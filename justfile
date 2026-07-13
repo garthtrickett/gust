@@ -1672,6 +1672,7 @@ guard-mir-to-c-boring-surface:
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9f-module-emitter-local-call-cohort' || true)"
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-opening-contract' || true)"
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-object-artifact-contract' || true)"
+    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-target-relocation-contract' || true)"
     if [ -n "$cranelift_recipe_wiring" ]; then
       echo "MIR-to-C boring gate allows only manifest, inert backend, dependency beachhead, explicit backend suite, return-int/local-binding/branch native smokes, and differential Cranelift guards before backend implementation expands."
       echo "$cranelift_recipe_wiring"
@@ -8789,8 +8790,10 @@ guard-cranelift-phase9g-opening-contract:
     rg -n -F 'fn emit_compiler_mir_fixture_contents_object(' "$source_file" >/dev/null
     rg -n -F 'fn lower_compiler_mir_ingestion_function_to_object(' "$source_file" >/dev/null
     rg -n -F 'fn lower_compiler_mir_ingestion_module_to_object(' "$source_file" >/dev/null
+    rg -n -F 'fn build_compiler_mir_native_object_builder(' "$source_file" >/dev/null
+    rg -n -F 'flag_builder.set("is_pic", "true")?;' "$source_file" >/dev/null
     rg -n -F 'cranelift_native::builder()' "$source_file" >/dev/null
-    rg -n -F 'settings::Flags::new(settings::builder())' "$source_file" >/dev/null
+    rg -n -F 'isa.flags().is_pic()' "$source_file" >/dev/null
     rg -n -F 'ObjectBuilder::new' "$source_file" >/dev/null
     rg -n -F 'ObjectModule::new' "$source_file" >/dev/null
     rg -n -F 'struct CompilerMirObjectArtifactReport {' "$source_file" >/dev/null
@@ -8973,6 +8976,156 @@ guard-cranelift-phase9g-object-artifact-contract:
     rg -n -F 'production route changes in this patch.' "$readme_doc" >/dev/null
 
     echo "✅ Phase 9G transactional object artifacts passed: complete nonempty bytes publish through a cleaned sibling temp and rename, while parse and publication failures preserve final-path integrity."
+
+
+guard-cranelift-phase9g-target-relocation-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 9G explicit native target and PIC relocation contract..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    readme_doc="compiler/experiments/cranelift/README.md"
+    source_file="compiler/experiments/cranelift/src/main.rs"
+    fixture="compiler/fixtures/phase9f_call_import_completeness.mir"
+    build_dir="build/guards/cranelift_phase9g_target_relocation_contract"
+    rm -rf "$build_dir"
+    mkdir -p "$build_dir"
+
+    just guard-cranelift-phase9g-object-artifact-contract
+
+    for required_file in "$manifest_doc" "$readme_doc" "$source_file" "$fixture"; do
+      if [ ! -f "$required_file" ]; then
+        echo "Missing Phase 9G target/relocation contract input: $required_file"
+        exit 1
+      fi
+    done
+
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9G_TARGET_RELOCATION_CONTRACT_GUARD: guard-cranelift-phase9g-target-relocation-contract' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_target_relocation_status: phase9g_explicit_native_target_and_pic_relocation_contract' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_target_relocation_owner: compiler/experiments/cranelift/src/main.rs::build_compiler_mir_native_object_builder' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_target_relocation_setting: cranelift_codegen_is_pic_true' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_target_relocation_report: native_triple_architecture_pointer_width_endianness_object_format_default_call_conv_relocation_model_and_is_pic' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_target_relocation_supported_object_formats: Elf_Coff_Macho' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_target_relocation_pointer_widths: 32_or_64' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_target_relocation_unsupported_host_policy: reject_unsupported_object_format_or_pointer_width_before_ObjectBuilder_creation' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_target_relocation_calling_convention_source: native_TargetIsa_default_call_conv' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_target_relocation_pie_policy: canonical_imported_call_objects_link_in_normal_Elf_PIE_mode_without_text_relocations_or_DT_TEXTREL' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_target_relocation_workaround_policy: no_global_no_pie_linker_flag' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_target_relocation_canonical_emitter_count: 2' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_target_relocation_inherited_inventory: 33_total_33_canonical_shared_0_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_target_relocation_route_policy: mir_to_c_primary_cranelift_disabled_no_production_runtime_or_backend_route' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_target_relocation_next_milestone: object_inspection_contract' "$manifest_doc" >/dev/null
+
+    rg -n -F 'use cranelift_codegen::settings::{self, Configurable};' "$source_file" >/dev/null
+    rg -n -F 'struct CompilerMirObjectTargetContract {' "$source_file" >/dev/null
+    rg -n -F 'fn build_compiler_mir_native_object_builder(' "$source_file" >/dev/null
+    rg -n -F 'fn print_compiler_mir_object_target_contract()' "$source_file" >/dev/null
+    rg -n -F '"compiler-mir-object-target-contract" => {' "$source_file" >/dev/null
+
+    target_builder_body="$(sed -n '/^fn build_compiler_mir_native_object_builder(/,/^fn print_compiler_mir_object_target_contract()/p' "$source_file")"
+    printf '%s\n' "$target_builder_body" | rg -n -F 'flag_builder.set("is_pic", "true")?;' >/dev/null
+    printf '%s\n' "$target_builder_body" | rg -n -F 'settings::Flags::new(flag_builder)' >/dev/null
+    printf '%s\n' "$target_builder_body" | rg -n -F 'cranelift_native::builder()' >/dev/null
+    printf '%s\n' "$target_builder_body" | rg -n -F 'isa.pointer_bits()' >/dev/null
+    printf '%s\n' "$target_builder_body" | rg -n -F 'isa.endianness()' >/dev/null
+    printf '%s\n' "$target_builder_body" | rg -n -F 'isa.triple().binary_format' >/dev/null
+    printf '%s\n' "$target_builder_body" | rg -n -F 'isa.default_call_conv()' >/dev/null
+    printf '%s\n' "$target_builder_body" | rg -n -F 'isa.flags().is_pic()' >/dev/null
+    printf '%s\n' "$target_builder_body" | rg -n -F '"Elf" | "Coff" | "Macho"' >/dev/null
+    printf '%s\n' "$target_builder_body" | rg -n -F 'ObjectBuilder::new(isa, object_name, default_libcall_names())?' >/dev/null
+
+    canonical_function_body="$(sed -n '/^fn lower_compiler_mir_ingestion_function_to_object(/,/^fn compiler_mir_ingestion_signature(/p' "$source_file")"
+    canonical_module_body="$(sed -n '/^fn lower_compiler_mir_ingestion_module_to_object(/,/^fn define_compiler_mir_ingestion_module_function(/p' "$source_file")"
+    for canonical_body in "$canonical_function_body" "$canonical_module_body"; do
+      printf '%s\n' "$canonical_body" | rg -n -F 'build_compiler_mir_native_object_builder(' >/dev/null
+      printf '%s\n' "$canonical_body" | rg -n -F 'debug_assert!(target_contract.is_pic);' >/dev/null
+      if printf '%s\n' "$canonical_body" | rg -n -F 'cranelift_native::builder()' >/dev/null; then
+        echo "Canonical compiler-MIR emitters must not own native target construction."
+        exit 1
+      fi
+      if printf '%s\n' "$canonical_body" | rg -n -F 'settings::Flags::new(settings::builder())' >/dev/null; then
+        echo "Canonical compiler-MIR emitters must not restore implicit default target flags."
+        exit 1
+      fi
+    done
+
+    if rg -n '^[[:space:]]*"[$]CC_BIN".*-no-pie' justfile >/dev/null; then
+      echo "Phase 9G target hardening must not introduce a global -no-pie linker invocation."
+      exit 1
+    fi
+
+    cargo_cmd=(cargo run --quiet --manifest-path compiler/experiments/cranelift/Cargo.toml --locked --)
+    target_log="$build_dir/target-contract.log"
+    "${cargo_cmd[@]}" compiler-mir-object-target-contract >"$target_log"
+    for field in target_triple architecture pointer_width_bits endianness object_format default_call_conv relocation_model is_pic; do
+      rg -n "^${field}: .+" "$target_log" >/dev/null
+    done
+    rg -n -F 'relocation_model: pic' "$target_log" >/dev/null
+    rg -n -F 'is_pic: true' "$target_log" >/dev/null
+    rg -n '^pointer_width_bits: (32|64)$' "$target_log" >/dev/null
+
+    object_format="$(sed -n 's/^object_format: //p' "$target_log")"
+    if [ "$object_format" != "Elf" ]; then
+      echo "The current Phase 9G PIE relocation guard supports the Ubuntu/ELF CI host; target contract reported $object_format."
+      cat "$target_log"
+      exit 1
+    fi
+    if ! command -v readelf >/dev/null 2>&1; then
+      echo "Phase 9G ELF PIE verification requires readelf from the native build toolchain."
+      exit 1
+    fi
+
+    object_file="$build_dir/completeness.o"
+    "${cargo_cmd[@]}" compiler-mir-ingestion-object "$fixture" "$object_file"
+    test -s "$object_file"
+
+    shim_c="$build_dir/completeness_shim.c"
+    cat >"$shim_c" <<'C'
+    #include <stdlib.h>
+    int phase9f_completeness_entry(int value);
+    int phase9f_completeness_host_zero(void) { return 2; }
+    int phase9f_completeness_host_add3(int a, int b, int c) { return a + b + c; }
+    int phase9f_completeness_host_positive(int value) { return value > 0; }
+    int main(int argc, char **argv) {
+        if (argc != 2) return 250;
+        return phase9f_completeness_entry(atoi(argv[1]));
+    }
+    C
+
+    CC_BIN="${CC:-cc}"
+    CFLAGS_VAL="${CFLAGS:--O0 -w}"
+    binary="$build_dir/completeness_pie"
+    link_log="$build_dir/completeness-pie-link.log"
+    if ! "$CC_BIN" $CFLAGS_VAL -fPIE -pie "$shim_c" "$object_file" -o "$binary" >"$link_log" 2>&1; then
+      echo "Canonical imported-call object failed normal ELF PIE linking:"
+      cat "$link_log"
+      exit 1
+    fi
+    if rg -ni 'DT_TEXTREL|text relocation|relocation against .* in read-only section|creating DT_TEXTREL' "$link_log" >/dev/null; then
+      echo "Canonical imported-call object produced a text-relocation linker diagnostic:"
+      cat "$link_log"
+      exit 1
+    fi
+    if readelf -d "$binary" | rg -n 'TEXTREL|FLAGS.*TEXTREL' >/dev/null; then
+      echo "Canonical imported-call PIE executable contains a DT_TEXTREL marker."
+      readelf -d "$binary"
+      exit 1
+    fi
+
+    set +e
+    "$binary" 3
+    native_status="$?"
+    set -e
+    if [ "$native_status" != "35" ]; then
+      echo "Expected canonical imported-call PIE executable to exit with status 35, got $native_status."
+      exit 1
+    fi
+
+    rg -n -F 'Steps 5 and 6 give both canonical compiler-MIR object emitters one explicit native target owner.' "$readme_doc" >/dev/null
+    rg -n -F 'Position-independent code is enabled in Cranelift with `is_pic=true`' "$readme_doc" >/dev/null
+    rg -n -F 'The ELF guard links the multi-import completeness object as a normal PIE' "$readme_doc" >/dev/null
+    rg -n -F 'No global `-no-pie` escape hatch is added.' "$readme_doc" >/dev/null
+
+    echo "✅ Phase 9G target/relocation contract passed: one explicit native target owner emits PIC canonical objects, and the multi-import object links as an ELF PIE without text relocations or DT_TEXTREL."
 
 
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:

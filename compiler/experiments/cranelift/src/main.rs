@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 
 use cranelift_codegen::ir::instructions::BlockArg;
 use cranelift_codegen::ir::{AbiParam, Block, FuncRef, InstBuilder, Type, condcodes::IntCC, types};
-use cranelift_codegen::settings;
+use cranelift_codegen::settings::{self, Configurable};
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext, Variable};
 use cranelift_module::{FuncId, Linkage, Module, default_libcall_names};
 use cranelift_object::{ObjectBuilder, ObjectModule};
@@ -1637,6 +1637,12 @@ fn run() -> Result<(), Box<dyn Error>> {
     };
 
     match command.as_str() {
+        "compiler-mir-object-target-contract" => {
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            print_compiler_mir_object_target_contract()
+        }
         "compiler-mir-ingestion-object" => {
             let Some(input_path) = args.next() else {
                 return Err(usage_error().into());
@@ -2759,6 +2765,7 @@ fn usage_error() -> IoError {
         ErrorKind::InvalidInput,
         concat!(
             "usage:\n",
+            "  gust-cranelift-experiment compiler-mir-object-target-contract\n",
             "  gust-cranelift-experiment compiler-mir-ingestion-object <input.mir> <output.o>\n",
             "  gust-cranelift-experiment compiler-mir-validate-fixture <input.mir>\n",
             "  gust-cranelift-experiment compiler-mir-return-int-ingestion-object <input.mir> <output.o>\n",
@@ -14017,6 +14024,95 @@ fn validate_compiler_mir_ingestion_lowering_readiness(
     Ok(())
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct CompilerMirObjectTargetContract {
+    triple: String,
+    architecture: String,
+    pointer_width_bits: u8,
+    endianness: String,
+    object_format: String,
+    default_call_conv: String,
+    relocation_model: &'static str,
+    is_pic: bool,
+}
+
+fn build_compiler_mir_native_object_builder(
+    object_name: &str,
+) -> Result<(ObjectBuilder, CompilerMirObjectTargetContract), Box<dyn Error>> {
+    let mut flag_builder = settings::builder();
+    flag_builder.set("is_pic", "true")?;
+    let flags = settings::Flags::new(flag_builder);
+
+    let isa_builder =
+        cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
+    let isa = isa_builder.finish(flags)?;
+    let target_contract = CompilerMirObjectTargetContract {
+        triple: isa.triple().to_string(),
+        architecture: isa.name().to_string(),
+        pointer_width_bits: isa.pointer_bits(),
+        endianness: format!("{:?}", isa.endianness()),
+        object_format: format!("{:?}", isa.triple().binary_format),
+        default_call_conv: format!("{:?}", isa.default_call_conv()),
+        relocation_model: "pic",
+        is_pic: isa.flags().is_pic(),
+    };
+
+    if !matches!(target_contract.pointer_width_bits, 32 | 64) {
+        return Err(IoError::new(
+            ErrorKind::Unsupported,
+            format!(
+                "canonical compiler MIR object target {} has unsupported pointer width {}",
+                target_contract.triple, target_contract.pointer_width_bits
+            ),
+        )
+        .into());
+    }
+    if !matches!(
+        target_contract.object_format.as_str(),
+        "Elf" | "Coff" | "Macho"
+    ) {
+        return Err(IoError::new(
+            ErrorKind::Unsupported,
+            format!(
+                "canonical compiler MIR object target {} has unsupported object format {}",
+                target_contract.triple, target_contract.object_format
+            ),
+        )
+        .into());
+    }
+    if !target_contract.is_pic {
+        return Err(IoError::new(
+            ErrorKind::InvalidData,
+            "canonical compiler MIR object target must enable position-independent code",
+        )
+        .into());
+    }
+
+    let object_builder =
+        ObjectBuilder::new(isa, object_name, default_libcall_names())?;
+    Ok((object_builder, target_contract))
+}
+
+fn print_compiler_mir_object_target_contract() -> Result<(), Box<dyn Error>> {
+    let (_object_builder, target_contract) =
+        build_compiler_mir_native_object_builder("gust_cranelift_target_contract_probe")?;
+    println!("target_triple: {}", target_contract.triple);
+    println!("architecture: {}", target_contract.architecture);
+    println!(
+        "pointer_width_bits: {}",
+        target_contract.pointer_width_bits
+    );
+    println!("endianness: {}", target_contract.endianness);
+    println!("object_format: {}", target_contract.object_format);
+    println!(
+        "default_call_conv: {}",
+        target_contract.default_call_conv
+    );
+    println!("relocation_model: {}", target_contract.relocation_model);
+    println!("is_pic: {}", target_contract.is_pic);
+    Ok(())
+}
+
 #[derive(Debug)]
 struct CompilerMirObjectArtifactReport {
     final_path: PathBuf,
@@ -14097,11 +14193,9 @@ fn lower_compiler_mir_ingestion_function_to_object(
 ) -> Result<(), Box<dyn Error>> {
     validate_compiler_mir_ingestion_lowering_readiness(mir_function)?;
 
-    let isa_builder =
-        cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
-    let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
-    let object_builder =
-        ObjectBuilder::new(isa, mir_function.object_name, default_libcall_names())?;
+    let (object_builder, target_contract) =
+        build_compiler_mir_native_object_builder(mir_function.object_name)?;
+    debug_assert!(target_contract.is_pic);
     let mut module = ObjectModule::new(object_builder);
 
     define_compiler_mir_ingestion_exported_function(&mut module, mir_function)?;
@@ -14159,11 +14253,9 @@ fn lower_compiler_mir_ingestion_module_to_object(
         recognize_compiler_mir_fixture_metadata(&defined.fixture.metadata)?;
     }
 
-    let isa_builder =
-        cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
-    let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
-    let object_builder =
-        ObjectBuilder::new(isa, mir_module.name, default_libcall_names())?;
+    let (object_builder, target_contract) =
+        build_compiler_mir_native_object_builder(mir_module.name)?;
+    debug_assert!(target_contract.is_pic);
     let mut module = ObjectModule::new(object_builder);
 
     let mut imported_link_ids: HashMap<&str, FuncId> = HashMap::new();

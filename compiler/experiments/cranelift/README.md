@@ -488,6 +488,20 @@ warnings with a global `-no-pie` flag.
 No linker ownership, target configuration, MIR syntax, translator seed, or
 production route changes in this patch.
 
+Steps 5 and 6 give both canonical compiler-MIR object emitters one explicit
+native target owner: `build_compiler_mir_native_object_builder`. The target
+contract records the native triple, architecture, pointer width, endianness,
+object format, default calling convention, relocation model, and PIC state.
+ELF, COFF, and Mach-O object formats with 32- or 64-bit pointers are admitted;
+other native targets reject before `ObjectBuilder` creation.
+
+Position-independent code is enabled in Cranelift with `is_pic=true` rather
+than delegated to implicit defaults. The ELF guard links the multi-import
+completeness object as a normal PIE, rejects text-relocation linker diagnostics
+and `DT_TEXTREL`, and executes the linked artifact. No global `-no-pie` escape
+hatch is added. MIR syntax, the 33/33/0/0/17 inventory, translator seeds,
+default backend state, and production routing remain unchanged.
+
 The checked-in lockfile for this crate is owned by:
 Patch 8 freezes the complete canonical call/import matrix and retires all
 eleven historical bypasses. The checked-in completeness fixture combines local
