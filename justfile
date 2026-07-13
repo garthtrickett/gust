@@ -9283,9 +9283,16 @@ guard-cranelift-phase9g-object-inspection-contract:
     canonical_function_body="$(sed -n '/^fn lower_compiler_mir_ingestion_function_to_object(/,/^fn compiler_mir_ingestion_signature(/p' "$source_file")"
     canonical_module_body="$(sed -n '/^fn lower_compiler_mir_ingestion_module_to_object(/,/^fn define_compiler_mir_ingestion_module_function(/p' "$source_file")"
     for canonical_body in "$canonical_function_body" "$canonical_module_body"; do
-      inspect_line="$(printf '%s\n' "$canonical_body" | rg -n -F 'let inspection_report = inspect_compiler_mir_object_artifact(' | cut -d: -f1)"
-      publish_line="$(printf '%s\n' "$canonical_body" | rg -n -F 'publish_compiler_mir_object_artifact(output_path, object_bytes)?;' | cut -d: -f1)"
-      if [ -z "$inspect_line" ] || [ -z "$publish_line" ] || [ "$inspect_line" -ge "$publish_line" ]; then
+      inspect_line="$(printf '%s\n' "$canonical_body" | (rg -n -F 'let inspection_report = compiler_mir_pipeline_wrap_box(' || true) | head -n1 | cut -d: -f1)"
+      inspect_call_line="$(printf '%s\n' "$canonical_body" | (rg -n -F 'inspect_compiler_mir_object_artifact(' || true) | head -n1 | cut -d: -f1)"
+      verification_stage_line="$(printf '%s\n' "$canonical_body" | (rg -n -F 'CompilerMirPipelineStage::ObjectVerification,' || true) | head -n1 | cut -d: -f1)"
+      publish_line="$(printf '%s\n' "$canonical_body" | (rg -n -F 'publish_compiler_mir_object_artifact(output_path, object_bytes),' || true) | head -n1 | cut -d: -f1)"
+      publication_stage_line="$(printf '%s\n' "$canonical_body" | (rg -n -F 'CompilerMirPipelineStage::ObjectPublication,' || true) | head -n1 | cut -d: -f1)"
+      if [ -z "$inspect_line" ] || [ -z "$inspect_call_line" ] || [ -z "$verification_stage_line" ] || [ -z "$publish_line" ] || [ -z "$publication_stage_line" ]; then
+        echo "Canonical compiler-MIR emitters must retain classified object inspection and publication wrappers."
+        exit 1
+      fi
+      if [ "$inspect_line" -ge "$inspect_call_line" ] || [ "$inspect_call_line" -ge "$publish_line" ] || [ "$verification_stage_line" -ge "$publish_line" ] || [ "$publish_line" -ge "$publication_stage_line" ]; then
         echo "Canonical compiler-MIR object inspection must complete before transactional publication."
         exit 1
       fi
