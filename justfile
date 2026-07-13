@@ -8850,6 +8850,32 @@ guard-cranelift-phase9g-opening-contract:
     echo "✅ Phase 9G opened with a separate nine-record object/link inventory; the 33/33/0/0/17 semantic boundary, frozen MIR schemas, disabled Cranelift default, and production routing remain unchanged."
 
 
+cranelift-phase9g-write-canonical-return-int-fixture output:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    output="{{output}}"
+    output_parent="$(dirname "$output")"
+    if [ ! -d "$output_parent" ]; then
+      echo "Canonical Phase 9G fixture parent must already exist: $output_parent"
+      exit 1
+    fi
+    cat >"$output" <<'EOF'
+    format: gust.compiler_mir_ingestion.v1
+    function: tiny_return_int
+    backend_symbol: tiny_native_backend_compiler_mir_ingested_return_int
+    parameter_count: 0
+    return_type: int
+    local_count: 0
+    entry_block: entry
+    block_count: 1
+    block_0_label: entry
+    block_0_statement_count: 0
+    block_0_terminator_kind: ReturnI32
+    block_0_terminator_value: 1
+    metadata_count: 0
+    expected_exit: 1
+    EOF
+
 guard-cranelift-phase9g-object-artifact-contract:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -8857,7 +8883,7 @@ guard-cranelift-phase9g-object-artifact-contract:
     manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     readme_doc="compiler/experiments/cranelift/README.md"
     source_file="compiler/experiments/cranelift/src/main.rs"
-    function_fixture="compiler/fixtures/native_backend_return_int_ingestion.mir"
+    function_fixture="build/guards/cranelift_phase9g_object_artifact_contract/canonical-return-int.mir"
     module_fixture="compiler/fixtures/phase9f_call_import_completeness.mir"
     build_dir="build/guards/cranelift_phase9g_object_artifact_contract"
     rm -rf "$build_dir"
@@ -8866,6 +8892,8 @@ guard-cranelift-phase9g-object-artifact-contract:
     if [ "${PHASE9G_SKIP_PREREQUISITES:-0}" != "1" ]; then
       just guard-cranelift-phase9g-opening-contract
     fi
+
+    just cranelift-phase9g-write-canonical-return-int-fixture "$function_fixture"
 
     for required_file in "$manifest_doc" "$readme_doc" "$source_file" "$function_fixture" "$module_fixture"; do
       if [ ! -f "$required_file" ]; then
@@ -9175,7 +9203,7 @@ guard-cranelift-phase9g-object-inspection-contract:
     source_file="compiler/experiments/cranelift/src/main.rs"
     cargo_manifest="compiler/experiments/cranelift/Cargo.toml"
     cargo_lock="compiler/experiments/cranelift/Cargo.lock"
-    function_fixture="compiler/fixtures/native_backend_return_int_ingestion.mir"
+    function_fixture="build/guards/cranelift_phase9g_object_inspection_contract/canonical-return-int.mir"
     local_fixture="compiler/fixtures/phase9f_local_call_module.mir"
     imported_fixture="compiler/fixtures/phase9f_call_import_completeness.mir"
     build_dir="build/guards/cranelift_phase9g_object_inspection_contract"
@@ -9185,6 +9213,8 @@ guard-cranelift-phase9g-object-inspection-contract:
     if [ "${PHASE9G_SKIP_PREREQUISITES:-0}" != "1" ]; then
       just guard-cranelift-phase9g-target-relocation-contract
     fi
+
+    just cranelift-phase9g-write-canonical-return-int-fixture "$function_fixture"
 
     for required_file in "$manifest_doc" "$readme_doc" "$source_file" "$cargo_manifest" "$cargo_lock" "$function_fixture" "$local_fixture" "$imported_fixture"; do
       if [ ! -f "$required_file" ]; then
@@ -9361,7 +9391,7 @@ guard-cranelift-phase9g-link-driver-contract:
     readme_doc="compiler/experiments/cranelift/README.md"
     source_file="compiler/experiments/cranelift/src/main.rs"
     cargo_manifest="compiler/experiments/cranelift/Cargo.toml"
-    function_fixture="compiler/fixtures/native_backend_return_int_ingestion.mir"
+    function_fixture="build/guards/cranelift_phase9g_link_driver_contract/canonical-return-int.mir"
     build_dir="build/guards/cranelift_phase9g_link_driver_contract"
     rm -rf "$build_dir"
     mkdir -p "$build_dir"
@@ -9369,6 +9399,8 @@ guard-cranelift-phase9g-link-driver-contract:
     if [ "${PHASE9G_SKIP_PREREQUISITES:-0}" != "1" ]; then
       just guard-cranelift-phase9g-object-inspection-contract
     fi
+
+    just cranelift-phase9g-write-canonical-return-int-fixture "$function_fixture"
 
     for required_file in "$manifest_doc" "$readme_doc" "$source_file" "$cargo_manifest" "$function_fixture"; do
       if [ ! -f "$required_file" ]; then
@@ -9647,7 +9679,7 @@ guard-cranelift-phase9g-pipeline-failure-classification:
     readme_doc="compiler/experiments/cranelift/README.md"
     source_file="compiler/experiments/cranelift/src/main.rs"
     cargo_manifest="compiler/experiments/cranelift/Cargo.toml"
-    function_fixture="compiler/fixtures/native_backend_return_int_ingestion.mir"
+    function_fixture="build/guards/cranelift_phase9g_pipeline_failure_classification/canonical-return-int.mir"
     positive_fixture="compiler/fixtures/phase9f_call_import_completeness.mir"
     unresolved_fixture="compiler/fixtures/phase9f_unresolved_import_object.mir"
     build_dir="build/guards/cranelift_phase9g_pipeline_failure_classification"
@@ -9657,6 +9689,8 @@ guard-cranelift-phase9g-pipeline-failure-classification:
     if [ "${PHASE9G_SKIP_PREREQUISITES:-0}" != "1" ]; then
       just guard-cranelift-phase9g-link-driver-contract
     fi
+
+    just cranelift-phase9g-write-canonical-return-int-fixture "$function_fixture"
 
     for required_file in "$manifest_doc" "$readme_doc" "$source_file" "$cargo_manifest" "$function_fixture" "$positive_fixture" "$unresolved_fixture"; do
       if [ ! -f "$required_file" ]; then
@@ -9925,7 +9959,7 @@ guard-cranelift-phase9g-positive-link-matrix:
     readme_doc="compiler/experiments/cranelift/README.md"
     source_file="compiler/experiments/cranelift/src/main.rs"
     cargo_manifest="compiler/experiments/cranelift/Cargo.toml"
-    import_free_fixture="compiler/fixtures/native_backend_return_int_ingestion.mir"
+    import_free_fixture="build/guards/cranelift_phase9g_positive_link_matrix/canonical-return-int.mir"
     one_import_fixture="compiler/fixtures/phase9f_unresolved_import_object.mir"
     multi_import_fixture="compiler/fixtures/phase9f_call_import_completeness.mir"
     local_module_fixture="compiler/fixtures/phase9f_local_call_module.mir"
@@ -9937,6 +9971,8 @@ guard-cranelift-phase9g-positive-link-matrix:
     if [ "${PHASE9G_SKIP_PREREQUISITES:-0}" != "1" ]; then
       just guard-cranelift-phase9g-pipeline-failure-classification
     fi
+
+    just cranelift-phase9g-write-canonical-return-int-fixture "$import_free_fixture"
 
     for required_file in "$manifest_doc" "$readme_doc" "$source_file" "$cargo_manifest" "$import_free_fixture" "$one_import_fixture" "$multi_import_fixture" "$local_module_fixture" "$cross_consumer_base_fixture"; do
       if [ ! -f "$required_file" ]; then
@@ -10314,7 +10350,7 @@ guard-cranelift-phase9g-negative-link-matrix:
     readme_doc="compiler/experiments/cranelift/README.md"
     source_file="compiler/experiments/cranelift/src/main.rs"
     cargo_manifest="compiler/experiments/cranelift/Cargo.toml"
-    import_free_fixture="compiler/fixtures/native_backend_return_int_ingestion.mir"
+    import_free_fixture="build/guards/cranelift_phase9g_negative_link_matrix/canonical-return-int.mir"
     one_import_fixture="compiler/fixtures/phase9f_unresolved_import_object.mir"
     multi_import_fixture="compiler/fixtures/phase9f_call_import_completeness.mir"
     build_dir="build/guards/cranelift_phase9g_negative_link_matrix"
@@ -10324,6 +10360,8 @@ guard-cranelift-phase9g-negative-link-matrix:
     if [ "${PHASE9G_SKIP_PREREQUISITES:-0}" != "1" ]; then
       just guard-cranelift-phase9g-positive-link-matrix
     fi
+
+    just cranelift-phase9g-write-canonical-return-int-fixture "$import_free_fixture"
 
     for required_file in "$manifest_doc" "$readme_doc" "$source_file" "$cargo_manifest" "$import_free_fixture" "$one_import_fixture" "$multi_import_fixture"; do
       if [ ! -f "$required_file" ]; then
