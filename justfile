@@ -9251,7 +9251,18 @@ guard-cranelift-phase9g-object-inspection-contract:
     cargo_package_block="$(sed -n '/^name = "gust-cranelift-experiment"$/,/^$/p' "$cargo_lock")"
     printf '%s\n' "$cargo_package_block" | rg -n -F '"object",' >/dev/null
 
-    rg -n -F 'use object::{Object, ObjectSection, ObjectSymbol, RelocationTarget, SectionKind, SymbolKind};' "$source_file" >/dev/null
+    object_read_import="$(
+      sed -n '/^use object::{/,/^};/p' "$source_file"
+    )"
+    if [ -z "$object_read_import" ]; then
+      echo "Missing object read API import block."
+      exit 1
+    fi
+    for imported_symbol in       Object       ObjectSection       ObjectSymbol       RelocationTarget       SectionKind       SymbolKind
+    do
+      printf '%s\n' "$object_read_import" |
+        rg -n "(^|[[:space:],])${imported_symbol}([[:space:],]|$)" >/dev/null
+    done
     rg -n -F 'struct CompilerMirObjectSymbolContract {' "$source_file" >/dev/null
     rg -n -F 'struct CompilerMirObjectInspectionReport {' "$source_file" >/dev/null
     rg -n -F 'fn inspect_compiler_mir_object_artifact(' "$source_file" >/dev/null
