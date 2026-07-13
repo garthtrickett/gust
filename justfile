@@ -9312,8 +9312,14 @@ guard-cranelift-phase9g-object-inspection-contract:
     printf '%s\n' "$canonical_module_body" | rg -n -F 'compiler_mir_module_object_symbol_contract(mir_module)' >/dev/null
 
     phase9f_completeness_body="$(sed -n '/^guard-cranelift-phase9f-call-import-completeness-rejection:/,/^guard-cranelift-phase9f-close:/p' justfile)"
-    printf '%s\n' "$phase9f_completeness_body" | rg -n -F 'compiler-mir-inspect-object "$unresolved_object"' >/dev/null
-    printf '%s\n' "$phase9f_completeness_body" | rg -n -F 'undefined_symbol: phase9f_missing_host_symbol' >/dev/null
+    printf '%s\n' "$phase9f_completeness_body" | rg -n -F 'just cranelift-phase9g-link-canonical-unresolved-ingestion-object "$unresolved_fixture" "$unresolved_object" "$unresolved_driver" "$unresolved_binary"' >/dev/null
+
+    unresolved_helper_body="$(sed -n '/^cranelift-phase9g-link-canonical-unresolved-ingestion-object /,/^guard-cranelift-phase9g-phase9c-phase9e-link-migration:/p' justfile)"
+    printf '%s\n' "$unresolved_helper_body" | rg -n -F 'compiler-mir-verify-object-contract "$fixture" "$object_file"' >/dev/null
+    printf '%s\n' "$unresolved_helper_body" | rg -n -F 'undefined_symbol_count:' >/dev/null
+    printf '%s\n' "$unresolved_helper_body" | rg -n -F 'expected_failure_kind: unresolved_symbol' >/dev/null
+    printf '%s\n' "$unresolved_helper_body" | rg -n -F 'pipeline_stage: native_link' >/dev/null
+    printf '%s\n' "$unresolved_helper_body" | rg -n -F 'failure_kind: unresolved_symbol' >/dev/null
     if printf '%s\n' "$phase9f_completeness_body" | rg -n -F 'if ! nm -u "$unresolved_object"' >/dev/null; then
       echo "Phase 9F unresolved-symbol proof must use structured inspection rather than nm as its assertion."
       exit 1
