@@ -2,6 +2,7 @@ use std::collections::{HashMap, HashSet, VecDeque};
 use std::env;
 use std::error::Error;
 use std::ffi::OsString;
+use std::fmt;
 use std::fs;
 use std::io::{Error as IoError, ErrorKind, Write};
 use std::path::{Path, PathBuf};
@@ -1625,8 +1626,231 @@ static MIR_LOCAL_BINDING_READ_STATEMENTS: [TinyMirStatement; 1] = [TinyMirStatem
     value: 2,
 }];
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum CompilerMirPipelineStage {
+    FixtureParse,
+    FixtureValidation,
+    MirLowering,
+    ObjectBuild,
+    ObjectVerification,
+    ObjectPublication,
+    LinkInputValidation,
+    LinkerSpawn,
+    NativeLink,
+    ExecutablePublication,
+    NativeExecution,
+}
+
+impl CompilerMirPipelineStage {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::FixtureParse => "fixture_parse",
+            Self::FixtureValidation => "fixture_validation",
+            Self::MirLowering => "mir_lowering",
+            Self::ObjectBuild => "object_build",
+            Self::ObjectVerification => "object_verification",
+            Self::ObjectPublication => "object_publication",
+            Self::LinkInputValidation => "link_input_validation",
+            Self::LinkerSpawn => "linker_spawn",
+            Self::NativeLink => "native_link",
+            Self::ExecutablePublication => "executable_publication",
+            Self::NativeExecution => "native_execution",
+        }
+    }
+}
+
+const COMPILER_MIR_PIPELINE_STAGES: [CompilerMirPipelineStage; 11] = [
+    CompilerMirPipelineStage::FixtureParse,
+    CompilerMirPipelineStage::FixtureValidation,
+    CompilerMirPipelineStage::MirLowering,
+    CompilerMirPipelineStage::ObjectBuild,
+    CompilerMirPipelineStage::ObjectVerification,
+    CompilerMirPipelineStage::ObjectPublication,
+    CompilerMirPipelineStage::LinkInputValidation,
+    CompilerMirPipelineStage::LinkerSpawn,
+    CompilerMirPipelineStage::NativeLink,
+    CompilerMirPipelineStage::ExecutablePublication,
+    CompilerMirPipelineStage::NativeExecution,
+];
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum CompilerMirPipelineFailureKind {
+    InvalidFixture,
+    InvalidRequest,
+    LoweringFailed,
+    ObjectBuildFailed,
+    UnresolvedSymbol,
+    DuplicateSymbol,
+    InvalidObject,
+    MissingInput,
+    UnsupportedTarget,
+    LinkerUnavailable,
+    LinkerRejectedOptions,
+    OutputNotWritable,
+    UnknownNativeLinkFailure,
+    NativeExecutionFailed,
+}
+
+impl CompilerMirPipelineFailureKind {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::InvalidFixture => "invalid_fixture",
+            Self::InvalidRequest => "invalid_request",
+            Self::LoweringFailed => "lowering_failed",
+            Self::ObjectBuildFailed => "object_build_failed",
+            Self::UnresolvedSymbol => "unresolved_symbol",
+            Self::DuplicateSymbol => "duplicate_symbol",
+            Self::InvalidObject => "invalid_object",
+            Self::MissingInput => "missing_input",
+            Self::UnsupportedTarget => "unsupported_target",
+            Self::LinkerUnavailable => "linker_unavailable",
+            Self::LinkerRejectedOptions => "linker_rejected_options",
+            Self::OutputNotWritable => "output_not_writable",
+            Self::UnknownNativeLinkFailure => "unknown_native_link_failure",
+            Self::NativeExecutionFailed => "native_execution_failed",
+        }
+    }
+
+    fn parse_link_failure_kind(value: &str) -> Result<Self, Box<dyn Error>> {
+        match value {
+            "unresolved_symbol" => Ok(Self::UnresolvedSymbol),
+            "duplicate_symbol" => Ok(Self::DuplicateSymbol),
+            "invalid_object" => Ok(Self::InvalidObject),
+            "missing_input" => Ok(Self::MissingInput),
+            "unsupported_target" => Ok(Self::UnsupportedTarget),
+            "linker_unavailable" => Ok(Self::LinkerUnavailable),
+            "linker_rejected_options" => Ok(Self::LinkerRejectedOptions),
+            "output_not_writable" => Ok(Self::OutputNotWritable),
+            "unknown_native_link_failure" => Ok(Self::UnknownNativeLinkFailure),
+            other => Err(IoError::new(
+                ErrorKind::InvalidData,
+                format!(
+                    "compiler MIR link request expected_failure_kind is not a stable link failure kind: {other}"
+                ),
+            )
+            .into()),
+        }
+    }
+}
+
+const COMPILER_MIR_LINK_FAILURE_KINDS: [CompilerMirPipelineFailureKind; 9] = [
+    CompilerMirPipelineFailureKind::UnresolvedSymbol,
+    CompilerMirPipelineFailureKind::DuplicateSymbol,
+    CompilerMirPipelineFailureKind::InvalidObject,
+    CompilerMirPipelineFailureKind::MissingInput,
+    CompilerMirPipelineFailureKind::UnsupportedTarget,
+    CompilerMirPipelineFailureKind::LinkerUnavailable,
+    CompilerMirPipelineFailureKind::LinkerRejectedOptions,
+    CompilerMirPipelineFailureKind::OutputNotWritable,
+    CompilerMirPipelineFailureKind::UnknownNativeLinkFailure,
+];
+
+#[derive(Debug)]
+struct CompilerMirPipelineError {
+    stage: CompilerMirPipelineStage,
+    kind: CompilerMirPipelineFailureKind,
+    detail: String,
+}
+
+impl CompilerMirPipelineError {
+    fn new(
+        stage: CompilerMirPipelineStage,
+        kind: CompilerMirPipelineFailureKind,
+        detail: impl Into<String>,
+    ) -> Self {
+        Self {
+            stage,
+            kind,
+            detail: detail.into(),
+        }
+    }
+
+    fn machine_line(&self) -> String {
+        compiler_mir_pipeline_machine_line(self.stage, self.kind)
+    }
+}
+
+impl fmt::Display for CompilerMirPipelineError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(&self.detail)
+    }
+}
+
+impl Error for CompilerMirPipelineError {}
+
+fn compiler_mir_pipeline_machine_line(
+    stage: CompilerMirPipelineStage,
+    kind: CompilerMirPipelineFailureKind,
+) -> String {
+    format!(
+        "gust_pipeline_failure: stage={} kind={}",
+        stage.as_str(),
+        kind.as_str()
+    )
+}
+
+fn compiler_mir_pipeline_error(
+    stage: CompilerMirPipelineStage,
+    kind: CompilerMirPipelineFailureKind,
+    detail: impl Into<String>,
+) -> Box<dyn Error> {
+    Box::new(CompilerMirPipelineError::new(stage, kind, detail))
+}
+
+fn compiler_mir_pipeline_wrap<T, E>(
+    result: Result<T, E>,
+    stage: CompilerMirPipelineStage,
+    kind: CompilerMirPipelineFailureKind,
+) -> Result<T, Box<dyn Error>>
+where
+    E: fmt::Display,
+{
+    result.map_err(|error| compiler_mir_pipeline_error(stage, kind, error.to_string()))
+}
+
+fn compiler_mir_pipeline_wrap_box<T>(
+    result: Result<T, Box<dyn Error>>,
+    stage: CompilerMirPipelineStage,
+    kind: CompilerMirPipelineFailureKind,
+) -> Result<T, Box<dyn Error>> {
+    result.map_err(
+        |error| match error.downcast::<CompilerMirPipelineError>() {
+            Ok(pipeline_error) => {
+                let pipeline_error: Box<dyn Error> = pipeline_error;
+                pipeline_error
+            }
+            Err(error) => {
+                compiler_mir_pipeline_error(stage, kind, error.to_string())
+            }
+        },
+    )
+}
+
+fn print_compiler_mir_pipeline_taxonomy() -> Result<(), Box<dyn Error>> {
+    println!("pipeline_stage_count: {}", COMPILER_MIR_PIPELINE_STAGES.len());
+    for stage in COMPILER_MIR_PIPELINE_STAGES {
+        println!("pipeline_stage: {}", stage.as_str());
+    }
+    println!(
+        "link_failure_kind_count: {}",
+        COMPILER_MIR_LINK_FAILURE_KINDS.len()
+    );
+    for kind in COMPILER_MIR_LINK_FAILURE_KINDS {
+        println!("link_failure_kind: {}", kind.as_str());
+    }
+    println!(
+        "machine_line_format: gust_pipeline_failure: stage=<stage> kind=<kind>"
+    );
+    Ok(())
+}
+
 fn main() {
     if let Err(error) = run() {
+        if let Some(pipeline_error) =
+            error.downcast_ref::<CompilerMirPipelineError>()
+        {
+            eprintln!("{}", pipeline_error.machine_line());
+        }
         eprintln!("gust Cranelift experiment failed: {error}");
         std::process::exit(2);
     }
@@ -1639,6 +1863,12 @@ fn run() -> Result<(), Box<dyn Error>> {
     };
 
     match command.as_str() {
+        "compiler-mir-pipeline-taxonomy" => {
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            print_compiler_mir_pipeline_taxonomy()
+        }
         "compiler-mir-object-target-contract" => {
             if args.next().is_some() {
                 return Err(usage_error().into());
@@ -2800,6 +3030,7 @@ fn usage_error() -> IoError {
         ErrorKind::InvalidInput,
         concat!(
             "usage:\n",
+            "  gust-cranelift-experiment compiler-mir-pipeline-taxonomy\n",
             "  gust-cranelift-experiment compiler-mir-object-target-contract\n",
             "  gust-cranelift-experiment compiler-mir-inspect-object <input.o>\n",
             "  gust-cranelift-experiment compiler-mir-verify-object-contract <input.mir> <input.o>\n",
@@ -5225,10 +5456,34 @@ fn emit_compiler_mir_fixture_object(
     input_path: &Path,
     output_path: &Path,
 ) -> Result<(), Box<dyn Error>> {
-    let contents = fs::read_to_string(input_path)?;
-    match parse_compiler_mir_input(&contents)? {
-        ParsedCompilerMirInput::V1(_) => {
-            emit_compiler_mir_fixture_contents_object(&contents, output_path)
+    let contents = compiler_mir_pipeline_wrap(
+        fs::read_to_string(input_path),
+        CompilerMirPipelineStage::FixtureParse,
+        CompilerMirPipelineFailureKind::InvalidFixture,
+    )?;
+    let parsed = compiler_mir_pipeline_wrap_box(
+        parse_compiler_mir_input(&contents),
+        CompilerMirPipelineStage::FixtureParse,
+        CompilerMirPipelineFailureKind::InvalidFixture,
+    )?;
+    match parsed {
+        ParsedCompilerMirInput::V1(fixture) => {
+            compiler_mir_pipeline_wrap_box(
+                validate_compiler_mir_fixture(&fixture),
+                CompilerMirPipelineStage::FixtureValidation,
+                CompilerMirPipelineFailureKind::InvalidFixture,
+            )?;
+            compiler_mir_pipeline_wrap_box(
+                recognize_compiler_mir_fixture_metadata(
+                    &fixture.metadata,
+                ),
+                CompilerMirPipelineStage::FixtureValidation,
+                CompilerMirPipelineFailureKind::InvalidFixture,
+            )?;
+            lower_compiler_mir_ingestion_function_to_object(
+                output_path,
+                &fixture.function,
+            )
         }
         ParsedCompilerMirInput::V2(module) => {
             lower_compiler_mir_ingestion_module_to_object(output_path, &module)
@@ -5240,10 +5495,25 @@ fn emit_compiler_mir_fixture_contents_object(
     contents: &str,
     output_path: &Path,
 ) -> Result<(), Box<dyn Error>> {
-    let fixture = parse_compiler_mir_fixture(contents)?;
-    validate_compiler_mir_fixture(&fixture)?;
-    recognize_compiler_mir_fixture_metadata(&fixture.metadata)?;
-    lower_compiler_mir_ingestion_function_to_object(output_path, &fixture.function)
+    let fixture = compiler_mir_pipeline_wrap_box(
+        parse_compiler_mir_fixture(contents),
+        CompilerMirPipelineStage::FixtureParse,
+        CompilerMirPipelineFailureKind::InvalidFixture,
+    )?;
+    compiler_mir_pipeline_wrap_box(
+        validate_compiler_mir_fixture(&fixture),
+        CompilerMirPipelineStage::FixtureValidation,
+        CompilerMirPipelineFailureKind::InvalidFixture,
+    )?;
+    compiler_mir_pipeline_wrap_box(
+        recognize_compiler_mir_fixture_metadata(&fixture.metadata),
+        CompilerMirPipelineStage::FixtureValidation,
+        CompilerMirPipelineFailureKind::InvalidFixture,
+    )?;
+    lower_compiler_mir_ingestion_function_to_object(
+        output_path,
+        &fixture.function,
+    )
 }
 
 fn recognize_compiler_mir_fixture_metadata(
@@ -14532,11 +14802,15 @@ fn print_compiler_mir_object_inspection_report(
 fn inspect_compiler_mir_object_path(
     input_path: &Path,
 ) -> Result<(), Box<dyn Error>> {
-    let object_bytes = fs::read(input_path)?;
-    let report = inspect_compiler_mir_object_artifact(
-        &object_bytes,
-        None,
-        None,
+    let object_bytes = compiler_mir_pipeline_wrap(
+        fs::read(input_path),
+        CompilerMirPipelineStage::ObjectVerification,
+        CompilerMirPipelineFailureKind::InvalidObject,
+    )?;
+    let report = compiler_mir_pipeline_wrap_box(
+        inspect_compiler_mir_object_artifact(&object_bytes, None, None),
+        CompilerMirPipelineStage::ObjectVerification,
+        CompilerMirPipelineFailureKind::InvalidObject,
     )?;
     print_compiler_mir_object_inspection_report(&report);
     Ok(())
@@ -14545,23 +14819,52 @@ fn inspect_compiler_mir_object_path(
 fn compiler_mir_object_symbol_contract_for_fixture_path(
     fixture_path: &Path,
 ) -> Result<CompilerMirObjectSymbolContract, Box<dyn Error>> {
-    let contents = fs::read_to_string(fixture_path)?;
-    match parse_compiler_mir_input(&contents)? {
+    let contents = compiler_mir_pipeline_wrap(
+        fs::read_to_string(fixture_path),
+        CompilerMirPipelineStage::FixtureParse,
+        CompilerMirPipelineFailureKind::InvalidFixture,
+    )?;
+    let parsed = compiler_mir_pipeline_wrap_box(
+        parse_compiler_mir_input(&contents),
+        CompilerMirPipelineStage::FixtureParse,
+        CompilerMirPipelineFailureKind::InvalidFixture,
+    )?;
+    match parsed {
         ParsedCompilerMirInput::V1(fixture) => {
-            validate_compiler_mir_fixture(&fixture)?;
-            recognize_compiler_mir_fixture_metadata(&fixture.metadata)?;
+            compiler_mir_pipeline_wrap_box(
+                validate_compiler_mir_fixture(&fixture),
+                CompilerMirPipelineStage::FixtureValidation,
+                CompilerMirPipelineFailureKind::InvalidFixture,
+            )?;
+            compiler_mir_pipeline_wrap_box(
+                recognize_compiler_mir_fixture_metadata(&fixture.metadata),
+                CompilerMirPipelineStage::FixtureValidation,
+                CompilerMirPipelineFailureKind::InvalidFixture,
+            )?;
             Ok(compiler_mir_function_object_symbol_contract(
                 &fixture.function,
             ))
         }
         ParsedCompilerMirInput::V2(module) => {
-            validate_compiler_mir_module(&module)?;
+            compiler_mir_pipeline_wrap_box(
+                validate_compiler_mir_module(&module),
+                CompilerMirPipelineStage::FixtureValidation,
+                CompilerMirPipelineFailureKind::InvalidFixture,
+            )?;
             for defined in &module.functions {
-                validate_compiler_mir_ingestion_lowering_readiness(
-                    &defined.fixture.function,
+                compiler_mir_pipeline_wrap_box(
+                    validate_compiler_mir_ingestion_lowering_readiness(
+                        &defined.fixture.function,
+                    ),
+                    CompilerMirPipelineStage::FixtureValidation,
+                    CompilerMirPipelineFailureKind::InvalidFixture,
                 )?;
-                recognize_compiler_mir_fixture_metadata(
-                    &defined.fixture.metadata,
+                compiler_mir_pipeline_wrap_box(
+                    recognize_compiler_mir_fixture_metadata(
+                        &defined.fixture.metadata,
+                    ),
+                    CompilerMirPipelineStage::FixtureValidation,
+                    CompilerMirPipelineFailureKind::InvalidFixture,
                 )?;
             }
             Ok(compiler_mir_module_object_symbol_contract(&module))
@@ -14575,11 +14878,19 @@ fn verify_compiler_mir_object_contract_path(
 ) -> Result<(), Box<dyn Error>> {
     let symbol_contract =
         compiler_mir_object_symbol_contract_for_fixture_path(fixture_path)?;
-    let object_bytes = fs::read(object_path)?;
-    let report = inspect_compiler_mir_object_artifact(
-        &object_bytes,
-        None,
-        Some(&symbol_contract),
+    let object_bytes = compiler_mir_pipeline_wrap(
+        fs::read(object_path),
+        CompilerMirPipelineStage::ObjectVerification,
+        CompilerMirPipelineFailureKind::InvalidObject,
+    )?;
+    let report = compiler_mir_pipeline_wrap_box(
+        inspect_compiler_mir_object_artifact(
+            &object_bytes,
+            None,
+            Some(&symbol_contract),
+        ),
+        CompilerMirPipelineStage::ObjectVerification,
+        CompilerMirPipelineFailureKind::InvalidObject,
     )?;
     print_compiler_mir_object_inspection_report(&report);
     Ok(())
@@ -14629,6 +14940,53 @@ impl CompilerMirLinkClassification {
     }
 }
 
+fn compiler_mir_classify_native_link_failure(
+    stdout: &[u8],
+    stderr: &[u8],
+) -> CompilerMirPipelineFailureKind {
+    let diagnostics = format!(
+        "{}\n{}",
+        String::from_utf8_lossy(stdout),
+        String::from_utf8_lossy(stderr)
+    )
+    .to_ascii_lowercase();
+
+    if diagnostics.contains("multiple definition")
+        || diagnostics.contains("duplicate symbol")
+        || diagnostics.contains("already defined")
+    {
+        CompilerMirPipelineFailureKind::DuplicateSymbol
+    } else if diagnostics.contains("undefined reference")
+        || diagnostics.contains("undefined symbol")
+        || diagnostics.contains("unresolved external symbol")
+        || diagnostics.contains("symbol(s) not found")
+    {
+        CompilerMirPipelineFailureKind::UnresolvedSymbol
+    } else if diagnostics.contains("file format not recognized")
+        || diagnostics.contains("not an object")
+        || diagnostics.contains("unknown file type")
+        || diagnostics.contains("malformed object")
+        || diagnostics.contains("truncated")
+    {
+        CompilerMirPipelineFailureKind::InvalidObject
+    } else if diagnostics.contains("unrecognized command-line option")
+        || diagnostics.contains("unrecognized option")
+        || diagnostics.contains("unknown argument")
+        || diagnostics.contains("unknown option")
+        || diagnostics.contains("unsupported option")
+    {
+        CompilerMirPipelineFailureKind::LinkerRejectedOptions
+    } else if diagnostics.contains("cannot open output file")
+        || diagnostics.contains("cannot write output")
+        || diagnostics.contains("permission denied")
+        || diagnostics.contains("read-only file system")
+    {
+        CompilerMirPipelineFailureKind::OutputNotWritable
+    } else {
+        CompilerMirPipelineFailureKind::UnknownNativeLinkFailure
+    }
+}
+
 #[derive(Debug)]
 struct CompilerMirLinkRequest {
     output_path: PathBuf,
@@ -14640,12 +14998,16 @@ struct CompilerMirLinkRequest {
     linker_driver: OsString,
     environment_overrides: Vec<(OsString, OsString)>,
     expected_result: CompilerMirLinkExpectedResult,
+    expected_failure_kind: Option<CompilerMirPipelineFailureKind>,
 }
 
 #[derive(Debug)]
 struct CompilerMirLinkReport {
     classification: CompilerMirLinkClassification,
+    failure_stage: Option<CompilerMirPipelineStage>,
+    failure_kind: Option<CompilerMirPipelineFailureKind>,
     expected_result: CompilerMirLinkExpectedResult,
+    expected_failure_kind: Option<CompilerMirPipelineFailureKind>,
     matched_expectation: bool,
     published: bool,
     exit_code: Option<i32>,
@@ -14690,6 +15052,7 @@ fn parse_compiler_mir_link_request(
     let mut linker_driver: Option<OsString> = None;
     let mut environment_overrides = Vec::new();
     let mut expected_result: Option<CompilerMirLinkExpectedResult> = None;
+    let mut expected_failure_kind: Option<CompilerMirPipelineFailureKind> = None;
 
     for (line_index, raw_line) in contents.lines().enumerate() {
         let line_number = line_index + 1;
@@ -14812,6 +15175,22 @@ fn parse_compiler_mir_link_request(
                     .into());
                 }
             }
+            "expected_failure_kind" => {
+                if expected_failure_kind
+                    .replace(
+                        CompilerMirPipelineFailureKind::parse_link_failure_kind(
+                            value,
+                        )?,
+                    )
+                    .is_some()
+                {
+                    return Err(IoError::new(
+                        ErrorKind::InvalidData,
+                        "compiler MIR link request expected_failure_kind may appear only once",
+                    )
+                    .into());
+                }
+            }
             other => {
                 return Err(IoError::new(
                     ErrorKind::InvalidData,
@@ -14860,18 +15239,20 @@ fn parse_compiler_mir_link_request(
                 "compiler MIR link request is missing expected_result",
             )
         })?,
+        expected_failure_kind,
     };
-    validate_compiler_mir_link_request(&request)?;
     Ok(request)
 }
 
 fn validate_compiler_mir_link_input(
     input_kind: &str,
     input_path: &Path,
+    inspect_object: bool,
 ) -> Result<(), Box<dyn Error>> {
     let metadata = fs::metadata(input_path).map_err(|error| {
-        IoError::new(
-            error.kind(),
+        compiler_mir_pipeline_error(
+            CompilerMirPipelineStage::LinkInputValidation,
+            CompilerMirPipelineFailureKind::MissingInput,
             format!(
                 "compiler MIR link {input_kind} input does not exist or cannot be read: {}: {error}",
                 input_path.display()
@@ -14879,14 +15260,35 @@ fn validate_compiler_mir_link_input(
         )
     })?;
     if !metadata.is_file() {
-        return Err(IoError::new(
-            ErrorKind::InvalidInput,
+        return Err(compiler_mir_pipeline_error(
+            CompilerMirPipelineStage::LinkInputValidation,
+            CompilerMirPipelineFailureKind::MissingInput,
             format!(
                 "compiler MIR link {input_kind} input must be a file: {}",
                 input_path.display()
             ),
-        )
-        .into());
+        ));
+    }
+    if inspect_object {
+        let object_bytes = fs::read(input_path).map_err(|error| {
+            compiler_mir_pipeline_error(
+                CompilerMirPipelineStage::LinkInputValidation,
+                CompilerMirPipelineFailureKind::MissingInput,
+                format!(
+                    "compiler MIR link {input_kind} input cannot be read: {}: {error}",
+                    input_path.display()
+                ),
+            )
+        })?;
+        compiler_mir_pipeline_wrap_box(
+            inspect_compiler_mir_object_artifact(
+                &object_bytes,
+                None,
+                None,
+            ),
+            CompilerMirPipelineStage::LinkInputValidation,
+            CompilerMirPipelineFailureKind::InvalidObject,
+        )?;
     }
     Ok(())
 }
@@ -14925,6 +15327,27 @@ fn validate_compiler_mir_link_request(
         )
         .into());
     }
+    match (
+        request.expected_result,
+        request.expected_failure_kind,
+    ) {
+        (CompilerMirLinkExpectedResult::Success, None) => {}
+        (CompilerMirLinkExpectedResult::Failure, Some(_)) => {}
+        (CompilerMirLinkExpectedResult::Success, Some(_)) => {
+            return Err(IoError::new(
+                ErrorKind::InvalidData,
+                "compiler MIR link request expected_failure_kind is forbidden when expected_result is success",
+            )
+            .into());
+        }
+        (CompilerMirLinkExpectedResult::Failure, None) => {
+            return Err(IoError::new(
+                ErrorKind::InvalidData,
+                "compiler MIR link request expected_result failure requires expected_failure_kind",
+            )
+            .into());
+        }
+    }
     for linker_arg in &request.additional_linker_args {
         let linker_arg = linker_arg.to_string_lossy();
         if linker_arg == "-o"
@@ -14942,13 +15365,13 @@ fn validate_compiler_mir_link_request(
     }
 
     for input_path in &request.ordered_object_inputs {
-        validate_compiler_mir_link_input("object", input_path)?;
+        validate_compiler_mir_link_input("object", input_path, true)?;
     }
     if let Some(c_source) = request.c_source.as_deref() {
-        validate_compiler_mir_link_input("C source", c_source)?;
+        validate_compiler_mir_link_input("C source", c_source, false)?;
     }
     if let Some(host_object) = request.host_object.as_deref() {
-        validate_compiler_mir_link_input("host object", host_object)?;
+        validate_compiler_mir_link_input("host object", host_object, true)?;
     }
 
     let temp_path =
@@ -15017,17 +15440,35 @@ fn remove_compiler_mir_link_temp(temp_path: &Path) -> Result<(), Box<dyn Error>>
 fn run_compiler_mir_link_request(
     request: CompilerMirLinkRequest,
 ) -> Result<CompilerMirLinkReport, Box<dyn Error>> {
-    validate_compiler_mir_link_request(&request)?;
-
-    let temp_path =
-        compiler_mir_link_sibling_path(&request.output_path, ".phase9g-link.tmp")?;
-    let stdout_log_path = compiler_mir_link_sibling_path(
-        &request.output_path,
-        ".phase9g-link.stdout.log",
+    compiler_mir_pipeline_wrap_box(
+        validate_compiler_mir_link_request(&request),
+        CompilerMirPipelineStage::LinkInputValidation,
+        CompilerMirPipelineFailureKind::InvalidRequest,
     )?;
-    let stderr_log_path = compiler_mir_link_sibling_path(
-        &request.output_path,
-        ".phase9g-link.stderr.log",
+
+    let temp_path = compiler_mir_pipeline_wrap_box(
+        compiler_mir_link_sibling_path(
+            &request.output_path,
+            ".phase9g-link.tmp",
+        ),
+        CompilerMirPipelineStage::LinkInputValidation,
+        CompilerMirPipelineFailureKind::InvalidRequest,
+    )?;
+    let stdout_log_path = compiler_mir_pipeline_wrap_box(
+        compiler_mir_link_sibling_path(
+            &request.output_path,
+            ".phase9g-link.stdout.log",
+        ),
+        CompilerMirPipelineStage::LinkInputValidation,
+        CompilerMirPipelineFailureKind::InvalidRequest,
+    )?;
+    let stderr_log_path = compiler_mir_pipeline_wrap_box(
+        compiler_mir_link_sibling_path(
+            &request.output_path,
+            ".phase9g-link.stderr.log",
+        ),
+        CompilerMirPipelineStage::LinkInputValidation,
+        CompilerMirPipelineFailureKind::InvalidRequest,
     )?;
 
     if let Some(parent) = request
@@ -15035,9 +15476,17 @@ fn run_compiler_mir_link_request(
         .parent()
         .filter(|parent| !parent.as_os_str().is_empty())
     {
-        fs::create_dir_all(parent)?;
+        compiler_mir_pipeline_wrap(
+            fs::create_dir_all(parent),
+            CompilerMirPipelineStage::ExecutablePublication,
+            CompilerMirPipelineFailureKind::OutputNotWritable,
+        )?;
     }
-    remove_compiler_mir_link_temp(&temp_path)?;
+    compiler_mir_pipeline_wrap_box(
+        remove_compiler_mir_link_temp(&temp_path),
+        CompilerMirPipelineStage::ExecutablePublication,
+        CompilerMirPipelineFailureKind::OutputNotWritable,
+    )?;
 
     let mut command = Command::new(&request.linker_driver);
     for linker_arg in &request.additional_linker_args {
@@ -15064,95 +15513,137 @@ fn run_compiler_mir_link_request(
         Ok(output) => output,
         Err(error) => {
             let _ = remove_compiler_mir_link_temp(&temp_path);
-            fs::write(&stdout_log_path, b"")?;
-            fs::write(
+            let _ = fs::write(&stdout_log_path, b"");
+            let _ = fs::write(
                 &stderr_log_path,
                 format!("linker spawn failed: {error}\n").as_bytes(),
-            )?;
-            return Err(IoError::new(
-                error.kind(),
+            );
+            return Err(compiler_mir_pipeline_error(
+                CompilerMirPipelineStage::LinkerSpawn,
+                CompilerMirPipelineFailureKind::LinkerUnavailable,
                 format!(
-                    "compiler MIR link classification linker_spawn_failure: {error}; stderr log: {}",
+                    "compiler MIR linker spawn failed: {error}; stderr log: {}",
                     stderr_log_path.display()
                 ),
-            )
-            .into());
+            ));
         }
     };
 
-    fs::write(&stdout_log_path, &process_output.stdout)?;
-    fs::write(&stderr_log_path, &process_output.stderr)?;
+    compiler_mir_pipeline_wrap(
+        fs::write(&stdout_log_path, &process_output.stdout),
+        CompilerMirPipelineStage::NativeLink,
+        CompilerMirPipelineFailureKind::OutputNotWritable,
+    )?;
+    compiler_mir_pipeline_wrap(
+        fs::write(&stderr_log_path, &process_output.stderr),
+        CompilerMirPipelineStage::NativeLink,
+        CompilerMirPipelineFailureKind::OutputNotWritable,
+    )?;
 
-    let classification = if process_output.status.success() {
-        CompilerMirLinkClassification::Linked
-    } else {
-        CompilerMirLinkClassification::NativeLinkFailure
-    };
-    let matched_expectation = matches!(
-        (request.expected_result, classification),
+    let (classification, failure_stage, failure_kind) =
+        if process_output.status.success() {
+            (CompilerMirLinkClassification::Linked, None, None)
+        } else {
+            (
+                CompilerMirLinkClassification::NativeLinkFailure,
+                Some(CompilerMirPipelineStage::NativeLink),
+                Some(compiler_mir_classify_native_link_failure(
+                    &process_output.stdout,
+                    &process_output.stderr,
+                )),
+            )
+        };
+
+    let matched_expectation = match (
+        request.expected_result,
+        request.expected_failure_kind,
+        classification,
+        failure_kind,
+    ) {
         (
             CompilerMirLinkExpectedResult::Success,
-            CompilerMirLinkClassification::Linked
-        ) | (
+            None,
+            CompilerMirLinkClassification::Linked,
+            None,
+        ) => true,
+        (
             CompilerMirLinkExpectedResult::Failure,
-            CompilerMirLinkClassification::NativeLinkFailure
-        )
-    );
+            Some(expected_kind),
+            CompilerMirLinkClassification::NativeLinkFailure,
+            Some(actual_kind),
+        ) => expected_kind == actual_kind,
+        _ => false,
+    };
 
     let published = if classification == CompilerMirLinkClassification::Linked
         && matched_expectation
     {
         let temp_metadata = fs::metadata(&temp_path).map_err(|error| {
-            IoError::new(
-                error.kind(),
+            compiler_mir_pipeline_error(
+                CompilerMirPipelineStage::ExecutablePublication,
+                CompilerMirPipelineFailureKind::OutputNotWritable,
                 format!(
-                    "compiler MIR link classification executable_publication_failure: linker reported success but temporary executable is unavailable at {}: {error}",
+                    "linker reported success but temporary executable is unavailable at {}: {error}",
                     temp_path.display()
                 ),
             )
         })?;
         if temp_metadata.len() == 0 {
             let _ = remove_compiler_mir_link_temp(&temp_path);
-            return Err(IoError::new(
-                ErrorKind::InvalidData,
-                "compiler MIR link classification executable_publication_failure: linker produced an empty temporary executable",
-            )
-            .into());
+            return Err(compiler_mir_pipeline_error(
+                CompilerMirPipelineStage::ExecutablePublication,
+                CompilerMirPipelineFailureKind::OutputNotWritable,
+                "linker produced an empty temporary executable",
+            ));
         }
         if let Err(error) = fs::rename(&temp_path, &request.output_path) {
             let _ = remove_compiler_mir_link_temp(&temp_path);
-            return Err(IoError::new(
-                error.kind(),
+            return Err(compiler_mir_pipeline_error(
+                CompilerMirPipelineStage::ExecutablePublication,
+                CompilerMirPipelineFailureKind::OutputNotWritable,
                 format!(
-                    "compiler MIR link classification executable_publication_failure: could not publish {}: {error}",
+                    "could not publish {}: {error}",
                     request.output_path.display()
                 ),
-            )
-            .into());
+            ));
         }
         true
     } else {
-        remove_compiler_mir_link_temp(&temp_path)?;
+        compiler_mir_pipeline_wrap_box(
+            remove_compiler_mir_link_temp(&temp_path),
+            CompilerMirPipelineStage::ExecutablePublication,
+            CompilerMirPipelineFailureKind::OutputNotWritable,
+        )?;
         false
     };
 
     if !matched_expectation {
-        return Err(IoError::new(
-            ErrorKind::Other,
+        let actual_kind = failure_kind.unwrap_or(
+            CompilerMirPipelineFailureKind::UnknownNativeLinkFailure,
+        );
+        return Err(compiler_mir_pipeline_error(
+            CompilerMirPipelineStage::NativeLink,
+            actual_kind,
             format!(
-                "compiler MIR link result mismatch: expected {}, classified {}; stdout log: {}; stderr log: {}",
+                "compiler MIR link result mismatch: expected {} {:?}, classified {} {:?}; stdout log: {}; stderr log: {}",
                 request.expected_result.as_str(),
+                request.expected_failure_kind.map(
+                    CompilerMirPipelineFailureKind::as_str
+                ),
                 classification.as_str(),
+                failure_kind.map(CompilerMirPipelineFailureKind::as_str),
                 stdout_log_path.display(),
                 stderr_log_path.display()
             ),
-        )
-        .into());
+        ));
     }
 
     Ok(CompilerMirLinkReport {
         classification,
+        failure_stage,
+        failure_kind,
         expected_result: request.expected_result,
+        expected_failure_kind: request.expected_failure_kind,
         matched_expectation,
         published,
         exit_code: process_output.status.code(),
@@ -15172,7 +15663,25 @@ fn run_compiler_mir_link_request(
 
 fn print_compiler_mir_link_report(report: &CompilerMirLinkReport) {
     println!("classification: {}", report.classification.as_str());
+    match (report.failure_stage, report.failure_kind) {
+        (Some(stage), Some(kind)) => {
+            println!("pipeline_stage: {}", stage.as_str());
+            println!("failure_kind: {}", kind.as_str());
+            println!(
+                "{}",
+                compiler_mir_pipeline_machine_line(stage, kind)
+            );
+        }
+        _ => {
+            println!("pipeline_stage: none");
+            println!("failure_kind: none");
+        }
+    }
     println!("expected_result: {}", report.expected_result.as_str());
+    match report.expected_failure_kind {
+        Some(kind) => println!("expected_failure_kind: {}", kind.as_str()),
+        None => println!("expected_failure_kind: none"),
+    }
     println!("matched_expectation: {}", report.matched_expectation);
     println!("published: {}", report.published);
     match report.exit_code {
@@ -15221,7 +15730,11 @@ fn print_compiler_mir_link_report(report: &CompilerMirLinkReport) {
 fn execute_compiler_mir_link_request_path(
     request_path: &Path,
 ) -> Result<(), Box<dyn Error>> {
-    let request = parse_compiler_mir_link_request(request_path)?;
+    let request = compiler_mir_pipeline_wrap_box(
+        parse_compiler_mir_link_request(request_path),
+        CompilerMirPipelineStage::LinkInputValidation,
+        CompilerMirPipelineFailureKind::InvalidRequest,
+    )?;
     let report = run_compiler_mir_link_request(request)?;
     print_compiler_mir_link_report(&report);
     Ok(())
@@ -15305,27 +15818,55 @@ fn lower_compiler_mir_ingestion_function_to_object(
     output_path: &Path,
     mir_function: &CompilerMirLoweringFunction<'_>,
 ) -> Result<(), Box<dyn Error>> {
-    validate_compiler_mir_ingestion_lowering_readiness(mir_function)?;
+    compiler_mir_pipeline_wrap_box(
+        validate_compiler_mir_ingestion_lowering_readiness(mir_function),
+        CompilerMirPipelineStage::FixtureValidation,
+        CompilerMirPipelineFailureKind::InvalidFixture,
+    )?;
 
     let (object_builder, target_contract) =
-        build_compiler_mir_native_object_builder(mir_function.object_name)?;
+        compiler_mir_pipeline_wrap_box(
+            build_compiler_mir_native_object_builder(
+                mir_function.object_name,
+            ),
+            CompilerMirPipelineStage::ObjectBuild,
+            CompilerMirPipelineFailureKind::UnsupportedTarget,
+        )?;
     debug_assert!(target_contract.is_pic);
     let mut module = ObjectModule::new(object_builder);
 
-    define_compiler_mir_ingestion_exported_function(&mut module, mir_function)?;
+    compiler_mir_pipeline_wrap_box(
+        define_compiler_mir_ingestion_exported_function(
+            &mut module,
+            mir_function,
+        ),
+        CompilerMirPipelineStage::MirLowering,
+        CompilerMirPipelineFailureKind::LoweringFailed,
+    )?;
 
     let object_product = module.finish();
-    let object_bytes = object_product.emit()?;
+    let object_bytes = compiler_mir_pipeline_wrap(
+        object_product.emit(),
+        CompilerMirPipelineStage::ObjectBuild,
+        CompilerMirPipelineFailureKind::ObjectBuildFailed,
+    )?;
     let symbol_contract =
         compiler_mir_function_object_symbol_contract(mir_function);
-    let inspection_report = inspect_compiler_mir_object_artifact(
-        &object_bytes,
-        Some(&target_contract),
-        Some(&symbol_contract),
+    let inspection_report = compiler_mir_pipeline_wrap_box(
+        inspect_compiler_mir_object_artifact(
+            &object_bytes,
+            Some(&target_contract),
+            Some(&symbol_contract),
+        ),
+        CompilerMirPipelineStage::ObjectVerification,
+        CompilerMirPipelineFailureKind::InvalidObject,
     )?;
     debug_assert!(inspection_report.has_code_section);
-    let artifact_report =
-        publish_compiler_mir_object_artifact(output_path, object_bytes)?;
+    let artifact_report = compiler_mir_pipeline_wrap_box(
+        publish_compiler_mir_object_artifact(output_path, object_bytes),
+        CompilerMirPipelineStage::ObjectPublication,
+        CompilerMirPipelineFailureKind::OutputNotWritable,
+    )?;
     debug_assert_eq!(artifact_report.final_path.as_path(), output_path);
     debug_assert!(artifact_report.byte_size > 0);
     Ok(())
@@ -15367,16 +15908,34 @@ fn lower_compiler_mir_ingestion_module_to_object(
     output_path: &Path,
     mir_module: &CompilerMirLoweringModule<'_>,
 ) -> Result<(), Box<dyn Error>> {
-    validate_compiler_mir_module(mir_module)?;
+    compiler_mir_pipeline_wrap_box(
+        validate_compiler_mir_module(mir_module),
+        CompilerMirPipelineStage::FixtureValidation,
+        CompilerMirPipelineFailureKind::InvalidFixture,
+    )?;
     for defined in &mir_module.functions {
-        validate_compiler_mir_ingestion_lowering_readiness(
-            &defined.fixture.function,
+        compiler_mir_pipeline_wrap_box(
+            validate_compiler_mir_ingestion_lowering_readiness(
+                &defined.fixture.function,
+            ),
+            CompilerMirPipelineStage::FixtureValidation,
+            CompilerMirPipelineFailureKind::InvalidFixture,
         )?;
-        recognize_compiler_mir_fixture_metadata(&defined.fixture.metadata)?;
+        compiler_mir_pipeline_wrap_box(
+            recognize_compiler_mir_fixture_metadata(
+                &defined.fixture.metadata,
+            ),
+            CompilerMirPipelineStage::FixtureValidation,
+            CompilerMirPipelineFailureKind::InvalidFixture,
+        )?;
     }
 
     let (object_builder, target_contract) =
-        build_compiler_mir_native_object_builder(mir_module.name)?;
+        compiler_mir_pipeline_wrap_box(
+            build_compiler_mir_native_object_builder(mir_module.name),
+            CompilerMirPipelineStage::ObjectBuild,
+            CompilerMirPipelineFailureKind::UnsupportedTarget,
+        )?;
     debug_assert!(target_contract.is_pic);
     let mut module = ObjectModule::new(object_builder);
 
@@ -15384,14 +15943,14 @@ fn lower_compiler_mir_ingestion_module_to_object(
     let mut imported_function_ids: HashMap<&str, FuncId> = HashMap::new();
     for imported in &mir_module.imports {
         if imported.linkage != CompilerMirLoweringFunctionLinkage::ImportedHost {
-            return Err(IoError::new(
-                ErrorKind::InvalidInput,
+            return Err(compiler_mir_pipeline_error(
+                CompilerMirPipelineStage::MirLowering,
+                CompilerMirPipelineFailureKind::LoweringFailed,
                 format!(
                     "canonical compiler MIR imported function {} must use imported_host linkage",
                     imported.name
                 ),
-            )
-            .into());
+            ));
         }
         let function_id = if let Some(existing) =
             imported_link_ids.get(imported.link_symbol).copied()
@@ -15400,10 +15959,14 @@ fn lower_compiler_mir_ingestion_module_to_object(
         } else {
             let signature =
                 compiler_mir_ingestion_import_signature(&module, imported);
-            let declared = module.declare_function(
-                imported.link_symbol,
-                Linkage::Import,
-                &signature,
+            let declared = compiler_mir_pipeline_wrap(
+                module.declare_function(
+                    imported.link_symbol,
+                    Linkage::Import,
+                    &signature,
+                ),
+                CompilerMirPipelineStage::MirLowering,
+                CompilerMirPipelineFailureKind::LoweringFailed,
             )?;
             imported_link_ids.insert(imported.link_symbol, declared);
             declared
@@ -15414,47 +15977,70 @@ fn lower_compiler_mir_ingestion_module_to_object(
     let mut local_function_ids: HashMap<&str, FuncId> = HashMap::new();
     for defined in &mir_module.functions {
         let mir_function = &defined.fixture.function;
-        let signature = compiler_mir_ingestion_signature(&module, mir_function);
+        let signature =
+            compiler_mir_ingestion_signature(&module, mir_function);
         let linkage = match defined.linkage {
             CompilerMirLoweringFunctionLinkage::ExportedEntry => Linkage::Export,
             CompilerMirLoweringFunctionLinkage::ModuleLocal => Linkage::Local,
             CompilerMirLoweringFunctionLinkage::ImportedHost => {
-                return Err(IoError::new(
-                    ErrorKind::InvalidInput,
+                return Err(compiler_mir_pipeline_error(
+                    CompilerMirPipelineStage::MirLowering,
+                    CompilerMirPipelineFailureKind::LoweringFailed,
                     format!(
                         "canonical compiler MIR defined function {} cannot use imported_host linkage",
                         mir_function.object_name
                     ),
-                )
-                .into());
+                ));
             }
         };
-        let function_id =
-            module.declare_function(mir_function.symbol, linkage, &signature)?;
+        let function_id = compiler_mir_pipeline_wrap(
+            module.declare_function(
+                mir_function.symbol,
+                linkage,
+                &signature,
+            ),
+            CompilerMirPipelineStage::MirLowering,
+            CompilerMirPipelineFailureKind::LoweringFailed,
+        )?;
         local_function_ids.insert(mir_function.object_name, function_id);
     }
 
     for defined in &mir_module.functions {
-        define_compiler_mir_ingestion_module_function(
-            &mut module,
-            defined,
-            &local_function_ids,
-            &imported_function_ids,
+        compiler_mir_pipeline_wrap_box(
+            define_compiler_mir_ingestion_module_function(
+                &mut module,
+                defined,
+                &local_function_ids,
+                &imported_function_ids,
+            ),
+            CompilerMirPipelineStage::MirLowering,
+            CompilerMirPipelineFailureKind::LoweringFailed,
         )?;
     }
 
     let object_product = module.finish();
-    let object_bytes = object_product.emit()?;
+    let object_bytes = compiler_mir_pipeline_wrap(
+        object_product.emit(),
+        CompilerMirPipelineStage::ObjectBuild,
+        CompilerMirPipelineFailureKind::ObjectBuildFailed,
+    )?;
     let symbol_contract =
         compiler_mir_module_object_symbol_contract(mir_module);
-    let inspection_report = inspect_compiler_mir_object_artifact(
-        &object_bytes,
-        Some(&target_contract),
-        Some(&symbol_contract),
+    let inspection_report = compiler_mir_pipeline_wrap_box(
+        inspect_compiler_mir_object_artifact(
+            &object_bytes,
+            Some(&target_contract),
+            Some(&symbol_contract),
+        ),
+        CompilerMirPipelineStage::ObjectVerification,
+        CompilerMirPipelineFailureKind::InvalidObject,
     )?;
     debug_assert!(inspection_report.has_code_section);
-    let artifact_report =
-        publish_compiler_mir_object_artifact(output_path, object_bytes)?;
+    let artifact_report = compiler_mir_pipeline_wrap_box(
+        publish_compiler_mir_object_artifact(output_path, object_bytes),
+        CompilerMirPipelineStage::ObjectPublication,
+        CompilerMirPipelineFailureKind::OutputNotWritable,
+    )?;
     debug_assert_eq!(artifact_report.final_path.as_path(), output_path);
     debug_assert!(artifact_report.byte_size > 0);
     Ok(())

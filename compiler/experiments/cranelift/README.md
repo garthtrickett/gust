@@ -533,8 +533,10 @@ separate from object emission. A request names the final executable, preserves
 the order of object inputs, selects either an optional C source or precompiled
 host object, carries additional libraries and one-argument-per-record linker
 options, selects the C compiler/link driver, applies explicit environment
-overrides, and declares whether linking is expected to succeed or fail. Relative
-paths are resolved from the request file rather than from hidden process state.
+overrides, and declares whether linking is expected to succeed or fail. A
+failure expectation also names one exact stable `expected_failure_kind`.
+Relative paths are resolved from the request file rather than from hidden
+process state.
 
 The driver never constructs a shell command string. It validates every declared
 input before creating an output parent, maps each structured field directly to
@@ -553,8 +555,36 @@ input objects, and captured logs.
 MIR syntax, object emission, the 33/33/0/0/17 inventory, translator seeds,
 default backend state, and production routing remain unchanged. Existing
 lane-owned linker commands are intentionally frozen until the later Phase 9G
-migration patches. The next milestone is stable pipeline-stage and link-failure
-classification.
+migration patches.
+
+Steps 11 and 12 define one stable pipeline taxonomy shared by canonical object
+emission and linking. The eleven stages are `fixture_parse`,
+`fixture_validation`, `mir_lowering`, `object_build`, `object_verification`,
+`object_publication`, `link_input_validation`, `linker_spawn`, `native_link`,
+`executable_publication`, and `native_execution`.
+
+Every classified error emits the machine-readable line
+`gust_pipeline_failure: stage=<stage> kind=<kind>` before the full human
+diagnostic. Native linker stdout and stderr remain in the deterministic sibling
+logs. Expected link failures now name an exact `expected_failure_kind`, so an
+expected failure cannot pass merely because some unrelated linker error
+occurred.
+
+The stable link failure kinds are `unresolved_symbol`, `duplicate_symbol`,
+`invalid_object`, `missing_input`, `unsupported_target`,
+`linker_unavailable`, `linker_rejected_options`, `output_not_writable`, and
+`unknown_native_link_failure`. Object and host-object inputs are structurally
+inspected during link-input validation before the linker is spawned.
+
+An unresolved imported host symbol is therefore always reported as
+`native_link/unresolved_symbol`: canonical fixture parsing, validation, MIR
+lowering, object construction, structural verification, and transactional
+object publication have already succeeded. It is never relabeled as a fixture
+or object-emission failure.
+
+MIR syntax, the 33/33/0/0/17 inventory, translator seeds, default backend
+state, and production routing remain unchanged. The next milestone is the
+positive canonical link matrix.
 
 The checked-in lockfile for this crate is owned by:
 Patch 8 freezes the complete canonical call/import matrix and retires all

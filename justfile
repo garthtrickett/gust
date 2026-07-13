@@ -1675,6 +1675,7 @@ guard-mir-to-c-boring-surface:
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-target-relocation-contract' || true)"
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-object-inspection-contract' || true)"
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-link-driver-contract' || true)"
+    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-pipeline-failure-classification' || true)"
     if [ -n "$cranelift_recipe_wiring" ]; then
       echo "MIR-to-C boring gate allows only manifest, inert backend, dependency beachhead, explicit backend suite, return-int/local-binding/branch native smokes, and differential Cranelift guards before backend implementation expands."
       echo "$cranelift_recipe_wiring"
@@ -9350,7 +9351,7 @@ guard-cranelift-phase9g-link-driver-contract:
     rg -n -F 'allowed_cranelift_phase9g_link_driver_status: phase9g_canonical_experimental_link_request_and_transactional_executable_publication' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase9g_link_driver_owner: compiler/experiments/cranelift/src/main.rs::run_compiler_mir_link_request' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase9g_link_driver_request_format: gust.compiler_mir_link_request.v1' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_link_driver_request_fields: output_ordered_object_inputs_optional_c_source_or_host_object_additional_libraries_additional_linker_arguments_selected_driver_environment_overrides_and_expected_result' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_link_driver_request_fields: output_ordered_object_inputs_optional_c_source_or_host_object_additional_libraries_additional_linker_arguments_selected_driver_environment_overrides_expected_result_and_expected_failure_kind' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase9g_link_driver_path_policy: request_paths_are_absolute_or_resolved_relative_to_the_request_file_parent' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase9g_link_driver_input_policy: validate_every_declared_input_before_output_parent_creation_or_linker_spawn' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase9g_link_driver_argument_policy: each_structured_field_becomes_one_Command_argument_no_shell_command_string_or_shell_splitting' "$manifest_doc" >/dev/null
@@ -9387,7 +9388,8 @@ guard-cranelift-phase9g-link-driver-contract:
     printf '%s\n' "$link_driver_body" | rg -n -F '"driver" => {' >/dev/null
     printf '%s\n' "$link_driver_body" | rg -n -F '"env" => {' >/dev/null
     printf '%s\n' "$link_driver_body" | rg -n -F '"expected_result" => {' >/dev/null
-    printf '%s\n' "$link_driver_body" | rg -n -F 'validate_compiler_mir_link_request(&request)?;' >/dev/null
+    printf '%s\n' "$link_driver_body" | rg -n -F '"expected_failure_kind" => {' >/dev/null
+    printf '%s\n' "$link_driver_body" | rg -n -F 'validate_compiler_mir_link_request(&request)' >/dev/null
     printf '%s\n' "$link_driver_body" | rg -n -F 'Command::new(&request.linker_driver)' >/dev/null
     printf '%s\n' "$link_driver_body" | rg -n -F 'command.arg(linker_arg);' >/dev/null
     printf '%s\n' "$link_driver_body" | rg -n -F 'command.arg(object_input);' >/dev/null
@@ -9521,10 +9523,13 @@ guard-cranelift-phase9g-link-driver-contract:
     link_arg: -O0
     driver: $CC_BIN
     expected_result: failure
+    expected_failure_kind: unresolved_symbol
     EOF
 
     "${cargo_cmd[@]}" compiler-mir-link-request "$failure_request" >"$failure_report"
     rg -n -F 'classification: native_link_failure' "$failure_report" >/dev/null
+    rg -n -F 'pipeline_stage: native_link' "$failure_report" >/dev/null
+    rg -n -F 'failure_kind: unresolved_symbol' "$failure_report" >/dev/null
     rg -n -F 'expected_result: failure' "$failure_report" >/dev/null
     rg -n -F 'matched_expectation: true' "$failure_report" >/dev/null
     rg -n -F 'published: false' "$failure_report" >/dev/null
@@ -9585,7 +9590,7 @@ guard-cranelift-phase9g-link-driver-contract:
       echo "Expected publication onto an existing directory to fail."
       exit 1
     fi
-    rg -n -F 'compiler MIR link classification executable_publication_failure' "$publication_log" >/dev/null
+    rg -n -F 'gust_pipeline_failure: stage=executable_publication kind=output_not_writable' "$publication_log" >/dev/null
     test -d "$publication_target"
     test -e "$publication_stdout_log"
     test -e "$publication_stderr_log"
@@ -9602,6 +9607,282 @@ guard-cranelift-phase9g-link-driver-contract:
     rg -n -F 'MIR syntax, object emission, the 33/33/0/0/17 inventory, translator' "$readme_doc" >/dev/null
 
     echo "✅ Phase 9G link-driver contract passed: structured requests become direct Command arguments, inputs validate before spawn, logs persist, expected native failures are classified, and only successful links publish executables."
+
+
+guard-cranelift-phase9g-pipeline-failure-classification:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 9G pipeline-stage and failure-kind classification..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    readme_doc="compiler/experiments/cranelift/README.md"
+    source_file="compiler/experiments/cranelift/src/main.rs"
+    cargo_manifest="compiler/experiments/cranelift/Cargo.toml"
+    function_fixture="compiler/fixtures/native_backend_return_int_ingestion.mir"
+    positive_fixture="compiler/fixtures/phase9f_call_import_completeness.mir"
+    unresolved_fixture="compiler/fixtures/phase9f_unresolved_import_object.mir"
+    build_dir="build/guards/cranelift_phase9g_pipeline_failure_classification"
+    rm -rf "$build_dir"
+    mkdir -p "$build_dir"
+
+    just guard-cranelift-phase9g-link-driver-contract
+
+    for required_file in "$manifest_doc" "$readme_doc" "$source_file" "$cargo_manifest" "$function_fixture" "$positive_fixture" "$unresolved_fixture"; do
+      if [ ! -f "$required_file" ]; then
+        echo "Missing Phase 9G pipeline-classification input: $required_file"
+        exit 1
+      fi
+    done
+
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9G_PIPELINE_FAILURE_CLASSIFICATION_GUARD: guard-cranelift-phase9g-pipeline-failure-classification' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_pipeline_failure_status: phase9g_stable_pipeline_stage_and_link_failure_taxonomy' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_pipeline_failure_stage_count: 11' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_pipeline_failure_stages: fixture_parse,fixture_validation,mir_lowering,object_build,object_verification,object_publication,link_input_validation,linker_spawn,native_link,executable_publication,native_execution' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_pipeline_failure_link_kind_count: 9' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_pipeline_failure_link_kinds: unresolved_symbol,duplicate_symbol,invalid_object,missing_input,unsupported_target,linker_unavailable,linker_rejected_options,output_not_writable,unknown_native_link_failure' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_pipeline_failure_machine_line: gust_pipeline_failure:_stage=<stage>_kind=<kind>' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_pipeline_failure_detail_policy: machine_line_is_stable_and_complete_human_detail_plus_native_stdout_and_stderr_logs_are_preserved' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_pipeline_failure_object_stage_policy: canonical_fixture_parse_validation_lowering_object_build_verification_and_publication_errors_are_labeled_at_their_actual_owner' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_pipeline_failure_link_stage_policy: request_and_input_preflight_linker_spawn_native_link_and_executable_publication_are_distinct_failure_stages' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_pipeline_failure_expected_kind_policy: expected_link_failure_requests_must_name_one_exact_stable_link_failure_kind' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_pipeline_failure_unresolved_policy: valid_unresolved_import_object_is_native_link_unresolved_symbol_never_fixture_or_object_emission_failure' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_pipeline_failure_next_milestone: positive_link_matrix' "$manifest_doc" >/dev/null
+
+    for stage in fixture_parse fixture_validation mir_lowering object_build object_verification object_publication link_input_validation linker_spawn native_link executable_publication native_execution; do
+      rg -n -F "\"$stage\"" "$source_file" >/dev/null
+    done
+    for kind in unresolved_symbol duplicate_symbol invalid_object missing_input unsupported_target linker_unavailable linker_rejected_options output_not_writable unknown_native_link_failure; do
+      rg -n -F "\"$kind\"" "$source_file" >/dev/null
+    done
+    rg -n -F 'struct CompilerMirPipelineError {' "$source_file" >/dev/null
+    rg -n -F 'fn compiler_mir_pipeline_machine_line(' "$source_file" >/dev/null
+    rg -n -F 'fn compiler_mir_classify_native_link_failure(' "$source_file" >/dev/null
+    rg -n -F '"compiler-mir-pipeline-taxonomy" => {' "$source_file" >/dev/null
+    rg -n -F '"expected_failure_kind" => {' "$source_file" >/dev/null
+    rg -n -F 'expected_result failure requires expected_failure_kind' "$source_file" >/dev/null
+
+    function_lowerer="$(sed -n '/^fn lower_compiler_mir_ingestion_function_to_object(/,/^fn compiler_mir_ingestion_signature(/p' "$source_file")"
+    module_lowerer="$(sed -n '/^fn lower_compiler_mir_ingestion_module_to_object(/,/^fn define_compiler_mir_ingestion_module_function(/p' "$source_file")"
+    for lowerer in "$function_lowerer" "$module_lowerer"; do
+      printf '%s\n' "$lowerer" | rg -n -F 'CompilerMirPipelineStage::FixtureValidation' >/dev/null
+      printf '%s\n' "$lowerer" | rg -n -F 'CompilerMirPipelineStage::MirLowering' >/dev/null
+      printf '%s\n' "$lowerer" | rg -n -F 'CompilerMirPipelineStage::ObjectBuild' >/dev/null
+      printf '%s\n' "$lowerer" | rg -n -F 'CompilerMirPipelineStage::ObjectVerification' >/dev/null
+      printf '%s\n' "$lowerer" | rg -n -F 'CompilerMirPipelineStage::ObjectPublication' >/dev/null
+    done
+
+    taxonomy_log="$build_dir/taxonomy.log"
+    cargo_cmd=(cargo run --quiet --manifest-path "$cargo_manifest" --locked --)
+    "${cargo_cmd[@]}" compiler-mir-pipeline-taxonomy >"$taxonomy_log"
+    rg -n -F 'pipeline_stage_count: 11' "$taxonomy_log" >/dev/null
+    rg -n -F 'link_failure_kind_count: 9' "$taxonomy_log" >/dev/null
+    for stage in fixture_parse fixture_validation mir_lowering object_build object_verification object_publication link_input_validation linker_spawn native_link executable_publication native_execution; do
+      rg -n -F "pipeline_stage: $stage" "$taxonomy_log" >/dev/null
+    done
+    for kind in unresolved_symbol duplicate_symbol invalid_object missing_input unsupported_target linker_unavailable linker_rejected_options output_not_writable unknown_native_link_failure; do
+      rg -n -F "link_failure_kind: $kind" "$taxonomy_log" >/dev/null
+    done
+
+    expect_failure_line() {
+      local label="$1"
+      local expected_stage="$2"
+      local expected_kind="$3"
+      shift 3
+      local log="$build_dir/${label}.log"
+      set +e
+      "$@" >"$log" 2>&1
+      local status="$?"
+      set -e
+      if [ "$status" = "0" ]; then
+        echo "Expected classified failure for $label."
+        cat "$log"
+        exit 1
+      fi
+      rg -n -F "gust_pipeline_failure: stage=$expected_stage kind=$expected_kind" "$log" >/dev/null
+    }
+
+    parse_fixture="$build_dir/fixture-parse.mir"
+    printf '%s\n' 'format: gust.compiler_mir_ingestion.unknown' >"$parse_fixture"
+    expect_failure_line fixture-parse fixture_parse invalid_fixture \
+      "${cargo_cmd[@]}" compiler-mir-ingestion-object "$parse_fixture" "$build_dir/parse-output/out.o"
+    if [ -e "$build_dir/parse-output" ]; then
+      echo "Fixture parse failure created an output directory."
+      exit 1
+    fi
+
+    validation_fixture="$build_dir/fixture-validation.mir"
+    sed 's/function_2_block_0_statement_0_callee: completeness_leaf/function_2_block_0_statement_0_callee: completeness_graph/' "$positive_fixture" >"$validation_fixture"
+    expect_failure_line fixture-validation fixture_validation invalid_fixture \
+      "${cargo_cmd[@]}" compiler-mir-ingestion-object "$validation_fixture" "$build_dir/validation-output/out.o"
+    if [ -e "$build_dir/validation-output" ]; then
+      echo "Fixture validation failure created an output directory."
+      exit 1
+    fi
+
+    invalid_object="$build_dir/invalid.o"
+    printf '%s\n' 'phase9g-invalid-object' >"$invalid_object"
+    expect_failure_line object-verification object_verification invalid_object \
+      "${cargo_cmd[@]}" compiler-mir-inspect-object "$invalid_object"
+
+    function_object="$build_dir/function.o"
+    function_before="$build_dir/function.before.o"
+    main_source="$build_dir/main.c"
+    "${cargo_cmd[@]}" compiler-mir-ingestion-object "$function_fixture" "$function_object"
+    cp "$function_object" "$function_before"
+    printf '%s\n' 'extern int tiny_native_backend_compiler_mir_ingested_return_int(void);' >"$main_source"
+    printf '%s\n' 'int main(void) { return tiny_native_backend_compiler_mir_ingested_return_int(); }' >>"$main_source"
+    CC_BIN="${CC:-cc}"
+
+    missing_request="$build_dir/missing-input.link"
+    cat >"$missing_request" <<EOF
+    format: gust.compiler_mir_link_request.v1
+    output: missing-parent/missing-bin
+    object: missing.o
+    c_source: main.c
+    driver: $CC_BIN
+    expected_result: success
+    EOF
+    expect_failure_line missing-input link_input_validation missing_input \
+      "${cargo_cmd[@]}" compiler-mir-link-request "$missing_request"
+    if [ -e "$build_dir/missing-parent" ]; then
+      echo "Missing-input classification created its output parent."
+      exit 1
+    fi
+
+    invalid_request="$build_dir/invalid-object.link"
+    cat >"$invalid_request" <<EOF
+    format: gust.compiler_mir_link_request.v1
+    output: invalid-object-bin
+    object: invalid.o
+    c_source: main.c
+    driver: $CC_BIN
+    expected_result: success
+    EOF
+    expect_failure_line invalid-object-input link_input_validation invalid_object \
+      "${cargo_cmd[@]}" compiler-mir-link-request "$invalid_request"
+
+    unavailable_request="$build_dir/linker-unavailable.link"
+    unavailable_stdout="$build_dir/.linker-unavailable-bin.phase9g-link.stdout.log"
+    unavailable_stderr="$build_dir/.linker-unavailable-bin.phase9g-link.stderr.log"
+    cat >"$unavailable_request" <<EOF
+    format: gust.compiler_mir_link_request.v1
+    output: linker-unavailable-bin
+    object: function.o
+    c_source: main.c
+    driver: $build_dir/definitely-missing-linker
+    expected_result: success
+    EOF
+    expect_failure_line linker-unavailable linker_spawn linker_unavailable \
+      "${cargo_cmd[@]}" compiler-mir-link-request "$unavailable_request"
+    test -e "$unavailable_stdout"
+    test -e "$unavailable_stderr"
+    test ! -e "$build_dir/linker-unavailable-bin"
+
+    unresolved_object="$build_dir/unresolved.o"
+    unresolved_source="$build_dir/unresolved-main.c"
+    unresolved_request="$build_dir/unresolved.link"
+    unresolved_report="$build_dir/unresolved-report.log"
+    "${cargo_cmd[@]}" compiler-mir-ingestion-object "$unresolved_fixture" "$unresolved_object"
+    printf '%s\n' 'int phase9f_unresolved_import_entry(void);' >"$unresolved_source"
+    printf '%s\n' 'int main(void) { return phase9f_unresolved_import_entry(); }' >>"$unresolved_source"
+    cat >"$unresolved_request" <<EOF
+    format: gust.compiler_mir_link_request.v1
+    output: unresolved-bin
+    object: unresolved.o
+    c_source: unresolved-main.c
+    driver: $CC_BIN
+    expected_result: failure
+    expected_failure_kind: unresolved_symbol
+    EOF
+    "${cargo_cmd[@]}" compiler-mir-link-request "$unresolved_request" >"$unresolved_report"
+    rg -n -F 'pipeline_stage: native_link' "$unresolved_report" >/dev/null
+    rg -n -F 'failure_kind: unresolved_symbol' "$unresolved_report" >/dev/null
+    rg -n -F 'gust_pipeline_failure: stage=native_link kind=unresolved_symbol' "$unresolved_report" >/dev/null
+    test ! -e "$build_dir/unresolved-bin"
+    test -s "$unresolved_object"
+
+    duplicate_source="$build_dir/duplicate.c"
+    duplicate_request="$build_dir/duplicate.link"
+    duplicate_report="$build_dir/duplicate-report.log"
+    cat >"$duplicate_source" <<'C'
+    int tiny_native_backend_compiler_mir_ingested_return_int(void) { return 9; }
+    int main(void) { return tiny_native_backend_compiler_mir_ingested_return_int(); }
+    C
+    cat >"$duplicate_request" <<EOF
+    format: gust.compiler_mir_link_request.v1
+    output: duplicate-bin
+    object: function.o
+    c_source: duplicate.c
+    driver: $CC_BIN
+    expected_result: failure
+    expected_failure_kind: duplicate_symbol
+    EOF
+    "${cargo_cmd[@]}" compiler-mir-link-request "$duplicate_request" >"$duplicate_report"
+    rg -n -F 'failure_kind: duplicate_symbol' "$duplicate_report" >/dev/null
+    test ! -e "$build_dir/duplicate-bin"
+
+    rejected_request="$build_dir/rejected-option.link"
+    rejected_report="$build_dir/rejected-option-report.log"
+    cat >"$rejected_request" <<EOF
+    format: gust.compiler_mir_link_request.v1
+    output: rejected-option-bin
+    object: function.o
+    c_source: main.c
+    link_arg: --phase9g-intentionally-rejected-option
+    driver: $CC_BIN
+    expected_result: failure
+    expected_failure_kind: linker_rejected_options
+    EOF
+    "${cargo_cmd[@]}" compiler-mir-link-request "$rejected_request" >"$rejected_report"
+    rg -n -F 'failure_kind: linker_rejected_options' "$rejected_report" >/dev/null
+    test ! -e "$build_dir/rejected-option-bin"
+
+    opaque_driver="$build_dir/opaque-linker"
+    opaque_request="$build_dir/opaque.link"
+    opaque_report="$build_dir/opaque-report.log"
+    cat >"$opaque_driver" <<'SH'
+    #!/usr/bin/env bash
+    echo "phase9g opaque native linker failure" >&2
+    exit 1
+    SH
+    chmod +x "$opaque_driver"
+    cat >"$opaque_request" <<EOF
+    format: gust.compiler_mir_link_request.v1
+    output: opaque-bin
+    object: function.o
+    c_source: main.c
+    driver: $opaque_driver
+    expected_result: failure
+    expected_failure_kind: unknown_native_link_failure
+    EOF
+    "${cargo_cmd[@]}" compiler-mir-link-request "$opaque_request" >"$opaque_report"
+    rg -n -F 'failure_kind: unknown_native_link_failure' "$opaque_report" >/dev/null
+    test ! -e "$build_dir/opaque-bin"
+
+    publication_target="$build_dir/publication-target"
+    publication_request="$build_dir/publication.link"
+    mkdir "$publication_target"
+    cat >"$publication_request" <<EOF
+    format: gust.compiler_mir_link_request.v1
+    output: publication-target
+    object: function.o
+    c_source: main.c
+    driver: $CC_BIN
+    expected_result: success
+    EOF
+    expect_failure_line publication executable_publication output_not_writable \
+      "${cargo_cmd[@]}" compiler-mir-link-request "$publication_request"
+    test -d "$publication_target"
+    test ! -e "$build_dir/.publication-target.phase9g-link.tmp"
+
+    cmp "$function_before" "$function_object"
+    test -s "$unresolved_object"
+
+    rg -n -F 'Steps 11 and 12 define one stable pipeline taxonomy shared by canonical object emission and linking.' "$readme_doc" >/dev/null
+    rg -n -F '`gust_pipeline_failure: stage=<stage> kind=<kind>`' "$readme_doc" >/dev/null
+    rg -n -F 'Expected link failures now name an exact `expected_failure_kind`.' "$readme_doc" >/dev/null
+    rg -n -F 'An unresolved imported host symbol is therefore always reported as' "$readme_doc" >/dev/null
+
+    echo "✅ Phase 9G pipeline taxonomy passed: object and link failures expose stable stages and kinds, expected failures match exact kinds, native linker output remains logged, and unresolved imports classify only as native_link/unresolved_symbol."
 
 
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
