@@ -7920,7 +7920,7 @@ guard-cranelift-phase9f-direct-imported-call-cohort:
 
     module_emitter_body="$(sed -n '/^fn lower_compiler_mir_ingestion_module_to_object/,/^fn define_compiler_mir_ingestion_module_function/p' "$source_file")"
     import_declare_line="$(printf '%s\n' "$module_emitter_body" | rg -n -F 'Linkage::Import,' | head -n1 | cut -d: -f1)"
-    local_declare_line="$(printf '%s\n' "$module_emitter_body" | rg -n -F 'module.declare_function(mir_function.symbol, linkage, &signature)?' | head -n1 | cut -d: -f1)"
+    local_declare_line="$(printf '%s\n' "$module_emitter_body" | rg -n -F 'let function_id = compiler_mir_pipeline_wrap(' | head -n1 | cut -d: -f1)"
     define_line="$(printf '%s\n' "$module_emitter_body" | rg -n -F 'define_compiler_mir_ingestion_module_function(' | tail -n1 | cut -d: -f1)"
     if [ -z "$import_declare_line" ] || [ -z "$local_declare_line" ] || [ -z "$define_line" ] || [ "$import_declare_line" -ge "$define_line" ] || [ "$local_declare_line" -ge "$define_line" ]; then
       echo "Phase 9F imported and defined functions must all be declared before any function body is defined."
