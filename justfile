@@ -1679,7 +1679,9 @@ guard-mir-to-c-boring-surface:
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-positive-link-matrix' || true)"
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-negative-link-matrix' || true)"
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'cranelift-phase9g-link-canonical-ingestion-object' || true)"
+    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'cranelift-phase9g-link-canonical-unresolved-ingestion-object' || true)"
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-phase9c-phase9e-link-migration' || true)"
+    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-link-bypass-retirement' || true)"
     if [ -n "$cranelift_recipe_wiring" ]; then
       echo "MIR-to-C boring gate allows only manifest, inert backend, dependency beachhead, explicit backend suite, return-int/local-binding/branch native smokes, and differential Cranelift guards before backend implementation expands."
       echo "$cranelift_recipe_wiring"
@@ -4130,9 +4132,7 @@ guard-cranelift-mir-to-cranelift-add-i32-translator-native-smoke:
     echo '  if (tiny_native_backend_mir_to_cranelift_add_i32_translator(0, 4) != 4) return 2;' >> "$shim_c"
     echo '  return 0;' >> "$shim_c"
     echo '}' >> "$shim_c"
-    CC_BIN="${CC:-cc}"
-    CFLAGS_VAL="${CFLAGS:--O0 -w}"
-    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    just cranelift-phase9g-link-canonical-ingestion-object "$fixture" "$object_file" "$shim_c" "$binary"
     "$binary"
     echo "✅ MIR-to-Cranelift add-i32 translator seed native smoke passed."
 
@@ -7957,9 +7957,7 @@ guard-cranelift-phase9f-direct-imported-call-cohort:
       '  if (tiny_phase9f_entry(-2) != -1) return 3;' \
       '  return 0;' \
       '}' > "$shim_c"
-    CC_BIN="${CC:-cc}"
-    CFLAGS_VAL="${CFLAGS:--O0 -w}"
-    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    just cranelift-phase9g-link-canonical-ingestion-object "$fixture" "$object_file" "$shim_c" "$binary"
     "$binary"
 
     for lane in block_param_imported_call_branch block_param_imported_call_return block_param_imported_predicate_update_branch; do
@@ -8443,10 +8441,8 @@ guard-cranelift-phase9f-call-import-completeness-rejection:
         return phase9f_completeness_entry(atoi(argv[1]));
     }
     C
-    CC_BIN="${CC:-cc}"
-    CFLAGS_VAL="${CFLAGS:--O0 -w}"
     positive_binary="$build_dir/completeness_bin"
-    "$CC_BIN" $CFLAGS_VAL "$positive_shim" "$positive_object" -o "$positive_binary"
+    just cranelift-phase9g-link-canonical-ingestion-object "$positive_fixture" "$positive_object" "$positive_shim" "$positive_binary"
 
     expect_status() {
       local input="$1"
@@ -8478,29 +8474,8 @@ guard-cranelift-phase9f-call-import-completeness-rejection:
     int phase9f_unresolved_import_entry(void);
     int main(void) { return phase9f_unresolved_import_entry(); }
     C
-    set +e
-    "$CC_BIN" $CFLAGS_VAL "$unresolved_driver" "$unresolved_object" -o "$build_dir/unresolved_bin" >"$build_dir/unresolved-link.log" 2>&1
-    unresolved_link_status="$?"
-    set -e
-    if [ "$unresolved_link_status" = "0" ]; then
-      echo "Expected native link failure for a valid object with an unresolved host import."
-      exit 1
-    fi
-    unresolved_inspection_log="$build_dir/unresolved-object-inspection.log"
-    if ! "${cargo_cmd[@]}" compiler-mir-inspect-object "$unresolved_object" >"$unresolved_inspection_log" 2>&1; then
-      echo "Valid unresolved-import object failed structured object inspection."
-      cat "$unresolved_inspection_log"
-      exit 1
-    fi
-    if ! rg -n -F 'undefined_symbol: phase9f_missing_host_symbol' "$unresolved_inspection_log" >/dev/null; then
-      echo "Valid unresolved-import object does not retain the expected undefined host symbol."
-      cat "$unresolved_inspection_log"
-      if command -v nm >/dev/null 2>&1; then
-        nm -u "$unresolved_object" || true
-      fi
-      exit 1
-    fi
-    test -s "$unresolved_object"
+    unresolved_binary="$build_dir/unresolved_bin"
+    just cranelift-phase9g-link-canonical-unresolved-ingestion-object "$unresolved_fixture" "$unresolved_object" "$unresolved_driver" "$unresolved_binary"
 
     expect_preoutput_reject() {
       local label="$1"
@@ -10698,10 +10673,24 @@ cranelift-phase9g-link-canonical-ingestion-object fixture object_file shim_c bin
           exit 1
         fi
         expected_symbol="${expected_symbols[0]}"
+        mapfile -t expected_import_symbols < <(
+          sed -n -E 's/^imported_function_[0-9]+_symbol:[[:space:]]*//p' "$fixture" |
+            sed '/^$/d' |
+            sort -u
+        )
+        expected_import_count="${#expected_import_symbols[@]}"
+
         "${cargo_cmd[@]}" compiler-mir-inspect-object "$object_file" >"$object_report"
         rg -n -F 'defined_global_symbol_count: 1' "$object_report" >/dev/null
-        rg -n -F 'undefined_symbol_count: 0' "$object_report" >/dev/null
         rg -n -F "defined_global_symbol: $expected_symbol" "$object_report" >/dev/null
+        if [ "$expected_import_count" = "0" ]; then
+          rg -n -F 'undefined_symbol_count: 0' "$object_report" >/dev/null
+        else
+          rg -n -F "undefined_symbol_count: $expected_import_count" "$object_report" >/dev/null
+          for expected_import_symbol in "${expected_import_symbols[@]}"; do
+            rg -n -F "undefined_symbol: $expected_import_symbol" "$object_report" >/dev/null
+          done
+        fi
         ;;
       *)
         echo "Unsupported canonical Phase 9G migration fixture format: $fixture_format"
@@ -10746,6 +10735,99 @@ cranelift-phase9g-link-canonical-ingestion-object fixture object_file shim_c bin
       echo "Canonical Phase 9G link migration modified input object bytes: $object_file"
       exit 1
     fi
+
+cranelift-phase9g-link-canonical-unresolved-ingestion-object fixture object_file shim_c binary:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    fixture="{{fixture}}"
+    object_file="{{object_file}}"
+    shim_c="{{shim_c}}"
+    binary="{{binary}}"
+    cargo_manifest="compiler/experiments/cranelift/Cargo.toml"
+
+    for required_file in "$fixture" "$object_file" "$shim_c" "$cargo_manifest"; do
+      if [ ! -f "$required_file" ]; then
+        echo "Missing canonical unresolved-link proof input: $required_file"
+        exit 1
+      fi
+    done
+    if [ ! -d "$(dirname "$binary")" ]; then
+      echo "Canonical unresolved-link proof output parent must already exist: $(dirname "$binary")"
+      exit 1
+    fi
+    if [ -e "$binary" ]; then
+      echo "Canonical unresolved-link proof requires an absent final executable: $binary"
+      exit 1
+    fi
+
+    absolute_path() {
+      case "$1" in
+        /*) printf '%s\n' "$1" ;;
+        *) printf '%s/%s\n' "$PWD" "$1" ;;
+      esac
+    }
+
+    cargo_cmd=(cargo run --quiet --manifest-path "$cargo_manifest" --locked --)
+    CC_BIN="${CC:-cc}"
+    CFLAGS_VAL="${CFLAGS:--O0 -w}"
+    cflag_args=()
+    if [ -n "$CFLAGS_VAL" ]; then
+      read -r -a cflag_args <<< "$CFLAGS_VAL"
+    fi
+
+    request_path="${binary}.phase9g-link.request"
+    object_report="${binary}.phase9g-object-contract.log"
+    link_report="${binary}.phase9g-link-report.log"
+    object_checksum_before="$(cksum "$object_file")"
+
+    "${cargo_cmd[@]}" compiler-mir-verify-object-contract "$fixture" "$object_file" >"$object_report"
+    rg -n -F 'object_kind: Relocatable' "$object_report" >/dev/null
+    rg -n -F 'has_code_section: true' "$object_report" >/dev/null
+    rg -n -F 'duplicate_symbol_count: 0' "$object_report" >/dev/null
+    undefined_count="$(sed -n -E 's/^undefined_symbol_count:[[:space:]]*//p' "$object_report")"
+    if [ -z "$undefined_count" ] || [ "$undefined_count" = "0" ]; then
+      echo "Canonical unresolved-link proof requires at least one verified unresolved import."
+      exit 1
+    fi
+
+    {
+      printf '%s\n' 'format: gust.compiler_mir_link_request.v1'
+      printf 'output: %s\n' "$(absolute_path "$binary")"
+      printf 'object: %s\n' "$(absolute_path "$object_file")"
+      printf 'c_source: %s\n' "$(absolute_path "$shim_c")"
+      for link_arg in "${cflag_args[@]}"; do
+        printf 'link_arg: %s\n' "$link_arg"
+      done
+      printf 'driver: %s\n' "$CC_BIN"
+      printf '%s\n' 'expected_result: failure'
+      printf '%s\n' 'expected_failure_kind: unresolved_symbol'
+    } >"$request_path"
+
+    "${cargo_cmd[@]}" compiler-mir-link-request "$request_path" >"$link_report"
+    rg -n -F 'classification: native_link_failure' "$link_report" >/dev/null
+    rg -n -F 'pipeline_stage: native_link' "$link_report" >/dev/null
+    rg -n -F 'failure_kind: unresolved_symbol' "$link_report" >/dev/null
+    rg -n -F 'gust_pipeline_failure: stage=native_link kind=unresolved_symbol' "$link_report" >/dev/null
+    rg -n -F 'expected_result: failure' "$link_report" >/dev/null
+    rg -n -F 'expected_failure_kind: unresolved_symbol' "$link_report" >/dev/null
+    rg -n -F 'matched_expectation: true' "$link_report" >/dev/null
+    rg -n -F 'published: false' "$link_report" >/dev/null
+
+    temp_path="$(dirname "$binary")/.$(basename "$binary").phase9g-link.tmp"
+    stdout_log="$(dirname "$binary")/.$(basename "$binary").phase9g-link.stdout.log"
+    stderr_log="$(dirname "$binary")/.$(basename "$binary").phase9g-link.stderr.log"
+    test ! -e "$binary"
+    test ! -e "$temp_path"
+    test -e "$stdout_log"
+    test -s "$stderr_log"
+
+    object_checksum_after="$(cksum "$object_file")"
+    if [ "$object_checksum_after" != "$object_checksum_before" ]; then
+      echo "Canonical unresolved-link proof modified input object bytes: $object_file"
+      exit 1
+    fi
+
+    echo "✅ Canonical unresolved-import proof reached native_link/unresolved_symbol after fixture validation, object construction, and structured object verification."
 
 guard-cranelift-phase9g-phase9c-phase9e-link-migration:
     #!/usr/bin/env bash
@@ -10908,6 +10990,242 @@ guard-cranelift-phase9g-phase9c-phase9e-link-migration:
     rg -n -F 'MIR-to-C oracle guards continue compiling generated C directly.' "$readme_doc" >/dev/null
 
     echo "✅ Phase 9G Phase 9C-through-9E migration passed: 22 canonical lanes and the bounded CFG support fixtures delegate linking, publication, and classification to the shared driver while preserving native and differential behavior."
+
+
+guard-cranelift-phase9g-link-bypass-retirement:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 9G Phase 9F migration and exact link-bypass retirement..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    readme_doc="compiler/experiments/cranelift/README.md"
+
+    just guard-cranelift-phase9g-phase9c-phase9e-link-migration
+
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9G_LINK_BYPASS_RETIREMENT_GUARD: guard-cranelift-phase9g-link-bypass-retirement' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_link_bypass_retirement_status: phase9g_all_33_canonical_phase9c_through_phase9f_ingestion_guards_driver_owned' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_link_bypass_retirement_success_helper: cranelift-phase9g-link-canonical-ingestion-object' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_link_bypass_retirement_unresolved_helper: cranelift-phase9g-link-canonical-unresolved-ingestion-object' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_link_bypass_retirement_canonical_guard_count: 33' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_link_bypass_retirement_phase9f_guard_count: 11' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_link_bypass_retirement_historical_exception_count: 35' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_link_bypass_retirement_translator_exception_count: 17' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_link_bypass_retirement_exception_policy: exact_frozen_recipe_names_only_no_prefix_wildcard_or_future_exception_category' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_link_bypass_retirement_next_milestone: reproducibility_and_CI_contract' "$manifest_doc" >/dev/null
+
+    success_helper_body="$(sed -n '/^cranelift-phase9g-link-canonical-ingestion-object /,/^cranelift-phase9g-link-canonical-unresolved-ingestion-object /p' justfile)"
+    printf '%s\n' "$success_helper_body" | rg -n -F 'imported_function_[0-9]+_symbol' >/dev/null
+    printf '%s\n' "$success_helper_body" | rg -n -F 'undefined_symbol: $expected_import_symbol' >/dev/null
+    printf '%s\n' "$success_helper_body" | rg -n -F 'compiler-mir-link-request "$request_path"' >/dev/null
+    printf '%s\n' "$success_helper_body" | rg -n -F 'expected_result: success' >/dev/null
+
+    unresolved_helper_body="$(sed -n '/^cranelift-phase9g-link-canonical-unresolved-ingestion-object /,/^guard-cranelift-phase9g-phase9c-phase9e-link-migration:/p' justfile)"
+    printf '%s\n' "$unresolved_helper_body" | rg -n -F 'compiler-mir-verify-object-contract "$fixture" "$object_file"' >/dev/null
+    printf '%s\n' "$unresolved_helper_body" | rg -n -F 'expected_result: failure' >/dev/null
+    printf '%s\n' "$unresolved_helper_body" | rg -n -F 'expected_failure_kind: unresolved_symbol' >/dev/null
+    printf '%s\n' "$unresolved_helper_body" | rg -n -F 'pipeline_stage: native_link' >/dev/null
+    printf '%s\n' "$unresolved_helper_body" | rg -n -F 'failure_kind: unresolved_symbol' >/dev/null
+    printf '%s\n' "$unresolved_helper_body" | rg -n -F 'gust_pipeline_failure: stage=native_link kind=unresolved_symbol' >/dev/null
+    printf '%s\n' "$unresolved_helper_body" | rg -n -F 'published: false' >/dev/null
+    printf '%s\n' "$unresolved_helper_body" | rg -n -F 'test -s "$stderr_log"' >/dev/null
+    if printf '%s\n' "$unresolved_helper_body" | rg -n -F '"$CC_BIN" ' >/dev/null; then
+      echo "The unresolved-import helper must submit a structured request rather than invoke the linker directly."
+      exit 1
+    fi
+
+    extract_recipe_body() {
+      local recipe_name="$1"
+      awk -v header="${recipe_name}:" '
+        $0 == header {
+          active = 1
+        }
+        active && $0 != header && $0 ~ /^[^[:space:]].*:$/ {
+          exit
+        }
+        active {
+          print
+        }
+      ' justfile
+    }
+
+    assert_no_lane_link_ownership() {
+      local recipe_name="$1"
+      local recipe_body="$2"
+      if printf '%s\n' "$recipe_body" | rg -n 'CC_BIN=|CFLAGS_VAL=|"\$CC_BIN"|compiler-mir-link-request|nm[[:space:]]+-u|phase9g-link\.tmp|unresolved-link\.log|(^|[^A-Za-z_])(link|linker|unresolved_link)_status=|link_(report|log)=|stderr_log=|stdout_log=|temporary_(binary|executable)|temp_(binary|executable)|link_temp|rm[[:space:]]+-f.*(\$binary|_bin)' >/dev/null; then
+        echo "Canonical lane $recipe_name still owns linker selection, link execution, status/log interpretation, temporary naming, nm assertions, or failed-output deletion."
+        printf '%s\n' "$recipe_body"
+        exit 1
+      fi
+    }
+
+    canonical_lines="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|' "$manifest_doc")"
+    canonical_count="$(printf '%s\n' "$canonical_lines" | sed '/^$/d' | wc -l | tr -d ' ')"
+    if [ "$canonical_count" != "33" ]; then
+      echo "Expected exactly 33 canonical ingestion seams, found $canonical_count."
+      exit 1
+    fi
+    canonical_guards="$(printf '%s\n' "$canonical_lines" | sed -E 's/.*\|native_guard=([^|]+)\|.*/\1/' | sort -u)"
+    canonical_guard_count="$(printf '%s\n' "$canonical_guards" | sed '/^$/d' | wc -l | tr -d ' ')"
+    if [ "$canonical_guard_count" != "33" ]; then
+      echo "Expected exactly 33 distinct canonical native guard adapters, found $canonical_guard_count."
+      exit 1
+    fi
+
+    phase9f_lines="$(printf '%s\n' "$canonical_lines" | rg '\|migration=phase9f_')"
+    phase9f_count="$(printf '%s\n' "$phase9f_lines" | sed '/^$/d' | wc -l | tr -d ' ')"
+    if [ "$phase9f_count" != "11" ]; then
+      echo "Expected exactly eleven Phase 9F canonical call/import seams, found $phase9f_count."
+      exit 1
+    fi
+
+    while IFS= read -r native_guard; do
+      if [ -z "$native_guard" ]; then
+        continue
+      fi
+      recipe_body="$(extract_recipe_body "$native_guard")"
+      helper_call_count="$(printf '%s\n' "$recipe_body" | rg -c -F 'just cranelift-phase9g-link-canonical-ingestion-object ' || true)"
+      helper_call_count="${helper_call_count:-0}"
+      if [ "$helper_call_count" != "1" ]; then
+        echo "Canonical native guard $native_guard must delegate exactly one successful link to the shared helper; found $helper_call_count."
+        exit 1
+      fi
+      assert_no_lane_link_ownership "$native_guard" "$recipe_body"
+    done <<< "$canonical_guards"
+
+    phase9f_guard_recipes=(
+      guard-cranelift-phase9f-opening-contract
+      guard-cranelift-phase9f-call-import-schema-validator
+      guard-cranelift-phase9f-module-emitter-local-call-cohort
+      guard-cranelift-phase9f-direct-imported-call-cohort
+      guard-cranelift-phase9f-imported-materialization-predicate-cohort
+      guard-cranelift-phase9f-merge-arm-imported-call-cohort
+      guard-cranelift-phase9f-joined-imported-call-cohort
+      guard-cranelift-phase9f-call-import-completeness-rejection
+      guard-cranelift-phase9f-close
+    )
+    for phase9f_guard in "${phase9f_guard_recipes[@]}"; do
+      phase9f_body="$(extract_recipe_body "$phase9f_guard")"
+      assert_no_lane_link_ownership "$phase9f_guard" "$phase9f_body"
+    done
+
+    for aggregate_guard in guard-cranelift-phase9f-module-emitter-local-call-cohort guard-cranelift-phase9f-direct-imported-call-cohort; do
+      aggregate_body="$(extract_recipe_body "$aggregate_guard")"
+      aggregate_helper_count="$(printf '%s\n' "$aggregate_body" | rg -c -F 'just cranelift-phase9g-link-canonical-ingestion-object ' || true)"
+      aggregate_helper_count="${aggregate_helper_count:-0}"
+      if [ "$aggregate_helper_count" != "1" ]; then
+        echo "Phase 9F aggregate guard $aggregate_guard must delegate exactly one successful link; found $aggregate_helper_count."
+        exit 1
+      fi
+    done
+
+    completeness_body="$(extract_recipe_body guard-cranelift-phase9f-call-import-completeness-rejection)"
+    completeness_success_count="$(printf '%s\n' "$completeness_body" | rg -c -F 'just cranelift-phase9g-link-canonical-ingestion-object ' || true)"
+    completeness_unresolved_count="$(printf '%s\n' "$completeness_body" | rg -c -F 'just cranelift-phase9g-link-canonical-unresolved-ingestion-object ' || true)"
+    if [ "${completeness_success_count:-0}" != "1" ] || [ "${completeness_unresolved_count:-0}" != "1" ]; then
+      echo "Phase 9F completeness must delegate one successful link and one expected unresolved-symbol link."
+      exit 1
+    fi
+
+    historical_exceptions=(
+      guard-cranelift-return-int-native-smoke
+      guard-cranelift-local-binding-native-smoke
+      guard-cranelift-conditional-branch-native-smoke
+      guard-cranelift-identity-i32-native-smoke
+      guard-cranelift-add-i32-native-smoke
+      guard-cranelift-positive-i32-branch-native-smoke
+      guard-cranelift-increment-local-i32-native-smoke
+      guard-cranelift-call-helper-i32-native-smoke
+      guard-cranelift-extern-call-i32-native-smoke
+      guard-cranelift-extern-add-i32-native-smoke
+      guard-cranelift-extern-predicate-branch-i32-native-smoke
+      guard-cranelift-mir-return-int-native-smoke
+      guard-cranelift-mir-local-binding-read-native-smoke
+      guard-cranelift-mir-conditional-branch-native-smoke
+      guard-cranelift-mir-add-i32-native-smoke
+      guard-cranelift-mir-positive-i32-branch-native-smoke
+      guard-cranelift-mir-increment-local-i32-native-smoke
+      guard-cranelift-mir-call-helper-i32-native-smoke
+      guard-cranelift-mir-extern-call-i32-native-smoke
+      guard-cranelift-mir-extern-add-i32-native-smoke
+      guard-cranelift-mir-extern-predicate-branch-i32-native-smoke
+      guard-cranelift-mir-arithmetic-i32-bundle-native-smoke
+      guard-cranelift-mir-comparison-i32-bundle-native-smoke
+      guard-cranelift-mir-comparison-branch-i32-bundle-native-smoke
+      guard-cranelift-mir-block-graph-i32-bundle-native-smoke
+      guard-cranelift-mir-block-graph-local-i32-bundle-native-smoke
+      guard-cranelift-mir-block-graph-local-update-i32-bundle-native-smoke
+      guard-cranelift-mir-block-graph-param-i32-bundle-native-smoke
+      guard-cranelift-mir-block-graph-param-call-i32-bundle-native-smoke
+      guard-cranelift-mir-block-graph-param-extern-i32-bundle-native-smoke
+      guard-cranelift-mir-block-graph-param-extern-add-i32-bundle-native-smoke
+      guard-cranelift-mir-block-graph-param-extern-predicate-i32-bundle-native-smoke
+      guard-cranelift-mir-block-graph-param-merge-i32-bundle-native-smoke
+      guard-cranelift-mir-block-graph-param-merge-call-i32-bundle-native-smoke
+      guard-cranelift-mir-to-c-differential-native-smoke
+    )
+    translator_exceptions=(
+      guard-cranelift-mir-to-cranelift-return-int-translator-native-smoke
+      guard-cranelift-mir-to-cranelift-local-binding-read-translator-native-smoke
+      guard-cranelift-mir-to-cranelift-conditional-branch-translator-native-smoke
+      guard-cranelift-mir-to-cranelift-block-jump-translator-native-smoke
+      guard-cranelift-mir-to-cranelift-provenance-metadata-translator-native-smoke
+      guard-cranelift-mir-to-cranelift-resource-metadata-translator-native-smoke
+      guard-cranelift-mir-to-cranelift-native-boundary-metadata-translator-native-smoke
+      guard-cranelift-mir-to-cranelift-add-i32-translator-native-smoke
+      guard-cranelift-mir-to-cranelift-positive-i32-branch-translator-native-smoke
+      guard-cranelift-mir-to-cranelift-block-local-branch-join-translator-native-smoke
+      guard-cranelift-mir-to-cranelift-block-param-update-branch-translator-native-smoke
+      guard-cranelift-mir-to-cranelift-block-param-merge-update-branch-translator-native-smoke
+      guard-cranelift-mir-to-cranelift-block-param-merge-imported-call-return-translator-native-smoke
+      guard-cranelift-mir-to-cranelift-block-param-merge-arm-update-imported-call-return-translator-native-smoke
+      guard-cranelift-mir-to-cranelift-block-param-merge-arm-update-imported-call-branch-translator-native-smoke
+      guard-cranelift-mir-to-cranelift-block-param-merge-imported-branch-joined-return-translator-native-smoke
+      guard-cranelift-mir-to-cranelift-block-param-merge-dual-imported-joined-return-translator-native-smoke
+    )
+    if [ "${#historical_exceptions[@]}" != "35" ] || [ "${#translator_exceptions[@]}" != "17" ]; then
+      echo "The exact frozen exception inventories must remain 35 historical guards and 17 translator seeds."
+      exit 1
+    fi
+
+    expected_historical_line='allowed_cranelift_phase9g_link_bypass_retirement_historical_exceptions: guard-cranelift-return-int-native-smoke,guard-cranelift-local-binding-native-smoke,guard-cranelift-conditional-branch-native-smoke,guard-cranelift-identity-i32-native-smoke,guard-cranelift-add-i32-native-smoke,guard-cranelift-positive-i32-branch-native-smoke,guard-cranelift-increment-local-i32-native-smoke,guard-cranelift-call-helper-i32-native-smoke,guard-cranelift-extern-call-i32-native-smoke,guard-cranelift-extern-add-i32-native-smoke,guard-cranelift-extern-predicate-branch-i32-native-smoke,guard-cranelift-mir-return-int-native-smoke,guard-cranelift-mir-local-binding-read-native-smoke,guard-cranelift-mir-conditional-branch-native-smoke,guard-cranelift-mir-add-i32-native-smoke,guard-cranelift-mir-positive-i32-branch-native-smoke,guard-cranelift-mir-increment-local-i32-native-smoke,guard-cranelift-mir-call-helper-i32-native-smoke,guard-cranelift-mir-extern-call-i32-native-smoke,guard-cranelift-mir-extern-add-i32-native-smoke,guard-cranelift-mir-extern-predicate-branch-i32-native-smoke,guard-cranelift-mir-arithmetic-i32-bundle-native-smoke,guard-cranelift-mir-comparison-i32-bundle-native-smoke,guard-cranelift-mir-comparison-branch-i32-bundle-native-smoke,guard-cranelift-mir-block-graph-i32-bundle-native-smoke,guard-cranelift-mir-block-graph-local-i32-bundle-native-smoke,guard-cranelift-mir-block-graph-local-update-i32-bundle-native-smoke,guard-cranelift-mir-block-graph-param-i32-bundle-native-smoke,guard-cranelift-mir-block-graph-param-call-i32-bundle-native-smoke,guard-cranelift-mir-block-graph-param-extern-i32-bundle-native-smoke,guard-cranelift-mir-block-graph-param-extern-add-i32-bundle-native-smoke,guard-cranelift-mir-block-graph-param-extern-predicate-i32-bundle-native-smoke,guard-cranelift-mir-block-graph-param-merge-i32-bundle-native-smoke,guard-cranelift-mir-block-graph-param-merge-call-i32-bundle-native-smoke,guard-cranelift-mir-to-c-differential-native-smoke'
+    expected_translator_line='allowed_cranelift_phase9g_link_bypass_retirement_translator_exceptions: guard-cranelift-mir-to-cranelift-return-int-translator-native-smoke,guard-cranelift-mir-to-cranelift-local-binding-read-translator-native-smoke,guard-cranelift-mir-to-cranelift-conditional-branch-translator-native-smoke,guard-cranelift-mir-to-cranelift-block-jump-translator-native-smoke,guard-cranelift-mir-to-cranelift-provenance-metadata-translator-native-smoke,guard-cranelift-mir-to-cranelift-resource-metadata-translator-native-smoke,guard-cranelift-mir-to-cranelift-native-boundary-metadata-translator-native-smoke,guard-cranelift-mir-to-cranelift-add-i32-translator-native-smoke,guard-cranelift-mir-to-cranelift-positive-i32-branch-translator-native-smoke,guard-cranelift-mir-to-cranelift-block-local-branch-join-translator-native-smoke,guard-cranelift-mir-to-cranelift-block-param-update-branch-translator-native-smoke,guard-cranelift-mir-to-cranelift-block-param-merge-update-branch-translator-native-smoke,guard-cranelift-mir-to-cranelift-block-param-merge-imported-call-return-translator-native-smoke,guard-cranelift-mir-to-cranelift-block-param-merge-arm-update-imported-call-return-translator-native-smoke,guard-cranelift-mir-to-cranelift-block-param-merge-arm-update-imported-call-branch-translator-native-smoke,guard-cranelift-mir-to-cranelift-block-param-merge-imported-branch-joined-return-translator-native-smoke,guard-cranelift-mir-to-cranelift-block-param-merge-dual-imported-joined-return-translator-native-smoke'
+    rg -n -F "$expected_historical_line" "$manifest_doc" >/dev/null
+    rg -n -F "$expected_translator_line" "$manifest_doc" >/dev/null
+
+    for frozen_guard in "${historical_exceptions[@]}" "${translator_exceptions[@]}"; do
+      frozen_body="$(extract_recipe_body "$frozen_guard")"
+      if ! printf '%s\n' "$frozen_body" | rg -n '"\$CC_BIN".*"\$object_file".*-o "\$binary"' >/dev/null; then
+        echo "Exact frozen exception $frozen_guard no longer matches its recorded historical direct-link shape; update the contract explicitly."
+        exit 1
+      fi
+    done
+
+    actual_direct_link_owners="$(
+      awk '
+        /^[A-Za-z0-9_-]+([^:]*)?:$/ {
+          recipe = $1
+          sub(/:$/, "", recipe)
+        }
+        /^[[:space:]]+"\$CC_BIN".*"\$object_file".*-o "\$binary"/ {
+          print recipe
+        }
+      ' justfile | sort -u
+    )"
+    expected_direct_link_owners="$(
+      printf '%s\n' "${historical_exceptions[@]}" "${translator_exceptions[@]}" | sort -u
+    )"
+    if [ "$actual_direct_link_owners" != "$expected_direct_link_owners" ]; then
+      echo "Direct Cranelift object-link owners differ from the two exact frozen exception inventories."
+      diff -u <(printf '%s\n' "$expected_direct_link_owners") <(printf '%s\n' "$actual_direct_link_owners") || true
+      exit 1
+    fi
+
+    just guard-cranelift-phase9f-close
+
+    rg -n -F 'Steps 19 and 20 migrate the eleven Phase 9F call/import seams and retire canonical lane-owned linking.' "$readme_doc" >/dev/null
+    rg -n -F 'The unresolved-import completeness fixture is the primary typed proof of `native_link/unresolved_symbol`.' "$readme_doc" >/dev/null
+    rg -n -F 'The only frozen direct Cranelift object-link exceptions are 35 exact historical pre-canonical guards and the 17 exact translator seeds.' "$readme_doc" >/dev/null
+
+    echo "✅ Phase 9G link bypass retirement passed: all 33 canonical Phase 9C-through-9F ingestion guards and the Phase 9F completeness matrix delegate to the canonical driver, while only 35 exact historical guards and 17 exact translator seeds remain frozen."
 
 
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
@@ -11680,9 +11998,7 @@ guard-cranelift-compiler-mir-block-param-local-call-branch-ingestion-native-smok
     echo '  if (tiny_native_backend_compiler_mir_ingested_block_param_local_call_branch(-1) != 83) return 3;' >> "$shim_c"
     echo '  return 0;' >> "$shim_c"
     echo '}' >> "$shim_c"
-    CC_BIN="${CC:-cc}"
-    CFLAGS_VAL="${CFLAGS:--O0 -w}"
-    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    just cranelift-phase9g-link-canonical-ingestion-object "$fixture" "$object_file" "$shim_c" "$binary"
     "$binary"
     echo "✅ Compiler-owned MIR block-param local-call branch compatibility adapter uses the canonical Phase 9F module emitter."
 
@@ -11739,9 +12055,7 @@ guard-cranelift-compiler-mir-block-param-imported-call-branch-ingestion-native-s
     echo '  if (tiny_native_backend_compiler_mir_ingested_block_param_imported_call_branch(-2) != 97) return 3;' >> "$shim_c"
     echo '  return 0;' >> "$shim_c"
     echo '}' >> "$shim_c"
-    CC_BIN="${CC:-cc}"
-    CFLAGS_VAL="${CFLAGS:--O0 -w}"
-    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    just cranelift-phase9g-link-canonical-ingestion-object "$fixture" "$object_file" "$shim_c" "$binary"
     "$binary"
     echo "✅ Compiler-owned MIR block-param imported-call branch ingestion seam native smoke passed."
 
@@ -11798,9 +12112,7 @@ guard-cranelift-compiler-mir-block-param-imported-call-return-ingestion-native-s
     echo '  if (tiny_native_backend_compiler_mir_ingested_block_param_imported_call_return(-12) != -1) return 3;' >> "$shim_c"
     echo '  return 0;' >> "$shim_c"
     echo '}' >> "$shim_c"
-    CC_BIN="${CC:-cc}"
-    CFLAGS_VAL="${CFLAGS:--O0 -w}"
-    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    just cranelift-phase9g-link-canonical-ingestion-object "$fixture" "$object_file" "$shim_c" "$binary"
     "$binary"
     echo "✅ Compiler-owned MIR block-param imported-call return ingestion seam native smoke passed."
 
@@ -11859,9 +12171,7 @@ guard-cranelift-compiler-mir-block-param-imported-predicate-update-branch-ingest
     echo '  if (tiny_native_backend_compiler_mir_ingested_block_param_imported_predicate_update_branch(-1) != 107) return 3;' >> "$shim_c"
     echo '  return 0;' >> "$shim_c"
     echo '}' >> "$shim_c"
-    CC_BIN="${CC:-cc}"
-    CFLAGS_VAL="${CFLAGS:--O0 -w}"
-    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    just cranelift-phase9g-link-canonical-ingestion-object "$fixture" "$object_file" "$shim_c" "$binary"
     "$binary"
     echo "✅ Compiler-owned MIR block-param imported-predicate update branch ingestion seam native smoke passed."
 
@@ -11984,9 +12294,7 @@ guard-cranelift-compiler-mir-block-param-merge-imported-call-return-ingestion-na
     echo '  if (tiny_native_backend_compiler_mir_ingested_block_param_merge_imported_call_return(-9) != 228) return 3;' >> "$shim_c"
     echo '  return 0;' >> "$shim_c"
     echo '}' >> "$shim_c"
-    CC_BIN="${CC:-cc}"
-    CFLAGS_VAL="${CFLAGS:--O0 -w}"
-    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    just cranelift-phase9g-link-canonical-ingestion-object "$fixture" "$object_file" "$shim_c" "$binary"
     "$binary"
     echo "✅ Compiler-owned MIR block-param merge imported-call return ingestion seam native smoke passed."
 
@@ -12044,9 +12352,7 @@ guard-cranelift-compiler-mir-block-param-merge-arm-update-imported-call-return-i
     echo '  if (tiny_native_backend_compiler_mir_ingested_block_param_merge_arm_update_imported_call_return(-9) != 237) return 3;' >> "$shim_c"
     echo '  return 0;' >> "$shim_c"
     echo '}' >> "$shim_c"
-    CC_BIN="${CC:-cc}"
-    CFLAGS_VAL="${CFLAGS:--O0 -w}"
-    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    just cranelift-phase9g-link-canonical-ingestion-object "$fixture" "$object_file" "$shim_c" "$binary"
     "$binary"
     echo "✅ Compiler-owned MIR block-param merge arm-update imported-call return ingestion seam native smoke passed."
 
@@ -12106,9 +12412,7 @@ guard-cranelift-compiler-mir-block-param-merge-arm-update-imported-call-branch-i
     echo '  if (tiny_native_backend_compiler_mir_ingested_block_param_merge_arm_update_imported_call_branch(-9) != 241) return 3;' >> "$shim_c"
     echo '  return 0;' >> "$shim_c"
     echo '}' >> "$shim_c"
-    CC_BIN="${CC:-cc}"
-    CFLAGS_VAL="${CFLAGS:--O0 -w}"
-    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    just cranelift-phase9g-link-canonical-ingestion-object "$fixture" "$object_file" "$shim_c" "$binary"
     "$binary"
     echo "✅ Compiler-owned MIR block-param merge arm-update imported-call branch ingestion seam native smoke passed."
 
@@ -12165,9 +12469,7 @@ guard-cranelift-compiler-mir-block-param-merge-imported-branch-joined-return-ing
     echo '  if (tiny_native_backend_compiler_mir_ingested_block_param_merge_imported_branch_joined_return(-9) != 244) return 3;' >> "$shim_c"
     echo '  return 0;' >> "$shim_c"
     echo '}' >> "$shim_c"
-    CC_BIN="${CC:-cc}"
-    CFLAGS_VAL="${CFLAGS:--O0 -w}"
-    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    just cranelift-phase9g-link-canonical-ingestion-object "$fixture" "$object_file" "$shim_c" "$binary"
     "$binary"
     echo "✅ Compiler-owned MIR block-param merge imported-branch joined-return ingestion seam native smoke passed."
 
@@ -12201,9 +12503,7 @@ guard-cranelift-compiler-mir-block-param-merge-dual-imported-joined-return-inges
     echo '  if (tiny_native_backend_compiler_mir_ingested_block_param_merge_dual_imported_joined_return(-9) != 245) return 3;' >> "$shim_c"
     echo '  return 0;' >> "$shim_c"
     echo '}' >> "$shim_c"
-    CC_BIN="${CC:-cc}"
-    CFLAGS_VAL="${CFLAGS:--O0 -w}"
-    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    just cranelift-phase9g-link-canonical-ingestion-object "$fixture" "$object_file" "$shim_c" "$binary"
     "$binary"
     echo "✅ Compiler-owned MIR block-param merge dual-import joined-return ingestion seam native smoke passed."
 
@@ -12240,9 +12540,7 @@ guard-cranelift-compiler-mir-block-param-imported-materialize-branch-ingestion-n
     echo '  if (tiny_native_backend_compiler_mir_ingested_block_param_imported_materialize_branch(-2) != 283) return 3;' >> "$shim_c"
     echo '  return 0;' >> "$shim_c"
     echo '}' >> "$shim_c"
-    CC_BIN="${CC:-cc}"
-    CFLAGS_VAL="${CFLAGS:--O0 -w}"
-    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    just cranelift-phase9g-link-canonical-ingestion-object "$fixture" "$object_file" "$shim_c" "$binary"
     "$binary"
     echo "✅ Compiler-owned MIR block-param imported materialize branch ingestion seam native smoke passed."
 
@@ -12325,9 +12623,7 @@ guard-cranelift-compiler-mir-block-param-imported-materialize-return-ingestion-n
     echo '  if (tiny_native_backend_compiler_mir_ingested_block_param_imported_materialize_return(-2) != 360) return 3;' >> "$shim_c"
     echo '  return 0;' >> "$shim_c"
     echo '}' >> "$shim_c"
-    CC_BIN="${CC:-cc}"
-    CFLAGS_VAL="${CFLAGS:--O0 -w}"
-    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    just cranelift-phase9g-link-canonical-ingestion-object "$fixture" "$object_file" "$shim_c" "$binary"
     "$binary"
     echo "✅ Compiler-owned MIR block-param imported materialize return ingestion seam native smoke passed."
 

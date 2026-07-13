@@ -677,6 +677,43 @@ disabled by default, and no production runtime or backend route is enabled.
 The next milestone migrates Phase 9F and retires the remaining canonical
 experimental direct-link bypasses.
 
+Steps 19 and 20 migrate the eleven Phase 9F call/import seams and retire canonical lane-owned linking.
+Each seam guard now delegates its existing object and C host/entry shim to the
+same successful-link helper used by the Phase 9C-through-9E migration. Legacy
+Phase 9F fixtures retain their dedicated parser and module-construction
+adapters; before linking, the helper verifies their one exported
+`backend_symbol` plus the exact set of `imported_function_N_symbol` records
+through the structured Rust object inspector.
+
+The Phase 9F local-call and direct-import aggregate native proofs also delegate
+to the successful-link helper. The completeness fixture delegates its positive
+v2 module to that helper and its valid unresolved-import module to a dedicated
+expected-failure helper. The unresolved-import completeness fixture is the primary typed proof of `native_link/unresolved_symbol`.
+That proof requires successful canonical fixture validation, a nonempty
+published object, successful fixture-derived object verification, an expected
+`native_link/unresolved_symbol` report, no final or owned temporary executable,
+a preserved nonempty native stderr log, and byte-identical input object data.
+
+Across all 33 canonical Phase 9C-through-9F ingestion guard adapters, lane-owned
+linker selection, C flag selection, direct linker execution, linker-status
+parsing, `nm -u` assertions, temporary executable naming, link-log
+interpretation, and failed-link output deletion are forbidden. Publication,
+cleanup, diagnostics, and stage classification belong only to the shared Rust
+link driver and its two Just request adapters.
+
+The only frozen direct Cranelift object-link exceptions are 35 exact historical pre-canonical guards and the 17 exact translator seeds.
+Both inventories are recorded by full recipe name in the experiment manifest,
+and the retirement guard requires the repository's remaining direct
+`CC`-plus-object owners to equal those two lists exactly. There is no prefix,
+wildcard, historical-family, or future-exception category. MIR-to-C generated-C
+oracle compilation remains outside this restriction.
+
+The inventory remains 33 canonical shared ingestion seams and seventeen frozen
+translator seeds. MIR-to-C remains primary, Cranelift remains disabled by
+default, and no production runtime or backend route is enabled. The next
+milestone freezes reproducibility and CI ownership for the completed link
+pipeline.
+
 The checked-in lockfile for this crate is owned by:
 Patch 8 freezes the complete canonical call/import matrix and retires all
 eleven historical bypasses. The checked-in completeness fixture combines local
