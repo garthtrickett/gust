@@ -714,6 +714,46 @@ default, and no production runtime or backend route is enabled. The next
 milestone freezes reproducibility and CI ownership for the completed link
 pipeline.
 
+Steps 21 and 22 freeze structured object reproducibility and split dynamic Phase 9G evidence across focused CI jobs.
+The reproducibility guard emits the same validated Phase 9F v2 module twice,
+using the same object basename in two independent directories. Both artifacts
+must pass the fixture-derived structural contract. Their canonical structured
+inspection reports must then produce the same fingerprint, with exact equality
+for defined global, defined local, and undefined symbol sets; section
+inventories and relocation-target summaries; and object format, architecture,
+endianness, pointer width, relocatable kind, and code-section presence.
+
+Byte-for-byte equality is recorded only as same-host/toolchain evidence and is not a cross-platform contract.
+The guard does not require equal bytes across operating systems, object
+formats, target architectures, or Cranelift versions. A later change may
+strengthen the same-host byte contract only after the supported toolchain has
+separate stability evidence.
+
+The PR-fast workflow owns exactly three focused Phase 9G shards: object artifact, positive link, and negative link.
+The object shard runs the opening, transactional artifact, target/relocation,
+structural inspection, and reproducibility guards. The positive shard owns the
+link-driver contract, canonical positive matrix, Phase 9C-through-9E migration,
+and Phase 9F bypass retirement. The negative shard owns stable failure
+classification and the negative object/link matrix. Focused CI invocations set
+`PHASE9G_SKIP_PREREQUISITES=1` so each core Phase 9G dynamic guard runs in
+exactly one shard, while direct local guard execution retains the cumulative
+prerequisite chain. The two migration-ownership guards additionally set
+`PHASE9G_SKIP_DYNAMIC_EVIDENCE=1`: they still verify every adapter and frozen
+exception statically, while the existing Phase 9E and Phase 9F semantic shards
+remain the sole owners of lane execution.
+
+The heavy workflow expands default `cc`, explicit GCC, and explicit Clang across separate positive and negative matrix jobs.
+Each matrix job selects one driver and one evidence guard. No job loops through
+all drivers, and no job sequentially executes both dynamic link matrices. The
+CI surface guard verifies this wiring statically; the eventual closure guard
+may depend on that surface but must not replay all PR-fast or heavy dynamic
+jobs inside one aggregate recipe.
+
+The inherited boundary remains unchanged: 33 canonical compiler-owned
+ingestion seams, zero bespoke seams, seventeen frozen translator seeds, frozen
+v1 and v2 syntax, MIR-to-C as the primary route, Cranelift disabled by default,
+and no production runtime or backend selection.
+
 The checked-in lockfile for this crate is owned by:
 Patch 8 freezes the complete canonical call/import matrix and retires all
 eleven historical bypasses. The checked-in completeness fixture combines local

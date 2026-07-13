@@ -80,6 +80,23 @@ guard-pr-fast-shard shard:
       cranelift-phase9f-call-import-ladder)
         just guard-cranelift-phase9f-close
         ;;
+      cranelift-phase9g-object-artifact)
+        PHASE9G_SKIP_PREREQUISITES=1 just guard-cranelift-phase9g-opening-contract
+        PHASE9G_SKIP_PREREQUISITES=1 just guard-cranelift-phase9g-object-artifact-contract
+        PHASE9G_SKIP_PREREQUISITES=1 just guard-cranelift-phase9g-target-relocation-contract
+        PHASE9G_SKIP_PREREQUISITES=1 just guard-cranelift-phase9g-object-inspection-contract
+        PHASE9G_SKIP_PREREQUISITES=1 just guard-cranelift-phase9g-object-reproducibility
+        ;;
+      cranelift-phase9g-link-positive)
+        PHASE9G_SKIP_PREREQUISITES=1 just guard-cranelift-phase9g-link-driver-contract
+        PHASE9G_SKIP_PREREQUISITES=1 just guard-cranelift-phase9g-positive-link-matrix
+        PHASE9G_SKIP_PREREQUISITES=1 PHASE9G_SKIP_DYNAMIC_EVIDENCE=1 just guard-cranelift-phase9g-phase9c-phase9e-link-migration
+        PHASE9G_SKIP_PREREQUISITES=1 PHASE9G_SKIP_DYNAMIC_EVIDENCE=1 just guard-cranelift-phase9g-link-bypass-retirement
+        ;;
+      cranelift-phase9g-link-negative)
+        PHASE9G_SKIP_PREREQUISITES=1 just guard-cranelift-phase9g-pipeline-failure-classification
+        PHASE9G_SKIP_PREREQUISITES=1 just guard-cranelift-phase9g-negative-link-matrix
+        ;;
       cranelift-backend-suite-core-baseline)
         just guard-cranelift-experimental-backend-suite-shard core-baseline
         ;;
@@ -143,7 +160,7 @@ guard-pr-fast-shard shard:
         ;;
       *)
         echo "unknown PR fast shard: {{shard}}"
-        echo "expected one of: cranelift-return-int, cranelift-local-binding, cranelift-branch, cranelift-differential, cranelift-phase9d-ingestion-ladder, cranelift-phase9e-cfg-ladder, cranelift-phase9f-call-import-ladder, cranelift-backend-suite-core-baseline, cranelift-backend-suite-core-legacy, cranelift-backend-suite-core-mir-basic-arithmetic, cranelift-backend-suite-core-mir-basic-calls, cranelift-backend-suite-core-mir-bundles, cranelift-backend-suite-core-mir-block-graphs, cranelift-backend-suite-compiler-mir-scalars, cranelift-backend-suite-compiler-mir-metadata, cranelift-backend-suite-compiler-mir-blocks, cranelift-backend-suite-translator-scalar, cranelift-backend-suite-translator-cfg, cranelift-backend-suite-translator-metadata, cranelift-backend-suite-translator-imports, mir-to-c-return-int, routed-return-int, migration-return-int, migration-local-binding, migration-if-else, migration-provenance"
+        echo "expected one of: cranelift-return-int, cranelift-local-binding, cranelift-branch, cranelift-differential, cranelift-phase9d-ingestion-ladder, cranelift-phase9e-cfg-ladder, cranelift-phase9f-call-import-ladder, cranelift-phase9g-object-artifact, cranelift-phase9g-link-positive, cranelift-phase9g-link-negative, cranelift-backend-suite-core-baseline, cranelift-backend-suite-core-legacy, cranelift-backend-suite-core-mir-basic-arithmetic, cranelift-backend-suite-core-mir-basic-calls, cranelift-backend-suite-core-mir-bundles, cranelift-backend-suite-core-mir-block-graphs, cranelift-backend-suite-compiler-mir-scalars, cranelift-backend-suite-compiler-mir-metadata, cranelift-backend-suite-compiler-mir-blocks, cranelift-backend-suite-translator-scalar, cranelift-backend-suite-translator-cfg, cranelift-backend-suite-translator-metadata, cranelift-backend-suite-translator-imports, mir-to-c-return-int, routed-return-int, migration-return-int, migration-local-binding, migration-if-else, migration-provenance"
         exit 1
         ;;
     esac
@@ -186,6 +203,9 @@ guard-pr-fast-ci-surface:
     rg -n -F 'cranelift-phase9d-ingestion-ladder' "$workflow" justfile >/dev/null
     rg -n -F 'cranelift-phase9e-cfg-ladder' "$workflow" justfile >/dev/null
     rg -n -F 'cranelift-phase9f-call-import-ladder' "$workflow" justfile >/dev/null
+    rg -n -F 'cranelift-phase9g-object-artifact' "$workflow" justfile >/dev/null
+    rg -n -F 'cranelift-phase9g-link-positive' "$workflow" justfile >/dev/null
+    rg -n -F 'cranelift-phase9g-link-negative' "$workflow" justfile >/dev/null
     rg -n -F 'cranelift-backend-suite-core-baseline' "$workflow" justfile >/dev/null
     rg -n -F 'cranelift-backend-suite-core-legacy' "$workflow" justfile >/dev/null
     rg -n -F 'cranelift-backend-suite-core-mir-basic-arithmetic' "$workflow" justfile >/dev/null
@@ -223,6 +243,9 @@ guard-pr-fast-ci-surface:
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9e-close' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-phase9f-call-import-ladder)' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase9f-close' >/dev/null
+    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-phase9g-object-artifact)' >/dev/null
+    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-phase9g-link-positive)' >/dev/null
+    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-phase9g-link-negative)' >/dev/null
     if printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-phase9c-differential-ladder)' >/dev/null; then
       echo "PR fast must split the Phase 9C-to-9F differential ladder into focused Phase 9D, Phase 9E, and Phase 9F shards."
       exit 1
@@ -329,8 +352,8 @@ guard-pr-fast-ci-surface:
     fi
 
     shard_count="$(awk '/shard:/{flag=1; next} flag && /^[[:space:]]*steps:/{flag=0} flag && /^[[:space:]]*- /{count++} END{print count+0}' "$workflow")"
-    if [ "$shard_count" != "26" ]; then
-      echo "Expected exactly 26 PR fast matrix shards, found $shard_count."
+    if [ "$shard_count" != "29" ]; then
+      echo "Expected exactly 29 PR fast matrix shards, found $shard_count."
       awk '/shard:/{flag=1; next} flag && /^[[:space:]]*steps:/{flag=0} flag{print}' "$workflow"
       exit 1
     fi
@@ -658,9 +681,10 @@ guard-cloud-heavy-ci-surface:
     rg -n -F 'jobs:' "$workflow" >/dev/null
     rg -n -F 'build:' "$workflow" >/dev/null
     rg -n -F 'guard:' "$workflow" >/dev/null
+    rg -n -F 'phase9g-link-driver:' "$workflow" >/dev/null
     rg -n -F 'final:' "$workflow" >/dev/null
     rg -n -F 'needs: build' "$workflow" >/dev/null
-    rg -n -F 'needs: guard' "$workflow" >/dev/null
+    rg -n -F 'needs: [guard, phase9g-link-driver]' "$workflow" >/dev/null
     rg -n -F 'strategy:' "$workflow" >/dev/null
     rg -n -F 'fail-fast: false' "$workflow" >/dev/null
     rg -n -F 'matrix:' "$workflow" >/dev/null
@@ -1682,6 +1706,8 @@ guard-mir-to-c-boring-surface:
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'cranelift-phase9g-link-canonical-unresolved-ingestion-object' || true)"
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-phase9c-phase9e-link-migration' || true)"
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-link-bypass-retirement' || true)"
+    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-object-reproducibility' || true)"
+    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-ci-surface' || true)"
     if [ -n "$cranelift_recipe_wiring" ]; then
       echo "MIR-to-C boring gate allows only manifest, inert backend, dependency beachhead, explicit backend suite, return-int/local-binding/branch native smokes, and differential Cranelift guards before backend implementation expands."
       echo "$cranelift_recipe_wiring"
@@ -8837,7 +8863,9 @@ guard-cranelift-phase9g-object-artifact-contract:
     rm -rf "$build_dir"
     mkdir -p "$build_dir"
 
-    just guard-cranelift-phase9g-opening-contract
+    if [ "${PHASE9G_SKIP_PREREQUISITES:-0}" != "1" ]; then
+      just guard-cranelift-phase9g-opening-contract
+    fi
 
     for required_file in "$manifest_doc" "$readme_doc" "$source_file" "$function_fixture" "$module_fixture"; do
       if [ ! -f "$required_file" ]; then
@@ -8998,7 +9026,9 @@ guard-cranelift-phase9g-target-relocation-contract:
     rm -rf "$build_dir"
     mkdir -p "$build_dir"
 
-    just guard-cranelift-phase9g-object-artifact-contract
+    if [ "${PHASE9G_SKIP_PREREQUISITES:-0}" != "1" ]; then
+      just guard-cranelift-phase9g-object-artifact-contract
+    fi
 
     for required_file in "$manifest_doc" "$readme_doc" "$source_file" "$fixture"; do
       if [ ! -f "$required_file" ]; then
@@ -9152,7 +9182,9 @@ guard-cranelift-phase9g-object-inspection-contract:
     rm -rf "$build_dir"
     mkdir -p "$build_dir"
 
-    just guard-cranelift-phase9g-target-relocation-contract
+    if [ "${PHASE9G_SKIP_PREREQUISITES:-0}" != "1" ]; then
+      just guard-cranelift-phase9g-target-relocation-contract
+    fi
 
     for required_file in "$manifest_doc" "$readme_doc" "$source_file" "$cargo_manifest" "$cargo_lock" "$function_fixture" "$local_fixture" "$imported_fixture"; do
       if [ ! -f "$required_file" ]; then
@@ -9334,7 +9366,9 @@ guard-cranelift-phase9g-link-driver-contract:
     rm -rf "$build_dir"
     mkdir -p "$build_dir"
 
-    just guard-cranelift-phase9g-object-inspection-contract
+    if [ "${PHASE9G_SKIP_PREREQUISITES:-0}" != "1" ]; then
+      just guard-cranelift-phase9g-object-inspection-contract
+    fi
 
     for required_file in "$manifest_doc" "$readme_doc" "$source_file" "$cargo_manifest" "$function_fixture"; do
       if [ ! -f "$required_file" ]; then
@@ -9620,7 +9654,9 @@ guard-cranelift-phase9g-pipeline-failure-classification:
     rm -rf "$build_dir"
     mkdir -p "$build_dir"
 
-    just guard-cranelift-phase9g-link-driver-contract
+    if [ "${PHASE9G_SKIP_PREREQUISITES:-0}" != "1" ]; then
+      just guard-cranelift-phase9g-link-driver-contract
+    fi
 
     for required_file in "$manifest_doc" "$readme_doc" "$source_file" "$cargo_manifest" "$function_fixture" "$positive_fixture" "$unresolved_fixture"; do
       if [ ! -f "$required_file" ]; then
@@ -9898,7 +9934,9 @@ guard-cranelift-phase9g-positive-link-matrix:
     rm -rf "$build_dir"
     mkdir -p "$build_dir"
 
-    just guard-cranelift-phase9g-pipeline-failure-classification
+    if [ "${PHASE9G_SKIP_PREREQUISITES:-0}" != "1" ]; then
+      just guard-cranelift-phase9g-pipeline-failure-classification
+    fi
 
     for required_file in "$manifest_doc" "$readme_doc" "$source_file" "$cargo_manifest" "$import_free_fixture" "$one_import_fixture" "$multi_import_fixture" "$local_module_fixture" "$cross_consumer_base_fixture"; do
       if [ ! -f "$required_file" ]; then
@@ -10283,7 +10321,9 @@ guard-cranelift-phase9g-negative-link-matrix:
     rm -rf "$build_dir"
     mkdir -p "$build_dir"
 
-    just guard-cranelift-phase9g-positive-link-matrix
+    if [ "${PHASE9G_SKIP_PREREQUISITES:-0}" != "1" ]; then
+      just guard-cranelift-phase9g-positive-link-matrix
+    fi
 
     for required_file in "$manifest_doc" "$readme_doc" "$source_file" "$cargo_manifest" "$import_free_fixture" "$one_import_fixture" "$multi_import_fixture"; do
       if [ ! -f "$required_file" ]; then
@@ -10850,7 +10890,9 @@ guard-cranelift-phase9g-phase9c-phase9e-link-migration:
     manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     readme_doc="compiler/experiments/cranelift/README.md"
 
-    just guard-cranelift-phase9g-negative-link-matrix
+    if [ "${PHASE9G_SKIP_PREREQUISITES:-0}" != "1" ]; then
+      just guard-cranelift-phase9g-negative-link-matrix
+    fi
 
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9G_PHASE9C_PHASE9E_LINK_MIGRATION_GUARD: guard-cranelift-phase9g-phase9c-phase9e-link-migration' "$manifest_doc" justfile >/dev/null
     rg -n -F 'allowed_cranelift_phase9g_phase9c_phase9e_link_migration_status: phase9g_phase9c_through_phase9e_canonical_native_guards_migrated' "$manifest_doc" >/dev/null
@@ -10989,16 +11031,18 @@ guard-cranelift-phase9g-phase9c-phase9e-link-migration:
       exit 1
     fi
 
-    just guard-cranelift-phase9c-differential-ladder-native-smoke
-    just guard-cranelift-compiler-mir-block-local-branch-join-ingestion-native-smoke
-    just guard-cranelift-phase9d-generic-ingestion-command
-    just guard-cranelift-phase9d-first-post9c-cohort-bypass-freeze
-    just guard-cranelift-phase9e-local-cfg-cohort
-    just guard-cranelift-phase9e-shared-block-parameter-lowering-core
-    just guard-cranelift-phase9e-single-parameter-cfg-cohort
-    just guard-cranelift-phase9e-variable-arity-block-parameter-cohort
-    just guard-cranelift-phase9e-block-parameter-to-local-materialization-cohort
-    just guard-cranelift-phase9e-cfg-completeness-rejection-phase9f-freeze
+    if [ "${PHASE9G_SKIP_DYNAMIC_EVIDENCE:-0}" != "1" ]; then
+      just guard-cranelift-phase9c-differential-ladder-native-smoke
+      just guard-cranelift-compiler-mir-block-local-branch-join-ingestion-native-smoke
+      just guard-cranelift-phase9d-generic-ingestion-command
+      just guard-cranelift-phase9d-first-post9c-cohort-bypass-freeze
+      just guard-cranelift-phase9e-local-cfg-cohort
+      just guard-cranelift-phase9e-shared-block-parameter-lowering-core
+      just guard-cranelift-phase9e-single-parameter-cfg-cohort
+      just guard-cranelift-phase9e-variable-arity-block-parameter-cohort
+      just guard-cranelift-phase9e-block-parameter-to-local-materialization-cohort
+      just guard-cranelift-phase9e-cfg-completeness-rejection-phase9f-freeze
+    fi
 
     rg -n -F 'Steps 17 and 18 migrate the canonical Phase 9C through Phase 9E native guards.' "$readme_doc" >/dev/null
     rg -n -F 'MIR-to-C oracle guards continue compiling generated C directly.' "$readme_doc" >/dev/null
@@ -11013,7 +11057,9 @@ guard-cranelift-phase9g-link-bypass-retirement:
     manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     readme_doc="compiler/experiments/cranelift/README.md"
 
-    just guard-cranelift-phase9g-phase9c-phase9e-link-migration
+    if [ "${PHASE9G_SKIP_PREREQUISITES:-0}" != "1" ]; then
+      just guard-cranelift-phase9g-phase9c-phase9e-link-migration
+    fi
 
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9G_LINK_BYPASS_RETIREMENT_GUARD: guard-cranelift-phase9g-link-bypass-retirement' "$manifest_doc" justfile >/dev/null
     rg -n -F 'allowed_cranelift_phase9g_link_bypass_retirement_status: phase9g_all_33_canonical_phase9c_through_phase9f_ingestion_guards_driver_owned' "$manifest_doc" >/dev/null
@@ -11233,13 +11279,234 @@ guard-cranelift-phase9g-link-bypass-retirement:
       exit 1
     fi
 
-    just guard-cranelift-phase9f-close
+    if [ "${PHASE9G_SKIP_DYNAMIC_EVIDENCE:-0}" != "1" ]; then
+      just guard-cranelift-phase9f-close
+    fi
 
     rg -n -F 'Steps 19 and 20 migrate the eleven Phase 9F call/import seams and retire canonical lane-owned linking.' "$readme_doc" >/dev/null
     rg -n -F 'The unresolved-import completeness fixture is the primary typed proof of `native_link/unresolved_symbol`.' "$readme_doc" >/dev/null
     rg -n -F 'The only frozen direct Cranelift object-link exceptions are 35 exact historical pre-canonical guards and the 17 exact translator seeds.' "$readme_doc" >/dev/null
 
     echo "✅ Phase 9G link bypass retirement passed: all 33 canonical Phase 9C-through-9F ingestion guards and the Phase 9F completeness matrix delegate to the canonical driver, while only 35 exact historical guards and 17 exact translator seeds remain frozen."
+
+
+guard-cranelift-phase9g-object-reproducibility:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 9G structured object reproducibility..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    readme_doc="compiler/experiments/cranelift/README.md"
+    cargo_manifest="compiler/experiments/cranelift/Cargo.toml"
+    fixture="compiler/fixtures/phase9f_call_import_completeness.mir"
+    build_dir="build/guards/cranelift_phase9g_object_reproducibility"
+    run_a_dir="$build_dir/run-a"
+    run_b_dir="$build_dir/run-b"
+    run_a_object="$run_a_dir/module.o"
+    run_b_object="$run_b_dir/module.o"
+    run_a_report="$run_a_dir/object-inspection.log"
+    run_b_report="$run_b_dir/object-inspection.log"
+    run_a_target_report="$run_a_dir/target-contract.log"
+    run_b_target_report="$run_b_dir/target-contract.log"
+    evidence_report="$build_dir/reproducibility-evidence.log"
+    rm -rf "$build_dir"
+    mkdir -p "$run_a_dir" "$run_b_dir"
+
+    if [ "${PHASE9G_SKIP_PREREQUISITES:-0}" != "1" ]; then
+      just guard-cranelift-phase9g-object-inspection-contract
+    fi
+
+    for required_file in "$manifest_doc" "$readme_doc" "$cargo_manifest" "$fixture"; do
+      if [ ! -f "$required_file" ]; then
+        echo "Missing Phase 9G reproducibility input: $required_file"
+        exit 1
+      fi
+    done
+
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9G_OBJECT_REPRODUCIBILITY_GUARD: guard-cranelift-phase9g-object-reproducibility' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_object_reproducibility_status: phase9g_same_host_toolchain_structured_object_reproducibility' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_object_reproducibility_fixture: compiler/fixtures/phase9f_call_import_completeness.mir' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_object_reproducibility_emission_policy: same_validated_canonical_module_emitted_twice_to_distinct_directories_with_the_same_object_basename' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_object_reproducibility_fingerprint_policy: canonical_sorted_structured_inspection_fields_must_have_identical_checksums' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_object_reproducibility_symbol_policy: defined_global_defined_local_and_undefined_symbol_sets_must_match_exactly' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_object_reproducibility_section_policy: section_inventory_counts_and_relocation_target_summaries_must_match_exactly' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_object_reproducibility_target_policy: format_architecture_endianness_pointer_width_kind_and_code_presence_must_match_exactly' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_object_reproducibility_byte_policy: same_host_toolchain_byte_equality_is_recorded_but_not_required_until_separately_proven_stable' "$manifest_doc" >/dev/null
+
+    cargo_cmd=(cargo run --quiet --manifest-path "$cargo_manifest" --locked --)
+    "${cargo_cmd[@]}" compiler-mir-object-target-contract >"$run_a_target_report"
+    "${cargo_cmd[@]}" compiler-mir-object-target-contract >"$run_b_target_report"
+    "${cargo_cmd[@]}" compiler-mir-ingestion-object "$fixture" "$run_a_object"
+    "${cargo_cmd[@]}" compiler-mir-ingestion-object "$fixture" "$run_b_object"
+    "${cargo_cmd[@]}" compiler-mir-verify-object-contract "$fixture" "$run_a_object" >"$run_a_dir/object-contract.log"
+    "${cargo_cmd[@]}" compiler-mir-verify-object-contract "$fixture" "$run_b_object" >"$run_b_dir/object-contract.log"
+    "${cargo_cmd[@]}" compiler-mir-inspect-object "$run_a_object" >"$run_a_report"
+    "${cargo_cmd[@]}" compiler-mir-inspect-object "$run_b_object" >"$run_b_report"
+    test -s "$run_a_object"
+    test -s "$run_b_object"
+
+    canonicalize_structured_report() {
+      local source_report="$1"
+      local destination_report="$2"
+      LC_ALL=C rg -N '^(binary_format|architecture|endianness|pointer_width_bits|object_kind|has_code_section|defined_global_symbol_count|defined_local_symbol_count|undefined_symbol_count|section_count|relocation_target_count|duplicate_symbol_count|defined_global_symbol|defined_local_symbol|undefined_symbol|symbol_visibility|section|relocation_target):' "$source_report" |
+        LC_ALL=C sort >"$destination_report"
+    }
+
+    extract_symbol_set() {
+      local source_report="$1"
+      local destination_report="$2"
+      LC_ALL=C rg -N '^(defined_global_symbol|defined_local_symbol|undefined_symbol):' "$source_report" |
+        LC_ALL=C sort >"$destination_report"
+    }
+
+    extract_section_relocation_summary() {
+      local source_report="$1"
+      local destination_report="$2"
+      LC_ALL=C rg -N '^(section_count|relocation_target_count|section|relocation_target):' "$source_report" |
+        LC_ALL=C sort >"$destination_report"
+    }
+
+    extract_target_metadata() {
+      local source_report="$1"
+      local target_report="$2"
+      local destination_report="$3"
+      {
+        LC_ALL=C rg -N '^(binary_format|architecture|endianness|pointer_width_bits|object_kind|has_code_section):' "$source_report"
+        LC_ALL=C rg -N '^(target_triple|architecture|pointer_width_bits|endianness|object_format|default_call_conv|relocation_model|is_pic):' "$target_report"
+      } | LC_ALL=C sort >"$destination_report"
+    }
+
+    canonicalize_structured_report "$run_a_report" "$run_a_dir/structured.canonical"
+    canonicalize_structured_report "$run_b_report" "$run_b_dir/structured.canonical"
+    extract_symbol_set "$run_a_report" "$run_a_dir/symbols.canonical"
+    extract_symbol_set "$run_b_report" "$run_b_dir/symbols.canonical"
+    extract_section_relocation_summary "$run_a_report" "$run_a_dir/sections-relocations.canonical"
+    extract_section_relocation_summary "$run_b_report" "$run_b_dir/sections-relocations.canonical"
+    extract_target_metadata "$run_a_report" "$run_a_target_report" "$run_a_dir/target.canonical"
+    extract_target_metadata "$run_b_report" "$run_b_target_report" "$run_b_dir/target.canonical"
+
+    cmp "$run_a_dir/structured.canonical" "$run_b_dir/structured.canonical"
+    cmp "$run_a_dir/symbols.canonical" "$run_b_dir/symbols.canonical"
+    cmp "$run_a_dir/sections-relocations.canonical" "$run_b_dir/sections-relocations.canonical"
+    cmp "$run_a_dir/target.canonical" "$run_b_dir/target.canonical"
+
+    structured_fingerprint_a="$(cksum <"$run_a_dir/structured.canonical")"
+    structured_fingerprint_b="$(cksum <"$run_b_dir/structured.canonical")"
+    if [ "$structured_fingerprint_a" != "$structured_fingerprint_b" ]; then
+      echo "Structured object fingerprints differ across same-host/toolchain emissions."
+      exit 1
+    fi
+
+    byte_equality_observed="false"
+    if cmp -s "$run_a_object" "$run_b_object"; then
+      byte_equality_observed="true"
+    fi
+
+    {
+      printf 'structured_object_fingerprint: cksum:%s\n' "$structured_fingerprint_a"
+      printf '%s\n' 'defined_and_undefined_symbol_sets_identical: true'
+      printf '%s\n' 'section_and_relocation_summaries_identical: true'
+      printf '%s\n' 'target_metadata_identical: true'
+      printf 'same_host_toolchain_byte_equality_observed: %s\n' "$byte_equality_observed"
+      printf '%s\n' 'byte_equality_required: false'
+    } >"$evidence_report"
+
+    rg -n -F 'Steps 21 and 22 freeze structured object reproducibility and split dynamic Phase 9G evidence across focused CI jobs.' "$readme_doc" >/dev/null
+    rg -n -F 'Byte-for-byte equality is recorded only as same-host/toolchain evidence and is not a cross-platform contract.' "$readme_doc" >/dev/null
+
+    echo "✅ Phase 9G object reproducibility passed: two independent emissions have identical structured fingerprints, symbol sets, section/relocation summaries, and target metadata; byte equality remains observational."
+
+
+guard-cranelift-phase9g-ci-surface:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 9G reproducibility and CI partition surface..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    readme_doc="compiler/experiments/cranelift/README.md"
+    pr_workflow=".github/workflows/pr-fast.yml"
+    heavy_workflow=".github/workflows/heavy-guards.yml"
+
+    for required_file in "$manifest_doc" "$readme_doc" "$pr_workflow" "$heavy_workflow"; do
+      if [ ! -f "$required_file" ]; then
+        echo "Missing Phase 9G CI surface input: $required_file"
+        exit 1
+      fi
+    done
+
+    just guard-pr-fast-ci-surface
+    just guard-cloud-heavy-ci-surface
+
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9G_CI_SURFACE_GUARD: guard-cranelift-phase9g-ci-surface' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_ci_status: phase9g_reproducibility_and_focused_dynamic_evidence_partitioned' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_ci_pr_fast_shards: cranelift-phase9g-object-artifact,cranelift-phase9g-link-positive,cranelift-phase9g-link-negative' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_ci_pr_fast_shard_count: 3' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_ci_focused_prerequisite_policy: PHASE9G_SKIP_PREREQUISITES=1_preserves_default_cumulative_local_guards_while_preventing_cross_shard_dynamic_reexecution' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_ci_migration_evidence_policy: PHASE9G_SKIP_DYNAMIC_EVIDENCE=1_keeps_migration_ownership_checks_static_in_the_link_positive_shard_while_existing_phase9e_and_phase9f_shards_own_lane_execution' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_ci_heavy_driver_matrix: default_cc,gcc,clang' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_ci_heavy_evidence_matrix: positive,negative' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_ci_heavy_job_count: 6' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_ci_matrix_policy: one_driver_and_one_evidence_case_per_job_no_sequential_driver_loop_and_no_dynamic_matrix_aggregate' "$manifest_doc" >/dev/null
+
+    for shard in cranelift-phase9g-object-artifact cranelift-phase9g-link-positive cranelift-phase9g-link-negative; do
+      rg -n "^[[:space:]]*-[[:space:]]*$shard$" "$pr_workflow" >/dev/null
+    done
+    phase9g_pr_shard_count="$(rg -c '^[[:space:]]*-[[:space:]]*cranelift-phase9g-(object-artifact|link-positive|link-negative)$' "$pr_workflow")"
+    if [ "$phase9g_pr_shard_count" != "3" ]; then
+      echo "Expected exactly three focused Phase 9G PR-fast shards, found $phase9g_pr_shard_count."
+      exit 1
+    fi
+    rg -n -F 'Phase 9G CI surface guard' "$pr_workflow" >/dev/null
+    rg -n -F 'just guard-cranelift-phase9g-ci-surface' "$pr_workflow" >/dev/null
+
+    pr_fast_dispatcher_body="$(sed -n '/^guard-pr-fast-shard shard:/,/^guard-pr-fast-ci-surface:/p' justfile)"
+    for shard_case in cranelift-phase9g-object-artifact cranelift-phase9g-link-positive cranelift-phase9g-link-negative; do
+      printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F "$shard_case)" >/dev/null
+    done
+    focused_command_count="$(printf '%s\n' "$pr_fast_dispatcher_body" | rg -c -F 'PHASE9G_SKIP_PREREQUISITES=1')"
+    if [ "$focused_command_count" != "11" ]; then
+      echo "Expected eleven explicitly partitioned Phase 9G guard commands, found $focused_command_count."
+      exit 1
+    fi
+    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'PHASE9G_SKIP_PREREQUISITES=1 just guard-cranelift-phase9g-object-reproducibility' >/dev/null
+    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'PHASE9G_SKIP_PREREQUISITES=1 just guard-cranelift-phase9g-positive-link-matrix' >/dev/null
+    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'PHASE9G_SKIP_PREREQUISITES=1 PHASE9G_SKIP_DYNAMIC_EVIDENCE=1 just guard-cranelift-phase9g-phase9c-phase9e-link-migration' >/dev/null
+    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'PHASE9G_SKIP_PREREQUISITES=1 PHASE9G_SKIP_DYNAMIC_EVIDENCE=1 just guard-cranelift-phase9g-link-bypass-retirement' >/dev/null
+    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'PHASE9G_SKIP_PREREQUISITES=1 just guard-cranelift-phase9g-negative-link-matrix' >/dev/null
+    if printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'guard-cranelift-phase9g-close' >/dev/null; then
+      echo "Focused Phase 9G PR-fast shards must not invoke the closure aggregate."
+      exit 1
+    fi
+
+    heavy_driver_body="$(sed -n '/^  phase9g-link-driver:/,/^  final:/p' "$heavy_workflow")"
+    printf '%s\n' "$heavy_driver_body" | rg -n -F 'phase9g-link-driver:' >/dev/null
+    printf '%s\n' "$heavy_driver_body" | rg -n -F 'driver:' >/dev/null
+    printf '%s\n' "$heavy_driver_body" | rg -n -F 'evidence:' >/dev/null
+    for driver in default gcc clang; do
+      printf '%s\n' "$heavy_driver_body" | rg -n "^[[:space:]]*-[[:space:]]*$driver$" >/dev/null
+    done
+    for evidence in positive negative; do
+      printf '%s\n' "$heavy_driver_body" | rg -n "^[[:space:]]*-[[:space:]]*$evidence$" >/dev/null
+    done
+    printf '%s\n' "$heavy_driver_body" | rg -n -F 'sudo apt-get install -y build-essential curl ripgrep gcc clang' >/dev/null
+    printf '%s\n' "$heavy_driver_body" | rg -n -F 'PHASE9G_SKIP_PREREQUISITES=1 just' >/dev/null
+    printf '%s\n' "$heavy_driver_body" | rg -n -F 'matrix.driver' >/dev/null
+    printf '%s\n' "$heavy_driver_body" | rg -n -F 'matrix.evidence' >/dev/null
+    printf '%s\n' "$heavy_driver_body" | rg -n -F 'guard-cranelift-phase9g-' >/dev/null
+    printf '%s\n' "$heavy_driver_body" | rg -n -F -- '-link-matrix' >/dev/null
+    if printf '%s\n' "$heavy_driver_body" | rg -n 'for[[:space:]]+.*(driver|compiler)' >/dev/null; then
+      echo "Phase 9G heavy CI must use matrix jobs rather than looping through link drivers in one job."
+      exit 1
+    fi
+    if printf '%s\n' "$heavy_driver_body" | rg -n -F 'just guard-cranelift-phase9g-positive-link-matrix' >/dev/null ||
+       printf '%s\n' "$heavy_driver_body" | rg -n -F 'just guard-cranelift-phase9g-negative-link-matrix' >/dev/null; then
+      echo "Phase 9G heavy CI must select one dynamic evidence guard through matrix.evidence rather than run both sequentially."
+      exit 1
+    fi
+    rg -n -F 'needs: [guard, phase9g-link-driver]' "$heavy_workflow" >/dev/null
+
+    rg -n -F 'The PR-fast workflow owns exactly three focused Phase 9G shards: object artifact, positive link, and negative link.' "$readme_doc" >/dev/null
+    rg -n -F 'The heavy workflow expands default `cc`, explicit GCC, and explicit Clang across separate positive and negative matrix jobs.' "$readme_doc" >/dev/null
+
+    echo "✅ Phase 9G CI surface passed: structured reproducibility has a focused PR shard, positive and negative link evidence are separated, and six heavy driver/evidence jobs run without a sequential aggregate."
 
 
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:

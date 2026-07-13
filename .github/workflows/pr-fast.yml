@@ -32,6 +32,9 @@ jobs:
       - name: PR fast CI surface guard
         run: just guard-pr-fast-ci-surface
 
+      - name: Phase 9G CI surface guard
+        run: just guard-cranelift-phase9g-ci-surface
+
       - name: Build Gust
         run: make gust
 
@@ -60,6 +63,9 @@ jobs:
           - cranelift-phase9d-ingestion-ladder
           - cranelift-phase9e-cfg-ladder
           - cranelift-phase9f-call-import-ladder
+          - cranelift-phase9g-object-artifact
+          - cranelift-phase9g-link-positive
+          - cranelift-phase9g-link-negative
           - cranelift-backend-suite-core-baseline
           - cranelift-backend-suite-core-legacy
           - cranelift-backend-suite-core-mir-basic-arithmetic

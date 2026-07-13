@@ -98,8 +98,49 @@ jobs:
         run: |
           just guard-cloud-heavy-shard "${{ matrix.shard }}"
 
+  phase9g-link-driver:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        driver:
+          - default
+          - gcc
+          - clang
+        evidence:
+          - positive
+          - negative
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Phase 9G link-driver dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential curl ripgrep gcc clang
+      - name: Install just
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --tag 1.55.1 --to "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          "$HOME/.local/bin/just" --version
+      - uses: actions/download-artifact@v4
+        with:
+          name: gust-build
+      - name: Restore Gust executable
+        run: |
+          chmod +x ./gust
+          test -d build
+      - name: Phase 9G ${{ matrix.driver }} ${{ matrix.evidence }} evidence
+        run: |
+          case "${{ matrix.driver }}" in
+            default) export CC=cc ;;
+            gcc) export CC=gcc ;;
+            clang) export CC=clang ;;
+            *) echo "unknown Phase 9G link driver: ${{ matrix.driver }}" >&2; exit 1 ;;
+          esac
+          PHASE9G_SKIP_PREREQUISITES=1 just "guard-cranelift-phase9g-${{ matrix.evidence }}-link-matrix"
+
   final:
-    needs: guard
+    needs: [guard, phase9g-link-driver]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -112,6 +153,7 @@ jobs:
           curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --tag 1.55.1 --to "$HOME/.local/bin"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           "$HOME/.local/bin/just" --version
-      - name: Heavy guard CI surface
+      - name: Heavy and Phase 9G CI surface
         run: |
           just guard-cloud-heavy-ci-surface
+          just guard-cranelift-phase9g-ci-surface
