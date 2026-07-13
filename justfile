@@ -5497,10 +5497,21 @@ guard-cranelift-phase9d-generic-ingestion-command:
     rg -n '^fn emit_compiler_mir_fixture_contents_object\(' "$source_file" >/dev/null
     rg -n '^fn recognize_compiler_mir_fixture_metadata\(' "$source_file" >/dev/null
     contents_body="$(sed -n '/^fn emit_compiler_mir_fixture_contents_object(/,/^}/p' "$source_file")"
-    printf '%s\n' "$contents_body" | rg -n -F 'let fixture = parse_compiler_mir_fixture(contents)?;' >/dev/null
-    printf '%s\n' "$contents_body" | rg -n -F 'validate_compiler_mir_fixture(&fixture)?;' >/dev/null
-    printf '%s\n' "$contents_body" | rg -n -F 'recognize_compiler_mir_fixture_metadata(&fixture.metadata)?;' >/dev/null
-    printf '%s\n' "$contents_body" | rg -n -F 'lower_compiler_mir_ingestion_function_to_object(output_path, &fixture.function)' >/dev/null
+    parse_line="$(printf '%s\n' "$contents_body" | rg -n -F 'parse_compiler_mir_fixture(contents),' | head -n1 | cut -d: -f1)"
+    validate_line="$(printf '%s\n' "$contents_body" | rg -n -F 'validate_compiler_mir_fixture(&fixture),' | head -n1 | cut -d: -f1)"
+    metadata_line="$(printf '%s\n' "$contents_body" | rg -n -F 'recognize_compiler_mir_fixture_metadata(&fixture.metadata),' | head -n1 | cut -d: -f1)"
+    lower_line="$(printf '%s\n' "$contents_body" | rg -n -F 'lower_compiler_mir_ingestion_function_to_object(' | head -n1 | cut -d: -f1)"
+    if [ -z "$parse_line" ] || [ -z "$validate_line" ] || [ -z "$metadata_line" ] || [ -z "$lower_line" ] || [ "$parse_line" -ge "$validate_line" ] || [ "$validate_line" -ge "$metadata_line" ] || [ "$metadata_line" -ge "$lower_line" ]; then
+      echo "Phase 9D generic ingestion must parse, validate, recognize metadata, and only then enter shared lowering."
+      exit 1
+    fi
+    parse_stage_count="$(printf '%s\n' "$contents_body" | rg -c -F 'CompilerMirPipelineStage::FixtureParse' || true)"
+    validation_stage_count="$(printf '%s\n' "$contents_body" | rg -c -F 'CompilerMirPipelineStage::FixtureValidation' || true)"
+    invalid_fixture_kind_count="$(printf '%s\n' "$contents_body" | rg -c -F 'CompilerMirPipelineFailureKind::InvalidFixture' || true)"
+    if [ "$parse_stage_count" != "1" ] || [ "$validation_stage_count" != "2" ] || [ "$invalid_fixture_kind_count" != "3" ]; then
+      echo "Phase 9D generic ingestion calls must retain the Phase 9G fixture parse/validation taxonomy wrappers."
+      exit 1
+    fi
 
     cat > "$fixture" <<'MIR'
     format: gust.compiler_mir_ingestion.v1
@@ -7517,7 +7528,8 @@ guard-cranelift-phase9f-call-import-schema-validator:
     rg -n -F '"gust.compiler_mir_ingestion.v1 remains call/import-free"' "$source_file" >/dev/null
     rg -n '^fn lower_compiler_mir_ingestion_module_to_object' "$source_file" >/dev/null
     rg -n '^fn compiler_mir_ingestion_import_signature' "$source_file" >/dev/null
-    rg -n -F 'let declared = module.declare_function(' "$source_file" >/dev/null
+    rg -n -F 'let declared = compiler_mir_pipeline_wrap(' "$source_file" >/dev/null
+    rg -n -F 'module.declare_function(' "$source_file" >/dev/null
     rg -n -F 'Linkage::Import,' "$source_file" >/dev/null
     rg -n -F 'module.declare_func_in_func(*candidate_id, builder.func)' "$source_file" >/dev/null
 
@@ -7750,17 +7762,18 @@ guard-cranelift-phase9f-module-emitter-local-call-cohort:
     rg -n '^fn define_compiler_mir_ingestion_module_function' "$source_file" >/dev/null
     rg -n '^fn build_compiler_mir_ingestion_body_with_calls' "$source_file" >/dev/null
     rg -n '^fn build_compiler_mir_block_param_local_call_branch_module' "$source_file" >/dev/null
-    rg -n -F 'module.declare_function(mir_function.symbol, linkage, &signature)?' "$source_file" >/dev/null
+    rg -n -F 'let function_id = compiler_mir_pipeline_wrap(' "$source_file" >/dev/null
+    rg -n -F 'module.declare_function(' "$source_file" >/dev/null
     rg -n -F 'module.declare_func_in_func(*candidate_id, builder.func)' "$source_file" >/dev/null
     rg -n -F 'CompilerMirLoweringCallTarget::LocalFunction(callee)' "$source_file" >/dev/null
     rg -n -F 'CompilerMirLoweringCallTarget::ImportedFunction(callee)' "$source_file" >/dev/null
     rg -n -F 'builder.ins().call(function_ref, &lowered_arguments)' "$source_file" >/dev/null
     rg -n '^fn compiler_mir_ingestion_import_signature' "$source_file" >/dev/null
-    rg -n -F 'let declared = module.declare_function(' "$source_file" >/dev/null
+    rg -n -F 'let declared = compiler_mir_pipeline_wrap(' "$source_file" >/dev/null
     rg -n -F 'Linkage::Import,' "$source_file" >/dev/null
 
     module_emitter_body="$(sed -n '/^fn lower_compiler_mir_ingestion_module_to_object/,/^fn define_compiler_mir_ingestion_module_function/p' "$source_file")"
-    declare_line="$(printf '%s\n' "$module_emitter_body" | rg -n -F 'module.declare_function(mir_function.symbol, linkage, &signature)?' | head -n1 | cut -d: -f1)"
+    declare_line="$(printf '%s\n' "$module_emitter_body" | rg -n -F 'let function_id = compiler_mir_pipeline_wrap(' | head -n1 | cut -d: -f1)"
     define_line="$(printf '%s\n' "$module_emitter_body" | rg -n -F 'define_compiler_mir_ingestion_module_function(' | tail -n1 | cut -d: -f1)"
     if [ -z "$declare_line" ] || [ -z "$define_line" ] || [ "$declare_line" -ge "$define_line" ]; then
       echo "Phase 9F module emission must predeclare every function before defining any function body."
