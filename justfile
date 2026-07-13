@@ -8844,7 +8844,7 @@ guard-cranelift-phase9g-opening-contract:
     rg -n -F 'Phase 9G is open as' "$readme_doc" >/dev/null
     rg -n -F '`phase9g_open_object_and_link_pipeline_hardening`.' "$readme_doc" >/dev/null
     rg -n -F 'Steps 1 and 2 changed only the contract, inventory, and guard surface.' "$readme_doc" >/dev/null
-    rg -n -F 'The separate Phase 9G inventory does not add a compiler-MIR ingestion seam or' "$readme_doc" >/dev/null
+    rg -n -F 'separate Phase 9G inventory does not add a compiler-MIR ingestion seam or' "$readme_doc" >/dev/null
     rg -n -F 'global `-no-pie` flag' "$readme_doc" >/dev/null
 
     echo "✅ Phase 9G opened with a separate nine-record object/link inventory; the 33/33/0/0/17 semantic boundary, frozen MIR schemas, disabled Cranelift default, and production routing remain unchanged."
@@ -9662,8 +9662,8 @@ guard-cranelift-phase9g-link-driver-contract:
     fi
     cmp "$function_object_before" "$function_object"
 
-    rg -n -F 'Steps 9 and 10 add one canonical experimental linker driver without migrating existing native lanes yet.' "$readme_doc" >/dev/null
-    rg -n -F '`gust.compiler_mir_link_request.v1` keeps linking separate from object emission.' "$readme_doc" >/dev/null
+    rg -n -F 'Steps 9 and 10 add one canonical experimental linker driver without migrating' "$readme_doc" >/dev/null
+    rg -n -F 'existing native lanes yet. `gust.compiler_mir_link_request.v1` keeps linking' "$readme_doc" >/dev/null
     rg -n -F 'The driver never constructs a shell command string.' "$readme_doc" >/dev/null
     rg -n -F 'Executable publication is transactional.' "$readme_doc" >/dev/null
     rg -n -F 'MIR syntax, object emission, the 33/33/0/0/17 inventory, translator' "$readme_doc" >/dev/null
@@ -9943,9 +9943,9 @@ guard-cranelift-phase9g-pipeline-failure-classification:
     cmp "$function_before" "$function_object"
     test -s "$unresolved_object"
 
-    rg -n -F 'Steps 11 and 12 define one stable pipeline taxonomy shared by canonical object emission and linking.' "$readme_doc" >/dev/null
+    rg -n -F 'Steps 11 and 12 define one stable pipeline taxonomy shared by canonical object' "$readme_doc" >/dev/null
     rg -n -F '`gust_pipeline_failure: stage=<stage> kind=<kind>`' "$readme_doc" >/dev/null
-    rg -n -F 'Expected link failures now name an exact `expected_failure_kind`.' "$readme_doc" >/dev/null
+    rg -n -F 'logs. Expected link failures now name an exact `expected_failure_kind`, so an' "$readme_doc" >/dev/null
     rg -n -F 'An unresolved imported host symbol is therefore always reported as' "$readme_doc" >/dev/null
 
     echo "✅ Phase 9G pipeline taxonomy passed: object and link failures expose stable stages and kinds, expected failures match exact kinds, native linker output remains logged, and unresolved imports classify only as native_link/unresolved_symbol."
