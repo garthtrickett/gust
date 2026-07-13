@@ -4132,7 +4132,9 @@ guard-cranelift-mir-to-cranelift-add-i32-translator-native-smoke:
     echo '  if (tiny_native_backend_mir_to_cranelift_add_i32_translator(0, 4) != 4) return 2;' >> "$shim_c"
     echo '  return 0;' >> "$shim_c"
     echo '}' >> "$shim_c"
-    just cranelift-phase9g-link-canonical-ingestion-object "$fixture" "$object_file" "$shim_c" "$binary"
+    CC_BIN="${CC:-cc}"
+    CFLAGS_VAL="${CFLAGS:--O0 -w}"
+    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
     "$binary"
     echo "✅ MIR-to-Cranelift add-i32 translator seed native smoke passed."
 
@@ -10621,13 +10623,14 @@ guard-cranelift-phase9g-negative-link-matrix:
     echo "✅ Phase 9G negative link matrix passed: malformed and incompatible objects reject before spawn, native linker failures retain stable classifications and diagnostic logs, no partial executable survives, and valid inputs remain unchanged."
 
 
-cranelift-phase9g-link-canonical-ingestion-object fixture object_file shim_c binary:
+cranelift-phase9g-link-canonical-ingestion-object fixture object_file shim_c binary legacy_import_policy="fixture":
     #!/usr/bin/env bash
     set -euo pipefail
     fixture="{{fixture}}"
     object_file="{{object_file}}"
     shim_c="{{shim_c}}"
     binary="{{binary}}"
+    legacy_import_policy="{{legacy_import_policy}}"
     cargo_manifest="compiler/experiments/cranelift/Cargo.toml"
 
     for required_file in "$fixture" "$object_file" "$shim_c" "$cargo_manifest"; do
@@ -10678,6 +10681,17 @@ cranelift-phase9g-link-canonical-ingestion-object fixture object_file shim_c bin
             sed '/^$/d' |
             sort -u
         )
+        case "$legacy_import_policy" in
+          fixture)
+            ;;
+          none)
+            expected_import_symbols=()
+            ;;
+          *)
+            echo "Unsupported canonical Phase 9G legacy import policy: $legacy_import_policy"
+            exit 1
+            ;;
+        esac
         expected_import_count="${#expected_import_symbols[@]}"
 
         "${cargo_cmd[@]}" compiler-mir-inspect-object "$object_file" >"$object_report"
@@ -12707,7 +12721,7 @@ guard-cranelift-compiler-mir-block-param-dual-materialize-return-ingestion-nativ
     echo '  if (tiny_native_backend_compiler_mir_ingested_block_param_dual_materialize_return(-9) != 540) return 3;' >> "$shim_c"
     echo '  return 0;' >> "$shim_c"
     echo '}' >> "$shim_c"
-    just cranelift-phase9g-link-canonical-ingestion-object "$fixture" "$object_file" "$shim_c" "$binary"
+    just cranelift-phase9g-link-canonical-ingestion-object "$fixture" "$object_file" "$shim_c" "$binary" "none"
     "$binary"
     echo "✅ Compiler-owned MIR block-param dual materialize return ingestion seam native smoke passed."
 
@@ -12755,7 +12769,7 @@ guard-cranelift-compiler-mir-block-param-local-first-dual-materialize-return-ing
     echo '  if (tiny_native_backend_compiler_mir_ingested_block_param_local_first_dual_materialize_return(-9) != 635) return 3;' >> "$shim_c"
     echo '  return 0;' >> "$shim_c"
     echo '}' >> "$shim_c"
-    just cranelift-phase9g-link-canonical-ingestion-object "$fixture" "$object_file" "$shim_c" "$binary"
+    just cranelift-phase9g-link-canonical-ingestion-object "$fixture" "$object_file" "$shim_c" "$binary" "none"
     "$binary"
     echo "✅ Compiler-owned MIR block-param local-first dual materialize return ingestion seam native smoke passed."
 
@@ -12793,7 +12807,7 @@ guard-cranelift-compiler-mir-block-param-triple-materialize-return-ingestion-nat
     echo '  if (tiny_native_backend_compiler_mir_ingested_block_param_triple_materialize_return(-9) != 739) return 3;' >> "$shim_c"
     echo '  return 0;' >> "$shim_c"
     echo '}' >> "$shim_c"
-    just cranelift-phase9g-link-canonical-ingestion-object "$fixture" "$object_file" "$shim_c" "$binary"
+    just cranelift-phase9g-link-canonical-ingestion-object "$fixture" "$object_file" "$shim_c" "$binary" "none"
     "$binary"
     echo "✅ Compiler-owned MIR block-param triple materialize return ingestion seam native smoke passed."
 
@@ -12832,7 +12846,7 @@ guard-cranelift-compiler-mir-block-param-quad-materialize-return-ingestion-nativ
     echo '  if (tiny_native_backend_compiler_mir_ingested_block_param_quad_materialize_return(-9) != 872) return 3;' >> "$shim_c"
     echo '  return 0;' >> "$shim_c"
     echo '}' >> "$shim_c"
-    just cranelift-phase9g-link-canonical-ingestion-object "$fixture" "$object_file" "$shim_c" "$binary"
+    just cranelift-phase9g-link-canonical-ingestion-object "$fixture" "$object_file" "$shim_c" "$binary" "none"
     "$binary"
     echo "✅ Compiler-owned MIR block-param quad materialize return ingestion seam native smoke passed."
 
@@ -12872,7 +12886,7 @@ guard-cranelift-compiler-mir-block-param-quint-materialize-return-ingestion-nati
     echo '  if (tiny_native_backend_compiler_mir_ingested_block_param_quint_materialize_return(-9) != 975) return 3;' >> "$shim_c"
     echo '  return 0;' >> "$shim_c"
     echo '}' >> "$shim_c"
-    just cranelift-phase9g-link-canonical-ingestion-object "$fixture" "$object_file" "$shim_c" "$binary"
+    just cranelift-phase9g-link-canonical-ingestion-object "$fixture" "$object_file" "$shim_c" "$binary" "none"
     "$binary"
     echo "✅ Compiler-owned MIR block-param quint materialize return ingestion seam native smoke passed."
 
