@@ -453,6 +453,27 @@ thin compatibility adapters into the canonical v2
 primary, Cranelift remains disabled by default, and
 no production runtime or backend route is enabled.
 
+Phase 9G is open as
+`phase9g_open_object_and_link_pipeline_hardening`. It inherits the closed
+Phase 9F boundary: all 33 compiler-owned ingestion seams are canonical,
+translator seeds remain frozen at seventeen, v1 and v2 syntax are unchanged,
+MIR-to-C remains primary, Cranelift remains disabled by default, and no
+production runtime or backend route is enabled.
+
+Steps 1 and 2 change only the contract, inventory, and guard surface. The
+separate Phase 9G inventory does not add a compiler-MIR ingestion seam or
+translator seed. It records the current object/link owners: canonical
+single-function and module object emitters, direct final-path object writes,
+host-native default target construction, historical direct object emitters,
+per-guard C shims, `CC_BIN`/`CFLAGS_VAL` link commands, native status handling,
+and the unresolved-symbol `nm -u` probe.
+
+The opening warning baseline includes the current PIE text-relocation
+diagnostics. Phase 9G must harden emitted objects rather than hide those
+warnings with a global `-no-pie` flag. No object publication, linker-driver,
+error-classification, or routing behavior changes in this patch.
+
+The checked-in lockfile for this crate is owned by:
 Patch 8 freezes the complete canonical call/import matrix and retires all
 eleven historical bypasses. The checked-in completeness fixture combines local
 and imported callees, zero/one/multiple arguments, every supported argument
