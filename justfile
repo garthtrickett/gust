@@ -11754,14 +11754,22 @@ guard-cranelift-phase9g-close:
       exit 1
     fi
 
-    rg -n -F 'Phase 9G closure guard' "$pr_workflow" "$heavy_workflow" >/dev/null
-    closure_wiring_count="$(
-      rg -h -F 'just guard-cranelift-phase9g-close' "$pr_workflow" "$heavy_workflow" |
-        wc -l |
-        tr -d ' '
+    for closure_workflow in "$pr_workflow" "$heavy_workflow"; do
+      rg -n -F 'name: Phase 9G closure guard' "$closure_workflow" >/dev/null
+    done
+
+    pr_closure_wiring_count="$(
+      rg -c '^[[:space:]]*run:[[:space:]]+just guard-cranelift-phase9g-close[[:space:]]*$' "$pr_workflow" ||
+        true
     )"
-    if [ "$closure_wiring_count" != "2" ]; then
-      echo "Phase 9G closure must be wired once in PR-fast and once in heavy CI; found $closure_wiring_count."
+    heavy_closure_wiring_count="$(
+      rg -c '^[[:space:]]*run:[[:space:]]+just guard-cranelift-phase9g-close[[:space:]]*$' "$heavy_workflow" ||
+        true
+    )"
+    pr_closure_wiring_count="${pr_closure_wiring_count:-0}"
+    heavy_closure_wiring_count="${heavy_closure_wiring_count:-0}"
+    if [ "$pr_closure_wiring_count" != "1" ] || [ "$heavy_closure_wiring_count" != "1" ]; then
+      echo "Phase 9G closure must be wired once in PR-fast and once in heavy CI; found PR-fast=$pr_closure_wiring_count heavy=$heavy_closure_wiring_count."
       exit 1
     fi
 
