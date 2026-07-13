@@ -650,14 +650,18 @@ statuses, metadata-recognition evidence, and MIR-to-C differential
 expectations. The supporting generic CFG, typed block-parameter, backedge,
 materialization, and completeness cases use the same migration helper.
 
-One shared Just adapter verifies each existing object against the symbol
-contract derived from its canonical fixture, writes a
-`gust.compiler_mir_link_request.v1` success request, and delegates linking to
-`compiler-mir-link-request`. The adapter validates the typed successful report,
-nonempty publication, deterministic logs, absence of the owned temporary
-executable, and byte preservation of the input object. Individual lane and
-cohort guards no longer invoke the selected C compiler as a linker, execute a
-link request directly, remove link temporaries, or classify pipeline stages.
+One shared Just adapter uses full Rust fixture-derived contract verification
+for generic `gust.compiler_mir_ingestion.v1` and v2 modules. Frozen Phase
+9C-through-9E fixture formats retain their existing dedicated parser and
+metadata checks; the adapter reads their already-validated `backend_symbol`
+record and verifies that export through the structured Rust object inspector.
+It then writes a `gust.compiler_mir_link_request.v1` success request and
+delegates linking to `compiler-mir-link-request`. The adapter validates the
+typed successful report, nonempty publication, deterministic logs, absence of
+the owned temporary executable, and byte preservation of the input object.
+Individual lane and cohort guards no longer invoke the selected C compiler as
+a linker, execute a link request directly, remove link temporaries, or
+classify pipeline stages.
 
 The Phase 9E support fixtures are migrated in bounded cohorts: simple CFG,
 typed block parameters, merge and countdown-backedge transport,

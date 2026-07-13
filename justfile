@@ -10686,7 +10686,31 @@ cranelift-phase9g-link-canonical-ingestion-object fixture object_file shim_c bin
     link_report="${binary}.phase9g-link-report.log"
     object_checksum_before="$(cksum "$object_file")"
 
-    "${cargo_cmd[@]}" compiler-mir-verify-object-contract "$fixture" "$object_file" >"$object_report"
+    fixture_format="$(sed -n -E 's/^format:[[:space:]]*//p' "$fixture" | head -n1)"
+    case "$fixture_format" in
+      gust.compiler_mir_ingestion.v1|gust.compiler_mir_ingestion.v2)
+        "${cargo_cmd[@]}" compiler-mir-verify-object-contract "$fixture" "$object_file" >"$object_report"
+        ;;
+      gust.compiler_mir_ingestion.*.v1)
+        mapfile -t expected_symbols < <(sed -n -E 's/^backend_symbol:[[:space:]]*//p' "$fixture")
+        if [ "${#expected_symbols[@]}" != "1" ] || [ -z "${expected_symbols[0]}" ]; then
+          echo "Legacy canonical migration fixture must contain exactly one nonempty backend_symbol: $fixture"
+          exit 1
+        fi
+        expected_symbol="${expected_symbols[0]}"
+        "${cargo_cmd[@]}" compiler-mir-inspect-object "$object_file" >"$object_report"
+        rg -n -F 'defined_global_symbol_count: 1' "$object_report" >/dev/null
+        rg -n -F 'undefined_symbol_count: 0' "$object_report" >/dev/null
+        rg -n -F "defined_global_symbol: $expected_symbol" "$object_report" >/dev/null
+        ;;
+      *)
+        echo "Unsupported canonical Phase 9G migration fixture format: $fixture_format"
+        exit 1
+        ;;
+    esac
+    rg -n -F 'object_kind: Relocatable' "$object_report" >/dev/null
+    rg -n -F 'has_code_section: true' "$object_report" >/dev/null
+    rg -n -F 'duplicate_symbol_count: 0' "$object_report" >/dev/null
 
     {
       printf '%s\n' 'format: gust.compiler_mir_link_request.v1'
@@ -10737,7 +10761,7 @@ guard-cranelift-phase9g-phase9c-phase9e-link-migration:
     rg -n -F 'allowed_cranelift_phase9g_phase9c_phase9e_link_migration_prerequisite: guard-cranelift-phase9g-negative-link-matrix' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase9g_phase9c_phase9e_link_migration_scope: 22_canonical_phase9c_through_phase9e_ingestion_lanes_plus_bounded_generic_CFG_and_completeness_support_cases' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase9g_phase9c_phase9e_link_migration_helper: cranelift-phase9g-link-canonical-ingestion-object' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_phase9c_phase9e_link_migration_object_policy: fixture_derived_structured_object_contract_verification_precedes_every_migrated_link' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_phase9c_phase9e_link_migration_object_policy: canonical_v1_v2_fixture_contract_verification_or_legacy_backend_symbol_structured_inspection_precedes_every_migrated_link' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase9g_phase9c_phase9e_link_migration_driver_policy: every_migrated_link_is_a_gust.compiler_mir_link_request.v1_success_request_and_only_the_shared_Rust_driver_classifies_or_publishes' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase9g_phase9c_phase9e_link_migration_adapter_policy: lane_and_cohort_guards_own_fixture_object_shim_and_native_status_evidence_but_no_link_command_temp_cleanup_or_stage_classification' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase9g_phase9c_phase9e_link_migration_preservation_policy: existing_fixtures_object_paths_native_statuses_MIR_to_C_differential_expectations_and_metadata_recognition_are_unchanged' "$manifest_doc" >/dev/null
@@ -10749,7 +10773,16 @@ guard-cranelift-phase9g-phase9c-phase9e-link-migration:
     rg -n -F 'allowed_cranelift_phase9g_phase9c_phase9e_link_migration_next_milestone: migrate_phase9f_and_retire_direct_link_bypasses' "$manifest_doc" >/dev/null
 
     helper_body="$(sed -n '/^cranelift-phase9g-link-canonical-ingestion-object /,/^guard-cranelift-phase9g-phase9c-phase9e-link-migration:/p' justfile)"
+    printf '%s\n' "$helper_body" | rg -n -F 'gust.compiler_mir_ingestion.v1|gust.compiler_mir_ingestion.v2)' >/dev/null
     printf '%s\n' "$helper_body" | rg -n -F 'compiler-mir-verify-object-contract "$fixture" "$object_file"' >/dev/null
+    printf '%s\n' "$helper_body" | rg -n -F 'gust.compiler_mir_ingestion.*.v1)' >/dev/null
+    printf '%s\n' "$helper_body" | rg -n -F "sed -n -E 's/^backend_symbol:[[:space:]]*//p' \"\$fixture\"" >/dev/null
+    printf '%s\n' "$helper_body" | rg -n -F 'compiler-mir-inspect-object "$object_file"' >/dev/null
+    printf '%s\n' "$helper_body" | rg -n -F 'defined_global_symbol: $expected_symbol' >/dev/null
+    printf '%s\n' "$helper_body" | rg -n -F 'undefined_symbol_count: 0' >/dev/null
+    printf '%s\n' "$helper_body" | rg -n -F 'object_kind: Relocatable' >/dev/null
+    printf '%s\n' "$helper_body" | rg -n -F 'has_code_section: true' >/dev/null
+    printf '%s\n' "$helper_body" | rg -n -F 'duplicate_symbol_count: 0' >/dev/null
     printf '%s\n' "$helper_body" | rg -n -F 'format: gust.compiler_mir_link_request.v1' >/dev/null
     printf '%s\n' "$helper_body" | rg -n -F 'compiler-mir-link-request "$request_path"' >/dev/null
     printf '%s\n' "$helper_body" | rg -n -F 'classification: linked' >/dev/null
