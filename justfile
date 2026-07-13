@@ -1678,6 +1678,8 @@ guard-mir-to-c-boring-surface:
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-pipeline-failure-classification' || true)"
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-positive-link-matrix' || true)"
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-negative-link-matrix' || true)"
+    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'cranelift-phase9g-link-canonical-ingestion-object' || true)"
+    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-phase9c-phase9e-link-migration' || true)"
     if [ -n "$cranelift_recipe_wiring" ]; then
       echo "MIR-to-C boring gate allows only manifest, inert backend, dependency beachhead, explicit backend suite, return-int/local-binding/branch native smokes, and differential Cranelift guards before backend implementation expands."
       echo "$cranelift_recipe_wiring"
@@ -3739,9 +3741,7 @@ guard-cranelift-compiler-mir-return-int-ingestion-native-smoke:
     echo '#include <stdint.h>' > "$shim_c"
     echo 'extern int32_t tiny_native_backend_compiler_mir_ingested_return_int(void);' >> "$shim_c"
     echo 'int main(void) { return tiny_native_backend_compiler_mir_ingested_return_int(); }' >> "$shim_c"
-    CC_BIN="${CC:-cc}"
-    CFLAGS_VAL="${CFLAGS:--O0 -w}"
-    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    just cranelift-phase9g-link-canonical-ingestion-object "$fixture" "$object_file" "$shim_c" "$binary"
     set +e
     "$binary"
     status="$?"
@@ -5565,9 +5565,7 @@ guard-cranelift-phase9d-generic-ingestion-command:
     printf '%s\n' '#include <stdint.h>' > "$shim_c"
     printf '%s\n' 'extern int32_t tiny_phase9d_generic_shared_cfg(int32_t);' >> "$shim_c"
     printf '%s\n' 'int main(void) { return tiny_phase9d_generic_shared_cfg(5); }' >> "$shim_c"
-    CC_BIN="${CC:-cc}"
-    CFLAGS_VAL="${CFLAGS:--O0 -w}"
-    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    just cranelift-phase9g-link-canonical-ingestion-object "$fixture" "$object_file" "$shim_c" "$binary"
     set +e
     "$binary"
     status="$?"
@@ -5633,7 +5631,7 @@ guard-cranelift-phase9d-generic-ingestion-command:
     test -s "$void_object"
     printf '%s\n' 'extern void tiny_phase9d_native_boundary_void(void);' > "$void_shim"
     printf '%s\n' 'int main(void) { tiny_phase9d_native_boundary_void(); return 0; }' >> "$void_shim"
-    "$CC_BIN" $CFLAGS_VAL "$void_shim" "$void_object" -o "$void_binary"
+    just cranelift-phase9g-link-canonical-ingestion-object "$void_fixture" "$void_object" "$void_shim" "$void_binary"
     "$void_binary"
 
     echo "✅ Phase 9D generic ingestion supports validated metadata and canonical int/void object emission while rejecting invalid MIR before output creation."
@@ -6394,25 +6392,22 @@ guard-cranelift-phase9e-shared-block-parameter-lowering-core:
     test -s "$local_object"
     test -s "$countdown_object"
 
-    CC_BIN="${CC:-cc}"
-    CFLAGS_VAL="${CFLAGS:--O0 -w}"
-
     printf '%s\n' '#include <stdint.h>' > "$transport_shim"
     printf '%s\n' 'extern int32_t tiny_phase9e_typed_transport(int32_t);' >> "$transport_shim"
     printf '%s\n' 'int main(void) { if (tiny_phase9e_typed_transport(5) != 7) return 1; if (tiny_phase9e_typed_transport(-5) != 41) return 2; return 0; }' >> "$transport_shim"
-    "$CC_BIN" $CFLAGS_VAL "$transport_shim" "$transport_object" -o "$transport_binary"
+    just cranelift-phase9g-link-canonical-ingestion-object "$transport_fixture" "$transport_object" "$transport_shim" "$transport_binary"
     "$transport_binary"
 
     printf '%s\n' '#include <stdint.h>' > "$local_shim"
     printf '%s\n' 'extern int32_t tiny_phase9e_local_edge_transport(int32_t);' >> "$local_shim"
     printf '%s\n' 'int main(void) { return tiny_phase9e_local_edge_transport(6) == 6 ? 0 : 1; }' >> "$local_shim"
-    "$CC_BIN" $CFLAGS_VAL "$local_shim" "$local_object" -o "$local_binary"
+    just cranelift-phase9g-link-canonical-ingestion-object "$local_fixture" "$local_object" "$local_shim" "$local_binary"
     "$local_binary"
 
     printf '%s\n' '#include <stdint.h>' > "$countdown_shim"
     printf '%s\n' 'extern int32_t tiny_phase9e_countdown_backedge(int32_t);' >> "$countdown_shim"
     printf '%s\n' 'int main(void) { if (tiny_phase9e_countdown_backedge(3) != 0) return 1; if (tiny_phase9e_countdown_backedge(0) != 0) return 2; return 0; }' >> "$countdown_shim"
-    "$CC_BIN" $CFLAGS_VAL "$countdown_shim" "$countdown_object" -o "$countdown_binary"
+    just cranelift-phase9g-link-canonical-ingestion-object "$countdown_fixture" "$countdown_object" "$countdown_shim" "$countdown_binary"
     "$countdown_binary"
 
     cat > "$materialization_fixture" <<'MIR'
@@ -6454,7 +6449,7 @@ guard-cranelift-phase9e-shared-block-parameter-lowering-core:
     printf '%s\n' '#include <stdint.h>' > "$materialization_shim"
     printf '%s\n' 'extern int32_t tiny_phase9e_materialization_enabled(int32_t);' >> "$materialization_shim"
     printf '%s\n' 'int main(void) { return tiny_phase9e_materialization_enabled(5) == 5 ? 0 : 1; }' >> "$materialization_shim"
-    "$CC_BIN" $CFLAGS_VAL "$materialization_shim" "$materialization_object" -o "$materialization_binary"
+    just cranelift-phase9g-link-canonical-ingestion-object "$materialization_fixture" "$materialization_object" "$materialization_shim" "$materialization_binary"
     "$materialization_binary"
 
     echo "✅ Shared typed block-parameter lowering passes ordered forward edges, independent branch arms, block-parameter-to-local materialization, local transport, returns, and a native countdown backedge."
@@ -7001,9 +6996,7 @@ guard-cranelift-phase9e-cfg-completeness-rejection-phase9f-freeze:
     printf '%s\n' '#include <stdint.h>' > "$matrix_shim"
     printf '%s\n' 'extern int32_t tiny_phase9e_cfg_completeness_matrix(int32_t, int32_t);' >> "$matrix_shim"
     printf '%s\n' 'int main(void) { if (tiny_phase9e_cfg_completeness_matrix(5, 2) != 6) return 1; if (tiny_phase9e_cfg_completeness_matrix(-3, 2) != -3) return 2; return 0; }' >> "$matrix_shim"
-    CC_BIN="${CC:-cc}"
-    CFLAGS_VAL="${CFLAGS:--O0 -w}"
-    "$CC_BIN" $CFLAGS_VAL "$matrix_shim" "$matrix_object" -o "$matrix_binary"
+    just cranelift-phase9g-link-canonical-ingestion-object "$matrix_fixture" "$matrix_object" "$matrix_shim" "$matrix_binary"
     "$matrix_binary"
 
     expect_rejected_before_object() {
@@ -10653,6 +10646,237 @@ guard-cranelift-phase9g-negative-link-matrix:
     echo "✅ Phase 9G negative link matrix passed: malformed and incompatible objects reject before spawn, native linker failures retain stable classifications and diagnostic logs, no partial executable survives, and valid inputs remain unchanged."
 
 
+cranelift-phase9g-link-canonical-ingestion-object fixture object_file shim_c binary:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    fixture="{{fixture}}"
+    object_file="{{object_file}}"
+    shim_c="{{shim_c}}"
+    binary="{{binary}}"
+    cargo_manifest="compiler/experiments/cranelift/Cargo.toml"
+
+    for required_file in "$fixture" "$object_file" "$shim_c" "$cargo_manifest"; do
+      if [ ! -f "$required_file" ]; then
+        echo "Missing canonical Phase 9G migration input: $required_file"
+        exit 1
+      fi
+    done
+    if [ ! -d "$(dirname "$binary")" ]; then
+      echo "Canonical Phase 9G migration output parent must already exist: $(dirname "$binary")"
+      exit 1
+    fi
+
+    absolute_path() {
+      case "$1" in
+        /*) printf '%s\n' "$1" ;;
+        *) printf '%s/%s\n' "$PWD" "$1" ;;
+      esac
+    }
+
+    cargo_cmd=(cargo run --quiet --manifest-path "$cargo_manifest" --locked --)
+    CC_BIN="${CC:-cc}"
+    CFLAGS_VAL="${CFLAGS:--O0 -w}"
+    cflag_args=()
+    if [ -n "$CFLAGS_VAL" ]; then
+      read -r -a cflag_args <<< "$CFLAGS_VAL"
+    fi
+
+    request_path="${binary}.phase9g-link.request"
+    object_report="${binary}.phase9g-object-contract.log"
+    link_report="${binary}.phase9g-link-report.log"
+    object_checksum_before="$(cksum "$object_file")"
+
+    "${cargo_cmd[@]}" compiler-mir-verify-object-contract "$fixture" "$object_file" >"$object_report"
+
+    {
+      printf '%s\n' 'format: gust.compiler_mir_link_request.v1'
+      printf 'output: %s\n' "$(absolute_path "$binary")"
+      printf 'object: %s\n' "$(absolute_path "$object_file")"
+      printf 'c_source: %s\n' "$(absolute_path "$shim_c")"
+      for link_arg in "${cflag_args[@]}"; do
+        printf 'link_arg: %s\n' "$link_arg"
+      done
+      printf 'driver: %s\n' "$CC_BIN"
+      printf '%s\n' 'expected_result: success'
+    } >"$request_path"
+
+    "${cargo_cmd[@]}" compiler-mir-link-request "$request_path" >"$link_report"
+    rg -n -F 'classification: linked' "$link_report" >/dev/null
+    rg -n -F 'pipeline_stage: none' "$link_report" >/dev/null
+    rg -n -F 'failure_kind: none' "$link_report" >/dev/null
+    rg -n -F 'expected_result: success' "$link_report" >/dev/null
+    rg -n -F 'expected_failure_kind: none' "$link_report" >/dev/null
+    rg -n -F 'matched_expectation: true' "$link_report" >/dev/null
+    rg -n -F 'published: true' "$link_report" >/dev/null
+    test -s "$binary"
+
+    temp_path="$(dirname "$binary")/.$(basename "$binary").phase9g-link.tmp"
+    stdout_log="$(dirname "$binary")/.$(basename "$binary").phase9g-link.stdout.log"
+    stderr_log="$(dirname "$binary")/.$(basename "$binary").phase9g-link.stderr.log"
+    test ! -e "$temp_path"
+    test -e "$stdout_log"
+    test -e "$stderr_log"
+
+    object_checksum_after="$(cksum "$object_file")"
+    if [ "$object_checksum_after" != "$object_checksum_before" ]; then
+      echo "Canonical Phase 9G link migration modified input object bytes: $object_file"
+      exit 1
+    fi
+
+guard-cranelift-phase9g-phase9c-phase9e-link-migration:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 9G Phase 9C-through-9E canonical link migration..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    readme_doc="compiler/experiments/cranelift/README.md"
+
+    just guard-cranelift-phase9g-negative-link-matrix
+
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9G_PHASE9C_PHASE9E_LINK_MIGRATION_GUARD: guard-cranelift-phase9g-phase9c-phase9e-link-migration' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_phase9c_phase9e_link_migration_status: phase9g_phase9c_through_phase9e_canonical_native_guards_migrated' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_phase9c_phase9e_link_migration_prerequisite: guard-cranelift-phase9g-negative-link-matrix' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_phase9c_phase9e_link_migration_scope: 22_canonical_phase9c_through_phase9e_ingestion_lanes_plus_bounded_generic_CFG_and_completeness_support_cases' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_phase9c_phase9e_link_migration_helper: cranelift-phase9g-link-canonical-ingestion-object' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_phase9c_phase9e_link_migration_object_policy: fixture_derived_structured_object_contract_verification_precedes_every_migrated_link' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_phase9c_phase9e_link_migration_driver_policy: every_migrated_link_is_a_gust.compiler_mir_link_request.v1_success_request_and_only_the_shared_Rust_driver_classifies_or_publishes' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_phase9c_phase9e_link_migration_adapter_policy: lane_and_cohort_guards_own_fixture_object_shim_and_native_status_evidence_but_no_link_command_temp_cleanup_or_stage_classification' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_phase9c_phase9e_link_migration_preservation_policy: existing_fixtures_object_paths_native_statuses_MIR_to_C_differential_expectations_and_metadata_recognition_are_unchanged' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_phase9c_phase9e_link_migration_cohorts: import_free_phase9c_phase9d_simple_CFG_block_parameters_merge_backedge_materialization_and_completeness' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_phase9c_phase9e_link_migration_mir_to_c_policy: MIR_to_C_guards_may_continue_compiling_generated_C_directly_and_are_outside_the_experimental_object_link_bypass_restriction' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_phase9c_phase9e_link_migration_artifact_policy: successful_driver_report_nonempty_final_no_owned_temp_deterministic_logs_and_byte_identical_input_object' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_phase9c_phase9e_link_migration_inherited_inventory: 33_total_33_canonical_shared_0_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_phase9c_phase9e_link_migration_route_policy: mir_to_c_primary_cranelift_disabled_no_production_runtime_or_backend_route' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_phase9c_phase9e_link_migration_next_milestone: migrate_phase9f_and_retire_direct_link_bypasses' "$manifest_doc" >/dev/null
+
+    helper_body="$(sed -n '/^cranelift-phase9g-link-canonical-ingestion-object /,/^guard-cranelift-phase9g-phase9c-phase9e-link-migration:/p' justfile)"
+    printf '%s\n' "$helper_body" | rg -n -F 'compiler-mir-verify-object-contract "$fixture" "$object_file"' >/dev/null
+    printf '%s\n' "$helper_body" | rg -n -F 'format: gust.compiler_mir_link_request.v1' >/dev/null
+    printf '%s\n' "$helper_body" | rg -n -F 'compiler-mir-link-request "$request_path"' >/dev/null
+    printf '%s\n' "$helper_body" | rg -n -F 'classification: linked' >/dev/null
+    printf '%s\n' "$helper_body" | rg -n -F 'pipeline_stage: none' >/dev/null
+    printf '%s\n' "$helper_body" | rg -n -F 'failure_kind: none' >/dev/null
+    printf '%s\n' "$helper_body" | rg -n -F 'published: true' >/dev/null
+    printf '%s\n' "$helper_body" | rg -n -F 'object_checksum_before="$(cksum "$object_file")"' >/dev/null
+    printf '%s\n' "$helper_body" | rg -n -F 'object_checksum_after="$(cksum "$object_file")"' >/dev/null
+    if printf '%s\n' "$helper_body" | rg -n -F '"$CC_BIN" ' >/dev/null; then
+      echo "The shared migration helper must pass a structured request to the Rust driver rather than invoke the selected linker directly."
+      exit 1
+    fi
+
+    extract_recipe_body() {
+      local recipe_name="$1"
+      awk -v header="${recipe_name}:" '
+        $0 == header {
+          active = 1
+        }
+        active && $0 != header && $0 ~ /^[^[:space:]].*:$/ {
+          exit
+        }
+        active {
+          print
+        }
+      ' justfile
+    }
+
+    phase9c_phase9e_lines="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|migration=' "$manifest_doc" | rg -v '\|migration=phase9f_')"
+    phase9c_phase9e_count="$(printf '%s\n' "$phase9c_phase9e_lines" | sed '/^$/d' | wc -l | tr -d ' ')"
+    if [ "$phase9c_phase9e_count" != "22" ]; then
+      echo "Expected exactly 22 canonical Phase 9C-through-9E migration lanes, found $phase9c_phase9e_count."
+      printf '%s\n' "$phase9c_phase9e_lines"
+      exit 1
+    fi
+
+    phase9c_phase9e_guards="$(printf '%s\n' "$phase9c_phase9e_lines" | sed -E 's/.*\|native_guard=([^|]+)\|.*/\1/' | sort -u)"
+    phase9c_phase9e_guard_count="$(printf '%s\n' "$phase9c_phase9e_guards" | sed '/^$/d' | wc -l | tr -d ' ')"
+    if [ "$phase9c_phase9e_guard_count" != "22" ]; then
+      echo "Expected 22 distinct Phase 9C-through-9E native guard adapters, found $phase9c_phase9e_guard_count."
+      printf '%s\n' "$phase9c_phase9e_guards"
+      exit 1
+    fi
+
+    while IFS= read -r native_guard; do
+      if [ -z "$native_guard" ]; then
+        continue
+      fi
+      recipe_body="$(extract_recipe_body "$native_guard")"
+      helper_call_count="$( (printf '%s\n' "$recipe_body" | rg -c -F 'just cranelift-phase9g-link-canonical-ingestion-object ' || true) )"
+      helper_call_count="${helper_call_count:-0}"
+      if [ "$helper_call_count" != "1" ]; then
+        echo "Migrated native guard $native_guard must delegate exactly one link to the shared Phase 9G helper; found $helper_call_count."
+        exit 1
+      fi
+      if printf '%s\n' "$recipe_body" | rg -n -F '"$CC_BIN"' >/dev/null; then
+        echo "Migrated native guard $native_guard still owns a direct linker command."
+        exit 1
+      fi
+      if printf '%s\n' "$recipe_body" | rg -n -F 'compiler-mir-link-request' >/dev/null; then
+        echo "Migrated native guard $native_guard must not own request execution or result classification."
+        exit 1
+      fi
+      if printf '%s\n' "$recipe_body" | rg -n -F '.phase9g-link.tmp' >/dev/null; then
+        echo "Migrated native guard $native_guard must not own link temporary cleanup."
+        exit 1
+      fi
+      if printf '%s\n' "$recipe_body" | rg -n 'pipeline_stage:|failure_kind:' >/dev/null; then
+        echo "Migrated native guard $native_guard must not infer or classify pipeline stages."
+        exit 1
+      fi
+    done <<< "$phase9c_phase9e_guards"
+
+    check_cohort_adapter() {
+      local recipe_name="$1"
+      local expected_links="$2"
+      local recipe_body
+      local helper_call_count
+      recipe_body="$(extract_recipe_body "$recipe_name")"
+      helper_call_count="$( (printf '%s\n' "$recipe_body" | rg -c -F 'just cranelift-phase9g-link-canonical-ingestion-object ' || true) )"
+      helper_call_count="${helper_call_count:-0}"
+      if [ "$helper_call_count" != "$expected_links" ]; then
+        echo "Cohort adapter $recipe_name must delegate $expected_links link(s) to the shared helper; found $helper_call_count."
+        exit 1
+      fi
+      if printf '%s\n' "$recipe_body" | rg -n -F '"$CC_BIN"' >/dev/null; then
+        echo "Cohort adapter $recipe_name still owns a direct linker command."
+        exit 1
+      fi
+      if printf '%s\n' "$recipe_body" | rg -n -F 'compiler-mir-link-request' >/dev/null; then
+        echo "Cohort adapter $recipe_name must not own request execution."
+        exit 1
+      fi
+      if printf '%s\n' "$recipe_body" | rg -n -F '.phase9g-link.tmp' >/dev/null; then
+        echo "Cohort adapter $recipe_name must not own link temporary cleanup."
+        exit 1
+      fi
+    }
+
+    check_cohort_adapter guard-cranelift-phase9d-generic-ingestion-command 2
+    check_cohort_adapter guard-cranelift-phase9e-shared-block-parameter-lowering-core 4
+    check_cohort_adapter guard-cranelift-phase9e-cfg-completeness-rejection-phase9f-freeze 1
+
+    mir_to_c_body="$(extract_recipe_body guard-mir-to-c-return-int-literal-native-smoke)"
+    printf '%s\n' "$mir_to_c_body" | rg -n -F '"$CC_BIN" $CFLAGS_VAL "$generated_c" -o "$binary"' >/dev/null
+    if printf '%s\n' "$mir_to_c_body" | rg -n -F 'cranelift-phase9g-link-canonical-ingestion-object' >/dev/null; then
+      echo "MIR-to-C native guards remain outside the experimental Cranelift object-link migration."
+      exit 1
+    fi
+
+    just guard-cranelift-phase9c-differential-ladder-native-smoke
+    just guard-cranelift-compiler-mir-block-local-branch-join-ingestion-native-smoke
+    just guard-cranelift-phase9d-generic-ingestion-command
+    just guard-cranelift-phase9d-first-post9c-cohort-bypass-freeze
+    just guard-cranelift-phase9e-local-cfg-cohort
+    just guard-cranelift-phase9e-shared-block-parameter-lowering-core
+    just guard-cranelift-phase9e-single-parameter-cfg-cohort
+    just guard-cranelift-phase9e-variable-arity-block-parameter-cohort
+    just guard-cranelift-phase9e-block-parameter-to-local-materialization-cohort
+    just guard-cranelift-phase9e-cfg-completeness-rejection-phase9f-freeze
+
+    rg -n -F 'Steps 17 and 18 migrate the canonical Phase 9C through Phase 9E native guards.' "$readme_doc" >/dev/null
+    rg -n -F 'MIR-to-C oracle guards continue compiling generated C directly.' "$readme_doc" >/dev/null
+
+    echo "✅ Phase 9G Phase 9C-through-9E migration passed: 22 canonical lanes and the bounded CFG support fixtures delegate linking, publication, and classification to the shared driver while preserving native and differential behavior."
+
+
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -10695,9 +10919,7 @@ guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
     echo '#include <stdint.h>' > "$shim_c"
     echo 'extern int32_t tiny_native_backend_compiler_mir_ingested_local_binding_read(void);' >> "$shim_c"
     echo 'int main(void) { return tiny_native_backend_compiler_mir_ingested_local_binding_read(); }' >> "$shim_c"
-    CC_BIN="${CC:-cc}"
-    CFLAGS_VAL="${CFLAGS:--O0 -w}"
-    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    just cranelift-phase9g-link-canonical-ingestion-object "$fixture" "$object_file" "$shim_c" "$binary"
     set +e
     "$binary"
     status="$?"
@@ -10754,9 +10976,7 @@ guard-cranelift-compiler-mir-conditional-branch-ingestion-native-smoke:
     echo '#include <stdint.h>' > "$shim_c"
     echo 'extern int32_t tiny_native_backend_compiler_mir_ingested_conditional_branch(void);' >> "$shim_c"
     echo 'int main(void) { return tiny_native_backend_compiler_mir_ingested_conditional_branch(); }' >> "$shim_c"
-    CC_BIN="${CC:-cc}"
-    CFLAGS_VAL="${CFLAGS:--O0 -w}"
-    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    just cranelift-phase9g-link-canonical-ingestion-object "$fixture" "$object_file" "$shim_c" "$binary"
     set +e
     "$binary"
     status="$?"
@@ -10809,9 +11029,7 @@ guard-cranelift-compiler-mir-add-i32-ingestion-native-smoke:
     echo '  if (tiny_native_backend_compiler_mir_ingested_add_i32(0, 4) != 4) return 2;' >> "$shim_c"
     echo '  return 0;' >> "$shim_c"
     echo '}' >> "$shim_c"
-    CC_BIN="${CC:-cc}"
-    CFLAGS_VAL="${CFLAGS:--O0 -w}"
-    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    just cranelift-phase9g-link-canonical-ingestion-object "$fixture" "$object_file" "$shim_c" "$binary"
     "$binary"
     echo "✅ Compiler-owned MIR add-i32 ingestion seam native smoke passed."
 
@@ -10854,9 +11072,7 @@ guard-cranelift-compiler-mir-provenance-metadata-ingestion-native-smoke:
     echo '#include <stdint.h>' > "$shim_c"
     echo 'extern int32_t tiny_native_backend_compiler_mir_ingested_provenance_metadata(void);' >> "$shim_c"
     echo 'int main(void) { return tiny_native_backend_compiler_mir_ingested_provenance_metadata(); }' >> "$shim_c"
-    CC_BIN="${CC:-cc}"
-    CFLAGS_VAL="${CFLAGS:--O0 -w}"
-    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    just cranelift-phase9g-link-canonical-ingestion-object "$fixture" "$object_file" "$shim_c" "$binary"
     set +e
     "$binary"
     status="$?"
@@ -10906,9 +11122,7 @@ guard-cranelift-compiler-mir-resource-metadata-ingestion-native-smoke:
     echo '#include <stdint.h>' > "$shim_c"
     echo 'extern int32_t tiny_native_backend_compiler_mir_ingested_resource_metadata(void);' >> "$shim_c"
     echo 'int main(void) { return tiny_native_backend_compiler_mir_ingested_resource_metadata(); }' >> "$shim_c"
-    CC_BIN="${CC:-cc}"
-    CFLAGS_VAL="${CFLAGS:--O0 -w}"
-    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    just cranelift-phase9g-link-canonical-ingestion-object "$fixture" "$object_file" "$shim_c" "$binary"
     set +e
     "$binary"
     status="$?"
@@ -10958,9 +11172,7 @@ guard-cranelift-compiler-mir-native-boundary-metadata-ingestion-native-smoke:
     test -s "$object_file"
     echo 'void tiny_native_backend_compiler_mir_ingested_native_boundary_metadata(void);' > "$shim_c"
     echo 'int main(void) { tiny_native_backend_compiler_mir_ingested_native_boundary_metadata(); return 0; }' >> "$shim_c"
-    CC_BIN="${CC:-cc}"
-    CFLAGS_VAL="${CFLAGS:--O0 -w}"
-    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    just cranelift-phase9g-link-canonical-ingestion-object "$fixture" "$object_file" "$shim_c" "$binary"
     "$binary"
     echo "✅ Compiler-owned MIR native-boundary metadata ingestion seam native smoke passed."
 
@@ -11014,9 +11226,7 @@ guard-cranelift-compiler-mir-positive-i32-branch-ingestion-native-smoke:
     echo '  if (tiny_native_backend_compiler_mir_ingested_positive_i32_branch(-4) != 9) return 3;' >> "$shim_c"
     echo '  return 0;' >> "$shim_c"
     echo '}' >> "$shim_c"
-    CC_BIN="${CC:-cc}"
-    CFLAGS_VAL="${CFLAGS:--O0 -w}"
-    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    just cranelift-phase9g-link-canonical-ingestion-object "$fixture" "$object_file" "$shim_c" "$binary"
     "$binary"
     echo "✅ Compiler-owned MIR positive-i32 branch ingestion seam native smoke passed."
 
@@ -11060,9 +11270,7 @@ guard-cranelift-compiler-mir-block-jump-ingestion-native-smoke:
     echo '#include <stdint.h>' > "$shim_c"
     echo 'extern int32_t tiny_native_backend_compiler_mir_ingested_block_jump(void);' >> "$shim_c"
     echo 'int main(void) { return tiny_native_backend_compiler_mir_ingested_block_jump(); }' >> "$shim_c"
-    CC_BIN="${CC:-cc}"
-    CFLAGS_VAL="${CFLAGS:--O0 -w}"
-    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    just cranelift-phase9g-link-canonical-ingestion-object "$fixture" "$object_file" "$shim_c" "$binary"
     set +e
     "$binary"
     status="$?"
@@ -11130,9 +11338,7 @@ guard-cranelift-compiler-mir-block-local-branch-ingestion-native-smoke:
     echo '  if (tiny_native_backend_compiler_mir_ingested_block_local_branch(-2) != 47) return 3;' >> "$shim_c"
     echo '  return 0;' >> "$shim_c"
     echo '}' >> "$shim_c"
-    CC_BIN="${CC:-cc}"
-    CFLAGS_VAL="${CFLAGS:--O0 -w}"
-    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    just cranelift-phase9g-link-canonical-ingestion-object "$fixture" "$object_file" "$shim_c" "$binary"
     "$binary"
     echo "✅ Compiler-owned MIR block-local branch ingestion seam native smoke passed."
 
@@ -11195,9 +11401,7 @@ guard-cranelift-compiler-mir-block-local-update-branch-ingestion-native-smoke:
     echo '  if (tiny_native_backend_compiler_mir_ingested_block_local_update_branch(-3) != 59) return 3;' >> "$shim_c"
     echo '  return 0;' >> "$shim_c"
     echo '}' >> "$shim_c"
-    CC_BIN="${CC:-cc}"
-    CFLAGS_VAL="${CFLAGS:--O0 -w}"
-    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    just cranelift-phase9g-link-canonical-ingestion-object "$fixture" "$object_file" "$shim_c" "$binary"
     "$binary"
     echo "✅ Compiler-owned MIR block-local update branch ingestion seam native smoke passed."
 
@@ -11265,9 +11469,7 @@ guard-cranelift-compiler-mir-block-two-local-update-branch-ingestion-native-smok
     echo '  if (tiny_native_backend_compiler_mir_ingested_block_two_local_update_branch(-3) != 67) return 3;' >> "$shim_c"
     echo '  return 0;' >> "$shim_c"
     echo '}' >> "$shim_c"
-    CC_BIN="${CC:-cc}"
-    CFLAGS_VAL="${CFLAGS:--O0 -w}"
-    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    just cranelift-phase9g-link-canonical-ingestion-object "$fixture" "$object_file" "$shim_c" "$binary"
     "$binary"
     echo "✅ Compiler-owned MIR block two-local update branch ingestion seam native smoke passed."
 
@@ -11326,9 +11528,7 @@ guard-cranelift-compiler-mir-block-local-branch-join-ingestion-native-smoke:
     echo '  if (tiny_native_backend_compiler_mir_ingested_block_local_branch_join(-3) != 5) return 3;' >> "$shim_c"
     echo '  return 0;' >> "$shim_c"
     echo '}' >> "$shim_c"
-    CC_BIN="${CC:-cc}"
-    CFLAGS_VAL="${CFLAGS:--O0 -w}"
-    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    just cranelift-phase9g-link-canonical-ingestion-object "$fixture" "$object_file" "$shim_c" "$binary"
     "$binary"
     echo "✅ Compiler-owned MIR block-local branch join ingestion seam native smoke passed."
 
@@ -11387,9 +11587,7 @@ guard-cranelift-compiler-mir-block-param-update-branch-ingestion-native-smoke:
     echo '  if (tiny_native_backend_compiler_mir_ingested_block_param_update_branch(-4) != 71) return 3;' >> "$shim_c"
     echo '  return 0;' >> "$shim_c"
     echo '}' >> "$shim_c"
-    CC_BIN="${CC:-cc}"
-    CFLAGS_VAL="${CFLAGS:--O0 -w}"
-    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    just cranelift-phase9g-link-canonical-ingestion-object "$fixture" "$object_file" "$shim_c" "$binary"
     "$binary"
     echo "✅ Compiler-owned MIR block-param update branch ingestion seam native smoke passed."
 
@@ -11692,9 +11890,7 @@ guard-cranelift-compiler-mir-block-param-merge-update-branch-ingestion-native-sm
     echo '  if (tiny_native_backend_compiler_mir_ingested_block_param_merge_update_branch(-9) != 191) return 3;' >> "$shim_c"
     echo '  return 0;' >> "$shim_c"
     echo '}' >> "$shim_c"
-    CC_BIN="${CC:-cc}"
-    CFLAGS_VAL="${CFLAGS:--O0 -w}"
-    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    just cranelift-phase9g-link-canonical-ingestion-object "$fixture" "$object_file" "$shim_c" "$binary"
     "$binary"
     echo "✅ Compiler-owned MIR block-param merge update branch ingestion seam native smoke passed."
 
@@ -12059,9 +12255,7 @@ guard-cranelift-compiler-mir-block-param-local-materialize-branch-ingestion-nati
     echo '  if (tiny_native_backend_compiler_mir_ingested_block_param_local_materialize_branch(-9) != 307) return 3;' >> "$shim_c"
     echo '  return 0;' >> "$shim_c"
     echo '}' >> "$shim_c"
-    CC_BIN="${CC:-cc}"
-    CFLAGS_VAL="${CFLAGS:--O0 -w}"
-    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    just cranelift-phase9g-link-canonical-ingestion-object "$fixture" "$object_file" "$shim_c" "$binary"
     "$binary"
     echo "✅ Compiler-owned MIR block-param local materialize branch ingestion seam native smoke passed."
 
@@ -12146,9 +12340,7 @@ guard-cranelift-compiler-mir-block-param-local-materialize-return-ingestion-nati
     echo '  if (tiny_native_backend_compiler_mir_ingested_block_param_local_materialize_return(-9) != 423) return 3;' >> "$shim_c"
     echo '  return 0;' >> "$shim_c"
     echo '}' >> "$shim_c"
-    CC_BIN="${CC:-cc}"
-    CFLAGS_VAL="${CFLAGS:--O0 -w}"
-    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    just cranelift-phase9g-link-canonical-ingestion-object "$fixture" "$object_file" "$shim_c" "$binary"
     "$binary"
     echo "✅ Compiler-owned MIR block-param local materialize return ingestion seam native smoke passed."
 
@@ -12186,9 +12378,7 @@ guard-cranelift-compiler-mir-block-param-dual-materialize-return-ingestion-nativ
     echo '  if (tiny_native_backend_compiler_mir_ingested_block_param_dual_materialize_return(-9) != 540) return 3;' >> "$shim_c"
     echo '  return 0;' >> "$shim_c"
     echo '}' >> "$shim_c"
-    CC_BIN="${CC:-cc}"
-    CFLAGS_VAL="${CFLAGS:--O0 -w}"
-    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    just cranelift-phase9g-link-canonical-ingestion-object "$fixture" "$object_file" "$shim_c" "$binary"
     "$binary"
     echo "✅ Compiler-owned MIR block-param dual materialize return ingestion seam native smoke passed."
 
@@ -12236,9 +12426,7 @@ guard-cranelift-compiler-mir-block-param-local-first-dual-materialize-return-ing
     echo '  if (tiny_native_backend_compiler_mir_ingested_block_param_local_first_dual_materialize_return(-9) != 635) return 3;' >> "$shim_c"
     echo '  return 0;' >> "$shim_c"
     echo '}' >> "$shim_c"
-    CC_BIN="${CC:-cc}"
-    CFLAGS_VAL="${CFLAGS:--O0 -w}"
-    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    just cranelift-phase9g-link-canonical-ingestion-object "$fixture" "$object_file" "$shim_c" "$binary"
     "$binary"
     echo "✅ Compiler-owned MIR block-param local-first dual materialize return ingestion seam native smoke passed."
 
@@ -12276,9 +12464,7 @@ guard-cranelift-compiler-mir-block-param-triple-materialize-return-ingestion-nat
     echo '  if (tiny_native_backend_compiler_mir_ingested_block_param_triple_materialize_return(-9) != 739) return 3;' >> "$shim_c"
     echo '  return 0;' >> "$shim_c"
     echo '}' >> "$shim_c"
-    CC_BIN="${CC:-cc}"
-    CFLAGS_VAL="${CFLAGS:--O0 -w}"
-    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    just cranelift-phase9g-link-canonical-ingestion-object "$fixture" "$object_file" "$shim_c" "$binary"
     "$binary"
     echo "✅ Compiler-owned MIR block-param triple materialize return ingestion seam native smoke passed."
 
@@ -12317,9 +12503,7 @@ guard-cranelift-compiler-mir-block-param-quad-materialize-return-ingestion-nativ
     echo '  if (tiny_native_backend_compiler_mir_ingested_block_param_quad_materialize_return(-9) != 872) return 3;' >> "$shim_c"
     echo '  return 0;' >> "$shim_c"
     echo '}' >> "$shim_c"
-    CC_BIN="${CC:-cc}"
-    CFLAGS_VAL="${CFLAGS:--O0 -w}"
-    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    just cranelift-phase9g-link-canonical-ingestion-object "$fixture" "$object_file" "$shim_c" "$binary"
     "$binary"
     echo "✅ Compiler-owned MIR block-param quad materialize return ingestion seam native smoke passed."
 
@@ -12359,9 +12543,7 @@ guard-cranelift-compiler-mir-block-param-quint-materialize-return-ingestion-nati
     echo '  if (tiny_native_backend_compiler_mir_ingested_block_param_quint_materialize_return(-9) != 975) return 3;' >> "$shim_c"
     echo '  return 0;' >> "$shim_c"
     echo '}' >> "$shim_c"
-    CC_BIN="${CC:-cc}"
-    CFLAGS_VAL="${CFLAGS:--O0 -w}"
-    "$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"
+    just cranelift-phase9g-link-canonical-ingestion-object "$fixture" "$object_file" "$shim_c" "$binary"
     "$binary"
     echo "✅ Compiler-owned MIR block-param quint materialize return ingestion seam native smoke passed."
 

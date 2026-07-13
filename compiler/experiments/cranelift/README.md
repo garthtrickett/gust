@@ -643,6 +643,36 @@ ABI mismatches that link successfully are not link-stage failures and remain out
 The next milestone migrates the Phase 9C through Phase 9E native guards onto
 the canonical object inspection and link driver.
 
+Steps 17 and 18 migrate the canonical Phase 9C through Phase 9E native guards.
+The twenty-two canonical ingestion lanes established from Phase 9C through
+Phase 9E retain their existing fixtures, object paths, C entry shims, native
+statuses, metadata-recognition evidence, and MIR-to-C differential
+expectations. The supporting generic CFG, typed block-parameter, backedge,
+materialization, and completeness cases use the same migration helper.
+
+One shared Just adapter verifies each existing object against the symbol
+contract derived from its canonical fixture, writes a
+`gust.compiler_mir_link_request.v1` success request, and delegates linking to
+`compiler-mir-link-request`. The adapter validates the typed successful report,
+nonempty publication, deterministic logs, absence of the owned temporary
+executable, and byte preservation of the input object. Individual lane and
+cohort guards no longer invoke the selected C compiler as a linker, execute a
+link request directly, remove link temporaries, or classify pipeline stages.
+
+The Phase 9E support fixtures are migrated in bounded cohorts: simple CFG,
+typed block parameters, merge and countdown-backedge transport,
+block-parameter materialization, and the completeness matrix. Native execution
+and case-specific return-status checks remain in the owning guards after the
+shared driver publishes the executable.
+
+MIR-to-C oracle guards continue compiling generated C directly. The bypass
+restriction applies to experimental Cranelift object linking and does not
+change the primary MIR-to-C route. The inventory remains 33 canonical
+ingestion seams and seventeen frozen translator seeds, Cranelift remains
+disabled by default, and no production runtime or backend route is enabled.
+The next milestone migrates Phase 9F and retires the remaining canonical
+experimental direct-link bypasses.
+
 The checked-in lockfile for this crate is owned by:
 Patch 8 freezes the complete canonical call/import matrix and retires all
 eleven historical bypasses. The checked-in completeness fixture combines local
