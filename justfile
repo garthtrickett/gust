@@ -10322,10 +10322,10 @@ guard-cranelift-phase9g-positive-link-matrix:
     cmp "$build_dir/cross-consumer.before.o" "$cross_consumer_object"
 
     rg -n -F 'Steps 13 and 14 freeze the canonical positive link matrix.' "$readme_doc" >/dev/null
-    rg -n -F 'The existing Phase 9F v2 format now admits one or more `exported_entry` definitions' "$readme_doc" >/dev/null
-    rg -n -F 'Every case verifies fixture-derived object contracts before invoking the shared link driver.' "$readme_doc" >/dev/null
-    rg -n -F 'The matrix exercises host definitions from both C source and a precompiled object' "$readme_doc" >/dev/null
-    rg -n -F 'No new ingestion fixture format, production route, or default backend is introduced.' "$readme_doc" >/dev/null
+    rg -n -F '9F v2 format now admits one or more `exported_entry` definitions, and direct' "$readme_doc" >/dev/null
+    rg -n -F 'Every case verifies fixture-derived object contracts before invoking the shared' "$readme_doc" >/dev/null
+    rg -n -F 'definitions from both C source and a precompiled object. Each successful report' "$readme_doc" >/dev/null
+    rg -n -F 'No new ingestion fixture format, production route, or default backend is' "$readme_doc" >/dev/null
 
     inventory_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:' "$manifest_doc")"
     canonical_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
