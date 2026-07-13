@@ -11775,7 +11775,8 @@ guard-cranelift-phase9g-close:
 
     rg -n -F 'Phase 9G is closed as' "$readme_doc" >/dev/null
     rg -n -F '`phase9g_closed_transactional_object_and_classified_link_pipeline`.' "$readme_doc" >/dev/null
-    rg -n -F 'The closure guard is a static meta-gate and does not replay the focused dynamic matrices.' "$readme_doc" >/dev/null
+    tr '\n' ' ' < "$readme_doc" |
+      rg -F 'The closure guard is a static meta-gate and does not replay the focused dynamic matrices.' >/dev/null
 
     echo "✅ Phase 9G closed: object and executable publication are transactional, object and link failures are classified, all 33 canonical seams are driver-owned, dynamic evidence remains partitioned, MIR syntax and translator seeds are frozen, and production routing is unchanged."
 
