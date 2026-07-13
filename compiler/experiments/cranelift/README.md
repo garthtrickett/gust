@@ -322,12 +322,13 @@ The v2 validator freezes separate source-function, imported-function, emitted
 backend-symbol, and imported link-symbol namespaces. It rejects duplicate
 imports or local functions, conflicting import-link signatures, emitted/import
 symbol collisions, unknown callees, wrong arity, non-i32 signatures,
-undeclared call destinations, calls to exported entry functions, recursive or
-mutually recursive local call graphs, invalid linkage, indirect targets, and
-call/import records in v1. The schema fixture proves caller-before-callee
-ordering, multiple defined functions, multiple imports, direct local calls,
-direct imported calls, ordered arguments, and result materialization into
-declared locals.
+undeclared call destinations, recursive or mutually recursive local call
+graphs, invalid linkage, indirect targets, and call/import records in v1.
+Modules define one or more `exported_entry` functions; exported and
+module-local callees participate in the same acyclic direct-call graph. The
+schema fixture proves caller-before-callee ordering, multiple defined
+functions, multiple imports, direct local calls, direct imported calls,
+ordered arguments, and result materialization into declared locals.
 
 Patch 3 enables v2 object emission for validated import-free local-call
 modules. The shared module emitter declares every exported-entry and
@@ -585,6 +586,28 @@ or object-emission failure.
 MIR syntax, the 33/33/0/0/17 inventory, translator seeds, default backend
 state, and production routing remain unchanged. The next milestone is the
 positive canonical link matrix.
+
+Steps 13 and 14 freeze the canonical positive link matrix. The existing Phase
+9F v2 format now admits one or more `exported_entry` definitions, and direct
+calls to exported or module-local functions share the same acyclic call-graph
+validation. No new ingestion fixture format is required.
+
+Every case verifies fixture-derived object contracts before invoking the shared
+link driver. The matrix covers an import-free object plus a C entry shim, one
+host import, multiple host imports, multiple exports in one object, multiple
+Cranelift object inputs, a symbol exported by one Cranelift object and imported
+by another, and both regular-object input orders.
+
+All links use explicit normal ELF PIE arguments. The matrix exercises host
+definitions from both C source and a precompiled object. Each successful report
+must classify as `linked`, match its expectation, and publish a nonempty final
+executable with no owned temporary executable remaining. Named application
+symbols must be defined rather than `UND` in the final ELF symbol tables, every
+binary must return its expected native status, and all input object bytes must
+remain unchanged.
+
+No new ingestion fixture format, production route, or default backend is
+introduced. The next milestone is the negative link and artifact matrix.
 
 The checked-in lockfile for this crate is owned by:
 Patch 8 freezes the complete canonical call/import matrix and retires all

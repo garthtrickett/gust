@@ -1676,6 +1676,7 @@ guard-mir-to-c-boring-surface:
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-object-inspection-contract' || true)"
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-link-driver-contract' || true)"
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-pipeline-failure-classification' || true)"
+    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-positive-link-matrix' || true)"
     if [ -n "$cranelift_recipe_wiring" ]; then
       echo "MIR-to-C boring gate allows only manifest, inert backend, dependency beachhead, explicit backend suite, return-int/local-binding/branch native smokes, and differential Cranelift guards before backend implementation expands."
       echo "$cranelift_recipe_wiring"
@@ -7649,9 +7650,9 @@ guard-cranelift-phase9f-call-import-schema-validator:
     sed 's/function_2_block_0_statement_0_local: result/function_2_block_0_statement_0_local: missing/' "$valid_fixture" >"$undeclared_destination"
     expect_reject undeclared-destination "$undeclared_destination" 'unknown canonical compiler MIR local missing'
 
-    exported_entry_call="$build_dir/exported-entry-call.mir"
-    sed 's/function_1_block_0_statement_0_callee: helper_b/function_1_block_0_statement_0_callee: phase9f_entry/' "$valid_fixture" >"$exported_entry_call"
-    expect_reject exported-entry-call "$exported_entry_call" 'cannot target exported entry function phase9f_entry'
+    exported_entry_cycle="$build_dir/exported-entry-cycle.mir"
+    sed 's/function_1_block_0_statement_0_callee: helper_b/function_1_block_0_statement_0_callee: phase9f_entry/' "$valid_fixture" >"$exported_entry_cycle"
+    expect_reject exported-entry-cycle "$exported_entry_cycle" 'must not contain recursion or mutual recursion'
 
     cyclic_local_calls="$build_dir/cyclic-local-calls.mir"
     sed -e 's/function_2_block_0_statement_0_callee_kind: ImportedFunction/function_2_block_0_statement_0_callee_kind: LocalFunction/' \
@@ -7671,9 +7672,20 @@ guard-cranelift-phase9f-call-import-schema-validator:
     sed 's/import_1_return_type: int/import_1_return_type: void/' "$valid_fixture" >"$void_import"
     expect_reject void-import "$void_import" 'must use only int parameters and one int return'
 
-    duplicate_exported_entry="$build_dir/duplicate-exported-entry.mir"
-    sed 's/function_1_linkage: module_local/function_1_linkage: exported_entry/' "$valid_fixture" >"$duplicate_exported_entry"
-    expect_reject duplicate-exported-entry "$duplicate_exported_entry" 'must define exactly one exported_entry function, found 2'
+    multiple_exported_entries="$build_dir/multiple-exported-entries.mir"
+    sed 's/function_1_linkage: module_local/function_1_linkage: exported_entry/' "$valid_fixture" >"$multiple_exported_entries"
+    if ! "${cargo_cmd[@]}" compiler-mir-validate-fixture "$multiple_exported_entries" >"$build_dir/multiple-exported-entries-validate.log" 2>&1; then
+      echo "Phase 9F v2 must admit one-or-more exported_entry definitions."
+      cat "$build_dir/multiple-exported-entries-validate.log"
+      exit 1
+    fi
+    multiple_export_output_dir="$build_dir/multiple-exported-entries-output"
+    if ! "${cargo_cmd[@]}" compiler-mir-ingestion-object "$multiple_exported_entries" "$multiple_export_output_dir/out.o" >"$build_dir/multiple-exported-entries-object.log" 2>&1; then
+      echo "Phase 9F v2 multiple-export object emission failed."
+      cat "$build_dir/multiple-exported-entries-object.log"
+      exit 1
+    fi
+    test -s "$multiple_export_output_dir/out.o"
 
     v1_call="$build_dir/v1-call.mir"
     cat >"$v1_call" <<'MIR'
@@ -9896,6 +9908,393 @@ guard-cranelift-phase9g-pipeline-failure-classification:
     rg -n -F 'An unresolved imported host symbol is therefore always reported as' "$readme_doc" >/dev/null
 
     echo "✅ Phase 9G pipeline taxonomy passed: object and link failures expose stable stages and kinds, expected failures match exact kinds, native linker output remains logged, and unresolved imports classify only as native_link/unresolved_symbol."
+
+
+guard-cranelift-phase9g-positive-link-matrix:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 9G canonical positive link matrix..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    readme_doc="compiler/experiments/cranelift/README.md"
+    source_file="compiler/experiments/cranelift/src/main.rs"
+    cargo_manifest="compiler/experiments/cranelift/Cargo.toml"
+    import_free_fixture="compiler/fixtures/native_backend_return_int_ingestion.mir"
+    one_import_fixture="compiler/fixtures/phase9f_unresolved_import_object.mir"
+    multi_import_fixture="compiler/fixtures/phase9f_call_import_completeness.mir"
+    local_module_fixture="compiler/fixtures/phase9f_local_call_module.mir"
+    cross_consumer_base_fixture="compiler/fixtures/phase9f_call_import_schema_validation.mir"
+    build_dir="build/guards/cranelift_phase9g_positive_link_matrix"
+    rm -rf "$build_dir"
+    mkdir -p "$build_dir"
+
+    just guard-cranelift-phase9g-pipeline-failure-classification
+
+    for required_file in "$manifest_doc" "$readme_doc" "$source_file" "$cargo_manifest" "$import_free_fixture" "$one_import_fixture" "$multi_import_fixture" "$local_module_fixture" "$cross_consumer_base_fixture"; do
+      if [ ! -f "$required_file" ]; then
+        echo "Missing Phase 9G positive-link input: $required_file"
+        exit 1
+      fi
+    done
+
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9G_POSITIVE_LINK_MATRIX_GUARD: guard-cranelift-phase9g-positive-link-matrix' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_positive_link_status: phase9g_canonical_positive_link_matrix' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_positive_link_schema_policy: reuse_gust.compiler_mir_ingestion.v1_and_v2_no_new_fixture_format' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_positive_link_export_policy: v2_requires_one_or_more_exported_entry_definitions_and_exported_functions_participate_in_the_same_acyclic_local_call_graph' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_positive_link_matrix: import_free_plus_C_entry_one_host_import_multiple_host_imports_multiple_exports_one_object_multiple_input_objects_cross_Cranelift_object_resolution_reversed_object_order_normal_ELF_PIE_C_source_hosts_and_precompiled_host_object' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_positive_link_object_policy: every_relocatable_input_is_structurally_inspected_and_verified_against_its_fixture_derived_symbol_contract_before_linking' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_positive_link_driver_policy: every_case_uses_compiler-mir-link-request_and_requires_linked_none_none_matched_true_published_true' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_positive_link_artifact_policy: final_executable_exists_is_nonempty_is_ELF_DYN_has_no_TEXTREL_and_has_no_owned_temporary_executable' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_positive_link_resolution_policy: named_application_exports_and_import_providers_are_defined_not_UND_in_the_final_ELF_symbol_tables' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_positive_link_execution_policy: every_published_executable_runs_and_returns_its_case_specific_expected_status' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_positive_link_input_policy: all_Cranelift_and_precompiled_host_object_bytes_are_unchanged_after_linking' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_positive_link_inherited_inventory: 33_total_33_canonical_shared_0_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_positive_link_route_policy: mir_to_c_primary_cranelift_disabled_no_production_runtime_or_backend_route' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_positive_link_next_milestone: negative_link_and_artifact_matrix' "$manifest_doc" >/dev/null
+
+    rg -n -F 'if exported_entry_count == 0 {' "$source_file" >/dev/null
+    rg -n -F '"canonical compiler MIR module must define at least one exported_entry function"' "$source_file" >/dev/null
+    if rg -n -F 'cannot target exported entry function' "$source_file" >/dev/null; then
+      echo "Phase 9G multiple-export modules must allow direct acyclic calls to exported functions."
+      exit 1
+    fi
+    schema_guard_body="$(sed -n '/^guard-cranelift-phase9f-call-import-schema-validator:/,/^guard-cranelift-phase9f-module-emitter-local-call-cohort:/p' justfile)"
+    printf '%s\n' "$schema_guard_body" | rg -n -F 'multiple-exported-entries.mir' >/dev/null
+    printf '%s\n' "$schema_guard_body" | rg -n -F 'Phase 9F v2 must admit one-or-more exported_entry definitions.' >/dev/null
+    if printf '%s\n' "$schema_guard_body" | rg -n -F 'must define exactly one exported_entry function' >/dev/null; then
+      echo "The Phase 9F schema guard still freezes the obsolete exactly-one-export rule."
+      exit 1
+    fi
+
+    cargo_cmd=(cargo run --quiet --manifest-path "$cargo_manifest" --locked --)
+    CC_BIN="${CC:-cc}"
+    if ! command -v "$CC_BIN" >/dev/null 2>&1; then
+      echo "Phase 9G positive linking requires the selected C compiler/link driver: $CC_BIN"
+      exit 1
+    fi
+    if ! command -v readelf >/dev/null 2>&1; then
+      echo "Phase 9G positive ELF artifact verification requires readelf."
+      exit 1
+    fi
+
+    target_report="$("${cargo_cmd[@]}" compiler-mir-object-target-contract)"
+    object_format="$(printf '%s\n' "$target_report" | sed -n 's/^object_format: //p')"
+    if [ "$object_format" != "Elf" ]; then
+      echo "Phase 9G positive link matrix is currently frozen on the Ubuntu ELF CI host; reported object format: ${object_format:-missing}"
+      exit 1
+    fi
+
+    assert_object_contract() {
+      local label="$1"
+      local fixture="$2"
+      local object_file="$3"
+      local report="$build_dir/${label}-object-inspection.log"
+      "${cargo_cmd[@]}" compiler-mir-verify-object-contract "$fixture" "$object_file" >"$build_dir/${label}-object-contract.log"
+      "${cargo_cmd[@]}" compiler-mir-inspect-object "$object_file" >"$report"
+      rg -n -F 'object_kind: Relocatable' "$report" >/dev/null
+      rg -n -F 'has_code_section: true' "$report" >/dev/null
+      rg -n -F 'duplicate_symbol_count: 0' "$report" >/dev/null
+      test -s "$object_file"
+    }
+
+    assert_link_success() {
+      local label="$1"
+      local report="$2"
+      local binary="$3"
+      rg -n -F 'classification: linked' "$report" >/dev/null
+      rg -n -F 'pipeline_stage: none' "$report" >/dev/null
+      rg -n -F 'failure_kind: none' "$report" >/dev/null
+      rg -n -F 'expected_result: success' "$report" >/dev/null
+      rg -n -F 'expected_failure_kind: none' "$report" >/dev/null
+      rg -n -F 'matched_expectation: true' "$report" >/dev/null
+      rg -n -F 'published: true' "$report" >/dev/null
+      test -s "$binary"
+      local temp_path
+      temp_path="$(dirname "$binary")/.$(basename "$binary").phase9g-link.tmp"
+      test ! -e "$temp_path"
+      test -e "$(dirname "$binary")/.$(basename "$binary").phase9g-link.stdout.log"
+      test -e "$(dirname "$binary")/.$(basename "$binary").phase9g-link.stderr.log"
+      readelf -h "$binary" | rg -n 'Type:[[:space:]]+DYN' >/dev/null
+      if readelf -d "$binary" | rg -n 'TEXTREL|FLAGS.*TEXTREL' >/dev/null; then
+        echo "Positive link case $label produced a text-relocation marker."
+        readelf -d "$binary"
+        exit 1
+      fi
+    }
+
+    assert_resolved_symbol() {
+      local binary="$1"
+      local symbol="$2"
+      if ! readelf -Ws "$binary" | awk -v symbol="$symbol" '
+        $8 == symbol {
+          found = 1
+          if ($7 == "UND") {
+            undefined = 1
+          }
+        }
+        END {
+          exit (!found || undefined)
+        }
+      '; then
+        echo "Expected final executable symbol to be defined and resolved: $symbol"
+        readelf -Ws "$binary" | rg -n -F "$symbol" || true
+        exit 1
+      fi
+    }
+
+    run_native_status() {
+      local expected_status="$1"
+      shift
+      set +e
+      "$@"
+      local actual_status="$?"
+      set -e
+      if [ "$actual_status" != "$expected_status" ]; then
+        echo "Expected native status $expected_status, got $actual_status from: $*"
+        exit 1
+      fi
+    }
+
+    import_free_object="$build_dir/import-free.o"
+    import_free_source="$build_dir/import-free-main.c"
+    import_free_request="$build_dir/import-free.link"
+    import_free_binary="$build_dir/import-free-bin"
+    import_free_report="$build_dir/import-free-link-report.log"
+    "${cargo_cmd[@]}" compiler-mir-ingestion-object "$import_free_fixture" "$import_free_object"
+    assert_object_contract import-free "$import_free_fixture" "$import_free_object"
+    rg -n -F 'defined_global_symbol: tiny_native_backend_compiler_mir_ingested_return_int' "$build_dir/import-free-object-inspection.log" >/dev/null
+    rg -n -F 'undefined_symbol_count: 0' "$build_dir/import-free-object-inspection.log" >/dev/null
+    cp "$import_free_object" "$build_dir/import-free.before.o"
+    cat >"$import_free_source" <<'C'
+    #include <stdint.h>
+    extern int32_t tiny_native_backend_compiler_mir_ingested_return_int(void);
+    int main(void) {
+        return tiny_native_backend_compiler_mir_ingested_return_int() == 1 ? 0 : 101;
+    }
+    C
+    printf '%s\n' \
+      'format: gust.compiler_mir_link_request.v1' \
+      'output: import-free-bin' \
+      'object: import-free.o' \
+      'c_source: import-free-main.c' \
+      'link_arg: -fPIE' \
+      'link_arg: -pie' \
+      "driver: $CC_BIN" \
+      'expected_result: success' >"$import_free_request"
+    "${cargo_cmd[@]}" compiler-mir-link-request "$import_free_request" >"$import_free_report"
+    assert_link_success import-free "$import_free_report" "$import_free_binary"
+    assert_resolved_symbol "$import_free_binary" tiny_native_backend_compiler_mir_ingested_return_int
+    run_native_status 0 "$import_free_binary"
+    cmp "$build_dir/import-free.before.o" "$import_free_object"
+
+    one_import_object="$build_dir/one-import.o"
+    one_import_source="$build_dir/one-import-main.c"
+    one_import_request="$build_dir/one-import.link"
+    one_import_binary="$build_dir/one-import-bin"
+    one_import_report="$build_dir/one-import-link-report.log"
+    "${cargo_cmd[@]}" compiler-mir-ingestion-object "$one_import_fixture" "$one_import_object"
+    assert_object_contract one-import "$one_import_fixture" "$one_import_object"
+    rg -n -F 'undefined_symbol_count: 1' "$build_dir/one-import-object-inspection.log" >/dev/null
+    rg -n -F 'undefined_symbol: phase9f_missing_host_symbol' "$build_dir/one-import-object-inspection.log" >/dev/null
+    cp "$one_import_object" "$build_dir/one-import.before.o"
+    cat >"$one_import_source" <<'C'
+    int phase9f_missing_host_symbol(void) { return 17; }
+    int phase9f_unresolved_import_entry(void);
+    int main(void) {
+        (void)phase9f_unresolved_import_entry();
+        return 0;
+    }
+    C
+    printf '%s\n' \
+      'format: gust.compiler_mir_link_request.v1' \
+      'output: one-import-bin' \
+      'object: one-import.o' \
+      'c_source: one-import-main.c' \
+      'link_arg: -fPIE' \
+      'link_arg: -pie' \
+      "driver: $CC_BIN" \
+      'expected_result: success' >"$one_import_request"
+    "${cargo_cmd[@]}" compiler-mir-link-request "$one_import_request" >"$one_import_report"
+    assert_link_success one-import "$one_import_report" "$one_import_binary"
+    assert_resolved_symbol "$one_import_binary" phase9f_missing_host_symbol
+    assert_resolved_symbol "$one_import_binary" phase9f_unresolved_import_entry
+    run_native_status 0 "$one_import_binary"
+    cmp "$build_dir/one-import.before.o" "$one_import_object"
+
+    multi_import_object="$build_dir/multi-import.o"
+    multi_import_host_source="$build_dir/multi-import-host.c"
+    multi_import_host_object="$build_dir/multi-import-host.o"
+    multi_import_request="$build_dir/multi-import.link"
+    multi_import_binary="$build_dir/multi-import-bin"
+    multi_import_report="$build_dir/multi-import-link-report.log"
+    "${cargo_cmd[@]}" compiler-mir-ingestion-object "$multi_import_fixture" "$multi_import_object"
+    assert_object_contract multi-import "$multi_import_fixture" "$multi_import_object"
+    rg -n -F 'undefined_symbol_count: 3' "$build_dir/multi-import-object-inspection.log" >/dev/null
+    for symbol in phase9f_completeness_host_zero phase9f_completeness_host_add3 phase9f_completeness_host_positive; do
+      rg -n -F "undefined_symbol: $symbol" "$build_dir/multi-import-object-inspection.log" >/dev/null
+    done
+    cat >"$multi_import_host_source" <<'C'
+    int phase9f_completeness_entry(int value);
+    int phase9f_completeness_host_zero(void) { return 2; }
+    int phase9f_completeness_host_add3(int a, int b, int c) { return a + b + c; }
+    int phase9f_completeness_host_positive(int value) { return value > 0; }
+    int main(void) { return phase9f_completeness_entry(3); }
+    C
+    "$CC_BIN" -fPIE -c "$multi_import_host_source" -o "$multi_import_host_object"
+    "${cargo_cmd[@]}" compiler-mir-inspect-object "$multi_import_host_object" >"$build_dir/multi-import-host-object-inspection.log"
+    rg -n -F 'object_kind: Relocatable' "$build_dir/multi-import-host-object-inspection.log" >/dev/null
+    rg -n -F 'has_code_section: true' "$build_dir/multi-import-host-object-inspection.log" >/dev/null
+    rg -n -F 'duplicate_symbol_count: 0' "$build_dir/multi-import-host-object-inspection.log" >/dev/null
+    cp "$multi_import_object" "$build_dir/multi-import.before.o"
+    cp "$multi_import_host_object" "$build_dir/multi-import-host.before.o"
+    printf '%s\n' \
+      'format: gust.compiler_mir_link_request.v1' \
+      'output: multi-import-bin' \
+      'object: multi-import.o' \
+      'host_object: multi-import-host.o' \
+      'link_arg: -fPIE' \
+      'link_arg: -pie' \
+      "driver: $CC_BIN" \
+      'expected_result: success' >"$multi_import_request"
+    "${cargo_cmd[@]}" compiler-mir-link-request "$multi_import_request" >"$multi_import_report"
+    assert_link_success multi-import "$multi_import_report" "$multi_import_binary"
+    for symbol in phase9f_completeness_entry phase9f_completeness_host_zero phase9f_completeness_host_add3 phase9f_completeness_host_positive; do
+      assert_resolved_symbol "$multi_import_binary" "$symbol"
+    done
+    run_native_status 35 "$multi_import_binary"
+    cmp "$build_dir/multi-import.before.o" "$multi_import_object"
+    cmp "$build_dir/multi-import-host.before.o" "$multi_import_host_object"
+
+    multi_export_fixture="$build_dir/multi-export.mir"
+    multi_export_object="$build_dir/multi-export.o"
+    multi_export_source="$build_dir/multi-export-main.c"
+    multi_export_request="$build_dir/multi-export.link"
+    multi_export_binary="$build_dir/multi-export-bin"
+    multi_export_report="$build_dir/multi-export-link-report.log"
+    sed 's/^function_1_linkage: module_local$/function_1_linkage: exported_entry/' "$local_module_fixture" >"$multi_export_fixture"
+    export_count="$(rg -c '^function_[0-9]+_linkage: exported_entry$' "$multi_export_fixture")"
+    if [ "$export_count" != "2" ]; then
+      echo "Expected the temporary Phase 9F v2 module to contain two exported_entry definitions, found $export_count."
+      exit 1
+    fi
+    "${cargo_cmd[@]}" compiler-mir-ingestion-object "$multi_export_fixture" "$multi_export_object"
+    assert_object_contract multi-export "$multi_export_fixture" "$multi_export_object"
+    rg -n -F 'defined_global_symbol_count: 2' "$build_dir/multi-export-object-inspection.log" >/dev/null
+    rg -n -F 'defined_local_symbol_count: 0' "$build_dir/multi-export-object-inspection.log" >/dev/null
+    rg -n -F 'undefined_symbol_count: 0' "$build_dir/multi-export-object-inspection.log" >/dev/null
+    for symbol in tiny_native_backend_compiler_mir_ingested_block_param_local_call_branch tiny_native_backend_compiler_mir_ingested_block_param_local_call_helper; do
+      rg -n -F "defined_global_symbol: $symbol" "$build_dir/multi-export-object-inspection.log" >/dev/null
+    done
+    cp "$multi_export_object" "$build_dir/multi-export.before.o"
+    cat >"$multi_export_source" <<'C'
+    #include <stdint.h>
+    extern int32_t tiny_native_backend_compiler_mir_ingested_block_param_local_call_branch(int32_t);
+    extern int32_t tiny_native_backend_compiler_mir_ingested_block_param_local_call_helper(int32_t);
+    int main(void) {
+        (void)tiny_native_backend_compiler_mir_ingested_block_param_local_call_helper(5);
+        (void)tiny_native_backend_compiler_mir_ingested_block_param_local_call_branch(5);
+        return 0;
+    }
+    C
+    printf '%s\n' \
+      'format: gust.compiler_mir_link_request.v1' \
+      'output: multi-export-bin' \
+      'object: multi-export.o' \
+      'c_source: multi-export-main.c' \
+      'link_arg: -fPIE' \
+      'link_arg: -pie' \
+      "driver: $CC_BIN" \
+      'expected_result: success' >"$multi_export_request"
+    "${cargo_cmd[@]}" compiler-mir-link-request "$multi_export_request" >"$multi_export_report"
+    assert_link_success multi-export "$multi_export_report" "$multi_export_binary"
+    assert_resolved_symbol "$multi_export_binary" tiny_native_backend_compiler_mir_ingested_block_param_local_call_branch
+    assert_resolved_symbol "$multi_export_binary" tiny_native_backend_compiler_mir_ingested_block_param_local_call_helper
+    run_native_status 0 "$multi_export_binary"
+    cmp "$build_dir/multi-export.before.o" "$multi_export_object"
+
+    cross_consumer_fixture="$build_dir/cross-consumer.mir"
+    cross_consumer_object="$build_dir/cross-consumer.o"
+    cross_source="$build_dir/cross-main.c"
+    cross_forward_request="$build_dir/cross-forward.link"
+    cross_reverse_request="$build_dir/cross-reverse.link"
+    cross_forward_binary="$build_dir/cross-forward-bin"
+    cross_reverse_binary="$build_dir/cross-reverse-bin"
+    cross_forward_report="$build_dir/cross-forward-link-report.log"
+    cross_reverse_report="$build_dir/cross-reverse-link-report.log"
+    sed 's/^import_1_link_symbol: tiny_phase9f_host_identity$/import_1_link_symbol: tiny_native_backend_compiler_mir_ingested_block_param_local_call_helper/' "$cross_consumer_base_fixture" >"$cross_consumer_fixture"
+    rg -n -F 'import_1_link_symbol: tiny_native_backend_compiler_mir_ingested_block_param_local_call_helper' "$cross_consumer_fixture" >/dev/null
+    "${cargo_cmd[@]}" compiler-mir-ingestion-object "$cross_consumer_fixture" "$cross_consumer_object"
+    assert_object_contract cross-consumer "$cross_consumer_fixture" "$cross_consumer_object"
+    rg -n -F 'undefined_symbol: tiny_phase9f_host_add' "$build_dir/cross-consumer-object-inspection.log" >/dev/null
+    rg -n -F 'undefined_symbol: tiny_native_backend_compiler_mir_ingested_block_param_local_call_helper' "$build_dir/cross-consumer-object-inspection.log" >/dev/null
+    cp "$cross_consumer_object" "$build_dir/cross-consumer.before.o"
+    cat >"$cross_source" <<'C'
+    #include <stdint.h>
+    int32_t tiny_phase9f_host_add(int32_t lhs, int32_t rhs) { return lhs + rhs; }
+    extern int32_t tiny_phase9f_entry(int32_t input);
+    int main(void) {
+        (void)tiny_phase9f_entry(5);
+        return 0;
+    }
+    C
+    printf '%s\n' \
+      'format: gust.compiler_mir_link_request.v1' \
+      'output: cross-forward-bin' \
+      'object: cross-consumer.o' \
+      'object: multi-export.o' \
+      'c_source: cross-main.c' \
+      'link_arg: -fPIE' \
+      'link_arg: -pie' \
+      "driver: $CC_BIN" \
+      'expected_result: success' >"$cross_forward_request"
+    "${cargo_cmd[@]}" compiler-mir-link-request "$cross_forward_request" >"$cross_forward_report"
+    assert_link_success cross-forward "$cross_forward_report" "$cross_forward_binary"
+    rg -n -F 'ordered_object_input_0: '"$build_dir"'/cross-consumer.o' "$cross_forward_report" >/dev/null
+    rg -n -F 'ordered_object_input_1: '"$build_dir"'/multi-export.o' "$cross_forward_report" >/dev/null
+    for symbol in tiny_phase9f_entry tiny_phase9f_host_add tiny_native_backend_compiler_mir_ingested_block_param_local_call_helper; do
+      assert_resolved_symbol "$cross_forward_binary" "$symbol"
+    done
+    run_native_status 0 "$cross_forward_binary"
+
+    printf '%s\n' \
+      'format: gust.compiler_mir_link_request.v1' \
+      'output: cross-reverse-bin' \
+      'object: multi-export.o' \
+      'object: cross-consumer.o' \
+      'c_source: cross-main.c' \
+      'link_arg: -fPIE' \
+      'link_arg: -pie' \
+      "driver: $CC_BIN" \
+      'expected_result: success' >"$cross_reverse_request"
+    "${cargo_cmd[@]}" compiler-mir-link-request "$cross_reverse_request" >"$cross_reverse_report"
+    assert_link_success cross-reverse "$cross_reverse_report" "$cross_reverse_binary"
+    rg -n -F 'ordered_object_input_0: '"$build_dir"'/multi-export.o' "$cross_reverse_report" >/dev/null
+    rg -n -F 'ordered_object_input_1: '"$build_dir"'/cross-consumer.o' "$cross_reverse_report" >/dev/null
+    for symbol in tiny_phase9f_entry tiny_phase9f_host_add tiny_native_backend_compiler_mir_ingested_block_param_local_call_helper; do
+      assert_resolved_symbol "$cross_reverse_binary" "$symbol"
+    done
+    run_native_status 0 "$cross_reverse_binary"
+    cmp "$build_dir/multi-export.before.o" "$multi_export_object"
+    cmp "$build_dir/cross-consumer.before.o" "$cross_consumer_object"
+
+    rg -n -F 'Steps 13 and 14 freeze the canonical positive link matrix.' "$readme_doc" >/dev/null
+    rg -n -F 'The existing Phase 9F v2 format now admits one or more `exported_entry` definitions' "$readme_doc" >/dev/null
+    rg -n -F 'Every case verifies fixture-derived object contracts before invoking the shared link driver.' "$readme_doc" >/dev/null
+    rg -n -F 'The matrix exercises host definitions from both C source and a precompiled object' "$readme_doc" >/dev/null
+    rg -n -F 'No new ingestion fixture format, production route, or default backend is introduced.' "$readme_doc" >/dev/null
+
+    inventory_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:' "$manifest_doc")"
+    canonical_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
+    bespoke_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" || true)"
+    bespoke_count="${bespoke_count:-0}"
+    metadata_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=metadata_preservation_only\|' "$manifest_doc" || true)"
+    metadata_count="${metadata_count:-0}"
+    translator_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_historical_translator_seed_[a-z0-9_]+:' "$manifest_doc")"
+    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "33" ] || [ "$bespoke_count" != "0" ] || [ "$metadata_count" != "0" ] || [ "$translator_count" != "17" ]; then
+      echo "Unexpected inventory after the Phase 9G positive link matrix: total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count metadata=$metadata_count translators=$translator_count"
+      exit 1
+    fi
+
+    echo "✅ Phase 9G positive link matrix passed: inspected canonical objects link as normal PIEs across source and precompiled hosts, multiple exports and cross-object resolution work in both object orders, executables run, and all inputs remain unchanged."
 
 
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:

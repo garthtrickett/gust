@@ -4572,12 +4572,10 @@ fn validate_compiler_mir_module(
             }
         }
     }
-    if exported_entry_count != 1 {
+    if exported_entry_count == 0 {
         return Err(IoError::new(
             ErrorKind::InvalidInput,
-            format!(
-                "canonical compiler MIR module must define exactly one exported_entry function, found {exported_entry_count}"
-            ),
+            "canonical compiler MIR module must define at least one exported_entry function",
         )
         .into());
     }
@@ -4611,18 +4609,6 @@ fn validate_compiler_mir_module(
                                 ),
                             )
                         })?;
-                        if callee.linkage
-                            == CompilerMirLoweringFunctionLinkage::ExportedEntry
-                        {
-                            return Err(IoError::new(
-                                ErrorKind::InvalidInput,
-                                format!(
-                                    "canonical compiler MIR local call from {} cannot target exported entry function {name}",
-                                    caller.object_name
-                                ),
-                            )
-                            .into());
-                        }
                         local_call_edges
                             .get_mut(caller.object_name)
                             .ok_or_else(|| {
