@@ -460,18 +460,33 @@ translator seeds remain frozen at seventeen, v1 and v2 syntax are unchanged,
 MIR-to-C remains primary, Cranelift remains disabled by default, and no
 production runtime or backend route is enabled.
 
-Steps 1 and 2 change only the contract, inventory, and guard surface. The
+Steps 1 and 2 changed only the contract, inventory, and guard surface. The
 separate Phase 9G inventory does not add a compiler-MIR ingestion seam or
-translator seed. It records the current object/link owners: canonical
-single-function and module object emitters, direct final-path object writes,
-host-native default target construction, historical direct object emitters,
-per-guard C shims, `CC_BIN`/`CFLAGS_VAL` link commands, native status handling,
-and the unresolved-symbol `nm -u` probe.
+translator seed. It records the object/link owners inherited from Phase 9F,
+including host-native default target construction, historical direct object
+emitters, per-guard C shims, `CC_BIN`/`CFLAGS_VAL` link commands, native status
+handling, and the unresolved-symbol `nm -u` probe.
 
-The opening warning baseline includes the current PIE text-relocation
+Steps 3 and 4 make both canonical compiler-MIR object emitters transactional.
+They finish lowering and object construction in memory, reject an empty object
+buffer, and publish complete bytes through one shared helper. The helper writes
+a hidden sibling temporary file with create-new semantics, flushes it, and
+renames it to the final path only after the write completes. It removes a stale
+owned temporary file before publication and cleans the owned temporary file
+after any write or rename failure. Existing final artifacts therefore remain
+untouched until a complete replacement is ready.
+
+`CompilerMirObjectArtifactReport` records the final path and byte size. Parent
+directories are created only after parsing, validation, metadata recognition,
+lowering, and in-memory object emission complete. Parse or validation rejection
+does not create the requested output parent, and failed publication leaves no
+partial final object or sibling temporary artifact.
+
+The opening warning baseline still includes the current PIE text-relocation
 diagnostics. Phase 9G must harden emitted objects rather than hide those
-warnings with a global `-no-pie` flag. No object publication, linker-driver,
-error-classification, or routing behavior changes in this patch.
+warnings with a global `-no-pie` flag.
+No linker ownership, target configuration, MIR syntax, translator seed, or
+production route changes in this patch.
 
 The checked-in lockfile for this crate is owned by:
 Patch 8 freezes the complete canonical call/import matrix and retires all

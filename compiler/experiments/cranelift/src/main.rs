@@ -1,9 +1,10 @@
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::env;
 use std::error::Error;
+use std::ffi::OsString;
 use std::fs;
-use std::io::{Error as IoError, ErrorKind};
-use std::path::Path;
+use std::io::{Error as IoError, ErrorKind, Write};
+use std::path::{Path, PathBuf};
 
 use cranelift_codegen::ir::instructions::BlockArg;
 use cranelift_codegen::ir::{AbiParam, Block, FuncRef, InstBuilder, Type, condcodes::IntCC, types};
@@ -14016,14 +14017,85 @@ fn validate_compiler_mir_ingestion_lowering_readiness(
     Ok(())
 }
 
+#[derive(Debug)]
+struct CompilerMirObjectArtifactReport {
+    final_path: PathBuf,
+    byte_size: usize,
+}
+
+fn compiler_mir_object_temp_path(
+    output_path: &Path,
+) -> Result<PathBuf, Box<dyn Error>> {
+    let file_name = output_path.file_name().ok_or_else(|| {
+        IoError::new(
+            ErrorKind::InvalidInput,
+            format!(
+                "compiler MIR object output path must name a file: {}",
+                output_path.display()
+            ),
+        )
+    })?;
+    let mut temp_file_name = OsString::from(".");
+    temp_file_name.push(file_name);
+    temp_file_name.push(".phase9g.tmp");
+    Ok(output_path.with_file_name(temp_file_name))
+}
+
+fn publish_compiler_mir_object_artifact(
+    output_path: &Path,
+    object_bytes: Vec<u8>,
+) -> Result<CompilerMirObjectArtifactReport, Box<dyn Error>> {
+    if object_bytes.is_empty() {
+        return Err(IoError::new(
+            ErrorKind::InvalidData,
+            "compiler MIR object emission produced an empty object artifact",
+        )
+        .into());
+    }
+
+    let byte_size = object_bytes.len();
+    let temp_path = compiler_mir_object_temp_path(output_path)?;
+    if let Some(parent) = output_path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        fs::create_dir_all(parent)?;
+    }
+
+    match fs::remove_file(&temp_path) {
+        Ok(()) => {}
+        Err(error) if error.kind() == ErrorKind::NotFound => {}
+        Err(error) => return Err(error.into()),
+    }
+
+    let publication_result = (|| -> Result<(), IoError> {
+        let mut temp_file = fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&temp_path)?;
+        temp_file.write_all(&object_bytes)?;
+        temp_file.sync_all()?;
+        drop(temp_file);
+        fs::rename(&temp_path, output_path)?;
+        Ok(())
+    })();
+
+    if let Err(error) = publication_result {
+        let _ = fs::remove_file(&temp_path);
+        return Err(error.into());
+    }
+
+    Ok(CompilerMirObjectArtifactReport {
+        final_path: output_path.to_path_buf(),
+        byte_size,
+    })
+}
+
 fn lower_compiler_mir_ingestion_function_to_object(
     output_path: &Path,
     mir_function: &CompilerMirLoweringFunction<'_>,
 ) -> Result<(), Box<dyn Error>> {
     validate_compiler_mir_ingestion_lowering_readiness(mir_function)?;
-    if let Some(parent) = output_path.parent() {
-        fs::create_dir_all(parent)?;
-    }
 
     let isa_builder =
         cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
@@ -14035,7 +14107,11 @@ fn lower_compiler_mir_ingestion_function_to_object(
     define_compiler_mir_ingestion_exported_function(&mut module, mir_function)?;
 
     let object_product = module.finish();
-    fs::write(output_path, object_product.emit()?)?;
+    let object_bytes = object_product.emit()?;
+    let artifact_report =
+        publish_compiler_mir_object_artifact(output_path, object_bytes)?;
+    debug_assert_eq!(artifact_report.final_path.as_path(), output_path);
+    debug_assert!(artifact_report.byte_size > 0);
     Ok(())
 }
 
@@ -14081,10 +14157,6 @@ fn lower_compiler_mir_ingestion_module_to_object(
             &defined.fixture.function,
         )?;
         recognize_compiler_mir_fixture_metadata(&defined.fixture.metadata)?;
-    }
-
-    if let Some(parent) = output_path.parent() {
-        fs::create_dir_all(parent)?;
     }
 
     let isa_builder =
@@ -14158,7 +14230,11 @@ fn lower_compiler_mir_ingestion_module_to_object(
     }
 
     let object_product = module.finish();
-    fs::write(output_path, object_product.emit()?)?;
+    let object_bytes = object_product.emit()?;
+    let artifact_report =
+        publish_compiler_mir_object_artifact(output_path, object_bytes)?;
+    debug_assert_eq!(artifact_report.final_path.as_path(), output_path);
+    debug_assert!(artifact_report.byte_size > 0);
     Ok(())
 }
 

@@ -1671,6 +1671,7 @@ guard-mir-to-c-boring-surface:
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9f-call-import-schema-validator' || true)"
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9f-module-emitter-local-call-cohort' || true)"
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-opening-contract' || true)"
+    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-object-artifact-contract' || true)"
     if [ -n "$cranelift_recipe_wiring" ]; then
       echo "MIR-to-C boring gate allows only manifest, inert backend, dependency beachhead, explicit backend suite, return-int/local-binding/branch native smokes, and differential Cranelift guards before backend implementation expands."
       echo "$cranelift_recipe_wiring"
@@ -8754,7 +8755,7 @@ guard-cranelift-phase9g-opening-contract:
     rg -n -F 'allowed_cranelift_phase9g_contract_opening_step_policy: steps_1_and_2_change_only_contract_inventory_and_guards_no_object_link_or_routing_behavior' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase9g_contract_inventory_namespace: allowed_cranelift_phase9g_object_link_inventory_' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase9g_contract_inventory_record_count: 9' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_contract_next_milestone: transactional_object_artifact_contract' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_contract_next_milestone: target_and_relocation_contract' "$manifest_doc" >/dev/null
 
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9F_CLOSE_GUARD: guard-cranelift-phase9f-close' "$manifest_doc" justfile >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9f_close_status: phase9f_closed_canonical_calls_and_imported_runtime_boundary' "$manifest_doc" >/dev/null
@@ -8792,7 +8793,9 @@ guard-cranelift-phase9g-opening-contract:
     rg -n -F 'settings::Flags::new(settings::builder())' "$source_file" >/dev/null
     rg -n -F 'ObjectBuilder::new' "$source_file" >/dev/null
     rg -n -F 'ObjectModule::new' "$source_file" >/dev/null
-    rg -n -F 'fs::write(output_path, object_product.emit()?)?;' "$source_file" >/dev/null
+    rg -n -F 'struct CompilerMirObjectArtifactReport {' "$source_file" >/dev/null
+    rg -n -F 'fn publish_compiler_mir_object_artifact(' "$source_file" >/dev/null
+    rg -n -F 'fs::rename(&temp_path, output_path)?;' "$source_file" >/dev/null
 
     rg -n -F 'CC_BIN="${CC:-cc}"' justfile >/dev/null
     rg -n -F 'CFLAGS_VAL="${CFLAGS:--O0 -w}"' justfile >/dev/null
@@ -8803,11 +8806,173 @@ guard-cranelift-phase9g-opening-contract:
 
     rg -n -F 'Phase 9G is open as' "$readme_doc" >/dev/null
     rg -n -F '`phase9g_open_object_and_link_pipeline_hardening`.' "$readme_doc" >/dev/null
-    rg -n -F 'Steps 1 and 2 change only the contract, inventory, and guard surface.' "$readme_doc" >/dev/null
+    rg -n -F 'Steps 1 and 2 changed only the contract, inventory, and guard surface.' "$readme_doc" >/dev/null
     rg -n -F 'The separate Phase 9G inventory does not add a compiler-MIR ingestion seam or' "$readme_doc" >/dev/null
     rg -n -F 'global `-no-pie` flag' "$readme_doc" >/dev/null
 
     echo "✅ Phase 9G opened with a separate nine-record object/link inventory; the 33/33/0/0/17 semantic boundary, frozen MIR schemas, disabled Cranelift default, and production routing remain unchanged."
+
+
+guard-cranelift-phase9g-object-artifact-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 9G transactional object artifact contract..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    readme_doc="compiler/experiments/cranelift/README.md"
+    source_file="compiler/experiments/cranelift/src/main.rs"
+    function_fixture="compiler/fixtures/native_backend_return_int_ingestion.mir"
+    module_fixture="compiler/fixtures/phase9f_call_import_completeness.mir"
+    build_dir="build/guards/cranelift_phase9g_object_artifact_contract"
+    rm -rf "$build_dir"
+    mkdir -p "$build_dir"
+
+    just guard-cranelift-phase9g-opening-contract
+
+    for required_file in "$manifest_doc" "$readme_doc" "$source_file" "$function_fixture" "$module_fixture"; do
+      if [ ! -f "$required_file" ]; then
+        echo "Missing Phase 9G object-artifact contract input: $required_file"
+        exit 1
+      fi
+    done
+
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9G_OBJECT_ARTIFACT_CONTRACT_GUARD: guard-cranelift-phase9g-object-artifact-contract' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_object_artifact_status: phase9g_transactional_object_artifact_contract' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_object_artifact_owner: compiler/experiments/cranelift/src/main.rs::publish_compiler_mir_object_artifact' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_object_artifact_report: CompilerMirObjectArtifactReport_final_path_and_byte_size' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_object_artifact_validation_order: fixture_parse_validation_metadata_and_lowering_complete_before_parent_directory_or_temp_file_creation' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_object_artifact_buffer_policy: complete_nonempty_object_bytes_required_before_publication' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_object_artifact_temp_policy: hidden_fixed_sibling_dot_filename_phase9g_tmp_removed_before_write_and_after_any_publication_failure' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_object_artifact_write_policy: create_new_write_all_sync_all_close_then_same_directory_rename' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_object_artifact_replacement_policy: existing_final_artifact_is_replaced_only_by_successful_rename_of_complete_temp_artifact' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_object_artifact_failure_policy: no_partial_final_artifact_and_no_owned_temp_artifact_after_failure' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_object_artifact_canonical_emitter_count: 2' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_object_artifact_canonical_emitters: lower_compiler_mir_ingestion_function_to_object,lower_compiler_mir_ingestion_module_to_object' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_object_artifact_dynamic_matrix: function_success_module_success_stale_temp_cleanup_existing_final_replacement_parse_rejection_without_output_parent_existing_final_preservation_and_publication_failure_cleanup' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_object_artifact_inherited_inventory: 33_total_33_canonical_shared_0_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_object_artifact_route_policy: mir_to_c_primary_cranelift_disabled_no_production_runtime_or_backend_route' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_object_artifact_next_milestone: target_and_relocation_contract' "$manifest_doc" >/dev/null
+
+    rg -n -F 'struct CompilerMirObjectArtifactReport {' "$source_file" >/dev/null
+    rg -n -F 'final_path: PathBuf,' "$source_file" >/dev/null
+    rg -n -F 'byte_size: usize,' "$source_file" >/dev/null
+    rg -n -F 'fn compiler_mir_object_temp_path(' "$source_file" >/dev/null
+    rg -n -F 'fn publish_compiler_mir_object_artifact(' "$source_file" >/dev/null
+
+    artifact_helper_body="$(sed -n '/^fn publish_compiler_mir_object_artifact(/,/^fn lower_compiler_mir_ingestion_function_to_object(/p' "$source_file")"
+    printf '%s\n' "$artifact_helper_body" | rg -n -F 'if object_bytes.is_empty() {' >/dev/null
+    printf '%s\n' "$artifact_helper_body" | rg -n -F 'fs::create_dir_all(parent)?;' >/dev/null
+    printf '%s\n' "$artifact_helper_body" | rg -n -F '.create_new(true)' >/dev/null
+    printf '%s\n' "$artifact_helper_body" | rg -n -F 'temp_file.write_all(&object_bytes)?;' >/dev/null
+    printf '%s\n' "$artifact_helper_body" | rg -n -F 'temp_file.sync_all()?;' >/dev/null
+    printf '%s\n' "$artifact_helper_body" | rg -n -F 'drop(temp_file);' >/dev/null
+    printf '%s\n' "$artifact_helper_body" | rg -n -F 'fs::rename(&temp_path, output_path)?;' >/dev/null
+    if [ "$(printf '%s\n' "$artifact_helper_body" | rg -c -F 'fs::remove_file(&temp_path)')" != "2" ]; then
+      echo "Transactional object publication must remove one stale temp before writing and clean the owned temp after failure."
+      exit 1
+    fi
+
+    canonical_function_body="$(sed -n '/^fn lower_compiler_mir_ingestion_function_to_object(/,/^fn compiler_mir_ingestion_signature(/p' "$source_file")"
+    canonical_module_body="$(sed -n '/^fn lower_compiler_mir_ingestion_module_to_object(/,/^fn define_compiler_mir_ingestion_module_function(/p' "$source_file")"
+    for canonical_body in "$canonical_function_body" "$canonical_module_body"; do
+      printf '%s\n' "$canonical_body" | rg -n -F 'let object_bytes = object_product.emit()?;' >/dev/null
+      printf '%s\n' "$canonical_body" | rg -n -F 'publish_compiler_mir_object_artifact(output_path, object_bytes)?;' >/dev/null
+      if printf '%s\n' "$canonical_body" | rg -n -F 'fs::write(output_path' >/dev/null; then
+        echo "Canonical compiler-MIR emitters must not write object bytes directly to the final path."
+        exit 1
+      fi
+      if printf '%s\n' "$canonical_body" | rg -n -F 'fs::create_dir_all' >/dev/null; then
+        echo "Canonical compiler-MIR emitters must not create output directories before object emission completes."
+        exit 1
+      fi
+    done
+
+    cargo_cmd=(cargo run --quiet --manifest-path compiler/experiments/cranelift/Cargo.toml --locked --)
+
+    function_parent="$build_dir/function"
+    function_output="$function_parent/return.o"
+    function_temp="$function_parent/.return.o.phase9g.tmp"
+    sentinel="$build_dir/original-object.sentinel"
+    mkdir -p "$function_parent"
+    printf '%s\n' 'phase9g-existing-final-object' >"$sentinel"
+    cp "$sentinel" "$function_output"
+    printf '%s\n' 'phase9g-stale-temp-object' >"$function_temp"
+    "${cargo_cmd[@]}" compiler-mir-ingestion-object "$function_fixture" "$function_output"
+    test -s "$function_output"
+    test ! -e "$function_temp"
+    if cmp -s "$function_output" "$sentinel"; then
+      echo "Transactional publication did not replace the existing final object."
+      exit 1
+    fi
+
+    module_parent="$build_dir/module"
+    module_output="$module_parent/completeness.o"
+    module_temp="$module_parent/.completeness.o.phase9g.tmp"
+    mkdir -p "$module_parent"
+    printf '%s\n' 'phase9g-stale-module-temp-object' >"$module_temp"
+    "${cargo_cmd[@]}" compiler-mir-ingestion-object "$module_fixture" "$module_output"
+    test -s "$module_output"
+    test ! -e "$module_temp"
+
+    invalid_fixture="$build_dir/invalid-format.mir"
+    printf '%s\n' 'format: gust.compiler_mir_ingestion.invalid.v9' >"$invalid_fixture"
+    rejected_parent="$build_dir/rejected/parse"
+    rejected_output="$rejected_parent/rejected.o"
+    set +e
+    "${cargo_cmd[@]}" compiler-mir-ingestion-object "$invalid_fixture" "$rejected_output" >"$build_dir/parse-rejection.log" 2>&1
+    parse_status="$?"
+    set -e
+    if [ "$parse_status" = "0" ]; then
+      echo "Expected malformed canonical fixture rejection before object publication."
+      cat "$build_dir/parse-rejection.log"
+      exit 1
+    fi
+    if [ -e "$rejected_parent" ]; then
+      echo "Malformed canonical fixture created its requested output parent."
+      find "$rejected_parent" -maxdepth 2 -print || true
+      exit 1
+    fi
+
+    preserved_output="$build_dir/preserved.o"
+    preserved_temp="$build_dir/.preserved.o.phase9g.tmp"
+    cp "$sentinel" "$preserved_output"
+    set +e
+    "${cargo_cmd[@]}" compiler-mir-ingestion-object "$invalid_fixture" "$preserved_output" >"$build_dir/preserved-rejection.log" 2>&1
+    preserved_status="$?"
+    set -e
+    if [ "$preserved_status" = "0" ]; then
+      echo "Expected malformed canonical fixture rejection with an existing final artifact."
+      cat "$build_dir/preserved-rejection.log"
+      exit 1
+    fi
+    cmp -s "$preserved_output" "$sentinel"
+    test ! -e "$preserved_temp"
+
+    publication_parent="$build_dir/publication-failure"
+    publication_output="$publication_parent/final.o"
+    publication_temp="$publication_parent/.final.o.phase9g.tmp"
+    mkdir -p "$publication_output"
+    set +e
+    "${cargo_cmd[@]}" compiler-mir-ingestion-object "$function_fixture" "$publication_output" >"$build_dir/publication-failure.log" 2>&1
+    publication_status="$?"
+    set -e
+    if [ "$publication_status" = "0" ]; then
+      echo "Expected final-path publication failure when the requested object path is a directory."
+      cat "$build_dir/publication-failure.log"
+      exit 1
+    fi
+    test -d "$publication_output"
+    if [ -e "$publication_temp" ]; then
+      echo "Failed object publication left its sibling temp artifact behind."
+      ls -la "$publication_parent"
+      exit 1
+    fi
+
+    rg -n -F 'Steps 3 and 4 make both canonical compiler-MIR object emitters transactional.' "$readme_doc" >/dev/null
+    rg -n -F '`CompilerMirObjectArtifactReport` records the final path and byte size.' "$readme_doc" >/dev/null
+    rg -n -F 'No linker ownership, target configuration, MIR syntax, translator seed, or' "$readme_doc" >/dev/null
+    rg -n -F 'production route changes in this patch.' "$readme_doc" >/dev/null
+
+    echo "✅ Phase 9G transactional object artifacts passed: complete nonempty bytes publish through a cleaned sibling temp and rename, while parse and publication failures preserve final-path integrity."
 
 
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
