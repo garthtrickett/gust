@@ -9181,7 +9181,7 @@ guard-cranelift-phase9g-object-inspection-contract:
     rg -n -F 'allowed_cranelift_phase9g_object_inspection_route_policy: mir_to_c_primary_cranelift_disabled_no_production_runtime_or_backend_route' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase9g_object_inspection_next_milestone: canonical_link_driver_contract' "$manifest_doc" >/dev/null
 
-    rg -n -F 'object = "=0.39.1"' "$cargo_manifest" >/dev/null
+    rg -n -F 'object = { version = "=0.39.1", default-features = false, features = ["read"] }' "$cargo_manifest" >/dev/null
     cargo_package_block="$(sed -n '/^name = "gust-cranelift-experiment"$/,/^$/p' "$cargo_lock")"
     printf '%s\n' "$cargo_package_block" | rg -n -F '"object",' >/dev/null
 
