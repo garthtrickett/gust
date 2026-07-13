@@ -502,6 +502,31 @@ and `DT_TEXTREL`, and executes the linked artifact. No global `-no-pie` escape
 hatch is added. MIR syntax, the 33/33/0/0/17 inventory, translator seeds,
 default backend state, and production routing remain unchanged.
 
+Steps 7 and 8 inspect complete object bytes before transactional publication.
+The pinned `object` reader records binary format, architecture, endianness,
+pointer width, object kind, section inventory, code-section presence, symbol
+visibility, relocation targets, and duplicate symbol-table entries. Malformed,
+truncated, code-section-free, or structurally inconsistent objects reject
+before the sibling temp file or final object path is touched.
+
+Each validated canonical MIR model derives an exact symbol contract before
+emission: exported entries must be the complete globally visible definition
+set, module-local functions must be defined with compilation-unit-local
+visibility, and unresolved symbols must exactly match the declared imported
+host link symbols. Import-free modules and local-only call graphs therefore
+admit no undefined symbols, and unexpected exported helpers reject before
+publication.
+
+`compiler-mir-inspect-object` prints the structured report, while
+`compiler-mir-verify-object-contract` re-derives the expected symbol contract
+from a canonical fixture and verifies an existing object. `nm` is no longer the
+source of truth for undefined symbols. It remains only an optional diagnostic
+when structured inspection reports a mismatch.
+
+MIR syntax, the 33/33/0/0/17 inventory, translator seeds, default backend
+state, and production routing remain unchanged. The next milestone is the
+canonical experimental link driver.
+
 The checked-in lockfile for this crate is owned by:
 Patch 8 freezes the complete canonical call/import matrix and retires all
 eleven historical bypasses. The checked-in completeness fixture combines local

@@ -245,6 +245,7 @@ dependencies = [
  "cranelift-module",
  "cranelift-native",
  "cranelift-object",
+ "object",
 ]
 
 [[package]]

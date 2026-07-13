@@ -1673,6 +1673,7 @@ guard-mir-to-c-boring-surface:
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-opening-contract' || true)"
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-object-artifact-contract' || true)"
     cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-target-relocation-contract' || true)"
+    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-object-inspection-contract' || true)"
     if [ -n "$cranelift_recipe_wiring" ]; then
       echo "MIR-to-C boring gate allows only manifest, inert backend, dependency beachhead, explicit backend suite, return-int/local-binding/branch native smokes, and differential Cranelift guards before backend implementation expands."
       echo "$cranelift_recipe_wiring"
@@ -8464,9 +8465,18 @@ guard-cranelift-phase9f-call-import-completeness-rejection:
       echo "Expected native link failure for a valid object with an unresolved host import."
       exit 1
     fi
-    if ! nm -u "$unresolved_object" | rg -n -F 'phase9f_missing_host_symbol' >/dev/null; then
+    unresolved_inspection_log="$build_dir/unresolved-object-inspection.log"
+    if ! "${cargo_cmd[@]}" compiler-mir-inspect-object "$unresolved_object" >"$unresolved_inspection_log" 2>&1; then
+      echo "Valid unresolved-import object failed structured object inspection."
+      cat "$unresolved_inspection_log"
+      exit 1
+    fi
+    if ! rg -n -F 'undefined_symbol: phase9f_missing_host_symbol' "$unresolved_inspection_log" >/dev/null; then
       echo "Valid unresolved-import object does not retain the expected undefined host symbol."
-      nm -u "$unresolved_object" || true
+      cat "$unresolved_inspection_log"
+      if command -v nm >/dev/null 2>&1; then
+        nm -u "$unresolved_object" || true
+      fi
       exit 1
     fi
     test -s "$unresolved_object"
@@ -9126,6 +9136,191 @@ guard-cranelift-phase9g-target-relocation-contract:
     rg -n -F 'No global `-no-pie` escape hatch is added.' "$readme_doc" >/dev/null
 
     echo "✅ Phase 9G target/relocation contract passed: one explicit native target owner emits PIC canonical objects, and the multi-import object links as an ELF PIE without text relocations or DT_TEXTREL."
+
+
+guard-cranelift-phase9g-object-inspection-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 9G structured object inspection and symbol contracts..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    readme_doc="compiler/experiments/cranelift/README.md"
+    source_file="compiler/experiments/cranelift/src/main.rs"
+    cargo_manifest="compiler/experiments/cranelift/Cargo.toml"
+    cargo_lock="compiler/experiments/cranelift/Cargo.lock"
+    function_fixture="compiler/fixtures/native_backend_return_int_ingestion.mir"
+    local_fixture="compiler/fixtures/phase9f_local_call_module.mir"
+    imported_fixture="compiler/fixtures/phase9f_call_import_completeness.mir"
+    build_dir="build/guards/cranelift_phase9g_object_inspection_contract"
+    rm -rf "$build_dir"
+    mkdir -p "$build_dir"
+
+    just guard-cranelift-phase9g-target-relocation-contract
+
+    for required_file in "$manifest_doc" "$readme_doc" "$source_file" "$cargo_manifest" "$cargo_lock" "$function_fixture" "$local_fixture" "$imported_fixture"; do
+      if [ ! -f "$required_file" ]; then
+        echo "Missing Phase 9G object-inspection contract input: $required_file"
+        exit 1
+      fi
+    done
+
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9G_OBJECT_INSPECTION_CONTRACT_GUARD: guard-cranelift-phase9g-object-inspection-contract' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_object_inspection_status: phase9g_structured_object_inspection_and_symbol_contract' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_object_inspection_dependency: object_0_39_1_unified_read_api' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_object_inspection_owner: compiler/experiments/cranelift/src/main.rs::inspect_compiler_mir_object_artifact' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_object_inspection_order: complete_object_bytes_then_structural_inspection_and_symbol_contract_then_transactional_publication' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_object_inspection_metadata: binary_format_architecture_endianness_pointer_width_object_kind_sections_code_section_symbol_visibility_relocation_targets_and_duplicate_symbols' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_object_inspection_symbol_contract: exact_exported_module_local_and_unresolved_import_symbol_sets_derived_from_the_validated_canonical_MIR_model' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_object_inspection_export_policy: no_unexpected_exported_helper_symbols' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_object_inspection_local_policy: every_module_local_function_is_defined_with_compilation_unit_local_visibility' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_object_inspection_import_policy: import_free_and_local_call_modules_have_zero_undefined_symbols_imported_call_modules_have_the_exact_declared_host_link_symbol_set' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_object_inspection_duplicate_policy: duplicate_non_section_non_file_symbol_table_names_reject_before_publication' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_object_inspection_malformed_policy: malformed_truncated_empty_or_code_section_free_objects_reject_as_object_inspection_failures' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_object_inspection_nm_policy: structured_object_inspection_is_authoritative_nm_is_optional_failure_diagnostic_only' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_object_inspection_dynamic_matrix: v1_export_only_local_call_export_plus_local_multi_import_exact_undefined_set_wrong_fixture_contract_malformed_object_and_truncated_object' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_object_inspection_inherited_inventory: 33_total_33_canonical_shared_0_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_object_inspection_route_policy: mir_to_c_primary_cranelift_disabled_no_production_runtime_or_backend_route' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_object_inspection_next_milestone: canonical_link_driver_contract' "$manifest_doc" >/dev/null
+
+    rg -n -F 'object = "=0.39.1"' "$cargo_manifest" >/dev/null
+    cargo_package_block="$(sed -n '/^name = "gust-cranelift-experiment"$/,/^$/p' "$cargo_lock")"
+    printf '%s\n' "$cargo_package_block" | rg -n -F '"object",' >/dev/null
+
+    rg -n -F 'use object::{Object, ObjectSection, ObjectSymbol, RelocationTarget, SectionKind, SymbolKind};' "$source_file" >/dev/null
+    rg -n -F 'struct CompilerMirObjectSymbolContract {' "$source_file" >/dev/null
+    rg -n -F 'struct CompilerMirObjectInspectionReport {' "$source_file" >/dev/null
+    rg -n -F 'fn inspect_compiler_mir_object_artifact(' "$source_file" >/dev/null
+    rg -n -F 'fn validate_compiler_mir_object_symbol_contract(' "$source_file" >/dev/null
+    rg -n -F 'fn compiler_mir_function_object_symbol_contract(' "$source_file" >/dev/null
+    rg -n -F 'fn compiler_mir_module_object_symbol_contract(' "$source_file" >/dev/null
+    rg -n -F 'fn inspect_compiler_mir_object_path(' "$source_file" >/dev/null
+    rg -n -F 'fn verify_compiler_mir_object_contract_path(' "$source_file" >/dev/null
+    rg -n -F '"compiler-mir-inspect-object" => {' "$source_file" >/dev/null
+    rg -n -F '"compiler-mir-verify-object-contract" => {' "$source_file" >/dev/null
+
+    inspection_body="$(sed -n '/^fn inspect_compiler_mir_object_artifact(/,/^fn print_compiler_mir_object_inspection_report(/p' "$source_file")"
+    printf '%s\n' "$inspection_body" | rg -n -F 'object::File::parse(object_bytes)' >/dev/null
+    printf '%s\n' "$inspection_body" | rg -n -F 'object_file.format()' >/dev/null
+    printf '%s\n' "$inspection_body" | rg -n -F 'object_file.architecture()' >/dev/null
+    printf '%s\n' "$inspection_body" | rg -n -F 'object_file.endianness()' >/dev/null
+    printf '%s\n' "$inspection_body" | rg -n -F 'object_file.sections()' >/dev/null
+    printf '%s\n' "$inspection_body" | rg -n -F 'section.kind()' >/dev/null
+    printf '%s\n' "$inspection_body" | rg -n -F 'section.relocations()' >/dev/null
+    printf '%s\n' "$inspection_body" | rg -n -F 'object_file.symbols()' >/dev/null
+    printf '%s\n' "$inspection_body" | rg -n -F 'symbol.scope()' >/dev/null
+    printf '%s\n' "$inspection_body" | rg -n -F 'symbol.is_global()' >/dev/null
+    printf '%s\n' "$inspection_body" | rg -n -F 'symbol.is_local()' >/dev/null
+    printf '%s\n' "$inspection_body" | rg -n -F 'symbol.is_undefined()' >/dev/null
+    printf '%s\n' "$inspection_body" | rg -n -F 'duplicate symbol-table entries' >/dev/null
+    printf '%s\n' "$inspection_body" | rg -n -F 'found no nonempty code section' >/dev/null
+    printf '%s\n' "$inspection_body" | rg -n -F 'validate_compiler_mir_object_symbol_contract(&report, symbol_contract)?;' >/dev/null
+
+    canonical_function_body="$(sed -n '/^fn lower_compiler_mir_ingestion_function_to_object(/,/^fn compiler_mir_ingestion_signature(/p' "$source_file")"
+    canonical_module_body="$(sed -n '/^fn lower_compiler_mir_ingestion_module_to_object(/,/^fn define_compiler_mir_ingestion_module_function(/p' "$source_file")"
+    for canonical_body in "$canonical_function_body" "$canonical_module_body"; do
+      inspect_line="$(printf '%s\n' "$canonical_body" | rg -n -F 'let inspection_report = inspect_compiler_mir_object_artifact(' | cut -d: -f1)"
+      publish_line="$(printf '%s\n' "$canonical_body" | rg -n -F 'publish_compiler_mir_object_artifact(output_path, object_bytes)?;' | cut -d: -f1)"
+      if [ -z "$inspect_line" ] || [ -z "$publish_line" ] || [ "$inspect_line" -ge "$publish_line" ]; then
+        echo "Canonical compiler-MIR object inspection must complete before transactional publication."
+        exit 1
+      fi
+    done
+    printf '%s\n' "$canonical_function_body" | rg -n -F 'compiler_mir_function_object_symbol_contract(mir_function)' >/dev/null
+    printf '%s\n' "$canonical_module_body" | rg -n -F 'compiler_mir_module_object_symbol_contract(mir_module)' >/dev/null
+
+    phase9f_completeness_body="$(sed -n '/^guard-cranelift-phase9f-call-import-completeness-rejection:/,/^guard-cranelift-phase9f-close:/p' justfile)"
+    printf '%s\n' "$phase9f_completeness_body" | rg -n -F 'compiler-mir-inspect-object "$unresolved_object"' >/dev/null
+    printf '%s\n' "$phase9f_completeness_body" | rg -n -F 'undefined_symbol: phase9f_missing_host_symbol' >/dev/null
+    if printf '%s\n' "$phase9f_completeness_body" | rg -n -F 'if ! nm -u "$unresolved_object"' >/dev/null; then
+      echo "Phase 9F unresolved-symbol proof must use structured inspection rather than nm as its assertion."
+      exit 1
+    fi
+
+    cargo_cmd=(cargo run --quiet --manifest-path "$cargo_manifest" --locked --)
+
+    function_object="$build_dir/function.o"
+    function_log="$build_dir/function-inspection.log"
+    "${cargo_cmd[@]}" compiler-mir-ingestion-object "$function_fixture" "$function_object"
+    "${cargo_cmd[@]}" compiler-mir-inspect-object "$function_object" >"$function_log"
+    "${cargo_cmd[@]}" compiler-mir-verify-object-contract "$function_fixture" "$function_object" >/dev/null
+    rg -n -F 'defined_global_symbol_count: 1' "$function_log" >/dev/null
+    rg -n -F 'defined_local_symbol_count: 0' "$function_log" >/dev/null
+    rg -n -F 'undefined_symbol_count: 0' "$function_log" >/dev/null
+    rg -n -F 'defined_global_symbol: tiny_native_backend_compiler_mir_ingested_return_int' "$function_log" >/dev/null
+    rg -n -F 'has_code_section: true' "$function_log" >/dev/null
+    rg -n -F 'duplicate_symbol_count: 0' "$function_log" >/dev/null
+
+    local_object="$build_dir/local-call.o"
+    local_log="$build_dir/local-call-inspection.log"
+    "${cargo_cmd[@]}" compiler-mir-ingestion-object "$local_fixture" "$local_object"
+    "${cargo_cmd[@]}" compiler-mir-inspect-object "$local_object" >"$local_log"
+    "${cargo_cmd[@]}" compiler-mir-verify-object-contract "$local_fixture" "$local_object" >/dev/null
+    rg -n -F 'defined_global_symbol_count: 1' "$local_log" >/dev/null
+    rg -n -F 'defined_local_symbol_count: 1' "$local_log" >/dev/null
+    rg -n -F 'undefined_symbol_count: 0' "$local_log" >/dev/null
+    rg -n -F 'defined_global_symbol: tiny_native_backend_compiler_mir_ingested_block_param_local_call_branch' "$local_log" >/dev/null
+    rg -n -F 'defined_local_symbol: tiny_native_backend_compiler_mir_ingested_block_param_local_call_helper' "$local_log" >/dev/null
+    rg -n -F 'has_code_section: true' "$local_log" >/dev/null
+
+    imported_object="$build_dir/imported.o"
+    imported_log="$build_dir/imported-inspection.log"
+    "${cargo_cmd[@]}" compiler-mir-ingestion-object "$imported_fixture" "$imported_object"
+    "${cargo_cmd[@]}" compiler-mir-inspect-object "$imported_object" >"$imported_log"
+    "${cargo_cmd[@]}" compiler-mir-verify-object-contract "$imported_fixture" "$imported_object" >/dev/null
+    rg -n -F 'defined_global_symbol_count: 1' "$imported_log" >/dev/null
+    rg -n -F 'defined_local_symbol_count: 2' "$imported_log" >/dev/null
+    rg -n -F 'undefined_symbol_count: 3' "$imported_log" >/dev/null
+    rg -n -F 'defined_global_symbol: phase9f_completeness_entry' "$imported_log" >/dev/null
+    rg -n -F 'defined_local_symbol: phase9f_completeness_leaf' "$imported_log" >/dev/null
+    rg -n -F 'defined_local_symbol: phase9f_completeness_graph' "$imported_log" >/dev/null
+    for imported_symbol in phase9f_completeness_host_zero phase9f_completeness_host_add3 phase9f_completeness_host_positive; do
+      rg -n -F "undefined_symbol: $imported_symbol" "$imported_log" >/dev/null
+      rg -n "relocation_target: .*${imported_symbol}" "$imported_log" >/dev/null
+    done
+    rg -n '^section: .+[|]kind=Text[|]size=[1-9][0-9]*[|]relocations=' "$imported_log" >/dev/null
+    rg -n -F 'duplicate_symbol_count: 0' "$imported_log" >/dev/null
+
+    wrong_contract_log="$build_dir/wrong-contract.log"
+    set +e
+    "${cargo_cmd[@]}" compiler-mir-verify-object-contract "$local_fixture" "$function_object" >"$wrong_contract_log" 2>&1
+    wrong_contract_status="$?"
+    set -e
+    if [ "$wrong_contract_status" = "0" ]; then
+      echo "Expected a valid object to reject against the wrong canonical fixture symbol contract."
+      exit 1
+    fi
+    rg -n -F 'compiler MIR object defined global symbol contract mismatch' "$wrong_contract_log" >/dev/null
+    test -s "$function_object"
+
+    malformed_object="$build_dir/malformed.o"
+    printf '%s\n' 'phase9g-not-an-object' >"$malformed_object"
+    set +e
+    "${cargo_cmd[@]}" compiler-mir-inspect-object "$malformed_object" >"$build_dir/malformed.log" 2>&1
+    malformed_status="$?"
+    set -e
+    if [ "$malformed_status" = "0" ]; then
+      echo "Expected malformed object bytes to reject during structured inspection."
+      exit 1
+    fi
+    rg -n -F 'compiler MIR object inspection could not parse object bytes' "$build_dir/malformed.log" >/dev/null
+
+    truncated_object="$build_dir/truncated.o"
+    head -c 16 "$imported_object" >"$truncated_object"
+    set +e
+    "${cargo_cmd[@]}" compiler-mir-inspect-object "$truncated_object" >"$build_dir/truncated.log" 2>&1
+    truncated_status="$?"
+    set -e
+    if [ "$truncated_status" = "0" ]; then
+      echo "Expected truncated object bytes to reject during structured inspection."
+      exit 1
+    fi
+    rg -n -F 'compiler MIR object inspection could not parse object bytes' "$build_dir/truncated.log" >/dev/null
+
+    rg -n -F 'Steps 7 and 8 inspect complete object bytes before transactional publication.' "$readme_doc" >/dev/null
+    rg -n -F 'Each validated canonical MIR model derives an exact symbol contract' "$readme_doc" >/dev/null
+    tr '\n' ' ' < "$readme_doc" | rg -F '`nm` is no longer the source of truth for undefined symbols.' >/dev/null
+    rg -n -F 'MIR syntax, the 33/33/0/0/17 inventory, translator seeds, default' "$readme_doc" >/dev/null
+
+    echo "✅ Phase 9G object inspection passed: canonical bytes are parsed before publication, exports/locals/imports match exact model-derived contracts, relocation targets are recorded, and malformed or truncated objects reject."
 
 
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:

@@ -12,6 +12,7 @@ use cranelift_codegen::settings::{self, Configurable};
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext, Variable};
 use cranelift_module::{FuncId, Linkage, Module, default_libcall_names};
 use cranelift_object::{ObjectBuilder, ObjectModule};
+use object::{Object, ObjectSection, ObjectSymbol, RelocationTarget, SectionKind, SymbolKind};
 
 const RETURN_INT_SYMBOL: &str = "tiny_cranelift_return_int";
 const LOCAL_BINDING_READ_SYMBOL: &str = "tiny_cranelift_local_binding_read";
@@ -1643,6 +1644,30 @@ fn run() -> Result<(), Box<dyn Error>> {
             }
             print_compiler_mir_object_target_contract()
         }
+        "compiler-mir-inspect-object" => {
+            let Some(input_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            inspect_compiler_mir_object_path(Path::new(&input_path))
+        }
+        "compiler-mir-verify-object-contract" => {
+            let Some(fixture_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            let Some(object_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            verify_compiler_mir_object_contract_path(
+                Path::new(&fixture_path),
+                Path::new(&object_path),
+            )
+        }
         "compiler-mir-ingestion-object" => {
             let Some(input_path) = args.next() else {
                 return Err(usage_error().into());
@@ -2766,6 +2791,8 @@ fn usage_error() -> IoError {
         concat!(
             "usage:\n",
             "  gust-cranelift-experiment compiler-mir-object-target-contract\n",
+            "  gust-cranelift-experiment compiler-mir-inspect-object <input.o>\n",
+            "  gust-cranelift-experiment compiler-mir-verify-object-contract <input.mir> <input.o>\n",
             "  gust-cranelift-experiment compiler-mir-ingestion-object <input.mir> <output.o>\n",
             "  gust-cranelift-experiment compiler-mir-validate-fixture <input.mir>\n",
             "  gust-cranelift-experiment compiler-mir-return-int-ingestion-object <input.mir> <output.o>\n",
@@ -14113,6 +14140,440 @@ fn print_compiler_mir_object_target_contract() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct CompilerMirObjectSymbolContract {
+    expected_exports: Vec<String>,
+    expected_module_locals: Vec<String>,
+    expected_unresolved_imports: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct CompilerMirObjectInspectionReport {
+    binary_format: String,
+    architecture: String,
+    endianness: String,
+    pointer_width_bits: u8,
+    object_kind: String,
+    defined_global_symbols: Vec<String>,
+    defined_local_symbols: Vec<String>,
+    undefined_symbols: Vec<String>,
+    symbol_visibility: Vec<String>,
+    sections: Vec<String>,
+    has_code_section: bool,
+    relocation_targets: Vec<String>,
+    duplicate_symbols: Vec<String>,
+}
+
+fn sorted_unique_compiler_mir_object_symbols<I>(symbols: I) -> Vec<String>
+where
+    I: IntoIterator<Item = String>,
+{
+    let mut symbols = symbols
+        .into_iter()
+        .collect::<HashSet<_>>()
+        .into_iter()
+        .collect::<Vec<_>>();
+    symbols.sort();
+    symbols
+}
+
+fn compiler_mir_function_object_symbol_contract(
+    mir_function: &CompilerMirLoweringFunction<'_>,
+) -> CompilerMirObjectSymbolContract {
+    CompilerMirObjectSymbolContract {
+        expected_exports: vec![mir_function.symbol.to_string()],
+        expected_module_locals: Vec::new(),
+        expected_unresolved_imports: Vec::new(),
+    }
+}
+
+fn compiler_mir_module_object_symbol_contract(
+    mir_module: &CompilerMirLoweringModule<'_>,
+) -> CompilerMirObjectSymbolContract {
+    let mut expected_exports = Vec::new();
+    let mut expected_module_locals = Vec::new();
+    for defined in &mir_module.functions {
+        match defined.linkage {
+            CompilerMirLoweringFunctionLinkage::ExportedEntry => {
+                expected_exports.push(defined.fixture.function.symbol.to_string());
+            }
+            CompilerMirLoweringFunctionLinkage::ModuleLocal => {
+                expected_module_locals.push(defined.fixture.function.symbol.to_string());
+            }
+            CompilerMirLoweringFunctionLinkage::ImportedHost => {}
+        }
+    }
+
+    CompilerMirObjectSymbolContract {
+        expected_exports: sorted_unique_compiler_mir_object_symbols(expected_exports),
+        expected_module_locals: sorted_unique_compiler_mir_object_symbols(
+            expected_module_locals,
+        ),
+        expected_unresolved_imports: sorted_unique_compiler_mir_object_symbols(
+            mir_module
+                .imports
+                .iter()
+                .map(|imported| imported.link_symbol.to_string()),
+        ),
+    }
+}
+
+fn compiler_mir_object_binary_format_name(format: object::BinaryFormat) -> String {
+    match format {
+        object::BinaryFormat::Elf => "Elf".to_string(),
+        object::BinaryFormat::Coff => "Coff".to_string(),
+        object::BinaryFormat::MachO => "Macho".to_string(),
+        other => format!("{other:?}"),
+    }
+}
+
+fn validate_compiler_mir_object_symbol_contract(
+    report: &CompilerMirObjectInspectionReport,
+    contract: &CompilerMirObjectSymbolContract,
+) -> Result<(), Box<dyn Error>> {
+    if report.defined_global_symbols != contract.expected_exports {
+        return Err(IoError::new(
+            ErrorKind::InvalidData,
+            format!(
+                "compiler MIR object defined global symbol contract mismatch: expected {:?}, got {:?}",
+                contract.expected_exports, report.defined_global_symbols
+            ),
+        )
+        .into());
+    }
+    if report.defined_local_symbols != contract.expected_module_locals {
+        return Err(IoError::new(
+            ErrorKind::InvalidData,
+            format!(
+                "compiler MIR object module-local symbol contract mismatch: expected {:?}, got {:?}",
+                contract.expected_module_locals, report.defined_local_symbols
+            ),
+        )
+        .into());
+    }
+    if report.undefined_symbols != contract.expected_unresolved_imports {
+        return Err(IoError::new(
+            ErrorKind::InvalidData,
+            format!(
+                "compiler MIR object unresolved import contract mismatch: expected {:?}, got {:?}",
+                contract.expected_unresolved_imports, report.undefined_symbols
+            ),
+        )
+        .into());
+    }
+    Ok(())
+}
+
+fn inspect_compiler_mir_object_artifact(
+    object_bytes: &[u8],
+    target_contract: Option<&CompilerMirObjectTargetContract>,
+    symbol_contract: Option<&CompilerMirObjectSymbolContract>,
+) -> Result<CompilerMirObjectInspectionReport, Box<dyn Error>> {
+    let object_file = object::File::parse(object_bytes).map_err(|error| {
+        IoError::new(
+            ErrorKind::InvalidData,
+            format!(
+                "compiler MIR object inspection could not parse object bytes: {error}"
+            ),
+        )
+    })?;
+
+    let binary_format = compiler_mir_object_binary_format_name(object_file.format());
+    let architecture = format!("{:?}", object_file.architecture());
+    let endianness = format!("{:?}", object_file.endianness());
+    let pointer_width_bits = if object_file.is_64() { 64 } else { 32 };
+    let object_kind = format!("{:?}", object_file.kind());
+
+    let mut sections = Vec::new();
+    let mut has_code_section = false;
+    let mut relocation_targets = Vec::new();
+    for section in object_file.sections() {
+        let section_name = section.name()?.to_string();
+        let section_kind = section.kind();
+        if section_kind == SectionKind::Text && section.size() > 0 {
+            has_code_section = true;
+        }
+
+        let mut relocation_count = 0usize;
+        for (offset, relocation) in section.relocations() {
+            relocation_count += 1;
+            let target_name = match relocation.target() {
+                RelocationTarget::Symbol(index) => {
+                    let symbol = object_file.symbol_by_index(index)?;
+                    let name = symbol.name()?;
+                    if name.is_empty() {
+                        format!("<symbol:{index:?}>")
+                    } else {
+                        name.to_string()
+                    }
+                }
+                RelocationTarget::Section(index) => {
+                    let target_section = object_file.section_by_index(index)?;
+                    let name = target_section.name()?;
+                    if name.is_empty() {
+                        format!("<section:{index:?}>")
+                    } else {
+                        name.to_string()
+                    }
+                }
+                RelocationTarget::Absolute => "<absolute>".to_string(),
+                other => format!("<{other:?}>"),
+            };
+            relocation_targets.push(format!(
+                "{}+0x{offset:x}->{target_name}|kind={:?}|encoding={:?}|size={}",
+                section_name,
+                relocation.kind(),
+                relocation.encoding(),
+                relocation.size()
+            ));
+        }
+        sections.push(format!(
+            "{}|kind={:?}|size={}|relocations={relocation_count}",
+            section_name,
+            section_kind,
+            section.size()
+        ));
+    }
+    sections.sort();
+    relocation_targets.sort();
+
+    let mut defined_global_symbols = Vec::new();
+    let mut defined_local_symbols = Vec::new();
+    let mut undefined_symbols = Vec::new();
+    let mut symbol_visibility = Vec::new();
+    let mut symbol_name_counts: HashMap<String, usize> = HashMap::new();
+
+    for symbol in object_file.symbols() {
+        let name = symbol.name()?.to_string();
+        if name.is_empty() {
+            continue;
+        }
+
+        symbol_visibility.push(format!(
+            "{}|kind={:?}|scope={:?}|definition={}|undefined={}|global={}|local={}|weak={}",
+            name,
+            symbol.kind(),
+            symbol.scope(),
+            symbol.is_definition(),
+            symbol.is_undefined(),
+            symbol.is_global(),
+            symbol.is_local(),
+            symbol.is_weak()
+        ));
+
+        if !matches!(symbol.kind(), SymbolKind::Section | SymbolKind::File) {
+            *symbol_name_counts.entry(name.clone()).or_insert(0) += 1;
+        }
+
+        if symbol.is_undefined() {
+            undefined_symbols.push(name);
+        } else if symbol.is_definition() && symbol.kind() == SymbolKind::Text {
+            if symbol.is_global() {
+                defined_global_symbols.push(name);
+            } else {
+                defined_local_symbols.push(name);
+            }
+        }
+    }
+
+    defined_global_symbols.sort();
+    defined_local_symbols.sort();
+    undefined_symbols.sort();
+    symbol_visibility.sort();
+
+    let mut duplicate_symbols = symbol_name_counts
+        .into_iter()
+        .filter_map(|(name, count)| (count > 1).then_some(format!("{name}:{count}")))
+        .collect::<Vec<_>>();
+    duplicate_symbols.sort();
+
+    let report = CompilerMirObjectInspectionReport {
+        binary_format,
+        architecture,
+        endianness,
+        pointer_width_bits,
+        object_kind,
+        defined_global_symbols,
+        defined_local_symbols,
+        undefined_symbols,
+        symbol_visibility,
+        sections,
+        has_code_section,
+        relocation_targets,
+        duplicate_symbols,
+    };
+
+    if report.object_kind != "Relocatable" {
+        return Err(IoError::new(
+            ErrorKind::InvalidData,
+            format!(
+                "compiler MIR object inspection expected a relocatable object, got {}",
+                report.object_kind
+            ),
+        )
+        .into());
+    }
+    if !report.has_code_section {
+        return Err(IoError::new(
+            ErrorKind::InvalidData,
+            "compiler MIR object inspection found no nonempty code section",
+        )
+        .into());
+    }
+    if !report.duplicate_symbols.is_empty() {
+        return Err(IoError::new(
+            ErrorKind::InvalidData,
+            format!(
+                "compiler MIR object inspection found duplicate symbol-table entries: {:?}",
+                report.duplicate_symbols
+            ),
+        )
+        .into());
+    }
+
+    if let Some(target_contract) = target_contract {
+        if report.binary_format != target_contract.object_format {
+            return Err(IoError::new(
+                ErrorKind::InvalidData,
+                format!(
+                    "compiler MIR object format mismatch: target expected {}, object contains {}",
+                    target_contract.object_format, report.binary_format
+                ),
+            )
+            .into());
+        }
+        if report.pointer_width_bits != target_contract.pointer_width_bits {
+            return Err(IoError::new(
+                ErrorKind::InvalidData,
+                format!(
+                    "compiler MIR object pointer width mismatch: target expected {}, object contains {}",
+                    target_contract.pointer_width_bits, report.pointer_width_bits
+                ),
+            )
+            .into());
+        }
+        if report.endianness != target_contract.endianness {
+            return Err(IoError::new(
+                ErrorKind::InvalidData,
+                format!(
+                    "compiler MIR object endianness mismatch: target expected {}, object contains {}",
+                    target_contract.endianness, report.endianness
+                ),
+            )
+            .into());
+        }
+    }
+
+    if let Some(symbol_contract) = symbol_contract {
+        validate_compiler_mir_object_symbol_contract(&report, symbol_contract)?;
+    }
+
+    Ok(report)
+}
+
+fn print_compiler_mir_object_inspection_report(
+    report: &CompilerMirObjectInspectionReport,
+) {
+    println!("binary_format: {}", report.binary_format);
+    println!("architecture: {}", report.architecture);
+    println!("endianness: {}", report.endianness);
+    println!("pointer_width_bits: {}", report.pointer_width_bits);
+    println!("object_kind: {}", report.object_kind);
+    println!("has_code_section: {}", report.has_code_section);
+    println!(
+        "defined_global_symbol_count: {}",
+        report.defined_global_symbols.len()
+    );
+    println!(
+        "defined_local_symbol_count: {}",
+        report.defined_local_symbols.len()
+    );
+    println!("undefined_symbol_count: {}", report.undefined_symbols.len());
+    println!("section_count: {}", report.sections.len());
+    println!(
+        "relocation_target_count: {}",
+        report.relocation_targets.len()
+    );
+    println!("duplicate_symbol_count: {}", report.duplicate_symbols.len());
+    for symbol in &report.defined_global_symbols {
+        println!("defined_global_symbol: {symbol}");
+    }
+    for symbol in &report.defined_local_symbols {
+        println!("defined_local_symbol: {symbol}");
+    }
+    for symbol in &report.undefined_symbols {
+        println!("undefined_symbol: {symbol}");
+    }
+    for visibility in &report.symbol_visibility {
+        println!("symbol_visibility: {visibility}");
+    }
+    for section in &report.sections {
+        println!("section: {section}");
+    }
+    for relocation_target in &report.relocation_targets {
+        println!("relocation_target: {relocation_target}");
+    }
+    for duplicate_symbol in &report.duplicate_symbols {
+        println!("duplicate_symbol: {duplicate_symbol}");
+    }
+}
+
+fn inspect_compiler_mir_object_path(
+    input_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let object_bytes = fs::read(input_path)?;
+    let report = inspect_compiler_mir_object_artifact(
+        &object_bytes,
+        None,
+        None,
+    )?;
+    print_compiler_mir_object_inspection_report(&report);
+    Ok(())
+}
+
+fn compiler_mir_object_symbol_contract_for_fixture_path(
+    fixture_path: &Path,
+) -> Result<CompilerMirObjectSymbolContract, Box<dyn Error>> {
+    let contents = fs::read_to_string(fixture_path)?;
+    match parse_compiler_mir_input(&contents)? {
+        ParsedCompilerMirInput::V1(fixture) => {
+            validate_compiler_mir_fixture(&fixture)?;
+            recognize_compiler_mir_fixture_metadata(&fixture.metadata)?;
+            Ok(compiler_mir_function_object_symbol_contract(
+                &fixture.function,
+            ))
+        }
+        ParsedCompilerMirInput::V2(module) => {
+            validate_compiler_mir_module(&module)?;
+            for defined in &module.functions {
+                validate_compiler_mir_ingestion_lowering_readiness(
+                    &defined.fixture.function,
+                )?;
+                recognize_compiler_mir_fixture_metadata(
+                    &defined.fixture.metadata,
+                )?;
+            }
+            Ok(compiler_mir_module_object_symbol_contract(&module))
+        }
+    }
+}
+
+fn verify_compiler_mir_object_contract_path(
+    fixture_path: &Path,
+    object_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let symbol_contract =
+        compiler_mir_object_symbol_contract_for_fixture_path(fixture_path)?;
+    let object_bytes = fs::read(object_path)?;
+    let report = inspect_compiler_mir_object_artifact(
+        &object_bytes,
+        None,
+        Some(&symbol_contract),
+    )?;
+    print_compiler_mir_object_inspection_report(&report);
+    Ok(())
+}
+
 #[derive(Debug)]
 struct CompilerMirObjectArtifactReport {
     final_path: PathBuf,
@@ -14202,6 +14663,14 @@ fn lower_compiler_mir_ingestion_function_to_object(
 
     let object_product = module.finish();
     let object_bytes = object_product.emit()?;
+    let symbol_contract =
+        compiler_mir_function_object_symbol_contract(mir_function);
+    let inspection_report = inspect_compiler_mir_object_artifact(
+        &object_bytes,
+        Some(&target_contract),
+        Some(&symbol_contract),
+    )?;
+    debug_assert!(inspection_report.has_code_section);
     let artifact_report =
         publish_compiler_mir_object_artifact(output_path, object_bytes)?;
     debug_assert_eq!(artifact_report.final_path.as_path(), output_path);
@@ -14323,6 +14792,14 @@ fn lower_compiler_mir_ingestion_module_to_object(
 
     let object_product = module.finish();
     let object_bytes = object_product.emit()?;
+    let symbol_contract =
+        compiler_mir_module_object_symbol_contract(mir_module);
+    let inspection_report = inspect_compiler_mir_object_artifact(
+        &object_bytes,
+        Some(&target_contract),
+        Some(&symbol_contract),
+    )?;
+    debug_assert!(inspection_report.has_code_section);
     let artifact_report =
         publish_compiler_mir_object_artifact(output_path, object_bytes)?;
     debug_assert_eq!(artifact_report.final_path.as_path(), output_path);
