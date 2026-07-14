@@ -6496,12 +6496,11 @@ func register_fn(env: *TypeEnvironment[ctx], name: str, params: std.Vector[ast.T
             mut p_arena_ptr_vector_str:
                 std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
             p_arena_ptr_vector_str.Push(t_arena_ptr);
-            // std.Vector[str, ctx] expressions are normalized by the
-            // typechecker to the branded erased struct before intrinsic
-            // argument matching. Register the runtime ABI with that exact
-            // normalized type rather than the source-level generic spelling.
+            // Keep the intrinsic signature in canonical source-level generic
+            // form. `types_match` owns the narrow bridge to the normalized
+            // branded vector struct used by resolved expressions.
             p_arena_ptr_vector_str.Push(
-                make_type_struct("std_Vector_str_ctx", "ctx", ctx)
+                make_type_generic("std.Vector", vec_args_str, ctx)
             );
             register_fn(
                 env,
@@ -9433,6 +9432,42 @@ func types_match(expected: ast.Type[ctx], actual: ast.Type[ctx], ctx: &Arena) in
         mut t_actual := ast.serialize_type(actual, ctx);
         mut log_msg := std.Format('types_match: expected=%s, actual=%s', t_expected, t_actual);
         typechecker_log_trace('⚖', log_msg, ctx);
+
+        // Resolved std.Vector[str, brand] expressions are represented as a
+        // branded erased struct such as std_Vector_str_ctx. FFI signatures
+        // remain source-level generics. Bridge only this exact string-vector
+        // normalization instead of registering a synthetic monomorphized
+        // struct layout.
+        if expected.tag == 10 && actual.tag == 8 {
+            if std.str_eq(expected.Generic.name, "std.Vector") == 1 ||
+               std.str_eq(expected.Generic.name, "std_Vector") == 1 ||
+               std.str_eq(expected.Generic.name, "Vector") == 1
+            {
+                mut expected_args:
+                    std.Vector[ast.Type[ctx], ctx] :=
+                        ctx[expected.Generic.args];
+                if len(expected_args) == 2 &&
+                   expected_args[0].tag == 5
+                {
+                    mut actual_name := actual.Struct.struct_name;
+                    if typechecker_starts_with(actual_name, "std_") == 1 {
+                        actual_name = std.str_slice(
+                            actual_name,
+                            4,
+                            len(actual_name)
+                        );
+                    }
+                    if std.str_eq(actual_name, "Vector_str") == 1 ||
+                       typechecker_starts_with(
+                           actual_name,
+                           "Vector_str_"
+                       ) == 1
+                    {
+                        return 1;
+                    }
+                }
+            }
+        }
 
          if expected.tag != actual.tag {
                 // Handle RawPointer(Arena) vs Arena match
