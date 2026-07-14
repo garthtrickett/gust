@@ -12954,22 +12954,22 @@ guard-cranelift-phase10-backend-request-contract:
     fi
 
     canonical_mir="$build_dir/main.mir"
-    cat >"$canonical_mir" <<'EOF'
-format: gust.compiler_mir_ingestion.v1
-function: main
-backend_symbol: main
-parameter_count: 0
-return_type: int
-local_count: 0
-entry_block: entry
-block_count: 1
-block_0_label: entry
-block_0_statement_count: 0
-block_0_terminator_kind: ReturnI32
-block_0_terminator_value: 7
-metadata_count: 0
-expected_exit: 7
-EOF
+    printf '%s\n' \
+      'format: gust.compiler_mir_ingestion.v1' \
+      'function: main' \
+      'backend_symbol: main' \
+      'parameter_count: 0' \
+      'return_type: int' \
+      'local_count: 0' \
+      'entry_block: entry' \
+      'block_count: 1' \
+      'block_0_label: entry' \
+      'block_0_statement_count: 0' \
+      'block_0_terminator_kind: ReturnI32' \
+      'block_0_terminator_value: 7' \
+      'metadata_count: 0' \
+      'expected_exit: 7' \
+      >"$canonical_mir"
     canonical_length="$(wc -c <"$canonical_mir" | tr -d ' ')"
 
     bundle_path="$build_dir/program.bundle"
