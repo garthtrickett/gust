@@ -1909,9 +1909,12 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 res = std.Concat(res, "*)((char*)");
                 res = std.Concat(res, alloc_str);
                 res = std.Concat(res, arrow_or_dot);
-                res = std.Concat(res, "BaseAddress + ");
+                res = std.Concat(
+                    res,
+                    "BaseAddress + (size_t)(uint32_t)("
+                );
                 res = std.Concat(res, index_str);
-                res = std.Concat(res, ")))");
+                res = std.Concat(res, "))))");
                 return std.Clone(ctx, res);
             }
 
@@ -2830,9 +2833,18 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                         arena_get_ref_res = std.Concat(arena_get_ref_res, "*)((char*)");
                         arena_get_ref_res = std.Concat(arena_get_ref_res, left_str);
                         arena_get_ref_res = std.Concat(arena_get_ref_res, arena_get_ref_arrow_or_dot);
-                        arena_get_ref_res = std.Concat(arena_get_ref_res, "BaseAddress + ");
-                        arena_get_ref_res = std.Concat(arena_get_ref_res, idx_str);
-                        arena_get_ref_res = std.Concat(arena_get_ref_res, "))");
+                        arena_get_ref_res = std.Concat(
+                            arena_get_ref_res,
+                            "BaseAddress + (size_t)(uint32_t)("
+                        );
+                        arena_get_ref_res = std.Concat(
+                            arena_get_ref_res,
+                            idx_str
+                        );
+                        arena_get_ref_res = std.Concat(
+                            arena_get_ref_res,
+                            ")))"
+                        );
                         return std.Clone(ctx, arena_get_ref_res);
                     }
 
@@ -2862,9 +2874,18 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                         arena_set_res = std.Concat(arena_set_res, "*)((char*)");
                         arena_set_res = std.Concat(arena_set_res, left_str);
                         arena_set_res = std.Concat(arena_set_res, arena_set_arrow_or_dot);
-                        arena_set_res = std.Concat(arena_set_res, "BaseAddress + ");
-                        arena_set_res = std.Concat(arena_set_res, idx_str_arena_set);
-                        arena_set_res = std.Concat(arena_set_res, ")) = ");
+                        arena_set_res = std.Concat(
+                            arena_set_res,
+                            "BaseAddress + (size_t)(uint32_t)("
+                        );
+                        arena_set_res = std.Concat(
+                            arena_set_res,
+                            idx_str_arena_set
+                        );
+                        arena_set_res = std.Concat(
+                            arena_set_res,
+                            "))) = "
+                        );
                         arena_set_res = std.Concat(arena_set_res, value_str_arena_set);
                         arena_set_res = std.Concat(arena_set_res, "; })");
                         return std.Clone(ctx, arena_set_res);
@@ -3509,11 +3530,17 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                     res = std.Concat(res, struct_name);
                     res = std.Concat(res, "*)((char*)");
                     res = std.Concat(res, dest_base);
-                    res = std.Concat(res, " + _dest_idx) = *(struct ");
+                    res = std.Concat(
+                        res,
+                        " + (size_t)(uint32_t)(_dest_idx)) = *(struct "
+                    );
                     res = std.Concat(res, struct_name);
                     res = std.Concat(res, "*)((char*)");
                     res = std.Concat(res, src_base);
-                    res = std.Concat(res, " + _src_idx); _dest_idx; })");
+                    res = std.Concat(
+                        res,
+                        " + (size_t)(uint32_t)(_src_idx)); _dest_idx; })"
+                    );
                     return std.Clone(ctx, res);
                 } else {
                     if src_type.tag == 5 { // Str
@@ -4417,13 +4444,19 @@ func codegen_generate_clone_helper(struct_name: str, env: &typechecker.TypeEnvir
         res = std.Concat(res, struct_name);
         res = std.Concat(res, '* src_ptr = (struct ');
         res = std.Concat(res, struct_name);
-        res = std.Concat(res, '*)((char*)src->BaseAddress + src_idx);\n');
+        res = std.Concat(
+            res,
+            '*)((char*)src->BaseAddress + (size_t)(uint32_t)(src_idx));\n'
+        );
         
         res = std.Concat(res, '    struct ');
         res = std.Concat(res, struct_name);
         res = std.Concat(res, '* dest_ptr = (struct ');
         res = std.Concat(res, struct_name);
-        res = std.Concat(res, '*)((char*)dest->BaseAddress + dest_idx);\n');
+        res = std.Concat(
+            res,
+            '*)((char*)dest->BaseAddress + (size_t)(uint32_t)(dest_idx));\n'
+        );
         res = std.Concat(res, '    *dest_ptr = *src_ptr;\n');
 
         mut orig_name := codegen_find_original_struct_name(struct_name, env, ctx);

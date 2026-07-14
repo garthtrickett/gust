@@ -27,7 +27,7 @@ void* os_ScratchAlloc(size_t size) {
     size = (size + 7) & ~7;
     if (active_thread_arena != NULL) {
         int offset = os_ArenaAlloc(active_thread_arena, size);
-        return (char*)active_thread_arena->BaseAddress + offset;
+        return (char*)active_thread_arena->BaseAddress + GUST_ARENA_OFFSET(offset);
     }
     if (os_scratch_buffer.offset + size > GUST_SCRATCH_SIZE) {
         printf("Out of thread-local scratch memory! Size requested: %zu\n", size);

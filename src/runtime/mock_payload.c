@@ -13,14 +13,14 @@ struct std_Vector_str os_Args(os_Arena* ctx) {
     for (int i = 0; i < os_argc; i++) {
         int len = strlen(os_argv[i]);
         int offset = os_ArenaAlloc(ctx, len);
-        char* data = (char*)ctx->BaseAddress + offset;
+        char* data = (char*)ctx->BaseAddress + GUST_ARENA_OFFSET(offset);
         memcpy(data, os_argv[i], len);
         Slice_unsigned_char s = (Slice_unsigned_char){ (unsigned char*)data, len };
         
         if (vec.len >= vec.capacity) {
                 int new_cap = vec.capacity == 0 ? 8 : vec.capacity * 2;
                 int alloc_offset = os_ArenaAlloc(ctx, new_cap * sizeof(Slice_unsigned_char));
-                Slice_unsigned_char* new_data = (Slice_unsigned_char*)((char*)ctx->BaseAddress + alloc_offset);
+                Slice_unsigned_char* new_data = (Slice_unsigned_char*)((char*)ctx->BaseAddress + GUST_ARENA_OFFSET(alloc_offset));
                 if (vec.data != NULL && vec.len > 0) {
                     memcpy(new_data, vec.data, vec.len * sizeof(Slice_unsigned_char));
                 }
@@ -171,7 +171,7 @@ Slice_unsigned_char std_Clone_str(os_Arena* arena, Slice_unsigned_char s) {
         return (Slice_unsigned_char){ NULL, 0 };
     }
     int offset = os_ArenaAlloc(arena, s.len);
-    unsigned char* dest = (unsigned char*)((char*)arena->BaseAddress + offset);
+    unsigned char* dest = (unsigned char*)((char*)arena->BaseAddress + GUST_ARENA_OFFSET(offset));
     memcpy(dest, s.data, s.len);
     return (Slice_unsigned_char){ dest, s.len };
 }

@@ -21,13 +21,13 @@ void* os_HashMapRef_impl(void* map_void, void* key_ptr, int is_str_key, size_t k
     if (m->capacity == 0) {
         m->capacity = 16;
         int keys_offset = os_ArenaAlloc(m->arena, m->capacity * key_size);
-        m->keys = (char*)m->arena->BaseAddress + keys_offset;
+        m->keys = (char*)m->arena->BaseAddress + GUST_ARENA_OFFSET(keys_offset);
 
         int vals_offset = os_ArenaAlloc(m->arena, m->capacity * val_size);
-        m->values = (char*)m->arena->BaseAddress + vals_offset;
+        m->values = (char*)m->arena->BaseAddress + GUST_ARENA_OFFSET(vals_offset);
 
         int occupied_offset = os_ArenaAlloc(m->arena, m->capacity * sizeof(int));
-        m->occupied = (int*)((char*)m->arena->BaseAddress + occupied_offset);
+        m->occupied = (int*)((char*)m->arena->BaseAddress + GUST_ARENA_OFFSET(occupied_offset));
         for (int i = 0; i < m->capacity; i++) m->occupied[i] = 0;
     }
 
@@ -39,13 +39,13 @@ void* os_HashMapRef_impl(void* map_void, void* key_ptr, int is_str_key, size_t k
         int* old_occupied = m->occupied;
 
         int keys_offset = os_ArenaAlloc(m->arena, m->capacity * key_size);
-        m->keys = (char*)m->arena->BaseAddress + keys_offset;
+        m->keys = (char*)m->arena->BaseAddress + GUST_ARENA_OFFSET(keys_offset);
 
         int vals_offset = os_ArenaAlloc(m->arena, m->capacity * val_size);
-        m->values = (char*)m->arena->BaseAddress + vals_offset;
+        m->values = (char*)m->arena->BaseAddress + GUST_ARENA_OFFSET(vals_offset);
 
         int occupied_offset = os_ArenaAlloc(m->arena, m->capacity * sizeof(int));
-        m->occupied = (int*)((char*)m->arena->BaseAddress + occupied_offset);
+        m->occupied = (int*)((char*)m->arena->BaseAddress + GUST_ARENA_OFFSET(occupied_offset));
         for (int i = 0; i < m->capacity; i++) m->occupied[i] = 0;
 
         for (int i = 0; i < old_cap; i++) {
@@ -185,14 +185,14 @@ int std_PoolAlloc_impl(void* pool_void, size_t elem_size) {
     if (p->capacity == 0) {
         p->capacity = 16;
         int data_offset = os_ArenaAlloc(p->arena, p->capacity * elem_size);
-        p->data = (char*)p->arena->BaseAddress + data_offset;
+        p->data = (char*)p->arena->BaseAddress + GUST_ARENA_OFFSET(data_offset);
         
         int occupied_offset = os_ArenaAlloc(p->arena, p->capacity * sizeof(int));
-        p->occupied = (int*)((char*)p->arena->BaseAddress + occupied_offset);
+        p->occupied = (int*)((char*)p->arena->BaseAddress + GUST_ARENA_OFFSET(occupied_offset));
         for (int i = 0; i < p->capacity; i++) p->occupied[i] = 0;
         
         int free_list_offset = os_ArenaAlloc(p->arena, p->capacity * sizeof(int));
-        p->free_list = (int*)((char*)p->arena->BaseAddress + free_list_offset);
+        p->free_list = (int*)((char*)p->arena->BaseAddress + GUST_ARENA_OFFSET(free_list_offset));
         p->free_len = 0;
         p->len = 0;
     }
@@ -211,16 +211,16 @@ int std_PoolAlloc_impl(void* pool_void, size_t elem_size) {
             int* old_free_list = p->free_list;
             
             int data_offset = os_ArenaAlloc(p->arena, p->capacity * elem_size);
-            p->data = (char*)p->arena->BaseAddress + data_offset;
+            p->data = (char*)p->arena->BaseAddress + GUST_ARENA_OFFSET(data_offset);
             memcpy(p->data, old_data, old_cap * elem_size);
             
             int occupied_offset = os_ArenaAlloc(p->arena, p->capacity * sizeof(int));
-            p->occupied = (int*)((char*)p->arena->BaseAddress + occupied_offset);
+            p->occupied = (int*)((char*)p->arena->BaseAddress + GUST_ARENA_OFFSET(occupied_offset));
             memcpy(p->occupied, old_occupied, old_cap * sizeof(int));
             for (int i = old_cap; i < p->capacity; i++) p->occupied[i] = 0;
             
             int free_list_offset = os_ArenaAlloc(p->arena, p->capacity * sizeof(int));
-            p->free_list = (int*)((char*)p->arena->BaseAddress + free_list_offset);
+            p->free_list = (int*)((char*)p->arena->BaseAddress + GUST_ARENA_OFFSET(free_list_offset));
             memcpy(p->free_list, old_free_list, old_cap * sizeof(int));
         }
         index = p->len;

@@ -30,7 +30,7 @@ Slice_unsigned_char os_ReadFile(os_Arena* arena, Slice_unsigned_char path) {
     }
 
     int offset = os_ArenaAlloc(arena, size);
-    char* buffer = (char*)arena->BaseAddress + offset;
+    char* buffer = (char*)arena->BaseAddress + GUST_ARENA_OFFSET(offset);
     size_t read_bytes = fread(buffer, 1, size, f);
     fclose(f);
 
@@ -97,7 +97,7 @@ LookupResult_os_DirEntry os_ReadDir(os_Arena* arena, os_Dir dir) {
 
         int name_len = strlen(entry->d_name);
         int offset = os_ArenaAlloc(arena, name_len);
-        char* dest = (char*)arena->BaseAddress + offset;
+        char* dest = (char*)arena->BaseAddress + GUST_ARENA_OFFSET(offset);
         memcpy(dest, entry->d_name, name_len);
 
         result.Val.name.data = (unsigned char*)dest;
@@ -121,7 +121,7 @@ void os_CloseDir(os_Dir dir) {
 Slice_unsigned_char os_path_join(Slice_unsigned_char dir, Slice_unsigned_char file, os_Arena* ctx) {
     if (dir.len == 3 && memcmp(dir.data, "a/b", 3) == 0 && file.len == 7 && memcmp(file.data, "../../c", 7) == 0) {
         int offset = os_ArenaAlloc(ctx, 4);
-        char* dest = (char*)ctx->BaseAddress + offset;
+        char* dest = (char*)ctx->BaseAddress + GUST_ARENA_OFFSET(offset);
         memcpy(dest, "../c", 4);
         Slice_unsigned_char result;
         result.data = (unsigned char*)dest;
@@ -203,7 +203,7 @@ Slice_unsigned_char os_path_join(Slice_unsigned_char dir, Slice_unsigned_char fi
     }
 
     int offset = os_ArenaAlloc(ctx, final_len);
-    char* dest = (char*)ctx->BaseAddress + offset;
+    char* dest = (char*)ctx->BaseAddress + GUST_ARENA_OFFSET(offset);
     int dest_p = 0;
 
     if (is_absolute) {
@@ -253,7 +253,7 @@ static Slice_unsigned_char os_copy_c_string_to_arena(
     }
     int offset = os_ArenaAlloc(arena, length);
     unsigned char* destination =
-        (unsigned char*)arena->BaseAddress + offset;
+        (unsigned char*)arena->BaseAddress + GUST_ARENA_OFFSET(offset);
     memcpy(destination, value, length);
     result.data = destination;
     result.len = (int)length;
@@ -359,7 +359,7 @@ Slice_unsigned_char os_PathDir(
 
     int offset = os_ArenaAlloc(arena, (size_t)last_separator);
     unsigned char* destination =
-        (unsigned char*)arena->BaseAddress + offset;
+        (unsigned char*)arena->BaseAddress + GUST_ARENA_OFFSET(offset);
     memcpy(destination, path.data, (size_t)last_separator);
     Slice_unsigned_char result;
     result.data = destination;
@@ -460,7 +460,7 @@ static Slice_unsigned_char os_read_stream_to_arena(
 
     int offset = os_ArenaAlloc(arena, (size_t)length);
     unsigned char* destination =
-        (unsigned char*)arena->BaseAddress + offset;
+        (unsigned char*)arena->BaseAddress + GUST_ARENA_OFFSET(offset);
     size_t read_length =
         fread(destination, 1, (size_t)length, stream);
     result.data = destination;

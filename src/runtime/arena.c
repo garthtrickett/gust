@@ -77,7 +77,7 @@ int os_ArenaAlloc(os_Arena* arena, size_t size) {
     memset((char*)arena->BaseAddress + payload_offset, 0, size);
 
     arena->Offset += total_size;
-    return (int)payload_offset;
+    return (int)(uint32_t)payload_offset;
 #else
     if (arena->Offset + size > arena->Capacity) {
         printf("Fatal Error: Out of Arena Capacity (exceeded 4GB Limit)!\n");
@@ -89,7 +89,7 @@ int os_ArenaAlloc(os_Arena* arena, size_t size) {
     memset((char*)arena->BaseAddress + assigned_offset, 0, size);
 
     arena->Offset += size;
-    return (int)assigned_offset;
+    return (int)(uint32_t)assigned_offset;
 #endif
 }
 

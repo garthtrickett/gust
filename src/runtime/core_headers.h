@@ -30,6 +30,12 @@
 #define GUST_UNLIKELY(x) (x)
 #endif
 
+// Arena indexes retain their historical 32-bit ABI. The arena itself reserves
+// 4 GiB, so offsets above INT_MAX are carried through `int` as their raw
+// two's-complement bit pattern. Always zero-extend that pattern before pointer
+// arithmetic instead of sign-extending a negative C `int`.
+#define GUST_ARENA_OFFSET(offset) ((size_t)(uint32_t)(offset))
+
 #define GUST_TICK_INTERVAL 4096
 extern GUST_THREAD_LOCAL int gust_loop_ticks;
 
@@ -225,7 +231,7 @@ static inline int os_key_eq(void* k1_ptr, void* k2_ptr, int is_str_key) {
     if ((vec_ptr)->len >= (vec_ptr)->capacity) { \
         int new_cap = (vec_ptr)->capacity == 0 ? 8 : (vec_ptr)->capacity * 2; \
         int offset = os_ArenaAlloc((vec_ptr)->arena, new_cap * sizeof(*(vec_ptr)->data)); \
-        void* new_data = (void*)((char*)(vec_ptr)->arena->BaseAddress + offset); \
+        void* new_data = (void*)((char*)(vec_ptr)->arena->BaseAddress + GUST_ARENA_OFFSET(offset)); \
         if ((vec_ptr)->data != NULL && (vec_ptr)->len > 0) { \
             memcpy(new_data, (vec_ptr)->data, (vec_ptr)->len * sizeof(*(vec_ptr)->data)); \
         } \
