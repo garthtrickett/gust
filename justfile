@@ -12806,6 +12806,347 @@ guard-cranelift-phase10-driver-handshake-contract:
     echo "✅ Phase 10 driver handshake passed: deterministic explicit-or-sibling discovery is frozen, the worker advertises exact target, MIR, link, taxonomy, and capability compatibility, and no source route or artifact path is connected."
 
 
+guard-mir-native-backend-request-smoke:
+    just guard compiler/mir_native_backend_request_smoke_test_entry.gst
+
+guard-cranelift-phase10-backend-request-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 10 generic backend request protocol..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    request_model="compiler/mir_native_backend_request.gst"
+    smoke_entry="compiler/mir_native_backend_request_smoke_test_entry.gst"
+    compiler_entry="compiler/test_runner_entry.gst"
+    rust_manifest="compiler/experiments/cranelift/Cargo.toml"
+    rust_driver="compiler/experiments/cranelift/src/main.rs"
+    readme_doc="compiler/experiments/cranelift/README.md"
+    build_dir="build/guards/cranelift_phase10_backend_request"
+
+    for required_file in \
+      "$manifest_doc" \
+      "$request_model" \
+      "$smoke_entry" \
+      "$compiler_entry" \
+      "$rust_manifest" \
+      "$rust_driver" \
+      "$readme_doc"
+    do
+      if [ ! -f "$required_file" ]; then
+        echo "Missing Phase 10 backend-request input: $required_file"
+        exit 1
+      fi
+    done
+
+    just guard-cranelift-phase10-driver-handshake-contract
+    just guard-cranelift-experiment-manifest-surface
+
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE10_BACKEND_REQUEST_GUARD: guard-cranelift-phase10-backend-request-contract' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_backend_request_status: phase10_generic_backend_request_validation_path' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_backend_request_predecessor_status: phase10_deterministic_driver_discovery_and_protocol_handshake' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_backend_request_predecessor_guard: guard-cranelift-phase10-driver-handshake-contract' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_backend_request_source: compiler/mir_native_backend_request.gst' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_backend_request_model: MirNativeBackendRequest' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_backend_request_serializer: mir_serialize_native_backend_request' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_backend_request_format: gust.native_backend.request.v1' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_backend_request_driver_protocol: gust.native_backend.driver.v1' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_backend_request_artifact_kind: native_executable' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_backend_request_command: phase10-backend-request-validate' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_backend_request_failure_taxonomy: gust.native_backend.request.failure.v1' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_backend_request_fields: format_driver_protocol_artifact_kind_target_triple_object_format_absolute_output_path_and_absolute_program_MIR_bundle_path' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_backend_request_path_policy: bundle_and_output_paths_are_distinct_absolute_single_argument_values_and_are_never_shell_fragments' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_backend_request_bundle_read_policy: worker_opens_the_absolute_bundle_path_once_retains_the_bytes_and_never_reopens_it_during_validation' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_backend_request_bundle_parser_policy: strict_serializer_order_exact_counts_exact_byte_lengths_no_unknown_or_trailing_content_and_exactly_one_exported_entry' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_backend_request_canonical_delegation: every_embedded_v1_or_v2_record_is_parsed_and_validated_by_parse_compiler_mir_input_and_the_existing_shared_validators' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_backend_request_index_validation: symbols_signatures_linkages_block_parameters_metadata_counts_module_paths_object_names_and_entry_symbol_match_the_embedded_canonical_records' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_backend_request_target_policy: request_target_triple_and_object_format_must_exactly_match_the_Phase9G_native_object_target_contract' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_backend_request_receipt_policy: successful_validation_emits_only_a_deterministic_text_receipt_and_does_not_claim_compilation_success' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_backend_request_failure_classes: invalid_request_protocol_mismatch_unsupported_artifact_target_mismatch_invalid_bundle_and_invalid_canonical_MIR' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_backend_request_artifact_policy: validation_reads_only_the_request_and_bundle_and_creates_no_object_link_log_output_parent_temporary_or_final_executable' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_backend_request_output_policy: output_path_is_validated_lexically_but_never_opened_stat_checked_created_removed_or_renamed' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_backend_request_no_fallback_policy: request_failure_never_routes_to_mir_to_c_or_a_fixture_specific_worker_command' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_backend_request_current_route_policy: compiler_model_serializer_worker_parser_validator_and_receipt_are_not_connected_to_compiler/test_runner_entry.gst' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_backend_request_default_route_policy: default_and_explicit_mir_to_c_C_stdout_behavior_remains_byte_identical' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_backend_request_next_milestone: scalar_and_metadata_source_route' "$manifest_doc" >/dev/null
+
+    rg -n -F 'type MirNativeBackendRequest[ctx] struct {' "$request_model" >/dev/null
+    rg -n -F 'func mir_native_backend_request_is_valid(' "$request_model" >/dev/null
+    rg -n -F 'func mir_serialize_native_backend_request(' "$request_model" >/dev/null
+    rg -n -F 'format: gust.native_backend.request.v1' "$request_model" "$smoke_entry" >/dev/null
+    rg -n -F 'SUCCESS: MIR native backend generic request protocol smoke' "$smoke_entry" >/dev/null
+
+    if rg -n -i -F 'cranelift' "$request_model" "$smoke_entry" >/dev/null; then
+      echo "Compiler-owned request files must remain implementation-neutral."
+      rg -n -i -F 'cranelift' "$request_model" "$smoke_entry"
+      exit 1
+    fi
+
+    if rg -n -F 'mir_native_backend_request.gst' "$compiler_entry" >/dev/null; then
+      echo "Patch 7 must not connect generic requests to the source-level compiler route."
+      rg -n -F 'mir_native_backend_request.gst' "$compiler_entry"
+      exit 1
+    fi
+
+    if rg -n 'MirNativeBackendRequest|mir_serialize_native_backend_request|phase10-backend-request-validate' "$compiler_entry" >/dev/null; then
+      echo "Patch 7 request types, serialization, and worker command must remain disconnected from compiler/test_runner_entry.gst."
+      rg -n 'MirNativeBackendRequest|mir_serialize_native_backend_request|phase10-backend-request-validate' "$compiler_entry"
+      exit 1
+    fi
+
+    if rg -n -i 'std\.System|os\.(WriteFile|Create|Open|Rename|Remove)|cargo run|Command::new|native-link|link-canonical|compiler-mir-.*object' "$request_model" "$smoke_entry" >/dev/null; then
+      echo "Compiler-owned request serialization must not spawn, build, or own filesystem, object, link, shell, or publication behavior."
+      rg -n -i 'std\.System|os\.(WriteFile|Create|Open|Rename|Remove)|cargo run|Command::new|native-link|link-canonical|compiler-mir-.*object' "$request_model" "$smoke_entry"
+      exit 1
+    fi
+
+    rg -n -F 'const PHASE10_BACKEND_REQUEST_FORMAT: &str = "gust.native_backend.request.v1";' "$rust_driver" >/dev/null
+    rg -n -F 'struct Phase10BackendRequest {' "$rust_driver" >/dev/null
+    rg -n -F 'struct Phase10ProgramMirBundle {' "$rust_driver" >/dev/null
+    rg -n -F 'fn parse_phase10_backend_request(' "$rust_driver" >/dev/null
+    rg -n -F 'fn parse_phase10_program_mir_bundle(' "$rust_driver" >/dev/null
+    rg -n -F 'fn validate_phase10_backend_request_path(' "$rust_driver" >/dev/null
+    rg -n -F '"phase10-backend-request-validate" => {' "$rust_driver" >/dev/null
+    rg -n -F 'gust-cranelift-experiment phase10-backend-request-validate <request.native>' "$rust_driver" >/dev/null
+    rg -n -F 'parse_compiler_mir_input(canonical_mir)' "$rust_driver" >/dev/null
+    rg -n -F 'validate_compiler_mir_fixture(&fixture)' "$rust_driver" >/dev/null
+    rg -n -F 'validate_compiler_mir_module(&module)' "$rust_driver" >/dev/null
+
+    rm -rf "$build_dir"
+    mkdir -p "$build_dir"
+
+    smoke_log="$build_dir/compiler-smoke-wrapper.log"
+    program_log="$build_dir/compiler-smoke-program.log"
+    rm -f to.log
+    if ! just guard-mir-native-backend-request-smoke >"$smoke_log" 2>&1; then
+      echo "Phase 10 generic request compiler smoke failed."
+      cat "$smoke_log"
+      if [ -f to.log ]; then
+        cat to.log
+      fi
+      exit 1
+    fi
+    if [ ! -f to.log ]; then
+      echo "Phase 10 generic request compiler smoke produced no program evidence log."
+      cat "$smoke_log"
+      exit 1
+    fi
+    cp to.log "$program_log"
+    rg -n -F 'SUCCESS: MIR native backend generic request protocol smoke' "$program_log" >/dev/null
+
+    cargo_target="$build_dir/cargo-target"
+    CARGO_TARGET_DIR="$cargo_target" cargo build \
+      --locked \
+      --quiet \
+      --manifest-path "$rust_manifest"
+    driver_bin="$cargo_target/debug/gust-cranelift-experiment"
+    if [ ! -x "$driver_bin" ]; then
+      echo "Missing built Phase 10 request worker: $driver_bin"
+      exit 1
+    fi
+
+    target_contract="$build_dir/target-contract.txt"
+    "$driver_bin" compiler-mir-object-target-contract >"$target_contract"
+    target_triple="$(sed -n 's/^target_triple: //p' "$target_contract")"
+    object_format="$(sed -n 's/^object_format: //p' "$target_contract")"
+    if [ -z "$target_triple" ] || [ -z "$object_format" ]; then
+      echo "Could not resolve canonical native target contract."
+      cat "$target_contract"
+      exit 1
+    fi
+
+    canonical_mir="$build_dir/main.mir"
+    cat >"$canonical_mir" <<'EOF'
+format: gust.compiler_mir_ingestion.v1
+function: main
+backend_symbol: main
+parameter_count: 0
+return_type: int
+local_count: 0
+entry_block: entry
+block_count: 1
+block_0_label: entry
+block_0_statement_count: 0
+block_0_terminator_kind: ReturnI32
+block_0_terminator_value: 7
+metadata_count: 0
+expected_exit: 7
+EOF
+    canonical_length="$(wc -c <"$canonical_mir" | tr -d ' ')"
+
+    bundle_path="$build_dir/program.bundle"
+    {
+      printf '%s\n' \
+        'format: gust.compiler_program_mir_bundle.v1' \
+        'entry_symbol: main' \
+        'module_count: 1' \
+        'module_0_path: app.gst' \
+        'module_0_prefix: ' \
+        'module_0_object_name: app.o' \
+        'module_0_canonical_format: gust.compiler_mir_ingestion.v1' \
+        'module_0_resource_metadata_count: 0' \
+        'module_0_provenance_metadata_count: 0' \
+        'module_0_native_boundary_metadata_count: 0' \
+        'module_0_symbol_count: 1' \
+        'module_0_defined_symbol_count: 1' \
+        'module_0_undefined_symbol_count: 0' \
+        'module_0_symbol_0_name: main' \
+        'module_0_symbol_0_link_name: main' \
+        'module_0_symbol_0_signature: ()->int' \
+        'module_0_symbol_0_linkage: exported_entry' \
+        'module_0_block_parameter_count: 0' \
+        "module_0_canonical_mir_length: $canonical_length" \
+        'module_0_canonical_mir_begin'
+      cat "$canonical_mir"
+      printf '%s\n' 'module_0_canonical_mir_end'
+    } >"$bundle_path"
+
+    bundle_abs="$(cd "$(dirname "$bundle_path")" && pwd)/$(basename "$bundle_path")"
+    output_path="$build_dir/program"
+    output_abs="$(cd "$(dirname "$output_path")" && pwd)/$(basename "$output_path")"
+    request_path="$build_dir/program.request"
+    {
+      printf '%s\n' \
+        'format: gust.native_backend.request.v1' \
+        'driver_protocol: gust.native_backend.driver.v1' \
+        'artifact_kind: native_executable' \
+        "target_triple: $target_triple" \
+        "object_format: $object_format" \
+        "output_path: $output_abs" \
+        "program_mir_bundle_path: $bundle_abs"
+    } >"$request_path"
+
+    receipt_a="$build_dir/receipt-a.txt"
+    receipt_b="$build_dir/receipt-b.txt"
+    run_dir="$build_dir/request-run"
+    mkdir -p "$run_dir"
+    (
+      cd "$run_dir"
+      "$OLDPWD/$driver_bin" phase10-backend-request-validate "$OLDPWD/$request_path" >"$OLDPWD/$receipt_a"
+      "$OLDPWD/$driver_bin" phase10-backend-request-validate "$OLDPWD/$request_path" >"$OLDPWD/$receipt_b"
+    )
+    cmp -s "$receipt_a" "$receipt_b"
+    rg -n -F 'request_protocol: gust.native_backend.request.v1' "$receipt_a" >/dev/null
+    rg -n -F 'request_status: validated' "$receipt_a" >/dev/null
+    rg -n -F 'artifact_kind: native_executable' "$receipt_a" >/dev/null
+    rg -n -F 'entry_symbol: main' "$receipt_a" >/dev/null
+    rg -n -F 'module_count: 1' "$receipt_a" >/dev/null
+    rg -n -F "target_triple: $target_triple" "$receipt_a" >/dev/null
+    rg -n -F "object_format: $object_format" "$receipt_a" >/dev/null
+    rg -n -F "output_path: $output_abs" "$receipt_a" >/dev/null
+
+    if [ -e "$output_abs" ]; then
+      echo "Request validation touched the requested executable path."
+      exit 1
+    fi
+    if find "$run_dir" -mindepth 1 -print -quit | grep -q .; then
+      echo "Request validation created an artifact in its working directory."
+      find "$run_dir" -mindepth 1 -print
+      exit 1
+    fi
+
+    expect_request_failure() {
+      local expected_machine_line="$1"
+      local case_name="$2"
+      local case_request="$3"
+      local stdout_log="$build_dir/$case_name.stdout"
+      local stderr_log="$build_dir/$case_name.stderr"
+      set +e
+      "$driver_bin" phase10-backend-request-validate "$case_request" >"$stdout_log" 2>"$stderr_log"
+      local status="$?"
+      set -e
+      if [ "$status" = "0" ]; then
+        echo "Expected backend request validation failure for $case_name."
+        exit 1
+      fi
+      rg -n -F "$expected_machine_line" "$stderr_log" >/dev/null
+      if [ -s "$stdout_log" ]; then
+        echo "Failed request validation must not emit a success receipt for $case_name."
+        cat "$stdout_log"
+        exit 1
+      fi
+      if [ -e "$output_abs" ]; then
+        echo "Failed request validation touched the requested executable path for $case_name."
+        exit 1
+      fi
+    }
+
+    bad_protocol="$build_dir/bad-protocol.request"
+    sed 's/gust.native_backend.driver.v1/gust.native_backend.driver.v2/' "$request_path" >"$bad_protocol"
+    expect_request_failure \
+      'gust_backend_request_failure: taxonomy=gust.native_backend.request.failure.v1 stage=request_validation kind=protocol_mismatch' \
+      bad-protocol \
+      "$bad_protocol"
+
+    bad_target="$build_dir/bad-target.request"
+    sed "s|target_triple: $target_triple|target_triple: phase10-invalid-target|" "$request_path" >"$bad_target"
+    expect_request_failure \
+      'gust_backend_request_failure: taxonomy=gust.native_backend.request.failure.v1 stage=target_validation kind=target_mismatch' \
+      bad-target \
+      "$bad_target"
+
+    relative_output="$build_dir/relative-output.request"
+    sed "s|output_path: $output_abs|output_path: program|" "$request_path" >"$relative_output"
+    expect_request_failure \
+      'gust_backend_request_failure: taxonomy=gust.native_backend.request.failure.v1 stage=request_validation kind=invalid_request' \
+      relative-output \
+      "$relative_output"
+
+    relative_bundle="$build_dir/relative-bundle.request"
+    sed "s|program_mir_bundle_path: $bundle_abs|program_mir_bundle_path: program.bundle|" "$request_path" >"$relative_bundle"
+    expect_request_failure \
+      'gust_backend_request_failure: taxonomy=gust.native_backend.request.failure.v1 stage=request_validation kind=invalid_request' \
+      relative-bundle \
+      "$relative_bundle"
+
+    bad_bundle_path="$build_dir/bad-bundle.bundle"
+    cp "$bundle_path" "$bad_bundle_path"
+    sed -i 's/gust.compiler_program_mir_bundle.v1/gust.compiler_program_mir_bundle.v2/' "$bad_bundle_path"
+    bad_bundle_abs="$(cd "$(dirname "$bad_bundle_path")" && pwd)/$(basename "$bad_bundle_path")"
+    bad_bundle_request="$build_dir/bad-bundle.request"
+    sed "s|program_mir_bundle_path: $bundle_abs|program_mir_bundle_path: $bad_bundle_abs|" "$request_path" >"$bad_bundle_request"
+    expect_request_failure \
+      'gust_backend_request_failure: taxonomy=gust.native_backend.request.failure.v1 stage=program_mir_bundle_validation kind=invalid_bundle' \
+      bad-bundle \
+      "$bad_bundle_request"
+
+    bad_canonical_path="$build_dir/bad-canonical.bundle"
+    cp "$bundle_path" "$bad_canonical_path"
+    sed -i 's/block_0_terminator_kind: ReturnI32/block_0_terminator_kind: Unknown/' "$bad_canonical_path"
+    bad_canonical_abs="$(cd "$(dirname "$bad_canonical_path")" && pwd)/$(basename "$bad_canonical_path")"
+    bad_canonical_request="$build_dir/bad-canonical.request"
+    sed "s|program_mir_bundle_path: $bundle_abs|program_mir_bundle_path: $bad_canonical_abs|" "$request_path" >"$bad_canonical_request"
+    expect_request_failure \
+      'gust_backend_request_failure: taxonomy=gust.native_backend.request.failure.v1 stage=program_mir_bundle_validation kind=invalid_bundle' \
+      bad-canonical \
+      "$bad_canonical_request"
+
+    set +e
+    "$driver_bin" phase10-backend-request-validate "$request_path" unexpected >"$build_dir/extra.stdout" 2>"$build_dir/extra.stderr"
+    extra_status="$?"
+    set -e
+    if [ "$extra_status" = "0" ]; then
+      echo "Generic backend request validation must reject extra arguments."
+      exit 1
+    fi
+
+    readme_flat="$(tr '\n' ' ' < "$readme_doc")"
+    printf '%s\n' "$readme_flat" |
+      rg -F 'Patch 7 adds the compiler-owned `MirNativeBackendRequest` and `mir_serialize_native_backend_request`.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'The line protocol is `gust.native_backend.request.v1`' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'The worker exposes `phase10-backend-request-validate`.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'Each embedded record is delegated to the existing `parse_compiler_mir_input` path and shared v1 or v2 validators.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'Successful validation emits a deterministic text receipt that says `request_status: validated`; it is not compilation success.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'Validation never opens or stats the requested output, creates an output parent, emits an object, invokes the linker, writes native logs, or publishes a temporary or final executable.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'The next milestone is the scalar and metadata source route.' >/dev/null
+
+    echo "✅ Phase 10 backend request contract passed: deterministic request and bundle validation delegates to the frozen shared MIR parsers, verifies canonical indexes and target compatibility, and creates no native artifact."
+
+
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail

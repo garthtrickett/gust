@@ -964,6 +964,40 @@ and creates no artifact. Patch 6 does not connect discovery or spawning to
 invoke the linker, or touch the requested executable. MIR-to-C remains default
 and primary. The next milestone is the generic backend request protocol.
 
+Patch 7 adds the compiler-owned `MirNativeBackendRequest` and
+`mir_serialize_native_backend_request`. The line protocol is
+`gust.native_backend.request.v1` and carries the driver protocol, the sole
+`native_executable` artifact kind, exact target triple and object format, one
+absolute final-output intent, and one distinct absolute canonical-program-bundle
+path. Paths are single values rather than command fragments. Serialization is
+deterministic and performs no filesystem access.
+
+The worker exposes `phase10-backend-request-validate`. It reads the request and
+then opens the referenced bundle exactly once. The bundle parser accepts only
+the exact indexed order emitted by `mir_serialize_program_bundle`, verifies all
+declared counts and byte lengths, rejects unknown or trailing content, and
+requires one exported entry. Module paths, object names, whole-program link
+names, signatures, linkages, block parameters, and metadata counts are checked
+against every embedded canonical record.
+
+Each embedded record is delegated to the existing `parse_compiler_mir_input`
+path and shared v1 or v2 validators. Patch 7 adds no alternate MIR parser and
+does not expand either frozen canonical schema. Request target and object values
+must match the Phase 9G native object-target constructor exactly.
+
+Successful validation emits a deterministic text receipt that says
+`request_status: validated`; it is not compilation success. Failures use the
+`gust.native_backend.request.failure.v1` taxonomy with stable request-parse,
+request-validation, target-validation, program-bundle-validation, and
+canonical-MIR-validation stages. Validation never opens or stats the requested
+output, creates an output parent, emits an object, invokes the linker, writes
+native logs, or publishes a temporary or final executable.
+
+Patch 7 remains disconnected from `compiler/test_runner_entry.gst` and provides
+no fallback to MIR-to-C or fixture-specific worker commands. Default and
+explicit MIR-to-C output remain byte-identical. The next milestone is the
+scalar and metadata source route.
+
 The checked-in lockfile for this crate is owned by:
 Patch 8 freezes the complete canonical call/import matrix and retires all
 eleven historical bypasses. The checked-in completeness fixture combines local

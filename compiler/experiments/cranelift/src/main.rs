@@ -1832,6 +1832,1081 @@ fn compiler_mir_pipeline_wrap_box<T>(
     )
 }
 
+
+const PHASE10_BACKEND_REQUEST_FORMAT: &str = "gust.native_backend.request.v1";
+const PHASE10_BACKEND_REQUEST_ARTIFACT_KIND: &str = "native_executable";
+const PHASE10_BACKEND_REQUEST_FAILURE_TAXONOMY: &str =
+    "gust.native_backend.request.failure.v1";
+
+#[derive(Debug, Clone, Copy)]
+enum Phase10BackendRequestStage {
+    RequestParse,
+    RequestValidation,
+    TargetValidation,
+    ProgramMirBundleValidation,
+    CanonicalMirValidation,
+}
+
+impl Phase10BackendRequestStage {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::RequestParse => "request_parse",
+            Self::RequestValidation => "request_validation",
+            Self::TargetValidation => "target_validation",
+            Self::ProgramMirBundleValidation => "program_mir_bundle_validation",
+            Self::CanonicalMirValidation => "canonical_mir_validation",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+enum Phase10BackendRequestFailureKind {
+    InvalidRequest,
+    ProtocolMismatch,
+    UnsupportedArtifact,
+    TargetMismatch,
+    InvalidBundle,
+    InvalidCanonicalMir,
+}
+
+impl Phase10BackendRequestFailureKind {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::InvalidRequest => "invalid_request",
+            Self::ProtocolMismatch => "protocol_mismatch",
+            Self::UnsupportedArtifact => "unsupported_artifact",
+            Self::TargetMismatch => "target_mismatch",
+            Self::InvalidBundle => "invalid_bundle",
+            Self::InvalidCanonicalMir => "invalid_canonical_mir",
+        }
+    }
+}
+
+#[derive(Debug)]
+struct Phase10BackendRequestError {
+    stage: Phase10BackendRequestStage,
+    kind: Phase10BackendRequestFailureKind,
+    detail: String,
+}
+
+impl Phase10BackendRequestError {
+    fn machine_line(&self) -> String {
+        format!(
+            "gust_backend_request_failure: taxonomy={} stage={} kind={}",
+            PHASE10_BACKEND_REQUEST_FAILURE_TAXONOMY,
+            self.stage.as_str(),
+            self.kind.as_str(),
+        )
+    }
+}
+
+impl fmt::Display for Phase10BackendRequestError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(&self.detail)
+    }
+}
+
+impl Error for Phase10BackendRequestError {}
+
+fn phase10_backend_request_error(
+    stage: Phase10BackendRequestStage,
+    kind: Phase10BackendRequestFailureKind,
+    detail: impl Into<String>,
+) -> Box<dyn Error> {
+    Box::new(Phase10BackendRequestError {
+        stage,
+        kind,
+        detail: detail.into(),
+    })
+}
+
+struct Phase10TextCursor<'a> {
+    remaining: &'a str,
+    line_number: usize,
+}
+
+impl<'a> Phase10TextCursor<'a> {
+    fn new(contents: &'a str) -> Self {
+        Self {
+            remaining: contents,
+            line_number: 1,
+        }
+    }
+
+    fn take_line(
+        &mut self,
+        stage: Phase10BackendRequestStage,
+        kind: Phase10BackendRequestFailureKind,
+    ) -> Result<&'a str, Box<dyn Error>> {
+        let Some(newline_index) = self.remaining.find('\n') else {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                format!(
+                    "line {} must be newline terminated",
+                    self.line_number
+                ),
+            ));
+        };
+        let line = &self.remaining[..newline_index];
+        self.remaining = &self.remaining[newline_index + 1..];
+        self.line_number += 1;
+        if line.contains('\r') {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                format!(
+                    "line {} contains a carriage return",
+                    self.line_number - 1
+                ),
+            ));
+        }
+        Ok(line)
+    }
+
+    fn take_expected_line(
+        &mut self,
+        expected: &str,
+        stage: Phase10BackendRequestStage,
+        kind: Phase10BackendRequestFailureKind,
+    ) -> Result<(), Box<dyn Error>> {
+        let line = self.take_line(stage, kind)?;
+        if line != expected {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                format!(
+                    "line {} expected {expected}, got {line}",
+                    self.line_number - 1
+                ),
+            ));
+        }
+        Ok(())
+    }
+
+    fn take_field(
+        &mut self,
+        field: &str,
+        allow_empty: bool,
+        stage: Phase10BackendRequestStage,
+        kind: Phase10BackendRequestFailureKind,
+    ) -> Result<&'a str, Box<dyn Error>> {
+        let line = self.take_line(stage, kind)?;
+        let prefix = format!("{field}: ");
+        let Some(value) = line.strip_prefix(&prefix) else {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                format!(
+                    "line {} expected field {field}",
+                    self.line_number - 1
+                ),
+            ));
+        };
+        if !allow_empty && value.is_empty() {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                format!("field {field} must not be empty"),
+            ));
+        }
+        Ok(value)
+    }
+
+    fn take_usize_field(
+        &mut self,
+        field: &str,
+        stage: Phase10BackendRequestStage,
+        kind: Phase10BackendRequestFailureKind,
+    ) -> Result<usize, Box<dyn Error>> {
+        let value = self.take_field(field, false, stage, kind)?;
+        value.parse::<usize>().map_err(|_| {
+            phase10_backend_request_error(
+                stage,
+                kind,
+                format!("field {field} must be a nonnegative integer"),
+            )
+        })
+    }
+
+    fn take_exact_bytes(
+        &mut self,
+        byte_length: usize,
+        stage: Phase10BackendRequestStage,
+        kind: Phase10BackendRequestFailureKind,
+    ) -> Result<&'a str, Box<dyn Error>> {
+        let Some(value) = self.remaining.get(..byte_length) else {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                format!(
+                    "declared byte length {byte_length} exceeds the remaining input"
+                ),
+            ));
+        };
+        self.remaining = &self.remaining[byte_length..];
+        self.line_number += value.bytes().filter(|byte| *byte == b'\n').count();
+        Ok(value)
+    }
+
+    fn finish(
+        self,
+        stage: Phase10BackendRequestStage,
+        kind: Phase10BackendRequestFailureKind,
+    ) -> Result<(), Box<dyn Error>> {
+        if !self.remaining.is_empty() {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "unexpected trailing request or bundle content",
+            ));
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug)]
+struct Phase10BackendRequest {
+    target_triple: String,
+    object_format: String,
+    output_path: PathBuf,
+    program_mir_bundle_path: PathBuf,
+}
+
+#[derive(Debug)]
+struct Phase10ProgramMirBundle {
+    entry_symbol: String,
+    module_count: usize,
+}
+
+fn parse_phase10_backend_request(
+    contents: &str,
+) -> Result<Phase10BackendRequest, Box<dyn Error>> {
+    let stage = Phase10BackendRequestStage::RequestParse;
+    let kind = Phase10BackendRequestFailureKind::InvalidRequest;
+    let mut cursor = Phase10TextCursor::new(contents);
+
+    let format_name = cursor.take_field("format", false, stage, kind)?;
+    if format_name != PHASE10_BACKEND_REQUEST_FORMAT {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::RequestValidation,
+            Phase10BackendRequestFailureKind::ProtocolMismatch,
+            format!(
+                "backend request format expected {}, got {format_name}",
+                PHASE10_BACKEND_REQUEST_FORMAT
+            ),
+        ));
+    }
+
+    let driver_protocol =
+        cursor.take_field("driver_protocol", false, stage, kind)?;
+    if driver_protocol != PHASE10_DRIVER_PROTOCOL {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::RequestValidation,
+            Phase10BackendRequestFailureKind::ProtocolMismatch,
+            format!(
+                "backend request driver protocol expected {}, got {driver_protocol}",
+                PHASE10_DRIVER_PROTOCOL
+            ),
+        ));
+    }
+
+    let artifact_kind =
+        cursor.take_field("artifact_kind", false, stage, kind)?;
+    if artifact_kind != PHASE10_BACKEND_REQUEST_ARTIFACT_KIND {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::RequestValidation,
+            Phase10BackendRequestFailureKind::UnsupportedArtifact,
+            format!(
+                "backend request artifact kind expected {}, got {artifact_kind}",
+                PHASE10_BACKEND_REQUEST_ARTIFACT_KIND
+            ),
+        ));
+    }
+
+    let target_triple = cursor
+        .take_field("target_triple", false, stage, kind)?
+        .to_string();
+    let object_format = cursor
+        .take_field("object_format", false, stage, kind)?
+        .to_string();
+    let output_path = PathBuf::from(
+        cursor.take_field("output_path", false, stage, kind)?,
+    );
+    let program_mir_bundle_path = PathBuf::from(
+        cursor.take_field(
+            "program_mir_bundle_path",
+            false,
+            stage,
+            kind,
+        )?,
+    );
+    cursor.finish(stage, kind)?;
+
+    if !output_path.is_absolute() {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::RequestValidation,
+            Phase10BackendRequestFailureKind::InvalidRequest,
+            "backend request output_path must be absolute",
+        ));
+    }
+    if !program_mir_bundle_path.is_absolute() {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::RequestValidation,
+            Phase10BackendRequestFailureKind::InvalidRequest,
+            "backend request program_mir_bundle_path must be absolute",
+        ));
+    }
+    if output_path == program_mir_bundle_path {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::RequestValidation,
+            Phase10BackendRequestFailureKind::InvalidRequest,
+            "backend request output and bundle paths must differ",
+        ));
+    }
+
+    Ok(Phase10BackendRequest {
+        target_triple,
+        object_format,
+        output_path,
+        program_mir_bundle_path,
+    })
+}
+
+fn phase10_tiny_mir_type_name(ty: TinyMirType) -> &'static str {
+    match ty {
+        TinyMirType::I32 => "int",
+        TinyMirType::Void => "void",
+    }
+}
+
+fn phase10_function_signature(
+    params: &[TinyMirType],
+    return_type: TinyMirType,
+) -> String {
+    let parameters = params
+        .iter()
+        .map(|ty| phase10_tiny_mir_type_name(*ty))
+        .collect::<Vec<_>>()
+        .join(",");
+    format!(
+        "({parameters})->{}",
+        phase10_tiny_mir_type_name(return_type)
+    )
+}
+
+fn phase10_linkage_name(
+    linkage: CompilerMirLoweringFunctionLinkage,
+) -> &'static str {
+    match linkage {
+        CompilerMirLoweringFunctionLinkage::ExportedEntry => "exported_entry",
+        CompilerMirLoweringFunctionLinkage::ModuleLocal => "module_local",
+        CompilerMirLoweringFunctionLinkage::ImportedHost => "imported_host",
+    }
+}
+
+fn phase10_metadata_counts(
+    metadata: &[CompilerMirFixtureMetadata<'_>],
+) -> (usize, usize, usize) {
+    let mut resource = 0;
+    let mut provenance = 0;
+    let mut native_boundary = 0;
+    for item in metadata {
+        match item.kind {
+            "resource" => resource += 1,
+            "provenance" => provenance += 1,
+            "native_boundary" => native_boundary += 1,
+            _ => {}
+        }
+    }
+    (resource, provenance, native_boundary)
+}
+
+fn phase10_expected_block_parameters(
+    function: &CompilerMirLoweringFunction<'_>,
+) -> HashSet<(String, String, usize, String, String)> {
+    let mut parameters = HashSet::new();
+    for block in &function.blocks {
+        for (ordinal, parameter) in block.parameters.iter().enumerate() {
+            parameters.insert((
+                function.symbol.to_string(),
+                block.label.to_string(),
+                ordinal,
+                parameter.name.to_string(),
+                phase10_tiny_mir_type_name(parameter.ty).to_string(),
+            ));
+        }
+    }
+    parameters
+}
+
+fn parse_phase10_program_mir_bundle(
+    contents: &str,
+) -> Result<Phase10ProgramMirBundle, Box<dyn Error>> {
+    let stage = Phase10BackendRequestStage::ProgramMirBundleValidation;
+    let kind = Phase10BackendRequestFailureKind::InvalidBundle;
+    let mut cursor = Phase10TextCursor::new(contents);
+
+    let format_name = cursor.take_field("format", false, stage, kind)?;
+    if format_name != PHASE10_PROGRAM_MIR_BUNDLE_FORMAT {
+        return Err(phase10_backend_request_error(
+            stage,
+            kind,
+            format!(
+                "program MIR bundle format expected {}, got {format_name}",
+                PHASE10_PROGRAM_MIR_BUNDLE_FORMAT
+            ),
+        ));
+    }
+
+    let entry_symbol =
+        cursor.take_field("entry_symbol", false, stage, kind)?.to_string();
+    let module_count =
+        cursor.take_usize_field("module_count", stage, kind)?;
+    if module_count == 0 {
+        return Err(phase10_backend_request_error(
+            stage,
+            kind,
+            "program MIR bundle must contain at least one module",
+        ));
+    }
+
+    let mut module_paths = HashSet::new();
+    let mut object_names = HashSet::new();
+    let mut global_symbol_links = HashSet::new();
+    let mut exported_entry_count = 0usize;
+    let mut canonical_defined_symbols = HashSet::new();
+
+    for module_index in 0..module_count {
+        let module_key = format!("module_{module_index}");
+        let module_path = cursor
+            .take_field(
+                &format!("{module_key}_path"),
+                false,
+                stage,
+                kind,
+            )?
+            .to_string();
+        let _module_prefix = cursor.take_field(
+            &format!("{module_key}_prefix"),
+            true,
+            stage,
+            kind,
+        )?;
+        let object_name = cursor
+            .take_field(
+                &format!("{module_key}_object_name"),
+                false,
+                stage,
+                kind,
+            )?
+            .to_string();
+        let canonical_format = cursor
+            .take_field(
+                &format!("{module_key}_canonical_format"),
+                false,
+                stage,
+                kind,
+            )?
+            .to_string();
+        let resource_metadata_count = cursor.take_usize_field(
+            &format!("{module_key}_resource_metadata_count"),
+            stage,
+            kind,
+        )?;
+        let provenance_metadata_count = cursor.take_usize_field(
+            &format!("{module_key}_provenance_metadata_count"),
+            stage,
+            kind,
+        )?;
+        let native_boundary_metadata_count = cursor.take_usize_field(
+            &format!("{module_key}_native_boundary_metadata_count"),
+            stage,
+            kind,
+        )?;
+
+        if !module_paths.insert(module_path.clone()) {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                format!("duplicate module path: {module_path}"),
+            ));
+        }
+        if !object_names.insert(object_name.clone()) {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                format!("duplicate module object name: {object_name}"),
+            ));
+        }
+        if !PHASE10_CANONICAL_MIR_FORMATS.contains(
+            &canonical_format.as_str(),
+        ) {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                format!(
+                    "unsupported canonical MIR format: {canonical_format}"
+                ),
+            ));
+        }
+
+        let symbol_count = cursor.take_usize_field(
+            &format!("{module_key}_symbol_count"),
+            stage,
+            kind,
+        )?;
+        let defined_symbol_count = cursor.take_usize_field(
+            &format!("{module_key}_defined_symbol_count"),
+            stage,
+            kind,
+        )?;
+        let undefined_symbol_count = cursor.take_usize_field(
+            &format!("{module_key}_undefined_symbol_count"),
+            stage,
+            kind,
+        )?;
+        if defined_symbol_count + undefined_symbol_count != symbol_count {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                format!(
+                    "{module_key} symbol totals do not match symbol_count"
+                ),
+            ));
+        }
+
+        let mut bundle_symbols:
+            HashMap<String, (String, String)> = HashMap::new();
+        let mut observed_defined = 0usize;
+        let mut observed_undefined = 0usize;
+        for symbol_index in 0..symbol_count {
+            let symbol_key =
+                format!("{module_key}_symbol_{symbol_index}");
+            let _symbol_name = cursor.take_field(
+                &format!("{symbol_key}_name"),
+                false,
+                stage,
+                kind,
+            )?;
+            let link_name = cursor
+                .take_field(
+                    &format!("{symbol_key}_link_name"),
+                    false,
+                    stage,
+                    kind,
+                )?
+                .to_string();
+            let signature = cursor
+                .take_field(
+                    &format!("{symbol_key}_signature"),
+                    false,
+                    stage,
+                    kind,
+                )?
+                .to_string();
+            let linkage = cursor
+                .take_field(
+                    &format!("{symbol_key}_linkage"),
+                    false,
+                    stage,
+                    kind,
+                )?
+                .to_string();
+
+            match linkage.as_str() {
+                "exported_entry" => {
+                    observed_defined += 1;
+                    exported_entry_count += 1;
+                    if link_name != entry_symbol {
+                        return Err(phase10_backend_request_error(
+                            stage,
+                            kind,
+                            format!(
+                                "exported entry {link_name} does not match bundle entry {entry_symbol}"
+                            ),
+                        ));
+                    }
+                }
+                "module_local" => observed_defined += 1,
+                "imported_host" => observed_undefined += 1,
+                _ => {
+                    return Err(phase10_backend_request_error(
+                        stage,
+                        kind,
+                        format!(
+                            "unsupported symbol linkage: {linkage}"
+                        ),
+                    ));
+                }
+            }
+
+            if !global_symbol_links.insert(link_name.clone()) {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    format!(
+                        "duplicate whole-program symbol link: {link_name}"
+                    ),
+                ));
+            }
+            bundle_symbols.insert(link_name, (signature, linkage));
+        }
+        if observed_defined != defined_symbol_count ||
+            observed_undefined != undefined_symbol_count
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                format!(
+                    "{module_key} observed linkage totals do not match declared totals"
+                ),
+            ));
+        }
+
+        let block_parameter_count = cursor.take_usize_field(
+            &format!("{module_key}_block_parameter_count"),
+            stage,
+            kind,
+        )?;
+        let mut bundle_block_parameters = HashSet::new();
+        for parameter_index in 0..block_parameter_count {
+            let parameter_key =
+                format!("{module_key}_block_parameter_{parameter_index}");
+            let function_name = cursor
+                .take_field(
+                    &format!("{parameter_key}_function"),
+                    false,
+                    stage,
+                    kind,
+                )?
+                .to_string();
+            let block_label = cursor
+                .take_field(
+                    &format!("{parameter_key}_block"),
+                    false,
+                    stage,
+                    kind,
+                )?
+                .to_string();
+            let ordinal = cursor.take_usize_field(
+                &format!("{parameter_key}_ordinal"),
+                stage,
+                kind,
+            )?;
+            let parameter_name = cursor
+                .take_field(
+                    &format!("{parameter_key}_name"),
+                    false,
+                    stage,
+                    kind,
+                )?
+                .to_string();
+            let parameter_type = cursor
+                .take_field(
+                    &format!("{parameter_key}_type"),
+                    false,
+                    stage,
+                    kind,
+                )?
+                .to_string();
+            if !bundle_block_parameters.insert((
+                function_name,
+                block_label,
+                ordinal,
+                parameter_name,
+                parameter_type,
+            )) {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    format!(
+                        "duplicate block parameter in {module_key}"
+                    ),
+                ));
+            }
+        }
+
+        let canonical_length = cursor.take_usize_field(
+            &format!("{module_key}_canonical_mir_length"),
+            stage,
+            kind,
+        )?;
+        if canonical_length == 0 {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                format!("{module_key} canonical MIR must not be empty"),
+            ));
+        }
+        cursor.take_expected_line(
+            &format!("{module_key}_canonical_mir_begin"),
+            stage,
+            kind,
+        )?;
+        let canonical_mir = cursor.take_exact_bytes(
+            canonical_length,
+            stage,
+            kind,
+        )?;
+        cursor.take_expected_line(
+            &format!("{module_key}_canonical_mir_end"),
+            stage,
+            kind,
+        )?;
+
+        if !canonical_mir.ends_with('\n') {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                format!(
+                    "{module_key} canonical MIR must end with a newline"
+                ),
+            ));
+        }
+        let expected_header = format!("format: {canonical_format}\n");
+        if !canonical_mir.starts_with(&expected_header) {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                format!(
+                    "{module_key} canonical format header does not match its index"
+                ),
+            ));
+        }
+
+        let parsed = parse_compiler_mir_input(canonical_mir).map_err(
+            |error| {
+                phase10_backend_request_error(
+                    Phase10BackendRequestStage::CanonicalMirValidation,
+                    Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                    format!(
+                        "{module_key} canonical MIR parse failed: {error}"
+                    ),
+                )
+            },
+        )?;
+
+        let mut expected_symbols:
+            HashMap<String, (String, Option<String>)> = HashMap::new();
+        let mut expected_block_parameters = HashSet::new();
+        let mut expected_resource_metadata = 0usize;
+        let mut expected_provenance_metadata = 0usize;
+        let mut expected_native_boundary_metadata = 0usize;
+
+        match parsed {
+            ParsedCompilerMirInput::V1(fixture) => {
+                if canonical_format != COMPILER_MIR_CANONICAL_FIXTURE_FORMAT {
+                    return Err(phase10_backend_request_error(
+                        stage,
+                        kind,
+                        format!(
+                            "{module_key} indexed canonical format disagrees with parsed v1 input"
+                        ),
+                    ));
+                }
+                validate_compiler_mir_fixture(&fixture).map_err(|error| {
+                    phase10_backend_request_error(
+                        Phase10BackendRequestStage::CanonicalMirValidation,
+                        Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                        format!(
+                            "{module_key} canonical MIR validation failed: {error}"
+                        ),
+                    )
+                })?;
+                recognize_compiler_mir_fixture_metadata(
+                    &fixture.metadata,
+                )
+                .map_err(|error| {
+                    phase10_backend_request_error(
+                        Phase10BackendRequestStage::CanonicalMirValidation,
+                        Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                        format!(
+                            "{module_key} canonical metadata validation failed: {error}"
+                        ),
+                    )
+                })?;
+
+                expected_symbols.insert(
+                    fixture.function.symbol.to_string(),
+                    (
+                        phase10_function_signature(
+                            &fixture.function.params,
+                            fixture.function.return_type,
+                        ),
+                        None,
+                    ),
+                );
+                canonical_defined_symbols
+                    .insert(fixture.function.symbol.to_string());
+                expected_block_parameters.extend(
+                    phase10_expected_block_parameters(&fixture.function),
+                );
+                let counts = phase10_metadata_counts(&fixture.metadata);
+                expected_resource_metadata += counts.0;
+                expected_provenance_metadata += counts.1;
+                expected_native_boundary_metadata += counts.2;
+            }
+            ParsedCompilerMirInput::V2(module) => {
+                if canonical_format != COMPILER_MIR_CANONICAL_MODULE_FORMAT {
+                    return Err(phase10_backend_request_error(
+                        stage,
+                        kind,
+                        format!(
+                            "{module_key} indexed canonical format disagrees with parsed v2 input"
+                        ),
+                    ));
+                }
+                validate_compiler_mir_module(&module).map_err(|error| {
+                    phase10_backend_request_error(
+                        Phase10BackendRequestStage::CanonicalMirValidation,
+                        Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                        format!(
+                            "{module_key} canonical MIR validation failed: {error}"
+                        ),
+                    )
+                })?;
+
+                for defined in &module.functions {
+                    recognize_compiler_mir_fixture_metadata(
+                        &defined.fixture.metadata,
+                    )
+                    .map_err(|error| {
+                        phase10_backend_request_error(
+                            Phase10BackendRequestStage::CanonicalMirValidation,
+                            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                            format!(
+                                "{module_key} canonical metadata validation failed: {error}"
+                            ),
+                        )
+                    })?;
+                    expected_symbols.insert(
+                        defined.fixture.function.symbol.to_string(),
+                        (
+                            phase10_function_signature(
+                                &defined.fixture.function.params,
+                                defined.fixture.function.return_type,
+                            ),
+                            Some(
+                                phase10_linkage_name(defined.linkage)
+                                    .to_string(),
+                            ),
+                        ),
+                    );
+                    canonical_defined_symbols.insert(
+                        defined.fixture.function.symbol.to_string(),
+                    );
+                    expected_block_parameters.extend(
+                        phase10_expected_block_parameters(
+                            &defined.fixture.function,
+                        ),
+                    );
+                    let counts =
+                        phase10_metadata_counts(&defined.fixture.metadata);
+                    expected_resource_metadata += counts.0;
+                    expected_provenance_metadata += counts.1;
+                    expected_native_boundary_metadata += counts.2;
+                }
+
+                for imported in &module.imports {
+                    expected_symbols.insert(
+                        imported.link_symbol.to_string(),
+                        (
+                            phase10_function_signature(
+                                &imported.params,
+                                imported.return_type,
+                            ),
+                            Some("imported_host".to_string()),
+                        ),
+                    );
+                }
+            }
+        }
+
+        if expected_symbols.len() != bundle_symbols.len() {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                format!(
+                    "{module_key} bundle symbol count does not match canonical MIR"
+                ),
+            ));
+        }
+        for (link_name, (expected_signature, expected_linkage)) in
+            expected_symbols
+        {
+            let Some((actual_signature, actual_linkage)) =
+                bundle_symbols.get(&link_name)
+            else {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    format!(
+                        "{module_key} is missing canonical symbol {link_name}"
+                    ),
+                ));
+            };
+            if actual_signature != &expected_signature {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    format!(
+                        "{module_key} signature mismatch for {link_name}"
+                    ),
+                ));
+            }
+            if let Some(expected_linkage) = expected_linkage {
+                if actual_linkage != &expected_linkage {
+                    return Err(phase10_backend_request_error(
+                        stage,
+                        kind,
+                        format!(
+                            "{module_key} linkage mismatch for {link_name}"
+                        ),
+                    ));
+                }
+            } else if link_name == entry_symbol &&
+                actual_linkage != "exported_entry"
+            {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    format!(
+                        "{module_key} v1 entry symbol must be exported"
+                    ),
+                ));
+            }
+        }
+
+        if expected_block_parameters != bundle_block_parameters {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                format!(
+                    "{module_key} block-parameter index does not match canonical MIR"
+                ),
+            ));
+        }
+        if resource_metadata_count != expected_resource_metadata ||
+            provenance_metadata_count != expected_provenance_metadata ||
+            native_boundary_metadata_count !=
+                expected_native_boundary_metadata
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                format!(
+                    "{module_key} metadata counts do not match canonical MIR"
+                ),
+            ));
+        }
+    }
+
+    cursor.finish(stage, kind)?;
+
+    if exported_entry_count != 1 {
+        return Err(phase10_backend_request_error(
+            stage,
+            kind,
+            format!(
+                "program MIR bundle must contain exactly one exported entry, found {exported_entry_count}"
+            ),
+        ));
+    }
+    if !canonical_defined_symbols.contains(&entry_symbol) {
+        return Err(phase10_backend_request_error(
+            stage,
+            kind,
+            format!(
+                "program MIR bundle entry {entry_symbol} is absent from canonical defined symbols"
+            ),
+        ));
+    }
+
+    Ok(Phase10ProgramMirBundle {
+        entry_symbol,
+        module_count,
+    })
+}
+
+fn validate_phase10_backend_request_path(
+    request_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let request_contents = fs::read_to_string(request_path).map_err(|error| {
+        phase10_backend_request_error(
+            Phase10BackendRequestStage::RequestParse,
+            Phase10BackendRequestFailureKind::InvalidRequest,
+            format!(
+                "failed to read backend request {}: {error}",
+                request_path.display()
+            ),
+        )
+    })?;
+    let request = parse_phase10_backend_request(&request_contents)?;
+
+    let (_object_builder, target_contract) =
+        build_compiler_mir_native_object_builder(
+            "gust_phase10_backend_request_validation_probe",
+        )
+        .map_err(|error| {
+            phase10_backend_request_error(
+                Phase10BackendRequestStage::TargetValidation,
+                Phase10BackendRequestFailureKind::TargetMismatch,
+                format!(
+                    "failed to resolve native target contract: {error}"
+                ),
+            )
+        })?;
+
+    if request.target_triple != target_contract.triple {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::TargetValidation,
+            Phase10BackendRequestFailureKind::TargetMismatch,
+            format!(
+                "backend request target triple expected {}, got {}",
+                target_contract.triple, request.target_triple
+            ),
+        ));
+    }
+    if request.object_format != target_contract.object_format {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::TargetValidation,
+            Phase10BackendRequestFailureKind::TargetMismatch,
+            format!(
+                "backend request object format expected {}, got {}",
+                target_contract.object_format, request.object_format
+            ),
+        ));
+    }
+
+    let bundle_contents =
+        fs::read_to_string(&request.program_mir_bundle_path).map_err(
+            |error| {
+                phase10_backend_request_error(
+                    Phase10BackendRequestStage::ProgramMirBundleValidation,
+                    Phase10BackendRequestFailureKind::InvalidBundle,
+                    format!(
+                        "failed to read program MIR bundle {}: {error}",
+                        request.program_mir_bundle_path.display()
+                    ),
+                )
+            },
+        )?;
+    let bundle = parse_phase10_program_mir_bundle(&bundle_contents)?;
+
+    println!("request_protocol: {PHASE10_BACKEND_REQUEST_FORMAT}");
+    println!("request_status: validated");
+    println!(
+        "artifact_kind: {PHASE10_BACKEND_REQUEST_ARTIFACT_KIND}"
+    );
+    println!("entry_symbol: {}", bundle.entry_symbol);
+    println!("module_count: {}", bundle.module_count);
+    println!("target_triple: {}", request.target_triple);
+    println!("object_format: {}", request.object_format);
+    println!("output_path: {}", request.output_path.display());
+    Ok(())
+}
+
 const PHASE10_DRIVER_PROTOCOL: &str = "gust.native_backend.driver.v1";
 const PHASE10_PROGRAM_MIR_BUNDLE_FORMAT: &str = "gust.compiler_program_mir_bundle.v1";
 const PHASE10_PIPELINE_TAXONOMY: &str = "gust.phase9g.pipeline.v1";
@@ -1926,6 +3001,11 @@ fn print_compiler_mir_pipeline_taxonomy() -> Result<(), Box<dyn Error>> {
 
 fn main() {
     if let Err(error) = run() {
+        if let Some(request_error) =
+            error.downcast_ref::<Phase10BackendRequestError>()
+        {
+            eprintln!("{}", request_error.machine_line());
+        }
         if let Some(pipeline_error) =
             error.downcast_ref::<CompilerMirPipelineError>()
         {
@@ -1943,6 +3023,15 @@ fn run() -> Result<(), Box<dyn Error>> {
     };
 
     match command.as_str() {
+        "phase10-backend-request-validate" => {
+            let Some(request_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            validate_phase10_backend_request_path(Path::new(&request_path))
+        }
         "phase10-driver-handshake" => {
             if args.next().is_some() {
                 return Err(usage_error().into());
@@ -3131,6 +4220,7 @@ fn usage_error() -> IoError {
         ErrorKind::InvalidInput,
         concat!(
             "usage:\n",
+            "  gust-cranelift-experiment phase10-backend-request-validate <request.native>\n",
             "  gust-cranelift-experiment phase10-driver-handshake\n",
             "  gust-cranelift-experiment compiler-mir-pipeline-taxonomy\n",
             "  gust-cranelift-experiment compiler-mir-object-target-contract\n",
