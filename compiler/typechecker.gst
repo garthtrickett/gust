@@ -6496,8 +6496,12 @@ func register_fn(env: *TypeEnvironment[ctx], name: str, params: std.Vector[ast.T
             mut p_arena_ptr_vector_str:
                 std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
             p_arena_ptr_vector_str.Push(t_arena_ptr);
+            // std.Vector[str, ctx] expressions are normalized by the
+            // typechecker to the branded erased struct before intrinsic
+            // argument matching. Register the runtime ABI with that exact
+            // normalized type rather than the source-level generic spelling.
             p_arena_ptr_vector_str.Push(
-                make_type_generic("std.Vector", vec_args_str, ctx)
+                make_type_struct("std_Vector_str_ctx", "ctx", ctx)
             );
             register_fn(
                 env,
