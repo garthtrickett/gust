@@ -28,7 +28,29 @@ gust_bootstrap: gust_v4.c $(RUNTIME_SRCS)
 
 build/gust_stage1_compiler.c: gust_bootstrap $(COMPILER_SRCS)
 	mkdir -p build
-	./gust_bootstrap compiler/test_runner_bootstrap_bridge_entry.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/gust_stage1_compiler.tmp
+	@rm -f build/gust_stage1_compiler.raw build/gust_stage1_compiler.tmp
+	@set +e; \
+	./gust_bootstrap compiler/test_runner_bootstrap_bridge_entry.gst > build/gust_stage1_compiler.raw 2>&1; \
+	status=$$?; \
+	set -e; \
+	if [ "$$status" -ne 0 ]; then \
+		echo "❌ Legacy bootstrap failed while generating the stage-one compiler:"; \
+		cat build/gust_stage1_compiler.raw; \
+		rm -f build/gust_stage1_compiler.tmp; \
+		exit "$$status"; \
+	fi; \
+	if ! grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" build/gust_stage1_compiler.raw > build/gust_stage1_compiler.tmp; then \
+		echo "❌ Legacy bootstrap succeeded but produced no filtered stage-one compiler C."; \
+		cat build/gust_stage1_compiler.raw; \
+		rm -f build/gust_stage1_compiler.tmp; \
+		exit 1; \
+	fi; \
+	if [ ! -s build/gust_stage1_compiler.tmp ]; then \
+		echo "❌ Filtered stage-one compiler C is empty."; \
+		cat build/gust_stage1_compiler.raw; \
+		rm -f build/gust_stage1_compiler.tmp; \
+		exit 1; \
+	fi
 	mv build/gust_stage1_compiler.tmp build/gust_stage1_compiler.c
 	sync
 
@@ -38,7 +60,29 @@ build/gust_stage1_bin: build/gust_stage1_compiler.c $(RUNTIME_SRCS)
 
 build/gust_compiler.c: build/gust_stage1_bin $(COMPILER_SRCS)
 	mkdir -p build
-	./build/gust_stage1_bin compiler/test_runner_entry.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/gust_compiler.tmp
+	@rm -f build/gust_compiler.raw build/gust_compiler.tmp
+	@set +e; \
+	./build/gust_stage1_bin compiler/test_runner_entry.gst > build/gust_compiler.raw 2>&1; \
+	status=$$?; \
+	set -e; \
+	if [ "$$status" -ne 0 ]; then \
+		echo "❌ Stage-one compiler failed while generating the final compiler:"; \
+		cat build/gust_compiler.raw; \
+		rm -f build/gust_compiler.tmp; \
+		exit "$$status"; \
+	fi; \
+	if ! grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" build/gust_compiler.raw > build/gust_compiler.tmp; then \
+		echo "❌ Stage-one compiler succeeded but produced no filtered final compiler C."; \
+		cat build/gust_compiler.raw; \
+		rm -f build/gust_compiler.tmp; \
+		exit 1; \
+	fi; \
+	if [ ! -s build/gust_compiler.tmp ]; then \
+		echo "❌ Filtered final compiler C is empty."; \
+		cat build/gust_compiler.raw; \
+		rm -f build/gust_compiler.tmp; \
+		exit 1; \
+	fi
 	mv build/gust_compiler.tmp build/gust_compiler.c
 	sync
 

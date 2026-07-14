@@ -13210,10 +13210,14 @@ guard-cranelift-phase10-scalar-source-route:
     rg -n -F 'native_source_route.mir_native_scalar_source_compile(' "$compiler_entry" >/dev/null
 
     rg -n -F 'build/gust_stage1_compiler.c: gust_bootstrap $(COMPILER_SRCS)' "$makefile" >/dev/null
-    rg -n -F './gust_bootstrap compiler/test_runner_bootstrap_bridge_entry.gst' "$makefile" >/dev/null
+    rg -n -F './gust_bootstrap compiler/test_runner_bootstrap_bridge_entry.gst > build/gust_stage1_compiler.raw 2>&1' "$makefile" >/dev/null
+    rg -n -F 'Legacy bootstrap failed while generating the stage-one compiler:' "$makefile" >/dev/null
     rg -n -F 'build/gust_stage1_bin: build/gust_stage1_compiler.c $(RUNTIME_SRCS)' "$makefile" >/dev/null
     rg -n -F 'build/gust_compiler.c: build/gust_stage1_bin $(COMPILER_SRCS)' "$makefile" >/dev/null
-    rg -n -F './build/gust_stage1_bin compiler/test_runner_entry.gst' "$makefile" >/dev/null
+    rg -n -F './build/gust_stage1_bin compiler/test_runner_entry.gst > build/gust_compiler.raw 2>&1' "$makefile" >/dev/null
+    rg -n -F 'Stage-one compiler failed while generating the final compiler:' "$makefile" >/dev/null
+    rg -n -F 'if [ ! -s build/gust_stage1_compiler.tmp ]; then' "$makefile" >/dev/null
+    rg -n -F 'if [ ! -s build/gust_compiler.tmp ]; then' "$makefile" >/dev/null
     rg -n -F 'Usage: gust-bootstrap-bridge <file.gst>' "$bootstrap_bridge" >/dev/null
     rg -n -F 'codegen.codegen_generate(programs, module_prefixes, &env, ctx)' "$bootstrap_bridge" >/dev/null
     if rg -n -i 'cranelift|mir_native_backend_source_route|os\.(RunProcess|GetEnv|ExecutablePath|PathAbsolute|PathDir|NativeTargetTriple|NativeObjectFormat|FileExists|FileExecutable|RemoveFile|LogError)' "$bootstrap_bridge" >/dev/null; then
