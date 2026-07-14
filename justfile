@@ -12372,9 +12372,34 @@ guard-cranelift-phase10-program-mir-contract:
       exit 1
     fi
 
-    if rg -n 'MirProgramBundle|gust\.compiler_program_mir_bundle\.v1' "$rust_driver" >/dev/null; then
-      echo "Patch 4 must not add Rust bundle parsing or driver routing yet."
-      rg -n 'MirProgramBundle|gust\.compiler_program_mir_bundle\.v1' "$rust_driver"
+    # Patch 6 may advertise the accepted bundle format in the read-only
+    # handshake. Keep an exact allowlist for that scalar constant while still
+    # rejecting Rust bundle models, parsers, request routing, or any additional
+    # bundle-format reference.
+    rust_bundle_refs="$(
+      rg -n 'MirProgramBundle|gust\.compiler_program_mir_bundle\.v1' "$rust_driver" ||
+        true
+    )"
+    unexpected_rust_bundle_refs="$(
+      printf '%s\n' "$rust_bundle_refs" |
+        rg -v '^[0-9]+:const PHASE10_PROGRAM_MIR_BUNDLE_FORMAT: &str = "gust\.compiler_program_mir_bundle\.v1";$' ||
+        true
+    )"
+    if [ -n "$unexpected_rust_bundle_refs" ]; then
+      echo "Patch 4 still forbids Rust bundle parsing or driver routing; Patch 6 may only advertise the exact read-only handshake format constant."
+      echo "$unexpected_rust_bundle_refs"
+      exit 1
+    fi
+
+    rust_bundle_ref_count="$(
+      printf '%s\n' "$rust_bundle_refs" |
+        sed '/^$/d' |
+        wc -l |
+        tr -d ' '
+    )"
+    if [ "$rust_bundle_ref_count" != "1" ]; then
+      echo "Expected exactly one read-only Rust bundle-format advertisement after Patch 6, found $rust_bundle_ref_count."
+      printf '%s\n' "$rust_bundle_refs"
       exit 1
     fi
 
