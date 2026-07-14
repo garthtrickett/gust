@@ -1025,6 +1025,15 @@ the real `compiler/test_runner_entry.gst`. Directly invoking the legacy
 bootstrap on the final entry is not a supported build path; `make gust` owns the
 transition, and fixed-point bootstrap continues from the final compiler.
 
+The legacy bootstrap also predates unsigned formation of pointers from the
+32-bit arena Index carrier. Its generated stage-one C is therefore passed once
+through `tools/normalize_generated_arena_offsets.py`. The lexical normalizer
+changes only actual C `BaseAddress + Index` expressions, skips comments and
+quoted literals, rejects malformed or empty input, verifies idempotence, and
+writes transactionally. Stage one embeds the updated code generator, so the
+final compiler and all later fixed-point generations emit the unsigned arena
+conversion directly and do not use this transitional normalization step.
+
 The compiler serializes one frozen v1 module into the whole-program bundle and
 writes one transient generic request. Both files are removed after the worker
 returns. The worker reuses the strict Patch 7 parser, the shared v1 parser and

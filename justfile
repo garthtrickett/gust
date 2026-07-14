@@ -13140,6 +13140,7 @@ guard-cranelift-phase10-scalar-source-route:
     route_source="compiler/mir_native_backend_source_route.gst"
     compiler_entry="compiler/test_runner_entry.gst"
     bootstrap_bridge="compiler/test_runner_bootstrap_bridge_entry.gst"
+    legacy_codegen_normalizer="tools/normalize_generated_arena_offsets.py"
     makefile="Makefile"
     return_source="compiler/phase10_scalar_return_source.gst"
     metadata_source="compiler/phase10_metadata_local_source.gst"
@@ -13154,6 +13155,7 @@ guard-cranelift-phase10-scalar-source-route:
       "$route_source" \
       "$compiler_entry" \
       "$bootstrap_bridge" \
+      "$legacy_codegen_normalizer" \
       "$makefile" \
       "$return_source" \
       "$metadata_source" \
@@ -13184,6 +13186,9 @@ guard-cranelift-phase10-scalar-source-route:
     rg -n -F 'allowed_cranelift_phase10_scalar_source_route_bootstrap_bridge: compiler/test_runner_bootstrap_bridge_entry.gst' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_scalar_source_route_bootstrap_policy: legacy_gust_bootstrap_compiles_the_MIR_to_C_only_bridge_then_the_stage1_compiler_compiles_the_final_Phase10_entry' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_scalar_source_route_bootstrap_intrinsic_policy: new_runtime_function_and_os_ProcessResult_type_registration_are_consumed_only_by_the_stage1_or_newer_compiler' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_scalar_source_route_legacy_codegen_normalizer: tools/normalize_generated_arena_offsets.py' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_scalar_source_route_legacy_codegen_policy: only_the_transitional_stage1_C_emitted_by_the_checked_in_bootstrap_is_lexically_normalized_from_signed_BaseAddress_plus_Index_to_GUST_ARENA_OFFSET' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_scalar_source_route_legacy_codegen_retirement: stage1_uses_the_updated_codegen_and_final_or_later_compilers_require_no_generated_C_normalization' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_scalar_source_route_direct_bootstrap_policy: invoking_the_legacy_gust_bootstrap_directly_on_compiler/test_runner_entry.gst_is_not_a_supported_build_path' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_scalar_source_route_fixed_point_policy: normal_make_gust_and_make_bootstrap_continue_from_the_final_stage1_compiled_entry' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_scalar_source_route_supported_program_shape: exactly_one_module_one_zero_argument_main_returning_int' "$manifest_doc" >/dev/null
@@ -13212,9 +13217,13 @@ guard-cranelift-phase10-scalar-source-route:
     rg -n -F 'import "mir_native_backend_source_route.gst" as native_source_route;' "$compiler_entry" >/dev/null
     rg -n -F 'native_source_route.mir_native_scalar_source_compile(' "$compiler_entry" >/dev/null
 
-    rg -n -F 'build/gust_stage1_compiler.c: gust_bootstrap $(COMPILER_SRCS)' "$makefile" >/dev/null
+    rg -n -F 'build/gust_stage1_compiler.c: gust_bootstrap $(COMPILER_SRCS) tools/normalize_generated_arena_offsets.py' "$makefile" >/dev/null
     rg -n -F './gust_bootstrap compiler/test_runner_bootstrap_bridge_entry.gst > build/gust_stage1_compiler.raw 2>&1' "$makefile" >/dev/null
+    rg -n -F 'tools/normalize_generated_arena_offsets.py \' "$makefile" >/dev/null
+    rg -n -F 'build/gust_stage1_compiler.filtered \' "$makefile" >/dev/null
+    rg -n -F 'build/gust_stage1_compiler.tmp; then \' "$makefile" >/dev/null
     rg -n -F 'Legacy bootstrap failed while generating the stage-one compiler:' "$makefile" >/dev/null
+    python3 "$legacy_codegen_normalizer" --self-test >/dev/null
     rg -n -F 'build/gust_stage1_bin: build/gust_stage1_compiler.c $(RUNTIME_SRCS)' "$makefile" >/dev/null
     rg -n -F 'build/gust_compiler.c: build/gust_stage1_bin $(COMPILER_SRCS)' "$makefile" >/dev/null
     rg -n -F './build/gust_stage1_bin compiler/test_runner_entry.gst > build/gust_compiler.raw 2>&1' "$makefile" >/dev/null

@@ -5,6 +5,7 @@ PREFIX = /usr/local
 
 PHASE10_DIAG_CC ?= clang
 PHASE10_DIAG_CFLAGS ?= -O0 -g3 -fno-omit-frame-pointer -fno-optimize-sibling-calls -fsanitize=address,undefined -fsanitize-address-use-after-scope -fno-sanitize-recover=all -pthread
+PYTHON ?= python3
 
 # Force make to use bash with pipefail to prevent silent pipeline errors
 SHELL = bash
@@ -29,9 +30,12 @@ gust_bootstrap: gust_v4.c $(RUNTIME_SRCS)
 	cat src/runtime.c gust_v4.c > build/gust_bootstrap_final.c
 	${CC} ${CFLAGS} ${INCLUDES} build/gust_bootstrap_final.c -o gust_bootstrap
 
-build/gust_stage1_compiler.c: gust_bootstrap $(COMPILER_SRCS)
+build/gust_stage1_compiler.c: gust_bootstrap $(COMPILER_SRCS) tools/normalize_generated_arena_offsets.py
 	mkdir -p build
-	@rm -f build/gust_stage1_compiler.raw build/gust_stage1_compiler.tmp
+	@rm -f \
+		build/gust_stage1_compiler.raw \
+		build/gust_stage1_compiler.filtered \
+		build/gust_stage1_compiler.tmp
 	@set +e; \
 	./gust_bootstrap compiler/test_runner_bootstrap_bridge_entry.gst > build/gust_stage1_compiler.raw 2>&1; \
 	status=$$?; \
@@ -39,19 +43,30 @@ build/gust_stage1_compiler.c: gust_bootstrap $(COMPILER_SRCS)
 	if [ "$$status" -ne 0 ]; then \
 		echo "❌ Legacy bootstrap failed while generating the stage-one compiler:"; \
 		cat build/gust_stage1_compiler.raw; \
-		rm -f build/gust_stage1_compiler.tmp; \
+		rm -f build/gust_stage1_compiler.filtered build/gust_stage1_compiler.tmp; \
 		exit "$$status"; \
 	fi; \
-	if ! grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" build/gust_stage1_compiler.raw > build/gust_stage1_compiler.tmp; then \
+	if ! grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" build/gust_stage1_compiler.raw > build/gust_stage1_compiler.filtered; then \
 		echo "❌ Legacy bootstrap succeeded but produced no filtered stage-one compiler C."; \
 		cat build/gust_stage1_compiler.raw; \
+		rm -f build/gust_stage1_compiler.filtered build/gust_stage1_compiler.tmp; \
+		exit 1; \
+	fi; \
+	if [ ! -s build/gust_stage1_compiler.filtered ]; then \
+		echo "❌ Filtered stage-one compiler C is empty."; \
+		cat build/gust_stage1_compiler.raw; \
+		rm -f build/gust_stage1_compiler.filtered build/gust_stage1_compiler.tmp; \
+		exit 1; \
+	fi; \
+	if ! $(PYTHON) tools/normalize_generated_arena_offsets.py \
+		build/gust_stage1_compiler.filtered \
+		build/gust_stage1_compiler.tmp; then \
+		echo "❌ Could not normalize the legacy bootstrap's generated arena pointer arithmetic."; \
 		rm -f build/gust_stage1_compiler.tmp; \
 		exit 1; \
 	fi; \
 	if [ ! -s build/gust_stage1_compiler.tmp ]; then \
-		echo "❌ Filtered stage-one compiler C is empty."; \
-		cat build/gust_stage1_compiler.raw; \
-		rm -f build/gust_stage1_compiler.tmp; \
+		echo "❌ Normalized stage-one compiler C is empty."; \
 		exit 1; \
 	fi
 	mv build/gust_stage1_compiler.tmp build/gust_stage1_compiler.c
