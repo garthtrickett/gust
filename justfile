@@ -12528,6 +12528,214 @@ guard-cranelift-phase10-capability-contract:
     echo "✅ Phase 10 capability contract passed: ordered typed requirements classify the first unsupported semantic or internal MIR failure with stable context, while routing and native artifacts remain disconnected."
 
 
+guard-mir-native-backend-driver-handshake-smoke:
+    just guard compiler/mir_native_backend_driver_smoke_test_entry.gst
+
+guard-cranelift-phase10-driver-handshake-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 10 driver discovery and protocol handshake..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    driver_model="compiler/mir_native_backend_driver.gst"
+    smoke_entry="compiler/mir_native_backend_driver_smoke_test_entry.gst"
+    compiler_entry="compiler/test_runner_entry.gst"
+    rust_manifest="compiler/experiments/cranelift/Cargo.toml"
+    rust_driver="compiler/experiments/cranelift/src/main.rs"
+    readme_doc="compiler/experiments/cranelift/README.md"
+    build_dir="build/guards/cranelift_phase10_driver_handshake"
+
+    for required_file in \
+      "$manifest_doc" \
+      "$driver_model" \
+      "$smoke_entry" \
+      "$compiler_entry" \
+      "$rust_manifest" \
+      "$rust_driver" \
+      "$readme_doc"
+    do
+      if [ ! -f "$required_file" ]; then
+        echo "Missing Phase 10 driver-handshake input: $required_file"
+        exit 1
+      fi
+    done
+
+    just guard-cranelift-phase10-capability-contract
+    just guard-cranelift-experiment-manifest-surface
+
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE10_DRIVER_HANDSHAKE_GUARD: guard-cranelift-phase10-driver-handshake-contract' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_driver_handshake_status: phase10_deterministic_driver_discovery_and_protocol_handshake' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_driver_handshake_predecessor_status: phase10_compiler_owned_capability_validation' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_driver_handshake_predecessor_guard: guard-cranelift-phase10-capability-contract' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_driver_discovery_source: compiler/mir_native_backend_driver.gst' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_driver_discovery_model: MirNativeBackendDriverDiscoveryResult' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_driver_discovery_function: mir_native_backend_discover_driver' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_driver_discovery_explicit_configuration: GUST_NATIVE_BACKEND_DRIVER_is_consulted_only_after_explicit_--backend_cranelift_selection_and_contains_one_path_not_arguments' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_driver_discovery_precedence: explicit_absolute_configured_path_then_executable_beside_gust_then_stable_failure' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_driver_discovery_explicit_failure_policy: invalid_missing_or_nonexecutable_explicit_path_rejects_without_sibling_fallback' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_driver_discovery_forbidden_search: no_PATH_working_directory_repository_or_arbitrary_relative_path_search' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_driver_discovery_forbidden_actions: no_cargo_build_download_install_dependency_resolution_or_shell_command_string' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_driver_handshake_command: phase10-driver-handshake' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_driver_handshake_protocol: gust.native_backend.driver.v1' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_driver_handshake_parser: compiler/mir_native_backend_driver.gst::mir_native_backend_parse_driver_handshake' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_driver_handshake_validator: compiler/mir_native_backend_driver.gst::mir_native_backend_validate_driver_handshake' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_driver_handshake_bundle_format: gust.compiler_program_mir_bundle.v1' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_driver_handshake_canonical_formats: gust.compiler_mir_ingestion.v1,gust.compiler_mir_ingestion.v2' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_driver_handshake_target_policy: exact_native_target_triple_and_object_format_match_required' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_driver_handshake_link_capability: native_executable' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_driver_handshake_pipeline_taxonomy: gust.phase9g.pipeline.v1' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_driver_handshake_capability_inventory: ordered_nonempty_unique_operations_types_ABIs_runtime_imports_and_target_requirements' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_driver_handshake_capability_bridge: mir_native_backend_driver_capability_set_feeds_the_compiler_owned_capability_validator' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_driver_handshake_mismatch_policy: malformed_protocol_bundle_MIR_target_object_link_taxonomy_or_capability_mismatch_rejects_before_bundle_serialization_or_artifact_access' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_driver_handshake_worker_policy: rust_worker_prints_a_read_only_deterministic_handshake_derived_from_the_same_native_object_target_contract' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_driver_handshake_artifact_policy: handshake_creates_no_bundle_object_log_temporary_or_final_executable' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_driver_handshake_current_route_policy: discovery_model_parser_validator_and_worker_command_are_not_connected_to_the_source_level_compiler_route' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_driver_handshake_default_route_policy: default_and_explicit_mir_to_c_C_stdout_behavior_remains_byte_identical' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_driver_handshake_next_milestone: generic_backend_request_protocol' "$manifest_doc" >/dev/null
+
+    rg -n -F 'type MirNativeBackendDriverDiscoveryClassification enum {' "$driver_model" >/dev/null
+    rg -n -F 'type MirNativeBackendDriverHandshakeClassification enum {' "$driver_model" >/dev/null
+    rg -n -F 'type MirNativeBackendDriverHandshake[ctx] struct {' "$driver_model" >/dev/null
+    rg -n -F 'func mir_native_backend_discover_driver(' "$driver_model" >/dev/null
+    rg -n -F 'func mir_native_backend_parse_driver_handshake(' "$driver_model" >/dev/null
+    rg -n -F 'func mir_native_backend_validate_driver_handshake(' "$driver_model" >/dev/null
+    rg -n -F 'func mir_native_backend_driver_capability_set(' "$driver_model" >/dev/null
+    rg -n -F 'SUCCESS: MIR native backend driver discovery and handshake smoke' "$smoke_entry" >/dev/null
+
+    if rg -n -i -F 'cranelift' "$driver_model" "$smoke_entry" >/dev/null; then
+      echo "Compiler-owned driver discovery files must remain implementation-neutral."
+      rg -n -i -F 'cranelift' "$driver_model" "$smoke_entry"
+      exit 1
+    fi
+
+    if rg -n -F 'mir_native_backend_driver.gst' "$compiler_entry" >/dev/null; then
+      echo "Patch 6 must not connect driver discovery to the source-level compiler route."
+      rg -n -F 'mir_native_backend_driver.gst' "$compiler_entry"
+      exit 1
+    fi
+
+    if rg -n 'mir_native_backend_discover_driver|mir_native_backend_parse_driver_handshake|phase10-driver-handshake' "$compiler_entry" >/dev/null; then
+      echo "Patch 6 discovery and handshake must remain disconnected from compiler/test_runner_entry.gst."
+      rg -n 'mir_native_backend_discover_driver|mir_native_backend_parse_driver_handshake|phase10-driver-handshake' "$compiler_entry"
+      exit 1
+    fi
+
+    if rg -n -i 'std\.System|os\.(WriteFile|Create|Open|Rename|Remove)|cargo run|Command::new|native-link|link-canonical|compiler-mir-.*object' "$driver_model" "$smoke_entry" >/dev/null; then
+      echo "Compiler-owned discovery and handshake validation must not spawn, build, or own filesystem, object, link, shell, or publication behavior."
+      rg -n -i 'std\.System|os\.(WriteFile|Create|Open|Rename|Remove)|cargo run|Command::new|native-link|link-canonical|compiler-mir-.*object' "$driver_model" "$smoke_entry"
+      exit 1
+    fi
+
+    rg -n -F 'const PHASE10_DRIVER_PROTOCOL: &str = "gust.native_backend.driver.v1";' "$rust_driver" >/dev/null
+    rg -n -F 'fn print_phase10_driver_handshake() -> Result<(), Box<dyn Error>> {' "$rust_driver" >/dev/null
+    rg -n -F '"phase10-driver-handshake" => {' "$rust_driver" >/dev/null
+    rg -n -F 'gust-cranelift-experiment phase10-driver-handshake' "$rust_driver" >/dev/null
+
+    rm -rf "$build_dir"
+    mkdir -p "$build_dir"
+    cargo_target="$build_dir/cargo-target"
+    CARGO_TARGET_DIR="$cargo_target" cargo build \
+      --locked \
+      --quiet \
+      --manifest-path "$rust_manifest"
+    driver_bin="$cargo_target/debug/gust-cranelift-experiment"
+    if [ ! -x "$driver_bin" ]; then
+      echo "Missing built Phase 10 handshake worker: $driver_bin"
+      exit 1
+    fi
+
+    smoke_log="$build_dir/compiler-smoke.log"
+    just guard-mir-native-backend-driver-handshake-smoke >"$smoke_log" 2>&1
+    rg -n -F 'SUCCESS: MIR native backend driver discovery and handshake smoke' "$smoke_log" >/dev/null
+
+    handshake_a="$build_dir/handshake-a.txt"
+    handshake_b="$build_dir/handshake-b.txt"
+    target_contract="$build_dir/target-contract.txt"
+    run_dir="$build_dir/handshake-run"
+    mkdir -p "$run_dir"
+
+    (
+      cd "$run_dir"
+      "$OLDPWD/$driver_bin" phase10-driver-handshake >"$OLDPWD/$handshake_a"
+      "$OLDPWD/$driver_bin" phase10-driver-handshake >"$OLDPWD/$handshake_b"
+      "$OLDPWD/$driver_bin" compiler-mir-object-target-contract >"$OLDPWD/$target_contract"
+    )
+
+    cmp -s "$handshake_a" "$handshake_b"
+    rg -n -F 'protocol: gust.native_backend.driver.v1' "$handshake_a" >/dev/null
+    rg -n -F 'driver_name: gust-cranelift-experiment' "$handshake_a" >/dev/null
+    rg -n -F 'driver_version: 0.0.0' "$handshake_a" >/dev/null
+    rg -n -F 'program_mir_bundle_format: gust.compiler_program_mir_bundle.v1' "$handshake_a" >/dev/null
+    rg -n -F 'canonical_mir_format: gust.compiler_mir_ingestion.v1' "$handshake_a" >/dev/null
+    rg -n -F 'canonical_mir_format: gust.compiler_mir_ingestion.v2' "$handshake_a" >/dev/null
+    rg -n -F 'link_capability: native_executable' "$handshake_a" >/dev/null
+    rg -n -F 'pipeline_taxonomy: gust.phase9g.pipeline.v1' "$handshake_a" >/dev/null
+
+    canonical_format_count="$(rg -c '^canonical_mir_format: ' "$handshake_a" || true)"
+    operation_count="$(rg -c '^operation: ' "$handshake_a" || true)"
+    type_abi_count="$(rg -c '^type_or_abi: ' "$handshake_a" || true)"
+    runtime_import_count="$(rg -c '^runtime_import: ' "$handshake_a" || true)"
+    target_requirement_count="$(rg -c '^target_requirement: ' "$handshake_a" || true)"
+    canonical_format_count="${canonical_format_count:-0}"
+    operation_count="${operation_count:-0}"
+    type_abi_count="${type_abi_count:-0}"
+    runtime_import_count="${runtime_import_count:-0}"
+    target_requirement_count="${target_requirement_count:-0}"
+    if [ "$canonical_format_count" != "2" ] ||
+       [ "$operation_count" != "15" ] ||
+       [ "$type_abi_count" != "5" ] ||
+       [ "$runtime_import_count" != "3" ] ||
+       [ "$target_requirement_count" != "3" ]; then
+      echo "Phase 10 handshake inventory drifted: canonical=$canonical_format_count operations=$operation_count type_abi=$type_abi_count runtime_imports=$runtime_import_count target_requirements=$target_requirement_count."
+      exit 1
+    fi
+
+    handshake_target="$(sed -n 's/^target_triple: //p' "$handshake_a")"
+    contract_target="$(sed -n 's/^target_triple: //p' "$target_contract")"
+    handshake_format="$(sed -n 's/^object_format: //p' "$handshake_a")"
+    contract_format="$(sed -n 's/^object_format: //p' "$target_contract")"
+    if [ -z "$handshake_target" ] || [ "$handshake_target" != "$contract_target" ]; then
+      echo "Handshake target must come from the canonical Phase 9G target contract."
+      exit 1
+    fi
+    if [ -z "$handshake_format" ] || [ "$handshake_format" != "$contract_format" ]; then
+      echo "Handshake object format must come from the canonical Phase 9G target contract."
+      exit 1
+    fi
+
+    if find "$run_dir" -mindepth 1 -print -quit | grep -q .; then
+      echo "Read-only driver handshake created an artifact in its working directory."
+      find "$run_dir" -mindepth 1 -print
+      exit 1
+    fi
+
+    set +e
+    "$driver_bin" phase10-driver-handshake unexpected >"$build_dir/extra-arg.stdout" 2>"$build_dir/extra-arg.stderr"
+    extra_arg_status="$?"
+    set -e
+    if [ "$extra_arg_status" = "0" ]; then
+      echo "Handshake command must reject additional arguments."
+      exit 1
+    fi
+
+    readme_flat="$(tr '\n' ' ' < "$readme_doc")"
+    printf '%s\n' "$readme_flat" |
+      rg -F 'Patch 6 adds the backend-neutral `mir_native_backend_discover_driver` policy.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'Discovery never searches `PATH`, the working directory, repository paths, or arbitrary relative paths and never invokes Cargo, downloads, installs, or builds a worker.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'The worker now exposes the read-only `phase10-driver-handshake` command.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'Its stable line protocol is `gust.native_backend.driver.v1`' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F '`mir_native_backend_driver_capability_set` converts the advertised inventory into the Patch 5 compiler-owned capability set.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'Patch 6 does not connect discovery or spawning to `compiler/test_runner_entry.gst`, serialize a program bundle, emit an object, invoke the linker, or touch the requested executable.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'The next milestone is the generic backend request protocol.' >/dev/null
+
+    echo "✅ Phase 10 driver handshake passed: deterministic explicit-or-sibling discovery is frozen, the worker advertises exact target, MIR, link, taxonomy, and capability compatibility, and no source route or artifact path is connected."
+
+
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail

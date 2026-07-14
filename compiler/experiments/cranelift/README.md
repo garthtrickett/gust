@@ -930,6 +930,40 @@ publication. Unsupported or invalid input must never fall back to MIR-to-C and
 must create no native artifact. The next milestone is driver discovery and the
 protocol handshake.
 
+Patch 6 adds the backend-neutral `mir_native_backend_discover_driver` policy.
+After explicit Cranelift selection, a single path from
+`GUST_NATIVE_BACKEND_DRIVER` may be considered first; it must be absolute and
+is always one argument-vector element, never a command string. With no explicit
+path, discovery considers only the executable installed beside `gust`.
+Invalid, missing, or non-executable explicit paths reject without sibling
+fallback. Discovery never searches `PATH`, the working directory, repository
+paths, or arbitrary relative paths and never invokes Cargo, downloads, installs,
+or builds a worker.
+
+The worker now exposes the read-only `phase10-driver-handshake` command. Its
+stable line protocol is `gust.native_backend.driver.v1` and advertises worker
+identity, `gust.compiler_program_mir_bundle.v1`, the frozen v1 and v2 canonical
+MIR formats, the native target triple and object format, native-executable link
+support, the `gust.phase9g.pipeline.v1` failure taxonomy, and ordered operation,
+type/ABI, runtime-import, and target-requirement inventories. Target and object
+values come from the same Phase 9G object-target constructor used for emission.
+
+`mir_native_backend_parse_driver_handshake` rejects unknown, malformed, or
+duplicate scalar fields. `mir_native_backend_validate_driver_handshake`
+requires exact protocol, bundle, canonical MIR, target, object, link, and
+pipeline-taxonomy compatibility plus nonempty duplicate-free capability
+inventories. `mir_native_backend_driver_capability_set` converts the advertised
+inventory into the Patch 5 compiler-owned capability set.
+
+The discovery and handshake smoke proves explicit precedence, no fallback from
+an unavailable explicit path, sibling selection, stable missing-driver
+classification, compatible parsing, capability bridging, and protocol, target,
+object, and malformed-handshake rejection. The Rust handshake is deterministic
+and creates no artifact. Patch 6 does not connect discovery or spawning to
+`compiler/test_runner_entry.gst`, serialize a program bundle, emit an object,
+invoke the linker, or touch the requested executable. MIR-to-C remains default
+and primary. The next milestone is the generic backend request protocol.
+
 The checked-in lockfile for this crate is owned by:
 Patch 8 freezes the complete canonical call/import matrix and retires all
 eleven historical bypasses. The checked-in completeness fixture combines local

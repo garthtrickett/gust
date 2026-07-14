@@ -1832,6 +1832,80 @@ fn compiler_mir_pipeline_wrap_box<T>(
     )
 }
 
+const PHASE10_DRIVER_PROTOCOL: &str = "gust.native_backend.driver.v1";
+const PHASE10_PROGRAM_MIR_BUNDLE_FORMAT: &str = "gust.compiler_program_mir_bundle.v1";
+const PHASE10_PIPELINE_TAXONOMY: &str = "gust.phase9g.pipeline.v1";
+const PHASE10_CANONICAL_MIR_FORMATS: [&str; 2] = [
+    "gust.compiler_mir_ingestion.v1",
+    "gust.compiler_mir_ingestion.v2",
+];
+const PHASE10_DRIVER_OPERATIONS: [&str; 15] = [
+    "ReturnI32",
+    "LocalI32Set",
+    "LocalI32Read",
+    "AddI32",
+    "SubI32",
+    "MulI32",
+    "EqI32",
+    "SgtI32",
+    "Jump",
+    "Branch",
+    "BlockParam",
+    "LocalCallI32",
+    "ImportedCallI32",
+    "ImportedPredicateI32",
+    "ImportedMaterializeI32",
+];
+const PHASE10_DRIVER_TYPES_AND_ABIS: [&str; 5] = [
+    "int",
+    "bool",
+    "()->int",
+    "(int)->int",
+    "(int,int)->int",
+];
+const PHASE10_DRIVER_RUNTIME_IMPORTS: [&str; 3] = [
+    "tiny_host_add_one_i32",
+    "tiny_host_add_i32",
+    "tiny_host_is_positive_i32",
+];
+const PHASE10_DRIVER_TARGET_REQUIREMENTS: [&str; 3] = [
+    "native_host",
+    "position_independent_code",
+    "native_executable_link",
+];
+
+fn print_phase10_driver_handshake() -> Result<(), Box<dyn Error>> {
+    let (_object_builder, target_contract) =
+        build_compiler_mir_native_object_builder("gust_phase10_driver_handshake_probe")?;
+
+    println!("protocol: {PHASE10_DRIVER_PROTOCOL}");
+    println!("driver_name: {}", env!("CARGO_PKG_NAME"));
+    println!("driver_version: {}", env!("CARGO_PKG_VERSION"));
+    println!(
+        "program_mir_bundle_format: {PHASE10_PROGRAM_MIR_BUNDLE_FORMAT}"
+    );
+    for format_name in PHASE10_CANONICAL_MIR_FORMATS {
+        println!("canonical_mir_format: {format_name}");
+    }
+    println!("target_triple: {}", target_contract.triple);
+    println!("object_format: {}", target_contract.object_format);
+    println!("link_capability: native_executable");
+    println!("pipeline_taxonomy: {PHASE10_PIPELINE_TAXONOMY}");
+    for operation in PHASE10_DRIVER_OPERATIONS {
+        println!("operation: {operation}");
+    }
+    for type_or_abi in PHASE10_DRIVER_TYPES_AND_ABIS {
+        println!("type_or_abi: {type_or_abi}");
+    }
+    for runtime_import in PHASE10_DRIVER_RUNTIME_IMPORTS {
+        println!("runtime_import: {runtime_import}");
+    }
+    for target_requirement in PHASE10_DRIVER_TARGET_REQUIREMENTS {
+        println!("target_requirement: {target_requirement}");
+    }
+    Ok(())
+}
+
 fn print_compiler_mir_pipeline_taxonomy() -> Result<(), Box<dyn Error>> {
     println!("pipeline_stage_count: {}", COMPILER_MIR_PIPELINE_STAGES.len());
     for stage in COMPILER_MIR_PIPELINE_STAGES {
@@ -1869,6 +1943,12 @@ fn run() -> Result<(), Box<dyn Error>> {
     };
 
     match command.as_str() {
+        "phase10-driver-handshake" => {
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            print_phase10_driver_handshake()
+        }
         "compiler-mir-pipeline-taxonomy" => {
             if args.next().is_some() {
                 return Err(usage_error().into());
@@ -3051,6 +3131,7 @@ fn usage_error() -> IoError {
         ErrorKind::InvalidInput,
         concat!(
             "usage:\n",
+            "  gust-cranelift-experiment phase10-driver-handshake\n",
             "  gust-cranelift-experiment compiler-mir-pipeline-taxonomy\n",
             "  gust-cranelift-experiment compiler-mir-object-target-contract\n",
             "  gust-cranelift-experiment compiler-mir-inspect-object <input.o>\n",
