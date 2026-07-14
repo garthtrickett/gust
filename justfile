@@ -11782,6 +11782,103 @@ guard-cranelift-phase9g-close:
 
 
 
+guard-cranelift-phase10-opening-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Opening Phase 10 explicit experimental backend routing..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    readme_doc="compiler/experiments/cranelift/README.md"
+
+    for required_file in "$manifest_doc" "$readme_doc"; do
+      if [ ! -f "$required_file" ]; then
+        echo "Missing Phase 10 opening-contract input: $required_file"
+        exit 1
+      fi
+    done
+
+    # Phase 10 may open only on the closed Phase 9G artifact pipeline.
+    just guard-cranelift-phase9g-close
+
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE10_OPENING_CONTRACT_GUARD: guard-cranelift-phase10-opening-contract' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_contract_status: phase10_open_explicit_experimental_cranelift_backend' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_contract_predecessor_status: phase9g_closed_transactional_object_and_classified_link_pipeline' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_contract_predecessor_guard: guard-cranelift-phase9g-close' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_contract_inherited_inventory: 33_total_33_canonical_shared_0_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_contract_mir_schema_policy: gust_compiler_mir_ingestion_v1_and_v2_syntax_remain_frozen' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_contract_default_backend: mir_to_c' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_contract_primary_route: mir_to_c' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_contract_cranelift_selection_policy: explicit_cli_only_disabled_when_not_selected' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_contract_canonical_input_policy: explicit_cranelift_route_consumes_compiler_owned_canonical_program_MIR_never_Gust_source_or_fixture_dispatch' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_contract_native_artifact_owner: phase9g_transactional_object_and_classified_link_pipeline' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_contract_accepted_backend_names: mir-to-c,cranelift' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_contract_default_cli: gust_source_path_emits_C_to_stdout_unchanged' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_contract_explicit_mir_to_c_cli: gust_--backend_mir-to-c_source_path_emits_same_C_as_default' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_contract_explicit_cranelift_cli: gust_--backend_cranelift_-o_executable_source_path' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_contract_cli_order_policy: backend_output_and_source_arguments_are_order_independent_after_the_program_name' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_contract_output_policy: explicit_cranelift_requires_exactly_one_-o_value_and_one_source_path' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_contract_rejection_policy: unknown_backend_unknown_option_duplicate_backend_duplicate_output_missing_option_value_or_multiple_source_paths_reject' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_contract_fallback_policy: no_cranelift_to_mir_to_c_fallback' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_contract_environment_policy: no_environment_variable_may_implicitly_select_cranelift' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_contract_scope_exclusions: no_JIT_cross_compilation_shared_library_object_only_or_optimization_level_contract' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_contract_fixture_policy: phase9_fixture_commands_are_test_evidence_only_not_the_source_level_backend_API' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_contract_opening_step_policy: steps_1_and_2_change_only_contract_documentation_and_guard_surface_no_CLI_output_object_link_or_routing_behavior' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_contract_production_route_policy: no_production_runtime_or_backend_route_enabled_by_this_opening_patch' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_contract_next_milestone: backend_selection_model' "$manifest_doc" >/dev/null
+
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9G_CLOSE_GUARD: guard-cranelift-phase9g-close' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_close_status: phase9g_closed_transactional_object_and_classified_link_pipeline' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_closure_freeze_policy: phase9g_closed_no_object_link_pipeline_MIR_schema_translator_seed_or_route_expansion_without_a_new_phase_contract' "$manifest_doc" >/dev/null
+
+    inventory_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:' "$manifest_doc" || true)"
+    canonical_count="$(
+      (rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|' "$manifest_doc" || true) |
+        wc -l |
+        tr -d ' '
+    )"
+    translator_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_historical_translator_seed_[a-z0-9_]+:' "$manifest_doc" || true)"
+    inventory_count="${inventory_count:-0}"
+    canonical_count="${canonical_count:-0}"
+    translator_count="${translator_count:-0}"
+    noncanonical_count="$((inventory_count - canonical_count))"
+    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "33" ] || [ "$noncanonical_count" != "0" ] || [ "$translator_count" != "17" ]; then
+      echo "Phase 10 must inherit the frozen 33/33/0/0/17 boundary; found total=$inventory_count canonical=$canonical_count noncanonical=$noncanonical_count translator_seeds=$translator_count."
+      exit 1
+    fi
+
+    phase10_guard_count="$(rg -c '^guard-cranelift-phase10-opening-contract:$' justfile || true)"
+    phase10_guard_count="${phase10_guard_count:-0}"
+    if [ "$phase10_guard_count" != "1" ]; then
+      echo "Expected exactly one Phase 10 opening guard recipe, found $phase10_guard_count."
+      exit 1
+    fi
+
+    rg -n -F '## Phase 10: explicit experimental backend selection' "$readme_doc" >/dev/null
+    rg -n -F 'Phase 10 is open as' "$readme_doc" >/dev/null
+    rg -n -F '`phase10_open_explicit_experimental_cranelift_backend`.' "$readme_doc" >/dev/null
+
+    readme_flat="$(tr '\n' ' ' < "$readme_doc")"
+    printf '%s\n' "$readme_flat" |
+      rg -F 'Steps 1 and 2 freeze the source-level backend contract without implementing it.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F '`gust program.gst` remains the unchanged MIR-to-C default and continues to emit C on stdout.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'The accepted future explicit spellings are `gust --backend mir-to-c program.gst` and `gust --backend cranelift -o program program.gst`.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'Cranelift will be selected only by the explicit CLI option.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'No environment variable may select it implicitly, and unsupported input will never fall back to MIR-to-C.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'The future route will consume compiler-owned canonical program MIR and delegate object verification, publication, linking, logs, cleanup, and failure classification to the Phase 9G pipeline.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'the existing fixture commands remain test evidence rather than the source-level backend API.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'This opening contract adds no JIT, cross-compilation, shared-library, object-only, or optimization-level promise.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'The next milestone is the typed backend-selection model.' >/dev/null
+
+    echo "✅ Phase 10 opened: Phase 9G remains the required artifact owner, the 33/33/0/0/17 boundary and frozen MIR schemas are preserved, MIR-to-C remains default, and the explicit Cranelift CLI is contract-only."
+
+
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail

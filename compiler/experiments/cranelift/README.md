@@ -786,6 +786,39 @@ not replay the focused dynamic matrices. Same-host/toolchain structured object
 fingerprints remain reproducible without claiming byte identity across object
 formats, targets, operating systems, or Cranelift versions.
 
+## Phase 10: explicit experimental backend selection
+
+Phase 10 is open as
+`phase10_open_explicit_experimental_cranelift_backend`. Its required
+predecessor is the closed Phase 9G transactional object and classified link
+pipeline. The inherited boundary remains 33 total compiler-owned ingestion
+seams, all 33 on canonical shared lowering, zero bespoke seams, zero
+metadata-only seams, and seventeen frozen translator seeds. The v1 and v2 MIR
+syntax remains unchanged.
+
+Steps 1 and 2 freeze the source-level backend contract without implementing it.
+`gust program.gst` remains the unchanged MIR-to-C default and continues to emit
+C on stdout. The accepted future explicit spellings are
+`gust --backend mir-to-c program.gst` and
+`gust --backend cranelift -o program program.gst`. Backend, output, and source
+arguments will be order-independent after the program name, but Cranelift will
+require exactly one output value and exactly one source path. Unknown backend
+names, unknown options, duplicate backend or output options, missing option
+values, and multiple source paths will reject.
+
+Cranelift will be selected only by the explicit CLI option. No environment
+variable may select it implicitly, and unsupported input will never fall back
+to MIR-to-C. The future route will consume compiler-owned canonical program MIR
+and delegate object verification, publication, linking, logs, cleanup, and
+failure classification to the Phase 9G pipeline. The Rust driver will not parse
+Gust source, and the existing fixture commands remain test evidence rather than
+the source-level backend API.
+
+This opening contract adds no JIT, cross-compilation, shared-library,
+object-only, or optimization-level promise. It changes no compiler CLI,
+generated C, object, executable, bootstrap, runtime, backend default, or
+production route. The next milestone is the typed backend-selection model.
+
 The checked-in lockfile for this crate is owned by:
 Patch 8 freezes the complete canonical call/import matrix and retires all
 eleven historical bypasses. The checked-in completeness fixture combines local
