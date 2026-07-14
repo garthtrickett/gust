@@ -186,5 +186,185 @@ func main() {
         fail("MIR smoke: block terminator should be allocated");
     }
 
+    // Phase 10 canonical whole-program bundle smoke.
+    mut bundle_phase10 := mir.mir_make_program_bundle("main", ctx);
+    mut library_record_phase10 := "format: gust.compiler_mir_ingestion.v1\nfunction: math_helper\nbackend_symbol: math__helper\n";
+    mut library_module_phase10 := mir.mir_make_program_bundle_module(
+        "lib/math.gst",
+        "math__",
+        "math.o",
+        "gust.compiler_mir_ingestion.v1",
+        library_record_phase10,
+        0,
+        0,
+        0,
+        ctx
+    );
+    mut library_symbol_phase10 := mir.mir_make_program_bundle_symbol(
+        "helper",
+        "math__helper",
+        "(int)->int",
+        1,
+        ctx
+    );
+    library_module_phase10 = mir.mir_program_bundle_module_with_symbol(
+        library_module_phase10,
+        library_symbol_phase10,
+        ctx
+    );
+    mut library_block_parameter_phase10 := mir.mir_make_program_bundle_block_parameter(
+        "math__helper",
+        "merge",
+        0,
+        "value",
+        "int",
+        ctx
+    );
+    library_module_phase10 = mir.mir_program_bundle_module_with_block_parameter(
+        library_module_phase10,
+        library_block_parameter_phase10,
+        ctx
+    );
+    bundle_phase10 = mir.mir_program_bundle_with_module(
+        bundle_phase10,
+        library_module_phase10,
+        ctx
+    );
+
+    mut entry_record_phase10 := "format: gust.compiler_mir_ingestion.v2\nmodule: app\nimport_count: 1\nfunction_count: 1\n";
+    mut entry_module_phase10 := mir.mir_make_program_bundle_module(
+        "app.gst",
+        "",
+        "app.o",
+        "gust.compiler_mir_ingestion.v2",
+        entry_record_phase10,
+        1,
+        1,
+        1,
+        ctx
+    );
+    mut entry_symbol_phase10 := mir.mir_make_program_bundle_symbol(
+        "main",
+        "main",
+        "()->int",
+        0,
+        ctx
+    );
+    entry_module_phase10 = mir.mir_program_bundle_module_with_symbol(
+        entry_module_phase10,
+        entry_symbol_phase10,
+        ctx
+    );
+    mut imported_symbol_phase10 := mir.mir_make_program_bundle_symbol(
+        "host_add",
+        "gust_host_add_i32",
+        "(int,int)->int",
+        2,
+        ctx
+    );
+    entry_module_phase10 = mir.mir_program_bundle_module_with_symbol(
+        entry_module_phase10,
+        imported_symbol_phase10,
+        ctx
+    );
+    bundle_phase10 = mir.mir_program_bundle_with_module(
+        bundle_phase10,
+        entry_module_phase10,
+        ctx
+    );
+
+    if mir.mir_program_bundle_is_valid(bundle_phase10, ctx) == 0 {
+        fail("MIR bundle smoke: canonical two-module bundle should validate");
+    }
+
+    mut serialized_bundle_phase10_a := mir.mir_serialize_program_bundle(bundle_phase10, ctx);
+    mut serialized_bundle_phase10_b := mir.mir_serialize_program_bundle(bundle_phase10, ctx);
+    if std.str_eq(serialized_bundle_phase10_a, serialized_bundle_phase10_b) == 0 {
+        fail("MIR bundle smoke: repeated serialization must be byte-identical");
+    }
+    if std.str_find(serialized_bundle_phase10_a, "format: gust.compiler_program_mir_bundle.v1\n") != 0 {
+        fail("MIR bundle smoke: bundle format header drifted");
+    }
+    if std.str_find(serialized_bundle_phase10_a, "entry_symbol: main\n") == 0 - 1 {
+        fail("MIR bundle smoke: entry symbol missing");
+    }
+    if std.str_find(serialized_bundle_phase10_a, "module_count: 2\n") == 0 - 1 {
+        fail("MIR bundle smoke: module count missing");
+    }
+    mut library_position_phase10 := std.str_find(serialized_bundle_phase10_a, "module_0_path: lib/math.gst\n");
+    mut entry_position_phase10 := std.str_find(serialized_bundle_phase10_a, "module_1_path: app.gst\n");
+    if library_position_phase10 == 0 - 1 || entry_position_phase10 == 0 - 1 || library_position_phase10 >= entry_position_phase10 {
+        fail("MIR bundle smoke: resolver order must be preserved");
+    }
+    if std.str_find(serialized_bundle_phase10_a, "module_1_symbol_0_linkage: exported_entry\n") == 0 - 1 {
+        fail("MIR bundle smoke: exported entry linkage missing");
+    }
+    if std.str_find(serialized_bundle_phase10_a, "module_1_symbol_1_linkage: imported_host\n") == 0 - 1 {
+        fail("MIR bundle smoke: imported host linkage missing");
+    }
+    if std.str_find(serialized_bundle_phase10_a, "module_0_block_parameter_0_name: value\n") == 0 - 1 {
+        fail("MIR bundle smoke: block parameter contract missing");
+    }
+    if std.str_find(serialized_bundle_phase10_a, "module_1_resource_metadata_count: 1\n") == 0 - 1 {
+        fail("MIR bundle smoke: resource metadata count missing");
+    }
+    if std.str_find(serialized_bundle_phase10_a, "module_1_canonical_format: gust.compiler_mir_ingestion.v2\n") == 0 - 1 {
+        fail("MIR bundle smoke: frozen v2 module format missing");
+    }
+
+    mut reversed_bundle_phase10 := mir.mir_make_program_bundle("main", ctx);
+    reversed_bundle_phase10 = mir.mir_program_bundle_with_module(
+        reversed_bundle_phase10,
+        entry_module_phase10,
+        ctx
+    );
+    reversed_bundle_phase10 = mir.mir_program_bundle_with_module(
+        reversed_bundle_phase10,
+        library_module_phase10,
+        ctx
+    );
+    mut serialized_reversed_bundle_phase10 := mir.mir_serialize_program_bundle(reversed_bundle_phase10, ctx);
+    if std.str_eq(serialized_bundle_phase10_a, serialized_reversed_bundle_phase10) == 1 {
+        fail("MIR bundle smoke: module order must be explicit rather than hash-derived");
+    }
+
+    mut invalid_bundle_phase10 := mir.mir_make_program_bundle("main", ctx);
+    mut invalid_record_phase10 := "format: gust.compiler_mir_ingestion.v3\n";
+    mut invalid_module_phase10 := mir.mir_make_program_bundle_module(
+        "invalid.gst",
+        "",
+        "invalid.o",
+        "gust.compiler_mir_ingestion.v3",
+        invalid_record_phase10,
+        0,
+        0,
+        0,
+        ctx
+    );
+    mut invalid_entry_symbol_phase10 := mir.mir_make_program_bundle_symbol(
+        "main",
+        "main",
+        "()->int",
+        0,
+        ctx
+    );
+    invalid_module_phase10 = mir.mir_program_bundle_module_with_symbol(
+        invalid_module_phase10,
+        invalid_entry_symbol_phase10,
+        ctx
+    );
+    invalid_bundle_phase10 = mir.mir_program_bundle_with_module(
+        invalid_bundle_phase10,
+        invalid_module_phase10,
+        ctx
+    );
+    if mir.mir_program_bundle_is_valid(invalid_bundle_phase10, ctx) == 1 {
+        fail("MIR bundle smoke: v3 module syntax must reject");
+    }
+    if std.str_eq(mir.mir_serialize_program_bundle(invalid_bundle_phase10, ctx), "format: invalid\n") == 0 {
+        fail("MIR bundle smoke: invalid bundle serialization must be stable");
+    }
+
+    os.LogStr("SUCCESS: canonical whole-program MIR bundle smoke");
     os.LogStr("SUCCESS: mir data structures smoke");
 }

@@ -866,6 +866,36 @@ fresh output absent, preserve an existing output, and avoid creating a missing
 parent directory. Default and explicit MIR-to-C output remain byte-identical.
 The next milestone is the canonical whole-program MIR bundle.
 
+Patch 4 adds the compiler-owned `MirProgramBundle` aggregation envelope. Its
+modules preserve resolver topological order and record module path and prefix,
+stable object name, symbol linkages and function signatures, ordered
+block-parameter contracts, metadata counts, and one embedded canonical MIR
+record. The bundle has exactly one exported entry symbol; module-local symbols
+remain defined, and imported-host symbols remain undefined.
+
+The bundle format is `gust.compiler_program_mir_bundle.v1`. Embedded module
+records remain exactly `gust.compiler_mir_ingestion.v1` or
+`gust.compiler_mir_ingestion.v2`; Patch 4 does not introduce or accept a v3
+MIR syntax. CFG blocks, edges, statements, calls, and imports remain owned by
+those frozen module records, while the bundle supplies deterministic
+whole-program ordering and structural indexes.
+
+`mir_program_bundle_is_valid` rejects empty bundles, unsafe line-valued fields,
+duplicate module paths or object names, duplicate symbol links within a module,
+missing or multiple exported entries, mismatched canonical format headers,
+unsupported formats, negative metadata counts, and negative block-parameter
+ordinals. `mir_serialize_program_bundle` emits a stable line-oriented envelope
+and preserves the canonical module text between explicit indexed boundaries.
+Identical ordered input serializes byte-for-byte identically.
+
+The data-structure smoke covers a two-module bundle with module-local,
+exported-entry, and imported-host symbols, a block parameter, metadata counts,
+v1 and v2 records, deterministic repeat serialization, explicit module-order
+sensitivity, and v3 rejection. Patch 4 does not import the bundle into the
+compiler entry, parse it in Rust, invoke a driver, touch an output path, emit an
+object, or link an executable. MIR-to-C remains default and primary. The next
+milestone is capability validation and unsupported-semantics classification.
+
 The checked-in lockfile for this crate is owned by:
 Patch 8 freezes the complete canonical call/import matrix and retires all
 eleven historical bypasses. The checked-in completeness fixture combines local

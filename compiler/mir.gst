@@ -173,6 +173,50 @@ type MirNativeBoundaryMetadata[ctx] struct {
     span: token.Span
 }
 
+// Phase 10 whole-program bundle vocabulary.
+//
+// The bundle is a deterministic aggregation envelope around the frozen
+// gust.compiler_mir_ingestion.v1 and v2 records. It does not add a v3 MIR
+// syntax and it is not connected to compiler routing or the native driver.
+type MirProgramBundleSymbolLinkage enum {
+    ExportedEntry,
+    ModuleLocal,
+    ImportedHost
+}
+
+type MirProgramBundleSymbol[ctx] struct {
+    name: str,
+    link_name: str,
+    signature: str,
+    linkage: MirProgramBundleSymbolLinkage
+}
+
+type MirProgramBundleBlockParameter[ctx] struct {
+    function_name: str,
+    block_label: str,
+    ordinal: int,
+    name: str,
+    value_type: str
+}
+
+type MirProgramBundleModule[ctx] struct {
+    module_path: str,
+    module_prefix: str,
+    object_name: str,
+    canonical_format: str,
+    canonical_mir: str,
+    symbols: Index[std.Vector[MirProgramBundleSymbol[ctx], ctx], ctx],
+    block_parameters: Index[std.Vector[MirProgramBundleBlockParameter[ctx], ctx], ctx],
+    resource_metadata_count: int,
+    provenance_metadata_count: int,
+    native_boundary_metadata_count: int
+}
+
+type MirProgramBundle[ctx] struct {
+    entry_symbol: str,
+    modules: Index[std.Vector[MirProgramBundleModule[ctx], ctx], ctx]
+}
+
 func mir_make_empty_span() token.Span {
     mut span: token.Span;
     return span;
@@ -279,6 +323,357 @@ func mir_make_native_boundary_metadata(function_name: str, boundary_kind: MirNat
     metadata.boundary_kind = boundary_kind;
     metadata.span = span;
     return metadata;
+}
+
+func mir_empty_program_bundle_symbol_vector(ctx: &Arena) Index[std.Vector[MirProgramBundleSymbol[ctx], ctx], ctx] {
+    mut symbols: std.Vector[MirProgramBundleSymbol[ctx], ctx] := std.VectorNew(ctx);
+    mut symbols_idx: Index[std.Vector[MirProgramBundleSymbol[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(symbols_idx, symbols);
+    return symbols_idx;
+}
+
+func mir_empty_program_bundle_block_parameter_vector(ctx: &Arena) Index[std.Vector[MirProgramBundleBlockParameter[ctx], ctx], ctx] {
+    mut parameters: std.Vector[MirProgramBundleBlockParameter[ctx], ctx] := std.VectorNew(ctx);
+    mut parameters_idx: Index[std.Vector[MirProgramBundleBlockParameter[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(parameters_idx, parameters);
+    return parameters_idx;
+}
+
+func mir_empty_program_bundle_module_vector(ctx: &Arena) Index[std.Vector[MirProgramBundleModule[ctx], ctx], ctx] {
+    mut modules: std.Vector[MirProgramBundleModule[ctx], ctx] := std.VectorNew(ctx);
+    mut modules_idx: Index[std.Vector[MirProgramBundleModule[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(modules_idx, modules);
+    return modules_idx;
+}
+
+func mir_make_program_bundle(entry_symbol: str, ctx: &Arena) MirProgramBundle[ctx] {
+    mut bundle: MirProgramBundle[ctx];
+    bundle.entry_symbol = std.Clone(ctx, entry_symbol);
+    bundle.modules = mir_empty_program_bundle_module_vector(ctx);
+    return bundle;
+}
+
+func mir_make_program_bundle_module(module_path: str, module_prefix: str, object_name: str, canonical_format: str, canonical_mir: str, resource_metadata_count: int, provenance_metadata_count: int, native_boundary_metadata_count: int, ctx: &Arena) MirProgramBundleModule[ctx] {
+    mut module: MirProgramBundleModule[ctx];
+    module.module_path = std.Clone(ctx, module_path);
+    module.module_prefix = std.Clone(ctx, module_prefix);
+    module.object_name = std.Clone(ctx, object_name);
+    module.canonical_format = std.Clone(ctx, canonical_format);
+    module.canonical_mir = std.Clone(ctx, canonical_mir);
+    module.symbols = mir_empty_program_bundle_symbol_vector(ctx);
+    module.block_parameters = mir_empty_program_bundle_block_parameter_vector(ctx);
+    module.resource_metadata_count = resource_metadata_count;
+    module.provenance_metadata_count = provenance_metadata_count;
+    module.native_boundary_metadata_count = native_boundary_metadata_count;
+    return module;
+}
+
+func mir_make_program_bundle_symbol(name: str, link_name: str, signature: str, linkage_tag: int, ctx: &Arena) MirProgramBundleSymbol[ctx] {
+    mut symbol: MirProgramBundleSymbol[ctx];
+    symbol.name = std.Clone(ctx, name);
+    symbol.link_name = std.Clone(ctx, link_name);
+    symbol.signature = std.Clone(ctx, signature);
+    unsafe {
+        symbol.linkage.tag = linkage_tag;
+    }
+    return symbol;
+}
+
+func mir_make_program_bundle_block_parameter(function_name: str, block_label: str, ordinal: int, name: str, value_type: str, ctx: &Arena) MirProgramBundleBlockParameter[ctx] {
+    mut parameter: MirProgramBundleBlockParameter[ctx];
+    parameter.function_name = std.Clone(ctx, function_name);
+    parameter.block_label = std.Clone(ctx, block_label);
+    parameter.ordinal = ordinal;
+    parameter.name = std.Clone(ctx, name);
+    parameter.value_type = std.Clone(ctx, value_type);
+    return parameter;
+}
+
+func mir_program_bundle_module_with_symbol(module: MirProgramBundleModule[ctx], symbol: MirProgramBundleSymbol[ctx], ctx: &Arena) MirProgramBundleModule[ctx] {
+    mut updated := module;
+    mut symbols: std.Vector[MirProgramBundleSymbol[ctx], ctx] := ctx[updated.symbols];
+    symbols.Push(symbol);
+    ctx.Set(updated.symbols, symbols);
+    return updated;
+}
+
+func mir_program_bundle_module_with_block_parameter(module: MirProgramBundleModule[ctx], parameter: MirProgramBundleBlockParameter[ctx], ctx: &Arena) MirProgramBundleModule[ctx] {
+    mut updated := module;
+    mut parameters: std.Vector[MirProgramBundleBlockParameter[ctx], ctx] := ctx[updated.block_parameters];
+    parameters.Push(parameter);
+    ctx.Set(updated.block_parameters, parameters);
+    return updated;
+}
+
+func mir_program_bundle_with_module(bundle: MirProgramBundle[ctx], module: MirProgramBundleModule[ctx], ctx: &Arena) MirProgramBundle[ctx] {
+    mut updated := bundle;
+    mut modules: std.Vector[MirProgramBundleModule[ctx], ctx] := ctx[updated.modules];
+    modules.Push(module);
+    ctx.Set(updated.modules, modules);
+    return updated;
+}
+
+func mir_program_bundle_field_is_safe(value: str, allow_empty: int) int {
+    if allow_empty == 0 && len(value) == 0 {
+        return 0;
+    }
+    if std.str_find(value, "\n") != 0 - 1 {
+        return 0;
+    }
+    if std.str_find(value, "\r") != 0 - 1 {
+        return 0;
+    }
+    return 1;
+}
+
+func mir_program_bundle_starts_with(value: str, prefix: str) int {
+    if len(value) < len(prefix) {
+        return 0;
+    }
+    mut candidate := std.str_slice(value, 0, len(prefix));
+    if std.str_eq(candidate, prefix) == 1 {
+        return 1;
+    }
+    return 0;
+}
+
+func mir_program_bundle_format_is_supported(format_name: str) int {
+    if std.str_eq(format_name, "gust.compiler_mir_ingestion.v1") == 1 {
+        return 1;
+    }
+    if std.str_eq(format_name, "gust.compiler_mir_ingestion.v2") == 1 {
+        return 1;
+    }
+    return 0;
+}
+
+func mir_program_bundle_linkage_name(linkage: MirProgramBundleSymbolLinkage) str {
+    if linkage.tag == 0 {
+        return "exported_entry";
+    }
+    if linkage.tag == 1 {
+        return "module_local";
+    }
+    if linkage.tag == 2 {
+        return "imported_host";
+    }
+    return "invalid";
+}
+
+func mir_program_bundle_is_valid(bundle: MirProgramBundle[ctx], ctx: &Arena) int {
+    if mir_program_bundle_field_is_safe(bundle.entry_symbol, 0) == 0 {
+        return 0;
+    }
+
+    mut modules: std.Vector[MirProgramBundleModule[ctx], ctx] := ctx[bundle.modules];
+    if len(modules) == 0 {
+        return 0;
+    }
+
+    mut exported_entry_count := 0;
+    mut module_index := 0;
+    while module_index < len(modules) {
+        mut module := modules[module_index];
+
+        if mir_program_bundle_field_is_safe(module.module_path, 0) == 0 {
+            return 0;
+        }
+        if mir_program_bundle_field_is_safe(module.module_prefix, 1) == 0 {
+            return 0;
+        }
+        if mir_program_bundle_field_is_safe(module.object_name, 0) == 0 {
+            return 0;
+        }
+        if mir_program_bundle_format_is_supported(module.canonical_format) == 0 {
+            return 0;
+        }
+        if len(module.canonical_mir) == 0 {
+            return 0;
+        }
+        if std.str_byte_at(module.canonical_mir, len(module.canonical_mir) - 1) != 10 {
+            return 0;
+        }
+
+        mut expected_header := std.Concat("format: ", module.canonical_format);
+        expected_header = std.Concat(expected_header, "\n");
+        if mir_program_bundle_starts_with(module.canonical_mir, expected_header) == 0 {
+            return 0;
+        }
+
+        if module.resource_metadata_count < 0 {
+            return 0;
+        }
+        if module.provenance_metadata_count < 0 {
+            return 0;
+        }
+        if module.native_boundary_metadata_count < 0 {
+            return 0;
+        }
+
+        mut prior_module_index := 0;
+        while prior_module_index < module_index {
+            mut prior_module := modules[prior_module_index];
+            if std.str_eq(prior_module.module_path, module.module_path) == 1 {
+                return 0;
+            }
+            if std.str_eq(prior_module.object_name, module.object_name) == 1 {
+                return 0;
+            }
+            prior_module_index = prior_module_index + 1;
+        }
+
+        mut symbols: std.Vector[MirProgramBundleSymbol[ctx], ctx] := ctx[module.symbols];
+        mut symbol_index := 0;
+        while symbol_index < len(symbols) {
+            mut symbol := symbols[symbol_index];
+            if mir_program_bundle_field_is_safe(symbol.name, 0) == 0 {
+                return 0;
+            }
+            if mir_program_bundle_field_is_safe(symbol.link_name, 0) == 0 {
+                return 0;
+            }
+            if mir_program_bundle_field_is_safe(symbol.signature, 0) == 0 {
+                return 0;
+            }
+            if symbol.linkage.tag < 0 || symbol.linkage.tag > 2 {
+                return 0;
+            }
+
+            if symbol.linkage.tag == 0 {
+                exported_entry_count = exported_entry_count + 1;
+                if std.str_eq(symbol.link_name, bundle.entry_symbol) == 0 {
+                    return 0;
+                }
+            }
+
+            mut prior_symbol_index := 0;
+            while prior_symbol_index < symbol_index {
+                mut prior_symbol := symbols[prior_symbol_index];
+                if std.str_eq(prior_symbol.link_name, symbol.link_name) == 1 {
+                    return 0;
+                }
+                prior_symbol_index = prior_symbol_index + 1;
+            }
+
+            symbol_index = symbol_index + 1;
+        }
+
+        mut block_parameters: std.Vector[MirProgramBundleBlockParameter[ctx], ctx] := ctx[module.block_parameters];
+        mut parameter_index := 0;
+        while parameter_index < len(block_parameters) {
+            mut parameter := block_parameters[parameter_index];
+            if mir_program_bundle_field_is_safe(parameter.function_name, 0) == 0 {
+                return 0;
+            }
+            if mir_program_bundle_field_is_safe(parameter.block_label, 0) == 0 {
+                return 0;
+            }
+            if parameter.ordinal < 0 {
+                return 0;
+            }
+            if mir_program_bundle_field_is_safe(parameter.name, 0) == 0 {
+                return 0;
+            }
+            if mir_program_bundle_field_is_safe(parameter.value_type, 0) == 0 {
+                return 0;
+            }
+            parameter_index = parameter_index + 1;
+        }
+
+        module_index = module_index + 1;
+    }
+
+    if exported_entry_count != 1 {
+        return 0;
+    }
+
+    return 1;
+}
+
+func mir_program_bundle_append_field(output: str, key: str, value: str) str {
+    mut updated := std.Concat(output, key);
+    updated = std.Concat(updated, ": ");
+    updated = std.Concat(updated, value);
+    updated = std.Concat(updated, "\n");
+    return updated;
+}
+
+func mir_serialize_program_bundle(bundle: MirProgramBundle[ctx], ctx: &Arena) str {
+    if mir_program_bundle_is_valid(bundle, ctx) == 0 {
+        return "format: invalid\n";
+    }
+
+    mut output := "format: gust.compiler_program_mir_bundle.v1\n";
+    output = mir_program_bundle_append_field(output, "entry_symbol", bundle.entry_symbol);
+
+    mut modules: std.Vector[MirProgramBundleModule[ctx], ctx] := ctx[bundle.modules];
+    output = mir_program_bundle_append_field(output, "module_count", std.FormatInt(len(modules)));
+
+    mut module_index := 0;
+    while module_index < len(modules) {
+        mut module := modules[module_index];
+        mut module_key := std.Concat("module_", std.FormatInt(module_index));
+
+        output = mir_program_bundle_append_field(output, std.Concat(module_key, "_path"), module.module_path);
+        output = mir_program_bundle_append_field(output, std.Concat(module_key, "_prefix"), module.module_prefix);
+        output = mir_program_bundle_append_field(output, std.Concat(module_key, "_object_name"), module.object_name);
+        output = mir_program_bundle_append_field(output, std.Concat(module_key, "_canonical_format"), module.canonical_format);
+        output = mir_program_bundle_append_field(output, std.Concat(module_key, "_resource_metadata_count"), std.FormatInt(module.resource_metadata_count));
+        output = mir_program_bundle_append_field(output, std.Concat(module_key, "_provenance_metadata_count"), std.FormatInt(module.provenance_metadata_count));
+        output = mir_program_bundle_append_field(output, std.Concat(module_key, "_native_boundary_metadata_count"), std.FormatInt(module.native_boundary_metadata_count));
+
+        mut symbols: std.Vector[MirProgramBundleSymbol[ctx], ctx] := ctx[module.symbols];
+        mut defined_symbol_count := 0;
+        mut undefined_symbol_count := 0;
+        mut symbol_count_index := 0;
+        while symbol_count_index < len(symbols) {
+            if symbols[symbol_count_index].linkage.tag == 2 {
+                undefined_symbol_count = undefined_symbol_count + 1;
+            } else {
+                defined_symbol_count = defined_symbol_count + 1;
+            }
+            symbol_count_index = symbol_count_index + 1;
+        }
+
+        output = mir_program_bundle_append_field(output, std.Concat(module_key, "_symbol_count"), std.FormatInt(len(symbols)));
+        output = mir_program_bundle_append_field(output, std.Concat(module_key, "_defined_symbol_count"), std.FormatInt(defined_symbol_count));
+        output = mir_program_bundle_append_field(output, std.Concat(module_key, "_undefined_symbol_count"), std.FormatInt(undefined_symbol_count));
+
+        mut symbol_index := 0;
+        while symbol_index < len(symbols) {
+            mut symbol := symbols[symbol_index];
+            mut symbol_key := std.Concat(std.Concat(module_key, "_symbol_"), std.FormatInt(symbol_index));
+            output = mir_program_bundle_append_field(output, std.Concat(symbol_key, "_name"), symbol.name);
+            output = mir_program_bundle_append_field(output, std.Concat(symbol_key, "_link_name"), symbol.link_name);
+            output = mir_program_bundle_append_field(output, std.Concat(symbol_key, "_signature"), symbol.signature);
+            output = mir_program_bundle_append_field(output, std.Concat(symbol_key, "_linkage"), mir_program_bundle_linkage_name(symbol.linkage));
+            symbol_index = symbol_index + 1;
+        }
+
+        mut block_parameters: std.Vector[MirProgramBundleBlockParameter[ctx], ctx] := ctx[module.block_parameters];
+        output = mir_program_bundle_append_field(output, std.Concat(module_key, "_block_parameter_count"), std.FormatInt(len(block_parameters)));
+
+        mut parameter_index := 0;
+        while parameter_index < len(block_parameters) {
+            mut parameter := block_parameters[parameter_index];
+            mut parameter_key := std.Concat(std.Concat(module_key, "_block_parameter_"), std.FormatInt(parameter_index));
+            output = mir_program_bundle_append_field(output, std.Concat(parameter_key, "_function"), parameter.function_name);
+            output = mir_program_bundle_append_field(output, std.Concat(parameter_key, "_block"), parameter.block_label);
+            output = mir_program_bundle_append_field(output, std.Concat(parameter_key, "_ordinal"), std.FormatInt(parameter.ordinal));
+            output = mir_program_bundle_append_field(output, std.Concat(parameter_key, "_name"), parameter.name);
+            output = mir_program_bundle_append_field(output, std.Concat(parameter_key, "_type"), parameter.value_type);
+            parameter_index = parameter_index + 1;
+        }
+
+        output = mir_program_bundle_append_field(output, std.Concat(module_key, "_canonical_mir_length"), std.FormatInt(len(module.canonical_mir)));
+        output = std.Concat(output, std.Concat(module_key, "_canonical_mir_begin\n"));
+        output = std.Concat(output, module.canonical_mir);
+        output = std.Concat(output, std.Concat(module_key, "_canonical_mir_end\n"));
+
+        module_index = module_index + 1;
+    }
+
+    return std.Clone(ctx, output);
 }
 
 func mir_make_function(name: str, return_type: str, span: token.Span, ctx: &Arena) MirFunction[ctx] {

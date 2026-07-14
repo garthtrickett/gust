@@ -12293,6 +12293,115 @@ guard-cranelift-phase10-output-contract:
     echo "✅ Phase 10 output contract passed: one executable intent is frozen, Phase 9G remains the sole native artifact publisher, and the unconnected selector creates no output, parent, object, or temporary artifact."
 
 
+guard-cranelift-phase10-program-mir-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 10 canonical whole-program MIR bundle..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    mir_source="compiler/mir.gst"
+    smoke_entry="compiler/mir_data_structures_smoke_test_entry.gst"
+    compiler_entry="compiler/test_runner_entry.gst"
+    rust_driver="compiler/experiments/cranelift/src/main.rs"
+    readme_doc="compiler/experiments/cranelift/README.md"
+    build_dir="build/guards/cranelift_phase10_program_mir"
+
+    for required_file in \
+      "$manifest_doc" \
+      "$mir_source" \
+      "$smoke_entry" \
+      "$compiler_entry" \
+      "$rust_driver" \
+      "$readme_doc"
+    do
+      if [ ! -f "$required_file" ]; then
+        echo "Missing Phase 10 program-MIR input: $required_file"
+        exit 1
+      fi
+    done
+
+    just guard-cranelift-phase10-output-contract
+
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE10_PROGRAM_MIR_GUARD: guard-cranelift-phase10-program-mir-contract' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_program_mir_status: phase10_canonical_whole_program_MIR_bundle' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_program_mir_predecessor_status: phase10_explicit_executable_output_contract' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_program_mir_predecessor_guard: guard-cranelift-phase10-output-contract' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_program_mir_model: compiler/mir.gst::MirProgramBundle' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_program_mir_module_model: compiler/mir.gst::MirProgramBundleModule' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_program_mir_symbol_model: compiler/mir.gst::MirProgramBundleSymbol' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_program_mir_block_parameter_model: compiler/mir.gst::MirProgramBundleBlockParameter' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_program_mir_format: gust.compiler_program_mir_bundle.v1' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_program_mir_serializer: compiler/mir.gst::mir_serialize_program_bundle' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_program_mir_validator: compiler/mir.gst::mir_program_bundle_is_valid' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_program_mir_module_order_policy: resolver_topological_compilation_order_is_preserved_exactly_and_no_hash_iteration_selects_order' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_program_mir_embedded_format_policy: each_ordered_module_contains_exactly_one_frozen_gust.compiler_mir_ingestion.v1_or_v2_record_and_v3_is_rejected' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_program_mir_entry_policy: exactly_one_exported_entry_symbol_matches_the_bundle_entry_symbol' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_program_mir_symbol_policy: every_module_records_stable_object_name_exported_entry_module_local_and_imported_host_link_names_and_function_signatures' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_program_mir_cfg_policy: canonical_module_record_preserves_CFG_blocks_edges_and_statements_while_the_bundle_indexes_ordered_block_parameter_contracts' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_program_mir_metadata_policy: each_module_records_resource_provenance_and_native_boundary_metadata_counts' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_program_mir_determinism_policy: identical_ordered_modules_symbols_block_parameters_metadata_and_canonical_records_serialize_byte_identically' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_program_mir_schema_policy: gust.compiler_mir_ingestion.v1_and_v2_are_unchanged_and_the_bundle_is_an_aggregation_envelope_not_v3' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_program_mir_validation_policy: empty_bundle_unsafe_fields_duplicate_module_paths_duplicate_object_names_duplicate_module_symbol_links_missing_or_multiple_entry_bad_format_header_and_negative_metadata_or_block_parameter_ordinals_reject' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_program_mir_smoke: compiler/mir_data_structures_smoke_test_entry.gst' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_program_mir_current_route_policy: bundle_model_serializer_and_smoke_are_additive_and_not_connected_to_test_runner_driver_object_link_or_output_paths' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_program_mir_driver_policy: rust_driver_bundle_parsing_and_shared_v1_v2_parser_delegation_remain_deferred_until_the_generic_driver_protocol_patch' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_program_mir_default_route_policy: default_and_explicit_mir_to_c_C_stdout_behavior_remains_unchanged' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_program_mir_next_milestone: capability_validation_and_unsupported_semantics' "$manifest_doc" >/dev/null
+
+    rg -n -F 'type MirProgramBundleSymbolLinkage enum {' "$mir_source" >/dev/null
+    rg -n -F 'type MirProgramBundleSymbol[ctx] struct {' "$mir_source" >/dev/null
+    rg -n -F 'type MirProgramBundleBlockParameter[ctx] struct {' "$mir_source" >/dev/null
+    rg -n -F 'type MirProgramBundleModule[ctx] struct {' "$mir_source" >/dev/null
+    rg -n -F 'type MirProgramBundle[ctx] struct {' "$mir_source" >/dev/null
+    rg -n -F 'func mir_make_program_bundle(entry_symbol: str, ctx: &Arena) MirProgramBundle[ctx] {' "$mir_source" >/dev/null
+    rg -n -F 'func mir_program_bundle_is_valid(bundle: MirProgramBundle[ctx], ctx: &Arena) int {' "$mir_source" >/dev/null
+    rg -n -F 'func mir_serialize_program_bundle(bundle: MirProgramBundle[ctx], ctx: &Arena) str {' "$mir_source" >/dev/null
+    rg -n -F 'format: gust.compiler_program_mir_bundle.v1' "$mir_source" "$smoke_entry" >/dev/null
+    rg -n -F 'gust.compiler_mir_ingestion.v1' "$mir_source" "$smoke_entry" "$rust_driver" >/dev/null
+    rg -n -F 'gust.compiler_mir_ingestion.v2' "$mir_source" "$smoke_entry" "$rust_driver" >/dev/null
+    rg -n -F 'SUCCESS: canonical whole-program MIR bundle smoke' "$smoke_entry" >/dev/null
+
+    if rg -n -F 'gust.compiler_mir_ingestion.v3' "$mir_source" "$rust_driver" >/dev/null; then
+      echo "Patch 4 must not add a v3 canonical MIR syntax to the compiler model or Rust driver."
+      rg -n -F 'gust.compiler_mir_ingestion.v3' "$mir_source" "$rust_driver"
+      exit 1
+    fi
+
+    if rg -n 'MirProgramBundle|mir_serialize_program_bundle|gust\.compiler_program_mir_bundle\.v1' "$compiler_entry" >/dev/null; then
+      echo "Patch 4 must not connect the bundle to the compiler entry yet."
+      rg -n 'MirProgramBundle|mir_serialize_program_bundle|gust\.compiler_program_mir_bundle\.v1' "$compiler_entry"
+      exit 1
+    fi
+
+    if rg -n 'MirProgramBundle|gust\.compiler_program_mir_bundle\.v1' "$rust_driver" >/dev/null; then
+      echo "Patch 4 must not add Rust bundle parsing or driver routing yet."
+      rg -n 'MirProgramBundle|gust\.compiler_program_mir_bundle\.v1' "$rust_driver"
+      exit 1
+    fi
+
+    rm -rf "$build_dir"
+    mkdir -p "$build_dir"
+    smoke_log="$build_dir/smoke.log"
+    just guard-mir-data-structures-smoke >"$smoke_log" 2>&1
+    rg -n -F 'SUCCESS: canonical whole-program MIR bundle smoke' "$smoke_log" >/dev/null
+    rg -n -F 'SUCCESS: mir data structures smoke' "$smoke_log" >/dev/null
+
+    readme_flat="$(tr '\n' ' ' < "$readme_doc")"
+    printf '%s\n' "$readme_flat" |
+      rg -F 'Patch 4 adds the compiler-owned `MirProgramBundle` aggregation envelope.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'The bundle format is `gust.compiler_program_mir_bundle.v1`.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'Patch 4 does not introduce or accept a v3 MIR syntax.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'Identical ordered input serializes byte-for-byte identically.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'Patch 4 does not import the bundle into the compiler entry, parse it in Rust, invoke a driver, touch an output path, emit an object, or link an executable.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'The next milestone is capability validation and unsupported-semantics classification.' >/dev/null
+
+    echo "✅ Phase 10 program MIR contract passed: ordered v1/v2 modules serialize deterministically with explicit entry, symbol, block-parameter, object, and metadata indexes while the compiler and driver routes remain disconnected."
+
+
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
