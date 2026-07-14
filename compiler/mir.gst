@@ -590,12 +590,12 @@ func mir_program_bundle_is_valid(bundle: MirProgramBundle[ctx], ctx: &Arena) int
     return 1;
 }
 
-func mir_program_bundle_append_field(output: str, key: str, value: str) str {
+func mir_program_bundle_append_field(output: str, key: str, value: str, ctx: &Arena) str {
     mut updated := std.Concat(output, key);
     updated = std.Concat(updated, ": ");
     updated = std.Concat(updated, value);
     updated = std.Concat(updated, "\n");
-    return updated;
+    return std.Clone(ctx, updated);
 }
 
 func mir_serialize_program_bundle(bundle: MirProgramBundle[ctx], ctx: &Arena) str {
@@ -604,23 +604,23 @@ func mir_serialize_program_bundle(bundle: MirProgramBundle[ctx], ctx: &Arena) st
     }
 
     mut output := "format: gust.compiler_program_mir_bundle.v1\n";
-    output = mir_program_bundle_append_field(output, "entry_symbol", bundle.entry_symbol);
+    output = mir_program_bundle_append_field(output, "entry_symbol", bundle.entry_symbol, ctx);
 
     mut modules: std.Vector[MirProgramBundleModule[ctx], ctx] := ctx[bundle.modules];
-    output = mir_program_bundle_append_field(output, "module_count", std.FormatInt(len(modules)));
+    output = mir_program_bundle_append_field(output, "module_count", std.FormatInt(len(modules)), ctx);
 
     mut module_index := 0;
     while module_index < len(modules) {
         mut module := modules[module_index];
         mut module_key := std.Concat("module_", std.FormatInt(module_index));
 
-        output = mir_program_bundle_append_field(output, std.Concat(module_key, "_path"), module.module_path);
-        output = mir_program_bundle_append_field(output, std.Concat(module_key, "_prefix"), module.module_prefix);
-        output = mir_program_bundle_append_field(output, std.Concat(module_key, "_object_name"), module.object_name);
-        output = mir_program_bundle_append_field(output, std.Concat(module_key, "_canonical_format"), module.canonical_format);
-        output = mir_program_bundle_append_field(output, std.Concat(module_key, "_resource_metadata_count"), std.FormatInt(module.resource_metadata_count));
-        output = mir_program_bundle_append_field(output, std.Concat(module_key, "_provenance_metadata_count"), std.FormatInt(module.provenance_metadata_count));
-        output = mir_program_bundle_append_field(output, std.Concat(module_key, "_native_boundary_metadata_count"), std.FormatInt(module.native_boundary_metadata_count));
+        output = mir_program_bundle_append_field(output, std.Concat(module_key, "_path"), module.module_path, ctx);
+        output = mir_program_bundle_append_field(output, std.Concat(module_key, "_prefix"), module.module_prefix, ctx);
+        output = mir_program_bundle_append_field(output, std.Concat(module_key, "_object_name"), module.object_name, ctx);
+        output = mir_program_bundle_append_field(output, std.Concat(module_key, "_canonical_format"), module.canonical_format, ctx);
+        output = mir_program_bundle_append_field(output, std.Concat(module_key, "_resource_metadata_count"), std.FormatInt(module.resource_metadata_count), ctx);
+        output = mir_program_bundle_append_field(output, std.Concat(module_key, "_provenance_metadata_count"), std.FormatInt(module.provenance_metadata_count), ctx);
+        output = mir_program_bundle_append_field(output, std.Concat(module_key, "_native_boundary_metadata_count"), std.FormatInt(module.native_boundary_metadata_count), ctx);
 
         mut symbols: std.Vector[MirProgramBundleSymbol[ctx], ctx] := ctx[module.symbols];
         mut defined_symbol_count := 0;
@@ -635,37 +635,37 @@ func mir_serialize_program_bundle(bundle: MirProgramBundle[ctx], ctx: &Arena) st
             symbol_count_index = symbol_count_index + 1;
         }
 
-        output = mir_program_bundle_append_field(output, std.Concat(module_key, "_symbol_count"), std.FormatInt(len(symbols)));
-        output = mir_program_bundle_append_field(output, std.Concat(module_key, "_defined_symbol_count"), std.FormatInt(defined_symbol_count));
-        output = mir_program_bundle_append_field(output, std.Concat(module_key, "_undefined_symbol_count"), std.FormatInt(undefined_symbol_count));
+        output = mir_program_bundle_append_field(output, std.Concat(module_key, "_symbol_count"), std.FormatInt(len(symbols)), ctx);
+        output = mir_program_bundle_append_field(output, std.Concat(module_key, "_defined_symbol_count"), std.FormatInt(defined_symbol_count), ctx);
+        output = mir_program_bundle_append_field(output, std.Concat(module_key, "_undefined_symbol_count"), std.FormatInt(undefined_symbol_count), ctx);
 
         mut symbol_index := 0;
         while symbol_index < len(symbols) {
             mut symbol := symbols[symbol_index];
             mut symbol_key := std.Concat(std.Concat(module_key, "_symbol_"), std.FormatInt(symbol_index));
-            output = mir_program_bundle_append_field(output, std.Concat(symbol_key, "_name"), symbol.name);
-            output = mir_program_bundle_append_field(output, std.Concat(symbol_key, "_link_name"), symbol.link_name);
-            output = mir_program_bundle_append_field(output, std.Concat(symbol_key, "_signature"), symbol.signature);
-            output = mir_program_bundle_append_field(output, std.Concat(symbol_key, "_linkage"), mir_program_bundle_linkage_name(symbol.linkage));
+            output = mir_program_bundle_append_field(output, std.Concat(symbol_key, "_name"), symbol.name, ctx);
+            output = mir_program_bundle_append_field(output, std.Concat(symbol_key, "_link_name"), symbol.link_name, ctx);
+            output = mir_program_bundle_append_field(output, std.Concat(symbol_key, "_signature"), symbol.signature, ctx);
+            output = mir_program_bundle_append_field(output, std.Concat(symbol_key, "_linkage"), mir_program_bundle_linkage_name(symbol.linkage), ctx);
             symbol_index = symbol_index + 1;
         }
 
         mut block_parameters: std.Vector[MirProgramBundleBlockParameter[ctx], ctx] := ctx[module.block_parameters];
-        output = mir_program_bundle_append_field(output, std.Concat(module_key, "_block_parameter_count"), std.FormatInt(len(block_parameters)));
+        output = mir_program_bundle_append_field(output, std.Concat(module_key, "_block_parameter_count"), std.FormatInt(len(block_parameters)), ctx);
 
         mut parameter_index := 0;
         while parameter_index < len(block_parameters) {
             mut parameter := block_parameters[parameter_index];
             mut parameter_key := std.Concat(std.Concat(module_key, "_block_parameter_"), std.FormatInt(parameter_index));
-            output = mir_program_bundle_append_field(output, std.Concat(parameter_key, "_function"), parameter.function_name);
-            output = mir_program_bundle_append_field(output, std.Concat(parameter_key, "_block"), parameter.block_label);
-            output = mir_program_bundle_append_field(output, std.Concat(parameter_key, "_ordinal"), std.FormatInt(parameter.ordinal));
-            output = mir_program_bundle_append_field(output, std.Concat(parameter_key, "_name"), parameter.name);
-            output = mir_program_bundle_append_field(output, std.Concat(parameter_key, "_type"), parameter.value_type);
+            output = mir_program_bundle_append_field(output, std.Concat(parameter_key, "_function"), parameter.function_name, ctx);
+            output = mir_program_bundle_append_field(output, std.Concat(parameter_key, "_block"), parameter.block_label, ctx);
+            output = mir_program_bundle_append_field(output, std.Concat(parameter_key, "_ordinal"), std.FormatInt(parameter.ordinal), ctx);
+            output = mir_program_bundle_append_field(output, std.Concat(parameter_key, "_name"), parameter.name, ctx);
+            output = mir_program_bundle_append_field(output, std.Concat(parameter_key, "_type"), parameter.value_type, ctx);
             parameter_index = parameter_index + 1;
         }
 
-        output = mir_program_bundle_append_field(output, std.Concat(module_key, "_canonical_mir_length"), std.FormatInt(len(module.canonical_mir)));
+        output = mir_program_bundle_append_field(output, std.Concat(module_key, "_canonical_mir_length"), std.FormatInt(len(module.canonical_mir)), ctx);
         output = std.Concat(output, std.Concat(module_key, "_canonical_mir_begin\n"));
         output = std.Concat(output, module.canonical_mir);
         output = std.Concat(output, std.Concat(module_key, "_canonical_mir_end\n"));
