@@ -12372,34 +12372,16 @@ guard-cranelift-phase10-program-mir-contract:
       exit 1
     fi
 
-    # Patch 6 may advertise the accepted bundle format in the read-only
-    # handshake. Keep an exact allowlist for that scalar constant while still
-    # rejecting Rust bundle models, parsers, request routing, or any additional
-    # bundle-format reference.
-    rust_bundle_refs="$(
-      rg -n 'MirProgramBundle|gust\.compiler_program_mir_bundle\.v1' "$rust_driver" ||
-        true
-    )"
-    unexpected_rust_bundle_refs="$(
-      printf '%s\n' "$rust_bundle_refs" |
-        rg -v '^[0-9]+:const PHASE10_PROGRAM_MIR_BUNDLE_FORMAT: &str = "gust\.compiler_program_mir_bundle\.v1";$' ||
-        true
-    )"
-    if [ -n "$unexpected_rust_bundle_refs" ]; then
-      echo "Patch 4 still forbids Rust bundle parsing or driver routing; Patch 6 may only advertise the exact read-only handshake format constant."
-      echo "$unexpected_rust_bundle_refs"
-      exit 1
-    fi
-
-    rust_bundle_ref_count="$(
-      printf '%s\n' "$rust_bundle_refs" |
-        sed '/^$/d' |
-        wc -l |
-        tr -d ' '
-    )"
-    if [ "$rust_bundle_ref_count" != "1" ]; then
-      echo "Expected exactly one read-only Rust bundle-format advertisement after Patch 6, found $rust_bundle_ref_count."
-      printf '%s\n' "$rust_bundle_refs"
+    # Patch 7 owns strict Rust parsing of the additive bundle envelope,
+    # and Patch 8 consumes that validated model for one explicit source cohort.
+    # The frozen v1/v2 embedded schemas remain the only accepted MIR records.
+    rg -n -F 'const PHASE10_PROGRAM_MIR_BUNDLE_FORMAT: &str = "gust.compiler_program_mir_bundle.v1";' "$rust_driver" >/dev/null
+    rg -n -F 'struct Phase10ProgramMirBundle {' "$rust_driver" >/dev/null
+    rg -n -F 'fn parse_phase10_program_mir_bundle(' "$rust_driver" >/dev/null
+    rg -n -F 'fn compile_phase10_scalar_metadata_request_path(' "$rust_driver" >/dev/null
+    if rg -n -F 'gust.compiler_mir_ingestion.v3' "$rust_driver" >/dev/null; then
+      echo "Phase 10 bundle parsing must not add a canonical MIR v3 schema."
+      rg -n -F 'gust.compiler_mir_ingestion.v3' "$rust_driver"
       exit 1
     fi
 
@@ -13145,6 +13127,247 @@ guard-cranelift-phase10-backend-request-contract:
       rg -F 'The next milestone is the scalar and metadata source route.' >/dev/null
 
     echo "✅ Phase 10 backend request contract passed: deterministic request and bundle validation delegates to the frozen shared MIR parsers, verifies canonical indexes and target compatibility, and creates no native artifact."
+
+
+guard-cranelift-phase10-scalar-source-route:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 10 scalar and metadata source route..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    route_source="compiler/mir_native_backend_source_route.gst"
+    compiler_entry="compiler/test_runner_entry.gst"
+    return_source="compiler/phase10_scalar_return_source.gst"
+    metadata_source="compiler/phase10_metadata_local_source.gst"
+    deferred_source="compiler/mir_feature_return_int_preservation_source.gst"
+    rust_manifest="compiler/experiments/cranelift/Cargo.toml"
+    rust_driver="compiler/experiments/cranelift/src/main.rs"
+    readme_doc="compiler/experiments/cranelift/README.md"
+    build_dir="build/guards/cranelift_phase10_scalar_source_route"
+
+    for required_file in \
+      "$manifest_doc" \
+      "$route_source" \
+      "$compiler_entry" \
+      "$return_source" \
+      "$metadata_source" \
+      "$deferred_source" \
+      "$rust_manifest" \
+      "$rust_driver" \
+      "$readme_doc"
+    do
+      if [ ! -f "$required_file" ]; then
+        echo "Missing Phase 10 scalar source-route input: $required_file"
+        exit 1
+      fi
+    done
+    if [ ! -x ./gust ]; then
+      echo "Phase 10 scalar source-route guard requires the rebuilt ./gust compiler."
+      exit 1
+    fi
+
+    just guard-cranelift-phase10-backend-request-contract
+    just guard-cranelift-experiment-manifest-surface
+
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE10_SCALAR_SOURCE_ROUTE_GUARD: guard-cranelift-phase10-scalar-source-route' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_scalar_source_route_status: phase10_connected_scalar_and_provenance_metadata_source_route' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_scalar_source_route_predecessor_status: phase10_generic_backend_request_validation_path' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_scalar_source_route_predecessor_guard: guard-cranelift-phase10-backend-request-contract' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_scalar_source_route_source: compiler/mir_native_backend_source_route.gst' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_scalar_source_route_worker_command: phase10-backend-request-compile' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_scalar_source_route_supported_program_shape: exactly_one_module_one_zero_argument_main_returning_int' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_scalar_source_route_supported_literal_shape: one_ReturnI32_literal' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_scalar_source_route_supported_local_shape: one_LocalI32Set_literal_then_ReturnLocalI32' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_scalar_source_route_metadata_shape: local_binding_source_emits_one_statement_attached_provenance_record_with_ignored_with_proof_policy' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_scalar_source_route_deferred_shapes: calls_imports_CFG_block_parameters_multiple_modules_parameters_non_int_entries_and_broader_expressions_keep_the_historical_route_not_connected_result' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_scalar_source_route_capability_order: compiler_owned_static_validation_then_driver_discovery_handshake_then_advertised_inventory_validation' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_scalar_source_route_driver_policy: GUST_NATIVE_BACKEND_DRIVER_absolute_path_then_gust-native-backend_absolute_sibling_and_no_fallback_from_bad_explicit_path' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_scalar_source_route_worker_policy: strict_Patch7_request_and_bundle_validation_then_shared_v1_parser_validator_metadata_recognizer_and_generic_object_lowerer' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_scalar_source_route_object_policy: Phase9G_verified_hidden_same_directory_object_is_removed_after_success_and_preserved_on_link_failure' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_scalar_source_route_link_policy: Phase9G_classified_link_pipeline_captures_deterministic_logs_and_atomically_publishes_the_final_executable' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_scalar_source_route_next_milestone: CFG_and_block_parameter_source_route' "$manifest_doc" >/dev/null
+
+    rg -n -F 'func mir_native_scalar_source_lower(' "$route_source" >/dev/null
+    rg -n -F 'func mir_native_scalar_source_compile(' "$route_source" >/dev/null
+    rg -n -F 'mir_native_backend_validate_capabilities(' "$route_source" >/dev/null
+    rg -n -F 'mir_native_backend_discover_driver(' "$route_source" >/dev/null
+    rg -n -F 'phase10-driver-handshake' "$route_source" >/dev/null
+    rg -n -F 'phase10-backend-request-compile' "$route_source" "$rust_driver" >/dev/null
+    rg -n -F 'os.RunProcess(ctx, arguments)' "$route_source" >/dev/null
+    rg -n -F 'mir_serialize_program_bundle(' "$route_source" >/dev/null
+    rg -n -F 'mir_serialize_native_backend_request(' "$route_source" >/dev/null
+    rg -n -F 'metadata_0_kind: provenance' "$route_source" >/dev/null
+    rg -n -F 'metadata_0_policy: ignored_with_proof' "$route_source" >/dev/null
+    rg -n -F 'import "mir_native_backend_source_route.gst" as native_source_route;' "$compiler_entry" >/dev/null
+    rg -n -F 'native_source_route.mir_native_scalar_source_compile(' "$compiler_entry" >/dev/null
+
+    if rg -n -i -F 'cranelift' "$route_source" >/dev/null; then
+      echo "Compiler-owned scalar source routing must remain implementation-neutral."
+      rg -n -i -F 'cranelift' "$route_source"
+      exit 1
+    fi
+    if rg -n -F 'os.System' "$route_source" "$compiler_entry" >/dev/null; then
+      echo "Phase 10 source routing must use argument vectors, not shell command strings."
+      exit 1
+    fi
+    if rg -n -i 'cargo run|cargo build|Command::new|compiler-mir-.*object|link-canonical' "$route_source" "$compiler_entry" >/dev/null; then
+      echo "The self-hosted compiler route must not build workers or invoke fixture-specific object/link commands."
+      rg -n -i 'cargo run|cargo build|Command::new|compiler-mir-.*object|link-canonical' "$route_source" "$compiler_entry"
+      exit 1
+    fi
+
+    rg -n -F 'fn compile_phase10_scalar_metadata_request_path(' "$rust_driver" >/dev/null
+    rg -n -F 'validate_phase10_scalar_metadata_fixture(' "$rust_driver" >/dev/null
+    rg -n -F 'lower_compiler_mir_ingestion_function_to_object(' "$rust_driver" >/dev/null
+    rg -n -F 'run_compiler_mir_link_request(link_request)' "$rust_driver" >/dev/null
+    rg -n -F '"phase10-backend-request-compile" => {' "$rust_driver" >/dev/null
+
+    rm -rf "$build_dir"
+    mkdir -p "$build_dir"
+    cargo_target="$build_dir/cargo-target"
+    CARGO_TARGET_DIR="$cargo_target" cargo build \
+      --locked \
+      --quiet \
+      --manifest-path "$rust_manifest"
+    driver_bin="$cargo_target/debug/gust-cranelift-experiment"
+    if [ ! -x "$driver_bin" ]; then
+      echo "Missing built Phase 10 scalar source-route worker: $driver_bin"
+      exit 1
+    fi
+    driver_abs="$(cd "$(dirname "$driver_bin")" && pwd)/$(basename "$driver_bin")"
+
+    compile_and_check() {
+      local source_path="$1"
+      local output_path="$2"
+      local expected_exit="$3"
+      local case_name="$4"
+      local stdout_log="$build_dir/$case_name.stdout"
+      local stderr_log="$build_dir/$case_name.stderr"
+
+      GUST_NATIVE_BACKEND_DRIVER="$driver_abs" \
+        ./gust --backend cranelift -o "$output_path" "$source_path" \
+        >"$stdout_log" 2>"$stderr_log"
+
+      if [ -s "$stdout_log" ]; then
+        echo "Successful native source compilation must keep stdout empty for $case_name."
+        cat "$stdout_log"
+        exit 1
+      fi
+      if [ -s "$stderr_log" ]; then
+        echo "Successful native source compilation must keep stderr empty for $case_name."
+        cat "$stderr_log"
+        exit 1
+      fi
+      if [ ! -x "$output_path" ]; then
+        echo "Native source compilation did not publish an executable for $case_name."
+        exit 1
+      fi
+
+      set +e
+      "$output_path"
+      local execution_status="$?"
+      set -e
+      if [ "$execution_status" != "$expected_exit" ]; then
+        echo "Native executable $case_name exited $execution_status, expected $expected_exit."
+        exit 1
+      fi
+
+      if [ -e "$output_path.phase10.bundle" ] ||
+         [ -e "$output_path.phase10.request" ]; then
+        echo "Compiler-owned transient request or bundle survived successful $case_name compilation."
+        exit 1
+      fi
+
+      local output_dir
+      local output_name
+      output_dir="$(dirname "$output_path")"
+      output_name="$(basename "$output_path")"
+      if [ -e "$output_dir/.$output_name.phase10-scalar-metadata.o" ]; then
+        echo "Successful $case_name compilation left the hidden verified object."
+        exit 1
+      fi
+      if [ ! -f "$output_dir/.$output_name.phase9g-link.stdout.log" ] ||
+         [ ! -f "$output_dir/.$output_name.phase9g-link.stderr.log" ]; then
+        echo "Successful $case_name compilation is missing deterministic Phase 9G link logs."
+        exit 1
+      fi
+    }
+
+    return_output="$build_dir/return-program"
+    metadata_output="$build_dir/metadata-program"
+    compile_and_check "$return_source" "$return_output" 7 return
+    compile_and_check "$metadata_source" "$metadata_output" 2 metadata
+
+    if ! rg -n -F 'metadata_0_kind: provenance' "$route_source" >/dev/null; then
+      echo "The local-binding source route lost provenance metadata."
+      exit 1
+    fi
+
+    deferred_output="$build_dir/deferred-program"
+    set +e
+    GUST_NATIVE_BACKEND_DRIVER="$driver_abs" \
+      ./gust --backend cranelift -o "$deferred_output" "$deferred_source" \
+      >"$build_dir/deferred.stdout" 2>"$build_dir/deferred.stderr"
+    deferred_status="$?"
+    set -e
+    if [ "$deferred_status" = "0" ]; then
+      echo "Call-bearing source must remain deferred until the call/import route patch."
+      exit 1
+    fi
+    cat "$build_dir/deferred.stdout" "$build_dir/deferred.stderr" >"$build_dir/deferred.combined"
+    rg -n -F 'Experimental Cranelift backend selection is valid, but the source-level route is not connected yet.' "$build_dir/deferred.combined" >/dev/null
+    if [ -e "$deferred_output" ]; then
+      echo "Deferred call-bearing source created an executable."
+      exit 1
+    fi
+
+    existing_output="$build_dir/existing-program"
+    existing_reference="$build_dir/existing-program.reference"
+    printf '%s\n' 'phase10-existing-executable-sentinel' >"$existing_output"
+    cp "$existing_output" "$existing_reference"
+    set +e
+    GUST_NATIVE_BACKEND_DRIVER="/phase10/missing/native/backend" \
+      ./gust --backend cranelift -o "$existing_output" "$return_source" \
+      >"$build_dir/missing-driver.stdout" 2>"$build_dir/missing-driver.stderr"
+    missing_driver_status="$?"
+    set -e
+    if [ "$missing_driver_status" = "0" ]; then
+      echo "Missing explicit driver must reject."
+      exit 1
+    fi
+    if ! cmp -s "$existing_reference" "$existing_output"; then
+      echo "Missing explicit driver changed a pre-existing executable."
+      exit 1
+    fi
+    rg -n -F 'Native backend driver discovery error:' "$build_dir/missing-driver.stderr" >/dev/null
+
+    sibling_dir="$build_dir/sibling-install"
+    mkdir -p "$sibling_dir"
+    cp ./gust "$sibling_dir/gust"
+    cp "$driver_bin" "$sibling_dir/gust-native-backend"
+    chmod +x "$sibling_dir/gust" "$sibling_dir/gust-native-backend"
+    sibling_output="$build_dir/sibling-program"
+    env -u GUST_NATIVE_BACKEND_DRIVER \
+      "$sibling_dir/gust" --backend cranelift -o "$sibling_output" "$return_source" \
+      >"$build_dir/sibling.stdout" 2>"$build_dir/sibling.stderr"
+    if [ ! -x "$sibling_output" ]; then
+      echo "Absolute sibling driver discovery did not publish an executable."
+      cat "$build_dir/sibling.stderr"
+      exit 1
+    fi
+
+    readme_flat="$(tr '\n' ' ' < "$readme_doc")"
+    printf '%s\n' "$readme_flat" |
+      rg -F 'Phase 10 Patch 8 connects the first source-level native cohort.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'The accepted shape is exactly one module containing one zero-argument `main() int`.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'The local form emits one statement-attached provenance record with the frozen `ignored_with_proof` metadata policy.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'There is no `PATH`, working directory, Cargo, download, installation, shell-command, or fixture-command fallback.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'The next milestone is the CFG and block-parameter source route.' >/dev/null
+
+    echo "✅ Phase 10 scalar source route passed: literal and provenance-local programs compile through canonical MIR, validated requests, Phase 9G objects, and classified atomic linking; deferred cohorts and failures create no replacement executable."
 
 
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:

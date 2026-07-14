@@ -998,6 +998,38 @@ no fallback to MIR-to-C or fixture-specific worker commands. Default and
 explicit MIR-to-C output remain byte-identical. The next milestone is the
 scalar and metadata source route.
 
+Phase 10 Patch 8 connects the first source-level native cohort. The accepted
+shape is exactly one module containing one zero-argument `main() int`. Its body
+is either one integer-literal return or one integer local initialized from a
+literal and returned. The local form emits one statement-attached provenance
+record with the frozen `ignored_with_proof` metadata policy. Calls, imports,
+multiple modules, parameters, CFG, block parameters, non-int entries, and
+broader expressions retain the historical route-not-connected result until
+their dedicated patches.
+
+The compiler performs static capability validation before driver discovery,
+then validates the read-only worker handshake and checks the same requirement
+plan against the advertised inventory. `GUST_NATIVE_BACKEND_DRIVER` is an
+absolute one-value override; otherwise only the absolute `gust-native-backend`
+sibling of the running compiler is considered. There is no `PATH`, working
+directory, Cargo, download, installation, shell-command, or fixture-command
+fallback.
+
+The compiler serializes one frozen v1 module into the whole-program bundle and
+writes one transient generic request. Both files are removed after the worker
+returns. The worker reuses the strict Patch 7 parser, the shared v1 parser and
+validator, the metadata recognizer, and
+`lower_compiler_mir_ingestion_function_to_object`. It accepts no v2 module,
+CFG, call, import, or block-parameter record in this cohort.
+
+Object verification and publication remain Phase 9G-owned. A verified hidden
+same-directory object is removed after a successful link and preserved when
+linking fails. The classified Phase 9G link pipeline captures deterministic
+sibling logs and atomically publishes the executable. Worker stdout and stderr
+are captured in memory; successful `gust --backend cranelift` stdout is empty.
+Failures never fall back to MIR-to-C and preserve any pre-existing executable.
+The next milestone is the CFG and block-parameter source route.
+
 The checked-in lockfile for this crate is owned by:
 Patch 8 freezes the complete canonical call/import matrix and retires all
 eleven historical bypasses. The checked-in completeness fixture combines local

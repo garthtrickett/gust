@@ -6186,7 +6186,38 @@ func env_register_std_templates(env: *TypeEnvironment[ctx], ctx: &Arena) {
         (*env).struct_templates.Insert(std.Clone(ctx, "os_DirEntry"), dire_tmpl);
         (*env).struct_templates.Insert(std.Clone(ctx, "os.DirEntry"), dire_tmpl);
 
-        // 13. ThreadLocalContext[ctx]
+        // 13. os.ProcessResult[ctx]
+        mut process_result_gen: std.Vector[str, ctx] := std.VectorNew(ctx);
+        process_result_gen.Push(std.Clone(ctx, "ctx"));
+
+        mut process_result_fields: std.Vector[ast.FieldDef[ctx], ctx] :=
+            std.VectorNew(ctx);
+        process_result_fields.Push(make_field("status", t_int, ctx));
+        process_result_fields.Push(make_field("stdout_text", t_str, ctx));
+        process_result_fields.Push(make_field("stderr_text", t_str, ctx));
+
+        mut process_result_gen_idx:
+            Index[std.Vector[str, ctx], ctx] := os.ArenaAlloc(ctx);
+        mut process_result_fields_idx:
+            Index[std.Vector[ast.FieldDef[ctx], ctx], ctx] :=
+                os.ArenaAlloc(ctx);
+        ctx.Set(process_result_gen_idx, process_result_gen);
+        ctx.Set(process_result_fields_idx, process_result_fields);
+
+        mut process_result_tmpl: StructTemplate[ctx];
+        process_result_tmpl.generics = process_result_gen_idx;
+        process_result_tmpl.fields = process_result_fields_idx;
+
+        (*env).struct_templates.Insert(
+            std.Clone(ctx, "os_ProcessResult"),
+            process_result_tmpl
+        );
+        (*env).struct_templates.Insert(
+            std.Clone(ctx, "os.ProcessResult"),
+            process_result_tmpl
+        );
+
+        // 14. ThreadLocalContext[ctx]
         mut tlc_gen: std.Vector[str, ctx] := std.VectorNew(ctx);
         tlc_gen.Push(std.Clone(ctx, "ctx"));
 
@@ -6441,6 +6472,47 @@ func register_fn(env: *TypeEnvironment[ctx], name: str, params: std.Vector[ast.T
             register_fn(env, "std_str_find", p_str_str, t_int, ctx);
             register_fn(env, "os.WriteFile", p_str_str, t_int, ctx);
             register_fn(env, "os_WriteFile", p_str_str, t_int, ctx);
+            register_fn(env, "os.LogError", p_str, t_void, ctx);
+            register_fn(env, "os_LogError", p_str, t_void, ctx);
+            register_fn(env, "os.GetEnv", p_arena_ptr_str, t_str, ctx);
+            register_fn(env, "os_GetEnv", p_arena_ptr_str, t_str, ctx);
+            register_fn(env, "os.ExecutablePath", p_arena_ptr, t_str, ctx);
+            register_fn(env, "os_ExecutablePath", p_arena_ptr, t_str, ctx);
+            register_fn(env, "os.PathAbsolute", p_arena_ptr_str, t_str, ctx);
+            register_fn(env, "os_PathAbsolute", p_arena_ptr_str, t_str, ctx);
+            register_fn(env, "os.PathDir", p_arena_ptr_str, t_str, ctx);
+            register_fn(env, "os_PathDir", p_arena_ptr_str, t_str, ctx);
+            register_fn(env, "os.NativeTargetTriple", p_arena_ptr, t_str, ctx);
+            register_fn(env, "os_NativeTargetTriple", p_arena_ptr, t_str, ctx);
+            register_fn(env, "os.NativeObjectFormat", p_arena_ptr, t_str, ctx);
+            register_fn(env, "os_NativeObjectFormat", p_arena_ptr, t_str, ctx);
+            register_fn(env, "os.FileExists", p_str, t_int, ctx);
+            register_fn(env, "os_FileExists", p_str, t_int, ctx);
+            register_fn(env, "os.FileExecutable", p_str, t_int, ctx);
+            register_fn(env, "os_FileExecutable", p_str, t_int, ctx);
+            register_fn(env, "os.RemoveFile", p_str, t_int, ctx);
+            register_fn(env, "os_RemoveFile", p_str, t_int, ctx);
+
+            mut p_arena_ptr_vector_str:
+                std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+            p_arena_ptr_vector_str.Push(t_arena_ptr);
+            p_arena_ptr_vector_str.Push(
+                make_type_generic("std.Vector", vec_args_str, ctx)
+            );
+            register_fn(
+                env,
+                "os.RunProcess",
+                p_arena_ptr_vector_str,
+                make_type_struct("os_ProcessResult_ctx", "ctx", ctx),
+                ctx
+            );
+            register_fn(
+                env,
+                "os_RunProcess",
+                p_arena_ptr_vector_str,
+                make_type_struct("os_ProcessResult_ctx", "ctx", ctx),
+                ctx
+            );
 
             register_fn(env, "std.str_byte_at", p_str_int, t_byte, ctx);
             register_fn(env, "std_str_byte_at", p_str_int, t_byte, ctx);

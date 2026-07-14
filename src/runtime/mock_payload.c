@@ -46,6 +46,14 @@ void os_LogStr(Slice_unsigned_char s) {
     printf("%.*s\n", s.len, (char*)s.data);
 }
 
+void os_LogError(Slice_unsigned_char s) {
+    fprintf(stderr, "%.*s", s.len, (char*)s.data);
+    if (s.len == 0 || s.data[s.len - 1] != '\n') {
+        fputc('\n', stderr);
+    }
+    fflush(stderr);
+}
+
 int std_str_eq(Slice_unsigned_char s1, Slice_unsigned_char s2) {
  if (s1.len != s2.len) return 0;
  if (s1.len == 0) return 1;

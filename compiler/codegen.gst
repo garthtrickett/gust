@@ -934,6 +934,28 @@ func codegen_should_skip_fwd_decl(name: str) int {
     if std.str_eq(name, "os_ReadFile") { return 1; }
     if std.str_eq(name, "os.WriteFile") { return 1; }
     if std.str_eq(name, "os_WriteFile") { return 1; }
+    if std.str_eq(name, "os.LogError") { return 1; }
+    if std.str_eq(name, "os_LogError") { return 1; }
+    if std.str_eq(name, "os.GetEnv") { return 1; }
+    if std.str_eq(name, "os_GetEnv") { return 1; }
+    if std.str_eq(name, "os.ExecutablePath") { return 1; }
+    if std.str_eq(name, "os_ExecutablePath") { return 1; }
+    if std.str_eq(name, "os.PathAbsolute") { return 1; }
+    if std.str_eq(name, "os_PathAbsolute") { return 1; }
+    if std.str_eq(name, "os.PathDir") { return 1; }
+    if std.str_eq(name, "os_PathDir") { return 1; }
+    if std.str_eq(name, "os.NativeTargetTriple") { return 1; }
+    if std.str_eq(name, "os_NativeTargetTriple") { return 1; }
+    if std.str_eq(name, "os.NativeObjectFormat") { return 1; }
+    if std.str_eq(name, "os_NativeObjectFormat") { return 1; }
+    if std.str_eq(name, "os.FileExists") { return 1; }
+    if std.str_eq(name, "os_FileExists") { return 1; }
+    if std.str_eq(name, "os.FileExecutable") { return 1; }
+    if std.str_eq(name, "os_FileExecutable") { return 1; }
+    if std.str_eq(name, "os.RemoveFile") { return 1; }
+    if std.str_eq(name, "os_RemoveFile") { return 1; }
+    if std.str_eq(name, "os.RunProcess") { return 1; }
+    if std.str_eq(name, "os_RunProcess") { return 1; }
     if std.str_eq(name, "os.path_join") { return 1; }
     if std.str_eq(name, "os_path_join") { return 1; }
     if std.str_eq(name, "os.LogInt") { return 1; }
@@ -4602,6 +4624,7 @@ typedef void Any;
             if std.str_eq(key, "std_Vector_str") == 0 &&
                std.str_eq(key, "os_Dir") == 0 &&
                std.str_eq(key, "os_DirEntry") == 0 &&
+               std.str_eq(key, "os_ProcessResult") == 0 &&
                std.str_eq(key, "LookupResult_os_Dir") == 0 &&
                std.str_eq(key, "LookupResult_os_DirEntry") == 0 &&
                std.str_find(key, "CastResult_") == 0 - 1 {
@@ -4685,6 +4708,7 @@ typedef void Any;
             if std.str_eq(key, "std_Vector_str") == 0 &&
                std.str_eq(key, "os_Dir") == 0 &&
                std.str_eq(key, "os_DirEntry") == 0 &&
+               std.str_eq(key, "os_ProcessResult") == 0 &&
                std.str_eq(key, "LookupResult_os_Dir") == 0 &&
                std.str_eq(key, "LookupResult_os_DirEntry") == 0 {
                 guard orig_key := erased_to_original.Get(key) else {

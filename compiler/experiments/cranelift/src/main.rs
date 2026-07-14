@@ -2074,9 +2074,18 @@ struct Phase10BackendRequest {
 }
 
 #[derive(Debug)]
+struct Phase10ProgramMirBundleModule {
+    module_path: String,
+    object_name: String,
+    canonical_format: String,
+    canonical_mir: String,
+}
+
+#[derive(Debug)]
 struct Phase10ProgramMirBundle {
     entry_symbol: String,
     module_count: usize,
+    modules: Vec<Phase10ProgramMirBundleModule>,
 }
 
 fn parse_phase10_backend_request(
@@ -2276,6 +2285,7 @@ fn parse_phase10_program_mir_bundle(
     let mut global_symbol_links = HashSet::new();
     let mut exported_entry_count = 0usize;
     let mut canonical_defined_symbols = HashSet::new();
+    let mut modules = Vec::with_capacity(module_count);
 
     for module_index in 0..module_count {
         let module_key = format!("module_{module_index}");
@@ -2800,6 +2810,13 @@ fn parse_phase10_program_mir_bundle(
                 ),
             ));
         }
+
+        modules.push(Phase10ProgramMirBundleModule {
+            module_path,
+            object_name,
+            canonical_format,
+            canonical_mir: canonical_mir.to_string(),
+        });
     }
 
     cursor.finish(stage, kind)?;
@@ -2826,6 +2843,7 @@ fn parse_phase10_program_mir_bundle(
     Ok(Phase10ProgramMirBundle {
         entry_symbol,
         module_count,
+        modules,
     })
 }
 
@@ -2901,6 +2919,223 @@ fn validate_phase10_backend_request_path(
     );
     println!("entry_symbol: {}", bundle.entry_symbol);
     println!("module_count: {}", bundle.module_count);
+    println!("target_triple: {}", request.target_triple);
+    println!("object_format: {}", request.object_format);
+    println!("output_path: {}", request.output_path.display());
+    Ok(())
+}
+
+fn validate_phase10_scalar_metadata_fixture(
+    fixture: &ParsedCompilerMirFixture<'_>,
+) -> Result<(), Box<dyn Error>> {
+    let function = &fixture.function;
+    if !function.params.is_empty() {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 10 Patch 8 source route requires a zero-argument entry",
+        ));
+    }
+    if function.return_type != TinyMirType::I32 {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 10 Patch 8 source route requires an i32 entry return",
+        ));
+    }
+    if function.blocks.len() != 1 ||
+        function.entry_block != function.blocks[0].label
+    {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 10 Patch 8 source route does not accept CFG",
+        ));
+    }
+
+    let block = &function.blocks[0];
+    if !block.parameters.is_empty() {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 10 Patch 8 source route does not accept block parameters",
+        ));
+    }
+    for statement in &block.statements {
+        if !matches!(
+            statement,
+            CompilerMirLoweringStatement::LocalI32Set { .. }
+        ) {
+            return Err(phase10_backend_request_error(
+                Phase10BackendRequestStage::CanonicalMirValidation,
+                Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                "Phase 10 Patch 8 source route accepts only LocalI32Set statements",
+            ));
+        }
+    }
+    if !matches!(
+        &block.terminator,
+        CompilerMirLoweringTerminator::ReturnI32(_) |
+            CompilerMirLoweringTerminator::ReturnLocalI32(_)
+    ) {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 10 Patch 8 source route accepts only scalar returns",
+        ));
+    }
+
+    recognize_compiler_mir_fixture_metadata(&fixture.metadata)?;
+    Ok(())
+}
+
+fn compile_phase10_scalar_metadata_request_path(
+    request_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let request_contents = fs::read_to_string(request_path).map_err(|error| {
+        phase10_backend_request_error(
+            Phase10BackendRequestStage::RequestParse,
+            Phase10BackendRequestFailureKind::InvalidRequest,
+            format!(
+                "failed to read backend request {}: {error}",
+                request_path.display()
+            ),
+        )
+    })?;
+    let request = parse_phase10_backend_request(&request_contents)?;
+
+    let (_object_builder, target_contract) =
+        build_compiler_mir_native_object_builder(
+            "gust_phase10_scalar_metadata_compile_probe",
+        )
+        .map_err(|error| {
+            phase10_backend_request_error(
+                Phase10BackendRequestStage::TargetValidation,
+                Phase10BackendRequestFailureKind::TargetMismatch,
+                format!(
+                    "failed to resolve native target contract: {error}"
+                ),
+            )
+        })?;
+
+    if request.target_triple != target_contract.triple ||
+        request.object_format != target_contract.object_format
+    {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::TargetValidation,
+            Phase10BackendRequestFailureKind::TargetMismatch,
+            "backend request target or object format does not match the native Phase 9G contract",
+        ));
+    }
+
+    let bundle_contents =
+        fs::read_to_string(&request.program_mir_bundle_path).map_err(
+            |error| {
+                phase10_backend_request_error(
+                    Phase10BackendRequestStage::ProgramMirBundleValidation,
+                    Phase10BackendRequestFailureKind::InvalidBundle,
+                    format!(
+                        "failed to read program MIR bundle {}: {error}",
+                        request.program_mir_bundle_path.display()
+                    ),
+                )
+            },
+        )?;
+    let bundle = parse_phase10_program_mir_bundle(&bundle_contents)?;
+    if bundle.module_count != 1 || bundle.modules.len() != 1 {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::ProgramMirBundleValidation,
+            Phase10BackendRequestFailureKind::InvalidBundle,
+            "Phase 10 Patch 8 source route requires exactly one module",
+        ));
+    }
+
+    let module = &bundle.modules[0];
+    if module.canonical_format != COMPILER_MIR_CANONICAL_FIXTURE_FORMAT {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::ProgramMirBundleValidation,
+            Phase10BackendRequestFailureKind::InvalidBundle,
+            "Phase 10 Patch 8 source route accepts only frozen canonical MIR v1",
+        ));
+    }
+
+    let parsed = parse_compiler_mir_input(&module.canonical_mir).map_err(
+        |error| {
+            phase10_backend_request_error(
+                Phase10BackendRequestStage::CanonicalMirValidation,
+                Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                format!(
+                    "Phase 10 Patch 8 canonical MIR parse failed: {error}"
+                ),
+            )
+        },
+    )?;
+    let fixture = match parsed {
+        ParsedCompilerMirInput::V1(fixture) => fixture,
+        ParsedCompilerMirInput::V2(_) => {
+            return Err(phase10_backend_request_error(
+                Phase10BackendRequestStage::CanonicalMirValidation,
+                Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                "Phase 10 Patch 8 source route does not accept canonical MIR v2 modules",
+            ));
+        }
+    };
+
+    validate_compiler_mir_fixture(&fixture)?;
+    validate_phase10_scalar_metadata_fixture(&fixture)?;
+
+    let object_path = compiler_mir_link_sibling_path(
+        &request.output_path,
+        ".phase10-scalar-metadata.o",
+    )?;
+    lower_compiler_mir_ingestion_function_to_object(
+        &object_path,
+        &fixture.function,
+    )?;
+
+    let linker_driver =
+        env::var_os("CC").unwrap_or_else(|| OsString::from("cc"));
+    let link_request = CompilerMirLinkRequest {
+        output_path: request.output_path.clone(),
+        ordered_object_inputs: vec![object_path.clone()],
+        c_source: None,
+        host_object: None,
+        additional_libraries: Vec::new(),
+        additional_linker_args: Vec::new(),
+        linker_driver,
+        environment_overrides: Vec::new(),
+        expected_result: CompilerMirLinkExpectedResult::Success,
+        expected_failure_kind: None,
+    };
+
+    let report = run_compiler_mir_link_request(link_request)?;
+    if !report.published {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::RequestValidation,
+            Phase10BackendRequestFailureKind::InvalidRequest,
+            "Phase 9G link pipeline did not publish the requested executable",
+        ));
+    }
+
+    fs::remove_file(&object_path).map_err(|error| {
+        phase10_backend_request_error(
+            Phase10BackendRequestStage::RequestValidation,
+            Phase10BackendRequestFailureKind::InvalidRequest,
+            format!(
+                "could not remove successful hidden source-route object {}: {error}",
+                object_path.display()
+            ),
+        )
+    })?;
+
+    println!("request_protocol: {PHASE10_BACKEND_REQUEST_FORMAT}");
+    println!("request_status: compiled");
+    println!("artifact_kind: {PHASE10_BACKEND_REQUEST_ARTIFACT_KIND}");
+    println!("source_route: scalar_metadata");
+    println!("entry_symbol: {}", bundle.entry_symbol);
+    println!("module_count: {}", bundle.module_count);
+    println!("module_path: {}", module.module_path);
+    println!("object_name: {}", module.object_name);
     println!("target_triple: {}", request.target_triple);
     println!("object_format: {}", request.object_format);
     println!("output_path: {}", request.output_path.display());
@@ -3023,6 +3258,17 @@ fn run() -> Result<(), Box<dyn Error>> {
     };
 
     match command.as_str() {
+        "phase10-backend-request-compile" => {
+            let Some(request_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            compile_phase10_scalar_metadata_request_path(
+                Path::new(&request_path),
+            )
+        }
         "phase10-backend-request-validate" => {
             let Some(request_path) = args.next() else {
                 return Err(usage_error().into());
@@ -4220,6 +4466,7 @@ fn usage_error() -> IoError {
         ErrorKind::InvalidInput,
         concat!(
             "usage:\n",
+            "  gust-cranelift-experiment phase10-backend-request-compile <request.native>\n",
             "  gust-cranelift-experiment phase10-backend-request-validate <request.native>\n",
             "  gust-cranelift-experiment phase10-driver-handshake\n",
             "  gust-cranelift-experiment compiler-mir-pipeline-taxonomy\n",

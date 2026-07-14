@@ -101,6 +101,13 @@ struct std_Vector_str {
     os_Arena* arena;
 };
 
+typedef struct os_ProcessResult os_ProcessResult;
+struct os_ProcessResult {
+    int status;
+    Slice_unsigned_char stdout_text;
+    Slice_unsigned_char stderr_text;
+};
+
 typedef struct std_GenerationalArena_Generic std_GenerationalArena_Generic;
 struct std_GenerationalArena_Generic {
     os_Arena current_ctx;
@@ -329,6 +336,7 @@ void gust_yield(void);
 struct std_Vector_str os_Args(os_Arena* ctx);
 struct Slice_unsigned_char os_MockPayload(void);
 void os_LogStr(struct Slice_unsigned_char s);
+void os_LogError(struct Slice_unsigned_char s);
 void os_LogInt(int val);
 
 int std_str_eq(struct Slice_unsigned_char s1, struct Slice_unsigned_char s2);
@@ -345,6 +353,16 @@ int std_parse_int(struct Slice_unsigned_char s);
 
 struct Slice_unsigned_char os_ReadFile(os_Arena* arena, struct Slice_unsigned_char path);
 int os_WriteFile(struct Slice_unsigned_char path, struct Slice_unsigned_char contents);
+struct Slice_unsigned_char os_GetEnv(os_Arena* arena, struct Slice_unsigned_char name);
+struct Slice_unsigned_char os_ExecutablePath(os_Arena* arena);
+struct Slice_unsigned_char os_PathAbsolute(os_Arena* arena, struct Slice_unsigned_char path);
+struct Slice_unsigned_char os_PathDir(os_Arena* arena, struct Slice_unsigned_char path);
+struct Slice_unsigned_char os_NativeTargetTriple(os_Arena* arena);
+struct Slice_unsigned_char os_NativeObjectFormat(os_Arena* arena);
+int os_FileExists(struct Slice_unsigned_char path);
+int os_FileExecutable(struct Slice_unsigned_char path);
+int os_RemoveFile(struct Slice_unsigned_char path);
+struct os_ProcessResult os_RunProcess(os_Arena* arena, struct std_Vector_str args);
 struct LookupResult_os_Dir os_OpenDir(os_Arena* arena, struct Slice_unsigned_char path);
 struct LookupResult_os_DirEntry os_ReadDir(os_Arena* arena, struct os_Dir dir);
 void os_CloseDir(struct os_Dir dir);

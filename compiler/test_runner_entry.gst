@@ -6,6 +6,7 @@ import "errors.gst" as errors;
 import "typechecker.gst" as typechecker;
 import "resolver.gst" as resolver;
 import "codegen.gst" as codegen;
+import "mir_native_backend_source_route.gst" as native_source_route;
 
 type CompilerBackendSelection enum {
     MirToC,
@@ -338,10 +339,25 @@ func main() {
     env.current_prefix = "";
 
     // 7. Select the backend only after the shared resolver, parser, and
-    // typechecker pipeline has completed. Patch 2 intentionally connects no
-    // native driver or artifact path.
+    // typechecker pipeline has completed. Phase 10 Patch 8 connects only the
+    // frozen single-module scalar and provenance-metadata cohort.
     if invocation.backend.tag == 1 {
-        os.LogStr("Experimental Cranelift backend selection is valid, but the source-level route is not connected yet.");
+        mut native_result :=
+            native_source_route.mir_native_scalar_source_compile(
+                programs,
+                order,
+                module_prefixes,
+                invocation.output_path,
+                ctx
+            );
+        if native_result.status == 0 {
+            os.Exit(0);
+        }
+        if native_result.status == 2 {
+            os.LogStr("Experimental Cranelift backend selection is valid, but the source-level route is not connected yet.");
+            os.Exit(1);
+        }
+        os.LogError(native_result.diagnostic);
         os.Exit(1);
     }
 
