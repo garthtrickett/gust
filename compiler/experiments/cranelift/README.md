@@ -896,6 +896,40 @@ compiler entry, parse it in Rust, invoke a driver, touch an output path, emit an
 object, or link an executable. MIR-to-C remains default and primary. The next
 milestone is capability validation and unsupported-semantics classification.
 
+Patch 5 adds the backend-neutral `MirNativeBackendCapabilityPlan`,
+`MirNativeBackendCapabilitySet`, and
+`mir_native_backend_validate_capabilities` pass. The compiler represents
+required canonical operations, value types and function ABIs, runtime imports,
+and target requirements as an ordered typed plan. Supported names live in four
+explicit compiler-owned sets rather than being inferred from a fixture command
+or accepted optimistically by the native worker.
+
+Validation first requires a structurally valid canonical program bundle and a
+well-formed, duplicate-free capability set. Requirements must be dense and
+zero-based in canonical module, function, block, and operation order. Each
+requirement carries stable module-path, function-name, block-label, ordinal,
+and feature context. Runtime-import requirements must also correspond to an
+`ImportedHost` symbol in the bundle.
+
+The first missing capability is classified as `unsupported_operation`,
+`unsupported_type_or_abi`, `unsupported_runtime_import`, or
+`unsupported_target_requirement`. Invalid compiler-generated bundles,
+capability sets, requirement context, module references, and import references
+are classified separately as `invalid_compiler_mir`; they are never presented
+as an unsupported user feature. The first failure is stable and later
+requirements cannot replace it.
+
+The capability smoke proves a supported plan, deterministic first-operation
+failure, all four unsupported classes, stable diagnostic context, invalid
+bundle classification, and absent-module internal failure. Patch 5 does not
+import the pass into the compiler entry or Rust worker yet because source-level
+bundle construction and driver discovery are still disconnected. When the
+route is connected, capability validation must finish before driver discovery,
+handshake, serialization, output-parent access, object emission, linking, or
+publication. Unsupported or invalid input must never fall back to MIR-to-C and
+must create no native artifact. The next milestone is driver discovery and the
+protocol handshake.
+
 The checked-in lockfile for this crate is owned by:
 Patch 8 freezes the complete canonical call/import matrix and retires all
 eleven historical bypasses. The checked-in completeness fixture combines local

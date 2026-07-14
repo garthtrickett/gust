@@ -12402,6 +12402,132 @@ guard-cranelift-phase10-program-mir-contract:
     echo "✅ Phase 10 program MIR contract passed: ordered v1/v2 modules serialize deterministically with explicit entry, symbol, block-parameter, object, and metadata indexes while the compiler and driver routes remain disconnected."
 
 
+guard-mir-native-backend-capability-smoke:
+    just guard compiler/mir_native_backend_capability_smoke_test_entry.gst
+
+guard-cranelift-phase10-capability-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 10 capability validation and unsupported semantics..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    capability_source="compiler/mir_native_backend_capability.gst"
+    smoke_entry="compiler/mir_native_backend_capability_smoke_test_entry.gst"
+    compiler_entry="compiler/test_runner_entry.gst"
+    rust_driver="compiler/experiments/cranelift/src/main.rs"
+    readme_doc="compiler/experiments/cranelift/README.md"
+    build_dir="build/guards/cranelift_phase10_capability"
+
+    for required_file in \
+      "$manifest_doc" \
+      "$capability_source" \
+      "$smoke_entry" \
+      "$compiler_entry" \
+      "$rust_driver" \
+      "$readme_doc"
+    do
+      if [ ! -f "$required_file" ]; then
+        echo "Missing Phase 10 capability input: $required_file"
+        exit 1
+      fi
+    done
+
+    just guard-cranelift-phase10-program-mir-contract
+    just guard-cranelift-experiment-manifest-surface
+
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE10_CAPABILITY_GUARD: guard-cranelift-phase10-capability-contract' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_capability_status: phase10_compiler_owned_capability_validation' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_capability_predecessor_status: phase10_canonical_whole_program_MIR_bundle' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_capability_predecessor_guard: guard-cranelift-phase10-program-mir-contract' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_capability_source: compiler/mir_native_backend_capability.gst' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_capability_plan_model: MirNativeBackendCapabilityPlan' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_capability_requirement_model: MirNativeBackendRequirement' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_capability_set_model: MirNativeBackendCapabilitySet' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_capability_result_model: MirNativeBackendCapabilityResult' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_capability_pass: mir_native_backend_validate_capabilities' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_capability_requirement_order_policy: compiler_emits_dense_zero_based_requirements_in_canonical_module_function_block_and_operation_order' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_capability_inventory_policy: supported_operation_type_ABI_runtime_import_and_target_names_are_explicit_typed_compiler_owned_sets' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_capability_supported_policy: every_ordered_requirement_must_exist_in_its_corresponding_capability_set' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_capability_operation_failure: unsupported_operation' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_capability_type_abi_failure: unsupported_type_or_abi' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_capability_runtime_import_failure: unsupported_runtime_import' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_capability_target_failure: unsupported_target_requirement' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_capability_internal_failure: invalid_compiler_mir' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_capability_internal_failure_policy: invalid_bundle_invalid_capability_set_invalid_requirement_context_missing_module_or_unrepresented_import_is_a_compiler_failure_not_a_user_unsupported_feature' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_capability_first_failure_policy: first_unsupported_requirement_in_canonical_order_is_reported_and_later_requirements_do_not_replace_it' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_capability_diagnostic_context: classification_module_path_function_name_block_label_requirement_ordinal_feature_and_stable_detail' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_capability_frontend_policy: capability_validation_consumes_compiler_owned_typed_bundle_facts_after_resolution_parsing_typechecking_and_structural_MIR_validation' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_capability_pre_driver_policy: capability_validation_must_complete_before_driver_discovery_handshake_MIR_serialization_output_parent_or_artifact_access' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_capability_no_fallback_policy: unsupported_or_invalid_input_never_routes_to_mir_to_c' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_capability_failure_artifact_policy: unsupported_or_invalid_input_creates_no_bundle_file_object_link_log_temporary_or_final_executable' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_capability_smoke: compiler/mir_native_backend_capability_smoke_test_entry.gst' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_capability_current_route_policy: model_validator_and_smoke_are_additive_and_not_imported_by_the_compiler_entry_or_rust_driver_yet' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_capability_default_route_policy: default_and_explicit_mir_to_c_C_stdout_behavior_remains_byte_identical' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_capability_next_milestone: driver_discovery_and_protocol_handshake' "$manifest_doc" >/dev/null
+
+    rg -n -F 'type MirNativeBackendRequirementKind enum {' "$capability_source" >/dev/null
+    rg -n -F 'type MirNativeBackendCapabilityClassification enum {' "$capability_source" >/dev/null
+    rg -n -F 'type MirNativeBackendRequirement[ctx] struct {' "$capability_source" >/dev/null
+    rg -n -F 'type MirNativeBackendCapabilityPlan[ctx] struct {' "$capability_source" >/dev/null
+    rg -n -F 'type MirNativeBackendCapabilitySet[ctx] struct {' "$capability_source" >/dev/null
+    rg -n -F 'type MirNativeBackendCapabilityResult[ctx] struct {' "$capability_source" >/dev/null
+    rg -n -F 'func mir_native_backend_validate_capabilities(' "$capability_source" >/dev/null
+    rg -n -F 'func mir_native_backend_capability_diagnostic(' "$capability_source" >/dev/null
+    rg -n -F 'unsupported_operation' "$capability_source" "$smoke_entry" >/dev/null
+    rg -n -F 'unsupported_type_or_abi' "$capability_source" >/dev/null
+    rg -n -F 'unsupported_runtime_import' "$capability_source" >/dev/null
+    rg -n -F 'unsupported_target_requirement' "$capability_source" >/dev/null
+    rg -n -F 'invalid_compiler_mir' "$capability_source" >/dev/null
+    rg -n -F 'SUCCESS: MIR native backend capability validation smoke' "$smoke_entry" >/dev/null
+
+    if rg -n -i -F 'cranelift' "$capability_source" "$smoke_entry" >/dev/null; then
+      echo "Compiler-owned capability files must remain backend-neutral and must not name the experimental implementation."
+      rg -n -i -F 'cranelift' "$capability_source" "$smoke_entry"
+      exit 1
+    fi
+
+    if rg -n -F 'mir_native_backend_capability.gst' "$compiler_entry" "$rust_driver" >/dev/null; then
+      echo "Patch 5 must not connect capability validation to the compiler entry or Rust worker yet."
+      rg -n -F 'mir_native_backend_capability.gst' "$compiler_entry" "$rust_driver"
+      exit 1
+    fi
+
+    if rg -n 'MirNativeBackendCapability|mir_native_backend_validate_capabilities' "$compiler_entry" "$rust_driver" >/dev/null; then
+      echo "Patch 5 capability types and pass must remain disconnected from production routing."
+      rg -n 'MirNativeBackendCapability|mir_native_backend_validate_capabilities' "$compiler_entry" "$rust_driver"
+      exit 1
+    fi
+
+    if rg -n -i 'std\.System|os\.(WriteFile|Create|Open|Rename|Remove)|cargo run|Command::new|native-link|link-canonical|compiler-mir-.*object' "$capability_source" "$smoke_entry" >/dev/null; then
+      echo "Capability validation must not discover a driver or own filesystem, object, link, shell, or publication behavior."
+      rg -n -i 'std\.System|os\.(WriteFile|Create|Open|Rename|Remove)|cargo run|Command::new|native-link|link-canonical|compiler-mir-.*object' "$capability_source" "$smoke_entry"
+      exit 1
+    fi
+
+    rm -rf "$build_dir"
+    mkdir -p "$build_dir"
+    smoke_log="$build_dir/smoke.log"
+    just guard-mir-native-backend-capability-smoke >"$smoke_log" 2>&1
+    rg -n -F 'SUCCESS: MIR native backend capability validation smoke' "$smoke_log" >/dev/null
+
+    readme_flat="$(tr '\n' ' ' < "$readme_doc")"
+    printf '%s\n' "$readme_flat" |
+      rg -F 'Patch 5 adds the backend-neutral `MirNativeBackendCapabilityPlan`, `MirNativeBackendCapabilitySet`, and `mir_native_backend_validate_capabilities` pass.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'The first missing capability is classified as `unsupported_operation`, `unsupported_type_or_abi`, `unsupported_runtime_import`, or `unsupported_target_requirement`.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'Invalid compiler-generated bundles, capability sets, requirement context, module references, and import references are classified separately as `invalid_compiler_mir`;' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'The first failure is stable and later requirements cannot replace it.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'Patch 5 does not import the pass into the compiler entry or Rust worker yet because source-level bundle construction and driver discovery are still disconnected.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'Unsupported or invalid input must never fall back to MIR-to-C and must create no native artifact.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'The next milestone is driver discovery and the protocol handshake.' >/dev/null
+
+    echo "✅ Phase 10 capability contract passed: ordered typed requirements classify the first unsupported semantic or internal MIR failure with stable context, while routing and native artifacts remain disconnected."
+
+
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
