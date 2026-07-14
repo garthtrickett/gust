@@ -178,19 +178,43 @@ def normalize_legacy_generated_c(source: str) -> tuple[str, int]:
             if not operand:
                 raise NormalizeError("empty arena offset expression")
 
+            # The operand can itself contain generated arena dereferences.
+            # Normalize those before wrapping the outer addition so one call
+            # reaches a fixed point rather than leaving nested additions for
+            # a second pass.
+            normalized_operand, nested_rewrites = (
+                normalize_legacy_generated_c(operand)
+            )
+
             output.append(source[index:operand_start])
             output.append("GUST_ARENA_OFFSET(")
-            output.append(operand)
+            output.append(normalized_operand)
             output.append(")")
             output.append(trailing)
             index = end
-            rewrites += 1
+            rewrites += 1 + nested_rewrites
             continue
 
         output.append(source[index])
         index += 1
 
     return "".join(output), rewrites
+
+
+def _difference_context(first: str, second: str) -> str:
+    shared = min(len(first), len(second))
+    difference = 0
+    while difference < shared and first[difference] == second[difference]:
+        difference += 1
+
+    start = max(0, difference - 96)
+    first_end = min(len(first), difference + 96)
+    second_end = min(len(second), difference + 96)
+    return (
+        f"first difference at byte {difference}; "
+        f"pass1={first[start:first_end]!r}; "
+        f"pass2={second[start:second_end]!r}"
+    )
 
 
 def _self_test() -> None:
@@ -200,15 +224,17 @@ void f(os_Arena* ctx, int idx, int other) {
     int b = *((int*)((char*)ctx->BaseAddress + (idx + other)));
     int c = *((int*)((char*)ctx->BaseAddress + GUST_ARENA_OFFSET(idx)));
     int d = *((int*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(idx)));
+    int e = *((int*)((char*)ctx->BaseAddress +
+        *((int*)((char*)ctx->BaseAddress + other))));
     const char* text = "BaseAddress + idx";
     // BaseAddress + idx
     /* BaseAddress + idx */
 }
 '''
     normalized, rewrites = normalize_legacy_generated_c(fixture)
-    if rewrites != 2:
+    if rewrites != 4:
         raise NormalizeError(
-            f"self-test expected 2 rewrites, observed {rewrites}"
+            f"self-test expected 4 rewrites, observed {rewrites}"
         )
     if "BaseAddress + GUST_ARENA_OFFSET(idx)" not in normalized:
         raise NormalizeError("self-test did not normalize a simple index")
@@ -217,6 +243,10 @@ void f(os_Arena* ctx, int idx, int other) {
         not in normalized
     ):
         raise NormalizeError("self-test did not normalize a compound index")
+    if normalized.count("GUST_ARENA_OFFSET(") != 5:
+        raise NormalizeError(
+            "self-test did not normalize both levels of a nested arena access"
+        )
     if '"BaseAddress + idx"' not in normalized:
         raise NormalizeError("self-test changed a string literal")
     if "// BaseAddress + idx" not in normalized:
@@ -226,7 +256,11 @@ void f(os_Arena* ctx, int idx, int other) {
 
     second, remaining = normalize_legacy_generated_c(normalized)
     if remaining != 0 or second != normalized:
-        raise NormalizeError("normalization is not idempotent")
+        raise NormalizeError(
+            "normalization is not idempotent: "
+            f"second pass rewrites={remaining}; "
+            + _difference_context(normalized, second)
+        )
 
 
 def _atomic_write(path: Path, contents: str) -> None:
@@ -282,7 +316,9 @@ def main() -> int:
         repeated, remaining = normalize_legacy_generated_c(normalized)
         if remaining != 0 or repeated != normalized:
             raise NormalizeError(
-                "legacy-generated C normalization is not idempotent"
+                "legacy-generated C normalization is not idempotent: "
+                f"second pass rewrites={remaining}; "
+                + _difference_context(normalized, repeated)
             )
 
         _atomic_write(output_path, normalized)
