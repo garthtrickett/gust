@@ -12142,6 +12142,157 @@ guard-cranelift-phase10-backend-selection-contract:
     echo "✅ Phase 10 backend selection passed: default and explicit MIR-to-C are byte-identical, Cranelift is typed but unconnected, the shared front end remains authoritative, and malformed invocations reject deterministically."
 
 
+guard-cranelift-phase10-output-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 10 output and artifact contract..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    compiler_entry="compiler/test_runner_entry.gst"
+    readme_doc="compiler/experiments/cranelift/README.md"
+    source_fixture="compiler/mir_feature_return_int_preservation_source.gst"
+    build_dir="build/guards/cranelift_phase10_output_contract"
+
+    for required_file in \
+      "$manifest_doc" \
+      "$compiler_entry" \
+      "$readme_doc" \
+      "$source_fixture"
+    do
+      if [ ! -f "$required_file" ]; then
+        echo "Missing Phase 10 output-contract input: $required_file"
+        exit 1
+      fi
+    done
+    if [ ! -x ./gust ]; then
+      echo "Phase 10 output-contract guard requires the built ./gust compiler."
+      exit 1
+    fi
+
+    just guard-cranelift-phase10-backend-selection-contract
+
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE10_OUTPUT_CONTRACT_GUARD: guard-cranelift-phase10-output-contract' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_output_contract_status: phase10_explicit_executable_output_contract' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_output_contract_predecessor_status: phase10_typed_backend_selection_model' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_output_contract_predecessor_guard: guard-cranelift-phase10-backend-selection-contract' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_output_contract_artifact_kind: one_native_executable_only' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_output_contract_output_intent_policy: compiler_parses_exactly_one_-o_path_as_opaque_final_executable_intent_without_touching_it' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_output_contract_validation_order: invocation_resolution_parsing_typechecking_capability_validation_driver_handshake_and_canonical_MIR_serialization_precede_output_parent_temp_or_final_path_access' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_output_contract_path_error_classification: invalid_output_path_or_unavailable_parent_is_compiler_output_failure_not_frontend_backend_or_link_failure' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_output_contract_publication_error_classification: final_rename_sync_permission_or_replacement_failure_is_native_publication_failure' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_output_contract_existing_final_policy: every_failure_preserves_any_preexisting_final_executable_byte_for_byte' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_output_contract_partial_policy: every_failure_leaves_no_new_final_or_owned_temporary_executable' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_output_contract_object_policy: no_user_visible_object_path_and_no_object_only_mode' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_output_contract_publication_owner: phase9g_successful_nonempty_hidden_same_directory_temporary_executable_atomic_rename' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_output_contract_object_owner: phase9g_validated_structurally_inspected_same_directory_temporary_object_atomic_publication' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_output_contract_link_failure_policy: phase9g_preserves_verified_input_objects_and_deterministic_native_logs_but_leaves_no_executable' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_output_contract_stdout_policy: explicit_cranelift_never_writes_object_or_executable_bytes_and_success_stdout_is_empty' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_output_contract_stderr_policy: compiler_and_backend_diagnostics_are_stable_text_on_stderr' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_output_contract_native_log_policy: spawned_backend_and_linker_stdout_stderr_are_captured_in_deterministic_sibling_logs_not_streamed_as_unstable_success_output' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_output_contract_exit_policy: success_is_zero_and_every_invocation_frontend_capability_driver_object_link_or_publication_failure_is_deterministically_nonzero' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_output_contract_temporary_path_policy: temporary_paths_are_internal_never_reported_as_success_and_never_survive_owned_failure_cleanup' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_output_contract_no_shell_policy: output_and_artifact orchestration_uses_argument_vectors_and_no_shell_command_string' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_output_contract_current_route_policy: patch3_defines_and_guards_the_contract_but_keeps_driver_object_link_and_executable_publication_unconnected' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_output_contract_runtime_enforcement_boundary: stdout_stderr_success_and_publication_rules_become_dynamic_route_invariants_when_the_driver_is_connected' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_output_contract_default_route_policy: default_and_explicit_mir_to_c_C_stdout_behavior_remains_byte_identical' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_output_contract_next_milestone: canonical_whole_program_MIR_bundle' "$manifest_doc" >/dev/null
+
+    # The Phase 10 contract delegates native publication rather than cloning it.
+    rg -n -F 'allowed_cranelift_phase9g_closure_object_validation_policy: canonical_fixture_parse_validation_metadata_and_lowering_complete_before_output_parent_or_temp_creation' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_closure_object_publication_policy: complete_nonempty_structurally_verified_bytes_publish_by_same_directory_temp_sync_and_atomic_rename' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_closure_object_failure_policy: failed_emission_or_publication_leaves_no_new_final_or_owned_partial_object_and_preserves_any_existing_final' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_closure_executable_publication_policy: successful_nonempty_hidden_same_directory_temporary_executable_is_atomically_renamed_to_the_final_path' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_closure_link_failure_artifact_policy: failures_preserve_input_objects_and_native_stdout_stderr_logs_but_leave_no_new_final_or_owned_temporary_executable' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_link_driver_log_policy: captured_stdout_and_stderr_are_written_to_deterministic_sibling_logs_for_every_spawned_link' "$manifest_doc" >/dev/null
+
+    rg -n -F 'output_path: str,' "$compiler_entry" >/dev/null
+    rg -n -F 'invocation.output_path = output_path;' "$compiler_entry" >/dev/null
+    rg -n -F 'the experimental backend requires exactly one -o <output> value' "$compiler_entry" >/dev/null
+    rg -n -F 'Experimental Cranelift backend selection is valid, but the source-level route is not connected yet.' "$compiler_entry" >/dev/null
+
+    if rg -n -i 'os\.(WriteFile|Create|Open|Rename|Remove)|std\.System|cargo run|compiler-mir-.*object|native-link|link-canonical|Command::new' "$compiler_entry" >/dev/null; then
+      echo "Patch 3 must define output ownership without connecting filesystem, driver, object, link, shell, or publication behavior."
+      rg -n -i 'os\.(WriteFile|Create|Open|Rename|Remove)|std\.System|cargo run|compiler-mir-.*object|native-link|link-canonical|Command::new' "$compiler_entry"
+      exit 1
+    fi
+
+    rm -rf "$build_dir"
+    mkdir -p "$build_dir"
+
+    run_unconnected_route() {
+      local output_path="$1"
+      local case_name="$2"
+      local stdout_log="$build_dir/$case_name.stdout.log"
+      local stderr_log="$build_dir/$case_name.stderr.log"
+      local combined_log="$build_dir/$case_name.combined.log"
+
+      set +e
+      ./gust --backend cranelift -o "$output_path" "$source_fixture" >"$stdout_log" 2>"$stderr_log"
+      local status="$?"
+      set -e
+
+      cat "$stdout_log" "$stderr_log" >"$combined_log"
+      if [ "$status" = "0" ]; then
+        echo "Patch 3 must keep the explicit native route unconnected."
+        exit 1
+      fi
+      rg -n -F 'Experimental Cranelift backend selection is valid, but the source-level route is not connected yet.' "$combined_log" >/dev/null
+    }
+
+    fresh_output="$build_dir/fresh-program"
+    run_unconnected_route "$fresh_output" fresh
+    if [ -e "$fresh_output" ]; then
+      echo "The unconnected route created the fresh final executable path."
+      exit 1
+    fi
+
+    existing_output="$build_dir/existing-program"
+    existing_reference="$build_dir/existing-program.reference"
+    printf '%s\n' 'phase10-existing-final-sentinel' >"$existing_output"
+    cp "$existing_output" "$existing_reference"
+    run_unconnected_route "$existing_output" existing
+    if ! cmp -s "$existing_reference" "$existing_output"; then
+      echo "The unconnected route changed a pre-existing final executable."
+      exit 1
+    fi
+
+    missing_parent="$build_dir/missing/parent"
+    missing_output="$missing_parent/program"
+    run_unconnected_route "$missing_output" missing-parent
+    if [ -e "$missing_parent" ]; then
+      echo "The unconnected route accessed or created the missing output parent."
+      exit 1
+    fi
+
+    owned_artifacts="$(
+      find "$build_dir" -type f \
+        \( -name '*.o' -o -name '*.obj' -o -name '*.tmp' -o -name '.*.tmp' -o -name '*.partial' \) \
+        -print
+    )"
+    if [ -n "$owned_artifacts" ]; then
+      echo "Patch 3 route-not-connected evidence left object or temporary artifacts:"
+      echo "$owned_artifacts"
+      exit 1
+    fi
+
+    readme_flat="$(tr '\n' ' ' < "$readme_doc")"
+    printf '%s\n' "$readme_flat" |
+      rg -F 'Patch 3 freezes that contract without connecting the route.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'The `-o` value is one opaque final-executable intent; there is no user-visible object path, object-only mode, shared-library mode, or second artifact.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'Every failure preserves a pre-existing final executable byte-for-byte and leaves no new final or owned temporary executable.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'The explicit Cranelift route will never write object or executable bytes to stdout.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'Spawned backend and linker stdout and stderr are captured in deterministic sibling logs rather than streamed as unstable success output.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'Patch 3 still performs no driver discovery, MIR serialization, object emission, link invocation, output-directory creation, temporary creation, or executable publication.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'The next milestone is the canonical whole-program MIR bundle.' >/dev/null
+
+    echo "✅ Phase 10 output contract passed: one executable intent is frozen, Phase 9G remains the sole native artifact publisher, and the unconnected selector creates no output, parent, object, or temporary artifact."
+
+
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail

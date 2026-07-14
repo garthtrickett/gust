@@ -838,6 +838,34 @@ No Cranelift source route or native artifact owner is connected by Patch 2.
 Phase 9G remains untouched, MIR-to-C remains default and primary, and the next
 milestone is the output and artifact contract.
 
+Patch 3 freezes that contract without connecting the route. The `-o` value is
+one opaque final-executable intent; there is no user-visible object path,
+object-only mode, shared-library mode, or second artifact. Invocation parsing,
+resolution, parsing, typechecking, capability validation, driver handshake,
+and canonical MIR serialization must all complete before the output parent,
+temporary path, or final path is accessed.
+
+Output-path and parent failures are compiler-output failures. Object emission,
+native linking, and final publication retain their separate Phase 9G failure
+classes. Every failure preserves a pre-existing final executable byte-for-byte
+and leaves no new final or owned temporary executable. Successful publication
+is delegated to the Phase 9G hidden same-directory temporary, sync, and atomic
+rename path; the Gust compiler does not implement a second publication path.
+
+The explicit Cranelift route will never write object or executable bytes to
+stdout. Successful stdout is empty, compiler and backend diagnostics are stable
+text on stderr, and all failures exit nonzero. Spawned backend and linker stdout
+and stderr are captured in deterministic sibling logs rather than streamed as
+unstable success output. Temporary paths are internal and are never presented
+as successful output.
+
+Patch 3 still performs no driver discovery, MIR serialization, object
+emission, link invocation, output-directory creation, temporary creation, or
+executable publication. The current route-not-connected selector must leave a
+fresh output absent, preserve an existing output, and avoid creating a missing
+parent directory. Default and explicit MIR-to-C output remain byte-identical.
+The next milestone is the canonical whole-program MIR bundle.
+
 The checked-in lockfile for this crate is owned by:
 Patch 8 freezes the complete canonical call/import matrix and retires all
 eleven historical bypasses. The checked-in completeness fixture combines local
