@@ -18,6 +18,9 @@ test:
 bootstrap:
     make bootstrap
 
+diagnose-phase10-stage1:
+    make diagnose-phase10-stage1
+
 make-target target:
     make "{{target}}"
 

@@ -3,6 +3,9 @@ CFLAGS = -O2 -Wall -pthread
 INCLUDES = -Isrc
 PREFIX = /usr/local
 
+PHASE10_DIAG_CC ?= clang
+PHASE10_DIAG_CFLAGS ?= -O0 -g3 -fno-omit-frame-pointer -fno-optimize-sibling-calls -fsanitize=address,undefined -fsanitize-address-use-after-scope -fno-sanitize-recover=all -pthread
+
 # Force make to use bash with pipefail to prevent silent pipeline errors
 SHELL = bash
 .SHELLFLAGS = -o pipefail -c
@@ -10,7 +13,7 @@ SHELL = bash
 # Keep Make's explicit phony surface small. The Makefile remains the canonical
 # build graph for core aggregate commands; focused guard/report discovery lives
 # in justfile and concrete recipe names below rather than in a giant .PHONY list.
-.PHONY: all clean test bootstrap install test_tree_sitter require_just
+.PHONY: all clean test bootstrap install test_tree_sitter require_just diagnose-phase10-stage1
 
 require_just:
 	@command -v just >/dev/null 2>&1 || { echo "❌ just is required for focused Make guards. Run nix develop or install just."; exit 1; }
@@ -58,6 +61,50 @@ build/gust_stage1_bin: build/gust_stage1_compiler.c $(RUNTIME_SRCS)
 	cat src/runtime.c build/gust_stage1_compiler.c > build/gust_stage1_final.c
 	${CC} ${CFLAGS} ${INCLUDES} build/gust_stage1_final.c -o build/gust_stage1_bin
 
+diagnose-phase10-stage1: build/gust_stage1_compiler.c $(RUNTIME_SRCS)
+	@command -v "$(PHASE10_DIAG_CC)" >/dev/null 2>&1 || { \
+		echo "❌ $(PHASE10_DIAG_CC) is required for the Phase 10 stage-one sanitizer diagnostic."; \
+		exit 1; \
+	}
+	mkdir -p build/diagnostics/phase10-stage1
+	cat src/runtime.c build/gust_stage1_compiler.c > build/diagnostics/phase10-stage1/gust_stage1_sanitized.c
+	$(PHASE10_DIAG_CC) $(PHASE10_DIAG_CFLAGS) $(INCLUDES) \
+		build/diagnostics/phase10-stage1/gust_stage1_sanitized.c \
+		-o build/diagnostics/phase10-stage1/gust_stage1_sanitized
+	@rm -f \
+		build/diagnostics/phase10-stage1/stdout.log \
+		build/diagnostics/phase10-stage1/stderr.log \
+		build/diagnostics/phase10-stage1/exit-status.txt
+	@set +e; \
+	ASAN_OPTIONS='abort_on_error=1:detect_leaks=0:disable_coredump=0:fast_unwind_on_malloc=0:malloc_context_size=40:print_summary=1:symbolize=1:strict_string_checks=1:check_initialization_order=1:detect_stack_use_after_return=1' \
+	UBSAN_OPTIONS='halt_on_error=1:print_stacktrace=1:report_error_type=1' \
+		./build/diagnostics/phase10-stage1/gust_stage1_sanitized \
+		compiler/test_runner_entry.gst \
+		> build/diagnostics/phase10-stage1/stdout.log \
+		2> build/diagnostics/phase10-stage1/stderr.log; \
+	status=$$?; \
+	set -e; \
+	printf '%s\n' "$$status" > build/diagnostics/phase10-stage1/exit-status.txt; \
+	echo "──────────────── Phase 10 stage-one sanitizer stderr ────────────────"; \
+	cat build/diagnostics/phase10-stage1/stderr.log; \
+	echo "──────────────── Last 200 compiler trace lines ─────────────────────"; \
+	tail -n 200 build/diagnostics/phase10-stage1/stdout.log || true; \
+	echo "──────────────── Diagnostic artifacts ──────────────────────────────"; \
+	echo "status: build/diagnostics/phase10-stage1/exit-status.txt"; \
+	echo "stderr: build/diagnostics/phase10-stage1/stderr.log"; \
+	echo "stdout: build/diagnostics/phase10-stage1/stdout.log"; \
+	echo "binary: build/diagnostics/phase10-stage1/gust_stage1_sanitized"; \
+	if [ "$$status" -eq 0 ]; then \
+		echo "❌ Sanitized stage one unexpectedly compiled the final entry successfully."; \
+		exit 1; \
+	fi; \
+	if ! grep -a -E 'AddressSanitizer|UndefinedBehaviorSanitizer|runtime error:|SUMMARY:' \
+		build/diagnostics/phase10-stage1/stderr.log >/dev/null; then \
+		echo "⚠️ No sanitizer report was emitted. Run the generated binary under gdb or lldb using the command printed below."; \
+		echo "gdb --args build/diagnostics/phase10-stage1/gust_stage1_sanitized compiler/test_runner_entry.gst"; \
+	fi; \
+	exit "$$status"
+
 build/gust_compiler.c: build/gust_stage1_bin $(COMPILER_SRCS)
 	mkdir -p build
 	@rm -f build/gust_compiler.raw build/gust_compiler.tmp
@@ -68,6 +115,9 @@ build/gust_compiler.c: build/gust_stage1_bin $(COMPILER_SRCS)
 	if [ "$$status" -ne 0 ]; then \
 		echo "❌ Stage-one compiler failed while generating the final compiler:"; \
 		cat build/gust_compiler.raw; \
+		if [ "$$status" -eq 139 ]; then \
+			echo "❌ Stage one terminated with SIGSEGV. Run: make diagnose-phase10-stage1"; \
+		fi; \
 		rm -f build/gust_compiler.tmp; \
 		exit "$$status"; \
 	fi; \
