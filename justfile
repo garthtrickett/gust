@@ -1817,13 +1817,64 @@ guard-cranelift-experiment-manifest-surface:
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9F_MERGE_ARM_IMPORTED_CALL_COHORT_GUARD: guard-cranelift-phase9f-merge-arm-imported-call-cohort' "$manifest_doc" justfile >/dev/null
     just guard-cranelift-compiler-mir-ingestion-corpus-surface
     just guard-cranelift-experiment-guard-wiring-surface
-    cranelift_refs="$(rg -n -i -F 'cranelift' compiler src tests Cargo.toml Cargo.lock Makefile 2>/dev/null | rg -v '^compiler/CRANELIFT_EXPERIMENT_MANIFEST\.md:' | rg -v '^compiler/CRANELIFT_PHASE9C_DIFFERENTIAL_LEDGER\.md:' | rg -v '^compiler/experiments/cranelift/' || true)"
+    phase10_selection_entry="compiler/test_runner_entry.gst"
+    if [ ! -f "$phase10_selection_entry" ]; then
+      echo "Missing Phase 10 typed backend-selection entry: $phase10_selection_entry"
+      exit 1
+    fi
+
+    rg -n -F 'allowed_cranelift_phase10_backend_selection_status: phase10_typed_backend_selection_model' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_backend_selection_entry: compiler/test_runner_entry.gst' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_backend_selection_artifact_policy: no_native_driver_object_linker_or_executable_publication_connected' "$manifest_doc" >/dev/null
+
+    # Phase 10 Patch 2 may name Cranelift only in the typed selector, parser,
+    # selector assignment, and stable route-not-connected diagnostic. Keep an
+    # exact allowlist so this Phase 9 surface still rejects codegen, driver,
+    # object, link, runtime, or broader compiler references.
+    phase10_selection_refs="$(
+      rg -n -i -F 'cranelift' "$phase10_selection_entry" ||
+        true
+    )"
+    unexpected_phase10_selection_refs="$(
+      printf '%s\n' "$phase10_selection_refs" |
+        rg -v '^[0-9]+:[[:space:]]*CraneliftExperimental[,]?$' |
+        rg -v '^[0-9]+:[[:space:]]*} else if std\.str_eq\(backend_name, "cranelift"\) == 1 \{$' |
+        rg -v '^[0-9]+:[[:space:]]*invocation\.backend\.tag = 1; // CraneliftExperimental$' |
+        rg -v '^[0-9]+:[[:space:]]*os\.LogStr\("Experimental Cranelift backend selection is valid, but the source-level route is not connected yet\."\);$' ||
+        true
+    )"
+    if [ -n "$unexpected_phase10_selection_refs" ]; then
+      echo "Phase 10 typed backend selection contains Cranelift references beyond the frozen Patch 2 selector surface:"
+      echo "$unexpected_phase10_selection_refs"
+      exit 1
+    fi
+
+    phase10_selection_ref_count="$(
+      printf '%s\n' "$phase10_selection_refs" |
+        sed '/^$/d' |
+        wc -l |
+        tr -d ' '
+    )"
+    if [ "$phase10_selection_ref_count" != "4" ]; then
+      echo "Expected exactly four frozen Phase 10 typed-selection Cranelift references, found $phase10_selection_ref_count."
+      printf '%s\n' "$phase10_selection_refs"
+      exit 1
+    fi
+
+    cranelift_refs="$(
+      rg -n -i -F 'cranelift' compiler src tests Cargo.toml Cargo.lock Makefile 2>/dev/null |
+        rg -v '^compiler/CRANELIFT_EXPERIMENT_MANIFEST\.md:' |
+        rg -v '^compiler/CRANELIFT_PHASE9C_DIFFERENTIAL_LEDGER\.md:' |
+        rg -v '^compiler/experiments/cranelift/' |
+        rg -v '^compiler/test_runner_entry\.gst:' ||
+        true
+    )"
     if [ -n "$cranelift_refs" ]; then
-      echo "Phase 9 Step 1 must not add Cranelift implementation references:"
+      echo "Phase 9 Step 1 must not add Cranelift implementation references outside the manifest-authorized Phase 10 typed selector:"
       echo "$cranelift_refs"
       exit 1
     fi
-    echo "✅ Cranelift experiment manifest surface passed: dependency beachhead plus explicit backend suite, manifest-derived guard wiring, disabled by default, and no production codegen exists yet."
+    echo "✅ Cranelift experiment manifest surface passed: dependency beachhead plus explicit backend suite, manifest-derived guard wiring, disabled by default, one exact Phase 10 typed selector, and no production Cranelift codegen or artifact route."
 
 guard-cranelift-compiler-mir-ingestion-corpus-surface:
     #!/usr/bin/env bash
