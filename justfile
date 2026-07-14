@@ -12405,10 +12405,25 @@ guard-cranelift-phase10-program-mir-contract:
 
     rm -rf "$build_dir"
     mkdir -p "$build_dir"
-    smoke_log="$build_dir/smoke.log"
-    just guard-mir-data-structures-smoke >"$smoke_log" 2>&1
-    rg -n -F 'SUCCESS: canonical whole-program MIR bundle smoke' "$smoke_log" >/dev/null
-    rg -n -F 'SUCCESS: mir data structures smoke' "$smoke_log" >/dev/null
+    smoke_log="$build_dir/smoke-wrapper.log"
+    program_log="$build_dir/smoke-program.log"
+    rm -f to.log
+    if ! just guard-mir-data-structures-smoke >"$smoke_log" 2>&1; then
+      echo "Phase 10 program-MIR smoke failed."
+      cat "$smoke_log"
+      if [ -f to.log ]; then
+        cat to.log
+      fi
+      exit 1
+    fi
+    if [ ! -f to.log ]; then
+      echo "Phase 10 program-MIR smoke produced no program evidence log."
+      cat "$smoke_log"
+      exit 1
+    fi
+    cp to.log "$program_log"
+    rg -n -F 'SUCCESS: canonical whole-program MIR bundle smoke' "$program_log" >/dev/null
+    rg -n -F 'SUCCESS: mir data structures smoke' "$program_log" >/dev/null
 
     readme_flat="$(tr '\n' ' ' < "$readme_doc")"
     printf '%s\n' "$readme_flat" |
@@ -12530,9 +12545,24 @@ guard-cranelift-phase10-capability-contract:
 
     rm -rf "$build_dir"
     mkdir -p "$build_dir"
-    smoke_log="$build_dir/smoke.log"
-    just guard-mir-native-backend-capability-smoke >"$smoke_log" 2>&1
-    rg -n -F 'SUCCESS: MIR native backend capability validation smoke' "$smoke_log" >/dev/null
+    smoke_log="$build_dir/smoke-wrapper.log"
+    program_log="$build_dir/smoke-program.log"
+    rm -f to.log
+    if ! just guard-mir-native-backend-capability-smoke >"$smoke_log" 2>&1; then
+      echo "Phase 10 capability smoke failed."
+      cat "$smoke_log"
+      if [ -f to.log ]; then
+        cat to.log
+      fi
+      exit 1
+    fi
+    if [ ! -f to.log ]; then
+      echo "Phase 10 capability smoke produced no program evidence log."
+      cat "$smoke_log"
+      exit 1
+    fi
+    cp to.log "$program_log"
+    rg -n -F 'SUCCESS: MIR native backend capability validation smoke' "$program_log" >/dev/null
 
     readme_flat="$(tr '\n' ' ' < "$readme_doc")"
     printf '%s\n' "$readme_flat" |
@@ -12668,9 +12698,24 @@ guard-cranelift-phase10-driver-handshake-contract:
       exit 1
     fi
 
-    smoke_log="$build_dir/compiler-smoke.log"
-    just guard-mir-native-backend-driver-handshake-smoke >"$smoke_log" 2>&1
-    rg -n -F 'SUCCESS: MIR native backend driver discovery and handshake smoke' "$smoke_log" >/dev/null
+    smoke_log="$build_dir/compiler-smoke-wrapper.log"
+    program_log="$build_dir/compiler-smoke-program.log"
+    rm -f to.log
+    if ! just guard-mir-native-backend-driver-handshake-smoke >"$smoke_log" 2>&1; then
+      echo "Phase 10 driver discovery and handshake compiler smoke failed."
+      cat "$smoke_log"
+      if [ -f to.log ]; then
+        cat to.log
+      fi
+      exit 1
+    fi
+    if [ ! -f to.log ]; then
+      echo "Phase 10 driver discovery and handshake compiler smoke produced no program evidence log."
+      cat "$smoke_log"
+      exit 1
+    fi
+    cp to.log "$program_log"
+    rg -n -F 'SUCCESS: MIR native backend driver discovery and handshake smoke' "$program_log" >/dev/null
 
     handshake_a="$build_dir/handshake-a.txt"
     handshake_b="$build_dir/handshake-b.txt"
