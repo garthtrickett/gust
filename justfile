@@ -2232,7 +2232,35 @@ guard-cranelift-backend-surface:
       exit 1
     fi
     backend_route_flag="$(printf '%s %s' '--backend' 'cranelift')"
-    backend_route_refs="$(rg -n -F -- "$backend_route_flag" compiler src tests Makefile Cargo.toml Cargo.lock justfile 2>/dev/null | rg -v '^compiler/CRANELIFT_EXPERIMENT_MANIFEST\.md:' || true)"
+
+    # Phase 10 contract documentation and its guard assertions may name the
+    # future explicit CLI. Production sources and non-Phase-10 orchestration
+    # must still contain no Cranelift backend route.
+    backend_route_code_refs="$(
+      rg -n -F -- "$backend_route_flag"         compiler src tests Makefile Cargo.toml Cargo.lock 2>/dev/null |
+        rg -v '^compiler/CRANELIFT_EXPERIMENT_MANIFEST\.md:' |
+        rg -v '^compiler/experiments/cranelift/README\.md:' ||
+        true
+    )"
+    phase10_guard_free_justfile="$(
+      awk '
+        /^[^[:space:]#][^=]*:/ {
+          in_phase10_guard = ($0 ~ /^guard-cranelift-phase10-[^:]*:/)
+        }
+        !in_phase10_guard {
+          print
+        }
+      ' justfile
+    )"
+    backend_route_just_refs="$(
+      printf '%s\n' "$phase10_guard_free_justfile" |
+        rg -n -F -- "$backend_route_flag" ||
+        true
+    )"
+    backend_route_refs="$(
+      printf '%s\n%s\n' "$backend_route_code_refs" "$backend_route_just_refs" |
+        sed '/^$/d'
+    )"
     if [ -n "$backend_route_refs" ]; then
       echo "Production Cranelift backend routing must not exist yet."
       echo "$backend_route_refs"
