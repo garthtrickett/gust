@@ -262,6 +262,16 @@ void f(os_Arena* ctx, int idx, int other) {
             + _difference_context(normalized, second)
         )
 
+    already_safe = (
+        "int value = *((int*)((char*)ctx->BaseAddress + "
+        "GUST_ARENA_OFFSET(idx)));\n"
+    )
+    safe_output, safe_rewrites = normalize_legacy_generated_c(already_safe)
+    if safe_rewrites != 0 or safe_output != already_safe:
+        raise NormalizeError(
+            "self-test rejected or changed already-safe generated C"
+        )
+
 
 def _atomic_write(path: Path, contents: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -308,10 +318,6 @@ def main() -> int:
 
         source = input_path.read_text(encoding="utf-8")
         normalized, rewrites = normalize_legacy_generated_c(source)
-        if rewrites == 0:
-            raise NormalizeError(
-                "legacy-generated C contained no unsafe arena additions"
-            )
 
         repeated, remaining = normalize_legacy_generated_c(normalized)
         if remaining != 0 or repeated != normalized:
@@ -322,11 +328,18 @@ def main() -> int:
             )
 
         _atomic_write(output_path, normalized)
-        print(
-            "normalized "
-            f"{rewrites} legacy generated arena pointer additions",
-            file=sys.stderr,
-        )
+        if rewrites == 0:
+            print(
+                "verified legacy generated C already contains no unsafe "
+                "arena pointer additions",
+                file=sys.stderr,
+            )
+        else:
+            print(
+                "normalized "
+                f"{rewrites} legacy generated arena pointer additions",
+                file=sys.stderr,
+            )
         return 0
     except (OSError, NormalizeError) as error:
         print(

@@ -1030,7 +1030,9 @@ The legacy bootstrap also predates unsigned formation of pointers from the
 through `tools/normalize_generated_arena_offsets.py`. The lexical normalizer
 changes only actual C `BaseAddress + Index` expressions, skips comments and
 quoted literals, rejects malformed or empty input, verifies idempotence, and
-writes transactionally. Stage one embeds the updated code generator, so the
+writes transactionally. Input that is already safe is a valid fixed point: it
+is copied transactionally without requiring a rewrite. Stage one embeds the
+updated code generator, so the
 final compiler and all later fixed-point generations emit the unsigned arena
 conversion directly and do not use this transitional normalization step.
 

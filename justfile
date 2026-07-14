@@ -13188,6 +13188,7 @@ guard-cranelift-phase10-scalar-source-route:
     rg -n -F 'allowed_cranelift_phase10_scalar_source_route_bootstrap_intrinsic_policy: new_runtime_function_and_os_ProcessResult_type_registration_are_consumed_only_by_the_stage1_or_newer_compiler' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_scalar_source_route_legacy_codegen_normalizer: tools/normalize_generated_arena_offsets.py' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_scalar_source_route_legacy_codegen_policy: only_the_transitional_stage1_C_emitted_by_the_checked_in_bootstrap_is_lexically_normalized_from_signed_BaseAddress_plus_Index_to_GUST_ARENA_OFFSET' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_scalar_source_route_legacy_codegen_noop_policy: already_safe_transitional_C_is_fixed_point_verified_and_copied_transactionally_without_requiring_a_rewrite' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_scalar_source_route_legacy_codegen_retirement: stage1_uses_the_updated_codegen_and_final_or_later_compilers_require_no_generated_C_normalization' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_scalar_source_route_direct_bootstrap_policy: invoking_the_legacy_gust_bootstrap_directly_on_compiler/test_runner_entry.gst_is_not_a_supported_build_path' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_scalar_source_route_fixed_point_policy: normal_make_gust_and_make_bootstrap_continue_from_the_final_stage1_compiled_entry' "$manifest_doc" >/dev/null
