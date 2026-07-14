@@ -11907,6 +11907,190 @@ guard-cranelift-phase10-opening-contract:
     echo "✅ Phase 10 opened: Phase 9G remains the required artifact owner, the 33/33/0/0/17 boundary and frozen MIR schemas are preserved, MIR-to-C remains default, and the explicit Cranelift CLI is contract-only."
 
 
+guard-cranelift-phase10-backend-selection-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 10 typed backend selection..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    compiler_entry="compiler/test_runner_entry.gst"
+    readme_doc="compiler/experiments/cranelift/README.md"
+    source_fixture="compiler/mir_feature_return_int_preservation_source.gst"
+    malformed_fixture="tests/test_multi_parser_errors_rejected.gst"
+    build_dir="build/guards/cranelift_phase10_backend_selection"
+
+    for required_file in \
+      "$manifest_doc" \
+      "$compiler_entry" \
+      "$readme_doc" \
+      "$source_fixture" \
+      "$malformed_fixture"
+    do
+      if [ ! -f "$required_file" ]; then
+        echo "Missing Phase 10 backend-selection input: $required_file"
+        exit 1
+      fi
+    done
+    if [ ! -x ./gust ]; then
+      echo "Phase 10 backend-selection guard requires the built ./gust compiler."
+      exit 1
+    fi
+
+    just guard-cranelift-phase10-opening-contract
+
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE10_BACKEND_SELECTION_GUARD: guard-cranelift-phase10-backend-selection-contract' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_backend_selection_status: phase10_typed_backend_selection_model' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_backend_selection_entry: compiler/test_runner_entry.gst' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_backend_selection_type: CompilerBackendSelection' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_backend_selection_invocation_type: CompilerInvocation' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_backend_selection_parser: compiler_parse_invocation' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_backend_selection_variants: MirToC,CraneliftExperimental' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_backend_selection_default_policy: omitted_backend_selects_MirToC' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_backend_selection_explicit_mir_to_c_policy: explicit_mir_to_c_uses_the_exact_default_codegen_path' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_backend_selection_frontend_policy: resolver_parser_and_typechecker_are_backend_independent' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_backend_selection_cranelift_stub_policy: explicit_cranelift_runs_the_common_frontend_then_rejects_route_not_connected_before_codegen_driver_object_link_or_output_touch' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_backend_selection_output_policy: cranelift_requires_exactly_one_-o_value_while_mir_to_c_rejects_-o' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_backend_selection_argument_policy: backend_output_and_source_are_order_independent_with_duplicate_unknown_missing_and_multiple_source_rejection' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_backend_selection_fallback_policy: no_cranelift_to_mir_to_c_fallback' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_backend_selection_environment_policy: no_environment_variable_selects_the_backend' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_backend_selection_artifact_policy: no_native_driver_object_linker_or_executable_publication_connected' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_backend_selection_default_compatibility: default_and_explicit_mir_to_c_emit_byte_identical_C' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_backend_selection_next_milestone: output_and_artifact_contract' "$manifest_doc" >/dev/null
+
+    rg -n -F 'type CompilerBackendSelection enum {' "$compiler_entry" >/dev/null
+    rg -n -F '    MirToC,' "$compiler_entry" >/dev/null
+    rg -n -F '    CraneliftExperimental' "$compiler_entry" >/dev/null
+    rg -n -F 'type CompilerInvocation[ctx] struct {' "$compiler_entry" >/dev/null
+    rg -n -F 'func compiler_parse_invocation(args: std.Vector[str, ctx], ctx: &Arena) CompilerInvocation[ctx] {' "$compiler_entry" >/dev/null
+    rg -n -F 'mut invocation := compiler_parse_invocation(args, ctx);' "$compiler_entry" >/dev/null
+    rg -n -F 'mut file_path := invocation.source_path;' "$compiler_entry" >/dev/null
+    rg -n -F 'if invocation.backend.tag == 1 {' "$compiler_entry" >/dev/null
+    rg -n -F 'Experimental Cranelift backend selection is valid, but the source-level route is not connected yet.' "$compiler_entry" >/dev/null
+
+    codegen_call_count="$(rg -c -F 'codegen.codegen_generate(programs, module_prefixes, &env, ctx)' "$compiler_entry" || true)"
+    codegen_call_count="${codegen_call_count:-0}"
+    if [ "$codegen_call_count" != "1" ]; then
+      echo "Default and explicit MIR-to-C must share exactly one codegen call; found $codegen_call_count."
+      exit 1
+    fi
+
+    if rg -n -i 'cargo run|compiler-mir-.*object|native-link|link-canonical|Command::new|std\.System' "$compiler_entry" >/dev/null; then
+      echo "Patch 2 must not connect driver, object, linker, shell, or executable orchestration."
+      rg -n -i 'cargo run|compiler-mir-.*object|native-link|link-canonical|Command::new|std\.System' "$compiler_entry"
+      exit 1
+    fi
+
+    rm -rf "$build_dir"
+    mkdir -p "$build_dir"
+    default_c="$build_dir/default.c"
+    explicit_c="$build_dir/explicit.c"
+    reordered_c="$build_dir/reordered.c"
+    cranelift_log="$build_dir/cranelift.log"
+    malformed_log="$build_dir/malformed-cranelift.log"
+    output_path="$build_dir/program"
+
+    ./gust "$source_fixture" > "$default_c"
+    ./gust --backend mir-to-c "$source_fixture" > "$explicit_c"
+    ./gust "$source_fixture" --backend mir-to-c > "$reordered_c"
+    cmp -s "$default_c" "$explicit_c"
+    cmp -s "$default_c" "$reordered_c"
+    test -s "$default_c"
+
+    set +e
+    ./gust --backend cranelift -o "$output_path" "$source_fixture" > "$cranelift_log" 2>&1
+    cranelift_status="$?"
+    set -e
+    if [ "$cranelift_status" = "0" ]; then
+      echo "Explicit Cranelift selection must remain a nonzero route-not-connected result in Patch 2."
+      exit 1
+    fi
+    rg -n -F 'Experimental Cranelift backend selection is valid, but the source-level route is not connected yet.' "$cranelift_log" >/dev/null
+    if [ -e "$output_path" ]; then
+      echo "Patch 2 Cranelift selection must not touch the requested output path."
+      exit 1
+    fi
+
+    set +e
+    ./gust --backend cranelift -o "$output_path" "$malformed_fixture" > "$malformed_log" 2>&1
+    malformed_status="$?"
+    set -e
+    if [ "$malformed_status" = "0" ]; then
+      echo "Malformed Gust input must fail under explicit Cranelift selection."
+      exit 1
+    fi
+    rg -n -F 'ParserError' "$malformed_log" >/dev/null
+    if rg -n -F 'source-level route is not connected yet' "$malformed_log" >/dev/null; then
+      echo "Cranelift selection must not bypass the shared parser."
+      exit 1
+    fi
+    if [ -e "$output_path" ]; then
+      echo "Frontend rejection must not touch the requested output path."
+      exit 1
+    fi
+
+    expect_invocation_failure() {
+      local expected="$1"
+      local case_name="$2"
+      shift 2
+      local case_log="$build_dir/$case_name.log"
+      set +e
+      "$@" > "$case_log" 2>&1
+      local status="$?"
+      set -e
+      if [ "$status" = "0" ]; then
+        echo "Expected invocation failure for $case_name."
+        exit 1
+      fi
+      rg -n -F "$expected" "$case_log" >/dev/null
+    }
+
+    expect_invocation_failure \
+      'Compiler invocation error: duplicate --backend option' \
+      duplicate-backend \
+      ./gust --backend mir-to-c --backend cranelift -o "$output_path" "$source_fixture"
+    expect_invocation_failure \
+      'Compiler invocation error: unknown backend: llvm' \
+      unknown-backend \
+      ./gust --backend llvm "$source_fixture"
+    expect_invocation_failure \
+      'Compiler invocation error: unknown option: --wat' \
+      unknown-option \
+      ./gust --wat "$source_fixture"
+    expect_invocation_failure \
+      'Compiler invocation error: missing value after --backend' \
+      missing-backend-value \
+      ./gust "$source_fixture" --backend
+    expect_invocation_failure \
+      'Compiler invocation error: duplicate -o option' \
+      duplicate-output \
+      ./gust --backend cranelift -o "$output_path" -o "$build_dir/other" "$source_fixture"
+    expect_invocation_failure \
+      'Compiler invocation error: multiple source paths are not supported' \
+      multiple-sources \
+      ./gust "$source_fixture" compiler/mir_feature_local_binding_read_preservation_source.gst
+    expect_invocation_failure \
+      'Compiler invocation error: the MIR-to-C backend does not accept -o' \
+      mir-to-c-output \
+      ./gust --backend mir-to-c -o "$output_path" "$source_fixture"
+    expect_invocation_failure \
+      'Compiler invocation error: the experimental backend requires exactly one -o <output> value' \
+      cranelift-missing-output \
+      ./gust --backend cranelift "$source_fixture"
+
+    readme_flat="$(tr '\n' ' ' < "$readme_doc")"
+    printf '%s\n' "$readme_flat" |
+      rg -F 'Patch 2 completes that milestone with the compiler-owned `CompilerBackendSelection` enum and `CompilerInvocation` record.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'Omitted selection and explicit `mir-to-c` both reach the same `codegen.codegen_generate` call, preserving byte-identical C output.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'Explicit Cranelift selection is now recognized only as a typed selection.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'No Cranelift source route or native artifact owner is connected by Patch 2.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'the next milestone is the output and artifact contract.' >/dev/null
+
+    echo "✅ Phase 10 backend selection passed: default and explicit MIR-to-C are byte-identical, Cranelift is typed but unconnected, the shared front end remains authoritative, and malformed invocations reject deterministically."
+
+
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail

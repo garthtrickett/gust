@@ -7,6 +7,118 @@ import "typechecker.gst" as typechecker;
 import "resolver.gst" as resolver;
 import "codegen.gst" as codegen;
 
+type CompilerBackendSelection enum {
+    MirToC,
+    CraneliftExperimental
+}
+
+type CompilerInvocation[ctx] struct {
+    backend: CompilerBackendSelection,
+    source_path: str,
+    output_path: str,
+    backend_was_explicit: int,
+    output_was_explicit: int
+}
+
+func compiler_argument_starts_with(value: str, prefix: str) int {
+    mut value_len := len(value);
+    mut prefix_len := len(prefix);
+    if value_len < prefix_len {
+        return 0;
+    }
+    mut candidate := std.str_slice(value, 0, prefix_len);
+    if std.str_eq(candidate, prefix) == 1 {
+        return 1;
+    }
+    return 0;
+}
+
+func compiler_invocation_fail(message: str) {
+    os.LogStr(std.Concat("Compiler invocation error: ", message));
+    os.Exit(1);
+}
+
+func compiler_parse_invocation(args: std.Vector[str, ctx], ctx: &Arena) CompilerInvocation[ctx] {
+    mut invocation: CompilerInvocation[ctx];
+    unsafe {
+        invocation.backend.tag = 0; // MirToC
+    }
+    invocation.source_path = "";
+    invocation.output_path = "";
+    invocation.backend_was_explicit = 0;
+    invocation.output_was_explicit = 0;
+
+    mut i := 1;
+    while i < len(args) {
+        mut arg := args[i];
+
+        if std.str_eq(arg, "--backend") == 1 {
+            if invocation.backend_was_explicit == 1 {
+                compiler_invocation_fail("duplicate --backend option");
+            }
+            if i + 1 >= len(args) {
+                compiler_invocation_fail("missing value after --backend");
+            }
+
+            mut backend_name := args[i + 1];
+            if std.str_eq(backend_name, "mir-to-c") == 1 {
+                unsafe {
+                    invocation.backend.tag = 0; // MirToC
+                }
+            } else if std.str_eq(backend_name, "cranelift") == 1 {
+                unsafe {
+                    invocation.backend.tag = 1; // CraneliftExperimental
+                }
+            } else {
+                compiler_invocation_fail(std.Concat("unknown backend: ", backend_name));
+            }
+
+            invocation.backend_was_explicit = 1;
+            i = i + 2;
+        } else if std.str_eq(arg, "-o") == 1 {
+            if invocation.output_was_explicit == 1 {
+                compiler_invocation_fail("duplicate -o option");
+            }
+            if i + 1 >= len(args) {
+                compiler_invocation_fail("missing value after -o");
+            }
+
+            mut output_path := args[i + 1];
+            if compiler_argument_starts_with(output_path, "-") == 1 {
+                compiler_invocation_fail("missing value after -o");
+            }
+
+            invocation.output_path = output_path;
+            invocation.output_was_explicit = 1;
+            i = i + 2;
+        } else {
+            if compiler_argument_starts_with(arg, "-") == 1 {
+                compiler_invocation_fail(std.Concat("unknown option: ", arg));
+            }
+            if std.str_eq(invocation.source_path, "") == 0 {
+                compiler_invocation_fail("multiple source paths are not supported");
+            }
+
+            invocation.source_path = arg;
+            i = i + 1;
+        }
+    }
+
+    if std.str_eq(invocation.source_path, "") == 1 {
+        compiler_invocation_fail("expected exactly one source path");
+    }
+
+    if invocation.backend.tag == 0 && invocation.output_was_explicit == 1 {
+        compiler_invocation_fail("the MIR-to-C backend does not accept -o");
+    }
+
+    if invocation.backend.tag == 1 && invocation.output_was_explicit == 0 {
+        compiler_invocation_fail("the experimental backend requires exactly one -o <output> value");
+    }
+
+    return invocation;
+}
+
 type FileParserError[ctx] struct {
     file_path: str,
     err: errors.CompilerError[ctx]
@@ -95,11 +207,8 @@ func main() {
     os.SetThreadScratch(ctx);
 
     mut args := os.Args(ctx);
-    if len(args) < 2 {
-        os.LogStr("Usage: test_runner_entry <file_path>");
-        os.Exit(1);
-    }
-    mut file_path := args[1];
+    mut invocation := compiler_parse_invocation(args, ctx);
+    mut file_path := invocation.source_path;
 
     // 1. Initialize Dependency Graph & Resolve Imports
     mut graph: std.Graph[str, ctx] := std.GraphNew(ctx);
@@ -228,7 +337,15 @@ func main() {
     // Reset current_prefix to entry module for main call matching
     env.current_prefix = "";
 
-    // 7. Generate Code
+    // 7. Select the backend only after the shared resolver, parser, and
+    // typechecker pipeline has completed. Patch 2 intentionally connects no
+    // native driver or artifact path.
+    if invocation.backend.tag == 1 {
+        os.LogStr("Experimental Cranelift backend selection is valid, but the source-level route is not connected yet.");
+        os.Exit(1);
+    }
+
+    // Default and explicit MIR-to-C selections share this exact codegen path.
     mut c_code := codegen.codegen_generate(programs, module_prefixes, &env, ctx);
     os.LogStr(c_code);
 }

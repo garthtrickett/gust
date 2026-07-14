@@ -819,6 +819,25 @@ object-only, or optimization-level promise. It changes no compiler CLI,
 generated C, object, executable, bootstrap, runtime, backend default, or
 production route. The next milestone is the typed backend-selection model.
 
+Patch 2 completes that milestone with the compiler-owned
+`CompilerBackendSelection` enum and `CompilerInvocation` record. Omitted
+selection and explicit `mir-to-c` both reach the same
+`codegen.codegen_generate` call, preserving byte-identical C output. Backend
+selection is parsed independently of Gust source, while import resolution,
+parsing, and typechecking remain one shared front-end pipeline.
+
+Explicit Cranelift selection is now recognized only as a typed selection. It
+requires one `-o` value, runs the shared front end, and then exits with the
+stable route-not-connected diagnostic before MIR backend codegen, driver
+discovery, object creation, linking, output-path access, or fallback. Unknown
+options and backend names, duplicate backend or output options, missing option
+values, and multiple source paths reject deterministically. MIR-to-C rejects
+`-o`, and no environment variable participates in selection.
+
+No Cranelift source route or native artifact owner is connected by Patch 2.
+Phase 9G remains untouched, MIR-to-C remains default and primary, and the next
+milestone is the output and artifact contract.
+
 The checked-in lockfile for this crate is owned by:
 Patch 8 freezes the complete canonical call/import matrix and retires all
 eleven historical bypasses. The checked-in completeness fixture combines local
