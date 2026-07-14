@@ -1015,6 +1015,16 @@ sibling of the running compiler is considered. There is no `PATH`, working
 directory, Cargo, download, installation, shell-command, or fixture-command
 fallback.
 
+Patch 8 introduces runtime functions and the `os.ProcessResult` layout that the
+checked-in legacy `gust_bootstrap` binary cannot know in advance. The canonical
+Make build therefore has two compiler-generation stages. The legacy bootstrap
+compiles `compiler/test_runner_bootstrap_bridge_entry.gst`, a backend-neutral
+MIR-to-C-only entry that uses no new intrinsic. That stage-one compiler embeds
+the updated typechecker, code generator, and runtime declarations and compiles
+the real `compiler/test_runner_entry.gst`. Directly invoking the legacy
+bootstrap on the final entry is not a supported build path; `make gust` owns the
+transition, and fixed-point bootstrap continues from the final compiler.
+
 The compiler serializes one frozen v1 module into the whole-program bundle and
 writes one transient generic request. Both files are removed after the worker
 returns. The worker reuses the strict Patch 7 parser, the shared v1 parser and

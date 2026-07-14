@@ -26,9 +26,19 @@ gust_bootstrap: gust_v4.c $(RUNTIME_SRCS)
 	cat src/runtime.c gust_v4.c > build/gust_bootstrap_final.c
 	${CC} ${CFLAGS} ${INCLUDES} build/gust_bootstrap_final.c -o gust_bootstrap
 
-build/gust_compiler.c: gust_bootstrap $(COMPILER_SRCS)
+build/gust_stage1_compiler.c: gust_bootstrap $(COMPILER_SRCS)
 	mkdir -p build
-	./gust_bootstrap compiler/test_runner_entry.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/gust_compiler.tmp
+	./gust_bootstrap compiler/test_runner_bootstrap_bridge_entry.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/gust_stage1_compiler.tmp
+	mv build/gust_stage1_compiler.tmp build/gust_stage1_compiler.c
+	sync
+
+build/gust_stage1_bin: build/gust_stage1_compiler.c $(RUNTIME_SRCS)
+	cat src/runtime.c build/gust_stage1_compiler.c > build/gust_stage1_final.c
+	${CC} ${CFLAGS} ${INCLUDES} build/gust_stage1_final.c -o build/gust_stage1_bin
+
+build/gust_compiler.c: build/gust_stage1_bin $(COMPILER_SRCS)
+	mkdir -p build
+	./build/gust_stage1_bin compiler/test_runner_entry.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/gust_compiler.tmp
 	mv build/gust_compiler.tmp build/gust_compiler.c
 	sync
 

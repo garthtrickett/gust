@@ -13136,6 +13136,8 @@ guard-cranelift-phase10-scalar-source-route:
     manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     route_source="compiler/mir_native_backend_source_route.gst"
     compiler_entry="compiler/test_runner_entry.gst"
+    bootstrap_bridge="compiler/test_runner_bootstrap_bridge_entry.gst"
+    makefile="Makefile"
     return_source="compiler/phase10_scalar_return_source.gst"
     metadata_source="compiler/phase10_metadata_local_source.gst"
     deferred_source="compiler/mir_feature_return_int_preservation_source.gst"
@@ -13148,6 +13150,8 @@ guard-cranelift-phase10-scalar-source-route:
       "$manifest_doc" \
       "$route_source" \
       "$compiler_entry" \
+      "$bootstrap_bridge" \
+      "$makefile" \
       "$return_source" \
       "$metadata_source" \
       "$deferred_source" \
@@ -13174,6 +13178,11 @@ guard-cranelift-phase10-scalar-source-route:
     rg -n -F 'allowed_cranelift_phase10_scalar_source_route_predecessor_guard: guard-cranelift-phase10-backend-request-contract' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_scalar_source_route_source: compiler/mir_native_backend_source_route.gst' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_scalar_source_route_worker_command: phase10-backend-request-compile' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_scalar_source_route_bootstrap_bridge: compiler/test_runner_bootstrap_bridge_entry.gst' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_scalar_source_route_bootstrap_policy: legacy_gust_bootstrap_compiles_the_MIR_to_C_only_bridge_then_the_stage1_compiler_compiles_the_final_Phase10_entry' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_scalar_source_route_bootstrap_intrinsic_policy: new_runtime_function_and_os_ProcessResult_type_registration_are_consumed_only_by_the_stage1_or_newer_compiler' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_scalar_source_route_direct_bootstrap_policy: invoking_the_legacy_gust_bootstrap_directly_on_compiler/test_runner_entry.gst_is_not_a_supported_build_path' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_scalar_source_route_fixed_point_policy: normal_make_gust_and_make_bootstrap_continue_from_the_final_stage1_compiled_entry' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_scalar_source_route_supported_program_shape: exactly_one_module_one_zero_argument_main_returning_int' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_scalar_source_route_supported_literal_shape: one_ReturnI32_literal' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_scalar_source_route_supported_local_shape: one_LocalI32Set_literal_then_ReturnLocalI32' "$manifest_doc" >/dev/null
@@ -13199,6 +13208,19 @@ guard-cranelift-phase10-scalar-source-route:
     rg -n -F 'metadata_0_policy: ignored_with_proof' "$route_source" >/dev/null
     rg -n -F 'import "mir_native_backend_source_route.gst" as native_source_route;' "$compiler_entry" >/dev/null
     rg -n -F 'native_source_route.mir_native_scalar_source_compile(' "$compiler_entry" >/dev/null
+
+    rg -n -F 'build/gust_stage1_compiler.c: gust_bootstrap $(COMPILER_SRCS)' "$makefile" >/dev/null
+    rg -n -F './gust_bootstrap compiler/test_runner_bootstrap_bridge_entry.gst' "$makefile" >/dev/null
+    rg -n -F 'build/gust_stage1_bin: build/gust_stage1_compiler.c $(RUNTIME_SRCS)' "$makefile" >/dev/null
+    rg -n -F 'build/gust_compiler.c: build/gust_stage1_bin $(COMPILER_SRCS)' "$makefile" >/dev/null
+    rg -n -F './build/gust_stage1_bin compiler/test_runner_entry.gst' "$makefile" >/dev/null
+    rg -n -F 'Usage: gust-bootstrap-bridge <file.gst>' "$bootstrap_bridge" >/dev/null
+    rg -n -F 'codegen.codegen_generate(programs, module_prefixes, &env, ctx)' "$bootstrap_bridge" >/dev/null
+    if rg -n -i 'cranelift|mir_native_backend_source_route|os\.(RunProcess|GetEnv|ExecutablePath|PathAbsolute|PathDir|NativeTargetTriple|NativeObjectFormat|FileExists|FileExecutable|RemoveFile|LogError)' "$bootstrap_bridge" >/dev/null; then
+      echo "The legacy-bootstrap bridge must remain backend-neutral and use only pre-Patch-8 runtime intrinsics."
+      rg -n -i 'cranelift|mir_native_backend_source_route|os\.(RunProcess|GetEnv|ExecutablePath|PathAbsolute|PathDir|NativeTargetTriple|NativeObjectFormat|FileExists|FileExecutable|RemoveFile|LogError)' "$bootstrap_bridge"
+      exit 1
+    fi
 
     if rg -n -i -F 'cranelift' "$route_source" >/dev/null; then
       echo "Compiler-owned scalar source routing must remain implementation-neutral."
