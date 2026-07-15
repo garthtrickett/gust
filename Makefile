@@ -2,6 +2,14 @@ CC = cc
 CFLAGS = -O2 -Wall -pthread
 INCLUDES = -Isrc
 PREFIX = /usr/local
+DESTDIR ?=
+CARGO ?= cargo
+
+PHASE10_NATIVE_BACKEND_MANIFEST = compiler/experiments/cranelift/Cargo.toml
+PHASE10_NATIVE_BACKEND_LOCK = compiler/experiments/cranelift/Cargo.lock
+PHASE10_NATIVE_BACKEND_SOURCE = compiler/experiments/cranelift/src/main.rs
+PHASE10_NATIVE_BACKEND_TARGET_DIR = build/phase10-native-backend-cargo
+PHASE10_NATIVE_BACKEND_BUILT_BIN = $(PHASE10_NATIVE_BACKEND_TARGET_DIR)/release/gust-cranelift-experiment
 
 PHASE10_DIAG_CC ?= clang
 PHASE10_DIAG_CFLAGS ?= -O0 -g3 -fno-omit-frame-pointer -fno-optimize-sibling-calls -fsanitize=address,undefined -fsanitize-address-use-after-scope -fno-sanitize-recover=all -pthread
@@ -14,7 +22,7 @@ SHELL = bash
 # Keep Make's explicit phony surface small. The Makefile remains the canonical
 # build graph for core aggregate commands; focused guard/report discovery lives
 # in justfile and concrete recipe names below rather than in a giant .PHONY list.
-.PHONY: all clean test bootstrap install test_tree_sitter require_just diagnose-phase10-stage1
+.PHONY: all clean test bootstrap install test_tree_sitter require_just diagnose-phase10-stage1 phase10-native-package
 
 require_just:
 	@command -v just >/dev/null 2>&1 || { echo "❌ just is required for focused Make guards. Run nix develop or install just."; exit 1; }
@@ -155,6 +163,30 @@ build/gust_compiler.c: build/gust_stage1_bin $(COMPILER_SRCS)
 gust: build/gust_compiler.c $(RUNTIME_SRCS)
 	cat src/runtime.c build/gust_compiler.c > build/gust_final.c
 	${CC} ${CFLAGS} ${INCLUDES} build/gust_final.c -o gust
+
+build/gust-native-backend: $(PHASE10_NATIVE_BACKEND_MANIFEST) $(PHASE10_NATIVE_BACKEND_LOCK) $(PHASE10_NATIVE_BACKEND_SOURCE)
+	mkdir -p build
+	CARGO_TARGET_DIR="$(PHASE10_NATIVE_BACKEND_TARGET_DIR)" \
+		$(CARGO) build \
+		--locked \
+		--release \
+		--manifest-path "$(PHASE10_NATIVE_BACKEND_MANIFEST)"
+	@test -x "$(PHASE10_NATIVE_BACKEND_BUILT_BIN)" || { \
+		echo "❌ Missing release native backend worker: $(PHASE10_NATIVE_BACKEND_BUILT_BIN)"; \
+		exit 1; \
+	}
+	@rm -f build/.gust-native-backend.tmp
+	install -m 0755 "$(PHASE10_NATIVE_BACKEND_BUILT_BIN)" build/.gust-native-backend.tmp
+	mv build/.gust-native-backend.tmp build/gust-native-backend
+
+phase10-native-package: gust build/gust-native-backend
+	@rm -rf build/phase10-package/.bin.tmp
+	mkdir -p build/phase10-package/.bin.tmp
+	install -m 0755 gust build/phase10-package/.bin.tmp/gust
+	install -m 0755 build/gust-native-backend build/phase10-package/.bin.tmp/gust-native-backend
+	@rm -rf build/phase10-package/bin
+	mv build/phase10-package/.bin.tmp build/phase10-package/bin
+	@echo "✅ Phase 10 native package ready: build/phase10-package/bin/gust and build/phase10-package/bin/gust-native-backend"
 
 # Fixed-Point Bootstrap Verification
 bootstrap: gust
@@ -333,6 +365,7 @@ $(JUST_GUARD_TARGETS): require_just
 clean:
 	rm -rf gust_bootstrap gust build/
 
-install: gust
-	mkdir -p ${PREFIX}/bin
-	cp gust ${PREFIX}/bin/gust
+install: phase10-native-package
+	install -d "$(DESTDIR)$(PREFIX)/bin"
+	install -m 0755 build/phase10-package/bin/gust "$(DESTDIR)$(PREFIX)/bin/gust"
+	install -m 0755 build/phase10-package/bin/gust-native-backend "$(DESTDIR)$(PREFIX)/bin/gust-native-backend"

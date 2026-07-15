@@ -1085,7 +1085,37 @@ linking fails. The classified Phase 9G link pipeline captures deterministic
 sibling logs and atomically publishes the executable. Worker stdout and stderr
 are captured in memory; successful `gust --backend cranelift` stdout is empty.
 Failures never fall back to MIR-to-C and preserve any pre-existing executable.
-The next milestone is packaging, help, CI, and Phase 10 closure.
+
+Phase 10 Patch 11 adds an explicit two-binary package surface. `make gust`
+remains the compiler-only build and does not require Rust or construct a
+worker. `make phase10-native-package` builds the checked-in worker lockfile in
+release mode under the isolated `build/phase10-native-backend-cargo` target
+directory, stages the worker as `build/gust-native-backend`, and publishes the
+mode-0755 sibling pair under `build/phase10-package/bin`.
+
+`make install` depends on that explicit package target and installs mode-0755
+`gust` and `gust-native-backend` siblings under
+`$(DESTDIR)$(PREFIX)/bin`. The runtime discovery contract is unchanged:
+`GUST_NATIVE_BACKEND_DRIVER` may name one absolute executable, otherwise only
+the worker beside the running compiler is considered. Packaging adds no PATH
+search, runtime Cargo invocation, download, auto-build, or backend fallback.
+
+`gust --help` and `gust -h` now emit the byte-frozen
+`compiler/fixtures/phase10_help.txt` text to stdout, keep stderr empty, and
+exit zero before source resolution or any backend operation. Help documents
+the MIR-to-C default, the experimental native invocation, the `-o` contract,
+the absolute driver override, the sibling worker name, and the absence of PATH
+search, auto-build, and fallback. Help is a sole-argument mode; mixed
+invocations continue through normal deterministic option rejection.
+
+PR Fast gains the dedicated `cranelift-phase10-packaging-help` matrix shard.
+That focused lane builds the package, verifies the worker handshake, proves
+native execution using only a staged sibling, exercises a `DESTDIR` install,
+compares both help spellings byte-for-byte, and executes the installed
+runtime-boundary fixture. The heavy build also treats help as a strict frozen
+surface rather than an ignored probe.
+
+The next milestone is the final Phase 10 audit and closure.
 
 The checked-in lockfile for this crate is owned by:
 Patch 8 freezes the complete canonical call/import matrix and retires all

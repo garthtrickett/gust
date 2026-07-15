@@ -21,6 +21,39 @@ type CompilerInvocation[ctx] struct {
     output_was_explicit: int
 }
 
+func compiler_is_help_invocation(args: std.Vector[str, ctx], ctx: &Arena) int {
+    if len(args) != 2 {
+        return 0;
+    }
+    if std.str_eq(args[1], "--help") == 1 ||
+       std.str_eq(args[1], "-h") == 1
+    {
+        return 1;
+    }
+    return 0;
+}
+
+func compiler_print_help() {
+    os.LogStr("Usage:");
+    os.LogStr("  gust <source.gst>");
+    os.LogStr("  gust --backend mir-to-c <source.gst>");
+    os.LogStr("  gust --backend cranelift -o <output> <source.gst>");
+    os.LogStr("");
+    os.LogStr("Backends:");
+    os.LogStr("  mir-to-c   Emit C source to stdout (default).");
+    os.LogStr("  cranelift  Compile a supported source cohort to one native executable (experimental).");
+    os.LogStr("");
+    os.LogStr("Options:");
+    os.LogStr("  --backend <mir-to-c|cranelift>  Select the backend explicitly.");
+    os.LogStr("  -o <output>                     Required only by the cranelift backend.");
+    os.LogStr("  -h, --help                      Show this help and exit.");
+    os.LogStr("");
+    os.LogStr("Native backend driver:");
+    os.LogStr("  Set GUST_NATIVE_BACKEND_DRIVER to an absolute executable path, or install");
+    os.LogStr("  gust-native-backend next to gust. There is no PATH search, auto-build, or");
+    os.LogStr("  fallback to MIR-to-C.");
+}
+
 func compiler_argument_starts_with(value: str, prefix: str) int {
     mut value_len := len(value);
     mut prefix_len := len(prefix);
@@ -208,6 +241,11 @@ func main() {
     os.SetThreadScratch(ctx);
 
     mut args := os.Args(ctx);
+    if compiler_is_help_invocation(args, ctx) == 1 {
+        compiler_print_help();
+        os.Exit(0);
+    }
+
     mut invocation := compiler_parse_invocation(args, ctx);
     mut file_path := invocation.source_path;
 
@@ -339,8 +377,8 @@ func main() {
     env.current_prefix = "";
 
     // 7. Select the backend only after the shared resolver, parser, and
-    // typechecker pipeline has completed. Phase 10 Patch 8 connects only the
-    // frozen single-module scalar and provenance-metadata cohort.
+    // typechecker pipeline has completed. The experimental route accepts only
+    // the explicitly connected Phase 10 source cohorts and never falls back.
     if invocation.backend.tag == 1 {
         mut native_result :=
             native_source_route.mir_native_scalar_source_compile(

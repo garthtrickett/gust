@@ -21,6 +21,9 @@ bootstrap:
 diagnose-phase10-stage1:
     make diagnose-phase10-stage1
 
+phase10-native-package:
+    make phase10-native-package
+
 make-target target:
     make "{{target}}"
 
@@ -100,6 +103,9 @@ guard-pr-fast-shard shard:
         PHASE9G_SKIP_PREREQUISITES=1 just guard-cranelift-phase9g-pipeline-failure-classification
         PHASE9G_SKIP_PREREQUISITES=1 just guard-cranelift-phase9g-negative-link-matrix
         ;;
+      cranelift-phase10-packaging-help)
+        just guard-cranelift-phase10-packaging-help-ci
+        ;;
       cranelift-backend-suite-core-baseline)
         just guard-cranelift-experimental-backend-suite-shard core-baseline
         ;;
@@ -163,7 +169,7 @@ guard-pr-fast-shard shard:
         ;;
       *)
         echo "unknown PR fast shard: {{shard}}"
-        echo "expected one of: cranelift-return-int, cranelift-local-binding, cranelift-branch, cranelift-differential, cranelift-phase9d-ingestion-ladder, cranelift-phase9e-cfg-ladder, cranelift-phase9f-call-import-ladder, cranelift-phase9g-object-artifact, cranelift-phase9g-link-positive, cranelift-phase9g-link-negative, cranelift-backend-suite-core-baseline, cranelift-backend-suite-core-legacy, cranelift-backend-suite-core-mir-basic-arithmetic, cranelift-backend-suite-core-mir-basic-calls, cranelift-backend-suite-core-mir-bundles, cranelift-backend-suite-core-mir-block-graphs, cranelift-backend-suite-compiler-mir-scalars, cranelift-backend-suite-compiler-mir-metadata, cranelift-backend-suite-compiler-mir-blocks, cranelift-backend-suite-translator-scalar, cranelift-backend-suite-translator-cfg, cranelift-backend-suite-translator-metadata, cranelift-backend-suite-translator-imports, mir-to-c-return-int, routed-return-int, migration-return-int, migration-local-binding, migration-if-else, migration-provenance"
+        echo "expected one of: cranelift-return-int, cranelift-local-binding, cranelift-branch, cranelift-differential, cranelift-phase9d-ingestion-ladder, cranelift-phase9e-cfg-ladder, cranelift-phase9f-call-import-ladder, cranelift-phase9g-object-artifact, cranelift-phase9g-link-positive, cranelift-phase9g-link-negative, cranelift-phase10-packaging-help, cranelift-backend-suite-core-baseline, cranelift-backend-suite-core-legacy, cranelift-backend-suite-core-mir-basic-arithmetic, cranelift-backend-suite-core-mir-basic-calls, cranelift-backend-suite-core-mir-bundles, cranelift-backend-suite-core-mir-block-graphs, cranelift-backend-suite-compiler-mir-scalars, cranelift-backend-suite-compiler-mir-metadata, cranelift-backend-suite-compiler-mir-blocks, cranelift-backend-suite-translator-scalar, cranelift-backend-suite-translator-cfg, cranelift-backend-suite-translator-metadata, cranelift-backend-suite-translator-imports, mir-to-c-return-int, routed-return-int, migration-return-int, migration-local-binding, migration-if-else, migration-provenance"
         exit 1
         ;;
     esac
@@ -209,6 +215,7 @@ guard-pr-fast-ci-surface:
     rg -n -F 'cranelift-phase9g-object-artifact' "$workflow" justfile >/dev/null
     rg -n -F 'cranelift-phase9g-link-positive' "$workflow" justfile >/dev/null
     rg -n -F 'cranelift-phase9g-link-negative' "$workflow" justfile >/dev/null
+    rg -n -F 'cranelift-phase10-packaging-help' "$workflow" justfile >/dev/null
     rg -n -F 'cranelift-backend-suite-core-baseline' "$workflow" justfile >/dev/null
     rg -n -F 'cranelift-backend-suite-core-legacy' "$workflow" justfile >/dev/null
     rg -n -F 'cranelift-backend-suite-core-mir-basic-arithmetic' "$workflow" justfile >/dev/null
@@ -249,6 +256,8 @@ guard-pr-fast-ci-surface:
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-phase9g-object-artifact)' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-phase9g-link-positive)' >/dev/null
     printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-phase9g-link-negative)' >/dev/null
+    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-phase10-packaging-help)' >/dev/null
+    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'just guard-cranelift-phase10-packaging-help-ci' >/dev/null
     if printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'cranelift-phase9c-differential-ladder)' >/dev/null; then
       echo "PR fast must split the Phase 9C-to-9F differential ladder into focused Phase 9D, Phase 9E, and Phase 9F shards."
       exit 1
@@ -355,8 +364,8 @@ guard-pr-fast-ci-surface:
     fi
 
     shard_count="$(awk '/shard:/{flag=1; next} flag && /^[[:space:]]*steps:/{flag=0} flag && /^[[:space:]]*- /{count++} END{print count+0}' "$workflow")"
-    if [ "$shard_count" != "29" ]; then
-      echo "Expected exactly 29 PR fast matrix shards, found $shard_count."
+    if [ "$shard_count" != "30" ]; then
+      echo "Expected exactly 30 PR fast matrix shards, found $shard_count."
       awk '/shard:/{flag=1; next} flag && /^[[:space:]]*steps:/{flag=0} flag{print}' "$workflow"
       exit 1
     fi
@@ -13793,6 +13802,238 @@ guard-cranelift-phase10-call-import-runtime-source-route:
       rg -F 'The next milestone is packaging, help, CI, and Phase 10 closure.' >/dev/null
 
     echo "✅ Phase 10 call/import source route passed: one local helper call and one imported-host abs runtime boundary compile through canonical v2, the shared verified object emitter, and the Phase 9G classified atomic link pipeline; broader call and source-import shapes remain deferred."
+
+
+guard-cranelift-phase10-packaging-help-ci:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 10 packaging, help, and focused CI surface..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    compiler_entry="compiler/test_runner_entry.gst"
+    help_fixture="compiler/fixtures/phase10_help.txt"
+    makefile="Makefile"
+    rust_manifest="compiler/experiments/cranelift/Cargo.toml"
+    rust_lock="compiler/experiments/cranelift/Cargo.lock"
+    rust_driver="compiler/experiments/cranelift/src/main.rs"
+    scalar_source="compiler/phase10_scalar_return_source.gst"
+    runtime_source="compiler/phase10_runtime_boundary_source.gst"
+    workflow=".github/workflows/pr-fast.yml"
+    heavy_workflow=".github/workflows/heavy-guards.yml"
+    readme_doc="compiler/experiments/cranelift/README.md"
+    build_dir="build/guards/cranelift_phase10_packaging_help_ci"
+
+    for required_file in \
+      "$manifest_doc" \
+      "$compiler_entry" \
+      "$help_fixture" \
+      "$makefile" \
+      "$rust_manifest" \
+      "$rust_lock" \
+      "$rust_driver" \
+      "$scalar_source" \
+      "$runtime_source" \
+      "$workflow" \
+      "$heavy_workflow" \
+      "$readme_doc"
+    do
+      if [ ! -f "$required_file" ]; then
+        echo "Missing Phase 10 packaging/help input: $required_file"
+        exit 1
+      fi
+    done
+    if [ ! -x ./gust ]; then
+      echo "Phase 10 packaging/help guard requires the rebuilt ./gust compiler."
+      exit 1
+    fi
+
+    just guard-cranelift-phase10-call-import-runtime-source-route
+    just guard-cranelift-experiment-manifest-surface
+
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE10_PACKAGING_HELP_CI_GUARD: guard-cranelift-phase10-packaging-help-ci' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_status: phase10_packaged_help_and_focused_CI_surface' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_predecessor_status: phase10_connected_calls_imports_and_runtime_boundary_source_route' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_make_target: phase10-native-package' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_default_build_policy: make_gust_remains_compiler_only_and_never_builds_the_Rust_worker' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_package_policy: make_phase10-native-package_explicitly_builds_and_stages_the_mode_0755_compiler_and_release_worker_as_build/phase10-package/bin_siblings' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_install_policy: make_install_uses_DESTDIR_and_PREFIX_and_installs_gust_and_gust-native-backend_as_mode_0755_siblings' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_help_invocations: gust_--help_and_gust_-h' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_focused_shard: cranelift-phase10-packaging-help' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_matrix_count: 30' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_next_milestone: audit_and_phase10_closure' "$manifest_doc" >/dev/null
+
+    rg -n -F 'func compiler_is_help_invocation(args: std.Vector[str, ctx], ctx: &Arena) int {' "$compiler_entry" >/dev/null
+    rg -n -F 'func compiler_print_help()' "$compiler_entry" >/dev/null
+    rg -n -F 'if compiler_is_help_invocation(args, ctx) == 1 {' "$compiler_entry" >/dev/null
+    rg -n -F 'gust-native-backend next to gust. There is no PATH search, auto-build, or' "$compiler_entry" >/dev/null
+
+    rg -n -F 'PHASE10_NATIVE_BACKEND_TARGET_DIR = build/phase10-native-backend-cargo' "$makefile" >/dev/null
+    rg -n -F 'build/gust-native-backend: $(PHASE10_NATIVE_BACKEND_MANIFEST) $(PHASE10_NATIVE_BACKEND_LOCK) $(PHASE10_NATIVE_BACKEND_SOURCE)' "$makefile" >/dev/null
+    rg -n -F '$(CARGO) build \' "$makefile" >/dev/null
+    rg -n -F -- '--locked \' "$makefile" >/dev/null
+    rg -n -F -- '--release \' "$makefile" >/dev/null
+    rg -n -F 'phase10-native-package: gust build/gust-native-backend' "$makefile" >/dev/null
+    rg -n -F 'build/phase10-package/.bin.tmp/gust-native-backend' "$makefile" >/dev/null
+    rg -n -F 'mv build/phase10-package/.bin.tmp build/phase10-package/bin' "$makefile" >/dev/null
+    rg -n -F 'install: phase10-native-package' "$makefile" >/dev/null
+    rg -n -F 'install -m 0755 build/phase10-package/bin/gust "$(DESTDIR)$(PREFIX)/bin/gust"' "$makefile" >/dev/null
+    rg -n -F 'install -m 0755 build/phase10-package/bin/gust-native-backend "$(DESTDIR)$(PREFIX)/bin/gust-native-backend"' "$makefile" >/dev/null
+    rg -n -F 'gust: build/gust_compiler.c $(RUNTIME_SRCS)' "$makefile" >/dev/null
+
+    if rg -n -i 'cargo run|cargo build|Command::new|os\.System' "$compiler_entry" >/dev/null; then
+      echo "The compiler entry must not build or launch the worker through a shell or embedded build command."
+      rg -n -i 'cargo run|cargo build|Command::new|os\.System' "$compiler_entry"
+      exit 1
+    fi
+
+    rg -n -F 'cranelift-phase10-packaging-help' "$workflow" justfile >/dev/null
+    rg -n -F './gust --help > build/phase10-help.stdout 2> build/phase10-help.stderr' "$heavy_workflow" >/dev/null
+    rg -n -F 'cmp -s compiler/fixtures/phase10_help.txt build/phase10-help.stdout' "$heavy_workflow" >/dev/null
+    if rg -n -F './gust --help >/dev/null 2>&1 || true' "$heavy_workflow" >/dev/null; then
+      echo "Heavy CI must not ignore the Phase 10 help result."
+      exit 1
+    fi
+
+    rm -rf "$build_dir"
+    mkdir -p "$build_dir"
+
+    help_stdout="$build_dir/help.stdout"
+    help_stderr="$build_dir/help.stderr"
+    short_help_stdout="$build_dir/help-short.stdout"
+    short_help_stderr="$build_dir/help-short.stderr"
+
+    ./gust --help >"$help_stdout" 2>"$help_stderr"
+    ./gust -h >"$short_help_stdout" 2>"$short_help_stderr"
+    cmp -s "$help_fixture" "$help_stdout"
+    cmp -s "$help_fixture" "$short_help_stdout"
+    if [ -s "$help_stderr" ] || [ -s "$short_help_stderr" ]; then
+      echo "Phase 10 help must keep stderr empty."
+      cat "$help_stderr" "$short_help_stderr"
+      exit 1
+    fi
+
+    set +e
+    ./gust --help "$scalar_source" \
+      >"$build_dir/mixed-help.stdout" \
+      2>"$build_dir/mixed-help.stderr"
+    mixed_help_status="$?"
+    set -e
+    if [ "$mixed_help_status" = "0" ]; then
+      echo "Help must remain a sole-argument mode."
+      exit 1
+    fi
+    cat "$build_dir/mixed-help.stdout" "$build_dir/mixed-help.stderr" \
+      >"$build_dir/mixed-help.combined"
+    rg -n -F 'Compiler invocation error: unknown option: --help' \
+      "$build_dir/mixed-help.combined" >/dev/null
+
+    rm -f build/gust-native-backend
+    rm -rf build/phase10-package
+    make gust
+    if [ -e build/gust-native-backend ] || [ -e build/phase10-package ]; then
+      echo "make gust must remain compiler-only and must not build or stage the Rust worker."
+      exit 1
+    fi
+
+    make phase10-native-package
+    if [ ! -x build/gust-native-backend ] ||
+       [ ! -x build/phase10-package/bin/gust ] ||
+       [ ! -x build/phase10-package/bin/gust-native-backend ]; then
+      echo "Explicit Phase 10 package target did not publish the executable sibling pair."
+      exit 1
+    fi
+
+    build/gust-native-backend phase10-driver-handshake \
+      >"$build_dir/worker-handshake.txt"
+    rg -n -F 'protocol: gust.native_backend.driver.v1' \
+      "$build_dir/worker-handshake.txt" >/dev/null
+    rg -n -F 'driver_name: gust-cranelift-experiment' \
+      "$build_dir/worker-handshake.txt" >/dev/null
+
+    package_bin="build/phase10-package/bin"
+
+    root_abs="$(pwd)"
+    scalar_abs="$root_abs/$scalar_source"
+    sibling_output="$root_abs/$build_dir/sibling-program"
+    env -u GUST_NATIVE_BACKEND_DRIVER \
+      "$package_bin/gust" \
+      --backend cranelift \
+      -o "$sibling_output" \
+      "$scalar_abs" \
+      >"$build_dir/sibling.stdout" \
+      2>"$build_dir/sibling.stderr"
+    if [ -s "$build_dir/sibling.stdout" ] ||
+       [ -s "$build_dir/sibling.stderr" ]; then
+      echo "Packaged sibling compilation must keep stdout and stderr empty."
+      cat "$build_dir/sibling.stdout" "$build_dir/sibling.stderr"
+      exit 1
+    fi
+    set +e
+    "$sibling_output"
+    sibling_status="$?"
+    set -e
+    if [ "$sibling_status" != "7" ]; then
+      echo "Packaged sibling executable exited $sibling_status, expected 7."
+      exit 1
+    fi
+
+    stage_root="$root_abs/$build_dir/stage"
+    make install DESTDIR="$stage_root" PREFIX=/usr/local
+    installed_bin="$stage_root/usr/local/bin"
+    installed_gust="$installed_bin/gust"
+    installed_worker="$installed_bin/gust-native-backend"
+    if [ ! -x "$installed_gust" ] || [ ! -x "$installed_worker" ]; then
+      echo "DESTDIR install did not publish both executable siblings."
+      exit 1
+    fi
+
+    "$installed_gust" --help \
+      >"$build_dir/installed-help.stdout" \
+      2>"$build_dir/installed-help.stderr"
+    cmp -s "$help_fixture" "$build_dir/installed-help.stdout"
+    if [ -s "$build_dir/installed-help.stderr" ]; then
+      echo "Installed help must keep stderr empty."
+      cat "$build_dir/installed-help.stderr"
+      exit 1
+    fi
+
+    runtime_abs="$root_abs/$runtime_source"
+    installed_output="$root_abs/$build_dir/installed-runtime-program"
+    env -u GUST_NATIVE_BACKEND_DRIVER \
+      "$installed_gust" \
+      --backend cranelift \
+      -o "$installed_output" \
+      "$runtime_abs" \
+      >"$build_dir/installed-runtime.stdout" \
+      2>"$build_dir/installed-runtime.stderr"
+    if [ -s "$build_dir/installed-runtime.stdout" ] ||
+       [ -s "$build_dir/installed-runtime.stderr" ]; then
+      echo "Installed runtime-boundary compilation must keep stdout and stderr empty."
+      cat "$build_dir/installed-runtime.stdout" \
+          "$build_dir/installed-runtime.stderr"
+      exit 1
+    fi
+    set +e
+    "$installed_output"
+    installed_status="$?"
+    set -e
+    if [ "$installed_status" != "53" ]; then
+      echo "Installed runtime-boundary executable exited $installed_status, expected 53."
+      exit 1
+    fi
+
+    readme_flat="$(tr '\n' ' ' < "$readme_doc")"
+    printf '%s\n' "$readme_flat" |
+      rg -F 'Phase 10 Patch 11 adds an explicit two-binary package surface.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F '`make gust` remains the compiler-only build and does not require Rust or construct a worker.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F '`gust --help` and `gust -h` now emit the byte-frozen `compiler/fixtures/phase10_help.txt` text to stdout' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'PR Fast gains the dedicated `cranelift-phase10-packaging-help` matrix shard.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'The next milestone is the final Phase 10 audit and closure.' >/dev/null
+
+    echo "✅ Phase 10 packaging/help/CI passed: compiler-only default build preserved, release worker explicitly packaged, staged and installed sibling discovery proven, frozen help verified, and one focused PR Fast shard wired."
 
 
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
