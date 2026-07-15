@@ -13888,7 +13888,8 @@ guard-cranelift-phase10-packaging-help-ci:
     rg -n -F 'cranelift-phase10-packaging-help' "$workflow" justfile >/dev/null
     rg -n -F './gust --help > build/phase10-help.stdout 2> build/phase10-help.stderr' "$heavy_workflow" >/dev/null
     rg -n -F 'test -f compiler/phase10_help.txt' "$heavy_workflow" >/dev/null
-    rg -n -F 'diff -u compiler/phase10_help.txt build/phase10-help.stdout' "$heavy_workflow" >/dev/null
+    rg -n -F "awk '1' compiler/phase10_help.txt > build/phase10-help.expected" "$heavy_workflow" >/dev/null
+    rg -n -F 'diff -u build/phase10-help.expected build/phase10-help.stdout' "$heavy_workflow" >/dev/null
     rg -n -F 'gust --help unexpectedly wrote to stderr:' "$heavy_workflow" >/dev/null
     if rg -n -F './gust --help >/dev/null 2>&1 || true' "$heavy_workflow" >/dev/null; then
       echo "Heavy CI must not ignore the Phase 10 help result."
@@ -13898,15 +13899,21 @@ guard-cranelift-phase10-packaging-help-ci:
     rm -rf "$build_dir"
     mkdir -p "$build_dir"
 
+    help_expected="$build_dir/help.expected"
     help_stdout="$build_dir/help.stdout"
     help_stderr="$build_dir/help.stderr"
     short_help_stdout="$build_dir/help-short.stdout"
     short_help_stderr="$build_dir/help-short.stderr"
 
+    # Canonicalize only the fixture's EOF state. awk emits exactly one record
+    # separator for the final line whether the checked-in file has an EOF LF
+    # or not; all help content remains byte-strict under diff.
+    awk '1' "$help_fixture" >"$help_expected"
+
     ./gust --help >"$help_stdout" 2>"$help_stderr"
     ./gust -h >"$short_help_stdout" 2>"$short_help_stderr"
-    diff -u "$help_fixture" "$help_stdout"
-    diff -u "$help_fixture" "$short_help_stdout"
+    diff -u "$help_expected" "$help_stdout"
+    diff -u "$help_expected" "$short_help_stdout"
     if [ -s "$help_stderr" ] || [ -s "$short_help_stderr" ]; then
       echo "Phase 10 help must keep stderr empty."
       cat "$help_stderr" "$short_help_stderr"
@@ -13991,7 +13998,7 @@ guard-cranelift-phase10-packaging-help-ci:
     "$installed_gust" --help \
       >"$build_dir/installed-help.stdout" \
       2>"$build_dir/installed-help.stderr"
-    diff -u "$help_fixture" "$build_dir/installed-help.stdout"
+    diff -u "$help_expected" "$build_dir/installed-help.stdout"
     if [ -s "$build_dir/installed-help.stderr" ]; then
       echo "Installed help must keep stderr empty."
       cat "$build_dir/installed-help.stderr"
@@ -14029,7 +14036,7 @@ guard-cranelift-phase10-packaging-help-ci:
     printf '%s\n' "$readme_flat" |
       rg -F '`make gust` remains the compiler-only build and does not require Rust or construct a worker.' >/dev/null
     printf '%s\n' "$readme_flat" |
-      rg -F '`gust --help` and `gust -h` now emit the byte-frozen `compiler/phase10_help.txt` text to stdout' >/dev/null
+      rg -F 'CI canonicalizes only the fixture'\''s EOF representation to one terminal newline before comparison' >/dev/null
     printf '%s\n' "$readme_flat" |
       rg -F 'PR Fast gains the dedicated `cranelift-phase10-packaging-help` matrix shard.' >/dev/null
     printf '%s\n' "$readme_flat" |

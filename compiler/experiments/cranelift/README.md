@@ -1101,8 +1101,11 @@ the worker beside the running compiler is considered. Packaging adds no PATH
 search, runtime Cargo invocation, download, auto-build, or backend fallback.
 
 `gust --help` and `gust -h` now emit the byte-frozen
-`compiler/phase10_help.txt` text to stdout, keep stderr empty, and
-exit zero before source resolution or any backend operation. Help documents
+`compiler/phase10_help.txt` text to stdout, keep stderr empty, and exit zero
+before source resolution or any backend operation. CI canonicalizes only the
+fixture's EOF representation to one terminal newline before comparison because
+`os.LogStr` always terminates its final line; every help-content byte remains
+strict. Help documents
 the MIR-to-C default, the experimental native invocation, the `-o` contract,
 the absolute driver override, the sibling worker name, and the absence of PATH
 search, auto-build, and fallback. Help is a sole-argument mode; mixed
