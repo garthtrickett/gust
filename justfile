@@ -1839,7 +1839,11 @@ guard-cranelift-experiment-manifest-surface:
     rg -n -F 'allowed_cranelift_phase10_backend_selection_entry: compiler/test_runner_entry.gst' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_backend_selection_artifact_policy: no_native_driver_object_linker_or_executable_publication_connected' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_help_legacy_manifest_guard_policy: exactly_four_help_only_Cranelift_references_extend_the_four_Patch2_selector_references_for_an_exact_total_of_eight' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_help_legacy_backend_surface_policy: only_the_exact_help_usage_line_gust_--backend_cranelift_-o_output_source_is_excluded_from_the_legacy_production_route_scan' "$manifest_doc" >/dev/null
+    if ! rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_help_legacy_backend_surface_policy: canonical_help_usage_is_exactly_validated_then_excluded_and_only_Phase10_plus_the_two_policy_guard_recipes_are_removed_from_the_legacy_orchestration_scan' "$manifest_doc" >/dev/null; then
+      echo "Phase 10 backend-surface help policy is missing or stale in $manifest_doc."
+      rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_help_legacy_backend_surface_policy:' "$manifest_doc" || true
+      exit 1
+    fi
 
     # Phase 10 Patch 2 froze four typed-selector references. Patch 11 adds
     # exactly four documentation-only references inside compiler_print_help.
