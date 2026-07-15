@@ -113,6 +113,11 @@ func mir_native_scalar_source_capabilities(ctx: &Arena) capability.MirNativeBack
     );
     capabilities = capability.mir_native_backend_capability_set_with_type_or_abi(
         capabilities,
+        "bool",
+        ctx
+    );
+    capabilities = capability.mir_native_backend_capability_set_with_type_or_abi(
+        capabilities,
         "()->int",
         ctx
     );

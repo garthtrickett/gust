@@ -13581,6 +13581,8 @@ guard-cranelift-phase10-cfg-block-parameter-source-route:
     rg -n -F 'allowed_cranelift_phase10_cfg_block_parameter_source_route_canonical_merge: entry_LocalI32Set_and_BranchLocalI32Positive_then_two_literal_Jump_edges_to_one_final_i32_block_parameter_and_ReturnBlockParamI32' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_cfg_block_parameter_source_route_bundle_policy: one_frozen_v1_module_with_exactly_one_indexed_block_parameter_only_for_the_merge_shape' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_cfg_block_parameter_source_route_capability_operations: ReturnI32,LocalI32Set,LocalI32Read,SgtI32,Jump,Branch,BlockParam' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_cfg_block_parameter_source_route_capability_types_and_abis: int,bool,()->int' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_cfg_block_parameter_source_route_static_bool_policy: compiler_owned_static_capability_set_must_advertise_bool_before_driver_handshake_validation' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_cfg_block_parameter_source_route_worker_restriction: v1_only_zero_function_parameters_three_or_four_blocks_at_most_one_i32_local_at_most_one_final_merge_i32_block_parameter_literal_edge_arguments_and_no_calls_or_imports' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_cfg_block_parameter_source_route_next_milestone: calls_imports_and_runtime_boundary_source_route' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_cfg_block_parameter_source_route_next_milestone_status: complete' "$manifest_doc" >/dev/null
@@ -13597,6 +13599,34 @@ guard-cranelift-phase10-cfg-block-parameter-source-route:
     rg -n -F '"Jump"' "$route_source" >/dev/null
     rg -n -F '"Branch"' "$route_source" >/dev/null
     rg -n -F '"BlockParam"' "$route_source" >/dev/null
+
+    static_capability_body="$(
+      sed -n         '/^func mir_native_scalar_source_capabilities(/,/^}/p'         "$route_source"
+    )"
+    static_bool_count="$(
+      printf '%s\n' "$static_capability_body" |
+        rg -c -F '"bool"' ||
+        true
+    )"
+    if [ "${static_bool_count:-0}" != "1" ]; then
+      echo "Compiler-owned Phase 10 static capabilities must advertise bool exactly once."
+      printf '%s\n' "$static_capability_body"
+      exit 1
+    fi
+    printf '%s\n' "$static_capability_body" |
+      rg -n -F 'mir_native_backend_capability_set_with_type_or_abi(' >/dev/null
+
+    rg -n -F 'const PHASE10_DRIVER_TYPES_AND_ABIS: [&str; 5]' "$rust_driver" >/dev/null
+    driver_bool_count="$(
+      sed -n         '/^const PHASE10_DRIVER_TYPES_AND_ABIS:/,/^];/p'         "$rust_driver" |
+        rg -c -F '"bool",' ||
+        true
+    )"
+    if [ "${driver_bool_count:-0}" != "1" ]; then
+      echo "Phase 10 driver handshake type inventory must advertise bool exactly once."
+      sed -n         '/^const PHASE10_DRIVER_TYPES_AND_ABIS:/,/^];/p'         "$rust_driver"
+      exit 1
+    fi
 
     if rg -n -i -F 'cranelift' "$route_source" >/dev/null; then
       echo "Compiler-owned CFG source routing must remain implementation-neutral."

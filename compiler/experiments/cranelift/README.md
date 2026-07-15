@@ -1054,9 +1054,13 @@ i32 block parameter returned by `ReturnBlockParamI32`.
 
 The whole-program bundle indexes that merge parameter explicitly. Capability
 validation requires `SgtI32`, `Jump`, `Branch`, and `BlockParam` in addition to
-the Patch 8 scalar operations. The frozen v1 route remains restricted to zero
-function parameters, at most one i32 local, three or four blocks, at most one
-final-merge i32 block parameter, and literal edge arguments.
+the Patch 8 scalar operations, plus the `bool` value type for
+`BranchI32Literal`. The compiler-owned static capability set and the external
+driver handshake must both advertise `bool`; static validation runs first and
+must not reject the CFG plan before driver discovery. The frozen v1 route
+remains restricted to zero function parameters, at most one i32 local, three
+or four blocks, at most one final-merge i32 block parameter, and literal edge
+arguments.
 
 Phase 10 Patch 10 connects two exact canonical-v2 call modules. The local-call
 shape defines `phase10_local_identity(int) int` with `module_local` linkage and
