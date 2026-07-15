@@ -38,6 +38,9 @@ jobs:
       - name: Phase 9G closure guard
         run: just guard-cranelift-phase9g-close
 
+      - name: Phase 10 closure guard
+        run: just guard-cranelift-phase10-close
+
       - name: Build Gust
         run: make gust
 

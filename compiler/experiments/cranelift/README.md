@@ -1137,7 +1137,44 @@ compares both help spellings byte-for-byte, and executes the installed
 runtime-boundary fixture. The heavy build also treats help as a strict frozen
 surface rather than an ignored probe.
 
-The next milestone is the final Phase 10 audit and closure.
+Phase 10 is closed as
+`phase10_closed_explicit_experimental_cranelift_backend_route`.
+
+The Patch 2 unconditional route-not-connected stub is retired for the six
+frozen connected cohorts: scalar return `7`, provenance-local return `2`,
+literal CFG return `11`, block-parameter merge return `17`, local identity
+call return `47`, and imported `abs` runtime-boundary return `53`. The stable
+route-not-connected result remains only for source shapes outside those exact
+cohorts and is produced before driver discovery, output resolution, or
+artifact creation.
+
+The compiler entry owns backend selection and invokes the source router exactly
+once after the shared resolver, parser, and typechecker. The router tries the
+exact call/import, CFG/block-parameter, and scalar/metadata recognizers in that
+order, validates static and advertised capabilities, writes the transient
+canonical bundle and generic request, and invokes only
+`phase10-backend-request-compile`. The external worker never parses Gust
+source; it accepts the request and canonical v1 or v2 MIR, reuses the shared
+validators and object emitters, and delegates verified object handling,
+classified argument-vector linking, logs, cleanup, and atomic executable
+publication to Phase 9G.
+
+MIR-to-C remains the default and primary backend, and explicit MIR-to-C remains
+byte-identical to default output. Cranelift remains explicit and experimental,
+requires one `-o` executable, has no implicit environment selection, PATH
+search, auto-build, download, installation, shell fallback, or MIR-to-C
+fallback, and preserves existing output on every unsupported or failed route.
+The package and help surfaces remain frozen, the Phase 9G inventory remains
+33/33 canonical with seventeen translator seeds, and canonical MIR v1 and v2
+remain frozen with no v3.
+
+`guard-cranelift-phase10-close` is a static route-retirement and closure
+meta-gate. It audits the full milestone chain, exact route ownership, generic
+worker boundary, Phase 9G artifact ownership, scope exclusions, inventory, and
+CI wiring without replaying the dynamic source, packaging, or link matrices.
+Those executions remain owned by the predecessor guards and the existing
+`cranelift-phase10-packaging-help` shard. The close guard is wired once in PR
+Fast build and once in the Heavy Guards final job.
 
 The checked-in lockfile for this crate is owned by:
 Patch 8 freezes the complete canonical call/import matrix and retires all
