@@ -13641,14 +13641,65 @@ guard-cranelift-phase10-cfg-block-parameter-source-route:
       local stdout_log="$build_dir/$case_name.stdout"
       local stderr_log="$build_dir/$case_name.stderr"
 
-      ./gust "$source_path" >"$default_c"
-      ./gust --backend mir-to-c "$source_path" >"$explicit_c"
-      cmp -s "$default_c" "$explicit_c"
-      test -s "$default_c"
+      if ! ./gust "$source_path" >"$default_c"; then
+        echo "Default MIR-to-C compilation failed for Phase 10 CFG case $case_name: $source_path"
+        exit 1
+      fi
+      if ! ./gust --backend mir-to-c "$source_path" >"$explicit_c"; then
+        echo "Explicit MIR-to-C compilation failed for Phase 10 CFG case $case_name: $source_path"
+        exit 1
+      fi
+      if ! cmp -s "$default_c" "$explicit_c"; then
+        echo "Default and explicit MIR-to-C output differ for Phase 10 CFG case $case_name."
+        diff -u "$default_c" "$explicit_c" || true
+        exit 1
+      fi
+      if [ ! -s "$default_c" ]; then
+        echo "Default MIR-to-C output is empty for Phase 10 CFG case $case_name."
+        exit 1
+      fi
 
+      set +e
       GUST_NATIVE_BACKEND_DRIVER="$driver_abs" \
         ./gust --backend cranelift -o "$output_path" "$source_path" \
         >"$stdout_log" 2>"$stderr_log"
+      local compile_status="$?"
+      set -e
+
+      if [ "$compile_status" != "0" ]; then
+        echo "Phase 10 CFG native compilation failed for $case_name with exit status $compile_status."
+        echo "source: $source_path"
+        echo "output: $output_path"
+        echo "driver: $driver_abs"
+        if [ -s "$stdout_log" ]; then
+          echo "--- compiler stdout ---"
+          cat "$stdout_log"
+        else
+          echo "--- compiler stdout: empty ---"
+        fi
+        if [ -s "$stderr_log" ]; then
+          echo "--- compiler stderr ---"
+          cat "$stderr_log"
+        else
+          echo "--- compiler stderr: empty ---"
+        fi
+        local output_dir
+        local output_name
+        output_dir="$(dirname "$output_path")"
+        output_name="$(basename "$output_path")"
+        for diagnostic_path in \
+          "$output_path.phase10.bundle" \
+          "$output_path.phase10.request" \
+          "$output_dir/.$output_name.phase10-source-route.o" \
+          "$output_dir/.$output_name.phase9g-link.stdout.log" \
+          "$output_dir/.$output_name.phase9g-link.stderr.log"
+        do
+          if [ -e "$diagnostic_path" ]; then
+            echo "preserved diagnostic artifact: $diagnostic_path"
+          fi
+        done
+        exit 1
+      fi
 
       if [ -s "$stdout_log" ] || [ -s "$stderr_log" ]; then
         echo "Successful Phase 10 CFG compilation must keep stdout and stderr empty for $case_name."
@@ -13707,7 +13758,13 @@ guard-cranelift-phase10-cfg-block-parameter-source-route:
       exit 1
     fi
     cat "$build_dir/deferred.stdout" "$build_dir/deferred.stderr" >"$build_dir/deferred.combined"
-    rg -n -F 'Experimental Cranelift backend selection is valid, but the source-level route is not connected yet.' "$build_dir/deferred.combined" >/dev/null
+    if ! rg -n -F 'Experimental Cranelift backend selection is valid, but the source-level route is not connected yet.' "$build_dir/deferred.combined" >/dev/null; then
+      echo "Deferred Phase 10 CFG source returned the wrong diagnostic."
+      echo "exit status: $deferred_status"
+      echo "--- combined compiler output ---"
+      cat "$build_dir/deferred.combined"
+      exit 1
+    fi
     if [ -e "$deferred_output" ]; then
       echo "Deferred call-bearing source created an executable."
       exit 1
