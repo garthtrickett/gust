@@ -1,18 +1,1 @@
-Usage:
-  gust <source.gst>
-  gust --backend mir-to-c <source.gst>
-  gust --backend cranelift -o <output> <source.gst>
-
-Backends:
-  mir-to-c   Emit C source to stdout (default).
-  cranelift  Compile a supported source cohort to one native executable (experimental).
-
-Options:
-  --backend <mir-to-c|cranelift>  Select the backend explicitly.
-  -o <output>                     Required only by the cranelift backend.
-  -h, --help                      Show this help and exit.
-
-Native backend driver:
-  Set GUST_NATIVE_BACKEND_DRIVER to an absolute executable path, or install
-  gust-native-backend next to gust. There is no PATH search, auto-build, or
-  fallback to MIR-to-C.
+Canonical help fixture moved to compiler/phase10_help.txt.

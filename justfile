@@ -1880,20 +1880,93 @@ guard-cranelift-experiment-manifest-surface:
       exit 1
     fi
 
+    phase10_package_make_refs="$(
+      rg -n -i -F 'cranelift' Makefile ||
+        true
+    )"
+    unexpected_phase10_package_make_refs="$(
+      printf '%s\n' "$phase10_package_make_refs" |
+        rg -v '^[0-9]+:PHASE10_NATIVE_BACKEND_MANIFEST = compiler/experiments/cranelift/Cargo\.toml$' |
+        rg -v '^[0-9]+:PHASE10_NATIVE_BACKEND_LOCK = compiler/experiments/cranelift/Cargo\.lock$' |
+        rg -v '^[0-9]+:PHASE10_NATIVE_BACKEND_SOURCE = compiler/experiments/cranelift/src/main\.rs$' |
+        rg -v '^[0-9]+:PHASE10_NATIVE_BACKEND_BUILT_BIN = \$\(PHASE10_NATIVE_BACKEND_TARGET_DIR\)/release/gust-cranelift-experiment$' ||
+        true
+    )"
+    if [ -n "$unexpected_phase10_package_make_refs" ]; then
+      echo "Phase 10 Makefile packaging contains Cranelift references beyond the four frozen Patch 11 release inputs:"
+      echo "$unexpected_phase10_package_make_refs"
+      exit 1
+    fi
+    phase10_package_make_ref_count="$(
+      printf '%s\n' "$phase10_package_make_refs" |
+        sed '/^$/d' |
+        wc -l |
+        tr -d ' '
+    )"
+    if [ "$phase10_package_make_ref_count" != "4" ]; then
+      echo "Expected exactly four frozen Patch 11 Makefile Cranelift references, found $phase10_package_make_ref_count."
+      printf '%s\n' "$phase10_package_make_refs"
+      exit 1
+    fi
+
+    phase10_help_fixture="compiler/phase10_help.txt"
+    if [ ! -f "$phase10_help_fixture" ]; then
+      echo "Missing canonical Phase 10 help fixture: $phase10_help_fixture"
+      exit 1
+    fi
+    phase10_help_fixture_refs="$(
+      rg -n -i -F 'cranelift' "$phase10_help_fixture" ||
+        true
+    )"
+    unexpected_phase10_help_fixture_refs="$(
+      printf '%s\n' "$phase10_help_fixture_refs" |
+        rg -v '^[0-9]+:  gust --backend cranelift -o <output> <source\.gst>$' |
+        rg -v '^[0-9]+:  cranelift  Compile a supported source cohort to one native executable \(experimental\)\.$' |
+        rg -v '^[0-9]+:  --backend <mir-to-c\|cranelift>  Select the backend explicitly\.$' |
+        rg -v '^[0-9]+:  -o <output>[[:space:]]+Required only by the cranelift backend\.$' ||
+        true
+    )"
+    if [ -n "$unexpected_phase10_help_fixture_refs" ]; then
+      echo "Canonical Phase 10 help fixture contains Cranelift references beyond the four frozen help lines:"
+      echo "$unexpected_phase10_help_fixture_refs"
+      exit 1
+    fi
+    phase10_help_fixture_ref_count="$(
+      printf '%s\n' "$phase10_help_fixture_refs" |
+        sed '/^$/d' |
+        wc -l |
+        tr -d ' '
+    )"
+    if [ "$phase10_help_fixture_ref_count" != "4" ]; then
+      echo "Expected exactly four frozen canonical help-fixture Cranelift references, found $phase10_help_fixture_ref_count."
+      printf '%s\n' "$phase10_help_fixture_refs"
+      exit 1
+    fi
+
+    legacy_phase10_help_fixture="compiler/fixtures/phase10_help.txt"
+    if [ -f "$legacy_phase10_help_fixture" ] &&
+       rg -n -i -F 'cranelift' "$legacy_phase10_help_fixture" >/dev/null; then
+      echo "Superseded Phase 10 help fixture must not retain a second Cranelift help surface:"
+      rg -n -i -F 'cranelift' "$legacy_phase10_help_fixture"
+      exit 1
+    fi
+
     cranelift_refs="$(
       rg -n -i -F 'cranelift' compiler src tests Cargo.toml Cargo.lock Makefile 2>/dev/null |
         rg -v '^compiler/CRANELIFT_EXPERIMENT_MANIFEST\.md:' |
         rg -v '^compiler/CRANELIFT_PHASE9C_DIFFERENTIAL_LEDGER\.md:' |
         rg -v '^compiler/experiments/cranelift/' |
-        rg -v '^compiler/test_runner_entry\.gst:' ||
+        rg -v '^compiler/test_runner_entry\.gst:' |
+        rg -v '^compiler/phase10_help\.txt:' |
+        rg -v '^Makefile:' ||
         true
     )"
     if [ -n "$cranelift_refs" ]; then
-      echo "Phase 9 Step 1 must not add Cranelift implementation references outside the manifest-authorized Phase 10 typed selector:"
+      echo "Phase 9 broad scan found Cranelift references beyond the exact selector, canonical help, release packaging, manifest, and experiment allowlists:"
       echo "$cranelift_refs"
       exit 1
     fi
-    echo "✅ Cranelift experiment manifest surface passed: dependency beachhead plus explicit backend suite, manifest-derived guard wiring, disabled by default, one exact Phase 10 typed selector, and no production Cranelift codegen or artifact route."
+    echo "✅ Cranelift experiment manifest surface passed: exact selector, canonical help, and release-package references validated independently; no residual production Cranelift implementation route."
 
 guard-cranelift-compiler-mir-ingestion-corpus-surface:
     #!/usr/bin/env bash
@@ -13867,6 +13940,8 @@ guard-cranelift-phase10-packaging-help-ci:
     rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_help_invocations: gust_--help_and_gust_-h' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_help_legacy_manifest_guard_policy: exactly_four_help_only_Cranelift_references_extend_the_four_Patch2_selector_references_for_an_exact_total_of_eight' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_help_legacy_backend_surface_policy: only_the_exact_help_usage_line_gust_--backend_cranelift_-o_output_source_is_excluded_from_the_legacy_production_route_scan' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_legacy_global_scan_policy: exactly_four_Makefile_release_packaging_references_and_exactly_four_compiler/phase10_help.txt_references_are_independently_exact_allowlisted_before_those_two_files_are_excluded_from_the_broad_Phase9_scan' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_legacy_fixture_retirement: compiler/fixtures/phase10_help.txt_is_a_keyword_free_pointer_to_compiler/phase10_help.txt_and_is_not_a_second_help_fixture' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_focused_shard: cranelift-phase10-packaging-help' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_matrix_count: 30' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_next_milestone: audit_and_phase10_closure' "$manifest_doc" >/dev/null
@@ -13898,6 +13973,36 @@ guard-cranelift-phase10-packaging-help-ci:
     rg -n -F 'install -m 0755 build/phase10-package/bin/gust "$(DESTDIR)$(PREFIX)/bin/gust"' "$makefile" >/dev/null
     rg -n -F 'install -m 0755 build/phase10-package/bin/gust-native-backend "$(DESTDIR)$(PREFIX)/bin/gust-native-backend"' "$makefile" >/dev/null
     rg -n -F 'gust: build/gust_compiler.c $(RUNTIME_SRCS)' "$makefile" >/dev/null
+    package_make_cranelift_count="$(
+      rg -i -F 'cranelift' "$makefile" |
+        wc -l |
+        tr -d ' '
+    )"
+    if [ "$package_make_cranelift_count" != "4" ]; then
+      echo "Phase 10 packaging requires exactly four frozen Makefile Cranelift references, found $package_make_cranelift_count."
+      rg -n -i -F 'cranelift' "$makefile"
+      exit 1
+    fi
+    help_fixture_cranelift_count="$(
+      rg -i -F 'cranelift' "$help_fixture" |
+        wc -l |
+        tr -d ' '
+    )"
+    if [ "$help_fixture_cranelift_count" != "4" ]; then
+      echo "Phase 10 packaging requires exactly four canonical help-fixture Cranelift references, found $help_fixture_cranelift_count."
+      rg -n -i -F 'cranelift' "$help_fixture"
+      exit 1
+    fi
+    legacy_help_fixture="compiler/fixtures/phase10_help.txt"
+    if [ ! -f "$legacy_help_fixture" ]; then
+      echo "Missing retired help-fixture pointer: $legacy_help_fixture"
+      exit 1
+    fi
+    rg -n -x -F 'Canonical help fixture moved to compiler/phase10_help.txt.' "$legacy_help_fixture" >/dev/null
+    if rg -n -i -F 'cranelift' "$legacy_help_fixture" >/dev/null; then
+      echo "Retired help-fixture pointer must not contain Cranelift text."
+      exit 1
+    fi
 
     if rg -n -i 'cargo run|cargo build|Command::new|os\.System' "$compiler_entry" >/dev/null; then
       echo "The compiler entry must not build or launch the worker through a shell or embedded build command."
