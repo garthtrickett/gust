@@ -63210,1564 +63210,3442 @@
 //    -> Found: Void
 // 🔍 Lookup span 4104..4110 prefix='mir_native_backend_request__'
 //    -> Found: Str
-// 🔍 Lookup span 1089..1102 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 1202..1215 prefix='mir_native_backend_source_route__'
 //    -> Found: Int
-// 🔍 Lookup span 1089..1095 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 1202..1208 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_source_route__MirNativeScalarSourceRouteResult_ctx", Some("ctx"))
-// 🔍 Lookup span 1117..1134 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 1230..1247 prefix='mir_native_backend_source_route__'
 //    -> Found: Str
-// 🔍 Lookup span 1117..1123 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 1230..1236 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_source_route__MirNativeScalarSourceRouteResult_ctx", Some("ctx"))
-// 🔍 Lookup span 1137..1140 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 1250..1253 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 1137..1140 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 1250..1253 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 1152..1162 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 1265..1275 prefix='mir_native_backend_source_route__'
 //    -> Found: Str
-// 🔍 Lookup span 1279..1282 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 1392..1395 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 1279..1282 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 1392..1395 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 1294..1297 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 1407..1410 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 1294..1297 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 1407..1410 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 1294..1319 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 1407..1432 prefix='mir_native_backend_source_route__'
 //    -> Found: Str
-// 🔍 Lookup span 1478..1496 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 1591..1609 prefix='mir_native_backend_source_route__'
 //    -> Found: Int
-// 🔍 Lookup span 1478..1486 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 1591..1599 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_source_route__MirNativeScalarSourceLowering_ctx", Some("ctx"))
-// 🔍 Lookup span 1506..1521 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 1619..1634 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir__MirProgramBundle_ctx", Some("ctx"))
-// 🔍 Lookup span 1506..1514 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 1619..1627 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_source_route__MirNativeScalarSourceLowering_ctx", Some("ctx"))
-// 🔍 Lookup span 1524..1527 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 1637..1640 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 1524..1527 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 1637..1640 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 1573..1586 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 1686..1699 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilityPlan_ctx", Some("ctx"))
-// 🔍 Lookup span 1573..1581 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 1686..1694 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_source_route__MirNativeScalarSourceLowering_ctx", Some("ctx"))
-// 🔍 Lookup span 1589..1599 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 1702..1712 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 1589..1599 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 1702..1712 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 1904..1914 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 2017..2027 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 1904..1914 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 2017..2027 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 1990..2000 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 2103..2113 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 1990..2000 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 2103..2113 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 2345..2355 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 2458..2468 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 2345..2355 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 2458..2468 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 2405..2417 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 2518..2530 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilitySet_ctx", Some("ctx"))
-// 🔍 Lookup span 2420..2430 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 2533..2543 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 2420..2430 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 2533..2543 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 2547..2559 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 2660..2672 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilitySet_ctx", Some("ctx"))
-// 🔍 Lookup span 2562..2572 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 2675..2685 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 2562..2572 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 2675..2685 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 2691..2703 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 2804..2816 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilitySet_ctx", Some("ctx"))
-// 🔍 Lookup span 2706..2716 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 2819..2829 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 2706..2716 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 2819..2829 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 2836..2848 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 2949..2961 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilitySet_ctx", Some("ctx"))
-// 🔍 Lookup span 2851..2861 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 2964..2974 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 2851..2861 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 2964..2974 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 2974..2986 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 3088..3100 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilitySet_ctx", Some("ctx"))
-// 🔍 Lookup span 2989..2999 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 3103..3113 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 2989..2999 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 3103..3113 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 3116..3128 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 3225..3237 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilitySet_ctx", Some("ctx"))
-// 🔍 Lookup span 3131..3141 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 3240..3250 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 3131..3141 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 3240..3250 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 3269..3281 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 3364..3376 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilitySet_ctx", Some("ctx"))
-// 🔍 Lookup span 3284..3294 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 3379..3389 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 3284..3294 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 3379..3389 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 3436..3448 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 3507..3519 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilitySet_ctx", Some("ctx"))
-// 🔍 Lookup span 3451..3461 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 3522..3532 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 3451..3461 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 3522..3532 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 3908..3916 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 3652..3664 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilitySet_ctx", Some("ctx"))
+// 🔍 Lookup span 3667..3677 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 3667..3677 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 3800..3812 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilitySet_ctx", Some("ctx"))
+// 🔍 Lookup span 3815..3825 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 3815..3825 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 3938..3950 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilitySet_ctx", Some("ctx"))
+// 🔍 Lookup span 3953..3963 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 3953..3963 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 4077..4089 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilitySet_ctx", Some("ctx"))
+// 🔍 Lookup span 4092..4102 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 4092..4102 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 4219..4231 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilitySet_ctx", Some("ctx"))
+// 🔍 Lookup span 4234..4244 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 4234..4244 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 4364..4376 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilitySet_ctx", Some("ctx"))
+// 🔍 Lookup span 4379..4389 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 4379..4389 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 4505..4517 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilitySet_ctx", Some("ctx"))
+// 🔍 Lookup span 4520..4530 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 4520..4530 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 4658..4670 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilitySet_ctx", Some("ctx"))
+// 🔍 Lookup span 4673..4683 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 4673..4683 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 4825..4837 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilitySet_ctx", Some("ctx"))
+// 🔍 Lookup span 4840..4850 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 4840..4850 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 5297..5305 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("std_Vector_ast__Program_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 3930..3942 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 5319..5331 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 3956..3971 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 5345..5360 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 4018..4021 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 5407..5410 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 4018..4021 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 5407..5410 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 4029..4044 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 5418..5433 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 4045..4046 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 5434..5435 prefix='mir_native_backend_source_route__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 4115..4127 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 5504..5516 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 4128..4129 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 5517..5518 prefix='mir_native_backend_source_route__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 4151..4159 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 5540..5548 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("std_Vector_ast__Program_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 4160..4161 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 5549..5550 prefix='mir_native_backend_source_route__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_ast__Program_ctx_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_ast__Program_ctx_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_ast__Program_ctx_ctx, Erased name: std_Vector_ast__Program, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 4222..4225 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 5611..5614 prefix='mir_native_backend_source_route__'
 //    -> Found: Reference(Arena, None)
-// 🔍 Lookup span 4226..4244 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 5615..5633 prefix='mir_native_backend_source_route__'
 //    -> Found: Index("std_Vector_ast__Statement_ctx", Some("ctx"))
 // 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("std_Vector_ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 4226..4233 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 5615..5622 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Program_ctx", Some("ctx"))
-// 🔍 Lookup span 4258..4267 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 5647..5656 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 4355..4364 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 5744..5753 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 4365..4366 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 5754..5755 prefix='mir_native_backend_source_route__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_ast__Statement_ctx_ctx, Erased name: std_Vector_ast__Statement, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 4380..4398 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 5769..5787 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 4460..4463 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 5849..5852 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 4460..4463 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 5849..5852 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 4471..4489 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 5860..5878 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 4471..4502 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 5860..5891 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Statement_ctx_FunctionDecl", Some("ctx"))
-// 🔍 Lookup span 4471..4489 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 5860..5878 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 4574..4592 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 5963..5981 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 4574..4605 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 5963..5994 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Statement_ctx_FunctionDecl", Some("ctx"))
-// 🔍 Lookup span 4574..4592 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 5963..5981 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 4738..4741 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 6127..6130 prefix='mir_native_backend_source_route__'
 //    -> Found: Reference(Arena, None)
-// 🔍 Lookup span 4742..4780 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 6131..6169 prefix='mir_native_backend_source_route__'
 //    -> Found: Index("std_Vector_ast__Parameter_ctx", Some("ctx"))
 // 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("std_Vector_ast__Parameter_ctx", Some("ctx"))
-// 🔍 Lookup span 4742..4760 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 6131..6149 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 4742..4773 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 6131..6162 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Statement_ctx_FunctionDecl", Some("ctx"))
-// 🔍 Lookup span 4742..4760 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 6131..6149 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 4798..4808 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 6187..6197 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("std_Vector_ast__Parameter_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 4884..4887 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 6273..6276 prefix='mir_native_backend_source_route__'
 //    -> Found: Reference(Arena, None)
-// 🔍 Lookup span 4888..4931 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 6277..6320 prefix='mir_native_backend_source_route__'
 //    -> Found: Index("ast__Type_ctx", Some("ctx"))
 // 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 4888..4906 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 6277..6295 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 4888..4919 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 6277..6308 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Statement_ctx_FunctionDecl", Some("ctx"))
-// 🔍 Lookup span 4888..4906 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 6277..6295 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 4945..4956 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 6334..6345 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 5028..5031 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 6417..6420 prefix='mir_native_backend_source_route__'
 //    -> Found: Reference(Arena, None)
-// 🔍 Lookup span 5032..5068 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 6421..6457 prefix='mir_native_backend_source_route__'
 //    -> Found: Index("ast__BlockStatement_ctx", Some("ctx"))
 // 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__BlockStatement_ctx", Some("ctx"))
-// 🔍 Lookup span 5032..5050 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 6421..6439 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 5032..5063 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 6421..6452 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Statement_ctx_FunctionDecl", Some("ctx"))
-// 🔍 Lookup span 5032..5050 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 6421..6439 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 5134..5137 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 6523..6526 prefix='mir_native_backend_source_route__'
 //    -> Found: Reference(Arena, None)
-// 🔍 Lookup span 5138..5153 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 6527..6542 prefix='mir_native_backend_source_route__'
 //    -> Found: Index("std_Vector_ast__Statement_ctx", Some("ctx"))
 // 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("std_Vector_ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 5138..5142 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 6527..6531 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__BlockStatement_ctx", Some("ctx"))
-// 🔍 Lookup span 5304..5314 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 6693..6703 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 5359..5369 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 6748..6758 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 5370..5371 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 6759..6760 prefix='mir_native_backend_source_route__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_ast__Statement_ctx_ctx, Erased name: std_Vector_ast__Statement, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 5389..5405 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 6778..6794 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 5459..5462 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 6848..6851 prefix='mir_native_backend_source_route__'
 //    -> Found: Reference(Arena, None)
-// 🔍 Lookup span 5463..5491 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 6852..6880 prefix='mir_native_backend_source_route__'
 //    -> Found: Index("ast__Expression_ctx", Some("ctx"))
 // 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__Expression_ctx", Some("ctx"))
-// 🔍 Lookup span 5463..5479 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 6852..6868 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 5463..5486 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 6852..6875 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Statement_ctx_Return", Some("ctx"))
-// 🔍 Lookup span 5463..5479 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 6852..6868 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 5513..5530 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 6902..6919 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
-// 🔍 Lookup span 5562..5579 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 6951..6968 prefix='mir_native_backend_source_route__'
 //    -> Found: Int
-// 🔍 Lookup span 5605..5617 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 6994..7006 prefix='mir_native_backend_source_route__'
 //    -> Found: Int
-// 🔍 Lookup span 5620..5637 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 7009..7026 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
-// 🔍 Lookup span 5620..5645 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 7009..7034 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Expression_ctx_Integer", Some("ctx"))
-// 🔍 Lookup span 5620..5637 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 7009..7026 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
-// 🔍 Lookup span 5705..5715 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 7094..7104 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 5759..5769 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 7148..7158 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 5770..5771 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 7159..7160 prefix='mir_native_backend_source_route__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_ast__Statement_ctx_ctx, Erased name: std_Vector_ast__Statement, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 5810..5820 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 7199..7209 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 5821..5822 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 7210..7211 prefix='mir_native_backend_source_route__'
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_ast__Statement_ctx_ctx, Erased name: std_Vector_ast__Statement, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 5841..5856 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 7230..7245 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 5869..5885 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 7258..7274 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 5938..5941 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 7327..7330 prefix='mir_native_backend_source_route__'
 //    -> Found: Reference(Arena, None)
-// 🔍 Lookup span 5942..5971 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 7331..7360 prefix='mir_native_backend_source_route__'
 //    -> Found: Index("ast__Expression_ctx", Some("ctx"))
 // 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__Expression_ctx", Some("ctx"))
-// 🔍 Lookup span 5942..5957 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 7331..7346 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 5942..5965 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 7331..7354 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Statement_ctx_VarDecl", Some("ctx"))
-// 🔍 Lookup span 5942..5957 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 7331..7346 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 6015..6018 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 7404..7407 prefix='mir_native_backend_source_route__'
 //    -> Found: Reference(Arena, None)
-// 🔍 Lookup span 6019..6047 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 7408..7436 prefix='mir_native_backend_source_route__'
 //    -> Found: Index("ast__Expression_ctx", Some("ctx"))
 // 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__Expression_ctx", Some("ctx"))
-// 🔍 Lookup span 6019..6035 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 7408..7424 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 6019..6042 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 7408..7431 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Statement_ctx_Return", Some("ctx"))
-// 🔍 Lookup span 6019..6035 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 7408..7424 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 6070..6086 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 7459..7475 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
-// 🔍 Lookup span 6099..6116 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 7488..7505 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
-// 🔍 Lookup span 6151..6154 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 7540..7543 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 6151..6154 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 7540..7543 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 6187..6202 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 7576..7591 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 6187..6210 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 7576..7599 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Statement_ctx_VarDecl", Some("ctx"))
-// 🔍 Lookup span 6187..6202 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 7576..7591 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 6241..6258 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 7630..7647 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
-// 🔍 Lookup span 6241..6269 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 7630..7658 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Expression_ctx_Identifier", Some("ctx"))
-// 🔍 Lookup span 6241..6258 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 7630..7647 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
-// 🔍 Lookup span 6331..6346 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 7720..7735 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 6331..6354 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 7720..7743 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Statement_ctx_VarDecl", Some("ctx"))
-// 🔍 Lookup span 6331..6346 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 7720..7735 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 6503..6506 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 7892..7895 prefix='mir_native_backend_source_route__'
 //    -> Found: Reference(Arena, None)
-// 🔍 Lookup span 6507..6539 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 7896..7928 prefix='mir_native_backend_source_route__'
 //    -> Found: Index("ast__Type_ctx", Some("ctx"))
 // 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 6507..6522 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 7896..7911 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 6507..6530 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 7896..7919 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Statement_ctx_VarDecl", Some("ctx"))
-// 🔍 Lookup span 6507..6522 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 7896..7911 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 6573..6586 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 7962..7975 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Type_ctx", Some("ctx"))
-// 🔍 Lookup span 6728..6743 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 8117..8132 prefix='mir_native_backend_source_route__'
 //    -> Found: Int
-// 🔍 Lookup span 6773..6785 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 8162..8174 prefix='mir_native_backend_source_route__'
 //    -> Found: Int
-// 🔍 Lookup span 6788..6804 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 8177..8193 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
-// 🔍 Lookup span 6788..6812 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 8177..8201 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Expression_ctx_Integer", Some("ctx"))
-// 🔍 Lookup span 6788..6804 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 8177..8193 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
-// 🔍 Lookup span 6842..6852 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 8231..8241 prefix='mir_native_backend_source_route__'
 //    -> Found: Str
-// 🔍 Lookup span 6855..6858 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 8244..8247 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 6855..6858 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 8244..8247 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 6927..6942 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 8316..8331 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 6927..6950 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 8316..8339 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Statement_ctx_VarDecl", Some("ctx"))
-// 🔍 Lookup span 6927..6942 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 8316..8331 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 6927..6955 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 8316..8344 prefix='mir_native_backend_source_route__'
 //    -> Found: Str
-// 🔍 Lookup span 7225..7234 prefix='mir_native_backend_source_route__'
-//    -> Found: Str
-// 🔍 Lookup span 7360..7369 prefix='mir_native_backend_source_route__'
-//    -> Found: Str
-// 🔍 Lookup span 7501..7510 prefix='mir_native_backend_source_route__'
-//    -> Found: Str
-// 🔍 Lookup span 7640..7649 prefix='mir_native_backend_source_route__'
-//    -> Found: Str
-// 🔍 Lookup span 7816..7825 prefix='mir_native_backend_source_route__'
-//    -> Found: Str
-// 🔍 Lookup span 7971..7980 prefix='mir_native_backend_source_route__'
-//    -> Found: Str
-// 🔍 Lookup span 8124..8133 prefix='mir_native_backend_source_route__'
-//    -> Found: Str
-// 🔍 Lookup span 8271..8280 prefix='mir_native_backend_source_route__'
-//    -> Found: Str
-// 🔍 Lookup span 8448..8457 prefix='mir_native_backend_source_route__'
-//    -> Found: Str
-// 🔍 Lookup span 8610..8619 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 8614..8623 prefix='mir_native_backend_source_route__'
 //    -> Found: Str
 // 🔍 Lookup span 8749..8758 prefix='mir_native_backend_source_route__'
 //    -> Found: Str
-// 🔍 Lookup span 8884..8893 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 8890..8899 prefix='mir_native_backend_source_route__'
 //    -> Found: Str
-// 🔍 Lookup span 9064..9073 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 9029..9038 prefix='mir_native_backend_source_route__'
 //    -> Found: Str
-// 🔍 Lookup span 9231..9240 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 9205..9214 prefix='mir_native_backend_source_route__'
 //    -> Found: Str
-// 🔍 Lookup span 9409..9418 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 9360..9369 prefix='mir_native_backend_source_route__'
 //    -> Found: Str
-// 🔍 Lookup span 9575..9584 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 9513..9522 prefix='mir_native_backend_source_route__'
 //    -> Found: Str
-// 🔍 Lookup span 9722..9731 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 9660..9669 prefix='mir_native_backend_source_route__'
 //    -> Found: Str
-// 🔍 Lookup span 9890..9899 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 9837..9846 prefix='mir_native_backend_source_route__'
 //    -> Found: Str
-// 🔍 Lookup span 9978..9981 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 9999..10008 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 10138..10147 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 10273..10282 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 10453..10462 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 10620..10629 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 10798..10807 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 10964..10973 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 11111..11120 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 11279..11288 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 11367..11370 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 9978..9981 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 11367..11370 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 10054..10063 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 11443..11452 prefix='mir_native_backend_source_route__'
 //    -> Found: Str
-// 🔍 Lookup span 10236..10245 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 11625..11634 prefix='mir_native_backend_source_route__'
 //    -> Found: Str
-// 🔍 Lookup span 10401..10410 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 11790..11799 prefix='mir_native_backend_source_route__'
 //    -> Found: Str
-// 🔍 Lookup span 10548..10557 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 11937..11946 prefix='mir_native_backend_source_route__'
 //    -> Found: Str
-// 🔍 Lookup span 10708..10717 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 12097..12106 prefix='mir_native_backend_source_route__'
 //    -> Found: Str
-// 🔍 Lookup span 10876..10885 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 12265..12274 prefix='mir_native_backend_source_route__'
 //    -> Found: Str
-// 🔍 Lookup span 11057..11066 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 12446..12455 prefix='mir_native_backend_source_route__'
 //    -> Found: Str
-// 🔍 Lookup span 11235..11244 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 12624..12633 prefix='mir_native_backend_source_route__'
 //    -> Found: Str
-// 🔍 Lookup span 11418..11427 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 12807..12816 prefix='mir_native_backend_source_route__'
 //    -> Found: Str
-// 🔍 Lookup span 11565..11574 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 12954..12963 prefix='mir_native_backend_source_route__'
 //    -> Found: Str
-// 🔍 Lookup span 11712..11721 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 13101..13110 prefix='mir_native_backend_source_route__'
 //    -> Found: Str
-// 🔍 Lookup span 11860..11869 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 13249..13258 prefix='mir_native_backend_source_route__'
 //    -> Found: Str
-// 🔍 Lookup span 12018..12027 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 13407..13416 prefix='mir_native_backend_source_route__'
 //    -> Found: Str
-// 🔍 Lookup span 12185..12194 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 13574..13583 prefix='mir_native_backend_source_route__'
 //    -> Found: Str
-// 🔍 Lookup span 12360..12369 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 13749..13758 prefix='mir_native_backend_source_route__'
 //    -> Found: Str
-// 🔍 Lookup span 12525..12534 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 13914..13923 prefix='mir_native_backend_source_route__'
 //    -> Found: Str
-// 🔍 Lookup span 12613..12616 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 14002..14005 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 12613..12616 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 14002..14005 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 12689..12698 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 14078..14087 prefix='mir_native_backend_source_route__'
 //    -> Found: Str
-// 🔍 Lookup span 12856..12865 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 14245..14254 prefix='mir_native_backend_source_route__'
 //    -> Found: Str
-// 🔍 Lookup span 12990..12999 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 14379..14388 prefix='mir_native_backend_source_route__'
 //    -> Found: Str
-// 🔍 Lookup span 13070..13073 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 14459..14462 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 13070..13073 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 14459..14462 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 13134..13143 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 14523..14532 prefix='mir_native_backend_source_route__'
 //    -> Found: Str
-// 🔍 Lookup span 13270..13273 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 14659..14662 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 13270..13273 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 14659..14662 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 13341..13344 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 14730..14733 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 13341..13344 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 14730..14733 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 13620..13633 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 15009..15022 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir__MirProgramBundleModule_ctx", Some("ctx"))
-// 🔍 Lookup span 13636..13639 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 15025..15028 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 13636..13639 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 15025..15028 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 13718..13721 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 15107..15110 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 13718..13721 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 15107..15110 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 13918..13924 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 15307..15313 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir__MirProgramBundle_ctx", Some("ctx"))
-// 🔍 Lookup span 13927..13930 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 15316..15319 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 13927..13930 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 15316..15319 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 14058..14068 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 15447..15457 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 14058..14068 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 15447..15457 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 14187..14191 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 15576..15580 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilityPlan_ctx", Some("ctx"))
-// 🔍 Lookup span 14409..14416 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 15798..15805 prefix='mir_native_backend_source_route__'
 //    -> Found: Int
-// 🔍 Lookup span 14444..14448 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 15833..15837 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilityPlan_ctx", Some("ctx"))
-// 🔍 Lookup span 14667..14674 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 16056..16063 prefix='mir_native_backend_source_route__'
 //    -> Found: Int
-// 🔍 Lookup span 14708..14712 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 16097..16101 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilityPlan_ctx", Some("ctx"))
-// 🔍 Lookup span 14896..14903 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 16285..16292 prefix='mir_native_backend_source_route__'
 //    -> Found: Int
-// 🔍 Lookup span 14927..14931 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 16316..16320 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilityPlan_ctx", Some("ctx"))
-// 🔍 Lookup span 15109..15116 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 16498..16505 prefix='mir_native_backend_source_route__'
 //    -> Found: Int
-// 🔍 Lookup span 15140..15144 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 16529..16533 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilityPlan_ctx", Some("ctx"))
-// 🔍 Lookup span 15326..15333 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 16715..16722 prefix='mir_native_backend_source_route__'
 //    -> Found: Int
-// 🔍 Lookup span 15357..15361 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 16746..16750 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilityPlan_ctx", Some("ctx"))
-// 🔍 Lookup span 15547..15554 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 16936..16943 prefix='mir_native_backend_source_route__'
 //    -> Found: Int
-// 🔍 Lookup span 15578..15582 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 16967..16971 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilityPlan_ctx", Some("ctx"))
-// 🔍 Lookup span 15782..15789 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 17171..17178 prefix='mir_native_backend_source_route__'
 //    -> Found: Int
-// 🔍 Lookup span 15813..15817 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 17202..17206 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilityPlan_ctx", Some("ctx"))
-// 🔍 Lookup span 16015..16033 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 17404..17422 prefix='mir_native_backend_source_route__'
 //    -> Found: Int
-// 🔍 Lookup span 16015..16023 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 17404..17412 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_source_route__MirNativeScalarSourceLowering_ctx", Some("ctx"))
-// 🔍 Lookup span 16047..16062 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 17436..17451 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir__MirProgramBundle_ctx", Some("ctx"))
-// 🔍 Lookup span 16047..16055 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 17436..17444 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_source_route__MirNativeScalarSourceLowering_ctx", Some("ctx"))
-// 🔍 Lookup span 16081..16094 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 17470..17483 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilityPlan_ctx", Some("ctx"))
-// 🔍 Lookup span 16081..16089 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 17470..17478 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_source_route__MirNativeScalarSourceLowering_ctx", Some("ctx"))
-// 🔍 Lookup span 16333..16336 prefix='mir_native_backend_source_route__'
-//    -> Found: Void
-// 🔍 Lookup span 16333..16336 prefix='mir_native_backend_source_route__'
-//    -> Found: Void
-// 🔍 Lookup span 16357..16366 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 17808..17816 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_ast__Program_ctx_ctx", Some("ctx"))
+// 🔍 Lookup span 17830..17842 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 16372..16375 prefix='mir_native_backend_source_route__'
-//    -> Found: Void
-// 🔍 Lookup span 16372..16375 prefix='mir_native_backend_source_route__'
-//    -> Found: Void
-// 🔍 Lookup span 16387..16398 prefix='mir_native_backend_source_route__'
-//    -> Found: Str
-// 🔍 Lookup span 16406..16415 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 17856..17871 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 16421..16424 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 17918..17921 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 16421..16424 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 17918..17921 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 16436..16448 prefix='mir_native_backend_source_route__'
-//    -> Found: Str
-// 🔍 Lookup span 16490..16499 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 17929..17944 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 16505..16508 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 17945..17946 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", Some("ctx")), index type is Int
+// 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
+//   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
+//   -> MATCHED std_Vector_ at 0!
+// 🔍 Lookup span 18015..18027 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
+// 🔍 Lookup span 18028..18029 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", Some("ctx")), index type is Int
+// 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
+//   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
+//   -> MATCHED std_Vector_ at 0!
+// 🔍 Lookup span 18051..18059 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_ast__Program_ctx_ctx", Some("ctx"))
+// 🔍 Lookup span 18060..18061 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_ast__Program_ctx_ctx", Some("ctx")), index type is Int
+// 🕵️ Checking if type is Vector: Struct("std_Vector_ast__Program_ctx_ctx", Some("ctx"))
+//   -> Struct name: std_Vector_ast__Program_ctx_ctx, Erased name: std_Vector_ast__Program, Vector_ find: 4, std_Vector_ find: 0
+//   -> MATCHED std_Vector_ at 0!
+// 🔍 Lookup span 18122..18125 prefix='mir_native_backend_source_route__'
+//    -> Found: Reference(Arena, None)
+// 🔍 Lookup span 18126..18144 prefix='mir_native_backend_source_route__'
+//    -> Found: Index("std_Vector_ast__Statement_ctx", Some("ctx"))
+// 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("std_Vector_ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 18126..18133 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Program_ctx", Some("ctx"))
+// 🔍 Lookup span 18158..18167 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
+// 🔍 Lookup span 18255..18264 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
+// 🔍 Lookup span 18265..18266 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx")), index type is Int
+// 🕵️ Checking if type is Vector: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
+//   -> Struct name: std_Vector_ast__Statement_ctx_ctx, Erased name: std_Vector_ast__Statement, Vector_ find: 4, std_Vector_ find: 0
+//   -> MATCHED std_Vector_ at 0!
+// 🔍 Lookup span 18280..18298 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 18360..18363 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 16505..16508 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 18360..18363 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 16520..16532 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 18371..18389 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 18371..18402 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx_FunctionDecl", Some("ctx"))
+// 🔍 Lookup span 18371..18389 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 18474..18492 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 18474..18505 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx_FunctionDecl", Some("ctx"))
+// 🔍 Lookup span 18474..18492 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 18638..18641 prefix='mir_native_backend_source_route__'
+//    -> Found: Reference(Arena, None)
+// 🔍 Lookup span 18642..18680 prefix='mir_native_backend_source_route__'
+//    -> Found: Index("std_Vector_ast__Parameter_ctx", Some("ctx"))
+// 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("std_Vector_ast__Parameter_ctx", Some("ctx"))
+// 🔍 Lookup span 18642..18660 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 18642..18673 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx_FunctionDecl", Some("ctx"))
+// 🔍 Lookup span 18642..18660 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 18698..18708 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_ast__Parameter_ctx_ctx", Some("ctx"))
+// 🔍 Lookup span 18784..18787 prefix='mir_native_backend_source_route__'
+//    -> Found: Reference(Arena, None)
+// 🔍 Lookup span 18788..18831 prefix='mir_native_backend_source_route__'
+//    -> Found: Index("ast__Type_ctx", Some("ctx"))
+// 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__Type_ctx", Some("ctx"))
+// 🔍 Lookup span 18788..18806 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 18788..18819 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx_FunctionDecl", Some("ctx"))
+// 🔍 Lookup span 18788..18806 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 18845..18856 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Type_ctx", Some("ctx"))
+// 🔍 Lookup span 18928..18931 prefix='mir_native_backend_source_route__'
+//    -> Found: Reference(Arena, None)
+// 🔍 Lookup span 18932..18968 prefix='mir_native_backend_source_route__'
+//    -> Found: Index("ast__BlockStatement_ctx", Some("ctx"))
+// 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__BlockStatement_ctx", Some("ctx"))
+// 🔍 Lookup span 18932..18950 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 18932..18963 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx_FunctionDecl", Some("ctx"))
+// 🔍 Lookup span 18932..18950 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 19046..19049 prefix='mir_native_backend_source_route__'
+//    -> Found: Reference(Arena, None)
+// 🔍 Lookup span 19050..19065 prefix='mir_native_backend_source_route__'
+//    -> Found: Index("std_Vector_ast__Statement_ctx", Some("ctx"))
+// 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("std_Vector_ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 19050..19054 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__BlockStatement_ctx", Some("ctx"))
+// 🔍 Lookup span 19347..19357 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
+// 🔍 Lookup span 19398..19408 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
+// 🔍 Lookup span 19409..19410 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx")), index type is Int
+// 🕵️ Checking if type is Vector: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
+//   -> Struct name: std_Vector_ast__Statement_ctx_ctx, Erased name: std_Vector_ast__Statement, Vector_ find: 4, std_Vector_ find: 0
+//   -> MATCHED std_Vector_ at 0!
+// 🔍 Lookup span 19428..19440 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 19485..19488 prefix='mir_native_backend_source_route__'
+//    -> Found: Reference(Arena, None)
+// 🔍 Lookup span 19489..19514 prefix='mir_native_backend_source_route__'
+//    -> Found: Index("ast__Expression_ctx", Some("ctx"))
+// 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 19489..19501 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 19489..19504 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx_If", Some("ctx"))
+// 🔍 Lookup span 19489..19501 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 19552..19555 prefix='mir_native_backend_source_route__'
+//    -> Found: Reference(Arena, None)
+// 🔍 Lookup span 19556..19583 prefix='mir_native_backend_source_route__'
+//    -> Found: Index("ast__BlockStatement_ctx", Some("ctx"))
+// 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__BlockStatement_ctx", Some("ctx"))
+// 🔍 Lookup span 19556..19568 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 19556..19571 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx_If", Some("ctx"))
+// 🔍 Lookup span 19556..19568 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 19621..19624 prefix='mir_native_backend_source_route__'
+//    -> Found: Reference(Arena, None)
+// 🔍 Lookup span 19625..19652 prefix='mir_native_backend_source_route__'
+//    -> Found: Index("ast__BlockStatement_ctx", Some("ctx"))
+// 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__BlockStatement_ctx", Some("ctx"))
+// 🔍 Lookup span 19625..19637 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 19625..19640 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx_If", Some("ctx"))
+// 🔍 Lookup span 19625..19637 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 19751..19754 prefix='mir_native_backend_source_route__'
+//    -> Found: Reference(Arena, None)
+// 🔍 Lookup span 19755..19777 prefix='mir_native_backend_source_route__'
+//    -> Found: Index("std_Vector_ast__Statement_ctx", Some("ctx"))
+// 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("std_Vector_ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 19755..19766 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__BlockStatement_ctx", Some("ctx"))
+// 🔍 Lookup span 19876..19879 prefix='mir_native_backend_source_route__'
+//    -> Found: Reference(Arena, None)
+// 🔍 Lookup span 19880..19902 prefix='mir_native_backend_source_route__'
+//    -> Found: Index("std_Vector_ast__Statement_ctx", Some("ctx"))
+// 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("std_Vector_ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 19880..19891 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__BlockStatement_ctx", Some("ctx"))
+// 🔍 Lookup span 19925..19934 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 19970..19985 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
+// 🔍 Lookup span 20018..20033 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
+// 🔍 Lookup span 20097..20112 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
+// 🔍 Lookup span 20113..20114 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx")), index type is Int
+// 🕵️ Checking if type is Vector: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
+//   -> Struct name: std_Vector_ast__Statement_ctx_ctx, Erased name: std_Vector_ast__Statement, Vector_ find: 4, std_Vector_ find: 0
+//   -> MATCHED std_Vector_ at 0!
+// 🔍 Lookup span 20156..20171 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
+// 🔍 Lookup span 20172..20173 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx")), index type is Int
+// 🕵️ Checking if type is Vector: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
+//   -> Struct name: std_Vector_ast__Statement_ctx_ctx, Erased name: std_Vector_ast__Statement, Vector_ find: 4, std_Vector_ find: 0
+//   -> MATCHED std_Vector_ at 0!
+// 🔍 Lookup span 20199..20210 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 20224..20235 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 20295..20298 prefix='mir_native_backend_source_route__'
+//    -> Found: Reference(Arena, None)
+// 🔍 Lookup span 20299..20322 prefix='mir_native_backend_source_route__'
+//    -> Found: Index("ast__Expression_ctx", Some("ctx"))
+// 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 20299..20310 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 20299..20317 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx_Return", Some("ctx"))
+// 🔍 Lookup span 20299..20310 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 20372..20375 prefix='mir_native_backend_source_route__'
+//    -> Found: Reference(Arena, None)
+// 🔍 Lookup span 20376..20399 prefix='mir_native_backend_source_route__'
+//    -> Found: Index("ast__Expression_ctx", Some("ctx"))
+// 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 20376..20387 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 20376..20394 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx_Return", Some("ctx"))
+// 🔍 Lookup span 20376..20387 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 20429..20444 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 20484..20499 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 20563..20577 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔍 Lookup span 20611..20626 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔍 Lookup span 20629..20638 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 20629..20643 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx_Bool", Some("ctx"))
+// 🔍 Lookup span 20629..20638 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 20677..20687 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔍 Lookup span 20690..20705 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 20690..20713 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx_Integer", Some("ctx"))
+// 🔍 Lookup span 20690..20705 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 20747..20757 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔍 Lookup span 20760..20775 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 20760..20783 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx_Integer", Some("ctx"))
+// 🔍 Lookup span 20760..20775 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 20817..20830 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔍 Lookup span 20931..20944 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔍 Lookup span 21091..21101 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
+// 🔍 Lookup span 21145..21155 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
+// 🔍 Lookup span 21156..21157 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx")), index type is Int
+// 🕵️ Checking if type is Vector: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
+//   -> Struct name: std_Vector_ast__Statement_ctx_ctx, Erased name: std_Vector_ast__Statement, Vector_ find: 4, std_Vector_ find: 0
+//   -> MATCHED std_Vector_ at 0!
+// 🔍 Lookup span 21192..21202 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
+// 🔍 Lookup span 21203..21204 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx")), index type is Int
+// 🕵️ Checking if type is Vector: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
+//   -> Struct name: std_Vector_ast__Statement_ctx_ctx, Erased name: std_Vector_ast__Statement, Vector_ find: 4, std_Vector_ find: 0
+//   -> MATCHED std_Vector_ at 0!
+// 🔍 Lookup span 21243..21253 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
+// 🔍 Lookup span 21254..21255 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx")), index type is Int
+// 🕵️ Checking if type is Vector: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
+//   -> Struct name: std_Vector_ast__Statement_ctx_ctx, Erased name: std_Vector_ast__Statement, Vector_ find: 4, std_Vector_ find: 0
+//   -> MATCHED std_Vector_ at 0!
+// 🔍 Lookup span 21274..21289 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 21317..21329 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 21357..21373 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 21438..21441 prefix='mir_native_backend_source_route__'
+//    -> Found: Reference(Arena, None)
+// 🔍 Lookup span 21442..21471 prefix='mir_native_backend_source_route__'
+//    -> Found: Index("ast__Expression_ctx", Some("ctx"))
+// 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 21442..21457 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 21442..21465 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx_VarDecl", Some("ctx"))
+// 🔍 Lookup span 21442..21457 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 21515..21518 prefix='mir_native_backend_source_route__'
+//    -> Found: Reference(Arena, None)
+// 🔍 Lookup span 21519..21547 prefix='mir_native_backend_source_route__'
+//    -> Found: Index("ast__Expression_ctx", Some("ctx"))
+// 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 21519..21535 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 21519..21542 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx_Return", Some("ctx"))
+// 🔍 Lookup span 21519..21535 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 21570..21585 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 21570..21593 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx_VarDecl", Some("ctx"))
+// 🔍 Lookup span 21570..21585 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 21628..21644 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 21676..21693 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 21741..21751 prefix='mir_native_backend_source_route__'
 //    -> Found: Str
-// 🔍 Lookup span 16553..16555 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 21754..21757 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 16553..16555 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 21754..21757 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 16959..16967 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 21818..21833 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 21818..21841 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx_VarDecl", Some("ctx"))
+// 🔍 Lookup span 21818..21833 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 21818..21846 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 21894..21897 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 21894..21897 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 21966..21983 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 21966..21994 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx_Identifier", Some("ctx"))
+// 🔍 Lookup span 21966..21983 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 22111..22126 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 22111..22134 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx_VarDecl", Some("ctx"))
+// 🔍 Lookup span 22111..22126 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 22315..22318 prefix='mir_native_backend_source_route__'
+//    -> Found: Reference(Arena, None)
+// 🔍 Lookup span 22319..22351 prefix='mir_native_backend_source_route__'
+//    -> Found: Index("ast__Type_ctx", Some("ctx"))
+// 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__Type_ctx", Some("ctx"))
+// 🔍 Lookup span 22319..22334 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 22319..22342 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx_VarDecl", Some("ctx"))
+// 🔍 Lookup span 22319..22334 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 22385..22398 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Type_ctx", Some("ctx"))
+// 🔍 Lookup span 22442..22462 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔍 Lookup span 22566..22569 prefix='mir_native_backend_source_route__'
+//    -> Found: Reference(Arena, None)
+// 🔍 Lookup span 22570..22595 prefix='mir_native_backend_source_route__'
+//    -> Found: Index("ast__Expression_ctx", Some("ctx"))
+// 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 22570..22582 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 22570..22585 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx_If", Some("ctx"))
+// 🔍 Lookup span 22570..22582 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 22641..22644 prefix='mir_native_backend_source_route__'
+//    -> Found: Reference(Arena, None)
+// 🔍 Lookup span 22645..22672 prefix='mir_native_backend_source_route__'
+//    -> Found: Index("ast__BlockStatement_ctx", Some("ctx"))
+// 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__BlockStatement_ctx", Some("ctx"))
+// 🔍 Lookup span 22645..22657 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 22645..22660 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx_If", Some("ctx"))
+// 🔍 Lookup span 22645..22657 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 22718..22721 prefix='mir_native_backend_source_route__'
+//    -> Found: Reference(Arena, None)
+// 🔍 Lookup span 22722..22749 prefix='mir_native_backend_source_route__'
+//    -> Found: Index("ast__BlockStatement_ctx", Some("ctx"))
+// 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__BlockStatement_ctx", Some("ctx"))
+// 🔍 Lookup span 22722..22734 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 22722..22737 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx_If", Some("ctx"))
+// 🔍 Lookup span 22722..22734 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 22896..22899 prefix='mir_native_backend_source_route__'
+//    -> Found: Reference(Arena, None)
+// 🔍 Lookup span 22900..22922 prefix='mir_native_backend_source_route__'
+//    -> Found: Index("std_Vector_ast__Statement_ctx", Some("ctx"))
+// 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("std_Vector_ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 22900..22911 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__BlockStatement_ctx", Some("ctx"))
+// 🔍 Lookup span 23069..23072 prefix='mir_native_backend_source_route__'
+//    -> Found: Reference(Arena, None)
+// 🔍 Lookup span 23073..23095 prefix='mir_native_backend_source_route__'
+//    -> Found: Index("std_Vector_ast__Statement_ctx", Some("ctx"))
+// 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("std_Vector_ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 23073..23084 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__BlockStatement_ctx", Some("ctx"))
+// 🔍 Lookup span 23182..23191 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 23232..23235 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 23232..23235 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 23243..23252 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 23243..23259 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx_Binary", Some("ctx"))
+// 🔍 Lookup span 23243..23252 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 23308..23323 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
+// 🔍 Lookup span 23364..23379 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
+// 🔍 Lookup span 23494..23497 prefix='mir_native_backend_source_route__'
+//    -> Found: Reference(Arena, None)
+// 🔍 Lookup span 23498..23519 prefix='mir_native_backend_source_route__'
+//    -> Found: Index("ast__Expression_ctx", Some("ctx"))
+// 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 23498..23507 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 23498..23514 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx_Binary", Some("ctx"))
+// 🔍 Lookup span 23498..23507 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 23605..23608 prefix='mir_native_backend_source_route__'
+//    -> Found: Reference(Arena, None)
+// 🔍 Lookup span 23609..23631 prefix='mir_native_backend_source_route__'
+//    -> Found: Index("ast__Expression_ctx", Some("ctx"))
+// 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 23609..23618 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 23609..23625 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx_Binary", Some("ctx"))
+// 🔍 Lookup span 23609..23618 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 23685..23700 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
+// 🔍 Lookup span 23701..23702 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx")), index type is Int
+// 🕵️ Checking if type is Vector: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
+//   -> Struct name: std_Vector_ast__Statement_ctx_ctx, Erased name: std_Vector_ast__Statement, Vector_ find: 4, std_Vector_ find: 0
+//   -> MATCHED std_Vector_ at 0!
+// 🔍 Lookup span 23756..23771 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
+// 🔍 Lookup span 23772..23773 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx")), index type is Int
+// 🕵️ Checking if type is Vector: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
+//   -> Struct name: std_Vector_ast__Statement_ctx_ctx, Erased name: std_Vector_ast__Statement, Vector_ find: 4, std_Vector_ find: 0
+//   -> MATCHED std_Vector_ at 0!
+// 🔍 Lookup span 23808..23822 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 23866..23881 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 23925..23940 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 23925..23948 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx_Integer", Some("ctx"))
+// 🔍 Lookup span 23925..23940 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 23992..23995 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 23992..23995 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 24039..24053 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 24039..24064 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx_Identifier", Some("ctx"))
+// 🔍 Lookup span 24039..24053 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 24189..24204 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 24248..24263 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 24388..24391 prefix='mir_native_backend_source_route__'
+//    -> Found: Reference(Arena, None)
+// 🔍 Lookup span 24392..24423 prefix='mir_native_backend_source_route__'
+//    -> Found: Index("ast__Expression_ctx", Some("ctx"))
+// 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 24392..24407 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 24392..24418 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx_Assignment", Some("ctx"))
+// 🔍 Lookup span 24392..24407 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 24517..24520 prefix='mir_native_backend_source_route__'
+//    -> Found: Reference(Arena, None)
+// 🔍 Lookup span 24521..24553 prefix='mir_native_backend_source_route__'
+//    -> Found: Index("ast__Expression_ctx", Some("ctx"))
+// 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 24521..24536 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 24521..24547 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx_Assignment", Some("ctx"))
+// 🔍 Lookup span 24521..24536 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 24641..24644 prefix='mir_native_backend_source_route__'
+//    -> Found: Reference(Arena, None)
+// 🔍 Lookup span 24645..24676 prefix='mir_native_backend_source_route__'
+//    -> Found: Index("ast__Expression_ctx", Some("ctx"))
+// 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 24645..24660 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 24645..24671 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx_Assignment", Some("ctx"))
+// 🔍 Lookup span 24645..24660 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 24770..24773 prefix='mir_native_backend_source_route__'
+//    -> Found: Reference(Arena, None)
+// 🔍 Lookup span 24774..24806 prefix='mir_native_backend_source_route__'
+//    -> Found: Index("ast__Expression_ctx", Some("ctx"))
+// 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 24774..24789 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 24774..24800 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx_Assignment", Some("ctx"))
+// 🔍 Lookup span 24774..24789 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 24845..24854 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 24902..24911 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 24959..24974 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 25022..25037 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 25085..25088 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 25085..25088 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 25136..25145 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 25136..25156 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx_Identifier", Some("ctx"))
+// 🔍 Lookup span 25136..25145 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 25293..25296 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 25293..25296 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 25344..25353 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 25344..25364 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx_Identifier", Some("ctx"))
+// 🔍 Lookup span 25344..25353 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 25533..25557 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔍 Lookup span 25599..25612 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔍 Lookup span 25655..25671 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 25655..25679 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx_Integer", Some("ctx"))
+// 🔍 Lookup span 25655..25671 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 25721..25731 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔍 Lookup span 25774..25789 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 25774..25797 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx_Integer", Some("ctx"))
+// 🔍 Lookup span 25774..25789 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 25839..25849 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔍 Lookup span 25892..25907 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 25892..25915 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx_Integer", Some("ctx"))
+// 🔍 Lookup span 25892..25907 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 25957..25970 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔍 Lookup span 26084..26097 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔍 Lookup span 26488..26497 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 26623..26632 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 26764..26773 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 26903..26912 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 27088..27097 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 27257..27266 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 27404..27413 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 27581..27590 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 27743..27752 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 27920..27929 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 28075..28084 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 28236..28245 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 28403..28412 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 28570..28579 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 28752..28761 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 28921..28930 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 29009..29012 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 29009..29012 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 29088..29097 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 29260..29269 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 29442..29451 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 29612..29621 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 29794..29803 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 29954..29963 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 30121..30130 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 30288..30297 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 30463..30472 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 30628..30637 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 30716..30719 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 30716..30719 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 30790..30799 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 30952..30961 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 31119..31128 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 31286..31295 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 31461..31470 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 31626..31635 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 31714..31717 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 31714..31717 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 31788..31797 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 31965..31974 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 32120..32129 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 32281..32290 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 32448..32457 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 32615..32624 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 32793..32802 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 32959..32968 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 33106..33115 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 33274..33283 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 33362..33365 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 33362..33365 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 33439..33448 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 33629..33638 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 33794..33803 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 33941..33950 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 34113..34122 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 34295..34304 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 34465..34474 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 34648..34657 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 34808..34817 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 34975..34984 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 35142..35151 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 35312..35321 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 35485..35494 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 35662..35671 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 35849..35858 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 36025..36034 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 36113..36116 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 36113..36116 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 36188..36197 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 36350..36359 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 36517..36526 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 36684..36693 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 36854..36863 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 37027..37036 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 37204..37213 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 37391..37400 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 37567..37576 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 37655..37658 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 37655..37658 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 37730..37739 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 37893..37902 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 38060..38069 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 38239..38248 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 38409..38418 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 38576..38585 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 38761..38770 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 38946..38955 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 39104..39113 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 39272..39281 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 39453..39462 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 39631..39640 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 39814..39823 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 39961..39970 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 40108..40117 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 40256..40265 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 40404..40413 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 40538..40547 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 40618..40621 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 40618..40621 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 40683..40692 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 40978..40989 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 41040..41056 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔍 Lookup span 41074..41095 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔍 Lookup span 41134..41137 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 41134..41137 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 41205..41208 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 41205..41208 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 41471..41484 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir__MirProgramBundleModule_ctx", Some("ctx"))
+// 🔍 Lookup span 41487..41490 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 41487..41490 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 41569..41572 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 41569..41572 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 41813..41826 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir__MirProgramBundleModule_ctx", Some("ctx"))
+// 🔍 Lookup span 41845..41848 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 41845..41848 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 41952..41955 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 41952..41955 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 42272..42278 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir__MirProgramBundle_ctx", Some("ctx"))
+// 🔍 Lookup span 42281..42284 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 42281..42284 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 42412..42422 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 42412..42422 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 42551..42555 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilityPlan_ctx", Some("ctx"))
+// 🔍 Lookup span 42773..42780 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔍 Lookup span 42808..42812 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilityPlan_ctx", Some("ctx"))
+// 🔍 Lookup span 43031..43038 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔍 Lookup span 43066..43070 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilityPlan_ctx", Some("ctx"))
+// 🔍 Lookup span 43283..43290 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔍 Lookup span 43325..43329 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilityPlan_ctx", Some("ctx"))
+// 🔍 Lookup span 43510..43517 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔍 Lookup span 43589..43593 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilityPlan_ctx", Some("ctx"))
+// 🔍 Lookup span 43804..43811 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔍 Lookup span 43839..43843 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilityPlan_ctx", Some("ctx"))
+// 🔍 Lookup span 44060..44067 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔍 Lookup span 44102..44106 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilityPlan_ctx", Some("ctx"))
+// 🔍 Lookup span 44290..44297 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔍 Lookup span 44321..44325 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilityPlan_ctx", Some("ctx"))
+// 🔍 Lookup span 44503..44510 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔍 Lookup span 44571..44575 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilityPlan_ctx", Some("ctx"))
+// 🔍 Lookup span 44786..44793 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔍 Lookup span 44827..44831 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilityPlan_ctx", Some("ctx"))
+// 🔍 Lookup span 45013..45020 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔍 Lookup span 45044..45048 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilityPlan_ctx", Some("ctx"))
+// 🔍 Lookup span 45234..45241 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔍 Lookup span 45265..45269 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilityPlan_ctx", Some("ctx"))
+// 🔍 Lookup span 45469..45476 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔍 Lookup span 45500..45504 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilityPlan_ctx", Some("ctx"))
+// 🔍 Lookup span 45702..45720 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔍 Lookup span 45702..45710 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_source_route__MirNativeScalarSourceLowering_ctx", Some("ctx"))
-// 🔍 Lookup span 17158..17168 prefix='mir_native_backend_source_route__'
-//    -> Found: Void
-// 🔍 Lookup span 17158..17168 prefix='mir_native_backend_source_route__'
-//    -> Found: Void
-// 🔍 Lookup span 17219..17227 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 45734..45749 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir__MirProgramBundle_ctx", Some("ctx"))
+// 🔍 Lookup span 45734..45742 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_source_route__MirNativeScalarSourceLowering_ctx", Some("ctx"))
-// 🔍 Lookup span 17244..17252 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 45768..45781 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilityPlan_ctx", Some("ctx"))
+// 🔍 Lookup span 45768..45776 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_source_route__MirNativeScalarSourceLowering_ctx", Some("ctx"))
-// 🔍 Lookup span 17314..17327 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 46114..46122 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_ast__Program_ctx_ctx", Some("ctx"))
+// 🔍 Lookup span 46136..46148 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
+// 🔍 Lookup span 46162..46177 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
+// 🔍 Lookup span 46224..46227 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 46224..46227 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 46235..46250 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
+// 🔍 Lookup span 46251..46252 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", Some("ctx")), index type is Int
+// 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
+//   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
+//   -> MATCHED std_Vector_ at 0!
+// 🔍 Lookup span 46321..46333 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
+// 🔍 Lookup span 46334..46335 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", Some("ctx")), index type is Int
+// 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
+//   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
+//   -> MATCHED std_Vector_ at 0!
+// 🔍 Lookup span 46357..46365 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_ast__Program_ctx_ctx", Some("ctx"))
+// 🔍 Lookup span 46366..46367 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_ast__Program_ctx_ctx", Some("ctx")), index type is Int
+// 🕵️ Checking if type is Vector: Struct("std_Vector_ast__Program_ctx_ctx", Some("ctx"))
+//   -> Struct name: std_Vector_ast__Program_ctx_ctx, Erased name: std_Vector_ast__Program, Vector_ find: 4, std_Vector_ find: 0
+//   -> MATCHED std_Vector_ at 0!
+// 🔍 Lookup span 46428..46431 prefix='mir_native_backend_source_route__'
+//    -> Found: Reference(Arena, None)
+// 🔍 Lookup span 46432..46450 prefix='mir_native_backend_source_route__'
+//    -> Found: Index("std_Vector_ast__Statement_ctx", Some("ctx"))
+// 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("std_Vector_ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 46432..46439 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Program_ctx", Some("ctx"))
+// 🔍 Lookup span 46464..46473 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
+// 🔍 Lookup span 46548..46557 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
+// 🔍 Lookup span 46558..46559 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx")), index type is Int
+// 🕵️ Checking if type is Vector: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
+//   -> Struct name: std_Vector_ast__Statement_ctx_ctx, Erased name: std_Vector_ast__Statement, Vector_ find: 4, std_Vector_ find: 0
+//   -> MATCHED std_Vector_ at 0!
+// 🔍 Lookup span 46584..46593 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
+// 🔍 Lookup span 46594..46595 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx")), index type is Int
+// 🕵️ Checking if type is Vector: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
+//   -> Struct name: std_Vector_ast__Statement_ctx_ctx, Erased name: std_Vector_ast__Statement, Vector_ find: 4, std_Vector_ find: 0
+//   -> MATCHED std_Vector_ at 0!
+// 🔍 Lookup span 46609..46614 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 46627..46633 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 46734..46737 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 46734..46737 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 46745..46759 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 46745..46772 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx_FunctionDecl", Some("ctx"))
+// 🔍 Lookup span 46745..46759 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 46806..46820 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 46806..46833 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx_FunctionDecl", Some("ctx"))
+// 🔍 Lookup span 46806..46820 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 46979..46982 prefix='mir_native_backend_source_route__'
+//    -> Found: Reference(Arena, None)
+// 🔍 Lookup span 46983..47017 prefix='mir_native_backend_source_route__'
+//    -> Found: Index("std_Vector_ast__Parameter_ctx", Some("ctx"))
+// 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("std_Vector_ast__Parameter_ctx", Some("ctx"))
+// 🔍 Lookup span 46983..46997 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 46983..47010 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx_FunctionDecl", Some("ctx"))
+// 🔍 Lookup span 46983..46997 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 47035..47050 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_ast__Parameter_ctx_ctx", Some("ctx"))
+// 🔍 Lookup span 47130..47133 prefix='mir_native_backend_source_route__'
+//    -> Found: Reference(Arena, None)
+// 🔍 Lookup span 47134..47173 prefix='mir_native_backend_source_route__'
+//    -> Found: Index("ast__Type_ctx", Some("ctx"))
+// 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__Type_ctx", Some("ctx"))
+// 🔍 Lookup span 47134..47148 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 47134..47161 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx_FunctionDecl", Some("ctx"))
+// 🔍 Lookup span 47134..47148 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 47187..47203 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Type_ctx", Some("ctx"))
+// 🔍 Lookup span 47280..47283 prefix='mir_native_backend_source_route__'
+//    -> Found: Reference(Arena, None)
+// 🔍 Lookup span 47284..47316 prefix='mir_native_backend_source_route__'
+//    -> Found: Index("ast__BlockStatement_ctx", Some("ctx"))
+// 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__BlockStatement_ctx", Some("ctx"))
+// 🔍 Lookup span 47284..47298 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 47284..47311 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx_FunctionDecl", Some("ctx"))
+// 🔍 Lookup span 47284..47298 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 47399..47402 prefix='mir_native_backend_source_route__'
+//    -> Found: Reference(Arena, None)
+// 🔍 Lookup span 47403..47423 prefix='mir_native_backend_source_route__'
+//    -> Found: Index("std_Vector_ast__Statement_ctx", Some("ctx"))
+// 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("std_Vector_ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 47403..47412 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__BlockStatement_ctx", Some("ctx"))
+// 🔍 Lookup span 47617..47622 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 47617..47635 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx_FunctionDecl", Some("ctx"))
+// 🔍 Lookup span 47617..47622 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 47668..47671 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 47668..47671 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 47696..47701 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 47696..47714 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx_FunctionDecl", Some("ctx"))
+// 🔍 Lookup span 47696..47701 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 47921..47924 prefix='mir_native_backend_source_route__'
+//    -> Found: Reference(Arena, None)
+// 🔍 Lookup span 47925..47950 prefix='mir_native_backend_source_route__'
+//    -> Found: Index("std_Vector_ast__Parameter_ctx", Some("ctx"))
+// 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("std_Vector_ast__Parameter_ctx", Some("ctx"))
+// 🔍 Lookup span 47925..47930 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 47925..47943 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx_FunctionDecl", Some("ctx"))
+// 🔍 Lookup span 47925..47930 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 47972..47989 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_ast__Parameter_ctx_ctx", Some("ctx"))
+// 🔍 Lookup span 48014..48031 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_ast__Parameter_ctx_ctx", Some("ctx"))
+// 🔍 Lookup span 48032..48033 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_ast__Parameter_ctx_ctx", Some("ctx")), index type is Int
+// 🕵️ Checking if type is Vector: Struct("std_Vector_ast__Parameter_ctx_ctx", Some("ctx"))
+//   -> Struct name: std_Vector_ast__Parameter_ctx_ctx, Erased name: std_Vector_ast__Parameter, Vector_ find: 4, std_Vector_ find: 0
+//   -> MATCHED std_Vector_ at 0!
+// 🔍 Lookup span 48014..48034 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Parameter_ctx", Some("ctx"))
+// 🔍 Lookup span 48014..48045 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Type_ctx", Some("ctx"))
+// 🔍 Lookup span 48014..48034 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Parameter_ctx", Some("ctx"))
+// 🔍 Lookup span 48154..48157 prefix='mir_native_backend_source_route__'
+//    -> Found: Reference(Arena, None)
+// 🔍 Lookup span 48158..48188 prefix='mir_native_backend_source_route__'
+//    -> Found: Index("ast__Type_ctx", Some("ctx"))
+// 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__Type_ctx", Some("ctx"))
+// 🔍 Lookup span 48158..48163 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 48158..48176 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx_FunctionDecl", Some("ctx"))
+// 🔍 Lookup span 48158..48163 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 48206..48224 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Type_ctx", Some("ctx"))
+// 🔍 Lookup span 48315..48318 prefix='mir_native_backend_source_route__'
+//    -> Found: Reference(Arena, None)
+// 🔍 Lookup span 48319..48342 prefix='mir_native_backend_source_route__'
+//    -> Found: Index("ast__BlockStatement_ctx", Some("ctx"))
+// 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__BlockStatement_ctx", Some("ctx"))
+// 🔍 Lookup span 48319..48324 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 48319..48337 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx_FunctionDecl", Some("ctx"))
+// 🔍 Lookup span 48319..48324 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 48435..48438 prefix='mir_native_backend_source_route__'
+//    -> Found: Reference(Arena, None)
+// 🔍 Lookup span 48439..48461 prefix='mir_native_backend_source_route__'
+//    -> Found: Index("std_Vector_ast__Statement_ctx", Some("ctx"))
+// 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("std_Vector_ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 48439..48450 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__BlockStatement_ctx", Some("ctx"))
+// 🔍 Lookup span 48483..48500 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
+// 🔍 Lookup span 48525..48542 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
+// 🔍 Lookup span 48543..48544 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx")), index type is Int
+// 🕵️ Checking if type is Vector: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
+//   -> Struct name: std_Vector_ast__Statement_ctx_ctx, Erased name: std_Vector_ast__Statement, Vector_ find: 4, std_Vector_ find: 0
+//   -> MATCHED std_Vector_ at 0!
+// 🔍 Lookup span 48525..48545 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 48667..48670 prefix='mir_native_backend_source_route__'
+//    -> Found: Reference(Arena, None)
+// 🔍 Lookup span 48671..48703 prefix='mir_native_backend_source_route__'
+//    -> Found: Index("ast__Expression_ctx", Some("ctx"))
+// 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 48671..48688 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
+// 🔍 Lookup span 48689..48690 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx")), index type is Int
+// 🕵️ Checking if type is Vector: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
+//   -> Struct name: std_Vector_ast__Statement_ctx_ctx, Erased name: std_Vector_ast__Statement, Vector_ find: 4, std_Vector_ find: 0
+//   -> MATCHED std_Vector_ at 0!
+// 🔍 Lookup span 48671..48691 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 48671..48698 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx_Return", Some("ctx"))
+// 🔍 Lookup span 48671..48691 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 48721..48734 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 48762..48765 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 48762..48765 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 48793..48806 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 48793..48817 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx_Identifier", Some("ctx"))
+// 🔍 Lookup span 48793..48806 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 48843..48860 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_ast__Parameter_ctx_ctx", Some("ctx"))
+// 🔍 Lookup span 48861..48862 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_ast__Parameter_ctx_ctx", Some("ctx")), index type is Int
+// 🕵️ Checking if type is Vector: Struct("std_Vector_ast__Parameter_ctx_ctx", Some("ctx"))
+//   -> Struct name: std_Vector_ast__Parameter_ctx_ctx, Erased name: std_Vector_ast__Parameter, Vector_ find: 4, std_Vector_ find: 0
+//   -> MATCHED std_Vector_ at 0!
+// 🔍 Lookup span 48843..48863 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Parameter_ctx", Some("ctx"))
+// 🔍 Lookup span 48972..48987 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
+// 🔍 Lookup span 49012..49027 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
+// 🔍 Lookup span 49028..49029 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx")), index type is Int
+// 🕵️ Checking if type is Vector: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
+//   -> Struct name: std_Vector_ast__Statement_ctx_ctx, Erased name: std_Vector_ast__Statement, Vector_ find: 4, std_Vector_ find: 0
+//   -> MATCHED std_Vector_ at 0!
+// 🔍 Lookup span 49012..49030 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 49114..49129 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 49132..49135 prefix='mir_native_backend_source_route__'
+//    -> Found: Reference(Arena, None)
+// 🔍 Lookup span 49136..49166 prefix='mir_native_backend_source_route__'
+//    -> Found: Index("ast__Expression_ctx", Some("ctx"))
+// 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 49136..49151 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
+// 🔍 Lookup span 49152..49153 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx")), index type is Int
+// 🕵️ Checking if type is Vector: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
+//   -> Struct name: std_Vector_ast__Statement_ctx_ctx, Erased name: std_Vector_ast__Statement, Vector_ find: 4, std_Vector_ find: 0
+//   -> MATCHED std_Vector_ at 0!
+// 🔍 Lookup span 49136..49154 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 49136..49161 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx_Return", Some("ctx"))
+// 🔍 Lookup span 49136..49154 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 49181..49190 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 49231..49244 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔍 Lookup span 49282..49285 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 49282..49285 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 49293..49298 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 49293..49311 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx_FunctionDecl", Some("ctx"))
+// 🔍 Lookup span 49293..49298 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 49348..49351 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 49348..49351 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 49359..49364 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 49359..49377 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx_FunctionDecl", Some("ctx"))
+// 🔍 Lookup span 49359..49364 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 49428..49431 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 49428..49431 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 49439..49444 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 49439..49457 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx_FunctionDecl", Some("ctx"))
+// 🔍 Lookup span 49439..49444 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 49632..49635 prefix='mir_native_backend_source_route__'
+//    -> Found: Reference(Arena, None)
+// 🔍 Lookup span 49636..49661 prefix='mir_native_backend_source_route__'
+//    -> Found: Index("std_Vector_ast__Parameter_ctx", Some("ctx"))
+// 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("std_Vector_ast__Parameter_ctx", Some("ctx"))
+// 🔍 Lookup span 49636..49641 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 49636..49654 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx_FunctionDecl", Some("ctx"))
+// 🔍 Lookup span 49636..49641 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 49683..49700 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_ast__Parameter_ctx_ctx", Some("ctx"))
+// 🔍 Lookup span 49725..49742 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_ast__Parameter_ctx_ctx", Some("ctx"))
+// 🔍 Lookup span 49743..49744 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_ast__Parameter_ctx_ctx", Some("ctx")), index type is Int
+// 🕵️ Checking if type is Vector: Struct("std_Vector_ast__Parameter_ctx_ctx", Some("ctx"))
+//   -> Struct name: std_Vector_ast__Parameter_ctx_ctx, Erased name: std_Vector_ast__Parameter, Vector_ find: 4, std_Vector_ find: 0
+//   -> MATCHED std_Vector_ at 0!
+// 🔍 Lookup span 49725..49745 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Parameter_ctx", Some("ctx"))
+// 🔍 Lookup span 49725..49756 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Type_ctx", Some("ctx"))
+// 🔍 Lookup span 49725..49745 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Parameter_ctx", Some("ctx"))
+// 🔍 Lookup span 49865..49868 prefix='mir_native_backend_source_route__'
+//    -> Found: Reference(Arena, None)
+// 🔍 Lookup span 49869..49899 prefix='mir_native_backend_source_route__'
+//    -> Found: Index("ast__Type_ctx", Some("ctx"))
+// 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__Type_ctx", Some("ctx"))
+// 🔍 Lookup span 49869..49874 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 49869..49887 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx_FunctionDecl", Some("ctx"))
+// 🔍 Lookup span 49869..49874 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 49917..49935 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Type_ctx", Some("ctx"))
+// 🔍 Lookup span 50014..50029 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
+// 🔍 Lookup span 50054..50069 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
+// 🔍 Lookup span 50070..50071 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx")), index type is Int
+// 🕵️ Checking if type is Vector: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
+//   -> Struct name: std_Vector_ast__Statement_ctx_ctx, Erased name: std_Vector_ast__Statement, Vector_ find: 4, std_Vector_ find: 0
+//   -> MATCHED std_Vector_ at 0!
+// 🔍 Lookup span 50054..50072 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 50175..50178 prefix='mir_native_backend_source_route__'
+//    -> Found: Reference(Arena, None)
+// 🔍 Lookup span 50179..50214 prefix='mir_native_backend_source_route__'
+//    -> Found: Index("ast__BlockStatement_ctx", Some("ctx"))
+// 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__BlockStatement_ctx", Some("ctx"))
+// 🔍 Lookup span 50179..50194 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
+// 🔍 Lookup span 50195..50196 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx")), index type is Int
+// 🕵️ Checking if type is Vector: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
+//   -> Struct name: std_Vector_ast__Statement_ctx_ctx, Erased name: std_Vector_ast__Statement, Vector_ find: 4, std_Vector_ find: 0
+//   -> MATCHED std_Vector_ at 0!
+// 🔍 Lookup span 50179..50197 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 50179..50209 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx_UnsafeBlock", Some("ctx"))
+// 🔍 Lookup span 50179..50197 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 50307..50310 prefix='mir_native_backend_source_route__'
+//    -> Found: Reference(Arena, None)
+// 🔍 Lookup span 50311..50333 prefix='mir_native_backend_source_route__'
+//    -> Found: Index("std_Vector_ast__Statement_ctx", Some("ctx"))
+// 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("std_Vector_ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 50311..50322 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__BlockStatement_ctx", Some("ctx"))
+// 🔍 Lookup span 50355..50372 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
+// 🔍 Lookup span 50397..50414 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
+// 🔍 Lookup span 50415..50416 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx")), index type is Int
+// 🕵️ Checking if type is Vector: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
+//   -> Struct name: std_Vector_ast__Statement_ctx_ctx, Erased name: std_Vector_ast__Statement, Vector_ find: 4, std_Vector_ find: 0
+//   -> MATCHED std_Vector_ at 0!
+// 🔍 Lookup span 50397..50417 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 50501..50516 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 50519..50522 prefix='mir_native_backend_source_route__'
+//    -> Found: Reference(Arena, None)
+// 🔍 Lookup span 50523..50555 prefix='mir_native_backend_source_route__'
+//    -> Found: Index("ast__Expression_ctx", Some("ctx"))
+// 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 50523..50540 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
+// 🔍 Lookup span 50541..50542 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx")), index type is Int
+// 🕵️ Checking if type is Vector: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
+//   -> Struct name: std_Vector_ast__Statement_ctx_ctx, Erased name: std_Vector_ast__Statement, Vector_ find: 4, std_Vector_ find: 0
+//   -> MATCHED std_Vector_ at 0!
+// 🔍 Lookup span 50523..50543 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 50523..50550 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx_Return", Some("ctx"))
+// 🔍 Lookup span 50523..50543 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Statement_ctx", Some("ctx"))
+// 🔍 Lookup span 50570..50579 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 50601..50620 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔍 Lookup span 50648..50663 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 50737..50740 prefix='mir_native_backend_source_route__'
+//    -> Found: Reference(Arena, None)
+// 🔍 Lookup span 50741..50770 prefix='mir_native_backend_source_route__'
+//    -> Found: Index("ast__Expression_ctx", Some("ctx"))
+// 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 50741..50756 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 50741..50761 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx_Call", Some("ctx"))
+// 🔍 Lookup span 50741..50756 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 50784..50790 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 50814..50817 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 50814..50817 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 50825..50831 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 50825..50842 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx_Identifier", Some("ctx"))
+// 🔍 Lookup span 50825..50831 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 50989..50992 prefix='mir_native_backend_source_route__'
+//    -> Found: Reference(Arena, None)
+// 🔍 Lookup span 50993..51023 prefix='mir_native_backend_source_route__'
+//    -> Found: Index("std_Vector_ast__Expression_ctx", Some("ctx"))
+// 🔬 IndexAccess codegen: allocator type is Reference(Arena, None), index type is Index("std_Vector_ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 50993..51008 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 50993..51013 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx_Call", Some("ctx"))
+// 🔍 Lookup span 50993..51008 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 51041..51050 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_ast__Expression_ctx_ctx", Some("ctx"))
+// 🔍 Lookup span 51060..51069 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_ast__Expression_ctx_ctx", Some("ctx"))
+// 🔍 Lookup span 51070..51071 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_ast__Expression_ctx_ctx", Some("ctx")), index type is Int
+// 🕵️ Checking if type is Vector: Struct("std_Vector_ast__Expression_ctx_ctx", Some("ctx"))
+//   -> Struct name: std_Vector_ast__Expression_ctx_ctx, Erased name: std_Vector_ast__Expression, Vector_ find: 4, std_Vector_ find: 0
+//   -> MATCHED std_Vector_ at 0!
+// 🔍 Lookup span 51060..51072 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 51131..51141 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔍 Lookup span 51144..51153 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_ast__Expression_ctx_ctx", Some("ctx"))
+// 🔍 Lookup span 51154..51155 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_ast__Expression_ctx_ctx", Some("ctx")), index type is Int
+// 🕵️ Checking if type is Vector: Struct("std_Vector_ast__Expression_ctx_ctx", Some("ctx"))
+//   -> Struct name: std_Vector_ast__Expression_ctx_ctx, Erased name: std_Vector_ast__Expression, Vector_ find: 4, std_Vector_ find: 0
+//   -> MATCHED std_Vector_ at 0!
+// 🔍 Lookup span 51144..51156 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 51144..51164 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx_Integer", Some("ctx"))
+// 🔍 Lookup span 51144..51156 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("ast__Expression_ctx", Some("ctx"))
+// 🔍 Lookup span 51351..51360 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 51518..51527 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 51674..51683 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 51833..51842 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 52006..52015 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 52190..52199 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 52380..52389 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 52550..52559 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 52723..52732 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 52891..52900 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 53057..53066 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 53234..53243 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 53403..53412 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 53573..53582 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 53739..53748 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 53911..53920 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 54089..54098 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 54267..54276 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 54461..54470 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 54651..54660 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 54831..54840 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 55022..55031 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 55211..55220 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 55380..55389 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 55565..55574 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 55738..55747 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 55894..55903 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 56053..56062 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 56219..56228 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 56391..56400 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 56559..56568 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 56730..56739 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 56896..56905 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 57126..57136 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔍 Lookup span 57239..57254 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 57291..57300 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 57423..57432 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 57567..57576 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 57699..57708 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 57834..57843 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 57966..57975 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 58107..58116 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 58239..58248 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 58378..58387 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 58510..58519 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 58647..58656 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 58779..58788 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 58914..58923 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 59046..59055 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 59192..59201 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 59324..59333 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 59462..59471 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 59594..59603 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 59733..59742 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 59865..59874 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 60000..60009 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 60132..60141 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 60273..60282 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 60405..60414 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 60552..60561 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 60684..60693 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 60831..60840 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 60963..60972 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 61125..61134 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 61257..61266 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 61416..61425 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 61584..61593 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 61788..61797 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 61984..61993 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 62116..62125 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 62263..62272 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 62389..62398 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 62510..62519 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 62642..62651 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 62800..62809 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 62932..62941 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 63100..63109 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 63232..63241 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 63389..63398 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 63469..63472 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 63469..63472 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 63531..63540 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 63652..63661 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 63784..63793 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 63944..63953 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 64076..64085 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 64277..64286 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 64429..64438 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 64587..64596 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 64739..64748 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 64912..64921 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 65064..65073 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 65245..65254 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 65397..65406 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 65575..65584 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 65727..65736 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 65921..65930 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 66069..66078 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 66227..66236 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 66379..66388 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 66544..66553 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 66676..66685 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 66810..66819 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 66890..66893 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 66890..66893 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 66952..66961 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 67263..67274 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 67317..67328 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 67380..67401 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔍 Lookup span 67440..67443 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 67440..67443 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 67511..67514 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 67511..67514 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 67819..67832 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir__MirProgramBundleModule_ctx", Some("ctx"))
+// 🔍 Lookup span 67835..67838 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 67835..67838 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 67925..67928 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 67925..67928 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 68217..68230 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir__MirProgramBundleModule_ctx", Some("ctx"))
+// 🔍 Lookup span 68233..68236 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 68233..68236 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 68323..68326 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 68323..68326 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 68567..68580 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir__MirProgramBundleModule_ctx", Some("ctx"))
+// 🔍 Lookup span 68583..68586 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 68583..68586 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 68665..68668 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 68665..68668 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 68865..68871 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir__MirProgramBundle_ctx", Some("ctx"))
+// 🔍 Lookup span 68874..68877 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 68874..68877 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 69005..69015 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 69005..69015 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 69096..69100 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilityPlan_ctx", Some("ctx"))
+// 🔍 Lookup span 69286..69293 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔍 Lookup span 69317..69321 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilityPlan_ctx", Some("ctx"))
+// 🔍 Lookup span 69508..69515 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔍 Lookup span 69575..69579 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilityPlan_ctx", Some("ctx"))
+// 🔍 Lookup span 69815..69819 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilityPlan_ctx", Some("ctx"))
+// 🔍 Lookup span 70047..70054 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔍 Lookup span 70078..70082 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilityPlan_ctx", Some("ctx"))
+// 🔍 Lookup span 70266..70273 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔍 Lookup span 70297..70301 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilityPlan_ctx", Some("ctx"))
+// 🔍 Lookup span 70479..70486 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔍 Lookup span 70510..70514 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilityPlan_ctx", Some("ctx"))
+// 🔍 Lookup span 70696..70703 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔍 Lookup span 70727..70731 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilityPlan_ctx", Some("ctx"))
+// 🔍 Lookup span 70916..70923 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔍 Lookup span 70989..70993 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilityPlan_ctx", Some("ctx"))
+// 🔍 Lookup span 71203..71210 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔍 Lookup span 71244..71248 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilityPlan_ctx", Some("ctx"))
+// 🔍 Lookup span 71434..71441 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔍 Lookup span 71465..71469 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilityPlan_ctx", Some("ctx"))
+// 🔍 Lookup span 71669..71676 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔍 Lookup span 71700..71704 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilityPlan_ctx", Some("ctx"))
+// 🔍 Lookup span 71902..71920 prefix='mir_native_backend_source_route__'
+//    -> Found: Int
+// 🔍 Lookup span 71902..71910 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir_native_backend_source_route__MirNativeScalarSourceLowering_ctx", Some("ctx"))
+// 🔍 Lookup span 71934..71949 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir__MirProgramBundle_ctx", Some("ctx"))
+// 🔍 Lookup span 71934..71942 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir_native_backend_source_route__MirNativeScalarSourceLowering_ctx", Some("ctx"))
+// 🔍 Lookup span 71968..71981 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilityPlan_ctx", Some("ctx"))
+// 🔍 Lookup span 71968..71976 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir_native_backend_source_route__MirNativeScalarSourceLowering_ctx", Some("ctx"))
+// 🔍 Lookup span 72220..72223 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 72220..72223 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 72244..72253 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
+// 🔍 Lookup span 72259..72262 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 72259..72262 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 72274..72285 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 72293..72302 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
+// 🔍 Lookup span 72308..72311 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 72308..72311 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 72323..72335 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 72377..72386 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
+// 🔍 Lookup span 72392..72395 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 72392..72395 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 72407..72419 prefix='mir_native_backend_source_route__'
+//    -> Found: Str
+// 🔍 Lookup span 72440..72442 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 72440..72442 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 72851..72859 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir_native_backend_source_route__MirNativeScalarSourceLowering_ctx", Some("ctx"))
+// 🔍 Lookup span 72885..72893 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir_native_backend_source_route__MirNativeScalarSourceLowering_ctx", Some("ctx"))
+// 🔍 Lookup span 73042..73050 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir_native_backend_source_route__MirNativeScalarSourceLowering_ctx", Some("ctx"))
+// 🔍 Lookup span 73076..73084 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir_native_backend_source_route__MirNativeScalarSourceLowering_ctx", Some("ctx"))
+// 🔍 Lookup span 73236..73244 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir_native_backend_source_route__MirNativeScalarSourceLowering_ctx", Some("ctx"))
+// 🔍 Lookup span 73435..73445 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 73435..73445 prefix='mir_native_backend_source_route__'
+//    -> Found: Void
+// 🔍 Lookup span 73496..73504 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir_native_backend_source_route__MirNativeScalarSourceLowering_ctx", Some("ctx"))
+// 🔍 Lookup span 73521..73529 prefix='mir_native_backend_source_route__'
+//    -> Found: Struct("mir_native_backend_source_route__MirNativeScalarSourceLowering_ctx", Some("ctx"))
+// 🔍 Lookup span 73591..73604 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilityResult_ctx", Some("ctx"))
-// 🔍 Lookup span 17314..17342 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 73591..73619 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilityClassification", Some("ctx"))
-// 🔍 Lookup span 17314..17327 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 73591..73604 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilityResult_ctx", Some("ctx"))
-// 🔍 Lookup span 17435..17445 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 73712..73722 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 17435..17445 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 73712..73722 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 17615..17617 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 73892..73894 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 17615..17617 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 73892..73894 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 17710..17712 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 73987..73989 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 17710..17712 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 73987..73989 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 17760..17762 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 74037..74039 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 17760..17762 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 74037..74039 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 17820..17822 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 74097..74099 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 17820..17822 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 74097..74099 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 17930..17936 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 74207..74213 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 17930..17936 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 74207..74213 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 18006..18008 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 74283..74285 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 18006..18008 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 74283..74285 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 18046..18048 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 74323..74325 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 18046..18048 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 74323..74325 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 18114..18116 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 74391..74393 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 18114..18116 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 74391..74393 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 18153..18155 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 74430..74432 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 18153..18155 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 74430..74432 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 18214..18223 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 74491..74500 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_driver__MirNativeBackendDriverDiscoveryResult_ctx", Some("ctx"))
-// 🔍 Lookup span 18214..18238 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 74491..74515 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_driver__MirNativeBackendDriverDiscoveryClassification", Some("ctx"))
-// 🔍 Lookup span 18214..18223 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 74491..74500 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_driver__MirNativeBackendDriverDiscoveryResult_ctx", Some("ctx"))
-// 🔍 Lookup span 18259..18268 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 74536..74545 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_driver__MirNativeBackendDriverDiscoveryResult_ctx", Some("ctx"))
-// 🔍 Lookup span 18259..18283 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 74536..74560 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_driver__MirNativeBackendDriverDiscoveryClassification", Some("ctx"))
-// 🔍 Lookup span 18259..18268 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 74536..74545 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_driver__MirNativeBackendDriverDiscoveryResult_ctx", Some("ctx"))
-// 🔍 Lookup span 18325..18328 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 74602..74605 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 18325..18328 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 74602..74605 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 18404..18413 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 74681..74690 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_driver__MirNativeBackendDriverDiscoveryResult_ctx", Some("ctx"))
-// 🔍 Lookup span 18630..18639 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 74907..74916 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_driver__MirNativeBackendDriverDiscoveryResult_ctx", Some("ctx"))
-// 🔍 Lookup span 18731..18748 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 75008..75025 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("os_ProcessResult_ctx", Some("ctx"))
-// 🔍 Lookup span 18789..18806 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 75066..75083 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("os_ProcessResult_ctx", Some("ctx"))
-// 🔍 Lookup span 18835..18845 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 75112..75122 prefix='mir_native_backend_source_route__'
 //    -> Found: Str
-// 🔍 Lookup span 18866..18876 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 75143..75153 prefix='mir_native_backend_source_route__'
 //    -> Found: Str
-// 🔍 Lookup span 19077..19083 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 75354..75360 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 19077..19083 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 75354..75360 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 19135..19152 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 75412..75429 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("os_ProcessResult_ctx", Some("ctx"))
-// 🔍 Lookup span 19212..19214 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 75489..75491 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 19212..19214 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 75489..75491 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 19274..19276 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 75551..75553 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 19274..19276 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 75551..75553 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 19338..19344 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 75615..75621 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 19338..19344 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 75615..75621 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 19513..19529 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 75790..75806 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_driver__MirNativeBackendDriverHandshakeResult_ctx", Some("ctx"))
-// 🔍 Lookup span 19513..19544 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 75790..75821 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_driver__MirNativeBackendDriverHandshakeClassification", Some("ctx"))
-// 🔍 Lookup span 19513..19529 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 75790..75806 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_driver__MirNativeBackendDriverHandshakeResult_ctx", Some("ctx"))
-// 🔍 Lookup span 19637..19643 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 75914..75920 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 19637..19643 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 75914..75920 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 19838..19844 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 76115..76121 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 19838..19844 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 76115..76121 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 19974..19984 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 76251..76261 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 19974..19984 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 76251..76261 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 20039..20047 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 76316..76324 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_source_route__MirNativeScalarSourceLowering_ctx", Some("ctx"))
-// 🔍 Lookup span 20068..20076 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 76345..76353 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_source_route__MirNativeScalarSourceLowering_ctx", Some("ctx"))
-// 🔍 Lookup span 20154..20171 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 76431..76448 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilityResult_ctx", Some("ctx"))
-// 🔍 Lookup span 20154..20186 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 76431..76463 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilityClassification", Some("ctx"))
-// 🔍 Lookup span 20154..20171 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 76431..76448 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_capability__MirNativeBackendCapabilityResult_ctx", Some("ctx"))
-// 🔍 Lookup span 20279..20289 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 76556..76566 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 20279..20289 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 76556..76566 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 20463..20465 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 76740..76742 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 20463..20465 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 76740..76742 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 20509..20524 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 76786..76801 prefix='mir_native_backend_source_route__'
 //    -> Found: Str
-// 🔍 Lookup span 20741..20744 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 77018..77021 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 20741..20744 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 77018..77021 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 20773..20776 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 77050..77053 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 20773..20776 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 77050..77053 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 20773..20819 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 77050..77096 prefix='mir_native_backend_source_route__'
 //    -> Found: Str
-// 🔍 Lookup span 20851..20854 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 77128..77131 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 20851..20854 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 77128..77131 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 20883..20886 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 77160..77163 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 20883..20886 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 77160..77163 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 20883..20930 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 77160..77207 prefix='mir_native_backend_source_route__'
 //    -> Found: Str
-// 🔍 Lookup span 20968..20971 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 77245..77248 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 20968..20971 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 77245..77248 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 21010..21018 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 77287..77295 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_source_route__MirNativeScalarSourceLowering_ctx", Some("ctx"))
-// 🔍 Lookup span 21053..21056 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 77330..77333 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 21053..21056 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 77330..77333 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 21334..21341 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 77611..77618 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 21334..21341 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 77611..77618 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 21486..21494 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 77763..77771 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_source_route__MirNativeScalarSourceLowering_ctx", Some("ctx"))
-// 🔍 Lookup span 21560..21567 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 77837..77844 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 21560..21567 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 77837..77844 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 21669..21672 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 77946..77949 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 21669..21672 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 77946..77949 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 21923..21925 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 78200..78202 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 21923..21925 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 78200..78202 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 21955..21957 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 78232..78234 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 21955..21957 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 78232..78234 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 21992..21994 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 78269..78271 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 21992..21994 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 78269..78271 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 22052..22054 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 78329..78331 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 22052..22054 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 78329..78331 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 22282..22284 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 78559..78561 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 22282..22284 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 78559..78561 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 22344..22346 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 78621..78623 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 22344..22346 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 78621..78623 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 22381..22383 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 78658..78660 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 22381..22383 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 78658..78660 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 22669..22678 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 78946..78955 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("mir_native_backend_driver__MirNativeBackendDriverDiscoveryResult_ctx", Some("ctx"))
-// 🔍 Lookup span 22785..22787 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 79062..79064 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 22785..22787 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 79062..79064 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 22818..22820 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 79095..79097 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 22818..22820 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 79095..79097 prefix='mir_native_backend_source_route__'
 //    -> Found: Void
-// 🔍 Lookup span 22854..22869 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 79131..79146 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("os_ProcessResult_ctx", Some("ctx"))
-// 🔍 Lookup span 22910..22925 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 79187..79202 prefix='mir_native_backend_source_route__'
 //    -> Found: Struct("os_ProcessResult_ctx", Some("ctx"))
-// 🔍 Lookup span 22954..22964 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 79231..79241 prefix='mir_native_backend_source_route__'
 //    -> Found: Str
-// 🔍 Lookup span 22985..22995 prefix='mir_native_backend_source_route__'
+// 🔍 Lookup span 79262..79272 prefix='mir_native_backend_source_route__'
 //    -> Found: Str
-// 🔍 Lookup span 677..682 prefix=''
-//    -> Found: Str
-// 🔍 Lookup span 711..717 prefix=''
-//    -> Found: Str
-// 🔍 Lookup span 797..800 prefix=''
-//    -> Found: Void
-// 🔍 Lookup span 797..800 prefix=''
-//    -> Found: Void
-// 🔍 Lookup span 841..844 prefix=''
-//    -> Found: Void
-// 🔍 Lookup span 841..844 prefix=''
-//    -> Found: Void
-// 🔍 Lookup span 969..971 prefix=''
-//    -> Found: Void
-// 🔍 Lookup span 969..971 prefix=''
-//    -> Found: Void
-// 🔍 Lookup span 979..982 prefix=''
-//    -> Found: Void
-// 🔍 Lookup span 979..982 prefix=''
-//    -> Found: Void
-// 🔍 Lookup span 1036..1038 prefix=''
-//    -> Found: Void
-// 🔍 Lookup span 1036..1038 prefix=''
-//    -> Found: Void
-// 🔍 Lookup span 1215..1237 prefix=''
-//    -> Found: Int
-// 🔍 Lookup span 1215..1225 prefix=''
-//    -> Found: Struct("CompilerInvocation_ctx", Some("ctx"))
-// 🔍 Lookup span 1215..1233 prefix=''
-//    -> Found: Struct("CompilerBackendSelection", Some("ctx"))
-// 🔍 Lookup span 1215..1225 prefix=''
-//    -> Found: Struct("CompilerInvocation_ctx", Some("ctx"))
-// 🔍 Lookup span 1263..1285 prefix=''
-//    -> Found: Str
-// 🔍 Lookup span 1263..1273 prefix=''
-//    -> Found: Struct("CompilerInvocation_ctx", Some("ctx"))
-// 🔍 Lookup span 1296..1318 prefix=''
-//    -> Found: Str
-// 🔍 Lookup span 1296..1306 prefix=''
-//    -> Found: Struct("CompilerInvocation_ctx", Some("ctx"))
-// 🔍 Lookup span 1329..1360 prefix=''
-//    -> Found: Int
-// 🔍 Lookup span 1329..1339 prefix=''
-//    -> Found: Struct("CompilerInvocation_ctx", Some("ctx"))
-// 🔍 Lookup span 1370..1400 prefix=''
-//    -> Found: Int
-// 🔍 Lookup span 1370..1380 prefix=''
-//    -> Found: Struct("CompilerInvocation_ctx", Some("ctx"))
-// 🔍 Lookup span 1441..1445 prefix=''
+// 🔍 Lookup span 677..681 prefix=''
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 1468..1472 prefix=''
+// 🔍 Lookup span 721..724 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 721..724 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 732..736 prefix=''
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 1473..1474 prefix=''
+// 🔍 Lookup span 737..738 prefix=''
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 1489..1492 prefix=''
+// 🔍 Lookup span 766..769 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 1489..1492 prefix=''
+// 🔍 Lookup span 766..769 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 1540..1550 prefix=''
-//    -> Found: Struct("CompilerInvocation_ctx", Some("ctx"))
-// 🔍 Lookup span 1693..1697 prefix=''
+// 🔍 Lookup span 777..781 prefix=''
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 1823..1827 prefix=''
-//    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 1828..1833 prefix=''
+// 🔍 Lookup span 782..783 prefix=''
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 1851..1854 prefix=''
+// 🔍 Lookup span 877..879 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 1851..1854 prefix=''
+// 🔍 Lookup span 877..879 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 1940..1962 prefix=''
+// 🔍 Lookup span 902..904 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 902..904 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 940..942 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 940..942 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 997..999 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 997..999 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 1067..1069 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 1067..1069 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 1086..1088 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 1086..1088 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 1114..1116 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 1114..1116 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 1180..1182 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 1180..1182 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 1286..1288 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 1286..1288 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 1305..1307 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 1305..1307 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 1332..1334 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 1332..1334 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 1415..1417 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 1415..1417 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 1507..1509 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 1507..1509 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 1584..1586 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 1584..1586 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 1603..1605 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 1603..1605 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 1644..1646 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 1644..1646 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 1738..1740 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 1738..1740 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 1832..1834 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 1832..1834 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 1964..1969 prefix=''
+//    -> Found: Str
+// 🔍 Lookup span 1998..2004 prefix=''
+//    -> Found: Str
+// 🔍 Lookup span 2084..2087 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 2084..2087 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 2128..2131 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 2128..2131 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 2256..2258 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 2256..2258 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 2266..2269 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 2266..2269 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 2323..2325 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 2323..2325 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 2502..2524 prefix=''
 //    -> Found: Int
-// 🔍 Lookup span 1940..1950 prefix=''
+// 🔍 Lookup span 2502..2512 prefix=''
 //    -> Found: Struct("CompilerInvocation_ctx", Some("ctx"))
-// 🔍 Lookup span 1940..1958 prefix=''
+// 🔍 Lookup span 2502..2520 prefix=''
 //    -> Found: Struct("CompilerBackendSelection", Some("ctx"))
-// 🔍 Lookup span 1940..1950 prefix=''
+// 🔍 Lookup span 2502..2512 prefix=''
 //    -> Found: Struct("CompilerInvocation_ctx", Some("ctx"))
-// 🔍 Lookup span 2018..2021 prefix=''
-//    -> Found: Void
-// 🔍 Lookup span 2018..2021 prefix=''
-//    -> Found: Void
-// 🔍 Lookup span 2108..2130 prefix=''
+// 🔍 Lookup span 2550..2572 prefix=''
+//    -> Found: Str
+// 🔍 Lookup span 2550..2560 prefix=''
+//    -> Found: Struct("CompilerInvocation_ctx", Some("ctx"))
+// 🔍 Lookup span 2583..2605 prefix=''
+//    -> Found: Str
+// 🔍 Lookup span 2583..2593 prefix=''
+//    -> Found: Struct("CompilerInvocation_ctx", Some("ctx"))
+// 🔍 Lookup span 2616..2647 prefix=''
 //    -> Found: Int
-// 🔍 Lookup span 2108..2118 prefix=''
+// 🔍 Lookup span 2616..2626 prefix=''
 //    -> Found: Struct("CompilerInvocation_ctx", Some("ctx"))
-// 🔍 Lookup span 2108..2126 prefix=''
-//    -> Found: Struct("CompilerBackendSelection", Some("ctx"))
-// 🔍 Lookup span 2108..2118 prefix=''
-//    -> Found: Struct("CompilerInvocation_ctx", Some("ctx"))
-// 🔍 Lookup span 2241..2244 prefix=''
-//    -> Found: Void
-// 🔍 Lookup span 2241..2244 prefix=''
-//    -> Found: Void
-// 🔍 Lookup span 2316..2347 prefix=''
+// 🔍 Lookup span 2657..2687 prefix=''
 //    -> Found: Int
-// 🔍 Lookup span 2316..2326 prefix=''
+// 🔍 Lookup span 2657..2667 prefix=''
 //    -> Found: Struct("CompilerInvocation_ctx", Some("ctx"))
-// 🔍 Lookup span 2365..2366 prefix=''
-//    -> Found: Int
-// 🔍 Lookup span 2394..2397 prefix=''
-//    -> Found: Void
-// 🔍 Lookup span 2394..2397 prefix=''
-//    -> Found: Void
-// 🔍 Lookup span 2438..2448 prefix=''
-//    -> Found: Struct("CompilerInvocation_ctx", Some("ctx"))
-// 🔍 Lookup span 2583..2587 prefix=''
+// 🔍 Lookup span 2728..2732 prefix=''
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 2705..2709 prefix=''
+// 🔍 Lookup span 2755..2759 prefix=''
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 2710..2715 prefix=''
+// 🔍 Lookup span 2760..2761 prefix=''
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 2883..2905 prefix=''
-//    -> Found: Str
-// 🔍 Lookup span 2883..2893 prefix=''
+// 🔍 Lookup span 2776..2779 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 2776..2779 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 2827..2837 prefix=''
 //    -> Found: Struct("CompilerInvocation_ctx", Some("ctx"))
-// 🔍 Lookup span 2933..2963 prefix=''
-//    -> Found: Int
-// 🔍 Lookup span 2933..2943 prefix=''
-//    -> Found: Struct("CompilerInvocation_ctx", Some("ctx"))
-// 🔍 Lookup span 2981..2982 prefix=''
-//    -> Found: Int
-// 🔍 Lookup span 3112..3115 prefix=''
-//    -> Found: Void
-// 🔍 Lookup span 3112..3115 prefix=''
-//    -> Found: Void
-// 🔍 Lookup span 3179..3182 prefix=''
-//    -> Found: Void
-// 🔍 Lookup span 3179..3182 prefix=''
-//    -> Found: Void
-// 🔍 Lookup span 3190..3200 prefix=''
-//    -> Found: Struct("CompilerInvocation_ctx", Some("ctx"))
-// 🔍 Lookup span 3337..3359 prefix=''
-//    -> Found: Str
-// 🔍 Lookup span 3337..3347 prefix=''
-//    -> Found: Struct("CompilerInvocation_ctx", Some("ctx"))
-// 🔍 Lookup span 3379..3380 prefix=''
-//    -> Found: Int
-// 🔍 Lookup span 3414..3417 prefix=''
-//    -> Found: Void
-// 🔍 Lookup span 3414..3417 prefix=''
-//    -> Found: Void
-// 🔍 Lookup span 3425..3435 prefix=''
-//    -> Found: Struct("CompilerInvocation_ctx", Some("ctx"))
-// 🔍 Lookup span 3544..3554 prefix=''
-//    -> Found: Struct("CompilerInvocation_ctx", Some("ctx"))
-// 🔍 Lookup span 3544..3562 prefix=''
-//    -> Found: Struct("CompilerBackendSelection", Some("ctx"))
-// 🔍 Lookup span 3544..3554 prefix=''
-//    -> Found: Struct("CompilerInvocation_ctx", Some("ctx"))
-// 🔍 Lookup span 3575..3585 prefix=''
-//    -> Found: Struct("CompilerInvocation_ctx", Some("ctx"))
-// 🔍 Lookup span 3704..3714 prefix=''
-//    -> Found: Struct("CompilerInvocation_ctx", Some("ctx"))
-// 🔍 Lookup span 3704..3722 prefix=''
-//    -> Found: Struct("CompilerBackendSelection", Some("ctx"))
-// 🔍 Lookup span 3704..3714 prefix=''
-//    -> Found: Struct("CompilerInvocation_ctx", Some("ctx"))
-// 🔍 Lookup span 3735..3745 prefix=''
-//    -> Found: Struct("CompilerInvocation_ctx", Some("ctx"))
-// 🔍 Lookup span 4101..4104 prefix=''
-//    -> Found: Void
-// 🔍 Lookup span 4101..4104 prefix=''
-//    -> Found: Void
-// 🔍 Lookup span 4112..4115 prefix=''
-//    -> Found: Struct("errors__CompilerError_ctx", Some("ctx"))
-// 🔍 Lookup span 4146..4149 prefix=''
-//    -> Found: Str
-// 🔍 Lookup span 4152..4155 prefix=''
-//    -> Found: Void
-// 🔍 Lookup span 4152..4155 prefix=''
-//    -> Found: Void
-// 🔍 Lookup span 4163..4192 prefix=''
-//    -> Found: Str
-// 🔍 Lookup span 4194..4197 prefix=''
-//    -> Found: Struct("errors__CompilerError_ctx", Some("ctx"))
-// 🔍 Lookup span 4194..4202 prefix=''
-//    -> Found: Struct("token__Span", Some("ctx"))
-// 🔍 Lookup span 4194..4197 prefix=''
-//    -> Found: Struct("errors__CompilerError_ctx", Some("ctx"))
-// 🔍 Lookup span 4194..4208 prefix=''
-//    -> Found: Struct("token__Position", Some("ctx"))
-// 🔍 Lookup span 4194..4202 prefix=''
-//    -> Found: Struct("token__Span", Some("ctx"))
-// 🔍 Lookup span 4215..4218 prefix=''
-//    -> Found: Struct("errors__CompilerError_ctx", Some("ctx"))
-// 🔍 Lookup span 4215..4223 prefix=''
-//    -> Found: Struct("token__Span", Some("ctx"))
-// 🔍 Lookup span 4215..4218 prefix=''
-//    -> Found: Struct("errors__CompilerError_ctx", Some("ctx"))
-// 🔍 Lookup span 4215..4229 prefix=''
-//    -> Found: Struct("token__Position", Some("ctx"))
-// 🔍 Lookup span 4215..4223 prefix=''
-//    -> Found: Struct("token__Span", Some("ctx"))
-// 🔍 Lookup span 4238..4241 prefix=''
-//    -> Found: Struct("errors__CompilerError_ctx", Some("ctx"))
-// 🔍 Lookup span 4273..4276 prefix=''
-//    -> Found: Str
-// 🔍 Lookup span 4279..4282 prefix=''
-//    -> Found: Void
-// 🔍 Lookup span 4279..4282 prefix=''
-//    -> Found: Void
-// 🔍 Lookup span 4290..4325 prefix=''
-//    -> Found: Str
-// 🔍 Lookup span 4327..4330 prefix=''
-//    -> Found: Struct("errors__CompilerError_ctx", Some("ctx"))
-// 🔍 Lookup span 4342..4345 prefix=''
-//    -> Found: Struct("errors__CompilerError_ctx", Some("ctx"))
-// 🔍 Lookup span 4342..4350 prefix=''
-//    -> Found: Struct("token__Span", Some("ctx"))
-// 🔍 Lookup span 4342..4345 prefix=''
-//    -> Found: Struct("errors__CompilerError_ctx", Some("ctx"))
-// 🔍 Lookup span 4342..4356 prefix=''
-//    -> Found: Struct("token__Position", Some("ctx"))
-// 🔍 Lookup span 4342..4350 prefix=''
-//    -> Found: Struct("token__Span", Some("ctx"))
-// 🔍 Lookup span 4363..4366 prefix=''
-//    -> Found: Struct("errors__CompilerError_ctx", Some("ctx"))
-// 🔍 Lookup span 4363..4371 prefix=''
-//    -> Found: Struct("token__Span", Some("ctx"))
-// 🔍 Lookup span 4363..4366 prefix=''
-//    -> Found: Struct("errors__CompilerError_ctx", Some("ctx"))
-// 🔍 Lookup span 4363..4377 prefix=''
-//    -> Found: Struct("token__Position", Some("ctx"))
-// 🔍 Lookup span 4363..4371 prefix=''
-//    -> Found: Struct("token__Span", Some("ctx"))
-// 🔍 Lookup span 4386..4389 prefix=''
-//    -> Found: Struct("errors__CompilerError_ctx", Some("ctx"))
-// 🔍 Lookup span 4410..4412 prefix=''
-//    -> Found: Void
-// 🔍 Lookup span 4410..4412 prefix=''
-//    -> Found: Void
-// 🔍 Lookup span 4434..4437 prefix=''
-//    -> Found: Void
-// 🔍 Lookup span 4434..4437 prefix=''
-//    -> Found: Void
-// 🔍 Lookup span 4445..4448 prefix=''
-//    -> Found: Struct("errors__CompilerError_ctx", Some("ctx"))
-// 🔍 Lookup span 4494..4496 prefix=''
-//    -> Found: Void
-// 🔍 Lookup span 4494..4496 prefix=''
-//    -> Found: Void
-// 🔍 Lookup span 4511..4514 prefix=''
-//    -> Found: Struct("errors__CompilerError_ctx", Some("ctx"))
-// 🔍 Lookup span 4542..4549 prefix=''
-//    -> Found: Str
-// 🔍 Lookup span 4582..4585 prefix=''
-//    -> Found: Void
-// 🔍 Lookup span 4582..4585 prefix=''
-//    -> Found: Void
-// 🔍 Lookup span 4582..4615 prefix=''
+// 🔍 Lookup span 2980..2984 prefix=''
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 4648..4651 prefix=''
-//    -> Found: Struct("errors__CompilerError_ctx", Some("ctx"))
-// 🔍 Lookup span 4648..4656 prefix=''
-//    -> Found: Struct("token__Span", Some("ctx"))
-// 🔍 Lookup span 4648..4651 prefix=''
-//    -> Found: Struct("errors__CompilerError_ctx", Some("ctx"))
-// 🔍 Lookup span 4648..4662 prefix=''
-//    -> Found: Struct("token__Position", Some("ctx"))
-// 🔍 Lookup span 4648..4656 prefix=''
-//    -> Found: Struct("token__Span", Some("ctx"))
-// 🔍 Lookup span 4764..4774 prefix=''
-//    -> Found: Int
-// 🔍 Lookup span 4869..4874 prefix=''
+// 🔍 Lookup span 3110..3114 prefix=''
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 4894..4902 prefix=''
-//    -> Found: Int
-// 🔍 Lookup span 4909..4914 prefix=''
-//    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 5034..5039 prefix=''
-//    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 5040..5043 prefix=''
+// 🔍 Lookup span 3115..3120 prefix=''
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 5077..5080 prefix=''
+// 🔍 Lookup span 3138..3141 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 5077..5080 prefix=''
+// 🔍 Lookup span 3138..3141 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 5203..5206 prefix=''
+// 🔍 Lookup span 3227..3249 prefix=''
+//    -> Found: Int
+// 🔍 Lookup span 3227..3237 prefix=''
+//    -> Found: Struct("CompilerInvocation_ctx", Some("ctx"))
+// 🔍 Lookup span 3227..3245 prefix=''
+//    -> Found: Struct("CompilerBackendSelection", Some("ctx"))
+// 🔍 Lookup span 3227..3237 prefix=''
+//    -> Found: Struct("CompilerInvocation_ctx", Some("ctx"))
+// 🔍 Lookup span 3305..3308 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 3305..3308 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 3395..3417 prefix=''
+//    -> Found: Int
+// 🔍 Lookup span 3395..3405 prefix=''
+//    -> Found: Struct("CompilerInvocation_ctx", Some("ctx"))
+// 🔍 Lookup span 3395..3413 prefix=''
+//    -> Found: Struct("CompilerBackendSelection", Some("ctx"))
+// 🔍 Lookup span 3395..3405 prefix=''
+//    -> Found: Struct("CompilerInvocation_ctx", Some("ctx"))
+// 🔍 Lookup span 3528..3531 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 3528..3531 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 3603..3634 prefix=''
+//    -> Found: Int
+// 🔍 Lookup span 3603..3613 prefix=''
+//    -> Found: Struct("CompilerInvocation_ctx", Some("ctx"))
+// 🔍 Lookup span 3652..3653 prefix=''
+//    -> Found: Int
+// 🔍 Lookup span 3681..3684 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 3681..3684 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 3725..3735 prefix=''
+//    -> Found: Struct("CompilerInvocation_ctx", Some("ctx"))
+// 🔍 Lookup span 3870..3874 prefix=''
+//    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
+// 🔍 Lookup span 3992..3996 prefix=''
+//    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
+// 🔍 Lookup span 3997..4002 prefix=''
+//    -> Found: Int
+// 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", Some("ctx")), index type is Int
+// 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
+//   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
+//   -> MATCHED std_Vector_ at 0!
+// 🔍 Lookup span 4170..4192 prefix=''
 //    -> Found: Str
-// 🔍 Lookup span 5278..5281 prefix=''
+// 🔍 Lookup span 4170..4180 prefix=''
+//    -> Found: Struct("CompilerInvocation_ctx", Some("ctx"))
+// 🔍 Lookup span 4220..4250 prefix=''
+//    -> Found: Int
+// 🔍 Lookup span 4220..4230 prefix=''
+//    -> Found: Struct("CompilerInvocation_ctx", Some("ctx"))
+// 🔍 Lookup span 4268..4269 prefix=''
+//    -> Found: Int
+// 🔍 Lookup span 4399..4402 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 4399..4402 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 4466..4469 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 4466..4469 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 4477..4487 prefix=''
+//    -> Found: Struct("CompilerInvocation_ctx", Some("ctx"))
+// 🔍 Lookup span 4624..4646 prefix=''
 //    -> Found: Str
-// 🔍 Lookup span 5353..5356 prefix=''
-//    -> Found: Str
-// 🔍 Lookup span 5437..5440 prefix=''
+// 🔍 Lookup span 4624..4634 prefix=''
+//    -> Found: Struct("CompilerInvocation_ctx", Some("ctx"))
+// 🔍 Lookup span 4666..4667 prefix=''
+//    -> Found: Int
+// 🔍 Lookup span 4701..4704 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 5437..5440 prefix=''
+// 🔍 Lookup span 4701..4704 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 5448..5459 prefix=''
-//    -> Found: Str
-// 🔍 Lookup span 5498..5500 prefix=''
+// 🔍 Lookup span 4712..4722 prefix=''
+//    -> Found: Struct("CompilerInvocation_ctx", Some("ctx"))
+// 🔍 Lookup span 4831..4841 prefix=''
+//    -> Found: Struct("CompilerInvocation_ctx", Some("ctx"))
+// 🔍 Lookup span 4831..4849 prefix=''
+//    -> Found: Struct("CompilerBackendSelection", Some("ctx"))
+// 🔍 Lookup span 4831..4841 prefix=''
+//    -> Found: Struct("CompilerInvocation_ctx", Some("ctx"))
+// 🔍 Lookup span 4862..4872 prefix=''
+//    -> Found: Struct("CompilerInvocation_ctx", Some("ctx"))
+// 🔍 Lookup span 4991..5001 prefix=''
+//    -> Found: Struct("CompilerInvocation_ctx", Some("ctx"))
+// 🔍 Lookup span 4991..5009 prefix=''
+//    -> Found: Struct("CompilerBackendSelection", Some("ctx"))
+// 🔍 Lookup span 4991..5001 prefix=''
+//    -> Found: Struct("CompilerInvocation_ctx", Some("ctx"))
+// 🔍 Lookup span 5022..5032 prefix=''
+//    -> Found: Struct("CompilerInvocation_ctx", Some("ctx"))
+// 🔍 Lookup span 5388..5391 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 5498..5500 prefix=''
+// 🔍 Lookup span 5388..5391 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 5685..5688 prefix=''
+// 🔍 Lookup span 5399..5402 prefix=''
 //    -> Found: Struct("errors__CompilerError_ctx", Some("ctx"))
-// 🔍 Lookup span 5685..5693 prefix=''
+// 🔍 Lookup span 5433..5436 prefix=''
+//    -> Found: Str
+// 🔍 Lookup span 5439..5442 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 5439..5442 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 5450..5479 prefix=''
+//    -> Found: Str
+// 🔍 Lookup span 5481..5484 prefix=''
+//    -> Found: Struct("errors__CompilerError_ctx", Some("ctx"))
+// 🔍 Lookup span 5481..5489 prefix=''
 //    -> Found: Struct("token__Span", Some("ctx"))
-// 🔍 Lookup span 5685..5688 prefix=''
+// 🔍 Lookup span 5481..5484 prefix=''
 //    -> Found: Struct("errors__CompilerError_ctx", Some("ctx"))
-// 🔍 Lookup span 5685..5699 prefix=''
+// 🔍 Lookup span 5481..5495 prefix=''
 //    -> Found: Struct("token__Position", Some("ctx"))
-// 🔍 Lookup span 5685..5693 prefix=''
+// 🔍 Lookup span 5481..5489 prefix=''
 //    -> Found: Struct("token__Span", Some("ctx"))
-// 🔍 Lookup span 5783..5792 prefix=''
+// 🔍 Lookup span 5502..5505 prefix=''
+//    -> Found: Struct("errors__CompilerError_ctx", Some("ctx"))
+// 🔍 Lookup span 5502..5510 prefix=''
+//    -> Found: Struct("token__Span", Some("ctx"))
+// 🔍 Lookup span 5502..5505 prefix=''
+//    -> Found: Struct("errors__CompilerError_ctx", Some("ctx"))
+// 🔍 Lookup span 5502..5516 prefix=''
+//    -> Found: Struct("token__Position", Some("ctx"))
+// 🔍 Lookup span 5502..5510 prefix=''
+//    -> Found: Struct("token__Span", Some("ctx"))
+// 🔍 Lookup span 5525..5528 prefix=''
+//    -> Found: Struct("errors__CompilerError_ctx", Some("ctx"))
+// 🔍 Lookup span 5560..5563 prefix=''
 //    -> Found: Str
-// 🔍 Lookup span 5795..5798 prefix=''
+// 🔍 Lookup span 5566..5569 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 5795..5798 prefix=''
+// 🔍 Lookup span 5566..5569 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 5847..5852 prefix=''
+// 🔍 Lookup span 5577..5612 prefix=''
+//    -> Found: Str
+// 🔍 Lookup span 5614..5617 prefix=''
+//    -> Found: Struct("errors__CompilerError_ctx", Some("ctx"))
+// 🔍 Lookup span 5629..5632 prefix=''
+//    -> Found: Struct("errors__CompilerError_ctx", Some("ctx"))
+// 🔍 Lookup span 5629..5637 prefix=''
+//    -> Found: Struct("token__Span", Some("ctx"))
+// 🔍 Lookup span 5629..5632 prefix=''
+//    -> Found: Struct("errors__CompilerError_ctx", Some("ctx"))
+// 🔍 Lookup span 5629..5643 prefix=''
+//    -> Found: Struct("token__Position", Some("ctx"))
+// 🔍 Lookup span 5629..5637 prefix=''
+//    -> Found: Struct("token__Span", Some("ctx"))
+// 🔍 Lookup span 5650..5653 prefix=''
+//    -> Found: Struct("errors__CompilerError_ctx", Some("ctx"))
+// 🔍 Lookup span 5650..5658 prefix=''
+//    -> Found: Struct("token__Span", Some("ctx"))
+// 🔍 Lookup span 5650..5653 prefix=''
+//    -> Found: Struct("errors__CompilerError_ctx", Some("ctx"))
+// 🔍 Lookup span 5650..5664 prefix=''
+//    -> Found: Struct("token__Position", Some("ctx"))
+// 🔍 Lookup span 5650..5658 prefix=''
+//    -> Found: Struct("token__Span", Some("ctx"))
+// 🔍 Lookup span 5673..5676 prefix=''
+//    -> Found: Struct("errors__CompilerError_ctx", Some("ctx"))
+// 🔍 Lookup span 5697..5699 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 5697..5699 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 5721..5724 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 5721..5724 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 5732..5735 prefix=''
+//    -> Found: Struct("errors__CompilerError_ctx", Some("ctx"))
+// 🔍 Lookup span 5781..5783 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 5781..5783 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 5798..5801 prefix=''
+//    -> Found: Struct("errors__CompilerError_ctx", Some("ctx"))
+// 🔍 Lookup span 5829..5836 prefix=''
+//    -> Found: Str
+// 🔍 Lookup span 5869..5872 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 5869..5872 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 5869..5902 prefix=''
+//    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
+// 🔍 Lookup span 5935..5938 prefix=''
+//    -> Found: Struct("errors__CompilerError_ctx", Some("ctx"))
+// 🔍 Lookup span 5935..5943 prefix=''
+//    -> Found: Struct("token__Span", Some("ctx"))
+// 🔍 Lookup span 5935..5938 prefix=''
+//    -> Found: Struct("errors__CompilerError_ctx", Some("ctx"))
+// 🔍 Lookup span 5935..5949 prefix=''
+//    -> Found: Struct("token__Position", Some("ctx"))
+// 🔍 Lookup span 5935..5943 prefix=''
+//    -> Found: Struct("token__Span", Some("ctx"))
+// 🔍 Lookup span 6051..6061 prefix=''
 //    -> Found: Int
-// 🔍 Lookup span 6012..6021 prefix=''
-//    -> Found: Str
-// 🔍 Lookup span 6101..6110 prefix=''
-//    -> Found: Str
-// 🔍 Lookup span 6190..6199 prefix=''
-//    -> Found: Str
-// 🔍 Lookup span 6293..6300 prefix=''
-//    -> Found: Str
-// 🔍 Lookup span 6341..6344 prefix=''
-//    -> Found: Void
-// 🔍 Lookup span 6341..6344 prefix=''
-//    -> Found: Void
-// 🔍 Lookup span 6490..6500 prefix=''
-//    -> Found: Str
-// 🔍 Lookup span 6503..6506 prefix=''
-//    -> Found: Void
-// 🔍 Lookup span 6503..6506 prefix=''
-//    -> Found: Void
-// 🔍 Lookup span 6556..6568 prefix=''
+// 🔍 Lookup span 6156..6161 prefix=''
+//    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
+// 🔍 Lookup span 6181..6189 prefix=''
 //    -> Found: Int
-// 🔍 Lookup span 6631..6641 prefix=''
-//    -> Found: Str
-// 🔍 Lookup span 6644..6647 prefix=''
-//    -> Found: Void
-// 🔍 Lookup span 6644..6647 prefix=''
-//    -> Found: Void
-// 🔍 Lookup span 6695..6705 prefix=''
-//    -> Found: Str
-// 🔍 Lookup span 6708..6711 prefix=''
-//    -> Found: Void
-// 🔍 Lookup span 6708..6711 prefix=''
-//    -> Found: Void
-// 🔍 Lookup span 6763..6773 prefix=''
-//    -> Found: Str
-// 🔍 Lookup span 6776..6779 prefix=''
-//    -> Found: Void
-// 🔍 Lookup span 6776..6779 prefix=''
-//    -> Found: Void
-// 🔍 Lookup span 6825..6827 prefix=''
-//    -> Found: Void
-// 🔍 Lookup span 6825..6827 prefix=''
-//    -> Found: Void
-// 🔍 Lookup span 6882..6885 prefix=''
+// 🔍 Lookup span 6196..6201 prefix=''
+//    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
+// 🔍 Lookup span 6321..6326 prefix=''
+//    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
+// 🔍 Lookup span 6327..6330 prefix=''
 //    -> Found: Int
-// 🔍 Lookup span 6923..6925 prefix=''
+// 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", Some("ctx")), index type is Int
+// 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
+//   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
+//   -> MATCHED std_Vector_ at 0!
+// 🔍 Lookup span 6364..6367 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 6923..6925 prefix=''
+// 🔍 Lookup span 6364..6367 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 6986..6994 prefix=''
+// 🔍 Lookup span 6490..6493 prefix=''
+//    -> Found: Str
+// 🔍 Lookup span 6565..6568 prefix=''
+//    -> Found: Str
+// 🔍 Lookup span 6640..6643 prefix=''
+//    -> Found: Str
+// 🔍 Lookup span 6724..6727 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 6986..6988 prefix=''
+// 🔍 Lookup span 6724..6727 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 6986..6994 prefix=''
+// 🔍 Lookup span 6735..6746 prefix=''
+//    -> Found: Str
+// 🔍 Lookup span 6785..6787 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 6986..6988 prefix=''
+// 🔍 Lookup span 6785..6787 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 7012..7015 prefix=''
+// 🔍 Lookup span 6972..6975 prefix=''
+//    -> Found: Struct("errors__CompilerError_ctx", Some("ctx"))
+// 🔍 Lookup span 6972..6980 prefix=''
+//    -> Found: Struct("token__Span", Some("ctx"))
+// 🔍 Lookup span 6972..6975 prefix=''
+//    -> Found: Struct("errors__CompilerError_ctx", Some("ctx"))
+// 🔍 Lookup span 6972..6986 prefix=''
+//    -> Found: Struct("token__Position", Some("ctx"))
+// 🔍 Lookup span 6972..6980 prefix=''
+//    -> Found: Struct("token__Span", Some("ctx"))
+// 🔍 Lookup span 7070..7079 prefix=''
+//    -> Found: Str
+// 🔍 Lookup span 7082..7085 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 7082..7085 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 7134..7139 prefix=''
+//    -> Found: Int
+// 🔍 Lookup span 7299..7308 prefix=''
+//    -> Found: Str
+// 🔍 Lookup span 7388..7397 prefix=''
+//    -> Found: Str
+// 🔍 Lookup span 7477..7486 prefix=''
+//    -> Found: Str
+// 🔍 Lookup span 7580..7587 prefix=''
+//    -> Found: Str
+// 🔍 Lookup span 7628..7631 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 7628..7631 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 7777..7787 prefix=''
+//    -> Found: Str
+// 🔍 Lookup span 7790..7793 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 7790..7793 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 7843..7855 prefix=''
+//    -> Found: Int
+// 🔍 Lookup span 7918..7928 prefix=''
+//    -> Found: Str
+// 🔍 Lookup span 7931..7934 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 7931..7934 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 7982..7992 prefix=''
+//    -> Found: Str
+// 🔍 Lookup span 7995..7998 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 7995..7998 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 8050..8060 prefix=''
+//    -> Found: Str
+// 🔍 Lookup span 8063..8066 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 8063..8066 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 8112..8114 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 8112..8114 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 8169..8172 prefix=''
+//    -> Found: Int
+// 🔍 Lookup span 8210..8212 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 8210..8212 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 8273..8281 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 8273..8275 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 8273..8281 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 8273..8275 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 8299..8302 prefix=''
 //    -> Found: Arena
-// 🔍 Lookup span 7028..7030 prefix=''
+// 🔍 Lookup span 8315..8317 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 7028..7030 prefix=''
+// 🔍 Lookup span 8315..8317 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 7071..7073 prefix=''
+// 🔍 Lookup span 8358..8360 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 7071..7073 prefix=''
+// 🔍 Lookup span 8358..8360 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 7071..7083 prefix=''
+// 🔍 Lookup span 8358..8370 prefix=''
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 7166..7176 prefix=''
+// 🔍 Lookup span 8464..8466 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 8464..8466 prefix=''
+//    -> Found: Void
+// 🔍 Lookup span 8564..8574 prefix=''
 //    -> Found: Struct("CompilerInvocation_ctx", Some("ctx"))
-// 🔍 Lookup span 7285..7288 prefix=''
+// 🔍 Lookup span 8683..8686 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 7285..7288 prefix=''
+// 🔍 Lookup span 8683..8686 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 7356..7359 prefix=''
+// 🔍 Lookup span 8754..8757 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 7356..7359 prefix=''
+// 🔍 Lookup span 8754..8757 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 7382..7390 prefix=''
+// 🔍 Lookup span 8780..8788 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 7382..7390 prefix=''
+// 🔍 Lookup span 8780..8788 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 7531..7539 prefix=''
+// 🔍 Lookup span 8929..8937 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 7531..7539 prefix=''
+// 🔍 Lookup span 8929..8937 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 7616..7621 prefix=''
+// 🔍 Lookup span 9014..9019 prefix=''
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 7638..7640 prefix=''
+// 🔍 Lookup span 9036..9038 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 7638..7640 prefix=''
+// 🔍 Lookup span 9036..9038 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 7694..7696 prefix=''
+// 🔍 Lookup span 9092..9094 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 7694..7696 prefix=''
+// 🔍 Lookup span 9092..9094 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 7773..7784 prefix=''
+// 🔍 Lookup span 9171..9182 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 7773..7784 prefix=''
+// 🔍 Lookup span 9171..9182 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 7816..7827 prefix=''
+// 🔍 Lookup span 9214..9225 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 7816..7827 prefix=''
+// 🔍 Lookup span 9214..9225 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 8014..8017 prefix=''
+// 🔍 Lookup span 9412..9415 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 8014..8017 prefix=''
+// 🔍 Lookup span 9412..9415 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 8083..8086 prefix=''
+// 🔍 Lookup span 9481..9484 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 8083..8086 prefix=''
+// 🔍 Lookup span 9481..9484 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 8179..8182 prefix=''
+// 🔍 Lookup span 9577..9580 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 8179..8182 prefix=''
+// 🔍 Lookup span 9577..9580 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 8234..8239 prefix=''
+// 🔍 Lookup span 9632..9637 prefix=''
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 8263..8268 prefix=''
+// 🔍 Lookup span 9661..9666 prefix=''
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 8269..8270 prefix=''
+// 🔍 Lookup span 9667..9668 prefix=''
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 8295..8297 prefix=''
+// 🔍 Lookup span 9693..9695 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 8295..8297 prefix=''
+// 🔍 Lookup span 9693..9695 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 8334..8340 prefix=''
+// 🔍 Lookup span 9732..9738 prefix=''
 //    -> Found: Str
-// 🔍 Lookup span 8372..8375 prefix=''
+// 🔍 Lookup span 9770..9773 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 8372..8375 prefix=''
+// 🔍 Lookup span 9770..9773 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 8443..8445 prefix=''
+// 🔍 Lookup span 9841..9843 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 8443..8445 prefix=''
+// 🔍 Lookup span 9841..9843 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 8471..8473 prefix=''
+// 🔍 Lookup span 9869..9871 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 8471..8473 prefix=''
+// 🔍 Lookup span 9869..9871 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 8535..8540 prefix=''
+// 🔍 Lookup span 9933..9938 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 8535..8540 prefix=''
+// 🔍 Lookup span 9933..9938 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 8609..8615 prefix=''
+// 🔍 Lookup span 10007..10013 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 8609..8615 prefix=''
+// 🔍 Lookup span 10007..10013 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 8663..8669 prefix=''
+// 🔍 Lookup span 10061..10067 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 8663..8669 prefix=''
+// 🔍 Lookup span 10061..10067 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 8709..8710 prefix=''
+// 🔍 Lookup span 10107..10108 prefix=''
 //    -> Found: Struct("parser__Parser_ctx", Some("ctx"))
-// 🔍 Lookup span 8709..8717 prefix=''
+// 🔍 Lookup span 10107..10115 prefix=''
 //    -> Found: Struct("std_Vector_errors__CompilerError_Any_Any", Some("ctx"))
-// 🔍 Lookup span 8787..8788 prefix=''
+// 🔍 Lookup span 10185..10186 prefix=''
 //    -> Found: Struct("parser__Parser_ctx", Some("ctx"))
-// 🔍 Lookup span 8787..8795 prefix=''
+// 🔍 Lookup span 10185..10193 prefix=''
 //    -> Found: Struct("std_Vector_errors__CompilerError_Any_Any", Some("ctx"))
-// 🔍 Lookup span 8864..8879 prefix=''
+// 🔍 Lookup span 10262..10277 prefix=''
 //    -> Found: Str
-// 🔍 Lookup span 8864..8869 prefix=''
+// 🔍 Lookup span 10262..10267 prefix=''
 //    -> Found: Struct("FileParserError_ctx", Some("ctx"))
-// 🔍 Lookup span 8904..8913 prefix=''
+// 🔍 Lookup span 10302..10311 prefix=''
 //    -> Found: Struct("errors__CompilerError_ctx", Some("ctx"))
-// 🔍 Lookup span 8904..8909 prefix=''
+// 🔍 Lookup span 10302..10307 prefix=''
 //    -> Found: Struct("FileParserError_ctx", Some("ctx"))
-// 🔍 Lookup span 8916..8924 prefix=''
+// 🔍 Lookup span 10314..10322 prefix=''
 //    -> Found: Struct("std_Vector_errors__CompilerError_Any_Any", Some("ctx"))
-// 🔍 Lookup span 8925..8932 prefix=''
+// 🔍 Lookup span 10323..10330 prefix=''
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_errors__CompilerError_Any_Any", Some("ctx")), index type is Int
-// 🔍 Lookup span 8916..8917 prefix=''
+// 🔍 Lookup span 10314..10315 prefix=''
 //    -> Found: Struct("parser__Parser_ctx", Some("ctx"))
 // 🕵️ Checking if type is Vector: Struct("std_Vector_errors__CompilerError_Any_Any", Some("ctx"))
 //   -> Struct name: std_Vector_errors__CompilerError_Any_Any, Erased name: std_Vector_errors__CompilerError, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 8951..8976 prefix=''
+// 🔍 Lookup span 10349..10374 prefix=''
 //    -> Found: Struct("std_Vector_FileParserError_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 9006..9013 prefix=''
+// 🔍 Lookup span 10404..10411 prefix=''
 //    -> Found: Int
-// 🔍 Lookup span 9062..9070 prefix=''
+// 🔍 Lookup span 10460..10468 prefix=''
 //    -> Found: Struct("std_Vector_ast__Program_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 9104..9115 prefix=''
+// 🔍 Lookup span 10502..10513 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 9104..9115 prefix=''
+// 🔍 Lookup span 10502..10513 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 9178..9181 prefix=''
+// 🔍 Lookup span 10576..10579 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 9178..9181 prefix=''
+// 🔍 Lookup span 10576..10579 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 9558..9564 prefix=''
+// 🔍 Lookup span 10956..10962 prefix=''
 //    -> Found: Str
-// 🔍 Lookup span 9567..9570 prefix=''
+// 🔍 Lookup span 10965..10968 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 9567..9570 prefix=''
+// 🔍 Lookup span 10965..10968 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 9582..9585 prefix=''
+// 🔍 Lookup span 10980..10983 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 9582..9585 prefix=''
+// 🔍 Lookup span 10980..10983 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 9582..9604 prefix=''
+// 🔍 Lookup span 10980..11002 prefix=''
 //    -> Found: Str
-// 🔍 Lookup span 9625..9640 prefix=''
+// 🔍 Lookup span 11023..11038 prefix=''
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 9722..9740 prefix=''
+// 🔍 Lookup span 11120..11138 prefix=''
 //    -> Found: Str
-// 🔍 Lookup span 9722..9725 prefix=''
+// 🔍 Lookup span 11120..11123 prefix=''
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 9759..9775 prefix=''
+// 🔍 Lookup span 11157..11173 prefix=''
 //    -> Found: Str
-// 🔍 Lookup span 9759..9762 prefix=''
+// 🔍 Lookup span 11157..11160 prefix=''
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 9851..9854 prefix=''
+// 🔍 Lookup span 11249..11252 prefix=''
 //    -> Found: Arena
-// 🔍 Lookup span 9855..9870 prefix=''
+// 🔍 Lookup span 11253..11268 prefix=''
 //    -> Found: Index("std_Vector_ast__Statement_ctx", Some("ctx"))
 // 🔬 IndexAccess codegen: allocator type is Arena, index type is Index("std_Vector_ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 9855..9859 prefix=''
+// 🔍 Lookup span 11253..11257 prefix=''
 //    -> Found: Struct("ast__Program_ctx", Some("ctx"))
-// 🔍 Lookup span 9915..9929 prefix=''
+// 🔍 Lookup span 11313..11327 prefix=''
 //    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 9945..9956 prefix=''
+// 🔍 Lookup span 11343..11354 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 9945..9956 prefix=''
+// 🔍 Lookup span 11343..11354 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 9990..10004 prefix=''
+// 🔍 Lookup span 11388..11402 prefix=''
 //    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 10005..10006 prefix=''
+// 🔍 Lookup span 11403..11404 prefix=''
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_ast__Statement_ctx_ctx, Erased name: std_Vector_ast__Statement, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 10027..10028 prefix=''
+// 🔍 Lookup span 11425..11426 prefix=''
 //    -> Found: Int
-// 🔍 Lookup span 10057..10058 prefix=''
+// 🔍 Lookup span 11455..11456 prefix=''
 //    -> Found: Int
-// 🔍 Lookup span 10086..10111 prefix=''
+// 🔍 Lookup span 11484..11509 prefix=''
 //    -> Found: Struct("std_Vector_FileParserError_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 10173..10198 prefix=''
+// 🔍 Lookup span 11571..11596 prefix=''
 //    -> Found: Struct("std_Vector_FileParserError_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 10227..10252 prefix=''
+// 🔍 Lookup span 11625..11650 prefix=''
 //    -> Found: Struct("std_Vector_FileParserError_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 10253..10260 prefix=''
+// 🔍 Lookup span 11651..11658 prefix=''
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_FileParserError_ctx_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_FileParserError_ctx_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_FileParserError_ctx_ctx, Erased name: std_Vector_FileParserError, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 10286..10289 prefix=''
+// 🔍 Lookup span 11684..11687 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 10286..10289 prefix=''
+// 🔍 Lookup span 11684..11687 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 10297..10334 prefix=''
+// 🔍 Lookup span 11695..11732 prefix=''
 //    -> Found: Str
-// 🔍 Lookup span 10353..10358 prefix=''
+// 🔍 Lookup span 11751..11756 prefix=''
 //    -> Found: Struct("FileParserError_ctx", Some("ctx"))
-// 🔍 Lookup span 10387..10392 prefix=''
+// 🔍 Lookup span 11785..11790 prefix=''
 //    -> Found: Struct("FileParserError_ctx", Some("ctx"))
-// 🔍 Lookup span 10387..10396 prefix=''
+// 🔍 Lookup span 11785..11794 prefix=''
 //    -> Found: Struct("errors__CompilerError_ctx", Some("ctx"))
-// 🔍 Lookup span 10387..10392 prefix=''
+// 🔍 Lookup span 11785..11790 prefix=''
 //    -> Found: Struct("FileParserError_ctx", Some("ctx"))
-// 🔍 Lookup span 10387..10401 prefix=''
+// 🔍 Lookup span 11785..11799 prefix=''
 //    -> Found: Struct("token__Span", Some("ctx"))
-// 🔍 Lookup span 10387..10396 prefix=''
+// 🔍 Lookup span 11785..11794 prefix=''
 //    -> Found: Struct("errors__CompilerError_ctx", Some("ctx"))
-// 🔍 Lookup span 10387..10407 prefix=''
+// 🔍 Lookup span 11785..11805 prefix=''
 //    -> Found: Struct("token__Position", Some("ctx"))
-// 🔍 Lookup span 10387..10401 prefix=''
+// 🔍 Lookup span 11785..11799 prefix=''
 //    -> Found: Struct("token__Span", Some("ctx"))
-// 🔍 Lookup span 10431..10436 prefix=''
+// 🔍 Lookup span 11829..11834 prefix=''
 //    -> Found: Struct("FileParserError_ctx", Some("ctx"))
-// 🔍 Lookup span 10431..10440 prefix=''
+// 🔍 Lookup span 11829..11838 prefix=''
 //    -> Found: Struct("errors__CompilerError_ctx", Some("ctx"))
-// 🔍 Lookup span 10431..10436 prefix=''
+// 🔍 Lookup span 11829..11834 prefix=''
 //    -> Found: Struct("FileParserError_ctx", Some("ctx"))
-// 🔍 Lookup span 10431..10445 prefix=''
+// 🔍 Lookup span 11829..11843 prefix=''
 //    -> Found: Struct("token__Span", Some("ctx"))
-// 🔍 Lookup span 10431..10440 prefix=''
+// 🔍 Lookup span 11829..11838 prefix=''
 //    -> Found: Struct("errors__CompilerError_ctx", Some("ctx"))
-// 🔍 Lookup span 10431..10451 prefix=''
+// 🔍 Lookup span 11829..11849 prefix=''
 //    -> Found: Struct("token__Position", Some("ctx"))
-// 🔍 Lookup span 10431..10445 prefix=''
+// 🔍 Lookup span 11829..11843 prefix=''
 //    -> Found: Struct("token__Span", Some("ctx"))
-// 🔍 Lookup span 10477..10482 prefix=''
+// 🔍 Lookup span 11875..11880 prefix=''
 //    -> Found: Struct("FileParserError_ctx", Some("ctx"))
-// 🔍 Lookup span 10477..10486 prefix=''
+// 🔍 Lookup span 11875..11884 prefix=''
 //    -> Found: Struct("errors__CompilerError_ctx", Some("ctx"))
-// 🔍 Lookup span 10477..10482 prefix=''
+// 🔍 Lookup span 11875..11880 prefix=''
 //    -> Found: Struct("FileParserError_ctx", Some("ctx"))
-// 🔍 Lookup span 10509..10511 prefix=''
+// 🔍 Lookup span 11907..11909 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 10509..10511 prefix=''
+// 🔍 Lookup span 11907..11909 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 10537..10544 prefix=''
+// 🔍 Lookup span 11935..11942 prefix=''
 //    -> Found: Int
-// 🔍 Lookup span 10578..10580 prefix=''
+// 🔍 Lookup span 11976..11978 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 10578..10580 prefix=''
+// 🔍 Lookup span 11976..11978 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 10655..10666 prefix=''
+// 🔍 Lookup span 12053..12064 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 10655..10666 prefix=''
+// 🔍 Lookup span 12053..12064 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 10746..10751 prefix=''
+// 🔍 Lookup span 12144..12149 prefix=''
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 10775..10783 prefix=''
+// 🔍 Lookup span 12173..12181 prefix=''
 //    -> Found: Struct("std_Vector_ast__Program_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 10784..10785 prefix=''
+// 🔍 Lookup span 12182..12183 prefix=''
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_ast__Program_ctx_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_ast__Program_ctx_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_ast__Program_ctx_ctx, Erased name: std_Vector_ast__Program, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 10810..10825 prefix=''
+// 🔍 Lookup span 12208..12223 prefix=''
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 10826..10827 prefix=''
+// 🔍 Lookup span 12224..12225 prefix=''
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 10839..10857 prefix=''
+// 🔍 Lookup span 12237..12255 prefix=''
 //    -> Found: Str
-// 🔍 Lookup span 10839..10842 prefix=''
+// 🔍 Lookup span 12237..12240 prefix=''
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 10876..10892 prefix=''
+// 🔍 Lookup span 12274..12290 prefix=''
 //    -> Found: Str
-// 🔍 Lookup span 10876..10879 prefix=''
+// 🔍 Lookup span 12274..12277 prefix=''
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 10895..10900 prefix=''
+// 🔍 Lookup span 12293..12298 prefix=''
 //    -> Found: Struct("std_Vector_str_ctx", Some("ctx"))
-// 🔍 Lookup span 10901..10902 prefix=''
+// 🔍 Lookup span 12299..12300 prefix=''
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_str_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_str_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_str_ctx, Erased name: std_Vector_str, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 10979..10982 prefix=''
+// 🔍 Lookup span 12377..12380 prefix=''
 //    -> Found: Arena
-// 🔍 Lookup span 10983..10998 prefix=''
+// 🔍 Lookup span 12381..12396 prefix=''
 //    -> Found: Index("std_Vector_ast__Statement_ctx", Some("ctx"))
 // 🔬 IndexAccess codegen: allocator type is Arena, index type is Index("std_Vector_ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 10983..10987 prefix=''
+// 🔍 Lookup span 12381..12385 prefix=''
 //    -> Found: Struct("ast__Program_ctx", Some("ctx"))
-// 🔍 Lookup span 11055..11075 prefix=''
+// 🔍 Lookup span 12453..12473 prefix=''
 //    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 11139..11141 prefix=''
+// 🔍 Lookup span 12537..12539 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 11139..11141 prefix=''
+// 🔍 Lookup span 12537..12539 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 11171..11174 prefix=''
+// 🔍 Lookup span 12569..12572 prefix=''
 //    -> Found: Arena
-// 🔍 Lookup span 11189..11209 prefix=''
+// 🔍 Lookup span 12587..12607 prefix=''
 //    -> Found: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 11210..11217 prefix=''
+// 🔍 Lookup span 12608..12615 prefix=''
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx")), index type is Int
 // 🕵️ Checking if type is Vector: Struct("std_Vector_ast__Statement_ctx_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_ast__Statement_ctx_ctx, Erased name: std_Vector_ast__Statement, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 11179..11187 prefix=''
+// 🔍 Lookup span 12577..12585 prefix=''
 //    -> Found: Index("ast__Statement_ctx", Some("ctx"))
-// 🔍 Lookup span 11233..11244 prefix=''
+// 🔍 Lookup span 12631..12642 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 11233..11244 prefix=''
+// 🔍 Lookup span 12631..12642 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 11302..11309 prefix=''
+// 🔍 Lookup span 12700..12707 prefix=''
 //    -> Found: Int
-// 🔍 Lookup span 11344..11345 prefix=''
+// 🔍 Lookup span 12742..12743 prefix=''
 //    -> Found: Int
-// 🔍 Lookup span 11373..11376 prefix=''
+// 🔍 Lookup span 12771..12774 prefix=''
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 11373..11383 prefix=''
+// 🔍 Lookup span 12771..12781 prefix=''
 //    -> Found: Struct("std_Vector_errors__CompilerError_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 11433..11436 prefix=''
+// 🔍 Lookup span 12831..12834 prefix=''
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 11433..11443 prefix=''
+// 🔍 Lookup span 12831..12841 prefix=''
 //    -> Found: Struct("std_Vector_errors__CompilerError_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 11470..11480 prefix=''
+// 🔍 Lookup span 12868..12878 prefix=''
 //    -> Found: Struct("std_Vector_errors__CompilerError_ctx_ctx", Some("ctx"))
-// 🔍 Lookup span 11481..11482 prefix=''
+// 🔍 Lookup span 12879..12880 prefix=''
 //    -> Found: Int
 // 🔬 IndexAccess codegen: allocator type is Struct("std_Vector_errors__CompilerError_ctx_ctx", Some("ctx")), index type is Int
-// 🔍 Lookup span 11470..11473 prefix=''
+// 🔍 Lookup span 12868..12871 prefix=''
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
 // 🕵️ Checking if type is Vector: Struct("std_Vector_errors__CompilerError_ctx_ctx", Some("ctx"))
 //   -> Struct name: std_Vector_errors__CompilerError_ctx_ctx, Erased name: std_Vector_errors__CompilerError, Vector_ find: 4, std_Vector_ find: 0
 //   -> MATCHED std_Vector_ at 0!
-// 🔍 Lookup span 11543..11544 prefix=''
+// 🔍 Lookup span 12941..12942 prefix=''
 //    -> Found: Int
-// 🔍 Lookup span 11572..11574 prefix=''
+// 🔍 Lookup span 12970..12972 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 11572..11574 prefix=''
+// 🔍 Lookup span 12970..12972 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 11662..11680 prefix=''
+// 🔍 Lookup span 13060..13078 prefix=''
 //    -> Found: Str
-// 🔍 Lookup span 11662..11665 prefix=''
+// 🔍 Lookup span 13060..13063 prefix=''
 //    -> Found: Struct("typechecker__TypeEnvironment_ctx", Some("ctx"))
-// 🔍 Lookup span 11913..11923 prefix=''
+// 🔍 Lookup span 13323..13333 prefix=''
 //    -> Found: Struct("CompilerInvocation_ctx", Some("ctx"))
-// 🔍 Lookup span 11913..11931 prefix=''
+// 🔍 Lookup span 13323..13341 prefix=''
 //    -> Found: Struct("CompilerBackendSelection", Some("ctx"))
-// 🔍 Lookup span 11913..11923 prefix=''
+// 🔍 Lookup span 13323..13333 prefix=''
 //    -> Found: Struct("CompilerInvocation_ctx", Some("ctx"))
-// 🔍 Lookup span 11984..12003 prefix=''
+// 🔍 Lookup span 13394..13413 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 11984..12003 prefix=''
+// 🔍 Lookup span 13394..13413 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 12136..12146 prefix=''
+// 🔍 Lookup span 13546..13556 prefix=''
 //    -> Found: Struct("CompilerInvocation_ctx", Some("ctx"))
-// 🔍 Lookup span 12206..12219 prefix=''
+// 🔍 Lookup span 13616..13629 prefix=''
 //    -> Found: Struct("mir_native_backend_source_route__MirNativeScalarSourceRouteResult_ctx", Some("ctx"))
-// 🔍 Lookup span 12246..12248 prefix=''
+// 🔍 Lookup span 13656..13658 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 12246..12248 prefix=''
+// 🔍 Lookup span 13656..13658 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 12279..12292 prefix=''
+// 🔍 Lookup span 13689..13702 prefix=''
 //    -> Found: Struct("mir_native_backend_source_route__MirNativeScalarSourceRouteResult_ctx", Some("ctx"))
-// 🔍 Lookup span 12319..12321 prefix=''
+// 🔍 Lookup span 13729..13731 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 12319..12321 prefix=''
+// 🔍 Lookup span 13729..13731 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 12445..12447 prefix=''
+// 🔍 Lookup span 13855..13857 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 12445..12447 prefix=''
+// 🔍 Lookup span 13855..13857 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 12475..12477 prefix=''
+// 🔍 Lookup span 13885..13887 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 12475..12477 prefix=''
+// 🔍 Lookup span 13885..13887 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 12487..12500 prefix=''
+// 🔍 Lookup span 13897..13910 prefix=''
 //    -> Found: Struct("mir_native_backend_source_route__MirNativeScalarSourceRouteResult_ctx", Some("ctx"))
-// 🔍 Lookup span 12522..12524 prefix=''
+// 🔍 Lookup span 13932..13934 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 12522..12524 prefix=''
+// 🔍 Lookup span 13932..13934 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 12638..12645 prefix=''
+// 🔍 Lookup span 14048..14055 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 12638..12645 prefix=''
+// 🔍 Lookup span 14048..14055 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 12706..12708 prefix=''
+// 🔍 Lookup span 14116..14118 prefix=''
 //    -> Found: Void
-// 🔍 Lookup span 12706..12708 prefix=''
+// 🔍 Lookup span 14116..14118 prefix=''
 //    -> Found: Void
 // Transpiled C Code
 #include <stdio.h>
@@ -65428,7 +67306,9 @@ int codegen__codegen_topological_visit(Slice_unsigned_char name, std_HashMap_str
 void codegen__init_codegen(codegen__Codegen* c, typechecker__TypeEnvironment* env, os_Arena* ctx);
 int compiler_argument_starts_with(Slice_unsigned_char value, Slice_unsigned_char prefix);
 void compiler_invocation_fail(Slice_unsigned_char message);
+int compiler_is_help_invocation(std_Vector_str args, os_Arena* ctx);
 CompilerInvocation compiler_parse_invocation(std_Vector_str args, os_Arena* ctx);
+void compiler_print_help(void);
 int lexer__Lexer_Any_IsValid(lexer__Lexer* req);
 int lexer__Lexer_ctx_IsValid(lexer__Lexer* req);
 int lexer__StringHeader_IsValid(lexer__StringHeader* req);
@@ -65588,6 +67468,8 @@ int mir_native_backend_request__mir_native_backend_request_is_valid(mir_native_b
 int mir_native_backend_request__mir_native_backend_request_path_is_absolute(Slice_unsigned_char path);
 int mir_native_backend_request__mir_native_backend_request_path_is_safe(Slice_unsigned_char path);
 Slice_unsigned_char mir_native_backend_request__mir_serialize_native_backend_request(mir_native_backend_request__MirNativeBackendRequest request, os_Arena* ctx);
+mir_native_backend_source_route__MirNativeScalarSourceLowering mir_native_backend_source_route__mir_native_call_import_source_lower(std_Vector_ast__Program programs, std_Vector_str module_paths, std_Vector_str module_prefixes, os_Arena* ctx);
+mir_native_backend_source_route__MirNativeScalarSourceLowering mir_native_backend_source_route__mir_native_cfg_source_lower(std_Vector_ast__Program programs, std_Vector_str module_paths, std_Vector_str module_prefixes, os_Arena* ctx);
 mir_native_backend_capability__MirNativeBackendCapabilityPlan mir_native_backend_source_route__mir_native_scalar_source_add_requirement(mir_native_backend_capability__MirNativeBackendCapabilityPlan plan, int kind_tag, Slice_unsigned_char source_path, int ordinal, Slice_unsigned_char feature, os_Arena* ctx);
 Slice_unsigned_char mir_native_backend_source_route__mir_native_scalar_source_append(Slice_unsigned_char output, Slice_unsigned_char value, os_Arena* ctx);
 mir_native_backend_capability__MirNativeBackendCapabilitySet mir_native_backend_source_route__mir_native_scalar_source_capabilities(os_Arena* ctx);
@@ -92611,8 +94493,17 @@ mir_native_backend_capability__MirNativeBackendCapabilitySet mir_native_backend_
     capabilities = mir_native_backend_capability__mir_native_backend_capability_set_with_operation(capabilities, ((Slice_unsigned_char){ (unsigned char*)"ReturnI32", 9 }), ctx);
     capabilities = mir_native_backend_capability__mir_native_backend_capability_set_with_operation(capabilities, ((Slice_unsigned_char){ (unsigned char*)"LocalI32Set", 11 }), ctx);
     capabilities = mir_native_backend_capability__mir_native_backend_capability_set_with_operation(capabilities, ((Slice_unsigned_char){ (unsigned char*)"LocalI32Read", 12 }), ctx);
+    capabilities = mir_native_backend_capability__mir_native_backend_capability_set_with_operation(capabilities, ((Slice_unsigned_char){ (unsigned char*)"SgtI32", 6 }), ctx);
+    capabilities = mir_native_backend_capability__mir_native_backend_capability_set_with_operation(capabilities, ((Slice_unsigned_char){ (unsigned char*)"Jump", 4 }), ctx);
+    capabilities = mir_native_backend_capability__mir_native_backend_capability_set_with_operation(capabilities, ((Slice_unsigned_char){ (unsigned char*)"Branch", 6 }), ctx);
+    capabilities = mir_native_backend_capability__mir_native_backend_capability_set_with_operation(capabilities, ((Slice_unsigned_char){ (unsigned char*)"BlockParam", 10 }), ctx);
+    capabilities = mir_native_backend_capability__mir_native_backend_capability_set_with_operation(capabilities, ((Slice_unsigned_char){ (unsigned char*)"LocalCallI32", 12 }), ctx);
+    capabilities = mir_native_backend_capability__mir_native_backend_capability_set_with_operation(capabilities, ((Slice_unsigned_char){ (unsigned char*)"ImportedCallI32", 15 }), ctx);
     capabilities = mir_native_backend_capability__mir_native_backend_capability_set_with_type_or_abi(capabilities, ((Slice_unsigned_char){ (unsigned char*)"int", 3 }), ctx);
+    capabilities = mir_native_backend_capability__mir_native_backend_capability_set_with_type_or_abi(capabilities, ((Slice_unsigned_char){ (unsigned char*)"bool", 4 }), ctx);
     capabilities = mir_native_backend_capability__mir_native_backend_capability_set_with_type_or_abi(capabilities, ((Slice_unsigned_char){ (unsigned char*)"()->int", 7 }), ctx);
+    capabilities = mir_native_backend_capability__mir_native_backend_capability_set_with_type_or_abi(capabilities, ((Slice_unsigned_char){ (unsigned char*)"(int)->int", 10 }), ctx);
+    capabilities = mir_native_backend_capability__mir_native_backend_capability_set_with_runtime_import(capabilities, ((Slice_unsigned_char){ (unsigned char*)"abs", 3 }), ctx);
     capabilities = mir_native_backend_capability__mir_native_backend_capability_set_with_target_requirement(capabilities, ((Slice_unsigned_char){ (unsigned char*)"native_host", 11 }), ctx);
     capabilities = mir_native_backend_capability__mir_native_backend_capability_set_with_target_requirement(capabilities, ((Slice_unsigned_char){ (unsigned char*)"position_independent_code", 25 }), ctx);
     capabilities = mir_native_backend_capability__mir_native_backend_capability_set_with_target_requirement(capabilities, ((Slice_unsigned_char){ (unsigned char*)"native_executable_link", 22 }), ctx);
@@ -92773,6 +94664,553 @@ mir_native_backend_source_route__MirNativeScalarSourceLowering mir_native_backen
     }
 }
 
+mir_native_backend_source_route__MirNativeScalarSourceLowering mir_native_backend_source_route__mir_native_cfg_source_lower(std_Vector_ast__Program programs, std_Vector_str module_paths, std_Vector_str module_prefixes, os_Arena* ctx) {
+    mir_native_backend_source_route__MirNativeScalarSourceLowering lowering = mir_native_backend_source_route__mir_native_scalar_source_empty_lowering(ctx);
+    if ((((programs.len != 1) || (module_paths.len != 1)) || (module_prefixes.len != 1))) {
+    return lowering;
+    }
+    if ((std_str_eq((*({ if (0 < 0 || 0 >= module_prefixes.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(module_prefixes.data[0]); })), ((Slice_unsigned_char){ (unsigned char*)"", 0 })) == 0)) {
+    return lowering;
+    }
+    Slice_unsigned_char source_path = (*({ if (0 < 0 || 0 >= module_paths.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(module_paths.data[0]); }));
+    ast__Program program = (*({ if (0 < 0 || 0 >= programs.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(programs.data[0]); }));
+    std_Vector_ast__Statement top_level = (*((std_Vector_ast__Statement*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(program.statements))));
+    if ((top_level.len != 1)) {
+    return lowering;
+    }
+    {
+    ast__Statement function_statement = (*({ if (0 < 0 || 0 >= top_level.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(top_level.data[0]); }));
+    if ((function_statement.tag != 3)) {
+    return lowering;
+    }
+    if ((std_str_eq(function_statement.FunctionDecl.name, ((Slice_unsigned_char){ (unsigned char*)"main", 4 })) == 0)) {
+    return lowering;
+    }
+    if ((function_statement.FunctionDecl.is_extern == 1)) {
+    return lowering;
+    }
+    std_Vector_ast__Parameter parameters = (*((std_Vector_ast__Parameter*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(function_statement.FunctionDecl.params))));
+    if ((parameters.len != 0)) {
+    return lowering;
+    }
+    ast__Type return_type = (*((ast__Type*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(function_statement.FunctionDecl.return_type))));
+    if ((return_type.tag != 0)) {
+    return lowering;
+    }
+    ast__BlockStatement body = (*((ast__BlockStatement*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(function_statement.FunctionDecl.body))));
+    std_Vector_ast__Statement statements = (*((std_Vector_ast__Statement*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(body.statements))));
+    int is_literal_cfg = 0;
+    int is_block_parameter_merge = 0;
+    int condition_value = 0;
+    int initial_value = 0;
+    int then_value = 0;
+    int else_value = 0;
+    int expected_exit = 0;
+    Slice_unsigned_char local_name = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
+    if ((statements.len == 1)) {
+    ast__Statement if_statement = (*({ if (0 < 0 || 0 >= statements.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(statements.data[0]); }));
+    if ((if_statement.tag == 7)) {
+    ast__Expression condition = (*((ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(if_statement.If.condition))));
+    ast__BlockStatement consequence = (*((ast__BlockStatement*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(if_statement.If.consequence))));
+    ast__BlockStatement alternative = (*((ast__BlockStatement*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(if_statement.If.alternative))));
+    std_Vector_ast__Statement then_statements = (*((std_Vector_ast__Statement*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(consequence.statements))));
+    std_Vector_ast__Statement else_statements = (*((std_Vector_ast__Statement*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(alternative.statements))));
+    if ((((condition.tag == 3) && (then_statements.len == 1)) && (else_statements.len == 1))) {
+    ast__Statement then_return = (*({ if (0 < 0 || 0 >= then_statements.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(then_statements.data[0]); }));
+    ast__Statement else_return = (*({ if (0 < 0 || 0 >= else_statements.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(else_statements.data[0]); }));
+    if (((then_return.tag == 12) && (else_return.tag == 12))) {
+    ast__Expression then_expression = (*((ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(then_return.Return.expr))));
+    ast__Expression else_expression = (*((ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(else_return.Return.expr))));
+    if (((then_expression.tag == 1) && (else_expression.tag == 1))) {
+    is_literal_cfg = 1;
+    condition_value = condition.Bool.val;
+    then_value = then_expression.Integer.val;
+    else_value = else_expression.Integer.val;
+    expected_exit = else_value;
+    if ((condition_value != 0)) {
+    expected_exit = then_value;
+    }
+    }
+    }
+    }
+    }
+    } else {
+    if ((statements.len == 3)) {
+    ast__Statement local_statement = (*({ if (0 < 0 || 0 >= statements.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(statements.data[0]); }));
+    ast__Statement if_statement = (*({ if (1 < 0 || 1 >= statements.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(statements.data[1]); }));
+    ast__Statement return_statement = (*({ if (2 < 0 || 2 >= statements.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(statements.data[2]); }));
+    if ((((local_statement.tag == 4) && (if_statement.tag == 7)) && (return_statement.tag == 12))) {
+    ast__Expression local_expression = (*((ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(local_statement.VarDecl.value))));
+    ast__Expression return_expression = (*((ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(return_statement.Return.expr))));
+    if ((((local_statement.VarDecl.is_mut == 1) && (local_expression.tag == 1)) && (return_expression.tag == 0))) {
+    local_name = std_Clone_str(ctx, local_statement.VarDecl.name);
+    if ((std_str_eq(local_name, return_expression.Identifier.name) == 1)) {
+    int declared_type_is_int = 1;
+    if ((local_statement.VarDecl.var_type != 0xFFFFFFFF)) {
+    ast__Type declared_type = (*((ast__Type*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(local_statement.VarDecl.var_type))));
+    if ((declared_type.tag != 0)) {
+    declared_type_is_int = 0;
+    }
+    }
+    ast__Expression condition = (*((ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(if_statement.If.condition))));
+    ast__BlockStatement consequence = (*((ast__BlockStatement*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(if_statement.If.consequence))));
+    ast__BlockStatement alternative = (*((ast__BlockStatement*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(if_statement.If.alternative))));
+    std_Vector_ast__Statement then_statements = (*((std_Vector_ast__Statement*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(consequence.statements))));
+    std_Vector_ast__Statement else_statements = (*((std_Vector_ast__Statement*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(alternative.statements))));
+    if ((((((declared_type_is_int == 1) && (condition.tag == 10)) && (std_str_eq(condition.Binary.op, ((Slice_unsigned_char){ (unsigned char*)">", 1 })) == 1)) && (then_statements.len == 1)) && (else_statements.len == 1))) {
+    ast__Expression condition_left = (*((ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(condition.Binary.left))));
+    ast__Expression condition_right = (*((ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(condition.Binary.right))));
+    ast__Statement then_assignment = (*({ if (0 < 0 || 0 >= then_statements.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(then_statements.data[0]); }));
+    ast__Statement else_assignment = (*({ if (0 < 0 || 0 >= else_statements.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(else_statements.data[0]); }));
+    if (((((((condition_left.tag == 0) && (condition_right.tag == 1)) && (condition_right.Integer.val == 0)) && (std_str_eq(condition_left.Identifier.name, local_name) == 1)) && (then_assignment.tag == 5)) && (else_assignment.tag == 5))) {
+    ast__Expression then_left = (*((ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(then_assignment.Assignment.left))));
+    ast__Expression then_expression = (*((ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(then_assignment.Assignment.value))));
+    ast__Expression else_left = (*((ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(else_assignment.Assignment.left))));
+    ast__Expression else_expression = (*((ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(else_assignment.Assignment.value))));
+    if (((((((then_left.tag == 0) && (else_left.tag == 0)) && (then_expression.tag == 1)) && (else_expression.tag == 1)) && (std_str_eq(then_left.Identifier.name, local_name) == 1)) && (std_str_eq(else_left.Identifier.name, local_name) == 1))) {
+    is_block_parameter_merge = 1;
+    initial_value = local_expression.Integer.val;
+    then_value = then_expression.Integer.val;
+    else_value = else_expression.Integer.val;
+    expected_exit = else_value;
+    if ((initial_value > 0)) {
+    expected_exit = then_value;
+    }
+    }
+    }
+    }
+    }
+    }
+    }
+    }
+    }
+    if (((is_literal_cfg == 0) && (is_block_parameter_merge == 0))) {
+    return lowering;
+    }
+    Slice_unsigned_char canonical = ((Slice_unsigned_char){ (unsigned char*)"format: gust.compiler_mir_ingestion.v1\n", 39 });
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"function: main\n", 15 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"backend_symbol: main\n", 21 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"parameter_count: 0\n", 19 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"return_type: int\n", 17 }), ctx);
+    if ((is_block_parameter_merge == 1)) {
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"local_count: 1\nlocal_0_name: ", 29 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, local_name, ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"\nlocal_0_type: int\n", 19 }), ctx);
+    } else {
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"local_count: 0\n", 15 }), ctx);
+    }
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"entry_block: entry\n", 19 }), ctx);
+    if ((is_literal_cfg == 1)) {
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_count: 3\n", 15 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_0_label: entry\n", 21 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_0_parameter_count: 0\n", 27 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_0_statement_count: 0\n", 27 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_0_terminator_kind: BranchI32Literal\n", 42 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_0_terminator_condition: ", 30 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, (({ int _val = condition_value; char* _buf = (char*)os_ScratchAlloc(16); int _len = snprintf(_buf, 16, "%d", _val); ((Slice_unsigned_char){ (unsigned char*)_buf, _len }); })), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"\nblock_0_terminator_then: then\n", 31 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_0_terminator_then_argument_count: 0\n", 42 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_0_terminator_else: else\n", 30 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_0_terminator_else_argument_count: 0\n", 42 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_1_label: then\n", 20 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_1_parameter_count: 0\n", 27 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_1_statement_count: 0\n", 27 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_1_terminator_kind: ReturnI32\n", 35 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_1_terminator_value: ", 26 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, (({ int _val = then_value; char* _buf = (char*)os_ScratchAlloc(16); int _len = snprintf(_buf, 16, "%d", _val); ((Slice_unsigned_char){ (unsigned char*)_buf, _len }); })), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"\nblock_2_label: else\n", 21 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_2_parameter_count: 0\n", 27 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_2_statement_count: 0\n", 27 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_2_terminator_kind: ReturnI32\n", 35 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_2_terminator_value: ", 26 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, (({ int _val = else_value; char* _buf = (char*)os_ScratchAlloc(16); int _len = snprintf(_buf, 16, "%d", _val); ((Slice_unsigned_char){ (unsigned char*)_buf, _len }); })), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"\nmetadata_count: 0\n", 19 }), ctx);
+    } else {
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_count: 4\n", 15 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_0_label: entry\n", 21 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_0_parameter_count: 0\n", 27 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_0_statement_count: 1\n", 27 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_0_statement_0_kind: LocalI32Set\n", 38 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_0_statement_0_local: ", 27 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, local_name, ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"\nblock_0_statement_0_value: ", 28 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, (({ int _val = initial_value; char* _buf = (char*)os_ScratchAlloc(16); int _len = snprintf(_buf, 16, "%d", _val); ((Slice_unsigned_char){ (unsigned char*)_buf, _len }); })), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"\nblock_0_terminator_kind: BranchLocalI32Positive\n", 49 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_0_terminator_local: ", 26 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, local_name, ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"\nblock_0_terminator_then: then\n", 31 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_0_terminator_then_argument_count: 0\n", 42 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_0_terminator_else: else\n", 30 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_0_terminator_else_argument_count: 0\n", 42 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_1_label: then\n", 20 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_1_parameter_count: 0\n", 27 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_1_statement_count: 0\n", 27 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_1_terminator_kind: Jump\n", 30 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_1_terminator_target: merge\n", 33 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_1_terminator_argument_count: 1\n", 37 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_1_terminator_argument_0_kind: I32Literal\n", 47 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_1_terminator_argument_0_value: ", 37 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, (({ int _val = then_value; char* _buf = (char*)os_ScratchAlloc(16); int _len = snprintf(_buf, 16, "%d", _val); ((Slice_unsigned_char){ (unsigned char*)_buf, _len }); })), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"\nblock_2_label: else\n", 21 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_2_parameter_count: 0\n", 27 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_2_statement_count: 0\n", 27 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_2_terminator_kind: Jump\n", 30 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_2_terminator_target: merge\n", 33 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_2_terminator_argument_count: 1\n", 37 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_2_terminator_argument_0_kind: I32Literal\n", 47 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_2_terminator_argument_0_value: ", 37 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, (({ int _val = else_value; char* _buf = (char*)os_ScratchAlloc(16); int _len = snprintf(_buf, 16, "%d", _val); ((Slice_unsigned_char){ (unsigned char*)_buf, _len }); })), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"\nblock_3_label: merge\n", 22 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_3_parameter_count: 1\n", 27 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_3_parameter_0_name: merged_value\n", 39 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_3_parameter_0_type: int\n", 30 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_3_statement_count: 0\n", 27 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_3_terminator_kind: ReturnBlockParamI32\n", 45 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_3_terminator_block_param: merged_value\n", 45 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"metadata_count: 1\n", 18 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"metadata_0_kind: provenance\n", 28 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"metadata_0_attachment: statement:entry:0\n", 41 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"metadata_0_policy: ignored_with_proof\n", 38 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"metadata_0_payload: kind=LocalBinding;local=", 44 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, local_name, ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)";origin=", 8 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, source_path, ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"\n", 1 }), ctx);
+    }
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"expected_exit: ", 15 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, (({ int _val = expected_exit; char* _buf = (char*)os_ScratchAlloc(16); int _len = snprintf(_buf, 16, "%d", _val); ((Slice_unsigned_char){ (unsigned char*)_buf, _len }); })), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"\n", 1 }), ctx);
+    Slice_unsigned_char object_name = ((Slice_unsigned_char){ (unsigned char*)"phase10_cfg_module.o", 20 });
+    int provenance_count = 0;
+    int block_parameter_count = 0;
+    if ((is_block_parameter_merge == 1)) {
+    object_name = ((Slice_unsigned_char){ (unsigned char*)"phase10_block_parameter_module.o", 32 });
+    provenance_count = 1;
+    block_parameter_count = 1;
+    }
+    mir__MirProgramBundle bundle = mir__mir_make_program_bundle(((Slice_unsigned_char){ (unsigned char*)"main", 4 }), ctx);
+    mir__MirProgramBundleModule bundle_module = mir__mir_make_program_bundle_module(source_path, ((Slice_unsigned_char){ (unsigned char*)"", 0 }), object_name, ((Slice_unsigned_char){ (unsigned char*)"gust.compiler_mir_ingestion.v1", 30 }), canonical, 0, provenance_count, 0, ctx);
+    bundle_module = mir__mir_program_bundle_module_with_symbol(bundle_module, mir__mir_make_program_bundle_symbol(((Slice_unsigned_char){ (unsigned char*)"main", 4 }), ((Slice_unsigned_char){ (unsigned char*)"main", 4 }), ((Slice_unsigned_char){ (unsigned char*)"()->int", 7 }), 0, ctx), ctx);
+    if ((block_parameter_count == 1)) {
+    bundle_module = mir__mir_program_bundle_module_with_block_parameter(bundle_module, mir__mir_make_program_bundle_block_parameter(((Slice_unsigned_char){ (unsigned char*)"main", 4 }), ((Slice_unsigned_char){ (unsigned char*)"merge", 5 }), 0, ((Slice_unsigned_char){ (unsigned char*)"merged_value", 12 }), ((Slice_unsigned_char){ (unsigned char*)"int", 3 }), ctx), ctx);
+    }
+    bundle = mir__mir_program_bundle_with_module(bundle, bundle_module, ctx);
+    mir_native_backend_capability__MirNativeBackendCapabilityPlan plan = mir_native_backend_capability__mir_native_backend_make_capability_plan(ctx);
+    int ordinal = 0;
+    if ((is_block_parameter_merge == 1)) {
+    plan = mir_native_backend_source_route__mir_native_scalar_source_add_requirement(plan, 0, source_path, ordinal, ((Slice_unsigned_char){ (unsigned char*)"LocalI32Set", 11 }), ctx);
+    ordinal = (ordinal + 1);
+    plan = mir_native_backend_source_route__mir_native_scalar_source_add_requirement(plan, 0, source_path, ordinal, ((Slice_unsigned_char){ (unsigned char*)"LocalI32Read", 12 }), ctx);
+    ordinal = (ordinal + 1);
+    plan = mir_native_backend_source_route__mir_native_scalar_source_add_requirement(plan, 0, source_path, ordinal, ((Slice_unsigned_char){ (unsigned char*)"SgtI32", 6 }), ctx);
+    ordinal = (ordinal + 1);
+    }
+    plan = mir_native_backend_source_route__mir_native_scalar_source_add_requirement(plan, 0, source_path, ordinal, ((Slice_unsigned_char){ (unsigned char*)"Branch", 6 }), ctx);
+    ordinal = (ordinal + 1);
+    if ((is_block_parameter_merge == 1)) {
+    plan = mir_native_backend_source_route__mir_native_scalar_source_add_requirement(plan, 0, source_path, ordinal, ((Slice_unsigned_char){ (unsigned char*)"Jump", 4 }), ctx);
+    ordinal = (ordinal + 1);
+    plan = mir_native_backend_source_route__mir_native_scalar_source_add_requirement(plan, 0, source_path, ordinal, ((Slice_unsigned_char){ (unsigned char*)"BlockParam", 10 }), ctx);
+    ordinal = (ordinal + 1);
+    }
+    plan = mir_native_backend_source_route__mir_native_scalar_source_add_requirement(plan, 0, source_path, ordinal, ((Slice_unsigned_char){ (unsigned char*)"ReturnI32", 9 }), ctx);
+    ordinal = (ordinal + 1);
+    plan = mir_native_backend_source_route__mir_native_scalar_source_add_requirement(plan, 1, source_path, ordinal, ((Slice_unsigned_char){ (unsigned char*)"int", 3 }), ctx);
+    ordinal = (ordinal + 1);
+    if ((is_literal_cfg == 1)) {
+    plan = mir_native_backend_source_route__mir_native_scalar_source_add_requirement(plan, 1, source_path, ordinal, ((Slice_unsigned_char){ (unsigned char*)"bool", 4 }), ctx);
+    ordinal = (ordinal + 1);
+    }
+    plan = mir_native_backend_source_route__mir_native_scalar_source_add_requirement(plan, 1, source_path, ordinal, ((Slice_unsigned_char){ (unsigned char*)"()->int", 7 }), ctx);
+    ordinal = (ordinal + 1);
+    plan = mir_native_backend_source_route__mir_native_scalar_source_add_requirement(plan, 3, source_path, ordinal, ((Slice_unsigned_char){ (unsigned char*)"native_host", 11 }), ctx);
+    ordinal = (ordinal + 1);
+    plan = mir_native_backend_source_route__mir_native_scalar_source_add_requirement(plan, 3, source_path, ordinal, ((Slice_unsigned_char){ (unsigned char*)"position_independent_code", 25 }), ctx);
+    ordinal = (ordinal + 1);
+    plan = mir_native_backend_source_route__mir_native_scalar_source_add_requirement(plan, 3, source_path, ordinal, ((Slice_unsigned_char){ (unsigned char*)"native_executable_link", 22 }), ctx);
+    lowering.supported = 1;
+    lowering.bundle = bundle;
+    lowering.plan = plan;
+    return lowering;
+    }
+}
+
+mir_native_backend_source_route__MirNativeScalarSourceLowering mir_native_backend_source_route__mir_native_call_import_source_lower(std_Vector_ast__Program programs, std_Vector_str module_paths, std_Vector_str module_prefixes, os_Arena* ctx) {
+    mir_native_backend_source_route__MirNativeScalarSourceLowering lowering = mir_native_backend_source_route__mir_native_scalar_source_empty_lowering(ctx);
+    if ((((programs.len != 1) || (module_paths.len != 1)) || (module_prefixes.len != 1))) {
+    return lowering;
+    }
+    if ((std_str_eq((*({ if (0 < 0 || 0 >= module_prefixes.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(module_prefixes.data[0]); })), ((Slice_unsigned_char){ (unsigned char*)"", 0 })) == 0)) {
+    return lowering;
+    }
+    Slice_unsigned_char source_path = (*({ if (0 < 0 || 0 >= module_paths.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(module_paths.data[0]); }));
+    ast__Program program = (*({ if (0 < 0 || 0 >= programs.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(programs.data[0]); }));
+    std_Vector_ast__Statement top_level = (*((std_Vector_ast__Statement*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(program.statements))));
+    if ((top_level.len != 2)) {
+    return lowering;
+    }
+    {
+    ast__Statement first = (*({ if (0 < 0 || 0 >= top_level.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(top_level.data[0]); }));
+    ast__Statement second = (*({ if (1 < 0 || 1 >= top_level.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(top_level.data[1]); }));
+    if (((first.tag != 3) || (second.tag != 3))) {
+    return lowering;
+    }
+    ast__Statement main_statement = second;
+    if (((std_str_eq(main_statement.FunctionDecl.name, ((Slice_unsigned_char){ (unsigned char*)"main", 4 })) == 0) || (main_statement.FunctionDecl.is_extern == 1))) {
+    return lowering;
+    }
+    std_Vector_ast__Parameter main_parameters = (*((std_Vector_ast__Parameter*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(main_statement.FunctionDecl.params))));
+    if ((main_parameters.len != 0)) {
+    return lowering;
+    }
+    ast__Type main_return_type = (*((ast__Type*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(main_statement.FunctionDecl.return_type))));
+    if ((main_return_type.tag != 0)) {
+    return lowering;
+    }
+    ast__BlockStatement main_body = (*((ast__BlockStatement*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(main_statement.FunctionDecl.body))));
+    std_Vector_ast__Statement main_statements = (*((std_Vector_ast__Statement*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(main_body.statements))));
+    int is_local_call = 0;
+    int is_runtime_boundary = 0;
+    int call_value = 0;
+    Slice_unsigned_char call_name = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
+    ast__Expression call_expression = ((ast__Expression){ .tag = 0 });
+    if ((first.FunctionDecl.is_extern == 0)) {
+    if ((std_str_eq(first.FunctionDecl.name, ((Slice_unsigned_char){ (unsigned char*)"phase10_local_identity", 22 })) == 0)) {
+    return lowering;
+    }
+    std_Vector_ast__Parameter helper_parameters = (*((std_Vector_ast__Parameter*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(first.FunctionDecl.params))));
+    if (((helper_parameters.len != 1) || ((*({ if (0 < 0 || 0 >= helper_parameters.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(helper_parameters.data[0]); })).param_type.tag != 0))) {
+    return lowering;
+    }
+    ast__Type helper_return_type = (*((ast__Type*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(first.FunctionDecl.return_type))));
+    if ((helper_return_type.tag != 0)) {
+    return lowering;
+    }
+    ast__BlockStatement helper_body = (*((ast__BlockStatement*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(first.FunctionDecl.body))));
+    std_Vector_ast__Statement helper_statements = (*((std_Vector_ast__Statement*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(helper_body.statements))));
+    if (((helper_statements.len != 1) || ((*({ if (0 < 0 || 0 >= helper_statements.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(helper_statements.data[0]); })).tag != 12))) {
+    return lowering;
+    }
+    ast__Expression helper_return = (*((ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)((*({ if (0 < 0 || 0 >= helper_statements.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(helper_statements.data[0]); })).Return.expr))));
+    if (((helper_return.tag != 0) || (std_str_eq(helper_return.Identifier.name, (*({ if (0 < 0 || 0 >= helper_parameters.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(helper_parameters.data[0]); })).name) == 0))) {
+    return lowering;
+    }
+    if (((main_statements.len != 1) || ((*({ if (0 < 0 || 0 >= main_statements.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(main_statements.data[0]); })).tag != 12))) {
+    return lowering;
+    }
+    call_expression = (*((ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)((*({ if (0 < 0 || 0 >= main_statements.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(main_statements.data[0]); })).Return.expr))));
+    call_name = ((Slice_unsigned_char){ (unsigned char*)"phase10_local_identity", 22 });
+    is_local_call = 1;
+    } else {
+    if ((((std_str_eq(first.FunctionDecl.name, ((Slice_unsigned_char){ (unsigned char*)"abs", 3 })) == 0) || (std_str_eq(first.FunctionDecl.extern_symbol_name, ((Slice_unsigned_char){ (unsigned char*)"abs", 3 })) == 0)) || (std_str_eq(first.FunctionDecl.extern_abi, ((Slice_unsigned_char){ (unsigned char*)"C", 1 })) == 0))) {
+    return lowering;
+    }
+    std_Vector_ast__Parameter extern_parameters = (*((std_Vector_ast__Parameter*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(first.FunctionDecl.params))));
+    if (((extern_parameters.len != 1) || ((*({ if (0 < 0 || 0 >= extern_parameters.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(extern_parameters.data[0]); })).param_type.tag != 0))) {
+    return lowering;
+    }
+    ast__Type extern_return_type = (*((ast__Type*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(first.FunctionDecl.return_type))));
+    if ((extern_return_type.tag != 0)) {
+    return lowering;
+    }
+    if (((main_statements.len != 1) || ((*({ if (0 < 0 || 0 >= main_statements.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(main_statements.data[0]); })).tag != 10))) {
+    return lowering;
+    }
+    ast__BlockStatement unsafe_body = (*((ast__BlockStatement*)((char*)ctx->BaseAddress + (size_t)(uint32_t)((*({ if (0 < 0 || 0 >= main_statements.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(main_statements.data[0]); })).UnsafeBlock.body))));
+    std_Vector_ast__Statement unsafe_statements = (*((std_Vector_ast__Statement*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(unsafe_body.statements))));
+    if (((unsafe_statements.len != 1) || ((*({ if (0 < 0 || 0 >= unsafe_statements.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(unsafe_statements.data[0]); })).tag != 12))) {
+    return lowering;
+    }
+    call_expression = (*((ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)((*({ if (0 < 0 || 0 >= unsafe_statements.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(unsafe_statements.data[0]); })).Return.expr))));
+    call_name = ((Slice_unsigned_char){ (unsigned char*)"abs", 3 });
+    is_runtime_boundary = 1;
+    }
+    if ((call_expression.tag != 12)) {
+    return lowering;
+    }
+    ast__Expression callee = (*((ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(call_expression.Call.function))));
+    if (((callee.tag != 0) || (std_str_eq(callee.Identifier.name, call_name) == 0))) {
+    return lowering;
+    }
+    std_Vector_ast__Expression arguments = (*((std_Vector_ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(call_expression.Call.arguments))));
+    if (((arguments.len != 1) || ((*({ if (0 < 0 || 0 >= arguments.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(arguments.data[0]); })).tag != 1))) {
+    return lowering;
+    }
+    call_value = (*({ if (0 < 0 || 0 >= arguments.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(arguments.data[0]); })).Integer.val;
+    if ((call_value < 0)) {
+    return lowering;
+    }
+    Slice_unsigned_char canonical = ((Slice_unsigned_char){ (unsigned char*)"format: gust.compiler_mir_ingestion.v2\n", 39 });
+    if ((is_local_call == 1)) {
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"module: phase10_local_call\n", 27 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"import_count: 0\n", 16 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"function_count: 2\n", 18 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"function_0_linkage: module_local\n", 33 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"function_0_function: phase10_local_identity\n", 44 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"function_0_backend_symbol: phase10_local_identity\n", 50 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"function_0_parameter_count: 1\n", 30 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"function_0_parameter_0_type: int\n", 33 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"function_0_return_type: int\n", 28 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"function_0_local_count: 1\n", 26 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"function_0_local_0_name: param_value\n", 37 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"function_0_local_0_type: int\n", 29 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"function_0_entry_block: entry\n", 30 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"function_0_block_count: 1\n", 26 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"function_0_block_0_label: entry\n", 32 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"function_0_block_0_parameter_count: 0\n", 38 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"function_0_block_0_statement_count: 1\n", 38 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"function_0_block_0_statement_0_kind: LocalI32SetParam\n", 54 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"function_0_block_0_statement_0_local: param_value\n", 50 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"function_0_block_0_statement_0_param: 0\n", 40 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"function_0_block_0_terminator_kind: ReturnLocalI32\n", 51 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"function_0_block_0_terminator_local: param_value\n", 49 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"function_0_metadata_count: 0\n", 29 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"function_0_expected_exit: 0\n", 28 }), ctx);
+    } else {
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"module: phase10_runtime_boundary\n", 33 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"import_count: 1\n", 16 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"import_0_name: abs\n", 19 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"import_0_link_symbol: abs\n", 26 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"import_0_linkage: imported_host\n", 32 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"import_0_parameter_count: 1\n", 28 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"import_0_parameter_0_type: int\n", 31 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"import_0_return_type: int\n", 26 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"function_count: 1\n", 18 }), ctx);
+    }
+    int main_index = 0;
+    if ((is_local_call == 1)) {
+    main_index = 1;
+    }
+    Slice_unsigned_char function_prefix = ((Slice_unsigned_char){ (unsigned char*)"function_0_", 11 });
+    if ((main_index == 1)) {
+    function_prefix = ((Slice_unsigned_char){ (unsigned char*)"function_1_", 11 });
+    }
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, function_prefix, ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"linkage: exported_entry\n", 24 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, function_prefix, ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"function: main\n", 15 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, function_prefix, ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"backend_symbol: main\n", 21 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, function_prefix, ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"parameter_count: 0\n", 19 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, function_prefix, ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"return_type: int\n", 17 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, function_prefix, ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"local_count: 1\n", 15 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, function_prefix, ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"local_0_name: call_result\n", 26 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, function_prefix, ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"local_0_type: int\n", 18 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, function_prefix, ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"entry_block: entry\n", 19 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, function_prefix, ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_count: 1\n", 15 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, function_prefix, ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_0_label: entry\n", 21 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, function_prefix, ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_0_parameter_count: 0\n", 27 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, function_prefix, ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_0_statement_count: 1\n", 27 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, function_prefix, ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_0_statement_0_kind: LocalI32SetCall\n", 42 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, function_prefix, ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_0_statement_0_local: call_result\n", 39 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, function_prefix, ctx);
+    if ((is_local_call == 1)) {
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_0_statement_0_callee_kind: LocalFunction\n", 47 }), ctx);
+    } else {
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_0_statement_0_callee_kind: ImportedFunction\n", 50 }), ctx);
+    }
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, function_prefix, ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_0_statement_0_callee: ", 28 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, call_name, ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"\n", 1 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, function_prefix, ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_0_statement_0_argument_count: 1\n", 38 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, function_prefix, ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_0_statement_0_argument_0_kind: I32Literal\n", 48 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, function_prefix, ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_0_statement_0_argument_0_value: ", 38 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, (({ int _val = call_value; char* _buf = (char*)os_ScratchAlloc(16); int _len = snprintf(_buf, 16, "%d", _val); ((Slice_unsigned_char){ (unsigned char*)_buf, _len }); })), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"\n", 1 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, function_prefix, ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_0_terminator_kind: ReturnLocalI32\n", 40 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, function_prefix, ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"block_0_terminator_local: call_result\n", 38 }), ctx);
+    if ((is_runtime_boundary == 1)) {
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, function_prefix, ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"metadata_count: 1\n", 18 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, function_prefix, ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"metadata_0_kind: native_boundary\n", 33 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, function_prefix, ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"metadata_0_attachment: statement:entry:0\n", 41 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, function_prefix, ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"metadata_0_policy: ignored_with_proof\n", 38 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, function_prefix, ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"metadata_0_payload: kind=RuntimeCall;symbol=abs;origin=", 55 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, source_path, ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"\n", 1 }), ctx);
+    } else {
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, function_prefix, ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"metadata_count: 0\n", 18 }), ctx);
+    }
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, function_prefix, ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"expected_exit: ", 15 }), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, (({ int _val = call_value; char* _buf = (char*)os_ScratchAlloc(16); int _len = snprintf(_buf, 16, "%d", _val); ((Slice_unsigned_char){ (unsigned char*)_buf, _len }); })), ctx);
+    canonical = mir_native_backend_source_route__mir_native_scalar_source_append(canonical, ((Slice_unsigned_char){ (unsigned char*)"\n", 1 }), ctx);
+    Slice_unsigned_char module_name = ((Slice_unsigned_char){ (unsigned char*)"phase10_local_call", 18 });
+    Slice_unsigned_char object_name = ((Slice_unsigned_char){ (unsigned char*)"phase10_local_call_module.o", 27 });
+    int native_boundary_count = 0;
+    if ((is_runtime_boundary == 1)) {
+    module_name = ((Slice_unsigned_char){ (unsigned char*)"phase10_runtime_boundary", 24 });
+    object_name = ((Slice_unsigned_char){ (unsigned char*)"phase10_runtime_boundary_module.o", 33 });
+    native_boundary_count = 1;
+    }
+    mir__MirProgramBundle bundle = mir__mir_make_program_bundle(((Slice_unsigned_char){ (unsigned char*)"main", 4 }), ctx);
+    mir__MirProgramBundleModule bundle_module = mir__mir_make_program_bundle_module(source_path, ((Slice_unsigned_char){ (unsigned char*)"", 0 }), object_name, ((Slice_unsigned_char){ (unsigned char*)"gust.compiler_mir_ingestion.v2", 30 }), canonical, 0, 0, native_boundary_count, ctx);
+    if ((is_local_call == 1)) {
+    bundle_module = mir__mir_program_bundle_module_with_symbol(bundle_module, mir__mir_make_program_bundle_symbol(((Slice_unsigned_char){ (unsigned char*)"phase10_local_identity", 22 }), ((Slice_unsigned_char){ (unsigned char*)"phase10_local_identity", 22 }), ((Slice_unsigned_char){ (unsigned char*)"(int)->int", 10 }), 1, ctx), ctx);
+    } else {
+    bundle_module = mir__mir_program_bundle_module_with_symbol(bundle_module, mir__mir_make_program_bundle_symbol(((Slice_unsigned_char){ (unsigned char*)"abs", 3 }), ((Slice_unsigned_char){ (unsigned char*)"abs", 3 }), ((Slice_unsigned_char){ (unsigned char*)"(int)->int", 10 }), 2, ctx), ctx);
+    }
+    bundle_module = mir__mir_program_bundle_module_with_symbol(bundle_module, mir__mir_make_program_bundle_symbol(((Slice_unsigned_char){ (unsigned char*)"main", 4 }), ((Slice_unsigned_char){ (unsigned char*)"main", 4 }), ((Slice_unsigned_char){ (unsigned char*)"()->int", 7 }), 0, ctx), ctx);
+    bundle = mir__mir_program_bundle_with_module(bundle, bundle_module, ctx);
+    mir_native_backend_capability__MirNativeBackendCapabilityPlan plan = mir_native_backend_capability__mir_native_backend_make_capability_plan(ctx);
+    int ordinal = 0;
+    plan = mir_native_backend_source_route__mir_native_scalar_source_add_requirement(plan, 0, source_path, ordinal, ((Slice_unsigned_char){ (unsigned char*)"LocalI32Set", 11 }), ctx);
+    ordinal = (ordinal + 1);
+    plan = mir_native_backend_source_route__mir_native_scalar_source_add_requirement(plan, 0, source_path, ordinal, ((Slice_unsigned_char){ (unsigned char*)"LocalI32Read", 12 }), ctx);
+    ordinal = (ordinal + 1);
+    if ((is_local_call == 1)) {
+    plan = mir_native_backend_source_route__mir_native_scalar_source_add_requirement(plan, 0, source_path, ordinal, ((Slice_unsigned_char){ (unsigned char*)"LocalCallI32", 12 }), ctx);
+    } else {
+    plan = mir_native_backend_source_route__mir_native_scalar_source_add_requirement(plan, 0, source_path, ordinal, ((Slice_unsigned_char){ (unsigned char*)"ImportedCallI32", 15 }), ctx);
+    }
+    ordinal = (ordinal + 1);
+    plan = mir_native_backend_source_route__mir_native_scalar_source_add_requirement(plan, 0, source_path, ordinal, ((Slice_unsigned_char){ (unsigned char*)"ReturnI32", 9 }), ctx);
+    ordinal = (ordinal + 1);
+    plan = mir_native_backend_source_route__mir_native_scalar_source_add_requirement(plan, 1, source_path, ordinal, ((Slice_unsigned_char){ (unsigned char*)"int", 3 }), ctx);
+    ordinal = (ordinal + 1);
+    plan = mir_native_backend_source_route__mir_native_scalar_source_add_requirement(plan, 1, source_path, ordinal, ((Slice_unsigned_char){ (unsigned char*)"()->int", 7 }), ctx);
+    ordinal = (ordinal + 1);
+    plan = mir_native_backend_source_route__mir_native_scalar_source_add_requirement(plan, 1, source_path, ordinal, ((Slice_unsigned_char){ (unsigned char*)"(int)->int", 10 }), ctx);
+    ordinal = (ordinal + 1);
+    if ((is_runtime_boundary == 1)) {
+    plan = mir_native_backend_source_route__mir_native_scalar_source_add_requirement(plan, 2, source_path, ordinal, ((Slice_unsigned_char){ (unsigned char*)"abs", 3 }), ctx);
+    ordinal = (ordinal + 1);
+    }
+    plan = mir_native_backend_source_route__mir_native_scalar_source_add_requirement(plan, 3, source_path, ordinal, ((Slice_unsigned_char){ (unsigned char*)"native_host", 11 }), ctx);
+    ordinal = (ordinal + 1);
+    plan = mir_native_backend_source_route__mir_native_scalar_source_add_requirement(plan, 3, source_path, ordinal, ((Slice_unsigned_char){ (unsigned char*)"position_independent_code", 25 }), ctx);
+    ordinal = (ordinal + 1);
+    plan = mir_native_backend_source_route__mir_native_scalar_source_add_requirement(plan, 3, source_path, ordinal, ((Slice_unsigned_char){ (unsigned char*)"native_executable_link", 22 }), ctx);
+    lowering.supported = 1;
+    lowering.bundle = bundle;
+    lowering.plan = plan;
+    return lowering;
+    }
+}
+
 os_ProcessResult mir_native_backend_source_route__mir_native_scalar_source_process(Slice_unsigned_char driver_path, Slice_unsigned_char command_name, Slice_unsigned_char request_path, int include_request, os_Arena* ctx) {
     std_Vector_str arguments = ((struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx });
     os_VectorPush(&arguments, std_Clone_str(ctx, driver_path));
@@ -92784,7 +95222,13 @@ os_ProcessResult mir_native_backend_source_route__mir_native_scalar_source_proce
 }
 
 mir_native_backend_source_route__MirNativeScalarSourceRouteResult mir_native_backend_source_route__mir_native_scalar_source_compile(std_Vector_ast__Program programs, std_Vector_str module_paths, std_Vector_str module_prefixes, Slice_unsigned_char output_path, os_Arena* ctx) {
-    mir_native_backend_source_route__MirNativeScalarSourceLowering lowering = mir_native_backend_source_route__mir_native_scalar_source_lower(programs, module_paths, module_prefixes, ctx);
+    mir_native_backend_source_route__MirNativeScalarSourceLowering lowering = mir_native_backend_source_route__mir_native_call_import_source_lower(programs, module_paths, module_prefixes, ctx);
+    if ((lowering.supported == 0)) {
+    lowering = mir_native_backend_source_route__mir_native_cfg_source_lower(programs, module_paths, module_prefixes, ctx);
+    }
+    if ((lowering.supported == 0)) {
+    lowering = mir_native_backend_source_route__mir_native_scalar_source_lower(programs, module_paths, module_prefixes, ctx);
+    }
     if ((lowering.supported == 0)) {
     return mir_native_backend_source_route__mir_native_scalar_source_route_result(2, ((Slice_unsigned_char){ (unsigned char*)"", 0 }), ctx);
     }
@@ -92859,6 +95303,37 @@ mir_native_backend_source_route__MirNativeScalarSourceRouteResult mir_native_bac
     return mir_native_backend_source_route__mir_native_scalar_source_route_result(1, diagnostic, ctx);
     }
     return mir_native_backend_source_route__mir_native_scalar_source_route_result(0, ((Slice_unsigned_char){ (unsigned char*)"", 0 }), ctx);
+}
+
+int compiler_is_help_invocation(std_Vector_str args, os_Arena* ctx) {
+    if ((args.len != 2)) {
+    return 0;
+    }
+    if (((std_str_eq((*({ if (1 < 0 || 1 >= args.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(args.data[1]); })), ((Slice_unsigned_char){ (unsigned char*)"--help", 6 })) == 1) || (std_str_eq((*({ if (1 < 0 || 1 >= args.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(args.data[1]); })), ((Slice_unsigned_char){ (unsigned char*)"-h", 2 })) == 1))) {
+    return 1;
+    }
+    return 0;
+}
+
+void compiler_print_help() {
+    os_LogStr(((Slice_unsigned_char){ (unsigned char*)"Usage:", 6 }));
+    os_LogStr(((Slice_unsigned_char){ (unsigned char*)"  gust <source.gst>", 19 }));
+    os_LogStr(((Slice_unsigned_char){ (unsigned char*)"  gust --backend mir-to-c <source.gst>", 38 }));
+    os_LogStr(((Slice_unsigned_char){ (unsigned char*)"  gust --backend cranelift -o <output> <source.gst>", 51 }));
+    os_LogStr(((Slice_unsigned_char){ (unsigned char*)"", 0 }));
+    os_LogStr(((Slice_unsigned_char){ (unsigned char*)"Backends:", 9 }));
+    os_LogStr(((Slice_unsigned_char){ (unsigned char*)"  mir-to-c   Emit C source to stdout (default).", 47 }));
+    os_LogStr(((Slice_unsigned_char){ (unsigned char*)"  cranelift  Compile a supported source cohort to one native executable (experimental).", 87 }));
+    os_LogStr(((Slice_unsigned_char){ (unsigned char*)"", 0 }));
+    os_LogStr(((Slice_unsigned_char){ (unsigned char*)"Options:", 8 }));
+    os_LogStr(((Slice_unsigned_char){ (unsigned char*)"  --backend <mir-to-c|cranelift>  Select the backend explicitly.", 64 }));
+    os_LogStr(((Slice_unsigned_char){ (unsigned char*)"  -o <output>                     Required only by the cranelift backend.", 73 }));
+    os_LogStr(((Slice_unsigned_char){ (unsigned char*)"  -h, --help                      Show this help and exit.", 58 }));
+    os_LogStr(((Slice_unsigned_char){ (unsigned char*)"", 0 }));
+    os_LogStr(((Slice_unsigned_char){ (unsigned char*)"Native backend driver:", 22 }));
+    os_LogStr(((Slice_unsigned_char){ (unsigned char*)"  Set GUST_NATIVE_BACKEND_DRIVER to an absolute executable path, or install", 75 }));
+    os_LogStr(((Slice_unsigned_char){ (unsigned char*)"  gust-native-backend next to gust. There is no PATH search, auto-build, or", 75 }));
+    os_LogStr(((Slice_unsigned_char){ (unsigned char*)"  fallback to MIR-to-C.", 23 }));
 }
 
 int compiler_argument_starts_with(Slice_unsigned_char value, Slice_unsigned_char prefix) {
@@ -93069,6 +95544,10 @@ void gust_user_main(void* _gust_arg) {
     os_Arena ctx = os_Arena_New();
     os_SetThreadScratch(&ctx);
     std_Vector_str args = (({ os_Arena* _ctx = &ctx; struct std_Vector_str _tmp = os_Args(_ctx); ((std_Vector_str){ .data = _tmp.data, .len = _tmp.len, .capacity = _tmp.capacity, .arena = _tmp.arena }); }));
+    if ((compiler_is_help_invocation(args, &ctx) == 1)) {
+    compiler_print_help();
+    exit(0);
+    }
     CompilerInvocation invocation = compiler_parse_invocation(args, &ctx);
     Slice_unsigned_char file_path = invocation.source_path;
     std_Graph_str graph = ((struct std_Graph_str){ .nodes = { .arena = &ctx, .capacity = 0, .data = NULL, .free_len = 0, .free_list = NULL, .len = 0, .occupied = NULL } });
