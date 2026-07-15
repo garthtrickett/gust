@@ -6,12 +6,13 @@ import "mir_native_backend_request.gst" as request;
 
 // Phase 10 source route.
 //
-// Patch 8 connected literal and provenance-local scalar programs. Patch 9 adds
-// two narrow control-flow cohorts without changing the request, object, or
-// link protocols: literal boolean if/else returns, and one mutable integer
-// whose literal branch assignments merge through one canonical block
-// parameter. Calls, imports, function parameters, multiple modules, non-int
-// entries, and broader expressions remain deferred.
+// Patch 8 connected literal and provenance-local scalar programs. Patch 9 added
+// narrow CFG and block-parameter cohorts. Patch 10 adds two exact canonical-v2
+// call shapes without changing the request, object, or link protocols: one
+// same-module local identity helper call and one bodyless C extern call modeled
+// as an imported-host runtime boundary. Source import statements, multiple
+// source modules, indirect or nested calls, multiple arguments, non-int ABIs,
+// and broader expressions remain deferred.
 type MirNativeScalarSourceLowering[ctx] struct {
     supported: int,
     bundle: mir.MirProgramBundle[ctx],
@@ -95,6 +96,16 @@ func mir_native_scalar_source_capabilities(ctx: &Arena) capability.MirNativeBack
         "BlockParam",
         ctx
     );
+    capabilities = capability.mir_native_backend_capability_set_with_operation(
+        capabilities,
+        "LocalCallI32",
+        ctx
+    );
+    capabilities = capability.mir_native_backend_capability_set_with_operation(
+        capabilities,
+        "ImportedCallI32",
+        ctx
+    );
     capabilities = capability.mir_native_backend_capability_set_with_type_or_abi(
         capabilities,
         "int",
@@ -103,6 +114,16 @@ func mir_native_scalar_source_capabilities(ctx: &Arena) capability.MirNativeBack
     capabilities = capability.mir_native_backend_capability_set_with_type_or_abi(
         capabilities,
         "()->int",
+        ctx
+    );
+    capabilities = capability.mir_native_backend_capability_set_with_type_or_abi(
+        capabilities,
+        "(int)->int",
+        ctx
+    );
+    capabilities = capability.mir_native_backend_capability_set_with_runtime_import(
+        capabilities,
+        "abs",
         ctx
     );
     capabilities = capability.mir_native_backend_capability_set_with_target_requirement(
@@ -1368,6 +1389,873 @@ func mir_native_cfg_source_lower(programs: std.Vector[ast.Program[ctx], ctx], mo
     }
 }
 
+
+func mir_native_call_import_source_lower(programs: std.Vector[ast.Program[ctx], ctx], module_paths: std.Vector[str, ctx], module_prefixes: std.Vector[str, ctx], ctx: &Arena) MirNativeScalarSourceLowering[ctx] {
+    mut lowering := mir_native_scalar_source_empty_lowering(ctx);
+
+    if len(programs) != 1 || len(module_paths) != 1 || len(module_prefixes) != 1 {
+        return lowering;
+    }
+    if std.str_eq(module_prefixes[0], "") == 0 {
+        return lowering;
+    }
+
+    mut source_path := module_paths[0];
+    mut program := programs[0];
+    mut top_level: std.Vector[ast.Statement[ctx], ctx] := ctx[program.statements];
+    if len(top_level) != 2 {
+        return lowering;
+    }
+
+    unsafe {
+        mut first := top_level[0];
+        mut second := top_level[1];
+        if first.tag != 3 || second.tag != 3 {
+            return lowering;
+        }
+
+        mut main_statement := second;
+        if std.str_eq(main_statement.FunctionDecl.name, "main") == 0 ||
+           main_statement.FunctionDecl.is_extern == 1
+        {
+            return lowering;
+        }
+
+        mut main_parameters: std.Vector[ast.Parameter[ctx], ctx] :=
+            ctx[main_statement.FunctionDecl.params];
+        if len(main_parameters) != 0 {
+            return lowering;
+        }
+        mut main_return_type := ctx[main_statement.FunctionDecl.return_type];
+        if main_return_type.tag != 0 {
+            return lowering;
+        }
+
+        mut main_body := ctx[main_statement.FunctionDecl.body];
+        mut main_statements: std.Vector[ast.Statement[ctx], ctx] :=
+            ctx[main_body.statements];
+
+        mut is_local_call := 0;
+        mut is_runtime_boundary := 0;
+        mut call_value := 0;
+        mut call_name := "";
+        mut call_expression: ast.Expression[ctx];
+
+        if first.FunctionDecl.is_extern == 0 {
+            if std.str_eq(
+                first.FunctionDecl.name,
+                "phase10_local_identity"
+            ) == 0 {
+                return lowering;
+            }
+
+            mut helper_parameters: std.Vector[ast.Parameter[ctx], ctx] :=
+                ctx[first.FunctionDecl.params];
+            if len(helper_parameters) != 1 ||
+               helper_parameters[0].param_type.tag != 0
+            {
+                return lowering;
+            }
+            mut helper_return_type := ctx[first.FunctionDecl.return_type];
+            if helper_return_type.tag != 0 {
+                return lowering;
+            }
+
+            mut helper_body := ctx[first.FunctionDecl.body];
+            mut helper_statements: std.Vector[ast.Statement[ctx], ctx] :=
+                ctx[helper_body.statements];
+            if len(helper_statements) != 1 ||
+               helper_statements[0].tag != 12
+            {
+                return lowering;
+            }
+
+            mut helper_return :=
+                ctx[helper_statements[0].Return.expr];
+            if helper_return.tag != 0 ||
+               std.str_eq(
+                   helper_return.Identifier.name,
+                   helper_parameters[0].name
+               ) == 0
+            {
+                return lowering;
+            }
+
+            if len(main_statements) != 1 ||
+               main_statements[0].tag != 12
+            {
+                return lowering;
+            }
+            call_expression = ctx[main_statements[0].Return.expr];
+            call_name = "phase10_local_identity";
+            is_local_call = 1;
+        } else {
+            if std.str_eq(first.FunctionDecl.name, "abs") == 0 ||
+               std.str_eq(first.FunctionDecl.extern_symbol_name, "abs") == 0 ||
+               std.str_eq(first.FunctionDecl.extern_abi, "C") == 0
+            {
+                return lowering;
+            }
+
+            mut extern_parameters: std.Vector[ast.Parameter[ctx], ctx] :=
+                ctx[first.FunctionDecl.params];
+            if len(extern_parameters) != 1 ||
+               extern_parameters[0].param_type.tag != 0
+            {
+                return lowering;
+            }
+            mut extern_return_type := ctx[first.FunctionDecl.return_type];
+            if extern_return_type.tag != 0 {
+                return lowering;
+            }
+
+            if len(main_statements) != 1 ||
+               main_statements[0].tag != 10
+            {
+                return lowering;
+            }
+            mut unsafe_body := ctx[main_statements[0].UnsafeBlock.body];
+            mut unsafe_statements: std.Vector[ast.Statement[ctx], ctx] :=
+                ctx[unsafe_body.statements];
+            if len(unsafe_statements) != 1 ||
+               unsafe_statements[0].tag != 12
+            {
+                return lowering;
+            }
+            call_expression = ctx[unsafe_statements[0].Return.expr];
+            call_name = "abs";
+            is_runtime_boundary = 1;
+        }
+
+        if call_expression.tag != 12 {
+            return lowering;
+        }
+        mut callee := ctx[call_expression.Call.function];
+        if callee.tag != 0 ||
+           std.str_eq(callee.Identifier.name, call_name) == 0
+        {
+            return lowering;
+        }
+        mut arguments: std.Vector[ast.Expression[ctx], ctx] :=
+            ctx[call_expression.Call.arguments];
+        if len(arguments) != 1 || arguments[0].tag != 1 {
+            return lowering;
+        }
+        call_value = arguments[0].Integer.val;
+        if call_value < 0 {
+            return lowering;
+        }
+
+        mut canonical := "format: gust.compiler_mir_ingestion.v2\n";
+        if is_local_call == 1 {
+            canonical = mir_native_scalar_source_append(
+                canonical,
+                "module: phase10_local_call\n",
+                ctx
+            );
+            canonical = mir_native_scalar_source_append(
+                canonical,
+                "import_count: 0\n",
+                ctx
+            );
+            canonical = mir_native_scalar_source_append(
+                canonical,
+                "function_count: 2\n",
+                ctx
+            );
+
+            canonical = mir_native_scalar_source_append(
+                canonical,
+                "function_0_linkage: module_local\n",
+                ctx
+            );
+            canonical = mir_native_scalar_source_append(
+                canonical,
+                "function_0_function: phase10_local_identity\n",
+                ctx
+            );
+            canonical = mir_native_scalar_source_append(
+                canonical,
+                "function_0_backend_symbol: phase10_local_identity\n",
+                ctx
+            );
+            canonical = mir_native_scalar_source_append(
+                canonical,
+                "function_0_parameter_count: 1\n",
+                ctx
+            );
+            canonical = mir_native_scalar_source_append(
+                canonical,
+                "function_0_parameter_0_type: int\n",
+                ctx
+            );
+            canonical = mir_native_scalar_source_append(
+                canonical,
+                "function_0_return_type: int\n",
+                ctx
+            );
+            canonical = mir_native_scalar_source_append(
+                canonical,
+                "function_0_local_count: 1\n",
+                ctx
+            );
+            canonical = mir_native_scalar_source_append(
+                canonical,
+                "function_0_local_0_name: param_value\n",
+                ctx
+            );
+            canonical = mir_native_scalar_source_append(
+                canonical,
+                "function_0_local_0_type: int\n",
+                ctx
+            );
+            canonical = mir_native_scalar_source_append(
+                canonical,
+                "function_0_entry_block: entry\n",
+                ctx
+            );
+            canonical = mir_native_scalar_source_append(
+                canonical,
+                "function_0_block_count: 1\n",
+                ctx
+            );
+            canonical = mir_native_scalar_source_append(
+                canonical,
+                "function_0_block_0_label: entry\n",
+                ctx
+            );
+            canonical = mir_native_scalar_source_append(
+                canonical,
+                "function_0_block_0_parameter_count: 0\n",
+                ctx
+            );
+            canonical = mir_native_scalar_source_append(
+                canonical,
+                "function_0_block_0_statement_count: 1\n",
+                ctx
+            );
+            canonical = mir_native_scalar_source_append(
+                canonical,
+                "function_0_block_0_statement_0_kind: LocalI32SetParam\n",
+                ctx
+            );
+            canonical = mir_native_scalar_source_append(
+                canonical,
+                "function_0_block_0_statement_0_local: param_value\n",
+                ctx
+            );
+            canonical = mir_native_scalar_source_append(
+                canonical,
+                "function_0_block_0_statement_0_param: 0\n",
+                ctx
+            );
+            canonical = mir_native_scalar_source_append(
+                canonical,
+                "function_0_block_0_terminator_kind: ReturnLocalI32\n",
+                ctx
+            );
+            canonical = mir_native_scalar_source_append(
+                canonical,
+                "function_0_block_0_terminator_local: param_value\n",
+                ctx
+            );
+            canonical = mir_native_scalar_source_append(
+                canonical,
+                "function_0_metadata_count: 0\n",
+                ctx
+            );
+            canonical = mir_native_scalar_source_append(
+                canonical,
+                "function_0_expected_exit: 0\n",
+                ctx
+            );
+        } else {
+            canonical = mir_native_scalar_source_append(
+                canonical,
+                "module: phase10_runtime_boundary\n",
+                ctx
+            );
+            canonical = mir_native_scalar_source_append(
+                canonical,
+                "import_count: 1\n",
+                ctx
+            );
+            canonical = mir_native_scalar_source_append(
+                canonical,
+                "import_0_name: abs\n",
+                ctx
+            );
+            canonical = mir_native_scalar_source_append(
+                canonical,
+                "import_0_link_symbol: abs\n",
+                ctx
+            );
+            canonical = mir_native_scalar_source_append(
+                canonical,
+                "import_0_linkage: imported_host\n",
+                ctx
+            );
+            canonical = mir_native_scalar_source_append(
+                canonical,
+                "import_0_parameter_count: 1\n",
+                ctx
+            );
+            canonical = mir_native_scalar_source_append(
+                canonical,
+                "import_0_parameter_0_type: int\n",
+                ctx
+            );
+            canonical = mir_native_scalar_source_append(
+                canonical,
+                "import_0_return_type: int\n",
+                ctx
+            );
+            canonical = mir_native_scalar_source_append(
+                canonical,
+                "function_count: 1\n",
+                ctx
+            );
+        }
+
+        mut main_index := 0;
+        if is_local_call == 1 {
+            main_index = 1;
+        }
+        mut function_prefix := "function_0_";
+        if main_index == 1 {
+            function_prefix = "function_1_";
+        }
+
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            function_prefix,
+            ctx
+        );
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            "linkage: exported_entry\n",
+            ctx
+        );
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            function_prefix,
+            ctx
+        );
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            "function: main\n",
+            ctx
+        );
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            function_prefix,
+            ctx
+        );
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            "backend_symbol: main\n",
+            ctx
+        );
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            function_prefix,
+            ctx
+        );
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            "parameter_count: 0\n",
+            ctx
+        );
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            function_prefix,
+            ctx
+        );
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            "return_type: int\n",
+            ctx
+        );
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            function_prefix,
+            ctx
+        );
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            "local_count: 1\n",
+            ctx
+        );
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            function_prefix,
+            ctx
+        );
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            "local_0_name: call_result\n",
+            ctx
+        );
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            function_prefix,
+            ctx
+        );
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            "local_0_type: int\n",
+            ctx
+        );
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            function_prefix,
+            ctx
+        );
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            "entry_block: entry\n",
+            ctx
+        );
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            function_prefix,
+            ctx
+        );
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            "block_count: 1\n",
+            ctx
+        );
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            function_prefix,
+            ctx
+        );
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            "block_0_label: entry\n",
+            ctx
+        );
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            function_prefix,
+            ctx
+        );
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            "block_0_parameter_count: 0\n",
+            ctx
+        );
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            function_prefix,
+            ctx
+        );
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            "block_0_statement_count: 1\n",
+            ctx
+        );
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            function_prefix,
+            ctx
+        );
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            "block_0_statement_0_kind: LocalI32SetCall\n",
+            ctx
+        );
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            function_prefix,
+            ctx
+        );
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            "block_0_statement_0_local: call_result\n",
+            ctx
+        );
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            function_prefix,
+            ctx
+        );
+        if is_local_call == 1 {
+            canonical = mir_native_scalar_source_append(
+                canonical,
+                "block_0_statement_0_callee_kind: LocalFunction\n",
+                ctx
+            );
+        } else {
+            canonical = mir_native_scalar_source_append(
+                canonical,
+                "block_0_statement_0_callee_kind: ImportedFunction\n",
+                ctx
+            );
+        }
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            function_prefix,
+            ctx
+        );
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            "block_0_statement_0_callee: ",
+            ctx
+        );
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            call_name,
+            ctx
+        );
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            "\n",
+            ctx
+        );
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            function_prefix,
+            ctx
+        );
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            "block_0_statement_0_argument_count: 1\n",
+            ctx
+        );
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            function_prefix,
+            ctx
+        );
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            "block_0_statement_0_argument_0_kind: I32Literal\n",
+            ctx
+        );
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            function_prefix,
+            ctx
+        );
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            "block_0_statement_0_argument_0_value: ",
+            ctx
+        );
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            std.FormatInt(call_value),
+            ctx
+        );
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            "\n",
+            ctx
+        );
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            function_prefix,
+            ctx
+        );
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            "block_0_terminator_kind: ReturnLocalI32\n",
+            ctx
+        );
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            function_prefix,
+            ctx
+        );
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            "block_0_terminator_local: call_result\n",
+            ctx
+        );
+
+        if is_runtime_boundary == 1 {
+            canonical = mir_native_scalar_source_append(
+                canonical,
+                function_prefix,
+                ctx
+            );
+            canonical = mir_native_scalar_source_append(
+                canonical,
+                "metadata_count: 1\n",
+                ctx
+            );
+            canonical = mir_native_scalar_source_append(
+                canonical,
+                function_prefix,
+                ctx
+            );
+            canonical = mir_native_scalar_source_append(
+                canonical,
+                "metadata_0_kind: native_boundary\n",
+                ctx
+            );
+            canonical = mir_native_scalar_source_append(
+                canonical,
+                function_prefix,
+                ctx
+            );
+            canonical = mir_native_scalar_source_append(
+                canonical,
+                "metadata_0_attachment: statement:entry:0\n",
+                ctx
+            );
+            canonical = mir_native_scalar_source_append(
+                canonical,
+                function_prefix,
+                ctx
+            );
+            canonical = mir_native_scalar_source_append(
+                canonical,
+                "metadata_0_policy: ignored_with_proof\n",
+                ctx
+            );
+            canonical = mir_native_scalar_source_append(
+                canonical,
+                function_prefix,
+                ctx
+            );
+            canonical = mir_native_scalar_source_append(
+                canonical,
+                "metadata_0_payload: kind=RuntimeCall;symbol=abs;origin=",
+                ctx
+            );
+            canonical = mir_native_scalar_source_append(
+                canonical,
+                source_path,
+                ctx
+            );
+            canonical = mir_native_scalar_source_append(
+                canonical,
+                "\n",
+                ctx
+            );
+        } else {
+            canonical = mir_native_scalar_source_append(
+                canonical,
+                function_prefix,
+                ctx
+            );
+            canonical = mir_native_scalar_source_append(
+                canonical,
+                "metadata_count: 0\n",
+                ctx
+            );
+        }
+
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            function_prefix,
+            ctx
+        );
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            "expected_exit: ",
+            ctx
+        );
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            std.FormatInt(call_value),
+            ctx
+        );
+        canonical = mir_native_scalar_source_append(
+            canonical,
+            "\n",
+            ctx
+        );
+
+        mut module_name := "phase10_local_call";
+        mut object_name := "phase10_local_call_module.o";
+        mut native_boundary_count := 0;
+        if is_runtime_boundary == 1 {
+            module_name = "phase10_runtime_boundary";
+            object_name = "phase10_runtime_boundary_module.o";
+            native_boundary_count = 1;
+        }
+
+        mut bundle := mir.mir_make_program_bundle("main", ctx);
+        mut bundle_module := mir.mir_make_program_bundle_module(
+            source_path,
+            "",
+            object_name,
+            "gust.compiler_mir_ingestion.v2",
+            canonical,
+            0,
+            0,
+            native_boundary_count,
+            ctx
+        );
+
+        if is_local_call == 1 {
+            bundle_module = mir.mir_program_bundle_module_with_symbol(
+                bundle_module,
+                mir.mir_make_program_bundle_symbol(
+                    "phase10_local_identity",
+                    "phase10_local_identity",
+                    "(int)->int",
+                    1,
+                    ctx
+                ),
+                ctx
+            );
+        } else {
+            bundle_module = mir.mir_program_bundle_module_with_symbol(
+                bundle_module,
+                mir.mir_make_program_bundle_symbol(
+                    "abs",
+                    "abs",
+                    "(int)->int",
+                    2,
+                    ctx
+                ),
+                ctx
+            );
+        }
+
+        bundle_module = mir.mir_program_bundle_module_with_symbol(
+            bundle_module,
+            mir.mir_make_program_bundle_symbol(
+                "main",
+                "main",
+                "()->int",
+                0,
+                ctx
+            ),
+            ctx
+        );
+        bundle = mir.mir_program_bundle_with_module(
+            bundle,
+            bundle_module,
+            ctx
+        );
+
+        mut plan := capability.mir_native_backend_make_capability_plan(ctx);
+        mut ordinal := 0;
+        plan = mir_native_scalar_source_add_requirement(
+            plan,
+            0,
+            source_path,
+            ordinal,
+            "LocalI32Set",
+            ctx
+        );
+        ordinal = ordinal + 1;
+        plan = mir_native_scalar_source_add_requirement(
+            plan,
+            0,
+            source_path,
+            ordinal,
+            "LocalI32Read",
+            ctx
+        );
+        ordinal = ordinal + 1;
+        if is_local_call == 1 {
+            plan = mir_native_scalar_source_add_requirement(
+                plan,
+                0,
+                source_path,
+                ordinal,
+                "LocalCallI32",
+                ctx
+            );
+        } else {
+            plan = mir_native_scalar_source_add_requirement(
+                plan,
+                0,
+                source_path,
+                ordinal,
+                "ImportedCallI32",
+                ctx
+            );
+        }
+        ordinal = ordinal + 1;
+        plan = mir_native_scalar_source_add_requirement(
+            plan,
+            0,
+            source_path,
+            ordinal,
+            "ReturnI32",
+            ctx
+        );
+        ordinal = ordinal + 1;
+        plan = mir_native_scalar_source_add_requirement(
+            plan,
+            1,
+            source_path,
+            ordinal,
+            "int",
+            ctx
+        );
+        ordinal = ordinal + 1;
+        plan = mir_native_scalar_source_add_requirement(
+            plan,
+            1,
+            source_path,
+            ordinal,
+            "()->int",
+            ctx
+        );
+        ordinal = ordinal + 1;
+        plan = mir_native_scalar_source_add_requirement(
+            plan,
+            1,
+            source_path,
+            ordinal,
+            "(int)->int",
+            ctx
+        );
+        ordinal = ordinal + 1;
+        if is_runtime_boundary == 1 {
+            plan = mir_native_scalar_source_add_requirement(
+                plan,
+                2,
+                source_path,
+                ordinal,
+                "abs",
+                ctx
+            );
+            ordinal = ordinal + 1;
+        }
+        plan = mir_native_scalar_source_add_requirement(
+            plan,
+            3,
+            source_path,
+            ordinal,
+            "native_host",
+            ctx
+        );
+        ordinal = ordinal + 1;
+        plan = mir_native_scalar_source_add_requirement(
+            plan,
+            3,
+            source_path,
+            ordinal,
+            "position_independent_code",
+            ctx
+        );
+        ordinal = ordinal + 1;
+        plan = mir_native_scalar_source_add_requirement(
+            plan,
+            3,
+            source_path,
+            ordinal,
+            "native_executable_link",
+            ctx
+        );
+
+        lowering.supported = 1;
+        lowering.bundle = bundle;
+        lowering.plan = plan;
+        return lowering;
+    }
+}
+
 func mir_native_scalar_source_process(driver_path: str, command_name: str, request_path: str, include_request: int, ctx: &Arena) os.ProcessResult[ctx] {
     mut arguments: std.Vector[str, ctx] := std.VectorNew(ctx);
     arguments.Push(std.Clone(ctx, driver_path));
@@ -1379,12 +2267,20 @@ func mir_native_scalar_source_process(driver_path: str, command_name: str, reque
 }
 
 func mir_native_scalar_source_compile(programs: std.Vector[ast.Program[ctx], ctx], module_paths: std.Vector[str, ctx], module_prefixes: std.Vector[str, ctx], output_path: str, ctx: &Arena) MirNativeScalarSourceRouteResult[ctx] {
-    mut lowering := mir_native_cfg_source_lower(
+    mut lowering := mir_native_call_import_source_lower(
         programs,
         module_paths,
         module_prefixes,
         ctx
     );
+    if lowering.supported == 0 {
+        lowering = mir_native_cfg_source_lower(
+            programs,
+            module_paths,
+            module_prefixes,
+            ctx
+        );
+    }
     if lowering.supported == 0 {
         lowering = mir_native_scalar_source_lower(
             programs,

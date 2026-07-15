@@ -1002,10 +1002,11 @@ Phase 10 Patch 8 connects the first source-level native cohort. The accepted
 shape is exactly one module containing one zero-argument `main() int`. Its body
 is either one integer-literal return or one integer local initialized from a
 literal and returned. The local form emits one statement-attached provenance
-record with the frozen `ignored_with_proof` metadata policy. After Patch 9,
-calls, imports, multiple modules, function parameters, non-int entries, nested
-control flow, loops, and broader expressions retain the historical
-route-not-connected result until their dedicated patches.
+record with the frozen `ignored_with_proof` metadata policy. After Patch 10,
+source `import` statements, multiple source modules, function parameters,
+non-int entries, indirect or nested calls, multiple arguments, nested control
+flow, loops, and broader expressions retain the historical route-not-connected
+result until their dedicated patches.
 
 The compiler performs static capability validation before driver discovery,
 then validates the read-only worker handshake and checks the same requirement
@@ -1052,12 +1053,31 @@ four-block graph whose arm jumps carry literal edge arguments into one final
 i32 block parameter returned by `ReturnBlockParamI32`.
 
 The whole-program bundle indexes that merge parameter explicitly. Capability
-validation now requires `SgtI32`, `Jump`, `Branch`, and `BlockParam` in addition
-to the Patch 8 scalar operations. The worker still accepts only frozen v1 MIR,
-zero function parameters, at most one i32 local, three or four blocks, at most
-one final-merge i32 block parameter, literal edge arguments, and no call or
-import operations. Unsupported source shapes retain the route-not-connected
-result and never fall back to MIR-to-C.
+validation requires `SgtI32`, `Jump`, `Branch`, and `BlockParam` in addition to
+the Patch 8 scalar operations. The frozen v1 route remains restricted to zero
+function parameters, at most one i32 local, three or four blocks, at most one
+final-merge i32 block parameter, and literal edge arguments.
+
+Phase 10 Patch 10 connects two exact canonical-v2 call modules. The local-call
+shape defines `phase10_local_identity(int) int` with `module_local` linkage and
+a zero-argument exported `main` that passes one non-negative integer literal.
+The runtime-boundary shape declares bodyless C `extern func abs(value: int)
+int;`, calls it from one `unsafe` block, and models it as an `imported_host`
+symbol with link name `abs`.
+
+Both entries lower the call into one `LocalI32SetCall` writing `call_result`,
+followed by `ReturnLocalI32`. The runtime shape carries one statement-attached
+`native_boundary` metadata record with `kind=RuntimeCall`, symbol `abs`, and
+the frozen `ignored_with_proof` policy. Capability validation adds
+`LocalCallI32`, `ImportedCallI32`, `(int)->int`, and runtime import `abs`.
+
+The worker accepts v2 only for those two exact module shapes, then reuses
+`validate_compiler_mir_module` and
+`lower_compiler_mir_ingestion_module_to_object`. The imported symbol is not
+resolved by a compiler-side shim or fallback; the existing Phase 9G classified
+native link pipeline resolves libc `abs`. Source `import` statements, multiple
+source modules, indirect or nested calls, multiple arguments, non-integer ABIs,
+and CFG combined with calls remain deferred.
 
 Object verification and publication remain Phase 9G-owned. A verified hidden
 same-directory object is removed after a successful link and preserved when
@@ -1065,7 +1085,7 @@ linking fails. The classified Phase 9G link pipeline captures deterministic
 sibling logs and atomically publishes the executable. Worker stdout and stderr
 are captured in memory; successful `gust --backend cranelift` stdout is empty.
 Failures never fall back to MIR-to-C and preserve any pre-existing executable.
-The next milestone is the calls, imports, and runtime-boundary source route.
+The next milestone is packaging, help, CI, and Phase 10 closure.
 
 The checked-in lockfile for this crate is owned by:
 Patch 8 freezes the complete canonical call/import matrix and retires all

@@ -3179,6 +3179,301 @@ fn validate_phase10_cfg_block_parameter_fixture(
     Ok(())
 }
 
+fn validate_phase10_call_result_function(
+    defined: &CompilerMirLoweringDefinedFunction<'_>,
+    expected_linkage: CompilerMirLoweringFunctionLinkage,
+    expected_callee: &str,
+    expect_imported: bool,
+) -> Result<i32, Box<dyn Error>> {
+    if defined.linkage != expected_linkage {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 10 Patch 10 function linkage does not match the connected call shape",
+        ));
+    }
+
+    let fixture = &defined.fixture;
+    let function = &fixture.function;
+    if function.object_name != "main" ||
+        function.symbol != "main" ||
+        !function.params.is_empty() ||
+        function.return_type != TinyMirType::I32 ||
+        function.locals.len() != 1 ||
+        function.locals[0].ty != TinyMirType::I32 ||
+        function.entry_block != "entry" ||
+        function.blocks.len() != 1
+    {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 10 Patch 10 entry must be one zero-argument main() int with one i32 call-result local and one entry block",
+        ));
+    }
+
+    let block = &function.blocks[0];
+    if block.label != "entry" ||
+        !block.parameters.is_empty() ||
+        block.statements.len() != 1
+    {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 10 Patch 10 entry block shape drifted",
+        ));
+    }
+
+    let (
+        result_local,
+        target,
+        arguments,
+    ) = match &block.statements[0] {
+        CompilerMirLoweringStatement::LocalI32SetCall {
+            name,
+            target,
+            arguments,
+        } => (*name, target, arguments),
+        _ => {
+            return Err(phase10_backend_request_error(
+                Phase10BackendRequestStage::CanonicalMirValidation,
+                Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                "Phase 10 Patch 10 entry accepts exactly one LocalI32SetCall statement",
+            ));
+        }
+    };
+
+    if result_local != function.locals[0].name ||
+        result_local != "call_result"
+    {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 10 Patch 10 call result must target the canonical call_result local",
+        ));
+    }
+
+    match (expect_imported, target) {
+        (
+            false,
+            CompilerMirLoweringCallTarget::LocalFunction(name),
+        ) if *name == expected_callee => {}
+        (
+            true,
+            CompilerMirLoweringCallTarget::ImportedFunction(name),
+        ) if *name == expected_callee => {}
+        _ => {
+            return Err(phase10_backend_request_error(
+                Phase10BackendRequestStage::CanonicalMirValidation,
+                Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                "Phase 10 Patch 10 call target kind or name is outside the connected cohort",
+            ));
+        }
+    }
+
+    if arguments.len() != 1 {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 10 Patch 10 calls require exactly one literal i32 argument",
+        ));
+    }
+    let argument_value = match arguments[0] {
+        CompilerMirLoweringCallArgument::I32Literal(value) if value >= 0 => value,
+        _ => {
+            return Err(phase10_backend_request_error(
+                Phase10BackendRequestStage::CanonicalMirValidation,
+                Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                "Phase 10 Patch 10 calls accept only one non-negative i32 literal argument",
+            ));
+        }
+    };
+
+    match &block.terminator {
+        CompilerMirLoweringTerminator::ReturnLocalI32(name)
+            if *name == result_local => {}
+        _ => {
+            return Err(phase10_backend_request_error(
+                Phase10BackendRequestStage::CanonicalMirValidation,
+                Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                "Phase 10 Patch 10 entry must return the call-result local",
+            ));
+        }
+    }
+
+    Ok(argument_value)
+}
+
+fn validate_phase10_local_identity_helper(
+    defined: &CompilerMirLoweringDefinedFunction<'_>,
+) -> Result<(), Box<dyn Error>> {
+    if defined.linkage != CompilerMirLoweringFunctionLinkage::ModuleLocal {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 10 Patch 10 local helper must use module_local linkage",
+        ));
+    }
+
+    let fixture = &defined.fixture;
+    let function = &fixture.function;
+    if function.object_name != "phase10_local_identity" ||
+        function.symbol != "phase10_local_identity" ||
+        function.params.as_slice() != [TinyMirType::I32] ||
+        function.return_type != TinyMirType::I32 ||
+        function.locals.len() != 1 ||
+        function.locals[0].name != "param_value" ||
+        function.locals[0].ty != TinyMirType::I32 ||
+        function.entry_block != "entry" ||
+        function.blocks.len() != 1
+    {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 10 Patch 10 local helper signature or storage shape drifted",
+        ));
+    }
+
+    let block = &function.blocks[0];
+    if block.label != "entry" ||
+        !block.parameters.is_empty() ||
+        block.statements.len() != 1
+    {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 10 Patch 10 local helper block shape drifted",
+        ));
+    }
+
+    match &block.statements[0] {
+        CompilerMirLoweringStatement::LocalI32SetParam {
+            name,
+            param: 0,
+        } if *name == "param_value" => {}
+        _ => {
+            return Err(phase10_backend_request_error(
+                Phase10BackendRequestStage::CanonicalMirValidation,
+                Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                "Phase 10 Patch 10 local helper must copy parameter zero into param_value",
+            ));
+        }
+    }
+    match &block.terminator {
+        CompilerMirLoweringTerminator::ReturnLocalI32(name)
+            if *name == "param_value" => {}
+        _ => {
+            return Err(phase10_backend_request_error(
+                Phase10BackendRequestStage::CanonicalMirValidation,
+                Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                "Phase 10 Patch 10 local helper must return param_value",
+            ));
+        }
+    }
+    if !fixture.metadata.is_empty() {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 10 Patch 10 local helper carries no metadata",
+        ));
+    }
+    Ok(())
+}
+
+fn validate_phase10_calls_imports_runtime_module(
+    module: &CompilerMirLoweringModule<'_>,
+) -> Result<&'static str, Box<dyn Error>> {
+    validate_compiler_mir_module(module)?;
+
+    if module.name == "phase10_local_call" {
+        if !module.imports.is_empty() || module.functions.len() != 2 {
+            return Err(phase10_backend_request_error(
+                Phase10BackendRequestStage::CanonicalMirValidation,
+                Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                "Phase 10 Patch 10 local-call module requires two defined functions and no imports",
+            ));
+        }
+
+        validate_phase10_local_identity_helper(&module.functions[0])?;
+        let argument = validate_phase10_call_result_function(
+            &module.functions[1],
+            CompilerMirLoweringFunctionLinkage::ExportedEntry,
+            "phase10_local_identity",
+            false,
+        )?;
+        if module.functions[1].fixture.expected_exit != argument ||
+            !module.functions[1].fixture.metadata.is_empty()
+        {
+            return Err(phase10_backend_request_error(
+                Phase10BackendRequestStage::CanonicalMirValidation,
+                Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                "Phase 10 Patch 10 local-call expected exit or metadata drifted",
+            ));
+        }
+        return Ok("local_call");
+    }
+
+    if module.name == "phase10_runtime_boundary" {
+        if module.imports.len() != 1 || module.functions.len() != 1 {
+            return Err(phase10_backend_request_error(
+                Phase10BackendRequestStage::CanonicalMirValidation,
+                Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                "Phase 10 Patch 10 runtime-boundary module requires one imported host function and one entry",
+            ));
+        }
+
+        let imported = &module.imports[0];
+        if imported.name != "abs" ||
+            imported.link_symbol != "abs" ||
+            imported.linkage !=
+                CompilerMirLoweringFunctionLinkage::ImportedHost ||
+            imported.params.as_slice() != [TinyMirType::I32] ||
+            imported.return_type != TinyMirType::I32
+        {
+            return Err(phase10_backend_request_error(
+                Phase10BackendRequestStage::CanonicalMirValidation,
+                Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                "Phase 10 Patch 10 runtime boundary permits only imported_host abs(int)->int",
+            ));
+        }
+
+        let argument = validate_phase10_call_result_function(
+            &module.functions[0],
+            CompilerMirLoweringFunctionLinkage::ExportedEntry,
+            "abs",
+            true,
+        )?;
+        let fixture = &module.functions[0].fixture;
+        if fixture.expected_exit != argument || fixture.metadata.len() != 1 {
+            return Err(phase10_backend_request_error(
+                Phase10BackendRequestStage::CanonicalMirValidation,
+                Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                "Phase 10 Patch 10 runtime-boundary expected exit or metadata count drifted",
+            ));
+        }
+        let metadata = &fixture.metadata[0];
+        if metadata.kind != "native_boundary" ||
+            metadata.attachment != "statement:entry:0" ||
+            metadata.policy != "ignored_with_proof" ||
+            !metadata
+                .payload
+                .starts_with("kind=RuntimeCall;symbol=abs;origin=")
+        {
+            return Err(phase10_backend_request_error(
+                Phase10BackendRequestStage::CanonicalMirValidation,
+                Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                "Phase 10 Patch 10 runtime boundary requires one statement-attached abs RuntimeCall metadata record",
+            ));
+        }
+        return Ok("runtime_boundary");
+    }
+
+    Err(phase10_backend_request_error(
+        Phase10BackendRequestStage::CanonicalMirValidation,
+        Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+        "Phase 10 Patch 10 canonical v2 module is outside the connected local-call and runtime-boundary cohorts",
+    ))
+}
+
 fn compile_phase10_scalar_metadata_request_path(
     request_path: &Path,
 ) -> Result<(), Box<dyn Error>> {
@@ -3196,7 +3491,7 @@ fn compile_phase10_scalar_metadata_request_path(
 
     let (_object_builder, target_contract) =
         build_compiler_mir_native_object_builder(
-            "gust_phase10_scalar_metadata_compile_probe",
+            "gust_phase10_source_route_compile_probe",
         )
         .map_err(|error| {
             phase10_backend_request_error(
@@ -3236,56 +3531,71 @@ fn compile_phase10_scalar_metadata_request_path(
         return Err(phase10_backend_request_error(
             Phase10BackendRequestStage::ProgramMirBundleValidation,
             Phase10BackendRequestFailureKind::InvalidBundle,
-            "Phase 10 Patch 8 source route requires exactly one module",
+            "Phase 10 connected source route requires exactly one canonical module",
         ));
     }
 
-    let module = &bundle.modules[0];
-    if module.canonical_format != COMPILER_MIR_CANONICAL_FIXTURE_FORMAT {
-        return Err(phase10_backend_request_error(
-            Phase10BackendRequestStage::ProgramMirBundleValidation,
-            Phase10BackendRequestFailureKind::InvalidBundle,
-            "Phase 10 Patch 8 source route accepts only frozen canonical MIR v1",
-        ));
-    }
-
-    let parsed = parse_compiler_mir_input(&module.canonical_mir).map_err(
+    let module_record = &bundle.modules[0];
+    let parsed = parse_compiler_mir_input(&module_record.canonical_mir).map_err(
         |error| {
             phase10_backend_request_error(
                 Phase10BackendRequestStage::CanonicalMirValidation,
                 Phase10BackendRequestFailureKind::InvalidCanonicalMir,
                 format!(
-                    "Phase 10 Patch 8 canonical MIR parse failed: {error}"
+                    "Phase 10 canonical MIR parse failed: {error}"
                 ),
             )
         },
     )?;
-    let fixture = match parsed {
-        ParsedCompilerMirInput::V1(fixture) => fixture,
-        ParsedCompilerMirInput::V2(_) => {
-            return Err(phase10_backend_request_error(
-                Phase10BackendRequestStage::CanonicalMirValidation,
-                Phase10BackendRequestFailureKind::InvalidCanonicalMir,
-                "Phase 10 Patch 8 source route does not accept canonical MIR v2 modules",
-            ));
-        }
-    };
-
-    validate_compiler_mir_fixture(&fixture)?;
-    if fixture.function.blocks.len() == 1 {
-        validate_phase10_scalar_metadata_fixture(&fixture)?;
-    } else {
-        validate_phase10_cfg_block_parameter_fixture(&fixture)?;
-    }
 
     let object_path = compiler_mir_link_sibling_path(
         &request.output_path,
         ".phase10-source-route.o",
     )?;
-    lower_compiler_mir_ingestion_function_to_object(
-        &object_path,
-        &fixture.function,
-    )?;
+
+    let source_route: &'static str;
+    match parsed {
+        ParsedCompilerMirInput::V1(fixture) => {
+            if module_record.canonical_format !=
+                COMPILER_MIR_CANONICAL_FIXTURE_FORMAT
+            {
+                return Err(phase10_backend_request_error(
+                    Phase10BackendRequestStage::ProgramMirBundleValidation,
+                    Phase10BackendRequestFailureKind::InvalidBundle,
+                    "Phase 10 v1 source route canonical format record drifted",
+                ));
+            }
+            validate_compiler_mir_fixture(&fixture)?;
+            if fixture.function.blocks.len() == 1 {
+                validate_phase10_scalar_metadata_fixture(&fixture)?;
+                source_route = "scalar_metadata";
+            } else {
+                validate_phase10_cfg_block_parameter_fixture(&fixture)?;
+                source_route = "cfg_block_parameter";
+            }
+            lower_compiler_mir_ingestion_function_to_object(
+                &object_path,
+                &fixture.function,
+            )?;
+        }
+        ParsedCompilerMirInput::V2(module) => {
+            if module_record.canonical_format !=
+                COMPILER_MIR_CANONICAL_MODULE_FORMAT
+            {
+                return Err(phase10_backend_request_error(
+                    Phase10BackendRequestStage::ProgramMirBundleValidation,
+                    Phase10BackendRequestFailureKind::InvalidBundle,
+                    "Phase 10 v2 source route canonical format record drifted",
+                ));
+            }
+            source_route =
+                validate_phase10_calls_imports_runtime_module(&module)?;
+            lower_compiler_mir_ingestion_module_to_object(
+                &object_path,
+                &module,
+            )?;
+        }
+    }
 
     let linker_driver =
         env::var_os("CC").unwrap_or_else(|| OsString::from("cc"));
@@ -3325,16 +3635,11 @@ fn compile_phase10_scalar_metadata_request_path(
     println!("request_protocol: {PHASE10_BACKEND_REQUEST_FORMAT}");
     println!("request_status: compiled");
     println!("artifact_kind: {PHASE10_BACKEND_REQUEST_ARTIFACT_KIND}");
-    let source_route = if fixture.function.blocks.len() == 1 {
-        "scalar_metadata"
-    } else {
-        "cfg_block_parameter"
-    };
     println!("source_route: {source_route}");
     println!("entry_symbol: {}", bundle.entry_symbol);
     println!("module_count: {}", bundle.module_count);
-    println!("module_path: {}", module.module_path);
-    println!("object_name: {}", module.object_name);
+    println!("module_path: {}", module_record.module_path);
+    println!("object_name: {}", module_record.object_name);
     println!("target_triple: {}", request.target_triple);
     println!("object_format: {}", request.object_format);
     println!("output_path: {}", request.output_path.display());
@@ -3372,10 +3677,11 @@ const PHASE10_DRIVER_TYPES_AND_ABIS: [&str; 5] = [
     "(int)->int",
     "(int,int)->int",
 ];
-const PHASE10_DRIVER_RUNTIME_IMPORTS: [&str; 3] = [
+const PHASE10_DRIVER_RUNTIME_IMPORTS: [&str; 4] = [
     "tiny_host_add_one_i32",
     "tiny_host_add_i32",
     "tiny_host_is_positive_i32",
+    "abs",
 ];
 const PHASE10_DRIVER_TARGET_REQUIREMENTS: [&str; 3] = [
     "native_host",

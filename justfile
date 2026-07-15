@@ -12738,7 +12738,7 @@ guard-cranelift-phase10-driver-handshake-contract:
     if [ "$canonical_format_count" != "2" ] ||
        [ "$operation_count" != "15" ] ||
        [ "$type_abi_count" != "5" ] ||
-       [ "$runtime_import_count" != "3" ] ||
+       [ "$runtime_import_count" != "4" ] ||
        [ "$target_requirement_count" != "3" ]; then
       echo "Phase 10 handshake inventory drifted: canonical=$canonical_format_count operations=$operation_count type_abi=$type_abi_count runtime_imports=$runtime_import_count target_requirements=$target_requirement_count."
       exit 1
@@ -13196,7 +13196,7 @@ guard-cranelift-phase10-scalar-source-route:
     rg -n -F 'allowed_cranelift_phase10_scalar_source_route_supported_literal_shape: one_ReturnI32_literal' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_scalar_source_route_supported_local_shape: one_LocalI32Set_literal_then_ReturnLocalI32' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_scalar_source_route_metadata_shape: local_binding_source_emits_one_statement_attached_provenance_record_with_ignored_with_proof_policy' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_scalar_source_route_deferred_after_patch9: calls_imports_multiple_modules_parameters_non_int_entries_and_broader_expressions_keep_the_historical_route_not_connected_result' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_scalar_source_route_deferred_after_patch10: source_import_statements_multiple_modules_function_parameters_non_int_entries_indirect_or_nested_calls_multiple_arguments_and_broader_expressions_keep_the_historical_route_not_connected_result' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_scalar_source_route_next_milestone_status: complete' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_scalar_source_route_capability_order: compiler_owned_static_validation_then_driver_discovery_handshake_then_advertised_inventory_validation' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_scalar_source_route_driver_policy: GUST_NATIVE_BACKEND_DRIVER_absolute_path_then_gust-native-backend_absolute_sibling_and_no_fallback_from_bad_explicit_path' "$manifest_doc" >/dev/null
@@ -13459,6 +13459,8 @@ guard-cranelift-phase10-cfg-block-parameter-source-route:
     rg -n -F 'allowed_cranelift_phase10_cfg_block_parameter_source_route_capability_operations: ReturnI32,LocalI32Set,LocalI32Read,SgtI32,Jump,Branch,BlockParam' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_cfg_block_parameter_source_route_worker_restriction: v1_only_zero_function_parameters_three_or_four_blocks_at_most_one_i32_local_at_most_one_final_merge_i32_block_parameter_literal_edge_arguments_and_no_calls_or_imports' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_cfg_block_parameter_source_route_next_milestone: calls_imports_and_runtime_boundary_source_route' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_cfg_block_parameter_source_route_next_milestone_status: complete' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_cfg_block_parameter_source_route_deferred_after_patch10: source_import_statements_multiple_modules_function_parameters_non_int_entries_nested_CFG_loops_indirect_or_nested_calls_multiple_arguments_and_broader_expressions' "$manifest_doc" >/dev/null
 
     rg -n -F 'func mir_native_cfg_source_lower(' "$route_source" >/dev/null
     rg -n -F 'block_0_terminator_kind: BranchI32Literal' "$route_source" >/dev/null
@@ -13577,7 +13579,7 @@ guard-cranelift-phase10-cfg-block-parameter-source-route:
     deferred_status="$?"
     set -e
     if [ "$deferred_status" = "0" ]; then
-      echo "Call-bearing source must remain deferred until Patch 10."
+      echo "Broader call-bearing source with function parameters must remain deferred after Patch 10."
       exit 1
     fi
     cat "$build_dir/deferred.stdout" "$build_dir/deferred.stderr" >"$build_dir/deferred.combined"
@@ -13593,9 +13595,204 @@ guard-cranelift-phase10-cfg-block-parameter-source-route:
     printf '%s\n' "$readme_flat" |
       rg -F 'It becomes a four-block graph whose arm jumps carry literal edge arguments into one final i32 block parameter returned by `ReturnBlockParamI32`.' >/dev/null
     printf '%s\n' "$readme_flat" |
-      rg -F 'The next milestone is the calls, imports, and runtime-boundary source route.' >/dev/null
+      rg -F 'Phase 10 Patch 10 connects two exact canonical-v2 call modules.' >/dev/null
 
     echo "✅ Phase 10 CFG source route passed: literal branching and one canonical block-parameter merge compile through the shared request, verified object, and classified atomic link pipeline; calls and imports remain deferred."
+
+
+guard-cranelift-phase10-call-import-runtime-source-route:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 10 calls, imports, and runtime-boundary source route..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    route_source="compiler/mir_native_backend_source_route.gst"
+    local_source="compiler/phase10_local_call_source.gst"
+    runtime_source="compiler/phase10_runtime_boundary_source.gst"
+    deferred_source="compiler/mir_feature_return_int_preservation_source.gst"
+    rust_manifest="compiler/experiments/cranelift/Cargo.toml"
+    rust_driver="compiler/experiments/cranelift/src/main.rs"
+    readme_doc="compiler/experiments/cranelift/README.md"
+    build_dir="build/guards/cranelift_phase10_call_import_runtime_source_route"
+
+    for required_file in \
+      "$manifest_doc" \
+      "$route_source" \
+      "$local_source" \
+      "$runtime_source" \
+      "$deferred_source" \
+      "$rust_manifest" \
+      "$rust_driver" \
+      "$readme_doc"
+    do
+      if [ ! -f "$required_file" ]; then
+        echo "Missing Phase 10 call/import source-route input: $required_file"
+        exit 1
+      fi
+    done
+    if [ ! -x ./gust ]; then
+      echo "Phase 10 call/import source-route guard requires the rebuilt ./gust compiler."
+      exit 1
+    fi
+
+    just guard-cranelift-phase10-cfg-block-parameter-source-route
+    just guard-cranelift-experiment-manifest-surface
+
+    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE10_CALL_IMPORT_RUNTIME_SOURCE_ROUTE_GUARD: guard-cranelift-phase10-call-import-runtime-source-route' "$manifest_doc" justfile >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_call_import_runtime_source_route_status: phase10_connected_calls_imports_and_runtime_boundary_source_route' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_call_import_runtime_source_route_predecessor_status: phase10_connected_CFG_and_block_parameter_source_route' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_call_import_runtime_source_route_canonical_format: gust.compiler_mir_ingestion.v2' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_call_import_runtime_source_route_local_shape: one_module_local_phase10_local_identity_int_to_int_and_zero_argument_main_returning_one_non_negative_literal_call' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_call_import_runtime_source_route_import_shape: one_imported_host_abs_int_to_int_and_zero_argument_main_returning_one_non_negative_literal_call_inside_one_unsafe_block' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_call_import_runtime_source_route_runtime_metadata: one_statement_attached_native_boundary_record_kind_RuntimeCall_symbol_abs_policy_ignored_with_proof' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_call_import_runtime_source_route_next_milestone: packaging_help_CI_and_phase10_closure' "$manifest_doc" >/dev/null
+
+    rg -n -F 'func mir_native_call_import_source_lower(' "$route_source" >/dev/null
+    rg -n -F 'format: gust.compiler_mir_ingestion.v2' "$route_source" >/dev/null
+    rg -n -F 'function_0_linkage: module_local' "$route_source" >/dev/null
+    rg -n -F 'import_0_linkage: imported_host' "$route_source" >/dev/null
+    rg -n -F 'block_0_statement_0_kind: LocalI32SetCall' "$route_source" >/dev/null
+    rg -n -F 'metadata_0_kind: native_boundary' "$route_source" >/dev/null
+    rg -n -F 'kind=RuntimeCall;symbol=abs;origin=' "$route_source" >/dev/null
+    rg -n -F '"LocalCallI32"' "$route_source" >/dev/null
+    rg -n -F '"ImportedCallI32"' "$route_source" >/dev/null
+    rg -n -F '"abs"' "$route_source" >/dev/null
+
+    if rg -n -i -F 'cranelift' "$route_source" >/dev/null; then
+      echo "Compiler-owned call/import source routing must remain implementation-neutral."
+      rg -n -i -F 'cranelift' "$route_source"
+      exit 1
+    fi
+    if rg -n -i 'cargo run|cargo build|Command::new|compiler-mir-.*object|link-canonical|os\.System' "$route_source" >/dev/null; then
+      echo "Compiler-owned call/import routing must not build workers, invoke fixture commands, or construct shell command strings."
+      rg -n -i 'cargo run|cargo build|Command::new|compiler-mir-.*object|link-canonical|os\.System' "$route_source"
+      exit 1
+    fi
+
+    rg -n -F 'fn validate_phase10_call_result_function(' "$rust_driver" >/dev/null
+    rg -n -F 'fn validate_phase10_local_identity_helper(' "$rust_driver" >/dev/null
+    rg -n -F 'fn validate_phase10_calls_imports_runtime_module(' "$rust_driver" >/dev/null
+    rg -n -F 'validate_phase10_calls_imports_runtime_module(&module)?' "$rust_driver" >/dev/null
+    rg -n -F 'lower_compiler_mir_ingestion_module_to_object(' "$rust_driver" >/dev/null
+    rg -n -F 'const PHASE10_DRIVER_RUNTIME_IMPORTS: [&str; 4]' "$rust_driver" >/dev/null
+    rg -n -F '"abs",' "$rust_driver" >/dev/null
+    rg -n -F '".phase10-source-route.o"' "$rust_driver" >/dev/null
+    rg -n -F 'run_compiler_mir_link_request(link_request)' "$rust_driver" >/dev/null
+
+    rm -rf "$build_dir"
+    mkdir -p "$build_dir"
+    cargo_target="$build_dir/cargo-target"
+    CARGO_TARGET_DIR="$cargo_target" cargo build \
+      --locked \
+      --quiet \
+      --manifest-path "$rust_manifest"
+    driver_bin="$cargo_target/debug/gust-cranelift-experiment"
+    if [ ! -x "$driver_bin" ]; then
+      echo "Missing built Phase 10 call/import worker: $driver_bin"
+      exit 1
+    fi
+    driver_abs="$(cd "$(dirname "$driver_bin")" && pwd)/$(basename "$driver_bin")"
+
+    handshake="$build_dir/handshake.txt"
+    "$driver_abs" phase10-driver-handshake >"$handshake"
+    rg -n -F 'runtime_import: abs' "$handshake" >/dev/null
+    runtime_import_count="$(rg -c '^runtime_import: ' "$handshake" || true)"
+    if [ "${runtime_import_count:-0}" != "4" ]; then
+      echo "Phase 10 Patch 10 worker must advertise exactly four runtime imports."
+      cat "$handshake"
+      exit 1
+    fi
+
+    compile_and_check() {
+      local source_path="$1"
+      local output_path="$2"
+      local expected_exit="$3"
+      local case_name="$4"
+      local default_c="$build_dir/$case_name.default.c"
+      local explicit_c="$build_dir/$case_name.explicit.c"
+      local stdout_log="$build_dir/$case_name.stdout"
+      local stderr_log="$build_dir/$case_name.stderr"
+
+      ./gust "$source_path" >"$default_c"
+      ./gust --backend mir-to-c "$source_path" >"$explicit_c"
+      cmp -s "$default_c" "$explicit_c"
+      test -s "$default_c"
+
+      GUST_NATIVE_BACKEND_DRIVER="$driver_abs" \
+        ./gust --backend cranelift -o "$output_path" "$source_path" \
+        >"$stdout_log" 2>"$stderr_log"
+
+      if [ -s "$stdout_log" ] || [ -s "$stderr_log" ]; then
+        echo "Successful Phase 10 call/import compilation must keep stdout and stderr empty for $case_name."
+        cat "$stdout_log" "$stderr_log"
+        exit 1
+      fi
+      if [ ! -x "$output_path" ]; then
+        echo "Phase 10 call/import compilation did not publish an executable for $case_name."
+        exit 1
+      fi
+
+      set +e
+      "$output_path"
+      local execution_status="$?"
+      set -e
+      if [ "$execution_status" != "$expected_exit" ]; then
+        echo "Phase 10 call/import executable $case_name exited $execution_status, expected $expected_exit."
+        exit 1
+      fi
+
+      if [ -e "$output_path.phase10.bundle" ] ||
+         [ -e "$output_path.phase10.request" ]; then
+        echo "Transient request or bundle survived successful $case_name compilation."
+        exit 1
+      fi
+
+      local output_dir
+      local output_name
+      output_dir="$(dirname "$output_path")"
+      output_name="$(basename "$output_path")"
+      if [ -e "$output_dir/.$output_name.phase10-source-route.o" ]; then
+        echo "Successful $case_name compilation left the hidden verified object."
+        exit 1
+      fi
+      if [ ! -f "$output_dir/.$output_name.phase9g-link.stdout.log" ] ||
+         [ ! -f "$output_dir/.$output_name.phase9g-link.stderr.log" ]; then
+        echo "Successful $case_name compilation is missing deterministic Phase 9G link logs."
+        exit 1
+      fi
+    }
+
+    local_output="$build_dir/local-call-program"
+    runtime_output="$build_dir/runtime-boundary-program"
+    compile_and_check "$local_source" "$local_output" 47 local-call
+    compile_and_check "$runtime_source" "$runtime_output" 53 runtime-boundary
+
+    deferred_output="$build_dir/deferred-program"
+    set +e
+    GUST_NATIVE_BACKEND_DRIVER="$driver_abs" \
+      ./gust --backend cranelift -o "$deferred_output" "$deferred_source" \
+      >"$build_dir/deferred.stdout" 2>"$build_dir/deferred.stderr"
+    deferred_status="$?"
+    set -e
+    if [ "$deferred_status" = "0" ]; then
+      echo "Function-parameter call source must remain outside the exact Patch 10 cohort."
+      exit 1
+    fi
+    cat "$build_dir/deferred.stdout" "$build_dir/deferred.stderr" >"$build_dir/deferred.combined"
+    rg -n -F 'Experimental Cranelift backend selection is valid, but the source-level route is not connected yet.' "$build_dir/deferred.combined" >/dev/null
+    if [ -e "$deferred_output" ]; then
+      echo "Deferred broader call source created an executable."
+      exit 1
+    fi
+
+    readme_flat="$(tr '\n' ' ' < "$readme_doc")"
+    printf '%s\n' "$readme_flat" |
+      rg -F 'Phase 10 Patch 10 connects two exact canonical-v2 call modules.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'The imported symbol is not resolved by a compiler-side shim or fallback; the existing Phase 9G classified native link pipeline resolves libc `abs`.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'The next milestone is packaging, help, CI, and Phase 10 closure.' >/dev/null
+
+    echo "✅ Phase 10 call/import source route passed: one local helper call and one imported-host abs runtime boundary compile through canonical v2, the shared verified object emitter, and the Phase 9G classified atomic link pipeline; broader call and source-import shapes remain deferred."
 
 
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
