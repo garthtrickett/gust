@@ -1176,6 +1176,42 @@ Those executions remain owned by the predecessor guards and the existing
 `cranelift-phase10-packaging-help` shard. The close guard is wired once in PR
 Fast build and once in the Heavy Guards final job.
 
+Phase 11 opens as
+`phase11_open_inventory_backed_feature_parity_migration`.
+
+Patch 1 is contract-only. Feature parity means equivalent observable behavior
+and equivalent failure classification for a declared registry inventory; it
+does not mean identical machine code, identical emitted C, identical
+backend-specific diagnostic prose, or full Gust language parity. The parity
+domain is limited to existing canonical MIR semantics, features already
+supported by MIR-to-C, and the seventeen frozen Cranelift translator-seed
+semantics.
+
+The six Phase 10 source cohorts remain the compatibility baseline: scalar
+return `7`, provenance-local return `2`, literal CFG return `11`,
+block-parameter merge return `17`, local identity call return `47`, and the
+imported `abs` runtime-boundary return `53`. Phase 11 initially records seven
+deferred families: broader scalar expressions, multiple locals and
+assignments, nested CFG, loops and backedges, function parameters and multiple
+arguments, multiple modules and source imports, and broader direct or imported
+calls.
+
+No new exact source-spelling, filename, or fixture-identity recognizer is
+authorized. Before native behavior expands, Patch 2 must establish one
+dedicated feature-parity registry and evidence model. MIR-to-C remains the
+default; Cranelift remains explicit and experimental with no fallback. The
+compiler retains source, canonical MIR, eligibility, capability, and
+orchestration ownership; the worker remains request-plus-MIR-only; and Phase 9G
+remains the sole verified-object, classified-link, cleanup, and atomic
+publication path.
+
+`guard-cranelift-phase11-opening-contract` is a static opening gate. It requires
+the closed Phase 10 contract, freezes the six-cohort baseline and seven-family
+deferred inventory, verifies that only the opening guard is authorized for
+Phase 11, and rejects Patch 1 changes to the compiler route, worker, package,
+CLI, workflows, MIR schemas, runtime or ABI families. Patch 1 adds no dynamic
+native evidence and no CI matrix shard.
+
 The checked-in lockfile for this crate is owned by:
 Patch 8 freezes the complete canonical call/import matrix and retires all
 eleven historical bypasses. The checked-in completeness fixture combines local

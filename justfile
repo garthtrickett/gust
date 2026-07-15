@@ -14732,6 +14732,184 @@ guard-cranelift-phase10-close:
 
     echo "✅ Phase 10 closed: the unconditional stub is retired for six exact source cohorts, deferred shapes remain classified before artifact access, the worker consumes only canonical MIR through one generic request, Phase 9G retains artifact ownership, packaging/help are frozen, MIR-to-C remains default, and CI owns one static close gate per workflow."
 
+guard-cranelift-phase11-opening-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Opening Phase 11 feature-parity migration on a frozen inventory..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    readme_doc="compiler/experiments/cranelift/README.md"
+    compiler_entry="compiler/test_runner_entry.gst"
+    source_route="compiler/mir_native_backend_source_route.gst"
+    canonical_mir="compiler/mir.gst"
+    rust_driver="compiler/experiments/cranelift/src/main.rs"
+    makefile="Makefile"
+    root_cargo="Cargo.toml"
+    pr_workflow=".github/workflows/pr-fast.yml"
+    heavy_workflow=".github/workflows/heavy-guards.yml"
+
+    for required_file in \
+      "$manifest_doc" \
+      "$readme_doc" \
+      "$compiler_entry" \
+      "$source_route" \
+      "$canonical_mir" \
+      "$rust_driver" \
+      "$makefile" \
+      "$root_cargo" \
+      "$pr_workflow" \
+      "$heavy_workflow"
+    do
+      if [ ! -f "$required_file" ]; then
+        echo "Missing Phase 11 opening input: $required_file"
+        exit 1
+      fi
+    done
+
+    just guard-cranelift-phase10-close
+
+    required_manifest_lines=(
+      'CRANELIFT_EXPERIMENT_ALLOWED_PHASE11_OPENING_CONTRACT_GUARD: guard-cranelift-phase11-opening-contract'
+      'allowed_cranelift_phase11_opening_status: phase11_open_inventory_backed_feature_parity_migration'
+      'allowed_cranelift_phase11_opening_predecessor_status: phase10_closed_explicit_experimental_cranelift_backend_route'
+      'allowed_cranelift_phase11_opening_predecessor_guard: guard-cranelift-phase10-close'
+      'allowed_cranelift_phase11_opening_scope: registry_backed_feature_parity_migration_not_full_Gust_language_parity'
+      'allowed_cranelift_phase11_opening_parity_domain: existing_canonical_MIR_semantics_existing_MIR_to_C_supported_features_and_seventeen_frozen_Cranelift_translator_seed_semantics'
+      'allowed_cranelift_phase11_opening_parity_definition: equivalent_observable_behavior_and_equivalent_failure_classification_not_identical_generated_machine_code_emitted_C_or_backend_specific_diagnostic_prose'
+      'allowed_cranelift_phase11_opening_compatibility_baseline_count: 6'
+      'allowed_cranelift_phase11_opening_compatibility_baseline: scalar_return_7,provenance_local_2,literal_CFG_11,block_parameter_merge_17,local_identity_call_47,imported_abs_runtime_boundary_53'
+      'allowed_cranelift_phase11_opening_deferred_category_count: 7'
+      'allowed_cranelift_phase11_opening_deferred_categories: broader_scalar_expressions,multiple_locals_and_assignments,nested_CFG,loops_and_backedges,function_parameters_and_multiple_arguments,multiple_modules_and_source_imports,broader_direct_and_imported_calls'
+      'allowed_cranelift_phase11_opening_source_route_policy: no_new_exact_source_spelling_filename_or_fixture_identity_recognizers'
+      'allowed_cranelift_phase11_opening_registry_policy: dedicated_feature_parity_registry_must_exist_before_native_behavior_expands'
+      'allowed_cranelift_phase11_opening_compiler_ownership: compiler_owns_source_processing_canonical_MIR_native_eligibility_capability_planning_and_orchestration'
+      'allowed_cranelift_phase11_opening_worker_input_policy: external_worker_accepts_only_generic_request_plus_compiler_owned_canonical_MIR_and_never_Gust_source'
+      'allowed_cranelift_phase11_opening_artifact_policy: Phase9G_remains_the_only_verified_object_classified_link_cleanup_and_atomic_publication_path'
+      'allowed_cranelift_phase11_opening_backend_policy: MIR_to_C_remains_default_and_Cranelift_remains_explicit_experimental_with_no_fallback'
+      'allowed_cranelift_phase11_opening_schema_policy: canonical_MIR_v1_and_v2_remain_frozen_and_no_MIR_v3_is_authorized'
+      'allowed_cranelift_phase11_opening_scope_freeze: no_new_language_type_runtime_subsystem_ABI_family_MIR_version_worker_protocol_driver_discovery_artifact_kind_link_mode_CLI_surface_or_CI_matrix_in_Patch1'
+      'allowed_cranelift_phase11_opening_behavior_policy: manifest_README_and_static_guard_only_no_source_route_worker_request_object_link_package_help_CLI_or_workflow_change'
+      'allowed_cranelift_phase11_opening_next_milestone: feature_parity_registry_and_evidence_model'
+      'allowed_cranelift_phase11_opening_next_milestone_status: pending'
+    )
+    for expected_line in "${required_manifest_lines[@]}"; do
+      if ! rg -n -x -F "$expected_line" "$manifest_doc" >/dev/null; then
+        echo "Missing Phase 11 opening manifest line:"
+        echo "$expected_line"
+        exit 1
+      fi
+    done
+
+    expected_phase11_guards="guard-cranelift-phase11-opening-contract"
+    declared_phase11_guards="$(
+      awk '/^CRANELIFT_EXPERIMENT_ALLOWED_PHASE11_[A-Z0-9_]+_GUARD:/ { print $2 }' \
+        "$manifest_doc" |
+        sort
+    )"
+    if [ "$declared_phase11_guards" != "$expected_phase11_guards" ]; then
+      echo "Phase 11 Patch 1 requires exactly one manifest-authorized guard."
+      diff -u \
+        <(printf '%s\n' "$expected_phase11_guards") \
+        <(printf '%s\n' "$declared_phase11_guards") ||
+        true
+      exit 1
+    fi
+
+    phase11_native_guards="$(
+      awk '/^CRANELIFT_EXPERIMENT_ALLOWED_PHASE11_.*_NATIVE_GUARD:/ { print $2 }' \
+        "$manifest_doc"
+    )"
+    if [ -n "$phase11_native_guards" ]; then
+      echo "Phase 11 Patch 1 is contract-only and must not authorize native guards."
+      printf '%s\n' "$phase11_native_guards"
+      exit 1
+    fi
+
+    expected_baseline_sources="$(
+      printf '%s\n' \
+        compiler/phase10_scalar_return_source.gst \
+        compiler/phase10_metadata_local_source.gst \
+        compiler/phase10_cfg_return_source.gst \
+        compiler/phase10_block_parameter_merge_source.gst \
+        compiler/phase10_local_call_source.gst \
+        compiler/phase10_runtime_boundary_source.gst |
+        sort
+    )"
+    actual_baseline_sources="$(
+      find compiler -maxdepth 1 -type f -name 'phase10_*_source.gst' |
+        sort
+    )"
+    if [ "$actual_baseline_sources" != "$expected_baseline_sources" ]; then
+      echo "Phase 11 must open from exactly the six frozen Phase 10 source cohorts."
+      diff -u \
+        <(printf '%s\n' "$expected_baseline_sources") \
+        <(printf '%s\n' "$actual_baseline_sources") ||
+        true
+      exit 1
+    fi
+
+    rg -n -x -F 'allowed_mir_to_cranelift_translator_seed_suite_count: 17' \
+      "$manifest_doc" >/dev/null
+    rg -n -x -F 'allowed_cranelift_phase10_closure_inventory: 33_total_33_canonical_shared_0_bespoke_0_metadata_only_17_frozen_translator_seeds' \
+      "$manifest_doc" >/dev/null
+
+    unexpected_phase11_behavior_refs="$(
+      rg -n -i 'phase11|phase 11' \
+        "$compiler_entry" \
+        "$source_route" \
+        "$canonical_mir" \
+        "$rust_driver" \
+        "$makefile" \
+        "$root_cargo" \
+        "$pr_workflow" \
+        "$heavy_workflow" 2>/dev/null ||
+        true
+    )"
+    if [ -n "$unexpected_phase11_behavior_refs" ]; then
+      echo "Phase 11 Patch 1 must not add compiler, worker, package, schema, CLI, or workflow implementation references."
+      printf '%s\n' "$unexpected_phase11_behavior_refs"
+      exit 1
+    fi
+
+    phase11_implementation_files="$(
+      find compiler -maxdepth 2 -type f \
+        \( -iname 'phase11_*' -o -iname '*phase11*' \) |
+        sort
+    )"
+    if [ -n "$phase11_implementation_files" ]; then
+      echo "Phase 11 Patch 1 must not add implementation or fixture files."
+      printf '%s\n' "$phase11_implementation_files"
+      exit 1
+    fi
+
+    pr_shard_count="$(
+      awk '/shard:/{flag=1; next} flag && /^[[:space:]]*steps:/{flag=0} flag && /^[[:space:]]*- /{count++} END{print count+0}' \
+        "$pr_workflow"
+    )"
+    heavy_shard_count="$(
+      awk '/shard:/{flag=1; next} flag && /^[[:space:]]*steps:/{flag=0} flag && /^[[:space:]]*- /{count++} END{print count+0}' \
+        "$heavy_workflow"
+    )"
+    if [ "$pr_shard_count" != "30" ] || [ "$heavy_shard_count" != "33" ]; then
+      echo "Phase 11 Patch 1 must not change CI matrices: PR=$pr_shard_count Heavy=$heavy_shard_count"
+      exit 1
+    fi
+
+    readme_flat="$(tr '\n' ' ' < "$readme_doc")"
+    printf '%s\n' "$readme_flat" |
+      rg -F 'Phase 11 opens as `phase11_open_inventory_backed_feature_parity_migration`.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'it does not mean identical machine code, identical emitted C, identical backend-specific diagnostic prose, or full Gust language parity.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'The six Phase 10 source cohorts remain the compatibility baseline' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'Phase 11 initially records seven deferred families' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'Before native behavior expands, Patch 2 must establish one dedicated feature-parity registry and evidence model.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F '`guard-cranelift-phase11-opening-contract` is a static opening gate.' >/dev/null
+
+    echo "✅ Phase 11 opened: Phase 10 remains closed, six source cohorts and seven deferred families are frozen, parity is registry-scoped rather than full-language, and Patch 1 changes no compiler, worker, artifact, CLI, schema, package, or CI behavior."
+
 
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
     #!/usr/bin/env bash
