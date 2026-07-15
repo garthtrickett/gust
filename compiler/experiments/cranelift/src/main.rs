@@ -2989,6 +2989,196 @@ fn validate_phase10_scalar_metadata_fixture(
     Ok(())
 }
 
+fn validate_phase10_cfg_edge(
+    edge: &CompilerMirLoweringEdge<'_>,
+    context: &str,
+) -> Result<(), Box<dyn Error>> {
+    if edge.arguments.len() > 1 {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            format!(
+                "Phase 10 Patch 9 source route accepts at most one edge argument at {context}"
+            ),
+        ));
+    }
+    for argument in &edge.arguments {
+        if !matches!(
+            argument,
+            CompilerMirLoweringEdgeArgument::I32Literal(_)
+        ) {
+            return Err(phase10_backend_request_error(
+                Phase10BackendRequestStage::CanonicalMirValidation,
+                Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                format!(
+                    "Phase 10 Patch 9 source route accepts only literal i32 edge arguments at {context}"
+                ),
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn validate_phase10_cfg_block_parameter_fixture(
+    fixture: &ParsedCompilerMirFixture<'_>,
+) -> Result<(), Box<dyn Error>> {
+    let function = &fixture.function;
+    if !function.params.is_empty() {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 10 Patch 9 source route requires a zero-argument entry",
+        ));
+    }
+    if function.return_type != TinyMirType::I32 {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 10 Patch 9 source route requires an i32 entry return",
+        ));
+    }
+    if function.blocks.len() < 3 || function.blocks.len() > 4 {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 10 Patch 9 source route accepts only three- or four-block CFGs",
+        ));
+    }
+    if function.entry_block != function.blocks[0].label {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 10 Patch 9 source route requires the first canonical block to be the entry",
+        ));
+    }
+    if function.locals.len() > 1 ||
+        function
+            .locals
+            .iter()
+            .any(|local| local.ty != TinyMirType::I32)
+    {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 10 Patch 9 source route accepts at most one i32 local",
+        ));
+    }
+
+    let mut block_parameter_count = 0usize;
+    for (block_index, block) in function.blocks.iter().enumerate() {
+        if block.parameters.len() > 1 ||
+            block
+                .parameters
+                .iter()
+                .any(|parameter| parameter.ty != TinyMirType::I32)
+        {
+            return Err(phase10_backend_request_error(
+                Phase10BackendRequestStage::CanonicalMirValidation,
+                Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                format!(
+                    "Phase 10 Patch 9 source route accepts at most one i32 parameter in block {}",
+                    block.label
+                ),
+            ));
+        }
+        if !block.parameters.is_empty() &&
+            block_index + 1 != function.blocks.len()
+        {
+            return Err(phase10_backend_request_error(
+                Phase10BackendRequestStage::CanonicalMirValidation,
+                Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                "Phase 10 Patch 9 source route permits a block parameter only on the final merge block",
+            ));
+        }
+        block_parameter_count += block.parameters.len();
+
+        for statement in &block.statements {
+            if !matches!(
+                statement,
+                CompilerMirLoweringStatement::LocalI32Set { .. }
+            ) {
+                return Err(phase10_backend_request_error(
+                    Phase10BackendRequestStage::CanonicalMirValidation,
+                    Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                    "Phase 10 Patch 9 source route accepts only LocalI32Set statements",
+                ));
+            }
+        }
+
+        match &block.terminator {
+            CompilerMirLoweringTerminator::ReturnI32(_) |
+            CompilerMirLoweringTerminator::ReturnLocalI32(_) |
+            CompilerMirLoweringTerminator::ReturnBlockParamI32(_) => {}
+            CompilerMirLoweringTerminator::Jump { edge } => {
+                validate_phase10_cfg_edge(
+                    edge,
+                    &format!("block {} jump", block.label),
+                )?;
+            }
+            CompilerMirLoweringTerminator::BranchI32Literal {
+                then_edge,
+                else_edge,
+                ..
+            } => {
+                validate_phase10_cfg_edge(
+                    then_edge,
+                    &format!("block {} then edge", block.label),
+                )?;
+                validate_phase10_cfg_edge(
+                    else_edge,
+                    &format!("block {} else edge", block.label),
+                )?;
+            }
+            CompilerMirLoweringTerminator::BranchLocalI32Positive {
+                then_edge,
+                else_edge,
+                ..
+            } => {
+                validate_phase10_cfg_edge(
+                    then_edge,
+                    &format!("block {} then edge", block.label),
+                )?;
+                validate_phase10_cfg_edge(
+                    else_edge,
+                    &format!("block {} else edge", block.label),
+                )?;
+            }
+            _ => {
+                return Err(phase10_backend_request_error(
+                    Phase10BackendRequestStage::CanonicalMirValidation,
+                    Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                    "Phase 10 Patch 9 source route encountered a deferred terminator",
+                ));
+            }
+        }
+    }
+
+    if block_parameter_count > 1 {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 10 Patch 9 source route accepts at most one block parameter",
+        ));
+    }
+    if block_parameter_count == 0 && function.blocks.len() != 3 {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 10 Patch 9 parameter-free CFG must contain exactly three blocks",
+        ));
+    }
+    if block_parameter_count == 1 && function.blocks.len() != 4 {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 10 Patch 9 block-parameter CFG must contain exactly four blocks",
+        ));
+    }
+
+    recognize_compiler_mir_fixture_metadata(&fixture.metadata)?;
+    Ok(())
+}
+
 fn compile_phase10_scalar_metadata_request_path(
     request_path: &Path,
 ) -> Result<(), Box<dyn Error>> {
@@ -3082,11 +3272,15 @@ fn compile_phase10_scalar_metadata_request_path(
     };
 
     validate_compiler_mir_fixture(&fixture)?;
-    validate_phase10_scalar_metadata_fixture(&fixture)?;
+    if fixture.function.blocks.len() == 1 {
+        validate_phase10_scalar_metadata_fixture(&fixture)?;
+    } else {
+        validate_phase10_cfg_block_parameter_fixture(&fixture)?;
+    }
 
     let object_path = compiler_mir_link_sibling_path(
         &request.output_path,
-        ".phase10-scalar-metadata.o",
+        ".phase10-source-route.o",
     )?;
     lower_compiler_mir_ingestion_function_to_object(
         &object_path,
@@ -3131,7 +3325,12 @@ fn compile_phase10_scalar_metadata_request_path(
     println!("request_protocol: {PHASE10_BACKEND_REQUEST_FORMAT}");
     println!("request_status: compiled");
     println!("artifact_kind: {PHASE10_BACKEND_REQUEST_ARTIFACT_KIND}");
-    println!("source_route: scalar_metadata");
+    let source_route = if fixture.function.blocks.len() == 1 {
+        "scalar_metadata"
+    } else {
+        "cfg_block_parameter"
+    };
+    println!("source_route: {source_route}");
     println!("entry_symbol: {}", bundle.entry_symbol);
     println!("module_count: {}", bundle.module_count);
     println!("module_path: {}", module.module_path);

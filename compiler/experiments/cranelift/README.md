@@ -1002,10 +1002,10 @@ Phase 10 Patch 8 connects the first source-level native cohort. The accepted
 shape is exactly one module containing one zero-argument `main() int`. Its body
 is either one integer-literal return or one integer local initialized from a
 literal and returned. The local form emits one statement-attached provenance
-record with the frozen `ignored_with_proof` metadata policy. Calls, imports,
-multiple modules, parameters, CFG, block parameters, non-int entries, and
-broader expressions retain the historical route-not-connected result until
-their dedicated patches.
+record with the frozen `ignored_with_proof` metadata policy. After Patch 9,
+calls, imports, multiple modules, function parameters, non-int entries, nested
+control flow, loops, and broader expressions retain the historical
+route-not-connected result until their dedicated patches.
 
 The compiler performs static capability validation before driver discovery,
 then validates the read-only worker handshake and checks the same requirement
@@ -1041,7 +1041,23 @@ writes one transient generic request. Both files are removed after the worker
 returns. The worker reuses the strict Patch 7 parser, the shared v1 parser and
 validator, the metadata recognizer, and
 `lower_compiler_mir_ingestion_function_to_object`. It accepts no v2 module,
-CFG, call, import, or block-parameter record in this cohort.
+call, or import record in the connected source cohorts.
+
+Phase 10 Patch 9 extends the source route with two exact control-flow shapes.
+The first is a literal boolean `if/else` whose arms each return one integer
+literal; it becomes a three-block `BranchI32Literal` graph. The second starts
+with one mutable integer literal, branches on `local > 0`, assigns one integer
+literal in each arm, and returns the local after the branch. It becomes a
+four-block graph whose arm jumps carry literal edge arguments into one final
+i32 block parameter returned by `ReturnBlockParamI32`.
+
+The whole-program bundle indexes that merge parameter explicitly. Capability
+validation now requires `SgtI32`, `Jump`, `Branch`, and `BlockParam` in addition
+to the Patch 8 scalar operations. The worker still accepts only frozen v1 MIR,
+zero function parameters, at most one i32 local, three or four blocks, at most
+one final-merge i32 block parameter, literal edge arguments, and no call or
+import operations. Unsupported source shapes retain the route-not-connected
+result and never fall back to MIR-to-C.
 
 Object verification and publication remain Phase 9G-owned. A verified hidden
 same-directory object is removed after a successful link and preserved when
@@ -1049,7 +1065,7 @@ linking fails. The classified Phase 9G link pipeline captures deterministic
 sibling logs and atomically publishes the executable. Worker stdout and stderr
 are captured in memory; successful `gust --backend cranelift` stdout is empty.
 Failures never fall back to MIR-to-C and preserve any pre-existing executable.
-The next milestone is the CFG and block-parameter source route.
+The next milestone is the calls, imports, and runtime-boundary source route.
 
 The checked-in lockfile for this crate is owned by:
 Patch 8 freezes the complete canonical call/import matrix and retires all
