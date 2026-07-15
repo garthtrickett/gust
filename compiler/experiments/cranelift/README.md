@@ -1101,7 +1101,7 @@ the worker beside the running compiler is considered. Packaging adds no PATH
 search, runtime Cargo invocation, download, auto-build, or backend fallback.
 
 `gust --help` and `gust -h` now emit the byte-frozen
-`compiler/fixtures/phase10_help.txt` text to stdout, keep stderr empty, and
+`compiler/phase10_help.txt` text to stdout, keep stderr empty, and
 exit zero before source resolution or any backend operation. Help documents
 the MIR-to-C default, the experimental native invocation, the `-o` contract,
 the absolute driver override, the sibling worker name, and the absence of PATH

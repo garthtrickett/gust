@@ -13810,7 +13810,7 @@ guard-cranelift-phase10-packaging-help-ci:
     echo "🔒 Checking Phase 10 packaging, help, and focused CI surface..."
     manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     compiler_entry="compiler/test_runner_entry.gst"
-    help_fixture="compiler/fixtures/phase10_help.txt"
+    help_fixture="compiler/phase10_help.txt"
     makefile="Makefile"
     rust_manifest="compiler/experiments/cranelift/Cargo.toml"
     rust_lock="compiler/experiments/cranelift/Cargo.lock"
@@ -13887,7 +13887,9 @@ guard-cranelift-phase10-packaging-help-ci:
 
     rg -n -F 'cranelift-phase10-packaging-help' "$workflow" justfile >/dev/null
     rg -n -F './gust --help > build/phase10-help.stdout 2> build/phase10-help.stderr' "$heavy_workflow" >/dev/null
-    rg -n -F 'cmp -s compiler/fixtures/phase10_help.txt build/phase10-help.stdout' "$heavy_workflow" >/dev/null
+    rg -n -F 'test -f compiler/phase10_help.txt' "$heavy_workflow" >/dev/null
+    rg -n -F 'diff -u compiler/phase10_help.txt build/phase10-help.stdout' "$heavy_workflow" >/dev/null
+    rg -n -F 'gust --help unexpectedly wrote to stderr:' "$heavy_workflow" >/dev/null
     if rg -n -F './gust --help >/dev/null 2>&1 || true' "$heavy_workflow" >/dev/null; then
       echo "Heavy CI must not ignore the Phase 10 help result."
       exit 1
@@ -13903,8 +13905,8 @@ guard-cranelift-phase10-packaging-help-ci:
 
     ./gust --help >"$help_stdout" 2>"$help_stderr"
     ./gust -h >"$short_help_stdout" 2>"$short_help_stderr"
-    cmp -s "$help_fixture" "$help_stdout"
-    cmp -s "$help_fixture" "$short_help_stdout"
+    diff -u "$help_fixture" "$help_stdout"
+    diff -u "$help_fixture" "$short_help_stdout"
     if [ -s "$help_stderr" ] || [ -s "$short_help_stderr" ]; then
       echo "Phase 10 help must keep stderr empty."
       cat "$help_stderr" "$short_help_stderr"
@@ -13989,7 +13991,7 @@ guard-cranelift-phase10-packaging-help-ci:
     "$installed_gust" --help \
       >"$build_dir/installed-help.stdout" \
       2>"$build_dir/installed-help.stderr"
-    cmp -s "$help_fixture" "$build_dir/installed-help.stdout"
+    diff -u "$help_fixture" "$build_dir/installed-help.stdout"
     if [ -s "$build_dir/installed-help.stderr" ]; then
       echo "Installed help must keep stderr empty."
       cat "$build_dir/installed-help.stderr"
@@ -14027,7 +14029,7 @@ guard-cranelift-phase10-packaging-help-ci:
     printf '%s\n' "$readme_flat" |
       rg -F '`make gust` remains the compiler-only build and does not require Rust or construct a worker.' >/dev/null
     printf '%s\n' "$readme_flat" |
-      rg -F '`gust --help` and `gust -h` now emit the byte-frozen `compiler/fixtures/phase10_help.txt` text to stdout' >/dev/null
+      rg -F '`gust --help` and `gust -h` now emit the byte-frozen `compiler/phase10_help.txt` text to stdout' >/dev/null
     printf '%s\n' "$readme_flat" |
       rg -F 'PR Fast gains the dedicated `cranelift-phase10-packaging-help` matrix shard.' >/dev/null
     printf '%s\n' "$readme_flat" |

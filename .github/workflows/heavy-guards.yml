@@ -27,8 +27,13 @@ jobs:
           make gust
           chmod +x ./gust
           ./gust --help > build/phase10-help.stdout 2> build/phase10-help.stderr
-          cmp -s compiler/fixtures/phase10_help.txt build/phase10-help.stdout
-          test ! -s build/phase10-help.stderr
+          test -f compiler/phase10_help.txt
+          diff -u compiler/phase10_help.txt build/phase10-help.stdout
+          if [ -s build/phase10-help.stderr ]; then
+            echo "gust --help unexpectedly wrote to stderr:"
+            cat build/phase10-help.stderr
+            exit 1
+          fi
           test -d build
       - uses: actions/upload-artifact@v4
         with:
