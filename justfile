@@ -2414,11 +2414,16 @@ guard-cranelift-backend-surface:
     backend_route_guard_free_justfile="$(
       awk '
         /^[^[:space:]#][^=]*:/ {
-          excluded_backend_route_guard = (
-            $0 ~ /^guard-cranelift-phase10-[^:]*:/ ||
-            $0 == "guard-cranelift-experiment-manifest-surface:" ||
-            $0 == "guard-cranelift-backend-surface:"
-          )
+          excluded_backend_route_guard = 0
+          if ($0 ~ /^guard-cranelift-phase10-[^:]*:/) {
+            excluded_backend_route_guard = 1
+          }
+          if ($0 == "guard-cranelift-experiment-manifest-surface:") {
+            excluded_backend_route_guard = 1
+          }
+          if ($0 == "guard-cranelift-backend-surface:") {
+            excluded_backend_route_guard = 1
+          }
         }
         !excluded_backend_route_guard {
           print
