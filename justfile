@@ -2375,29 +2375,54 @@ guard-cranelift-backend-surface:
       exit 1
     fi
     backend_route_flag="$(printf '%s %s' '--backend' 'cranelift')"
+    phase10_help_fixture="compiler/phase10_help.txt"
+    phase10_help_route_line='  gust --backend cranelift -o <output> <source.gst>'
 
-    # Phase 10 contract documentation, guard assertions, and the exact Patch 11
-    # help usage line may name the explicit CLI. No other production source or
-    # non-Phase-10 orchestration reference is exempted.
+    # The canonical Patch 11 help fixture is documentation, but validate the
+    # exact route spelling before excluding it from this legacy production
+    # scan. This keeps broader help, source, or orchestration references visible.
+    if [ ! -f "$phase10_help_fixture" ]; then
+      echo "Missing canonical Phase 10 help fixture: $phase10_help_fixture"
+      exit 1
+    fi
+    phase10_help_route_count="$(
+      rg -n -x -F -- "$phase10_help_route_line" "$phase10_help_fixture" |
+        wc -l |
+        tr -d ' '
+    )"
+    if [ "$phase10_help_route_count" != "1" ]; then
+      echo "Expected exactly one frozen native usage line in $phase10_help_fixture, found $phase10_help_route_count."
+      rg -n -F -- "$backend_route_flag" "$phase10_help_fixture" || true
+      exit 1
+    fi
+
+    # Phase 10 contract documentation, the exact validated help line, and
+    # Phase 10 guard recipes may name the explicit CLI. No other production
+    # source or non-Phase-10 orchestration reference is exempted.
     backend_route_code_refs="$(
       rg -n -F -- "$backend_route_flag"         compiler src tests Makefile Cargo.toml Cargo.lock 2>/dev/null |
         rg -v '^compiler/CRANELIFT_EXPERIMENT_MANIFEST\.md:' |
         rg -v '^compiler/experiments/cranelift/README\.md:' |
-        rg -v '^compiler/test_runner_entry\.gst:[0-9]+:[[:space:]]*os\.LogStr\("  gust --backend cranelift -o <output> <source\.gst>"\);$' ||
+        rg -v '^compiler/test_runner_entry\.gst:[0-9]+:[[:space:]]*os\.LogStr\("  gust --backend cranelift -o <output> <source\.gst>"\);$' |
+        rg -v '^compiler/phase10_help\.txt:[0-9]+:  gust --backend cranelift -o <output> <source\.gst>$' ||
         true
     )"
-    phase10_guard_free_justfile="$(
+    backend_route_guard_free_justfile="$(
       awk '
         /^[^[:space:]#][^=]*:/ {
-          in_phase10_guard = ($0 ~ /^guard-cranelift-phase10-[^:]*:/)
+          excluded_backend_route_guard = (
+            $0 ~ /^guard-cranelift-phase10-[^:]*:/ ||
+            $0 == "guard-cranelift-experiment-manifest-surface:" ||
+            $0 == "guard-cranelift-backend-surface:"
+          )
         }
-        !in_phase10_guard {
+        !excluded_backend_route_guard {
           print
         }
       ' justfile
     )"
     backend_route_just_refs="$(
-      printf '%s\n' "$phase10_guard_free_justfile" |
+      printf '%s\n' "$backend_route_guard_free_justfile" |
         rg -n -F -- "$backend_route_flag" ||
         true
     )"
@@ -2406,7 +2431,7 @@ guard-cranelift-backend-surface:
         sed '/^$/d'
     )"
     if [ -n "$backend_route_refs" ]; then
-      echo "Production Cranelift backend routing must not exist yet."
+      echo "Unauthorized Cranelift backend routing exists outside the frozen Phase 10 source, help, and guard surfaces."
       echo "$backend_route_refs"
       exit 1
     fi
@@ -13939,7 +13964,7 @@ guard-cranelift-phase10-packaging-help-ci:
     rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_install_policy: make_install_uses_DESTDIR_and_PREFIX_and_installs_gust_and_gust-native-backend_as_mode_0755_siblings' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_help_invocations: gust_--help_and_gust_-h' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_help_legacy_manifest_guard_policy: exactly_four_help_only_Cranelift_references_extend_the_four_Patch2_selector_references_for_an_exact_total_of_eight' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_help_legacy_backend_surface_policy: only_the_exact_help_usage_line_gust_--backend_cranelift_-o_output_source_is_excluded_from_the_legacy_production_route_scan' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_help_legacy_backend_surface_policy: canonical_help_usage_is_exactly_validated_then_excluded_and_only_Phase10_plus_the_two_policy_guard_recipes_are_removed_from_the_legacy_orchestration_scan' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_legacy_global_scan_policy: exactly_four_Makefile_release_packaging_references_and_exactly_four_compiler/phase10_help.txt_references_are_independently_exact_allowlisted_before_those_two_files_are_excluded_from_the_broad_Phase9_scan' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_legacy_fixture_retirement: compiler/fixtures/phase10_help.txt_is_a_keyword_free_pointer_to_compiler/phase10_help.txt_and_is_not_a_second_help_fixture' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_focused_shard: cranelift-phase10-packaging-help' "$manifest_doc" >/dev/null

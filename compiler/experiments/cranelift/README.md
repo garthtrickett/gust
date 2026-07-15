@@ -1110,9 +1110,14 @@ the MIR-to-C default, the experimental native invocation, the `-o` contract,
 the absolute driver override, the sibling worker name, and the absence of PATH
 search, auto-build, and fallback. The legacy Phase 9 manifest guard therefore
 authorizes exactly four help-only `Cranelift` references in addition to the
-four frozen Patch 2 selector references, while the legacy backend-route scan
-excludes only the exact help usage line. The older broad Phase 9 repository
-scan separately validates exactly four release-packaging references in
+four frozen Patch 2 selector references. The legacy backend-route guard
+independently verifies that the canonical help fixture contains exactly one
+native usage line before excluding that exact line. Its justfile scan omits
+all `guard-cranelift-phase10-*` recipes and the two policy recipes that
+implement the manifest and backend-surface allowlists, preventing those guards
+from reporting their own regex text as production routing. The older broad
+Phase 9 repository scan separately validates exactly four release-packaging
+references in
 `Makefile` and exactly four help references in `compiler/phase10_help.txt`
 before excluding those two files from its residual scan. The superseded
 `compiler/fixtures/phase10_help.txt` path is retained only as a keyword-free
