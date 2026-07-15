@@ -13856,6 +13856,7 @@ guard-cranelift-phase10-call-import-runtime-source-route:
     rg -n -F 'allowed_cranelift_phase10_call_import_runtime_source_route_import_shape: one_imported_host_abs_int_to_int_and_zero_argument_main_returning_one_non_negative_literal_call_inside_one_unsafe_block' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_call_import_runtime_source_route_runtime_metadata: one_statement_attached_native_boundary_record_kind_RuntimeCall_symbol_abs_policy_ignored_with_proof' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_call_import_runtime_source_route_next_milestone: packaging_help_CI_and_phase10_closure' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_call_import_runtime_source_route_next_milestone_status: complete' "$manifest_doc" >/dev/null
 
     rg -n -F 'func mir_native_call_import_source_lower(' "$route_source" >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.v2' "$route_source" >/dev/null
@@ -14000,8 +14001,13 @@ guard-cranelift-phase10-call-import-runtime-source-route:
       rg -F 'Phase 10 Patch 10 connects two exact canonical-v2 call modules.' >/dev/null
     printf '%s\n' "$readme_flat" |
       rg -F 'The imported symbol is not resolved by a compiler-side shim or fallback; the existing Phase 9G classified native link pipeline resolves libc `abs`.' >/dev/null
-    printf '%s\n' "$readme_flat" |
-      rg -F 'The next milestone is packaging, help, CI, and Phase 10 closure.' >/dev/null
+    if ! printf '%s\n' "$readme_flat" |
+      rg -F 'The next milestone is the final Phase 10 audit and closure.' >/dev/null
+    then
+      echo "Phase 10 call/import README successor is missing or stale."
+      rg -n -F 'The next milestone is' "$readme_doc" || true
+      exit 1
+    fi
 
     echo "✅ Phase 10 call/import source route passed: one local helper call and one imported-host abs runtime boundary compile through canonical v2, the shared verified object emitter, and the Phase 9G classified atomic link pipeline; broader call and source-import shapes remain deferred."
 
