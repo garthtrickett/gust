@@ -1108,8 +1108,13 @@ fixture's EOF representation to one terminal newline before comparison because
 strict. Help documents
 the MIR-to-C default, the experimental native invocation, the `-o` contract,
 the absolute driver override, the sibling worker name, and the absence of PATH
-search, auto-build, and fallback. Help is a sole-argument mode; mixed
-invocations continue through normal deterministic option rejection.
+search, auto-build, and fallback. The legacy Phase 9 manifest guard therefore
+authorizes exactly four help-only `Cranelift` references in addition to the
+four frozen Patch 2 selector references, while the legacy backend-route scan
+excludes only the exact help usage line. No implementation, driver, object,
+link, runtime, PATH, auto-build, or fallback reference is broadly exempted.
+Help is a sole-argument mode; mixed invocations continue through normal
+deterministic option rejection.
 
 PR Fast gains the dedicated `cranelift-phase10-packaging-help` matrix shard.
 That focused lane builds the package, verifies the worker handshake, proves

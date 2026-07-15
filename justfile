@@ -1838,11 +1838,14 @@ guard-cranelift-experiment-manifest-surface:
     rg -n -F 'allowed_cranelift_phase10_backend_selection_status: phase10_typed_backend_selection_model' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_backend_selection_entry: compiler/test_runner_entry.gst' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_backend_selection_artifact_policy: no_native_driver_object_linker_or_executable_publication_connected' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_help_legacy_manifest_guard_policy: exactly_four_help_only_Cranelift_references_extend_the_four_Patch2_selector_references_for_an_exact_total_of_eight' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_help_legacy_backend_surface_policy: only_the_exact_help_usage_line_gust_--backend_cranelift_-o_output_source_is_excluded_from_the_legacy_production_route_scan' "$manifest_doc" >/dev/null
 
-    # Phase 10 Patch 2 may name Cranelift only in the typed selector, parser,
-    # selector assignment, and stable route-not-connected diagnostic. Keep an
-    # exact allowlist so this Phase 9 surface still rejects codegen, driver,
-    # object, link, runtime, or broader compiler references.
+    # Phase 10 Patch 2 froze four typed-selector references. Patch 11 adds
+    # exactly four documentation-only references inside compiler_print_help.
+    # Keep an exact eight-line allowlist so codegen, driver, object, link,
+    # runtime, PATH, auto-build, fallback, and broader compiler references
+    # remain rejected.
     phase10_selection_refs="$(
       rg -n -i -F 'cranelift' "$phase10_selection_entry" ||
         true
@@ -1852,11 +1855,15 @@ guard-cranelift-experiment-manifest-surface:
         rg -v '^[0-9]+:[[:space:]]*CraneliftExperimental[,]?$' |
         rg -v '^[0-9]+:[[:space:]]*} else if std\.str_eq\(backend_name, "cranelift"\) == 1 \{$' |
         rg -v '^[0-9]+:[[:space:]]*invocation\.backend\.tag = 1; // CraneliftExperimental$' |
-        rg -v '^[0-9]+:[[:space:]]*os\.LogStr\("Experimental Cranelift backend selection is valid, but the source-level route is not connected yet\."\);$' ||
+        rg -v '^[0-9]+:[[:space:]]*os\.LogStr\("Experimental Cranelift backend selection is valid, but the source-level route is not connected yet\."\);$' |
+        rg -v '^[0-9]+:[[:space:]]*os\.LogStr\("  gust --backend cranelift -o <output> <source\.gst>"\);$' |
+        rg -v '^[0-9]+:[[:space:]]*os\.LogStr\("  cranelift  Compile a supported source cohort to one native executable \(experimental\)\."\);$' |
+        rg -v '^[0-9]+:[[:space:]]*os\.LogStr\("  --backend <mir-to-c\|cranelift>  Select the backend explicitly\."\);$' |
+        rg -v '^[0-9]+:[[:space:]]*os\.LogStr\("  -o <output>[[:space:]]+Required only by the cranelift backend\."\);$' ||
         true
     )"
     if [ -n "$unexpected_phase10_selection_refs" ]; then
-      echo "Phase 10 typed backend selection contains Cranelift references beyond the frozen Patch 2 selector surface:"
+      echo "Phase 10 compiler entry contains Cranelift references beyond the frozen selector and help surfaces:"
       echo "$unexpected_phase10_selection_refs"
       exit 1
     fi
@@ -1867,8 +1874,8 @@ guard-cranelift-experiment-manifest-surface:
         wc -l |
         tr -d ' '
     )"
-    if [ "$phase10_selection_ref_count" != "4" ]; then
-      echo "Expected exactly four frozen Phase 10 typed-selection Cranelift references, found $phase10_selection_ref_count."
+    if [ "$phase10_selection_ref_count" != "8" ]; then
+      echo "Expected exactly eight Phase 10 typed-selection and help-surface Cranelift references, found $phase10_selection_ref_count."
       printf '%s\n' "$phase10_selection_refs"
       exit 1
     fi
@@ -2296,13 +2303,14 @@ guard-cranelift-backend-surface:
     fi
     backend_route_flag="$(printf '%s %s' '--backend' 'cranelift')"
 
-    # Phase 10 contract documentation and its guard assertions may name the
-    # future explicit CLI. Production sources and non-Phase-10 orchestration
-    # must still contain no Cranelift backend route.
+    # Phase 10 contract documentation, guard assertions, and the exact Patch 11
+    # help usage line may name the explicit CLI. No other production source or
+    # non-Phase-10 orchestration reference is exempted.
     backend_route_code_refs="$(
       rg -n -F -- "$backend_route_flag"         compiler src tests Makefile Cargo.toml Cargo.lock 2>/dev/null |
         rg -v '^compiler/CRANELIFT_EXPERIMENT_MANIFEST\.md:' |
-        rg -v '^compiler/experiments/cranelift/README\.md:' ||
+        rg -v '^compiler/experiments/cranelift/README\.md:' |
+        rg -v '^compiler/test_runner_entry\.gst:[0-9]+:[[:space:]]*os\.LogStr\("  gust --backend cranelift -o <output> <source\.gst>"\);$' ||
         true
     )"
     phase10_guard_free_justfile="$(
@@ -13857,6 +13865,8 @@ guard-cranelift-phase10-packaging-help-ci:
     rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_package_policy: make_phase10-native-package_explicitly_builds_and_stages_the_mode_0755_compiler_and_release_worker_as_build/phase10-package/bin_siblings' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_install_policy: make_install_uses_DESTDIR_and_PREFIX_and_installs_gust_and_gust-native-backend_as_mode_0755_siblings' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_help_invocations: gust_--help_and_gust_-h' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_help_legacy_manifest_guard_policy: exactly_four_help_only_Cranelift_references_extend_the_four_Patch2_selector_references_for_an_exact_total_of_eight' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_help_legacy_backend_surface_policy: only_the_exact_help_usage_line_gust_--backend_cranelift_-o_output_source_is_excluded_from_the_legacy_production_route_scan' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_focused_shard: cranelift-phase10-packaging-help' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_matrix_count: 30' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_next_milestone: audit_and_phase10_closure' "$manifest_doc" >/dev/null
@@ -13865,6 +13875,16 @@ guard-cranelift-phase10-packaging-help-ci:
     rg -n -F 'func compiler_print_help()' "$compiler_entry" >/dev/null
     rg -n -F 'if compiler_is_help_invocation(args, ctx) == 1 {' "$compiler_entry" >/dev/null
     rg -n -F 'gust-native-backend next to gust. There is no PATH search, auto-build, or' "$compiler_entry" >/dev/null
+    compiler_entry_cranelift_count="$(
+      rg -i -F 'cranelift' "$compiler_entry" |
+        wc -l |
+        tr -d ' '
+    )"
+    if [ "$compiler_entry_cranelift_count" != "8" ]; then
+      echo "Phase 10 help packaging requires exactly eight selector-plus-help Cranelift references, found $compiler_entry_cranelift_count."
+      rg -n -i -F 'cranelift' "$compiler_entry"
+      exit 1
+    fi
 
     rg -n -F 'PHASE10_NATIVE_BACKEND_TARGET_DIR = build/phase10-native-backend-cargo' "$makefile" >/dev/null
     rg -n -F 'build/gust-native-backend: $(PHASE10_NATIVE_BACKEND_MANIFEST) $(PHASE10_NATIVE_BACKEND_LOCK) $(PHASE10_NATIVE_BACKEND_SOURCE)' "$makefile" >/dev/null
