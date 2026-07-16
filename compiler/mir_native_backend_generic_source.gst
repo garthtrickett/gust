@@ -1,6 +1,7 @@
 import "ast.gst" as ast;
 import "mir.gst" as mir;
 import "mir_native_backend_capability.gst" as capability;
+import "mir_native_backend_local_state_source.gst" as local_state;
 
 // Compiler-owned generic source-to-canonical-MIR route.
 //
@@ -2184,11 +2185,31 @@ func mir_native_generic_source_lower(programs: std.Vector[ast.Program[ctx], ctx]
         module_prefixes,
         ctx
     );
-    if model.represented == 0 {
-        return mir_native_generic_empty_result(1, "", ctx);
+    mut bundle := mir.mir_make_program_bundle("invalid", ctx);
+
+    if model.represented == 1 {
+        bundle = mir_native_generic_emit_bundle(model, ctx);
+    } else {
+        mut local_state_result :=
+            local_state.mir_native_local_state_source_lower(
+                programs,
+                module_paths,
+                module_prefixes,
+                ctx
+            );
+        if local_state_result.invalid == 1 {
+            return mir_native_generic_empty_result(
+                3,
+                local_state_result.diagnostic,
+                ctx
+            );
+        }
+        if local_state_result.represented == 0 {
+            return mir_native_generic_empty_result(1, "", ctx);
+        }
+        bundle = local_state_result.bundle;
     }
 
-    mut bundle := mir_native_generic_emit_bundle(model, ctx);
     mut serialized := mir.mir_serialize_program_bundle(bundle, ctx);
     if std.str_eq(serialized, "format: invalid\n") == 1 {
         return mir_native_generic_empty_result(

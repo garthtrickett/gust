@@ -1311,8 +1311,51 @@ Multiplication is the adjacent negative source: MIR-to-C still executes
 it with exit `12`, while the native route returns the stable deferred result
 before driver discovery and preserves an existing output sentinel. Patch 4
 does not add subtraction, multiplication, division, overflow controls, floats,
-casts, multiple locals, reassignment, a MIR v3, protocol changes, or CI matrix
-work. The next milestone is local-state and assignment parity.
+casts, or local-state behavior. Its successor owns those local-state changes.
+
+Patch 5 migrates local state and assignment parity as
+`phase11_migrated_local_state_parity`. A compiler-owned helper runs after the
+existing generic scalar/CFG/call recognizers decline a typed semantic AST. It
+supports multiple integer locals, typed declarations without initializers,
+later assignment, repeated reassignment, local-to-local assignment, supported
+scalar-expression assignment, and one top-level positive-local branch with
+assignment-only arms. It never inspects source paths, fixture names, or raw
+source text.
+
+Local indices are allocated once in source declaration order and serialized as
+the canonical v1 local inventory. Declaration initializers and later writes use
+the existing `LocalI32Set` and `LocalI32AddI32Literal` operations; local reads,
+positive comparison, branch, jump, and return capabilities continue to be
+derived from the emitted bundle. Each declaration and later assignment carries
+recognized-preserved provenance metadata with its stable local index and
+canonical attachment.
+
+The worker now detects that metadata-backed local-state profile and validates a
+generic nonempty i32 local inventory. Its definite-assignment dataflow handles
+one straight-line block or one entry/then/else/merge graph, intersects branch
+assignment state at the merge, and rejects unknown or uninitialized local use
+before object emission. The frozen v1 schema, generic request protocol, driver
+discovery, and Phase 9G artifact pipeline remain unchanged.
+
+Four ordinary sources differentially cover straight-line state changes,
+branch-arm updates, read-after-write, and independent locals with exits `2`,
+`43`, `53`, and `67`. An uninitialized read is classified as invalid canonical
+MIR before driver discovery; an invalid local is rejected by the ordinary
+semantic pipeline. Both negative lanes preserve an existing output and create
+no request, bundle, object, or executable artifact.
+
+The registry now records ten generic owners: three
+`scalar_expression_migrated`, three `local_state_migrated`, four
+`generic_shadowed`, and nine deferred entries. The dedicated MIR-to-C evidence
+gap count falls to six. The multiple-locals-and-assignments deferred family is
+marked migrated, while nested CFG, loops/backedges, broader arithmetic,
+function parameters, modules/imports, and broader calls remain deferred.
+
+`guard-cranelift-phase11-local-state-parity` runs the Patch 4 predecessor in
+static-contract mode, validates stable indexing and provenance structure,
+compares MIR-to-C and Cranelift behavior for all four positive sources, and
+proves both negative lanes stop before driver or artifact access. The next
+milestone is structured CFG parity.
 
 The checked-in lockfile for this crate is owned by:
 Patch 8 freezes the complete canonical call/import matrix and retires all

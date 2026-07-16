@@ -2925,6 +2925,388 @@ fn validate_phase10_backend_request_path(
     Ok(())
 }
 
+fn phase11_local_state_payload_field<'a>(
+    payload: &'a str,
+    key: &str,
+) -> Option<&'a str> {
+    payload.split(';').find_map(|field| {
+        let (field_key, value) = field.split_once('=')?;
+        (field_key == key).then_some(value)
+    })
+}
+
+fn is_phase11_local_state_fixture(
+    fixture: &ParsedCompilerMirFixture<'_>,
+) -> bool {
+    fixture.metadata.iter().any(|item| {
+        item.payload.starts_with("kind=LocalDeclaration;") ||
+            item.payload.starts_with("kind=LocalAssignment;")
+    })
+}
+
+fn phase11_local_state_local_index(
+    function: &CompilerMirLoweringFunction<'_>,
+    name: &str,
+) -> Result<usize, Box<dyn Error>> {
+    function
+        .locals
+        .iter()
+        .position(|local| local.name == name)
+        .ok_or_else(|| {
+            phase10_backend_request_error(
+                Phase10BackendRequestStage::CanonicalMirValidation,
+                Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                format!(
+                    "Phase 11 local-state canonical MIR references unknown local {name}"
+                ),
+            )
+        })
+}
+
+fn phase11_local_state_apply_statements(
+    function: &CompilerMirLoweringFunction<'_>,
+    block: &CompilerMirLoweringBlock<'_>,
+    assigned: &mut [bool],
+) -> Result<(), Box<dyn Error>> {
+    for statement in &block.statements {
+        match statement {
+            CompilerMirLoweringStatement::LocalI32Set {
+                name,
+                ..
+            } => {
+                let local_index =
+                    phase11_local_state_local_index(function, name)?;
+                assigned[local_index] = true;
+            }
+            CompilerMirLoweringStatement::LocalI32AddI32Literal {
+                name,
+                ..
+            } => {
+                let local_index =
+                    phase11_local_state_local_index(function, name)?;
+                if !assigned[local_index] {
+                    return Err(phase10_backend_request_error(
+                        Phase10BackendRequestStage::CanonicalMirValidation,
+                        Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                        format!(
+                            "Phase 11 local-state canonical MIR reads local {name} before definite assignment"
+                        ),
+                    ));
+                }
+            }
+            _ => {
+                return Err(phase10_backend_request_error(
+                    Phase10BackendRequestStage::CanonicalMirValidation,
+                    Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                    "Phase 11 local-state source route accepts only canonical i32 set/add statements",
+                ));
+            }
+        }
+    }
+    Ok(())
+}
+
+fn phase11_local_state_validate_return(
+    function: &CompilerMirLoweringFunction<'_>,
+    terminator: &CompilerMirLoweringTerminator<'_>,
+    assigned: &[bool],
+) -> Result<(), Box<dyn Error>> {
+    let CompilerMirLoweringTerminator::ReturnLocalI32(name) = terminator else {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 11 local-state source route requires a local i32 return",
+        ));
+    };
+    let local_index = phase11_local_state_local_index(function, name)?;
+    if !assigned[local_index] {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            format!(
+                "Phase 11 local-state canonical MIR returns local {name} before definite assignment"
+            ),
+        ));
+    }
+    Ok(())
+}
+
+fn validate_phase11_local_state_fixture(
+    fixture: &ParsedCompilerMirFixture<'_>,
+) -> Result<(), Box<dyn Error>> {
+    let function = &fixture.function;
+    if !function.params.is_empty() ||
+        function.return_type != TinyMirType::I32
+    {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 11 local-state source route requires a zero-argument i32 entry",
+        ));
+    }
+    if function.locals.is_empty() ||
+        function
+            .locals
+            .iter()
+            .any(|local| local.ty != TinyMirType::I32)
+    {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 11 local-state source route requires a nonempty generic i32 local inventory",
+        ));
+    }
+    if function.blocks.len() != 1 && function.blocks.len() != 4 {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 11 local-state source route accepts one straight-line block or one four-block branch/merge graph",
+        ));
+    }
+    if function.entry_block != function.blocks[0].label ||
+        function
+            .blocks
+            .iter()
+            .any(|block| !block.parameters.is_empty())
+    {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 11 local-state source route requires the first parameter-free block to be the entry",
+        ));
+    }
+
+    recognize_compiler_mir_fixture_metadata(&fixture.metadata)?;
+
+    let mut declaration_seen = vec![false; function.locals.len()];
+    let mut assignment_metadata_count = 0usize;
+    for item in &fixture.metadata {
+        let Some(kind) =
+            phase11_local_state_payload_field(item.payload, "kind")
+        else {
+            continue;
+        };
+        match kind {
+            "LocalDeclaration" => {
+                let Some(local_name) =
+                    phase11_local_state_payload_field(
+                        item.payload,
+                        "local",
+                    )
+                else {
+                    return Err(phase10_backend_request_error(
+                        Phase10BackendRequestStage::CanonicalMirValidation,
+                        Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                        "Phase 11 local declaration provenance is missing its local name",
+                    ));
+                };
+                let Some(index_text) =
+                    phase11_local_state_payload_field(
+                        item.payload,
+                        "index",
+                    )
+                else {
+                    return Err(phase10_backend_request_error(
+                        Phase10BackendRequestStage::CanonicalMirValidation,
+                        Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                        "Phase 11 local declaration provenance is missing its stable index",
+                    ));
+                };
+                let local_index: usize = index_text.parse().map_err(
+                    |_| {
+                        phase10_backend_request_error(
+                            Phase10BackendRequestStage::CanonicalMirValidation,
+                            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                            "Phase 11 local declaration provenance has an invalid stable index",
+                        )
+                    },
+                )?;
+                if local_index >= function.locals.len() ||
+                    function.locals[local_index].name != local_name ||
+                    declaration_seen[local_index] ||
+                    item.attachment != format!("local:{local_index}")
+                {
+                    return Err(phase10_backend_request_error(
+                        Phase10BackendRequestStage::CanonicalMirValidation,
+                        Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                        "Phase 11 local declaration provenance does not match the serialized local inventory",
+                    ));
+                }
+                declaration_seen[local_index] = true;
+            }
+            "LocalAssignment" => {
+                let Some(local_name) =
+                    phase11_local_state_payload_field(
+                        item.payload,
+                        "local",
+                    )
+                else {
+                    return Err(phase10_backend_request_error(
+                        Phase10BackendRequestStage::CanonicalMirValidation,
+                        Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                        "Phase 11 local assignment provenance is missing its local name",
+                    ));
+                };
+                phase11_local_state_local_index(function, local_name)?;
+                if !item.attachment.starts_with("statement:") {
+                    return Err(phase10_backend_request_error(
+                        Phase10BackendRequestStage::CanonicalMirValidation,
+                        Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                        "Phase 11 local assignment provenance must attach to a canonical statement",
+                    ));
+                }
+                assignment_metadata_count += 1;
+            }
+            _ => {}
+        }
+    }
+    if declaration_seen.iter().any(|seen| !seen) ||
+        assignment_metadata_count == 0
+    {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 11 local-state source route requires one declaration provenance record per local and at least one assignment record",
+        ));
+    }
+
+    let mut assigned = vec![false; function.locals.len()];
+    let entry = &function.blocks[0];
+    phase11_local_state_apply_statements(
+        function,
+        entry,
+        &mut assigned,
+    )?;
+
+    if function.blocks.len() == 1 {
+        return phase11_local_state_validate_return(
+            function,
+            &entry.terminator,
+            &assigned,
+        );
+    }
+
+    let CompilerMirLoweringTerminator::BranchLocalI32Positive {
+        name: condition_local,
+        then_edge,
+        else_edge,
+    } = &entry.terminator
+    else {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 11 local-state branch graph requires a local-positive entry branch",
+        ));
+    };
+    let condition_index =
+        phase11_local_state_local_index(function, condition_local)?;
+    if !assigned[condition_index] ||
+        !then_edge.arguments.is_empty() ||
+        !else_edge.arguments.is_empty()
+    {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 11 local-state entry branch requires an assigned condition and zero edge arguments",
+        ));
+    }
+
+    let block_by_label: HashMap<&str, &CompilerMirLoweringBlock<'_>> =
+        function
+            .blocks
+            .iter()
+            .map(|block| (block.label, block))
+            .collect();
+    let then_block = block_by_label.get(then_edge.target).ok_or_else(
+        || {
+            phase10_backend_request_error(
+                Phase10BackendRequestStage::CanonicalMirValidation,
+                Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                "Phase 11 local-state then edge targets an unknown block",
+            )
+        },
+    )?;
+    let else_block = block_by_label.get(else_edge.target).ok_or_else(
+        || {
+            phase10_backend_request_error(
+                Phase10BackendRequestStage::CanonicalMirValidation,
+                Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                "Phase 11 local-state else edge targets an unknown block",
+            )
+        },
+    )?;
+
+    let mut then_assigned = assigned.clone();
+    phase11_local_state_apply_statements(
+        function,
+        then_block,
+        &mut then_assigned,
+    )?;
+    let mut else_assigned = assigned.clone();
+    phase11_local_state_apply_statements(
+        function,
+        else_block,
+        &mut else_assigned,
+    )?;
+
+    let CompilerMirLoweringTerminator::Jump {
+        edge: then_jump,
+    } = &then_block.terminator
+    else {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 11 local-state then block must jump to the merge",
+        ));
+    };
+    let CompilerMirLoweringTerminator::Jump {
+        edge: else_jump,
+    } = &else_block.terminator
+    else {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 11 local-state else block must jump to the merge",
+        ));
+    };
+    if then_jump.target != else_jump.target ||
+        !then_jump.arguments.is_empty() ||
+        !else_jump.arguments.is_empty()
+    {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 11 local-state branch arms must converge on one zero-argument merge",
+        ));
+    }
+
+    let merge_block =
+        block_by_label.get(then_jump.target).ok_or_else(|| {
+            phase10_backend_request_error(
+                Phase10BackendRequestStage::CanonicalMirValidation,
+                Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                "Phase 11 local-state branch merge target is unknown",
+            )
+        })?;
+    let mut merge_assigned: Vec<bool> = then_assigned
+        .iter()
+        .zip(&else_assigned)
+        .map(|(then_value, else_value)| {
+            *then_value && *else_value
+        })
+        .collect();
+    phase11_local_state_apply_statements(
+        function,
+        merge_block,
+        &mut merge_assigned,
+    )?;
+    phase11_local_state_validate_return(
+        function,
+        &merge_block.terminator,
+        &merge_assigned,
+    )
+}
+
 fn validate_phase11_scalar_expression_fixture(
     fixture: &ParsedCompilerMirFixture<'_>,
 ) -> Result<(), Box<dyn Error>> {
@@ -3584,7 +3966,10 @@ fn compile_phase10_scalar_metadata_request_path(
                 ));
             }
             validate_compiler_mir_fixture(&fixture)?;
-            if fixture.function.blocks.len() == 1 {
+            if is_phase11_local_state_fixture(&fixture) {
+                validate_phase11_local_state_fixture(&fixture)?;
+                source_route = "local_state";
+            } else if fixture.function.blocks.len() == 1 {
                 validate_phase11_scalar_expression_fixture(&fixture)?;
                 let has_scalar_add = fixture.function.blocks[0]
                     .statements
