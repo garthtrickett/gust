@@ -2,17 +2,18 @@ import "ast.gst" as ast;
 import "mir.gst" as mir;
 import "mir_native_backend_capability.gst" as capability;
 import "mir_native_backend_driver.gst" as driver;
+import "mir_native_backend_generic_source.gst" as generic_source;
 import "mir_native_backend_request.gst" as request;
 
-// Phase 10 source route.
+// Compiler-owned source route.
 //
-// Patch 8 connected literal and provenance-local scalar programs. Patch 9 added
-// narrow CFG and block-parameter cohorts. Patch 10 adds two exact canonical-v2
-// call shapes without changing the request, object, or link protocols: one
-// same-module local identity helper call and one bodyless C extern call modeled
-// as an imported-host runtime boundary. Source import statements, multiple
-// source modules, indirect or nested calls, multiple arguments, non-int ABIs,
-// and broader expressions remain deferred.
+// The generic semantic route now runs before the closed exact-shape
+// recognizers. It lowers the already-resolved and typechecked AST into the
+// frozen canonical v1/v2 bundle vocabulary, derives capabilities by traversing
+// that bundle, and shadow-compares any overlapping legacy result byte for byte.
+// The exact recognizers remain temporary compatibility paths. Source imports,
+// multiple source modules, indirect or nested calls, multiple arguments,
+// non-int ABIs, and broader expressions remain deferred.
 type MirNativeScalarSourceLowering[ctx] struct {
     supported: int,
     bundle: mir.MirProgramBundle[ctx],
@@ -2272,6 +2273,32 @@ func mir_native_scalar_source_process(driver_path: str, command_name: str, reque
 }
 
 func mir_native_scalar_source_compile(programs: std.Vector[ast.Program[ctx], ctx], module_paths: std.Vector[str, ctx], module_prefixes: std.Vector[str, ctx], output_path: str, ctx: &Arena) MirNativeScalarSourceRouteResult[ctx] {
+    mut static_capabilities := mir_native_scalar_source_capabilities(ctx);
+    mut generic_result := generic_source.mir_native_generic_source_lower(
+        programs,
+        module_paths,
+        module_prefixes,
+        static_capabilities,
+        ctx
+    );
+
+    if generic_result.eligibility.tag == 3 {
+        return mir_native_scalar_source_route_result(
+            1,
+            generic_result.diagnostic,
+            ctx
+        );
+    }
+    if generic_result.eligibility.tag == 2 {
+        return mir_native_scalar_source_route_result(
+            1,
+            generic_result.diagnostic,
+            ctx
+        );
+    }
+
+    // The closed recognizers remain behind the generic attempt as a temporary
+    // compatibility route and as byte-for-byte shadow evidence.
     mut lowering := mir_native_call_import_source_lower(
         programs,
         module_paths,
@@ -2294,11 +2321,45 @@ func mir_native_scalar_source_compile(programs: std.Vector[ast.Program[ctx], ctx
             ctx
         );
     }
+
+    if generic_result.eligibility.tag == 0 {
+        mut generic_serialized := mir.mir_serialize_program_bundle(
+            generic_result.bundle,
+            ctx
+        );
+        if std.str_eq(generic_serialized, "format: invalid\n") == 1 {
+            return mir_native_scalar_source_route_result(
+                1,
+                "Native backend internal error: generic canonical MIR bundle validation failed",
+                ctx
+            );
+        }
+
+        if lowering.supported == 1 {
+            mut legacy_serialized := mir.mir_serialize_program_bundle(
+                lowering.bundle,
+                ctx
+            );
+            if std.str_eq(legacy_serialized, "format: invalid\n") == 1 ||
+               std.str_eq(generic_serialized, legacy_serialized) == 0
+            {
+                return mir_native_scalar_source_route_result(
+                    1,
+                    "Native backend internal error: generic and compatibility canonical MIR bundles differ",
+                    ctx
+                );
+            }
+        }
+
+        lowering.supported = 1;
+        lowering.bundle = generic_result.bundle;
+        lowering.plan = generic_result.plan;
+    }
+
     if lowering.supported == 0 {
         return mir_native_scalar_source_route_result(2, "", ctx);
     }
 
-    mut static_capabilities := mir_native_scalar_source_capabilities(ctx);
     mut static_result := capability.mir_native_backend_validate_capabilities(
         lowering.bundle,
         lowering.plan,

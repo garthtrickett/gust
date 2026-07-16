@@ -1241,7 +1241,41 @@ all explicit evidence gaps. It adds no dynamic native evidence and no CI
 matrix shard. The legacy Phase 9 manifest-surface scan validates the registry's
 exact path, version, status, nineteen-entry count, and seven-family count
 before excluding only that documentation file from its broad Cranelift
-reference scan. The next milestone is the generic canonical-MIR source route.
+reference scan.
+
+Patch 3 connects the generic compiler-owned source route as
+`phase11_connected_generic_canonical_MIR_source_route`. The route consumes the
+same resolved, parsed, and typechecked AST programs already produced by the
+normal compiler frontend. It recognizes semantic AST structure without
+comparing source paths, fixture identities, or raw source spellings, and emits
+the existing frozen canonical v1/v2 program-bundle vocabulary.
+
+Generic eligibility is typed as `LoweredAndEligible`,
+`SourceFeatureNotRepresented`, `NativeCapabilityUnsupported`, or
+`InvalidCanonicalMir`. The capability plan is derived after lowering by
+traversing bundle modules, symbol signatures, imported symbols, block
+parameters, and canonical MIR operation records. Unsupported capability and
+invalid-MIR results stop before driver discovery, output resolution, request
+or bundle files, object emission, or linking.
+
+The six Phase 10 compatibility cohorts are now primary
+`generic_canonical_mir` registry owners with `generic_shadowed` migration
+status. The closed call/import, CFG/block-parameter, and scalar/metadata
+recognizers remain behind the generic attempt. Whenever both paths recognize a
+program, both bundles are serialized and must be byte-identical before the
+external driver can be discovered. This preserves the exact v1/v2 wire bytes
+while the compatibility code remains available for later retirement.
+
+`guard-cranelift-phase11-generic-canonical-mir-route` builds one worker, runs
+all six baseline programs through the generic route, checks exits `7`, `2`,
+`11`, `17`, `47`, and `53`, proves a broader source shape remains deferred
+before driver access, and proves an unapproved imported runtime symbol is
+classified as unsupported before driver access while an existing output
+sentinel survives. MIR-to-C remains the default, the worker protocol is
+unchanged, Phase 9G retains artifact ownership, and no workflow matrix changes
+in this patch. The legacy backend-surface guard validates the exact Phase 11
+generic-route guard authorization before excluding only that guard recipe from
+its explicit native CLI scan. The next milestone is scalar-expression parity.
 
 The checked-in lockfile for this crate is owned by:
 Patch 8 freezes the complete canonical call/import matrix and retires all
