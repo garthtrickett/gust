@@ -73,11 +73,9 @@ func mir_native_local_state_append(output: str, value: str, ctx: &Arena) str {
 }
 
 func mir_native_local_state_append_int(output: str, value: int, ctx: &Arena) str {
-    return mir_native_local_state_append(
-        output,
-        std.FormatInt(value),
-        ctx
-    );
+    mut formatted := std.FormatInt(value);
+    mut updated := std.Concat(output, formatted);
+    return std.Clone(ctx, updated);
 }
 
 func mir_native_local_state_empty_expression() MirNativeLocalStateExpression {
@@ -967,7 +965,7 @@ func mir_native_local_state_emit_write(
         ctx
     );
     output = mir_native_local_state_append(output, "\n", ctx);
-    return output;
+    return std.Clone(ctx, output);
 }
 
 func mir_native_local_state_emit_block_header_and_writes(
@@ -1027,7 +1025,7 @@ func mir_native_local_state_emit_block_header_and_writes(
         );
         statement_index = statement_index + 1;
     }
-    return output;
+    return std.Clone(ctx, output);
 }
 
 func mir_native_local_state_emit_return(
@@ -1065,7 +1063,7 @@ func mir_native_local_state_emit_return(
         ctx
     );
     output = mir_native_local_state_append(output, "\n", ctx);
-    return output;
+    return std.Clone(ctx, output);
 }
 
 func mir_native_local_state_emit_metadata(
@@ -1214,7 +1212,7 @@ func mir_native_local_state_emit_metadata(
         output = mir_native_local_state_append(output, "\n", ctx);
         metadata_index = metadata_index + 1;
     }
-    return output;
+    return std.Clone(ctx, output);
 }
 
 func mir_native_local_state_emit_bundle(
