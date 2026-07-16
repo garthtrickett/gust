@@ -1238,7 +1238,10 @@ nineteen unique entries, seventeen exact translator-seed imports, six unique
 baseline owners, four exact MIR migration imports, six family totals, seven
 deferred families, every referenced fixture and guard, route-owner totals, and
 all explicit evidence gaps. It adds no dynamic native evidence and no CI
-matrix shard. The next milestone is the generic canonical-MIR source route.
+matrix shard. The legacy Phase 9 manifest-surface scan validates the registry's
+exact path, version, status, nineteen-entry count, and seven-family count
+before excluding only that documentation file from its broad Cranelift
+reference scan. The next milestone is the generic canonical-MIR source route.
 
 The checked-in lockfile for this crate is owned by:
 Patch 8 freezes the complete canonical call/import matrix and retires all

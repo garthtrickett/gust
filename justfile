@@ -1865,6 +1865,11 @@ guard-cranelift-experiment-manifest-surface:
     rg -n -F 'allowed_cranelift_phase10_backend_selection_entry: compiler/test_runner_entry.gst' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_backend_selection_artifact_policy: no_native_driver_object_linker_or_executable_publication_connected' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_help_legacy_manifest_guard_policy: exactly_four_help_only_Cranelift_references_extend_the_four_Patch2_selector_references_for_an_exact_total_of_eight' "$manifest_doc" >/dev/null
+    if ! rg -n -x -F 'allowed_cranelift_phase11_registry_legacy_manifest_surface_policy: exact_registry_path_headers_and_counts_are_validated_before_exclusion_from_the_Phase9_broad_Cranelift_reference_scan' "$manifest_doc" >/dev/null; then
+      echo "Phase 11 parity-registry legacy manifest-surface policy is missing or stale in $manifest_doc."
+      rg -n -F 'allowed_cranelift_phase11_registry_legacy_manifest_surface_policy:' "$manifest_doc" || true
+      exit 1
+    fi
     if ! rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_help_legacy_backend_surface_policy: canonical_help_usage_is_exactly_validated_then_excluded_and_only_Phase10_plus_the_two_policy_guard_recipes_are_removed_from_the_legacy_orchestration_scan' "$manifest_doc" >/dev/null; then
       echo "Phase 10 backend-surface help policy is missing or stale in $manifest_doc."
       rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_help_legacy_backend_surface_policy:' "$manifest_doc" || true
@@ -1981,10 +1986,50 @@ guard-cranelift-experiment-manifest-surface:
       exit 1
     fi
 
+    phase11_registry_doc="compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md"
+    if ! rg -n -x -F 'allowed_cranelift_phase11_registry_path: compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md' "$manifest_doc" >/dev/null; then
+      echo "Phase 11 parity-registry path is missing or stale in $manifest_doc."
+      rg -n -F 'allowed_cranelift_phase11_registry_path:' "$manifest_doc" || true
+      exit 1
+    fi
+    if [ ! -f "$phase11_registry_doc" ] || [ -L "$phase11_registry_doc" ]; then
+      echo "Phase 11 parity registry must be one regular non-symlink documentation file: $phase11_registry_doc"
+      exit 1
+    fi
+
+    required_phase11_registry_headers=(
+      'CRANELIFT_FEATURE_PARITY_REGISTRY_VERSION: 1'
+      'CRANELIFT_FEATURE_PARITY_REGISTRY_STATUS: phase11_froze_feature_parity_registry'
+      'CRANELIFT_FEATURE_PARITY_REGISTRY_ENTRY_COUNT: 19'
+      'CRANELIFT_FEATURE_PARITY_REGISTRY_DEFERRED_FAMILY_COUNT: 7'
+    )
+    for expected_header in "${required_phase11_registry_headers[@]}"; do
+      if ! rg -n -x -F "$expected_header" "$phase11_registry_doc" >/dev/null; then
+        echo "Phase 11 parity registry is missing a frozen legacy-scan header:"
+        echo "$expected_header"
+        exit 1
+      fi
+    done
+
+    phase11_registry_entry_count="$(
+      rg -c '^parity_entry: ' "$phase11_registry_doc" ||
+        true
+    )"
+    phase11_registry_deferred_count="$(
+      rg -c '^deferred_family: ' "$phase11_registry_doc" ||
+        true
+    )"
+    if [ "${phase11_registry_entry_count:-0}" != "19" ] ||
+       [ "${phase11_registry_deferred_count:-0}" != "7" ]; then
+      echo "Phase 11 parity registry counts drifted before the legacy broad-scan exclusion: entries=${phase11_registry_entry_count:-0} deferred=${phase11_registry_deferred_count:-0}"
+      exit 1
+    fi
+
     cranelift_refs="$(
       rg -n -i -F 'cranelift' compiler src tests Cargo.toml Cargo.lock Makefile 2>/dev/null |
         rg -v '^compiler/CRANELIFT_EXPERIMENT_MANIFEST\.md:' |
         rg -v '^compiler/CRANELIFT_PHASE9C_DIFFERENTIAL_LEDGER\.md:' |
+        rg -v '^compiler/CRANELIFT_FEATURE_PARITY_REGISTRY\.md:' |
         rg -v '^compiler/experiments/cranelift/' |
         rg -v '^compiler/test_runner_entry\.gst:' |
         rg -v '^compiler/phase10_help\.txt:' |
@@ -15027,6 +15072,7 @@ guard-cranelift-phase11-parity-registry:
       'allowed_cranelift_phase11_registry_evidence_policy: every_entry_has_positive_oracle_and_explicit_deferred_lane_with_missing_MIR_to_C_or_source_native_evidence_recorded_as_none_gap'
       'allowed_cranelift_phase11_registry_dedup_policy: seventeen_seed_entries_plus_two_Phase10_only_call_entries_with_six_unique_primary_baseline_owners'
       'allowed_cranelift_phase11_registry_behavior_policy: documentation_manifest_and_static_guard_only_no_compiler_worker_MIR_request_artifact_package_CLI_or_workflow_change'
+      'allowed_cranelift_phase11_registry_legacy_manifest_surface_policy: exact_registry_path_headers_and_counts_are_validated_before_exclusion_from_the_Phase9_broad_Cranelift_reference_scan'
       'allowed_cranelift_phase11_registry_next_milestone: generic_canonical_MIR_source_route'
       'allowed_cranelift_phase11_registry_next_milestone_status: pending'
     )
