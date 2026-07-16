@@ -14849,10 +14849,10 @@ guard-cranelift-phase11-opening-contract:
       'allowed_cranelift_phase11_opening_backend_policy: MIR_to_C_remains_default_and_Cranelift_remains_explicit_experimental_with_no_fallback'
       'allowed_cranelift_phase11_opening_schema_policy: canonical_MIR_v1_and_v2_remain_frozen_and_no_MIR_v3_is_authorized'
       'allowed_cranelift_phase11_opening_scope_freeze: no_new_language_type_runtime_subsystem_ABI_family_MIR_version_worker_protocol_driver_discovery_artifact_kind_link_mode_CLI_surface_or_CI_matrix_in_Patch1'
-      'allowed_cranelift_phase11_opening_behavior_policy: manifest_README_and_static_guard_only_no_source_route_worker_request_object_link_package_help_CLI_or_workflow_change'
+      'allowed_cranelift_phase11_opening_behavior_policy: manifest_README_registry_and_static_guards_only_no_source_route_worker_request_object_link_package_help_CLI_or_workflow_change'
       'allowed_cranelift_phase11_opening_post_opening_CI_partition: frozen_Phase10_packaging_help_evidence_split_across_four_PR_fast_shards_without_native_behavior_change'
       'allowed_cranelift_phase11_opening_next_milestone: feature_parity_registry_and_evidence_model'
-      'allowed_cranelift_phase11_opening_next_milestone_status: pending'
+      'allowed_cranelift_phase11_opening_next_milestone_status: complete'
     )
     for expected_line in "${required_manifest_lines[@]}"; do
       if ! rg -n -x -F "$expected_line" "$manifest_doc" >/dev/null; then
@@ -14862,14 +14862,19 @@ guard-cranelift-phase11-opening-contract:
       fi
     done
 
-    expected_phase11_guards="guard-cranelift-phase11-opening-contract"
+    expected_phase11_guards="$(
+      printf '%s\n' \
+        guard-cranelift-phase11-opening-contract \
+        guard-cranelift-phase11-parity-registry |
+        sort
+    )"
     declared_phase11_guards="$(
       awk '/^CRANELIFT_EXPERIMENT_ALLOWED_PHASE11_[A-Z0-9_]+_GUARD:/ { print $2 }' \
         "$manifest_doc" |
         sort
     )"
     if [ "$declared_phase11_guards" != "$expected_phase11_guards" ]; then
-      echo "Phase 11 Patch 1 requires exactly one manifest-authorized guard."
+      echo "Phase 11 current contract requires exactly the opening and registry guards."
       diff -u \
         <(printf '%s\n' "$expected_phase11_guards") \
         <(printf '%s\n' "$declared_phase11_guards") ||
@@ -14967,7 +14972,7 @@ guard-cranelift-phase11-opening-contract:
     printf '%s\n' "$readme_flat" |
       rg -F 'Phase 11 initially records seven deferred families' >/dev/null
     printf '%s\n' "$readme_flat" |
-      rg -F 'Before native behavior expands, Patch 2 must establish one dedicated feature-parity registry and evidence model.' >/dev/null
+      rg -F 'Patch 2 establishes `compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md` before native behavior expands.' >/dev/null
     printf '%s\n' "$readme_flat" |
       rg -F '`guard-cranelift-phase11-opening-contract` is a static opening gate.' >/dev/null
     printf '%s\n' "$readme_flat" |
@@ -14975,6 +14980,444 @@ guard-cranelift-phase11-opening-contract:
 
     echo "✅ Phase 11 opened: Phase 10 remains closed, six source cohorts and seven deferred families are frozen, parity is registry-scoped rather than full-language, and the later four-way Phase 10 CI partition changes no compiler, worker, artifact, CLI, schema, or package behavior."
 
+
+guard-cranelift-phase11-parity-registry:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Freezing the Phase 11 feature-parity registry and evidence model..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    registry_doc="compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md"
+    mir_registry_doc="compiler/MIR_FEATURE_MIGRATION_REGISTRY.md"
+    readme_doc="compiler/experiments/cranelift/README.md"
+
+    for required_file in \
+      "$manifest_doc" \
+      "$registry_doc" \
+      "$mir_registry_doc" \
+      "$readme_doc" \
+      justfile
+    do
+      if [ ! -f "$required_file" ]; then
+        echo "Missing Phase 11 parity-registry input: $required_file"
+        exit 1
+      fi
+    done
+
+    just guard-cranelift-phase11-opening-contract
+
+    required_manifest_lines=(
+      'CRANELIFT_EXPERIMENT_ALLOWED_PHASE11_PARITY_REGISTRY_GUARD: guard-cranelift-phase11-parity-registry'
+      'allowed_cranelift_phase11_registry_status: phase11_froze_feature_parity_registry'
+      'allowed_cranelift_phase11_registry_predecessor_status: phase11_open_inventory_backed_feature_parity_migration'
+      'allowed_cranelift_phase11_registry_predecessor_guard: guard-cranelift-phase11-opening-contract'
+      'allowed_cranelift_phase11_registry_path: compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md'
+      'allowed_cranelift_phase11_registry_entry_count: 19'
+      'allowed_cranelift_phase11_registry_translator_seed_import_count: 17'
+      'allowed_cranelift_phase11_registry_phase10_baseline_count: 6'
+      'allowed_cranelift_phase11_registry_legacy_MIR_feature_import_count: 4'
+      'allowed_cranelift_phase11_registry_family_count: 6'
+      'allowed_cranelift_phase11_registry_families: scalar,cfg,block_parameter,metadata,direct_call,import_runtime'
+      'allowed_cranelift_phase11_registry_deferred_family_count: 7'
+      'allowed_cranelift_phase11_registry_deferred_families: broader_scalar_expressions,multiple_locals_and_assignments,nested_CFG,loops_and_backedges,function_parameters_and_multiple_arguments,multiple_modules_and_source_imports,broader_direct_and_imported_calls'
+      'allowed_cranelift_phase11_registry_route_inventory: 6_legacy_exact_shape_0_generic_canonical_mir_13_deferred'
+      'allowed_cranelift_phase11_registry_migration_inventory: 6_baseline_supported_13_deferred'
+      'allowed_cranelift_phase11_registry_MIR_to_C_gap_count: 9'
+      'allowed_cranelift_phase11_registry_schema: id,family,source_fixture,mir_fixture,deferred_fixture,deferred_family,canonical_mir_operations,types_abis,mir_registry_feature,mir_to_c_guard,canonical_oracle_guard,translator_seed_guard,source_native_guard,baseline_source,positive_expectation,deferred_expectation,route_owner,migration_status,seed_import'
+      'allowed_cranelift_phase11_registry_route_owner_policy: exactly_one_of_legacy_exact_shape_generic_canonical_mir_or_deferred'
+      'allowed_cranelift_phase11_registry_evidence_policy: every_entry_has_positive_oracle_and_explicit_deferred_lane_with_missing_MIR_to_C_or_source_native_evidence_recorded_as_none_gap'
+      'allowed_cranelift_phase11_registry_dedup_policy: seventeen_seed_entries_plus_two_Phase10_only_call_entries_with_six_unique_primary_baseline_owners'
+      'allowed_cranelift_phase11_registry_behavior_policy: documentation_manifest_and_static_guard_only_no_compiler_worker_MIR_request_artifact_package_CLI_or_workflow_change'
+      'allowed_cranelift_phase11_registry_next_milestone: generic_canonical_MIR_source_route'
+      'allowed_cranelift_phase11_registry_next_milestone_status: pending'
+    )
+    for expected_line in "${required_manifest_lines[@]}"; do
+      if ! rg -n -x -F "$expected_line" "$manifest_doc" >/dev/null; then
+        echo "Missing Phase 11 parity-registry manifest line:"
+        echo "$expected_line"
+        exit 1
+      fi
+    done
+
+    required_registry_lines=(
+      'CRANELIFT_FEATURE_PARITY_REGISTRY_VERSION: 1'
+      'CRANELIFT_FEATURE_PARITY_REGISTRY_PHASE: phase11_feature_parity_registry_and_evidence_model'
+      'CRANELIFT_FEATURE_PARITY_REGISTRY_STATUS: phase11_froze_feature_parity_registry'
+      'CRANELIFT_FEATURE_PARITY_REGISTRY_ENTRY_COUNT: 19'
+      'CRANELIFT_FEATURE_PARITY_REGISTRY_TRANSLATOR_SEED_IMPORT_COUNT: 17'
+      'CRANELIFT_FEATURE_PARITY_REGISTRY_PHASE10_BASELINE_COUNT: 6'
+      'CRANELIFT_FEATURE_PARITY_REGISTRY_LEGACY_MIR_FEATURE_IMPORT_COUNT: 4'
+      'CRANELIFT_FEATURE_PARITY_REGISTRY_FAMILY_COUNT: 6'
+      'CRANELIFT_FEATURE_PARITY_REGISTRY_DEFERRED_FAMILY_COUNT: 7'
+      'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_INVENTORY: 6_legacy_exact_shape_0_generic_canonical_mir_13_deferred'
+      'CRANELIFT_FEATURE_PARITY_REGISTRY_MIGRATION_INVENTORY: 6_baseline_supported_13_deferred'
+      'CRANELIFT_FEATURE_PARITY_REGISTRY_MIR_TO_C_GAP_COUNT: 9'
+    )
+    for expected_line in "${required_registry_lines[@]}"; do
+      if ! rg -n -x -F "$expected_line" "$registry_doc" >/dev/null; then
+        echo "Missing Phase 11 parity-registry header:"
+        echo "$expected_line"
+        exit 1
+      fi
+    done
+
+    registry_record_field() {
+      local record_prefix="$1"
+      local requested_field="$2"
+      awk -F'|' -v record_prefix="$record_prefix" -v key="$requested_field" '
+        index($0, record_prefix) == 1 {
+          for (field_index = 1; field_index <= NF; field_index++) {
+            value = $field_index
+            sub("^" record_prefix, "", value)
+            prefix = key "="
+            if (index(value, prefix) == 1) {
+              print substr(value, length(prefix) + 1)
+            }
+          }
+        }
+      ' "$registry_doc"
+    }
+
+    registry_entry_field() {
+      registry_record_field "parity_entry: " "$1"
+    }
+
+    registry_deferred_field() {
+      registry_record_field "deferred_family: " "$1"
+    }
+
+    registry_field_count() {
+      local requested_field="$1"
+      local expected_value="$2"
+      registry_entry_field "$requested_field" |
+        awk -v expected="$expected_value" '
+          $0 == expected { count++ }
+          END { print count + 0 }
+        '
+    }
+
+    entry_count="$(rg -c '^parity_entry: ' "$registry_doc")"
+    if [ "$entry_count" != "19" ]; then
+      echo "Expected exactly 19 Phase 11 parity entries, found $entry_count."
+      exit 1
+    fi
+
+    required_entry_fields=(
+      id
+      family
+      source_fixture
+      mir_fixture
+      deferred_fixture
+      deferred_family
+      canonical_mir_operations
+      types_abis
+      mir_registry_feature
+      mir_to_c_guard
+      canonical_oracle_guard
+      translator_seed_guard
+      source_native_guard
+      baseline_source
+      positive_expectation
+      deferred_expectation
+      route_owner
+      migration_status
+      seed_import
+    )
+    for required_field in "${required_entry_fields[@]}"; do
+      field_count="$(registry_entry_field "$required_field" | wc -l | tr -d ' ')"
+      if [ "$field_count" != "19" ]; then
+        echo "Phase 11 parity field $required_field appears $field_count times, expected 19."
+        exit 1
+      fi
+    done
+
+    expected_entry_ids="$(
+      printf '%s\n' \
+        return_int \
+        local_binding_read \
+        add_i32 \
+        conditional_branch \
+        block_jump \
+        positive_i32_branch \
+        block_local_branch_join \
+        block_param_update_branch \
+        block_param_merge_update_branch \
+        provenance_metadata \
+        resource_metadata \
+        native_boundary_metadata \
+        direct_call_i32 \
+        imported_runtime_call_i32 \
+        block_param_merge_imported_call_return \
+        block_param_merge_arm_update_imported_call_return \
+        block_param_merge_arm_update_imported_call_branch \
+        block_param_merge_imported_branch_joined_return \
+        block_param_merge_dual_imported_joined_return |
+        sort
+    )"
+    actual_entry_ids="$(registry_entry_field id | sort)"
+    if [ "$actual_entry_ids" != "$expected_entry_ids" ]; then
+      echo "Phase 11 parity entry IDs differ from the frozen inventory."
+      diff -u \
+        <(printf '%s\n' "$expected_entry_ids") \
+        <(printf '%s\n' "$actual_entry_ids") ||
+        true
+      exit 1
+    fi
+    duplicate_entry_ids="$(
+      registry_entry_field id |
+        sort |
+        uniq -d
+    )"
+    if [ -n "$duplicate_entry_ids" ]; then
+      echo "Phase 11 parity entry IDs must be unique."
+      printf '%s\n' "$duplicate_entry_ids"
+      exit 1
+    fi
+
+    expected_family_counts=(
+      'scalar=3'
+      'cfg=4'
+      'block_parameter=2'
+      'metadata=3'
+      'direct_call=1'
+      'import_runtime=6'
+    )
+    for family_record in "${expected_family_counts[@]}"; do
+      family_name="${family_record%%=*}"
+      expected_count="${family_record#*=}"
+      actual_count="$(registry_field_count family "$family_name")"
+      if [ "$actual_count" != "$expected_count" ]; then
+        echo "Phase 11 family $family_name expected $expected_count entries, found $actual_count."
+        exit 1
+      fi
+    done
+
+    if [ "$(registry_field_count route_owner legacy_exact_shape)" != "6" ] ||
+       [ "$(registry_field_count route_owner generic_canonical_mir)" != "0" ] ||
+       [ "$(registry_field_count route_owner deferred)" != "13" ]; then
+      echo "Phase 11 Patch 2 route-owner inventory must remain 6 legacy, 0 generic, 13 deferred."
+      exit 1
+    fi
+    if [ "$(registry_field_count migration_status baseline_supported)" != "6" ] ||
+       [ "$(registry_field_count migration_status deferred)" != "13" ]; then
+      echo "Phase 11 Patch 2 migration inventory must remain 6 baseline-supported and 13 deferred."
+      exit 1
+    fi
+    if [ "$(registry_field_count seed_import 1)" != "17" ] ||
+       [ "$(registry_field_count seed_import 0)" != "2" ]; then
+      echo "Phase 11 registry must import 17 translator seeds plus two Phase 10-only entries."
+      exit 1
+    fi
+    if [ "$(registry_field_count mir_to_c_guard none_gap_recorded)" != "9" ]; then
+      echo "Phase 11 registry must expose exactly nine dedicated MIR-to-C evidence gaps."
+      exit 1
+    fi
+
+    expected_seed_guards="$(
+      awk '
+        /^allowed_mir_to_cranelift_translator_seed_suite_[a-z0-9_][a-z0-9_]*_guard: guard-cranelift-mir-to-cranelift-.*-translator-native-smoke$/ {
+          print $2
+        }
+      ' "$manifest_doc" |
+        sort
+    )"
+    actual_seed_guards="$(
+      registry_entry_field translator_seed_guard |
+        rg -v '^none_' |
+        sort
+    )"
+    if [ "$actual_seed_guards" != "$expected_seed_guards" ]; then
+      echo "Phase 11 registry translator-seed imports differ from the frozen 17-seed manifest inventory."
+      diff -u \
+        <(printf '%s\n' "$expected_seed_guards") \
+        <(printf '%s\n' "$actual_seed_guards") ||
+        true
+      exit 1
+    fi
+    if [ "$(printf '%s\n' "$actual_seed_guards" | wc -l | tr -d ' ')" != "17" ]; then
+      echo "Phase 11 registry must import exactly seventeen translator guards."
+      exit 1
+    fi
+
+    expected_baseline_sources="$(
+      printf '%s\n' \
+        compiler/phase10_scalar_return_source.gst \
+        compiler/phase10_metadata_local_source.gst \
+        compiler/phase10_cfg_return_source.gst \
+        compiler/phase10_block_parameter_merge_source.gst \
+        compiler/phase10_local_call_source.gst \
+        compiler/phase10_runtime_boundary_source.gst |
+        sort
+    )"
+    actual_baseline_sources="$(
+      registry_entry_field baseline_source |
+        rg -v '^none$' |
+        sort
+    )"
+    if [ "$actual_baseline_sources" != "$expected_baseline_sources" ]; then
+      echo "Phase 11 registry baseline sources differ from the six Phase 10 cohorts."
+      diff -u \
+        <(printf '%s\n' "$expected_baseline_sources") \
+        <(printf '%s\n' "$actual_baseline_sources") ||
+        true
+      exit 1
+    fi
+
+    expected_baseline_expectations="$(
+      printf '%s\n' \
+        exit_2_stdout_empty_stderr_empty \
+        exit_7_stdout_empty_stderr_empty \
+        exit_11_stdout_empty_stderr_empty \
+        exit_17_stdout_empty_stderr_empty \
+        exit_47_stdout_empty_stderr_empty \
+        exit_53_stdout_empty_stderr_empty |
+        sort
+    )"
+    actual_baseline_expectations="$(
+      registry_entry_field positive_expectation |
+        rg '^exit_' |
+        sort
+    )"
+    if [ "$actual_baseline_expectations" != "$expected_baseline_expectations" ]; then
+      echo "Phase 11 registry baseline expectations differ from the six frozen exits."
+      diff -u \
+        <(printf '%s\n' "$expected_baseline_expectations") \
+        <(printf '%s\n' "$actual_baseline_expectations") ||
+        true
+      exit 1
+    fi
+
+    expected_mir_features="$(
+      awk -F': ' '/^feature_name: / { print $2 }' "$mir_registry_doc" |
+        sort
+    )"
+    actual_mir_features="$(
+      registry_entry_field mir_registry_feature |
+        rg -v '^none$' |
+        sort
+    )"
+    if [ "$actual_mir_features" != "$expected_mir_features" ]; then
+      echo "Phase 11 registry MIR feature imports differ from the four-entry migration registry."
+      diff -u \
+        <(printf '%s\n' "$expected_mir_features") \
+        <(printf '%s\n' "$actual_mir_features") ||
+        true
+      exit 1
+    fi
+    if [ "$(printf '%s\n' "$actual_mir_features" | wc -l | tr -d ' ')" != "4" ]; then
+      echo "Phase 11 registry must import exactly four legacy MIR feature entries."
+      exit 1
+    fi
+
+    deferred_count="$(rg -c '^deferred_family: ' "$registry_doc")"
+    if [ "$deferred_count" != "7" ]; then
+      echo "Expected exactly seven Phase 11 deferred families, found $deferred_count."
+      exit 1
+    fi
+    expected_deferred_ids="$(
+      printf '%s\n' \
+        broader_scalar_expressions \
+        multiple_locals_and_assignments \
+        nested_CFG \
+        loops_and_backedges \
+        function_parameters_and_multiple_arguments \
+        multiple_modules_and_source_imports \
+        broader_direct_and_imported_calls |
+        sort
+    )"
+    actual_deferred_ids="$(registry_deferred_field id | sort)"
+    if [ "$actual_deferred_ids" != "$expected_deferred_ids" ]; then
+      echo "Phase 11 deferred-family inventory differs from the opening contract."
+      diff -u \
+        <(printf '%s\n' "$expected_deferred_ids") \
+        <(printf '%s\n' "$actual_deferred_ids") ||
+        true
+      exit 1
+    fi
+    invalid_entry_deferred_ids="$(
+      comm -23 \
+        <(registry_entry_field deferred_family | sort -u) \
+        <(printf '%s\n' "$expected_deferred_ids")
+    )"
+    if [ -n "$invalid_entry_deferred_ids" ]; then
+      echo "Phase 11 entries reference unknown deferred families."
+      printf '%s\n' "$invalid_entry_deferred_ids"
+      exit 1
+    fi
+
+    deferred_entries_without_fixture="$(
+      awk -F'|' '
+        /^parity_entry: / {
+          route_owner = ""
+          deferred_fixture = ""
+          entry_id = ""
+          for (field_index = 1; field_index <= NF; field_index++) {
+            value = $field_index
+            sub(/^parity_entry: /, "", value)
+            if (index(value, "id=") == 1) {
+              entry_id = substr(value, 4)
+            } else if (index(value, "route_owner=") == 1) {
+              route_owner = substr(value, 13)
+            } else if (index(value, "deferred_fixture=") == 1) {
+              deferred_fixture = substr(value, 18)
+            }
+          }
+          if (route_owner == "deferred" &&
+              index(deferred_fixture, "none_") == 1) {
+            print entry_id
+          }
+        }
+      ' "$registry_doc"
+    )"
+    if [ -n "$deferred_entries_without_fixture" ]; then
+      echo "Deferred Phase 11 entries must point at an existing source fixture."
+      printf '%s\n' "$deferred_entries_without_fixture"
+      exit 1
+    fi
+
+    for fixture_field in source_fixture mir_fixture deferred_fixture baseline_source; do
+      while IFS= read -r fixture_path; do
+        if [ -z "$fixture_path" ] ||
+           [ "$fixture_path" = "none" ] ||
+           [[ "$fixture_path" == none_* ]]; then
+          continue
+        fi
+        if [ ! -f "$fixture_path" ]; then
+          echo "Phase 11 registry $fixture_field path does not exist: $fixture_path"
+          exit 1
+        fi
+      done < <(registry_entry_field "$fixture_field" | sort -u)
+    done
+
+    for guard_field in \
+      mir_to_c_guard \
+      canonical_oracle_guard \
+      translator_seed_guard \
+      source_native_guard
+    do
+      while IFS= read -r guard_name; do
+        if [ -z "$guard_name" ] || [[ "$guard_name" == none_* ]]; then
+          continue
+        fi
+        if ! rg -n -x -F "$guard_name:" justfile >/dev/null; then
+          echo "Phase 11 registry $guard_field recipe does not exist: $guard_name"
+          exit 1
+        fi
+      done < <(registry_entry_field "$guard_field" | sort -u)
+    done
+
+    readme_flat="$(tr '\n' ' ' < "$readme_doc")"
+    printf '%s\n' "$readme_flat" |
+      rg -F 'The registry freezes nineteen primary parity entries across six families' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'Seventeen entries import the complete frozen translator-seed inventory.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'Patch 2 records six `legacy_exact_shape` owners, zero `generic_canonical_mir` owners, and thirteen `deferred` owners.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F '`guard-cranelift-phase11-parity-registry` validates the registry schema' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'The next milestone is the generic canonical-MIR source route.' >/dev/null
+
+    echo "✅ Phase 11 parity registry frozen: 19 unique entries, 17 translator seeds, 6 Phase 10 baseline owners, 4 MIR migration imports, 7 deferred families, 9 explicit MIR-to-C gaps, and no generic native route yet."
 
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
     #!/usr/bin/env bash

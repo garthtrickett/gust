@@ -1202,22 +1202,43 @@ arguments, multiple modules and source imports, and broader direct or imported
 calls.
 
 No new exact source-spelling, filename, or fixture-identity recognizer is
-authorized. Before native behavior expands, Patch 2 must establish one
-dedicated feature-parity registry and evidence model. MIR-to-C remains the
-default; Cranelift remains explicit and experimental with no fallback. The
-compiler retains source, canonical MIR, eligibility, capability, and
-orchestration ownership; the worker remains request-plus-MIR-only; and Phase 9G
-remains the sole verified-object, classified-link, cleanup, and atomic
-publication path.
+authorized. Patch 2 establishes
+`compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md` before native behavior expands.
+MIR-to-C remains the default; Cranelift remains explicit and experimental with
+no fallback. The compiler retains source, canonical MIR, eligibility,
+capability, and orchestration ownership; the worker remains
+request-plus-MIR-only; and Phase 9G remains the sole verified-object,
+classified-link, cleanup, and atomic publication path.
 
-`guard-cranelift-phase11-opening-contract` is a static opening gate. It requires
-the closed Phase 10 contract, freezes the six-cohort baseline and seven-family
-deferred inventory, verifies that only the opening guard is authorized for
-Phase 11, and rejects Patch 1 changes to the compiler route, worker, package,
-CLI, workflows, MIR schemas, runtime or ABI families. Patch 1 adds no dynamic
-native evidence and no CI matrix shard. A later CI-only partition splits the
-frozen Phase 10 packaging/help evidence across four PR Fast jobs without
-changing native behavior.
+The registry freezes nineteen primary parity entries across six families:
+three scalar, four CFG, two block-parameter, three metadata, one direct-call,
+and six import/runtime entries. Seventeen entries import the complete frozen
+translator-seed inventory. Two additional entries account for the Phase 10
+local-call and imported-runtime cohorts without pretending those semantics
+already have translator seeds.
+
+Exactly six entries own the Phase 10 compatibility baseline, four entries
+import the complete legacy MIR feature migration registry, and all nineteen
+entries name a positive oracle plus an explicit deferred family. Nine entries
+record the absence of a dedicated MIR-to-C evidence guard as
+`none_gap_recorded`; the gap is visible and must be resolved or explicitly
+retained by later migration patches. Patch 2 records six
+`legacy_exact_shape` owners, zero `generic_canonical_mir` owners, and thirteen
+`deferred` owners.
+
+`guard-cranelift-phase11-opening-contract` remains the static opening gate. It
+requires the closed Phase 10 contract, freezes the six-cohort baseline and
+seven-family deferred inventory, and now authorizes exactly the opening and
+registry guards. It still rejects compiler-route, worker, package, CLI,
+workflow, MIR-schema, runtime, or ABI behavior changes. The four-way Phase 10
+packaging/help CI partition remains frozen.
+
+`guard-cranelift-phase11-parity-registry` validates the registry schema,
+nineteen unique entries, seventeen exact translator-seed imports, six unique
+baseline owners, four exact MIR migration imports, six family totals, seven
+deferred families, every referenced fixture and guard, route-owner totals, and
+all explicit evidence gaps. It adds no dynamic native evidence and no CI
+matrix shard. The next milestone is the generic canonical-MIR source route.
 
 The checked-in lockfile for this crate is owned by:
 Patch 8 freezes the complete canonical call/import matrix and retires all
