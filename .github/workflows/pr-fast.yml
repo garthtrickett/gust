@@ -72,7 +72,10 @@ jobs:
           - cranelift-phase9g-object-artifact
           - cranelift-phase9g-link-positive
           - cranelift-phase9g-link-negative
-          - cranelift-phase10-packaging-help
+          - cranelift-phase10-call-runtime
+          - cranelift-phase10-help-surface
+          - cranelift-phase10-package-sibling
+          - cranelift-phase10-install-runtime
           - cranelift-backend-suite-core-baseline
           - cranelift-backend-suite-core-legacy
           - cranelift-backend-suite-core-mir-basic-arithmetic

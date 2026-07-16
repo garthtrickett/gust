@@ -1130,12 +1130,17 @@ implementation, driver, object, link, runtime, PATH, auto-build, or fallback
 reference is broadly exempted. Help is a sole-argument mode; mixed invocations
 continue through normal deterministic option rejection.
 
-PR Fast gains the dedicated `cranelift-phase10-packaging-help` matrix shard.
-That focused lane builds the package, verifies the worker handshake, proves
-native execution using only a staged sibling, exercises a `DESTDIR` install,
-compares both help spellings byte-for-byte, and executes the installed
-runtime-boundary fixture. The heavy build also treats help as a strict frozen
-surface rather than an ignored probe.
+PR Fast partitions the Phase 10 evidence across four independent matrix shards.
+`cranelift-phase10-call-runtime` owns the predecessor source-route executions;
+`cranelift-phase10-help-surface` owns the static packaging/help contract and
+both byte-exact help spellings; `cranelift-phase10-package-sibling` owns the
+compiler-only default-build proof, release package, worker handshake, and staged
+sibling execution; and `cranelift-phase10-install-runtime` owns the `DESTDIR`
+install, installed help, and installed runtime-boundary execution. The
+`guard-cranelift-phase10-packaging-help-ci` recipe remains the local aggregate:
+an unset `PHASE10_PACKAGING_HELP_SHARD` runs all four partitions serially, while
+CI selects one partition per job. The heavy build also treats help as a strict
+frozen surface rather than an ignored probe.
 
 Phase 10 is closed as
 `phase10_closed_explicit_experimental_cranelift_backend_route`.
@@ -1210,7 +1215,9 @@ the closed Phase 10 contract, freezes the six-cohort baseline and seven-family
 deferred inventory, verifies that only the opening guard is authorized for
 Phase 11, and rejects Patch 1 changes to the compiler route, worker, package,
 CLI, workflows, MIR schemas, runtime or ABI families. Patch 1 adds no dynamic
-native evidence and no CI matrix shard.
+native evidence and no CI matrix shard. A later CI-only partition splits the
+frozen Phase 10 packaging/help evidence across four PR Fast jobs without
+changing native behavior.
 
 The checked-in lockfile for this crate is owned by:
 Patch 8 freezes the complete canonical call/import matrix and retires all
