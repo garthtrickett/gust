@@ -2472,11 +2472,16 @@ guard-cranelift-backend-surface:
     fi
 
     # Phase 10 contract documentation, the exact validated help line, Phase 10
-    # guard recipes, and the exact manifest-authorized Phase 11 generic-route
-    # guard may name the explicit CLI. No production source is exempted.
+    # guard recipes, and the two exact manifest-authorized Phase 11 route
+    # guards may name the explicit CLI. No production source is exempted.
     if ! rg -n -x -F 'allowed_cranelift_phase11_generic_route_legacy_backend_surface_policy: exact_generic_route_guard_recipe_is_manifest_validated_then_excluded_from_the_legacy_explicit_CLI_scan' "$manifest_doc" >/dev/null; then
       echo "Phase 11 generic-route legacy backend-surface policy is missing or stale."
       rg -n -F 'allowed_cranelift_phase11_generic_route_legacy_backend_surface_policy:' "$manifest_doc" || true
+      exit 1
+    fi
+    if ! rg -n -x -F 'allowed_cranelift_phase11_scalar_expression_legacy_backend_surface_policy: exact_scalar_expression_guard_recipe_is_manifest_validated_then_excluded_from_the_legacy_explicit_CLI_scan' "$manifest_doc" >/dev/null; then
+      echo "Phase 11 scalar-expression legacy backend-surface policy is missing or stale."
+      rg -n -F 'allowed_cranelift_phase11_scalar_expression_legacy_backend_surface_policy:' "$manifest_doc" || true
       exit 1
     fi
     backend_route_code_refs="$(
@@ -2495,6 +2500,9 @@ guard-cranelift-backend-surface:
             excluded_backend_route_guard = 1
           }
           if ($0 == "guard-cranelift-phase11-generic-canonical-mir-route:") {
+            excluded_backend_route_guard = 1
+          }
+          if ($0 == "guard-cranelift-phase11-scalar-expression-parity:") {
             excluded_backend_route_guard = 1
           }
           if ($0 == "guard-cranelift-experiment-manifest-surface:") {
@@ -2519,7 +2527,7 @@ guard-cranelift-backend-surface:
         sed '/^$/d'
     )"
     if [ -n "$backend_route_refs" ]; then
-      echo "Unauthorized Cranelift backend routing exists outside the frozen Phase 10 surfaces and the exact validated Phase 11 generic-route guard."
+      echo "Unauthorized Cranelift backend routing exists outside the frozen Phase 10 surfaces and the exact validated Phase 11 generic/scalar route guards."
       echo "$backend_route_refs"
       exit 1
     fi
@@ -14919,7 +14927,8 @@ guard-cranelift-phase11-opening-contract:
       printf '%s\n' \
         guard-cranelift-phase11-generic-canonical-mir-route \
         guard-cranelift-phase11-opening-contract \
-        guard-cranelift-phase11-parity-registry |
+        guard-cranelift-phase11-parity-registry \
+        guard-cranelift-phase11-scalar-expression-parity |
         sort
     )"
     declared_phase11_guards="$(
@@ -14928,7 +14937,7 @@ guard-cranelift-phase11-opening-contract:
         sort
     )"
     if [ "$declared_phase11_guards" != "$expected_phase11_guards" ]; then
-      echo "Phase 11 current contract requires exactly the opening, registry, and generic-route guards."
+      echo "Phase 11 current contract requires exactly the opening, registry, generic-route, and scalar-expression guards."
       diff -u \
         <(printf '%s\n' "$expected_phase11_guards") \
         <(printf '%s\n' "$declared_phase11_guards") ||
@@ -14974,32 +14983,42 @@ guard-cranelift-phase11-opening-contract:
     rg -n -x -F 'allowed_cranelift_phase10_closure_inventory: 33_total_33_canonical_shared_0_bespoke_0_metadata_only_17_frozen_translator_seeds' \
       "$manifest_doc" >/dev/null
 
-    unexpected_phase11_behavior_refs="$(
+    unexpected_phase11_surface_refs="$(
       rg -n -i 'phase11|phase 11' \
         "$compiler_entry" \
         "$source_route" \
         "$canonical_mir" \
-        "$rust_driver" \
         "$makefile" \
         "$root_cargo" \
         "$pr_workflow" \
         "$heavy_workflow" 2>/dev/null ||
         true
     )"
-    if [ -n "$unexpected_phase11_behavior_refs" ]; then
-      echo "Phase 11 Patch 1 must not add compiler, worker, package, schema, CLI, or workflow implementation references."
-      printf '%s\n' "$unexpected_phase11_behavior_refs"
+    if [ -n "$unexpected_phase11_surface_refs" ]; then
+      echo "Phase 11 must not leak phase-specific routing into the compiler entry, canonical MIR schema, package, root Cargo, CLI, or workflows."
+      printf '%s\n' "$unexpected_phase11_surface_refs"
       exit 1
     fi
 
-    phase11_implementation_files="$(
-      find compiler -maxdepth 2 -type f \
-        \( -iname 'phase11_*' -o -iname '*phase11*' \) |
+    expected_phase11_fixture_files="$(
+      printf '%s\n' \
+        compiler/phase11_scalar_add_source.gst \
+        compiler/phase11_scalar_literal_source.gst \
+        compiler/phase11_scalar_local_read_source.gst \
+        compiler/phase11_scalar_positive_predicate_source.gst \
+        compiler/phase11_scalar_unsupported_multiply_source.gst |
         sort
     )"
-    if [ -n "$phase11_implementation_files" ]; then
-      echo "Phase 11 Patch 1 must not add implementation or fixture files."
-      printf '%s\n' "$phase11_implementation_files"
+    actual_phase11_fixture_files="$(
+      find compiler -maxdepth 1 -type f -name 'phase11_*_source.gst' |
+        sort
+    )"
+    if [ "$actual_phase11_fixture_files" != "$expected_phase11_fixture_files" ]; then
+      echo "Phase 11 current source-fixture inventory differs from the five Patch 4 scalar fixtures."
+      diff -u \
+        <(printf '%s\n' "$expected_phase11_fixture_files") \
+        <(printf '%s\n' "$actual_phase11_fixture_files") ||
+        true
       exit 1
     fi
 
@@ -15073,9 +15092,9 @@ guard-cranelift-phase11-parity-registry:
       'allowed_cranelift_phase11_registry_families: scalar,cfg,block_parameter,metadata,direct_call,import_runtime'
       'allowed_cranelift_phase11_registry_deferred_family_count: 7'
       'allowed_cranelift_phase11_registry_deferred_families: broader_scalar_expressions,multiple_locals_and_assignments,nested_CFG,loops_and_backedges,function_parameters_and_multiple_arguments,multiple_modules_and_source_imports,broader_direct_and_imported_calls'
-      'allowed_cranelift_phase11_registry_route_inventory: 0_legacy_exact_shape_6_generic_canonical_mir_13_deferred'
-      'allowed_cranelift_phase11_registry_migration_inventory: 6_generic_shadowed_13_deferred'
-      'allowed_cranelift_phase11_registry_MIR_to_C_gap_count: 9'
+      'allowed_cranelift_phase11_registry_route_inventory: 0_legacy_exact_shape_9_generic_canonical_mir_10_deferred'
+      'allowed_cranelift_phase11_registry_migration_inventory: 4_scalar_expression_migrated_5_generic_shadowed_10_deferred'
+      'allowed_cranelift_phase11_registry_MIR_to_C_gap_count: 7'
       'allowed_cranelift_phase11_registry_schema: id,family,source_fixture,mir_fixture,deferred_fixture,deferred_family,canonical_mir_operations,types_abis,mir_registry_feature,mir_to_c_guard,canonical_oracle_guard,translator_seed_guard,source_native_guard,baseline_source,positive_expectation,deferred_expectation,route_owner,migration_status,seed_import'
       'allowed_cranelift_phase11_registry_route_owner_policy: exactly_one_of_legacy_exact_shape_generic_canonical_mir_or_deferred'
       'allowed_cranelift_phase11_registry_evidence_policy: every_entry_has_positive_oracle_and_explicit_deferred_lane_with_missing_MIR_to_C_or_source_native_evidence_recorded_as_none_gap'
@@ -15103,10 +15122,10 @@ guard-cranelift-phase11-parity-registry:
       'CRANELIFT_FEATURE_PARITY_REGISTRY_LEGACY_MIR_FEATURE_IMPORT_COUNT: 4'
       'CRANELIFT_FEATURE_PARITY_REGISTRY_FAMILY_COUNT: 6'
       'CRANELIFT_FEATURE_PARITY_REGISTRY_DEFERRED_FAMILY_COUNT: 7'
-      'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_connected_generic_canonical_MIR_source_route'
-      'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_INVENTORY: 0_legacy_exact_shape_6_generic_canonical_mir_13_deferred'
-      'CRANELIFT_FEATURE_PARITY_REGISTRY_MIGRATION_INVENTORY: 6_generic_shadowed_13_deferred'
-      'CRANELIFT_FEATURE_PARITY_REGISTRY_MIR_TO_C_GAP_COUNT: 9'
+      'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_migrated_scalar_expression_parity'
+      'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_INVENTORY: 0_legacy_exact_shape_9_generic_canonical_mir_10_deferred'
+      'CRANELIFT_FEATURE_PARITY_REGISTRY_MIGRATION_INVENTORY: 4_scalar_expression_migrated_5_generic_shadowed_10_deferred'
+      'CRANELIFT_FEATURE_PARITY_REGISTRY_MIR_TO_C_GAP_COUNT: 7'
     )
     for expected_line in "${required_registry_lines[@]}"; do
       if ! rg -n -x -F "$expected_line" "$registry_doc" >/dev/null; then
@@ -15248,14 +15267,15 @@ guard-cranelift-phase11-parity-registry:
     done
 
     if [ "$(registry_field_count route_owner legacy_exact_shape)" != "0" ] ||
-       [ "$(registry_field_count route_owner generic_canonical_mir)" != "6" ] ||
-       [ "$(registry_field_count route_owner deferred)" != "13" ]; then
-      echo "Phase 11 current route-owner inventory must remain 0 legacy-primary, 6 generic, 13 deferred."
+       [ "$(registry_field_count route_owner generic_canonical_mir)" != "9" ] ||
+       [ "$(registry_field_count route_owner deferred)" != "10" ]; then
+      echo "Phase 11 current route-owner inventory must remain 0 legacy-primary, 9 generic, 10 deferred."
       exit 1
     fi
-    if [ "$(registry_field_count migration_status generic_shadowed)" != "6" ] ||
-       [ "$(registry_field_count migration_status deferred)" != "13" ]; then
-      echo "Phase 11 current migration inventory must remain 6 generic-shadowed and 13 deferred."
+    if [ "$(registry_field_count migration_status scalar_expression_migrated)" != "4" ] ||
+       [ "$(registry_field_count migration_status generic_shadowed)" != "5" ] ||
+       [ "$(registry_field_count migration_status deferred)" != "10" ]; then
+      echo "Phase 11 current migration inventory must remain 4 scalar-migrated, 5 generic-shadowed, and 10 deferred."
       exit 1
     fi
     if [ "$(registry_field_count seed_import 1)" != "17" ] ||
@@ -15263,8 +15283,8 @@ guard-cranelift-phase11-parity-registry:
       echo "Phase 11 registry must import 17 translator seeds plus two Phase 10-only entries."
       exit 1
     fi
-    if [ "$(registry_field_count mir_to_c_guard none_gap_recorded)" != "9" ]; then
-      echo "Phase 11 registry must expose exactly nine dedicated MIR-to-C evidence gaps."
+    if [ "$(registry_field_count mir_to_c_guard none_gap_recorded)" != "7" ]; then
+      echo "Phase 11 registry must expose exactly seven dedicated MIR-to-C evidence gaps after scalar migration."
       exit 1
     fi
 
@@ -15329,8 +15349,24 @@ guard-cranelift-phase11-parity-registry:
         sort
     )"
     actual_baseline_expectations="$(
-      registry_entry_field positive_expectation |
-        rg '^exit_' |
+      awk -F'|' '
+        /^parity_entry: / {
+          baseline_source = ""
+          positive_expectation = ""
+          for (field_index = 1; field_index <= NF; field_index++) {
+            value = $field_index
+            sub(/^parity_entry: /, "", value)
+            if (index(value, "baseline_source=") == 1) {
+              baseline_source = substr(value, 17)
+            } else if (index(value, "positive_expectation=") == 1) {
+              positive_expectation = substr(value, 22)
+            }
+          }
+          if (baseline_source != "none") {
+            print positive_expectation
+          }
+        }
+      ' "$registry_doc" |
         sort
     )"
     if [ "$actual_baseline_expectations" != "$expected_baseline_expectations" ]; then
@@ -15467,13 +15503,15 @@ guard-cranelift-phase11-parity-registry:
     printf '%s\n' "$readme_flat" |
       rg -F 'Seventeen entries import the complete frozen translator-seed inventory.' >/dev/null
     printf '%s\n' "$readme_flat" |
-      rg -F 'The six Phase 10 compatibility cohorts are now primary `generic_canonical_mir` registry owners with `generic_shadowed` migration status.' >/dev/null
+      rg -F 'Patch 3 initially made the six Phase 10 compatibility cohorts primary `generic_canonical_mir` registry owners with `generic_shadowed` migration status.' >/dev/null
     printf '%s\n' "$readme_flat" |
       rg -F '`guard-cranelift-phase11-parity-registry` validates the registry schema' >/dev/null
     printf '%s\n' "$readme_flat" |
-      rg -F 'The next milestone is scalar-expression parity.' >/dev/null
+      rg -F 'The registry now owns nine generic routes: four `scalar_expression_migrated`, five remaining Phase 10 `generic_shadowed`, and ten deferred entries.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'The next milestone is local-state and assignment parity.' >/dev/null
 
-    echo "✅ Phase 11 parity registry preserved: 19 unique entries, 17 translator seeds, 6 generic-shadowed Phase 10 baseline owners, 4 MIR migration imports, 7 deferred families, and 9 explicit MIR-to-C gaps."
+    echo "✅ Phase 11 parity registry preserved: 19 unique entries, 17 translator seeds, 9 generic owners, 4 scalar-expression migrations, 5 generic-shadowed baselines, 10 deferred entries, and 7 explicit MIR-to-C gaps."
 
 guard-cranelift-phase11-generic-canonical-mir-route:
     #!/usr/bin/env bash
@@ -15538,7 +15576,7 @@ guard-cranelift-phase11-generic-canonical-mir-route:
       'allowed_cranelift_phase11_generic_route_shadow_policy: overlapping_generic_and_legacy_bundles_are_serialized_and_must_be_byte_identical_before_driver_discovery'
       'allowed_cranelift_phase11_generic_route_shadow_cohort_count: 6'
       'allowed_cranelift_phase11_generic_route_shadow_cohorts: scalar_return_7,provenance_local_2,literal_CFG_11,block_parameter_merge_17,local_identity_call_47,imported_abs_runtime_boundary_53'
-      'allowed_cranelift_phase11_generic_route_registry_inventory: 0_legacy_exact_shape_6_generic_canonical_mir_13_deferred'
+      'allowed_cranelift_phase11_generic_route_registry_inventory: 0_legacy_exact_shape_9_generic_canonical_mir_10_deferred'
       'allowed_cranelift_phase11_generic_route_compatibility_policy: Phase10_recognizers_remain_temporarily_available_only_after_the_generic_attempt'
       'allowed_cranelift_phase11_generic_route_deferred_policy: SourceFeatureNotRepresented_returns_route_not_connected_before_driver_discovery_output_resolution_or_artifact_touch_when_no_compatibility_route_matches'
       'allowed_cranelift_phase11_generic_route_capability_failure_policy: unsupported_native_capability_is_classified_before_driver_discovery_and_preserves_existing_output'
@@ -15549,7 +15587,7 @@ guard-cranelift-phase11-generic-canonical-mir-route:
       'allowed_cranelift_phase11_generic_route_scope_freeze: no_MIR_v3_worker_protocol_driver_discovery_artifact_kind_link_mode_package_CLI_or_CI_matrix_change'
       'allowed_cranelift_phase11_generic_route_legacy_backend_surface_policy: exact_generic_route_guard_recipe_is_manifest_validated_then_excluded_from_the_legacy_explicit_CLI_scan'
       'allowed_cranelift_phase11_generic_route_next_milestone: scalar_expression_parity'
-      'allowed_cranelift_phase11_generic_route_next_milestone_status: pending'
+      'allowed_cranelift_phase11_generic_route_next_milestone_status: complete'
     )
     for expected_line in "${required_manifest_lines[@]}"; do
       if ! rg -n -x -F "$expected_line" "$manifest_doc" >/dev/null; then
@@ -15653,18 +15691,32 @@ guard-cranelift-phase11-generic-canonical-mir-route:
 
     generic_owner_count="$(rg -c 'route_owner=generic_canonical_mir' "$registry_doc" || true)"
     generic_shadow_count="$(rg -c 'migration_status=generic_shadowed' "$registry_doc" || true)"
+    scalar_migrated_count="$(rg -c 'migration_status=scalar_expression_migrated' "$registry_doc" || true)"
     legacy_owner_count="$(rg -c 'route_owner=legacy_exact_shape' "$registry_doc" || true)"
-    if [ "${generic_owner_count:-0}" != "6" ] ||
-       [ "${generic_shadow_count:-0}" != "6" ] ||
+    if [ "${generic_owner_count:-0}" != "9" ] ||
+       [ "${generic_shadow_count:-0}" != "5" ] ||
+       [ "${scalar_migrated_count:-0}" != "4" ] ||
        [ "${legacy_owner_count:-0}" != "0" ]; then
-      echo "Phase 11 registry must expose six generic-shadowed owners and zero legacy primary owners."
-      echo "generic=${generic_owner_count:-0} shadowed=${generic_shadow_count:-0} legacy=${legacy_owner_count:-0}"
+      echo "Phase 11 registry must expose nine generic owners: five shadowed baselines plus four scalar-expression migrations."
+      echo "generic=${generic_owner_count:-0} shadowed=${generic_shadow_count:-0} scalar=${scalar_migrated_count:-0} legacy=${legacy_owner_count:-0}"
       exit 1
     fi
-    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_connected_generic_canonical_MIR_source_route' "$registry_doc" >/dev/null
-    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_INVENTORY: 0_legacy_exact_shape_6_generic_canonical_mir_13_deferred' "$registry_doc" >/dev/null
-    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_MIGRATION_INVENTORY: 6_generic_shadowed_13_deferred' "$registry_doc" >/dev/null
+    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_migrated_scalar_expression_parity' "$registry_doc" >/dev/null
+    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_INVENTORY: 0_legacy_exact_shape_9_generic_canonical_mir_10_deferred' "$registry_doc" >/dev/null
+    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_MIGRATION_INVENTORY: 4_scalar_expression_migrated_5_generic_shadowed_10_deferred' "$registry_doc" >/dev/null
     rg -n -F "deferred_fixture=$unsupported_source" "$registry_doc" >/dev/null
+
+    if [ "${PHASE11_GENERIC_ROUTE_SKIP_DYNAMIC:-0}" = "1" ]; then
+      readme_flat="$(tr '\n' ' ' < "$readme_doc")"
+      printf '%s\n' "$readme_flat" |
+        rg -F 'Patch 3 connects the generic compiler-owned source route as `phase11_connected_generic_canonical_MIR_source_route`.' >/dev/null
+      printf '%s\n' "$readme_flat" |
+        rg -F 'both bundles are serialized and must be byte-identical before the external driver can be discovered.' >/dev/null
+      printf '%s\n' "$readme_flat" |
+        rg -F 'Patch 4 migrates scalar-expression parity as `phase11_migrated_scalar_expression_parity`.' >/dev/null
+      echo "✅ Phase 11 generic route static contract preserved; dynamic six-cohort evidence was intentionally not replayed."
+      exit 0
+    fi
 
     rm -rf "$build_dir"
     mkdir -p "$build_dir"
@@ -15787,10 +15839,347 @@ guard-cranelift-phase11-generic-canonical-mir-route:
     printf '%s\n' "$readme_flat" |
       rg -F 'both bundles are serialized and must be byte-identical before the external driver can be discovered.' >/dev/null
     printf '%s\n' "$readme_flat" |
-      rg -F 'The next milestone is scalar-expression parity.' >/dev/null
+      rg -F 'Patch 4 migrates scalar-expression parity as `phase11_migrated_scalar_expression_parity`.' >/dev/null
 
     echo "✅ Phase 11 generic route connected: six baseline cohorts lower from semantic AST through generic canonical MIR, overlapping legacy bundles are byte-identical, capabilities are bundle-derived, and deferred or unsupported sources stop before driver and artifact access."
 
+
+guard-cranelift-phase11-scalar-expression-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 11 scalar-expression parity..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    registry_doc="compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md"
+    generic_source="compiler/mir_native_backend_generic_source.gst"
+    route_source="compiler/mir_native_backend_source_route.gst"
+    rust_manifest="compiler/experiments/cranelift/Cargo.toml"
+    rust_driver="compiler/experiments/cranelift/src/main.rs"
+    readme_doc="compiler/experiments/cranelift/README.md"
+    negative_source="compiler/phase11_scalar_unsupported_multiply_source.gst"
+    build_dir="build/guards/cranelift_phase11_scalar_expression_parity"
+
+    positive_cases=(
+      'compiler/phase11_scalar_literal_source.gst|7|literal'
+      'compiler/phase11_scalar_local_read_source.gst|17|local-read'
+      'compiler/phase11_scalar_add_source.gst|23|nested-add'
+      'compiler/phase11_scalar_positive_predicate_source.gst|31|positive-predicate'
+    )
+
+    for required_file in \
+      "$manifest_doc" \
+      "$registry_doc" \
+      "$generic_source" \
+      "$route_source" \
+      "$rust_manifest" \
+      "$rust_driver" \
+      "$readme_doc" \
+      "$negative_source" \
+      src/runtime.c
+    do
+      if [ ! -f "$required_file" ]; then
+        echo "Missing Phase 11 scalar-expression input: $required_file"
+        exit 1
+      fi
+    done
+    for case_record in "${positive_cases[@]}"; do
+      IFS='|' read -r source_path expected_exit case_name <<<"$case_record"
+      if [ ! -f "$source_path" ]; then
+        echo "Missing Phase 11 scalar source $case_name: $source_path"
+        exit 1
+      fi
+    done
+    if [ ! -x ./gust ]; then
+      echo "Phase 11 scalar-expression guard requires the rebuilt ./gust compiler."
+      exit 1
+    fi
+
+    PHASE11_GENERIC_ROUTE_SKIP_DYNAMIC=1 \
+      just guard-cranelift-phase11-generic-canonical-mir-route
+
+    required_manifest_lines=(
+      'CRANELIFT_EXPERIMENT_ALLOWED_PHASE11_SCALAR_EXPRESSION_PARITY_GUARD: guard-cranelift-phase11-scalar-expression-parity'
+      'allowed_cranelift_phase11_scalar_expression_status: phase11_migrated_scalar_expression_parity'
+      'allowed_cranelift_phase11_scalar_expression_predecessor_status: phase11_connected_generic_canonical_MIR_source_route'
+      'allowed_cranelift_phase11_scalar_expression_predecessor_guard: guard-cranelift-phase11-generic-canonical-mir-route'
+      'allowed_cranelift_phase11_scalar_expression_predecessor_policy: predecessor_guard_runs_static_contract_mode_without_replaying_the_six_dynamic_baseline_executions'
+      'allowed_cranelift_phase11_scalar_expression_positive_fixture_count: 4'
+      'allowed_cranelift_phase11_scalar_expression_positive_fixtures: compiler/phase11_scalar_literal_source.gst,compiler/phase11_scalar_local_read_source.gst,compiler/phase11_scalar_add_source.gst,compiler/phase11_scalar_positive_predicate_source.gst'
+      'allowed_cranelift_phase11_scalar_expression_negative_fixture: compiler/phase11_scalar_unsupported_multiply_source.gst'
+      'allowed_cranelift_phase11_scalar_expression_expected_exits: literal_7,local_read_17,nested_add_23,positive_predicate_31,multiply_MIR_to_C_12'
+      'allowed_cranelift_phase11_scalar_expression_source_scope: integer_literals_one_i32_local_read_nested_integer_addition_and_existing_positive_i32_comparison_predicate'
+      'allowed_cranelift_phase11_scalar_expression_canonical_operations: LocalI32Set,LocalI32Read,AddI32,SgtI32,Branch,ReturnI32'
+      'allowed_cranelift_phase11_scalar_expression_lowering_policy: semantic_expression_tree_is_folded_to_one_canonical_i32_temporary_or_source_local_plus_LocalI32AddI32Literal_without_source_identity_checks'
+      'allowed_cranelift_phase11_scalar_expression_capability_policy: AddI32_and_bool_requirements_are_discovered_from_serialized_canonical_MIR_then_checked_against_static_and_driver_inventories'
+      'allowed_cranelift_phase11_scalar_expression_worker_policy: single_block_scalar_validation_accepts_canonical_i32_set_and_add_sequences_instead_of_one_exact_fixture_shape'
+      'allowed_cranelift_phase11_scalar_expression_differential_policy: default_and_explicit_MIR_to_C_are_byte_identical_and_MIR_to_C_plus_Cranelift_match_exit_stdout_and_stderr_for_all_four_positive_sources'
+      'allowed_cranelift_phase11_scalar_expression_negative_policy: multiplication_remains_SourceFeatureNotRepresented_before_driver_discovery_and_preserves_existing_output'
+      'allowed_cranelift_phase11_scalar_expression_registry_inventory: 0_legacy_exact_shape_9_generic_canonical_mir_10_deferred'
+      'allowed_cranelift_phase11_scalar_expression_registry_migration_inventory: 4_scalar_expression_migrated_5_generic_shadowed_10_deferred'
+      'allowed_cranelift_phase11_scalar_expression_registry_MIR_to_C_gap_count: 7'
+      'allowed_cranelift_phase11_scalar_expression_compatibility_policy: Phase10_recognizers_remain_behind_the_generic_route_and_the_six_baseline_shadow_comparisons_remain_unchanged'
+      'allowed_cranelift_phase11_scalar_expression_scope_freeze: no_subtraction_multiplication_division_overflow_mode_float_cast_multi_local_assignment_MIR_v3_worker_protocol_driver_discovery_artifact_link_package_CLI_or_CI_matrix_change'
+      'allowed_cranelift_phase11_scalar_expression_legacy_backend_surface_policy: exact_scalar_expression_guard_recipe_is_manifest_validated_then_excluded_from_the_legacy_explicit_CLI_scan'
+      'allowed_cranelift_phase11_scalar_expression_next_milestone: local_state_and_assignment_parity'
+      'allowed_cranelift_phase11_scalar_expression_next_milestone_status: pending'
+    )
+    for expected_line in "${required_manifest_lines[@]}"; do
+      if ! rg -n -x -F "$expected_line" "$manifest_doc" >/dev/null; then
+        echo "Missing Phase 11 scalar-expression manifest line:"
+        echo "$expected_line"
+        exit 1
+      fi
+    done
+
+    required_generic_symbols=(
+      'ScalarExpression,'
+      'PositiveLocalBranch'
+      'type MirNativeGenericScalarExpression struct'
+      'func mir_native_generic_scalar_expression('
+      'std.str_eq(expression.Binary.op, "+")'
+      'func mir_native_generic_emit_scalar_expression('
+      'LocalI32AddI32Literal'
+      'func mir_native_generic_emit_positive_local_branch('
+      'BranchLocalI32Positive'
+      '"AddI32"'
+      '"bool"'
+    )
+    for expected_symbol in "${required_generic_symbols[@]}"; do
+      rg -n -F "$expected_symbol" "$generic_source" >/dev/null
+    done
+
+    scalar_capability_body="$(
+      sed -n \
+        '/^func mir_native_scalar_source_capabilities(/,/^func mir_native_scalar_source_lower(/p' \
+        "$route_source"
+    )"
+    if [ "$(printf '%s\n' "$scalar_capability_body" | rg -c -x '[[:space:]]*"AddI32",')" != "1" ]; then
+      echo "Compiler-owned static capabilities must advertise AddI32 exactly once."
+      printf '%s\n' "$scalar_capability_body"
+      exit 1
+    fi
+    rg -n -F 'fn validate_phase11_scalar_expression_fixture(' "$rust_driver" >/dev/null
+    rg -n -F 'CompilerMirLoweringStatement::LocalI32AddI32Literal { .. }' "$rust_driver" >/dev/null
+    rg -n -F 'validate_phase11_scalar_expression_fixture(&fixture)?;' "$rust_driver" >/dev/null
+    rg -n -F '"scalar_expression"' "$rust_driver" >/dev/null
+
+    phase10_driver_operations="$(
+      sed -n \
+        '/^const PHASE10_DRIVER_OPERATIONS:/,/^];/p' \
+        "$rust_driver"
+    )"
+    if [ "$(printf '%s\n' "$phase10_driver_operations" | rg -c -x '[[:space:]]*"AddI32",')" != "1" ]; then
+      echo "Native worker handshake must advertise AddI32 exactly once."
+      printf '%s\n' "$phase10_driver_operations"
+      exit 1
+    fi
+
+    if rg -n -e 'phase10_[A-Za-z0-9_]*_source\.gst|phase11_[A-Za-z0-9_]*_source\.gst' \
+      "$generic_source" "$route_source" >/dev/null; then
+      echo "Scalar-expression lowering must not inspect or embed source fixture identities."
+      rg -n -e 'phase10_[A-Za-z0-9_]*_source\.gst|phase11_[A-Za-z0-9_]*_source\.gst' \
+        "$generic_source" "$route_source"
+      exit 1
+    fi
+    if rg -n -F 'std.str_eq(expression.Binary.op, "*")' "$generic_source" >/dev/null ||
+       rg -n -F 'std.str_eq(expression.Binary.op, "-")' "$generic_source" >/dev/null ||
+       rg -n -F 'std.str_eq(expression.Binary.op, "/")' "$generic_source" >/dev/null; then
+      echo "Patch 4 must not connect subtraction, multiplication, or division."
+      exit 1
+    fi
+
+    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_migrated_scalar_expression_parity' "$registry_doc" >/dev/null
+    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_INVENTORY: 0_legacy_exact_shape_9_generic_canonical_mir_10_deferred' "$registry_doc" >/dev/null
+    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_MIGRATION_INVENTORY: 4_scalar_expression_migrated_5_generic_shadowed_10_deferred' "$registry_doc" >/dev/null
+    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_MIR_TO_C_GAP_COUNT: 7' "$registry_doc" >/dev/null
+    if [ "$(rg -c 'migration_status=scalar_expression_migrated' "$registry_doc")" != "4" ]; then
+      echo "Registry must contain exactly four scalar-expression migrations."
+      exit 1
+    fi
+    for scalar_id in return_int local_binding_read add_i32 positive_i32_branch; do
+      scalar_record="$(rg -n -F "parity_entry: id=$scalar_id|" "$registry_doc")"
+      printf '%s\n' "$scalar_record" |
+        rg -F 'route_owner=generic_canonical_mir' >/dev/null
+      printf '%s\n' "$scalar_record" |
+        rg -F 'migration_status=scalar_expression_migrated' >/dev/null
+      printf '%s\n' "$scalar_record" |
+        rg -F 'source_native_guard=guard-cranelift-phase11-scalar-expression-parity' >/dev/null
+      printf '%s\n' "$scalar_record" |
+        rg -F 'mir_to_c_guard=guard-cranelift-phase11-scalar-expression-parity' >/dev/null
+    done
+    if [ "$(rg -c -F "deferred_fixture=$negative_source" "$registry_doc")" != "3" ]; then
+      echo "The three scalar registry entries must share the adjacent unsupported multiplication fixture."
+      exit 1
+    fi
+
+    rm -rf "$build_dir"
+    mkdir -p "$build_dir"
+    cargo_target="$build_dir/cargo-target"
+    CARGO_TARGET_DIR="$cargo_target" cargo build \
+      --locked \
+      --quiet \
+      --manifest-path "$rust_manifest"
+    driver_bin="$cargo_target/debug/gust-cranelift-experiment"
+    if [ ! -x "$driver_bin" ]; then
+      echo "Missing built Phase 11 scalar-expression worker: $driver_bin"
+      exit 1
+    fi
+    driver_abs="$(cd "$(dirname "$driver_bin")" && pwd)/$(basename "$driver_bin")"
+    CC_BIN="${CC:-cc}"
+    CFLAGS_VAL="${CFLAGS:--O0 -w -pthread}"
+
+    execute_and_capture() {
+      local binary="$1"
+      local prefix="$2"
+      set +e
+      "$binary" >"$prefix.stdout" 2>"$prefix.stderr"
+      local status="$?"
+      set -e
+      printf '%s\n' "$status" >"$prefix.status"
+    }
+
+    compile_and_compare() {
+      local source_path="$1"
+      local expected_exit="$2"
+      local case_name="$3"
+      local case_dir="$build_dir/$case_name"
+      mkdir -p "$case_dir"
+
+      ./gust "$source_path" \
+        >"$case_dir/default.c" 2>"$case_dir/default.compiler.stderr"
+      ./gust --backend mir-to-c "$source_path" \
+        >"$case_dir/explicit.c" 2>"$case_dir/explicit.compiler.stderr"
+      if [ -s "$case_dir/default.compiler.stderr" ] ||
+         [ -s "$case_dir/explicit.compiler.stderr" ]; then
+        echo "MIR-to-C compilation emitted diagnostics for $case_name."
+        cat "$case_dir/default.compiler.stderr" "$case_dir/explicit.compiler.stderr"
+        exit 1
+      fi
+      if ! cmp -s "$case_dir/default.c" "$case_dir/explicit.c"; then
+        echo "Default and explicit MIR-to-C output differ for $case_name."
+        diff -u "$case_dir/default.c" "$case_dir/explicit.c" || true
+        exit 1
+      fi
+
+      cat src/runtime.c "$case_dir/default.c" >"$case_dir/mir-to-c.final.c"
+      "$CC_BIN" $CFLAGS_VAL -Isrc \
+        "$case_dir/mir-to-c.final.c" \
+        -o "$case_dir/mir-to-c-program"
+      execute_and_capture \
+        "$case_dir/mir-to-c-program" \
+        "$case_dir/mir-to-c"
+
+      GUST_NATIVE_BACKEND_DRIVER="$driver_abs" \
+        ./gust --backend cranelift \
+          -o "$case_dir/native-program" \
+          "$source_path" \
+          >"$case_dir/native.compiler.stdout" \
+          2>"$case_dir/native.compiler.stderr"
+      if [ -s "$case_dir/native.compiler.stdout" ] ||
+         [ -s "$case_dir/native.compiler.stderr" ]; then
+        echo "Successful native scalar compilation emitted diagnostics for $case_name."
+        cat "$case_dir/native.compiler.stdout" "$case_dir/native.compiler.stderr"
+        exit 1
+      fi
+      if [ ! -x "$case_dir/native-program" ]; then
+        echo "Native scalar compilation did not publish $case_name."
+        exit 1
+      fi
+      execute_and_capture \
+        "$case_dir/native-program" \
+        "$case_dir/native"
+
+      mir_status="$(cat "$case_dir/mir-to-c.status")"
+      native_status="$(cat "$case_dir/native.status")"
+      if [ "$mir_status" != "$expected_exit" ] ||
+         [ "$native_status" != "$expected_exit" ]; then
+        echo "Scalar parity exit mismatch for $case_name: MIR-to-C=$mir_status native=$native_status expected=$expected_exit"
+        exit 1
+      fi
+      if ! cmp -s "$case_dir/mir-to-c.stdout" "$case_dir/native.stdout" ||
+         ! cmp -s "$case_dir/mir-to-c.stderr" "$case_dir/native.stderr"; then
+        echo "Scalar parity stdout/stderr mismatch for $case_name."
+        diff -u "$case_dir/mir-to-c.stdout" "$case_dir/native.stdout" || true
+        diff -u "$case_dir/mir-to-c.stderr" "$case_dir/native.stderr" || true
+        exit 1
+      fi
+      if [ -e "$case_dir/native-program.phase10.bundle" ] ||
+         [ -e "$case_dir/native-program.phase10.request" ]; then
+        echo "Scalar parity compilation left transient request artifacts for $case_name."
+        exit 1
+      fi
+    }
+
+    for case_record in "${positive_cases[@]}"; do
+      IFS='|' read -r source_path expected_exit case_name <<<"$case_record"
+      compile_and_compare "$source_path" "$expected_exit" "$case_name"
+    done
+
+    negative_dir="$build_dir/unsupported-multiply"
+    mkdir -p "$negative_dir"
+    ./gust "$negative_source" \
+      >"$negative_dir/default.c" 2>"$negative_dir/default.compiler.stderr"
+    if [ -s "$negative_dir/default.compiler.stderr" ]; then
+      echo "MIR-to-C rejected the adjacent multiplication source."
+      cat "$negative_dir/default.compiler.stderr"
+      exit 1
+    fi
+    cat src/runtime.c "$negative_dir/default.c" >"$negative_dir/default.final.c"
+    "$CC_BIN" $CFLAGS_VAL -Isrc \
+      "$negative_dir/default.final.c" \
+      -o "$negative_dir/mir-to-c-program"
+    execute_and_capture \
+      "$negative_dir/mir-to-c-program" \
+      "$negative_dir/mir-to-c"
+    if [ "$(cat "$negative_dir/mir-to-c.status")" != "12" ]; then
+      echo "Adjacent multiplication MIR-to-C program must exit 12."
+      exit 1
+    fi
+
+    negative_output="$negative_dir/existing-output"
+    printf 'phase11-scalar-output-sentinel\n' >"$negative_output"
+    cp "$negative_output" "$negative_dir/existing-output.expected"
+    missing_driver="/phase11/missing/scalar/backend"
+    set +e
+    GUST_NATIVE_BACKEND_DRIVER="$missing_driver" \
+      ./gust --backend cranelift \
+        -o "$negative_output" \
+        "$negative_source" \
+        >"$negative_dir/native.stdout" \
+        2>"$negative_dir/native.stderr"
+    negative_status="$?"
+    set -e
+    if [ "$negative_status" = "0" ]; then
+      echo "Unsupported multiplication unexpectedly compiled natively."
+      exit 1
+    fi
+    cat "$negative_dir/native.stdout" "$negative_dir/native.stderr" \
+      >"$negative_dir/native.combined"
+    rg -n -F 'Experimental Cranelift backend selection is valid, but the source-level route is not connected yet.' \
+      "$negative_dir/native.combined" >/dev/null
+    if rg -n -F 'Native backend driver discovery error:' "$negative_dir/native.combined" >/dev/null ||
+       rg -n -F 'driver discovery' "$negative_dir/native.combined" >/dev/null; then
+      echo "Unsupported multiplication reached driver discovery."
+      cat "$negative_dir/native.combined"
+      exit 1
+    fi
+    cmp -s "$negative_dir/existing-output.expected" "$negative_output"
+    if [ -e "$negative_output.phase10.bundle" ] ||
+       [ -e "$negative_output.phase10.request" ]; then
+      echo "Unsupported multiplication created transient backend artifacts."
+      exit 1
+    fi
+
+    readme_flat="$(tr '\n' ' ' < "$readme_doc")"
+    printf '%s\n' "$readme_flat" |
+      rg -F 'Patch 4 migrates scalar-expression parity as `phase11_migrated_scalar_expression_parity`.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'The three scalar registry entries no longer depend on Phase 10 source matching.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'Multiplication is the adjacent negative source' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'The next milestone is local-state and assignment parity.' >/dev/null
+
+    echo "✅ Phase 11 scalar-expression parity migrated: ordinary-source literal, local read, nested addition, and positive comparison match MIR-to-C; multiplication remains deferred before driver access; existing output is preserved."
 
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
     #!/usr/bin/env bash

@@ -79,6 +79,11 @@ func mir_native_scalar_source_capabilities(ctx: &Arena) capability.MirNativeBack
     );
     capabilities = capability.mir_native_backend_capability_set_with_operation(
         capabilities,
+        "AddI32",
+        ctx
+    );
+    capabilities = capability.mir_native_backend_capability_set_with_operation(
+        capabilities,
         "SgtI32",
         ctx
     );

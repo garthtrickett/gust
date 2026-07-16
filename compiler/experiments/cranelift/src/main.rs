@@ -2925,7 +2925,7 @@ fn validate_phase10_backend_request_path(
     Ok(())
 }
 
-fn validate_phase10_scalar_metadata_fixture(
+fn validate_phase11_scalar_expression_fixture(
     fixture: &ParsedCompilerMirFixture<'_>,
 ) -> Result<(), Box<dyn Error>> {
     let function = &fixture.function;
@@ -2933,14 +2933,14 @@ fn validate_phase10_scalar_metadata_fixture(
         return Err(phase10_backend_request_error(
             Phase10BackendRequestStage::CanonicalMirValidation,
             Phase10BackendRequestFailureKind::InvalidCanonicalMir,
-            "Phase 10 Patch 8 source route requires a zero-argument entry",
+            "Phase 11 scalar-expression source route requires a zero-argument entry",
         ));
     }
     if function.return_type != TinyMirType::I32 {
         return Err(phase10_backend_request_error(
             Phase10BackendRequestStage::CanonicalMirValidation,
             Phase10BackendRequestFailureKind::InvalidCanonicalMir,
-            "Phase 10 Patch 8 source route requires an i32 entry return",
+            "Phase 11 scalar-expression source route requires an i32 entry return",
         ));
     }
     if function.blocks.len() != 1 ||
@@ -2949,7 +2949,18 @@ fn validate_phase10_scalar_metadata_fixture(
         return Err(phase10_backend_request_error(
             Phase10BackendRequestStage::CanonicalMirValidation,
             Phase10BackendRequestFailureKind::InvalidCanonicalMir,
-            "Phase 10 Patch 8 source route does not accept CFG",
+            "Phase 11 scalar-expression source route requires one canonical block",
+        ));
+    }
+    if function
+        .locals
+        .iter()
+        .any(|local| local.ty != TinyMirType::I32)
+    {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 11 scalar-expression source route accepts only i32 locals",
         ));
     }
 
@@ -2958,18 +2969,19 @@ fn validate_phase10_scalar_metadata_fixture(
         return Err(phase10_backend_request_error(
             Phase10BackendRequestStage::CanonicalMirValidation,
             Phase10BackendRequestFailureKind::InvalidCanonicalMir,
-            "Phase 10 Patch 8 source route does not accept block parameters",
+            "Phase 11 scalar-expression source route does not accept block parameters",
         ));
     }
     for statement in &block.statements {
         if !matches!(
             statement,
-            CompilerMirLoweringStatement::LocalI32Set { .. }
+            CompilerMirLoweringStatement::LocalI32Set { .. } |
+                CompilerMirLoweringStatement::LocalI32AddI32Literal { .. }
         ) {
             return Err(phase10_backend_request_error(
                 Phase10BackendRequestStage::CanonicalMirValidation,
                 Phase10BackendRequestFailureKind::InvalidCanonicalMir,
-                "Phase 10 Patch 8 source route accepts only LocalI32Set statements",
+                "Phase 11 scalar-expression source route accepts only canonical i32 set/add statements",
             ));
         }
     }
@@ -2981,12 +2993,18 @@ fn validate_phase10_scalar_metadata_fixture(
         return Err(phase10_backend_request_error(
             Phase10BackendRequestStage::CanonicalMirValidation,
             Phase10BackendRequestFailureKind::InvalidCanonicalMir,
-            "Phase 10 Patch 8 source route accepts only scalar returns",
+            "Phase 11 scalar-expression source route accepts only scalar returns",
         ));
     }
 
     recognize_compiler_mir_fixture_metadata(&fixture.metadata)?;
     Ok(())
+}
+
+fn validate_phase10_scalar_metadata_fixture(
+    fixture: &ParsedCompilerMirFixture<'_>,
+) -> Result<(), Box<dyn Error>> {
+    validate_phase11_scalar_expression_fixture(fixture)
 }
 
 fn validate_phase10_cfg_edge(
@@ -3567,8 +3585,23 @@ fn compile_phase10_scalar_metadata_request_path(
             }
             validate_compiler_mir_fixture(&fixture)?;
             if fixture.function.blocks.len() == 1 {
-                validate_phase10_scalar_metadata_fixture(&fixture)?;
-                source_route = "scalar_metadata";
+                validate_phase11_scalar_expression_fixture(&fixture)?;
+                let has_scalar_add = fixture.function.blocks[0]
+                    .statements
+                    .iter()
+                    .any(|statement| {
+                        matches!(
+                            statement,
+                            CompilerMirLoweringStatement::LocalI32AddI32Literal {
+                                ..
+                            }
+                        )
+                    });
+                source_route = if has_scalar_add {
+                    "scalar_expression"
+                } else {
+                    "scalar_metadata"
+                };
             } else {
                 validate_phase10_cfg_block_parameter_fixture(&fixture)?;
                 source_route = "cfg_block_parameter";

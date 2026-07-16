@@ -22,7 +22,9 @@ type MirNativeGenericShape enum {
     LiteralBranch,
     LocalMerge,
     LocalCall,
-    ImportedCall
+    ImportedCall,
+    ScalarExpression,
+    PositiveLocalBranch
 }
 
 type MirNativeGenericModel[ctx] struct {
@@ -36,7 +38,17 @@ type MirNativeGenericModel[ctx] struct {
     condition_value: int,
     initial_value: int,
     then_value: int,
-    else_value: int
+    else_value: int,
+    scalar_literal_total: int,
+    scalar_add_count: int,
+    scalar_uses_source_local: int
+}
+
+type MirNativeGenericScalarExpression struct {
+    represented: int,
+    uses_local: int,
+    literal_total: int,
+    add_count: int
 }
 
 type MirNativeGenericSourceResult[ctx] struct {
@@ -65,9 +77,78 @@ func mir_native_generic_empty_model(ctx: &Arena) MirNativeGenericModel[ctx] {
     model.initial_value = 0;
     model.then_value = 0;
     model.else_value = 0;
+    model.scalar_literal_total = 0;
+    model.scalar_add_count = 0;
+    model.scalar_uses_source_local = 0;
     return model;
 }
 
+func mir_native_generic_empty_scalar_expression() MirNativeGenericScalarExpression {
+    mut expression: MirNativeGenericScalarExpression;
+    expression.represented = 0;
+    expression.uses_local = 0;
+    expression.literal_total = 0;
+    expression.add_count = 0;
+    return expression;
+}
+
+func mir_native_generic_scalar_expression(
+    expression: ast.Expression[ctx],
+    allowed_local: str,
+    ctx: &Arena
+) MirNativeGenericScalarExpression {
+    mut lowered := mir_native_generic_empty_scalar_expression();
+    unsafe {
+        if expression.tag == 1 {
+            lowered.represented = 1;
+            lowered.literal_total = expression.Integer.val;
+            return lowered;
+        }
+
+        if expression.tag == 0 &&
+           len(allowed_local) > 0 &&
+           std.str_eq(expression.Identifier.name, allowed_local) == 1
+        {
+            lowered.represented = 1;
+            lowered.uses_local = 1;
+            return lowered;
+        }
+
+        if expression.tag != 10 ||
+           std.str_eq(expression.Binary.op, "+") == 0
+        {
+            return lowered;
+        }
+
+        mut left_expression := ctx[expression.Binary.left];
+        mut right_expression := ctx[expression.Binary.right];
+        mut left := mir_native_generic_scalar_expression(
+            left_expression,
+            allowed_local,
+            ctx
+        );
+        mut right := mir_native_generic_scalar_expression(
+            right_expression,
+            allowed_local,
+            ctx
+        );
+        if left.represented == 0 ||
+           right.represented == 0 ||
+           left.uses_local + right.uses_local > 1
+        {
+            return mir_native_generic_empty_scalar_expression();
+        }
+
+        lowered.represented = 1;
+        lowered.uses_local = left.uses_local + right.uses_local;
+        lowered.literal_total =
+            left.literal_total + right.literal_total;
+        lowered.add_count = left.add_count + right.add_count + 1;
+        return lowered;
+    }
+}
+
+func mir_native_generic_make_result
 func mir_native_generic_make_result(eligibility_tag: int, bundle: mir.MirProgramBundle[ctx], plan: capability.MirNativeBackendCapabilityPlan[ctx], diagnostic: str, ctx: &Arena) MirNativeGenericSourceResult[ctx] {
     mut result: MirNativeGenericSourceResult[ctx];
     unsafe {
@@ -137,6 +218,30 @@ func mir_native_generic_analyze_single_function(statement: ast.Statement[ctx], s
                     model.literal_value = expression.Integer.val;
                     return model;
                 }
+
+                mut scalar_expression :=
+                    mir_native_generic_scalar_expression(
+                        expression,
+                        "",
+                        ctx
+                    );
+                if scalar_expression.represented == 1 &&
+                   scalar_expression.add_count > 0
+                {
+                    model.represented = 1;
+                    model.shape.tag = 6;
+                    model.source_path = std.Clone(ctx, source_path);
+                    model.local_name = std.Clone(
+                        ctx,
+                        "__gust_phase11_scalar_tmp"
+                    );
+                    model.scalar_literal_total =
+                        scalar_expression.literal_total;
+                    model.scalar_add_count =
+                        scalar_expression.add_count;
+                    model.scalar_uses_source_local = 0;
+                    return model;
+                }
             }
 
             if only_statement.tag == 7 {
@@ -175,12 +280,9 @@ func mir_native_generic_analyze_single_function(statement: ast.Statement[ctx], s
 
         if len(statements) == 2 {
             mut local_statement := statements[0];
-            mut return_statement := statements[1];
-            if local_statement.tag == 4 &&
-               return_statement.tag == 12
-            {
+            mut second_statement := statements[1];
+            if local_statement.tag == 4 {
                 mut local_expression := ctx[local_statement.VarDecl.value];
-                mut return_expression := ctx[return_statement.Return.expr];
                 mut declared_type_is_int := 1;
                 if local_statement.VarDecl.var_type !=
                     empty[Index[ast.Type[ctx], ctx]]
@@ -194,21 +296,117 @@ func mir_native_generic_analyze_single_function(statement: ast.Statement[ctx], s
 
                 if declared_type_is_int == 1 &&
                    local_expression.tag == 1 &&
-                   return_expression.tag == 0 &&
-                   std.str_eq(
-                       local_statement.VarDecl.name,
-                       return_expression.Identifier.name
-                   ) == 1
+                   second_statement.tag == 12
                 {
-                    model.represented = 1;
-                    model.shape.tag = 1;
-                    model.source_path = std.Clone(ctx, source_path);
-                    model.local_name = std.Clone(
-                        ctx,
-                        local_statement.VarDecl.name
-                    );
-                    model.literal_value = local_expression.Integer.val;
-                    return model;
+                    mut return_expression :=
+                        ctx[second_statement.Return.expr];
+                    if return_expression.tag == 0 &&
+                       std.str_eq(
+                           local_statement.VarDecl.name,
+                           return_expression.Identifier.name
+                       ) == 1
+                    {
+                        model.represented = 1;
+                        model.shape.tag = 1;
+                        model.source_path =
+                            std.Clone(ctx, source_path);
+                        model.local_name = std.Clone(
+                            ctx,
+                            local_statement.VarDecl.name
+                        );
+                        model.literal_value =
+                            local_expression.Integer.val;
+                        return model;
+                    }
+
+                    mut scalar_expression :=
+                        mir_native_generic_scalar_expression(
+                            return_expression,
+                            local_statement.VarDecl.name,
+                            ctx
+                        );
+                    if scalar_expression.represented == 1 &&
+                       scalar_expression.uses_local == 1 &&
+                       scalar_expression.add_count > 0
+                    {
+                        model.represented = 1;
+                        model.shape.tag = 6;
+                        model.source_path =
+                            std.Clone(ctx, source_path);
+                        model.local_name = std.Clone(
+                            ctx,
+                            local_statement.VarDecl.name
+                        );
+                        model.initial_value =
+                            local_expression.Integer.val;
+                        model.scalar_literal_total =
+                            scalar_expression.literal_total;
+                        model.scalar_add_count =
+                            scalar_expression.add_count;
+                        model.scalar_uses_source_local = 1;
+                        return model;
+                    }
+                }
+
+                if declared_type_is_int == 1 &&
+                   local_expression.tag == 1 &&
+                   second_statement.tag == 7
+                {
+                    mut condition := ctx[second_statement.If.condition];
+                    mut consequence :=
+                        ctx[second_statement.If.consequence];
+                    mut alternative :=
+                        ctx[second_statement.If.alternative];
+                    mut then_statements:
+                        std.Vector[ast.Statement[ctx], ctx] :=
+                            ctx[consequence.statements];
+                    mut else_statements:
+                        std.Vector[ast.Statement[ctx], ctx] :=
+                            ctx[alternative.statements];
+
+                    if condition.tag == 10 &&
+                       std.str_eq(condition.Binary.op, ">") == 1 &&
+                       len(then_statements) == 1 &&
+                       len(else_statements) == 1 &&
+                       then_statements[0].tag == 12 &&
+                       else_statements[0].tag == 12
+                    {
+                        mut condition_left :=
+                            ctx[condition.Binary.left];
+                        mut condition_right :=
+                            ctx[condition.Binary.right];
+                        mut then_expression :=
+                            ctx[then_statements[0].Return.expr];
+                        mut else_expression :=
+                            ctx[else_statements[0].Return.expr];
+
+                        if condition_left.tag == 0 &&
+                           condition_right.tag == 1 &&
+                           condition_right.Integer.val == 0 &&
+                           then_expression.tag == 1 &&
+                           else_expression.tag == 1 &&
+                           std.str_eq(
+                               condition_left.Identifier.name,
+                               local_statement.VarDecl.name
+                           ) == 1
+                        {
+                            model.represented = 1;
+                            model.shape.tag = 7;
+                            model.source_path =
+                                std.Clone(ctx, source_path);
+                            model.local_name = std.Clone(
+                                ctx,
+                                local_statement.VarDecl.name
+                            );
+                            model.initial_value =
+                                local_expression.Integer.val;
+                            model.then_value =
+                                then_expression.Integer.val;
+                            model.else_value =
+                                else_expression.Integer.val;
+                            return model;
+                        }
+                    }
                 }
             }
         }
@@ -629,6 +827,276 @@ func mir_native_generic_emit_scalar(model: MirNativeGenericModel[ctx], ctx: &Are
         canonical,
         0,
         is_local,
+        0,
+        ctx
+    );
+    bundle_module = mir.mir_program_bundle_module_with_symbol(
+        bundle_module,
+        mir.mir_make_program_bundle_symbol(
+            "main",
+            "main",
+            "()->int",
+            0,
+            ctx
+        ),
+        ctx
+    );
+    return mir.mir_program_bundle_with_module(
+        bundle,
+        bundle_module,
+        ctx
+    );
+}
+
+func mir_native_generic_emit_scalar_expression(
+    model: MirNativeGenericModel[ctx],
+    ctx: &Arena
+) mir.MirProgramBundle[ctx] {
+    mut initial_value := 0;
+    mut provenance_count := 0;
+    if model.scalar_uses_source_local == 1 {
+        initial_value = model.initial_value;
+        provenance_count = 1;
+    }
+    mut expected_exit :=
+        initial_value + model.scalar_literal_total;
+
+    mut canonical :=
+        "format: gust.compiler_mir_ingestion.v1\nfunction: main\nbackend_symbol: main\nparameter_count: 0\nreturn_type: int\nlocal_count: 1\nlocal_0_name: ";
+    canonical = mir_native_generic_append(
+        canonical,
+        model.local_name,
+        ctx
+    );
+    canonical = mir_native_generic_append(
+        canonical,
+        "\nlocal_0_type: int\nentry_block: entry\nblock_count: 1\nblock_0_label: entry\nblock_0_parameter_count: 0\nblock_0_statement_count: 2\nblock_0_statement_0_kind: LocalI32Set\nblock_0_statement_0_local: ",
+        ctx
+    );
+    canonical = mir_native_generic_append(
+        canonical,
+        model.local_name,
+        ctx
+    );
+    canonical = mir_native_generic_append(
+        canonical,
+        "\nblock_0_statement_0_value: ",
+        ctx
+    );
+    canonical = mir_native_generic_append(
+        canonical,
+        std.FormatInt(initial_value),
+        ctx
+    );
+    canonical = mir_native_generic_append(
+        canonical,
+        "\nblock_0_statement_1_kind: LocalI32AddI32Literal\nblock_0_statement_1_local: ",
+        ctx
+    );
+    canonical = mir_native_generic_append(
+        canonical,
+        model.local_name,
+        ctx
+    );
+    canonical = mir_native_generic_append(
+        canonical,
+        "\nblock_0_statement_1_value: ",
+        ctx
+    );
+    canonical = mir_native_generic_append(
+        canonical,
+        std.FormatInt(model.scalar_literal_total),
+        ctx
+    );
+    canonical = mir_native_generic_append(
+        canonical,
+        "\nblock_0_terminator_kind: ReturnLocalI32\nblock_0_terminator_local: ",
+        ctx
+    );
+    canonical = mir_native_generic_append(
+        canonical,
+        model.local_name,
+        ctx
+    );
+
+    if provenance_count == 1 {
+        canonical = mir_native_generic_append(
+            canonical,
+            "\nmetadata_count: 1\nmetadata_0_kind: provenance\nmetadata_0_attachment: statement:entry:0\nmetadata_0_policy: ignored_with_proof\nmetadata_0_payload: kind=LocalBinding;local=",
+            ctx
+        );
+        canonical = mir_native_generic_append(
+            canonical,
+            model.local_name,
+            ctx
+        );
+        canonical = mir_native_generic_append(
+            canonical,
+            ";origin=",
+            ctx
+        );
+        canonical = mir_native_generic_append(
+            canonical,
+            model.source_path,
+            ctx
+        );
+    } else {
+        canonical = mir_native_generic_append(
+            canonical,
+            "\nmetadata_count: 0",
+            ctx
+        );
+    }
+
+    canonical = mir_native_generic_append(
+        canonical,
+        "\nexpected_exit: ",
+        ctx
+    );
+    canonical = mir_native_generic_append(
+        canonical,
+        std.FormatInt(expected_exit),
+        ctx
+    );
+    canonical = mir_native_generic_append(canonical, "\n", ctx);
+
+    mut bundle := mir.mir_make_program_bundle("main", ctx);
+    mut bundle_module := mir.mir_make_program_bundle_module(
+        model.source_path,
+        "",
+        "phase11_scalar_expression_module.o",
+        "gust.compiler_mir_ingestion.v1",
+        canonical,
+        0,
+        provenance_count,
+        0,
+        ctx
+    );
+    bundle_module = mir.mir_program_bundle_module_with_symbol(
+        bundle_module,
+        mir.mir_make_program_bundle_symbol(
+            "main",
+            "main",
+            "()->int",
+            0,
+            ctx
+        ),
+        ctx
+    );
+    return mir.mir_program_bundle_with_module(
+        bundle,
+        bundle_module,
+        ctx
+    );
+}
+
+func mir_native_generic_emit_positive_local_branch(
+    model: MirNativeGenericModel[ctx],
+    ctx: &Arena
+) mir.MirProgramBundle[ctx] {
+    mut expected_exit := model.else_value;
+    if model.initial_value > 0 {
+        expected_exit = model.then_value;
+    }
+
+    mut canonical :=
+        "format: gust.compiler_mir_ingestion.v1\nfunction: main\nbackend_symbol: main\nparameter_count: 0\nreturn_type: int\nlocal_count: 1\nlocal_0_name: ";
+    canonical = mir_native_generic_append(
+        canonical,
+        model.local_name,
+        ctx
+    );
+    canonical = mir_native_generic_append(
+        canonical,
+        "\nlocal_0_type: int\nentry_block: entry\nblock_count: 3\nblock_0_label: entry\nblock_0_parameter_count: 0\nblock_0_statement_count: 1\nblock_0_statement_0_kind: LocalI32Set\nblock_0_statement_0_local: ",
+        ctx
+    );
+    canonical = mir_native_generic_append(
+        canonical,
+        model.local_name,
+        ctx
+    );
+    canonical = mir_native_generic_append(
+        canonical,
+        "\nblock_0_statement_0_value: ",
+        ctx
+    );
+    canonical = mir_native_generic_append(
+        canonical,
+        std.FormatInt(model.initial_value),
+        ctx
+    );
+    canonical = mir_native_generic_append(
+        canonical,
+        "\nblock_0_terminator_kind: BranchLocalI32Positive\nblock_0_terminator_local: ",
+        ctx
+    );
+    canonical = mir_native_generic_append(
+        canonical,
+        model.local_name,
+        ctx
+    );
+    canonical = mir_native_generic_append(
+        canonical,
+        "\nblock_0_terminator_then: positive\nblock_0_terminator_then_argument_count: 0\nblock_0_terminator_else: non_positive\nblock_0_terminator_else_argument_count: 0\nblock_1_label: positive\nblock_1_parameter_count: 0\nblock_1_statement_count: 0\nblock_1_terminator_kind: ReturnI32\nblock_1_terminator_value: ",
+        ctx
+    );
+    canonical = mir_native_generic_append(
+        canonical,
+        std.FormatInt(model.then_value),
+        ctx
+    );
+    canonical = mir_native_generic_append(
+        canonical,
+        "\nblock_2_label: non_positive\nblock_2_parameter_count: 0\nblock_2_statement_count: 0\nblock_2_terminator_kind: ReturnI32\nblock_2_terminator_value: ",
+        ctx
+    );
+    canonical = mir_native_generic_append(
+        canonical,
+        std.FormatInt(model.else_value),
+        ctx
+    );
+    canonical = mir_native_generic_append(
+        canonical,
+        "\nmetadata_count: 1\nmetadata_0_kind: provenance\nmetadata_0_attachment: statement:entry:0\nmetadata_0_policy: ignored_with_proof\nmetadata_0_payload: kind=LocalBinding;local=",
+        ctx
+    );
+    canonical = mir_native_generic_append(
+        canonical,
+        model.local_name,
+        ctx
+    );
+    canonical = mir_native_generic_append(
+        canonical,
+        ";origin=",
+        ctx
+    );
+    canonical = mir_native_generic_append(
+        canonical,
+        model.source_path,
+        ctx
+    );
+    canonical = mir_native_generic_append(
+        canonical,
+        "\nexpected_exit: ",
+        ctx
+    );
+    canonical = mir_native_generic_append(
+        canonical,
+        std.FormatInt(expected_exit),
+        ctx
+    );
+    canonical = mir_native_generic_append(canonical, "\n", ctx);
+
+    mut bundle := mir.mir_make_program_bundle("main", ctx);
+    mut bundle_module := mir.mir_make_program_bundle_module(
+        model.source_path,
+        "",
+        "phase11_scalar_predicate_module.o",
+        "gust.compiler_mir_ingestion.v1",
+        canonical,
+        0,
+        1,
         0,
         ctx
     );
@@ -1335,6 +1803,12 @@ func mir_native_generic_emit_bundle(model: MirNativeGenericModel[ctx], ctx: &Are
     if model.shape.tag == 4 || model.shape.tag == 5 {
         return mir_native_generic_emit_call(model, ctx);
     }
+    if model.shape.tag == 6 {
+        return mir_native_generic_emit_scalar_expression(model, ctx);
+    }
+    if model.shape.tag == 7 {
+        return mir_native_generic_emit_positive_local_branch(model, ctx);
+    }
     return mir.mir_make_program_bundle("invalid", ctx);
 }
 
@@ -1372,6 +1846,7 @@ func mir_native_generic_plan_from_bundle(bundle: mir.MirProgramBundle[ctx], ctx:
     mut module_path := modules[0].module_path;
     mut has_local_set := 0;
     mut has_local_read := 0;
+    mut has_add := 0;
     mut has_sgt := 0;
     mut has_jump := 0;
     mut has_branch := 0;
@@ -1399,6 +1874,12 @@ func mir_native_generic_plan_from_bundle(bundle: mir.MirProgramBundle[ctx], ctx:
            ) == 1
         {
             has_local_read = 1;
+        }
+        if mir_native_generic_contains(
+            canonical,
+            "LocalI32AddI32Literal"
+        ) == 1 {
+            has_add = 1;
         }
         if mir_native_generic_contains(
             canonical,
@@ -1462,7 +1943,12 @@ func mir_native_generic_plan_from_bundle(bundle: mir.MirProgramBundle[ctx], ctx:
         if mir_native_generic_contains(
             canonical,
             "BranchI32Literal"
-        ) == 1 {
+        ) == 1 ||
+           mir_native_generic_contains(
+               canonical,
+               "BranchLocalI32Positive"
+           ) == 1
+        {
             has_bool = 1;
         }
 
@@ -1502,6 +1988,17 @@ func mir_native_generic_plan_from_bundle(bundle: mir.MirProgramBundle[ctx], ctx:
             module_path,
             ordinal,
             "LocalI32Read",
+            ctx
+        );
+        ordinal = ordinal + 1;
+    }
+    if has_add == 1 {
+        plan = mir_native_generic_plan_add(
+            plan,
+            0,
+            module_path,
+            ordinal,
+            "AddI32",
             ctx
         );
         ordinal = ordinal + 1;

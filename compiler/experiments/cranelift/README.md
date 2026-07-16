@@ -1258,13 +1258,15 @@ parameters, and canonical MIR operation records. Unsupported capability and
 invalid-MIR results stop before driver discovery, output resolution, request
 or bundle files, object emission, or linking.
 
-The six Phase 10 compatibility cohorts are now primary
+Patch 3 initially made the six Phase 10 compatibility cohorts primary
 `generic_canonical_mir` registry owners with `generic_shadowed` migration
-status. The closed call/import, CFG/block-parameter, and scalar/metadata
-recognizers remain behind the generic attempt. Whenever both paths recognize a
-program, both bundles are serialized and must be byte-identical before the
-external driver can be discovered. This preserves the exact v1/v2 wire bytes
-while the compatibility code remains available for later retirement.
+status. Patch 4 reclassifies the return-literal entry as scalar-expression
+migrated while the other five baseline entries remain generic-shadowed. The
+closed call/import, CFG/block-parameter, and scalar/metadata recognizers remain
+behind the generic attempt. Whenever both paths recognize a program, both
+bundles are serialized and must be byte-identical before the external driver
+can be discovered. This preserves the exact v1/v2 wire bytes while the
+compatibility code remains available for later retirement.
 
 `guard-cranelift-phase11-generic-canonical-mir-route` builds one worker, runs
 all six baseline programs through the generic route, checks exits `7`, `2`,
@@ -1275,7 +1277,42 @@ sentinel survives. MIR-to-C remains the default, the worker protocol is
 unchanged, Phase 9G retains artifact ownership, and no workflow matrix changes
 in this patch. The legacy backend-surface guard validates the exact Phase 11
 generic-route guard authorization before excluding only that guard recipe from
-its explicit native CLI scan. The next milestone is scalar-expression parity.
+its explicit native CLI scan.
+
+Patch 4 migrates scalar-expression parity as
+`phase11_migrated_scalar_expression_parity`. Four ordinary Gust sources now
+exercise literal return, one local read, nested integer addition, and the
+existing positive-i32 comparison predicate. The nested source expression
+`(5 + 7) + 11` is lowered without source-name checks into one canonical
+i32 local, `LocalI32Set`, `LocalI32AddI32Literal`, and `ReturnLocalI32`.
+Capability requirements for `AddI32`, `SgtI32`, `Branch`, `int`, and `bool`
+come from the serialized canonical MIR rather than from a fixture-selected
+plan.
+
+The worker's single-block scalar validation is no longer limited to one exact
+`LocalI32Set` shape. It accepts validated i32 set/add sequences followed by a
+literal or local return and continues to use the shared canonical parser,
+validator, object lowerer, and Phase 9G link pipeline. The v1/v2 wire schemas
+and the generic backend request remain unchanged.
+
+The registry now owns nine generic routes: four
+`scalar_expression_migrated`, five remaining Phase 10
+`generic_shadowed`, and ten deferred entries. The dedicated MIR-to-C evidence
+gap count falls from nine to seven because the ordinary-source addition and
+positive-predicate entries now have differential evidence. The three scalar
+registry entries no longer depend on Phase 10 source matching.
+
+`guard-cranelift-phase11-scalar-expression-parity` first runs the Patch 3
+predecessor in static-contract mode so it does not replay the six dynamic
+baseline executions. It then proves default and explicit MIR-to-C byte
+identity, compiles emitted C, compiles the same four sources through the
+explicit native route, and compares exit status, stdout, and stderr.
+Multiplication is the adjacent negative source: MIR-to-C still executes
+it with exit `12`, while the native route returns the stable deferred result
+before driver discovery and preserves an existing output sentinel. Patch 4
+does not add subtraction, multiplication, division, overflow controls, floats,
+casts, multiple locals, reassignment, a MIR v3, protocol changes, or CI matrix
+work. The next milestone is local-state and assignment parity.
 
 The checked-in lockfile for this crate is owned by:
 Patch 8 freezes the complete canonical call/import matrix and retires all
