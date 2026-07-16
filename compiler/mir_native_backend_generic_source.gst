@@ -148,7 +148,6 @@ func mir_native_generic_scalar_expression(
     }
 }
 
-func mir_native_generic_make_result
 func mir_native_generic_make_result(eligibility_tag: int, bundle: mir.MirProgramBundle[ctx], plan: capability.MirNativeBackendCapabilityPlan[ctx], diagnostic: str, ctx: &Arena) MirNativeGenericSourceResult[ctx] {
     mut result: MirNativeGenericSourceResult[ctx];
     unsafe {
