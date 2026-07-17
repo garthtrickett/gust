@@ -2545,6 +2545,9 @@ guard-cranelift-backend-surface:
           if ($0 == "guard-cranelift-phase11-module-import-runtime-parity:") {
             excluded_backend_route_guard = 1
           }
+          if ($0 == "guard-cranelift-phase11-metadata-diagnostic-parity:") {
+            excluded_backend_route_guard = 1
+          }
           if ($0 == "guard-cranelift-experiment-manifest-surface:") {
             excluded_backend_route_guard = 1
           }
@@ -14973,7 +14976,8 @@ guard-cranelift-phase11-opening-contract:
         guard-cranelift-phase11-structured-cfg-parity \
         guard-cranelift-phase11-block-parameter-loop-parity \
         guard-cranelift-phase11-direct-call-abi-parity \
-        guard-cranelift-phase11-module-import-runtime-parity |
+        guard-cranelift-phase11-module-import-runtime-parity \
+        guard-cranelift-phase11-metadata-diagnostic-parity |
         sort
     )"
     declared_phase11_guards="$(
@@ -14982,7 +14986,7 @@ guard-cranelift-phase11-opening-contract:
         sort
     )"
     if [ "$declared_phase11_guards" != "$expected_phase11_guards" ]; then
-      echo "Phase 11 current contract requires exactly the opening, registry, generic-route, scalar-expression, local-state, structured-CFG, block-parameter/loop, direct-call/ABI, and module/import/runtime guards."
+      echo "Phase 11 current contract requires exactly the opening, registry, generic-route, scalar-expression, local-state, structured-CFG, block-parameter/loop, direct-call/ABI, module/import/runtime, and metadata/diagnostic guards."
       diff -u \
         <(printf '%s\n' "$expected_phase11_guards") \
         <(printf '%s\n' "$declared_phase11_guards") ||
@@ -15051,6 +15055,7 @@ guard-cranelift-phase11-opening-contract:
         compiler/phase11_block_parameter_non_final_join_source.gst \
         compiler/phase11_block_parameter_stride_loop_source.gst \
         compiler/phase11_declared_external_import_source.gst \
+        compiler/phase11_diagnostic_type_error_source.gst \
         compiler/phase11_direct_call_missing_symbol_source.gst \
         compiler/phase11_direct_call_nested_source.gst \
         compiler/phase11_direct_call_recursion_source.gst \
@@ -15062,6 +15067,10 @@ guard-cranelift-phase11-opening-contract:
         compiler/phase11_local_state_read_after_write_source.gst \
         compiler/phase11_local_state_straight_line_source.gst \
         compiler/phase11_local_state_uninitialized_read_source.gst \
+        compiler/phase11_metadata_call_source.gst \
+        compiler/phase11_metadata_cfg_source.gst \
+        compiler/phase11_metadata_local_source.gst \
+        compiler/phase11_metadata_scalar_source.gst \
         compiler/phase11_module_import_duplicate_symbol_source.gst \
         compiler/phase11_module_import_forbidden_runtime_source.gst \
         compiler/phase11_module_import_main_source.gst \
@@ -15084,7 +15093,7 @@ guard-cranelift-phase11-opening-contract:
         sort
     )"
     if [ "$actual_phase11_fixture_files" != "$expected_phase11_fixture_files" ]; then
-      echo "Phase 11 current source-fixture inventory differs from the 30 Patch 4-through-9 scalar, local-state, CFG, block-parameter, direct-call, and module/import/runtime fixtures."
+      echo "Phase 11 current source-fixture inventory differs from the 35 Patch 4-through-10 scalar, local-state, CFG, block-parameter, direct-call, module/import/runtime, metadata, and diagnostic fixtures."
       diff -u \
         <(printf '%s\n' "$expected_phase11_fixture_files") \
         <(printf '%s\n' "$actual_phase11_fixture_files") ||
@@ -15192,7 +15201,7 @@ guard-cranelift-phase11-parity-registry:
       'CRANELIFT_FEATURE_PARITY_REGISTRY_LEGACY_MIR_FEATURE_IMPORT_COUNT: 4'
       'CRANELIFT_FEATURE_PARITY_REGISTRY_FAMILY_COUNT: 6'
       'CRANELIFT_FEATURE_PARITY_REGISTRY_DEFERRED_FAMILY_COUNT: 7'
-      'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_migrated_module_import_and_runtime_parity'
+      'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_froze_metadata_and_diagnostic_parity'
       'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_INVENTORY: 0_legacy_exact_shape_12_generic_canonical_mir_7_deferred'
       'CRANELIFT_FEATURE_PARITY_REGISTRY_MIGRATION_INVENTORY: 3_scalar_expression_migrated_2_local_state_migrated_3_structured_CFG_migrated_2_block_parameter_backedge_migrated_1_direct_call_ABI_migrated_1_module_import_runtime_migrated_7_deferred'
       'CRANELIFT_FEATURE_PARITY_REGISTRY_MIR_TO_C_GAP_COUNT: 5'
@@ -15710,7 +15719,7 @@ guard-cranelift-phase11-generic-canonical-mir-route:
 
     rg -n -F 'import "mir_native_backend_generic_source.gst" as generic_source;' "$route_source" >/dev/null
     compile_body="$(
-      sed -n '/^func mir_native_scalar_source_compile(/,/^}/p' "$route_source"
+      sed -n '/^func mir_native_scalar_source_compile_inner(/,/^}/p' "$route_source"
     )"
     generic_line="$(
       printf '%s\n' "$compile_body" |
@@ -15786,7 +15795,7 @@ guard-cranelift-phase11-generic-canonical-mir-route:
       echo "generic=${generic_owner_count:-0} shadowed=${generic_shadow_count:-0} scalar=${scalar_migrated_count:-0} local_state=${local_state_migrated_count:-0} structured_CFG=${structured_cfg_migrated_count:-0} block_parameter=${block_parameter_migrated_count:-0} direct_call=${direct_call_migrated_count:-0} module_import_runtime=${module_import_runtime_migrated_count:-0} legacy=${legacy_owner_count:-0}"
       exit 1
     fi
-    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_migrated_module_import_and_runtime_parity' "$registry_doc" >/dev/null
+    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_froze_metadata_and_diagnostic_parity' "$registry_doc" >/dev/null
     rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_INVENTORY: 0_legacy_exact_shape_12_generic_canonical_mir_7_deferred' "$registry_doc" >/dev/null
     rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_MIGRATION_INVENTORY: 3_scalar_expression_migrated_2_local_state_migrated_3_structured_CFG_migrated_2_block_parameter_backedge_migrated_1_direct_call_ABI_migrated_1_module_import_runtime_migrated_7_deferred' "$registry_doc" >/dev/null
     rg -n -F "deferred_fixture=$unsupported_source" "$registry_doc" >/dev/null
@@ -16074,7 +16083,7 @@ guard-cranelift-phase11-scalar-expression-parity:
       exit 1
     fi
 
-    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_migrated_module_import_and_runtime_parity' "$registry_doc" >/dev/null
+    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_froze_metadata_and_diagnostic_parity' "$registry_doc" >/dev/null
     rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_INVENTORY: 0_legacy_exact_shape_12_generic_canonical_mir_7_deferred' "$registry_doc" >/dev/null
     rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_MIGRATION_INVENTORY: 3_scalar_expression_migrated_2_local_state_migrated_3_structured_CFG_migrated_2_block_parameter_backedge_migrated_1_direct_call_ABI_migrated_1_module_import_runtime_migrated_7_deferred' "$registry_doc" >/dev/null
     rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_MIR_TO_C_GAP_COUNT: 5' "$registry_doc" >/dev/null
@@ -16426,7 +16435,7 @@ guard-cranelift-phase11-local-state-parity:
     rg -n -F 'fn compiler_mir_cfg_lowering_order(' "$rust_driver" >/dev/null
     rg -n -F 'fn phase11_cfg_intersect_assignment_state(' "$rust_driver" >/dev/null
 
-    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_migrated_module_import_and_runtime_parity' "$registry_doc" >/dev/null
+    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_froze_metadata_and_diagnostic_parity' "$registry_doc" >/dev/null
     rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_INVENTORY: 0_legacy_exact_shape_12_generic_canonical_mir_7_deferred' "$registry_doc" >/dev/null
     rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_MIGRATION_INVENTORY: 3_scalar_expression_migrated_2_local_state_migrated_3_structured_CFG_migrated_2_block_parameter_backedge_migrated_1_direct_call_ABI_migrated_1_module_import_runtime_migrated_7_deferred' "$registry_doc" >/dev/null
     rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_MIR_TO_C_GAP_COUNT: 5' "$registry_doc" >/dev/null
@@ -16809,7 +16818,7 @@ guard-cranelift-phase11-structured-cfg-parity:
       exit 1
     fi
 
-    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_migrated_module_import_and_runtime_parity' "$registry_doc" >/dev/null
+    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_froze_metadata_and_diagnostic_parity' "$registry_doc" >/dev/null
     rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_INVENTORY: 0_legacy_exact_shape_12_generic_canonical_mir_7_deferred' "$registry_doc" >/dev/null
     rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_MIGRATION_INVENTORY: 3_scalar_expression_migrated_2_local_state_migrated_3_structured_CFG_migrated_2_block_parameter_backedge_migrated_1_direct_call_ABI_migrated_1_module_import_runtime_migrated_7_deferred' "$registry_doc" >/dev/null
     rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_MIR_TO_C_GAP_COUNT: 5' "$registry_doc" >/dev/null
@@ -17265,7 +17274,7 @@ guard-cranelift-phase11-block-parameter-loop-parity:
       exit 1
     fi
 
-    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_migrated_module_import_and_runtime_parity' "$registry_doc" >/dev/null
+    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_froze_metadata_and_diagnostic_parity' "$registry_doc" >/dev/null
     rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_INVENTORY: 0_legacy_exact_shape_12_generic_canonical_mir_7_deferred' "$registry_doc" >/dev/null
     rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_MIGRATION_INVENTORY: 3_scalar_expression_migrated_2_local_state_migrated_3_structured_CFG_migrated_2_block_parameter_backedge_migrated_1_direct_call_ABI_migrated_1_module_import_runtime_migrated_7_deferred' "$registry_doc" >/dev/null
     if [ "$(rg -c 'migration_status=block_parameter_backedge_migrated' "$registry_doc")" != "2" ]; then
@@ -17685,7 +17694,7 @@ guard-cranelift-phase11-direct-call-abi-parity:
       rg -n -F "$expected_symbol" "$rust_driver" >/dev/null
     done
 
-    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_migrated_module_import_and_runtime_parity' "$registry_doc" >/dev/null
+    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_froze_metadata_and_diagnostic_parity' "$registry_doc" >/dev/null
     rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_INVENTORY: 0_legacy_exact_shape_12_generic_canonical_mir_7_deferred' "$registry_doc" >/dev/null
     rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_MIGRATION_INVENTORY: 3_scalar_expression_migrated_2_local_state_migrated_3_structured_CFG_migrated_2_block_parameter_backedge_migrated_1_direct_call_ABI_migrated_1_module_import_runtime_migrated_7_deferred' "$registry_doc" >/dev/null
     if [ "$(rg -c 'migration_status=direct_call_ABI_migrated' "$registry_doc")" != "1" ]; then
@@ -17983,8 +17992,8 @@ guard-cranelift-phase11-module-import-runtime-parity:
       'allowed_cranelift_phase11_module_import_runtime_deferred_policy: indirect_calls_closures_dynamic_loading_variadic_imports_non_scalar_ABIs_and_unapproved_host_or_runtime_symbols_remain_deferred'
       'allowed_cranelift_phase11_module_import_runtime_scope_freeze: no_arbitrary_linker_flags_libraries_search_paths_environment_linker_overrides_dynamic_loading_MIR_v3_new_artifact_kind_package_CLI_or_CI_matrix_change'
       'allowed_cranelift_phase11_module_import_runtime_legacy_backend_surface_policy: exact_module_import_runtime_guard_recipe_is_manifest_validated_then_excluded_from_the_legacy_explicit_CLI_scan'
-      'allowed_cranelift_phase11_module_import_runtime_next_milestone: aggregate_and_resource_parity'
-      'allowed_cranelift_phase11_module_import_runtime_next_milestone_status: pending'
+      'allowed_cranelift_phase11_module_import_runtime_next_milestone: metadata_and_diagnostic_parity'
+      'allowed_cranelift_phase11_module_import_runtime_next_milestone_status: complete'
     )
     for expected_line in "${required_manifest_lines[@]}"; do
       if ! rg -n -x -F "$expected_line" "$manifest_doc" >/dev/null; then
@@ -18074,7 +18083,7 @@ guard-cranelift-phase11-module-import-runtime-parity:
       exit 1
     fi
 
-    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_migrated_module_import_and_runtime_parity' "$registry_doc" >/dev/null
+    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_froze_metadata_and_diagnostic_parity' "$registry_doc" >/dev/null
     rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_INVENTORY: 0_legacy_exact_shape_12_generic_canonical_mir_7_deferred' "$registry_doc" >/dev/null
     rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_MIGRATION_INVENTORY: 3_scalar_expression_migrated_2_local_state_migrated_3_structured_CFG_migrated_2_block_parameter_backedge_migrated_1_direct_call_ABI_migrated_1_module_import_runtime_migrated_7_deferred' "$registry_doc" >/dev/null
     if [ "$(rg -c 'migration_status=module_import_runtime_migrated' "$registry_doc")" != "1" ]; then
@@ -18199,6 +18208,383 @@ guard-cranelift-phase11-module-import-runtime-parity:
     done
 
     echo "✅ Phase 11 module/import/runtime parity migrated: resolver-owned modules preserve qualified identities, approved host boundaries are registry-classified, Phase 9G links ordered objects without linker-surface expansion, and negative lanes preserve output."
+
+
+
+guard-cranelift-phase11-metadata-diagnostic-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 11 metadata and diagnostic parity..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    registry_doc="compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md"
+    readme_doc="compiler/experiments/cranelift/README.md"
+    rust_manifest="compiler/experiments/cranelift/Cargo.toml"
+    rust_driver="compiler/experiments/cranelift/src/main.rs"
+    generic_source="compiler/mir_native_backend_generic_source.gst"
+    route_source="compiler/mir_native_backend_source_route.gst"
+    import_source="compiler/mir_native_backend_module_import_source.gst"
+    compiler_entry="compiler/test_runner_entry.gst"
+    resource_fixture="compiler/fixtures/phase11_resource_metadata_preservation.mir"
+    type_error_source="compiler/phase11_diagnostic_type_error_source.gst"
+    unsupported_source="compiler/phase11_scalar_unsupported_multiply_source.gst"
+    build_dir="build/guards/cranelift_phase11_metadata_diagnostic_parity"
+    metadata_cases=(
+      'scalar|compiler/phase11_metadata_scalar_source.gst|19|provenance'
+      'local|compiler/phase11_metadata_local_source.gst|23|provenance'
+      'cfg|compiler/phase11_metadata_cfg_source.gst|29|provenance'
+      'call|compiler/phase11_metadata_call_source.gst|37|native_boundary'
+    )
+
+    for required_file in \
+      "$manifest_doc" "$registry_doc" "$readme_doc" \
+      "$rust_manifest" "$rust_driver" "$generic_source" "$route_source" \
+      "$import_source" "$compiler_entry" "$resource_fixture" \
+      "$type_error_source" "$unsupported_source" src/runtime.c
+    do
+      if [ ! -f "$required_file" ]; then
+        echo "Missing Phase 11 metadata/diagnostic input: $required_file"
+        exit 1
+      fi
+    done
+    for case_record in "${metadata_cases[@]}"; do
+      IFS='|' read -r case_name source_path expected_exit metadata_class <<<"$case_record"
+      if [ ! -f "$source_path" ]; then
+        echo "Missing Phase 11 metadata source $case_name: $source_path"
+        exit 1
+      fi
+    done
+
+    PHASE11_MODULE_IMPORT_RUNTIME_SKIP_DYNAMIC=1 \
+      just guard-cranelift-phase11-module-import-runtime-parity
+
+    required_manifest_lines=(
+      'CRANELIFT_EXPERIMENT_ALLOWED_PHASE11_METADATA_DIAGNOSTIC_PARITY_GUARD: guard-cranelift-phase11-metadata-diagnostic-parity'
+      'allowed_cranelift_phase11_metadata_diagnostic_status: phase11_froze_metadata_and_diagnostic_parity'
+      'allowed_cranelift_phase11_metadata_diagnostic_predecessor_status: phase11_migrated_module_import_and_runtime_parity'
+      'allowed_cranelift_phase11_metadata_diagnostic_predecessor_guard: guard-cranelift-phase11-module-import-runtime-parity'
+      'allowed_cranelift_phase11_metadata_diagnostic_predecessor_policy: predecessor_guard_runs_static_contract_mode_without_replaying_module_import_runtime_dynamic_evidence'
+      'allowed_cranelift_phase11_metadata_diagnostic_metadata_fixture_count: 5'
+      'allowed_cranelift_phase11_metadata_diagnostic_source_fixtures: compiler/phase11_metadata_scalar_source.gst,compiler/phase11_metadata_local_source.gst,compiler/phase11_metadata_cfg_source.gst,compiler/phase11_metadata_call_source.gst'
+      'allowed_cranelift_phase11_metadata_diagnostic_resource_fixture: compiler/fixtures/phase11_resource_metadata_preservation.mir'
+      'allowed_cranelift_phase11_metadata_diagnostic_metadata_classes: provenance,resource,native_boundary'
+      'allowed_cranelift_phase11_metadata_diagnostic_metadata_policy: canonical_records_are_retained_as_owned_worker_bundle_records_and_counted_before_lowering'
+      'allowed_cranelift_phase11_metadata_diagnostic_ignored_policy: every_ignored_with_proof_record_requires_codegen_none_and_a_nonempty_proof'
+      'allowed_cranelift_phase11_metadata_diagnostic_codegen_claim_policy: codegen_required_and_unknown_codegen_claims_are_rejected_before_object_publication'
+      'allowed_cranelift_phase11_metadata_diagnostic_unknown_policy: unknown_metadata_classes_and_policies_are_rejected_and_never_silently_discarded'
+      'allowed_cranelift_phase11_metadata_diagnostic_taxonomy: gust.backend_parity.diagnostic.v1'
+      'allowed_cranelift_phase11_metadata_diagnostic_class_count: 6'
+      'allowed_cranelift_phase11_metadata_diagnostic_classes: source_type_error,canonical_mir_verification_error,unsupported_native_capability,driver_handshake_error,worker_lowering_error,object_link_publication_error'
+      'allowed_cranelift_phase11_metadata_diagnostic_comparison_policy: compare_source_path_line_column_and_stable_class_not_backend_specific_prose'
+      'allowed_cranelift_phase11_metadata_diagnostic_unsupported_policy: unsupported_native_capability_is_classified_before_driver_discovery'
+      'allowed_cranelift_phase11_metadata_diagnostic_failure_policy: every_failure_class_preserves_existing_output_and_removes_hidden_request_bundle_and_object_artifacts'
+      'allowed_cranelift_phase11_metadata_diagnostic_positive_expected_exits: scalar_19,local_23,cfg_29,call_37,resource_canonical_41'
+      'allowed_cranelift_phase11_metadata_diagnostic_scope_freeze: no_MIR_v3_worker_protocol_linker_surface_new_library_linker_flag_environment_override_package_CLI_or_CI_matrix_change'
+      'allowed_cranelift_phase11_metadata_diagnostic_legacy_backend_surface_policy: exact_metadata_diagnostic_guard_recipe_is_manifest_validated_then_excluded_from_the_legacy_explicit_CLI_scan'
+      'allowed_cranelift_phase11_metadata_diagnostic_next_milestone: aggregate_and_resource_codegen_parity'
+      'allowed_cranelift_phase11_metadata_diagnostic_next_milestone_status: pending'
+    )
+    for expected_line in "${required_manifest_lines[@]}"; do
+      if ! rg -n -x -F "$expected_line" "$manifest_doc" >/dev/null; then
+        echo "Missing Phase 11 metadata/diagnostic manifest line:"
+        echo "$expected_line"
+        exit 1
+      fi
+    done
+
+    required_worker_symbols=(
+      'struct Phase11PreservedMetadata'
+      'metadata: Vec<Phase11PreservedMetadata>'
+      'fn phase11_preserve_metadata('
+      'metadata: expected_metadata'
+      'retained metadata records do not match canonical metadata totals'
+      'metadata_record_count: {preserved_metadata_count}'
+      'unknown canonical compiler MIR metadata class'
+      'claims code-generation semantics the worker does not implement'
+      'must retain a non-empty ignored_with_proof justification'
+      'const PHASE11_BACKEND_DIAGNOSTIC_TAXONOMY: &str'
+      'gust.backend_parity.diagnostic.v1'
+      'const PHASE11_BACKEND_DIAGNOSTIC_CLASSES: [&str; 6]'
+      'fn phase11_request_diagnostic_class('
+      'fn phase11_pipeline_diagnostic_class('
+      'fn phase11_diagnostic_machine_line('
+      'compiler_mir_pipeline_wrap_box('
+      'validate_compiler_mir_fixture_path(Path::new(&input_path))'
+    )
+    for expected_symbol in "${required_worker_symbols[@]}"; do
+      rg -n -F "$expected_symbol" "$rust_driver" >/dev/null
+    done
+
+    required_route_symbols=(
+      'type MirNativeDiagnosticClass enum'
+      'SourceTypeError'
+      'CanonicalMirVerificationError'
+      'UnsupportedNativeCapability'
+      'DriverHandshakeError'
+      'WorkerLoweringError'
+      'ObjectLinkPublicationError'
+      'func mir_native_scalar_source_diagnostic_class('
+      'func mir_native_scalar_source_diagnostic_line('
+      'func mir_native_scalar_source_entry_location('
+      'func mir_native_scalar_source_compile_inner('
+      'gust_backend_parity_diagnostic: taxonomy=gust.backend_parity.diagnostic.v1'
+      'result.source_path = std.Clone(ctx, location.source_path);'
+    )
+    for expected_symbol in "${required_route_symbols[@]}"; do
+      rg -n -F "$expected_symbol" "$route_source" >/dev/null
+    done
+    rg -n -F 'mir_native_scalar_source_diagnostic_line(' "$compiler_entry" >/dev/null
+
+    for proof in \
+      'codegen=none;proof=local_binding_metadata_is_diagnostic_only' \
+      'codegen=none;proof=runtime_boundary_classification_is_registry_validated' \
+      'codegen=none;proof=resource_cleanup_was_verified_before_native_lowering'
+    do
+      rg -n -F "$proof" "$generic_source" "$route_source" "$import_source" "$resource_fixture" "$rust_driver" >/dev/null
+    done
+    rg -n -F 'metadata_0_policy: ignored_with_proof' "$resource_fixture" >/dev/null
+    rg -n -F 'metadata_0_kind: resource' "$resource_fixture" >/dev/null
+
+    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_froze_metadata_and_diagnostic_parity' "$registry_doc" >/dev/null
+    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_METADATA_CLASS_COUNT: 3' "$registry_doc" >/dev/null
+    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_METADATA_CLASSES: provenance,resource,native_boundary' "$registry_doc" >/dev/null
+    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_DIAGNOSTIC_TAXONOMY: gust.backend_parity.diagnostic.v1' "$registry_doc" >/dev/null
+    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_DIAGNOSTIC_CLASS_COUNT: 6' "$registry_doc" >/dev/null
+    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_DIAGNOSTIC_CLASSES: source_type_error,canonical_mir_verification_error,unsupported_native_capability,driver_handshake_error,worker_lowering_error,object_link_publication_error' "$registry_doc" >/dev/null
+
+    readme_flat="$(tr '\n' ' ' < "$readme_doc")"
+    printf '%s\n' "$readme_flat" | rg -F 'Phase 11 Patch 10 freezes metadata and diagnostic parity as `phase11_froze_metadata_and_diagnostic_parity`.' >/dev/null
+    printf '%s\n' "$readme_flat" | rg -F 'Every `ignored_with_proof` record must declare `codegen=none` and carry a non-empty `proof=` justification.' >/dev/null
+    printf '%s\n' "$readme_flat" | rg -F 'The compiler and worker share `gust.backend_parity.diagnostic.v1` with six stable classes' >/dev/null
+    printf '%s\n' "$readme_flat" | rg -F 'Unsupported native capabilities are classified before driver discovery' >/dev/null
+
+    if [ "${PHASE11_METADATA_DIAGNOSTIC_SKIP_DYNAMIC:-0}" = "1" ]; then
+      echo "✅ Phase 11 metadata/diagnostic static contract passed; dynamic metadata and failure evidence was intentionally not replayed."
+      exit 0
+    fi
+    if [ ! -x ./gust ]; then
+      echo "Phase 11 metadata/diagnostic guard requires the rebuilt ./gust compiler."
+      exit 1
+    fi
+
+    rm -rf "$build_dir"
+    mkdir -p "$build_dir"
+    cargo_target="$build_dir/cargo-target"
+    CARGO_TARGET_DIR="$cargo_target" cargo build \
+      --locked --quiet --manifest-path "$rust_manifest"
+    driver_bin="$cargo_target/debug/gust-cranelift-experiment"
+    driver_abs="$(cd "$(dirname "$driver_bin")" && pwd)/$(basename "$driver_bin")"
+
+    capture_driver="$build_dir/capture-driver"
+    cat >"$capture_driver" <<'EOF_CAPTURE'
+    #!/usr/bin/env bash
+    set -euo pipefail
+    case "${1:-}" in
+      phase10-driver-handshake)
+    exec "$REAL_DRIVER" "$@"
+    ;;
+      phase10-backend-request-compile)
+    request_path="${2:?missing request path}"
+    cp "$request_path" "$CAPTURE_PREFIX.request"
+    bundle_path="$(sed -n 's/^program_mir_bundle_path: //p' "$request_path")"
+    test -n "$bundle_path"
+    cp "$bundle_path" "$CAPTURE_PREFIX.bundle"
+    exec "$REAL_DRIVER" "$@"
+    ;;
+      *)
+    exec "$REAL_DRIVER" "$@"
+    ;;
+    esac
+    EOF_CAPTURE
+    chmod +x "$capture_driver"
+
+    run_metadata_case() {
+      local name="$1"
+      local source_path="$2"
+      local expected_exit="$3"
+      local metadata_class="$4"
+      local case_dir="$build_dir/$name"
+      local output="$case_dir/program"
+      mkdir -p "$case_dir"
+      REAL_DRIVER="$driver_abs" CAPTURE_PREFIX="$case_dir/capture" \
+        GUST_NATIVE_BACKEND_DRIVER="$capture_driver" \
+        ./gust --backend cranelift -o "$output" "$source_path" \
+        >"$case_dir/compiler.stdout" 2>"$case_dir/compiler.stderr"
+      test ! -s "$case_dir/compiler.stdout"
+      test ! -s "$case_dir/compiler.stderr"
+      test -x "$output"
+      set +e
+      "$output" >"$case_dir/runtime.stdout" 2>"$case_dir/runtime.stderr"
+      local status="$?"
+      set -e
+      test "$status" = "$expected_exit"
+      test ! -s "$case_dir/runtime.stdout"
+      test ! -s "$case_dir/runtime.stderr"
+      rg -n -F 'metadata_count: 1' "$case_dir/capture.bundle" >/dev/null
+      rg -n -F "metadata_0_kind: $metadata_class" "$case_dir/capture.bundle" >/dev/null
+      rg -n -F 'metadata_0_policy: ignored_with_proof' "$case_dir/capture.bundle" >/dev/null
+      rg -n -F 'codegen=none;proof=' "$case_dir/capture.bundle" >/dev/null
+      test ! -e "$output.phase10.bundle"
+      test ! -e "$output.phase10.request"
+      if find "$case_dir" -maxdepth 1 -type f -name '.program.phase10-source-route*.o' | grep -q .; then
+        echo "Metadata case left a hidden object: $name"
+        exit 1
+      fi
+    }
+    for case_record in "${metadata_cases[@]}"; do
+      IFS='|' read -r case_name source_path expected_exit metadata_class <<<"$case_record"
+      run_metadata_case "$case_name" "$source_path" "$expected_exit" "$metadata_class"
+    done
+
+    "$driver_abs" compiler-mir-validate-fixture "$resource_fixture" \
+      >"$build_dir/resource.validate.stdout" 2>"$build_dir/resource.validate.stderr"
+    test ! -s "$build_dir/resource.validate.stderr"
+    rg -n -F 'metadata_record_count: 1' "$build_dir/resource.validate.stdout" >/dev/null
+    rg -n -F 'resource_metadata_count: 1' "$build_dir/resource.validate.stdout" >/dev/null
+    resource_object="$build_dir/resource.o"
+    "$driver_abs" compiler-mir-ingestion-object "$resource_fixture" "$resource_object" \
+      >"$build_dir/resource.object.stdout" 2>"$build_dir/resource.object.stderr"
+    test -s "$resource_object"
+
+    expect_metadata_rejection() {
+      local name="$1"
+      local fixture="$2"
+      local existing="$build_dir/$name.existing.o"
+      printf 'phase11-metadata-output-sentinel\n' >"$existing"
+      cp "$existing" "$existing.expected"
+      set +e
+      "$driver_abs" compiler-mir-ingestion-object "$fixture" "$existing" \
+        >"$build_dir/$name.stdout" 2>"$build_dir/$name.stderr"
+      local status="$?"
+      set -e
+      if [ "$status" = "0" ]; then
+        echo "Invalid metadata unexpectedly lowered: $name"
+        exit 1
+      fi
+      cmp -s "$existing.expected" "$existing"
+      rg -n -F 'class=canonical_mir_verification_error' "$build_dir/$name.stderr" >/dev/null
+    }
+    unknown_fixture="$build_dir/unknown-metadata.mir"
+    missing_proof_fixture="$build_dir/missing-proof.mir"
+    codegen_fixture="$build_dir/codegen-required.mir"
+    sed 's/metadata_0_kind: resource/metadata_0_kind: mystery/' "$resource_fixture" >"$unknown_fixture"
+    sed 's/;proof=resource_cleanup_was_verified_before_native_lowering//' "$resource_fixture" >"$missing_proof_fixture"
+    sed 's/codegen=none/codegen=required/' "$resource_fixture" >"$codegen_fixture"
+    expect_metadata_rejection unknown "$unknown_fixture"
+    expect_metadata_rejection missing-proof "$missing_proof_fixture"
+    expect_metadata_rejection codegen-required "$codegen_fixture"
+
+    # Source/type diagnostics are backend-independent because they are emitted
+    # before backend selection. Compare the class we assign and the stable source
+    # location rather than prose.
+    set +e
+    ./gust "$type_error_source" >"$build_dir/type.default.stdout" 2>"$build_dir/type.default.stderr"
+    default_status="$?"
+    ./gust --backend cranelift "$type_error_source" >"$build_dir/type.native.stdout" 2>"$build_dir/type.native.stderr"
+    native_status="$?"
+    set -e
+    test "$default_status" != "0"
+    test "$native_status" != "0"
+    default_location="$(rg -o 'TypeError in [^ ]+ at line [0-9]+:[0-9]+' "$build_dir/type.default.stderr" | head -1)"
+    native_location="$(rg -o 'TypeError in [^ ]+ at line [0-9]+:[0-9]+' "$build_dir/type.native.stderr" | head -1)"
+    test -n "$default_location"
+    test "$default_location" = "$native_location"
+    printf 'source_type_error|%s\n' "$default_location" >"$build_dir/type.normalized"
+
+    assert_preserved_output() {
+      local output="$1"
+      local expected="$2"
+      cmp -s "$expected" "$output"
+      test ! -e "$output.phase10.bundle"
+      test ! -e "$output.phase10.request"
+      if find "$(dirname "$output")" -maxdepth 1 -type f -name ".$(basename "$output").phase10-source-route*.o" | grep -q .; then
+        echo "Failure left hidden object for $output"
+        exit 1
+      fi
+    }
+
+    unsupported_output="$build_dir/unsupported.existing"
+    printf 'phase11-diagnostic-output-sentinel\n' >"$unsupported_output"
+    cp "$unsupported_output" "$unsupported_output.expected"
+    set +e
+    GUST_NATIVE_BACKEND_DRIVER="$build_dir/does-not-exist" \
+      ./gust --backend cranelift -o "$unsupported_output" "$unsupported_source" \
+      >"$build_dir/unsupported.stdout" 2>"$build_dir/unsupported.stderr"
+    unsupported_status="$?"
+    set -e
+    test "$unsupported_status" != "0"
+    rg -n -F 'class=unsupported_native_capability' "$build_dir/unsupported.stderr" >/dev/null
+    rg -n -F 'source=compiler/phase11_scalar_unsupported_multiply_source.gst' "$build_dir/unsupported.stderr" >/dev/null
+    rg -n -e 'line=[1-9][0-9]* column=[1-9][0-9]*' "$build_dir/unsupported.stderr" >/dev/null
+    if rg -n -F 'driver discovery' "$build_dir/unsupported.stderr" >/dev/null; then
+      echo "Unsupported capability reached driver discovery."
+      exit 1
+    fi
+    assert_preserved_output "$unsupported_output" "$unsupported_output.expected"
+
+    malformed_driver="$build_dir/malformed-handshake-driver"
+    cat >"$malformed_driver" <<'EOF_MALFORMED'
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ "${1:-}" = "phase10-driver-handshake" ]; then
+      printf 'not-a-valid-handshake\n'
+      exit 0
+    fi
+    exit 2
+    EOF_MALFORMED
+    chmod +x "$malformed_driver"
+    driver_output="$build_dir/driver.existing"
+    printf 'phase11-diagnostic-output-sentinel\n' >"$driver_output"
+    cp "$driver_output" "$driver_output.expected"
+    set +e
+    GUST_NATIVE_BACKEND_DRIVER="$malformed_driver" \
+      ./gust --backend cranelift -o "$driver_output" compiler/phase11_metadata_scalar_source.gst \
+      >"$build_dir/driver.stdout" 2>"$build_dir/driver.stderr"
+    driver_status="$?"
+    set -e
+    test "$driver_status" != "0"
+    rg -n -F 'class=driver_handshake_error' "$build_dir/driver.stderr" >/dev/null
+    rg -n -F 'source=compiler/phase11_metadata_scalar_source.gst' "$build_dir/driver.stderr" >/dev/null
+    rg -n -e 'line=[1-9][0-9]* column=[1-9][0-9]*' "$build_dir/driver.stderr" >/dev/null
+    assert_preserved_output "$driver_output" "$driver_output.expected"
+
+    make_class_driver() {
+      local script_path="$1"
+      local class_name="$2"
+      cat >"$script_path" <<EOF_CLASS_DRIVER
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ "\${1:-}" = "phase10-driver-handshake" ]; then
+      exec "$driver_abs" "\$@"
+    fi
+    if [ "\${1:-}" = "phase10-backend-request-compile" ]; then
+      printf 'gust_backend_parity_diagnostic: taxonomy=gust.backend_parity.diagnostic.v1 class=$class_name\\n' >&2
+      exit 2
+    fi
+    exec "$driver_abs" "\$@"
+    EOF_CLASS_DRIVER
+      chmod +x "$script_path"
+    }
+
+    for class_name in worker_lowering_error object_link_publication_error; do
+      class_driver="$build_dir/$class_name-driver"
+      make_class_driver "$class_driver" "$class_name"
+      class_output="$build_dir/$class_name.existing"
+      printf 'phase11-diagnostic-output-sentinel\n' >"$class_output"
+      cp "$class_output" "$class_output.expected"
+      set +e
+      GUST_NATIVE_BACKEND_DRIVER="$class_driver" \
+        ./gust --backend cranelift -o "$class_output" compiler/phase11_metadata_scalar_source.gst \
+        >"$build_dir/$class_name.stdout" 2>"$build_dir/$class_name.stderr"
+      class_status="$?"
+      set -e
+      test "$class_status" != "0"
+      rg -n -F "class=$class_name" "$build_dir/$class_name.stderr" >/dev/null
+      rg -n -F 'source=compiler/phase11_metadata_scalar_source.gst' "$build_dir/$class_name.stderr" >/dev/null
+      rg -n -e 'line=[1-9][0-9]* column=[1-9][0-9]*' "$build_dir/$class_name.stderr" >/dev/null
+      assert_preserved_output "$class_output" "$class_output.expected"
+    done
+
+    echo "✅ Phase 11 metadata and diagnostic parity frozen: metadata records survive bundle verification with explicit proofs, unknown/codegen metadata rejects, six stable failure classes carry source locations, unsupported features stop before driver discovery, and every failure preserves output."
 
 
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:

@@ -391,6 +391,12 @@ func main() {
         if native_result.status == 0 {
             os.Exit(0);
         }
+        os.LogStr(
+            native_source_route.mir_native_scalar_source_diagnostic_line(
+                native_result,
+                ctx
+            )
+        );
         if native_result.status == 2 {
             os.LogStr("Experimental Cranelift backend selection is valid, but the source-level route is not connected yet.");
             os.Exit(1);

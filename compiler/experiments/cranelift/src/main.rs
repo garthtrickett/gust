@@ -500,7 +500,7 @@ const PHASE9C_CANONICAL_PROVENANCE_METADATA_FIXTURE: &str = concat!(
     "metadata_0_kind: provenance\n",
     "metadata_0_attachment: statement:entry:0\n",
     "metadata_0_policy: ignored_with_proof\n",
-    "metadata_0_payload: kind=LocalBinding;local=value;origin=compiler/mir_feature_local_binding_read_provenance_metadata_preservation_source.gst\n",
+    "metadata_0_payload: kind=LocalBinding;local=value;origin=compiler/mir_feature_local_binding_read_provenance_metadata_preservation_source.gst;codegen=none;proof=provenance_is_diagnostic_only_after_typecheck\n",
     "expected_exit: 2\n",
 );
 
@@ -526,7 +526,7 @@ const PHASE9C_CANONICAL_RESOURCE_METADATA_FIXTURE: &str = concat!(
     "metadata_0_kind: resource\n",
     "metadata_0_attachment: statement:entry:0\n",
     "metadata_0_policy: ignored_with_proof\n",
-    "metadata_0_payload: kind=LinearResource;state=Live;local=value;cleanup_required=false\n",
+    "metadata_0_payload: kind=LinearResource;state=Live;local=value;cleanup_required=false;codegen=none;proof=resource_cleanup_was_verified_before_native_lowering\n",
     "expected_exit: 2\n",
 );
 
@@ -546,7 +546,7 @@ const PHASE9C_CANONICAL_NATIVE_BOUNDARY_METADATA_FIXTURE: &str = concat!(
     "metadata_0_kind: native_boundary\n",
     "metadata_0_attachment: function\n",
     "metadata_0_policy: ignored_with_proof\n",
-    "metadata_0_payload: kind=RuntimeCall;symbol=tiny_runtime_boundary;origin=compiler/mir_to_c_native_boundary_metadata_smoke_test_entry.gst\n",
+    "metadata_0_payload: kind=RuntimeCall;symbol=tiny_runtime_boundary;origin=compiler/mir_to_c_native_boundary_metadata_smoke_test_entry.gst;codegen=none;proof=runtime_boundary_classification_is_registry_validated\n",
     "expected_exit: 0\n",
 );
 
@@ -1924,6 +1924,63 @@ fn phase10_backend_request_error(
     })
 }
 
+const PHASE11_BACKEND_DIAGNOSTIC_TAXONOMY: &str =
+    "gust.backend_parity.diagnostic.v1";
+
+const PHASE11_BACKEND_DIAGNOSTIC_CLASSES: [&str; 6] = [
+    "source_type_error",
+    "canonical_mir_verification_error",
+    "unsupported_native_capability",
+    "driver_handshake_error",
+    "worker_lowering_error",
+    "object_link_publication_error",
+];
+
+fn phase11_request_diagnostic_class(
+    error: &Phase10BackendRequestError,
+) -> &'static str {
+    match error.stage {
+        Phase10BackendRequestStage::ProgramMirBundleValidation
+        | Phase10BackendRequestStage::CanonicalMirValidation => {
+            "canonical_mir_verification_error"
+        }
+        Phase10BackendRequestStage::RequestParse
+        | Phase10BackendRequestStage::RequestValidation
+        | Phase10BackendRequestStage::TargetValidation => {
+            "driver_handshake_error"
+        }
+    }
+}
+
+fn phase11_pipeline_diagnostic_class(
+    error: &CompilerMirPipelineError,
+) -> &'static str {
+    match error.stage {
+        CompilerMirPipelineStage::FixtureParse
+        | CompilerMirPipelineStage::FixtureValidation => {
+            "canonical_mir_verification_error"
+        }
+        CompilerMirPipelineStage::MirLowering => "worker_lowering_error",
+        CompilerMirPipelineStage::ObjectBuild
+        | CompilerMirPipelineStage::ObjectVerification
+        | CompilerMirPipelineStage::ObjectPublication
+        | CompilerMirPipelineStage::LinkInputValidation
+        | CompilerMirPipelineStage::LinkerSpawn
+        | CompilerMirPipelineStage::NativeLink
+        | CompilerMirPipelineStage::ExecutablePublication
+        | CompilerMirPipelineStage::NativeExecution => {
+            "object_link_publication_error"
+        }
+    }
+}
+
+fn phase11_diagnostic_machine_line(class_name: &str) -> String {
+    format!(
+        "gust_backend_parity_diagnostic: taxonomy={} class={class_name}",
+        PHASE11_BACKEND_DIAGNOSTIC_TAXONOMY
+    )
+}
+
 struct Phase10TextCursor<'a> {
     remaining: &'a str,
     line_number: usize,
@@ -2077,12 +2134,21 @@ struct Phase10BackendRequest {
     program_mir_bundle_path: PathBuf,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct Phase11PreservedMetadata {
+    kind: String,
+    attachment: String,
+    policy: String,
+    payload: String,
+}
+
 #[derive(Debug)]
 struct Phase10ProgramMirBundleModule {
     module_path: String,
     object_name: String,
     canonical_format: String,
     canonical_mir: String,
+    metadata: Vec<Phase11PreservedMetadata>,
 }
 
 #[derive(Debug)]
@@ -2236,6 +2302,20 @@ fn phase10_metadata_counts(
         }
     }
     (resource, provenance, native_boundary)
+}
+
+fn phase11_preserve_metadata(
+    metadata: &[CompilerMirFixtureMetadata<'_>],
+) -> Vec<Phase11PreservedMetadata> {
+    metadata
+        .iter()
+        .map(|item| Phase11PreservedMetadata {
+            kind: item.kind.to_string(),
+            attachment: item.attachment.to_string(),
+            policy: item.policy.to_string(),
+            payload: item.payload.to_string(),
+        })
+        .collect()
 }
 
 fn phase10_expected_block_parameters(
@@ -2662,6 +2742,7 @@ fn parse_phase10_program_mir_bundle(
         let mut expected_resource_metadata = 0usize;
         let mut expected_provenance_metadata = 0usize;
         let mut expected_native_boundary_metadata = 0usize;
+        let mut expected_metadata = Vec::new();
 
         match parsed {
             ParsedCompilerMirInput::V1(fixture) => {
@@ -2715,6 +2796,9 @@ fn parse_phase10_program_mir_bundle(
                 expected_resource_metadata += counts.0;
                 expected_provenance_metadata += counts.1;
                 expected_native_boundary_metadata += counts.2;
+                expected_metadata.extend(
+                    phase11_preserve_metadata(&fixture.metadata),
+                );
             }
             ParsedCompilerMirInput::V2(module) => {
                 if canonical_format != COMPILER_MIR_CANONICAL_MODULE_FORMAT {
@@ -2775,6 +2859,11 @@ fn parse_phase10_program_mir_bundle(
                     expected_resource_metadata += counts.0;
                     expected_provenance_metadata += counts.1;
                     expected_native_boundary_metadata += counts.2;
+                    expected_metadata.extend(
+                        phase11_preserve_metadata(
+                            &defined.fixture.metadata,
+                        ),
+                    );
                 }
 
                 for imported in &module.imports {
@@ -2872,12 +2961,26 @@ fn parse_phase10_program_mir_bundle(
                 ),
             ));
         }
+        if expected_metadata.len()
+            != resource_metadata_count
+                + provenance_metadata_count
+                + native_boundary_metadata_count
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                format!(
+                    "{module_key} retained metadata records do not match canonical metadata totals"
+                ),
+            ));
+        }
 
         modules.push(Phase10ProgramMirBundleModule {
             module_path,
             object_name,
             canonical_format,
             canonical_mir: canonical_mir.to_string(),
+            metadata: expected_metadata,
         });
     }
 
@@ -4409,7 +4512,7 @@ fn validate_phase10_calls_imports_runtime_module(
             metadata.policy != "ignored_with_proof" ||
             !metadata
                 .payload
-                .starts_with("kind=RuntimeCall;symbol=abs;origin=")
+                .starts_with("kind=RuntimeCall;symbol=abs;")
         {
             return Err(phase10_backend_request_error(
                 Phase10BackendRequestStage::CanonicalMirValidation,
@@ -4483,7 +4586,7 @@ fn validate_phase11_import_boundary_metadata(
                 let attachment =
                     format!("statement:{}:{statement_index}", block.label);
                 let payload_prefix = format!(
-                    "kind={classification};symbol={link_symbol};origin="
+                    "kind={classification};symbol={link_symbol};"
                 );
                 let matching_metadata = defined
                     .fixture
@@ -4634,8 +4737,42 @@ fn compile_phase10_scalar_metadata_request_path(
     let mut source_route = "scalar_metadata";
     let mut reported_module_path = "";
     let mut reported_object_name = "";
+    let mut preserved_metadata_count = 0usize;
+    let mut preserved_resource_metadata_count = 0usize;
+    let mut preserved_provenance_metadata_count = 0usize;
+    let mut preserved_native_boundary_metadata_count = 0usize;
 
     for (module_index, module_record) in bundle.modules.iter().enumerate() {
+        preserved_metadata_count += module_record.metadata.len();
+        for metadata in &module_record.metadata {
+            match metadata.kind.as_str() {
+                "resource" => preserved_resource_metadata_count += 1,
+                "provenance" => preserved_provenance_metadata_count += 1,
+                "native_boundary" => {
+                    preserved_native_boundary_metadata_count += 1
+                }
+                _ => {
+                    return Err(phase10_backend_request_error(
+                        Phase10BackendRequestStage::CanonicalMirValidation,
+                        Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                        format!(
+                            "retained metadata class drifted after bundle validation: {}",
+                            metadata.kind
+                        ),
+                    ));
+                }
+            }
+            if metadata.attachment.is_empty()
+                || metadata.policy.is_empty()
+                || metadata.payload.is_empty()
+            {
+                return Err(phase10_backend_request_error(
+                    Phase10BackendRequestStage::CanonicalMirValidation,
+                    Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                    "retained metadata record became incomplete before lowering",
+                ));
+            }
+        }
         let parsed =
             parse_compiler_mir_input(&module_record.canonical_mir).map_err(
                 |error| {
@@ -4802,6 +4939,16 @@ fn compile_phase10_scalar_metadata_request_path(
     println!("module_count: {}", bundle.module_count);
     println!("module_path: {reported_module_path}");
     println!("object_name: {reported_object_name}");
+    println!("metadata_record_count: {preserved_metadata_count}");
+    println!(
+        "resource_metadata_count: {preserved_resource_metadata_count}"
+    );
+    println!(
+        "provenance_metadata_count: {preserved_provenance_metadata_count}"
+    );
+    println!(
+        "native_boundary_metadata_count: {preserved_native_boundary_metadata_count}"
+    );
     println!("target_triple: {}", request.target_triple);
     println!("object_format: {}", request.object_format);
     println!("output_path: {}", request.output_path.display());
@@ -4900,6 +5047,16 @@ fn print_compiler_mir_pipeline_taxonomy() -> Result<(), Box<dyn Error>> {
     println!(
         "machine_line_format: gust_pipeline_failure: stage=<stage> kind=<kind>"
     );
+    println!(
+        "diagnostic_taxonomy: {PHASE11_BACKEND_DIAGNOSTIC_TAXONOMY}"
+    );
+    println!(
+        "diagnostic_class_count: {}",
+        PHASE11_BACKEND_DIAGNOSTIC_CLASSES.len()
+    );
+    for class_name in PHASE11_BACKEND_DIAGNOSTIC_CLASSES {
+        println!("diagnostic_class: {class_name}");
+    }
     Ok(())
 }
 
@@ -4908,11 +5065,23 @@ fn main() {
         if let Some(request_error) =
             error.downcast_ref::<Phase10BackendRequestError>()
         {
+            eprintln!(
+                "{}",
+                phase11_diagnostic_machine_line(
+                    phase11_request_diagnostic_class(request_error),
+                )
+            );
             eprintln!("{}", request_error.machine_line());
         }
         if let Some(pipeline_error) =
             error.downcast_ref::<CompilerMirPipelineError>()
         {
+            eprintln!(
+                "{}",
+                phase11_diagnostic_machine_line(
+                    phase11_pipeline_diagnostic_class(pipeline_error),
+                )
+            );
             eprintln!("{}", pipeline_error.machine_line());
         }
         eprintln!("gust Cranelift experiment failed: {error}");
@@ -5035,7 +5204,11 @@ fn run() -> Result<(), Box<dyn Error>> {
             if args.next().is_some() {
                 return Err(usage_error().into());
             }
-            validate_compiler_mir_fixture_path(Path::new(&input_path))
+            compiler_mir_pipeline_wrap_box(
+                validate_compiler_mir_fixture_path(Path::new(&input_path)),
+                CompilerMirPipelineStage::FixtureValidation,
+                CompilerMirPipelineFailureKind::InvalidFixture,
+            )
         }
         "return-int-object" => {
             let Some(output_path) = args.next() else {
@@ -8707,21 +8880,48 @@ fn validate_compiler_mir_fixture_path(input_path: &Path) -> Result<(), Box<dyn E
     match parse_compiler_mir_input(&contents)? {
         ParsedCompilerMirInput::V1(fixture) => {
             validate_compiler_mir_fixture(&fixture)?;
+            recognize_compiler_mir_fixture_metadata(&fixture.metadata)?;
             if is_phase11_block_parameter_loop_fixture(&fixture) {
                 validate_phase11_block_parameter_loop_fixture(&fixture)?;
             }
+            let counts = phase10_metadata_counts(&fixture.metadata);
             println!(
                 "validated canonical compiler MIR fixture: {} -> {}",
                 fixture.function.object_name, fixture.function.symbol
             );
+            println!("metadata_record_count: {}", fixture.metadata.len());
+            println!("resource_metadata_count: {}", counts.0);
+            println!("provenance_metadata_count: {}", counts.1);
+            println!("native_boundary_metadata_count: {}", counts.2);
         }
         ParsedCompilerMirInput::V2(module) => {
             validate_compiler_mir_module(&module)?;
+            let mut metadata_record_count = 0usize;
+            let mut resource_metadata_count = 0usize;
+            let mut provenance_metadata_count = 0usize;
+            let mut native_boundary_metadata_count = 0usize;
+            for defined in &module.functions {
+                recognize_compiler_mir_fixture_metadata(
+                    &defined.fixture.metadata,
+                )?;
+                metadata_record_count += defined.fixture.metadata.len();
+                let counts =
+                    phase10_metadata_counts(&defined.fixture.metadata);
+                resource_metadata_count += counts.0;
+                provenance_metadata_count += counts.1;
+                native_boundary_metadata_count += counts.2;
+            }
             println!(
                 "validated canonical compiler MIR module: {} ({} defined, {} imported)",
                 module.name,
                 module.functions.len(),
                 module.imports.len()
+            );
+            println!("metadata_record_count: {metadata_record_count}");
+            println!("resource_metadata_count: {resource_metadata_count}");
+            println!("provenance_metadata_count: {provenance_metadata_count}");
+            println!(
+                "native_boundary_metadata_count: {native_boundary_metadata_count}"
             );
         }
     }
@@ -8799,21 +8999,114 @@ fn emit_compiler_mir_fixture_contents_object(
     )
 }
 
+fn compiler_mir_metadata_payload_field<'a>(
+    payload: &'a str,
+    key: &str,
+) -> Option<&'a str> {
+    payload.split(';').find_map(|field| {
+        let (field_key, field_value) = field.split_once('=')?;
+        (field_key == key).then_some(field_value)
+    })
+}
+
 fn recognize_compiler_mir_fixture_metadata(
     metadata: &[CompilerMirFixtureMetadata<'_>],
 ) -> Result<(), Box<dyn Error>> {
     for (index, item) in metadata.iter().enumerate() {
-        match (item.kind, item.policy) {
-            (
-                "provenance" | "resource" | "native_boundary",
-                "recognized_preserved" | "ignored_with_proof",
-            ) => {}
-            _ => {
+        if !matches!(
+            item.kind,
+            "provenance" | "resource" | "native_boundary"
+        ) {
+            return Err(IoError::new(
+                ErrorKind::InvalidInput,
+                format!(
+                    "unknown canonical compiler MIR metadata class at metadata {index}: {}",
+                    item.kind
+                ),
+            )
+            .into());
+        }
+        if !matches!(
+            item.policy,
+            "recognized_preserved" | "ignored_with_proof"
+        ) {
+            return Err(IoError::new(
+                ErrorKind::InvalidInput,
+                format!(
+                    "unsupported canonical compiler MIR metadata policy at metadata {index}: {}",
+                    item.policy
+                ),
+            )
+            .into());
+        }
+        if item.payload.is_empty() {
+            return Err(IoError::new(
+                ErrorKind::InvalidInput,
+                format!(
+                    "canonical compiler MIR metadata {index} has an empty payload"
+                ),
+            )
+            .into());
+        }
+
+        let codegen_claim =
+            compiler_mir_metadata_payload_field(item.payload, "codegen");
+        if codegen_claim == Some("required") {
+            return Err(IoError::new(
+                ErrorKind::InvalidInput,
+                format!(
+                    "canonical compiler MIR metadata {index} claims code-generation semantics the worker does not implement"
+                ),
+            )
+            .into());
+        }
+        if let Some(codegen_claim) = codegen_claim {
+            if !matches!(codegen_claim, "none" | "preserved") {
                 return Err(IoError::new(
                     ErrorKind::InvalidInput,
                     format!(
-                        "unsupported canonical compiler MIR metadata lowering policy at metadata {index}: kind={} policy={}",
-                        item.kind, item.policy
+                        "canonical compiler MIR metadata {index} has an unknown codegen claim: {codegen_claim}"
+                    ),
+                )
+                .into());
+            }
+        }
+
+        if matches!(item.kind, "provenance" | "native_boundary") {
+            let origin = compiler_mir_metadata_payload_field(
+                item.payload,
+                "origin",
+            );
+            if origin.is_none() || origin == Some("") {
+                return Err(IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!(
+                        "canonical compiler MIR metadata {index} must retain a non-empty origin"
+                    ),
+                )
+                .into());
+            }
+        }
+
+        if item.policy == "ignored_with_proof" {
+            if codegen_claim != Some("none") {
+                return Err(IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!(
+                        "ignored canonical compiler MIR metadata {index} must declare codegen=none"
+                    ),
+                )
+                .into());
+            }
+            let proof = compiler_mir_metadata_payload_field(
+                item.payload,
+                "proof",
+            );
+            if proof.is_none() || proof == Some("") {
+                return Err(IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!(
+                        "ignored canonical compiler MIR metadata {index} must retain a non-empty ignored_with_proof justification"
                     ),
                 )
                 .into());

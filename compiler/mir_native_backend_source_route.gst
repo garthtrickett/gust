@@ -21,16 +21,205 @@ type MirNativeScalarSourceLowering[ctx] struct {
     plan: capability.MirNativeBackendCapabilityPlan[ctx]
 }
 
+type MirNativeDiagnosticClass enum {
+    SourceTypeError,
+    CanonicalMirVerificationError,
+    UnsupportedNativeCapability,
+    DriverHandshakeError,
+    WorkerLoweringError,
+    ObjectLinkPublicationError
+}
+
+type MirNativeDiagnosticLocation[ctx] struct {
+    source_path: str,
+    line: int,
+    column: int
+}
+
 type MirNativeScalarSourceRouteResult[ctx] struct {
     status: int,
-    diagnostic: str
+    diagnostic: str,
+    source_path: str,
+    line: int,
+    column: int
 }
 
 func mir_native_scalar_source_route_result(status: int, diagnostic: str, ctx: &Arena) MirNativeScalarSourceRouteResult[ctx] {
     mut result: MirNativeScalarSourceRouteResult[ctx];
     result.status = status;
     result.diagnostic = std.Clone(ctx, diagnostic);
+    result.source_path = std.Clone(ctx, "");
+    result.line = 1;
+    result.column = 1;
     return result;
+}
+
+func mir_native_scalar_source_contains(value: str, needle: str) int {
+    if std.str_find(value, needle) == 0 - 1 {
+        return 0;
+    }
+    return 1;
+}
+
+func mir_native_scalar_source_diagnostic_class(result: MirNativeScalarSourceRouteResult[ctx]) MirNativeDiagnosticClass {
+    mut classification: MirNativeDiagnosticClass;
+    unsafe {
+        classification.tag = 4;
+    }
+
+    if result.status == 2 {
+        unsafe {
+            classification.tag = 2;
+        }
+        return classification;
+    }
+    if mir_native_scalar_source_contains(
+        result.diagnostic,
+        "class=canonical_mir_verification_error"
+    ) == 1 {
+        unsafe {
+            classification.tag = 1;
+        }
+        return classification;
+    }
+    if mir_native_scalar_source_contains(
+        result.diagnostic,
+        "class=unsupported_native_capability"
+    ) == 1 {
+        unsafe {
+            classification.tag = 2;
+        }
+        return classification;
+    }
+    if mir_native_scalar_source_contains(
+        result.diagnostic,
+        "class=driver_handshake_error"
+    ) == 1 {
+        unsafe {
+            classification.tag = 3;
+        }
+        return classification;
+    }
+    if mir_native_scalar_source_contains(
+        result.diagnostic,
+        "class=worker_lowering_error"
+    ) == 1 {
+        unsafe {
+            classification.tag = 4;
+        }
+        return classification;
+    }
+    if mir_native_scalar_source_contains(
+        result.diagnostic,
+        "class=object_link_publication_error"
+    ) == 1 {
+        unsafe {
+            classification.tag = 5;
+        }
+        return classification;
+    }
+
+    if mir_native_scalar_source_contains(
+        result.diagnostic,
+        "Native backend capability error"
+    ) == 1 {
+        unsafe {
+            classification.tag = 2;
+        }
+        return classification;
+    }
+    if mir_native_scalar_source_contains(
+        result.diagnostic,
+        "driver discovery"
+    ) == 1 ||
+       mir_native_scalar_source_contains(
+           result.diagnostic,
+           "handshake"
+       ) == 1
+    {
+        unsafe {
+            classification.tag = 3;
+        }
+        return classification;
+    }
+    if mir_native_scalar_source_contains(
+        result.diagnostic,
+        "output error"
+    ) == 1 ||
+       mir_native_scalar_source_contains(
+           result.diagnostic,
+           "object_link_publication"
+       ) == 1
+    {
+        unsafe {
+            classification.tag = 5;
+        }
+        return classification;
+    }
+    if mir_native_scalar_source_contains(
+        result.diagnostic,
+        "canonical"
+    ) == 1 ||
+       mir_native_scalar_source_contains(
+           result.diagnostic,
+           "Native backend internal error"
+       ) == 1 ||
+       mir_native_scalar_source_contains(
+           result.diagnostic,
+           "Native backend direct-call"
+       ) == 1 ||
+       mir_native_scalar_source_contains(
+           result.diagnostic,
+           "Native backend module/import"
+       ) == 1
+    {
+        unsafe {
+            classification.tag = 1;
+        }
+        return classification;
+    }
+    return classification;
+}
+
+func mir_native_scalar_source_diagnostic_class_name(classification: MirNativeDiagnosticClass) str {
+    if classification.tag == 0 {
+        return "source_type_error";
+    }
+    if classification.tag == 1 {
+        return "canonical_mir_verification_error";
+    }
+    if classification.tag == 2 {
+        return "unsupported_native_capability";
+    }
+    if classification.tag == 3 {
+        return "driver_handshake_error";
+    }
+    if classification.tag == 4 {
+        return "worker_lowering_error";
+    }
+    if classification.tag == 5 {
+        return "object_link_publication_error";
+    }
+    return "worker_lowering_error";
+}
+
+func mir_native_scalar_source_diagnostic_line(result: MirNativeScalarSourceRouteResult[ctx], ctx: &Arena) str {
+    mut classification :=
+        mir_native_scalar_source_diagnostic_class(result);
+    mut source_path := result.source_path;
+    if len(source_path) == 0 {
+        source_path = "<source>";
+    }
+    return std.Clone(
+        ctx,
+        std.Format(
+            "gust_backend_parity_diagnostic: taxonomy=gust.backend_parity.diagnostic.v1 class=%s source=%s line=%d column=%d",
+            mir_native_scalar_source_diagnostic_class_name(classification),
+            source_path,
+            result.line,
+            result.column
+        )
+    );
 }
 
 func mir_native_scalar_source_append(output: str, value: str, ctx: &Arena) str {
@@ -405,7 +594,7 @@ func mir_native_scalar_source_lower(programs: std.Vector[ast.Program[ctx], ctx],
             );
             canonical = mir_native_scalar_source_append(
                 canonical,
-                ";origin=",
+                ";codegen=none;proof=local_binding_metadata_is_diagnostic_only;origin=",
                 ctx
             );
             canonical = mir_native_scalar_source_append(
@@ -1191,7 +1380,7 @@ func mir_native_cfg_source_lower(programs: std.Vector[ast.Program[ctx], ctx], mo
             );
             canonical = mir_native_scalar_source_append(
                 canonical,
-                ";origin=",
+                ";codegen=none;proof=local_binding_metadata_is_diagnostic_only;origin=",
                 ctx
             );
             canonical = mir_native_scalar_source_append(
@@ -2045,7 +2234,7 @@ func mir_native_call_import_source_lower(programs: std.Vector[ast.Program[ctx], 
             );
             canonical = mir_native_scalar_source_append(
                 canonical,
-                "metadata_0_payload: kind=RuntimeCall;symbol=abs;origin=",
+                "metadata_0_payload: kind=RuntimeCall;symbol=abs;codegen=none;proof=runtime_boundary_classification_is_registry_validated;origin=",
                 ctx
             );
             canonical = mir_native_scalar_source_append(
@@ -2288,7 +2477,7 @@ func mir_native_scalar_source_process(driver_path: str, command_name: str, reque
     return os.RunProcess(ctx, arguments);
 }
 
-func mir_native_scalar_source_compile(programs: std.Vector[ast.Program[ctx], ctx], module_paths: std.Vector[str, ctx], module_prefixes: std.Vector[str, ctx], output_path: str, ctx: &Arena) MirNativeScalarSourceRouteResult[ctx] {
+func mir_native_scalar_source_compile_inner(programs: std.Vector[ast.Program[ctx], ctx], module_paths: std.Vector[str, ctx], module_prefixes: std.Vector[str, ctx], output_path: str, ctx: &Arena) MirNativeScalarSourceRouteResult[ctx] {
     mut static_capabilities := mir_native_scalar_source_capabilities(ctx);
     mut generic_result := generic_source.mir_native_generic_source_lower(
         programs,
@@ -2588,4 +2777,72 @@ func mir_native_scalar_source_compile(programs: std.Vector[ast.Program[ctx], ctx
     }
 
     return mir_native_scalar_source_route_result(0, "", ctx);
+}
+
+func mir_native_scalar_source_entry_location(programs: std.Vector[ast.Program[ctx], ctx], module_paths: std.Vector[str, ctx], module_prefixes: std.Vector[str, ctx], ctx: &Arena) MirNativeDiagnosticLocation[ctx] {
+    mut location: MirNativeDiagnosticLocation[ctx];
+    location.source_path = std.Clone(ctx, "<source>");
+    location.line = 1;
+    location.column = 1;
+
+    mut module_index := 0;
+    while module_index < len(programs) &&
+          module_index < len(module_paths) &&
+          module_index < len(module_prefixes)
+    {
+        if std.str_eq(module_prefixes[module_index], "") == 1 {
+            location.source_path = std.Clone(
+                ctx,
+                module_paths[module_index]
+            );
+            mut statements: std.Vector[ast.Statement[ctx], ctx] :=
+                ctx[programs[module_index].statements];
+            mut statement_index := 0;
+            while statement_index < len(statements) {
+                mut statement := statements[statement_index];
+                unsafe {
+                    if statement.tag == 3 &&
+                       std.str_eq(
+                           statement.FunctionDecl.name,
+                           "main"
+                       ) == 1
+                    {
+                        location.line =
+                            statement.FunctionDecl.span.start.line;
+                        location.column =
+                            statement.FunctionDecl.span.start.column;
+                        return location;
+                    }
+                }
+                statement_index = statement_index + 1;
+            }
+            return location;
+        }
+        module_index = module_index + 1;
+    }
+
+    if len(module_paths) > 0 {
+        location.source_path = std.Clone(ctx, module_paths[0]);
+    }
+    return location;
+}
+
+func mir_native_scalar_source_compile(programs: std.Vector[ast.Program[ctx], ctx], module_paths: std.Vector[str, ctx], module_prefixes: std.Vector[str, ctx], output_path: str, ctx: &Arena) MirNativeScalarSourceRouteResult[ctx] {
+    mut result := mir_native_scalar_source_compile_inner(
+        programs,
+        module_paths,
+        module_prefixes,
+        output_path,
+        ctx
+    );
+    mut location := mir_native_scalar_source_entry_location(
+        programs,
+        module_paths,
+        module_prefixes,
+        ctx
+    );
+    result.source_path = std.Clone(ctx, location.source_path);
+    result.line = location.line;
+    result.column = location.column;
+    return result;
 }

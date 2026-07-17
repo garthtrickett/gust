@@ -1835,7 +1835,7 @@ func mir_native_module_import_emit_function(output: str, function: MirNativeModu
         );
         emitted = mir_native_module_import_append(
             emitted,
-            ";origin=",
+            ";codegen=none;proof=runtime_boundary_classification_is_registry_validated;origin=",
             ctx
         );
         emitted = mir_native_module_import_append(

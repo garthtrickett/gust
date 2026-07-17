@@ -1479,6 +1479,36 @@ no-partial-output evidence. Indirect calls, closures, dynamic loading, variadic
 imports, non-scalar ABIs, and arbitrary native linker expansion remain
 deferred. The next milestone is aggregate and resource parity.
 
+Phase 11 Patch 10 freezes metadata and diagnostic parity as
+`phase11_froze_metadata_and_diagnostic_parity`. Metadata-bearing scalar, local,
+CFG, direct-call, and canonical resource fixtures now retain provenance,
+resource, and native-boundary records as owned worker bundle records through
+whole-bundle verification. The worker counts the retained records immediately
+before lowering instead of treating successful parsing as permission to drop
+them.
+
+Every `ignored_with_proof` record must declare `codegen=none` and carry a
+non-empty `proof=` justification. Unknown classes, unknown policies, unknown
+code-generation claims, and `codegen=required` records reject as canonical MIR
+verification failures before object publication. `recognized_preserved` remains
+the explicit policy for metadata that is retained without being ignored.
+
+The compiler and worker share `gust.backend_parity.diagnostic.v1` with six
+stable classes: `source_type_error`, `canonical_mir_verification_error`,
+`unsupported_native_capability`, `driver_handshake_error`,
+`worker_lowering_error`, and `object_link_publication_error`. Differential
+evidence compares the stable class and source path/line/column; backend-specific
+prose remains intentionally unconstrained. Unsupported native capabilities are
+classified before driver discovery, and every failure lane preserves an
+existing output while removing transient request, bundle, and hidden object
+artifacts.
+
+`guard-cranelift-phase11-metadata-diagnostic-parity` owns the metadata retention,
+proof-policy, diagnostic taxonomy, source-location comparison, early capability
+classification, and no-partial-output evidence. The Phase 9G argument-vector
+linker and its closed library/flag/environment surface remain unchanged. The
+next milestone is aggregate and resource code-generation parity.
+
 The checked-in lockfile for this crate is owned by:
 Patch 8 freezes the complete canonical call/import matrix and retires all
 eleven historical bypasses. The checked-in completeness fixture combines local

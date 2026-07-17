@@ -790,7 +790,7 @@ func mir_native_generic_emit_scalar(model: MirNativeGenericModel[ctx], ctx: &Are
         );
         canonical = mir_native_generic_append(
             canonical,
-            ";origin=",
+            ";codegen=none;proof=local_binding_metadata_is_diagnostic_only;origin=",
             ctx
         );
         canonical = mir_native_generic_append(
@@ -943,7 +943,7 @@ func mir_native_generic_emit_scalar_expression(
         );
         canonical = mir_native_generic_append(
             canonical,
-            ";origin=",
+            ";codegen=none;proof=local_binding_metadata_is_diagnostic_only;origin=",
             ctx
         );
         canonical = mir_native_generic_append(
@@ -1079,7 +1079,7 @@ func mir_native_generic_emit_positive_local_branch(
     );
     canonical = mir_native_generic_append(
         canonical,
-        ";origin=",
+        ";codegen=none;proof=local_binding_metadata_is_diagnostic_only;origin=",
         ctx
     );
     canonical = mir_native_generic_append(
@@ -1276,7 +1276,7 @@ func mir_native_generic_emit_cfg(model: MirNativeGenericModel[ctx], ctx: &Arena)
         );
         canonical = mir_native_generic_append(
             canonical,
-            ";origin=",
+            ";codegen=none;proof=local_binding_metadata_is_diagnostic_only;origin=",
             ctx
         );
         canonical = mir_native_generic_append(
@@ -1708,7 +1708,7 @@ func mir_native_generic_emit_call(model: MirNativeGenericModel[ctx], ctx: &Arena
         );
         canonical = mir_native_generic_append(
             canonical,
-            ";origin=",
+            ";codegen=none;proof=runtime_boundary_classification_is_registry_validated;origin=",
             ctx
         );
         canonical = mir_native_generic_append(
