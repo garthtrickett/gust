@@ -12980,7 +12980,7 @@ guard-cranelift-phase10-driver-handshake-contract:
     target_requirement_count="${target_requirement_count:-0}"
     if [ "$canonical_format_count" != "2" ] ||
        [ "$operation_count" != "15" ] ||
-       [ "$type_abi_count" != "5" ] ||
+       [ "$type_abi_count" != "6" ] ||
        [ "$runtime_import_count" != "4" ] ||
        [ "$target_requirement_count" != "3" ]; then
       echo "Phase 10 handshake inventory drifted: canonical=$canonical_format_count operations=$operation_count type_abi=$type_abi_count runtime_imports=$runtime_import_count target_requirements=$target_requirement_count."
