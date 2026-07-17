@@ -9,6 +9,51 @@ type Codegen[ctx] struct {
     current_params: std.Vector[str, ctx]
 }
 
+
+type CodegenStringHeader struct {
+    data: *byte,
+    len: int
+}
+
+func codegen_join_chunks(chunks: std.Vector[str, ctx], ctx: &Arena) str {
+    unsafe {
+        mut total_size := 0;
+        mut chunk_index := 0;
+        while chunk_index < len(chunks) {
+            total_size = total_size + len(chunks[chunk_index]);
+            chunk_index = chunk_index + 1;
+        }
+        if total_size == 0 {
+            return std.Clone(ctx, "");
+        }
+
+        mut buffer := os.ScratchAlloc(total_size + 1);
+        mut destination := buffer as *byte;
+        mut write_index := 0;
+        chunk_index = 0;
+        while chunk_index < len(chunks) {
+            mut chunk := chunks[chunk_index];
+            mut byte_index := 0;
+            while byte_index < len(chunk) {
+                *(destination + write_index) = std.str_byte_at(chunk, byte_index);
+                write_index = write_index + 1;
+                byte_index = byte_index + 1;
+            }
+            chunk_index = chunk_index + 1;
+        }
+        *(destination + write_index) = 0;
+
+        mut header_alloc := os.ScratchAlloc(16);
+        mut header_ptr := (header_alloc + 0) as *CodegenStringHeader;
+        if 0 == 1 {
+            header_ptr = destination as *CodegenStringHeader;
+        }
+        (*header_ptr).data = (buffer + 0) as *byte;
+        (*header_ptr).len = write_index;
+        return *(((header_ptr as *str) + 0) as *str);
+    }
+}
+
 func codegen_get_c_type_name_by_struct_name(name: str, ctx: &Arena) str {
     if std.str_eq(name, "str") == 1 {
         return "Slice_unsigned_char";
@@ -4519,7 +4564,8 @@ func codegen_generate_clone_helper(struct_name: str, env: &typechecker.TypeEnvir
 func codegen_generate(programs: std.Vector[ast.Program[ctx], ctx], prefixes: std.Vector[str, ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) str {
     unsafe {
         codegen_log_trace("⚙️", "codegen_generate: commencing code generation pass", ctx);
-        mut c_code := "// Transpiled C Code
+        mut chunks: std.Vector[str, ctx] := std.VectorNew(ctx);
+        chunks.Push("// Transpiled C Code
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -4527,13 +4573,13 @@ func codegen_generate(programs: std.Vector[ast.Program[ctx], ctx], prefixes: std
 
 typedef void Any;
 
-";
+");
 
         // 1. Generate Slice structure definitions
-        c_code = std.Concat(c_code, "/* Builtin slice structs are runtime-owned in src/runtime/core_headers.h. */\n\n");
+        chunks.Push("/* Builtin slice structs are runtime-owned in src/runtime/core_headers.h. */\n\n");
 
         // 2. Generate forward declarations for all structs
-        c_code = std.Concat(c_code, "// Forward Declarations\n");
+        chunks.Push("// Forward Declarations\n");
         mut struct_keys := codegen_get_topologically_sorted_structs(env, ctx);
         
         mut erased_struct_keys: std.Vector[str, ctx] := std.VectorNew(ctx);
@@ -4670,7 +4716,7 @@ typedef void Any;
                 fwd = std.Concat(fwd, " ");
                 fwd = std.Concat(fwd, key);
                 fwd = std.Concat(fwd, ";\n");
-                c_code = std.Concat(c_code, fwd);
+                chunks.Push(fwd);
             }
             i_fwd = i_fwd + 1;
         }
@@ -4685,36 +4731,36 @@ typedef void Any;
                 fwd = std.Concat(fwd, " CastResult_");
                 fwd = std.Concat(fwd, key);
                 fwd = std.Concat(fwd, ";\n");
-                c_code = std.Concat(c_code, fwd);
+                chunks.Push(fwd);
             }
             i_cast_fwd = i_cast_fwd + 1;
         }
-        c_code = std.Concat(c_code, "\n");
+        chunks.Push("\n");
 
         // Generational Arena Clone Helper forward declarations
         if len(erased_helpers) > 0 {
-            c_code = std.Concat(c_code, "// ====================================================\n");
-            c_code = std.Concat(c_code, "// GENERATIONAL ARENA CLONE HELPER FORWARD DECLARATIONS\n");
-            c_code = std.Concat(c_code, "// ====================================================\n");
+            chunks.Push("// ====================================================\n");
+            chunks.Push("// GENERATIONAL ARENA CLONE HELPER FORWARD DECLARATIONS\n");
+            chunks.Push("// ====================================================\n");
             mut h_idx := 0;
             while h_idx < len(erased_helpers) {
                 mut name := erased_helpers[h_idx];
-                c_code = std.Concat(c_code, "int std_GenerationalArena_Clone_");
-                c_code = std.Concat(c_code, name);
-                c_code = std.Concat(c_code, "(os_Arena* dest, os_Arena* src, int src_idx);\n");
+                chunks.Push("int std_GenerationalArena_Clone_");
+                chunks.Push(name);
+                chunks.Push("(os_Arena* dest, os_Arena* src, int src_idx);\n");
                 
-                c_code = std.Concat(c_code, "void std_GenerationalArena_Step_");
-                c_code = std.Concat(c_code, name);
-                c_code = std.Concat(c_code, "(void* arena_ptr);\n");
+                chunks.Push("void std_GenerationalArena_Step_");
+                chunks.Push(name);
+                chunks.Push("(void* arena_ptr);\n");
                 h_idx = h_idx + 1;
             }
-            c_code = std.Concat(c_code, "\n");
+            chunks.Push("\n");
         }
 
         // Function Forward Declarations
-        c_code = std.Concat(c_code, "// Function Forward Declarations\n");
+        chunks.Push("// Function Forward Declarations\n");
         if codegen_has_thread_local_context(env, ctx) == 1 {
-            c_code = std.Concat(c_code, "std_ThreadLocalContext os_GetThreadScratch(void);\n\n");
+            chunks.Push("std_ThreadLocalContext os_GetThreadScratch(void);\n\n");
         }
         mut func_keys := typechecker.typechecker_get_sorted_keys_func(&((*env).function_registry), ctx);
         mut f_idx := 0;
@@ -4725,16 +4771,16 @@ typedef void Any;
                     mut sig_lookup := (*env).function_registry.Get(key);
                     if sig_lookup.Ok {
                         mut fwd_decl := codegen_gen_function_fwd_decl(key, sig_lookup.Val, env, ctx);
-                        c_code = std.Concat(c_code, fwd_decl);
+                        chunks.Push(fwd_decl);
                     }
                 }
             }
             f_idx = f_idx + 1;
         }
-        c_code = std.Concat(c_code, "\n");
+        chunks.Push("\n");
 
         // 3. Structures Declarations
-        c_code = std.Concat(c_code, "// Structures\n");
+        chunks.Push("// Structures\n");
         mut i := 0;
         while i < len(erased_struct_keys) {
             mut key := erased_struct_keys[i];
@@ -4785,7 +4831,7 @@ typedef void Any;
                         enum_decl = std.Concat(enum_decl, "} ");
                         enum_decl = std.Concat(enum_decl, key);
                         enum_decl = std.Concat(enum_decl, "_Tag;\n\n");
-                        c_code = std.Concat(c_code, enum_decl);
+                        chunks.Push(enum_decl);
 
                         // 2. Generate struct with anonymous union
                         mut struct_decl := std.Concat("struct ", key);
@@ -4809,7 +4855,7 @@ typedef void Any;
                         }
                         struct_decl = std.Concat(struct_decl, "    };\n");
                         struct_decl = std.Concat(struct_decl, "};\n\n");
-                        c_code = std.Concat(c_code, struct_decl);
+                        chunks.Push(struct_decl);
                     } else {
                         mut struct_decl := std.Concat("struct ", key);
                         struct_decl = std.Concat(struct_decl, " {\n");
@@ -4834,7 +4880,7 @@ typedef void Any;
                             } 
                         }
                         struct_decl = std.Concat(struct_decl, "};\n\n");
-                        c_code = std.Concat(c_code, struct_decl);
+                        chunks.Push(struct_decl);
                     }
                 }
             }
@@ -4842,7 +4888,7 @@ typedef void Any;
         }
         
         // 2. pthread_wrapper forward declarations
-        c_code = std.Concat(c_code, "// pthread_wrapper forward declarations\n");
+        chunks.Push("// pthread_wrapper forward declarations\n");
         mut fwd_p_idx := 0;
         while fwd_p_idx < len(programs) {
             mut prog := programs[fwd_p_idx];
@@ -4869,7 +4915,7 @@ typedef void Any;
                         }
                         mut decl := std.Concat("void* ", c_func_name);
                         decl = std.Concat(decl, "_pthread_wrapper(void* arg);\n");
-                        c_code = std.Concat(c_code, decl);
+                        chunks.Push(decl);
                     }
                 }
                 fwd_s_idx = fwd_s_idx + 1;
@@ -4877,10 +4923,10 @@ typedef void Any;
             fwd_p_idx = fwd_p_idx + 1;
         }
         (*env).current_prefix = "";
-        c_code = std.Concat(c_code, "\n");
+        chunks.Push("\n");
         
         // 3. _IsValid Invariant Validator forward declarations
-        c_code = std.Concat(c_code, "// Invariant Validator forward declarations\n");
+        chunks.Push("// Invariant Validator forward declarations\n");
         mut k := 0;
         while k < len(erased_struct_keys) {
             mut key := erased_struct_keys[k];
@@ -4895,14 +4941,14 @@ typedef void Any;
                 decl = std.Concat(decl, "_IsValid(");
                 decl = std.Concat(decl, key);
                 decl = std.Concat(decl, "* req);\n");
-                c_code = std.Concat(c_code, decl);
+                chunks.Push(decl);
             }
             k = k + 1;
         }
-        c_code = std.Concat(c_code, "\n");
+        chunks.Push("\n");
         
         // 3. _IsValid Invariant Validator implementations
-        c_code = std.Concat(c_code, "// Invariant Validator implementations\n");
+        chunks.Push("// Invariant Validator implementations\n");
         mut m := 0;
         while m < len(erased_struct_keys) {
             mut key := erased_struct_keys[m];
@@ -4922,8 +4968,8 @@ typedef void Any;
                 match layout_lookup {
                     Some { val } => {
                         mut impl := codegen_gen_is_valid_helper(key, *val, env, ctx);
-                        c_code = std.Concat(c_code, impl);
-                        c_code = std.Concat(c_code, "\n");
+                        chunks.Push(impl);
+                        chunks.Push("\n");
                     }
                     None => {
                     }
@@ -4934,21 +4980,21 @@ typedef void Any;
 
         // Generational Arena Clone Helper implementations
         if len(erased_helpers) > 0 {
-            c_code = std.Concat(c_code, "// ====================================================\n");
-            c_code = std.Concat(c_code, "// GENERATIONAL ARENA CLONE HELPER DEFINITIONS\n");
-            c_code = std.Concat(c_code, "// ====================================================\n");
+            chunks.Push("// ====================================================\n");
+            chunks.Push("// GENERATIONAL ARENA CLONE HELPER DEFINITIONS\n");
+            chunks.Push("// ====================================================\n");
             mut h_idx := 0;
             while h_idx < len(erased_helpers) {
                 mut name := erased_helpers[h_idx];
                 mut impl := codegen_generate_clone_helper(name, env, ctx);
-                c_code = std.Concat(c_code, impl);
+                chunks.Push(impl);
                 h_idx = h_idx + 1;
             }
-            c_code = std.Concat(c_code, "\n");
+            chunks.Push("\n");
         }
         
         // 4. Statements in program (transpiled C)
-        c_code = std.Concat(c_code, "// Program Statements\n");
+        chunks.Push("// Program Statements\n");
         mut p_idx2 := 0;
         while p_idx2 < len(programs) {
             mut prog := programs[p_idx2];
@@ -4959,7 +5005,7 @@ typedef void Any;
                 mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
                 ctx.Set(stmt_idx, statements_vec_program_emit[s_idx]);
                 mut stmt_c := codegen_generate_statement(stmt_idx, env, ctx);
-                c_code = std.Concat(c_code, stmt_c);
+                chunks.Push(stmt_c);
                 s_idx = s_idx + 1;
             }
             p_idx2 = p_idx2 + 1;
@@ -4967,12 +5013,13 @@ typedef void Any;
         (*env).current_prefix = "";
 
         if codegen_has_thread_local_context(env, ctx) == 1 {
-            c_code = std.Concat(c_code, "std_ThreadLocalContext os_GetThreadScratch(void) {\n");
-            c_code = std.Concat(c_code, "    std_ThreadLocalContext tl = { .arena = os_GetThreadScratch_raw(), ._phantom = NULL };\n");
-            c_code = std.Concat(c_code, "    return tl;\n");
-            c_code = std.Concat(c_code, "}\n\n");
+            chunks.Push("std_ThreadLocalContext os_GetThreadScratch(void) {\n");
+            chunks.Push("    std_ThreadLocalContext tl = { .arena = os_GetThreadScratch_raw(), ._phantom = NULL };\n");
+            chunks.Push("    return tl;\n");
+            chunks.Push("}\n\n");
         }
         
-        return std.Clone(ctx, c_code);
+        mut generated := codegen_join_chunks(chunks, ctx);
+        return std.Clone(ctx, generated);
     }
 }
