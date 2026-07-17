@@ -1412,6 +1412,37 @@ fails before publication and preserves any existing output. The frozen Phase 10
 single-final-i32-merge fixture remains compatibility evidence, not the support
 definition. The next milestone is direct function and ABI parity.
 
+Phase 11 Patch 8 migrates direct functions and scalar ABIs as
+`phase11_migrated_direct_call_and_ABI_parity`. A compiler-owned semantic lowerer
+accepts one ordinary source module with statically named direct functions,
+multiple integer and boolean parameters, multiple scalar arguments, and an
+acyclic call graph. Function parameters become canonical MIR function
+parameters and typed locals; direct calls carry complete ordered argument
+vectors. The frozen Phase 10 identity helper remains byte-identical shadow
+evidence, but no new call support depends on its zero-argument-main plus
+one-identity-helper arrangement.
+
+Canonical MIR keeps `int` and `bool` distinct in every parameter, local, call
+argument, and return signature. The worker maps both scalar types to Cranelift
+`i32` values only after verifying full caller/callee arity and type
+compatibility. It declares every local function from its serialized signature
+before lowering bodies, resolves calls by symbol identity, verifies call-result
+local types, and rejects unknown symbols or cyclic local call graphs before
+object publication. The capability plan records generic
+`direct_scalar_abi`; the verifier, not a finite signature allowlist, remains
+authoritative for the exact parameter and return vector.
+
+The nested positive source uses three direct functions and a
+`(bool,int,int)->int` call chain and exits `48` through both MIR-to-C and
+Cranelift. Source and canonical-MIR negative lanes cover wrong arity, wrong
+argument type, missing symbols, and unsupported recursion while preserving an
+existing output sentinel. Indirect calls, closures, modules, imports, and
+runtime-boundary expansion remain deferred. The registry now records one
+`direct_call_ABI_migrated` entry and one remaining `generic_shadowed` entry.
+`guard-cranelift-phase11-direct-call-abi-parity` owns the static contract,
+differential execution, malformed-signature rejection, and no-partial-output
+evidence. The next milestone is module, import, and runtime-boundary parity.
+
 The checked-in lockfile for this crate is owned by:
 Patch 8 freezes the complete canonical call/import matrix and retires all
 eleven historical bypasses. The checked-in completeness fixture combines local

@@ -11,9 +11,10 @@ import "mir_native_backend_request.gst" as request;
 // recognizers. It lowers the already-resolved and typechecked AST into the
 // frozen canonical v1/v2 bundle vocabulary, derives capabilities by traversing
 // that bundle, and shadow-compares any overlapping legacy result byte for byte.
-// The exact recognizers remain temporary compatibility paths. Source imports,
-// multiple source modules, indirect or nested calls, multiple arguments,
-// non-int ABIs, and broader expressions remain deferred.
+// The exact recognizers remain temporary compatibility paths. Direct,
+// statically named acyclic calls now accept integer/boolean scalar signatures
+// with multiple parameters and arguments. Source imports, multiple source
+// modules, indirect calls, closures, and non-scalar ABIs remain deferred.
 type MirNativeScalarSourceLowering[ctx] struct {
     supported: int,
     bundle: mir.MirProgramBundle[ctx],
@@ -130,6 +131,11 @@ func mir_native_scalar_source_capabilities(ctx: &Arena) capability.MirNativeBack
     capabilities = capability.mir_native_backend_capability_set_with_type_or_abi(
         capabilities,
         "(int)->int",
+        ctx
+    );
+    capabilities = capability.mir_native_backend_capability_set_with_type_or_abi(
+        capabilities,
+        "direct_scalar_abi",
         ctx
     );
     capabilities = capability.mir_native_backend_capability_set_with_runtime_import(

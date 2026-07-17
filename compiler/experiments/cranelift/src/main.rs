@@ -255,6 +255,7 @@ const MIR_BLOCK_GRAPH_PARAM_MERGE_CALL_HELPER_I32_SYMBOL: &str =
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum TinyMirType {
     I32,
+    Bool,
     Void,
 }
 
@@ -1356,6 +1357,7 @@ enum CompilerMirLoweringCallTarget<'a> {
 #[derive(Clone, Copy)]
 enum CompilerMirLoweringCallArgument<'a> {
     I32Literal(i32),
+    BoolLiteral(i32),
     FunctionParamI32(usize),
     LocalI32(&'a str),
     BlockParamI32(&'a str),
@@ -2185,6 +2187,7 @@ fn parse_phase10_backend_request(
 fn phase10_tiny_mir_type_name(ty: TinyMirType) -> &'static str {
     match ty {
         TinyMirType::I32 => "int",
+        TinyMirType::Bool => "bool",
         TinyMirType::Void => "void",
     }
 }
@@ -6798,16 +6801,16 @@ fn validate_compiler_mir_function_fixture(
     if function
         .params
         .iter()
-        .any(|ty| !matches!(*ty, TinyMirType::I32))
+        .any(|ty| !matches!(*ty, TinyMirType::I32 | TinyMirType::Bool))
     {
         return Err(IoError::new(
             ErrorKind::InvalidInput,
-            "canonical compiler MIR fixture currently supports only int parameters",
+            "canonical compiler MIR fixture supports only int and bool parameters",
         )
         .into());
     }
     match fixture.return_type {
-        TinyMirType::I32 => {
+        TinyMirType::I32 | TinyMirType::Bool => {
             if !(0..=255).contains(&fixture.expected_exit) {
                 return Err(IoError::new(
                     ErrorKind::InvalidInput,
@@ -6834,19 +6837,22 @@ fn validate_compiler_mir_function_fixture(
     }
 
     let mut local_names: HashSet<&str> = HashSet::new();
+    let mut local_types: HashMap<&str, TinyMirType> = HashMap::new();
     for local in &function.locals {
         validate_canonical_compiler_mir_name(local.name, "local")?;
-        if !matches!(local.ty, TinyMirType::I32) {
+        if !matches!(local.ty, TinyMirType::I32 | TinyMirType::Bool) {
             return Err(IoError::new(
                 ErrorKind::InvalidInput,
                 format!(
-                    "canonical compiler MIR fixture local {} must have int type",
+                    "canonical compiler MIR fixture local {} must have int or bool type",
                     local.name
                 ),
             )
             .into());
         }
-        if !local_names.insert(local.name) {
+        if !local_names.insert(local.name)
+            || local_types.insert(local.name, local.ty).is_some()
+        {
             return Err(IoError::new(
                 ErrorKind::InvalidInput,
                 format!(
@@ -6940,28 +6946,94 @@ fn validate_compiler_mir_function_fixture(
         let current_block_parameters = &block_parameter_types[block_index];
         for (statement_index, statement) in block.statements.iter().enumerate() {
             match statement.clone() {
-                CompilerMirLoweringStatement::LocalI32Set { name, .. }
-                | CompilerMirLoweringStatement::LocalI32AddI32Literal { name, .. } => {
+                CompilerMirLoweringStatement::LocalI32Set { name, .. } => {
                     validate_canonical_compiler_mir_local_reference(
                         &local_names,
                         name,
                         block.label,
                         statement_index,
                     )?;
+                    if !matches!(local_types.get(name).copied(), Some(TinyMirType::I32)) {
+                        return Err(IoError::new(
+                            ErrorKind::InvalidInput,
+                            format!(
+                                "canonical compiler MIR integer literal assignment requires int local {name} at block {} statement {statement_index}",
+                                block.label
+                            ),
+                        )
+                        .into());
+                    }
                 }
-                CompilerMirLoweringStatement::LocalI32SetParam { name, param }
-                | CompilerMirLoweringStatement::LocalI32AddParam { name, param } => {
+                CompilerMirLoweringStatement::LocalI32AddI32Literal { name, .. } => {
                     validate_canonical_compiler_mir_local_reference(
                         &local_names,
                         name,
                         block.label,
                         statement_index,
                     )?;
-                    if param >= function.params.len() {
+                    if !matches!(local_types.get(name).copied(), Some(TinyMirType::I32)) {
+                        return Err(IoError::new(
+                            ErrorKind::InvalidInput,
+                            format!(
+                                "canonical compiler MIR integer addition requires int local {name} at block {} statement {statement_index}",
+                                block.label
+                            ),
+                        )
+                        .into());
+                    }
+                }
+                CompilerMirLoweringStatement::LocalI32SetParam { name, param } => {
+                    validate_canonical_compiler_mir_local_reference(
+                        &local_names,
+                        name,
+                        block.label,
+                        statement_index,
+                    )?;
+                    let Some(parameter_type) = function.params.get(param).copied() else {
                         return Err(IoError::new(
                             ErrorKind::InvalidInput,
                             format!(
                                 "unknown canonical compiler MIR parameter {param} at block {} statement {statement_index}",
+                                block.label
+                            ),
+                        )
+                        .into());
+                    };
+                    if local_types.get(name).copied() != Some(parameter_type) {
+                        return Err(IoError::new(
+                            ErrorKind::InvalidInput,
+                            format!(
+                                "canonical compiler MIR parameter assignment type mismatch for local {name} at block {} statement {statement_index}",
+                                block.label
+                            ),
+                        )
+                        .into());
+                    }
+                }
+                CompilerMirLoweringStatement::LocalI32AddParam { name, param } => {
+                    validate_canonical_compiler_mir_local_reference(
+                        &local_names,
+                        name,
+                        block.label,
+                        statement_index,
+                    )?;
+                    let Some(parameter_type) = function.params.get(param).copied() else {
+                        return Err(IoError::new(
+                            ErrorKind::InvalidInput,
+                            format!(
+                                "unknown canonical compiler MIR parameter {param} at block {} statement {statement_index}",
+                                block.label
+                            ),
+                        )
+                        .into());
+                    };
+                    if !matches!(local_types.get(name).copied(), Some(TinyMirType::I32))
+                        || !matches!(parameter_type, TinyMirType::I32)
+                    {
+                        return Err(IoError::new(
+                            ErrorKind::InvalidInput,
+                            format!(
+                                "canonical compiler MIR integer addition requires int local and parameter at block {} statement {statement_index}",
                                 block.label
                             ),
                         )
@@ -6978,13 +7050,24 @@ fn validate_compiler_mir_function_fixture(
                         block.label,
                         statement_index,
                     )?;
-                    validate_canonical_compiler_mir_block_parameter_reference(
-                        current_block_parameters,
-                        &block_parameter_owners,
-                        block_param,
-                        block.label,
-                        &format!("statement {statement_index}"),
-                    )?;
+                    let block_parameter_type =
+                        validate_canonical_compiler_mir_block_parameter_reference(
+                            current_block_parameters,
+                            &block_parameter_owners,
+                            block_param,
+                            block.label,
+                            &format!("statement {statement_index}"),
+                        )?;
+                    if local_types.get(name).copied() != Some(block_parameter_type) {
+                        return Err(IoError::new(
+                            ErrorKind::InvalidInput,
+                            format!(
+                                "canonical compiler MIR block-parameter assignment type mismatch for local {name} at block {} statement {statement_index}",
+                                block.label
+                            ),
+                        )
+                        .into());
+                    }
                 }
                 CompilerMirLoweringStatement::LocalI32SetCall {
                     name,
@@ -7007,7 +7090,7 @@ fn validate_compiler_mir_function_fixture(
                     for (argument_index, argument) in arguments.iter().enumerate() {
                         validate_canonical_compiler_mir_call_argument(
                             function,
-                            &local_names,
+                            &local_types,
                             current_block_parameters,
                             &block_parameter_owners,
                             block.label,
@@ -7022,11 +7105,11 @@ fn validate_compiler_mir_function_fixture(
 
         match &block.terminator {
             CompilerMirLoweringTerminator::ReturnI32(_) => {
-                if matches!(fixture.return_type, TinyMirType::Void) {
+                if !matches!(fixture.return_type, TinyMirType::I32) {
                     return Err(IoError::new(
                         ErrorKind::InvalidInput,
                         format!(
-                            "canonical compiler MIR void function cannot return int at block {}",
+                            "canonical compiler MIR non-int function cannot return an int literal at block {}",
                             block.label
                         ),
                     )
@@ -7034,17 +7117,7 @@ fn validate_compiler_mir_function_fixture(
                 }
             }
             CompilerMirLoweringTerminator::ReturnLocalI32(name) => {
-                if matches!(fixture.return_type, TinyMirType::Void) {
-                    return Err(IoError::new(
-                        ErrorKind::InvalidInput,
-                        format!(
-                            "canonical compiler MIR void function cannot return local {name} at block {}",
-                            block.label
-                        ),
-                    )
-                    .into());
-                }
-                if !local_names.contains(name) {
+                let Some(local_type) = local_types.get(name).copied() else {
                     return Err(IoError::new(
                         ErrorKind::InvalidInput,
                         format!(
@@ -7053,14 +7126,24 @@ fn validate_compiler_mir_function_fixture(
                         ),
                     )
                     .into());
-                }
-            }
-            CompilerMirLoweringTerminator::ReturnBlockParamI32(name) => {
-                if matches!(fixture.return_type, TinyMirType::Void) {
+                };
+                if local_type != fixture.return_type {
                     return Err(IoError::new(
                         ErrorKind::InvalidInput,
                         format!(
-                            "canonical compiler MIR void function cannot return block parameter {name} at block {}",
+                            "canonical compiler MIR return local {name} type does not match function return type at block {}",
+                            block.label
+                        ),
+                    )
+                    .into());
+                }
+            }
+            CompilerMirLoweringTerminator::ReturnBlockParamI32(name) => {
+                if !matches!(fixture.return_type, TinyMirType::I32) {
+                    return Err(IoError::new(
+                        ErrorKind::InvalidInput,
+                        format!(
+                            "canonical compiler MIR non-int function cannot return int block parameter {name} at block {}",
                             block.label
                         ),
                     )
@@ -7075,11 +7158,11 @@ fn validate_compiler_mir_function_fixture(
                 )?;
             }
             CompilerMirLoweringTerminator::ReturnVoid => {
-                if matches!(fixture.return_type, TinyMirType::I32) {
+                if !matches!(fixture.return_type, TinyMirType::Void) {
                     return Err(IoError::new(
                         ErrorKind::InvalidInput,
                         format!(
-                            "canonical compiler MIR int function cannot use ReturnVoid at block {}",
+                            "canonical compiler MIR value-returning function cannot use ReturnVoid at block {}",
                             block.label
                         ),
                     )
@@ -7129,11 +7212,11 @@ fn validate_compiler_mir_function_fixture(
                 then_edge,
                 else_edge,
             } => {
-                if !local_names.contains(name) {
+                if !matches!(local_types.get(name).copied(), Some(TinyMirType::I32)) {
                     return Err(IoError::new(
                         ErrorKind::InvalidInput,
                         format!(
-                            "unknown canonical compiler MIR branch local {name} at block {}",
+                            "canonical compiler MIR positive branch requires int local {name} at block {}",
                             block.label
                         ),
                     )
@@ -7328,13 +7411,16 @@ fn validate_compiler_mir_module(
         if function
             .params
             .iter()
-            .any(|ty| !matches!(*ty, TinyMirType::I32))
-            || !matches!(function.return_type, TinyMirType::I32)
+            .any(|ty| !matches!(*ty, TinyMirType::I32 | TinyMirType::Bool))
+            || !matches!(
+                function.return_type,
+                TinyMirType::I32 | TinyMirType::Bool
+            )
         {
             return Err(IoError::new(
                 ErrorKind::InvalidInput,
                 format!(
-                    "canonical compiler MIR defined function {} must use only int parameters and one int return",
+                    "canonical compiler MIR defined function {} must use only int/bool parameters and one int/bool return",
                     function.object_name
                 ),
             )
@@ -7413,27 +7499,51 @@ fn validate_compiler_mir_module(
 
     for defined in &module.functions {
         let caller = &defined.fixture.function;
+        let local_types: HashMap<&str, TinyMirType> = caller
+            .locals
+            .iter()
+            .map(|local| (local.name, local.ty))
+            .collect();
+        let mut block_parameter_owners: HashMap<&str, Vec<&str>> =
+            HashMap::new();
         for block in &caller.blocks {
-            for statement in &block.statements {
+            for parameter in &block.parameters {
+                block_parameter_owners
+                    .entry(parameter.name)
+                    .or_default()
+                    .push(block.label);
+            }
+        }
+
+        for block in &caller.blocks {
+            let current_block_parameters: HashMap<&str, TinyMirType> = block
+                .parameters
+                .iter()
+                .map(|parameter| (parameter.name, parameter.ty))
+                .collect();
+            for (statement_index, statement) in
+                block.statements.iter().enumerate()
+            {
                 let CompilerMirLoweringStatement::LocalI32SetCall {
+                    name: result_local,
                     target,
                     arguments,
-                    ..
                 } = statement
                 else {
                     continue;
                 };
                 let (callee_params, callee_return_type) = match *target {
                     CompilerMirLoweringCallTarget::LocalFunction(name) => {
-                        let callee = function_names.get(name).copied().ok_or_else(|| {
-                            IoError::new(
-                                ErrorKind::InvalidInput,
-                                format!(
-                                    "unknown canonical compiler MIR local callee {name} in function {}",
-                                    caller.object_name
-                                ),
-                            )
-                        })?;
+                        let callee =
+                            function_names.get(name).copied().ok_or_else(|| {
+                                IoError::new(
+                                    ErrorKind::InvalidInput,
+                                    format!(
+                                        "unknown canonical compiler MIR local callee {name} in function {}",
+                                        caller.object_name
+                                    ),
+                                )
+                            })?;
                         local_call_edges
                             .get_mut(caller.object_name)
                             .ok_or_else(|| {
@@ -7452,15 +7562,16 @@ fn validate_compiler_mir_module(
                         )
                     }
                     CompilerMirLoweringCallTarget::ImportedFunction(name) => {
-                        let callee = import_names.get(name).copied().ok_or_else(|| {
-                            IoError::new(
-                                ErrorKind::InvalidInput,
-                                format!(
-                                    "unknown canonical compiler MIR imported callee {name} in function {}",
-                                    caller.object_name
-                                ),
-                            )
-                        })?;
+                        let callee =
+                            import_names.get(name).copied().ok_or_else(|| {
+                                IoError::new(
+                                    ErrorKind::InvalidInput,
+                                    format!(
+                                        "unknown canonical compiler MIR imported callee {name} in function {}",
+                                        caller.object_name
+                                    ),
+                                )
+                            })?;
                         (callee.params.as_slice(), callee.return_type)
                     }
                 };
@@ -7476,16 +7587,43 @@ fn validate_compiler_mir_module(
                     )
                     .into());
                 }
-                if !matches!(callee_return_type, TinyMirType::I32)
-                    || callee_params
-                        .iter()
-                        .any(|ty| !matches!(*ty, TinyMirType::I32))
+
+                for (argument_index, (argument, parameter_type)) in arguments
+                    .iter()
+                    .zip(callee_params.iter().copied())
+                    .enumerate()
+                {
+                    let argument_type =
+                        validate_canonical_compiler_mir_call_argument(
+                            caller,
+                            &local_types,
+                            &current_block_parameters,
+                            &block_parameter_owners,
+                            block.label,
+                            statement_index,
+                            argument_index,
+                            argument,
+                        )?;
+                    if argument_type != parameter_type {
+                        return Err(IoError::new(
+                            ErrorKind::InvalidInput,
+                            format!(
+                                "canonical compiler MIR call argument type mismatch in function {} at block {} statement {statement_index} argument {argument_index}",
+                                caller.object_name, block.label
+                            ),
+                        )
+                        .into());
+                    }
+                }
+
+                if local_types.get(result_local).copied()
+                    != Some(callee_return_type)
                 {
                     return Err(IoError::new(
                         ErrorKind::InvalidInput,
                         format!(
-                            "canonical compiler MIR callee in function {} must use only int parameters and one int return",
-                            caller.object_name
+                            "canonical compiler MIR call result type mismatch for local {result_local} in function {} at block {} statement {statement_index}",
+                            caller.object_name, block.label
                         ),
                     )
                     .into());
@@ -7553,7 +7691,7 @@ fn validate_canonical_compiler_mir_local_call_graph_acyclic(
 
 fn validate_canonical_compiler_mir_call_argument<'a>(
     function: &CompilerMirLoweringFunction<'a>,
-    local_names: &HashSet<&'a str>,
+    local_types: &HashMap<&'a str, TinyMirType>,
     current_block_parameters: &HashMap<&'a str, TinyMirType>,
     block_parameter_owners: &HashMap<&'a str, Vec<&'a str>>,
     source_block: &str,
@@ -7563,6 +7701,7 @@ fn validate_canonical_compiler_mir_call_argument<'a>(
 ) -> Result<TinyMirType, Box<dyn Error>> {
     match *argument {
         CompilerMirLoweringCallArgument::I32Literal(_) => Ok(TinyMirType::I32),
+        CompilerMirLoweringCallArgument::BoolLiteral(_) => Ok(TinyMirType::Bool),
         CompilerMirLoweringCallArgument::FunctionParamI32(param) => function
             .params
             .get(param)
@@ -7576,18 +7715,18 @@ fn validate_canonical_compiler_mir_call_argument<'a>(
                 )
                 .into()
             }),
-        CompilerMirLoweringCallArgument::LocalI32(name) => {
-            if !local_names.contains(name) {
-                return Err(IoError::new(
+        CompilerMirLoweringCallArgument::LocalI32(name) => local_types
+            .get(name)
+            .copied()
+            .ok_or_else(|| {
+                IoError::new(
                     ErrorKind::InvalidInput,
                     format!(
                         "unknown canonical compiler MIR local {name} at block {source_block} statement {statement_index} call argument {argument_index}"
                     ),
                 )
-                .into());
-            }
-            Ok(TinyMirType::I32)
-        }
+                .into()
+            }),
         CompilerMirLoweringCallArgument::BlockParamI32(name)
         | CompilerMirLoweringCallArgument::BlockParamI32AddI32Literal {
             name,
@@ -7890,6 +8029,24 @@ fn parse_canonical_compiler_mir_call_arguments<'a>(
                     )?,
                 )
             }
+            "BoolLiteral" => {
+                let value_key = format!("{argument_prefix}_value");
+                let value = parse_canonical_compiler_mir_i32_field(
+                    fields,
+                    consumed,
+                    &value_key,
+                )?;
+                if !matches!(value, 0 | 1) {
+                    return Err(IoError::new(
+                        ErrorKind::InvalidInput,
+                        format!(
+                            "canonical compiler MIR BoolLiteral at {value_key} must be 0 or 1, got {value}"
+                        ),
+                    )
+                    .into());
+                }
+                CompilerMirLoweringCallArgument::BoolLiteral(value)
+            }
             "FunctionParamI32" => {
                 let param_key = format!("{argument_prefix}_param");
                 CompilerMirLoweringCallArgument::FunctionParamI32(
@@ -8051,6 +8208,7 @@ fn parse_canonical_compiler_mir_type(
 ) -> Result<TinyMirType, Box<dyn Error>> {
     match value {
         "int" => Ok(TinyMirType::I32),
+        "bool" => Ok(TinyMirType::Bool),
         "void" => Ok(TinyMirType::Void),
         other => Err(IoError::new(
             ErrorKind::InvalidInput,
@@ -17142,7 +17300,7 @@ fn emit_extern_predicate_branch_i32_object(output_path: &Path) -> Result<(), Box
 
 fn tiny_mir_type_to_cranelift_type(mir_type: TinyMirType) -> Type {
     match mir_type {
-        TinyMirType::I32 => types::I32,
+        TinyMirType::I32 | TinyMirType::Bool => types::I32,
         TinyMirType::Void => panic!("void tiny MIR type has no Cranelift value representation"),
     }
 }
@@ -18944,7 +19102,10 @@ fn compiler_mir_ingestion_signature(
             .params
             .push(AbiParam::new(tiny_mir_type_to_cranelift_type(*param)));
     }
-    if matches!(mir_function.return_type, TinyMirType::I32) {
+    if matches!(
+        mir_function.return_type,
+        TinyMirType::I32 | TinyMirType::Bool
+    ) {
         signature.returns.push(AbiParam::new(types::I32));
     }
     signature
@@ -19172,7 +19333,10 @@ fn define_compiler_mir_ingestion_exported_function(
             .params
             .push(AbiParam::new(tiny_mir_type_to_cranelift_type(*param)));
     }
-    if matches!(mir_function.return_type, TinyMirType::I32) {
+    if matches!(
+        mir_function.return_type,
+        TinyMirType::I32 | TinyMirType::Bool
+    ) {
         signature.returns.push(AbiParam::new(types::I32));
     }
 
@@ -19292,7 +19456,7 @@ fn build_compiler_mir_ingestion_body_with_calls(
         for parameter in &block.parameters {
             let parameter_type = match parameter.ty {
                 TinyMirType::I32 => types::I32,
-                TinyMirType::Void => {
+                TinyMirType::Bool | TinyMirType::Void => {
                     return Err(IoError::new(
                         ErrorKind::InvalidInput,
                         format!(
@@ -19324,7 +19488,7 @@ fn build_compiler_mir_ingestion_body_with_calls(
     let mut local_slots: HashMap<&str, Variable> = HashMap::new();
     for local in &mir_function.locals {
         let local_type = match local.ty {
-            TinyMirType::I32 => types::I32,
+            TinyMirType::I32 | TinyMirType::Bool => types::I32,
             TinyMirType::Void => {
                 return Err(IoError::new(
                     ErrorKind::InvalidInput,
@@ -19525,7 +19689,8 @@ fn build_compiler_mir_ingestion_body_with_calls(
                     let mut lowered_arguments = Vec::with_capacity(arguments.len());
                     for argument in arguments {
                         let value = match argument {
-                            CompilerMirLoweringCallArgument::I32Literal(value) => {
+                            CompilerMirLoweringCallArgument::I32Literal(value)
+                            | CompilerMirLoweringCallArgument::BoolLiteral(value) => {
                                 builder.ins().iconst(types::I32, i64::from(value))
                             }
                             CompilerMirLoweringCallArgument::FunctionParamI32(param) => {
@@ -19880,7 +20045,9 @@ fn lower_tiny_mir_function_to_object(
             .push(AbiParam::new(tiny_mir_type_to_cranelift_type(*param)));
     }
     match mir_function.return_type {
-        TinyMirType::I32 => signature.returns.push(AbiParam::new(types::I32)),
+        TinyMirType::I32 | TinyMirType::Bool => {
+            signature.returns.push(AbiParam::new(types::I32))
+        }
         TinyMirType::Void => {}
     }
 
@@ -19915,7 +20082,9 @@ fn define_tiny_mir_exported_function(
             .push(AbiParam::new(tiny_mir_type_to_cranelift_type(*param)));
     }
     match mir_function.return_type {
-        TinyMirType::I32 => signature.returns.push(AbiParam::new(types::I32)),
+        TinyMirType::I32 | TinyMirType::Bool => {
+            signature.returns.push(AbiParam::new(types::I32))
+        }
         TinyMirType::Void => {}
     }
 
