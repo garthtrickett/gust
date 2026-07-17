@@ -10367,8 +10367,8 @@ guard-cranelift-phase9g-positive-link-matrix:
     rg -n -F 'allowed_cranelift_phase9g_positive_link_route_policy: mir_to_c_primary_cranelift_disabled_no_production_runtime_or_backend_route' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase9g_positive_link_next_milestone: negative_link_and_artifact_matrix' "$manifest_doc" >/dev/null
 
-    rg -n -F 'if exported_entry_count == 0 {' "$source_file" >/dev/null
-    rg -n -F '"canonical compiler MIR module must define at least one exported_entry function"' "$source_file" >/dev/null
+    rg -n -F 'if exported_entry_count == 0 && bundle_export_count == 0 {' "$source_file" >/dev/null
+    rg -n -F '"canonical compiler MIR module must define an exported_entry or bundle_export function"' "$source_file" >/dev/null
     if rg -n -F 'cannot target exported entry function' "$source_file" >/dev/null; then
       echo "Phase 9G multiple-export modules must allow direct acyclic calls to exported functions."
       exit 1
@@ -14630,8 +14630,9 @@ guard-cranelift-phase10-close:
 
     source_compile_body="$(
       sed -n \
-        '/^func mir_native_scalar_source_compile(/,/^}/p' \
+        '/^func mir_native_scalar_source_compile_inner(/,/^}/p' \
         "$source_route"
+    )
     )"
     source_process_body="$(
       sed -n \
