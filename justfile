@@ -8029,7 +8029,7 @@ guard-cranelift-phase9f-call-import-schema-validator:
 
     void_import="$build_dir/void-import.mir"
     sed 's/import_1_return_type: int/import_1_return_type: void/' "$valid_fixture" >"$void_import"
-    expect_reject void-import "$void_import" 'must use only int parameters and one int return'
+    expect_reject void-import "$void_import" 'uses an unsupported scalar ABI'
 
     multiple_exported_entries="$build_dir/multiple-exported-entries.mir"
     sed 's/function_1_linkage: module_local/function_1_linkage: exported_entry/' "$valid_fixture" >"$multiple_exported_entries"
@@ -8881,7 +8881,7 @@ guard-cranelift-phase9f-call-import-completeness-rejection:
 
     signature_type_mismatch="$build_dir/signature-type-mismatch.mir"
     sed 's/import_1_parameter_2_type: int/import_1_parameter_2_type: void/' "$positive_fixture" >"$signature_type_mismatch"
-    expect_preoutput_reject signature-type-mismatch "$signature_type_mismatch" 'must use only int parameters and one int return'
+    expect_preoutput_reject signature-type-mismatch "$signature_type_mismatch" 'uses an unsupported scalar ABI'
 
     non_i32_return="$build_dir/non-i32-return.mir"
     sed 's/import_2_return_type: int/import_2_return_type: float/' "$positive_fixture" >"$non_i32_return"
