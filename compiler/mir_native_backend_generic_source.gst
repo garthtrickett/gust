@@ -1,6 +1,7 @@
 import "ast.gst" as ast;
 import "mir.gst" as mir;
 import "mir_native_backend_capability.gst" as capability;
+import "mir_native_backend_block_parameter_loop_source.gst" as block_parameter_loop;
 import "mir_native_backend_local_state_source.gst" as local_state;
 import "mir_native_backend_structured_cfg_source.gst" as structured_cfg;
 
@@ -1879,13 +1880,23 @@ func mir_native_generic_plan_from_bundle(bundle: mir.MirProgramBundle[ctx], ctx:
         if mir_native_generic_contains(
             canonical,
             "LocalI32AddI32Literal"
-        ) == 1 {
+        ) == 1 ||
+           mir_native_generic_contains(
+               canonical,
+               "BlockParamI32AddI32Literal"
+           ) == 1
+        {
             has_add = 1;
         }
         if mir_native_generic_contains(
             canonical,
             "BranchLocalI32Positive"
-        ) == 1 {
+        ) == 1 ||
+           mir_native_generic_contains(
+               canonical,
+               "BranchBlockParamI32Positive"
+           ) == 1
+        {
             has_sgt = 1;
         }
         if mir_native_generic_contains(
@@ -1901,6 +1912,10 @@ func mir_native_generic_plan_from_bundle(bundle: mir.MirProgramBundle[ctx], ctx:
            mir_native_generic_contains(
                canonical,
                "BranchLocalI32Positive"
+           ) == 1 ||
+           mir_native_generic_contains(
+               canonical,
+               "BranchBlockParamI32Positive"
            ) == 1
         {
             has_branch = 1;
@@ -1948,6 +1963,10 @@ func mir_native_generic_plan_from_bundle(bundle: mir.MirProgramBundle[ctx], ctx:
            mir_native_generic_contains(
                canonical,
                "BranchLocalI32Positive"
+           ) == 1 ||
+           mir_native_generic_contains(
+               canonical,
+               "BranchBlockParamI32Positive"
            ) == 1
         {
             has_bool = 1;
@@ -2191,41 +2210,59 @@ func mir_native_generic_source_lower(programs: std.Vector[ast.Program[ctx], ctx]
     if model.represented == 1 {
         bundle = mir_native_generic_emit_bundle(model, ctx);
     } else {
-        mut structured_cfg_result :=
-            structured_cfg.mir_native_structured_cfg_source_lower(
+        mut block_parameter_loop_result :=
+            block_parameter_loop.mir_native_block_parameter_loop_source_lower(
                 programs,
                 module_paths,
                 module_prefixes,
                 ctx
             );
-        if structured_cfg_result.invalid == 1 {
+        if block_parameter_loop_result.invalid == 1 {
             return mir_native_generic_empty_result(
                 3,
-                structured_cfg_result.diagnostic,
+                block_parameter_loop_result.diagnostic,
                 ctx
             );
         }
-        if structured_cfg_result.represented == 1 {
-            bundle = structured_cfg_result.bundle;
+        if block_parameter_loop_result.represented == 1 {
+            bundle = block_parameter_loop_result.bundle;
         } else {
-            mut local_state_result :=
-                local_state.mir_native_local_state_source_lower(
+            mut structured_cfg_result :=
+                structured_cfg.mir_native_structured_cfg_source_lower(
                     programs,
                     module_paths,
                     module_prefixes,
                     ctx
                 );
-            if local_state_result.invalid == 1 {
+            if structured_cfg_result.invalid == 1 {
                 return mir_native_generic_empty_result(
                     3,
-                    local_state_result.diagnostic,
+                    structured_cfg_result.diagnostic,
                     ctx
                 );
             }
-            if local_state_result.represented == 0 {
-                return mir_native_generic_empty_result(1, "", ctx);
+            if structured_cfg_result.represented == 1 {
+                bundle = structured_cfg_result.bundle;
+            } else {
+                mut local_state_result :=
+                    local_state.mir_native_local_state_source_lower(
+                        programs,
+                        module_paths,
+                        module_prefixes,
+                        ctx
+                    );
+                if local_state_result.invalid == 1 {
+                    return mir_native_generic_empty_result(
+                        3,
+                        local_state_result.diagnostic,
+                        ctx
+                    );
+                }
+                if local_state_result.represented == 0 {
+                    return mir_native_generic_empty_result(1, "", ctx);
+                }
+                bundle = local_state_result.bundle;
             }
-            bundle = local_state_result.bundle;
         }
     }
 

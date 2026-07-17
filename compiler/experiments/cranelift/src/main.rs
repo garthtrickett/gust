@@ -3179,6 +3179,308 @@ fn compiler_mir_cfg_acyclic_order(
     }
 }
 
+fn compiler_mir_cfg_predecessors(
+    function: &CompilerMirLoweringFunction<'_>,
+) -> Result<Vec<Vec<usize>>, Box<dyn Error>> {
+    let block_indices = compiler_mir_cfg_block_indices(function);
+    let mut predecessors = vec![Vec::new(); function.blocks.len()];
+    for (source_index, block) in function.blocks.iter().enumerate() {
+        for successor in compiler_mir_cfg_successors(&block.terminator) {
+            let target_index = *block_indices.get(successor).ok_or_else(|| {
+                IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!(
+                        "unknown compiler MIR lowering successor {successor} from block {}",
+                        block.label
+                    ),
+                )
+            })?;
+            predecessors[target_index].push(source_index);
+        }
+    }
+    Ok(predecessors)
+}
+
+fn compiler_mir_cfg_dominators(
+    function: &CompilerMirLoweringFunction<'_>,
+) -> Result<Vec<HashSet<usize>>, Box<dyn Error>> {
+    let block_indices = compiler_mir_cfg_block_indices(function);
+    let entry_index = *block_indices.get(function.entry_block).ok_or_else(|| {
+        IoError::new(
+            ErrorKind::InvalidInput,
+            format!(
+                "unknown compiler MIR lowering entry block: {}",
+                function.entry_block
+            ),
+        )
+    })?;
+    let predecessors = compiler_mir_cfg_predecessors(function)?;
+    let all_blocks: HashSet<usize> =
+        (0..function.blocks.len()).collect();
+    let mut dominators = vec![all_blocks.clone(); function.blocks.len()];
+    dominators[entry_index] = HashSet::from([entry_index]);
+
+    let mut changed = true;
+    while changed {
+        changed = false;
+        for block_index in 0..function.blocks.len() {
+            if block_index == entry_index {
+                continue;
+            }
+            let mut next = all_blocks.clone();
+            for predecessor in &predecessors[block_index] {
+                next = next
+                    .intersection(&dominators[*predecessor])
+                    .copied()
+                    .collect();
+            }
+            next.insert(block_index);
+            if next != dominators[block_index] {
+                dominators[block_index] = next;
+                changed = true;
+            }
+        }
+    }
+    Ok(dominators)
+}
+
+fn compiler_mir_cfg_reducible_backedge_count(
+    function: &CompilerMirLoweringFunction<'_>,
+) -> Result<usize, Box<dyn Error>> {
+    let block_indices = compiler_mir_cfg_block_indices(function);
+    let dominators = compiler_mir_cfg_dominators(function)?;
+    let mut non_backedge_indegree = vec![0usize; function.blocks.len()];
+    let mut non_backedge_successors = vec![Vec::new(); function.blocks.len()];
+    let mut backedge_count = 0usize;
+
+    for (source_index, block) in function.blocks.iter().enumerate() {
+        for successor in compiler_mir_cfg_successors(&block.terminator) {
+            let target_index = *block_indices.get(successor).ok_or_else(|| {
+                IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!(
+                        "unknown compiler MIR lowering successor {successor} from block {}",
+                        block.label
+                    ),
+                )
+            })?;
+            if dominators[source_index].contains(&target_index) {
+                backedge_count += 1;
+            } else {
+                non_backedge_indegree[target_index] += 1;
+                non_backedge_successors[source_index].push(target_index);
+            }
+        }
+    }
+
+    let mut pending: VecDeque<usize> = non_backedge_indegree
+        .iter()
+        .enumerate()
+        .filter_map(|(index, count)| (*count == 0).then_some(index))
+        .collect();
+    let mut visited = 0usize;
+    while let Some(block_index) = pending.pop_front() {
+        visited += 1;
+        for successor in &non_backedge_successors[block_index] {
+            non_backedge_indegree[*successor] -= 1;
+            if non_backedge_indegree[*successor] == 0 {
+                pending.push_back(*successor);
+            }
+        }
+    }
+    if visited != function.blocks.len() {
+        return Err(IoError::new(
+            ErrorKind::InvalidInput,
+            "canonical compiler MIR contains an irreducible cycle or a backedge whose target does not dominate its source",
+        )
+        .into());
+    }
+    Ok(backedge_count)
+}
+
+fn is_phase11_block_parameter_loop_fixture(
+    fixture: &ParsedCompilerMirFixture<'_>,
+) -> bool {
+    fixture.metadata.iter().any(|item| {
+        item.payload.starts_with("kind=BlockParameterLoop;")
+    })
+}
+
+fn validate_phase11_block_parameter_loop_fixture(
+    fixture: &ParsedCompilerMirFixture<'_>,
+) -> Result<(), Box<dyn Error>> {
+    let function = &fixture.function;
+    if !function.params.is_empty()
+        || function.return_type != TinyMirType::I32
+    {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 11 block-parameter/loop source route requires a zero-argument i32 entry",
+        ));
+    }
+    if !function.locals.is_empty() {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 11 block-parameter/loop source route transports scalar state through block parameters rather than fixture-shaped locals",
+        ));
+    }
+
+    recognize_compiler_mir_fixture_metadata(&fixture.metadata)?;
+    let metadata = fixture.metadata.iter().find(|item| {
+        item.payload.starts_with("kind=BlockParameterLoop;")
+    }).ok_or_else(|| {
+        phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 11 block-parameter/loop source route is missing its ownership metadata",
+        )
+    })?;
+    if metadata.attachment != "function" {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 11 block-parameter/loop ownership metadata must attach to the function",
+        ));
+    }
+    let profile = phase11_local_state_payload_field(
+        metadata.payload,
+        "profile",
+    ).ok_or_else(|| {
+        phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 11 block-parameter/loop metadata is missing its profile",
+        )
+    })?;
+    if !matches!(profile, "non_final_join" | "bounded_loop") {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            format!(
+                "Phase 11 block-parameter/loop metadata has unsupported profile {profile}"
+            ),
+        ));
+    }
+
+    let mut parameter_block_count = 0usize;
+    let mut multi_parameter_block_count = 0usize;
+    let mut non_final_parameter_block_count = 0usize;
+    for block in &function.blocks {
+        if !block.parameters.is_empty() {
+            parameter_block_count += 1;
+            if block.parameters.len() > 1 {
+                multi_parameter_block_count += 1;
+            }
+            if !matches!(
+                &block.terminator,
+                CompilerMirLoweringTerminator::ReturnBlockParamI32(_)
+            ) {
+                non_final_parameter_block_count += 1;
+            }
+        }
+        if block
+            .parameters
+            .iter()
+            .any(|parameter| parameter.ty != TinyMirType::I32)
+        {
+            return Err(phase10_backend_request_error(
+                Phase10BackendRequestStage::CanonicalMirValidation,
+                Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                format!(
+                    "Phase 11 block-parameter/loop block {} has a non-i32 parameter",
+                    block.label
+                ),
+            ));
+        }
+        if !block.statements.is_empty() {
+            return Err(phase10_backend_request_error(
+                Phase10BackendRequestStage::CanonicalMirValidation,
+                Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                "Phase 11 block-parameter/loop source route keeps scalar transport on edges and accepts no block statements",
+            ));
+        }
+
+        let edges: Vec<&CompilerMirLoweringEdge<'_>> = match &block.terminator {
+            CompilerMirLoweringTerminator::Jump { edge } => vec![edge],
+            CompilerMirLoweringTerminator::BranchI32Literal {
+                then_edge,
+                else_edge,
+                ..
+            }
+            | CompilerMirLoweringTerminator::BranchBlockParamI32Positive {
+                then_edge,
+                else_edge,
+                ..
+            } => vec![then_edge, else_edge],
+            CompilerMirLoweringTerminator::ReturnBlockParamI32(_) => Vec::new(),
+            _ => {
+                return Err(phase10_backend_request_error(
+                    Phase10BackendRequestStage::CanonicalMirValidation,
+                    Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                    "Phase 11 block-parameter/loop source route accepts only literal or block-parameter branches, parameterized jumps, and block-parameter returns",
+                ));
+            }
+        };
+        for edge in edges {
+            for argument in &edge.arguments {
+                if !matches!(
+                    argument,
+                    CompilerMirLoweringEdgeArgument::I32Literal(_)
+                        | CompilerMirLoweringEdgeArgument::BlockParamI32(_)
+                        | CompilerMirLoweringEdgeArgument::BlockParamI32AddI32Literal {
+                            ..
+                        }
+                ) {
+                    return Err(phase10_backend_request_error(
+                        Phase10BackendRequestStage::CanonicalMirValidation,
+                        Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                        "Phase 11 block-parameter/loop source route accepts only i32 literal and current-block-parameter edge arguments",
+                    ));
+                }
+            }
+        }
+    }
+    if parameter_block_count == 0
+        || multi_parameter_block_count == 0
+        || non_final_parameter_block_count == 0
+    {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 11 block-parameter parity requires multiple parameters and at least one parameterized non-final block",
+        ));
+    }
+
+    let backedge_count = compiler_mir_cfg_reducible_backedge_count(function)
+        .map_err(|error| {
+            phase10_backend_request_error(
+                Phase10BackendRequestStage::CanonicalMirValidation,
+                Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                error.to_string(),
+            )
+        })?;
+    match profile {
+        "non_final_join" if backedge_count != 0 => {
+            return Err(phase10_backend_request_error(
+                Phase10BackendRequestStage::CanonicalMirValidation,
+                Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                "Phase 11 non-final join profile must remain acyclic",
+            ));
+        }
+        "bounded_loop" if backedge_count == 0 => {
+            return Err(phase10_backend_request_error(
+                Phase10BackendRequestStage::CanonicalMirValidation,
+                Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                "Phase 11 bounded-loop profile requires at least one natural backedge",
+            ));
+        }
+        _ => {}
+    }
+    Ok(())
+}
+
 fn is_phase11_structured_cfg_fixture(
     fixture: &ParsedCompilerMirFixture<'_>,
 ) -> bool {
@@ -4120,7 +4422,10 @@ fn compile_phase10_scalar_metadata_request_path(
                 ));
             }
             validate_compiler_mir_fixture(&fixture)?;
-            if is_phase11_structured_cfg_fixture(&fixture) {
+            if is_phase11_block_parameter_loop_fixture(&fixture) {
+                validate_phase11_block_parameter_loop_fixture(&fixture)?;
+                source_route = "block_parameter_loop";
+            } else if is_phase11_structured_cfg_fixture(&fixture) {
                 validate_phase11_local_state_fixture(&fixture)?;
                 source_route = "structured_cfg";
             } else if is_phase11_local_state_fixture(&fixture) {
@@ -7940,6 +8245,9 @@ fn validate_compiler_mir_fixture_path(input_path: &Path) -> Result<(), Box<dyn E
     match parse_compiler_mir_input(&contents)? {
         ParsedCompilerMirInput::V1(fixture) => {
             validate_compiler_mir_fixture(&fixture)?;
+            if is_phase11_block_parameter_loop_fixture(&fixture) {
+                validate_phase11_block_parameter_loop_fixture(&fixture)?;
+            }
             println!(
                 "validated canonical compiler MIR fixture: {} -> {}",
                 fixture.function.object_name, fixture.function.symbol
@@ -7986,6 +8294,13 @@ fn emit_compiler_mir_fixture_object(
                 CompilerMirPipelineStage::FixtureValidation,
                 CompilerMirPipelineFailureKind::InvalidFixture,
             )?;
+            if is_phase11_block_parameter_loop_fixture(&fixture) {
+                compiler_mir_pipeline_wrap_box(
+                    validate_phase11_block_parameter_loop_fixture(&fixture),
+                    CompilerMirPipelineStage::FixtureValidation,
+                    CompilerMirPipelineFailureKind::InvalidFixture,
+                )?;
+            }
             lower_compiler_mir_ingestion_function_to_object(
                 output_path,
                 &fixture.function,

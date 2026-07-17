@@ -1397,6 +1397,21 @@ validates the static contract, three differential lanes, six malformed-CFG
 negative lanes, and explicit loop deferral. The next milestone is
 block-parameter and loop/backedge parity.
 
+Patch 7 migrates block parameters and reducible backedges as
+`phase11_migrated_block_parameter_and_backedge_parity`. The compiler-owned
+lowerer emits normal multi-value i32 parameter vectors and matching edge
+argument vectors, including a two-parameter non-final join and bounded
+single-header loops. The
+worker validates argument count and type against every target parameter,
+rejects references to parameters owned by another block, computes dominators,
+and accepts cycles only when removing natural backedges leaves an acyclic
+graph. Cranelift blocks and all block parameters are created before lowering;
+loop headers remain unsealed until both forward edges and backedges have been
+emitted, then every block is sealed exactly once. Malformed or irreducible CFG
+fails before publication and preserves any existing output. The frozen Phase 10
+single-final-i32-merge fixture remains compatibility evidence, not the support
+definition. The next milestone is direct function and ABI parity.
+
 The checked-in lockfile for this crate is owned by:
 Patch 8 freezes the complete canonical call/import matrix and retires all
 eleven historical bypasses. The checked-in completeness fixture combines local

@@ -6,8 +6,8 @@ import "mir_native_backend_local_state_source.gst" as local_state;
 //
 // This route consumes typed AST structure only. It lowers nested positive-local
 // if/else statements into an ordinary canonical MIR block graph, leaves join
-// formation independent of any fixture topology, and deliberately declines
-// loops/backedges for the Patch 7 successor.
+// formation independent of any fixture topology, and deliberately leaves
+// loops/backedges to the dedicated block-parameter/loop lowerer.
 type MirNativeStructuredCfgBlock[ctx] struct {
     writes: std.Vector[local_state.MirNativeLocalStateWrite, ctx],
     terminator_kind: int,
