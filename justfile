@@ -13735,7 +13735,7 @@ guard-cranelift-phase10-cfg-block-parameter-source-route:
     printf '%s\n' "$static_capability_body" |
       rg -n -F 'mir_native_backend_capability_set_with_type_or_abi(' >/dev/null
 
-    rg -n -F 'const PHASE10_DRIVER_TYPES_AND_ABIS: [&str; 5]' "$rust_driver" >/dev/null
+    rg -n -F 'const PHASE10_DRIVER_TYPES_AND_ABIS: [&str; 6]' "$rust_driver" >/dev/null
     driver_bool_count="$(
       sed -n         '/^const PHASE10_DRIVER_TYPES_AND_ABIS:/,/^];/p'         "$rust_driver" |
         rg -c -F '"bool",' ||
@@ -17650,6 +17650,8 @@ guard-cranelift-phase11-direct-call-abi-parity:
       'canonical compiler MIR local call graph must not contain recursion or mutual recursion'
       'compiler_mir_ingestion_signature('
       'module.declare_function('
+      'const PHASE10_DRIVER_TYPES_AND_ABIS: [&str; 6]'
+      '"direct_scalar_abi",'
     )
     for expected_symbol in "${required_worker_symbols[@]}"; do
       rg -n -F "$expected_symbol" "$rust_driver" >/dev/null

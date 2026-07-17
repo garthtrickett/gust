@@ -4553,12 +4553,13 @@ const PHASE10_DRIVER_OPERATIONS: [&str; 15] = [
     "ImportedPredicateI32",
     "ImportedMaterializeI32",
 ];
-const PHASE10_DRIVER_TYPES_AND_ABIS: [&str; 5] = [
+const PHASE10_DRIVER_TYPES_AND_ABIS: [&str; 6] = [
     "int",
     "bool",
     "()->int",
     "(int)->int",
     "(int,int)->int",
+    "direct_scalar_abi",
 ];
 const PHASE10_DRIVER_RUNTIME_IMPORTS: [&str; 4] = [
     "tiny_host_add_one_i32",
