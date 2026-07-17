@@ -280,20 +280,22 @@ func mir_native_module_import_signature_types(parameter_types: std.Vector[str, c
 
 func mir_native_module_import_signature(function: MirNativeModuleImportFunction[ctx], ctx: &Arena) str {
     mut parameter_types: std.Vector[str, ctx] := ctx[function.parameter_types];
-    return mir_native_module_import_signature_types(
+    mut signature := mir_native_module_import_signature_types(
         parameter_types,
         function.return_type,
         ctx
     );
+    return std.Clone(ctx, signature);
 }
 
 func mir_native_module_import_host_signature(host: MirNativeModuleImportHost[ctx], ctx: &Arena) str {
     mut parameter_types: std.Vector[str, ctx] := ctx[host.parameter_types];
-    return mir_native_module_import_signature_types(
+    mut signature := mir_native_module_import_signature_types(
         parameter_types,
         host.return_type,
         ctx
     );
+    return std.Clone(ctx, signature);
 }
 
 func mir_native_module_import_analyze_argument(expression: ast.Expression[ctx], parameter_names: std.Vector[str, ctx], parameter_types: std.Vector[str, ctx], ctx: &Arena) MirNativeModuleImportArgument[ctx] {
