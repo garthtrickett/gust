@@ -93,7 +93,7 @@ func mir_native_direct_call_empty_model(ctx: &Arena) MirNativeDirectCallModel[ct
     model.diagnostic = std.Clone(ctx, "");
     model.source_path = std.Clone(ctx, "");
     model.functions = mir_native_direct_call_empty_function_vector(ctx);
-    model.entry_index = -1;
+    model.entry_index = 0 - 1;
     model.expected_exit = 0;
     return model;
 }
@@ -135,7 +135,7 @@ func mir_native_direct_call_parameter_index(names: std.Vector[str, ctx], name: s
         }
         index = index + 1;
     }
-    return -1;
+    return 0 - 1;
 }
 
 func mir_native_direct_call_function_index(functions: std.Vector[MirNativeDirectCallFunction[ctx], ctx], name: str, ctx: &Arena) int {
@@ -146,14 +146,14 @@ func mir_native_direct_call_function_index(functions: std.Vector[MirNativeDirect
         }
         index = index + 1;
     }
-    return -1;
+    return 0 - 1;
 }
 
 func mir_native_direct_call_analyze_argument(expression: ast.Expression[ctx], parameter_names: std.Vector[str, ctx], parameter_types: std.Vector[str, ctx], ctx: &Arena) MirNativeDirectCallArgument[ctx] {
     mut argument: MirNativeDirectCallArgument[ctx];
-    argument.kind = -1;
+    argument.kind = 0 - 1;
     argument.value = 0;
-    argument.parameter_index = -1;
+    argument.parameter_index = 0 - 1;
     argument.value_type = std.Clone(ctx, "");
     unsafe {
         if expression.tag == 1 {
@@ -193,9 +193,9 @@ func mir_native_direct_call_analyze_function(statement: ast.Statement[ctx], ctx:
     function.parameter_names = mir_native_direct_call_empty_string_vector(ctx);
     function.parameter_types = mir_native_direct_call_empty_string_vector(ctx);
     function.return_type = std.Clone(ctx, "");
-    function.profile = -1;
-    function.first_parameter = -1;
-    function.second_parameter = -1;
+    function.profile = 0 - 1;
+    function.first_parameter = 0 - 1;
+    function.second_parameter = 0 - 1;
     function.callee = std.Clone(ctx, "");
     function.arguments = mir_native_direct_call_empty_argument_vector(ctx);
 
@@ -311,7 +311,7 @@ func mir_native_direct_call_analyze_function(statement: ast.Statement[ctx], ctx:
                     ctx
                 );
                 if argument.kind < 0 {
-                    function.profile = -1;
+                    function.profile = 0 - 1;
                     return function;
                 }
                 arguments.Push(argument);
@@ -418,7 +418,7 @@ func mir_native_direct_call_validate_acyclic(model: MirNativeDirectCallModel[ctx
 
     mut visited := 0;
     while visited < len(functions) {
-        mut selected := -1;
+        mut selected := 0 - 1;
         index = 0;
         while index < len(functions) {
             if removed[index] == 0 && indegree[index] == 0 {
@@ -555,7 +555,7 @@ func mir_native_direct_call_analyze(programs: std.Vector[ast.Program[ctx], ctx],
     mut functions: std.Vector[MirNativeDirectCallFunction[ctx], ctx] :=
         std.VectorNew(ctx);
     mut has_call := 0;
-    mut entry_index := -1;
+    mut entry_index := 0 - 1;
     mut index := 0;
     while index < len(top_level) {
         mut function := mir_native_direct_call_analyze_function(
