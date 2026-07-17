@@ -1357,6 +1357,46 @@ compares MIR-to-C and Cranelift behavior for all four positive sources, and
 proves both negative lanes stop before driver or artifact access. The next
 milestone is structured CFG parity.
 
+Patch 6 migrates structured CFG parity as
+`phase11_migrated_structured_CFG_parity`. A compiler-owned recursive lowerer
+runs before the Patch 5 compatibility helper and converts ordinary typed AST
+`if`/`else` structure into canonical MIR blocks. It supports nested branches,
+joins with arbitrary predecessor counts, and sequential jumps whose targets are
+resolved by labels rather than by a frozen three- or four-block arrangement.
+The route does not inspect source paths, fixture names, or raw source text.
+
+CFG support is now verifier-defined rather than block-count-defined. The shared
+canonical parser and verifier enforce unique block labels, a valid and reachable
+entry graph, valid successors, exactly one serialized terminator per block, and
+compatible edge-argument arity and types. The Phase 11 definite-assignment pass
+propagates state in acyclic topological order and intersects assignment state
+across every predecessor at a join, including joins with more than two incoming
+paths.
+
+The worker creates every Cranelift block before lowering any body. It tracks the
+number of emitted predecessor edges and seals each block exactly when all of its
+declared predecessors have been emitted, so lowering no longer depends on the
+serialized block arrangement. Existing canonical MIR backedge support remains
+available to the older worker lanes; ordinary source loops, backedges, and
+irreducible control flow remain explicitly deferred to the successor patch.
+
+Three ordinary sources differentially cover nested `if`/`else`, a
+three-predecessor join, and two independent branch/jump regions with exits `71`,
+`73`, and `32`. Six malformed canonical-MIR cases reject duplicate block IDs,
+unknown successors, unreachable blocks, missing terminators, duplicate
+terminator fields, and incompatible edge arguments before object publication.
+A source-level loop lane proves deferral occurs before driver discovery while
+preserving an existing output.
+
+The registry now records eleven generic owners: three
+`scalar_expression_migrated`, two `local_state_migrated`, three
+`structured_CFG_migrated`, three `generic_shadowed`, and eight deferred entries.
+The dedicated MIR-to-C evidence gap count remains six, and the nested-CFG
+family is marked migrated. `guard-cranelift-phase11-structured-cfg-parity`
+validates the static contract, three differential lanes, six malformed-CFG
+negative lanes, and explicit loop deferral. The next milestone is
+block-parameter and loop/backedge parity.
+
 The checked-in lockfile for this crate is owned by:
 Patch 8 freezes the complete canonical call/import matrix and retires all
 eleven historical bypasses. The checked-in completeness fixture combines local

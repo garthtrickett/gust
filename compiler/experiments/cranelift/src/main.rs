@@ -3031,21 +3031,193 @@ fn phase11_local_state_validate_return(
     Ok(())
 }
 
+fn compiler_mir_cfg_successors<'a>(
+    terminator: &CompilerMirLoweringTerminator<'a>,
+) -> Vec<&'a str> {
+    match terminator {
+        CompilerMirLoweringTerminator::ReturnI32(_)
+        | CompilerMirLoweringTerminator::ReturnLocalI32(_)
+        | CompilerMirLoweringTerminator::ReturnBlockParamI32(_)
+        | CompilerMirLoweringTerminator::ReturnVoid => Vec::new(),
+        CompilerMirLoweringTerminator::Jump { edge } => vec![edge.target],
+        CompilerMirLoweringTerminator::BranchI32Literal {
+            then_edge,
+            else_edge,
+            ..
+        }
+        | CompilerMirLoweringTerminator::BranchLocalI32Positive {
+            then_edge,
+            else_edge,
+            ..
+        }
+        | CompilerMirLoweringTerminator::BranchBlockParamI32Positive {
+            then_edge,
+            else_edge,
+            ..
+        } => vec![then_edge.target, else_edge.target],
+    }
+}
+
+fn compiler_mir_cfg_block_indices<'a>(
+    function: &CompilerMirLoweringFunction<'a>,
+) -> HashMap<&'a str, usize> {
+    function
+        .blocks
+        .iter()
+        .enumerate()
+        .map(|(index, block)| (block.label, index))
+        .collect()
+}
+
+fn compiler_mir_cfg_predecessor_counts(
+    function: &CompilerMirLoweringFunction<'_>,
+) -> Result<Vec<usize>, Box<dyn Error>> {
+    let block_indices = compiler_mir_cfg_block_indices(function);
+    let mut predecessor_counts = vec![0usize; function.blocks.len()];
+    for block in &function.blocks {
+        for successor in compiler_mir_cfg_successors(&block.terminator) {
+            let successor_index = *block_indices.get(successor).ok_or_else(|| {
+                IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!(
+                        "unknown compiler MIR lowering successor {successor} from block {}",
+                        block.label
+                    ),
+                )
+            })?;
+            predecessor_counts[successor_index] += 1;
+        }
+    }
+    Ok(predecessor_counts)
+}
+
+fn compiler_mir_cfg_lowering_order(
+    function: &CompilerMirLoweringFunction<'_>,
+) -> Result<Vec<usize>, Box<dyn Error>> {
+    let block_indices = compiler_mir_cfg_block_indices(function);
+    let entry_index = *block_indices.get(function.entry_block).ok_or_else(|| {
+        IoError::new(
+            ErrorKind::InvalidInput,
+            format!(
+                "unknown compiler MIR lowering entry block: {}",
+                function.entry_block
+            ),
+        )
+    })?;
+    let mut pending = VecDeque::from([entry_index]);
+    let mut visited = vec![false; function.blocks.len()];
+    let mut order = Vec::with_capacity(function.blocks.len());
+    while let Some(block_index) = pending.pop_front() {
+        if visited[block_index] {
+            continue;
+        }
+        visited[block_index] = true;
+        order.push(block_index);
+        for successor in
+            compiler_mir_cfg_successors(&function.blocks[block_index].terminator)
+        {
+            let successor_index = *block_indices.get(successor).ok_or_else(|| {
+                IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!(
+                        "unknown compiler MIR lowering successor {successor} from block {}",
+                        function.blocks[block_index].label
+                    ),
+                )
+            })?;
+            if !visited[successor_index] {
+                pending.push_back(successor_index);
+            }
+        }
+    }
+    if order.len() != function.blocks.len() {
+        return Err(IoError::new(
+            ErrorKind::InvalidInput,
+            "compiler MIR lowering graph contains unreachable blocks",
+        )
+        .into());
+    }
+    Ok(order)
+}
+
+fn compiler_mir_cfg_acyclic_order(
+    function: &CompilerMirLoweringFunction<'_>,
+) -> Result<Option<Vec<usize>>, Box<dyn Error>> {
+    let block_indices = compiler_mir_cfg_block_indices(function);
+    let mut remaining_predecessors =
+        compiler_mir_cfg_predecessor_counts(function)?;
+    let mut pending: VecDeque<usize> = remaining_predecessors
+        .iter()
+        .enumerate()
+        .filter_map(|(index, count)| (*count == 0).then_some(index))
+        .collect();
+    let mut order = Vec::with_capacity(function.blocks.len());
+    while let Some(block_index) = pending.pop_front() {
+        order.push(block_index);
+        for successor in
+            compiler_mir_cfg_successors(&function.blocks[block_index].terminator)
+        {
+            let successor_index = *block_indices.get(successor).ok_or_else(|| {
+                IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!(
+                        "unknown compiler MIR lowering successor {successor} from block {}",
+                        function.blocks[block_index].label
+                    ),
+                )
+            })?;
+            remaining_predecessors[successor_index] -= 1;
+            if remaining_predecessors[successor_index] == 0 {
+                pending.push_back(successor_index);
+            }
+        }
+    }
+    if order.len() == function.blocks.len() {
+        Ok(Some(order))
+    } else {
+        Ok(None)
+    }
+}
+
+fn is_phase11_structured_cfg_fixture(
+    fixture: &ParsedCompilerMirFixture<'_>,
+) -> bool {
+    fixture.metadata.iter().any(|item| {
+        item.payload.starts_with("kind=StructuredCfg;")
+    })
+}
+
+fn phase11_cfg_intersect_assignment_state(
+    incoming: &mut Option<Vec<bool>>,
+    candidate: &[bool],
+) {
+    match incoming {
+        Some(existing) => {
+            for (existing_value, candidate_value) in
+                existing.iter_mut().zip(candidate)
+            {
+                *existing_value = *existing_value && *candidate_value;
+            }
+        }
+        None => *incoming = Some(candidate.to_vec()),
+    }
+}
+
 fn validate_phase11_local_state_fixture(
     fixture: &ParsedCompilerMirFixture<'_>,
 ) -> Result<(), Box<dyn Error>> {
     let function = &fixture.function;
-    if !function.params.is_empty() ||
-        function.return_type != TinyMirType::I32
+    if !function.params.is_empty()
+        || function.return_type != TinyMirType::I32
     {
         return Err(phase10_backend_request_error(
             Phase10BackendRequestStage::CanonicalMirValidation,
             Phase10BackendRequestFailureKind::InvalidCanonicalMir,
-            "Phase 11 local-state source route requires a zero-argument i32 entry",
+            "Phase 11 local-state/structured-CFG source route requires a zero-argument i32 entry",
         ));
     }
-    if function.locals.is_empty() ||
-        function
+    if function.locals.is_empty()
+        || function
             .locals
             .iter()
             .any(|local| local.ty != TinyMirType::I32)
@@ -3053,26 +3225,18 @@ fn validate_phase11_local_state_fixture(
         return Err(phase10_backend_request_error(
             Phase10BackendRequestStage::CanonicalMirValidation,
             Phase10BackendRequestFailureKind::InvalidCanonicalMir,
-            "Phase 11 local-state source route requires a nonempty generic i32 local inventory",
+            "Phase 11 local-state/structured-CFG source route requires a nonempty generic i32 local inventory",
         ));
     }
-    if function.blocks.len() != 1 && function.blocks.len() != 4 {
-        return Err(phase10_backend_request_error(
-            Phase10BackendRequestStage::CanonicalMirValidation,
-            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
-            "Phase 11 local-state source route accepts one straight-line block or one four-block branch/merge graph",
-        ));
-    }
-    if function.entry_block != function.blocks[0].label ||
-        function
-            .blocks
-            .iter()
-            .any(|block| !block.parameters.is_empty())
+    if function
+        .blocks
+        .iter()
+        .any(|block| !block.parameters.is_empty())
     {
         return Err(phase10_backend_request_error(
             Phase10BackendRequestStage::CanonicalMirValidation,
             Phase10BackendRequestFailureKind::InvalidCanonicalMir,
-            "Phase 11 local-state source route requires the first parameter-free block to be the entry",
+            "Phase 11 structured CFG parity keeps block parameters and edge arguments deferred to Patch 7",
         ));
     }
 
@@ -3088,43 +3252,37 @@ fn validate_phase11_local_state_fixture(
         };
         match kind {
             "LocalDeclaration" => {
-                let Some(local_name) =
-                    phase11_local_state_payload_field(
-                        item.payload,
-                        "local",
-                    )
-                else {
+                let Some(local_name) = phase11_local_state_payload_field(
+                    item.payload,
+                    "local",
+                ) else {
                     return Err(phase10_backend_request_error(
                         Phase10BackendRequestStage::CanonicalMirValidation,
                         Phase10BackendRequestFailureKind::InvalidCanonicalMir,
                         "Phase 11 local declaration provenance is missing its local name",
                     ));
                 };
-                let Some(index_text) =
-                    phase11_local_state_payload_field(
-                        item.payload,
-                        "index",
-                    )
-                else {
+                let Some(index_text) = phase11_local_state_payload_field(
+                    item.payload,
+                    "index",
+                ) else {
                     return Err(phase10_backend_request_error(
                         Phase10BackendRequestStage::CanonicalMirValidation,
                         Phase10BackendRequestFailureKind::InvalidCanonicalMir,
                         "Phase 11 local declaration provenance is missing its stable index",
                     ));
                 };
-                let local_index: usize = index_text.parse().map_err(
-                    |_| {
-                        phase10_backend_request_error(
-                            Phase10BackendRequestStage::CanonicalMirValidation,
-                            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
-                            "Phase 11 local declaration provenance has an invalid stable index",
-                        )
-                    },
-                )?;
-                if local_index >= function.locals.len() ||
-                    function.locals[local_index].name != local_name ||
-                    declaration_seen[local_index] ||
-                    item.attachment != format!("local:{local_index}")
+                let local_index: usize = index_text.parse().map_err(|_| {
+                    phase10_backend_request_error(
+                        Phase10BackendRequestStage::CanonicalMirValidation,
+                        Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                        "Phase 11 local declaration provenance has an invalid stable index",
+                    )
+                })?;
+                if local_index >= function.locals.len()
+                    || function.locals[local_index].name != local_name
+                    || declaration_seen[local_index]
+                    || item.attachment != format!("local:{local_index}")
                 {
                     return Err(phase10_backend_request_error(
                         Phase10BackendRequestStage::CanonicalMirValidation,
@@ -3135,12 +3293,10 @@ fn validate_phase11_local_state_fixture(
                 declaration_seen[local_index] = true;
             }
             "LocalAssignment" => {
-                let Some(local_name) =
-                    phase11_local_state_payload_field(
-                        item.payload,
-                        "local",
-                    )
-                else {
+                let Some(local_name) = phase11_local_state_payload_field(
+                    item.payload,
+                    "local",
+                ) else {
                     return Err(phase10_backend_request_error(
                         Phase10BackendRequestStage::CanonicalMirValidation,
                         Phase10BackendRequestFailureKind::InvalidCanonicalMir,
@@ -3157,154 +3313,152 @@ fn validate_phase11_local_state_fixture(
                 }
                 assignment_metadata_count += 1;
             }
+            "StructuredCfg" => {
+                if item.attachment != "function"
+                    || phase11_local_state_payload_field(
+                        item.payload,
+                        "reducibility",
+                    ) != Some("acyclic")
+                {
+                    return Err(phase10_backend_request_error(
+                        Phase10BackendRequestStage::CanonicalMirValidation,
+                        Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                        "Phase 11 structured CFG provenance must declare function-scoped acyclic reducibility",
+                    ));
+                }
+            }
             _ => {}
         }
     }
-    if declaration_seen.iter().any(|seen| !seen) ||
-        assignment_metadata_count == 0
+    if declaration_seen.iter().any(|seen| !seen)
+        || assignment_metadata_count == 0
     {
         return Err(phase10_backend_request_error(
             Phase10BackendRequestStage::CanonicalMirValidation,
             Phase10BackendRequestFailureKind::InvalidCanonicalMir,
-            "Phase 11 local-state source route requires one declaration provenance record per local and at least one assignment record",
+            "Phase 11 local-state/structured-CFG source route requires one declaration provenance record per local and at least one assignment record",
         ));
     }
 
-    let mut assigned = vec![false; function.locals.len()];
-    let entry = &function.blocks[0];
-    phase11_local_state_apply_statements(
-        function,
-        entry,
-        &mut assigned,
-    )?;
+    let Some(order) = compiler_mir_cfg_acyclic_order(function).map_err(
+        |error| {
+            phase10_backend_request_error(
+                Phase10BackendRequestStage::CanonicalMirValidation,
+                Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                error.to_string(),
+            )
+        },
+    )? else {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 11 structured CFG parity explicitly defers backedges and cyclic or irreducible control flow to Patch 7",
+        ));
+    };
+    let block_indices = compiler_mir_cfg_block_indices(function);
+    let entry_index = *block_indices.get(function.entry_block).ok_or_else(|| {
+        phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 11 structured CFG entry block is unknown",
+        )
+    })?;
+    let mut incoming_assignment =
+        vec![None::<Vec<bool>>; function.blocks.len()];
+    incoming_assignment[entry_index] =
+        Some(vec![false; function.locals.len()]);
 
-    if function.blocks.len() == 1 {
-        return phase11_local_state_validate_return(
+    for block_index in order {
+        let block = &function.blocks[block_index];
+        let mut assigned = incoming_assignment[block_index]
+            .take()
+            .ok_or_else(|| {
+                phase10_backend_request_error(
+                    Phase10BackendRequestStage::CanonicalMirValidation,
+                    Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                    format!(
+                        "Phase 11 structured CFG block {} has no reachable predecessor assignment state",
+                        block.label
+                    ),
+                )
+            })?;
+        phase11_local_state_apply_statements(
             function,
-            &entry.terminator,
-            &assigned,
-        );
+            block,
+            &mut assigned,
+        )?;
+
+        match &block.terminator {
+            CompilerMirLoweringTerminator::ReturnLocalI32(_) => {
+                phase11_local_state_validate_return(
+                    function,
+                    &block.terminator,
+                    &assigned,
+                )?;
+            }
+            CompilerMirLoweringTerminator::Jump { edge } => {
+                if !edge.arguments.is_empty() {
+                    return Err(phase10_backend_request_error(
+                        Phase10BackendRequestStage::CanonicalMirValidation,
+                        Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                        "Phase 11 structured CFG parity keeps edge arguments deferred to Patch 7",
+                    ));
+                }
+            }
+            CompilerMirLoweringTerminator::BranchLocalI32Positive {
+                name,
+                then_edge,
+                else_edge,
+            } => {
+                let condition_index =
+                    phase11_local_state_local_index(function, name)?;
+                if !assigned[condition_index] {
+                    return Err(phase10_backend_request_error(
+                        Phase10BackendRequestStage::CanonicalMirValidation,
+                        Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                        format!(
+                            "Phase 11 structured CFG branch reads local {name} before definite assignment"
+                        ),
+                    ));
+                }
+                if !then_edge.arguments.is_empty()
+                    || !else_edge.arguments.is_empty()
+                {
+                    return Err(phase10_backend_request_error(
+                        Phase10BackendRequestStage::CanonicalMirValidation,
+                        Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                        "Phase 11 structured CFG parity keeps edge arguments deferred to Patch 7",
+                    ));
+                }
+            }
+            _ => {
+                return Err(phase10_backend_request_error(
+                    Phase10BackendRequestStage::CanonicalMirValidation,
+                    Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                    "Phase 11 structured CFG source route accepts local i32 return, zero-argument jump, and positive-local branch terminators",
+                ));
+            }
+        }
+
+        for successor in compiler_mir_cfg_successors(&block.terminator) {
+            let successor_index = *block_indices.get(successor).ok_or_else(|| {
+                phase10_backend_request_error(
+                    Phase10BackendRequestStage::CanonicalMirValidation,
+                    Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                    format!(
+                        "Phase 11 structured CFG block {} targets unknown successor {successor}",
+                        block.label
+                    ),
+                )
+            })?;
+            phase11_cfg_intersect_assignment_state(
+                &mut incoming_assignment[successor_index],
+                &assigned,
+            );
+        }
     }
 
-    let CompilerMirLoweringTerminator::BranchLocalI32Positive {
-        name: condition_local,
-        then_edge,
-        else_edge,
-    } = &entry.terminator
-    else {
-        return Err(phase10_backend_request_error(
-            Phase10BackendRequestStage::CanonicalMirValidation,
-            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
-            "Phase 11 local-state branch graph requires a local-positive entry branch",
-        ));
-    };
-    let condition_index =
-        phase11_local_state_local_index(function, condition_local)?;
-    if !assigned[condition_index] ||
-        !then_edge.arguments.is_empty() ||
-        !else_edge.arguments.is_empty()
-    {
-        return Err(phase10_backend_request_error(
-            Phase10BackendRequestStage::CanonicalMirValidation,
-            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
-            "Phase 11 local-state entry branch requires an assigned condition and zero edge arguments",
-        ));
-    }
-
-    let block_by_label: HashMap<&str, &CompilerMirLoweringBlock<'_>> =
-        function
-            .blocks
-            .iter()
-            .map(|block| (block.label, block))
-            .collect();
-    let then_block = block_by_label.get(then_edge.target).ok_or_else(
-        || {
-            phase10_backend_request_error(
-                Phase10BackendRequestStage::CanonicalMirValidation,
-                Phase10BackendRequestFailureKind::InvalidCanonicalMir,
-                "Phase 11 local-state then edge targets an unknown block",
-            )
-        },
-    )?;
-    let else_block = block_by_label.get(else_edge.target).ok_or_else(
-        || {
-            phase10_backend_request_error(
-                Phase10BackendRequestStage::CanonicalMirValidation,
-                Phase10BackendRequestFailureKind::InvalidCanonicalMir,
-                "Phase 11 local-state else edge targets an unknown block",
-            )
-        },
-    )?;
-
-    let mut then_assigned = assigned.clone();
-    phase11_local_state_apply_statements(
-        function,
-        then_block,
-        &mut then_assigned,
-    )?;
-    let mut else_assigned = assigned.clone();
-    phase11_local_state_apply_statements(
-        function,
-        else_block,
-        &mut else_assigned,
-    )?;
-
-    let CompilerMirLoweringTerminator::Jump {
-        edge: then_jump,
-    } = &then_block.terminator
-    else {
-        return Err(phase10_backend_request_error(
-            Phase10BackendRequestStage::CanonicalMirValidation,
-            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
-            "Phase 11 local-state then block must jump to the merge",
-        ));
-    };
-    let CompilerMirLoweringTerminator::Jump {
-        edge: else_jump,
-    } = &else_block.terminator
-    else {
-        return Err(phase10_backend_request_error(
-            Phase10BackendRequestStage::CanonicalMirValidation,
-            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
-            "Phase 11 local-state else block must jump to the merge",
-        ));
-    };
-    if then_jump.target != else_jump.target ||
-        !then_jump.arguments.is_empty() ||
-        !else_jump.arguments.is_empty()
-    {
-        return Err(phase10_backend_request_error(
-            Phase10BackendRequestStage::CanonicalMirValidation,
-            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
-            "Phase 11 local-state branch arms must converge on one zero-argument merge",
-        ));
-    }
-
-    let merge_block =
-        block_by_label.get(then_jump.target).ok_or_else(|| {
-            phase10_backend_request_error(
-                Phase10BackendRequestStage::CanonicalMirValidation,
-                Phase10BackendRequestFailureKind::InvalidCanonicalMir,
-                "Phase 11 local-state branch merge target is unknown",
-            )
-        })?;
-    let mut merge_assigned: Vec<bool> = then_assigned
-        .iter()
-        .zip(&else_assigned)
-        .map(|(then_value, else_value)| {
-            *then_value && *else_value
-        })
-        .collect();
-    phase11_local_state_apply_statements(
-        function,
-        merge_block,
-        &mut merge_assigned,
-    )?;
-    phase11_local_state_validate_return(
-        function,
-        &merge_block.terminator,
-        &merge_assigned,
-    )
+    Ok(())
 }
 
 fn validate_phase11_scalar_expression_fixture(
@@ -3966,7 +4120,10 @@ fn compile_phase10_scalar_metadata_request_path(
                 ));
             }
             validate_compiler_mir_fixture(&fixture)?;
-            if is_phase11_local_state_fixture(&fixture) {
+            if is_phase11_structured_cfg_fixture(&fixture) {
+                validate_phase11_local_state_fixture(&fixture)?;
+                source_route = "structured_cfg";
+            } else if is_phase11_local_state_fixture(&fixture) {
                 validate_phase11_local_state_fixture(&fixture)?;
                 source_route = "local_state";
             } else if fixture.function.blocks.len() == 1 {
@@ -18683,7 +18840,6 @@ fn define_compiler_mir_ingestion_module_function(
         &local_function_refs,
         &imported_function_refs,
     )?;
-    builder.seal_all_blocks();
     builder.finalize();
 
     module.define_function(function_id, &mut context)?;
@@ -18712,7 +18868,6 @@ fn define_compiler_mir_ingestion_exported_function(
     let mut builder_context = FunctionBuilderContext::new();
     let mut builder = FunctionBuilder::new(&mut context.func, &mut builder_context);
     build_compiler_mir_ingestion_body(&mut builder, mir_function)?;
-    builder.seal_all_blocks();
     builder.finalize();
 
     module.define_function(function_id, &mut context)?;
@@ -18876,7 +19031,31 @@ fn build_compiler_mir_ingestion_body_with_calls(
         }
     }
 
-    for block in &mir_function.blocks {
+    let block_indices = compiler_mir_cfg_block_indices(mir_function);
+    let predecessor_counts = compiler_mir_cfg_predecessor_counts(mir_function)?;
+    let mut emitted_predecessors = vec![0usize; mir_function.blocks.len()];
+    let mut sealed_blocks = vec![false; mir_function.blocks.len()];
+    for (block_index, predecessor_count) in predecessor_counts.iter().enumerate() {
+        if *predecessor_count == 0 {
+            let block = *cranelift_blocks
+                .get(mir_function.blocks[block_index].label)
+                .ok_or_else(|| {
+                    IoError::new(
+                        ErrorKind::InvalidInput,
+                        format!(
+                            "unknown compiler MIR lowering block: {}",
+                            mir_function.blocks[block_index].label
+                        ),
+                    )
+                })?;
+            builder.seal_block(block);
+            sealed_blocks[block_index] = true;
+        }
+    }
+
+    let lowering_order = compiler_mir_cfg_lowering_order(mir_function)?;
+    for block_index in lowering_order {
+        let block = &mir_function.blocks[block_index];
         let current_block = *cranelift_blocks.get(block.label).ok_or_else(|| {
             IoError::new(
                 ErrorKind::InvalidInput,
@@ -19324,6 +19503,40 @@ fn build_compiler_mir_ingestion_body_with_calls(
                 );
             }
         }
+
+        for successor in compiler_mir_cfg_successors(&block.terminator) {
+            let successor_index = *block_indices.get(successor).ok_or_else(|| {
+                IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!(
+                        "unknown compiler MIR lowering successor {successor} from block {}",
+                        block.label
+                    ),
+                )
+            })?;
+            emitted_predecessors[successor_index] += 1;
+            if emitted_predecessors[successor_index]
+                == predecessor_counts[successor_index]
+                && !sealed_blocks[successor_index]
+            {
+                let successor_block = *cranelift_blocks.get(successor).ok_or_else(|| {
+                    IoError::new(
+                        ErrorKind::InvalidInput,
+                        format!("unknown compiler MIR lowering block: {successor}"),
+                    )
+                })?;
+                builder.seal_block(successor_block);
+                sealed_blocks[successor_index] = true;
+            }
+        }
+    }
+
+    if sealed_blocks.iter().any(|sealed| !sealed) {
+        return Err(IoError::new(
+            ErrorKind::InvalidInput,
+            "compiler MIR lowering left an unsealed block after all predecessor edges were emitted",
+        )
+        .into());
     }
 
     Ok(())

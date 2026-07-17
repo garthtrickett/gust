@@ -2489,6 +2489,11 @@ guard-cranelift-backend-surface:
       rg -n -F 'allowed_cranelift_phase11_local_state_legacy_backend_surface_policy:' "$manifest_doc" || true
       exit 1
     fi
+    if ! rg -n -x -F 'allowed_cranelift_phase11_structured_CFG_legacy_backend_surface_policy: exact_structured_CFG_guard_recipe_is_manifest_validated_then_excluded_from_the_legacy_explicit_CLI_scan' "$manifest_doc" >/dev/null; then
+      echo "Phase 11 structured-CFG legacy backend-surface policy is missing or stale."
+      rg -n -F 'allowed_cranelift_phase11_structured_CFG_legacy_backend_surface_policy:' "$manifest_doc" || true
+      exit 1
+    fi
     backend_route_code_refs="$(
       rg -n -F -- "$backend_route_flag"         compiler src tests Makefile Cargo.toml Cargo.lock 2>/dev/null |
         rg -v '^compiler/CRANELIFT_EXPERIMENT_MANIFEST\.md:' |
@@ -2513,6 +2518,9 @@ guard-cranelift-backend-surface:
           if ($0 == "guard-cranelift-phase11-local-state-parity:") {
             excluded_backend_route_guard = 1
           }
+          if ($0 == "guard-cranelift-phase11-structured-cfg-parity:") {
+            excluded_backend_route_guard = 1
+          }
           if ($0 == "guard-cranelift-experiment-manifest-surface:") {
             excluded_backend_route_guard = 1
           }
@@ -2535,7 +2543,7 @@ guard-cranelift-backend-surface:
         sed '/^$/d'
     )"
     if [ -n "$backend_route_refs" ]; then
-      echo "Unauthorized Cranelift backend routing exists outside the frozen Phase 10 surfaces and the exact validated Phase 11 generic/scalar/local-state route guards."
+      echo "Unauthorized Cranelift backend routing exists outside the frozen Phase 10 surfaces and the exact validated Phase 11 generic/scalar/local-state/structured-CFG route guards."
       echo "$backend_route_refs"
       exit 1
     fi
@@ -14937,7 +14945,8 @@ guard-cranelift-phase11-opening-contract:
         guard-cranelift-phase11-local-state-parity \
         guard-cranelift-phase11-opening-contract \
         guard-cranelift-phase11-parity-registry \
-        guard-cranelift-phase11-scalar-expression-parity |
+        guard-cranelift-phase11-scalar-expression-parity \
+        guard-cranelift-phase11-structured-cfg-parity |
         sort
     )"
     declared_phase11_guards="$(
@@ -14946,7 +14955,7 @@ guard-cranelift-phase11-opening-contract:
         sort
     )"
     if [ "$declared_phase11_guards" != "$expected_phase11_guards" ]; then
-      echo "Phase 11 current contract requires exactly the opening, registry, generic-route, scalar-expression, and local-state guards."
+      echo "Phase 11 current contract requires exactly the opening, registry, generic-route, scalar-expression, local-state, and structured-CFG guards."
       diff -u \
         <(printf '%s\n' "$expected_phase11_guards") \
         <(printf '%s\n' "$declared_phase11_guards") ||
@@ -15017,6 +15026,10 @@ guard-cranelift-phase11-opening-contract:
         compiler/phase11_local_state_read_after_write_source.gst \
         compiler/phase11_local_state_straight_line_source.gst \
         compiler/phase11_local_state_uninitialized_read_source.gst \
+        compiler/phase11_structured_cfg_deferred_loop_source.gst \
+        compiler/phase11_structured_cfg_independent_jumps_source.gst \
+        compiler/phase11_structured_cfg_nested_source.gst \
+        compiler/phase11_structured_cfg_three_predecessor_join_source.gst \
         compiler/phase11_scalar_add_source.gst \
         compiler/phase11_scalar_literal_source.gst \
         compiler/phase11_scalar_local_read_source.gst \
@@ -15029,7 +15042,7 @@ guard-cranelift-phase11-opening-contract:
         sort
     )"
     if [ "$actual_phase11_fixture_files" != "$expected_phase11_fixture_files" ]; then
-      echo "Phase 11 current source-fixture inventory differs from the five Patch 4 scalar and six Patch 5 local-state fixtures."
+      echo "Phase 11 current source-fixture inventory differs from the five Patch 4 scalar, six Patch 5 local-state, and four Patch 6 structured-CFG fixtures."
       diff -u \
         <(printf '%s\n' "$expected_phase11_fixture_files") \
         <(printf '%s\n' "$actual_phase11_fixture_files") ||
@@ -15137,9 +15150,9 @@ guard-cranelift-phase11-parity-registry:
       'CRANELIFT_FEATURE_PARITY_REGISTRY_LEGACY_MIR_FEATURE_IMPORT_COUNT: 4'
       'CRANELIFT_FEATURE_PARITY_REGISTRY_FAMILY_COUNT: 6'
       'CRANELIFT_FEATURE_PARITY_REGISTRY_DEFERRED_FAMILY_COUNT: 7'
-      'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_migrated_local_state_parity'
-      'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_INVENTORY: 0_legacy_exact_shape_10_generic_canonical_mir_9_deferred'
-      'CRANELIFT_FEATURE_PARITY_REGISTRY_MIGRATION_INVENTORY: 3_scalar_expression_migrated_3_local_state_migrated_4_generic_shadowed_9_deferred'
+      'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_migrated_structured_CFG_parity'
+      'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_INVENTORY: 0_legacy_exact_shape_11_generic_canonical_mir_8_deferred'
+      'CRANELIFT_FEATURE_PARITY_REGISTRY_MIGRATION_INVENTORY: 3_scalar_expression_migrated_2_local_state_migrated_3_structured_CFG_migrated_3_generic_shadowed_8_deferred'
       'CRANELIFT_FEATURE_PARITY_REGISTRY_MIR_TO_C_GAP_COUNT: 6'
     )
     for expected_line in "${required_registry_lines[@]}"; do
@@ -15282,16 +15295,17 @@ guard-cranelift-phase11-parity-registry:
     done
 
     if [ "$(registry_field_count route_owner legacy_exact_shape)" != "0" ] ||
-       [ "$(registry_field_count route_owner generic_canonical_mir)" != "10" ] ||
-       [ "$(registry_field_count route_owner deferred)" != "9" ]; then
-      echo "Phase 11 current route-owner inventory must remain 0 legacy-primary, 10 generic, 9 deferred."
+       [ "$(registry_field_count route_owner generic_canonical_mir)" != "11" ] ||
+       [ "$(registry_field_count route_owner deferred)" != "8" ]; then
+      echo "Phase 11 current route-owner inventory must remain 0 legacy-primary, 11 generic, 8 deferred."
       exit 1
     fi
     if [ "$(registry_field_count migration_status scalar_expression_migrated)" != "3" ] ||
-       [ "$(registry_field_count migration_status local_state_migrated)" != "3" ] ||
-       [ "$(registry_field_count migration_status generic_shadowed)" != "4" ] ||
-       [ "$(registry_field_count migration_status deferred)" != "9" ]; then
-      echo "Phase 11 current migration inventory must remain 3 scalar-migrated, 3 local-state-migrated, 4 generic-shadowed, and 9 deferred."
+       [ "$(registry_field_count migration_status local_state_migrated)" != "2" ] ||
+       [ "$(registry_field_count migration_status structured_CFG_migrated)" != "3" ] ||
+       [ "$(registry_field_count migration_status generic_shadowed)" != "3" ] ||
+       [ "$(registry_field_count migration_status deferred)" != "8" ]; then
+      echo "Phase 11 current migration inventory must remain 3 scalar-migrated, 2 local-state-migrated, 3 structured-CFG-migrated, 3 generic-shadowed, and 8 deferred."
       exit 1
     fi
     if [ "$(registry_field_count seed_import 1)" != "17" ] ||
@@ -15300,7 +15314,7 @@ guard-cranelift-phase11-parity-registry:
       exit 1
     fi
     if [ "$(registry_field_count mir_to_c_guard none_gap_recorded)" != "6" ]; then
-      echo "Phase 11 registry must expose exactly six dedicated MIR-to-C evidence gaps after local-state migration."
+      echo "Phase 11 registry must retain exactly six dedicated MIR-to-C evidence gaps after structured-CFG migration."
       exit 1
     fi
 
@@ -15354,17 +15368,17 @@ guard-cranelift-phase11-parity-registry:
       exit 1
     fi
 
-    expected_baseline_expectations="$(
+    expected_current_expectations_for_baseline_owners="$(
       printf '%s\n' \
         exit_2_stdout_empty_stderr_empty \
         exit_7_stdout_empty_stderr_empty \
-        exit_11_stdout_empty_stderr_empty \
         exit_17_stdout_empty_stderr_empty \
         exit_47_stdout_empty_stderr_empty \
-        exit_53_stdout_empty_stderr_empty |
+        exit_53_stdout_empty_stderr_empty \
+        exit_71_stdout_empty_stderr_empty |
         sort
     )"
-    actual_baseline_expectations="$(
+    actual_current_expectations_for_baseline_owners="$(
       awk -F'|' '
         /^parity_entry: / {
           baseline_source = ""
@@ -15385,11 +15399,11 @@ guard-cranelift-phase11-parity-registry:
       ' "$registry_doc" |
         sort
     )"
-    if [ "$actual_baseline_expectations" != "$expected_baseline_expectations" ]; then
-      echo "Phase 11 registry baseline expectations differ from the six frozen exits."
+    if [ "$actual_current_expectations_for_baseline_owners" != "$expected_current_expectations_for_baseline_owners" ]; then
+      echo "Phase 11 registry current positive expectations for the six baseline owners are stale."
       diff -u \
-        <(printf '%s\n' "$expected_baseline_expectations") \
-        <(printf '%s\n' "$actual_baseline_expectations") ||
+        <(printf '%s\n' "$expected_current_expectations_for_baseline_owners") \
+        <(printf '%s\n' "$actual_current_expectations_for_baseline_owners") ||
         true
       exit 1
     fi
@@ -15527,7 +15541,7 @@ guard-cranelift-phase11-parity-registry:
     printf '%s\n' "$readme_flat" |
       rg -F 'The next milestone is structured CFG parity.' >/dev/null
 
-    echo "✅ Phase 11 parity registry preserved: 19 unique entries, 17 translator seeds, 10 generic owners, 3 scalar-expression migrations, 3 local-state migrations, 4 generic-shadowed entries, 9 deferred entries, and 6 explicit MIR-to-C gaps."
+    echo "✅ Phase 11 parity registry preserved: 19 unique entries, 17 translator seeds, 11 generic owners, 3 scalar-expression migrations, 2 local-state migrations, 3 structured-CFG migrations, 3 generic-shadowed entries, 8 deferred entries, and 6 explicit MIR-to-C gaps."
 
 guard-cranelift-phase11-generic-canonical-mir-route:
     #!/usr/bin/env bash
@@ -15709,19 +15723,21 @@ guard-cranelift-phase11-generic-canonical-mir-route:
     generic_shadow_count="$(rg -c 'migration_status=generic_shadowed' "$registry_doc" || true)"
     scalar_migrated_count="$(rg -c 'migration_status=scalar_expression_migrated' "$registry_doc" || true)"
     local_state_migrated_count="$(rg -c 'migration_status=local_state_migrated' "$registry_doc" || true)"
+    structured_cfg_migrated_count="$(rg -c 'migration_status=structured_CFG_migrated' "$registry_doc" || true)"
     legacy_owner_count="$(rg -c 'route_owner=legacy_exact_shape' "$registry_doc" || true)"
-    if [ "${generic_owner_count:-0}" != "10" ] ||
-       [ "${generic_shadow_count:-0}" != "4" ] ||
+    if [ "${generic_owner_count:-0}" != "11" ] ||
+       [ "${generic_shadow_count:-0}" != "3" ] ||
        [ "${scalar_migrated_count:-0}" != "3" ] ||
-       [ "${local_state_migrated_count:-0}" != "3" ] ||
+       [ "${local_state_migrated_count:-0}" != "2" ] ||
+       [ "${structured_cfg_migrated_count:-0}" != "3" ] ||
        [ "${legacy_owner_count:-0}" != "0" ]; then
-      echo "Phase 11 registry must expose ten generic owners: four shadowed entries, three scalar migrations, and three local-state migrations."
-      echo "generic=${generic_owner_count:-0} shadowed=${generic_shadow_count:-0} scalar=${scalar_migrated_count:-0} local_state=${local_state_migrated_count:-0} legacy=${legacy_owner_count:-0}"
+      echo "Phase 11 registry must expose eleven generic owners: three shadowed entries, three scalar migrations, two local-state migrations, and three structured-CFG migrations."
+      echo "generic=${generic_owner_count:-0} shadowed=${generic_shadow_count:-0} scalar=${scalar_migrated_count:-0} local_state=${local_state_migrated_count:-0} structured_CFG=${structured_cfg_migrated_count:-0} legacy=${legacy_owner_count:-0}"
       exit 1
     fi
-    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_migrated_local_state_parity' "$registry_doc" >/dev/null
-    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_INVENTORY: 0_legacy_exact_shape_10_generic_canonical_mir_9_deferred' "$registry_doc" >/dev/null
-    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_MIGRATION_INVENTORY: 3_scalar_expression_migrated_3_local_state_migrated_4_generic_shadowed_9_deferred' "$registry_doc" >/dev/null
+    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_migrated_structured_CFG_parity' "$registry_doc" >/dev/null
+    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_INVENTORY: 0_legacy_exact_shape_11_generic_canonical_mir_8_deferred' "$registry_doc" >/dev/null
+    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_MIGRATION_INVENTORY: 3_scalar_expression_migrated_2_local_state_migrated_3_structured_CFG_migrated_3_generic_shadowed_8_deferred' "$registry_doc" >/dev/null
     rg -n -F "deferred_fixture=$unsupported_source" "$registry_doc" >/dev/null
 
     if [ "${PHASE11_GENERIC_ROUTE_SKIP_DYNAMIC:-0}" = "1" ]; then
@@ -16007,9 +16023,9 @@ guard-cranelift-phase11-scalar-expression-parity:
       exit 1
     fi
 
-    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_migrated_local_state_parity' "$registry_doc" >/dev/null
-    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_INVENTORY: 0_legacy_exact_shape_10_generic_canonical_mir_9_deferred' "$registry_doc" >/dev/null
-    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_MIGRATION_INVENTORY: 3_scalar_expression_migrated_3_local_state_migrated_4_generic_shadowed_9_deferred' "$registry_doc" >/dev/null
+    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_migrated_structured_CFG_parity' "$registry_doc" >/dev/null
+    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_INVENTORY: 0_legacy_exact_shape_11_generic_canonical_mir_8_deferred' "$registry_doc" >/dev/null
+    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_MIGRATION_INVENTORY: 3_scalar_expression_migrated_2_local_state_migrated_3_structured_CFG_migrated_3_generic_shadowed_8_deferred' "$registry_doc" >/dev/null
     rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_MIR_TO_C_GAP_COUNT: 6' "$registry_doc" >/dev/null
     if [ "$(rg -c 'migration_status=scalar_expression_migrated' "$registry_doc")" != "3" ]; then
       echo "Registry must contain exactly three scalar-expression migrations after the local-read entry moves to Patch 5."
@@ -16295,7 +16311,7 @@ guard-cranelift-phase11-local-state-parity:
       'allowed_cranelift_phase11_local_state_scope_freeze: no_nested_CFG_loops_backedges_function_parameters_new_arithmetic_operation_MIR_v3_worker_protocol_driver_discovery_artifact_link_package_CLI_or_CI_matrix_change'
       'allowed_cranelift_phase11_local_state_legacy_backend_surface_policy: exact_local_state_guard_recipe_is_manifest_validated_then_excluded_from_the_legacy_explicit_CLI_scan'
       'allowed_cranelift_phase11_local_state_next_milestone: structured_CFG_parity'
-      'allowed_cranelift_phase11_local_state_next_milestone_status: pending'
+      'allowed_cranelift_phase11_local_state_next_milestone_status: complete'
     )
     for expected_line in "${required_manifest_lines[@]}"; do
       if ! rg -n -x -F "$expected_line" "$manifest_doc" >/dev/null; then
@@ -16356,17 +16372,18 @@ guard-cranelift-phase11-local-state-parity:
     rg -n -F 'validate_phase11_local_state_fixture(&fixture)?;' "$rust_driver" >/dev/null
     rg -n -F '"local_state"' "$rust_driver" >/dev/null
     rg -n -F 'declaration_seen = vec![false; function.locals.len()]' "$rust_driver" >/dev/null
-    rg -n -F '.zip(&else_assigned)' "$rust_driver" >/dev/null
+    rg -n -F 'fn compiler_mir_cfg_lowering_order(' "$rust_driver" >/dev/null
+    rg -n -F 'fn phase11_cfg_intersect_assignment_state(' "$rust_driver" >/dev/null
 
-    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_migrated_local_state_parity' "$registry_doc" >/dev/null
-    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_INVENTORY: 0_legacy_exact_shape_10_generic_canonical_mir_9_deferred' "$registry_doc" >/dev/null
-    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_MIGRATION_INVENTORY: 3_scalar_expression_migrated_3_local_state_migrated_4_generic_shadowed_9_deferred' "$registry_doc" >/dev/null
+    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_migrated_structured_CFG_parity' "$registry_doc" >/dev/null
+    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_INVENTORY: 0_legacy_exact_shape_11_generic_canonical_mir_8_deferred' "$registry_doc" >/dev/null
+    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_MIGRATION_INVENTORY: 3_scalar_expression_migrated_2_local_state_migrated_3_structured_CFG_migrated_3_generic_shadowed_8_deferred' "$registry_doc" >/dev/null
     rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_MIR_TO_C_GAP_COUNT: 6' "$registry_doc" >/dev/null
-    if [ "$(rg -c 'migration_status=local_state_migrated' "$registry_doc")" != "3" ]; then
-      echo "Registry must contain exactly three local-state migrations."
+    if [ "$(rg -c 'migration_status=local_state_migrated' "$registry_doc")" != "2" ]; then
+      echo "Registry must retain exactly two Patch 5 local-state migrations after CFG ownership moves to Patch 6."
       exit 1
     fi
-    for local_state_id in local_binding_read block_local_branch_join provenance_metadata; do
+    for local_state_id in local_binding_read provenance_metadata; do
       local_state_record="$(rg -n -F "parity_entry: id=$local_state_id|" "$registry_doc")"
       printf '%s\n' "$local_state_record" |
         rg -F 'route_owner=generic_canonical_mir' >/dev/null
@@ -16377,6 +16394,11 @@ guard-cranelift-phase11-local-state-parity:
       printf '%s\n' "$local_state_record" |
         rg -F 'mir_to_c_guard=guard-cranelift-phase11-local-state-parity' >/dev/null
     done
+    block_local_record="$(rg -n -F 'parity_entry: id=block_local_branch_join|' "$registry_doc")"
+    printf '%s\n' "$block_local_record" | rg -F 'route_owner=generic_canonical_mir' >/dev/null
+    printf '%s\n' "$block_local_record" | rg -F 'migration_status=structured_CFG_migrated' >/dev/null
+    printf '%s\n' "$block_local_record" | rg -F 'source_native_guard=guard-cranelift-phase11-structured-cfg-parity' >/dev/null
+
     rg -n -x -F 'deferred_family: id=multiple_locals_and_assignments|owner_patch=5|fixture=compiler/phase11_local_state_uninitialized_read_source.gst|expected_class=invalid_canonical_MIR_before_driver_discovery_or_artifact_access|status=migrated|' "$registry_doc" >/dev/null
 
     manifest_inventory_count="$(
@@ -16575,6 +16597,488 @@ guard-cranelift-phase11-local-state-parity:
       rg -F 'The next milestone is structured CFG parity.' >/dev/null
 
     echo "✅ Phase 11 local-state parity migrated: generic multiple-local inventories, declaration and assignment provenance, straight-line and branch dataflow, four MIR-to-C/native differential lanes, and two pre-driver negative lanes are covered."
+
+
+guard-cranelift-phase11-structured-cfg-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 11 structured CFG parity..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    registry_doc="compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md"
+    generic_source="compiler/mir_native_backend_generic_source.gst"
+    structured_cfg_source="compiler/mir_native_backend_structured_cfg_source.gst"
+    route_source="compiler/mir_native_backend_source_route.gst"
+    rust_manifest="compiler/experiments/cranelift/Cargo.toml"
+    rust_driver="compiler/experiments/cranelift/src/main.rs"
+    readme_doc="compiler/experiments/cranelift/README.md"
+    deferred_loop_source="compiler/phase11_structured_cfg_deferred_loop_source.gst"
+    build_dir="build/guards/cranelift_phase11_structured_cfg_parity"
+
+    positive_cases=(
+      'compiler/phase11_structured_cfg_nested_source.gst|71|nested-if-else'
+      'compiler/phase11_structured_cfg_three_predecessor_join_source.gst|73|three-predecessor-join'
+      'compiler/phase11_structured_cfg_independent_jumps_source.gst|32|independent-jumps'
+    )
+
+    for required_file in \
+      "$manifest_doc" \
+      "$registry_doc" \
+      "$generic_source" \
+      "$structured_cfg_source" \
+      "$route_source" \
+      "$rust_manifest" \
+      "$rust_driver" \
+      "$readme_doc" \
+      "$deferred_loop_source" \
+      src/runtime.c
+    do
+      if [ ! -f "$required_file" ]; then
+        echo "Missing Phase 11 structured-CFG input: $required_file"
+        exit 1
+      fi
+    done
+    for case_record in "${positive_cases[@]}"; do
+      IFS='|' read -r source_path expected_exit case_name <<<"$case_record"
+      if [ ! -f "$source_path" ]; then
+        echo "Missing Phase 11 structured-CFG source $case_name: $source_path"
+        exit 1
+      fi
+    done
+    if [ ! -x ./gust ]; then
+      echo "Phase 11 structured-CFG guard requires the rebuilt ./gust compiler."
+      exit 1
+    fi
+
+    PHASE11_LOCAL_STATE_SKIP_DYNAMIC=1 \
+      just guard-cranelift-phase11-local-state-parity
+
+    required_manifest_lines=(
+      'CRANELIFT_EXPERIMENT_ALLOWED_PHASE11_STRUCTURED_CFG_PARITY_GUARD: guard-cranelift-phase11-structured-cfg-parity'
+      'allowed_cranelift_phase11_structured_CFG_status: phase11_migrated_structured_CFG_parity'
+      'allowed_cranelift_phase11_structured_CFG_predecessor_status: phase11_migrated_local_state_parity'
+      'allowed_cranelift_phase11_structured_CFG_predecessor_guard: guard-cranelift-phase11-local-state-parity'
+      'allowed_cranelift_phase11_structured_CFG_predecessor_policy: predecessor_guard_runs_static_contract_mode_without_replaying_local_state_dynamic_executions'
+      'allowed_cranelift_phase11_structured_CFG_lowerer: compiler/mir_native_backend_structured_cfg_source.gst'
+      'allowed_cranelift_phase11_structured_CFG_positive_fixture_count: 3'
+      'allowed_cranelift_phase11_structured_CFG_positive_fixtures: compiler/phase11_structured_cfg_nested_source.gst,compiler/phase11_structured_cfg_three_predecessor_join_source.gst,compiler/phase11_structured_cfg_independent_jumps_source.gst'
+      'allowed_cranelift_phase11_structured_CFG_expected_exits: nested_71,three_predecessor_join_73,independent_jumps_32'
+      'allowed_cranelift_phase11_structured_CFG_deferred_fixture: compiler/phase11_structured_cfg_deferred_loop_source.gst'
+      'allowed_cranelift_phase11_structured_CFG_source_scope: nested_positive_local_if_else_multi_predecessor_zero_argument_joins_and_sequential_layout_independent_block_jumps'
+      'allowed_cranelift_phase11_structured_CFG_verifier_rules: unique_block_labels_valid_successors_reachable_entry_exactly_one_serialized_terminator_compatible_edge_argument_arity_and_types_and_definite_local_assignment'
+      'allowed_cranelift_phase11_structured_CFG_join_policy: acyclic_topological_dataflow_intersects_assignment_state_across_arbitrary_predecessor_counts_and_the_selected_execution_state_only_drives_expected_exit_evidence'
+      'allowed_cranelift_phase11_structured_CFG_worker_policy: arbitrary_acyclic_block_inventories_replace_one_or_four_block_fixture_topology_checks'
+      'allowed_cranelift_phase11_structured_CFG_cranelift_policy: all_blocks_are_created_first_lowering_uses_reachable_graph_order_and_each_block_is_sealed_exactly_when_all_declared_predecessor_edges_have_been_emitted'
+      'allowed_cranelift_phase11_structured_CFG_negative_case_count: 6'
+      'allowed_cranelift_phase11_structured_CFG_negative_cases: duplicate_block_label,unknown_successor,unreachable_block,missing_terminator,duplicate_terminator_field,incompatible_edge_arguments'
+      'allowed_cranelift_phase11_structured_CFG_negative_policy: malformed_CFG_is_rejected_by_the_shared_parser_or_verifier_before_object_publication_and_existing_output_is_preserved'
+      'allowed_cranelift_phase11_structured_CFG_irreducible_policy: ordinary_source_loops_backedges_and_irreducible_CFG_remain_explicitly_deferred_while_preexisting_canonical_MIR_worker_backedge_support_is_preserved'
+      'allowed_cranelift_phase11_structured_CFG_differential_policy: default_and_explicit_MIR_to_C_are_byte_identical_and_MIR_to_C_plus_Cranelift_match_exit_stdout_and_stderr_for_all_three_positive_sources'
+      'allowed_cranelift_phase11_structured_CFG_registry_inventory: 0_legacy_exact_shape_11_generic_canonical_mir_8_deferred'
+      'allowed_cranelift_phase11_structured_CFG_registry_migration_inventory: 3_scalar_expression_migrated_2_local_state_migrated_3_structured_CFG_migrated_3_generic_shadowed_8_deferred'
+      'allowed_cranelift_phase11_structured_CFG_registry_MIR_to_C_gap_count: 6'
+      'allowed_cranelift_phase11_structured_CFG_compatibility_policy: Phase10_recognizers_and_six_baseline_shadow_comparisons_remain_unchanged_behind_the_generic_attempt'
+      'allowed_cranelift_phase11_structured_CFG_scope_freeze: no_block_parameters_edge_arguments_loops_backedges_function_parameters_calls_imports_MIR_v3_worker_protocol_driver_link_package_CLI_or_CI_matrix_change'
+      'allowed_cranelift_phase11_structured_CFG_legacy_backend_surface_policy: exact_structured_CFG_guard_recipe_is_manifest_validated_then_excluded_from_the_legacy_explicit_CLI_scan'
+      'allowed_cranelift_phase11_structured_CFG_next_milestone: block_parameter_and_loop_backedge_parity'
+      'allowed_cranelift_phase11_structured_CFG_next_milestone_status: pending'
+    )
+    for expected_line in "${required_manifest_lines[@]}"; do
+      if ! rg -n -x -F "$expected_line" "$manifest_doc" >/dev/null; then
+        echo "Missing Phase 11 structured-CFG manifest line:"
+        echo "$expected_line"
+        exit 1
+      fi
+    done
+
+    required_cfg_symbols=(
+      'type MirNativeStructuredCfgBlock[ctx] struct'
+      'type MirNativeStructuredCfgState[ctx] struct'
+      'type MirNativeStructuredCfgModel[ctx] struct'
+      'func mir_native_structured_cfg_merge_states('
+      'func mir_native_structured_cfg_lower_sequence('
+      'func mir_native_structured_cfg_emit_block('
+      'func mir_native_structured_cfg_source_lower('
+      'result.model.branch_count ='
+      'if len(result.states) > 1 {'
+      'merged_initialized.Set(local_index, 0)'
+      'terminator_kind = 2'
+      'terminator_kind = 3'
+      'kind=StructuredCfg;reducibility=acyclic;block_count='
+      '_terminator_argument_count: 0'
+      '_terminator_then_argument_count: 0'
+      '_terminator_else_argument_count: 0'
+    )
+    for expected_symbol in "${required_cfg_symbols[@]}"; do
+      rg -n -F "$expected_symbol" "$structured_cfg_source" >/dev/null
+    done
+
+    rg -n -F 'import "mir_native_backend_structured_cfg_source.gst" as structured_cfg;' \
+      "$generic_source" >/dev/null
+    rg -n -F 'structured_cfg.mir_native_structured_cfg_source_lower(' \
+      "$generic_source" >/dev/null
+    structured_line="$(rg -n -F 'structured_cfg.mir_native_structured_cfg_source_lower(' "$generic_source" | cut -d: -f1)"
+    local_state_line="$(rg -n -F 'local_state.mir_native_local_state_source_lower(' "$generic_source" | cut -d: -f1)"
+    if [ -z "$structured_line" ] || [ -z "$local_state_line" ] || [ "$structured_line" -ge "$local_state_line" ]; then
+      echo "Structured-CFG lowering must run before the Patch 5 compatibility lowerer."
+      exit 1
+    fi
+
+    if rg -n -e 'phase10_[A-Za-z0-9_]*_source\.gst|phase11_[A-Za-z0-9_]*_source\.gst' \
+      "$generic_source" "$structured_cfg_source" "$route_source" >/dev/null; then
+      echo "Structured-CFG lowering must not inspect or embed source fixture identities."
+      rg -n -e 'phase10_[A-Za-z0-9_]*_source\.gst|phase11_[A-Za-z0-9_]*_source\.gst' \
+        "$generic_source" "$structured_cfg_source" "$route_source"
+      exit 1
+    fi
+    if rg -n -F 'statement.tag == 8' "$structured_cfg_source" >/dev/null ||
+       rg -n -F 'statement.While' "$structured_cfg_source" >/dev/null; then
+      echo "Patch 6 must not lower loops or backedges from ordinary source."
+      exit 1
+    fi
+
+    required_worker_symbols=(
+      'fn compiler_mir_cfg_successors'
+      'fn compiler_mir_cfg_predecessor_counts('
+      'fn compiler_mir_cfg_lowering_order('
+      'fn compiler_mir_cfg_acyclic_order('
+      'fn is_phase11_structured_cfg_fixture('
+      'fn phase11_cfg_intersect_assignment_state('
+      'source_route = "structured_cfg";'
+      'let mut emitted_predecessors = vec![0usize; mir_function.blocks.len()]'
+      'builder.seal_block(successor_block);'
+      'compiler MIR lowering left an unsealed block after all predecessor edges were emitted'
+      'explicitly defers backedges and cyclic or irreducible control flow to Patch 7'
+    )
+    for expected_symbol in "${required_worker_symbols[@]}"; do
+      rg -n -F "$expected_symbol" "$rust_driver" >/dev/null
+    done
+    if rg -n -F 'Phase 11 local-state source route accepts one straight-line block or one four-block branch/merge graph' "$rust_driver" >/dev/null ||
+       rg -n -F 'function.blocks.len() != 1 && function.blocks.len() != 4' "$rust_driver" >/dev/null; then
+      echo "Patch 6 must retire exact one/four-block worker validation."
+      exit 1
+    fi
+
+    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_migrated_structured_CFG_parity' "$registry_doc" >/dev/null
+    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_INVENTORY: 0_legacy_exact_shape_11_generic_canonical_mir_8_deferred' "$registry_doc" >/dev/null
+    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_MIGRATION_INVENTORY: 3_scalar_expression_migrated_2_local_state_migrated_3_structured_CFG_migrated_3_generic_shadowed_8_deferred' "$registry_doc" >/dev/null
+    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_MIR_TO_C_GAP_COUNT: 6' "$registry_doc" >/dev/null
+    if [ "$(rg -c 'migration_status=structured_CFG_migrated' "$registry_doc")" != "3" ]; then
+      echo "Registry must contain exactly three structured-CFG migrations."
+      exit 1
+    fi
+    for cfg_id in conditional_branch block_jump block_local_branch_join; do
+      cfg_record="$(rg -n -F "parity_entry: id=$cfg_id|" "$registry_doc")"
+      printf '%s\n' "$cfg_record" | rg -F 'route_owner=generic_canonical_mir' >/dev/null
+      printf '%s\n' "$cfg_record" | rg -F 'migration_status=structured_CFG_migrated' >/dev/null
+      printf '%s\n' "$cfg_record" | rg -F 'source_native_guard=guard-cranelift-phase11-structured-cfg-parity' >/dev/null
+      printf '%s\n' "$cfg_record" | rg -F 'deferred_fixture=compiler/phase11_structured_cfg_deferred_loop_source.gst' >/dev/null
+    done
+    rg -n -x -F 'deferred_family: id=nested_CFG|owner_patch=6|fixture=compiler/phase11_structured_cfg_nested_source.gst|expected_class=migrated_by_verifier_defined_acyclic_CFG_support|status=migrated|' "$registry_doc" >/dev/null
+    rg -n -x -F 'deferred_family: id=loops_and_backedges|owner_patch=7|fixture=compiler/phase11_structured_cfg_deferred_loop_source.gst|expected_class=route_not_connected_before_driver_discovery_or_artifact_access|status=frozen|' "$registry_doc" >/dev/null
+
+    if [ "${PHASE11_STRUCTURED_CFG_SKIP_DYNAMIC:-0}" = "1" ]; then
+      readme_flat="$(tr '\n' ' ' < "$readme_doc")"
+      printf '%s\n' "$readme_flat" |
+        rg -F 'Patch 6 migrates structured CFG parity as `phase11_migrated_structured_CFG_parity`.' >/dev/null
+      printf '%s\n' "$readme_flat" |
+        rg -F 'CFG support is now verifier-defined rather than block-count-defined.' >/dev/null
+      printf '%s\n' "$readme_flat" |
+        rg -F 'The next milestone is block-parameter and loop/backedge parity.' >/dev/null
+      echo "✅ Phase 11 structured-CFG static contract passed; dynamic differential and malformed-CFG evidence was intentionally not replayed."
+      exit 0
+    fi
+
+    rm -rf "$build_dir"
+    mkdir -p "$build_dir"
+    cargo_target="$build_dir/cargo-target"
+    CARGO_TARGET_DIR="$cargo_target" cargo build \
+      --locked \
+      --quiet \
+      --manifest-path "$rust_manifest"
+    driver_bin="$cargo_target/debug/gust-cranelift-experiment"
+    if [ ! -x "$driver_bin" ]; then
+      echo "Missing built Phase 11 structured-CFG worker: $driver_bin"
+      exit 1
+    fi
+    driver_abs="$(cd "$(dirname "$driver_bin")" && pwd)/$(basename "$driver_bin")"
+    CC_BIN="${CC:-cc}"
+    CFLAGS_VAL="${CFLAGS:--O0 -w -pthread}"
+
+    execute_and_capture() {
+      local binary="$1"
+      local prefix="$2"
+      set +e
+      "$binary" >"$prefix.stdout" 2>"$prefix.stderr"
+      local status="$?"
+      set -e
+      printf '%s\n' "$status" >"$prefix.status"
+    }
+
+    compile_and_compare() {
+      local source_path="$1"
+      local expected_exit="$2"
+      local case_name="$3"
+      local case_dir="$build_dir/$case_name"
+      mkdir -p "$case_dir"
+
+      ./gust "$source_path" \
+        >"$case_dir/default.c" 2>"$case_dir/default.compiler.stderr"
+      ./gust --backend mir-to-c "$source_path" \
+        >"$case_dir/explicit.c" 2>"$case_dir/explicit.compiler.stderr"
+      if [ -s "$case_dir/default.compiler.stderr" ] ||
+         [ -s "$case_dir/explicit.compiler.stderr" ]; then
+        echo "MIR-to-C compilation emitted diagnostics for structured-CFG case $case_name."
+        cat "$case_dir/default.compiler.stderr" "$case_dir/explicit.compiler.stderr"
+        exit 1
+      fi
+      if ! cmp -s "$case_dir/default.c" "$case_dir/explicit.c"; then
+        echo "Default and explicit MIR-to-C output differ for structured-CFG case $case_name."
+        diff -u "$case_dir/default.c" "$case_dir/explicit.c" || true
+        exit 1
+      fi
+
+      cat src/runtime.c "$case_dir/default.c" >"$case_dir/mir-to-c.final.c"
+      "$CC_BIN" $CFLAGS_VAL -Isrc \
+        "$case_dir/mir-to-c.final.c" \
+        -o "$case_dir/mir-to-c-program"
+      execute_and_capture "$case_dir/mir-to-c-program" "$case_dir/mir-to-c"
+
+      GUST_NATIVE_BACKEND_DRIVER="$driver_abs" \
+        ./gust --backend cranelift \
+          -o "$case_dir/native-program" \
+          "$source_path" \
+          >"$case_dir/native.compiler.stdout" \
+          2>"$case_dir/native.compiler.stderr"
+      if [ -s "$case_dir/native.compiler.stdout" ] ||
+         [ -s "$case_dir/native.compiler.stderr" ]; then
+        echo "Successful native structured-CFG compilation emitted diagnostics for $case_name."
+        cat "$case_dir/native.compiler.stdout" "$case_dir/native.compiler.stderr"
+        exit 1
+      fi
+      if [ ! -x "$case_dir/native-program" ]; then
+        echo "Native structured-CFG compilation did not publish $case_name."
+        exit 1
+      fi
+      execute_and_capture "$case_dir/native-program" "$case_dir/native"
+
+      mir_status="$(cat "$case_dir/mir-to-c.status")"
+      native_status="$(cat "$case_dir/native.status")"
+      if [ "$mir_status" != "$expected_exit" ] ||
+         [ "$native_status" != "$expected_exit" ]; then
+        echo "Structured-CFG parity exit mismatch for $case_name: MIR-to-C=$mir_status native=$native_status expected=$expected_exit"
+        exit 1
+      fi
+      if ! cmp -s "$case_dir/mir-to-c.stdout" "$case_dir/native.stdout" ||
+         ! cmp -s "$case_dir/mir-to-c.stderr" "$case_dir/native.stderr"; then
+        echo "Structured-CFG parity stdout/stderr mismatch for $case_name."
+        diff -u "$case_dir/mir-to-c.stdout" "$case_dir/native.stdout" || true
+        diff -u "$case_dir/mir-to-c.stderr" "$case_dir/native.stderr" || true
+        exit 1
+      fi
+      if [ -e "$case_dir/native-program.phase10.bundle" ] ||
+         [ -e "$case_dir/native-program.phase10.request" ]; then
+        echo "Structured-CFG parity compilation left transient request artifacts for $case_name."
+        exit 1
+      fi
+    }
+
+    for case_record in "${positive_cases[@]}"; do
+      IFS='|' read -r source_path expected_exit case_name <<<"$case_record"
+      compile_and_compare "$source_path" "$expected_exit" "$case_name"
+    done
+
+    deferred_dir="$build_dir/deferred-loop"
+    mkdir -p "$deferred_dir"
+    deferred_output="$deferred_dir/existing-output"
+    missing_driver="/phase11/missing/structured-cfg/backend"
+    printf 'phase11-structured-cfg-output-sentinel\n' >"$deferred_output"
+    cp "$deferred_output" "$deferred_dir/existing-output.expected"
+    set +e
+    GUST_NATIVE_BACKEND_DRIVER="$missing_driver" \
+      ./gust --backend cranelift \
+        -o "$deferred_output" \
+        "$deferred_loop_source" \
+        >"$deferred_dir/native.stdout" \
+        2>"$deferred_dir/native.stderr"
+    deferred_status="$?"
+    set -e
+    if [ "$deferred_status" = "0" ]; then
+      echo "Loop/backedge source unexpectedly entered the Phase 11 structured-CFG route."
+      exit 1
+    fi
+    cat "$deferred_dir/native.stdout" "$deferred_dir/native.stderr" >"$deferred_dir/native.combined"
+    rg -n -F 'Experimental Cranelift backend selection is valid, but the source-level route is not connected yet.' "$deferred_dir/native.combined" >/dev/null
+    if rg -n -F 'Native backend driver discovery error:' "$deferred_dir/native.combined" >/dev/null ||
+       rg -n -F "$missing_driver" "$deferred_dir/native.combined" >/dev/null; then
+      echo "Deferred loop/backedge source reached driver discovery."
+      cat "$deferred_dir/native.combined"
+      exit 1
+    fi
+    cmp -s "$deferred_dir/existing-output.expected" "$deferred_output"
+
+    malformed_dir="$build_dir/malformed"
+    mkdir -p "$malformed_dir"
+    malformed_emit_cmd=("$driver_bin" compiler-mir-ingestion-object)
+    expect_invalid_fixture() {
+      local name="$1"
+      local fixture="$2"
+      local expected="$3"
+      local log="$malformed_dir/$name.log"
+      local protected_output="$malformed_dir/$name.existing-output"
+      printf 'phase11-malformed-cfg-output-sentinel\n' >"$protected_output"
+      cp "$protected_output" "$protected_output.expected"
+      set +e
+      "${malformed_emit_cmd[@]}" "$fixture" "$protected_output" >"$log" 2>&1
+      local status="$?"
+      set -e
+      if [ "$status" = "0" ]; then
+        echo "Malformed structured CFG unexpectedly validated: $name"
+        cat "$log"
+        exit 1
+      fi
+      rg -n -F "$expected" "$log" >/dev/null
+      cmp -s "$protected_output.expected" "$protected_output"
+    }
+
+    duplicate_block="$malformed_dir/duplicate-block.mir"
+    cat >"$duplicate_block" <<'MIR'
+    format: gust.compiler_mir_ingestion.v1
+    function: malformed_duplicate_block
+    backend_symbol: malformed_duplicate_block
+    parameter_count: 0
+    return_type: int
+    local_count: 0
+    entry_block: entry
+    block_count: 2
+    block_0_label: entry
+    block_0_statement_count: 0
+    block_0_terminator_kind: ReturnI32
+    block_0_terminator_value: 0
+    block_1_label: entry
+    block_1_statement_count: 0
+    block_1_terminator_kind: ReturnI32
+    block_1_terminator_value: 0
+    metadata_count: 0
+    expected_exit: 0
+    MIR
+    expect_invalid_fixture duplicate-block "$duplicate_block" 'duplicate canonical compiler MIR block label: entry'
+
+    unknown_successor="$malformed_dir/unknown-successor.mir"
+    cat >"$unknown_successor" <<'MIR'
+    format: gust.compiler_mir_ingestion.v1
+    function: malformed_unknown_successor
+    backend_symbol: malformed_unknown_successor
+    parameter_count: 0
+    return_type: int
+    local_count: 0
+    entry_block: entry
+    block_count: 1
+    block_0_label: entry
+    block_0_statement_count: 0
+    block_0_terminator_kind: Jump
+    block_0_terminator_target: missing
+    block_0_terminator_argument_count: 0
+    metadata_count: 0
+    expected_exit: 0
+    MIR
+    expect_invalid_fixture unknown-successor "$unknown_successor" 'unknown canonical compiler MIR jump target missing from block entry'
+
+    unreachable_block="$malformed_dir/unreachable-block.mir"
+    cat >"$unreachable_block" <<'MIR'
+    format: gust.compiler_mir_ingestion.v1
+    function: malformed_unreachable_block
+    backend_symbol: malformed_unreachable_block
+    parameter_count: 0
+    return_type: int
+    local_count: 0
+    entry_block: entry
+    block_count: 2
+    block_0_label: entry
+    block_0_statement_count: 0
+    block_0_terminator_kind: ReturnI32
+    block_0_terminator_value: 0
+    block_1_label: orphan
+    block_1_statement_count: 0
+    block_1_terminator_kind: ReturnI32
+    block_1_terminator_value: 0
+    metadata_count: 0
+    expected_exit: 0
+    MIR
+    expect_invalid_fixture unreachable-block "$unreachable_block" 'canonical compiler MIR fixture has unreachable block(s): orphan'
+
+    missing_terminator="$malformed_dir/missing-terminator.mir"
+    cat >"$missing_terminator" <<'MIR'
+    format: gust.compiler_mir_ingestion.v1
+    function: malformed_missing_terminator
+    backend_symbol: malformed_missing_terminator
+    parameter_count: 0
+    return_type: int
+    local_count: 0
+    entry_block: entry
+    block_count: 1
+    block_0_label: entry
+    block_0_statement_count: 0
+    metadata_count: 0
+    expected_exit: 0
+    MIR
+    expect_invalid_fixture missing-terminator "$missing_terminator" 'missing canonical compiler MIR fixture field: block_0_terminator_kind'
+
+    duplicate_terminator="$malformed_dir/duplicate-terminator.mir"
+    cat >"$duplicate_terminator" <<'MIR'
+    format: gust.compiler_mir_ingestion.v1
+    function: malformed_duplicate_terminator
+    backend_symbol: malformed_duplicate_terminator
+    parameter_count: 0
+    return_type: int
+    local_count: 0
+    entry_block: entry
+    block_count: 1
+    block_0_label: entry
+    block_0_statement_count: 0
+    block_0_terminator_kind: ReturnI32
+    block_0_terminator_value: 0
+    block_0_terminator_kind: ReturnI32
+    metadata_count: 0
+    expected_exit: 0
+    MIR
+    expect_invalid_fixture duplicate-terminator "$duplicate_terminator" 'duplicate canonical compiler MIR fixture field: block_0_terminator_kind'
+
+    incompatible_edge="$malformed_dir/incompatible-edge-arguments.mir"
+    cat >"$incompatible_edge" <<'MIR'
+    format: gust.compiler_mir_ingestion.v1
+    function: malformed_incompatible_edge_arguments
+    backend_symbol: malformed_incompatible_edge_arguments
+    parameter_count: 0
+    return_type: int
+    local_count: 0
+    entry_block: entry
+    block_count: 2
+    block_0_label: entry
+    block_0_statement_count: 0
+    block_0_terminator_kind: Jump
+    block_0_terminator_target: join
+    block_0_terminator_argument_count: 0
+    block_1_label: join
+    block_1_parameter_count: 1
+    block_1_parameter_0_name: value
+    block_1_parameter_0_type: int
+    block_1_statement_count: 0
+    block_1_terminator_kind: ReturnBlockParamI32
+    block_1_terminator_block_param: value
+    metadata_count: 0
+    expected_exit: 0
+    MIR
+    expect_invalid_fixture incompatible-edge-arguments "$incompatible_edge" 'passes 0 argument(s), but target declares 1 block parameter(s)'
+
+    readme_flat="$(tr '\n' ' ' < "$readme_doc")"
+    printf '%s\n' "$readme_flat" |
+      rg -F 'Patch 6 migrates structured CFG parity as `phase11_migrated_structured_CFG_parity`.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'CFG support is now verifier-defined rather than block-count-defined.' >/dev/null
+    printf '%s\n' "$readme_flat" |
+      rg -F 'The next milestone is block-parameter and loop/backedge parity.' >/dev/null
+
+    echo "✅ Phase 11 structured-CFG parity migrated: nested branches, arbitrary acyclic joins and jumps, predecessor-driven Cranelift sealing, six malformed-CFG rejections, and explicit source-level loop deferral are covered."
 
 
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
