@@ -4,6 +4,7 @@ import "mir_native_backend_capability.gst" as capability;
 import "mir_native_backend_block_parameter_loop_source.gst" as block_parameter_loop;
 import "mir_native_backend_direct_call_source.gst" as direct_call;
 import "mir_native_backend_local_state_source.gst" as local_state;
+import "mir_native_backend_module_import_source.gst" as module_import;
 import "mir_native_backend_structured_cfg_source.gst" as structured_cfg;
 
 // Compiler-owned generic source-to-canonical-MIR route.
@@ -656,6 +657,13 @@ func mir_native_generic_analyze_call_module(top_level: std.Vector[ast.Statement[
            len(arguments) != 1 ||
            arguments[0].tag != 1 ||
            arguments[0].Integer.val < 0
+        {
+            return mir_native_generic_empty_model(ctx);
+        }
+
+        if call_is_imported == 1 &&
+           (std.str_eq(model.call_name, "abs") == 0 ||
+            std.str_eq(model.call_link_name, "abs") == 0)
         {
             return mir_native_generic_empty_model(ctx);
         }
@@ -2229,75 +2237,93 @@ func mir_native_generic_source_lower(programs: std.Vector[ast.Program[ctx], ctx]
     if model.represented == 1 {
         bundle = mir_native_generic_emit_bundle(model, ctx);
     } else {
-        mut direct_call_result :=
-            direct_call.mir_native_direct_call_source_lower(
+        mut module_import_result :=
+            module_import.mir_native_module_import_source_lower(
                 programs,
                 module_paths,
                 module_prefixes,
                 ctx
             );
-        if direct_call_result.invalid == 1 {
+        if module_import_result.invalid == 1 {
             return mir_native_generic_empty_result(
                 3,
-                direct_call_result.diagnostic,
+                module_import_result.diagnostic,
                 ctx
             );
         }
-        if direct_call_result.represented == 1 {
-            bundle = direct_call_result.bundle;
+        if module_import_result.represented == 1 {
+            bundle = module_import_result.bundle;
         } else {
-            mut block_parameter_loop_result :=
-                block_parameter_loop.mir_native_block_parameter_loop_source_lower(
+            mut direct_call_result :=
+                direct_call.mir_native_direct_call_source_lower(
                     programs,
                     module_paths,
                     module_prefixes,
                     ctx
                 );
-            if block_parameter_loop_result.invalid == 1 {
+            if direct_call_result.invalid == 1 {
                 return mir_native_generic_empty_result(
                     3,
-                    block_parameter_loop_result.diagnostic,
+                    direct_call_result.diagnostic,
                     ctx
                 );
             }
-            if block_parameter_loop_result.represented == 1 {
-                bundle = block_parameter_loop_result.bundle;
+            if direct_call_result.represented == 1 {
+                bundle = direct_call_result.bundle;
             } else {
-                mut structured_cfg_result :=
-                    structured_cfg.mir_native_structured_cfg_source_lower(
+                mut block_parameter_loop_result :=
+                    block_parameter_loop.mir_native_block_parameter_loop_source_lower(
                         programs,
                         module_paths,
                         module_prefixes,
                         ctx
                     );
-                if structured_cfg_result.invalid == 1 {
+                if block_parameter_loop_result.invalid == 1 {
                     return mir_native_generic_empty_result(
                         3,
-                        structured_cfg_result.diagnostic,
+                        block_parameter_loop_result.diagnostic,
                         ctx
                     );
                 }
-                if structured_cfg_result.represented == 1 {
-                    bundle = structured_cfg_result.bundle;
+                if block_parameter_loop_result.represented == 1 {
+                    bundle = block_parameter_loop_result.bundle;
                 } else {
-                    mut local_state_result :=
-                        local_state.mir_native_local_state_source_lower(
+                    mut structured_cfg_result :=
+                        structured_cfg.mir_native_structured_cfg_source_lower(
                             programs,
                             module_paths,
                             module_prefixes,
                             ctx
                         );
-                    if local_state_result.invalid == 1 {
+                    if structured_cfg_result.invalid == 1 {
                         return mir_native_generic_empty_result(
                             3,
-                            local_state_result.diagnostic,
+                            structured_cfg_result.diagnostic,
                             ctx
                         );
                     }
-                    if local_state_result.represented == 0 {
-                        return mir_native_generic_empty_result(1, "", ctx);
+                    if structured_cfg_result.represented == 1 {
+                        bundle = structured_cfg_result.bundle;
+                    } else {
+                        mut local_state_result :=
+                            local_state.mir_native_local_state_source_lower(
+                                programs,
+                                module_paths,
+                                module_prefixes,
+                                ctx
+                            );
+                        if local_state_result.invalid == 1 {
+                            return mir_native_generic_empty_result(
+                                3,
+                                local_state_result.diagnostic,
+                                ctx
+                            );
+                        }
+                        if local_state_result.represented == 0 {
+                            return mir_native_generic_empty_result(1, "", ctx);
+                        }
+                        bundle = local_state_result.bundle;
                     }
-                    bundle = local_state_result.bundle;
                 }
             }
         }

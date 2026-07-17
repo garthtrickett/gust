@@ -1484,6 +1484,8 @@ enum CompilerMirLoweringFunctionLinkage {
     ExportedEntry,
     ModuleLocal,
     ImportedHost,
+    BundleExport,
+    ImportedBundle,
 }
 
 struct CompilerMirLoweringImportedFunction<'a> {
@@ -2214,6 +2216,8 @@ fn phase10_linkage_name(
         CompilerMirLoweringFunctionLinkage::ExportedEntry => "exported_entry",
         CompilerMirLoweringFunctionLinkage::ModuleLocal => "module_local",
         CompilerMirLoweringFunctionLinkage::ImportedHost => "imported_host",
+        CompilerMirLoweringFunctionLinkage::BundleExport => "bundle_export",
+        CompilerMirLoweringFunctionLinkage::ImportedBundle => "imported_bundle",
     }
 }
 
@@ -2285,7 +2289,12 @@ fn parse_phase10_program_mir_bundle(
 
     let mut module_paths = HashSet::new();
     let mut object_names = HashSet::new();
-    let mut global_symbol_links = HashSet::new();
+    let mut global_symbol_signatures: HashMap<String, String> =
+        HashMap::new();
+    let mut global_defined_linkages: HashMap<String, String> =
+        HashMap::new();
+    let mut global_imported_bundle_links: HashSet<String> = HashSet::new();
+    let mut global_imported_host_links: HashSet<String> = HashSet::new();
     let mut exported_entry_count = 0usize;
     let mut canonical_defined_symbols = HashSet::new();
     let mut modules = Vec::with_capacity(module_count);
@@ -2441,8 +2450,12 @@ fn parse_phase10_program_mir_bundle(
                         ));
                     }
                 }
-                "module_local" => observed_defined += 1,
-                "imported_host" => observed_undefined += 1,
+                "module_local" | "bundle_export" => {
+                    observed_defined += 1;
+                }
+                "imported_host" | "imported_bundle" => {
+                    observed_undefined += 1;
+                }
                 _ => {
                     return Err(phase10_backend_request_error(
                         stage,
@@ -2454,16 +2467,59 @@ fn parse_phase10_program_mir_bundle(
                 }
             }
 
-            if !global_symbol_links.insert(link_name.clone()) {
+            if let Some(previous_signature) =
+                global_symbol_signatures.get(&link_name)
+            {
+                if previous_signature != &signature {
+                    return Err(phase10_backend_request_error(
+                        stage,
+                        kind,
+                        format!(
+                            "whole-program symbol signature disagreement for {link_name}"
+                        ),
+                    ));
+                }
+            } else {
+                global_symbol_signatures
+                    .insert(link_name.clone(), signature.clone());
+            }
+
+            match linkage.as_str() {
+                "exported_entry" | "module_local" | "bundle_export" => {
+                    if global_defined_linkages
+                        .insert(link_name.clone(), linkage.clone())
+                        .is_some()
+                    {
+                        return Err(phase10_backend_request_error(
+                            stage,
+                            kind,
+                            format!(
+                                "duplicate whole-program defined symbol: {link_name}"
+                            ),
+                        ));
+                    }
+                }
+                "imported_bundle" => {
+                    global_imported_bundle_links.insert(link_name.clone());
+                }
+                "imported_host" => {
+                    global_imported_host_links.insert(link_name.clone());
+                }
+                _ => unreachable!(),
+            }
+
+            if bundle_symbols
+                .insert(link_name.clone(), (signature, linkage))
+                .is_some()
+            {
                 return Err(phase10_backend_request_error(
                     stage,
                     kind,
                     format!(
-                        "duplicate whole-program symbol link: {link_name}"
+                        "duplicate symbol link inside {module_key}: {link_name}"
                     ),
                 ));
             }
-            bundle_symbols.insert(link_name, (signature, linkage));
         }
         if observed_defined != defined_symbol_count ||
             observed_undefined != undefined_symbol_count
@@ -2729,7 +2785,10 @@ fn parse_phase10_program_mir_bundle(
                                 &imported.params,
                                 imported.return_type,
                             ),
-                            Some("imported_host".to_string()),
+                            Some(
+                                phase10_linkage_name(imported.linkage)
+                                    .to_string(),
+                            ),
                         ),
                     );
                 }
@@ -2823,6 +2882,41 @@ fn parse_phase10_program_mir_bundle(
     }
 
     cursor.finish(stage, kind)?;
+
+    for link_name in &global_imported_bundle_links {
+        match global_defined_linkages.get(link_name) {
+            Some(linkage) if linkage == "bundle_export" => {}
+            Some(linkage) => {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    format!(
+                        "imported bundle symbol {link_name} resolves to forbidden linkage {linkage}"
+                    ),
+                ));
+            }
+            None => {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    format!(
+                        "unresolved imported bundle symbol: {link_name}"
+                    ),
+                ));
+            }
+        }
+    }
+    for link_name in &global_imported_host_links {
+        if global_defined_linkages.contains_key(link_name) {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                format!(
+                    "imported host symbol collides with a bundle definition: {link_name}"
+                ),
+            ));
+        }
+    }
 
     if exported_entry_count != 1 {
         return Err(phase10_backend_request_error(
@@ -4333,6 +4427,148 @@ fn validate_phase10_calls_imports_runtime_module(
     ))
 }
 
+
+fn phase11_import_registry_classification(
+    imported: &CompilerMirLoweringImportedFunction<'_>,
+) -> Option<&'static str> {
+    if imported.linkage != CompilerMirLoweringFunctionLinkage::ImportedHost
+        || imported.params.as_slice() != [TinyMirType::I32]
+        || imported.return_type != TinyMirType::I32
+    {
+        return None;
+    }
+    match imported.link_symbol {
+        "abs" if imported.name == "abs" => Some("RuntimeCall"),
+        "toupper" if imported.name == "toupper" => Some("ExternFunction"),
+        _ => None,
+    }
+}
+
+fn validate_phase11_import_boundary_metadata(
+    module: &CompilerMirLoweringModule<'_>,
+) -> Result<(), Box<dyn Error>> {
+    let imported_hosts: HashMap<&str, (&str, &str)> = module
+        .imports
+        .iter()
+        .filter_map(|imported| {
+            phase11_import_registry_classification(imported).map(
+                |classification| {
+                    (
+                        imported.name,
+                        (imported.link_symbol, classification),
+                    )
+                },
+            )
+        })
+        .collect();
+
+    for defined in &module.functions {
+        for block in &defined.fixture.function.blocks {
+            for (statement_index, statement) in block.statements.iter().enumerate() {
+                let CompilerMirLoweringStatement::LocalI32SetCall {
+                    target:
+                        CompilerMirLoweringCallTarget::ImportedFunction(
+                            imported_name,
+                        ),
+                    ..
+                } = statement
+                else {
+                    continue;
+                };
+                let Some((link_symbol, classification)) =
+                    imported_hosts.get(imported_name)
+                else {
+                    continue;
+                };
+                let attachment =
+                    format!("statement:{}:{statement_index}", block.label);
+                let payload_prefix = format!(
+                    "kind={classification};symbol={link_symbol};origin="
+                );
+                let matching_metadata = defined
+                    .fixture
+                    .metadata
+                    .iter()
+                    .filter(|metadata| {
+                        metadata.kind == "native_boundary"
+                            && metadata.attachment == attachment
+                            && metadata.policy == "ignored_with_proof"
+                            && metadata.payload.starts_with(&payload_prefix)
+                    })
+                    .count();
+                if matching_metadata != 1 {
+                    return Err(phase10_backend_request_error(
+                        Phase10BackendRequestStage::CanonicalMirValidation,
+                        Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                        format!(
+                            "approved host import {link_symbol} requires exactly one {classification} metadata record attached to {attachment}"
+                        ),
+                    ));
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+fn validate_phase11_module_import_runtime_module(
+    module: &CompilerMirLoweringModule<'_>,
+) -> Result<&'static str, Box<dyn Error>> {
+    validate_compiler_mir_module(module)?;
+
+    let mut has_bundle_import = false;
+    let mut has_runtime_import = false;
+    let mut has_declared_external = false;
+    for imported in &module.imports {
+        match imported.linkage {
+            CompilerMirLoweringFunctionLinkage::ImportedBundle => {
+                has_bundle_import = true;
+            }
+            CompilerMirLoweringFunctionLinkage::ImportedHost => {
+                let Some(classification) =
+                    phase11_import_registry_classification(imported)
+                else {
+                    return Err(phase10_backend_request_error(
+                        Phase10BackendRequestStage::CanonicalMirValidation,
+                        Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                        format!(
+                            "host import {} with symbol {} is absent from the Phase 11 import/runtime registry",
+                            imported.name, imported.link_symbol
+                        ),
+                    ));
+                };
+                if classification == "RuntimeCall" {
+                    has_runtime_import = true;
+                } else {
+                    has_declared_external = true;
+                }
+            }
+            _ => {
+                return Err(phase10_backend_request_error(
+                    Phase10BackendRequestStage::CanonicalMirValidation,
+                    Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                    format!(
+                        "canonical import {} has a non-import linkage",
+                        imported.name
+                    ),
+                ));
+            }
+        }
+    }
+
+    validate_phase11_import_boundary_metadata(module)?;
+
+    if has_bundle_import {
+        Ok("module_import_runtime")
+    } else if has_declared_external {
+        Ok("declared_external_import")
+    } else if has_runtime_import {
+        Ok("runtime_boundary")
+    } else {
+        Ok("direct_call_abi")
+    }
+}
+
 fn compile_phase10_scalar_metadata_request_path(
     request_path: &Path,
 ) -> Result<(), Box<dyn Error>> {
@@ -4362,8 +4598,8 @@ fn compile_phase10_scalar_metadata_request_path(
             )
         })?;
 
-    if request.target_triple != target_contract.triple ||
-        request.object_format != target_contract.object_format
+    if request.target_triple != target_contract.triple
+        || request.object_format != target_contract.object_format
     {
         return Err(phase10_backend_request_error(
             Phase10BackendRequestStage::TargetValidation,
@@ -4386,105 +4622,146 @@ fn compile_phase10_scalar_metadata_request_path(
             },
         )?;
     let bundle = parse_phase10_program_mir_bundle(&bundle_contents)?;
-    if bundle.module_count != 1 || bundle.modules.len() != 1 {
+    if bundle.modules.len() != bundle.module_count {
         return Err(phase10_backend_request_error(
             Phase10BackendRequestStage::ProgramMirBundleValidation,
             Phase10BackendRequestFailureKind::InvalidBundle,
-            "Phase 10 connected source route requires exactly one canonical module",
+            "program MIR bundle module records do not match module_count",
         ));
     }
 
-    let module_record = &bundle.modules[0];
-    let parsed = parse_compiler_mir_input(&module_record.canonical_mir).map_err(
-        |error| {
-            phase10_backend_request_error(
-                Phase10BackendRequestStage::CanonicalMirValidation,
-                Phase10BackendRequestFailureKind::InvalidCanonicalMir,
-                format!(
-                    "Phase 10 canonical MIR parse failed: {error}"
-                ),
-            )
-        },
-    )?;
+    let mut object_paths = Vec::with_capacity(bundle.module_count);
+    let mut source_route = "scalar_metadata";
+    let mut reported_module_path = "";
+    let mut reported_object_name = "";
 
-    let object_path = compiler_mir_link_sibling_path(
-        &request.output_path,
-        ".phase10-source-route.o",
-    )?;
+    for (module_index, module_record) in bundle.modules.iter().enumerate() {
+        let parsed =
+            parse_compiler_mir_input(&module_record.canonical_mir).map_err(
+                |error| {
+                    phase10_backend_request_error(
+                        Phase10BackendRequestStage::CanonicalMirValidation,
+                        Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                        format!(
+                            "canonical MIR module {module_index} parse failed: {error}"
+                        ),
+                    )
+                },
+            )?;
 
-    let source_route: &'static str;
-    match parsed {
-        ParsedCompilerMirInput::V1(fixture) => {
-            if module_record.canonical_format !=
-                COMPILER_MIR_CANONICAL_FIXTURE_FORMAT
-            {
-                return Err(phase10_backend_request_error(
-                    Phase10BackendRequestStage::ProgramMirBundleValidation,
-                    Phase10BackendRequestFailureKind::InvalidBundle,
-                    "Phase 10 v1 source route canonical format record drifted",
-                ));
-            }
-            validate_compiler_mir_fixture(&fixture)?;
-            if is_phase11_block_parameter_loop_fixture(&fixture) {
-                validate_phase11_block_parameter_loop_fixture(&fixture)?;
-                source_route = "block_parameter_loop";
-            } else if is_phase11_structured_cfg_fixture(&fixture) {
-                validate_phase11_local_state_fixture(&fixture)?;
-                source_route = "structured_cfg";
-            } else if is_phase11_local_state_fixture(&fixture) {
-                validate_phase11_local_state_fixture(&fixture)?;
-                source_route = "local_state";
-            } else if fixture.function.blocks.len() == 1 {
-                validate_phase11_scalar_expression_fixture(&fixture)?;
-                let has_scalar_add = fixture.function.blocks[0]
-                    .statements
-                    .iter()
-                    .any(|statement| {
-                        matches!(
-                            statement,
-                            CompilerMirLoweringStatement::LocalI32AddI32Literal {
-                                ..
-                            }
-                        )
-                    });
-                source_route = if has_scalar_add {
-                    "scalar_expression"
+        let object_suffix = if bundle.module_count == 1 {
+            ".phase10-source-route.o".to_string()
+        } else {
+            format!(".phase10-source-route-{module_index}.o")
+        };
+        let object_path = compiler_mir_link_sibling_path(
+            &request.output_path,
+            &object_suffix,
+        )?;
+
+        match parsed {
+            ParsedCompilerMirInput::V1(fixture) => {
+                if bundle.module_count != 1 {
+                    return Err(phase10_backend_request_error(
+                        Phase10BackendRequestStage::ProgramMirBundleValidation,
+                        Phase10BackendRequestFailureKind::InvalidBundle,
+                        "multi-module source routes require canonical MIR v2 modules",
+                    ));
+                }
+                if module_record.canonical_format
+                    != COMPILER_MIR_CANONICAL_FIXTURE_FORMAT
+                {
+                    return Err(phase10_backend_request_error(
+                        Phase10BackendRequestStage::ProgramMirBundleValidation,
+                        Phase10BackendRequestFailureKind::InvalidBundle,
+                        "Phase 10 v1 source route canonical format record drifted",
+                    ));
+                }
+                validate_compiler_mir_fixture(&fixture)?;
+                if is_phase11_block_parameter_loop_fixture(&fixture) {
+                    validate_phase11_block_parameter_loop_fixture(&fixture)?;
+                    source_route = "block_parameter_loop";
+                } else if is_phase11_structured_cfg_fixture(&fixture) {
+                    validate_phase11_local_state_fixture(&fixture)?;
+                    source_route = "structured_cfg";
+                } else if is_phase11_local_state_fixture(&fixture) {
+                    validate_phase11_local_state_fixture(&fixture)?;
+                    source_route = "local_state";
+                } else if fixture.function.blocks.len() == 1 {
+                    validate_phase11_scalar_expression_fixture(&fixture)?;
+                    let has_scalar_add = fixture.function.blocks[0]
+                        .statements
+                        .iter()
+                        .any(|statement| {
+                            matches!(
+                                statement,
+                                CompilerMirLoweringStatement::LocalI32AddI32Literal {
+                                    ..
+                                }
+                            )
+                        });
+                    source_route = if has_scalar_add {
+                        "scalar_expression"
+                    } else {
+                        "scalar_metadata"
+                    };
                 } else {
-                    "scalar_metadata"
+                    validate_phase10_cfg_block_parameter_fixture(&fixture)?;
+                    source_route = "cfg_block_parameter";
+                }
+                lower_compiler_mir_ingestion_function_to_object(
+                    &object_path,
+                    &fixture.function,
+                )?;
+            }
+            ParsedCompilerMirInput::V2(module) => {
+                if module_record.canonical_format
+                    != COMPILER_MIR_CANONICAL_MODULE_FORMAT
+                {
+                    return Err(phase10_backend_request_error(
+                        Phase10BackendRequestStage::ProgramMirBundleValidation,
+                        Phase10BackendRequestFailureKind::InvalidBundle,
+                        "canonical v2 source route format record drifted",
+                    ));
+                }
+
+                let module_route = if matches!(
+                    module.name,
+                    "phase10_local_call" | "phase10_runtime_boundary"
+                ) {
+                    validate_phase10_calls_imports_runtime_module(&module)?
+                } else {
+                    validate_phase11_module_import_runtime_module(&module)?
                 };
-            } else {
-                validate_phase10_cfg_block_parameter_fixture(&fixture)?;
-                source_route = "cfg_block_parameter";
+                if module_route == "module_import_runtime" {
+                    source_route = "module_import_runtime";
+                } else if source_route != "module_import_runtime"
+                    && module_route == "declared_external_import"
+                {
+                    source_route = "declared_external_import";
+                } else if source_route == "scalar_metadata"
+                    || source_route == "direct_call_abi"
+                {
+                    source_route = module_route;
+                }
+
+                lower_compiler_mir_ingestion_module_to_object(
+                    &object_path,
+                    &module,
+                )?;
             }
-            lower_compiler_mir_ingestion_function_to_object(
-                &object_path,
-                &fixture.function,
-            )?;
         }
-        ParsedCompilerMirInput::V2(module) => {
-            if module_record.canonical_format !=
-                COMPILER_MIR_CANONICAL_MODULE_FORMAT
-            {
-                return Err(phase10_backend_request_error(
-                    Phase10BackendRequestStage::ProgramMirBundleValidation,
-                    Phase10BackendRequestFailureKind::InvalidBundle,
-                    "Phase 10 v2 source route canonical format record drifted",
-                ));
-            }
-            source_route =
-                validate_phase10_calls_imports_runtime_module(&module)?;
-            lower_compiler_mir_ingestion_module_to_object(
-                &object_path,
-                &module,
-            )?;
-        }
+
+        object_paths.push(object_path);
+        reported_module_path = &module_record.module_path;
+        reported_object_name = &module_record.object_name;
     }
 
     let linker_driver =
         env::var_os("CC").unwrap_or_else(|| OsString::from("cc"));
     let link_request = CompilerMirLinkRequest {
         output_path: request.output_path.clone(),
-        ordered_object_inputs: vec![object_path.clone()],
+        ordered_object_inputs: object_paths.clone(),
         c_source: None,
         host_object: None,
         additional_libraries: Vec::new(),
@@ -4504,16 +4781,18 @@ fn compile_phase10_scalar_metadata_request_path(
         ));
     }
 
-    fs::remove_file(&object_path).map_err(|error| {
-        phase10_backend_request_error(
-            Phase10BackendRequestStage::RequestValidation,
-            Phase10BackendRequestFailureKind::InvalidRequest,
-            format!(
-                "could not remove successful hidden source-route object {}: {error}",
-                object_path.display()
-            ),
-        )
-    })?;
+    for object_path in &object_paths {
+        fs::remove_file(object_path).map_err(|error| {
+            phase10_backend_request_error(
+                Phase10BackendRequestStage::RequestValidation,
+                Phase10BackendRequestFailureKind::InvalidRequest,
+                format!(
+                    "could not remove successful hidden source-route object {}: {error}",
+                    object_path.display()
+                ),
+            )
+        })?;
+    }
 
     println!("request_protocol: {PHASE10_BACKEND_REQUEST_FORMAT}");
     println!("request_status: compiled");
@@ -4521,8 +4800,8 @@ fn compile_phase10_scalar_metadata_request_path(
     println!("source_route: {source_route}");
     println!("entry_symbol: {}", bundle.entry_symbol);
     println!("module_count: {}", bundle.module_count);
-    println!("module_path: {}", module_record.module_path);
-    println!("object_name: {}", module_record.object_name);
+    println!("module_path: {reported_module_path}");
+    println!("object_name: {reported_object_name}");
     println!("target_triple: {}", request.target_triple);
     println!("object_format: {}", request.object_format);
     println!("output_path: {}", request.output_path.display());
@@ -4561,11 +4840,12 @@ const PHASE10_DRIVER_TYPES_AND_ABIS: [&str; 6] = [
     "(int,int)->int",
     "direct_scalar_abi",
 ];
-const PHASE10_DRIVER_RUNTIME_IMPORTS: [&str; 4] = [
+const PHASE10_DRIVER_RUNTIME_IMPORTS: [&str; 5] = [
     "tiny_host_add_one_i32",
     "tiny_host_add_i32",
     "tiny_host_is_positive_i32",
     "abs",
+    "toupper",
 ];
 const PHASE10_DRIVER_TARGET_REQUIREMENTS: [&str; 3] = [
     "native_host",
@@ -6642,6 +6922,7 @@ fn parse_compiler_mir_module_field_map<'a>(
         )?;
         let linkage = match linkage_value {
             "imported_host" => CompilerMirLoweringFunctionLinkage::ImportedHost,
+            "imported_bundle" => CompilerMirLoweringFunctionLinkage::ImportedBundle,
             other => {
                 return Err(IoError::new(
                     ErrorKind::InvalidInput,
@@ -6709,6 +6990,7 @@ fn parse_compiler_mir_module_field_map<'a>(
         let linkage = match linkage_value {
             "exported_entry" => CompilerMirLoweringFunctionLinkage::ExportedEntry,
             "module_local" => CompilerMirLoweringFunctionLinkage::ModuleLocal,
+            "bundle_export" => CompilerMirLoweringFunctionLinkage::BundleExport,
             other => {
                 return Err(IoError::new(
                     ErrorKind::InvalidInput,
@@ -7345,26 +7627,42 @@ fn validate_compiler_mir_module(
             imported.link_symbol,
             "import link symbol",
         )?;
-        if imported.linkage != CompilerMirLoweringFunctionLinkage::ImportedHost {
+        if !matches!(
+            imported.linkage,
+            CompilerMirLoweringFunctionLinkage::ImportedHost
+                | CompilerMirLoweringFunctionLinkage::ImportedBundle
+        ) {
             return Err(IoError::new(
                 ErrorKind::InvalidInput,
                 format!(
-                    "canonical compiler MIR import {} must use imported_host linkage",
+                    "canonical compiler MIR import {} must use imported_host or imported_bundle linkage",
                     imported.name
                 ),
             )
             .into());
         }
-        if imported
+        let import_uses_scalar_abi = imported
             .params
             .iter()
-            .any(|ty| !matches!(*ty, TinyMirType::I32))
-            || !matches!(imported.return_type, TinyMirType::I32)
+            .all(|ty| matches!(*ty, TinyMirType::I32 | TinyMirType::Bool))
+            && matches!(
+                imported.return_type,
+                TinyMirType::I32 | TinyMirType::Bool
+            );
+        let imported_host_uses_int_abi = imported
+            .params
+            .iter()
+            .all(|ty| matches!(*ty, TinyMirType::I32))
+            && matches!(imported.return_type, TinyMirType::I32);
+        if !import_uses_scalar_abi
+            || (imported.linkage
+                == CompilerMirLoweringFunctionLinkage::ImportedHost
+                && !imported_host_uses_int_abi)
         {
             return Err(IoError::new(
                 ErrorKind::InvalidInput,
                 format!(
-                    "canonical compiler MIR import {} must use only int parameters and one int return",
+                    "canonical compiler MIR import {} uses an unsupported scalar ABI",
                     imported.name
                 ),
             )
@@ -7406,6 +7704,7 @@ fn validate_compiler_mir_module(
     let mut function_names = HashMap::new();
     let mut backend_symbols: HashSet<&str> = HashSet::new();
     let mut exported_entry_count = 0usize;
+    let mut bundle_export_count = 0usize;
     for defined in &module.functions {
         validate_compiler_mir_function_fixture(&defined.fixture, true)?;
         let function = &defined.fixture.function;
@@ -7471,12 +7770,16 @@ fn validate_compiler_mir_module(
             CompilerMirLoweringFunctionLinkage::ExportedEntry => {
                 exported_entry_count += 1;
             }
+            CompilerMirLoweringFunctionLinkage::BundleExport => {
+                bundle_export_count += 1;
+            }
             CompilerMirLoweringFunctionLinkage::ModuleLocal => {}
-            CompilerMirLoweringFunctionLinkage::ImportedHost => {
+            CompilerMirLoweringFunctionLinkage::ImportedHost
+            | CompilerMirLoweringFunctionLinkage::ImportedBundle => {
                 return Err(IoError::new(
                     ErrorKind::InvalidInput,
                     format!(
-                        "canonical compiler MIR defined function {} cannot use imported_host linkage",
+                        "canonical compiler MIR defined function {} cannot use imported linkage",
                         function.object_name
                     ),
                 )
@@ -7484,10 +7787,10 @@ fn validate_compiler_mir_module(
             }
         }
     }
-    if exported_entry_count == 0 {
+    if exported_entry_count == 0 && bundle_export_count == 0 {
         return Err(IoError::new(
             ErrorKind::InvalidInput,
-            "canonical compiler MIR module must define at least one exported_entry function",
+            "canonical compiler MIR module must define an exported_entry or bundle_export function",
         )
         .into());
     }
@@ -17492,13 +17795,15 @@ fn compiler_mir_module_object_symbol_contract(
     let mut expected_module_locals = Vec::new();
     for defined in &mir_module.functions {
         match defined.linkage {
-            CompilerMirLoweringFunctionLinkage::ExportedEntry => {
+            CompilerMirLoweringFunctionLinkage::ExportedEntry
+            | CompilerMirLoweringFunctionLinkage::BundleExport => {
                 expected_exports.push(defined.fixture.function.symbol.to_string());
             }
             CompilerMirLoweringFunctionLinkage::ModuleLocal => {
                 expected_module_locals.push(defined.fixture.function.symbol.to_string());
             }
-            CompilerMirLoweringFunctionLinkage::ImportedHost => {}
+            CompilerMirLoweringFunctionLinkage::ImportedHost
+            | CompilerMirLoweringFunctionLinkage::ImportedBundle => {}
         }
     }
 
@@ -19166,12 +19471,16 @@ fn lower_compiler_mir_ingestion_module_to_object(
     let mut imported_link_ids: HashMap<&str, FuncId> = HashMap::new();
     let mut imported_function_ids: HashMap<&str, FuncId> = HashMap::new();
     for imported in &mir_module.imports {
-        if imported.linkage != CompilerMirLoweringFunctionLinkage::ImportedHost {
+        if !matches!(
+            imported.linkage,
+            CompilerMirLoweringFunctionLinkage::ImportedHost
+                | CompilerMirLoweringFunctionLinkage::ImportedBundle
+        ) {
             return Err(compiler_mir_pipeline_error(
                 CompilerMirPipelineStage::MirLowering,
                 CompilerMirPipelineFailureKind::LoweringFailed,
                 format!(
-                    "canonical compiler MIR imported function {} must use imported_host linkage",
+                    "canonical compiler MIR imported function {} must use imported linkage",
                     imported.name
                 ),
             ));
@@ -19204,14 +19513,18 @@ fn lower_compiler_mir_ingestion_module_to_object(
         let signature =
             compiler_mir_ingestion_signature(&module, mir_function);
         let linkage = match defined.linkage {
-            CompilerMirLoweringFunctionLinkage::ExportedEntry => Linkage::Export,
+            CompilerMirLoweringFunctionLinkage::ExportedEntry
+            | CompilerMirLoweringFunctionLinkage::BundleExport => {
+                Linkage::Export
+            }
             CompilerMirLoweringFunctionLinkage::ModuleLocal => Linkage::Local,
-            CompilerMirLoweringFunctionLinkage::ImportedHost => {
+            CompilerMirLoweringFunctionLinkage::ImportedHost
+            | CompilerMirLoweringFunctionLinkage::ImportedBundle => {
                 return Err(compiler_mir_pipeline_error(
                     CompilerMirPipelineStage::MirLowering,
                     CompilerMirPipelineFailureKind::LoweringFailed,
                     format!(
-                        "canonical compiler MIR defined function {} cannot use imported_host linkage",
+                        "canonical compiler MIR defined function {} cannot use imported linkage",
                         mir_function.object_name
                     ),
                 ));

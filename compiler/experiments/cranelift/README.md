@@ -1443,6 +1443,42 @@ runtime-boundary expansion remain deferred. The registry now records one
 differential execution, malformed-signature rejection, and no-partial-output
 evidence. The next milestone is module, import, and runtime-boundary parity.
 
+Phase 11 Patch 9 migrates module, import, and runtime-boundary parity as
+`phase11_migrated_module_import_and_runtime_parity`. The compiler now consumes
+the existing resolver's topologically ordered programs, paths, and prefixes and
+preserves fully qualified function identities in canonical MIR. A dependency
+function that is visible across a module boundary is serialized as
+`bundle_export`; the caller records the same symbol and signature as
+`imported_bundle`. Module-local helpers remain `module_local`, and exactly one
+entry remains `exported_entry`.
+
+Declared host imports remain a distinct `imported_host` class. The compiler and
+worker share an explicit scalar allowlist: `abs(int)->int` is an approved
+`RuntimeCall`, while `toupper(int)->int` is an approved `ExternFunction`.
+Every approved host call carries one statement-attached `native_boundary`
+metadata record whose classification, symbol, and ignored-with-proof policy
+must match the registry. Duplicate definitions, unresolved bundle imports,
+signature disagreement, host/definition collisions, and forbidden runtime
+names reject before executable publication.
+
+The worker validates the complete program bundle before lowering modules,
+writes one hidden object per canonical module, and passes the ordered object
+vector to the unchanged Phase 9G classified linker. The request still supplies
+no additional libraries, linker arguments, search paths, or linker environment,
+and neither source text nor ambient environment can extend that surface.
+Successful links remove all hidden objects; negative lanes preserve an existing
+output sentinel.
+
+The resolver-backed two-module fixture exits `42`, the declared `toupper`
+fixture exits `65`, and the frozen Phase 10 `abs` fixture remains byte-identical
+compatibility evidence at exit `53`. Four source negatives cover duplicate
+symbols, unresolved symbols, signature disagreement, and forbidden runtime
+names. `guard-cranelift-phase11-module-import-runtime-parity` owns the static
+registry/linkage contract, differential execution, failure classification, and
+no-partial-output evidence. Indirect calls, closures, dynamic loading, variadic
+imports, non-scalar ABIs, and arbitrary native linker expansion remain
+deferred. The next milestone is aggregate and resource parity.
+
 The checked-in lockfile for this crate is owned by:
 Patch 8 freezes the complete canonical call/import matrix and retires all
 eleven historical bypasses. The checked-in completeness fixture combines local

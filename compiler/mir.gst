@@ -181,7 +181,9 @@ type MirNativeBoundaryMetadata[ctx] struct {
 type MirProgramBundleSymbolLinkage enum {
     ExportedEntry,
     ModuleLocal,
-    ImportedHost
+    ImportedHost,
+    BundleExport,
+    ImportedBundle
 }
 
 type MirProgramBundleSymbol[ctx] struct {
@@ -457,6 +459,12 @@ func mir_program_bundle_linkage_name(linkage: MirProgramBundleSymbolLinkage) str
     if linkage.tag == 2 {
         return "imported_host";
     }
+    if linkage.tag == 3 {
+        return "bundle_export";
+    }
+    if linkage.tag == 4 {
+        return "imported_bundle";
+    }
     return "invalid";
 }
 
@@ -535,7 +543,7 @@ func mir_program_bundle_is_valid(bundle: MirProgramBundle[ctx], ctx: &Arena) int
             if mir_program_bundle_field_is_safe(symbol.signature, 0) == 0 {
                 return 0;
             }
-            if symbol.linkage.tag < 0 || symbol.linkage.tag > 2 {
+            if symbol.linkage.tag < 0 || symbol.linkage.tag > 4 {
                 return 0;
             }
 
@@ -583,6 +591,121 @@ func mir_program_bundle_is_valid(bundle: MirProgramBundle[ctx], ctx: &Arena) int
         module_index = module_index + 1;
     }
 
+    module_index = 0;
+    while module_index < len(modules) {
+        mut module := modules[module_index];
+        mut symbols: std.Vector[MirProgramBundleSymbol[ctx], ctx] :=
+            ctx[module.symbols];
+        mut symbol_index := 0;
+        while symbol_index < len(symbols) {
+            mut symbol := symbols[symbol_index];
+
+            if symbol.linkage.tag == 0 ||
+               symbol.linkage.tag == 1 ||
+               symbol.linkage.tag == 3
+            {
+                mut other_module_index := 0;
+                while other_module_index < len(modules) {
+                    mut other_symbols:
+                        std.Vector[MirProgramBundleSymbol[ctx], ctx] :=
+                            ctx[modules[other_module_index].symbols];
+                    mut other_symbol_index := 0;
+                    while other_symbol_index < len(other_symbols) {
+                        mut other := other_symbols[other_symbol_index];
+                        if (other_module_index != module_index ||
+                            other_symbol_index != symbol_index) &&
+                           (other.linkage.tag == 0 ||
+                            other.linkage.tag == 1 ||
+                            other.linkage.tag == 3) &&
+                           std.str_eq(other.link_name, symbol.link_name) == 1
+                        {
+                            return 0;
+                        }
+                        other_symbol_index = other_symbol_index + 1;
+                    }
+                    other_module_index = other_module_index + 1;
+                }
+            }
+
+            if symbol.linkage.tag == 4 {
+                mut resolution_count := 0;
+                mut resolution_module_index := 0;
+                while resolution_module_index < len(modules) {
+                    mut resolution_symbols:
+                        std.Vector[MirProgramBundleSymbol[ctx], ctx] :=
+                            ctx[modules[resolution_module_index].symbols];
+                    mut resolution_symbol_index := 0;
+                    while resolution_symbol_index < len(resolution_symbols) {
+                        mut resolution :=
+                            resolution_symbols[resolution_symbol_index];
+                        if resolution.linkage.tag == 3 &&
+                           std.str_eq(
+                               resolution.link_name,
+                               symbol.link_name
+                           ) == 1
+                        {
+                            if std.str_eq(
+                                resolution.signature,
+                                symbol.signature
+                            ) == 0 {
+                                return 0;
+                            }
+                            resolution_count = resolution_count + 1;
+                        }
+                        resolution_symbol_index =
+                            resolution_symbol_index + 1;
+                    }
+                    resolution_module_index = resolution_module_index + 1;
+                }
+                if resolution_count != 1 {
+                    return 0;
+                }
+            }
+
+            if symbol.linkage.tag == 2 {
+                mut collision_module_index := 0;
+                while collision_module_index < len(modules) {
+                    mut collision_symbols:
+                        std.Vector[MirProgramBundleSymbol[ctx], ctx] :=
+                            ctx[modules[collision_module_index].symbols];
+                    mut collision_symbol_index := 0;
+                    while collision_symbol_index < len(collision_symbols) {
+                        mut collision :=
+                            collision_symbols[collision_symbol_index];
+                        if (collision.linkage.tag == 0 ||
+                            collision.linkage.tag == 1 ||
+                            collision.linkage.tag == 3) &&
+                           std.str_eq(
+                               collision.link_name,
+                               symbol.link_name
+                           ) == 1
+                        {
+                            return 0;
+                        }
+                        if collision.linkage.tag == 2 &&
+                           std.str_eq(
+                               collision.link_name,
+                               symbol.link_name
+                           ) == 1 &&
+                           std.str_eq(
+                               collision.signature,
+                               symbol.signature
+                           ) == 0
+                        {
+                            return 0;
+                        }
+                        collision_symbol_index =
+                            collision_symbol_index + 1;
+                    }
+                    collision_module_index = collision_module_index + 1;
+                }
+            }
+
+            symbol_index = symbol_index + 1;
+        }
+        module_index = module_index + 1;
+    }
+
     if exported_entry_count != 1 {
         return 0;
     }
@@ -627,7 +750,9 @@ func mir_serialize_program_bundle(bundle: MirProgramBundle[ctx], ctx: &Arena) st
         mut undefined_symbol_count := 0;
         mut symbol_count_index := 0;
         while symbol_count_index < len(symbols) {
-            if symbols[symbol_count_index].linkage.tag == 2 {
+            if symbols[symbol_count_index].linkage.tag == 2 ||
+               symbols[symbol_count_index].linkage.tag == 4
+            {
                 undefined_symbol_count = undefined_symbol_count + 1;
             } else {
                 defined_symbol_count = defined_symbol_count + 1;

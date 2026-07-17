@@ -143,6 +143,11 @@ func mir_native_scalar_source_capabilities(ctx: &Arena) capability.MirNativeBack
         "abs",
         ctx
     );
+    capabilities = capability.mir_native_backend_capability_set_with_runtime_import(
+        capabilities,
+        "toupper",
+        ctx
+    );
     capabilities = capability.mir_native_backend_capability_set_with_target_requirement(
         capabilities,
         "native_host",

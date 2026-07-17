@@ -2504,6 +2504,11 @@ guard-cranelift-backend-surface:
       rg -n -F 'allowed_cranelift_phase11_direct_call_ABI_legacy_backend_surface_policy:' "$manifest_doc" || true
       exit 1
     fi
+    if ! rg -n -x -F 'allowed_cranelift_phase11_module_import_runtime_legacy_backend_surface_policy: exact_module_import_runtime_guard_recipe_is_manifest_validated_then_excluded_from_the_legacy_explicit_CLI_scan' "$manifest_doc" >/dev/null; then
+      echo "Phase 11 module/import/runtime legacy backend-surface policy is missing or stale."
+      rg -n -F 'allowed_cranelift_phase11_module_import_runtime_legacy_backend_surface_policy:' "$manifest_doc" || true
+      exit 1
+    fi
     backend_route_code_refs="$(
       rg -n -F -- "$backend_route_flag"         compiler src tests Makefile Cargo.toml Cargo.lock 2>/dev/null |
         rg -v '^compiler/CRANELIFT_EXPERIMENT_MANIFEST\.md:' |
@@ -2537,6 +2542,9 @@ guard-cranelift-backend-surface:
           if ($0 == "guard-cranelift-phase11-direct-call-abi-parity:") {
             excluded_backend_route_guard = 1
           }
+          if ($0 == "guard-cranelift-phase11-module-import-runtime-parity:") {
+            excluded_backend_route_guard = 1
+          }
           if ($0 == "guard-cranelift-experiment-manifest-surface:") {
             excluded_backend_route_guard = 1
           }
@@ -2559,7 +2567,7 @@ guard-cranelift-backend-surface:
         sed '/^$/d'
     )"
     if [ -n "$backend_route_refs" ]; then
-      echo "Unauthorized Cranelift backend routing exists outside the frozen Phase 10 surfaces and the exact validated Phase 11 generic/scalar/local-state/structured-CFG/block-parameter/direct-call route guards."
+      echo "Unauthorized Cranelift backend routing exists outside the frozen Phase 10 surfaces and the exact validated Phase 11 generic/scalar/local-state/structured-CFG/block-parameter/direct-call/module-import-runtime route guards."
       echo "$backend_route_refs"
       exit 1
     fi
@@ -12981,7 +12989,7 @@ guard-cranelift-phase10-driver-handshake-contract:
     if [ "$canonical_format_count" != "2" ] ||
        [ "$operation_count" != "15" ] ||
        [ "$type_abi_count" != "6" ] ||
-       [ "$runtime_import_count" != "4" ] ||
+       [ "$runtime_import_count" != "5" ] ||
        [ "$target_requirement_count" != "3" ]; then
       echo "Phase 10 handshake inventory drifted: canonical=$canonical_format_count operations=$operation_count type_abi=$type_abi_count runtime_imports=$runtime_import_count target_requirements=$target_requirement_count."
       exit 1
@@ -14004,7 +14012,7 @@ guard-cranelift-phase10-call-import-runtime-source-route:
     rg -n -F 'fn validate_phase10_calls_imports_runtime_module(' "$rust_driver" >/dev/null
     rg -n -F 'validate_phase10_calls_imports_runtime_module(&module)?' "$rust_driver" >/dev/null
     rg -n -F 'lower_compiler_mir_ingestion_module_to_object(' "$rust_driver" >/dev/null
-    rg -n -F 'const PHASE10_DRIVER_RUNTIME_IMPORTS: [&str; 4]' "$rust_driver" >/dev/null
+    rg -n -F 'const PHASE10_DRIVER_RUNTIME_IMPORTS: [&str; 5]' "$rust_driver" >/dev/null
     rg -n -F '"abs",' "$rust_driver" >/dev/null
     rg -n -F '".phase10-source-route.o"' "$rust_driver" >/dev/null
     rg -n -F 'run_compiler_mir_link_request(link_request)' "$rust_driver" >/dev/null
@@ -14027,8 +14035,8 @@ guard-cranelift-phase10-call-import-runtime-source-route:
     "$driver_abs" phase10-driver-handshake >"$handshake"
     rg -n -F 'runtime_import: abs' "$handshake" >/dev/null
     runtime_import_count="$(rg -c '^runtime_import: ' "$handshake" || true)"
-    if [ "${runtime_import_count:-0}" != "4" ]; then
-      echo "Phase 10 Patch 10 worker must advertise exactly four runtime imports."
+    if [ "${runtime_import_count:-0}" != "5" ]; then
+      echo "Phase 10 Patch 10 worker must advertise exactly five runtime imports."
       cat "$handshake"
       exit 1
     fi
@@ -14964,7 +14972,8 @@ guard-cranelift-phase11-opening-contract:
         guard-cranelift-phase11-scalar-expression-parity \
         guard-cranelift-phase11-structured-cfg-parity \
         guard-cranelift-phase11-block-parameter-loop-parity \
-        guard-cranelift-phase11-direct-call-abi-parity |
+        guard-cranelift-phase11-direct-call-abi-parity \
+        guard-cranelift-phase11-module-import-runtime-parity |
         sort
     )"
     declared_phase11_guards="$(
@@ -14973,7 +14982,7 @@ guard-cranelift-phase11-opening-contract:
         sort
     )"
     if [ "$declared_phase11_guards" != "$expected_phase11_guards" ]; then
-      echo "Phase 11 current contract requires exactly the opening, registry, generic-route, scalar-expression, local-state, structured-CFG, block-parameter/loop, and direct-call/ABI guards."
+      echo "Phase 11 current contract requires exactly the opening, registry, generic-route, scalar-expression, local-state, structured-CFG, block-parameter/loop, direct-call/ABI, and module/import/runtime guards."
       diff -u \
         <(printf '%s\n' "$expected_phase11_guards") \
         <(printf '%s\n' "$declared_phase11_guards") ||
@@ -15038,21 +15047,36 @@ guard-cranelift-phase11-opening-contract:
 
     expected_phase11_fixture_files="$(
       printf '%s\n' \
+        compiler/phase11_block_parameter_countdown_loop_source.gst \
+        compiler/phase11_block_parameter_non_final_join_source.gst \
+        compiler/phase11_block_parameter_stride_loop_source.gst \
+        compiler/phase11_declared_external_import_source.gst \
+        compiler/phase11_direct_call_missing_symbol_source.gst \
+        compiler/phase11_direct_call_nested_source.gst \
+        compiler/phase11_direct_call_recursion_source.gst \
+        compiler/phase11_direct_call_wrong_arity_source.gst \
+        compiler/phase11_direct_call_wrong_type_source.gst \
         compiler/phase11_local_state_branch_update_source.gst \
         compiler/phase11_local_state_independent_locals_source.gst \
         compiler/phase11_local_state_invalid_local_source.gst \
         compiler/phase11_local_state_read_after_write_source.gst \
         compiler/phase11_local_state_straight_line_source.gst \
         compiler/phase11_local_state_uninitialized_read_source.gst \
-        compiler/phase11_structured_cfg_deferred_loop_source.gst \
-        compiler/phase11_structured_cfg_independent_jumps_source.gst \
-        compiler/phase11_structured_cfg_nested_source.gst \
-        compiler/phase11_structured_cfg_three_predecessor_join_source.gst \
+        compiler/phase11_module_import_duplicate_symbol_source.gst \
+        compiler/phase11_module_import_forbidden_runtime_source.gst \
+        compiler/phase11_module_import_main_source.gst \
+        compiler/phase11_module_import_math_source.gst \
+        compiler/phase11_module_import_signature_disagreement_source.gst \
+        compiler/phase11_module_import_unresolved_symbol_source.gst \
         compiler/phase11_scalar_add_source.gst \
         compiler/phase11_scalar_literal_source.gst \
         compiler/phase11_scalar_local_read_source.gst \
         compiler/phase11_scalar_positive_predicate_source.gst \
-        compiler/phase11_scalar_unsupported_multiply_source.gst |
+        compiler/phase11_scalar_unsupported_multiply_source.gst \
+        compiler/phase11_structured_cfg_deferred_loop_source.gst \
+        compiler/phase11_structured_cfg_independent_jumps_source.gst \
+        compiler/phase11_structured_cfg_nested_source.gst \
+        compiler/phase11_structured_cfg_three_predecessor_join_source.gst |
         sort
     )"
     actual_phase11_fixture_files="$(
@@ -15060,7 +15084,7 @@ guard-cranelift-phase11-opening-contract:
         sort
     )"
     if [ "$actual_phase11_fixture_files" != "$expected_phase11_fixture_files" ]; then
-      echo "Phase 11 current source-fixture inventory differs from the five Patch 4 scalar, six Patch 5 local-state, and four Patch 6 structured-CFG fixtures."
+      echo "Phase 11 current source-fixture inventory differs from the 30 Patch 4-through-9 scalar, local-state, CFG, block-parameter, direct-call, and module/import/runtime fixtures."
       diff -u \
         <(printf '%s\n' "$expected_phase11_fixture_files") \
         <(printf '%s\n' "$actual_phase11_fixture_files") ||
@@ -15168,9 +15192,9 @@ guard-cranelift-phase11-parity-registry:
       'CRANELIFT_FEATURE_PARITY_REGISTRY_LEGACY_MIR_FEATURE_IMPORT_COUNT: 4'
       'CRANELIFT_FEATURE_PARITY_REGISTRY_FAMILY_COUNT: 6'
       'CRANELIFT_FEATURE_PARITY_REGISTRY_DEFERRED_FAMILY_COUNT: 7'
-      'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_migrated_direct_call_and_ABI_parity'
+      'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_migrated_module_import_and_runtime_parity'
       'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_INVENTORY: 0_legacy_exact_shape_12_generic_canonical_mir_7_deferred'
-      'CRANELIFT_FEATURE_PARITY_REGISTRY_MIGRATION_INVENTORY: 3_scalar_expression_migrated_2_local_state_migrated_3_structured_CFG_migrated_2_block_parameter_backedge_migrated_1_direct_call_ABI_migrated_1_generic_shadowed_7_deferred'
+      'CRANELIFT_FEATURE_PARITY_REGISTRY_MIGRATION_INVENTORY: 3_scalar_expression_migrated_2_local_state_migrated_3_structured_CFG_migrated_2_block_parameter_backedge_migrated_1_direct_call_ABI_migrated_1_module_import_runtime_migrated_7_deferred'
       'CRANELIFT_FEATURE_PARITY_REGISTRY_MIR_TO_C_GAP_COUNT: 5'
     )
     for expected_line in "${required_registry_lines[@]}"; do
@@ -15322,9 +15346,11 @@ guard-cranelift-phase11-parity-registry:
        [ "$(registry_field_count migration_status local_state_migrated)" != "2" ] ||
        [ "$(registry_field_count migration_status structured_CFG_migrated)" != "3" ] ||
        [ "$(registry_field_count migration_status block_parameter_backedge_migrated)" != "2" ] ||
-       [ "$(registry_field_count migration_status generic_shadowed)" != "2" ] ||
+       [ "$(registry_field_count migration_status direct_call_ABI_migrated)" != "1" ] ||
+       [ "$(registry_field_count migration_status module_import_runtime_migrated)" != "1" ] ||
+       [ "$(registry_field_count migration_status generic_shadowed)" != "0" ] ||
        [ "$(registry_field_count migration_status deferred)" != "7" ]; then
-      echo "Phase 11 current migration inventory must remain 3 scalar-migrated, 2 local-state-migrated, 3 structured-CFG-migrated, 2 block-parameter/backedge-migrated, 2 generic-shadowed, and 7 deferred."
+      echo "Phase 11 current migration inventory must remain 3 scalar-migrated, 2 local-state-migrated, 3 structured-CFG-migrated, 2 block-parameter/backedge-migrated, 1 direct-call/ABI-migrated, 1 module/import/runtime-migrated, 0 generic-shadowed, and 7 deferred."
       exit 1
     fi
     if [ "$(registry_field_count seed_import 1)" != "17" ] ||
@@ -15393,7 +15419,7 @@ guard-cranelift-phase11-parity-registry:
         exit_7_stdout_empty_stderr_empty \
         exit_14_stdout_empty_stderr_empty \
         exit_48_stdout_empty_stderr_empty \
-        exit_53_stdout_empty_stderr_empty \
+        resolver_bundle_exit_42_declared_external_exit_65_runtime_boundary_exit_53_stdout_empty_stderr_empty \
         exit_71_stdout_empty_stderr_empty |
         sort
     )"
@@ -15746,21 +15772,23 @@ guard-cranelift-phase11-generic-canonical-mir-route:
     legacy_owner_count="$(rg -c 'route_owner=legacy_exact_shape' "$registry_doc" || true)"
     block_parameter_migrated_count="$(rg -c 'migration_status=block_parameter_backedge_migrated' "$registry_doc" || true)"
     direct_call_migrated_count="$(rg -c 'migration_status=direct_call_ABI_migrated' "$registry_doc" || true)"
+    module_import_runtime_migrated_count="$(rg -c 'migration_status=module_import_runtime_migrated' "$registry_doc" || true)"
     if [ "${generic_owner_count:-0}" != "12" ] ||
-       [ "${generic_shadow_count:-0}" != "1" ] ||
+       [ "${generic_shadow_count:-0}" != "0" ] ||
        [ "${scalar_migrated_count:-0}" != "3" ] ||
        [ "${local_state_migrated_count:-0}" != "2" ] ||
        [ "${structured_cfg_migrated_count:-0}" != "3" ] ||
        [ "${block_parameter_migrated_count:-0}" != "2" ] ||
        [ "${direct_call_migrated_count:-0}" != "1" ] ||
+       [ "${module_import_runtime_migrated_count:-0}" != "1" ] ||
        [ "${legacy_owner_count:-0}" != "0" ]; then
-      echo "Phase 11 registry must expose twelve generic owners: one shadowed entry, three scalar migrations, two local-state migrations, three structured-CFG migrations, two block-parameter/backedge migrations, and one direct-call/ABI migration."
-      echo "generic=${generic_owner_count:-0} shadowed=${generic_shadow_count:-0} scalar=${scalar_migrated_count:-0} local_state=${local_state_migrated_count:-0} structured_CFG=${structured_cfg_migrated_count:-0} block_parameter=${block_parameter_migrated_count:-0} direct_call=${direct_call_migrated_count:-0} legacy=${legacy_owner_count:-0}"
+      echo "Phase 11 registry must expose twelve generic owners: three scalar migrations, two local-state migrations, three structured-CFG migrations, two block-parameter/backedge migrations, one direct-call/ABI migration, and one module/import/runtime migration."
+      echo "generic=${generic_owner_count:-0} shadowed=${generic_shadow_count:-0} scalar=${scalar_migrated_count:-0} local_state=${local_state_migrated_count:-0} structured_CFG=${structured_cfg_migrated_count:-0} block_parameter=${block_parameter_migrated_count:-0} direct_call=${direct_call_migrated_count:-0} module_import_runtime=${module_import_runtime_migrated_count:-0} legacy=${legacy_owner_count:-0}"
       exit 1
     fi
-    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_migrated_direct_call_and_ABI_parity' "$registry_doc" >/dev/null
+    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_migrated_module_import_and_runtime_parity' "$registry_doc" >/dev/null
     rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_INVENTORY: 0_legacy_exact_shape_12_generic_canonical_mir_7_deferred' "$registry_doc" >/dev/null
-    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_MIGRATION_INVENTORY: 3_scalar_expression_migrated_2_local_state_migrated_3_structured_CFG_migrated_2_block_parameter_backedge_migrated_1_direct_call_ABI_migrated_1_generic_shadowed_7_deferred' "$registry_doc" >/dev/null
+    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_MIGRATION_INVENTORY: 3_scalar_expression_migrated_2_local_state_migrated_3_structured_CFG_migrated_2_block_parameter_backedge_migrated_1_direct_call_ABI_migrated_1_module_import_runtime_migrated_7_deferred' "$registry_doc" >/dev/null
     rg -n -F "deferred_fixture=$unsupported_source" "$registry_doc" >/dev/null
 
     if [ "${PHASE11_GENERIC_ROUTE_SKIP_DYNAMIC:-0}" = "1" ]; then
@@ -16046,9 +16074,9 @@ guard-cranelift-phase11-scalar-expression-parity:
       exit 1
     fi
 
-    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_migrated_direct_call_and_ABI_parity' "$registry_doc" >/dev/null
+    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_migrated_module_import_and_runtime_parity' "$registry_doc" >/dev/null
     rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_INVENTORY: 0_legacy_exact_shape_12_generic_canonical_mir_7_deferred' "$registry_doc" >/dev/null
-    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_MIGRATION_INVENTORY: 3_scalar_expression_migrated_2_local_state_migrated_3_structured_CFG_migrated_2_block_parameter_backedge_migrated_1_direct_call_ABI_migrated_1_generic_shadowed_7_deferred' "$registry_doc" >/dev/null
+    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_MIGRATION_INVENTORY: 3_scalar_expression_migrated_2_local_state_migrated_3_structured_CFG_migrated_2_block_parameter_backedge_migrated_1_direct_call_ABI_migrated_1_module_import_runtime_migrated_7_deferred' "$registry_doc" >/dev/null
     rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_MIR_TO_C_GAP_COUNT: 5' "$registry_doc" >/dev/null
     if [ "$(rg -c 'migration_status=scalar_expression_migrated' "$registry_doc")" != "3" ]; then
       echo "Registry must contain exactly three scalar-expression migrations after the local-read entry moves to Patch 5."
@@ -16398,9 +16426,9 @@ guard-cranelift-phase11-local-state-parity:
     rg -n -F 'fn compiler_mir_cfg_lowering_order(' "$rust_driver" >/dev/null
     rg -n -F 'fn phase11_cfg_intersect_assignment_state(' "$rust_driver" >/dev/null
 
-    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_migrated_direct_call_and_ABI_parity' "$registry_doc" >/dev/null
+    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_migrated_module_import_and_runtime_parity' "$registry_doc" >/dev/null
     rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_INVENTORY: 0_legacy_exact_shape_12_generic_canonical_mir_7_deferred' "$registry_doc" >/dev/null
-    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_MIGRATION_INVENTORY: 3_scalar_expression_migrated_2_local_state_migrated_3_structured_CFG_migrated_2_block_parameter_backedge_migrated_1_direct_call_ABI_migrated_1_generic_shadowed_7_deferred' "$registry_doc" >/dev/null
+    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_MIGRATION_INVENTORY: 3_scalar_expression_migrated_2_local_state_migrated_3_structured_CFG_migrated_2_block_parameter_backedge_migrated_1_direct_call_ABI_migrated_1_module_import_runtime_migrated_7_deferred' "$registry_doc" >/dev/null
     rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_MIR_TO_C_GAP_COUNT: 5' "$registry_doc" >/dev/null
     if [ "$(rg -c 'migration_status=local_state_migrated' "$registry_doc")" != "2" ]; then
       echo "Registry must retain exactly two Patch 5 local-state migrations after CFG ownership moves to Patch 6."
@@ -16781,9 +16809,9 @@ guard-cranelift-phase11-structured-cfg-parity:
       exit 1
     fi
 
-    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_migrated_direct_call_and_ABI_parity' "$registry_doc" >/dev/null
+    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_migrated_module_import_and_runtime_parity' "$registry_doc" >/dev/null
     rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_INVENTORY: 0_legacy_exact_shape_12_generic_canonical_mir_7_deferred' "$registry_doc" >/dev/null
-    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_MIGRATION_INVENTORY: 3_scalar_expression_migrated_2_local_state_migrated_3_structured_CFG_migrated_2_block_parameter_backedge_migrated_1_direct_call_ABI_migrated_1_generic_shadowed_7_deferred' "$registry_doc" >/dev/null
+    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_MIGRATION_INVENTORY: 3_scalar_expression_migrated_2_local_state_migrated_3_structured_CFG_migrated_2_block_parameter_backedge_migrated_1_direct_call_ABI_migrated_1_module_import_runtime_migrated_7_deferred' "$registry_doc" >/dev/null
     rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_MIR_TO_C_GAP_COUNT: 5' "$registry_doc" >/dev/null
     if [ "$(rg -c 'migration_status=structured_CFG_migrated' "$registry_doc")" != "3" ]; then
       echo "Registry must contain exactly three structured-CFG migrations."
@@ -17237,9 +17265,9 @@ guard-cranelift-phase11-block-parameter-loop-parity:
       exit 1
     fi
 
-    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_migrated_direct_call_and_ABI_parity' "$registry_doc" >/dev/null
+    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_migrated_module_import_and_runtime_parity' "$registry_doc" >/dev/null
     rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_INVENTORY: 0_legacy_exact_shape_12_generic_canonical_mir_7_deferred' "$registry_doc" >/dev/null
-    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_MIGRATION_INVENTORY: 3_scalar_expression_migrated_2_local_state_migrated_3_structured_CFG_migrated_2_block_parameter_backedge_migrated_1_direct_call_ABI_migrated_1_generic_shadowed_7_deferred' "$registry_doc" >/dev/null
+    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_MIGRATION_INVENTORY: 3_scalar_expression_migrated_2_local_state_migrated_3_structured_CFG_migrated_2_block_parameter_backedge_migrated_1_direct_call_ABI_migrated_1_module_import_runtime_migrated_7_deferred' "$registry_doc" >/dev/null
     if [ "$(rg -c 'migration_status=block_parameter_backedge_migrated' "$registry_doc")" != "2" ]; then
       echo "Registry must contain exactly two block-parameter/backedge migrations."
       exit 1
@@ -17595,7 +17623,7 @@ guard-cranelift-phase11-direct-call-abi-parity:
       'allowed_cranelift_phase11_direct_call_ABI_scope_freeze: no_indirect_calls_closures_recursion_modules_imports_runtime_allowlist_MIR_v3_worker_protocol_driver_link_package_CLI_or_CI_matrix_change'
       'allowed_cranelift_phase11_direct_call_ABI_legacy_backend_surface_policy: exact_direct_call_ABI_guard_recipe_is_manifest_validated_then_excluded_from_the_legacy_explicit_CLI_scan'
       'allowed_cranelift_phase11_direct_call_ABI_next_milestone: module_import_and_runtime_boundary_parity'
-      'allowed_cranelift_phase11_direct_call_ABI_next_milestone_status: pending'
+      'allowed_cranelift_phase11_direct_call_ABI_next_milestone_status: complete'
     )
     for expected_line in "${required_manifest_lines[@]}"; do
       if ! rg -n -x -F "$expected_line" "$manifest_doc" >/dev/null; then
@@ -17657,9 +17685,9 @@ guard-cranelift-phase11-direct-call-abi-parity:
       rg -n -F "$expected_symbol" "$rust_driver" >/dev/null
     done
 
-    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_migrated_direct_call_and_ABI_parity' "$registry_doc" >/dev/null
+    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_migrated_module_import_and_runtime_parity' "$registry_doc" >/dev/null
     rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_INVENTORY: 0_legacy_exact_shape_12_generic_canonical_mir_7_deferred' "$registry_doc" >/dev/null
-    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_MIGRATION_INVENTORY: 3_scalar_expression_migrated_2_local_state_migrated_3_structured_CFG_migrated_2_block_parameter_backedge_migrated_1_direct_call_ABI_migrated_1_generic_shadowed_7_deferred' "$registry_doc" >/dev/null
+    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_MIGRATION_INVENTORY: 3_scalar_expression_migrated_2_local_state_migrated_3_structured_CFG_migrated_2_block_parameter_backedge_migrated_1_direct_call_ABI_migrated_1_module_import_runtime_migrated_7_deferred' "$registry_doc" >/dev/null
     if [ "$(rg -c 'migration_status=direct_call_ABI_migrated' "$registry_doc")" != "1" ]; then
       echo "Registry must contain exactly one direct-call/ABI migration."
       exit 1
@@ -17864,6 +17892,313 @@ guard-cranelift-phase11-direct-call-abi-parity:
     expect_invalid_fixture recursion "$recursion" 'canonical compiler MIR local call graph must not contain recursion or mutual recursion'
 
     echo "✅ Phase 11 direct-function and scalar-ABI parity migrated: signatures drive declarations and calls, int/bool arguments are typed, nested direct calls execute, malformed signatures and recursion are rejected, and existing output is preserved."
+
+
+guard-cranelift-phase11-module-import-runtime-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 11 module, import, and runtime-boundary parity..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    registry_doc="compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md"
+    generic_source="compiler/mir_native_backend_generic_source.gst"
+    lowerer_source="compiler/mir_native_backend_module_import_source.gst"
+    route_source="compiler/mir_native_backend_source_route.gst"
+    canonical_mir="compiler/mir.gst"
+    rust_manifest="compiler/experiments/cranelift/Cargo.toml"
+    rust_driver="compiler/experiments/cranelift/src/main.rs"
+    readme_doc="compiler/experiments/cranelift/README.md"
+    module_source="compiler/phase11_module_import_main_source.gst"
+    module_dependency="compiler/phase11_module_import_math_source.gst"
+    declared_external_source="compiler/phase11_declared_external_import_source.gst"
+    runtime_source="compiler/phase10_runtime_boundary_source.gst"
+    build_dir="build/guards/cranelift_phase11_module_import_runtime_parity"
+    negative_sources=(
+      'duplicate-symbol|compiler/phase11_module_import_duplicate_symbol_source.gst'
+      'unresolved-symbol|compiler/phase11_module_import_unresolved_symbol_source.gst'
+      'signature-disagreement|compiler/phase11_module_import_signature_disagreement_source.gst'
+      'forbidden-runtime|compiler/phase11_module_import_forbidden_runtime_source.gst'
+    )
+
+    for required_file in \
+      "$manifest_doc" \
+      "$registry_doc" \
+      "$generic_source" \
+      "$lowerer_source" \
+      "$route_source" \
+      "$canonical_mir" \
+      "$rust_manifest" \
+      "$rust_driver" \
+      "$readme_doc" \
+      "$module_source" \
+      "$module_dependency" \
+      "$declared_external_source" \
+      "$runtime_source" \
+      src/runtime.c
+    do
+      if [ ! -f "$required_file" ]; then
+        echo "Missing Phase 11 module/import/runtime input: $required_file"
+        exit 1
+      fi
+    done
+    for case_record in "${negative_sources[@]}"; do
+      IFS='|' read -r case_name source_path <<<"$case_record"
+      if [ ! -f "$source_path" ]; then
+        echo "Missing Phase 11 module/import/runtime negative source $case_name: $source_path"
+        exit 1
+      fi
+    done
+
+    PHASE11_DIRECT_CALL_ABI_SKIP_DYNAMIC=1 \
+      just guard-cranelift-phase11-direct-call-abi-parity
+
+    required_manifest_lines=(
+      'CRANELIFT_EXPERIMENT_ALLOWED_PHASE11_MODULE_IMPORT_RUNTIME_PARITY_GUARD: guard-cranelift-phase11-module-import-runtime-parity'
+      'allowed_cranelift_phase11_module_import_runtime_status: phase11_migrated_module_import_and_runtime_parity'
+      'allowed_cranelift_phase11_module_import_runtime_predecessor_status: phase11_migrated_direct_call_and_ABI_parity'
+      'allowed_cranelift_phase11_module_import_runtime_predecessor_guard: guard-cranelift-phase11-direct-call-abi-parity'
+      'allowed_cranelift_phase11_module_import_runtime_predecessor_policy: predecessor_guard_runs_static_contract_mode_without_replaying_direct_call_dynamic_evidence'
+      'allowed_cranelift_phase11_module_import_runtime_lowerer: compiler/mir_native_backend_module_import_source.gst'
+      'allowed_cranelift_phase11_module_import_runtime_positive_fixture_count: 3'
+      'allowed_cranelift_phase11_module_import_runtime_positive_fixtures: compiler/phase11_module_import_main_source.gst,compiler/phase11_declared_external_import_source.gst,compiler/phase10_runtime_boundary_source.gst'
+      'allowed_cranelift_phase11_module_import_runtime_dependency_fixture: compiler/phase11_module_import_math_source.gst'
+      'allowed_cranelift_phase11_module_import_runtime_expected_exits: resolver_bundle_42,declared_external_toupper_65,approved_runtime_abs_53'
+      'allowed_cranelift_phase11_module_import_runtime_source_scope: compiler_resolved_topologically_ordered_source_modules_fully_qualified_direct_function_identities_declared_C_externs_and_approved_runtime_boundaries'
+      'allowed_cranelift_phase11_module_import_runtime_linkage_classes: exported_entry,module_local,bundle_export,imported_bundle,imported_host'
+      'allowed_cranelift_phase11_module_import_runtime_resolver_policy: source_imports_are_owned_by_the_existing_recursive_resolver_parser_and_typechecker_and_the_native_lowerer_consumes_only_resolved_program_order_paths_and_prefixes'
+      'allowed_cranelift_phase11_module_import_runtime_symbol_policy: every_bundle_symbol_has_one_fully_qualified_link_identity_and_one_exact_signature_with_duplicate_definition_unresolved_bundle_import_and_signature_disagreement_rejected'
+      'allowed_cranelift_phase11_module_import_runtime_registry_policy: imported_host_symbols_require_an_exact_name_link_signature_and_boundary_classification_match_in_the_compiler_and_worker_allowlists'
+      'allowed_cranelift_phase11_module_import_runtime_allowlist: abs_int_to_int_RuntimeCall,toupper_int_to_int_ExternFunction'
+      'allowed_cranelift_phase11_module_import_runtime_boundary_policy: approved_host_calls_carry_exactly_one_statement_attached_native_boundary_metadata_record_with_ignored_with_proof_policy'
+      'allowed_cranelift_phase11_module_import_runtime_worker_policy: compiler_MIR_v2_modules_are_validated_as_one_program_then_lowered_to_ordered_objects_and_linked_by_the_existing_Phase9G_argument_vector_driver'
+      'allowed_cranelift_phase11_module_import_runtime_linker_policy: source_and_environment_cannot_add_libraries_linker_flags_link_search_paths_or_linker_environment_and_the_existing_Phase9G_classified_link_request_remains_the_only_link_surface'
+      'allowed_cranelift_phase11_module_import_runtime_negative_case_count: 4'
+      'allowed_cranelift_phase11_module_import_runtime_negative_cases: duplicate_symbol,unresolved_symbol,signature_disagreement,forbidden_runtime_name'
+      'allowed_cranelift_phase11_module_import_runtime_negative_fixtures: compiler/phase11_module_import_duplicate_symbol_source.gst,compiler/phase11_module_import_unresolved_symbol_source.gst,compiler/phase11_module_import_signature_disagreement_source.gst,compiler/phase11_module_import_forbidden_runtime_source.gst'
+      'allowed_cranelift_phase11_module_import_runtime_negative_policy: resolver_typechecker_canonical_verifier_or_worker_registry_failure_occurs_before_atomic_executable_publication_and_existing_output_is_preserved'
+      'allowed_cranelift_phase11_module_import_runtime_differential_policy: default_and_explicit_MIR_to_C_are_byte_identical_and_MIR_to_C_plus_Cranelift_match_exit_stdout_and_stderr_for_the_resolved_bundle_declared_external_and_runtime_boundary_sources'
+      'allowed_cranelift_phase11_module_import_runtime_registry_inventory: 0_legacy_exact_shape_12_generic_canonical_mir_7_deferred'
+      'allowed_cranelift_phase11_module_import_runtime_registry_migration_inventory: 3_scalar_expression_migrated_2_local_state_migrated_3_structured_CFG_migrated_2_block_parameter_backedge_migrated_1_direct_call_ABI_migrated_1_module_import_runtime_migrated_7_deferred'
+      'allowed_cranelift_phase11_module_import_runtime_registry_MIR_to_C_gap_count: 5'
+      'allowed_cranelift_phase11_module_import_runtime_compatibility_policy: Phase10_literal_abs_source_remains_byte_identical_shadow_evidence_but_the_new_import_route_is_resolver_and_registry_driven'
+      'allowed_cranelift_phase11_module_import_runtime_deferred_policy: indirect_calls_closures_dynamic_loading_variadic_imports_non_scalar_ABIs_and_unapproved_host_or_runtime_symbols_remain_deferred'
+      'allowed_cranelift_phase11_module_import_runtime_scope_freeze: no_arbitrary_linker_flags_libraries_search_paths_environment_linker_overrides_dynamic_loading_MIR_v3_new_artifact_kind_package_CLI_or_CI_matrix_change'
+      'allowed_cranelift_phase11_module_import_runtime_legacy_backend_surface_policy: exact_module_import_runtime_guard_recipe_is_manifest_validated_then_excluded_from_the_legacy_explicit_CLI_scan'
+      'allowed_cranelift_phase11_module_import_runtime_next_milestone: aggregate_and_resource_parity'
+      'allowed_cranelift_phase11_module_import_runtime_next_milestone_status: pending'
+    )
+    for expected_line in "${required_manifest_lines[@]}"; do
+      if ! rg -n -x -F "$expected_line" "$manifest_doc" >/dev/null; then
+        echo "Missing Phase 11 module/import/runtime manifest line:"
+        echo "$expected_line"
+        exit 1
+      fi
+    done
+
+    required_lowerer_symbols=(
+      'type MirNativeModuleImportModel[ctx] struct'
+      'type MirNativeModuleImportHost[ctx] struct'
+      'func mir_native_module_import_alias_prefix('
+      'func mir_native_module_import_validate_host_registry('
+      'func mir_native_module_import_validate_calls('
+      'func mir_native_module_import_validate_acyclic('
+      'func mir_native_module_import_emit_canonical_module('
+      'func mir_native_module_import_emit_bundle('
+      'func mir_native_module_import_source_lower('
+      '"abs"'
+      '"toupper"'
+      '"RuntimeCall"'
+      '"ExternFunction"'
+      '"bundle_export"'
+      '"imported_bundle"'
+      '"imported_host"'
+    )
+    for expected_symbol in "${required_lowerer_symbols[@]}"; do
+      rg -n -F "$expected_symbol" "$lowerer_source" >/dev/null
+    done
+
+    rg -n -F 'import "mir_native_backend_module_import_source.gst" as module_import;' "$generic_source" >/dev/null
+    rg -n -F 'module_import.mir_native_module_import_source_lower(' "$generic_source" >/dev/null
+    module_import_line="$(rg -n -F 'module_import.mir_native_module_import_source_lower(' "$generic_source" | cut -d: -f1)"
+    direct_call_line="$(rg -n -F 'direct_call.mir_native_direct_call_source_lower(' "$generic_source" | cut -d: -f1)"
+    if [ -z "$module_import_line" ] || [ -z "$direct_call_line" ] || [ "$module_import_line" -ge "$direct_call_line" ]; then
+      echo "Module/import lowering must run before the one-module direct-call compatibility lowerer."
+      exit 1
+    fi
+    if rg -n -e 'phase10_[A-Za-z0-9_]*_source\.gst|phase11_[A-Za-z0-9_]*_source\.gst' \
+      "$generic_source" "$lowerer_source" >/dev/null; then
+      echo "Module/import lowering must not inspect or embed source fixture identities."
+      exit 1
+    fi
+
+    required_mir_symbols=(
+      'BundleExport'
+      'ImportedBundle'
+      'return "bundle_export";'
+      'return "imported_bundle";'
+      'symbol.linkage.tag == 4'
+      'resolution_count != 1'
+    )
+    for expected_symbol in "${required_mir_symbols[@]}"; do
+      rg -n -F "$expected_symbol" "$canonical_mir" >/dev/null
+    done
+
+    required_worker_symbols=(
+      'CompilerMirLoweringFunctionLinkage::BundleExport'
+      'CompilerMirLoweringFunctionLinkage::ImportedBundle'
+      '"bundle_export"'
+      '"imported_bundle"'
+      'phase11_import_registry_classification('
+      '"abs" if imported.name == "abs" => Some("RuntimeCall")'
+      '"toupper" if imported.name == "toupper" => Some("ExternFunction")'
+      'validate_phase11_import_boundary_metadata('
+      'unresolved imported bundle symbol'
+      'whole-program symbol signature disagreement'
+      'duplicate whole-program defined symbol'
+      'ordered_object_inputs: object_paths.clone()'
+      'additional_libraries: Vec::new()'
+      'additional_linker_args: Vec::new()'
+      'environment_overrides: Vec::new()'
+      'run_compiler_mir_link_request(link_request)'
+      'const PHASE10_DRIVER_RUNTIME_IMPORTS: [&str; 5]'
+    )
+    for expected_symbol in "${required_worker_symbols[@]}"; do
+      rg -n -F "$expected_symbol" "$rust_driver" >/dev/null
+    done
+
+    if rg -n -e 'additional_libraries:[[:space:]]*vec!\[[^]]' \
+                -e 'additional_linker_args:[[:space:]]*vec!\[[^]]' \
+                -e 'environment_overrides:[[:space:]]*vec!\[[^]]' \
+                -e 'RUSTFLAGS|LIBRARY_PATH|LD_LIBRARY_PATH' \
+                "$lowerer_source" "$generic_source" "$route_source" >/dev/null; then
+      echo "Patch 9 must not expose source- or environment-controlled linker expansion."
+      exit 1
+    fi
+
+    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_migrated_module_import_and_runtime_parity' "$registry_doc" >/dev/null
+    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_INVENTORY: 0_legacy_exact_shape_12_generic_canonical_mir_7_deferred' "$registry_doc" >/dev/null
+    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_MIGRATION_INVENTORY: 3_scalar_expression_migrated_2_local_state_migrated_3_structured_CFG_migrated_2_block_parameter_backedge_migrated_1_direct_call_ABI_migrated_1_module_import_runtime_migrated_7_deferred' "$registry_doc" >/dev/null
+    if [ "$(rg -c 'migration_status=module_import_runtime_migrated' "$registry_doc")" != "1" ]; then
+      echo "Registry must contain exactly one module/import/runtime migration."
+      exit 1
+    fi
+    import_record="$(rg -n -F 'parity_entry: id=imported_runtime_call_i32|' "$registry_doc")"
+    printf '%s\n' "$import_record" | rg -F 'source_fixture=compiler/phase11_declared_external_import_source.gst' >/dev/null
+    printf '%s\n' "$import_record" | rg -F 'migration_status=module_import_runtime_migrated' >/dev/null
+    printf '%s\n' "$import_record" | rg -F 'source_native_guard=guard-cranelift-phase11-module-import-runtime-parity' >/dev/null
+    rg -n -F 'deferred_family: id=multiple_modules_and_source_imports|' "$registry_doc" |
+      rg -F 'status=migrated' >/dev/null
+    rg -n -F 'deferred_family: id=broader_direct_and_imported_calls|' "$registry_doc" |
+      rg -F 'status=partially_migrated' >/dev/null
+
+    readme_flat="$(tr '\n' ' ' < "$readme_doc")"
+    printf '%s\n' "$readme_flat" | rg -F 'Phase 11 Patch 9 migrates module, import, and runtime-boundary parity as `phase11_migrated_module_import_and_runtime_parity`.' >/dev/null
+    printf '%s\n' "$readme_flat" | rg -F 'The compiler and worker share an explicit scalar allowlist: `abs(int)->int` is an approved `RuntimeCall`, while `toupper(int)->int` is an approved `ExternFunction`.' >/dev/null
+    printf '%s\n' "$readme_flat" | rg -F 'passes the ordered object vector to the unchanged Phase 9G classified linker.' >/dev/null
+
+    if [ "${PHASE11_MODULE_IMPORT_RUNTIME_SKIP_DYNAMIC:-0}" = "1" ]; then
+      echo "✅ Phase 11 module/import/runtime static contract passed; differential and negative evidence was intentionally not replayed."
+      exit 0
+    fi
+    if [ ! -x ./gust ]; then
+      echo "Phase 11 module/import/runtime guard requires the rebuilt ./gust compiler."
+      exit 1
+    fi
+
+    rm -rf "$build_dir"
+    mkdir -p "$build_dir"
+    cargo_target="$build_dir/cargo-target"
+    CARGO_TARGET_DIR="$cargo_target" cargo build \
+      --locked \
+      --quiet \
+      --manifest-path "$rust_manifest"
+    driver_bin="$cargo_target/debug/gust-cranelift-experiment"
+    driver_abs="$(cd "$(dirname "$driver_bin")" && pwd)/$(basename "$driver_bin")"
+    CC_BIN="${CC:-cc}"
+    CFLAGS_VAL="${CFLAGS:--O0 -w -pthread}"
+
+    execute_and_capture() {
+      local binary="$1"
+      local prefix="$2"
+      set +e
+      "$binary" >"$prefix.stdout" 2>"$prefix.stderr"
+      local status="$?"
+      set -e
+      printf '%s\n' "$status" >"$prefix.status"
+    }
+
+    run_differential_case() {
+      local name="$1"
+      local source_path="$2"
+      local expected_exit="$3"
+      local case_dir="$build_dir/$name"
+      mkdir -p "$case_dir"
+
+      ./gust "$source_path" >"$case_dir/default.c" 2>"$case_dir/default.compiler.stderr"
+      ./gust --backend mir-to-c "$source_path" >"$case_dir/explicit.c" 2>"$case_dir/explicit.compiler.stderr"
+      test ! -s "$case_dir/default.compiler.stderr"
+      test ! -s "$case_dir/explicit.compiler.stderr"
+      cmp -s "$case_dir/default.c" "$case_dir/explicit.c"
+
+      cat src/runtime.c "$case_dir/default.c" >"$case_dir/mir-to-c.final.c"
+      "$CC_BIN" $CFLAGS_VAL -Isrc "$case_dir/mir-to-c.final.c" -o "$case_dir/mir-to-c-program"
+      execute_and_capture "$case_dir/mir-to-c-program" "$case_dir/mir-to-c"
+
+      GUST_NATIVE_BACKEND_DRIVER="$driver_abs" \
+        ./gust --backend cranelift -o "$case_dir/native-program" "$source_path" \
+        >"$case_dir/native.compiler.stdout" 2>"$case_dir/native.compiler.stderr"
+      test ! -s "$case_dir/native.compiler.stdout"
+      test ! -s "$case_dir/native.compiler.stderr"
+      test -x "$case_dir/native-program"
+      execute_and_capture "$case_dir/native-program" "$case_dir/native"
+
+      test "$(cat "$case_dir/mir-to-c.status")" = "$expected_exit"
+      test "$(cat "$case_dir/native.status")" = "$expected_exit"
+      cmp -s "$case_dir/mir-to-c.stdout" "$case_dir/native.stdout"
+      cmp -s "$case_dir/mir-to-c.stderr" "$case_dir/native.stderr"
+      test ! -e "$case_dir/native-program.phase10.bundle"
+      test ! -e "$case_dir/native-program.phase10.request"
+      if find "$case_dir" -maxdepth 1 -type f -name 'native-program.phase10-source-route-*.o' | grep -q .; then
+        echo "Successful Patch 9 case left hidden module objects: $name"
+        find "$case_dir" -maxdepth 1 -type f -name '*.o' -print
+        exit 1
+      fi
+    }
+
+    run_differential_case resolver-bundle "$module_source" 42
+    run_differential_case declared-external "$declared_external_source" 65
+    run_differential_case approved-runtime "$runtime_source" 53
+
+    expect_source_failure() {
+      local name="$1"
+      local source_path="$2"
+      local output="$build_dir/source-$name.existing-output"
+      local log="$build_dir/source-$name.log"
+      printf 'phase11-module-import-runtime-output-sentinel\n' >"$output"
+      cp "$output" "$output.expected"
+      set +e
+      GUST_NATIVE_BACKEND_DRIVER="$driver_abs" \
+        ./gust --backend cranelift -o "$output" "$source_path" >"$log" 2>&1
+      local status="$?"
+      set -e
+      if [ "$status" = "0" ]; then
+        echo "Invalid module/import/runtime source unexpectedly compiled: $name"
+        cat "$log"
+        exit 1
+      fi
+      cmp -s "$output.expected" "$output"
+      test ! -e "$output.phase10.bundle"
+      test ! -e "$output.phase10.request"
+      if find "$build_dir" -maxdepth 1 -type f -name "source-$name.existing-output.phase10-source-route-*.o" | grep -q .; then
+        echo "Invalid Patch 9 case left hidden module objects: $name"
+        exit 1
+      fi
+    }
+    for case_record in "${negative_sources[@]}"; do
+      IFS='|' read -r case_name source_path <<<"$case_record"
+      expect_source_failure "$case_name" "$source_path"
+    done
+
+    echo "✅ Phase 11 module/import/runtime parity migrated: resolver-owned modules preserve qualified identities, approved host boundaries are registry-classified, Phase 9G links ordered objects without linker-surface expansion, and negative lanes preserve output."
 
 
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
