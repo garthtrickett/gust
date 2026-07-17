@@ -577,7 +577,6 @@ func mir_native_block_parameter_emit_join(model: MirNativeBlockParameterLoopMode
     return std.Clone(ctx, emitted);
 }
 
-func mir_native_block_parameter_emit_loop
 func mir_native_block_parameter_emit_loop(model: MirNativeBlockParameterLoopModel[ctx], ctx: &Arena) str {
     mut emitted :=
         "format: gust.compiler_mir_ingestion.v1\nfunction: main\nbackend_symbol: main\nparameter_count: 0\nreturn_type: int\nlocal_count: 0\nentry_block: entry\nblock_count: 4\nblock_0_label: entry\nblock_0_parameter_count: 0\nblock_0_statement_count: 0\nblock_0_terminator_kind: Jump\nblock_0_terminator_target: loop_header\nblock_0_terminator_argument_count: 2\n";
@@ -629,7 +628,6 @@ func mir_native_block_parameter_emit_loop(model: MirNativeBlockParameterLoopMode
     return std.Clone(ctx, emitted);
 }
 
-func mir_native_block_parameter_add_parameter
 func mir_native_block_parameter_add_parameter(module: mir.MirProgramBundleModule[ctx], block_label: str, ordinal: int, name: str, ctx: &Arena) mir.MirProgramBundleModule[ctx] {
     return mir.mir_program_bundle_module_with_block_parameter(
         module,
