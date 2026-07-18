@@ -569,7 +569,17 @@ func mir_native_block_parameter_emit_join(model: MirNativeBlockParameterLoopMode
     );
     emitted = mir_native_block_parameter_append(
         emitted,
-        "block_4_label: result\nblock_4_parameter_count: 1\nblock_4_parameter_0_name: result_value\nblock_4_parameter_0_type: int\nblock_4_statement_count: 0\nblock_4_terminator_kind: ReturnBlockParamI32\nblock_4_terminator_block_param: result_value\nmetadata_count: 1\nmetadata_0_kind: provenance\nmetadata_0_attachment: function\nmetadata_0_policy: recognized_preserved\nmetadata_0_payload: kind=BlockParameterLoop;profile=non_final_join;reducibility=acyclic;parameter_arity=2\nexpected_exit: ",
+        "block_4_label: result\nblock_4_parameter_count: 1\nblock_4_parameter_0_name: result_value\nblock_4_parameter_0_type: int\nblock_4_statement_count: 0\nblock_4_terminator_kind: ReturnBlockParamI32\nblock_4_terminator_block_param: result_value\nmetadata_count: 1\nmetadata_0_kind: provenance\nmetadata_0_attachment: function\nmetadata_0_policy: recognized_preserved\nmetadata_0_payload: kind=BlockParameterLoop;profile=non_final_join;reducibility=acyclic;parameter_arity=2;origin=",
+        ctx
+    );
+    emitted = mir_native_block_parameter_append(
+        emitted,
+        model.source_path,
+        ctx
+    );
+    emitted = mir_native_block_parameter_append(
+        emitted,
+        "\nexpected_exit: ",
         ctx
     );
     emitted = mir_native_block_parameter_append_int(emitted, model.expected_exit, ctx);
@@ -620,7 +630,17 @@ func mir_native_block_parameter_emit_loop(model: MirNativeBlockParameterLoopMode
     );
     emitted = mir_native_block_parameter_append(
         emitted,
-        "block_3_label: loop_exit\nblock_3_parameter_count: 1\nblock_3_parameter_0_name: result_value\nblock_3_parameter_0_type: int\nblock_3_statement_count: 0\nblock_3_terminator_kind: ReturnBlockParamI32\nblock_3_terminator_block_param: result_value\nmetadata_count: 1\nmetadata_0_kind: provenance\nmetadata_0_attachment: function\nmetadata_0_policy: recognized_preserved\nmetadata_0_payload: kind=BlockParameterLoop;profile=bounded_loop;reducibility=single_header;parameter_arity=2\nexpected_exit: ",
+        "block_3_label: loop_exit\nblock_3_parameter_count: 1\nblock_3_parameter_0_name: result_value\nblock_3_parameter_0_type: int\nblock_3_statement_count: 0\nblock_3_terminator_kind: ReturnBlockParamI32\nblock_3_terminator_block_param: result_value\nmetadata_count: 1\nmetadata_0_kind: provenance\nmetadata_0_attachment: function\nmetadata_0_policy: recognized_preserved\nmetadata_0_payload: kind=BlockParameterLoop;profile=bounded_loop;reducibility=single_header;parameter_arity=2;origin=",
+        ctx
+    );
+    emitted = mir_native_block_parameter_append(
+        emitted,
+        model.source_path,
+        ctx
+    );
+    emitted = mir_native_block_parameter_append(
+        emitted,
+        "\nexpected_exit: ",
         ctx
     );
     emitted = mir_native_block_parameter_append_int(emitted, model.expected_exit, ctx);

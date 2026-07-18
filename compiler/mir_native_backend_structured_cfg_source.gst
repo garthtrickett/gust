@@ -1258,6 +1258,16 @@ func mir_native_structured_cfg_emit_metadata(
         len(model.blocks),
         ctx
     );
+    emitted = mir_native_structured_cfg_append(
+        emitted,
+        ";origin=",
+        ctx
+    );
+    emitted = mir_native_structured_cfg_append(
+        emitted,
+        model.source_path,
+        ctx
+    );
     return mir_native_structured_cfg_append(emitted, "\n", ctx);
 }
 
