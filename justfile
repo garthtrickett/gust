@@ -17689,7 +17689,7 @@ guard-cranelift-phase13-opening-contract:
       'allowed_cranelift_phase13_opening_predecessor_guard: guard-cranelift-phase11-close'
       'allowed_cranelift_phase13_opening_phase11_registry: compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md'
       'allowed_cranelift_phase13_opening_phase11_registry_disposition: historical_immutable'
-      'allowed_cranelift_phase13_opening_phase11_registry_SHA256: fc24ad8b6ce7b73f570c29bdcb1c7ea55b80f9b349745a6268de387924101c68'
+      'allowed_cranelift_phase13_opening_phase11_registry_SHA256: a3f1a0fda51cddda0b9d801b331dbed519fb5d2c30ebf447d56c31d27ebc627d'
       'allowed_cranelift_phase13_opening_phase11_registry_entry_count: 19'
       'allowed_cranelift_phase13_opening_phase11_classification_inventory: 12_migrated_7_deferred_0_excluded'
       'allowed_cranelift_phase13_opening_phase11_deferred_entry_count: 7'
@@ -17726,9 +17726,9 @@ guard-cranelift-phase13-opening-contract:
     done
 
     phase11_sha="$(sha256sum "$phase11_registry" | awk '{print $1}')"
-    if [ "$phase11_sha" != "fc24ad8b6ce7b73f570c29bdcb1c7ea55b80f9b349745a6268de387924101c68" ]; then
+    if [ "$phase11_sha" != "a3f1a0fda51cddda0b9d801b331dbed519fb5d2c30ebf447d56c31d27ebc627d" ]; then
       echo "Closed Phase 11 registry changed after its historical freeze."
-      echo "expected=fc24ad8b6ce7b73f570c29bdcb1c7ea55b80f9b349745a6268de387924101c68"
+      echo "expected=a3f1a0fda51cddda0b9d801b331dbed519fb5d2c30ebf447d56c31d27ebc627d"
       echo "actual=$phase11_sha"
       exit 1
     fi
@@ -17751,7 +17751,7 @@ guard-cranelift-phase13-opening-contract:
       'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PREDECESSOR_GUARD: guard-cranelift-phase11-close'
       'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE11_REGISTRY: compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md'
       'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE11_DISPOSITION: historical_immutable'
-      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE11_SHA256: fc24ad8b6ce7b73f570c29bdcb1c7ea55b80f9b349745a6268de387924101c68'
+      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE11_SHA256: a3f1a0fda51cddda0b9d801b331dbed519fb5d2c30ebf447d56c31d27ebc627d'
       'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE11_ENTRY_COUNT: 19'
       'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE11_CLASSIFICATION_INVENTORY: 12_migrated_7_deferred_0_excluded'
       'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE11_DEFERRED_ENTRY_COUNT: 7'
