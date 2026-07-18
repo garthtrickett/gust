@@ -1986,12 +1986,50 @@ guard-cranelift-experiment-manifest-surface:
       exit 1
     fi
 
+    phase12_5_inventory_doc="compiler/CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY.md"
+    if ! rg -n -x -F 'allowed_cranelift_phase12_5_opening_legacy_manifest_surface_policy: exact_inventory_path_headers_and_count_are_validated_before_exclusion_from_the_historical_broad_Cranelift_reference_scan' "$manifest_doc" >/dev/null; then
+      echo "Phase 12.5 verification inventory legacy manifest-surface policy is missing or stale."
+      rg -n -F 'allowed_cranelift_phase12_5_opening_legacy_manifest_surface_policy:' "$manifest_doc" || true
+      exit 1
+    fi
+    if ! rg -n -x -F 'allowed_cranelift_phase12_5_opening_inventory: compiler/CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY.md' "$manifest_doc" >/dev/null; then
+      echo "Phase 12.5 verification inventory path is missing or stale in $manifest_doc."
+      rg -n -F 'allowed_cranelift_phase12_5_opening_inventory:' "$manifest_doc" || true
+      exit 1
+    fi
+    if [ ! -f "$phase12_5_inventory_doc" ] || [ -L "$phase12_5_inventory_doc" ]; then
+      echo "Phase 12.5 verification inventory must be one regular non-symlink documentation file: $phase12_5_inventory_doc"
+      exit 1
+    fi
+    required_phase12_5_inventory_headers=(
+      'CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_VERSION: 1'
+      'CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_STATUS: phase12_5_opened_verification_framework_consolidation'
+      'CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_ITEM_COUNT: 26'
+      'CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_DUPLICATE_FACT_COUNT: 7'
+    )
+    for expected_header in "${required_phase12_5_inventory_headers[@]}"; do
+      if ! rg -n -x -F "$expected_header" "$phase12_5_inventory_doc" >/dev/null; then
+        echo "Phase 12.5 verification inventory is missing a frozen legacy-scan header:"
+        echo "$expected_header"
+        exit 1
+      fi
+    done
+    phase12_5_inventory_item_count="$(
+      rg -c '^phase12_5_inventory_item: ' "$phase12_5_inventory_doc" ||
+        true
+    )"
+    if [ "${phase12_5_inventory_item_count:-0}" != "26" ]; then
+      echo "Phase 12.5 verification inventory count drifted before the legacy broad-scan exclusion: items=${phase12_5_inventory_item_count:-0}"
+      exit 1
+    fi
+
     cranelift_refs="$(
       rg -n -i -F 'cranelift' compiler src tests Cargo.toml Cargo.lock Makefile 2>/dev/null |
         rg -v '^compiler/CRANELIFT_EXPERIMENT_MANIFEST\.md:' |
         rg -v '^compiler/CRANELIFT_PHASE9C_DIFFERENTIAL_LEDGER\.md:' |
         rg -v '^compiler/CRANELIFT_FEATURE_PARITY_REGISTRY\.md:' |
         rg -v '^compiler/CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY\.md:' |
+        rg -v '^compiler/CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY\.md:' |
         rg -v '^compiler/experiments/cranelift/' |
         rg -v '^compiler/test_runner_entry\.gst:' |
         rg -v '^compiler/phase10_help\.txt:' |
@@ -18147,6 +18185,292 @@ guard-cranelift-phase13-opening-contract:
     fi
 
     echo "✅ Phase 13 opened: 16 concrete deferred work items are uniquely owned and traceable to the immutable Phase 11 closure input."
+
+guard-cranelift-phase12-5-opening-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Opening Phase 12.5 verification framework consolidation..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    inventory_doc="compiler/CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY.md"
+    phase11_registry="compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md"
+    phase13_registry="compiler/CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY.md"
+    pr_workflow=".github/workflows/pr-fast.yml"
+    heavy_workflow=".github/workflows/heavy-guards.yml"
+    differential_script="scripts/phase11_registry_differential.sh"
+
+    for required_file in \
+      "$manifest_doc" "$inventory_doc" "$phase11_registry" "$phase13_registry" \
+      "$pr_workflow" "$heavy_workflow" "$differential_script" justfile
+    do
+      if [ ! -f "$required_file" ]; then
+        echo "Missing Phase 12.5 opening inventory input: $required_file"
+        exit 1
+      fi
+    done
+
+    just guard-cranelift-phase11-close
+
+    required_manifest_lines=(
+      'CRANELIFT_EXPERIMENT_ALLOWED_PHASE12_5_OPENING_GUARD: guard-cranelift-phase12-5-opening-contract'
+      'allowed_cranelift_phase12_5_opening_status: phase12_5_opened_verification_framework_consolidation'
+      'allowed_cranelift_phase12_5_opening_predecessor_status: phase11_closed_registry_backed_feature_parity_migration'
+      'allowed_cranelift_phase12_5_opening_predecessor_guard: guard-cranelift-phase11-close'
+      'allowed_cranelift_phase12_5_opening_inventory: compiler/CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY.md'
+      'allowed_cranelift_phase12_5_opening_inventory_item_count: 26'
+      'allowed_cranelift_phase12_5_opening_classification_inventory: 3_canonical_source_2_generated_view_5_executable_test_3_historical_evidence_8_redundant_duplicate_5_candidate_for_removal'
+      'allowed_cranelift_phase12_5_opening_duplicate_fact_count: 7'
+      'allowed_cranelift_phase12_5_opening_duplicate_facts: feature_row_identity,status,ci_family,totals,guard_names,workflow_shard_names,closure_status'
+      'allowed_cranelift_phase12_5_opening_behavior_freeze: no_route_MIR_worker_feature_migration_or_output_policy_changes'
+      'allowed_cranelift_phase12_5_opening_target_architecture: one_structured_registry_one_validator_projector_three_test_levels_semantic_closure_summaries_minimal_hard_architectural_bans'
+      'allowed_cranelift_phase12_5_opening_phase13_policy: phase13_paused_after_opening_until_phase12_5_close'
+      'allowed_cranelift_phase12_5_opening_legacy_manifest_surface_policy: exact_inventory_path_headers_and_count_are_validated_before_exclusion_from_the_historical_broad_Cranelift_reference_scan'
+      'allowed_cranelift_phase12_5_opening_scope: inventory_manifest_and_static_guard_only_no_compiler_route_MIR_worker_feature_output_or_workflow_change'
+      'allowed_cranelift_phase12_5_opening_next_patch: structured_registry'
+    )
+    for line in "${required_manifest_lines[@]}"; do
+      if ! rg -n -x -F "$line" "$manifest_doc" >/dev/null; then
+        echo "Missing Phase 12.5 manifest contract:"
+        echo "$line"
+        exit 1
+      fi
+    done
+
+    required_inventory_headers=(
+      'CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_VERSION: 1'
+      'CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_STATUS: phase12_5_opened_verification_framework_consolidation'
+      'CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_PREDECESSOR_STATUS: phase11_closed_registry_backed_feature_parity_migration'
+      'CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_PHASE13_POLICY: phase13_paused_after_opening_until_phase12_5_close'
+      'CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_ITEM_COUNT: 26'
+      'CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_CLASSIFICATION_COUNT: 6'
+      'CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_CLASSIFICATION_COUNTS: canonical_source_3,generated_view_2,executable_test_5,historical_evidence_3,redundant_duplicate_8,candidate_for_removal_5'
+      'CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_SURFACE_COUNT: 8'
+      'CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_SURFACES: feature_registry,experiment_manifest,justfile_recipe,pr_fast_workflow,heavy_workflow,differential_script,closure_guard,historical_contract'
+      'CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_DUPLICATE_FACT_COUNT: 7'
+      'CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_DUPLICATE_FACTS: feature_row_identity,status,ci_family,totals,guard_names,workflow_shard_names,closure_status'
+      'CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_BEHAVIOR_FREEZE_COUNT: 5'
+      'CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_TARGET_COMPONENT_COUNT: 5'
+      'CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_TEST_LEVEL_COUNT: 3'
+      'CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_NEXT_PATCH: structured_registry'
+    )
+    for header in "${required_inventory_headers[@]}"; do
+      if ! rg -n -x -F "$header" "$inventory_doc" >/dev/null; then
+        echo "Missing Phase 12.5 inventory header:"
+        echo "$header"
+        exit 1
+      fi
+    done
+
+    record_field() {
+      local record="$1"
+      local prefix="$2"
+      local key="$3"
+      printf '%s\n' "$record" |
+        tr '|' '\n' |
+        sed -n \
+          -e "s/^${prefix}: ${key}=//p" \
+          -e "s/^${key}=//p" |
+        head -n1
+    }
+
+    item_count="$(rg -c '^phase12_5_inventory_item: ' "$inventory_doc")"
+    unique_item_count="$(
+      awk -F'|' '
+        /^phase12_5_inventory_item: / {
+          value = $1
+          sub(/^phase12_5_inventory_item: id=/, "", value)
+          print value
+        }
+      ' "$inventory_doc" | sort -u | wc -l | tr -d ' '
+    )"
+    if [ "$item_count" != "26" ] || [ "$unique_item_count" != "26" ]; then
+      echo "Phase 12.5 inventory identity drifted: items=$item_count unique=$unique_item_count"
+      exit 1
+    fi
+
+    declare -A classification_counts=()
+    declare -A surface_counts=()
+    while IFS= read -r record; do
+      id="$(record_field "$record" phase12_5_inventory_item id)"
+      surface="$(record_field "$record" phase12_5_inventory_item surface)"
+      location="$(record_field "$record" phase12_5_inventory_item location)"
+      classification="$(record_field "$record" phase12_5_inventory_item classification)"
+      facts="$(record_field "$record" phase12_5_inventory_item facts)"
+      future_owner="$(record_field "$record" phase12_5_inventory_item future_owner)"
+      disposition_patch="$(record_field "$record" phase12_5_inventory_item disposition_patch)"
+
+      for value in \
+        "$id" "$surface" "$location" "$classification" \
+        "$facts" "$future_owner" "$disposition_patch"
+      do
+        if [ -z "$value" ]; then
+          echo "Phase 12.5 inventory row has a blank required field:"
+          echo "$record"
+          exit 1
+        fi
+        if printf '%s\n' "$value" | rg -n -i -x '(unknown|tbd|ownerless|ambiguous)' >/dev/null; then
+          echo "Phase 12.5 inventory row has an ambiguous field:"
+          echo "$record"
+          exit 1
+        fi
+      done
+
+      case "$classification" in
+        canonical_source|generated_view|executable_test|historical_evidence|redundant_duplicate|candidate_for_removal)
+          ;;
+        *)
+          echo "Unknown Phase 12.5 classification '$classification' in:"
+          echo "$record"
+          exit 1
+          ;;
+      esac
+
+      case "$surface" in
+        feature_registry|experiment_manifest|justfile_recipe|pr_fast_workflow|heavy_workflow|differential_script|closure_guard|historical_contract)
+          ;;
+        *)
+          echo "Unknown Phase 12.5 verification surface '$surface' in:"
+          echo "$record"
+          exit 1
+          ;;
+      esac
+
+      if ! printf '%s\n' "$disposition_patch" | rg -n -x '12\.5\.[1-9]' >/dev/null; then
+        echo "Phase 12.5 inventory row has an invalid disposition patch:"
+        echo "$record"
+        exit 1
+      fi
+
+      classification_counts["$classification"]=$(( ${classification_counts["$classification"]:-0} + 1 ))
+      surface_counts["$surface"]=$(( ${surface_counts["$surface"]:-0} + 1 ))
+    done < <(rg '^phase12_5_inventory_item: ' "$inventory_doc")
+
+    declare -A expected_classification_counts=(
+      [canonical_source]=3
+      [generated_view]=2
+      [executable_test]=5
+      [historical_evidence]=3
+      [redundant_duplicate]=8
+      [candidate_for_removal]=5
+    )
+    for classification in "${!expected_classification_counts[@]}"; do
+      actual="${classification_counts[$classification]:-0}"
+      expected="${expected_classification_counts[$classification]}"
+      if [ "$actual" != "$expected" ]; then
+        echo "Phase 12.5 classification $classification has $actual items, expected $expected."
+        exit 1
+      fi
+    done
+
+    required_surfaces=(
+      feature_registry
+      experiment_manifest
+      justfile_recipe
+      pr_fast_workflow
+      heavy_workflow
+      differential_script
+      closure_guard
+      historical_contract
+    )
+    for surface in "${required_surfaces[@]}"; do
+      if [ "${surface_counts[$surface]:-0}" = "0" ]; then
+        echo "Phase 12.5 inventory omitted verification surface: $surface"
+        exit 1
+      fi
+    done
+
+    duplicate_count="$(rg -c '^phase12_5_duplicate_fact: ' "$inventory_doc")"
+    unique_duplicate_count="$(
+      awk -F'|' '
+        /^phase12_5_duplicate_fact: / {
+          value = $1
+          sub(/^phase12_5_duplicate_fact: fact=/, "", value)
+          print value
+        }
+      ' "$inventory_doc" | sort -u | wc -l | tr -d ' '
+    )"
+    if [ "$duplicate_count" != "7" ] || [ "$unique_duplicate_count" != "7" ]; then
+      echo "Phase 12.5 duplicated-fact inventory drifted: facts=$duplicate_count unique=$unique_duplicate_count"
+      exit 1
+    fi
+
+    expected_duplicate_facts=(
+      feature_row_identity
+      status
+      ci_family
+      totals
+      guard_names
+      workflow_shard_names
+      closure_status
+    )
+    for expected_fact in "${expected_duplicate_facts[@]}"; do
+      record="$(
+        rg "^phase12_5_duplicate_fact: fact=${expected_fact}\|" "$inventory_doc" ||
+          true
+      )"
+      if [ -z "$record" ]; then
+        echo "Phase 12.5 inventory omitted duplicated fact: $expected_fact"
+        exit 1
+      fi
+      current_owners="$(record_field "$record" phase12_5_duplicate_fact current_owners)"
+      future_owner="$(record_field "$record" phase12_5_duplicate_fact future_owner)"
+      removal_patch="$(record_field "$record" phase12_5_duplicate_fact removal_patch)"
+      if [ -z "$current_owners" ] || [ -z "$future_owner" ] || [ -z "$removal_patch" ]; then
+        echo "Duplicated fact $expected_fact lacks a current owner, future owner, or removal patch."
+        exit 1
+      fi
+    done
+
+    required_freezes=(
+      'phase12_5_behavior_freeze: area=compiler_route|policy=no_route_changes'
+      'phase12_5_behavior_freeze: area=mir_schema_and_lowering|policy=no_MIR_changes'
+      'phase12_5_behavior_freeze: area=cranelift_worker|policy=no_worker_changes'
+      'phase12_5_behavior_freeze: area=feature_parity|policy=no_feature_migrations'
+      'phase12_5_behavior_freeze: area=output_policy|policy=no_output_policy_changes'
+    )
+    for freeze in "${required_freezes[@]}"; do
+      rg -n -x -F "$freeze" "$inventory_doc" >/dev/null
+    done
+    if [ "$(rg -c '^phase12_5_behavior_freeze: ' "$inventory_doc")" != "5" ]; then
+      echo "Phase 12.5 compiler behavior freeze inventory must contain exactly five areas."
+      exit 1
+    fi
+
+    required_target_components=(
+      'phase12_5_target_component: component=structured_registry|policy=one_machine_readable_registry_owns_feature_state'
+      'phase12_5_target_component: component=validator_projector|policy=one_validator_projector_derives_schema_totals_summaries_and_CI_families'
+      'phase12_5_target_component: component=three_test_levels|policy=fast_contract_focused_differential_and_historical_full_are_separate'
+      'phase12_5_target_component: component=semantic_closure_summaries|policy=closed_rows_are_compared_by_stable_semantic_fields_not_raw_file_bytes'
+      'phase12_5_target_component: component=minimal_hard_architectural_bans|policy=behavioral_tests_are_primary_and_source_scans_remain_only_for_explicit_hard_bans'
+    )
+    for component in "${required_target_components[@]}"; do
+      rg -n -x -F "$component" "$inventory_doc" >/dev/null
+    done
+    if [ "$(rg -c '^phase12_5_target_component: ' "$inventory_doc")" != "5" ]; then
+      echo "Phase 12.5 target architecture must contain exactly five components."
+      exit 1
+    fi
+
+    required_test_levels=(
+      'phase12_5_test_level: level=fast_contract|owner=PR_Fast_and_local_contract_runner'
+      'phase12_5_test_level: level=focused_differential|owner=registry_family_shards'
+      'phase12_5_test_level: level=historical_full|owner=Heavy_nightly_release_or_explicit_full_history_runner'
+    )
+    for level in "${required_test_levels[@]}"; do
+      rg -n -x -F "$level" "$inventory_doc" >/dev/null
+    done
+    if [ "$(rg -c '^phase12_5_test_level: ' "$inventory_doc")" != "3" ]; then
+      echo "Phase 12.5 must define exactly three verification test levels."
+      exit 1
+    fi
+
+    if rg -n -F 'phase12_5_' compiler \
+         --glob '*.gst' --glob '*.rs' >/dev/null; then
+      echo "Phase 12.5 opening must not add compiler-route, MIR, or worker implementation symbols."
+      rg -n -F 'phase12_5_' compiler --glob '*.gst' --glob '*.rs'
+      exit 1
+    fi
+
+    echo "✅ Phase 12.5 opened: 26 verification items and seven duplicated facts have explicit future owners and consolidation patches; compiler behavior remains frozen."
 
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
     #!/usr/bin/env bash
