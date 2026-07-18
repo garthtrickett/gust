@@ -4178,11 +4178,6 @@ func check_expression(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvir
             (*env).resolved_types_nested.Push(new_entry);
             found_idx = len((*env).resolved_types_nested) - 1;
 
-            // Log prefix database registration (Step 3)
-            if std.str_eq(prefix, "") == 0 {
-                mut log_reg := std.Concat("👁️ Prefix registered in type checker: ", prefix);
-                os.LogStr(log_reg);
-            }
         }
 
         mut entry_ref := &(*env).resolved_types_nested[found_idx];
