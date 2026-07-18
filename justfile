@@ -16833,7 +16833,7 @@ guard-cranelift-phase11-metadata-diagnostic-parity:
     set +e
     ./gust "$type_error_source" >"$build_dir/type.default.stdout" 2>"$build_dir/type.default.stderr"
     default_status="$?"
-    ./gust --backend cranelift "$type_error_source" >"$build_dir/type.native.stdout" 2>"$build_dir/type.native.stderr"
+    ./gust --backend cranelift -o "$build_dir/type.native.output" "$type_error_source" >"$build_dir/type.native.stdout" 2>"$build_dir/type.native.stderr"
     native_status="$?"
     set -e
     if [ "$default_status" = "0" ] || [ "$native_status" = "0" ]; then
