@@ -14058,11 +14058,6 @@ guard-cranelift-phase11-scalar-expression-parity:
         exit 1
       fi
     done
-    if [ ! -x ./gust ]; then
-      echo "Phase 11 scalar-expression guard requires the rebuilt ./gust compiler."
-      exit 1
-    fi
-
     PHASE11_GENERIC_ROUTE_SKIP_DYNAMIC=1 \
       just guard-cranelift-phase11-generic-canonical-mir-route
 
@@ -14189,6 +14184,10 @@ guard-cranelift-phase11-scalar-expression-parity:
         rg -F 'Patch 5 migrates local state and assignment parity as `phase11_migrated_local_state_parity`.' >/dev/null
       echo "✅ Phase 11 scalar-expression static contract preserved; dynamic scalar evidence was intentionally not replayed."
       exit 0
+    fi
+    if [ ! -x ./gust ]; then
+      echo "Phase 11 scalar-expression guard requires the rebuilt ./gust compiler."
+      exit 1
     fi
 
     rm -rf "$build_dir"
@@ -14409,11 +14408,6 @@ guard-cranelift-phase11-local-state-parity:
         exit 1
       fi
     done
-    if [ ! -x ./gust ]; then
-      echo "Phase 11 local-state guard requires the rebuilt ./gust compiler."
-      exit 1
-    fi
-
     PHASE11_SCALAR_EXPRESSION_SKIP_DYNAMIC=1 \
       just guard-cranelift-phase11-scalar-expression-parity
 
@@ -14563,6 +14557,10 @@ guard-cranelift-phase11-local-state-parity:
       echo "✅ Phase 11 local-state static contract passed; dynamic differential evidence was intentionally not replayed."
       exit 0
     fi
+    if [ ! -x ./gust ]; then
+      echo "Phase 11 local-state guard requires the rebuilt ./gust compiler."
+      exit 1
+    fi
 
     rm -rf "$build_dir"
     mkdir -p "$build_dir"
@@ -14597,10 +14595,20 @@ guard-cranelift-phase11-local-state-parity:
       local case_dir="$build_dir/$case_name"
       mkdir -p "$case_dir"
 
+      set +e
       ./gust "$source_path" \
         >"$case_dir/default.c" 2>"$case_dir/default.compiler.stderr"
+      default_compile_status="$?"
       ./gust --backend mir-to-c "$source_path" \
         >"$case_dir/explicit.c" 2>"$case_dir/explicit.compiler.stderr"
+      explicit_compile_status="$?"
+      set -e
+      if [ "$default_compile_status" != "0" ] ||
+         [ "$explicit_compile_status" != "0" ]; then
+        echo "MIR-to-C compilation failed for local-state case $case_name: default=$default_compile_status explicit=$explicit_compile_status"
+        cat "$case_dir/default.compiler.stderr" "$case_dir/explicit.compiler.stderr"
+        exit 1
+      fi
       if [ -s "$case_dir/default.compiler.stderr" ] ||
          [ -s "$case_dir/explicit.compiler.stderr" ]; then
         echo "MIR-to-C compilation emitted diagnostics for local-state case $case_name."
@@ -14614,19 +14622,34 @@ guard-cranelift-phase11-local-state-parity:
       fi
 
       cat src/runtime.c "$case_dir/default.c" >"$case_dir/mir-to-c.final.c"
-      "$CC_BIN" $CFLAGS_VAL -Isrc \
+      if ! "$CC_BIN" $CFLAGS_VAL -Isrc \
         "$case_dir/mir-to-c.final.c" \
-        -o "$case_dir/mir-to-c-program"
+        -o "$case_dir/mir-to-c-program" \
+        >"$case_dir/mir-to-c.link.stdout" \
+        2>"$case_dir/mir-to-c.link.stderr"
+      then
+        echo "MIR-to-C C compilation failed for local-state case $case_name."
+        cat "$case_dir/mir-to-c.link.stdout" "$case_dir/mir-to-c.link.stderr"
+        exit 1
+      fi
       execute_and_capture \
         "$case_dir/mir-to-c-program" \
         "$case_dir/mir-to-c"
 
+      set +e
       GUST_NATIVE_BACKEND_DRIVER="$driver_abs" \
         ./gust --backend cranelift \
           -o "$case_dir/native-program" \
           "$source_path" \
           >"$case_dir/native.compiler.stdout" \
           2>"$case_dir/native.compiler.stderr"
+      native_compile_status="$?"
+      set -e
+      if [ "$native_compile_status" != "0" ]; then
+        echo "Native compilation failed for local-state case $case_name with status $native_compile_status."
+        cat "$case_dir/native.compiler.stdout" "$case_dir/native.compiler.stderr"
+        exit 1
+      fi
       if [ -s "$case_dir/native.compiler.stdout" ] ||
          [ -s "$case_dir/native.compiler.stderr" ]; then
         echo "Successful native local-state compilation emitted diagnostics for $case_name."
@@ -14693,8 +14716,11 @@ guard-cranelift-phase11-local-state-parity:
       fi
       cat "$case_dir/native.stdout" "$case_dir/native.stderr" \
         >"$case_dir/native.combined"
-      if [ -n "$expected_diagnostic" ]; then
-        rg -n -F "$expected_diagnostic" "$case_dir/native.combined" >/dev/null
+      if [ -n "$expected_diagnostic" ] &&
+         ! rg -n -F "$expected_diagnostic" "$case_dir/native.combined" >/dev/null; then
+        echo "Negative local-state case $case_name did not emit expected diagnostic: $expected_diagnostic"
+        cat "$case_dir/native.combined"
+        exit 1
       fi
       if rg -n -F 'Native backend driver discovery error:' "$case_dir/native.combined" >/dev/null ||
          rg -n -F "$missing_driver" "$case_dir/native.combined" >/dev/null; then
@@ -14778,11 +14804,6 @@ guard-cranelift-phase11-structured-cfg-parity:
         exit 1
       fi
     done
-    if [ ! -x ./gust ]; then
-      echo "Phase 11 structured-CFG guard requires the rebuilt ./gust compiler."
-      exit 1
-    fi
-
     PHASE11_LOCAL_STATE_SKIP_DYNAMIC=1 \
       just guard-cranelift-phase11-local-state-parity
 
@@ -14920,6 +14941,10 @@ guard-cranelift-phase11-structured-cfg-parity:
         rg -F 'The next milestone is block-parameter and loop/backedge parity.' >/dev/null
       echo "✅ Phase 11 structured-CFG static contract passed; dynamic differential and malformed-CFG evidence was intentionally not replayed."
       exit 0
+    fi
+    if [ ! -x ./gust ]; then
+      echo "Phase 11 structured-CFG guard requires the rebuilt ./gust compiler."
+      exit 1
     fi
 
     rm -rf "$build_dir"
