@@ -5761,7 +5761,7 @@ guard-cranelift-phase9d-schema-parser-validator:
     metadata_0_kind: provenance
     metadata_0_attachment: function
     metadata_0_policy: recognized_preserved
-    metadata_0_payload: local_binding
+    metadata_0_payload: kind=LocalBinding;local=value;origin=guard-cranelift-phase9d-schema-parser-validator
     expected_exit: 9
     MIR
 
@@ -5964,7 +5964,7 @@ guard-cranelift-phase9d-generic-ingestion-command:
     metadata_0_kind: provenance
     metadata_0_attachment: function
     metadata_0_policy: recognized_preserved
-    metadata_0_payload: local_binding
+    metadata_0_payload: kind=LocalBinding;local=value;origin=guard-cranelift-phase9d-generic-ingestion-command
     MIR
     "${cargo_cmd[@]}" "$metadata_fixture" "$metadata_object"
     test -s "$metadata_object"
@@ -5989,7 +5989,7 @@ guard-cranelift-phase9d-generic-ingestion-command:
     metadata_0_kind: native_boundary
     metadata_0_attachment: function
     metadata_0_policy: ignored_with_proof
-    metadata_0_payload: kind=RuntimeCall;symbol=tiny_runtime_boundary
+    metadata_0_payload: kind=RuntimeCall;symbol=tiny_runtime_boundary;origin=guard-cranelift-phase9d-generic-ingestion-command;codegen=none;proof=runtime_boundary_classification_is_fixture_validated
     expected_exit: 0
     MIR
     "${cargo_cmd[@]}" "$void_fixture" "$void_object"
@@ -13994,7 +13994,7 @@ guard-cranelift-phase10-call-import-runtime-source-route:
     rg -n -F 'import_0_linkage: imported_host' "$route_source" >/dev/null
     rg -n -F 'block_0_statement_0_kind: LocalI32SetCall' "$route_source" >/dev/null
     rg -n -F 'metadata_0_kind: native_boundary' "$route_source" >/dev/null
-    rg -n -F 'kind=RuntimeCall;symbol=abs;origin=' "$route_source" >/dev/null
+    rg -n -F 'kind=RuntimeCall;symbol=abs;codegen=none;proof=runtime_boundary_classification_is_registry_validated;origin=' "$route_source" >/dev/null
     rg -n -F '"LocalCallI32"' "$route_source" >/dev/null
     rg -n -F '"ImportedCallI32"' "$route_source" >/dev/null
     rg -n -F '"abs"' "$route_source" >/dev/null
@@ -17417,9 +17417,10 @@ guard-cranelift-phase11-block-parameter-loop-parity:
     metadata_0_kind: provenance
     metadata_0_attachment: function
     metadata_0_policy: recognized_preserved
-    metadata_0_payload: kind=BlockParameterLoop;profile=non_final_join;reducibility=acyclic;parameter_arity=2
+    metadata_0_payload: kind=BlockParameterLoop;profile=non_final_join;reducibility=acyclic;parameter_arity=2;origin=guard-cranelift-phase11-block-parameter-loop-parity-arity-mismatch
     expected_exit: 1
     MIR
+    expect_invalid_fixture arity-mismatch "$arity_mismatch"
     expect_invalid_fixture arity-mismatch "$arity_mismatch" 'passes 1 argument(s), but target declares 2 block parameter(s)'
 
     incompatible_type="$malformed_dir/incompatible-type.mir"
@@ -17480,9 +17481,10 @@ guard-cranelift-phase11-block-parameter-loop-parity:
     metadata_0_kind: provenance
     metadata_0_attachment: function
     metadata_0_policy: recognized_preserved
-    metadata_0_payload: kind=BlockParameterLoop;profile=bounded_loop;reducibility=single_header;parameter_arity=2
+    metadata_0_payload: kind=BlockParameterLoop;profile=bounded_loop;reducibility=single_header;parameter_arity=2;origin=guard-cranelift-phase11-block-parameter-loop-parity-foreign-parameter
     expected_exit: 0
     MIR
+    expect_invalid_fixture foreign-parameter "$foreign_parameter"
     expect_invalid_fixture foreign-parameter "$foreign_parameter" 'references block parameter header_first owned by block(s): header'
 
     unknown_backedge="$malformed_dir/unknown-backedge.mir"
@@ -17549,9 +17551,10 @@ guard-cranelift-phase11-block-parameter-loop-parity:
     metadata_0_kind: provenance
     metadata_0_attachment: function
     metadata_0_policy: recognized_preserved
-    metadata_0_payload: kind=BlockParameterLoop;profile=bounded_loop;reducibility=single_header;parameter_arity=2
+    metadata_0_payload: kind=BlockParameterLoop;profile=bounded_loop;reducibility=single_header;parameter_arity=2;origin=guard-cranelift-phase11-block-parameter-loop-parity-irreducible
     expected_exit: 0
     MIR
+    expect_invalid_fixture irreducible "$irreducible"
     expect_invalid_fixture irreducible "$irreducible" 'irreducible cycle or a backedge whose target does not dominate its source'
 
     echo "✅ Phase 11 block-parameter and loop/backedge parity migrated: multiple parameters and arguments, non-final joins, bounded reducible loops, malformed-edge rejection, and output preservation are covered."
