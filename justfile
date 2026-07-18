@@ -16842,12 +16842,28 @@ guard-cranelift-phase11-metadata-diagnostic-parity:
       cat "$build_dir/type.native.stdout" "$build_dir/type.native.stderr"
       exit 1
     fi
-    default_location="$(rg -o 'TypeError in [^ ]+ at line [0-9]+:[0-9]+' "$build_dir/type.default.stderr" | head -1 || true)"
-    native_location="$(rg -o 'TypeError in [^ ]+ at line [0-9]+:[0-9]+' "$build_dir/type.native.stderr" | head -1 || true)"
+    default_location="$(
+      rg --no-filename -o \
+        'TypeError in [^ ]+ at line [0-9]+:[0-9]+' \
+        "$build_dir/type.default.stdout" \
+        "$build_dir/type.default.stderr" |
+        head -1 || true
+    )"
+    native_location="$(
+      rg --no-filename -o \
+        'TypeError in [^ ]+ at line [0-9]+:[0-9]+' \
+        "$build_dir/type.native.stdout" \
+        "$build_dir/type.native.stderr" |
+        head -1 || true
+    )"
     if [ -z "$default_location" ] || [ "$default_location" != "$native_location" ]; then
       echo "Source type-error locations differ: default='$default_location' native='$native_location'"
+      echo "--- default stdout ---"
+      cat "$build_dir/type.default.stdout"
       echo "--- default stderr ---"
       cat "$build_dir/type.default.stderr"
+      echo "--- native stdout ---"
+      cat "$build_dir/type.native.stdout"
       echo "--- native stderr ---"
       cat "$build_dir/type.native.stderr"
       exit 1
