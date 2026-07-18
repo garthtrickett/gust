@@ -15287,6 +15287,9 @@ guard-cranelift-phase11-structured-cfg-parity:
 guard-cranelift-phase11-block-parameter-loop-parity:
     #!/usr/bin/env bash
     set -euo pipefail
+    if [ "${PHASE11_BLOCK_PARAMETER_LOOP_TRACE:-0}" = "1" ]; then
+      set -x
+    fi
     echo "🔒 Checking Phase 11 block-parameter and loop/backedge parity..."
     manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     registry_doc="compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md"
@@ -15473,31 +15476,95 @@ guard-cranelift-phase11-block-parameter-loop-parity:
       local case_name="$3"
       local case_dir="$build_dir/$case_name"
       mkdir -p "$case_dir"
+      echo "▶ Phase 11 block-parameter case: $case_name"
 
-      ./gust "$source_path" >"$case_dir/default.c" 2>"$case_dir/default.compiler.stderr"
-      ./gust --backend mir-to-c "$source_path" >"$case_dir/explicit.c" 2>"$case_dir/explicit.compiler.stderr"
-      test ! -s "$case_dir/default.compiler.stderr"
-      test ! -s "$case_dir/explicit.compiler.stderr"
-      cmp -s "$case_dir/default.c" "$case_dir/explicit.c"
+      set +e
+      ./gust "$source_path" \
+        >"$case_dir/default.c" \
+        2>"$case_dir/default.compiler.stderr"
+      local default_compile_status="$?"
+      ./gust --backend mir-to-c "$source_path" \
+        >"$case_dir/explicit.c" \
+        2>"$case_dir/explicit.compiler.stderr"
+      local explicit_compile_status="$?"
+      set -e
+      if [ "$default_compile_status" != "0" ] ||
+         [ "$explicit_compile_status" != "0" ]; then
+        echo "MIR-to-C compilation failed for block-parameter case $case_name: default=$default_compile_status explicit=$explicit_compile_status"
+        cat "$case_dir/default.compiler.stderr" "$case_dir/explicit.compiler.stderr"
+        exit 1
+      fi
+      if [ -s "$case_dir/default.compiler.stderr" ] ||
+         [ -s "$case_dir/explicit.compiler.stderr" ]; then
+        echo "MIR-to-C compilation emitted diagnostics for block-parameter case $case_name."
+        cat "$case_dir/default.compiler.stderr" "$case_dir/explicit.compiler.stderr"
+        exit 1
+      fi
+      if ! cmp -s "$case_dir/default.c" "$case_dir/explicit.c"; then
+        echo "Default and explicit MIR-to-C output differ for block-parameter case $case_name."
+        diff -u "$case_dir/default.c" "$case_dir/explicit.c" || true
+        exit 1
+      fi
 
       cat src/runtime.c "$case_dir/default.c" >"$case_dir/mir-to-c.final.c"
-      "$CC_BIN" $CFLAGS_VAL -Isrc "$case_dir/mir-to-c.final.c" -o "$case_dir/mir-to-c-program"
+      if ! "$CC_BIN" $CFLAGS_VAL -Isrc \
+        "$case_dir/mir-to-c.final.c" \
+        -o "$case_dir/mir-to-c-program" \
+        >"$case_dir/mir-to-c.link.stdout" \
+        2>"$case_dir/mir-to-c.link.stderr"
+      then
+        echo "MIR-to-C C compilation failed for block-parameter case $case_name."
+        cat "$case_dir/mir-to-c.link.stdout" "$case_dir/mir-to-c.link.stderr"
+        exit 1
+      fi
       execute_and_capture "$case_dir/mir-to-c-program" "$case_dir/mir-to-c"
 
+      set +e
       GUST_NATIVE_BACKEND_DRIVER="$driver_abs" \
         ./gust --backend cranelift -o "$case_dir/native-program" "$source_path" \
-        >"$case_dir/native.compiler.stdout" 2>"$case_dir/native.compiler.stderr"
-      test ! -s "$case_dir/native.compiler.stdout"
-      test ! -s "$case_dir/native.compiler.stderr"
-      test -x "$case_dir/native-program"
+        >"$case_dir/native.compiler.stdout" \
+        2>"$case_dir/native.compiler.stderr"
+      local native_compile_status="$?"
+      set -e
+      if [ "$native_compile_status" != "0" ]; then
+        echo "Native compilation failed for block-parameter case $case_name with status $native_compile_status."
+        cat "$case_dir/native.compiler.stdout" "$case_dir/native.compiler.stderr"
+        exit 1
+      fi
+      if [ -s "$case_dir/native.compiler.stdout" ] ||
+         [ -s "$case_dir/native.compiler.stderr" ]; then
+        echo "Successful native block-parameter compilation emitted diagnostics for $case_name."
+        cat "$case_dir/native.compiler.stdout" "$case_dir/native.compiler.stderr"
+        exit 1
+      fi
+      if [ ! -x "$case_dir/native-program" ]; then
+        echo "Native block-parameter compilation did not publish $case_name."
+        exit 1
+      fi
       execute_and_capture "$case_dir/native-program" "$case_dir/native"
 
-      test "$(cat "$case_dir/mir-to-c.status")" = "$expected_exit"
-      test "$(cat "$case_dir/native.status")" = "$expected_exit"
-      cmp -s "$case_dir/mir-to-c.stdout" "$case_dir/native.stdout"
-      cmp -s "$case_dir/mir-to-c.stderr" "$case_dir/native.stderr"
-      test ! -e "$case_dir/native-program.phase10.bundle"
-      test ! -e "$case_dir/native-program.phase10.request"
+      local mir_status
+      local native_status
+      mir_status="$(cat "$case_dir/mir-to-c.status")"
+      native_status="$(cat "$case_dir/native.status")"
+      if [ "$mir_status" != "$expected_exit" ] ||
+         [ "$native_status" != "$expected_exit" ]; then
+        echo "Block-parameter parity exit mismatch for $case_name: MIR-to-C=$mir_status native=$native_status expected=$expected_exit"
+        exit 1
+      fi
+      if ! cmp -s "$case_dir/mir-to-c.stdout" "$case_dir/native.stdout" ||
+         ! cmp -s "$case_dir/mir-to-c.stderr" "$case_dir/native.stderr"; then
+        echo "Block-parameter parity stdout/stderr mismatch for $case_name."
+        diff -u "$case_dir/mir-to-c.stdout" "$case_dir/native.stdout" || true
+        diff -u "$case_dir/mir-to-c.stderr" "$case_dir/native.stderr" || true
+        exit 1
+      fi
+      if [ -e "$case_dir/native-program.phase10.bundle" ] ||
+         [ -e "$case_dir/native-program.phase10.request" ]; then
+        echo "Successful block-parameter case $case_name left transient backend artifacts."
+        ls -la "$case_dir"
+        exit 1
+      fi
     }
 
     for case_record in "${positive_cases[@]}"; do
@@ -15524,8 +15591,16 @@ guard-cranelift-phase11-block-parameter-loop-parity:
         cat "$log"
         exit 1
       fi
-      rg -n -F "$expected" "$log" >/dev/null
-      cmp -s "$protected_output.expected" "$protected_output"
+      if ! rg -n -F "$expected" "$log" >/dev/null; then
+        echo "Malformed block-parameter case $name did not emit expected diagnostic: $expected"
+        cat "$log"
+        exit 1
+      fi
+      if ! cmp -s "$protected_output.expected" "$protected_output"; then
+        echo "Malformed block-parameter case $name modified the protected output."
+        diff -u "$protected_output.expected" "$protected_output" || true
+        exit 1
+      fi
     }
 
     arity_mismatch="$malformed_dir/arity-mismatch.mir"
