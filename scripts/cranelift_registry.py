@@ -57,7 +57,6 @@ PHASE11_DEFERRED_IDS = (
 )
 
 
-class Error
 class Error(RuntimeError):
     pass
 
