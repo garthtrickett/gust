@@ -16829,32 +16829,51 @@ guard-cranelift-phase11-metadata-diagnostic-parity:
     # Source/type diagnostics are backend-independent because they are emitted
     # before backend selection. Compare the class we assign and the stable source
     # location rather than prose.
+    echo "▶ Phase 11 diagnostic case: source-type-error"
     set +e
     ./gust "$type_error_source" >"$build_dir/type.default.stdout" 2>"$build_dir/type.default.stderr"
     default_status="$?"
     ./gust --backend cranelift "$type_error_source" >"$build_dir/type.native.stdout" 2>"$build_dir/type.native.stderr"
     native_status="$?"
     set -e
-    test "$default_status" != "0"
-    test "$native_status" != "0"
-    default_location="$(rg -o 'TypeError in [^ ]+ at line [0-9]+:[0-9]+' "$build_dir/type.default.stderr" | head -1)"
-    native_location="$(rg -o 'TypeError in [^ ]+ at line [0-9]+:[0-9]+' "$build_dir/type.native.stderr" | head -1)"
-    test -n "$default_location"
-    test "$default_location" = "$native_location"
+    if [ "$default_status" = "0" ] || [ "$native_status" = "0" ]; then
+      echo "Source type-error case unexpectedly succeeded: default=$default_status native=$native_status"
+      cat "$build_dir/type.default.stdout" "$build_dir/type.default.stderr"
+      cat "$build_dir/type.native.stdout" "$build_dir/type.native.stderr"
+      exit 1
+    fi
+    default_location="$(rg -o 'TypeError in [^ ]+ at line [0-9]+:[0-9]+' "$build_dir/type.default.stderr" | head -1 || true)"
+    native_location="$(rg -o 'TypeError in [^ ]+ at line [0-9]+:[0-9]+' "$build_dir/type.native.stderr" | head -1 || true)"
+    if [ -z "$default_location" ] || [ "$default_location" != "$native_location" ]; then
+      echo "Source type-error locations differ: default='$default_location' native='$native_location'"
+      echo "--- default stderr ---"
+      cat "$build_dir/type.default.stderr"
+      echo "--- native stderr ---"
+      cat "$build_dir/type.native.stderr"
+      exit 1
+    fi
     printf 'source_type_error|%s\n' "$default_location" >"$build_dir/type.normalized"
 
     assert_preserved_output() {
       local output="$1"
       local expected="$2"
-      cmp -s "$expected" "$output"
-      test ! -e "$output.phase10.bundle"
-      test ! -e "$output.phase10.request"
+      if ! cmp -s "$expected" "$output"; then
+        echo "Failed diagnostic case changed existing output: $output"
+        diff -u "$expected" "$output" || true
+        exit 1
+      fi
+      if [ -e "$output.phase10.bundle" ] || [ -e "$output.phase10.request" ]; then
+        echo "Failed diagnostic case left transient request artifacts for $output"
+        ls -la "$(dirname "$output")"
+        exit 1
+      fi
       if find "$(dirname "$output")" -maxdepth 1 -type f -name ".$(basename "$output").phase10-source-route*.o" | grep -q .; then
         echo "Failure left hidden object for $output"
         exit 1
       fi
     }
 
+    echo "▶ Phase 11 diagnostic case: unsupported-native-capability"
     unsupported_output="$build_dir/unsupported.existing"
     printf 'phase11-diagnostic-output-sentinel\n' >"$unsupported_output"
     cp "$unsupported_output" "$unsupported_output.expected"
@@ -16864,12 +16883,18 @@ guard-cranelift-phase11-metadata-diagnostic-parity:
       >"$build_dir/unsupported.stdout" 2>"$build_dir/unsupported.stderr"
     unsupported_status="$?"
     set -e
-    test "$unsupported_status" != "0"
-    rg -n -F 'class=unsupported_native_capability' "$build_dir/unsupported.stderr" >/dev/null
-    rg -n -F 'source=compiler/phase11_scalar_unsupported_multiply_source.gst' "$build_dir/unsupported.stderr" >/dev/null
-    rg -n -e 'line=[1-9][0-9]* column=[1-9][0-9]*' "$build_dir/unsupported.stderr" >/dev/null
+    if [ "$unsupported_status" = "0" ] ||
+       ! rg -n -F 'class=unsupported_native_capability' "$build_dir/unsupported.stderr" >/dev/null ||
+       ! rg -n -F 'source=compiler/phase11_scalar_unsupported_multiply_source.gst' "$build_dir/unsupported.stderr" >/dev/null ||
+       ! rg -n -e 'line=[1-9][0-9]* column=[1-9][0-9]*' "$build_dir/unsupported.stderr" >/dev/null
+    then
+      echo "Unsupported-capability diagnostic contract failed with status $unsupported_status."
+      cat "$build_dir/unsupported.stdout" "$build_dir/unsupported.stderr"
+      exit 1
+    fi
     if rg -n -F 'driver discovery' "$build_dir/unsupported.stderr" >/dev/null; then
       echo "Unsupported capability reached driver discovery."
+      cat "$build_dir/unsupported.stderr"
       exit 1
     fi
     assert_preserved_output "$unsupported_output" "$unsupported_output.expected"
@@ -16895,10 +16920,16 @@ guard-cranelift-phase11-metadata-diagnostic-parity:
       >"$build_dir/driver.stdout" 2>"$build_dir/driver.stderr"
     driver_status="$?"
     set -e
-    test "$driver_status" != "0"
-    rg -n -F 'class=driver_handshake_error' "$build_dir/driver.stderr" >/dev/null
-    rg -n -F 'source=compiler/phase11_metadata_scalar_source.gst' "$build_dir/driver.stderr" >/dev/null
-    rg -n -e 'line=[1-9][0-9]* column=[1-9][0-9]*' "$build_dir/driver.stderr" >/dev/null
+    echo "▶ Phase 11 diagnostic case: driver-handshake-error"
+    if [ "$driver_status" = "0" ] ||
+       ! rg -n -F 'class=driver_handshake_error' "$build_dir/driver.stderr" >/dev/null ||
+       ! rg -n -F 'source=compiler/phase11_metadata_scalar_source.gst' "$build_dir/driver.stderr" >/dev/null ||
+       ! rg -n -e 'line=[1-9][0-9]* column=[1-9][0-9]*' "$build_dir/driver.stderr" >/dev/null
+    then
+      echo "Driver-handshake diagnostic contract failed with status $driver_status."
+      cat "$build_dir/driver.stdout" "$build_dir/driver.stderr"
+      exit 1
+    fi
     assert_preserved_output "$driver_output" "$driver_output.expected"
 
     make_class_driver() {
@@ -16932,10 +16963,16 @@ guard-cranelift-phase11-metadata-diagnostic-parity:
         >"$build_dir/$class_name.stdout" 2>"$build_dir/$class_name.stderr"
       class_status="$?"
       set -e
-      test "$class_status" != "0"
-      rg -n -F "class=$class_name" "$build_dir/$class_name.stderr" >/dev/null
-      rg -n -F 'source=compiler/phase11_metadata_scalar_source.gst' "$build_dir/$class_name.stderr" >/dev/null
-      rg -n -e 'line=[1-9][0-9]* column=[1-9][0-9]*' "$build_dir/$class_name.stderr" >/dev/null
+      echo "▶ Phase 11 diagnostic case: $class_name"
+      if [ "$class_status" = "0" ] ||
+         ! rg -n -F "class=$class_name" "$build_dir/$class_name.stderr" >/dev/null ||
+         ! rg -n -F 'source=compiler/phase11_metadata_scalar_source.gst' "$build_dir/$class_name.stderr" >/dev/null ||
+         ! rg -n -e 'line=[1-9][0-9]* column=[1-9][0-9]*' "$build_dir/$class_name.stderr" >/dev/null
+      then
+        echo "Injected $class_name diagnostic contract failed with status $class_status."
+        cat "$build_dir/$class_name.stdout" "$build_dir/$class_name.stderr"
+        exit 1
+      fi
       assert_preserved_output "$class_output" "$class_output.expected"
     done
 
