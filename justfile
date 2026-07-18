@@ -14762,6 +14762,9 @@ guard-cranelift-phase11-local-state-parity:
 guard-cranelift-phase11-structured-cfg-parity:
     #!/usr/bin/env bash
     set -euo pipefail
+    if [ "${PHASE11_STRUCTURED_CFG_TRACE:-0}" = "1" ]; then
+      set -x
+    fi
     echo "🔒 Checking Phase 11 structured CFG parity..."
     manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     registry_doc="compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md"
@@ -14980,10 +14983,20 @@ guard-cranelift-phase11-structured-cfg-parity:
       local case_dir="$build_dir/$case_name"
       mkdir -p "$case_dir"
 
+      set +e
       ./gust "$source_path" \
         >"$case_dir/default.c" 2>"$case_dir/default.compiler.stderr"
+      default_compile_status="$?"
       ./gust --backend mir-to-c "$source_path" \
         >"$case_dir/explicit.c" 2>"$case_dir/explicit.compiler.stderr"
+      explicit_compile_status="$?"
+      set -e
+      if [ "$default_compile_status" != "0" ] ||
+         [ "$explicit_compile_status" != "0" ]; then
+        echo "MIR-to-C compilation failed for structured-CFG case $case_name: default=$default_compile_status explicit=$explicit_compile_status"
+        cat "$case_dir/default.compiler.stderr" "$case_dir/explicit.compiler.stderr"
+        exit 1
+      fi
       if [ -s "$case_dir/default.compiler.stderr" ] ||
          [ -s "$case_dir/explicit.compiler.stderr" ]; then
         echo "MIR-to-C compilation emitted diagnostics for structured-CFG case $case_name."
@@ -14997,17 +15010,32 @@ guard-cranelift-phase11-structured-cfg-parity:
       fi
 
       cat src/runtime.c "$case_dir/default.c" >"$case_dir/mir-to-c.final.c"
-      "$CC_BIN" $CFLAGS_VAL -Isrc \
+      if ! "$CC_BIN" $CFLAGS_VAL -Isrc \
         "$case_dir/mir-to-c.final.c" \
-        -o "$case_dir/mir-to-c-program"
+        -o "$case_dir/mir-to-c-program" \
+        >"$case_dir/mir-to-c.link.stdout" \
+        2>"$case_dir/mir-to-c.link.stderr"
+      then
+        echo "MIR-to-C C compilation failed for structured-CFG case $case_name."
+        cat "$case_dir/mir-to-c.link.stdout" "$case_dir/mir-to-c.link.stderr"
+        exit 1
+      fi
       execute_and_capture "$case_dir/mir-to-c-program" "$case_dir/mir-to-c"
 
+      set +e
       GUST_NATIVE_BACKEND_DRIVER="$driver_abs" \
         ./gust --backend cranelift \
           -o "$case_dir/native-program" \
           "$source_path" \
           >"$case_dir/native.compiler.stdout" \
           2>"$case_dir/native.compiler.stderr"
+      native_compile_status="$?"
+      set -e
+      if [ "$native_compile_status" != "0" ]; then
+        echo "Native compilation failed for structured-CFG case $case_name with status $native_compile_status."
+        cat "$case_dir/native.compiler.stdout" "$case_dir/native.compiler.stderr"
+        exit 1
+      fi
       if [ -s "$case_dir/native.compiler.stdout" ] ||
          [ -s "$case_dir/native.compiler.stderr" ]; then
         echo "Successful native structured-CFG compilation emitted diagnostics for $case_name."
@@ -15066,14 +15094,22 @@ guard-cranelift-phase11-structured-cfg-parity:
       exit 1
     fi
     cat "$deferred_dir/native.stdout" "$deferred_dir/native.stderr" >"$deferred_dir/native.combined"
-    rg -n -F 'Experimental Cranelift backend selection is valid, but the source-level route is not connected yet.' "$deferred_dir/native.combined" >/dev/null
+    if ! rg -n -F 'Experimental Cranelift backend selection is valid, but the source-level route is not connected yet.' "$deferred_dir/native.combined" >/dev/null; then
+      echo "Deferred loop/backedge source did not emit the expected typed deferred diagnostic."
+      cat "$deferred_dir/native.combined"
+      exit 1
+    fi
     if rg -n -F 'Native backend driver discovery error:' "$deferred_dir/native.combined" >/dev/null ||
        rg -n -F "$missing_driver" "$deferred_dir/native.combined" >/dev/null; then
       echo "Deferred loop/backedge source reached driver discovery."
       cat "$deferred_dir/native.combined"
       exit 1
     fi
-    cmp -s "$deferred_dir/existing-output.expected" "$deferred_output"
+    if ! cmp -s "$deferred_dir/existing-output.expected" "$deferred_output"; then
+      echo "Deferred loop/backedge source modified the protected existing output."
+      diff -u "$deferred_dir/existing-output.expected" "$deferred_output" || true
+      exit 1
+    fi
 
     malformed_dir="$build_dir/malformed"
     mkdir -p "$malformed_dir"
@@ -15095,8 +15131,16 @@ guard-cranelift-phase11-structured-cfg-parity:
         cat "$log"
         exit 1
       fi
-      rg -n -F "$expected" "$log" >/dev/null
-      cmp -s "$protected_output.expected" "$protected_output"
+      if ! rg -n -F "$expected" "$log" >/dev/null; then
+        echo "Malformed structured-CFG case $name did not emit expected diagnostic: $expected"
+        cat "$log"
+        exit 1
+      fi
+      if ! cmp -s "$protected_output.expected" "$protected_output"; then
+        echo "Malformed structured-CFG case $name modified the protected output."
+        diff -u "$protected_output.expected" "$protected_output" || true
+        exit 1
+      fi
     }
 
     duplicate_block="$malformed_dir/duplicate-block.mir"
