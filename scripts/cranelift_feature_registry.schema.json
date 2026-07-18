@@ -11,6 +11,7 @@
     "registry_status",
     "current_phase",
     "closed_phase_versions",
+    "closure_snapshots",
     "planning_categories",
     "supported_values",
     "legacy_views",
@@ -45,6 +46,18 @@
         "phase11",
         "phase12_5_opening"
       ]
+    },
+    "closure_snapshots": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "phase11"
+      ],
+      "properties": {
+        "phase11": {
+          "$ref": "#/$defs/phase11_closure_snapshot"
+        }
+      }
     },
     "planning_categories": {
       "type": "array",
@@ -165,6 +178,133 @@
     }
   },
   "$defs": {
+    "phase11_closure_snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "closure_version",
+        "immutable_fields",
+        "entry_count",
+        "classification_counts",
+        "deferred_entry_ids",
+        "entries",
+        "byte_provenance",
+        "comparison_policy"
+      ],
+      "properties": {
+        "closure_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "immutable_fields": {
+          "type": "array",
+          "minItems": 7,
+          "maxItems": 7,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "entry_count": {
+          "const": 19
+        },
+        "classification_counts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "migrated",
+            "deferred",
+            "excluded"
+          ],
+          "properties": {
+            "migrated": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "deferred": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "excluded": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "deferred_entry_ids": {
+          "type": "array",
+          "minItems": 7,
+          "maxItems": 7,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_]+$"
+          }
+        },
+        "entries": {
+          "type": "array",
+          "minItems": 19,
+          "maxItems": 19,
+          "items": {
+            "$ref": "#/$defs/phase11_closure_snapshot_entry"
+          }
+        },
+        "byte_provenance": {
+          "const": "git_history"
+        },
+        "comparison_policy": {
+          "const": "semantic_fields_only_whitespace_prose_field_order_and_generated_layout_are_ignored"
+        }
+      }
+    },
+    "phase11_closure_snapshot_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "classification",
+        "feature_family",
+        "route_owner",
+        "source_fixture",
+        "canonical_mir_fixture",
+        "ci_family"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_]+$"
+        },
+        "classification": {
+          "type": "string",
+          "enum": [
+            "migrated",
+            "deferred",
+            "excluded"
+          ]
+        },
+        "feature_family": {
+          "type": "string",
+          "minLength": 1
+        },
+        "route_owner": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_fixture": {
+          "type": "string",
+          "minLength": 1
+        },
+        "canonical_mir_fixture": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ci_family": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
     "entry": {
       "type": "object",
       "additionalProperties": false,

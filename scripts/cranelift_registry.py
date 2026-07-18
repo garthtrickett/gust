@@ -15,8 +15,8 @@ AMBIGUOUS = {"", "unknown", "tbd", "ownerless", "ambiguous"}
 
 TOP_FIELDS = {
     "schema", "schema_version", "registry_version", "registry_status",
-    "current_phase", "closed_phase_versions", "planning_categories",
-    "supported_values", "legacy_views", "entries",
+    "current_phase", "closed_phase_versions", "closure_snapshots",
+    "planning_categories", "supported_values", "legacy_views", "entries",
 }
 ENTRY_FIELDS = {
     "id", "origin_phase", "parent", "feature_family", "ci_family", "status",
@@ -28,8 +28,36 @@ SUPPORTED_FIELDS = {
     "statuses", "origin_phases", "feature_families", "ci_families",
     "route_owners", "worker_capability_owners", "diagnostic_owners",
 }
+PHASE11_SNAPSHOT_FIELDS = {
+    "closure_version", "immutable_fields", "entry_count",
+    "classification_counts", "deferred_entry_ids", "entries",
+    "byte_provenance", "comparison_policy",
+}
+PHASE11_SNAPSHOT_ENTRY_FIELDS = {
+    "id", "classification", "feature_family", "route_owner",
+    "source_fixture", "canonical_mir_fixture", "ci_family",
+}
+PHASE11_IMMUTABLE_FIELDS = (
+    "id", "classification", "feature_family", "route_owner",
+    "source_fixture", "canonical_mir_fixture", "ci_family",
+)
+PHASE11_CLASSIFICATION_COUNTS = {
+    "migrated": 12,
+    "deferred": 7,
+    "excluded": 0,
+}
+PHASE11_DEFERRED_IDS = (
+    "resource_metadata",
+    "native_boundary_metadata",
+    "block_param_merge_imported_call_return",
+    "block_param_merge_arm_update_imported_call_return",
+    "block_param_merge_arm_update_imported_call_branch",
+    "block_param_merge_imported_branch_joined_return",
+    "block_param_merge_dual_imported_joined_return",
+)
 
 
+class Error
 class Error(RuntimeError):
     pass
 
@@ -94,6 +122,74 @@ def legacy_records(path, prefix):
     ]
 
 
+def validate_phase11_snapshot_structure(registry):
+    snapshots = registry["closure_snapshots"]
+    require(
+        isinstance(snapshots, dict) and set(snapshots) == {"phase11"},
+        "closure_snapshots must contain exactly phase11",
+    )
+    snapshot = snapshots["phase11"]
+    require(
+        isinstance(snapshot, dict) and set(snapshot) == PHASE11_SNAPSHOT_FIELDS,
+        "Phase 11 closure snapshot fields drifted",
+    )
+    require(
+        snapshot["closure_version"] == registry["closed_phase_versions"]["phase11"],
+        "Phase 11 closure snapshot version differs from closed_phase_versions",
+    )
+    require(
+        snapshot["immutable_fields"] == list(PHASE11_IMMUTABLE_FIELDS),
+        "Phase 11 immutable-field set drifted",
+    )
+    require(snapshot["entry_count"] == 19,
+            "Phase 11 closure snapshot entry_count must be 19")
+    require(
+        snapshot["classification_counts"] == PHASE11_CLASSIFICATION_COUNTS,
+        "Phase 11 closure snapshot classification totals drifted",
+    )
+    require(
+        unique_strings(
+            snapshot["deferred_entry_ids"],
+            "closure_snapshots.phase11.deferred_entry_ids",
+        ) == list(PHASE11_DEFERRED_IDS),
+        "Phase 11 deferred entry IDs drifted",
+    )
+    require(snapshot["byte_provenance"] == "git_history",
+            "Phase 11 byte provenance must be Git history")
+    require(
+        snapshot["comparison_policy"]
+        == "semantic_fields_only_whitespace_prose_field_order_and_generated_layout_are_ignored",
+        "Phase 11 semantic comparison policy drifted",
+    )
+
+    rows = snapshot["entries"]
+    require(isinstance(rows, list) and len(rows) == 19,
+            "Phase 11 closure snapshot must contain 19 rows")
+    ids = set()
+    for index, row in enumerate(rows):
+        context = f"closure_snapshots.phase11.entries[{index}]"
+        require(
+            isinstance(row, dict) and set(row) == PHASE11_SNAPSHOT_ENTRY_FIELDS,
+            f"{context} fields drifted",
+        )
+        entry_id = text(row["id"], f"{context}.id")
+        require(entry_id not in ids, f"duplicate Phase 11 snapshot ID: {entry_id}")
+        ids.add(entry_id)
+        require(
+            row["classification"] in PHASE11_CLASSIFICATION_COUNTS,
+            f"{entry_id}: unknown snapshot classification {row['classification']}",
+        )
+        for field in (
+            "feature_family", "route_owner", "source_fixture",
+            "canonical_mir_fixture", "ci_family",
+        ):
+            text(row[field], f"{context}.{field}")
+        fixture(row["source_fixture"], f"{context}.source_fixture")
+        fixture(row["canonical_mir_fixture"],
+                f"{context}.canonical_mir_fixture")
+
+    return snapshot
+
 def validate():
     registry = read_json(REGISTRY)
     schema = read_json(SCHEMA)
@@ -128,6 +224,7 @@ def validate():
         },
         "closed phase versions drifted",
     )
+    validate_phase11_snapshot_structure(registry)
 
     categories = set(unique_strings(registry["planning_categories"], "planning_categories"))
     supported = registry["supported_values"]
@@ -286,6 +383,64 @@ def verify_legacy_import(registry):
                     f"Phase 13 {row['id']} {field} differs from historical view")
 
 
+def verify_phase11_closure(registry):
+    snapshot = validate_phase11_snapshot_structure(registry)
+    current = [
+        entry for entry in registry["entries"]
+        if entry["origin_phase"] == "phase11"
+    ]
+    current_by_id = {entry["id"]: entry for entry in current}
+    snapshot_by_id = {entry["id"]: entry for entry in snapshot["entries"]}
+
+    require(len(current) == snapshot["entry_count"] == 19,
+            "Phase 11 semantic closure must contain 19 current and frozen rows")
+    require(set(current_by_id) == set(snapshot_by_id),
+            "Phase 11 stable ID inventory differs from the semantic snapshot")
+
+    field_map = {
+        "id": "id",
+        "classification": "status",
+        "feature_family": "feature_family",
+        "route_owner": "route_owner",
+        "source_fixture": "source_fixture",
+        "canonical_mir_fixture": "canonical_mir_fixture",
+        "ci_family": "ci_family",
+    }
+    for entry_id, frozen in snapshot_by_id.items():
+        live = current_by_id[entry_id]
+        for frozen_field, live_field in field_map.items():
+            require(
+                frozen[frozen_field] == live[live_field],
+                f"Phase 11 {entry_id} changed immutable field "
+                f"{frozen_field}: frozen={frozen[frozen_field]!r} "
+                f"current={live[live_field]!r}",
+            )
+        require(
+            live["closure_version"] == snapshot["closure_version"],
+            f"Phase 11 {entry_id} closure version drifted",
+        )
+
+    counts = Counter(entry["status"] for entry in current)
+    actual_counts = {
+        "migrated": counts["migrated"],
+        "deferred": counts["deferred"],
+        "excluded": counts["excluded"],
+    }
+    require(
+        actual_counts == snapshot["classification_counts"]
+        == PHASE11_CLASSIFICATION_COUNTS,
+        "Phase 11 12/7/0 classification inventory drifted",
+    )
+    actual_deferred = [
+        entry["id"] for entry in current if entry["status"] == "deferred"
+    ]
+    require(
+        actual_deferred == snapshot["deferred_entry_ids"]
+        == list(PHASE11_DEFERRED_IDS),
+        "Phase 11 deferred parent ID inventory drifted",
+    )
+
+
 def cell(value):
     return str(value).replace("|", r"\|").replace("\n", " ")
 
@@ -340,13 +495,23 @@ def summary_path(registry):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("command",
-                        choices=("validate", "verify-legacy-import", "project", "check-projection"))
+    parser.add_argument(
+        "command",
+        choices=(
+            "validate",
+            "verify-legacy-import",
+            "verify-phase11-closure",
+            "project",
+            "check-projection",
+        ),
+    )
     command = parser.parse_args().command
     try:
         registry = validate()
         if command == "verify-legacy-import":
             verify_legacy_import(registry)
+        elif command == "verify-phase11-closure":
+            verify_phase11_closure(registry)
         elif command == "project":
             path = summary_path(registry)
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -363,6 +528,7 @@ def main():
     messages = {
         "validate": "✅ Canonical Cranelift registry schema passed: 35 unique entries.",
         "verify-legacy-import": "✅ Canonical registry preserves all 19 Phase 11 and 16 Phase 13 legacy rows.",
+        "verify-phase11-closure": "✅ Phase 11 semantic closure snapshot passed: 19 rows, 12 migrated, seven deferred, zero excluded.",
         "project": "✅ Canonical Cranelift registry Markdown summary generated.",
         "check-projection": "✅ Canonical Cranelift registry Markdown summary is current.",
     }

@@ -17703,6 +17703,64 @@ guard-cranelift-phase11-close:
 
     echo "✅ Parity is complete for the Phase 11 registry inventory."
 
+guard-cranelift-phase11-closure-summary:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking the Phase 11 semantic closure snapshot..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    registry_json="scripts/cranelift_feature_registry.json"
+    registry_schema="scripts/cranelift_feature_registry.schema.json"
+    validator="scripts/cranelift_registry.py"
+    phase13_view="compiler/CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY.md"
+
+    for required_file in \
+      "$manifest_doc" "$registry_json" "$registry_schema" \
+      "$validator" "$phase13_view"
+    do
+      if [ ! -f "$required_file" ] || [ -L "$required_file" ]; then
+        echo "Phase 11 semantic closure input must be a regular non-symlink file: $required_file"
+        exit 1
+      fi
+    done
+
+    required_manifest_lines=(
+      'CRANELIFT_EXPERIMENT_ALLOWED_PHASE11_CLOSURE_SUMMARY_GUARD: guard-cranelift-phase11-closure-summary'
+      'allowed_cranelift_phase11_closure_snapshot_authority: scripts/cranelift_feature_registry.json'
+      'allowed_cranelift_phase11_closure_snapshot_schema: scripts/cranelift_feature_registry.schema.json'
+      'allowed_cranelift_phase11_closure_snapshot_validator: scripts/cranelift_registry.py'
+      'allowed_cranelift_phase11_closure_snapshot_version: phase11_closed_registry_backed_feature_parity_migration'
+      'allowed_cranelift_phase11_closure_snapshot_immutable_fields: id,classification,feature_family,route_owner,source_fixture,canonical_mir_fixture,ci_family'
+      'allowed_cranelift_phase11_closure_snapshot_entry_count: 19'
+      'allowed_cranelift_phase11_closure_snapshot_classification_inventory: 12_migrated_7_deferred_0_excluded'
+      'allowed_cranelift_phase11_closure_snapshot_deferred_entry_ids: resource_metadata,native_boundary_metadata,block_param_merge_imported_call_return,block_param_merge_arm_update_imported_call_return,block_param_merge_arm_update_imported_call_branch,block_param_merge_imported_branch_joined_return,block_param_merge_dual_imported_joined_return'
+      'allowed_cranelift_phase11_closure_snapshot_comparison_policy: semantic_fields_only_whitespace_prose_field_order_and_generated_layout_are_ignored'
+      'allowed_cranelift_phase11_closure_snapshot_byte_provenance: git_history'
+      'allowed_cranelift_phase11_closure_snapshot_phase13_policy: Phase13_uses_the_semantic_closure_summary_instead_of_raw_registry_byte_identity'
+      'allowed_cranelift_phase11_closure_snapshot_behavior_policy: registry_schema_validator_manifest_and_guard_only_no_route_MIR_worker_feature_or_output_change'
+      'allowed_cranelift_phase11_closure_snapshot_next_patch: derived_summaries_and_totals'
+    )
+    for line in "${required_manifest_lines[@]}"; do
+      if ! rg -n -x -F "$line" "$manifest_doc" >/dev/null; then
+        echo "Missing Phase 11 semantic closure manifest contract:"
+        echo "$line"
+        exit 1
+      fi
+    done
+
+    python3 "$validator" validate
+    python3 "$validator" verify-phase11-closure
+
+    raw_hash_header="SHA""256"
+    raw_hash_command="sha256""sum"
+    if rg -n -F "$raw_hash_header" "$manifest_doc" "$phase13_view" justfile >/dev/null ||
+       rg -n -F "$raw_hash_command" "$manifest_doc" "$phase13_view" justfile >/dev/null
+    then
+      echo "Raw registry byte-hash contracts must not remain after the semantic closure snapshot."
+      exit 1
+    fi
+
+    echo "✅ Phase 11 semantic closure preserved: 19 stable rows, 12 migrated, seven deferred, zero excluded, and seven frozen deferred parent IDs."
+
 guard-cranelift-phase13-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -17726,8 +17784,9 @@ guard-cranelift-phase13-opening-contract:
       'allowed_cranelift_phase13_opening_predecessor_status: phase11_closed_registry_backed_feature_parity_migration'
       'allowed_cranelift_phase13_opening_predecessor_guard: guard-cranelift-phase11-close'
       'allowed_cranelift_phase13_opening_phase11_registry: compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md'
-      'allowed_cranelift_phase13_opening_phase11_registry_disposition: historical_immutable'
-      'allowed_cranelift_phase13_opening_phase11_registry_SHA256: 8e2ff46acc70dd52aa82294107431f679c4c8b00bdeeebb81f2a8ee7d8fb69ea'
+      'allowed_cranelift_phase13_opening_phase11_registry_disposition: semantic_closure_snapshot'
+      'allowed_cranelift_phase13_opening_phase11_closure_summary_guard: guard-cranelift-phase11-closure-summary'
+      'allowed_cranelift_phase13_opening_phase11_immutable_fields: id,classification,feature_family,route_owner,source_fixture,canonical_mir_fixture,ci_family'
       'allowed_cranelift_phase13_opening_phase11_registry_entry_count: 19'
       'allowed_cranelift_phase13_opening_phase11_classification_inventory: 12_migrated_7_deferred_0_excluded'
       'allowed_cranelift_phase13_opening_phase11_deferred_entry_count: 7'
@@ -17763,24 +17822,7 @@ guard-cranelift-phase13-opening-contract:
       fi
     done
 
-    phase11_sha="$(sha256sum "$phase11_registry" | awk '{print $1}')"
-    if [ "$phase11_sha" != "8e2ff46acc70dd52aa82294107431f679c4c8b00bdeeebb81f2a8ee7d8fb69ea" ]; then
-      echo "Closed Phase 11 registry changed after its historical freeze."
-      echo "expected=8e2ff46acc70dd52aa82294107431f679c4c8b00bdeeebb81f2a8ee7d8fb69ea"
-      echo "actual=$phase11_sha"
-      exit 1
-    fi
-
-    required_phase11_headers=(
-      'CRANELIFT_FEATURE_PARITY_REGISTRY_ENTRY_COUNT: 19'
-      'CRANELIFT_FEATURE_PARITY_REGISTRY_CLOSURE_STATUS: phase11_closed_registry_backed_feature_parity_migration'
-      'CRANELIFT_FEATURE_PARITY_REGISTRY_CLOSURE_CLASSIFICATION_INVENTORY: 12_migrated_7_deferred_0_excluded'
-      'CRANELIFT_FEATURE_PARITY_REGISTRY_NEXT_PHASE_DEFERRED_CATEGORY_COUNT: 7'
-      'CRANELIFT_FEATURE_PARITY_REGISTRY_NEXT_PHASE_DEFERRED_CATEGORIES: broader_scalar_expressions,multiple_locals_and_assignments,nested_CFG,loops_and_backedges,function_parameters_and_multiple_arguments,multiple_modules_and_source_imports,broader_direct_and_imported_calls'
-    )
-    for header in "${required_phase11_headers[@]}"; do
-      rg -n -x -F "$header" "$phase11_registry" >/dev/null
-    done
+    just guard-cranelift-phase11-closure-summary
 
     required_phase13_headers=(
       'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_VERSION: 1'
@@ -17788,8 +17830,9 @@ guard-cranelift-phase13-opening-contract:
       'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_STATUS: phase13_opened_deferred_parity_registry'
       'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PREDECESSOR_GUARD: guard-cranelift-phase11-close'
       'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE11_REGISTRY: compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md'
-      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE11_DISPOSITION: historical_immutable'
-      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE11_SHA256: 8e2ff46acc70dd52aa82294107431f679c4c8b00bdeeebb81f2a8ee7d8fb69ea'
+      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE11_DISPOSITION: semantic_closure_snapshot'
+      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE11_CLOSURE_SUMMARY_GUARD: guard-cranelift-phase11-closure-summary'
+      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE11_IMMUTABLE_FIELDS: id,classification,feature_family,route_owner,source_fixture,canonical_mir_fixture,ci_family'
       'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE11_ENTRY_COUNT: 19'
       'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE11_CLASSIFICATION_INVENTORY: 12_migrated_7_deferred_0_excluded'
       'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE11_DEFERRED_ENTRY_COUNT: 7'
@@ -18505,7 +18548,7 @@ guard-cranelift-registry-schema:
       'allowed_cranelift_registry_authority_policy: JSON_owns_active_Phase11_and_Phase13_inventory_facts_Markdown_is_review_or_history_only'
       'allowed_cranelift_registry_import_policy: preserve_19_Phase11_and_16_Phase13_stable_IDs_and_semantic_ownership'
       'allowed_cranelift_registry_behavior_policy: registry_schema_validator_projector_and_views_only_no_route_MIR_worker_feature_or_output_change'
-      'allowed_cranelift_registry_next_patch: semantic_closure_snapshots'
+      'allowed_cranelift_registry_next_patch: derived_summaries_and_totals'
     )
     for line in "${required_manifest_lines[@]}"; do
       if ! rg -n -x -F "$line" "$manifest_doc" >/dev/null; then
@@ -18514,11 +18557,6 @@ guard-cranelift-registry-schema:
         exit 1
       fi
     done
-
-    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_AUTHORITY: historical_generated_view' "$phase11_view" >/dev/null
-    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_CANONICAL_SOURCE: scripts/cranelift_feature_registry.json' "$phase11_view" >/dev/null
-    rg -n -x -F 'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_AUTHORITY: historical_generated_view' "$phase13_view" >/dev/null
-    rg -n -x -F 'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_CANONICAL_SOURCE: scripts/cranelift_feature_registry.json' "$phase13_view" >/dev/null
 
     authority_count="$(
       rg -l -F '"registry_status": "phase12_5_canonical_machine_readable_registry"' \
@@ -18532,10 +18570,10 @@ guard-cranelift-registry-schema:
     fi
 
     python3 "$validator" validate
-    python3 "$validator" verify-legacy-import
+    python3 "$validator" verify-phase11-closure
     python3 "$validator" check-projection
 
-    echo "✅ Canonical Cranelift registry passed: one JSON authority preserves 19 Phase 11 and 16 Phase 13 rows; Markdown views are current."
+    echo "✅ Canonical Cranelift registry passed: one JSON authority validates 35 rows and the Phase 11 semantic closure; Markdown views are non-authoritative."
 
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
     #!/usr/bin/env bash
