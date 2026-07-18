@@ -15562,7 +15562,6 @@ guard-cranelift-phase11-block-parameter-loop-parity:
     metadata_0_payload: kind=BlockParameterLoop;profile=non_final_join;reducibility=acyclic;parameter_arity=2;origin=guard-cranelift-phase11-block-parameter-loop-parity-arity-mismatch
     expected_exit: 1
     MIR
-    expect_invalid_fixture arity-mismatch "$arity_mismatch"
     expect_invalid_fixture arity-mismatch "$arity_mismatch" 'passes 1 argument(s), but target declares 2 block parameter(s)'
 
     incompatible_type="$malformed_dir/incompatible-type.mir"
@@ -15626,7 +15625,6 @@ guard-cranelift-phase11-block-parameter-loop-parity:
     metadata_0_payload: kind=BlockParameterLoop;profile=bounded_loop;reducibility=single_header;parameter_arity=2;origin=guard-cranelift-phase11-block-parameter-loop-parity-foreign-parameter
     expected_exit: 0
     MIR
-    expect_invalid_fixture foreign-parameter "$foreign_parameter"
     expect_invalid_fixture foreign-parameter "$foreign_parameter" 'references block parameter header_first owned by block(s): header'
 
     unknown_backedge="$malformed_dir/unknown-backedge.mir"
@@ -15696,7 +15694,6 @@ guard-cranelift-phase11-block-parameter-loop-parity:
     metadata_0_payload: kind=BlockParameterLoop;profile=bounded_loop;reducibility=single_header;parameter_arity=2;origin=guard-cranelift-phase11-block-parameter-loop-parity-irreducible
     expected_exit: 0
     MIR
-    expect_invalid_fixture irreducible "$irreducible"
     expect_invalid_fixture irreducible "$irreducible" 'irreducible cycle or a backedge whose target does not dominate its source'
 
     echo "✅ Phase 11 block-parameter and loop/backedge parity migrated: multiple parameters and arguments, non-final joins, bounded reducible loops, malformed-edge rejection, and output preservation are covered."
