@@ -13,7 +13,8 @@ import "mir_native_backend_structured_cfg_source.gst" as structured_cfg;
 // available to the compiler entry. It recognizes semantic AST structure only;
 // it never compares source paths, fixture names, or raw source text. The
 // canonical v1/v2 serialization labels remain byte-compatible with the closed
-// Phase 10 route while the legacy recognizers are retained for shadow evidence.
+// Phase 10 evidence, but production routing no longer constructs or compares a
+// legacy exact-shape bundle.
 type MirNativeGenericEligibility enum {
     LoweredAndEligible,
     SourceFeatureNotRepresented,

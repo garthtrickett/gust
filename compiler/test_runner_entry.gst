@@ -378,7 +378,7 @@ func main() {
 
     // 7. Select the backend only after the shared resolver, parser, and
     // typechecker pipeline has completed. The experimental route accepts only
-    // the explicitly connected Phase 10 source cohorts and never falls back.
+    // registry-owned generic canonical-MIR entries and never falls back.
     if invocation.backend.tag == 1 {
         mut native_result :=
             native_source_route.mir_native_scalar_source_compile(

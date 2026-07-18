@@ -1550,6 +1550,39 @@ closed inventory is 33 canonical ingestion seams, zero bespoke seams, and
 seventeen frozen translator seeds. MIR-to-C remains primary, Cranelift remains
 disabled by default, and no production runtime or backend route is enabled.
 
+
+
+Phase 11 Patch 11 retires the exact-shape compatibility implementation as
+`phase11_retired_exact_shape_source_routes`. The production source orchestrator
+contains one entry into `mir_native_generic_source_lower`; it no longer
+constructs scalar, literal-CFG, merge, local-identity-call, or runtime-`abs`
+bundles itself and no longer shadow-compares a legacy bundle. The semantic
+lowerers for local state, structured CFG, block parameters and reducible
+backedges, direct scalar calls, and resolver-owned modules/imports remain behind
+the generic canonical-MIR owner. Unsupported source semantics return the single
+typed `SourceFeatureNotRepresented` result before driver discovery.
+
+`scripts/phase11_registry_differential.sh` treats every
+`route_owner=generic_canonical_mir` registry entry as executable evidence. For
+each selected entry it proves default and explicit MIR-to-C byte identity,
+builds and executes the emitted C, compiles and executes the explicit Cranelift
+result, compares exit status plus stdout and stderr bytes, and verifies that the
+entry's deferred fixture cannot modify an existing output or reach a missing
+driver. Every failure names the owning parity entry and focused CI family.
+
+PR Fast replaces seventeen Phase 10 and broad backend-suite rows with seven
+focused families: `cranelift-phase11-scalars`, `cranelift-phase11-locals`,
+`cranelift-phase11-cfg`, `cranelift-phase11-block-params`,
+`cranelift-phase11-direct-calls`, `cranelift-phase11-imports`, and
+`cranelift-phase11-metadata-diagnostics`. This reduces PR Fast from 33 to 23
+rows. The 33-row Heavy matrix remains unchanged, so the new families are not
+silently duplicated. Phase 10 scalar, CFG/merge, and call/import/runtime guards
+now preserve historical fixtures, protocol records, and observable baselines
+without requiring removed production recognizer functions.
+`guard-cranelift-phase11-route-retirement-ci` owns the retirement, differential,
+historical-guard, registry, and CI-shape contract. The next milestone is
+aggregate and resource code-generation parity.
+
 The checked-in lockfile for this crate is owned by:
 
 ```bash

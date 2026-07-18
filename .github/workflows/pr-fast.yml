@@ -44,6 +44,9 @@ jobs:
       - name: Build Gust
         run: make gust
 
+      - name: Phase 11 route-retirement and focused-CI guard
+        run: PHASE11_ROUTE_RETIREMENT_SKIP_DYNAMIC=1 just guard-cranelift-phase11-route-retirement-ci
+
       - name: Upload Gust build outputs
         uses: actions/upload-artifact@v4
         with:
@@ -72,23 +75,13 @@ jobs:
           - cranelift-phase9g-object-artifact
           - cranelift-phase9g-link-positive
           - cranelift-phase9g-link-negative
-          - cranelift-phase10-call-runtime
-          - cranelift-phase10-help-surface
-          - cranelift-phase10-package-sibling
-          - cranelift-phase10-install-runtime
-          - cranelift-backend-suite-core-baseline
-          - cranelift-backend-suite-core-legacy
-          - cranelift-backend-suite-core-mir-basic-arithmetic
-          - cranelift-backend-suite-core-mir-basic-calls
-          - cranelift-backend-suite-core-mir-bundles
-          - cranelift-backend-suite-core-mir-block-graphs
-          - cranelift-backend-suite-compiler-mir-scalars
-          - cranelift-backend-suite-compiler-mir-metadata
-          - cranelift-backend-suite-compiler-mir-blocks
-          - cranelift-backend-suite-translator-scalar
-          - cranelift-backend-suite-translator-cfg
-          - cranelift-backend-suite-translator-metadata
-          - cranelift-backend-suite-translator-imports
+          - cranelift-phase11-scalars
+          - cranelift-phase11-locals
+          - cranelift-phase11-cfg
+          - cranelift-phase11-block-params
+          - cranelift-phase11-direct-calls
+          - cranelift-phase11-imports
+          - cranelift-phase11-metadata-diagnostics
           - mir-to-c-return-int
           - routed-return-int
           - migration-return-int
