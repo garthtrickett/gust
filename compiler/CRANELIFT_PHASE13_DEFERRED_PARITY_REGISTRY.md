@@ -10,38 +10,22 @@ CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE11_REGISTRY: compiler/CRANELIFT_
 CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE11_DISPOSITION: semantic_closure_snapshot
 CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE11_CLOSURE_SUMMARY_GUARD: guard-cranelift-phase11-closure-summary
 CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE11_IMMUTABLE_FIELDS: id,classification,feature_family,route_owner,source_fixture,canonical_mir_fixture,ci_family
-CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE11_ENTRY_COUNT: 19
-CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE11_CLASSIFICATION_INVENTORY: 12_migrated_7_deferred_0_excluded
-CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE11_DEFERRED_ENTRY_COUNT: 7
-CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE11_DEFERRED_PARENT_IDS: resource_metadata,native_boundary_metadata,block_param_merge_imported_call_return,block_param_merge_arm_update_imported_call_return,block_param_merge_arm_update_imported_call_branch,block_param_merge_imported_branch_joined_return,block_param_merge_dual_imported_joined_return
-CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PLANNING_CATEGORY_COUNT: 7
-CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PLANNING_CATEGORIES: broader_scalar_expressions,multiple_locals_and_assignments,nested_CFG,loops_and_backedges,function_parameters_and_multiple_arguments,multiple_modules_and_source_imports,broader_direct_and_imported_calls
-CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_OPENING_ENTRY_COUNT: 16
-CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_INHERITED_ENTRY_COUNT: 7
-CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_CANDIDATE_ENTRY_COUNT: 9
-CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PARENT_INVENTORY: 7_phase11_entry_9_phase11_category
-CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_STATUS_INVENTORY: 7_inherited_deferred_9_candidate_deferred
-CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_ROUTE_INVENTORY: 16_deferred_0_generic_canonical_mir_0_excluded
-CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_FEATURE_FAMILY_COUNT: 7
-CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_FEATURE_FAMILY_COUNTS: scalar_1,local_state_1,cfg_1,block_parameter_1,direct_call_2,metadata_2,import_runtime_8
-CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_CI_FAMILY_COUNT: 7
-CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_CI_FAMILY_COUNTS: scalars_1,locals_1,cfg_1,block-params_1,direct-calls_2,imports_8,metadata-diagnostics_2
-CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_CATEGORY_CANDIDATE_COUNTS: broader_scalar_expressions_1,multiple_locals_and_assignments_1,nested_CFG_1,loops_and_backedges_1,function_parameters_and_multiple_arguments_2,multiple_modules_and_source_imports_1,broader_direct_and_imported_calls_2
+CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_DERIVED_SUMMARY: docs/CRANELIFT_FEATURE_REGISTRY.md
 CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_SCHEMA: id,parent,feature_family,source_fixture,canonical_mir_fixture,route_owner,worker_capability_owner,diagnostic_owner,ci_family,status,deferral_reason
 CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_OPENING_POLICY: inventory_only_no_source_route_worker_MIR_request_object_link_package_CLI_or_workflow_change
 CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_NEXT_MILESTONE: capability_and_deferral_contract
 
 This document is the historical Phase 13 opening review view. The canonical
 active inventory is `scripts/cranelift_feature_registry.json`; the JSON
-preserves all sixteen stable IDs and their Phase 11 parents. The temporary
-Phase 11 byte hash remains only until Patch 12.5.2 replaces it with a
-semantic closure comparison.
+preserves stable IDs and their Phase 11 parents. Active totals, family
+summaries, route ownership totals, and deferred destinations are generated in
+`docs/CRANELIFT_FEATURE_REGISTRY.md`.
 
-The seven `phase11_entry` parents are imported one-for-one from the Phase 11
-deferred inventory. The nine `phase11_category` rows turn the seven frozen
-planning categories into concrete candidates. A candidate is not a support
-claim: every opening row remains deferred until a later patch migrates,
-excludes, or replaces it with narrower owned rows.
+Rows with `phase11_entry` parents import deferred Phase 11 work directly.
+Rows with `phase11_category` parents turn planning categories into concrete
+candidates. A candidate is not a support claim: every opening row remains
+deferred until a later patch migrates, excludes, or replaces it with narrower
+owned rows.
 
 ## Entry schema
 
@@ -61,8 +45,8 @@ Every `phase13_entry` line contains:
 
 `parent` is exactly one `phase11_entry:<id>` or
 `phase11_category:<id>`. `route_owner` is `deferred` throughout the opening
-inventory. `status` is `inherited_deferred` for the seven imported Phase 11
-rows and `candidate_deferred` for the nine category candidates. A
+inventory. `status` is `inherited_deferred` for imported Phase 11 rows and
+`candidate_deferred` for category candidates. A
 `none_*` canonical-MIR value is explicit: either the source is rejected
 before canonical MIR or the owning later patch must materialize that fixture.
 

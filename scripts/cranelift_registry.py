@@ -4,6 +4,7 @@
 import argparse
 import json
 import sys
+import tempfile
 from collections import Counter
 from pathlib import Path
 
@@ -41,22 +42,6 @@ PHASE11_IMMUTABLE_FIELDS = (
     "id", "classification", "feature_family", "route_owner",
     "source_fixture", "canonical_mir_fixture", "ci_family",
 )
-PHASE11_CLASSIFICATION_COUNTS = {
-    "migrated": 12,
-    "deferred": 7,
-    "excluded": 0,
-}
-PHASE11_DEFERRED_IDS = (
-    "resource_metadata",
-    "native_boundary_metadata",
-    "block_param_merge_imported_call_return",
-    "block_param_merge_arm_update_imported_call_return",
-    "block_param_merge_arm_update_imported_call_branch",
-    "block_param_merge_imported_branch_joined_return",
-    "block_param_merge_dual_imported_joined_return",
-)
-
-
 class Error(RuntimeError):
     pass
 
@@ -140,18 +125,32 @@ def validate_phase11_snapshot_structure(registry):
         snapshot["immutable_fields"] == list(PHASE11_IMMUTABLE_FIELDS),
         "Phase 11 immutable-field set drifted",
     )
-    require(snapshot["entry_count"] == 19,
-            "Phase 11 closure snapshot entry_count must be 19")
     require(
-        snapshot["classification_counts"] == PHASE11_CLASSIFICATION_COUNTS,
-        "Phase 11 closure snapshot classification totals drifted",
+        isinstance(snapshot["entry_count"], int) and snapshot["entry_count"] > 0,
+        "Phase 11 closure snapshot entry_count must be positive",
+    )
+    classification_counts = snapshot["classification_counts"]
+    require(
+        isinstance(classification_counts, dict)
+        and set(classification_counts) == {"migrated", "deferred", "excluded"},
+        "Phase 11 closure snapshot classification fields drifted",
+    )
+    for key, value in classification_counts.items():
+        require(
+            isinstance(value, int) and value >= 0,
+            f"Phase 11 closure snapshot classification {key} must be non-negative",
+        )
+    require(
+        sum(classification_counts.values()) == snapshot["entry_count"],
+        "Phase 11 closure snapshot classification totals do not match entry_count",
+    )
+    deferred_ids = unique_strings(
+        snapshot["deferred_entry_ids"],
+        "closure_snapshots.phase11.deferred_entry_ids",
     )
     require(
-        unique_strings(
-            snapshot["deferred_entry_ids"],
-            "closure_snapshots.phase11.deferred_entry_ids",
-        ) == list(PHASE11_DEFERRED_IDS),
-        "Phase 11 deferred entry IDs drifted",
+        len(deferred_ids) == classification_counts["deferred"],
+        "Phase 11 deferred ID count differs from the deferred classification total",
     )
     require(snapshot["byte_provenance"] == "git_history",
             "Phase 11 byte provenance must be Git history")
@@ -162,9 +161,12 @@ def validate_phase11_snapshot_structure(registry):
     )
 
     rows = snapshot["entries"]
-    require(isinstance(rows, list) and len(rows) == 19,
-            "Phase 11 closure snapshot must contain 19 rows")
+    require(
+        isinstance(rows, list) and len(rows) == snapshot["entry_count"],
+        "Phase 11 closure snapshot rows do not match entry_count",
+    )
     ids = set()
+    row_classifications = Counter()
     for index, row in enumerate(rows):
         context = f"closure_snapshots.phase11.entries[{index}]"
         require(
@@ -175,9 +177,10 @@ def validate_phase11_snapshot_structure(registry):
         require(entry_id not in ids, f"duplicate Phase 11 snapshot ID: {entry_id}")
         ids.add(entry_id)
         require(
-            row["classification"] in PHASE11_CLASSIFICATION_COUNTS,
+            row["classification"] in classification_counts,
             f"{entry_id}: unknown snapshot classification {row['classification']}",
         )
+        row_classifications[row["classification"]] += 1
         for field in (
             "feature_family", "route_owner", "source_fixture",
             "canonical_mir_fixture", "ci_family",
@@ -187,7 +190,19 @@ def validate_phase11_snapshot_structure(registry):
         fixture(row["canonical_mir_fixture"],
                 f"{context}.canonical_mir_fixture")
 
+    require(
+        dict(row_classifications) == {
+            key: value for key, value in classification_counts.items() if value
+        },
+        "Phase 11 closure snapshot row classifications differ from its totals",
+    )
+    require(
+        [row["id"] for row in rows if row["classification"] == "deferred"]
+        == deferred_ids,
+        "Phase 11 deferred ID inventory differs from snapshot rows",
+    )
     return snapshot
+
 
 def validate():
     registry = read_json(REGISTRY)
@@ -241,8 +256,8 @@ def validate():
         text(value, f"legacy_views.{key}")
 
     entries = registry["entries"]
-    require(isinstance(entries, list) and len(entries) == 35,
-            f"registry must contain 35 entries, found {len(entries) if isinstance(entries, list) else 'non-array'}")
+    require(isinstance(entries, list) and entries,
+            "registry entries must be a non-empty array")
 
     ids = set()
     phase11 = []
@@ -302,8 +317,31 @@ def validate():
         if entry["origin_phase"] == "phase11":
             require(parent == "phase11_root:feature_inventory",
                     f"{entry_id}: invalid Phase 11 parent")
-            require(closure == "phase11_closed_registry_backed_feature_parity_migration",
+            require(closure == registry["closed_phase_versions"]["phase11"],
                     f"{entry_id}: Phase 11 closure version drifted")
+            deferred_family = text(
+                entry["evidence"].get("deferred_family"),
+                f"{entry_id}.evidence.deferred_family",
+            )
+            require(
+                deferred_family in categories,
+                f"{entry_id}: unknown deferred planning category {deferred_family}",
+            )
+            deferred_expectation = text(
+                entry["evidence"].get("deferred_expectation"),
+                f"{entry_id}.evidence.deferred_expectation",
+            )
+            require(
+                any(
+                    marker in deferred_expectation
+                    for marker in (
+                        "before_driver",
+                        "before_object_publication",
+                        "before_publication",
+                    )
+                ),
+                f"{entry_id}: deferred expectation must prove pre-driver or pre-publication failure",
+            )
             phase11.append(entry)
         else:
             require(closure == "phase13_opening_inventory_v1",
@@ -320,6 +358,15 @@ def validate():
                     f"{entry['id']}: inherited parent is not deferred")
             require(entry["status"] == "inherited_deferred",
                     f"{entry['id']}: entry parent requires inherited_deferred")
+            require(
+                entry["source_fixture"] == phase11_by_id[parent_id]["source_fixture"],
+                f"{entry['id']}: inherited source fixture differs from Phase 11",
+            )
+            require(
+                entry["canonical_mir_fixture"]
+                == phase11_by_id[parent_id]["canonical_mir_fixture"],
+                f"{entry['id']}: inherited canonical MIR fixture differs from Phase 11",
+            )
         elif parent.startswith("phase11_category:"):
             category = parent.split(":", 1)[1]
             require(category in categories, f"{entry['id']}: unknown category {category}")
@@ -328,15 +375,8 @@ def validate():
         else:
             raise Error(f"{entry['id']}: invalid parent {parent}")
 
-    require(Counter(entry["origin_phase"] for entry in entries)
-            == Counter({"phase11": 19, "phase13": 16}),
-            "origin phase totals drifted")
-    require(Counter(entry["status"] for entry in phase11)
-            == Counter({"migrated": 12, "deferred": 7}),
-            "Phase 11 status totals drifted")
-    require(Counter(entry["status"] for entry in phase13)
-            == Counter({"inherited_deferred": 7, "candidate_deferred": 9}),
-            "Phase 13 status totals drifted")
+    require(phase11, "registry must contain Phase 11 rows")
+    require(phase13, "registry must contain Phase 13 rows")
     return registry
 
 
@@ -391,8 +431,10 @@ def verify_phase11_closure(registry):
     current_by_id = {entry["id"]: entry for entry in current}
     snapshot_by_id = {entry["id"]: entry for entry in snapshot["entries"]}
 
-    require(len(current) == snapshot["entry_count"] == 19,
-            "Phase 11 semantic closure must contain 19 current and frozen rows")
+    require(
+        len(current) == snapshot["entry_count"],
+        "Phase 11 current row count differs from the semantic snapshot",
+    )
     require(set(current_by_id) == set(snapshot_by_id),
             "Phase 11 stable ID inventory differs from the semantic snapshot")
 
@@ -421,23 +463,61 @@ def verify_phase11_closure(registry):
 
     counts = Counter(entry["status"] for entry in current)
     actual_counts = {
-        "migrated": counts["migrated"],
-        "deferred": counts["deferred"],
-        "excluded": counts["excluded"],
+        key: counts[key] for key in ("migrated", "deferred", "excluded")
     }
     require(
-        actual_counts == snapshot["classification_counts"]
-        == PHASE11_CLASSIFICATION_COUNTS,
-        "Phase 11 12/7/0 classification inventory drifted",
+        actual_counts == snapshot["classification_counts"],
+        "Phase 11 classification inventory differs from the semantic snapshot",
     )
     actual_deferred = [
         entry["id"] for entry in current if entry["status"] == "deferred"
     ]
     require(
-        actual_deferred == snapshot["deferred_entry_ids"]
-        == list(PHASE11_DEFERRED_IDS),
-        "Phase 11 deferred parent ID inventory drifted",
+        actual_deferred == snapshot["deferred_entry_ids"],
+        "Phase 11 deferred parent ID inventory differs from the semantic snapshot",
     )
+    return snapshot
+
+
+def derived_totals(registry):
+    entries = registry["entries"]
+    deferred_entries = [
+        entry for entry in entries if entry["status"] in DEFERRED
+    ]
+    return {
+        "total_rows": len(entries),
+        "origin_phase": Counter(entry["origin_phase"] for entry in entries),
+        "status": Counter(entry["status"] for entry in entries),
+        "feature_family": Counter(entry["feature_family"] for entry in entries),
+        "ci_family": Counter(entry["ci_family"] for entry in entries),
+        "route_owner": Counter(entry["route_owner"] for entry in entries),
+        "deferred_destination": Counter(
+            entry["future_destination_phase"] for entry in deferred_entries
+        ),
+    }
+
+
+def count_lines(counter):
+    return [f"- `{key}`: `{counter[key]}`" for key in sorted(counter)]
+
+
+def closure_summary_lines(registry):
+    snapshot = verify_phase11_closure(registry)
+    counts = snapshot["classification_counts"]
+    return [
+        "## Phase 11 semantic closure summary",
+        "",
+        f"- Closure version: `{snapshot['closure_version']}`",
+        f"- Closed rows: `{snapshot['entry_count']}`",
+        f"- Migrated: `{counts['migrated']}`",
+        f"- Deferred: `{counts['deferred']}`",
+        f"- Excluded: `{counts['excluded']}`",
+        "- Deferred parent IDs:",
+        *[f"  - `{entry_id}`" for entry_id in snapshot["deferred_entry_ids"]],
+        "",
+        "This text is generated from the semantic closure snapshot in the JSON registry.",
+        "",
+    ]
 
 
 def cell(value):
@@ -446,28 +526,35 @@ def cell(value):
 
 def render(registry):
     entries = registry["entries"]
-    phase = Counter(entry["origin_phase"] for entry in entries)
-    status = Counter(entry["status"] for entry in entries)
-    feature = Counter(entry["feature_family"] for entry in entries)
-    ci = Counter(entry["ci_family"] for entry in entries)
+    totals = derived_totals(registry)
     lines = [
         "# Canonical Cranelift Feature Registry", "",
         "<!-- Generated by scripts/cranelift_registry.py; do not edit by hand. -->", "",
         f"- Schema version: `{registry['schema_version']}`",
         f"- Registry version: `{registry['registry_version']}`",
         f"- Registry status: `{registry['registry_status']}`",
-        f"- Entries: `{len(entries)}`",
-        f"- Phase 11 entries: `{phase['phase11']}`",
-        f"- Phase 13 entries: `{phase['phase13']}`", "",
+        f"- Total rows: `{totals['total_rows']}`",
+        "",
+        "## Derived origin-phase totals", "",
+        *count_lines(totals["origin_phase"]),
+        "",
         "## Derived status totals", "",
-    ]
-    lines += [f"- `{key}`: `{status[key]}`" for key in sorted(status)]
-    lines += ["", "## Derived feature-family totals", ""]
-    lines += [f"- `{key}`: `{feature[key]}`" for key in sorted(feature)]
-    lines += ["", "## Derived CI-family totals", ""]
-    lines += [f"- `{key}`: `{ci[key]}`" for key in sorted(ci)]
-    lines += [
-        "", "## Registry entries", "",
+        *count_lines(totals["status"]),
+        "",
+        "## Derived feature-family totals", "",
+        *count_lines(totals["feature_family"]),
+        "",
+        "## Derived CI-family totals", "",
+        *count_lines(totals["ci_family"]),
+        "",
+        "## Derived route-owner totals", "",
+        *count_lines(totals["route_owner"]),
+        "",
+        "## Derived deferred-destination totals", "",
+        *count_lines(totals["deferred_destination"]),
+        "",
+        *closure_summary_lines(registry),
+        "## Registry entries", "",
         "| ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |",
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
     ]
@@ -483,9 +570,21 @@ def render(registry):
         "", "## Legacy views", "",
         f"- Phase 11 historical view: `{registry['legacy_views']['phase11']}`",
         f"- Phase 13 historical view: `{registry['legacy_views']['phase13']}`", "",
-        "The JSON registry is authoritative. These Markdown documents remain review and historical views only.", "",
+        "The JSON registry is authoritative. Generated Markdown is a review artifact, and the legacy Markdown documents remain historical views only.", "",
     ]
     return "\n".join(lines)
+
+
+def check_projection(registry):
+    path = summary_path(registry)
+    require(path.is_file(), f"missing generated summary: {path.relative_to(ROOT)}")
+    with tempfile.TemporaryDirectory(prefix="cranelift-registry-projection-") as temp_dir:
+        candidate = Path(temp_dir) / path.name
+        candidate.write_text(render(registry), encoding="utf-8")
+        require(
+            path.read_text(encoding="utf-8") == candidate.read_text(encoding="utf-8"),
+            "generated summary is stale; run `python3 scripts/cranelift_registry.py project`",
+        )
 
 
 def summary_path(registry):
@@ -516,20 +615,35 @@ def main():
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(render(registry), encoding="utf-8")
         elif command == "check-projection":
-            path = summary_path(registry)
-            require(path.is_file(), f"missing generated summary: {path.relative_to(ROOT)}")
-            require(path.read_text(encoding="utf-8") == render(registry),
-                    "generated summary is stale; run `python3 scripts/cranelift_registry.py project`")
+            check_projection(registry)
     except Error as exc:
         print(f"cranelift registry error: {exc}", file=sys.stderr)
         return 1
 
+    totals = derived_totals(registry)
+    snapshot = registry["closure_snapshots"]["phase11"]
+    classifications = snapshot["classification_counts"]
     messages = {
-        "validate": "✅ Canonical Cranelift registry schema passed: 35 unique entries.",
-        "verify-legacy-import": "✅ Canonical registry preserves all 19 Phase 11 and 16 Phase 13 legacy rows.",
-        "verify-phase11-closure": "✅ Phase 11 semantic closure snapshot passed: 19 rows, 12 migrated, seven deferred, zero excluded.",
+        "validate": (
+            "✅ Canonical Cranelift registry schema passed: "
+            f"{totals['total_rows']} unique entries."
+        ),
+        "verify-legacy-import": (
+            "✅ Canonical registry preserves all historical Phase 11 and "
+            "Phase 13 rows."
+        ),
+        "verify-phase11-closure": (
+            "✅ Phase 11 semantic closure snapshot passed: "
+            f"{snapshot['entry_count']} rows, "
+            f"{classifications['migrated']} migrated, "
+            f"{classifications['deferred']} deferred, "
+            f"{classifications['excluded']} excluded."
+        ),
         "project": "✅ Canonical Cranelift registry Markdown summary generated.",
-        "check-projection": "✅ Canonical Cranelift registry Markdown summary is current.",
+        "check-projection": (
+            "✅ Canonical Cranelift registry projection was regenerated "
+            "and matches the committed review artifact."
+        ),
     }
     print(messages[command])
     return 0

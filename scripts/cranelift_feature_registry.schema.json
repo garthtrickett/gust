@@ -207,7 +207,8 @@
           }
         },
         "entry_count": {
-          "const": 19
+          "type": "integer",
+          "minimum": 1
         },
         "classification_counts": {
           "type": "object",
@@ -234,8 +235,6 @@
         },
         "deferred_entry_ids": {
           "type": "array",
-          "minItems": 7,
-          "maxItems": 7,
           "uniqueItems": true,
           "items": {
             "type": "string",
@@ -244,8 +243,7 @@
         },
         "entries": {
           "type": "array",
-          "minItems": 19,
-          "maxItems": 19,
+          "minItems": 1,
           "items": {
             "$ref": "#/$defs/phase11_closure_snapshot_entry"
           }
