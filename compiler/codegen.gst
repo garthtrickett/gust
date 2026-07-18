@@ -3859,14 +3859,15 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
 
             mut resolved_func := typechecker.env_resolve_namespaced_ident(env, func_str, ctx);
             mut resolved_sig := (*env).function_registry.Get(resolved_func);
-            if resolved_sig.Ok &&
-               resolved_sig.Val.is_extern == 1 &&
-               len(resolved_sig.Val.extern_symbol_name) > 0
-            {
-                resolved_func = std.Clone(
-                    ctx,
-                    resolved_sig.Val.extern_symbol_name
-                );
+            if resolved_sig.Ok {
+                if resolved_sig.Val.is_extern == 1 &&
+                   len(resolved_sig.Val.extern_symbol_name) > 0
+                {
+                    resolved_func = std.Clone(
+                        ctx,
+                        resolved_sig.Val.extern_symbol_name
+                    );
+                }
             }
             mut c_func := "";
             mut i := 0;
