@@ -1949,11 +1949,49 @@ guard-cranelift-experiment-manifest-surface:
       exit 1
     fi
 
+    phase13_registry_doc="compiler/CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY.md"
+    if ! rg -n -x -F 'allowed_cranelift_phase13_opening_legacy_manifest_surface_policy: exact_registry_path_headers_and_count_are_validated_before_exclusion_from_the_Phase9_broad_Cranelift_reference_scan' "$manifest_doc" >/dev/null; then
+      echo "Phase 13 deferred-parity registry legacy manifest-surface policy is missing or stale."
+      rg -n -F 'allowed_cranelift_phase13_opening_legacy_manifest_surface_policy:' "$manifest_doc" || true
+      exit 1
+    fi
+    if ! rg -n -x -F 'allowed_cranelift_phase13_opening_registry: compiler/CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY.md' "$manifest_doc" >/dev/null; then
+      echo "Phase 13 deferred-parity registry path is missing or stale in $manifest_doc."
+      rg -n -F 'allowed_cranelift_phase13_opening_registry:' "$manifest_doc" || true
+      exit 1
+    fi
+    if [ ! -f "$phase13_registry_doc" ] || [ -L "$phase13_registry_doc" ]; then
+      echo "Phase 13 deferred-parity registry must be one regular non-symlink documentation file: $phase13_registry_doc"
+      exit 1
+    fi
+    required_phase13_registry_headers=(
+      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_VERSION: 1'
+      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_STATUS: phase13_opened_deferred_parity_registry'
+      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_OPENING_ENTRY_COUNT: 16'
+      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PLANNING_CATEGORY_COUNT: 7'
+    )
+    for expected_header in "${required_phase13_registry_headers[@]}"; do
+      if ! rg -n -x -F "$expected_header" "$phase13_registry_doc" >/dev/null; then
+        echo "Phase 13 deferred-parity registry is missing a frozen legacy-scan header:"
+        echo "$expected_header"
+        exit 1
+      fi
+    done
+    phase13_registry_entry_count="$(
+      rg -c '^phase13_entry: ' "$phase13_registry_doc" ||
+        true
+    )"
+    if [ "${phase13_registry_entry_count:-0}" != "16" ]; then
+      echo "Phase 13 deferred-parity registry count drifted before the legacy broad-scan exclusion: entries=${phase13_registry_entry_count:-0}"
+      exit 1
+    fi
+
     cranelift_refs="$(
       rg -n -i -F 'cranelift' compiler src tests Cargo.toml Cargo.lock Makefile 2>/dev/null |
         rg -v '^compiler/CRANELIFT_EXPERIMENT_MANIFEST\.md:' |
         rg -v '^compiler/CRANELIFT_PHASE9C_DIFFERENTIAL_LEDGER\.md:' |
         rg -v '^compiler/CRANELIFT_FEATURE_PARITY_REGISTRY\.md:' |
+        rg -v '^compiler/CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY\.md:' |
         rg -v '^compiler/experiments/cranelift/' |
         rg -v '^compiler/test_runner_entry\.gst:' |
         rg -v '^compiler/phase10_help\.txt:' |
@@ -17626,6 +17664,489 @@ guard-cranelift-phase11-close:
     done
 
     echo "✅ Parity is complete for the Phase 11 registry inventory."
+
+guard-cranelift-phase13-opening-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Opening Phase 13 deferred-parity inventory..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    phase11_registry="compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md"
+    phase13_registry="compiler/CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY.md"
+
+    for required_file in "$manifest_doc" "$phase11_registry" "$phase13_registry"; do
+      if [ ! -f "$required_file" ]; then
+        echo "Missing Phase 13 opening input: $required_file"
+        exit 1
+      fi
+    done
+
+    just guard-cranelift-phase11-close
+
+    required_manifest_lines=(
+      'CRANELIFT_EXPERIMENT_ALLOWED_PHASE13_OPENING_GUARD: guard-cranelift-phase13-opening-contract'
+      'allowed_cranelift_phase13_opening_status: phase13_opened_deferred_parity_registry'
+      'allowed_cranelift_phase13_opening_predecessor_status: phase11_closed_registry_backed_feature_parity_migration'
+      'allowed_cranelift_phase13_opening_predecessor_guard: guard-cranelift-phase11-close'
+      'allowed_cranelift_phase13_opening_phase11_registry: compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md'
+      'allowed_cranelift_phase13_opening_phase11_registry_disposition: historical_immutable'
+      'allowed_cranelift_phase13_opening_phase11_registry_SHA256: fc24ad8b6ce7b73f570c29bdcb1c7ea55b80f9b349745a6268de387924101c68'
+      'allowed_cranelift_phase13_opening_phase11_registry_entry_count: 19'
+      'allowed_cranelift_phase13_opening_phase11_classification_inventory: 12_migrated_7_deferred_0_excluded'
+      'allowed_cranelift_phase13_opening_phase11_deferred_entry_count: 7'
+      'allowed_cranelift_phase13_opening_phase11_deferred_parent_ids: resource_metadata,native_boundary_metadata,block_param_merge_imported_call_return,block_param_merge_arm_update_imported_call_return,block_param_merge_arm_update_imported_call_branch,block_param_merge_imported_branch_joined_return,block_param_merge_dual_imported_joined_return'
+      'allowed_cranelift_phase13_opening_registry: compiler/CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY.md'
+      'allowed_cranelift_phase13_opening_registry_version: 1'
+      'allowed_cranelift_phase13_opening_entry_count: 16'
+      'allowed_cranelift_phase13_opening_inherited_entry_count: 7'
+      'allowed_cranelift_phase13_opening_candidate_entry_count: 9'
+      'allowed_cranelift_phase13_opening_parent_inventory: 7_phase11_entry_9_phase11_category'
+      'allowed_cranelift_phase13_opening_status_inventory: 7_inherited_deferred_9_candidate_deferred'
+      'allowed_cranelift_phase13_opening_route_inventory: 16_deferred_0_generic_canonical_mir_0_excluded'
+      'allowed_cranelift_phase13_opening_planning_category_count: 7'
+      'allowed_cranelift_phase13_opening_planning_categories: broader_scalar_expressions,multiple_locals_and_assignments,nested_CFG,loops_and_backedges,function_parameters_and_multiple_arguments,multiple_modules_and_source_imports,broader_direct_and_imported_calls'
+      'allowed_cranelift_phase13_opening_feature_family_count: 7'
+      'allowed_cranelift_phase13_opening_feature_family_counts: scalar_1,local_state_1,cfg_1,block_parameter_1,direct_call_2,metadata_2,import_runtime_8'
+      'allowed_cranelift_phase13_opening_CI_family_count: 7'
+      'allowed_cranelift_phase13_opening_CI_family_counts: scalars_1,locals_1,cfg_1,block-params_1,direct-calls_2,imports_8,metadata-diagnostics_2'
+      'allowed_cranelift_phase13_opening_category_candidate_counts: broader_scalar_expressions_1,multiple_locals_and_assignments_1,nested_CFG_1,loops_and_backedges_1,function_parameters_and_multiple_arguments_2,multiple_modules_and_source_imports_1,broader_direct_and_imported_calls_2'
+      'allowed_cranelift_phase13_opening_schema: id,parent,feature_family,source_fixture,canonical_mir_fixture,route_owner,worker_capability_owner,diagnostic_owner,ci_family,status,deferral_reason'
+      'allowed_cranelift_phase13_opening_identity_policy: every_row_has_a_unique_stable_id_and_exactly_one_Phase11_entry_or_category_parent'
+      'allowed_cranelift_phase13_opening_owner_policy: every_row_has_explicit_route_worker_diagnostic_and_CI_owners'
+      'allowed_cranelift_phase13_opening_fixture_policy: inherited_rows_preserve_Phase11_source_and_canonical_MIR_fixtures_and_none_values_are_explicit'
+      'allowed_cranelift_phase13_opening_legacy_manifest_surface_policy: exact_registry_path_headers_and_count_are_validated_before_exclusion_from_the_Phase9_broad_Cranelift_reference_scan'
+      'allowed_cranelift_phase13_opening_behavior_policy: registry_manifest_and_static_guard_only_no_source_route_worker_MIR_request_object_link_package_CLI_or_workflow_change'
+      'allowed_cranelift_phase13_opening_next_milestone: capability_and_deferral_contract'
+    )
+    for line in "${required_manifest_lines[@]}"; do
+      if ! rg -n -x -F "$line" "$manifest_doc" >/dev/null; then
+        echo "Missing Phase 13 opening manifest line:"
+        echo "$line"
+        exit 1
+      fi
+    done
+
+    phase11_sha="$(sha256sum "$phase11_registry" | awk '{print $1}')"
+    if [ "$phase11_sha" != "fc24ad8b6ce7b73f570c29bdcb1c7ea55b80f9b349745a6268de387924101c68" ]; then
+      echo "Closed Phase 11 registry changed after its historical freeze."
+      echo "expected=fc24ad8b6ce7b73f570c29bdcb1c7ea55b80f9b349745a6268de387924101c68"
+      echo "actual=$phase11_sha"
+      exit 1
+    fi
+
+    required_phase11_headers=(
+      'CRANELIFT_FEATURE_PARITY_REGISTRY_ENTRY_COUNT: 19'
+      'CRANELIFT_FEATURE_PARITY_REGISTRY_CLOSURE_STATUS: phase11_closed_registry_backed_feature_parity_migration'
+      'CRANELIFT_FEATURE_PARITY_REGISTRY_CLOSURE_CLASSIFICATION_INVENTORY: 12_migrated_7_deferred_0_excluded'
+      'CRANELIFT_FEATURE_PARITY_REGISTRY_NEXT_PHASE_DEFERRED_CATEGORY_COUNT: 7'
+      'CRANELIFT_FEATURE_PARITY_REGISTRY_NEXT_PHASE_DEFERRED_CATEGORIES: broader_scalar_expressions,multiple_locals_and_assignments,nested_CFG,loops_and_backedges,function_parameters_and_multiple_arguments,multiple_modules_and_source_imports,broader_direct_and_imported_calls'
+    )
+    for header in "${required_phase11_headers[@]}"; do
+      rg -n -x -F "$header" "$phase11_registry" >/dev/null
+    done
+
+    required_phase13_headers=(
+      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_VERSION: 1'
+      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE: phase13_opening_inventory_and_registry_rebase'
+      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_STATUS: phase13_opened_deferred_parity_registry'
+      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PREDECESSOR_GUARD: guard-cranelift-phase11-close'
+      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE11_REGISTRY: compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md'
+      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE11_DISPOSITION: historical_immutable'
+      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE11_SHA256: fc24ad8b6ce7b73f570c29bdcb1c7ea55b80f9b349745a6268de387924101c68'
+      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE11_ENTRY_COUNT: 19'
+      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE11_CLASSIFICATION_INVENTORY: 12_migrated_7_deferred_0_excluded'
+      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE11_DEFERRED_ENTRY_COUNT: 7'
+      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE11_DEFERRED_PARENT_IDS: resource_metadata,native_boundary_metadata,block_param_merge_imported_call_return,block_param_merge_arm_update_imported_call_return,block_param_merge_arm_update_imported_call_branch,block_param_merge_imported_branch_joined_return,block_param_merge_dual_imported_joined_return'
+      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PLANNING_CATEGORY_COUNT: 7'
+      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PLANNING_CATEGORIES: broader_scalar_expressions,multiple_locals_and_assignments,nested_CFG,loops_and_backedges,function_parameters_and_multiple_arguments,multiple_modules_and_source_imports,broader_direct_and_imported_calls'
+      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_OPENING_ENTRY_COUNT: 16'
+      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_INHERITED_ENTRY_COUNT: 7'
+      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_CANDIDATE_ENTRY_COUNT: 9'
+      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PARENT_INVENTORY: 7_phase11_entry_9_phase11_category'
+      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_STATUS_INVENTORY: 7_inherited_deferred_9_candidate_deferred'
+      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_ROUTE_INVENTORY: 16_deferred_0_generic_canonical_mir_0_excluded'
+      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_FEATURE_FAMILY_COUNT: 7'
+      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_FEATURE_FAMILY_COUNTS: scalar_1,local_state_1,cfg_1,block_parameter_1,direct_call_2,metadata_2,import_runtime_8'
+      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_CI_FAMILY_COUNT: 7'
+      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_CI_FAMILY_COUNTS: scalars_1,locals_1,cfg_1,block-params_1,direct-calls_2,imports_8,metadata-diagnostics_2'
+      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_CATEGORY_CANDIDATE_COUNTS: broader_scalar_expressions_1,multiple_locals_and_assignments_1,nested_CFG_1,loops_and_backedges_1,function_parameters_and_multiple_arguments_2,multiple_modules_and_source_imports_1,broader_direct_and_imported_calls_2'
+      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_SCHEMA: id,parent,feature_family,source_fixture,canonical_mir_fixture,route_owner,worker_capability_owner,diagnostic_owner,ci_family,status,deferral_reason'
+      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_OPENING_POLICY: inventory_only_no_source_route_worker_MIR_request_object_link_package_CLI_or_workflow_change'
+      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_NEXT_MILESTONE: capability_and_deferral_contract'
+    )
+    for header in "${required_phase13_headers[@]}"; do
+      if ! rg -n -x -F "$header" "$phase13_registry" >/dev/null; then
+        echo "Missing Phase 13 opening registry header:"
+        echo "$header"
+        exit 1
+      fi
+    done
+
+    entry_field() {
+      local key="$1"
+      awk -F'|' -v key="$key" '
+        /^phase13_entry: / {
+          for (i = 1; i <= NF; i++) {
+            value = $i
+            sub(/^phase13_entry: /, "", value)
+            prefix = key "="
+            if (index(value, prefix) == 1) {
+              print substr(value, length(prefix) + 1)
+            }
+          }
+        }
+      ' "$phase13_registry"
+    }
+
+    record_field() {
+      local record="$1"
+      local key="$2"
+      printf '%s\n' "$record" |
+        tr '|' '\n' |
+        sed -n       -e "s/^phase13_entry: ${key}=//p"       -e "s/^${key}=//p" |
+        head -n1
+    }
+
+    phase11_record_field() {
+      local record="$1"
+      local key="$2"
+      printf '%s\n' "$record" |
+        tr '|' '\n' |
+        sed -n       -e "s/^parity_entry: ${key}=//p"       -e "s/^${key}=//p" |
+        head -n1
+    }
+
+    entry_count="$(rg -c '^phase13_entry: ' "$phase13_registry")"
+    unique_id_count="$(entry_field id | sort -u | wc -l | tr -d ' ')"
+    if [ "$entry_count" != "16" ] || [ "$unique_id_count" != "16" ]; then
+      echo "Phase 13 opening identity inventory drifted: entries=$entry_count unique=$unique_id_count"
+      exit 1
+    fi
+
+    required_fields=(
+      id parent feature_family source_fixture canonical_mir_fixture
+      route_owner worker_capability_owner diagnostic_owner ci_family
+      status deferral_reason
+    )
+    for field in "${required_fields[@]}"; do
+      field_count="$(entry_field "$field" | wc -l | tr -d ' ')"
+      empty_count="$(entry_field "$field" | rg -c '^$' || true)"
+      if [ "$field_count" != "16" ] || [ "${empty_count:-0}" != "0" ]; then
+        echo "Phase 13 opening found missing, duplicated, or empty field $field: count=$field_count empty=${empty_count:-0}"
+        exit 1
+      fi
+    done
+
+    expected_ids=(
+      'p13_resource_metadata_source_route'
+      'p13_native_boundary_metadata_source_route'
+      'p13_imported_call_return_source_route'
+      'p13_imported_arm_update_return_source_route'
+      'p13_imported_arm_update_branch_source_route'
+      'p13_imported_branch_joined_return_source_route'
+      'p13_dual_imported_joined_return_source_route'
+      'p13_scalar_multiply_i32'
+      'p13_two_local_update_branch_source_route'
+      'p13_nested_local_update_branch_source_route'
+      'p13_general_loop_backedge_source_route'
+      'p13_parameterized_local_call_branch_source_route'
+      'p13_recursive_direct_call_policy'
+      'p13_multi_module_bundle_composition'
+      'p13_imported_predicate_update_branch_source_route'
+      'p13_unapproved_host_symbol_policy'
+    )
+    actual_ids="$(entry_field id | sort)"
+    expected_ids_sorted="$(printf '%s\n' "${expected_ids[@]}" | sort)"
+    if [ "$actual_ids" != "$expected_ids_sorted" ]; then
+      echo "Phase 13 opening row identity set drifted."
+      echo "--- expected ---"
+      printf '%s\n' "$expected_ids_sorted"
+      echo "--- actual ---"
+      printf '%s\n' "$actual_ids"
+      exit 1
+    fi
+
+    expected_phase11_deferred_ids=(
+      'resource_metadata'
+      'native_boundary_metadata'
+      'block_param_merge_imported_call_return'
+      'block_param_merge_arm_update_imported_call_return'
+      'block_param_merge_arm_update_imported_call_branch'
+      'block_param_merge_imported_branch_joined_return'
+      'block_param_merge_dual_imported_joined_return'
+    )
+    actual_phase11_deferred_ids="$(
+      awk -F'|' '
+        /^parity_entry: / && /route_owner=deferred/ {
+          for (i = 1; i <= NF; i++) {
+            value = $i
+            sub(/^parity_entry: /, "", value)
+            if (index(value, "id=") == 1) {
+              print substr(value, 4)
+            }
+          }
+        }
+      ' "$phase11_registry" | sort
+    )"
+    expected_phase11_deferred_ids_sorted="$(
+      printf '%s\n' "${expected_phase11_deferred_ids[@]}" | sort
+    )"
+    if [ "$actual_phase11_deferred_ids" != "$expected_phase11_deferred_ids_sorted" ]; then
+      echo "Closed Phase 11 deferred row inventory drifted."
+      exit 1
+    fi
+
+    expected_categories=(
+      'broader_scalar_expressions'
+      'multiple_locals_and_assignments'
+      'nested_CFG'
+      'loops_and_backedges'
+      'function_parameters_and_multiple_arguments'
+      'multiple_modules_and_source_imports'
+      'broader_direct_and_imported_calls'
+    )
+    actual_phase11_categories="$(
+      awk -F'|' '
+        /^deferred_family: / {
+          for (i = 1; i <= NF; i++) {
+            value = $i
+            sub(/^deferred_family: /, "", value)
+            if (index(value, "id=") == 1) {
+              print substr(value, 4)
+            }
+          }
+        }
+      ' "$phase11_registry" | sort
+    )"
+    expected_categories_sorted="$(printf '%s\n' "${expected_categories[@]}" | sort)"
+    if [ "$actual_phase11_categories" != "$expected_categories_sorted" ]; then
+      echo "Closed Phase 11 planning-category inventory drifted."
+      exit 1
+    fi
+
+    declare -A allowed_feature_families=(
+      [scalar]=1
+      [local_state]=1
+      [cfg]=1
+      [block_parameter]=1
+      [direct_call]=1
+      [metadata]=1
+      [import_runtime]=1
+    )
+    declare -A allowed_worker_owners=(
+      [worker_scalar_expression_lowering]=1
+      [worker_local_state_lowering]=1
+      [worker_structured_cfg_lowering]=1
+      [worker_block_parameter_loop_lowering]=1
+      [worker_direct_call_lowering]=1
+      [worker_module_import_lowering]=1
+      [worker_metadata_lowering]=1
+    )
+    declare -A allowed_diagnostic_owners=(
+      [generic_source_capability_classifier]=1
+      [canonical_mir_cfg_verifier]=1
+      [canonical_mir_metadata_verifier]=1
+      [source_signature_and_call_graph_verifier]=1
+      [resolver_signature_and_canonical_mir_verifier]=1
+      [approved_host_registry_verifier]=1
+    )
+    declare -A allowed_ci_families=(
+      [scalars]=1
+      [locals]=1
+      [cfg]=1
+      [block-params]=1
+      [direct-calls]=1
+      [imports]=1
+      [metadata-diagnostics]=1
+    )
+
+    inherited_count=0
+    candidate_count=0
+    while IFS= read -r record; do
+      id="$(record_field "$record" id)"
+      parent="$(record_field "$record" parent)"
+      feature_family="$(record_field "$record" feature_family)"
+      source_fixture="$(record_field "$record" source_fixture)"
+      canonical_mir_fixture="$(record_field "$record" canonical_mir_fixture)"
+      route_owner="$(record_field "$record" route_owner)"
+      worker_owner="$(record_field "$record" worker_capability_owner)"
+      diagnostic_owner="$(record_field "$record" diagnostic_owner)"
+      ci_family="$(record_field "$record" ci_family)"
+      status="$(record_field "$record" status)"
+      reason="$(record_field "$record" deferral_reason)"
+
+      if [[ ! "$id" =~ ^p13_[a-z0-9_]+$ ]]; then
+        echo "Phase 13 row has an unstable identifier: $id"
+        exit 1
+      fi
+      for value in "$parent" "$feature_family" "$source_fixture"                "$canonical_mir_fixture" "$route_owner" "$worker_owner"                "$diagnostic_owner" "$ci_family" "$status" "$reason"
+      do
+        if [[ "$value" =~ (^|_)(unknown|ambiguous|ownerless|tbd)($|_) ]]; then
+          echo "Phase 13 row $id contains an ambiguous value: $value"
+          exit 1
+        fi
+      done
+
+      if [ "$route_owner" != "deferred" ]; then
+        echo "Phase 13 opening row $id must remain deferred, found route_owner=$route_owner"
+        exit 1
+      fi
+      if [ -z "${allowed_feature_families[$feature_family]:-}" ]; then
+        echo "Phase 13 row $id has unknown feature owner: $feature_family"
+        exit 1
+      fi
+      if [ -z "${allowed_worker_owners[$worker_owner]:-}" ]; then
+        echo "Phase 13 row $id has unknown worker capability owner: $worker_owner"
+        exit 1
+      fi
+      if [ -z "${allowed_diagnostic_owners[$diagnostic_owner]:-}" ]; then
+        echo "Phase 13 row $id has unknown diagnostic owner: $diagnostic_owner"
+        exit 1
+      fi
+      if [ -z "${allowed_ci_families[$ci_family]:-}" ]; then
+        echo "Phase 13 row $id has unknown CI owner: $ci_family"
+        exit 1
+      fi
+      if [ ! -f "$source_fixture" ]; then
+        echo "Phase 13 row $id references a missing source fixture: $source_fixture"
+        exit 1
+      fi
+      if [[ "$canonical_mir_fixture" != none_* ]] &&
+         [ ! -f "$canonical_mir_fixture" ]; then
+        echo "Phase 13 row $id references a missing canonical-MIR fixture: $canonical_mir_fixture"
+        exit 1
+      fi
+
+      case "$parent" in
+        phase11_entry:*)
+          inherited_count=$((inherited_count + 1))
+          parent_id="${parent#phase11_entry:}"
+          if [ "$status" != "inherited_deferred" ]; then
+            echo "Inherited Phase 13 row $id has invalid status $status"
+            exit 1
+          fi
+          phase11_record="$(
+            rg -m1 -F "parity_entry: id=$parent_id|" "$phase11_registry" || true
+          )"
+          if [ -z "$phase11_record" ]; then
+            echo "Phase 13 row $id references a missing Phase 11 parent: $parent_id"
+            exit 1
+          fi
+          if [ "$(phase11_record_field "$phase11_record" route_owner)" != "deferred" ] ||
+             [ "$(phase11_record_field "$phase11_record" migration_status)" != "deferred" ]; then
+            echo "Phase 13 row $id does not inherit a deferred Phase 11 row."
+            exit 1
+          fi
+          if [ "$source_fixture" != "$(phase11_record_field "$phase11_record" source_fixture)" ] ||
+             [ "$canonical_mir_fixture" != "$(phase11_record_field "$phase11_record" mir_fixture)" ]; then
+            echo "Phase 13 inherited row $id changed its Phase 11 fixtures."
+            exit 1
+          fi
+          ;;
+        phase11_category:*)
+          candidate_count=$((candidate_count + 1))
+          category="${parent#phase11_category:}"
+          if [ "$status" != "candidate_deferred" ]; then
+            echo "Phase 13 category candidate $id has invalid status $status"
+            exit 1
+          fi
+          if ! rg -n -F "deferred_family: id=$category|"         "$phase11_registry" >/dev/null; then
+            echo "Phase 13 row $id references an unknown Phase 11 category: $category"
+            exit 1
+          fi
+          ;;
+        *)
+          echo "Phase 13 row $id has an invalid parent: $parent"
+          exit 1
+          ;;
+      esac
+    done < <(rg '^phase13_entry: ' "$phase13_registry")
+
+    if [ "$inherited_count" != "7" ] || [ "$candidate_count" != "9" ]; then
+      echo "Phase 13 opening parent inventory drifted: inherited=$inherited_count candidate=$candidate_count"
+      exit 1
+    fi
+
+    actual_inherited_parent_ids="$(
+      entry_field parent |
+        sed -n 's/^phase11_entry://p' |
+        sort
+    )"
+    if [ "$actual_inherited_parent_ids" != "$expected_phase11_deferred_ids_sorted" ]; then
+      echo "Phase 13 did not import the seven deferred Phase 11 rows exactly."
+      exit 1
+    fi
+
+    actual_candidate_categories="$(
+      entry_field parent |
+        sed -n 's/^phase11_category://p' |
+        sort -u
+    )"
+    if [ "$actual_candidate_categories" != "$expected_categories_sorted" ]; then
+      echo "Phase 13 did not import all seven next-phase planning categories."
+      exit 1
+    fi
+
+    declare -A expected_category_candidate_counts=(
+      [broader_scalar_expressions]=1
+      [multiple_locals_and_assignments]=1
+      [nested_CFG]=1
+      [loops_and_backedges]=1
+      [function_parameters_and_multiple_arguments]=2
+      [multiple_modules_and_source_imports]=1
+      [broader_direct_and_imported_calls]=2
+    )
+    for category in "${!expected_category_candidate_counts[@]}"; do
+      actual="$(
+        entry_field parent |
+          rg -c -x -F "phase11_category:$category" || true
+      )"
+      if [ "${actual:-0}" != "${expected_category_candidate_counts[$category]}" ]; then
+        echo "Phase 13 category $category has ${actual:-0} candidates, expected ${expected_category_candidate_counts[$category]}."
+        exit 1
+      fi
+    done
+
+    declare -A expected_feature_family_counts=(
+      [scalar]=1
+      [local_state]=1
+      [cfg]=1
+      [block_parameter]=1
+      [direct_call]=2
+      [metadata]=2
+      [import_runtime]=8
+    )
+    for family in "${!expected_feature_family_counts[@]}"; do
+      actual="$(entry_field feature_family | rg -c -x -F "$family" || true)"
+      if [ "${actual:-0}" != "${expected_feature_family_counts[$family]}" ]; then
+        echo "Phase 13 feature family $family has ${actual:-0} rows, expected ${expected_feature_family_counts[$family]}."
+        exit 1
+      fi
+    done
+
+    declare -A expected_ci_family_counts=(
+      [scalars]=1
+      [locals]=1
+      [cfg]=1
+      [block-params]=1
+      [direct-calls]=2
+      [imports]=8
+      [metadata-diagnostics]=2
+    )
+    for family in "${!expected_ci_family_counts[@]}"; do
+      actual="$(entry_field ci_family | rg -c -x -F "$family" || true)"
+      if [ "${actual:-0}" != "${expected_ci_family_counts[$family]}" ]; then
+        echo "Phase 13 CI family $family has ${actual:-0} rows, expected ${expected_ci_family_counts[$family]}."
+        exit 1
+      fi
+    done
+
+    if [ "$(entry_field status | rg -c -x -F inherited_deferred)" != "7" ] ||
+       [ "$(entry_field status | rg -c -x -F candidate_deferred)" != "9" ]; then
+      echo "Phase 13 opening status inventory drifted."
+      exit 1
+    fi
+
+    echo "✅ Phase 13 opened: 16 concrete deferred work items are uniquely owned and traceable to the immutable Phase 11 closure input."
 
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
     #!/usr/bin/env bash
