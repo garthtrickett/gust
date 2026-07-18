@@ -16885,11 +16885,12 @@ guard-cranelift-phase11-metadata-diagnostic-parity:
     exit 2
     EOF_MALFORMED
     chmod +x "$malformed_driver"
+    malformed_driver_abs="$(cd "$(dirname "$malformed_driver")" && pwd)/$(basename "$malformed_driver")"
     driver_output="$build_dir/driver.existing"
     printf 'phase11-diagnostic-output-sentinel\n' >"$driver_output"
     cp "$driver_output" "$driver_output.expected"
     set +e
-    GUST_NATIVE_BACKEND_DRIVER="$malformed_driver" \
+    GUST_NATIVE_BACKEND_DRIVER="$malformed_driver_abs" \
       ./gust --backend cranelift -o "$driver_output" compiler/phase11_metadata_scalar_source.gst \
       >"$build_dir/driver.stdout" 2>"$build_dir/driver.stderr"
     driver_status="$?"
@@ -16921,11 +16922,12 @@ guard-cranelift-phase11-metadata-diagnostic-parity:
     for class_name in worker_lowering_error object_link_publication_error; do
       class_driver="$build_dir/$class_name-driver"
       make_class_driver "$class_driver" "$class_name"
+      class_driver_abs="$(cd "$(dirname "$class_driver")" && pwd)/$(basename "$class_driver")"
       class_output="$build_dir/$class_name.existing"
       printf 'phase11-diagnostic-output-sentinel\n' >"$class_output"
       cp "$class_output" "$class_output.expected"
       set +e
-      GUST_NATIVE_BACKEND_DRIVER="$class_driver" \
+      GUST_NATIVE_BACKEND_DRIVER="$class_driver_abs" \
         ./gust --backend cranelift -o "$class_output" compiler/phase11_metadata_scalar_source.gst \
         >"$build_dir/$class_name.stdout" 2>"$build_dir/$class_name.stderr"
       class_status="$?"
