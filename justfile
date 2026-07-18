@@ -16899,18 +16899,20 @@ guard-cranelift-phase11-metadata-diagnostic-parity:
       >"$build_dir/unsupported.stdout" 2>"$build_dir/unsupported.stderr"
     unsupported_status="$?"
     set -e
+    cat "$build_dir/unsupported.stdout" "$build_dir/unsupported.stderr" \
+      >"$build_dir/unsupported.diagnostic"
     if [ "$unsupported_status" = "0" ] ||
-       ! rg -n -F 'class=unsupported_native_capability' "$build_dir/unsupported.stderr" >/dev/null ||
-       ! rg -n -F 'source=compiler/phase11_scalar_unsupported_multiply_source.gst' "$build_dir/unsupported.stderr" >/dev/null ||
-       ! rg -n -e 'line=[1-9][0-9]* column=[1-9][0-9]*' "$build_dir/unsupported.stderr" >/dev/null
+       ! rg -n -F 'class=unsupported_native_capability' "$build_dir/unsupported.diagnostic" >/dev/null ||
+       ! rg -n -F 'source=compiler/phase11_scalar_unsupported_multiply_source.gst' "$build_dir/unsupported.diagnostic" >/dev/null ||
+       ! rg -n -e 'line=[1-9][0-9]* column=[1-9][0-9]*' "$build_dir/unsupported.diagnostic" >/dev/null
     then
       echo "Unsupported-capability diagnostic contract failed with status $unsupported_status."
-      cat "$build_dir/unsupported.stdout" "$build_dir/unsupported.stderr"
+      cat "$build_dir/unsupported.diagnostic"
       exit 1
     fi
-    if rg -n -F 'driver discovery' "$build_dir/unsupported.stderr" >/dev/null; then
+    if rg -n -F 'driver discovery' "$build_dir/unsupported.diagnostic" >/dev/null; then
       echo "Unsupported capability reached driver discovery."
-      cat "$build_dir/unsupported.stderr"
+      cat "$build_dir/unsupported.diagnostic"
       exit 1
     fi
     assert_preserved_output "$unsupported_output" "$unsupported_output.expected"
@@ -16937,13 +16939,15 @@ guard-cranelift-phase11-metadata-diagnostic-parity:
     driver_status="$?"
     set -e
     echo "▶ Phase 11 diagnostic case: driver-handshake-error"
+    cat "$build_dir/driver.stdout" "$build_dir/driver.stderr" \
+      >"$build_dir/driver.diagnostic"
     if [ "$driver_status" = "0" ] ||
-       ! rg -n -F 'class=driver_handshake_error' "$build_dir/driver.stderr" >/dev/null ||
-       ! rg -n -F 'source=compiler/phase11_metadata_scalar_source.gst' "$build_dir/driver.stderr" >/dev/null ||
-       ! rg -n -e 'line=[1-9][0-9]* column=[1-9][0-9]*' "$build_dir/driver.stderr" >/dev/null
+       ! rg -n -F 'class=driver_handshake_error' "$build_dir/driver.diagnostic" >/dev/null ||
+       ! rg -n -F 'source=compiler/phase11_metadata_scalar_source.gst' "$build_dir/driver.diagnostic" >/dev/null ||
+       ! rg -n -e 'line=[1-9][0-9]* column=[1-9][0-9]*' "$build_dir/driver.diagnostic" >/dev/null
     then
       echo "Driver-handshake diagnostic contract failed with status $driver_status."
-      cat "$build_dir/driver.stdout" "$build_dir/driver.stderr"
+      cat "$build_dir/driver.diagnostic"
       exit 1
     fi
     assert_preserved_output "$driver_output" "$driver_output.expected"
@@ -16980,13 +16984,15 @@ guard-cranelift-phase11-metadata-diagnostic-parity:
       class_status="$?"
       set -e
       echo "▶ Phase 11 diagnostic case: $class_name"
+      cat "$build_dir/$class_name.stdout" "$build_dir/$class_name.stderr" \
+        >"$build_dir/$class_name.diagnostic"
       if [ "$class_status" = "0" ] ||
-         ! rg -n -F "class=$class_name" "$build_dir/$class_name.stderr" >/dev/null ||
-         ! rg -n -F 'source=compiler/phase11_metadata_scalar_source.gst' "$build_dir/$class_name.stderr" >/dev/null ||
-         ! rg -n -e 'line=[1-9][0-9]* column=[1-9][0-9]*' "$build_dir/$class_name.stderr" >/dev/null
+         ! rg -n -F "class=$class_name" "$build_dir/$class_name.diagnostic" >/dev/null ||
+         ! rg -n -F 'source=compiler/phase11_metadata_scalar_source.gst' "$build_dir/$class_name.diagnostic" >/dev/null ||
+         ! rg -n -e 'line=[1-9][0-9]* column=[1-9][0-9]*' "$build_dir/$class_name.diagnostic" >/dev/null
       then
         echo "Injected $class_name diagnostic contract failed with status $class_status."
-        cat "$build_dir/$class_name.stdout" "$build_dir/$class_name.stderr"
+        cat "$build_dir/$class_name.diagnostic"
         exit 1
       fi
       assert_preserved_output "$class_output" "$class_output.expected"
