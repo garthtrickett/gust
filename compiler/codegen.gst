@@ -1049,15 +1049,19 @@ func codegen_gen_function_fwd_decl(name: str, sig: typechecker.FunctionSignature
         mut ret_c_type := codegen_get_c_type(sig.return_type, env, ctx);
         
         mut c_func_name := "";
-        mut char_idx := 0;
-        while char_idx < len(name) {
-            mut b := std.str_byte_at(name, char_idx);
-            if b == 46 { // '.'
-                c_func_name = std.Concat(c_func_name, "_");
-            } else {
-                c_func_name = std.Concat(c_func_name, std.str_slice(name, char_idx, char_idx + 1));
+        if sig.is_extern == 1 && len(sig.extern_symbol_name) > 0 {
+            c_func_name = std.Clone(ctx, sig.extern_symbol_name);
+        } else {
+            mut char_idx := 0;
+            while char_idx < len(name) {
+                mut b := std.str_byte_at(name, char_idx);
+                if b == 46 { // '.'
+                    c_func_name = std.Concat(c_func_name, "_");
+                } else {
+                    c_func_name = std.Concat(c_func_name, std.str_slice(name, char_idx, char_idx + 1));
+                }
+                char_idx = char_idx + 1;
             }
-            char_idx = char_idx + 1;
         }
 
         mut params_str := "";
@@ -3854,6 +3858,16 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
             }
 
             mut resolved_func := typechecker.env_resolve_namespaced_ident(env, func_str, ctx);
+            mut resolved_sig := (*env).function_registry.Get(resolved_func);
+            if resolved_sig.Ok &&
+               resolved_sig.Val.is_extern == 1 &&
+               len(resolved_sig.Val.extern_symbol_name) > 0
+            {
+                resolved_func = std.Clone(
+                    ctx,
+                    resolved_sig.Val.extern_symbol_name
+                );
+            }
             mut c_func := "";
             mut i := 0;
             while i < len(resolved_func) {
@@ -4054,6 +4068,13 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
             mut t_ret := ctx[ctx[stmt_idx].FunctionDecl.return_type];
             if sig_lookup.Ok {
                 t_ret = sig_lookup.Val.return_type;
+            }
+
+            // Extern functions are declarations owned by the host linker.
+            // Their forward declaration uses the declared external symbol;
+            // never synthesize an empty Gust function body for them.
+            if ctx[stmt_idx].FunctionDecl.is_extern == 1 {
+                return std.Clone(ctx, "");
             }
 
             if std.str_eq(namespaced_name, "main") == 1 {

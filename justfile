@@ -16700,6 +16700,7 @@ guard-cranelift-phase11-metadata-diagnostic-parity:
     esac
     EOF_CAPTURE
     chmod +x "$capture_driver"
+    capture_driver_abs="$(cd "$(dirname "$capture_driver")" && pwd)/$(basename "$capture_driver")"
 
     run_metadata_case() {
       local name="$1"
@@ -16713,7 +16714,7 @@ guard-cranelift-phase11-metadata-diagnostic-parity:
 
       set +e
       REAL_DRIVER="$driver_abs" CAPTURE_PREFIX="$case_dir/capture" \
-        GUST_NATIVE_BACKEND_DRIVER="$capture_driver" \
+        GUST_NATIVE_BACKEND_DRIVER="$capture_driver_abs" \
         ./gust --backend cranelift -o "$output" "$source_path" \
         >"$case_dir/compiler.stdout" 2>"$case_dir/compiler.stderr"
       local compile_status="$?"
