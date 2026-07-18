@@ -7770,6 +7770,7 @@ fn validate_compiler_mir_function_fixture(
         }
         validate_canonical_compiler_mir_metadata_attachment(
             metadata.attachment,
+            function.locals.len(),
             &block_indices,
             &function.blocks,
             index,
@@ -8837,6 +8838,7 @@ fn validate_canonical_compiler_mir_reachability(
 
 fn validate_canonical_compiler_mir_metadata_attachment(
     attachment: &str,
+    local_count: usize,
     block_indices: &HashMap<&str, usize>,
     blocks: &[CompilerMirLoweringBlock<'_>],
     metadata_index: usize,
@@ -8845,7 +8847,13 @@ fn validate_canonical_compiler_mir_metadata_attachment(
         return Ok(());
     }
 
-    if let Some(label) = attachment.strip_prefix("block:") {
+    if let Some(index_text) = attachment.strip_prefix("local:") {
+        if let Ok(local_index) = index_text.parse::<usize>() {
+            if local_index < local_count {
+                return Ok(());
+            }
+        }
+    } else if let Some(label) = attachment.strip_prefix("block:") {
         if block_indices.contains_key(label) {
             return Ok(());
         }
