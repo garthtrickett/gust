@@ -44,8 +44,8 @@ jobs:
       - name: Build Gust
         run: make gust
 
-      - name: Phase 11 route-retirement and focused-CI guard
-        run: PHASE11_ROUTE_RETIREMENT_SKIP_DYNAMIC=1 just guard-cranelift-phase11-route-retirement-ci
+      - name: Phase 11 closure guard
+        run: just guard-cranelift-phase11-close
 
       - name: Upload Gust build outputs
         uses: actions/upload-artifact@v4

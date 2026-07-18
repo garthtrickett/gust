@@ -21,6 +21,17 @@ CRANELIFT_FEATURE_PARITY_REGISTRY_DIAGNOSTIC_CLASSES: source_type_error,canonica
 CRANELIFT_FEATURE_PARITY_REGISTRY_CI_FAMILY_COUNT: 7
 CRANELIFT_FEATURE_PARITY_REGISTRY_CI_FAMILIES: scalars,locals,cfg,block-params,direct-calls,imports,metadata-diagnostics
 CRANELIFT_FEATURE_PARITY_REGISTRY_CI_POLICY: replace_17_PR_fast_Phase10_and_backend_suite_shards_with_7_Phase11_families_keep_Heavy_matrix_unchanged
+CRANELIFT_FEATURE_PARITY_REGISTRY_CLOSURE_STATUS: phase11_closed_registry_backed_feature_parity_migration
+CRANELIFT_FEATURE_PARITY_REGISTRY_CLOSURE_CLASSIFICATION_INVENTORY: 12_migrated_7_deferred_0_excluded
+CRANELIFT_FEATURE_PARITY_REGISTRY_FEATURE_FAMILY_COUNTS: scalar_3,cfg_4,block_parameter_2,metadata_3,direct_call_1,import_runtime_6
+CRANELIFT_FEATURE_PARITY_REGISTRY_SUPPORTED_CI_FAMILY_COUNTS: scalars_3,locals_1,cfg_3,block-params_2,direct-calls_1,imports_1,metadata-diagnostics_1
+CRANELIFT_FEATURE_PARITY_REGISTRY_EXCLUDED_ENTRY_COUNT: 0
+CRANELIFT_FEATURE_PARITY_REGISTRY_NEXT_PHASE_DEFERRED_CATEGORY_COUNT: 7
+CRANELIFT_FEATURE_PARITY_REGISTRY_NEXT_PHASE_DEFERRED_CATEGORIES: broader_scalar_expressions,multiple_locals_and_assignments,nested_CFG,loops_and_backedges,function_parameters_and_multiple_arguments,multiple_modules_and_source_imports,broader_direct_and_imported_calls
+CRANELIFT_FEATURE_PARITY_REGISTRY_DEFERRED_ENTRY_CATEGORY_COUNT: 3
+CRANELIFT_FEATURE_PARITY_REGISTRY_DEFERRED_ENTRY_CATEGORIES: multiple_locals_and_assignments,multiple_modules_and_source_imports,broader_direct_and_imported_calls
+CRANELIFT_FEATURE_PARITY_REGISTRY_CLOSURE_GUARD: guard-cranelift-phase11-close
+CRANELIFT_FEATURE_PARITY_REGISTRY_CLOSURE_CI_POLICY: one_static_closure_guard_in_PR_Fast_and_Heavy_without_full_dynamic_matrix_replay
 
 This registry is the machine-checkable Phase 11 source of truth. It imports the
 four existing MIR feature-migration entries and all seventeen frozen
@@ -32,6 +43,14 @@ Registry parity means equivalent observable behavior and equivalent failure
 classification for this declared inventory. It does not claim full Gust
 language parity, identical machine code, identical emitted C, or identical
 backend-specific diagnostic prose.
+
+## Phase 11 closure
+
+Parity is complete for the Phase 11 registry inventory.
+
+This closure is limited to the declared registry-backed scope. It makes no
+whole-language parity claim for Gust. The seven frozen deferred categories
+remain the input to the next phase.
 
 ## Entry schema
 

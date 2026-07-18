@@ -227,11 +227,20 @@ guard-pr-fast-ci-surface:
       'chmod +x ./gust'
       'just guard-pr-fast-shard'
       'matrix.shard'
-      'just guard-cranelift-phase11-route-retirement-ci'
+      'Phase 11 closure guard'
+      'just guard-cranelift-phase11-close'
     )
     for token in "${required_workflow_tokens[@]}"; do
       rg -n -F "$token" "$workflow" >/dev/null
     done
+    if [ "$(rg -c -F 'just guard-cranelift-phase11-close' "$workflow")" != "1" ]; then
+      echo "PR Fast must invoke the Phase 11 closure guard exactly once."
+      exit 1
+    fi
+    if rg -n -F 'just guard-cranelift-phase11-route-retirement-ci' "$workflow" >/dev/null; then
+      echo "PR Fast must invoke the Phase 11 closure guard instead of wiring its predecessor directly."
+      exit 1
+    fi
 
     phase11_families=(
       cranelift-phase11-scalars
@@ -628,6 +637,16 @@ guard-cloud-heavy-ci-surface:
     rg -n -F 'needs: [guard, phase9g-link-driver]' "$workflow" >/dev/null
     rg -n -F 'Phase 10 closure guard' "$workflow" >/dev/null
     rg -n -F 'just guard-cranelift-phase10-close' "$workflow" >/dev/null
+    rg -n -F 'Phase 11 closure guard' "$workflow" >/dev/null
+    rg -n -F 'just guard-cranelift-phase11-close' "$workflow" >/dev/null
+    if [ "$(rg -c -F 'just guard-cranelift-phase11-close' "$workflow")" != "1" ]; then
+      echo "Heavy Guards must invoke the Phase 11 closure guard exactly once."
+      exit 1
+    fi
+    if rg -n -F 'just guard-cranelift-phase11-route-retirement-ci' "$workflow" >/dev/null; then
+      echo "Heavy Guards must invoke the Phase 11 closure guard instead of wiring its predecessor directly."
+      exit 1
+    fi
     rg -n -F 'strategy:' "$workflow" >/dev/null
     rg -n -F 'fail-fast: false' "$workflow" >/dev/null
     rg -n -F 'matrix:' "$workflow" >/dev/null
@@ -13784,7 +13803,8 @@ guard-cranelift-phase11-opening-contract:
       guard-cranelift-phase11-module-import-runtime-parity \
       guard-cranelift-phase11-metadata-diagnostic-parity \
       guard-cranelift-phase11-registry-differential \
-      guard-cranelift-phase11-route-retirement-ci
+      guard-cranelift-phase11-route-retirement-ci \
+      guard-cranelift-phase11-close
     do
       printf '%s\n' "$declared_phase11_guards" |
         rg -n -x -F "$guard_name" >/dev/null
@@ -17128,6 +17148,484 @@ guard-cranelift-phase11-route-retirement-ci:
 
     bash "$differential_harness" all
     echo "✅ Phase 11 exact-shape routes are retired, all supported registry entries are differentially covered, and focused PR CI is authoritative."
+
+guard-cranelift-phase11-close:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Auditing and closing Phase 11 registry-backed feature parity..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    registry_doc="compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md"
+    route_source="compiler/mir_native_backend_source_route.gst"
+    generic_source="compiler/mir_native_backend_generic_source.gst"
+    invocation_source="compiler/test_runner_entry.gst"
+    request_source="compiler/mir_native_backend_request.gst"
+    worker_source="compiler/experiments/cranelift/src/main.rs"
+    differential_harness="scripts/phase11_registry_differential.sh"
+    pr_workflow=".github/workflows/pr-fast.yml"
+    heavy_workflow=".github/workflows/heavy-guards.yml"
+    production_lowerers=(
+      "$route_source"
+      "$generic_source"
+      compiler/mir_native_backend_local_state_source.gst
+      compiler/mir_native_backend_structured_cfg_source.gst
+      compiler/mir_native_backend_block_parameter_loop_source.gst
+      compiler/mir_native_backend_direct_call_source.gst
+      compiler/mir_native_backend_module_import_source.gst
+    )
+    for required_file in \
+      "$manifest_doc" "$registry_doc" "$invocation_source" \
+      "$request_source" "$worker_source" "$differential_harness" \
+      "$pr_workflow" "$heavy_workflow" "${production_lowerers[@]}"
+    do
+      if [ ! -f "$required_file" ]; then
+        echo "Missing Phase 11 closure input: $required_file"
+        exit 1
+      fi
+    done
+
+    just guard-cranelift-phase10-close
+    PHASE11_ROUTE_RETIREMENT_SKIP_DYNAMIC=1 \
+      just guard-cranelift-phase11-route-retirement-ci
+
+    required_manifest_lines=(
+      'CRANELIFT_EXPERIMENT_ALLOWED_PHASE11_CLOSE_GUARD: guard-cranelift-phase11-close'
+      'allowed_cranelift_phase11_close_status: phase11_closed_registry_backed_feature_parity_migration'
+      'allowed_cranelift_phase11_close_predecessor_guard: guard-cranelift-phase11-route-retirement-ci'
+      'allowed_cranelift_phase11_close_predecessor_policy: predecessor_runs_static_contract_mode_without_replaying_the_full_dynamic_matrix'
+      'allowed_cranelift_phase11_close_scope: declared_Phase11_registry_inventory_only_not_whole_language_parity_for_Gust'
+      'allowed_cranelift_phase11_close_required_wording: Parity_is_complete_for_the_Phase_11_registry_inventory'
+      'allowed_cranelift_phase11_close_registry_entry_count: 19'
+      'allowed_cranelift_phase11_close_classification_inventory: 12_migrated_7_deferred_0_excluded'
+      'allowed_cranelift_phase11_close_feature_family_count: 6'
+      'allowed_cranelift_phase11_close_feature_family_counts: scalar_3,cfg_4,block_parameter_2,metadata_3,direct_call_1,import_runtime_6'
+      'allowed_cranelift_phase11_close_CI_family_count: 7'
+      'allowed_cranelift_phase11_close_supported_CI_family_counts: scalars_3,locals_1,cfg_3,block-params_2,direct-calls_1,imports_1,metadata-diagnostics_1'
+      'allowed_cranelift_phase11_close_registry_policy: every_row_is_exactly_migrated_deferred_or_excluded_with_no_ambiguous_or_ownerless_entries'
+      'allowed_cranelift_phase11_close_route_policy: every_migrated_row_is_owned_by_generic_canonical_MIR_and_zero_exact_shape_recognizers_remain'
+      'allowed_cranelift_phase11_close_unsupported_policy: every_deferred_or_unsupported_source_fails_before_driver_discovery_request_bundle_object_link_or_publication_access'
+      'allowed_cranelift_phase11_close_MIR_to_C_policy: default_and_explicit_MIR_to_C_share_one_codegen_path_and_the_registry_differential_harness_requires_byte_identical_output'
+      'allowed_cranelift_phase11_close_fallback_policy: explicit_Cranelift_success_or_failure_exits_without_fallback_to_MIR_to_C'
+      'allowed_cranelift_phase11_close_worker_input_policy: worker_receives_exactly_one_generic_request_path_referencing_compiler_owned_canonical_MIR_and_never_Gust_source'
+      'allowed_cranelift_phase11_close_artifact_policy: Phase9G_remains_the_only_verified_object_link_cleanup_and_atomic_publication_owner'
+      'allowed_cranelift_phase11_close_next_phase_deferred_category_count: 7'
+      'allowed_cranelift_phase11_close_next_phase_deferred_categories: broader_scalar_expressions,multiple_locals_and_assignments,nested_CFG,loops_and_backedges,function_parameters_and_multiple_arguments,multiple_modules_and_source_imports,broader_direct_and_imported_calls'
+      'allowed_cranelift_phase11_close_deferred_entry_category_count: 3'
+      'allowed_cranelift_phase11_close_deferred_entry_categories: multiple_locals_and_assignments,multiple_modules_and_source_imports,broader_direct_and_imported_calls'
+      'allowed_cranelift_phase11_close_CI_policy: one_static_closure_guard_is_wired_once_in_PR_Fast_and_once_in_Heavy_without_adding_or_replaying_the_dynamic_matrix'
+    )
+    for line in "${required_manifest_lines[@]}"; do
+      if ! rg -n -x -F "$line" "$manifest_doc" >/dev/null; then
+        echo "Missing Phase 11 closure manifest line:"
+        echo "$line"
+        exit 1
+      fi
+    done
+
+    required_registry_headers=(
+      'CRANELIFT_FEATURE_PARITY_REGISTRY_ENTRY_COUNT: 19'
+      'CRANELIFT_FEATURE_PARITY_REGISTRY_FAMILY_COUNT: 6'
+      'CRANELIFT_FEATURE_PARITY_REGISTRY_DEFERRED_FAMILY_COUNT: 7'
+      'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_INVENTORY: 0_legacy_exact_shape_12_generic_canonical_mir_7_deferred'
+      'CRANELIFT_FEATURE_PARITY_REGISTRY_CLOSURE_STATUS: phase11_closed_registry_backed_feature_parity_migration'
+      'CRANELIFT_FEATURE_PARITY_REGISTRY_CLOSURE_CLASSIFICATION_INVENTORY: 12_migrated_7_deferred_0_excluded'
+      'CRANELIFT_FEATURE_PARITY_REGISTRY_FEATURE_FAMILY_COUNTS: scalar_3,cfg_4,block_parameter_2,metadata_3,direct_call_1,import_runtime_6'
+      'CRANELIFT_FEATURE_PARITY_REGISTRY_SUPPORTED_CI_FAMILY_COUNTS: scalars_3,locals_1,cfg_3,block-params_2,direct-calls_1,imports_1,metadata-diagnostics_1'
+      'CRANELIFT_FEATURE_PARITY_REGISTRY_EXCLUDED_ENTRY_COUNT: 0'
+      'CRANELIFT_FEATURE_PARITY_REGISTRY_NEXT_PHASE_DEFERRED_CATEGORY_COUNT: 7'
+      'CRANELIFT_FEATURE_PARITY_REGISTRY_NEXT_PHASE_DEFERRED_CATEGORIES: broader_scalar_expressions,multiple_locals_and_assignments,nested_CFG,loops_and_backedges,function_parameters_and_multiple_arguments,multiple_modules_and_source_imports,broader_direct_and_imported_calls'
+      'CRANELIFT_FEATURE_PARITY_REGISTRY_DEFERRED_ENTRY_CATEGORY_COUNT: 3'
+      'CRANELIFT_FEATURE_PARITY_REGISTRY_DEFERRED_ENTRY_CATEGORIES: multiple_locals_and_assignments,multiple_modules_and_source_imports,broader_direct_and_imported_calls'
+      'CRANELIFT_FEATURE_PARITY_REGISTRY_CLOSURE_GUARD: guard-cranelift-phase11-close'
+      'CRANELIFT_FEATURE_PARITY_REGISTRY_CLOSURE_CI_POLICY: one_static_closure_guard_in_PR_Fast_and_Heavy_without_full_dynamic_matrix_replay'
+    )
+    for header in "${required_registry_headers[@]}"; do
+      if ! rg -n -x -F "$header" "$registry_doc" >/dev/null; then
+        echo "Missing Phase 11 closure registry header:"
+        echo "$header"
+        exit 1
+      fi
+    done
+    rg -n -x -F 'Parity is complete for the Phase 11 registry inventory.' \
+      "$registry_doc" >/dev/null
+    if rg -n -F 'Cranelift has full Gust language parity' \
+      "$registry_doc" "$manifest_doc" >/dev/null; then
+      echo "Phase 11 closure must not claim whole-language parity."
+      exit 1
+    fi
+
+    registry_entry_field() {
+      local key="$1"
+      awk -F'|' -v key="$key" '
+        /^parity_entry: / {
+          for (i = 1; i <= NF; i++) {
+            value = $i
+            sub(/^parity_entry: /, "", value)
+            prefix = key "="
+            if (index(value, prefix) == 1) {
+              print substr(value, length(prefix) + 1)
+            }
+          }
+        }
+      ' "$registry_doc"
+    }
+
+    field_value() {
+      local record="$1"
+      local key="$2"
+      printf '%s\n' "$record" |
+        tr '|' '\n' |
+        sed -n \
+          -e "s/^parity_entry: ${key}=//p" \
+          -e "s/^${key}=//p" |
+        head -n1
+    }
+
+    entry_count="$(rg -c '^parity_entry: ' "$registry_doc")"
+    unique_id_count="$(registry_entry_field id | sort -u | wc -l | tr -d ' ')"
+    if [ "$entry_count" != "19" ] || [ "$unique_id_count" != "19" ]; then
+      echo "Phase 11 closure registry identity inventory drifted: entries=$entry_count unique=$unique_id_count"
+      exit 1
+    fi
+
+    required_fields=(
+      id family route_owner migration_status ci_family deferred_family
+      source_fixture deferred_fixture deferred_expectation
+    )
+    for field in "${required_fields[@]}"; do
+      field_count="$(registry_entry_field "$field" | wc -l | tr -d ' ')"
+      empty_count="$(registry_entry_field "$field" | rg -c '^$' || true)"
+      if [ "$field_count" != "19" ] || [ "${empty_count:-0}" != "0" ]; then
+        echo "Phase 11 closure found missing, duplicated, or empty registry field $field: count=$field_count empty=${empty_count:-0}"
+        exit 1
+      fi
+    done
+
+    migrated_count=0
+    deferred_count=0
+    excluded_count=0
+    while IFS= read -r record; do
+      id="$(field_value "$record" id)"
+      owner="$(field_value "$record" route_owner)"
+      status="$(field_value "$record" migration_status)"
+      deferred_family="$(field_value "$record" deferred_family)"
+      deferred_expectation="$(field_value "$record" deferred_expectation)"
+
+      case "$owner:$status" in
+        generic_canonical_mir:*_migrated)
+          migrated_count=$((migrated_count + 1))
+          ;;
+        deferred:deferred)
+          deferred_count=$((deferred_count + 1))
+          if [[ ! "$deferred_expectation" =~ before_(driver|object_publication|publication) ]]; then
+            echo "Deferred registry entry $id does not prove pre-driver or pre-publication failure: $deferred_expectation"
+            exit 1
+          fi
+          ;;
+        excluded:excluded)
+          excluded_count=$((excluded_count + 1))
+          ;;
+        *)
+          echo "Ambiguous or ownerless Phase 11 registry entry: id=$id owner=$owner migration_status=$status"
+          exit 1
+          ;;
+      esac
+
+      if ! rg -n -F "deferred_family: id=$deferred_family|" \
+        "$registry_doc" >/dev/null; then
+        echo "Registry entry $id references an undeclared deferred family: $deferred_family"
+        exit 1
+      fi
+    done < <(rg '^parity_entry: ' "$registry_doc")
+
+    if [ "$migrated_count" != "12" ] ||
+       [ "$deferred_count" != "7" ] ||
+       [ "$excluded_count" != "0" ]; then
+      echo "Phase 11 closure classification drifted: migrated=$migrated_count deferred=$deferred_count excluded=$excluded_count"
+      exit 1
+    fi
+
+    declare -A expected_feature_family_counts=(
+      [scalar]=3
+      [cfg]=4
+      [block_parameter]=2
+      [metadata]=3
+      [direct_call]=1
+      [import_runtime]=6
+    )
+    for family in "${!expected_feature_family_counts[@]}"; do
+      actual="$(registry_entry_field family | rg -c -x -F "$family" || true)"
+      if [ "${actual:-0}" != "${expected_feature_family_counts[$family]}" ]; then
+        echo "Phase 11 feature family $family has ${actual:-0} rows, expected ${expected_feature_family_counts[$family]}."
+        exit 1
+      fi
+    done
+    unique_feature_family_count="$(
+      registry_entry_field family | sort -u | wc -l | tr -d ' '
+    )"
+    if [ "$unique_feature_family_count" != "6" ]; then
+      echo "Phase 11 closure expected six feature families, found $unique_feature_family_count."
+      exit 1
+    fi
+
+    declare -A expected_supported_CI_family_counts=(
+      [scalars]=3
+      [locals]=1
+      [cfg]=3
+      [block-params]=2
+      [direct-calls]=1
+      [imports]=1
+      [metadata-diagnostics]=1
+    )
+    for family in "${!expected_supported_CI_family_counts[@]}"; do
+      actual="$(
+        awk -F'|' -v family="$family" '
+          /^parity_entry: / &&
+          $0 ~ /route_owner=generic_canonical_mir/ &&
+          $0 ~ ("ci_family=" family "(\\||$)") { count++ }
+          END { print count + 0 }
+        ' "$registry_doc"
+      )"
+      if [ "$actual" != "${expected_supported_CI_family_counts[$family]}" ]; then
+        echo "Phase 11 supported CI family $family has $actual rows, expected ${expected_supported_CI_family_counts[$family]}."
+        exit 1
+      fi
+    done
+
+    expected_deferred_categories=(
+      broader_scalar_expressions
+      multiple_locals_and_assignments
+      nested_CFG
+      loops_and_backedges
+      function_parameters_and_multiple_arguments
+      multiple_modules_and_source_imports
+      broader_direct_and_imported_calls
+    )
+    actual_deferred_categories="$(
+      awk -F'|' '
+        /^deferred_family: / {
+          for (i = 1; i <= NF; i++) {
+            value = $i
+            sub(/^deferred_family: /, "", value)
+            if (index(value, "id=") == 1) {
+              print substr(value, 4)
+            }
+          }
+        }
+      ' "$registry_doc" | sort
+    )"
+    expected_deferred_categories_sorted="$(
+      printf '%s\n' "${expected_deferred_categories[@]}" | sort
+    )"
+    if [ "$actual_deferred_categories" != "$expected_deferred_categories_sorted" ]; then
+      echo "Phase 11 next-phase deferred category inventory drifted."
+      echo "--- expected ---"
+      printf '%s\n' "$expected_deferred_categories_sorted"
+      echo "--- actual ---"
+      printf '%s\n' "$actual_deferred_categories"
+      exit 1
+    fi
+
+    deferred_entry_categories="$(
+      awk -F'|' '
+        /^parity_entry: / && $0 ~ /route_owner=deferred/ {
+          for (i = 1; i <= NF; i++) {
+            value = $i
+            sub(/^parity_entry: /, "", value)
+            if (index(value, "deferred_family=") == 1) {
+              print substr(value, length("deferred_family=") + 1)
+            }
+          }
+        }
+      ' "$registry_doc" | sort -u | paste -sd, -
+    )"
+    if [ "$deferred_entry_categories" != "broader_direct_and_imported_calls,multiple_locals_and_assignments,multiple_modules_and_source_imports" ]; then
+      echo "Phase 11 deferred-entry categories drifted: $deferred_entry_categories"
+      exit 1
+    fi
+
+    if [ "$(rg -c -F 'generic_source.mir_native_generic_source_lower(' "$route_source")" != "1" ]; then
+      echo "Phase 11 closure requires exactly one generic canonical-MIR production route."
+      exit 1
+    fi
+    if [ "$(rg -c -F 'return mir_native_scalar_source_deferred_result(ctx);' "$route_source")" != "1" ]; then
+      echo "Phase 11 closure requires exactly one typed deferred production result."
+      exit 1
+    fi
+    prohibited_route_symbols=(
+      'func mir_native_scalar_source_lower('
+      'func mir_native_cfg_source_lower('
+      'func mir_native_call_import_source_lower('
+      'legacy_serialized'
+      'generic and compatibility canonical MIR bundles differ'
+    )
+    for symbol in "${prohibited_route_symbols[@]}"; do
+      if rg -n -F "$symbol" "$route_source" >/dev/null; then
+        echo "Phase 11 closure found a retired exact-shape recognizer: $symbol"
+        exit 1
+      fi
+    done
+    if rg -n -e 'phase(10|11)_[A-Za-z0-9_]*_source\.gst' \
+      "${production_lowerers[@]}" >/dev/null; then
+      echo "Phase 11 production lowering contains a source-fixture identity."
+      exit 1
+    fi
+    if rg -n -e 'os\.(ReadFile|OpenFile)' \
+      "${production_lowerers[@]}" >/dev/null; then
+      echo "Phase 11 production lowering reads raw source text."
+      exit 1
+    fi
+
+    compile_body="$(
+      sed -n \
+        '/^func mir_native_scalar_source_compile_inner(/,/^}/p' \
+        "$route_source"
+    )"
+    unsupported_line="$(
+      printf '%s\n' "$compile_body" |
+        rg -n -F 'if generic_result.eligibility.tag == 2' |
+        head -n1 | cut -d: -f1
+    )"
+    deferred_line="$(
+      printf '%s\n' "$compile_body" |
+        rg -n -F 'if generic_result.eligibility.tag == 1' |
+        head -n1 | cut -d: -f1
+    )"
+    static_line="$(
+      printf '%s\n' "$compile_body" |
+        rg -n -F 'capability.mir_native_backend_validate_capabilities(' |
+        head -n1 | cut -d: -f1
+    )"
+    discovery_line="$(
+      printf '%s\n' "$compile_body" |
+        rg -n -F 'driver.mir_native_backend_discover_driver(' |
+        head -n1 | cut -d: -f1
+    )"
+    artifact_line="$(
+      printf '%s\n' "$compile_body" |
+        rg -n -F 'mut absolute_output := os.PathAbsolute' |
+        head -n1 | cut -d: -f1
+    )"
+    write_line="$(
+      printf '%s\n' "$compile_body" |
+        rg -n -F 'os.WriteFile(bundle_path' |
+        head -n1 | cut -d: -f1
+    )"
+    if [ -z "$unsupported_line" ] || [ -z "$deferred_line" ] ||
+       [ -z "$static_line" ] || [ -z "$discovery_line" ] ||
+       [ -z "$artifact_line" ] || [ -z "$write_line" ] ||
+       [ "$unsupported_line" -ge "$static_line" ] ||
+       [ "$deferred_line" -ge "$static_line" ] ||
+       [ "$static_line" -ge "$discovery_line" ] ||
+       [ "$discovery_line" -ge "$artifact_line" ] ||
+       [ "$artifact_line" -ge "$write_line" ]; then
+      echo "Unsupported/deferred classification, driver discovery, and artifact access are misordered."
+      printf '%s\n' "$compile_body"
+      exit 1
+    fi
+    for token in \
+      'deferred or unsupported source reached driver discovery' \
+      'failed native compilation changed the existing output' \
+      'failed native compilation left transient request artifacts'
+    do
+      rg -n -F "$token" "$differential_harness" >/dev/null
+    done
+
+    if [ "$(rg -c -F 'invocation.backend.tag = 0; // MirToC' "$invocation_source")" != "2" ]; then
+      echo "Default and explicit MIR-to-C selections must map to the same typed backend tag."
+      exit 1
+    fi
+    if [ "$(rg -c -F 'mut c_code := codegen.codegen_generate(' "$invocation_source")" != "1" ]; then
+      echo "MIR-to-C must retain exactly one shared code-generation path."
+      exit 1
+    fi
+    rg -n -F 'cmp -s "$case_dir/default.c" "$case_dir/explicit.c"' \
+      "$differential_harness" >/dev/null
+    rg -n -F 'default and explicit MIR-to-C output are not byte-identical' \
+      "$differential_harness" >/dev/null
+
+    native_branch="$(
+      sed -n \
+        '/if invocation.backend.tag == 1 {/,/Default and explicit MIR-to-C selections/p' \
+        "$invocation_source"
+    )"
+    if printf '%s\n' "$native_branch" |
+       rg -n -F 'codegen.codegen_generate(' >/dev/null; then
+      echo "Explicit Cranelift selection contains a MIR-to-C fallback."
+      exit 1
+    fi
+    if [ "$(printf '%s\n' "$native_branch" | rg -c -F 'os.Exit(0);')" != "1" ] ||
+       [ "$(printf '%s\n' "$native_branch" | rg -c -F 'os.Exit(1);')" != "2" ]; then
+      echo "Explicit Cranelift selection must terminate on success, deferral, and failure."
+      printf '%s\n' "$native_branch"
+      exit 1
+    fi
+    rg -n -F 'fallback to MIR-to-C.' "$invocation_source" >/dev/null
+
+    process_body="$(
+      sed -n \
+        '/^func mir_native_scalar_source_process(/,/^}/p' \
+        "$route_source"
+    )"
+    if [ "$(printf '%s\n' "$process_body" | rg -c -F 'arguments.Push(')" != "3" ]; then
+      echo "Native worker process invocation must contain only driver, command, and optional request path."
+      printf '%s\n' "$process_body"
+      exit 1
+    fi
+    for token in \
+      'arguments.Push(std.Clone(ctx, driver_path));' \
+      'arguments.Push(std.Clone(ctx, command_name));' \
+      'arguments.Push(std.Clone(ctx, request_path));'
+    do
+      printf '%s\n' "$process_body" | rg -n -F "$token" >/dev/null
+    done
+    rg -n -F '"phase10-backend-request-compile"' "$route_source" >/dev/null
+    rg -n -F 'compile_phase10_scalar_metadata_request_path(' "$worker_source" >/dev/null
+    worker_command_body="$(
+      sed -n \
+        '/"phase10-backend-request-compile" => {/,/^        }/p' \
+        "$worker_source"
+    )"
+    for token in \
+      'let Some(request_path) = args.next()' \
+      'if args.next().is_some()' \
+      'Path::new(&request_path)'
+    do
+      printf '%s\n' "$worker_command_body" | rg -n -F "$token" >/dev/null
+    done
+    for forbidden_request_field in source_path source_text source_bytes ast_program; do
+      if rg -n -F "$forbidden_request_field" "$request_source" >/dev/null; then
+        echo "Native worker request exposes forbidden source input: $forbidden_request_field"
+        exit 1
+      fi
+    done
+    for request_field in \
+      target_triple object_format output_path \
+      program_mir_bundle_path program_bundle
+    do
+      rg -n -F "$request_field" "$request_source" >/dev/null
+    done
+
+    phase10_close_body="$(
+      sed -n \
+        '/^guard-cranelift-phase10-close:/,/^guard-cranelift-phase11-opening-contract:/p' \
+        justfile
+    )"
+    printf '%s\n' "$phase10_close_body" |
+      rg -n -F 'just guard-cranelift-phase9g-close' >/dev/null
+
+    for workflow in "$pr_workflow" "$heavy_workflow"; do
+      if [ "$(rg -c -F 'just guard-cranelift-phase11-close' "$workflow")" != "1" ]; then
+        echo "Phase 11 closure guard must be wired exactly once in $workflow."
+        exit 1
+      fi
+      if rg -n -F 'just guard-cranelift-phase11-route-retirement-ci' \
+        "$workflow" >/dev/null; then
+        echo "Workflow must wire the closure guard, not its predecessor: $workflow"
+        exit 1
+      fi
+    done
+
+    echo "✅ Parity is complete for the Phase 11 registry inventory."
 
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
     #!/usr/bin/env bash
