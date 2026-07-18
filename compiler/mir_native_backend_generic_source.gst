@@ -384,11 +384,29 @@ func mir_native_generic_analyze_single_function(statement: ast.Statement[ctx], s
                             ctx[then_statements[0].Return.expr];
                         mut else_expression :=
                             ctx[else_statements[0].Return.expr];
+                        mut then_return_represented := 0;
+                        mut then_return_value := 0;
+                        if then_expression.tag == 1 {
+                            then_return_represented = 1;
+                            then_return_value =
+                                then_expression.Integer.val;
+                        }
+                        if then_expression.tag == 0 {
+                            if std.str_eq(
+                                then_expression.Identifier.name,
+                                local_statement.VarDecl.name
+                            ) == 1
+                            {
+                                then_return_represented = 1;
+                                then_return_value =
+                                    local_expression.Integer.val;
+                            }
+                        }
 
                         if condition_left.tag == 0 &&
                            condition_right.tag == 1 &&
                            condition_right.Integer.val == 0 &&
-                           then_expression.tag == 1 &&
+                           then_return_represented == 1 &&
                            else_expression.tag == 1 &&
                            std.str_eq(
                                condition_left.Identifier.name,
@@ -405,8 +423,7 @@ func mir_native_generic_analyze_single_function(statement: ast.Statement[ctx], s
                             );
                             model.initial_value =
                                 local_expression.Integer.val;
-                            model.then_value =
-                                then_expression.Integer.val;
+                            model.then_value = then_return_value;
                             model.else_value =
                                 else_expression.Integer.val;
                             return model;
