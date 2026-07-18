@@ -4070,32 +4070,65 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
             return std.Clone(ctx, res);
         }
         if tag == 3 { // FunctionDecl
-                mut f_name := ctx[stmt_idx].FunctionDecl.name;
-                mut namespaced_name := typechecker.env_resolve_namespaced_ident(env, f_name, ctx);
-                mut sig_lookup := (*env).function_registry.Get(namespaced_name);
+            mut f_name := ctx[stmt_idx].FunctionDecl.name;
+            mut namespaced_name := typechecker.env_resolve_namespaced_ident(env, f_name, ctx);
+            mut sig_lookup := (*env).function_registry.Get(namespaced_name);
+            mut t_ret := ctx[ctx[stmt_idx].FunctionDecl.return_type];
+            if sig_lookup.Ok {
+                t_ret = sig_lookup.Val.return_type;
+            }
 
-                if std.str_eq(namespaced_name, "main") == 1 {
-                    (*env).current_params.Clear();
-                    mut res := "void gust_user_main(void* _gust_arg) {\n";
-                    mut body_idx := ctx[stmt_idx].FunctionDecl.body;
-                    mut body_c := codegen_generate_block_statement(body_idx, env, ctx);
+            if std.str_eq(namespaced_name, "main") == 1 {
+                (*env).current_params.Clear();
+                mut resolved_main_return := typechecker.env_resolve_type(env, t_ret, ctx);
+                mut body_idx := ctx[stmt_idx].FunctionDecl.body;
+                mut body_c := codegen_generate_block_statement(body_idx, env, ctx);
+                mut res := "";
+
+                if resolved_main_return.tag == 0 ||
+                   resolved_main_return.tag == 1 ||
+                   resolved_main_return.tag == 2
+                {
+                    mut main_return_c_type := codegen_get_c_type(
+                        resolved_main_return,
+                        env,
+                        ctx
+                    );
+                    res = std.Concat(res, "static int gust_user_exit_status = 0;\n\n");
+                    res = std.Concat(res, main_return_c_type);
+                    res = std.Concat(res, " gust_user_main_impl(void* _gust_arg) {\n");
                     res = std.Concat(res, body_c);
                     res = std.Concat(res, "}\n\n");
+                    res = std.Concat(res, "void gust_user_main(void* _gust_arg) {\n");
+                    res = std.Concat(
+                        res,
+                        "    gust_user_exit_status = (int)gust_user_main_impl(_gust_arg);\n"
+                    );
+                    res = std.Concat(res, "}\n\n");
+                } else {
+                    res = std.Concat(res, "void gust_user_main(void* _gust_arg) {\n");
+                    res = std.Concat(res, body_c);
+                    res = std.Concat(res, "}\n\n");
+                }
+
                 res = std.Concat(res, "int main(int argc, char** argv) {\n");
                 res = std.Concat(res, "    os_argc = argc;\n");
                 res = std.Concat(res, "    os_argv = argv;\n");
                 res = std.Concat(res, "    gust_scheduler_init(get_num_threads_to_use());\n");
                 res = std.Concat(res, "    gust_scheduler_spawn(8388608, gust_user_main, NULL);\n");
                 res = std.Concat(res, "    gust_scheduler_destroy();\n");
-                res = std.Concat(res, "    return 0;\n");
+                if resolved_main_return.tag == 0 ||
+                   resolved_main_return.tag == 1 ||
+                   resolved_main_return.tag == 2
+                {
+                    res = std.Concat(res, "    return gust_user_exit_status;\n");
+                } else {
+                    res = std.Concat(res, "    return 0;\n");
+                }
                 res = std.Concat(res, "}\n\n");
                 return std.Clone(ctx, res);
             }
 
-            mut t_ret := ctx[ctx[stmt_idx].FunctionDecl.return_type];
-            if sig_lookup.Ok {
-                t_ret = sig_lookup.Val.return_type;
-            }
             mut c_ret := codegen_get_c_type(t_ret, env, ctx);
             mut res := std.Concat(c_ret, " ");
 
