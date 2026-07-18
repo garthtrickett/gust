@@ -15716,7 +15716,7 @@ guard-cranelift-phase11-block-parameter-loop-parity:
     return_type: int
     local_count: 0
     entry_block: entry
-    block_count: 3
+    block_count: 4
     block_0_label: entry
     block_0_parameter_count: 0
     block_0_statement_count: 0
@@ -15755,13 +15755,29 @@ guard-cranelift-phase11-block-parameter-loop-parity:
     block_2_parameter_1_name: right_second
     block_2_parameter_1_type: int
     block_2_statement_count: 0
-    block_2_terminator_kind: Jump
-    block_2_terminator_target: left
-    block_2_terminator_argument_count: 2
-    block_2_terminator_argument_0_kind: BlockParamI32
-    block_2_terminator_argument_0_block_param: right_first
-    block_2_terminator_argument_1_kind: BlockParamI32
-    block_2_terminator_argument_1_block_param: right_second
+    block_2_terminator_kind: BranchI32Literal
+    block_2_terminator_condition: 1
+    block_2_terminator_then: left
+    block_2_terminator_then_argument_count: 2
+    block_2_terminator_then_argument_0_kind: BlockParamI32
+    block_2_terminator_then_argument_0_block_param: right_first
+    block_2_terminator_then_argument_1_kind: BlockParamI32
+    block_2_terminator_then_argument_1_block_param: right_second
+    block_2_terminator_else: exit
+    block_2_terminator_else_argument_count: 2
+    block_2_terminator_else_argument_0_kind: BlockParamI32
+    block_2_terminator_else_argument_0_block_param: right_first
+    block_2_terminator_else_argument_1_kind: BlockParamI32
+    block_2_terminator_else_argument_1_block_param: right_second
+    block_3_label: exit
+    block_3_parameter_count: 2
+    block_3_parameter_0_name: exit_first
+    block_3_parameter_0_type: int
+    block_3_parameter_1_name: exit_second
+    block_3_parameter_1_type: int
+    block_3_statement_count: 0
+    block_3_terminator_kind: ReturnBlockParamI32
+    block_3_terminator_block_param: exit_first
     metadata_count: 1
     metadata_0_kind: provenance
     metadata_0_attachment: function
