@@ -1,12 +1,14 @@
 # Cranelift Phase 13 Deferred Parity Registry
 
 CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_VERSION: 1
+CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_AUTHORITY: historical_generated_view
+CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_CANONICAL_SOURCE: scripts/cranelift_feature_registry.json
 CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE: phase13_opening_inventory_and_registry_rebase
 CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_STATUS: phase13_opened_deferred_parity_registry
 CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PREDECESSOR_GUARD: guard-cranelift-phase11-close
 CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE11_REGISTRY: compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md
 CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE11_DISPOSITION: historical_immutable
-CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE11_SHA256: a3f1a0fda51cddda0b9d801b331dbed519fb5d2c30ebf447d56c31d27ebc627d
+CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE11_SHA256: 8e2ff46acc70dd52aa82294107431f679c4c8b00bdeeebb81f2a8ee7d8fb69ea
 CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE11_ENTRY_COUNT: 19
 CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE11_CLASSIFICATION_INVENTORY: 12_migrated_7_deferred_0_excluded
 CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE11_DEFERRED_ENTRY_COUNT: 7
@@ -28,10 +30,11 @@ CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_SCHEMA: id,parent,feature_family,sour
 CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_OPENING_POLICY: inventory_only_no_source_route_worker_MIR_request_object_link_package_CLI_or_workflow_change
 CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_NEXT_MILESTONE: capability_and_deferral_contract
 
-This registry is the machine-checkable Phase 13 opening inventory. It does
-not modify or reinterpret the closed Phase 11 registry. The exact Phase 11
-file is frozen above by SHA-256 and remains the historical source of its
-nineteen rows, closure totals, and seven deferred classifications.
+This document is the historical Phase 13 opening review view. The canonical
+active inventory is `scripts/cranelift_feature_registry.json`; the JSON
+preserves all sixteen stable IDs and their Phase 11 parents. The temporary
+Phase 11 byte hash remains only until Patch 12.5.2 replaces it with a
+semantic closure comparison.
 
 The seven `phase11_entry` parents are imported one-for-one from the Phase 11
 deferred inventory. The nine `phase11_category` rows turn the seven frozen

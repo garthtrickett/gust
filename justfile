@@ -17727,7 +17727,7 @@ guard-cranelift-phase13-opening-contract:
       'allowed_cranelift_phase13_opening_predecessor_guard: guard-cranelift-phase11-close'
       'allowed_cranelift_phase13_opening_phase11_registry: compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md'
       'allowed_cranelift_phase13_opening_phase11_registry_disposition: historical_immutable'
-      'allowed_cranelift_phase13_opening_phase11_registry_SHA256: a3f1a0fda51cddda0b9d801b331dbed519fb5d2c30ebf447d56c31d27ebc627d'
+      'allowed_cranelift_phase13_opening_phase11_registry_SHA256: 8e2ff46acc70dd52aa82294107431f679c4c8b00bdeeebb81f2a8ee7d8fb69ea'
       'allowed_cranelift_phase13_opening_phase11_registry_entry_count: 19'
       'allowed_cranelift_phase13_opening_phase11_classification_inventory: 12_migrated_7_deferred_0_excluded'
       'allowed_cranelift_phase13_opening_phase11_deferred_entry_count: 7'
@@ -17764,9 +17764,9 @@ guard-cranelift-phase13-opening-contract:
     done
 
     phase11_sha="$(sha256sum "$phase11_registry" | awk '{print $1}')"
-    if [ "$phase11_sha" != "a3f1a0fda51cddda0b9d801b331dbed519fb5d2c30ebf447d56c31d27ebc627d" ]; then
+    if [ "$phase11_sha" != "8e2ff46acc70dd52aa82294107431f679c4c8b00bdeeebb81f2a8ee7d8fb69ea" ]; then
       echo "Closed Phase 11 registry changed after its historical freeze."
-      echo "expected=a3f1a0fda51cddda0b9d801b331dbed519fb5d2c30ebf447d56c31d27ebc627d"
+      echo "expected=8e2ff46acc70dd52aa82294107431f679c4c8b00bdeeebb81f2a8ee7d8fb69ea"
       echo "actual=$phase11_sha"
       exit 1
     fi
@@ -17789,7 +17789,7 @@ guard-cranelift-phase13-opening-contract:
       'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PREDECESSOR_GUARD: guard-cranelift-phase11-close'
       'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE11_REGISTRY: compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md'
       'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE11_DISPOSITION: historical_immutable'
-      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE11_SHA256: a3f1a0fda51cddda0b9d801b331dbed519fb5d2c30ebf447d56c31d27ebc627d'
+      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE11_SHA256: 8e2ff46acc70dd52aa82294107431f679c4c8b00bdeeebb81f2a8ee7d8fb69ea'
       'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE11_ENTRY_COUNT: 19'
       'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE11_CLASSIFICATION_INVENTORY: 12_migrated_7_deferred_0_excluded'
       'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE11_DEFERRED_ENTRY_COUNT: 7'
@@ -18471,6 +18471,71 @@ guard-cranelift-phase12-5-opening-contract:
     fi
 
     echo "✅ Phase 12.5 opened: 26 verification items and seven duplicated facts have explicit future owners and consolidation patches; compiler behavior remains frozen."
+
+guard-cranelift-registry-schema:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Validating the canonical Cranelift feature registry..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    registry_json="scripts/cranelift_feature_registry.json"
+    registry_schema="scripts/cranelift_feature_registry.schema.json"
+    validator="scripts/cranelift_registry.py"
+    generated_summary="docs/CRANELIFT_FEATURE_REGISTRY.md"
+    phase11_view="compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md"
+    phase13_view="compiler/CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY.md"
+
+    for required_file in \
+      "$manifest_doc" "$registry_json" "$registry_schema" "$validator" \
+      "$generated_summary" "$phase11_view" "$phase13_view"
+    do
+      if [ ! -f "$required_file" ] || [ -L "$required_file" ]; then
+        echo "Canonical Cranelift registry input must be a regular non-symlink file: $required_file"
+        exit 1
+      fi
+    done
+
+    required_manifest_lines=(
+      'CRANELIFT_EXPERIMENT_ALLOWED_REGISTRY_SCHEMA_GUARD: guard-cranelift-registry-schema'
+      'allowed_cranelift_registry_authority: scripts/cranelift_feature_registry.json'
+      'allowed_cranelift_registry_schema: scripts/cranelift_feature_registry.schema.json'
+      'allowed_cranelift_registry_validator_projector: scripts/cranelift_registry.py'
+      'allowed_cranelift_registry_generated_summary: docs/CRANELIFT_FEATURE_REGISTRY.md'
+      'allowed_cranelift_registry_legacy_phase11_view: compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md'
+      'allowed_cranelift_registry_legacy_phase13_view: compiler/CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY.md'
+      'allowed_cranelift_registry_authority_policy: JSON_owns_active_Phase11_and_Phase13_inventory_facts_Markdown_is_review_or_history_only'
+      'allowed_cranelift_registry_import_policy: preserve_19_Phase11_and_16_Phase13_stable_IDs_and_semantic_ownership'
+      'allowed_cranelift_registry_behavior_policy: registry_schema_validator_projector_and_views_only_no_route_MIR_worker_feature_or_output_change'
+      'allowed_cranelift_registry_next_patch: semantic_closure_snapshots'
+    )
+    for line in "${required_manifest_lines[@]}"; do
+      if ! rg -n -x -F "$line" "$manifest_doc" >/dev/null; then
+        echo "Missing canonical registry manifest contract:"
+        echo "$line"
+        exit 1
+      fi
+    done
+
+    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_AUTHORITY: historical_generated_view' "$phase11_view" >/dev/null
+    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_CANONICAL_SOURCE: scripts/cranelift_feature_registry.json' "$phase11_view" >/dev/null
+    rg -n -x -F 'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_AUTHORITY: historical_generated_view' "$phase13_view" >/dev/null
+    rg -n -x -F 'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_CANONICAL_SOURCE: scripts/cranelift_feature_registry.json' "$phase13_view" >/dev/null
+
+    authority_count="$(
+      rg -l -F '"registry_status": "phase12_5_canonical_machine_readable_registry"' \
+        scripts docs compiler |
+        wc -l |
+        tr -d ' '
+    )"
+    if [ "$authority_count" != "1" ]; then
+      echo "Expected exactly one canonical machine-readable Cranelift registry, found $authority_count."
+      exit 1
+    fi
+
+    python3 "$validator" validate
+    python3 "$validator" verify-legacy-import
+    python3 "$validator" check-projection
+
+    echo "✅ Canonical Cranelift registry passed: one JSON authority preserves 19 Phase 11 and 16 Phase 13 rows; Markdown views are current."
 
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
     #!/usr/bin/env bash

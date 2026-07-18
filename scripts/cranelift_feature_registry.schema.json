@@ -1,0 +1,256 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "scripts/cranelift_feature_registry.schema.json",
+  "title": "Gust Cranelift feature registry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "schema_version",
+    "registry_version",
+    "registry_status",
+    "current_phase",
+    "closed_phase_versions",
+    "planning_categories",
+    "supported_values",
+    "legacy_views",
+    "entries"
+  ],
+  "properties": {
+    "schema": {
+      "const": "scripts/cranelift_feature_registry.schema.json"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "registry_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "registry_status": {
+      "type": "string",
+      "minLength": 1
+    },
+    "current_phase": {
+      "type": "string",
+      "minLength": 1
+    },
+    "closed_phase_versions": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1
+      },
+      "required": [
+        "phase11",
+        "phase12_5_opening"
+      ]
+    },
+    "planning_categories": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9_]+$"
+      }
+    },
+    "supported_values": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "statuses",
+        "origin_phases",
+        "feature_families",
+        "ci_families",
+        "route_owners",
+        "worker_capability_owners",
+        "diagnostic_owners"
+      ],
+      "properties": {
+        "statuses": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "origin_phases": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "feature_families": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "ci_families": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "route_owners": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "worker_capability_owners": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "diagnostic_owners": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "legacy_views": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "phase11",
+        "phase13",
+        "generated_summary"
+      ],
+      "properties": {
+        "phase11": {
+          "type": "string",
+          "minLength": 1
+        },
+        "phase13": {
+          "type": "string",
+          "minLength": 1
+        },
+        "generated_summary": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "entries": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/entry"
+      }
+    }
+  },
+  "$defs": {
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "origin_phase",
+        "parent",
+        "feature_family",
+        "ci_family",
+        "status",
+        "route_owner",
+        "worker_capability_owner",
+        "diagnostic_owner",
+        "source_fixture",
+        "canonical_mir_fixture",
+        "differential_case_id",
+        "deferral_reason",
+        "future_destination_phase",
+        "closure_version",
+        "evidence"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_]+$"
+        },
+        "origin_phase": {
+          "type": "string",
+          "minLength": 1
+        },
+        "parent": {
+          "type": "string",
+          "pattern": "^phase11_(root|entry|category):[A-Za-z0-9_]+$"
+        },
+        "feature_family": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ci_family": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "route_owner": {
+          "type": "string",
+          "minLength": 1
+        },
+        "worker_capability_owner": {
+          "type": "string",
+          "minLength": 1
+        },
+        "diagnostic_owner": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_fixture": {
+          "type": "string",
+          "minLength": 1
+        },
+        "canonical_mir_fixture": {
+          "type": "string",
+          "minLength": 1
+        },
+        "differential_case_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_]+:[A-Za-z0-9_]+$"
+        },
+        "deferral_reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "future_destination_phase": {
+          "type": "string",
+          "minLength": 1
+        },
+        "closure_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence": {
+          "type": "object"
+        }
+      }
+    }
+  }
+}

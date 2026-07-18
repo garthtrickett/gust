@@ -1,6 +1,8 @@
 # Cranelift Feature Parity Registry
 
 CRANELIFT_FEATURE_PARITY_REGISTRY_VERSION: 1
+CRANELIFT_FEATURE_PARITY_REGISTRY_AUTHORITY: historical_generated_view
+CRANELIFT_FEATURE_PARITY_REGISTRY_CANONICAL_SOURCE: scripts/cranelift_feature_registry.json
 CRANELIFT_FEATURE_PARITY_REGISTRY_PHASE: phase11_feature_parity_registry_and_evidence_model
 CRANELIFT_FEATURE_PARITY_REGISTRY_STATUS: phase11_froze_feature_parity_registry
 CRANELIFT_FEATURE_PARITY_REGISTRY_ENTRY_COUNT: 19
@@ -33,11 +35,10 @@ CRANELIFT_FEATURE_PARITY_REGISTRY_DEFERRED_ENTRY_CATEGORIES: multiple_locals_and
 CRANELIFT_FEATURE_PARITY_REGISTRY_CLOSURE_GUARD: guard-cranelift-phase11-close
 CRANELIFT_FEATURE_PARITY_REGISTRY_CLOSURE_CI_POLICY: one_static_closure_guard_in_PR_Fast_and_Heavy_without_full_dynamic_matrix_replay
 
-This registry is the machine-checkable Phase 11 source of truth. It imports the
-four existing MIR feature-migration entries and all seventeen frozen
-MIR-to-Cranelift translator seeds, then adds the two Phase 10-only call
-capabilities needed to account for the six connected source cohorts without
-pretending that the translator inventory already covers them.
+This document is the historical Phase 11 review view. The canonical active
+inventory is `scripts/cranelift_feature_registry.json`; the committed JSON
+preserves these nineteen stable IDs, classifications, owners, fixtures, and
+closure version without making Markdown formatting authoritative.
 
 Registry parity means equivalent observable behavior and equivalent failure
 classification for this declared inventory. It does not claim full Gust
