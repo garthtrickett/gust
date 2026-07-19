@@ -17807,6 +17807,7 @@ guard-cranelift-ci-family-projection:
 
     required_manifest_lines=(
       'CRANELIFT_EXPERIMENT_ALLOWED_CI_FAMILY_PROJECTION_GUARD: guard-cranelift-ci-family-projection'
+      'CRANELIFT_EXPERIMENT_ALLOWED_PHASE11_CI_FAMILY_GUARD: guard-cranelift-phase11-ci-family'
       'allowed_cranelift_ci_family_projection_authority: scripts/cranelift_feature_registry.json'
       'allowed_cranelift_ci_family_projection_runner: scripts/cranelift_ci_family.py'
       'allowed_cranelift_ci_family_projection_mapping_policy: one_runner_mapping_covers_every_row_derived_Phase11_CI_family'
