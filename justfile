@@ -12052,21 +12052,38 @@ guard-cranelift-phase9g-close:
     fi
 
     for closure_workflow in "$pr_workflow" "$heavy_workflow"; do
-      rg -n -F 'name: Phase 9G closure guard' "$closure_workflow" >/dev/null
+      rg -n -F 'historical-closure:' "$closure_workflow" >/dev/null
+      rg -n -F 'name: Full historical Phase 11 closure' "$closure_workflow" >/dev/null
     done
 
-    pr_closure_wiring_count="$(
+    pr_historical_closure_count="$(
+      rg -c '^[[:space:]]*run:[[:space:]]+just guard-cranelift-phase11-close[[:space:]]*$' "$pr_workflow" ||
+        true
+    )"
+    heavy_historical_closure_count="$(
+      rg -c '^[[:space:]]*run:[[:space:]]+just guard-cranelift-phase11-close[[:space:]]*$' "$heavy_workflow" ||
+        true
+    )"
+    pr_direct_phase9g_close_count="$(
       rg -c '^[[:space:]]*run:[[:space:]]+just guard-cranelift-phase9g-close[[:space:]]*$' "$pr_workflow" ||
         true
     )"
-    heavy_closure_wiring_count="$(
+    heavy_direct_phase9g_close_count="$(
       rg -c '^[[:space:]]*run:[[:space:]]+just guard-cranelift-phase9g-close[[:space:]]*$' "$heavy_workflow" ||
         true
     )"
-    pr_closure_wiring_count="${pr_closure_wiring_count:-0}"
-    heavy_closure_wiring_count="${heavy_closure_wiring_count:-0}"
-    if [ "$pr_closure_wiring_count" != "1" ] || [ "$heavy_closure_wiring_count" != "1" ]; then
-      echo "Phase 9G closure must be wired once in PR-fast and once in heavy CI; found PR-fast=$pr_closure_wiring_count heavy=$heavy_closure_wiring_count."
+    pr_historical_closure_count="${pr_historical_closure_count:-0}"
+    heavy_historical_closure_count="${heavy_historical_closure_count:-0}"
+    pr_direct_phase9g_close_count="${pr_direct_phase9g_close_count:-0}"
+    heavy_direct_phase9g_close_count="${heavy_direct_phase9g_close_count:-0}"
+    if [ "$pr_historical_closure_count" != "1" ] ||
+       [ "$heavy_historical_closure_count" != "1" ]; then
+      echo "Full historical Phase 11 closure must be wired once in PR-fast and once in heavy CI; found PR-fast=$pr_historical_closure_count heavy=$heavy_historical_closure_count."
+      exit 1
+    fi
+    if [ "$pr_direct_phase9g_close_count" != "0" ] ||
+       [ "$heavy_direct_phase9g_close_count" != "0" ]; then
+      echo "Phase 9G close must be replayed through the dedicated full historical Phase 11 closure job, not wired as a second direct workflow gate."
       exit 1
     fi
 
