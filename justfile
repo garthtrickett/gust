@@ -15894,7 +15894,6 @@ guard-cranelift-phase11-direct-call-abi-parity:
     done
 
     rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_retired_exact_shape_source_routes' "$registry_doc" >/dev/null
-    direct_record="$(rg -n -F 'parity_entry: id=direct_call_i32|' "$registry_doc")
     direct_record="$(rg -n -F 'parity_entry: id=direct_call_i32|' "$registry_doc")"
     printf '%s\n' "$direct_record" | rg -F 'source_fixture=compiler/phase11_direct_call_nested_source.gst' >/dev/null
     printf '%s\n' "$direct_record" | rg -F 'route_owner=generic_canonical_mir' >/dev/null
@@ -16281,7 +16280,6 @@ guard-cranelift-phase11-module-import-runtime-parity:
     fi
 
     rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_retired_exact_shape_source_routes' "$registry_doc" >/dev/null
-    import_record="$(rg -n -F 'parity_entry: id=imported_runtime_call_i32|' "$registry_doc")
     import_record="$(rg -n -F 'parity_entry: id=imported_runtime_call_i32|' "$registry_doc")"
     printf '%s\n' "$import_record" | rg -F 'source_fixture=compiler/phase11_declared_external_import_source.gst' >/dev/null
     printf '%s\n' "$import_record" | rg -F 'migration_status=module_import_runtime_migrated' >/dev/null
