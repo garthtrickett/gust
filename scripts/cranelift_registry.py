@@ -487,6 +487,156 @@ def verify_phase11_closure(registry):
     return snapshot
 
 
+def phase_entries(registry, origin_phase):
+    rows = [
+        entry for entry in registry["entries"]
+        if entry["origin_phase"] == origin_phase
+    ]
+    require(rows, f"registry must contain {origin_phase} rows")
+    return rows
+
+
+def verify_phase13_registry_schema(registry):
+    rows = phase_entries(registry, "phase13")
+    allowed_statuses = {"inherited_deferred", "candidate_deferred"}
+    required_owners = (
+        "route_owner",
+        "worker_capability_owner",
+        "diagnostic_owner",
+        "ci_family",
+    )
+
+    for entry in rows:
+        entry_id = entry["id"]
+        require(
+            entry["closure_version"] == "phase13_opening_inventory_v1",
+            f"{entry_id}: Phase 13 opening version drifted",
+        )
+        require(
+            entry["status"] in allowed_statuses,
+            f"{entry_id}: unsupported Phase 13 opening status {entry['status']}",
+        )
+        require(
+            entry["route_owner"] == "deferred",
+            f"{entry_id}: Phase 13 opening route owner must remain deferred",
+        )
+        require(
+            entry["future_destination_phase"] == "phase13",
+            f"{entry_id}: Phase 13 opening destination drifted",
+        )
+        require(
+            entry["differential_case_id"] == f"phase13_opening:{entry_id}",
+            f"{entry_id}: Phase 13 differential identity drifted",
+        )
+        for field in required_owners:
+            text(entry[field], f"{entry_id}.{field}")
+
+        evidence = entry["evidence"]
+        require(
+            set(evidence) == {"opening_record_kind"},
+            f"{entry_id}: Phase 13 opening evidence fields drifted",
+        )
+        expected_kind = (
+            "inherited"
+            if entry["status"] == "inherited_deferred"
+            else "candidate"
+        )
+        require(
+            evidence["opening_record_kind"] == expected_kind,
+            f"{entry_id}: Phase 13 opening record kind drifted",
+        )
+    return rows
+
+
+def verify_phase13_parent_traceability(registry):
+    phase11 = {
+        entry["id"]: entry
+        for entry in phase_entries(registry, "phase11")
+    }
+    categories = set(registry["planning_categories"])
+    rows = verify_phase13_registry_schema(registry)
+    parent_kinds = Counter()
+
+    for entry in rows:
+        entry_id = entry["id"]
+        parent = entry["parent"]
+        if parent.startswith("phase11_entry:"):
+            parent_kinds["phase11_entry"] += 1
+            parent_id = parent.split(":", 1)[1]
+            require(parent_id in phase11, f"{entry_id}: missing parent {parent_id}")
+            parent_entry = phase11[parent_id]
+            require(
+                parent_entry["status"] == "deferred",
+                f"{entry_id}: inherited parent is not deferred",
+            )
+            require(
+                entry["status"] == "inherited_deferred",
+                f"{entry_id}: entry parent requires inherited_deferred",
+            )
+            require(
+                entry["source_fixture"] == parent_entry["source_fixture"],
+                f"{entry_id}: inherited source fixture differs from Phase 11",
+            )
+            require(
+                entry["canonical_mir_fixture"]
+                == parent_entry["canonical_mir_fixture"],
+                f"{entry_id}: inherited canonical MIR fixture differs from Phase 11",
+            )
+        elif parent.startswith("phase11_category:"):
+            parent_kinds["phase11_category"] += 1
+            category = parent.split(":", 1)[1]
+            require(category in categories, f"{entry_id}: unknown category {category}")
+            require(
+                entry["status"] == "candidate_deferred",
+                f"{entry_id}: category parent requires candidate_deferred",
+            )
+        else:
+            raise Error(f"{entry_id}: invalid parent {parent}")
+
+    require(
+        sum(parent_kinds.values()) == len(rows),
+        "Phase 13 parent-kind totals do not cover every opening row",
+    )
+    return parent_kinds
+
+
+def verify_phase13_opening_totals(registry):
+    rows = verify_phase13_registry_schema(registry)
+    parent_kinds = verify_phase13_parent_traceability(registry)
+    status_counts = Counter(entry["status"] for entry in rows)
+    feature_counts = Counter(entry["feature_family"] for entry in rows)
+    ci_counts = Counter(entry["ci_family"] for entry in rows)
+
+    for label, counter in (
+        ("status", status_counts),
+        ("feature family", feature_counts),
+        ("CI family", ci_counts),
+        ("parent kind", parent_kinds),
+    ):
+        require(
+            sum(counter.values()) == len(rows),
+            f"Phase 13 {label} totals do not reconcile with opening rows",
+        )
+
+    require(
+        status_counts["inherited_deferred"]
+        == parent_kinds["phase11_entry"],
+        "Phase 13 inherited status total differs from entry-parent total",
+    )
+    require(
+        status_counts["candidate_deferred"]
+        == parent_kinds["phase11_category"],
+        "Phase 13 candidate status total differs from category-parent total",
+    )
+    return {
+        "row_count": len(rows),
+        "status_counts": status_counts,
+        "feature_counts": feature_counts,
+        "ci_counts": ci_counts,
+        "parent_kinds": parent_kinds,
+    }
+
+
 def derived_totals(registry):
     entries = registry["entries"]
     deferred_entries = [
@@ -607,6 +757,9 @@ def main():
             "validate",
             "verify-legacy-import",
             "verify-phase11-closure",
+            "verify-phase13-schema",
+            "verify-phase13-parent-traceability",
+            "verify-phase13-opening-totals",
             "project",
             "check-projection",
         ),
@@ -618,6 +771,12 @@ def main():
             verify_legacy_import(registry)
         elif command == "verify-phase11-closure":
             verify_phase11_closure(registry)
+        elif command == "verify-phase13-schema":
+            verify_phase13_registry_schema(registry)
+        elif command == "verify-phase13-parent-traceability":
+            verify_phase13_parent_traceability(registry)
+        elif command == "verify-phase13-opening-totals":
+            verify_phase13_opening_totals(registry)
         elif command == "project":
             path = summary_path(registry)
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -631,6 +790,9 @@ def main():
     totals = derived_totals(registry)
     snapshot = registry["closure_snapshots"]["phase11"]
     classifications = snapshot["classification_counts"]
+    phase13_totals = verify_phase13_opening_totals(registry)
+    phase13_statuses = phase13_totals["status_counts"]
+    phase13_parents = phase13_totals["parent_kinds"]
     messages = {
         "validate": (
             "✅ Canonical Cranelift registry schema passed: "
@@ -646,6 +808,21 @@ def main():
             f"{classifications['migrated']} migrated, "
             f"{classifications['deferred']} deferred, "
             f"{classifications['excluded']} excluded."
+        ),
+        "verify-phase13-schema": (
+            "✅ Phase 13 opening registry schema passed: "
+            f"{phase13_totals['row_count']} structurally owned rows."
+        ),
+        "verify-phase13-parent-traceability": (
+            "✅ Phase 13 parent traceability passed: "
+            f"{phase13_parents['phase11_entry']} entry parents and "
+            f"{phase13_parents['phase11_category']} category parents."
+        ),
+        "verify-phase13-opening-totals": (
+            "✅ Phase 13 opening totals reconcile from registry rows: "
+            f"{phase13_totals['row_count']} total, "
+            f"{phase13_statuses['inherited_deferred']} inherited, "
+            f"{phase13_statuses['candidate_deferred']} candidate."
         ),
         "project": "✅ Canonical Cranelift registry Markdown summary generated.",
         "check-projection": (

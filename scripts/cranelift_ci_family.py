@@ -183,7 +183,9 @@ def check_pr_workflow(path):
         'matrix=$(python3 scripts/cranelift_ci_family.py matrix-json)',
         "family: ${{ fromJSON(needs.build.outputs.phase11_families) }}",
         'just guard-cranelift-phase11-ci-family "${{ matrix.family }}"',
-        "needs: [guard, phase11-family]",
+        "historical-closure:",
+        "needs: [guard, phase11-family, historical-closure]",
+        "just guard-cranelift-phase11-close",
     )
     for token in required:
         require_token(text, token, path.relative_to(ROOT))
@@ -208,6 +210,12 @@ def check_heavy_workflow(path):
             literal not in text,
             f"{path.relative_to(ROOT)} duplicates PR family {family}",
         )
+    require_token(text, "historical-closure:", path.relative_to(ROOT))
+    require_token(
+        text,
+        "needs: [guard, phase9g-link-driver, historical-closure]",
+        path.relative_to(ROOT),
+    )
     require(
         text.count("just guard-cranelift-phase11-close") == 1,
         f"{path.relative_to(ROOT)} must invoke the Phase 11 closure guard exactly once",
