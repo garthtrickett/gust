@@ -21,10 +21,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential curl ripgrep
-          mkdir -p "$HOME/.local/bin"
-          curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --tag 1.55.1 --to "$HOME/.local/bin"
+          bash scripts/install-just-ci.sh "$HOME/.local/bin"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-          "$HOME/.local/bin/just" --version
 
       - name: Diff check
         run: git diff --check
@@ -97,10 +95,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential curl ripgrep
-          mkdir -p "$HOME/.local/bin"
-          curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --tag 1.55.1 --to "$HOME/.local/bin"
+          bash scripts/install-just-ci.sh "$HOME/.local/bin"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-          "$HOME/.local/bin/just" --version
 
       - name: Download Gust build outputs
         uses: actions/download-artifact@v4

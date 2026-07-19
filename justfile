@@ -194,12 +194,18 @@ guard-pr-fast-ci-surface:
     echo "🔒 Checking PR fast CI surface..."
     workflow=".github/workflows/pr-fast.yml"
     manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
-    for required_file in "$workflow" "$manifest_doc"; do
+    just_installer="scripts/install-just-ci.sh"
+    for required_file in "$workflow" "$manifest_doc" "$just_installer"; do
       if [ ! -f "$required_file" ]; then
         echo "Missing PR fast CI input: $required_file"
         exit 1
       fi
     done
+
+    if [ "$(rg -c -F 'bash scripts/install-just-ci.sh "$HOME/.local/bin"' "$workflow")" != "2" ]; then
+      echo "PR Fast must install pinned just through the retrying repository-owned installer in both jobs."
+      exit 1
+    fi
 
     required_workflow_tokens=(
       'name: PR Fast'
@@ -613,8 +619,13 @@ guard-cloud-heavy-ci-surface:
     set -euo pipefail
     echo "🔒 Checking cloud heavy CI surface..."
     workflow=".github/workflows/heavy-guards.yml"
+    just_installer="scripts/install-just-ci.sh"
     if [ ! -f "$workflow" ]; then
       echo "Missing $workflow. Heavy guard cloud workflow must exist."
+      exit 1
+    fi
+    if [ ! -f "$just_installer" ] || [ -L "$just_installer" ]; then
+      echo "Missing regular CI just installer: $just_installer"
       exit 1
     fi
 
@@ -750,8 +761,15 @@ guard-cloud-heavy-ci-surface:
     rg -n -F 'chmod +x ./gust' "$workflow" >/dev/null
 
     rg -n -F 'sudo apt-get install -y build-essential curl ripgrep' "$workflow" >/dev/null
-    rg -n -F 'https://just.systems/install.sh' "$workflow" >/dev/null
-    rg -n -F 'bash -s -- --tag 1.55.1 --to "$HOME/.local/bin"' "$workflow" >/dev/null
+    if [ "$(rg -c -F 'bash scripts/install-just-ci.sh "$HOME/.local/bin"' "$workflow")" != "4" ]; then
+      echo "Heavy Guards must install pinned just through the retrying repository-owned installer in all four jobs."
+      exit 1
+    fi
+    rg -n -x -F 'JUST_CI_VERSION="1.55.1"' "$just_installer" >/dev/null
+    rg -n -x -F 'JUST_CI_TARGET="x86_64-unknown-linux-musl"' "$just_installer" >/dev/null
+    rg -n -x -F 'JUST_CI_MAX_ATTEMPTS=5' "$just_installer" >/dev/null
+    rg -n -F 'tar -tzf "$archive" just' "$just_installer" >/dev/null
+    bash -n "$just_installer"
     rg -n -F 'GITHUB_PATH' "$workflow" >/dev/null
     rg -n -F '"$HOME/.local/bin/just" --version' "$workflow" >/dev/null
 
