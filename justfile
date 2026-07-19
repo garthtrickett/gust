@@ -17012,7 +17012,6 @@ guard-cranelift-phase11-route-retirement-ci:
       'family_runner="scripts/cranelift_ci_family.py"'
       'differential-rows'
       'route_owner'
-      'generic_canonical_mir'
       'ci_family'
       'default.c'
       'explicit.c'
@@ -17027,6 +17026,10 @@ guard-cranelift-phase11-route-retirement-ci:
     for token in "${required_harness_tokens[@]}"; do
       rg -n -F "$token" "$differential_harness" >/dev/null
     done
+    if ! rg -n -F 'entry.get("route_owner") == "generic_canonical_mir"' "$family_runner" >/dev/null; then
+      echo "CI family projection must select differential rows owned by generic canonical MIR."
+      exit 1
+    fi
 
     just guard-cranelift-ci-family-projection
     just guard-pr-fast-ci-surface
