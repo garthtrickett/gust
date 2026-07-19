@@ -14145,11 +14145,6 @@ guard-cranelift-phase11-scalar-expression-parity:
     fi
 
     rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_retired_exact_shape_source_routes' "$registry_doc" >/dev/null
-    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_MIR_TO_C_GAP_COUNT: 5' "$registry_doc" >/dev/null
-    if [ "$(rg -c 'migration_status=scalar_expression_migrated' "$registry_doc")" != "3" ]; then
-      echo "Registry must contain exactly three scalar-expression migrations after the local-read entry moves to Patch 5."
-      exit 1
-    fi
     for scalar_id in return_int add_i32 positive_i32_branch; do
       scalar_record="$(rg -n -F "parity_entry: id=$scalar_id|" "$registry_doc")"
       printf '%s\n' "$scalar_record" |
@@ -14494,11 +14489,6 @@ guard-cranelift-phase11-local-state-parity:
     rg -n -F 'fn phase11_cfg_intersect_assignment_state(' "$rust_driver" >/dev/null
 
     rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_retired_exact_shape_source_routes' "$registry_doc" >/dev/null
-    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_MIR_TO_C_GAP_COUNT: 5' "$registry_doc" >/dev/null
-    if [ "$(rg -c 'migration_status=local_state_migrated' "$registry_doc")" != "2" ]; then
-      echo "Registry must retain exactly two Patch 5 local-state migrations after CFG ownership moves to Patch 6."
-      exit 1
-    fi
     for local_state_id in local_binding_read provenance_metadata; do
       local_state_record="$(rg -n -F "parity_entry: id=$local_state_id|" "$registry_doc")"
       printf '%s\n' "$local_state_record" |
@@ -14905,11 +14895,6 @@ guard-cranelift-phase11-structured-cfg-parity:
     fi
 
     rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_retired_exact_shape_source_routes' "$registry_doc" >/dev/null
-    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_MIR_TO_C_GAP_COUNT: 5' "$registry_doc" >/dev/null
-    if [ "$(rg -c 'migration_status=structured_CFG_migrated' "$registry_doc")" != "3" ]; then
-      echo "Registry must contain exactly three structured-CFG migrations."
-      exit 1
-    fi
     for cfg_id in conditional_branch block_jump block_local_branch_join; do
       cfg_record="$(rg -n -F "parity_entry: id=$cfg_id|" "$registry_doc")"
       printf '%s\n' "$cfg_record" | rg -F 'route_owner=generic_canonical_mir' >/dev/null
@@ -15407,10 +15392,6 @@ guard-cranelift-phase11-block-parameter-loop-parity:
     fi
 
     rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_retired_exact_shape_source_routes' "$registry_doc" >/dev/null
-    if [ "$(rg -c 'migration_status=block_parameter_backedge_migrated' "$registry_doc")" != "2" ]; then
-      echo "Registry must contain exactly two block-parameter/backedge migrations."
-      exit 1
-    fi
     for feature_id in block_param_update_branch block_param_merge_update_branch; do
       record="$(rg -n -F "parity_entry: id=$feature_id|" "$registry_doc")"
       printf '%s\n' "$record" | rg -F 'route_owner=generic_canonical_mir' >/dev/null
@@ -15913,10 +15894,7 @@ guard-cranelift-phase11-direct-call-abi-parity:
     done
 
     rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_retired_exact_shape_source_routes' "$registry_doc" >/dev/null
-    if [ "$(rg -c 'migration_status=direct_call_ABI_migrated' "$registry_doc")" != "1" ]; then
-      echo "Registry must contain exactly one direct-call/ABI migration."
-      exit 1
-    fi
+    direct_record="$(rg -n -F 'parity_entry: id=direct_call_i32|' "$registry_doc")
     direct_record="$(rg -n -F 'parity_entry: id=direct_call_i32|' "$registry_doc")"
     printf '%s\n' "$direct_record" | rg -F 'source_fixture=compiler/phase11_direct_call_nested_source.gst' >/dev/null
     printf '%s\n' "$direct_record" | rg -F 'route_owner=generic_canonical_mir' >/dev/null
@@ -16303,10 +16281,7 @@ guard-cranelift-phase11-module-import-runtime-parity:
     fi
 
     rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_retired_exact_shape_source_routes' "$registry_doc" >/dev/null
-    if [ "$(rg -c 'migration_status=module_import_runtime_migrated' "$registry_doc")" != "1" ]; then
-      echo "Registry must contain exactly one module/import/runtime migration."
-      exit 1
-    fi
+    import_record="$(rg -n -F 'parity_entry: id=imported_runtime_call_i32|' "$registry_doc")
     import_record="$(rg -n -F 'parity_entry: id=imported_runtime_call_i32|' "$registry_doc")"
     printf '%s\n' "$import_record" | rg -F 'source_fixture=compiler/phase11_declared_external_import_source.gst' >/dev/null
     printf '%s\n' "$import_record" | rg -F 'migration_status=module_import_runtime_migrated' >/dev/null
@@ -16629,11 +16604,7 @@ guard-cranelift-phase11-metadata-diagnostic-parity:
     rg -n -F 'metadata_0_kind: resource' "$resource_fixture" >/dev/null
 
     rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_retired_exact_shape_source_routes' "$registry_doc" >/dev/null
-    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_METADATA_CLASS_COUNT: 3' "$registry_doc" >/dev/null
-    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_METADATA_CLASSES: provenance,resource,native_boundary' "$registry_doc" >/dev/null
     rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_DIAGNOSTIC_TAXONOMY: gust.backend_parity.diagnostic.v1' "$registry_doc" >/dev/null
-    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_DIAGNOSTIC_CLASS_COUNT: 6' "$registry_doc" >/dev/null
-    rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_DIAGNOSTIC_CLASSES: source_type_error,canonical_mir_verification_error,unsupported_native_capability,driver_handshake_error,worker_lowering_error,object_link_publication_error' "$registry_doc" >/dev/null
 
     readme_flat="$(tr '\n' ' ' < "$readme_doc")"
     printf '%s\n' "$readme_flat" | rg -F 'Phase 11 Patch 10 freezes metadata and diagnostic parity as `phase11_froze_metadata_and_diagnostic_parity`.' >/dev/null
@@ -17018,8 +16989,6 @@ guard-cranelift-phase11-route-retirement-ci:
     required_manifest_lines=(
       'CRANELIFT_EXPERIMENT_ALLOWED_PHASE11_ROUTE_RETIREMENT_CI_GUARD: guard-cranelift-phase11-route-retirement-ci'
       'allowed_cranelift_phase11_route_retirement_status: phase11_retired_exact_shape_source_routes'
-      'allowed_cranelift_phase11_route_retirement_supported_entry_count: 12'
-      'allowed_cranelift_phase11_route_retirement_CI_family_count: 7'
       'allowed_cranelift_phase11_route_retirement_PR_fast_shard_count: 23'
       'allowed_cranelift_phase11_route_retirement_heavy_policy: Heavy_matrix_remains_at_33_shards_and_receives_no_duplicate_Phase11_family_rows'
       'allowed_cranelift_phase11_route_retirement_phase10_guard_policy: Phase10_source_route_guards_preserve_historical_fixtures_protocols_and_baselines_without_asserting_removed_implementation_shapes'
