@@ -26,7 +26,7 @@ ENTRY_FIELDS = {
     "deferral_reason", "future_destination_phase", "closure_version", "evidence",
 }
 SUPPORTED_FIELDS = {
-    "statuses", "origin_phases", "feature_families", "ci_families",
+    "statuses", "origin_phases", "feature_families",
     "route_owners", "worker_capability_owners", "diagnostic_owners",
 }
 PHASE11_SNAPSHOT_FIELDS = {
@@ -275,7 +275,6 @@ def validate():
         checks = (
             ("origin_phase", "origin_phases"),
             ("feature_family", "feature_families"),
-            ("ci_family", "ci_families"),
             ("status", "statuses"),
             ("route_owner", "route_owners"),
             ("worker_capability_owner", "worker_capability_owners"),
@@ -285,6 +284,7 @@ def validate():
             value = text(entry[field], f"{entry_id}.{field}")
             require(value in allowed[allowed_field],
                     f"{entry_id}: unknown {field} {value}")
+        text(entry["ci_family"], f"{entry_id}.ci_family")
 
         parent = text(entry["parent"], f"{entry_id}.parent")
         fixture(entry["source_fixture"], f"{entry_id}.source_fixture")
@@ -377,6 +377,14 @@ def validate():
 
     require(phase11, "registry must contain Phase 11 rows")
     require(phase13, "registry must contain Phase 13 rows")
+    active_ci_families = {entry["ci_family"] for entry in phase11}
+    require(active_ci_families, "Phase 11 rows must define active CI families")
+    for entry in phase13:
+        require(
+            entry["ci_family"] in active_ci_families,
+            f"{entry['id']}: Phase 13 introduces non-Phase11 CI family "
+            f"{entry['ci_family']}",
+        )
     return registry
 
 

@@ -103,61 +103,10 @@ guard-pr-fast-shard shard:
         PHASE9G_SKIP_PREREQUISITES=1 just guard-cranelift-phase9g-pipeline-failure-classification
         PHASE9G_SKIP_PREREQUISITES=1 just guard-cranelift-phase9g-negative-link-matrix
         ;;
-      cranelift-phase11-scalars)
-        PHASE11_GENERIC_ROUTE_SKIP_DYNAMIC=1 \
-          just guard-cranelift-phase11-scalar-expression-parity
-        just guard-cranelift-phase11-registry-differential scalars
-        ;;
-      cranelift-phase11-locals)
-        PHASE11_GENERIC_ROUTE_SKIP_DYNAMIC=1 \
-        PHASE11_SCALAR_EXPRESSION_SKIP_DYNAMIC=1 \
-          just guard-cranelift-phase11-local-state-parity
-        just guard-cranelift-phase11-registry-differential locals
-        ;;
-      cranelift-phase11-cfg)
-        PHASE11_GENERIC_ROUTE_SKIP_DYNAMIC=1 \
-        PHASE11_SCALAR_EXPRESSION_SKIP_DYNAMIC=1 \
-        PHASE11_LOCAL_STATE_SKIP_DYNAMIC=1 \
-          just guard-cranelift-phase11-structured-cfg-parity
-        just guard-cranelift-phase11-registry-differential cfg
-        ;;
-      cranelift-phase11-block-params)
-        PHASE11_GENERIC_ROUTE_SKIP_DYNAMIC=1 \
-        PHASE11_SCALAR_EXPRESSION_SKIP_DYNAMIC=1 \
-        PHASE11_LOCAL_STATE_SKIP_DYNAMIC=1 \
-        PHASE11_STRUCTURED_CFG_SKIP_DYNAMIC=1 \
-          just guard-cranelift-phase11-block-parameter-loop-parity
-        just guard-cranelift-phase11-registry-differential block-params
-        ;;
-      cranelift-phase11-direct-calls)
-        PHASE11_GENERIC_ROUTE_SKIP_DYNAMIC=1 \
-        PHASE11_SCALAR_EXPRESSION_SKIP_DYNAMIC=1 \
-        PHASE11_LOCAL_STATE_SKIP_DYNAMIC=1 \
-        PHASE11_STRUCTURED_CFG_SKIP_DYNAMIC=1 \
-        PHASE11_BLOCK_PARAMETER_LOOP_SKIP_DYNAMIC=1 \
-          just guard-cranelift-phase11-direct-call-abi-parity
-        just guard-cranelift-phase11-registry-differential direct-calls
-        ;;
-      cranelift-phase11-imports)
-        PHASE11_GENERIC_ROUTE_SKIP_DYNAMIC=1 \
-        PHASE11_SCALAR_EXPRESSION_SKIP_DYNAMIC=1 \
-        PHASE11_LOCAL_STATE_SKIP_DYNAMIC=1 \
-        PHASE11_STRUCTURED_CFG_SKIP_DYNAMIC=1 \
-        PHASE11_BLOCK_PARAMETER_LOOP_SKIP_DYNAMIC=1 \
-        PHASE11_DIRECT_CALL_ABI_SKIP_DYNAMIC=1 \
-          just guard-cranelift-phase11-module-import-runtime-parity
-        just guard-cranelift-phase11-registry-differential imports
-        ;;
-      cranelift-phase11-metadata-diagnostics)
-        PHASE11_GENERIC_ROUTE_SKIP_DYNAMIC=1 \
-        PHASE11_SCALAR_EXPRESSION_SKIP_DYNAMIC=1 \
-        PHASE11_LOCAL_STATE_SKIP_DYNAMIC=1 \
-        PHASE11_STRUCTURED_CFG_SKIP_DYNAMIC=1 \
-        PHASE11_BLOCK_PARAMETER_LOOP_SKIP_DYNAMIC=1 \
-        PHASE11_DIRECT_CALL_ABI_SKIP_DYNAMIC=1 \
-        PHASE11_MODULE_IMPORT_RUNTIME_SKIP_DYNAMIC=1 \
-          just guard-cranelift-phase11-metadata-diagnostic-parity
-        just guard-cranelift-phase11-registry-differential metadata-diagnostics
+      cranelift-phase11-*)
+        requested_shard="{{shard}}"
+        family="${requested_shard#cranelift-phase11-}"
+        just guard-cranelift-phase11-ci-family "$family"
         ;;
       mir-to-c-return-int)
         just guard-mir-to-c-return-int-literal-native-smoke
@@ -183,7 +132,7 @@ guard-pr-fast-shard shard:
         ;;
       *)
         echo "unknown PR fast shard: {{shard}}"
-        echo "expected one of: cranelift-return-int, cranelift-local-binding, cranelift-branch, cranelift-differential, cranelift-phase9d-ingestion-ladder, cranelift-phase9e-cfg-ladder, cranelift-phase9f-call-import-ladder, cranelift-phase9g-object-artifact, cranelift-phase9g-link-positive, cranelift-phase9g-link-negative, cranelift-phase11-scalars, cranelift-phase11-locals, cranelift-phase11-cfg, cranelift-phase11-block-params, cranelift-phase11-direct-calls, cranelift-phase11-imports, cranelift-phase11-metadata-diagnostics, mir-to-c-return-int, routed-return-int, migration-return-int, migration-local-binding, migration-if-else, migration-provenance"
+        echo "expected one of: cranelift-return-int, cranelift-local-binding, cranelift-branch, cranelift-differential, cranelift-phase9d-ingestion-ladder, cranelift-phase9e-cfg-ladder, cranelift-phase9f-call-import-ladder, cranelift-phase9g-object-artifact, cranelift-phase9g-link-positive, cranelift-phase9g-link-negative, cranelift-phase11-<registry-family>, mir-to-c-return-int, routed-return-int, migration-return-int, migration-local-binding, migration-if-else, migration-provenance"
         exit 1
         ;;
     esac
@@ -194,18 +143,24 @@ guard-pr-fast-ci-surface:
     echo "🔒 Checking PR fast CI surface..."
     workflow=".github/workflows/pr-fast.yml"
     manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    registry_json="scripts/cranelift_feature_registry.json"
+    family_runner="scripts/cranelift_ci_family.py"
     just_installer="scripts/install-just-ci.sh"
-    for required_file in "$workflow" "$manifest_doc" "$just_installer"; do
+    for required_file in \
+      "$workflow" "$manifest_doc" "$registry_json" "$family_runner" "$just_installer"
+    do
       if [ ! -f "$required_file" ]; then
         echo "Missing PR fast CI input: $required_file"
         exit 1
       fi
     done
 
-    if [ "$(rg -c -F 'bash scripts/install-just-ci.sh "$HOME/.local/bin"' "$workflow")" != "2" ]; then
-      echo "PR Fast must install pinned just through the retrying repository-owned installer in both jobs."
+    if [ "$(rg -c -F 'bash scripts/install-just-ci.sh "$HOME/.local/bin"' "$workflow")" != "3" ]; then
+      echo "PR Fast must install pinned just through the retrying repository-owned installer in all three executable jobs."
       exit 1
     fi
+    python3 "$family_runner" validate
+    python3 "$family_runner" check-pr-workflow "$workflow"
 
     required_workflow_tokens=(
       'name: PR Fast'
@@ -219,11 +174,16 @@ guard-pr-fast-ci-surface:
       'guard:'
       'final:'
       'needs: build'
-      'needs: guard'
+      'needs: [guard, phase11-family]'
       'strategy:'
       'fail-fast: false'
       'matrix:'
       'shard:'
+      'phase11-family:'
+      'phase11_families:'
+      'matrix.family'
+      'just guard-cranelift-phase11-ci-family'
+      'GITHUB_OUTPUT'
       'actions/checkout@v4'
       'actions/upload-artifact@v4'
       'actions/download-artifact@v4'
@@ -246,25 +206,6 @@ guard-pr-fast-ci-surface:
       echo "PR Fast must invoke the Phase 11 closure guard instead of wiring its predecessor directly."
       exit 1
     fi
-
-    phase11_families=(
-      cranelift-phase11-scalars
-      cranelift-phase11-locals
-      cranelift-phase11-cfg
-      cranelift-phase11-block-params
-      cranelift-phase11-direct-calls
-      cranelift-phase11-imports
-      cranelift-phase11-metadata-diagnostics
-    )
-    dispatcher_body="$(sed -n '/^guard-pr-fast-shard shard:/,/^guard-pr-fast-ci-surface:/p' justfile)"
-    for family in "${phase11_families[@]}"; do
-      if [ "$(rg -c -x "[[:space:]]*- $family" "$workflow")" != "1" ]; then
-        echo "PR Fast must contain Phase 11 family $family exactly once."
-        exit 1
-      fi
-      printf '%s\n' "$dispatcher_body" |
-        rg -n -F "$family)" >/dev/null
-    done
 
     retired_pr_rows=(
       cranelift-phase10-call-runtime
@@ -292,13 +233,15 @@ guard-pr-fast-ci-surface:
       fi
     done
 
-    shard_count="$(awk '/shard:/{flag=1; next} flag && /^[[:space:]]*steps:/{flag=0} flag && /^[[:space:]]*- /{count++} END{print count+0}' "$workflow")"
-    if [ "$shard_count" != "23" ]; then
-      echo "Expected exactly 23 PR fast matrix shards after Patch 11 replacement, found $shard_count."
+    static_shard_count="$(awk '/shard:/{flag=1; next} flag && /^[[:space:]]*steps:/{flag=0} flag && /^[[:space:]]*- /{count++} END{print count+0}' "$workflow")"
+    family_count="$(python3 "$family_runner" families | wc -l | tr -d ' ')"
+    projected_shard_count="$((static_shard_count + family_count))"
+    if [ "$projected_shard_count" -gt "23" ]; then
+      echo "PR Fast projected shard capacity exceeded: maximum=23 projected=$projected_shard_count."
       exit 1
     fi
 
-    rg -n -F 'allowed_cranelift_phase11_route_retirement_PR_fast_shard_count: 23' "$manifest_doc" >/dev/null
+    rg -n -F 'allowed_cranelift_phase11_route_retirement_PR_fast_max_shards: 23' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase11_route_retirement_heavy_policy: Heavy_matrix_remains_at_33_shards_and_receives_no_duplicate_Phase11_family_rows' "$manifest_doc" >/dev/null
 
     if rg -n -F 'actions/cache' "$workflow" >/dev/null; then
@@ -311,7 +254,7 @@ guard-pr-fast-ci-surface:
       exit 1
     fi
 
-    echo "✅ PR fast CI surface guard passed: 17 Phase 10/backend-suite rows were replaced by seven focused Phase 11 families; total shards=23."
+    echo "✅ PR fast CI surface guard passed: Phase 11 families are registry-derived; projected shards=$projected_shard_count within max=23."
 
 guard-cranelift-core-mir-basic-suite-shard shard:
     #!/usr/bin/env bash
@@ -619,6 +562,7 @@ guard-cloud-heavy-ci-surface:
     set -euo pipefail
     echo "🔒 Checking cloud heavy CI surface..."
     workflow=".github/workflows/heavy-guards.yml"
+    family_runner="scripts/cranelift_ci_family.py"
     just_installer="scripts/install-just-ci.sh"
     if [ ! -f "$workflow" ]; then
       echo "Missing $workflow. Heavy guard cloud workflow must exist."
@@ -628,6 +572,11 @@ guard-cloud-heavy-ci-surface:
       echo "Missing regular CI just installer: $just_installer"
       exit 1
     fi
+    if [ ! -f "$family_runner" ] || [ -L "$family_runner" ]; then
+      echo "Missing regular CI family runner: $family_runner"
+      exit 1
+    fi
+    python3 "$family_runner" check-heavy-workflow "$workflow"
 
     rg -n -F 'name: Heavy Guards' "$workflow" >/dev/null
     rg -n -F 'pull_request:' "$workflow" >/dev/null
@@ -16975,6 +16924,11 @@ guard-cranelift-phase11-registry-differential family:
     echo "🧭 Running Phase 11 registry differential family: {{family}}"
     bash scripts/phase11_registry_differential.sh "{{family}}"
 
+guard-cranelift-phase11-ci-family family:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    python3 scripts/cranelift_ci_family.py run "{{family}}"
+
 guard-cranelift-phase11-route-retirement-ci:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -16984,11 +16938,14 @@ guard-cranelift-phase11-route-retirement-ci:
     route_source="compiler/mir_native_backend_source_route.gst"
     generic_source="compiler/mir_native_backend_generic_source.gst"
     differential_harness="scripts/phase11_registry_differential.sh"
+    family_runner="scripts/cranelift_ci_family.py"
+    registry_json="scripts/cranelift_feature_registry.json"
     pr_workflow=".github/workflows/pr-fast.yml"
     heavy_workflow=".github/workflows/heavy-guards.yml"
     for required_file in \
       "$manifest_doc" "$registry_doc" "$route_source" "$generic_source" \
-      "$differential_harness" "$pr_workflow" "$heavy_workflow"
+      "$registry_json" "$family_runner" "$differential_harness" \
+      "$pr_workflow" "$heavy_workflow"
     do
       test -f "$required_file"
     done
@@ -17006,7 +16963,7 @@ guard-cranelift-phase11-route-retirement-ci:
     required_manifest_lines=(
       'CRANELIFT_EXPERIMENT_ALLOWED_PHASE11_ROUTE_RETIREMENT_CI_GUARD: guard-cranelift-phase11-route-retirement-ci'
       'allowed_cranelift_phase11_route_retirement_status: phase11_retired_exact_shape_source_routes'
-      'allowed_cranelift_phase11_route_retirement_PR_fast_shard_count: 23'
+      'allowed_cranelift_phase11_route_retirement_PR_fast_max_shards: 23'
       'allowed_cranelift_phase11_route_retirement_heavy_policy: Heavy_matrix_remains_at_33_shards_and_receives_no_duplicate_Phase11_family_rows'
       'allowed_cranelift_phase11_route_retirement_phase10_guard_policy: Phase10_source_route_guards_preserve_historical_fixtures_protocols_and_baselines_without_asserting_removed_implementation_shapes'
     )
@@ -17052,6 +17009,8 @@ guard-cranelift-phase11-route-retirement-ci:
     fi
 
     required_harness_tokens=(
+      'family_runner="scripts/cranelift_ci_family.py"'
+      'differential-rows'
       'route_owner'
       'generic_canonical_mir'
       'ci_family'
@@ -17069,17 +17028,9 @@ guard-cranelift-phase11-route-retirement-ci:
       rg -n -F "$token" "$differential_harness" >/dev/null
     done
 
+    just guard-cranelift-ci-family-projection
     just guard-pr-fast-ci-surface
     just guard-cloud-heavy-ci-surface
-    heavy_shard_count="$(awk '/shard:/{flag=1; next} flag && /^[[:space:]]*steps:/{flag=0} flag && /^[[:space:]]*- /{count++} END{print count+0}' "$heavy_workflow")"
-    if [ "$heavy_shard_count" != "33" ]; then
-      echo "Heavy matrix changed during Patch 11: expected 33 shards, found $heavy_shard_count."
-      exit 1
-    fi
-    if rg -n -e '^[[:space:]]*-[[:space:]]*cranelift-phase11-(scalars|locals|cfg|block-params|direct-calls|imports|metadata-diagnostics)$' "$heavy_workflow" >/dev/null; then
-      echo "Patch 11 must not duplicate the new focused families in Heavy."
-      exit 1
-    fi
 
     just guard-cranelift-phase10-scalar-source-route
     just guard-cranelift-phase10-cfg-block-parameter-source-route
@@ -17833,6 +17784,88 @@ guard-cranelift-registry-schema:
     python3 "$validator" verify-phase11-closure
 
     echo "✅ Canonical Cranelift registry schema and semantic closure passed; totals are derived by the projector."
+
+guard-cranelift-ci-family-projection:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Validating registry-derived Phase 11 CI family projection..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    registry_json="scripts/cranelift_feature_registry.json"
+    family_runner="scripts/cranelift_ci_family.py"
+    pr_workflow=".github/workflows/pr-fast.yml"
+    heavy_workflow=".github/workflows/heavy-guards.yml"
+
+    for required_file in \
+      "$manifest_doc" "$registry_json" "$family_runner" \
+      "$pr_workflow" "$heavy_workflow"
+    do
+      if [ ! -f "$required_file" ] || [ -L "$required_file" ]; then
+        echo "CI family projection input must be a regular non-symlink file: $required_file"
+        exit 1
+      fi
+    done
+
+    required_manifest_lines=(
+      'CRANELIFT_EXPERIMENT_ALLOWED_CI_FAMILY_PROJECTION_GUARD: guard-cranelift-ci-family-projection'
+      'allowed_cranelift_ci_family_projection_authority: scripts/cranelift_feature_registry.json'
+      'allowed_cranelift_ci_family_projection_runner: scripts/cranelift_ci_family.py'
+      'allowed_cranelift_ci_family_projection_mapping_policy: one_runner_mapping_covers_every_row_derived_Phase11_CI_family'
+      'allowed_cranelift_ci_family_projection_active_set_policy: active_families_are_derived_from_Phase11_registry_rows_not_supported_values_manifest_or_workflow_literals'
+      'allowed_cranelift_ci_family_projection_dispatcher_policy: one_generic_cranelift_phase11_family_branch_rejects_unknown_or_retired_families'
+      'allowed_cranelift_ci_family_projection_PR_policy: build_job_projects_the_registry_family_matrix_and_each_family_runs_one_static_contract_plus_its_differential_rows'
+      'allowed_cranelift_ci_family_projection_heavy_policy: Heavy_contains_no_duplicate_Phase11_family_rows_and_keeps_its_33_shard_capacity_limit'
+      'allowed_cranelift_ci_family_projection_capacity_policy: PR_projected_static_plus_family_shards_must_not_exceed_23'
+      'allowed_cranelift_ci_family_projection_manifest_policy: no_manual_CI_family_count_or_family_list'
+      'allowed_cranelift_ci_family_projection_behavior_policy: CI_projection_and_runner_wiring_only_no_compiler_route_MIR_worker_feature_or_output_change'
+      'allowed_cranelift_ci_family_projection_next_patch: flattened_closure_and_predecessor_graph'
+    )
+    for line in "${required_manifest_lines[@]}"; do
+      if ! rg -n -x -F "$line" "$manifest_doc" >/dev/null; then
+        echo "Missing CI family projection manifest contract:"
+        echo "$line"
+        exit 1
+      fi
+    done
+
+    python3 "$family_runner" validate
+    python3 "$family_runner" check-pr-workflow "$pr_workflow"
+    python3 "$family_runner" check-heavy-workflow "$heavy_workflow"
+
+    rg -n -x -F '      cranelift-phase11-*)' justfile >/dev/null
+    rg -n -F 'just guard-cranelift-phase11-ci-family "$family"' justfile >/dev/null
+    rg -n -F 'guard-cranelift-phase11-ci-family family:' justfile >/dev/null
+
+    while IFS= read -r family; do
+      if rg -n -x -F "      cranelift-phase11-$family)" justfile >/dev/null; then
+        echo "Phase 11 dispatcher still contains explicit family branch: $family"
+        exit 1
+      fi
+    done < <(python3 "$family_runner" families)
+
+    if rg -n -e '^allowed_cranelift_phase11_.*CI_family_count:' \
+         -e '^allowed_cranelift_phase11_.*CI_families:' \
+         "$manifest_doc" >/dev/null; then
+      echo "Manifest still contains a manually maintained Phase 11 CI family count or list."
+      exit 1
+    fi
+
+    unknown_log="$(mktemp)"
+    set +e
+    python3 "$family_runner" validate-family retired-family \
+      >"$unknown_log" 2>&1
+    unknown_status="$?"
+    set -e
+    if [ "$unknown_status" != "2" ]; then
+      echo "Unknown CI family must fail with exit code 2, got $unknown_status."
+      cat "$unknown_log"
+      rm -f "$unknown_log"
+      exit 1
+    fi
+    rg -n -F "unknown or retired Phase 11 CI family 'retired-family'" \
+      "$unknown_log" >/dev/null
+    rm -f "$unknown_log"
+
+    echo "✅ Phase 11 CI families are row-derived, workflow-projected, and owned by one runner mapping."
 
 guard-cranelift-registry-projection:
     #!/usr/bin/env bash

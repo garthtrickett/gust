@@ -75,7 +75,6 @@
         "statuses",
         "origin_phases",
         "feature_families",
-        "ci_families",
         "route_owners",
         "worker_capability_owners",
         "diagnostic_owners"
@@ -100,15 +99,6 @@
           }
         },
         "feature_families": {
-          "type": "array",
-          "minItems": 1,
-          "uniqueItems": true,
-          "items": {
-            "type": "string",
-            "minLength": 1
-          }
-        },
-        "ci_families": {
           "type": "array",
           "minItems": 1,
           "uniqueItems": true,

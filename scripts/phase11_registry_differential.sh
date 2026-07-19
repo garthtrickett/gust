@@ -2,22 +2,20 @@
 set -euo pipefail
 
 requested_family="${1:-all}"
-registry_doc="compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md"
+registry_json="scripts/cranelift_feature_registry.json"
+family_runner="scripts/cranelift_ci_family.py"
 rust_manifest="compiler/experiments/cranelift/Cargo.toml"
 route_deferred_fixture="compiler/phase11_scalar_unsupported_multiply_source.gst"
 build_root="build/guards/cranelift_phase11_registry_differential/${requested_family}"
 cargo_target="$build_root/cargo-target"
 
-case "$requested_family" in
-  all|scalars|locals|cfg|block-params|direct-calls|imports|metadata-diagnostics) ;;
-  *)
-    echo "unknown Phase 11 differential family: $requested_family" >&2
-    exit 2
-    ;;
-esac
+if [ "$requested_family" != "all" ]; then
+  python3 "$family_runner" validate-family "$requested_family" >/dev/null
+fi
 
 for required_file in \
-  "$registry_doc" "$rust_manifest" "$route_deferred_fixture" src/runtime.c ./gust
+  "$registry_json" "$family_runner" "$rust_manifest" \
+  "$route_deferred_fixture" src/runtime.c ./gust
 do
   if [ ! -e "$required_file" ]; then
     echo "Phase 11 differential harness is missing $required_file" >&2
@@ -45,17 +43,6 @@ driver_abs="$(cd "$(dirname "$driver_bin")" && pwd)/$(basename "$driver_bin")"
 CC_BIN="${CC:-cc}"
 CFLAGS_VAL="${CFLAGS:--O0 -w -pthread}"
 
-field_value() {
-  local record="$1"
-  local key="$2"
-  printf '%s\n' "$record" |
-    tr '|' '\n' |
-    sed -n \
-      -e "s/^parity_entry: ${key}=//p" \
-      -e "s/^${key}=//p" |
-    head -n1
-}
-
 execute_and_capture() {
   local binary="$1"
   local prefix="$2"
@@ -67,22 +54,9 @@ execute_and_capture() {
 }
 
 entry_count=0
-while IFS= read -r record; do
-  id="$(field_value "$record" id)"
-  route_owner="$(field_value "$record" route_owner)"
-  ci_family="$(field_value "$record" ci_family)"
-  source_fixture="$(field_value "$record" source_fixture)"
-  deferred_fixture="$(field_value "$record" deferred_fixture)"
-  positive_expectation="$(field_value "$record" positive_expectation)"
-
-  if [ "$route_owner" != "generic_canonical_mir" ]; then
-    continue
-  fi
-  if [ "$requested_family" != "all" ] &&
-     [ "$ci_family" != "$requested_family" ]; then
-    continue
-  fi
-
+while IFS=$'\t' read -r \
+  id route_owner ci_family source_fixture deferred_fixture positive_expectation
+do
   entry_count=$((entry_count + 1))
   context="parity_entry=$id ci_family=$ci_family source=$source_fixture"
 
@@ -221,14 +195,12 @@ while IFS= read -r record; do
   fi
 
   echo "✅ Phase 11 differential entry passed [$context]"
-done < <(rg '^parity_entry: ' "$registry_doc")
+done < <(
+  python3 "$family_runner" differential-rows "$requested_family"
+)
 
 if [ "$entry_count" = "0" ]; then
-  echo "Phase 11 differential family $requested_family selected no supported registry entries." >&2
-  exit 1
-fi
-if [ "$requested_family" = "all" ] && [ "$entry_count" != "12" ]; then
-  echo "Phase 11 differential harness expected 12 supported registry entries, found $entry_count." >&2
+  echo "Phase 11 differential family $requested_family selected no migrated registry entries." >&2
   exit 1
 fi
 
