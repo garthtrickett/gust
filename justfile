@@ -11871,7 +11871,7 @@ guard-cranelift-phase9g-ci-surface:
       echo "Phase 9G heavy CI must select one dynamic evidence guard through matrix.evidence rather than run both sequentially."
       exit 1
     fi
-    rg -n -F 'needs: [guard, phase9g-link-driver]' "$heavy_workflow" >/dev/null
+    rg -n -F 'needs: [guard, phase9g-link-driver, historical-closure]' "$heavy_workflow" >/dev/null
 
     rg -n -F 'The PR-fast workflow owns exactly three focused Phase 9G shards: object artifact, positive link, and negative link.' "$readme_doc" >/dev/null
     rg -n -F 'The heavy workflow expands default `cc`, explicit GCC, and explicit Clang across separate positive and negative matrix jobs.' "$readme_doc" >/dev/null
