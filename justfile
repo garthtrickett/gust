@@ -771,7 +771,8 @@ guard-cloud-heavy-ci-surface:
     rg -n -F 'tar -tzf "$archive" just' "$just_installer" >/dev/null
     bash -n "$just_installer"
     rg -n -F 'GITHUB_PATH' "$workflow" >/dev/null
-    rg -n -F '"$HOME/.local/bin/just" --version' "$workflow" >/dev/null
+    rg -n -F 'installed_version="$("$destination/just" --version)"' "$just_installer" >/dev/null
+    rg -n -F 'if [ "$installed_version" != "just ${JUST_CI_VERSION}" ]; then' "$just_installer" >/dev/null
 
     if rg -n -F 'actions/cache' "$workflow" >/dev/null; then
       echo "Cloud heavy guard workflow must not enable cache yet."
