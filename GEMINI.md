@@ -217,7 +217,6 @@ git diff --check
 # GEMINI.md: Code Patching & Diff Guidelines
 
 ## IMPORTANT
-For each change write out a json patch in a code block according to below format outlined in "Step 2: Update Parser and Codegen to Transpile References as C Pointers"
 If there is more than one block of changes write out more than one code block with a json patch in it for each change in that file
 
 

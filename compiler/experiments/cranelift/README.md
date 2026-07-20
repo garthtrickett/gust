@@ -729,25 +729,16 @@ formats, target architectures, or Cranelift versions. A later change may
 strengthen the same-host byte contract only after the supported toolchain has
 separate stability evidence.
 
-The PR-fast workflow owns exactly three focused Phase 9G shards: object artifact, positive link, and negative link.
-The object shard runs the opening, transactional artifact, target/relocation,
-structural inspection, and reproducibility guards. The positive shard owns the
-link-driver contract, canonical positive matrix, Phase 9C-through-9E migration,
-and Phase 9F bypass retirement. The negative shard owns stable failure
-classification and the negative object/link matrix. Focused CI invocations set
-`PHASE9G_SKIP_PREREQUISITES=1` so each core Phase 9G dynamic guard runs in
-exactly one shard, while direct local guard execution retains the cumulative
-prerequisite chain. The two migration-ownership guards additionally set
-`PHASE9G_SKIP_DYNAMIC_EVIDENCE=1`: they still verify every adapter and frozen
-exception statically, while the existing Phase 9E and Phase 9F semantic shards
-remain the sole owners of lane execution.
+PR Fast contains no Phase 9G dynamic shards.
+Its Cranelift scope is limited to Level 1 contracts and registry-derived Level
+2 feature families. Heavy Guards retains focused expensive native evidence and
+expands default `cc`, explicit GCC, and explicit Clang across separate positive
+and negative matrix jobs. Each matrix job selects one driver and one evidence
+guard; no job loops through all drivers or executes both matrices sequentially.
 
-The heavy workflow expands default `cc`, explicit GCC, and explicit Clang across separate positive and negative matrix jobs.
-Each matrix job selects one driver and one evidence guard. No job loops through
-all drivers, and no job sequentially executes both dynamic link matrices. The
-CI surface guard verifies this wiring statically.
-`guard-cranelift-phase9g-close` depends on that surface but does not replay all
-PR-fast or heavy dynamic jobs inside one aggregate recipe.
+The scheduled or manually dispatched Cranelift Historical Full workflow owns complete Phase 9G object, link, and reproducibility replay.
+`guard-cranelift-phase9g-close` validates the static closure record and CI
+wiring without replaying those dynamic matrices.
 
 The inherited boundary remains unchanged: 33 canonical compiler-owned
 ingestion seams, zero bespoke seams, seventeen frozen translator seeds, frozen

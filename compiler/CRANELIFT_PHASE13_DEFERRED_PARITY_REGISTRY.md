@@ -5,7 +5,7 @@ CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_AUTHORITY: historical_generated_view
 CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_CANONICAL_SOURCE: scripts/cranelift_feature_registry.json
 CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE: phase13_opening_inventory_and_registry_rebase
 CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_STATUS: phase13_opened_deferred_parity_registry
-CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PREDECESSOR_GUARD: guard-cranelift-phase11-close
+CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PREDECESSOR_GUARD: guard-cranelift-phase11-closure-summary
 CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE11_REGISTRY: compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md
 CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE11_DISPOSITION: semantic_closure_snapshot
 CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PHASE11_CLOSURE_SUMMARY_GUARD: guard-cranelift-phase11-closure-summary
@@ -71,7 +71,7 @@ phase13_entry: id=p13_unapproved_host_symbol_policy|parent=phase11_category:broa
 
 ## Opening invariants
 
-- `guard-cranelift-phase11-close` is the mandatory predecessor.
+- `guard-cranelift-phase11-closure-summary` is the mandatory opening predecessor; `guard-cranelift-historical-full` owns full replay.
 - The Phase 11 registry remains byte-for-byte historical evidence.
 - Every inherited row preserves its Phase 11 source and canonical-MIR fixture.
 - Every planning category has at least one concrete Phase 13 candidate.

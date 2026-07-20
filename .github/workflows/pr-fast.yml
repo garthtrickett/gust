@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   build:
-    name: build gust
+    name: build and Level 1 contracts
     runs-on: ubuntu-latest
     outputs:
       phase11_families: ${{ steps.phase11_families.outputs.matrix }}
@@ -36,11 +36,11 @@ jobs:
       - name: PR fast CI surface guard
         run: just guard-pr-fast-ci-surface
 
-      - name: Phase 9G CI surface guard
-        run: just guard-cranelift-phase9g-ci-surface
-
       - name: Build Gust
         run: make gust
+
+      - name: Level 1 fast contracts
+        run: just guard-cranelift-contract-fast
 
       - name: Upload Gust build outputs
         uses: actions/upload-artifact@v4
@@ -60,16 +60,6 @@ jobs:
       fail-fast: false
       matrix:
         shard:
-          - cranelift-return-int
-          - cranelift-local-binding
-          - cranelift-branch
-          - cranelift-differential
-          - cranelift-phase9d-ingestion-ladder
-          - cranelift-phase9e-cfg-ladder
-          - cranelift-phase9f-call-import-ladder
-          - cranelift-phase9g-object-artifact
-          - cranelift-phase9g-link-positive
-          - cranelift-phase9g-link-negative
           - mir-to-c-return-int
           - routed-return-int
           - migration-return-int
@@ -129,41 +119,13 @@ jobs:
       - name: Restore executable bit
         run: chmod +x ./gust 2>/dev/null || true
 
-      - name: Run Phase 11 CI family
-        run: just guard-cranelift-phase11-ci-family "${{ matrix.family }}"
-
-  historical-closure:
-    name: historical Phase 11 closure replay
-    runs-on: ubuntu-latest
-    needs: build
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install guard tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential curl ripgrep
-          bash scripts/install-just-ci.sh "$HOME/.local/bin"
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-
-      - name: Download Gust build outputs
-        uses: actions/download-artifact@v4
-        with:
-          name: gust-build
-          path: .
-
-      - name: Restore executable bit
-        run: chmod +x ./gust 2>/dev/null || true
-
-      - name: Full historical Phase 11 closure
-        run: just guard-cranelift-phase11-close
+      - name: Run Level 2 differential family
+        run: just guard-cranelift-differential-family "${{ matrix.family }}"
 
   final:
     name: final diff check
     runs-on: ubuntu-latest
-    needs: [guard, phase11-family, historical-closure]
+    needs: [guard, phase11-family]
 
     steps:
       - name: Checkout

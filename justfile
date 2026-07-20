@@ -50,64 +50,6 @@ guard-pr-fast-shard shard:
     rm -rf build/guards
     rm -f to.log
     case "{{shard}}" in
-      cranelift-return-int)
-        just guard-cranelift-experiment-manifest-surface
-        just guard-cranelift-backend-surface
-        just guard-cranelift-return-int-native-smoke
-        ;;
-      cranelift-local-binding)
-        just guard-cranelift-experiment-manifest-surface
-        just guard-cranelift-backend-surface
-        just guard-cranelift-local-binding-read-native-smoke
-        ;;
-      cranelift-branch)
-        just guard-cranelift-experiment-manifest-surface
-        just guard-cranelift-backend-surface
-        just guard-cranelift-conditional-branch-native-smoke
-        ;;
-      cranelift-differential)
-        just guard-cranelift-experiment-manifest-surface
-        just guard-cranelift-backend-surface
-        just guard-cranelift-route-architecture-contract
-        ;;
-      cranelift-phase9d-ingestion-ladder)
-        just guard-cranelift-phase9c-differential-ladder-surface
-        just guard-cranelift-compiler-mir-ingestion-strict-rejection-contract
-        just guard-cranelift-phase9d-opening-contract
-        just guard-cranelift-phase9d-ingestion-inventory-architecture
-        just guard-cranelift-phase9d-schema-parser-validator
-        just guard-cranelift-phase9d-generic-ingestion-command
-        just guard-cranelift-phase9d-phase9c-rebase-metadata
-        just guard-cranelift-phase9d-first-post9c-cohort-bypass-freeze
-        ;;
-      cranelift-phase9e-cfg-ladder)
-        just guard-cranelift-phase9e-close
-        ;;
-      cranelift-phase9f-call-import-ladder)
-        just guard-cranelift-phase9f-close
-        ;;
-      cranelift-phase9g-object-artifact)
-        PHASE9G_SKIP_PREREQUISITES=1 just guard-cranelift-phase9g-opening-contract
-        PHASE9G_SKIP_PREREQUISITES=1 just guard-cranelift-phase9g-object-artifact-contract
-        PHASE9G_SKIP_PREREQUISITES=1 just guard-cranelift-phase9g-target-relocation-contract
-        PHASE9G_SKIP_PREREQUISITES=1 just guard-cranelift-phase9g-object-inspection-contract
-        PHASE9G_SKIP_PREREQUISITES=1 just guard-cranelift-phase9g-object-reproducibility
-        ;;
-      cranelift-phase9g-link-positive)
-        PHASE9G_SKIP_PREREQUISITES=1 just guard-cranelift-phase9g-link-driver-contract
-        PHASE9G_SKIP_PREREQUISITES=1 just guard-cranelift-phase9g-positive-link-matrix
-        PHASE9G_SKIP_PREREQUISITES=1 PHASE9G_SKIP_DYNAMIC_EVIDENCE=1 just guard-cranelift-phase9g-phase9c-phase9e-link-migration
-        PHASE9G_SKIP_PREREQUISITES=1 PHASE9G_SKIP_DYNAMIC_EVIDENCE=1 just guard-cranelift-phase9g-link-bypass-retirement
-        ;;
-      cranelift-phase9g-link-negative)
-        PHASE9G_SKIP_PREREQUISITES=1 just guard-cranelift-phase9g-pipeline-failure-classification
-        PHASE9G_SKIP_PREREQUISITES=1 just guard-cranelift-phase9g-negative-link-matrix
-        ;;
-      cranelift-phase11-*)
-        requested_shard="{{shard}}"
-        family="${requested_shard#cranelift-phase11-}"
-        just guard-cranelift-phase11-ci-family "$family"
-        ;;
       mir-to-c-return-int)
         just guard-mir-to-c-return-int-literal-native-smoke
         ;;
@@ -132,7 +74,7 @@ guard-pr-fast-shard shard:
         ;;
       *)
         echo "unknown PR fast shard: {{shard}}"
-        echo "expected one of: cranelift-return-int, cranelift-local-binding, cranelift-branch, cranelift-differential, cranelift-phase9d-ingestion-ladder, cranelift-phase9e-cfg-ladder, cranelift-phase9f-call-import-ladder, cranelift-phase9g-object-artifact, cranelift-phase9g-link-positive, cranelift-phase9g-link-negative, cranelift-phase11-<registry-family>, mir-to-c-return-int, routed-return-int, migration-return-int, migration-local-binding, migration-if-else, migration-provenance"
+        echo "expected one of: mir-to-c-return-int, routed-return-int, migration-return-int, migration-local-binding, migration-if-else, migration-provenance"
         exit 1
         ;;
     esac
@@ -143,119 +85,76 @@ guard-pr-fast-ci-surface:
     echo "🔒 Checking PR fast CI surface..."
     workflow=".github/workflows/pr-fast.yml"
     manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
-    registry_json="scripts/cranelift_feature_registry.json"
     family_runner="scripts/cranelift_ci_family.py"
+    level_runner="scripts/cranelift_test_levels.py"
     just_installer="scripts/install-just-ci.sh"
     for required_file in \
-      "$workflow" "$manifest_doc" "$registry_json" "$family_runner" "$just_installer"
+      "$workflow" "$manifest_doc" "$family_runner" "$level_runner" \
+      scripts/cranelift_test_levels.json \
+      .github/workflows/heavy-guards.yml \
+      .github/workflows/cranelift-historical-full.yml \
+      "$just_installer"
     do
-      if [ ! -f "$required_file" ]; then
-        echo "Missing PR fast CI input: $required_file"
+      if [ ! -f "$required_file" ] || [ -L "$required_file" ]; then
+        echo "Missing regular PR fast CI input: $required_file"
         exit 1
       fi
     done
 
-    if [ "$(rg -c -F 'bash scripts/install-just-ci.sh "$HOME/.local/bin"' "$workflow")" != "4" ]; then
-      echo "PR Fast must install pinned just through the retrying repository-owned installer in all four executable jobs."
+    if [ "$(rg -c -F 'bash scripts/install-just-ci.sh "$HOME/.local/bin"' "$workflow")" != "3" ]; then
+      echo "PR Fast must install pinned just in its build, static guard, and family jobs."
       exit 1
     fi
+
     python3 "$family_runner" validate
     python3 "$family_runner" check-pr-workflow "$workflow"
-
-    pr_dispatcher_body="$(
-      sed -n '/^guard-pr-fast-shard shard:/,/^guard-pr-fast-ci-surface:/p' justfile
-    )"
-    printf '%s\n' "$pr_dispatcher_body" |
-      rg -n -F 'cranelift-differential)' >/dev/null
-    printf '%s\n' "$pr_dispatcher_body" |
-      rg -n -F 'just guard-cranelift-route-architecture-contract' >/dev/null
+    python3 "$level_runner" validate
+    python3 "$level_runner" check-pr-workflow
+    python3 "$level_runner" check-heavy-workflow
+    python3 "$level_runner" check-historical-workflow
 
     required_workflow_tokens=(
       'name: PR Fast'
       'pull_request:'
       'push:'
       'workflow_dispatch:'
-      'permissions:'
-      'contents: read'
-      'jobs:'
-      'build:'
-      'guard:'
-      'final:'
-      'needs: build'
-      'historical-closure:'
-      'needs: [guard, phase11-family, historical-closure]'
-      'Full historical Phase 11 closure'
-      'strategy:'
-      'fail-fast: false'
-      'matrix:'
-      'shard:'
+      'build and Level 1 contracts'
+      'Level 1 fast contracts'
+      'just guard-cranelift-contract-fast'
       'phase11-family:'
       'phase11_families:'
       'matrix.family'
-      'just guard-cranelift-phase11-ci-family'
-      'GITHUB_OUTPUT'
-      'actions/checkout@v4'
+      'Run Level 2 differential family'
+      'just guard-cranelift-differential-family'
+      'needs: [guard, phase11-family]'
       'actions/upload-artifact@v4'
       'actions/download-artifact@v4'
       'name: gust-build'
       'if-no-files-found: error'
-      'chmod +x ./gust'
-      'just guard-pr-fast-shard'
-      'matrix.shard'
-      'just guard-cranelift-phase11-close'
     )
     for token in "${required_workflow_tokens[@]}"; do
       rg -n -F "$token" "$workflow" >/dev/null
     done
-    if [ "$(rg -c -F 'just guard-cranelift-phase11-close' "$workflow")" != "1" ]; then
-      echo "PR Fast must invoke the Phase 11 closure guard exactly once."
-      exit 1
-    fi
-    historical_body="$(
-      sed -n '/^  historical-closure:/,/^  final:/p' "$workflow"
-    )"
-    printf '%s\n' "$historical_body" |
-      rg -n -F 'just guard-cranelift-phase11-close' >/dev/null
-    build_body="$(
-      sed -n '/^  build:/,/^  guard:/p' "$workflow"
-    )"
-    if printf '%s\n' "$build_body" |
-       rg -n -F 'just guard-cranelift-phase11-close' >/dev/null; then
-      echo "PR Fast must run the full Phase 11 closure in the dedicated historical-closure job."
-      exit 1
-    fi
-    if rg -n -F 'just guard-cranelift-phase11-route-retirement-ci' "$workflow" >/dev/null; then
-      echo "PR Fast must invoke the Phase 11 closure guard instead of wiring its predecessor directly."
+
+    if rg -n \
+        -e 'historical-closure:' \
+        -e 'guard-cranelift-historical-full' \
+        -e 'just guard-cranelift-phase11-close' \
+        "$workflow" >/dev/null
+    then
+      echo "PR Fast must not contain Level 3 historical replay."
       exit 1
     fi
 
-    retired_pr_rows=(
-      cranelift-phase10-call-runtime
-      cranelift-phase10-help-surface
-      cranelift-phase10-package-sibling
-      cranelift-phase10-install-runtime
-      cranelift-backend-suite-core-baseline
-      cranelift-backend-suite-core-legacy
-      cranelift-backend-suite-core-mir-basic-arithmetic
-      cranelift-backend-suite-core-mir-basic-calls
-      cranelift-backend-suite-core-mir-bundles
-      cranelift-backend-suite-core-mir-block-graphs
-      cranelift-backend-suite-compiler-mir-scalars
-      cranelift-backend-suite-compiler-mir-metadata
-      cranelift-backend-suite-compiler-mir-blocks
-      cranelift-backend-suite-translator-scalar
-      cranelift-backend-suite-translator-cfg
-      cranelift-backend-suite-translator-metadata
-      cranelift-backend-suite-translator-imports
-    )
-    for retired in "${retired_pr_rows[@]}"; do
-      if rg -n -x "[[:space:]]*- $retired" "$workflow" >/dev/null; then
-        echo "PR Fast still contains retired Phase 10/backend-suite row $retired."
-        exit 1
-      fi
-    done
+    if rg -n '^[[:space:]]*-[[:space:]]*cranelift-' "$workflow" >/dev/null; then
+      echo "PR Fast static shards must not contain historical or native Cranelift rows."
+      rg -n '^[[:space:]]*-[[:space:]]*cranelift-' "$workflow"
+      exit 1
+    fi
 
-    static_shard_count="$(awk '/shard:/{flag=1; next} flag && /^[[:space:]]*steps:/{flag=0} flag && /^[[:space:]]*- /{count++} END{print count+0}' "$workflow")"
+    static_shard_count="$(
+      awk '/shard:/{flag=1; next} flag && /^[[:space:]]*steps:/{flag=0} flag && /^[[:space:]]*- /{count++} END{print count+0}' "$workflow"
+    )"
     family_count="$(python3 "$family_runner" families | wc -l | tr -d ' ')"
     projected_shard_count="$((static_shard_count + family_count))"
     if [ "$projected_shard_count" -gt "23" ]; then
@@ -264,19 +163,11 @@ guard-pr-fast-ci-surface:
     fi
 
     rg -n -F 'allowed_cranelift_phase11_route_retirement_PR_fast_max_shards: 23' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase11_route_retirement_heavy_policy: Heavy_matrix_remains_at_33_shards_and_receives_no_duplicate_Phase11_family_rows' "$manifest_doc" >/dev/null
+    bash -n "$just_installer"
 
-    if rg -n -F 'actions/cache' "$workflow" >/dev/null; then
-      echo "PR fast CI must not add cache wiring in Patch 11."
-      exit 1
-    fi
-    if rg -n -F 'cargo install just --locked' "$workflow" >/dev/null ||
-       rg -n -F 'https://sh.rustup.rs' "$workflow" >/dev/null; then
-      echo "PR fast CI must keep using the prebuilt just installer."
-      exit 1
-    fi
+    echo "✅ PR fast CI surface guard passed: Level 1 contracts plus registry-derived Level 2 families; projected shards=$projected_shard_count within max=23."
 
-    echo "✅ PR fast CI surface guard passed: Phase 11 families are registry-derived; projected shards=$projected_shard_count within max=23."
+
 
 guard-cranelift-core-mir-basic-suite-shard shard:
     #!/usr/bin/env bash
@@ -585,52 +476,41 @@ guard-cloud-heavy-ci-surface:
     echo "🔒 Checking cloud heavy CI surface..."
     workflow=".github/workflows/heavy-guards.yml"
     family_runner="scripts/cranelift_ci_family.py"
+    level_runner="scripts/cranelift_test_levels.py"
     just_installer="scripts/install-just-ci.sh"
-    if [ ! -f "$workflow" ]; then
-      echo "Missing $workflow. Heavy guard cloud workflow must exist."
-      exit 1
-    fi
-    if [ ! -f "$just_installer" ] || [ -L "$just_installer" ]; then
-      echo "Missing regular CI just installer: $just_installer"
-      exit 1
-    fi
-    if [ ! -f "$family_runner" ] || [ -L "$family_runner" ]; then
-      echo "Missing regular CI family runner: $family_runner"
-      exit 1
-    fi
+    for required_file in \
+      "$workflow" "$family_runner" "$level_runner" "$just_installer"
+    do
+      if [ ! -f "$required_file" ] || [ -L "$required_file" ]; then
+        echo "Missing regular Heavy CI input: $required_file"
+        exit 1
+      fi
+    done
+
     python3 "$family_runner" check-heavy-workflow "$workflow"
+    python3 "$level_runner" check-heavy-workflow
 
     rg -n -F 'name: Heavy Guards' "$workflow" >/dev/null
     rg -n -F 'pull_request:' "$workflow" >/dev/null
     rg -n -F 'push:' "$workflow" >/dev/null
     rg -n -F 'workflow_dispatch:' "$workflow" >/dev/null
-    rg -n -F 'permissions:' "$workflow" >/dev/null
-    rg -n -F 'contents: read' "$workflow" >/dev/null
-
     rg -n -F 'jobs:' "$workflow" >/dev/null
     rg -n -F 'build:' "$workflow" >/dev/null
     rg -n -F 'guard:' "$workflow" >/dev/null
     rg -n -F 'phase9g-link-driver:' "$workflow" >/dev/null
-    rg -n -F 'historical-closure:' "$workflow" >/dev/null
     rg -n -F 'final:' "$workflow" >/dev/null
-    rg -n -F 'needs: build' "$workflow" >/dev/null
-    rg -n -F 'needs: [guard, phase9g-link-driver, historical-closure]' "$workflow" >/dev/null
-    rg -n -F 'Full historical Phase 11 closure' "$workflow" >/dev/null
-    rg -n -F 'Full historical Phase 11 closure' "$workflow" >/dev/null
-    rg -n -F 'just guard-cranelift-phase11-close' "$workflow" >/dev/null
-    if [ "$(rg -c -F 'just guard-cranelift-phase11-close' "$workflow")" != "1" ]; then
-      echo "Heavy Guards must invoke the Phase 11 closure guard exactly once."
+    rg -n -F 'needs: [guard, phase9g-link-driver]' "$workflow" >/dev/null
+
+    if rg -n \
+        -e 'historical-closure:' \
+        -e 'guard-cranelift-historical-full' \
+        -e 'just guard-cranelift-phase11-close' \
+        "$workflow" >/dev/null
+    then
+      echo "Heavy Guards must not own the Level 3 full-history replay."
       exit 1
     fi
-    historical_body="$(
-      sed -n '/^  historical-closure:/,/^  final:/p' "$workflow"
-    )"
-    printf '%s\n' "$historical_body" |
-      rg -n -F 'just guard-cranelift-phase11-close' >/dev/null
-    if rg -n -F 'just guard-cranelift-phase11-route-retirement-ci' "$workflow" >/dev/null; then
-      echo "Heavy Guards must invoke the Phase 11 closure guard instead of wiring its predecessor directly."
-      exit 1
-    fi
+
     rg -n -F 'strategy:' "$workflow" >/dev/null
     rg -n -F 'fail-fast: false' "$workflow" >/dev/null
     rg -n -F 'matrix:' "$workflow" >/dev/null
@@ -737,8 +617,8 @@ guard-cloud-heavy-ci-surface:
     rg -n -F 'chmod +x ./gust' "$workflow" >/dev/null
 
     rg -n -F 'sudo apt-get install -y build-essential curl ripgrep' "$workflow" >/dev/null
-    if [ "$(rg -c -F 'bash scripts/install-just-ci.sh "$HOME/.local/bin"' "$workflow")" != "5" ]; then
-      echo "Heavy Guards must install pinned just through the retrying repository-owned installer in all five executable jobs."
+    if [ "$(rg -c -F 'bash scripts/install-just-ci.sh "$HOME/.local/bin"' "$workflow")" != "4" ]; then
+      echo "Heavy Guards must install pinned just through the retrying repository-owned installer in all four executable jobs."
       exit 1
     fi
     rg -n -x -F 'JUST_CI_VERSION="1.55.1"' "$just_installer" >/dev/null
@@ -7709,7 +7589,7 @@ guard-cranelift-phase9f-opening-contract:
       exit 1
     fi
 
-    just guard-cranelift-phase9e-close
+    rg -n -x -F 'guard-cranelift-phase9e-close:' justfile >/dev/null
 
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9F_OPENING_CONTRACT_GUARD: guard-cranelift-phase9f-opening-contract' "$manifest_doc" justfile >/dev/null
     rg -n -F 'allowed_compiler_mir_ingestion_phase9f_contract_status: phase9f_closed_canonical_calls_and_imported_runtime_boundary' "$manifest_doc" >/dev/null
@@ -11797,15 +11677,19 @@ guard-cranelift-phase9g-object-reproducibility:
 guard-cranelift-phase9g-ci-surface:
     #!/usr/bin/env bash
     set -euo pipefail
-    echo "🔒 Checking Phase 9G reproducibility and CI partition surface..."
+    echo "🔒 Checking Phase 9G Level 3 and heavy evidence ownership..."
     manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     readme_doc="compiler/experiments/cranelift/README.md"
     pr_workflow=".github/workflows/pr-fast.yml"
     heavy_workflow=".github/workflows/heavy-guards.yml"
+    historical_workflow=".github/workflows/cranelift-historical-full.yml"
 
-    for required_file in "$manifest_doc" "$readme_doc" "$pr_workflow" "$heavy_workflow"; do
-      if [ ! -f "$required_file" ]; then
-        echo "Missing Phase 9G CI surface input: $required_file"
+    for required_file in \
+      "$manifest_doc" "$readme_doc" "$pr_workflow" "$heavy_workflow" \
+      "$historical_workflow"
+    do
+      if [ ! -f "$required_file" ] || [ -L "$required_file" ]; then
+        echo "Missing regular Phase 9G CI surface input: $required_file"
         exit 1
       fi
     done
@@ -11813,78 +11697,59 @@ guard-cranelift-phase9g-ci-surface:
     just guard-pr-fast-ci-surface
     just guard-cloud-heavy-ci-surface
 
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9G_CI_SURFACE_GUARD: guard-cranelift-phase9g-ci-surface' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_ci_status: phase9g_reproducibility_and_focused_dynamic_evidence_partitioned' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_ci_pr_fast_shards: cranelift-phase9g-object-artifact,cranelift-phase9g-link-positive,cranelift-phase9g-link-negative' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_ci_pr_fast_shard_count: 3' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_ci_focused_prerequisite_policy: PHASE9G_SKIP_PREREQUISITES=1_preserves_default_cumulative_local_guards_while_preventing_cross_shard_dynamic_reexecution' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_ci_migration_evidence_policy: PHASE9G_SKIP_DYNAMIC_EVIDENCE=1_keeps_migration_ownership_checks_static_in_the_link_positive_shard_while_existing_phase9e_and_phase9f_shards_own_lane_execution' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_ci_heavy_driver_matrix: default_cc,gcc,clang' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_ci_heavy_evidence_matrix: positive,negative' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_ci_heavy_job_count: 6' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_ci_matrix_policy: one_driver_and_one_evidence_case_per_job_no_sequential_driver_loop_and_no_dynamic_matrix_aggregate' "$manifest_doc" >/dev/null
-
-    for shard in cranelift-phase9g-object-artifact cranelift-phase9g-link-positive cranelift-phase9g-link-negative; do
-      rg -n "^[[:space:]]*-[[:space:]]*$shard$" "$pr_workflow" >/dev/null
+    required_manifest_lines=(
+      'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9G_CI_SURFACE_GUARD: guard-cranelift-phase9g-ci-surface'
+      'allowed_cranelift_phase9g_ci_status: phase9g_level3_history_and_heavy_link_evidence_partitioned'
+      'allowed_cranelift_phase9g_ci_pr_fast_policy: no_Phase9G_dynamic_shards_Level1_contracts_only'
+      'allowed_cranelift_phase9g_ci_heavy_driver_matrix: default_cc,gcc,clang'
+      'allowed_cranelift_phase9g_ci_heavy_evidence_matrix: positive,negative'
+      'allowed_cranelift_phase9g_ci_heavy_job_count: 6'
+      'allowed_cranelift_phase9g_ci_matrix_policy: one_driver_and_one_evidence_case_per_job_no_sequential_driver_loop_and_no_dynamic_matrix_aggregate'
+      'allowed_cranelift_phase9g_ci_historical_policy: full_object_link_reproducibility_and_history_replay_owned_by_guard_cranelift_historical_full'
+    )
+    for line in "${required_manifest_lines[@]}"; do
+      rg -n -x -F "$line" "$manifest_doc" >/dev/null
     done
-    phase9g_pr_shard_count="$(rg -c '^[[:space:]]*-[[:space:]]*cranelift-phase9g-(object-artifact|link-positive|link-negative)$' "$pr_workflow")"
-    if [ "$phase9g_pr_shard_count" != "3" ]; then
-      echo "Expected exactly three focused Phase 9G PR-fast shards, found $phase9g_pr_shard_count."
-      exit 1
-    fi
-    rg -n -F 'Phase 9G CI surface guard' "$pr_workflow" >/dev/null
-    rg -n -F 'just guard-cranelift-phase9g-ci-surface' "$pr_workflow" >/dev/null
 
-    pr_fast_dispatcher_body="$(sed -n '/^guard-pr-fast-shard shard:/,/^guard-pr-fast-ci-surface:/p' justfile)"
-    for shard_case in cranelift-phase9g-object-artifact cranelift-phase9g-link-positive cranelift-phase9g-link-negative; do
-      printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F "$shard_case)" >/dev/null
-    done
-    focused_command_count="$(printf '%s\n' "$pr_fast_dispatcher_body" | rg -c -F 'PHASE9G_SKIP_PREREQUISITES=1')"
-    if [ "$focused_command_count" != "11" ]; then
-      echo "Expected eleven explicitly partitioned Phase 9G guard commands, found $focused_command_count."
-      exit 1
-    fi
-    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'PHASE9G_SKIP_PREREQUISITES=1 just guard-cranelift-phase9g-object-reproducibility' >/dev/null
-    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'PHASE9G_SKIP_PREREQUISITES=1 just guard-cranelift-phase9g-positive-link-matrix' >/dev/null
-    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'PHASE9G_SKIP_PREREQUISITES=1 PHASE9G_SKIP_DYNAMIC_EVIDENCE=1 just guard-cranelift-phase9g-phase9c-phase9e-link-migration' >/dev/null
-    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'PHASE9G_SKIP_PREREQUISITES=1 PHASE9G_SKIP_DYNAMIC_EVIDENCE=1 just guard-cranelift-phase9g-link-bypass-retirement' >/dev/null
-    printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'PHASE9G_SKIP_PREREQUISITES=1 just guard-cranelift-phase9g-negative-link-matrix' >/dev/null
-    if printf '%s\n' "$pr_fast_dispatcher_body" | rg -n -F 'guard-cranelift-phase9g-close' >/dev/null; then
-      echo "Focused Phase 9G PR-fast shards must not invoke the closure aggregate."
+    if rg -n '^[[:space:]]*-[[:space:]]*cranelift-phase9g-' "$pr_workflow" >/dev/null; then
+      echo "Phase 9G dynamic evidence must not run in PR Fast."
       exit 1
     fi
 
-    heavy_driver_body="$(sed -n '/^  phase9g-link-driver:/,/^  final:/p' "$heavy_workflow")"
-    printf '%s\n' "$heavy_driver_body" | rg -n -F 'phase9g-link-driver:' >/dev/null
-    printf '%s\n' "$heavy_driver_body" | rg -n -F 'driver:' >/dev/null
-    printf '%s\n' "$heavy_driver_body" | rg -n -F 'evidence:' >/dev/null
+    heavy_driver_body="$(
+      sed -n '/^  phase9g-link-driver:/,/^  final:/p' "$heavy_workflow"
+    )"
     for driver in default gcc clang; do
-      printf '%s\n' "$heavy_driver_body" | rg -n "^[[:space:]]*-[[:space:]]*$driver$" >/dev/null
+      printf '%s\n' "$heavy_driver_body" |
+        rg -n "^[[:space:]]*-[[:space:]]*$driver$" >/dev/null
     done
     for evidence in positive negative; do
-      printf '%s\n' "$heavy_driver_body" | rg -n "^[[:space:]]*-[[:space:]]*$evidence$" >/dev/null
+      printf '%s\n' "$heavy_driver_body" |
+        rg -n "^[[:space:]]*-[[:space:]]*$evidence$" >/dev/null
     done
-    printf '%s\n' "$heavy_driver_body" | rg -n -F 'sudo apt-get install -y build-essential curl ripgrep gcc clang' >/dev/null
-    printf '%s\n' "$heavy_driver_body" | rg -n -F 'PHASE9G_SKIP_PREREQUISITES=1 just' >/dev/null
-    printf '%s\n' "$heavy_driver_body" | rg -n -F 'matrix.driver' >/dev/null
-    printf '%s\n' "$heavy_driver_body" | rg -n -F 'matrix.evidence' >/dev/null
-    printf '%s\n' "$heavy_driver_body" | rg -n -F 'guard-cranelift-phase9g-' >/dev/null
-    printf '%s\n' "$heavy_driver_body" | rg -n -F -- '-link-matrix' >/dev/null
-    if printf '%s\n' "$heavy_driver_body" | rg -n 'for[[:space:]]+.*(driver|compiler)' >/dev/null; then
-      echo "Phase 9G heavy CI must use matrix jobs rather than looping through link drivers in one job."
+    printf '%s\n' "$heavy_driver_body" |
+      rg -n -F 'PHASE9G_SKIP_PREREQUISITES=1 just' >/dev/null
+    printf '%s\n' "$heavy_driver_body" |
+      rg -n -F 'matrix.driver' >/dev/null
+    printf '%s\n' "$heavy_driver_body" |
+      rg -n -F 'matrix.evidence' >/dev/null
+    if printf '%s\n' "$heavy_driver_body" |
+       rg -n 'for[[:space:]]+.*(driver|compiler)' >/dev/null
+    then
+      echo "Phase 9G heavy CI must keep one driver/evidence pair per matrix job."
       exit 1
     fi
-    if printf '%s\n' "$heavy_driver_body" | rg -n -F 'just guard-cranelift-phase9g-positive-link-matrix' >/dev/null ||
-       printf '%s\n' "$heavy_driver_body" | rg -n -F 'just guard-cranelift-phase9g-negative-link-matrix' >/dev/null; then
-      echo "Phase 9G heavy CI must select one dynamic evidence guard through matrix.evidence rather than run both sequentially."
-      exit 1
-    fi
-    rg -n -F 'needs: [guard, phase9g-link-driver, historical-closure]' "$heavy_workflow" >/dev/null
 
-    rg -n -F 'The PR-fast workflow owns exactly three focused Phase 9G shards: object artifact, positive link, and negative link.' "$readme_doc" >/dev/null
-    rg -n -F 'The heavy workflow expands default `cc`, explicit GCC, and explicit Clang across separate positive and negative matrix jobs.' "$readme_doc" >/dev/null
+    rg -n -F 'name: Cranelift Historical Full' "$historical_workflow" >/dev/null
+    rg -n -F 'schedule:' "$historical_workflow" >/dev/null
+    rg -n -F 'workflow_dispatch:' "$historical_workflow" >/dev/null
+    rg -n -F 'just guard-cranelift-historical-full' "$historical_workflow" >/dev/null
 
-    echo "✅ Phase 9G CI surface passed: structured reproducibility has a focused PR shard, positive and negative link evidence are separated, and six heavy driver/evidence jobs run without a sequential aggregate."
+    rg -n -F 'PR Fast contains no Phase 9G dynamic shards.' "$readme_doc" >/dev/null
+    rg -n -F 'The scheduled or manually dispatched Cranelift Historical Full workflow owns complete Phase 9G object, link, and reproducibility replay.' "$readme_doc" >/dev/null
+
+    echo "✅ Phase 9G CI surface passed: PR Fast is Level 1/2 only, Heavy keeps focused link-driver evidence, and full history has one scheduled/manual owner."
+
 
 
 guard-cranelift-phase9g-close:
@@ -11896,8 +11761,9 @@ guard-cranelift-phase9g-close:
     source_file="compiler/experiments/cranelift/src/main.rs"
     pr_workflow=".github/workflows/pr-fast.yml"
     heavy_workflow=".github/workflows/heavy-guards.yml"
+    historical_workflow=".github/workflows/cranelift-historical-full.yml"
 
-    for required_file in "$manifest_doc" "$readme_doc" "$source_file" "$pr_workflow" "$heavy_workflow"; do
+    for required_file in "$manifest_doc" "$readme_doc" "$source_file" "$pr_workflow" "$heavy_workflow" "$historical_workflow"; do
       if [ ! -f "$required_file" ]; then
         echo "Missing Phase 9G closure input: $required_file"
         exit 1
@@ -12051,7 +11917,7 @@ guard-cranelift-phase9g-close:
     rg -n -F 'CRANELIFT_EXPERIMENT_ENABLED_BY_DEFAULT: false' "$manifest_doc" >/dev/null
     rg -n -F 'forbidden_production_route: cranelift' "$manifest_doc" >/dev/null
 
-    close_body="$(sed -n '/^guard-cranelift-phase9g-close:/,/^guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:/p' justfile)"
+    close_body="$(sed -n '/^guard-cranelift-phase9g-close:/,/^guard-cranelift-phase10-opening-contract:/p' justfile)"
     dynamic_close_calls="$(printf '%s\n' "$close_body" | rg '^[[:space:]]+just guard-cranelift-phase9g-(object-artifact-contract|target-relocation-contract|object-inspection-contract|link-driver-contract|pipeline-failure-classification|positive-link-matrix|negative-link-matrix|phase9c-phase9e-link-migration|link-bypass-retirement|object-reproducibility)$' || true)"
     if [ -n "$dynamic_close_calls" ]; then
       echo "Phase 9G close must not replay focused dynamic evidence:"
@@ -12059,46 +11925,17 @@ guard-cranelift-phase9g-close:
       exit 1
     fi
 
-    for closure_workflow in "$pr_workflow" "$heavy_workflow"; do
-      rg -n -F 'historical-closure:' "$closure_workflow" >/dev/null
-      rg -n -F 'name: Full historical Phase 11 closure' "$closure_workflow" >/dev/null
-    done
-
-    pr_historical_closure_count="$(
-      rg -c '^[[:space:]]*run:[[:space:]]+just guard-cranelift-phase11-close[[:space:]]*$' "$pr_workflow" ||
-        true
-    )"
-    heavy_historical_closure_count="$(
-      rg -c '^[[:space:]]*run:[[:space:]]+just guard-cranelift-phase11-close[[:space:]]*$' "$heavy_workflow" ||
-        true
-    )"
-    pr_direct_phase9g_close_count="$(
-      rg -c '^[[:space:]]*run:[[:space:]]+just guard-cranelift-phase9g-close[[:space:]]*$' "$pr_workflow" ||
-        true
-    )"
-    heavy_direct_phase9g_close_count="$(
-      rg -c '^[[:space:]]*run:[[:space:]]+just guard-cranelift-phase9g-close[[:space:]]*$' "$heavy_workflow" ||
-        true
-    )"
-    pr_historical_closure_count="${pr_historical_closure_count:-0}"
-    heavy_historical_closure_count="${heavy_historical_closure_count:-0}"
-    pr_direct_phase9g_close_count="${pr_direct_phase9g_close_count:-0}"
-    heavy_direct_phase9g_close_count="${heavy_direct_phase9g_close_count:-0}"
-    if [ "$pr_historical_closure_count" != "1" ] ||
-       [ "$heavy_historical_closure_count" != "1" ]; then
-      echo "Full historical Phase 11 closure must be wired once in PR-fast and once in heavy CI; found PR-fast=$pr_historical_closure_count heavy=$heavy_historical_closure_count."
+    python3 scripts/cranelift_test_levels.py check-historical-workflow
+    if rg -n -F 'guard-cranelift-historical-full' "$pr_workflow" "$heavy_workflow" >/dev/null; then
+      echo "Level 3 full history must not be wired into PR Fast or Heavy Guards."
       exit 1
     fi
-    if [ "$pr_direct_phase9g_close_count" != "0" ] ||
-       [ "$heavy_direct_phase9g_close_count" != "0" ]; then
-      echo "Phase 9G close must be replayed through the dedicated full historical Phase 11 closure job, not wired as a second direct workflow gate."
-      exit 1
-    fi
+    rg -n -F 'just guard-cranelift-historical-full' "$historical_workflow" >/dev/null
 
     rg -n -F 'Phase 9G is closed as' "$readme_doc" >/dev/null
     rg -n -F '`phase9g_closed_transactional_object_and_classified_link_pipeline`.' "$readme_doc" >/dev/null
     tr '\n' ' ' < "$readme_doc" |
-      rg -F 'The closure guard is a static meta-gate and does not replay the focused dynamic matrices.' >/dev/null
+      rg -F 'guard-cranelift-phase9g-close` validates the static closure record and CI wiring without replaying those dynamic matrices.' >/dev/null
 
     echo "✅ Phase 9G closed: object and executable publication are transactional, object and link failures are classified, all 33 canonical seams are driver-owned, dynamic evidence remains partitioned, MIR syntax and translator seeds are frozen, and production routing is unchanged."
 
@@ -12119,7 +11956,7 @@ guard-cranelift-phase10-opening-contract:
     done
 
     # Phase 10 may open only on the closed Phase 9G artifact pipeline.
-    just guard-cranelift-phase9g-close
+    rg -n -x -F 'guard-cranelift-phase9g-close:' justfile >/dev/null
 
     rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE10_OPENING_CONTRACT_GUARD: guard-cranelift-phase10-opening-contract' "$manifest_doc" justfile >/dev/null
     rg -n -F 'allowed_cranelift_phase10_contract_status: phase10_open_explicit_experimental_cranelift_backend' "$manifest_doc" >/dev/null
@@ -13758,26 +13595,43 @@ guard-cranelift-phase10-packaging-help-ci:
 guard-cranelift-phase10-close:
     #!/usr/bin/env bash
     set -euo pipefail
-    echo "🔒 Preserving Phase 10 as historical evidence after exact-route retirement..."
+    echo "🔒 Validating Phase 10 historical closure wiring..."
     manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     test -f "$manifest_doc"
 
-    just guard-cranelift-phase9g-close
-    just guard-cranelift-backend-surface
-    just guard-cranelift-experiment-manifest-surface
-    just guard-cranelift-phase10-scalar-source-route
-    just guard-cranelift-phase10-cfg-block-parameter-source-route
-    just guard-cranelift-phase10-call-import-runtime-source-route
-    PHASE11_ROUTE_ARCHITECTURE_SKIP_DYNAMIC=1 \
-      just guard-cranelift-route-architecture-contract
-    just guard-pr-fast-ci-surface
-    just guard-cloud-heavy-ci-surface
+    for guard_name in \
+      guard-cranelift-phase10-opening-contract \
+      guard-cranelift-phase10-backend-selection-contract \
+      guard-cranelift-phase10-output-contract \
+      guard-cranelift-phase10-program-mir-contract \
+      guard-cranelift-phase10-capability-contract \
+      guard-cranelift-phase10-driver-handshake-contract \
+      guard-cranelift-phase10-backend-request-contract \
+      guard-cranelift-phase10-scalar-source-route \
+      guard-cranelift-phase10-cfg-block-parameter-source-route \
+      guard-cranelift-phase10-call-import-runtime-source-route \
+      guard-cranelift-phase10-packaging-help-ci
+    do
+      rg -n -x -F "$guard_name:" justfile >/dev/null
+    done
 
     rg -n -F 'allowed_cranelift_phase10_scalar_source_route_retirement_status: exact_shape_implementation_retired_by_Phase11_Patch11' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_cfg_block_parameter_source_route_retirement_status: exact_shape_implementation_retired_by_Phase11_Patch11' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_call_import_runtime_source_route_retirement_status: exact_shape_implementation_retired_by_Phase11_Patch11' "$manifest_doc" >/dev/null
 
-    echo "✅ Phase 10 remains closed as historical fixture/protocol evidence; current route architecture is owned by the semantic architecture contract."
+    close_body="$(
+      sed -n '/^guard-cranelift-phase10-close:/,/^guard-cranelift-phase11-opening-contract:/p' justfile
+    )"
+    if printf '%s\n' "$close_body" |
+       rg -n '^[[:space:]]+just guard-cranelift-phase(9g|10)-' >/dev/null
+    then
+      echo "Phase 10 close must validate historical wiring without replaying Phase 9G or Phase 10 evidence."
+      exit 1
+    fi
+
+    echo "✅ Phase 10 closure wiring passed; dynamic evidence remains Level 3."
+
+
 
 guard-cranelift-phase11-opening-contract:
     #!/usr/bin/env bash
@@ -13790,7 +13644,7 @@ guard-cranelift-phase11-opening-contract:
       test -f "$required_file"
     done
 
-    just guard-cranelift-phase10-close
+    rg -n -x -F 'guard-cranelift-phase10-close:' justfile >/dev/null
     required_manifest_lines=(
       'CRANELIFT_EXPERIMENT_ALLOWED_PHASE11_OPENING_CONTRACT_GUARD: guard-cranelift-phase11-opening-contract'
       'allowed_cranelift_phase11_opening_status: phase11_open_inventory_backed_feature_parity_migration'
@@ -14070,15 +13924,15 @@ guard-cranelift-phase11-scalar-expression-parity:
         exit 1
       fi
     done
-    PHASE11_GENERIC_ROUTE_SKIP_DYNAMIC=1 \
-      just guard-cranelift-phase11-generic-canonical-mir-route
+    PHASE11_ROUTE_ARCHITECTURE_SKIP_DYNAMIC=1 \
+      just guard-cranelift-route-architecture-contract
 
     required_manifest_lines=(
       'CRANELIFT_EXPERIMENT_ALLOWED_PHASE11_SCALAR_EXPRESSION_PARITY_GUARD: guard-cranelift-phase11-scalar-expression-parity'
       'allowed_cranelift_phase11_scalar_expression_status: phase11_migrated_scalar_expression_parity'
       'allowed_cranelift_phase11_scalar_expression_predecessor_status: phase11_connected_generic_canonical_MIR_source_route'
-      'allowed_cranelift_phase11_scalar_expression_predecessor_guard: guard-cranelift-phase11-generic-canonical-mir-route'
-      'allowed_cranelift_phase11_scalar_expression_predecessor_policy: predecessor_guard_runs_static_contract_mode_without_replaying_the_six_dynamic_baseline_executions'
+      'allowed_cranelift_phase11_scalar_expression_predecessor_guard: guard-cranelift-route-architecture-contract'
+      'allowed_cranelift_phase11_scalar_expression_predecessor_policy: Level2_family_runs_focused_static_contract_without_replaying_other_family_guards'
       'allowed_cranelift_phase11_scalar_expression_positive_fixture_count: 4'
       'allowed_cranelift_phase11_scalar_expression_positive_fixtures: compiler/phase11_scalar_literal_source.gst,compiler/phase11_scalar_local_read_source.gst,compiler/phase11_scalar_add_source.gst,compiler/phase11_scalar_positive_predicate_source.gst'
       'allowed_cranelift_phase11_scalar_expression_negative_fixture: compiler/phase11_scalar_unsupported_multiply_source.gst'
@@ -14413,15 +14267,15 @@ guard-cranelift-phase11-local-state-parity:
         exit 1
       fi
     done
-    PHASE11_SCALAR_EXPRESSION_SKIP_DYNAMIC=1 \
-      just guard-cranelift-phase11-scalar-expression-parity
+    PHASE11_ROUTE_ARCHITECTURE_SKIP_DYNAMIC=1 \
+      just guard-cranelift-route-architecture-contract
 
     required_manifest_lines=(
       'CRANELIFT_EXPERIMENT_ALLOWED_PHASE11_LOCAL_STATE_PARITY_GUARD: guard-cranelift-phase11-local-state-parity'
       'allowed_cranelift_phase11_local_state_status: phase11_migrated_local_state_parity'
       'allowed_cranelift_phase11_local_state_predecessor_status: phase11_migrated_scalar_expression_parity'
-      'allowed_cranelift_phase11_local_state_predecessor_guard: guard-cranelift-phase11-scalar-expression-parity'
-      'allowed_cranelift_phase11_local_state_predecessor_policy: predecessor_guard_runs_static_contract_mode_without_replaying_scalar_dynamic_executions'
+      'allowed_cranelift_phase11_local_state_predecessor_guard: guard-cranelift-route-architecture-contract'
+      'allowed_cranelift_phase11_local_state_predecessor_policy: Level2_family_runs_focused_static_contract_without_replaying_other_family_guards'
       'allowed_cranelift_phase11_local_state_lowerer: compiler/mir_native_backend_local_state_source.gst'
       'allowed_cranelift_phase11_local_state_positive_fixture_count: 4'
       'allowed_cranelift_phase11_local_state_positive_fixtures: compiler/phase11_local_state_straight_line_source.gst,compiler/phase11_local_state_branch_update_source.gst,compiler/phase11_local_state_read_after_write_source.gst,compiler/phase11_local_state_independent_locals_source.gst'
@@ -14805,15 +14659,15 @@ guard-cranelift-phase11-structured-cfg-parity:
         exit 1
       fi
     done
-    PHASE11_LOCAL_STATE_SKIP_DYNAMIC=1 \
-      just guard-cranelift-phase11-local-state-parity
+    PHASE11_ROUTE_ARCHITECTURE_SKIP_DYNAMIC=1 \
+      just guard-cranelift-route-architecture-contract
 
     required_manifest_lines=(
       'CRANELIFT_EXPERIMENT_ALLOWED_PHASE11_STRUCTURED_CFG_PARITY_GUARD: guard-cranelift-phase11-structured-cfg-parity'
       'allowed_cranelift_phase11_structured_CFG_status: phase11_migrated_structured_CFG_parity'
       'allowed_cranelift_phase11_structured_CFG_predecessor_status: phase11_migrated_local_state_parity'
-      'allowed_cranelift_phase11_structured_CFG_predecessor_guard: guard-cranelift-phase11-local-state-parity'
-      'allowed_cranelift_phase11_structured_CFG_predecessor_policy: predecessor_guard_runs_static_contract_mode_without_replaying_local_state_dynamic_executions'
+      'allowed_cranelift_phase11_structured_CFG_predecessor_guard: guard-cranelift-route-architecture-contract'
+      'allowed_cranelift_phase11_structured_CFG_predecessor_policy: Level2_family_runs_focused_static_contract_without_replaying_other_family_guards'
       'allowed_cranelift_phase11_structured_CFG_lowerer: compiler/mir_native_backend_structured_cfg_source.gst'
       'allowed_cranelift_phase11_structured_CFG_positive_fixture_count: 3'
       'allowed_cranelift_phase11_structured_CFG_positive_fixtures: compiler/phase11_structured_cfg_nested_source.gst,compiler/phase11_structured_cfg_three_predecessor_join_source.gst,compiler/phase11_structured_cfg_independent_jumps_source.gst'
@@ -15320,15 +15174,15 @@ guard-cranelift-phase11-block-parameter-loop-parity:
       fi
     done
 
-    PHASE11_STRUCTURED_CFG_SKIP_DYNAMIC=1 \
-      just guard-cranelift-phase11-structured-cfg-parity
+    PHASE11_ROUTE_ARCHITECTURE_SKIP_DYNAMIC=1 \
+      just guard-cranelift-route-architecture-contract
 
     required_manifest_lines=(
       'CRANELIFT_EXPERIMENT_ALLOWED_PHASE11_BLOCK_PARAMETER_LOOP_PARITY_GUARD: guard-cranelift-phase11-block-parameter-loop-parity'
       'allowed_cranelift_phase11_block_parameter_loop_status: phase11_migrated_block_parameter_and_backedge_parity'
       'allowed_cranelift_phase11_block_parameter_loop_predecessor_status: phase11_migrated_structured_CFG_parity'
-      'allowed_cranelift_phase11_block_parameter_loop_predecessor_guard: guard-cranelift-phase11-structured-cfg-parity'
-      'allowed_cranelift_phase11_block_parameter_loop_predecessor_policy: predecessor_guard_runs_static_contract_mode_without_replaying_structured_CFG_dynamic_evidence'
+      'allowed_cranelift_phase11_block_parameter_loop_predecessor_guard: guard-cranelift-route-architecture-contract'
+      'allowed_cranelift_phase11_block_parameter_loop_predecessor_policy: Level2_family_runs_focused_static_contract_without_replaying_other_family_guards'
       'allowed_cranelift_phase11_block_parameter_loop_lowerer: compiler/mir_native_backend_block_parameter_loop_source.gst'
       'allowed_cranelift_phase11_block_parameter_loop_positive_fixture_count: 3'
       'allowed_cranelift_phase11_block_parameter_loop_positive_fixtures: compiler/phase11_block_parameter_non_final_join_source.gst,compiler/phase11_block_parameter_countdown_loop_source.gst,compiler/phase11_block_parameter_stride_loop_source.gst'
@@ -15821,15 +15675,15 @@ guard-cranelift-phase11-direct-call-abi-parity:
       fi
     done
 
-    PHASE11_BLOCK_PARAMETER_LOOP_SKIP_DYNAMIC=1 \
-      just guard-cranelift-phase11-block-parameter-loop-parity
+    PHASE11_ROUTE_ARCHITECTURE_SKIP_DYNAMIC=1 \
+      just guard-cranelift-route-architecture-contract
 
     required_manifest_lines=(
       'CRANELIFT_EXPERIMENT_ALLOWED_PHASE11_DIRECT_CALL_ABI_PARITY_GUARD: guard-cranelift-phase11-direct-call-abi-parity'
       'allowed_cranelift_phase11_direct_call_ABI_status: phase11_migrated_direct_call_and_ABI_parity'
       'allowed_cranelift_phase11_direct_call_ABI_predecessor_status: phase11_migrated_block_parameter_and_backedge_parity'
-      'allowed_cranelift_phase11_direct_call_ABI_predecessor_guard: guard-cranelift-phase11-block-parameter-loop-parity'
-      'allowed_cranelift_phase11_direct_call_ABI_predecessor_policy: predecessor_guard_runs_static_contract_mode_without_replaying_block_parameter_loop_dynamic_evidence'
+      'allowed_cranelift_phase11_direct_call_ABI_predecessor_guard: guard-cranelift-route-architecture-contract'
+      'allowed_cranelift_phase11_direct_call_ABI_predecessor_policy: Level2_family_runs_focused_static_contract_without_replaying_other_family_guards'
       'allowed_cranelift_phase11_direct_call_ABI_lowerer: compiler/mir_native_backend_direct_call_source.gst'
       'allowed_cranelift_phase11_direct_call_ABI_positive_fixture_count: 1'
       'allowed_cranelift_phase11_direct_call_ABI_positive_fixtures: compiler/phase11_direct_call_nested_source.gst'
@@ -16173,15 +16027,15 @@ guard-cranelift-phase11-module-import-runtime-parity:
       fi
     done
 
-    PHASE11_DIRECT_CALL_ABI_SKIP_DYNAMIC=1 \
-      just guard-cranelift-phase11-direct-call-abi-parity
+    PHASE11_ROUTE_ARCHITECTURE_SKIP_DYNAMIC=1 \
+      just guard-cranelift-route-architecture-contract
 
     required_manifest_lines=(
       'CRANELIFT_EXPERIMENT_ALLOWED_PHASE11_MODULE_IMPORT_RUNTIME_PARITY_GUARD: guard-cranelift-phase11-module-import-runtime-parity'
       'allowed_cranelift_phase11_module_import_runtime_status: phase11_migrated_module_import_and_runtime_parity'
       'allowed_cranelift_phase11_module_import_runtime_predecessor_status: phase11_migrated_direct_call_and_ABI_parity'
-      'allowed_cranelift_phase11_module_import_runtime_predecessor_guard: guard-cranelift-phase11-direct-call-abi-parity'
-      'allowed_cranelift_phase11_module_import_runtime_predecessor_policy: predecessor_guard_runs_static_contract_mode_without_replaying_direct_call_dynamic_evidence'
+      'allowed_cranelift_phase11_module_import_runtime_predecessor_guard: guard-cranelift-route-architecture-contract'
+      'allowed_cranelift_phase11_module_import_runtime_predecessor_policy: Level2_family_runs_focused_static_contract_without_replaying_other_family_guards'
       'allowed_cranelift_phase11_module_import_runtime_lowerer: compiler/mir_native_backend_module_import_source.gst'
       'allowed_cranelift_phase11_module_import_runtime_positive_fixture_count: 3'
       'allowed_cranelift_phase11_module_import_runtime_positive_fixtures: compiler/phase11_module_import_main_source.gst,compiler/phase11_declared_external_import_source.gst,compiler/phase10_runtime_boundary_source.gst'
@@ -16531,15 +16385,15 @@ guard-cranelift-phase11-metadata-diagnostic-parity:
       fi
     done
 
-    PHASE11_MODULE_IMPORT_RUNTIME_SKIP_DYNAMIC=1 \
-      just guard-cranelift-phase11-module-import-runtime-parity
+    PHASE11_ROUTE_ARCHITECTURE_SKIP_DYNAMIC=1 \
+      just guard-cranelift-route-architecture-contract
 
     required_manifest_lines=(
       'CRANELIFT_EXPERIMENT_ALLOWED_PHASE11_METADATA_DIAGNOSTIC_PARITY_GUARD: guard-cranelift-phase11-metadata-diagnostic-parity'
       'allowed_cranelift_phase11_metadata_diagnostic_status: phase11_froze_metadata_and_diagnostic_parity'
       'allowed_cranelift_phase11_metadata_diagnostic_predecessor_status: phase11_migrated_module_import_and_runtime_parity'
-      'allowed_cranelift_phase11_metadata_diagnostic_predecessor_guard: guard-cranelift-phase11-module-import-runtime-parity'
-      'allowed_cranelift_phase11_metadata_diagnostic_predecessor_policy: predecessor_guard_runs_static_contract_mode_without_replaying_module_import_runtime_dynamic_evidence'
+      'allowed_cranelift_phase11_metadata_diagnostic_predecessor_guard: guard-cranelift-route-architecture-contract'
+      'allowed_cranelift_phase11_metadata_diagnostic_predecessor_policy: Level2_family_runs_focused_static_contract_without_replaying_other_family_guards'
       'allowed_cranelift_phase11_metadata_diagnostic_metadata_fixture_count: 5'
       'allowed_cranelift_phase11_metadata_diagnostic_source_fixtures: compiler/phase11_metadata_scalar_source.gst,compiler/phase11_metadata_local_source.gst,compiler/phase11_metadata_cfg_source.gst,compiler/phase11_metadata_call_source.gst'
       'allowed_cranelift_phase11_metadata_diagnostic_resource_fixture: compiler/fixtures/phase11_resource_metadata_preservation.mir'
@@ -16976,10 +16830,112 @@ guard-cranelift-phase11-registry-differential family:
     echo "🧭 Running Phase 11 registry differential family: {{family}}"
     bash scripts/phase11_registry_differential.sh "{{family}}"
 
+guard-cranelift-differential-family family:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_ci_family.py run "{{family}}"
+
 guard-cranelift-phase11-ci-family family:
     #!/usr/bin/env bash
     set -euo pipefail
-    python3 scripts/cranelift_ci_family.py run "{{family}}"
+    echo "guard-cranelift-phase11-ci-family is a compatibility alias for Level 2."
+    just guard-cranelift-differential-family "{{family}}"
+
+
+guard-cranelift-contract-fast:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "⚡ Running Level 1 Cranelift fast contracts..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    required_manifest_lines=(
+      'CRANELIFT_EXPERIMENT_ALLOWED_CONTRACT_FAST_GUARD: guard-cranelift-contract-fast'
+      'CRANELIFT_EXPERIMENT_ALLOWED_DIFFERENTIAL_FAMILY_GUARD: guard-cranelift-differential-family'
+      'CRANELIFT_EXPERIMENT_ALLOWED_HISTORICAL_FULL_GUARD: guard-cranelift-historical-full'
+      'allowed_cranelift_test_level_authority: scripts/cranelift_test_levels.json'
+      'allowed_cranelift_test_level_validator: scripts/cranelift_test_levels.py'
+      'allowed_cranelift_test_level_historical_workflow: .github/workflows/cranelift-historical-full.yml'
+      'allowed_cranelift_test_level_assignment_policy: every_guard_cranelift_recipe_has_exactly_one_level_and_inherits_one_CI_owner_from_that_level'
+      'allowed_cranelift_test_level_1_owner: PR_Fast_build_contract_job'
+      'allowed_cranelift_test_level_2_owner: PR_Fast_phase11_family_matrix'
+      'allowed_cranelift_test_level_3_owner: scheduled_or_manual_Cranelift_Historical_Full_workflow'
+      'allowed_cranelift_test_level_closure_policy: phase_opening_and_Phase11_closure_guards_validate_summaries_and_wiring_without_replaying_Level2_or_Level3'
+      'allowed_cranelift_test_level_PR_policy: PR_Fast_contains_Level1_contracts_plus_registry_derived_Level2_families_and_no_Level3_job'
+    )
+    for line in "${required_manifest_lines[@]}"; do
+      rg -n -x -F "$line" "$manifest_doc" >/dev/null
+    done
+
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py check-pr-workflow
+    python3 scripts/cranelift_test_levels.py check-heavy-workflow
+    python3 scripts/cranelift_test_levels.py check-historical-workflow
+    just guard-cranelift-experiment-guard-wiring-surface
+    just guard-cranelift-phase9g-ci-surface
+    just guard-cranelift-registry-schema
+    just guard-cranelift-ci-family-projection
+    just guard-cranelift-route-architecture-contract
+    just guard-cranelift-phase11-close
+    just guard-cranelift-phase13-opening-contract
+    echo "✅ Level 1 Cranelift fast contracts passed."
+
+
+
+guard-cranelift-historical-full:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🕰️ Running Level 3 full Cranelift history..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py check-historical-workflow
+
+    just guard-cranelift-experimental-backend-suite
+    just guard-cranelift-phase9c-differential-ladder-native-smoke
+    just guard-cranelift-phase9d-close
+    just guard-cranelift-phase9e-close
+    just guard-cranelift-phase9f-close
+
+    PHASE9G_SKIP_PREREQUISITES=1 just guard-cranelift-phase9g-opening-contract
+    PHASE9G_SKIP_PREREQUISITES=1 just guard-cranelift-phase9g-object-artifact-contract
+    PHASE9G_SKIP_PREREQUISITES=1 just guard-cranelift-phase9g-target-relocation-contract
+    PHASE9G_SKIP_PREREQUISITES=1 just guard-cranelift-phase9g-object-inspection-contract
+    PHASE9G_SKIP_PREREQUISITES=1 just guard-cranelift-phase9g-object-reproducibility
+    PHASE9G_SKIP_PREREQUISITES=1 just guard-cranelift-phase9g-link-driver-contract
+    PHASE9G_SKIP_PREREQUISITES=1 just guard-cranelift-phase9g-pipeline-failure-classification
+    PHASE9G_SKIP_PREREQUISITES=1 PHASE9G_SKIP_DYNAMIC_EVIDENCE=1 \
+      just guard-cranelift-phase9g-phase9c-phase9e-link-migration
+    PHASE9G_SKIP_PREREQUISITES=1 PHASE9G_SKIP_DYNAMIC_EVIDENCE=1 \
+      just guard-cranelift-phase9g-link-bypass-retirement
+    for driver in cc gcc clang; do
+      CC="$driver" PHASE9G_SKIP_PREREQUISITES=1 \
+        just guard-cranelift-phase9g-positive-link-matrix
+      CC="$driver" PHASE9G_SKIP_PREREQUISITES=1 \
+        just guard-cranelift-phase9g-negative-link-matrix
+    done
+
+    just guard-cranelift-phase9g-close
+
+    just guard-cranelift-phase10-opening-contract
+    just guard-cranelift-phase10-backend-selection-contract
+    just guard-cranelift-phase10-output-contract
+    just guard-cranelift-phase10-program-mir-contract
+    just guard-cranelift-phase10-capability-contract
+    just guard-cranelift-phase10-driver-handshake-contract
+    just guard-cranelift-phase10-backend-request-contract
+    just guard-cranelift-phase10-scalar-source-route
+    just guard-cranelift-phase10-cfg-block-parameter-source-route
+    just guard-cranelift-phase10-call-import-runtime-source-route
+    just guard-cranelift-phase10-packaging-help-ci
+    just guard-cranelift-phase10-close
+
+    while IFS= read -r family; do
+      just guard-cranelift-differential-family "$family"
+    done < <(python3 scripts/cranelift_ci_family.py families)
+    just guard-cranelift-phase11-generic-canonical-mir-route
+    just guard-cranelift-phase11-close
+
+    echo "✅ Level 3 full Cranelift history passed."
+
+
 
 guard-cranelift-phase11-route-retirement-ci:
     #!/usr/bin/env bash
@@ -16994,20 +16950,13 @@ guard-cranelift-phase11-route-retirement-ci:
     heavy_workflow=".github/workflows/heavy-guards.yml"
     for required_file in \
       "$manifest_doc" "$registry_doc" "$registry_json" "$family_runner" \
+      scripts/cranelift_test_levels.py scripts/cranelift_test_levels.json \
       "$differential_harness" "$pr_workflow" "$heavy_workflow"
     do
       test -f "$required_file"
     done
 
-    PHASE11_GENERIC_ROUTE_SKIP_DYNAMIC=1 \
-    PHASE11_SCALAR_EXPRESSION_SKIP_DYNAMIC=1 \
-    PHASE11_LOCAL_STATE_SKIP_DYNAMIC=1 \
-    PHASE11_STRUCTURED_CFG_SKIP_DYNAMIC=1 \
-    PHASE11_BLOCK_PARAMETER_LOOP_SKIP_DYNAMIC=1 \
-    PHASE11_DIRECT_CALL_ABI_SKIP_DYNAMIC=1 \
-    PHASE11_MODULE_IMPORT_RUNTIME_SKIP_DYNAMIC=1 \
-    PHASE11_METADATA_DIAGNOSTIC_SKIP_DYNAMIC=1 \
-      just guard-cranelift-phase11-metadata-diagnostic-parity
+    python3 scripts/cranelift_test_levels.py validate
 
     required_manifest_lines=(
       'CRANELIFT_EXPERIMENT_ALLOWED_PHASE11_ROUTE_RETIREMENT_CI_GUARD: guard-cranelift-phase11-route-retirement-ci'
@@ -17021,12 +16970,8 @@ guard-cranelift-phase11-route-retirement-ci:
     done
     rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_retired_exact_shape_source_routes' "$registry_doc" >/dev/null
 
-    if [ "${PHASE11_ROUTE_RETIREMENT_SKIP_DYNAMIC:-0}" = "1" ]; then
-      PHASE11_ROUTE_ARCHITECTURE_SKIP_DYNAMIC=1 \
-        just guard-cranelift-route-architecture-contract
-    else
+    PHASE11_ROUTE_ARCHITECTURE_SKIP_DYNAMIC=1 \
       just guard-cranelift-route-architecture-contract
-    fi
 
     required_harness_tokens=(
       'family_runner="scripts/cranelift_ci_family.py"'
@@ -17055,65 +17000,61 @@ guard-cranelift-phase11-route-retirement-ci:
     just guard-pr-fast-ci-surface
     just guard-cloud-heavy-ci-surface
 
-    just guard-cranelift-phase10-scalar-source-route
-    just guard-cranelift-phase10-cfg-block-parameter-source-route
-    just guard-cranelift-phase10-call-import-runtime-source-route
+    for historical_route_guard in \
+      guard-cranelift-phase10-scalar-source-route \
+      guard-cranelift-phase10-cfg-block-parameter-source-route \
+      guard-cranelift-phase10-call-import-runtime-source-route
+    do
+      rg -n -x -F "$historical_route_guard:" justfile >/dev/null
+    done
 
-    if [ "${PHASE11_ROUTE_RETIREMENT_SKIP_DYNAMIC:-0}" = "1" ]; then
-      echo "✅ Phase 11 route-retirement and CI static contract passed; behavioural and differential evidence were intentionally skipped."
-      exit 0
-    fi
-
-    bash "$differential_harness" all
-    echo "✅ Phase 11 exact-shape routes are retired by semantic route evidence, all supported registry entries are differentially covered, and focused PR CI is authoritative."
+    echo "✅ Phase 11 route-retirement and CI wiring contract passed; Level 2 families and Level 3 history own dynamic evidence."
 
 guard-cranelift-phase11-close:
     #!/usr/bin/env bash
     set -euo pipefail
-    echo "🔒 Auditing and closing Phase 11 registry-backed feature parity..."
+    echo "🔒 Validating the Phase 11 closure summary and test-level wiring..."
     manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     registry_doc="compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md"
-    registry_json="scripts/cranelift_feature_registry.json"
     registry_validator="scripts/cranelift_registry.py"
     differential_harness="scripts/phase11_registry_differential.sh"
-    pr_workflow=".github/workflows/pr-fast.yml"
-    heavy_workflow=".github/workflows/heavy-guards.yml"
+    level_runner="scripts/cranelift_test_levels.py"
+    historical_workflow=".github/workflows/cranelift-historical-full.yml"
+
     for required_file in \
-      "$manifest_doc" "$registry_doc" "$registry_json" "$registry_validator" \
-      "$differential_harness" "$pr_workflow" "$heavy_workflow" justfile
+      "$manifest_doc" "$registry_doc" "$registry_validator" \
+      "$differential_harness" "$level_runner" \
+      scripts/cranelift_test_levels.json \
+      .github/workflows/pr-fast.yml .github/workflows/heavy-guards.yml \
+      "$historical_workflow" justfile
     do
-      if [ ! -f "$required_file" ]; then
-        echo "Missing Phase 11 closure input: $required_file"
+      if [ ! -f "$required_file" ] || [ -L "$required_file" ]; then
+        echo "Missing regular Phase 11 closure input: $required_file"
         exit 1
       fi
     done
 
-    just guard-cranelift-phase10-close
+    just guard-cranelift-phase11-closure-summary
     PHASE11_ROUTE_RETIREMENT_SKIP_DYNAMIC=1 \
       just guard-cranelift-phase11-route-retirement-ci
+
+    python3 "$level_runner" validate
+    python3 "$level_runner" check-pr-workflow
+    python3 "$level_runner" check-heavy-workflow
+    python3 "$level_runner" check-historical-workflow
 
     required_manifest_lines=(
       'CRANELIFT_EXPERIMENT_ALLOWED_PHASE11_CLOSE_GUARD: guard-cranelift-phase11-close'
       'allowed_cranelift_phase11_close_status: phase11_closed_registry_backed_feature_parity_migration'
-      'allowed_cranelift_phase11_close_predecessor_guard: guard-cranelift-phase11-route-retirement-ci'
-      'allowed_cranelift_phase11_close_predecessor_policy: predecessor_runs_static_contract_mode_without_replaying_the_full_dynamic_matrix'
+      'allowed_cranelift_phase11_close_predecessor_guard: guard-cranelift-phase11-closure-summary'
+      'allowed_cranelift_phase11_close_predecessor_policy: semantic_summary_and_test_level_wiring_only_no_historical_replay'
       'allowed_cranelift_phase11_close_scope: declared_Phase11_registry_inventory_only_not_whole_language_parity_for_Gust'
       'allowed_cranelift_phase11_close_required_wording: Parity_is_complete_for_the_Phase_11_registry_inventory'
       'allowed_cranelift_phase11_close_registry_policy: active_totals_and_family_summaries_are_derived_from_the_canonical_JSON_registry'
-      'allowed_cranelift_phase11_close_route_policy: every_migrated_row_is_owned_by_generic_canonical_MIR_and_zero_exact_shape_recognizers_remain'
-      'allowed_cranelift_phase11_close_unsupported_policy: every_deferred_or_unsupported_source_fails_before_driver_discovery_request_bundle_object_link_or_publication_access'
-      'allowed_cranelift_phase11_close_MIR_to_C_policy: default_and_explicit_MIR_to_C_share_one_codegen_path_and_the_registry_differential_harness_requires_byte_identical_output'
-      'allowed_cranelift_phase11_close_fallback_policy: explicit_Cranelift_success_or_failure_exits_without_fallback_to_MIR_to_C'
-      'allowed_cranelift_phase11_close_worker_input_policy: worker_receives_exactly_one_generic_request_path_referencing_compiler_owned_canonical_MIR_and_never_Gust_source'
-      'allowed_cranelift_phase11_close_artifact_policy: Phase9G_remains_the_only_verified_object_link_cleanup_and_atomic_publication_owner'
-      'allowed_cranelift_phase11_close_CI_policy: one_static_closure_guard_is_wired_once_in_PR_Fast_and_once_in_Heavy_without_adding_or_replaying_the_dynamic_matrix'
+      'allowed_cranelift_phase11_close_CI_policy: Level1_closure_validation_in_PR_Fast_Level2_registry_families_in_PR_Fast_and_Level3_only_in_Cranelift_Historical_Full'
     )
     for line in "${required_manifest_lines[@]}"; do
-      if ! rg -n -x -F "$line" "$manifest_doc" >/dev/null; then
-        echo "Missing Phase 11 closure manifest line:"
-        echo "$line"
-        exit 1
-      fi
+      rg -n -x -F "$line" "$manifest_doc" >/dev/null
     done
 
     required_registry_headers=(
@@ -17123,52 +17064,36 @@ guard-cranelift-phase11-close:
       'CRANELIFT_FEATURE_PARITY_REGISTRY_DERIVED_SUMMARY: docs/CRANELIFT_FEATURE_REGISTRY.md'
       'CRANELIFT_FEATURE_PARITY_REGISTRY_CLOSURE_STATUS: phase11_closed_registry_backed_feature_parity_migration'
       'CRANELIFT_FEATURE_PARITY_REGISTRY_CLOSURE_GUARD: guard-cranelift-phase11-close'
-      'CRANELIFT_FEATURE_PARITY_REGISTRY_CLOSURE_CI_POLICY: one_static_closure_guard_in_PR_Fast_and_Heavy_without_full_dynamic_matrix_replay'
+      'CRANELIFT_FEATURE_PARITY_REGISTRY_CLOSURE_CI_POLICY: Level1_summary_in_PR_Fast_Level2_families_in_PR_Fast_Level3_in_Cranelift_Historical_Full'
     )
     for header in "${required_registry_headers[@]}"; do
-      if ! rg -n -x -F "$header" "$registry_doc" >/dev/null; then
-        echo "Missing Phase 11 closure registry header:"
-        echo "$header"
-        exit 1
-      fi
+      rg -n -x -F "$header" "$registry_doc" >/dev/null
     done
-    rg -n -x -F 'Parity is complete for the Phase 11 registry inventory.' \
-      "$registry_doc" >/dev/null
-    if rg -n -F 'Cranelift has full Gust language parity' \
-      "$registry_doc" "$manifest_doc" >/dev/null; then
-      echo "Phase 11 closure must not claim whole-language parity."
-      exit 1
-    fi
 
     python3 "$registry_validator" validate
     python3 "$registry_validator" verify-phase11-closure
-
     rg -n -F 'cmp -s "$case_dir/default.c" "$case_dir/explicit.c"' \
       "$differential_harness" >/dev/null
-    rg -n -F 'default and explicit MIR-to-C output are not byte-identical' \
-      "$differential_harness" >/dev/null
 
-    phase10_close_body="$(
-      sed -n \
-        '/^guard-cranelift-phase10-close:/,/^guard-cranelift-phase11-opening-contract:/p' \
-        justfile
+    close_body="$(
+      sed -n '/^guard-cranelift-phase11-close:/,/^guard-cranelift-phase11-closure-summary:/p' justfile
     )"
-    printf '%s\n' "$phase10_close_body" |
-      rg -n -F 'just guard-cranelift-phase9g-close' >/dev/null
+    if printf '%s\n' "$close_body" |
+       rg -n \
+         -e '^[[:space:]]+just guard-cranelift-phase(9g|10)-close([[:space:]]|$)' \
+         -e '^[[:space:]]+just guard-cranelift-differential-family([[:space:]]|$)' \
+         -e '^[[:space:]]+just guard-cranelift-historical-full([[:space:]]|$)' \
+         >/dev/null
+    then
+      echo "Phase 11 closure must validate summaries and wiring, not replay Level 2 or Level 3."
+      exit 1
+    fi
 
-    for workflow in "$pr_workflow" "$heavy_workflow"; do
-      if [ "$(rg -c -F 'just guard-cranelift-phase11-close' "$workflow")" != "1" ]; then
-        echo "Phase 11 closure guard must be wired exactly once in $workflow."
-        exit 1
-      fi
-      if rg -n -F 'just guard-cranelift-phase11-route-retirement-ci' \
-        "$workflow" >/dev/null; then
-        echo "Workflow must wire the closure guard, not its predecessor: $workflow"
-        exit 1
-      fi
-    done
+    rg -n -F 'just guard-cranelift-historical-full' "$historical_workflow" >/dev/null
 
-    echo "✅ Parity is complete for the Phase 11 registry inventory."
+    echo "✅ Phase 11 closure passed as a Level 1 summary and wiring contract."
+
+
 
 guard-cranelift-phase11-closure-summary:
     #!/usr/bin/env bash
@@ -17403,7 +17328,7 @@ guard-cranelift-phase13-opening-contract:
       'allowed_cranelift_phase13_opening_behavior_policy: registry_manifest_validator_and_flattened_guard_graph_only_no_source_route_worker_MIR_request_object_link_package_CLI_or_output_change'
       'allowed_cranelift_phase13_opening_future_phase_policy: future_phase_opening_guards_use_semantic_predecessor_summaries_not_recursive_full_closures'
       'allowed_cranelift_flattened_closure_phase13_graph: phase11_closure_summary,phase13_registry_schema,phase13_parent_traceability,phase13_opening_totals'
-      'allowed_cranelift_flattened_closure_full_replay_CI_policy: guard_cranelift_phase11_close_runs_in_dedicated_historical_closure_jobs_in_PR_Fast_and_Heavy'
+      'allowed_cranelift_flattened_closure_full_replay_CI_policy: guard_cranelift_historical_full_runs_only_in_the_scheduled_or_manual_Cranelift_Historical_Full_workflow'
       'allowed_cranelift_flattened_closure_phase_opening_policy: future_phase_opening_guards_use_semantic_predecessor_summaries_not_recursive_full_closures'
     )
     for line in "${required_manifest_lines[@]}"; do
@@ -17453,13 +17378,13 @@ guard-cranelift-phase12-5-opening-contract:
       fi
     done
 
-    just guard-cranelift-phase11-close
+    just guard-cranelift-phase11-closure-summary
 
     required_manifest_lines=(
       'CRANELIFT_EXPERIMENT_ALLOWED_PHASE12_5_OPENING_GUARD: guard-cranelift-phase12-5-opening-contract'
       'allowed_cranelift_phase12_5_opening_status: phase12_5_opened_verification_framework_consolidation'
       'allowed_cranelift_phase12_5_opening_predecessor_status: phase11_closed_registry_backed_feature_parity_migration'
-      'allowed_cranelift_phase12_5_opening_predecessor_guard: guard-cranelift-phase11-close'
+      'allowed_cranelift_phase12_5_opening_predecessor_guard: guard-cranelift-phase11-closure-summary'
       'allowed_cranelift_phase12_5_opening_inventory: compiler/CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY.md'
       'allowed_cranelift_phase12_5_opening_inventory_item_count: 26'
       'allowed_cranelift_phase12_5_opening_classification_inventory: 3_canonical_source_2_generated_view_5_executable_test_3_historical_evidence_8_redundant_duplicate_5_candidate_for_removal'
@@ -17799,9 +17724,9 @@ guard-cranelift-ci-family-projection:
       'allowed_cranelift_ci_family_projection_runner: scripts/cranelift_ci_family.py'
       'allowed_cranelift_ci_family_projection_mapping_policy: one_runner_mapping_covers_every_row_derived_Phase11_CI_family'
       'allowed_cranelift_ci_family_projection_active_set_policy: active_families_are_derived_from_Phase11_registry_rows_not_supported_values_manifest_or_workflow_literals'
-      'allowed_cranelift_ci_family_projection_dispatcher_policy: one_generic_cranelift_phase11_family_branch_rejects_unknown_or_retired_families'
-      'allowed_cranelift_ci_family_projection_PR_policy: build_job_projects_the_registry_family_matrix_and_each_family_runs_one_static_contract_plus_its_differential_rows'
-      'allowed_cranelift_ci_family_projection_heavy_policy: Heavy_contains_no_duplicate_Phase11_family_rows_and_keeps_its_33_shard_capacity_limit'
+      'allowed_cranelift_ci_family_projection_dispatcher_policy: registry_derived_workflow_matrix_invokes_one_generic_Level2_family_guard_and_rejects_unknown_or_retired_families'
+      'allowed_cranelift_ci_family_projection_PR_policy: build_job_projects_the_registry_family_matrix_and_each_family_runs_guard_cranelift_differential_family'
+      'allowed_cranelift_ci_family_projection_heavy_policy: Heavy_contains_no_duplicate_Phase11_family_rows_no_full_history_job_and_keeps_its_33_shard_capacity_limit'
       'allowed_cranelift_ci_family_projection_capacity_policy: PR_projected_static_plus_family_shards_must_not_exceed_23'
       'allowed_cranelift_ci_family_projection_manifest_policy: no_manual_CI_family_count_or_family_list'
       'allowed_cranelift_ci_family_projection_behavior_policy: CI_projection_and_runner_wiring_only_no_compiler_route_MIR_worker_feature_or_output_change'
@@ -17819,13 +17744,15 @@ guard-cranelift-ci-family-projection:
     python3 "$family_runner" check-pr-workflow "$pr_workflow"
     python3 "$family_runner" check-heavy-workflow "$heavy_workflow"
 
-    rg -n -x -F '      cranelift-phase11-*)' justfile >/dev/null
-    rg -n -F 'just guard-cranelift-phase11-ci-family "$family"' justfile >/dev/null
+    rg -n -F 'guard-cranelift-differential-family family:' justfile >/dev/null
+    rg -n -F 'just guard-cranelift-differential-family "${{ matrix.family }}"'       "$pr_workflow" >/dev/null
     rg -n -F 'guard-cranelift-phase11-ci-family family:' justfile >/dev/null
 
     while IFS= read -r family; do
-      if rg -n -x -F "      cranelift-phase11-$family)" justfile >/dev/null; then
-        echo "Phase 11 dispatcher still contains explicit family branch: $family"
+      if rg -n -x -F "      cranelift-phase11-$family)" justfile >/dev/null ||
+         rg -n -x -F "          - cranelift-phase11-$family" "$pr_workflow" >/dev/null
+      then
+        echo "Phase 11 family is manually inventoried outside the registry projection: $family"
         exit 1
       fi
     done < <(python3 "$family_runner" families)

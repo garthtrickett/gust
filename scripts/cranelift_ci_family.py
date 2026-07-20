@@ -182,13 +182,17 @@ def check_pr_workflow(path):
         "phase11_families:",
         'matrix=$(python3 scripts/cranelift_ci_family.py matrix-json)',
         "family: ${{ fromJSON(needs.build.outputs.phase11_families) }}",
-        'just guard-cranelift-phase11-ci-family "${{ matrix.family }}"',
-        "historical-closure:",
-        "needs: [guard, phase11-family, historical-closure]",
-        "just guard-cranelift-phase11-close",
+        'just guard-cranelift-differential-family "${{ matrix.family }}"',
+        "needs: [guard, phase11-family]",
     )
     for token in required:
         require_token(text, token, path.relative_to(ROOT))
+
+    require(
+        "historical-closure:" not in text
+        and "just guard-cranelift-phase11-close" not in text,
+        f"{path.relative_to(ROOT)} must not own Level 3 historical replay",
+    )
 
     for family in families:
         literal = f"- cranelift-phase11-{family}"
@@ -210,18 +214,17 @@ def check_heavy_workflow(path):
             literal not in text,
             f"{path.relative_to(ROOT)} duplicates PR family {family}",
         )
-    require_token(text, "historical-closure:", path.relative_to(ROOT))
+    require(
+        "historical-closure:" not in text
+        and "just guard-cranelift-phase11-close" not in text,
+        f"{path.relative_to(ROOT)} must leave Level 3 history to its dedicated workflow",
+    )
     require_token(
         text,
-        "needs: [guard, phase9g-link-driver, historical-closure]",
+        "needs: [guard, phase9g-link-driver]",
         path.relative_to(ROOT),
     )
-    require(
-        text.count("just guard-cranelift-phase11-close") == 1,
-        f"{path.relative_to(ROOT)} must invoke the Phase 11 closure guard exactly once",
-    )
     return families
-
 
 def tsv(value, context):
     require(isinstance(value, str) and value, f"{context} must be a non-empty string")
@@ -270,8 +273,27 @@ def run_static(registry, family):
         )
 
 
+def run_focused(registry, family):
+    runner = validate_family(registry, family)
+    rows = selected_rows(registry, family)
+    print(
+        "▶ Phase 11 CI family focused contract: "
+        f"family={family} rows={','.join(entry['id'] for entry in rows)}"
+    )
+    completed = subprocess.run(
+        ["just", runner["static_guard"]],
+        cwd=ROOT,
+        check=False,
+    )
+    if completed.returncode != 0:
+        raise Error(
+            f"Phase 11 CI family {family!r} focused guard "
+            f"{runner['static_guard']} failed with exit code {completed.returncode}"
+        )
+
+
 def run_family(registry, family):
-    run_static(registry, family)
+    run_focused(registry, family)
     completed = subprocess.run(
         ["just", "guard-cranelift-phase11-registry-differential", family],
         cwd=ROOT,
