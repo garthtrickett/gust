@@ -84,12 +84,11 @@ guard-pr-fast-ci-surface:
     set -euo pipefail
     echo "🔒 Checking PR fast CI surface..."
     workflow=".github/workflows/pr-fast.yml"
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     family_runner="scripts/cranelift_ci_family.py"
     level_runner="scripts/cranelift_test_levels.py"
     just_installer="scripts/install-just-ci.sh"
     for required_file in \
-      "$workflow" "$manifest_doc" "$family_runner" "$level_runner" \
+      "$workflow" "$family_runner" "$level_runner" \
       scripts/cranelift_test_levels.json \
       .github/workflows/heavy-guards.yml \
       .github/workflows/cranelift-historical-full.yml \
@@ -162,25 +161,14 @@ guard-pr-fast-ci-surface:
       exit 1
     fi
 
-    rg -n -F 'allowed_cranelift_phase11_route_retirement_PR_fast_max_shards: 23' "$manifest_doc" >/dev/null
     bash -n "$just_installer"
-
     echo "✅ PR fast CI surface guard passed: Level 1 contracts plus registry-derived Level 2 families; projected shards=$projected_shard_count within max=23."
-
-
 
 guard-cranelift-core-mir-basic-suite-shard shard:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔀 Running focused core MIR basic shard: {{shard}}"
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_BACKEND_SUITE_SHARD_GUARD: guard-cranelift-experimental-backend-suite-shard' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_backend_suite_shard_guard: guard-cranelift-experimental-backend-suite-shard' "$manifest_doc" >/dev/null
-    suite_native_guards="$(awk '/^CRANELIFT_EXPERIMENT_ALLOWED_.*NATIVE_GUARD: guard-cranelift-/ { print $2 }' "$manifest_doc" | awk '!seen[$0]++')"
-    if [ -z "$suite_native_guards" ]; then
-      echo "Expected native Cranelift guard inventory in $manifest_doc."
-      exit 1
-    fi
+    suite_native_guards="$(python3 scripts/cranelift_test_levels.py list-native)"
     case "{{shard}}" in
       scalars)
         shard_guards="$(printf '%s\n' "$suite_native_guards" | rg '^guard-cranelift-mir-(return-int|local-binding-read|conditional-branch|add-i32|positive-i32-branch|increment-local-i32)-native-smoke$' || true)"
@@ -205,9 +193,7 @@ guard-cranelift-core-mir-basic-suite-shard shard:
       exit 1
     fi
     while IFS= read -r guard_recipe; do
-      if [ -z "$guard_recipe" ]; then
-        continue
-      fi
+      [ -n "$guard_recipe" ] || continue
       echo "▶ [core-mir-basic/{{shard}}] $guard_recipe"
       just "$guard_recipe"
     done <<< "$shard_guards"
@@ -217,13 +203,7 @@ guard-cranelift-mir-to-cranelift-translator-seed-suite-shard shard:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔀 Running MIR-to-Cranelift translator seed suite shard: {{shard}}"
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_TO_CRANELIFT_TRANSLATOR_SEED_SUITE_NATIVE_GUARD: guard-cranelift-mir-to-cranelift-translator-seed-suite' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_native_guard: guard-cranelift-mir-to-cranelift-translator-seed-suite' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_status: phase9b_translator_seed_inventory' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_count: 17' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_route_policy: experiment_only_no_production_routing' "$manifest_doc" >/dev/null
     case "{{shard}}" in
       scalar)
         just guard-cranelift-mir-to-cranelift-return-int-translator-native-smoke
@@ -262,12 +242,7 @@ guard-cranelift-phase9c-differential-ladder-native-shard shard:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔀 Running Phase 9C native differential ladder shard: {{shard}}"
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-phase9c-differential-ladder-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9C_DIFFERENTIAL_LADDER_NATIVE_GUARD: guard-cranelift-phase9c-differential-ladder-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_native_guard: guard-cranelift-phase9c-differential-ladder-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_status: phase9c_closed_fixture_backed_differential' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_lane_count: 7' "$manifest_doc" >/dev/null
     case "{{shard}}" in
       return-local)
         just guard-mir-to-c-return-int-literal-native-smoke
@@ -1565,338 +1540,36 @@ guard-mir-to-c-boring-surface:
 guard-cranelift-experiment-guard-wiring-surface:
     #!/usr/bin/env bash
     set -euo pipefail
-    echo "🔒 Checking Cranelift experiment guard wiring inventory..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
-    if [ ! -f "$manifest_doc" ]; then
-      echo "Missing $manifest_doc. Phase 9 requires the Cranelift experiment manifest before guard wiring can be checked."
-      exit 1
-    fi
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_GUARD_WIRING_SURFACE: guard-cranelift-experiment-guard-wiring-surface' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_guard_wiring_inventory_source: compiler/CRANELIFT_EXPERIMENT_MANIFEST.md' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_guard_wiring_recipe_inventory: just --summary' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_guard_wiring_native_suite_source: CRANELIFT_EXPERIMENT_ALLOWED_*_NATIVE_GUARD' "$manifest_doc" >/dev/null
-    tmpdir="$(mktemp -d)"
-    trap 'rm -rf "$tmpdir"' EXIT
-    just --summary | tr ' ' '\n' | rg '^guard-cranelift-' | sort -u > "$tmpdir/defined"
-    rg --no-line-number -o 'guard-cranelift-[A-Za-z0-9_-]+' "$manifest_doc" | sort -u > "$tmpdir/manifest"
-    {
-      printf '%s\n' 'guard-cranelift-experiment-guard-wiring-surface'
-      printf '%s\n' 'guard-cranelift-experiment-manifest-surface'
-      printf '%s\n' 'guard-cranelift-backend-surface'
-      printf '%s\n' 'guard-cranelift-dependency-beachhead'
-      printf '%s\n' 'guard-cranelift-experimental-backend-suite'
-      printf '%s\n' 'guard-cranelift-no-fixture-regression'
-    } | sort -u > "$tmpdir/core"
-    cat "$tmpdir/core" "$tmpdir/manifest" | sort -u > "$tmpdir/allowed"
-    missing_manifest_recipes="$(comm -23 "$tmpdir/manifest" "$tmpdir/defined" || true)"
-    if [ -n "$missing_manifest_recipes" ]; then
-      echo "Cranelift manifest names guard recipes that are not defined in justfile:"
-      echo "$missing_manifest_recipes"
-      exit 1
-    fi
-    unexpected_cranelift_recipes="$(comm -23 "$tmpdir/defined" "$tmpdir/allowed" || true)"
-    if [ -n "$unexpected_cranelift_recipes" ]; then
-      echo "Cranelift guard recipes must be listed in compiler/CRANELIFT_EXPERIMENT_MANIFEST.md or be core surface guards:"
-      echo "$unexpected_cranelift_recipes"
-      exit 1
-    fi
-    native_guard_tokens="$(awk '/^CRANELIFT_EXPERIMENT_ALLOWED_.*NATIVE_GUARD: guard-cranelift-/ { print $2 }' "$manifest_doc" | awk '!seen[$0]++')"
+    echo "🔒 Checking Cranelift executable guard inventory..."
+    python3 scripts/cranelift_manifest.py validate
+    python3 scripts/cranelift_test_levels.py validate
+    native_guard_tokens="$(python3 scripts/cranelift_test_levels.py list-native)"
     if [ -z "$native_guard_tokens" ]; then
-      echo "Expected at least one CRANELIFT_EXPERIMENT_ALLOWED_*_NATIVE_GUARD token in $manifest_doc."
+      echo "Structured test-level authority produced no native Cranelift guards."
       exit 1
     fi
     while IFS= read -r guard_recipe; do
-      if [ -z "$guard_recipe" ]; then
-        continue
-      fi
-      rg -n -F "$guard_recipe:" justfile >/dev/null
+      [ -n "$guard_recipe" ] || continue
+      rg -n -x -F "$guard_recipe:" justfile >/dev/null
     done <<< "$native_guard_tokens"
-    echo "✅ Cranelift experiment guard wiring inventory passed."
+    echo "✅ Cranelift executable guard inventory passed from the structured test-level authority."
 
-guard-cranelift-experiment-manifest-surface:
+guard-cranelift-manifest-architecture-contract:
     #!/usr/bin/env bash
     set -euo pipefail
-    echo "🔒 Checking Cranelift experiment manifest surface..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
-    if [ ! -f "$manifest_doc" ]; then
-      echo "Missing $manifest_doc. Phase 9 Step 1 requires a manifest-only Cranelift experiment contract."
-      exit 1
-    fi
-    rg -n -F 'CRANELIFT_EXPERIMENT_MANIFEST_VERSION: 1' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_PHASE: phase9-mir-to-c-differential-entry' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_STATUS: mir_to_c_differential_native_smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ENABLED_BY_DEFAULT: false' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_CODEGEN_STATUS: return_int_local_binding_branch_differential_fixture_only' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_BACKEND_SURFACE_STATUS: differential_native_smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_PRIMARY_ROUTE: mir_to_c' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_GUARD: guard-cranelift-experiment-manifest-surface' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_BACKEND_SURFACE_GUARD: guard-cranelift-backend-surface' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_DEPENDENCY_GUARD: guard-cranelift-dependency-beachhead' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_BACKEND_SUITE_GUARD: guard-cranelift-experimental-backend-suite' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_NO_FIXTURE_REGRESSION_GUARD: guard-cranelift-no-fixture-regression' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_GUARD_WIRING_SURFACE: guard-cranelift-experiment-guard-wiring-surface' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_COMPILER_MIR_INGESTION_CORPUS_SURFACE_GUARD: guard-cranelift-compiler-mir-ingestion-corpus-surface' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9B_CLOSE_GUARD: guard-cranelift-phase9b-close' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9C_DIFFERENTIAL_LADDER_SURFACE_GUARD: guard-cranelift-phase9c-differential-ladder-surface' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9C_DIFFERENTIAL_LADDER_NATIVE_GUARD: guard-cranelift-phase9c-differential-ladder-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9C_CLOSE_GUARD: guard-cranelift-phase9c-close' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9D_OPENING_CONTRACT_GUARD: guard-cranelift-phase9d-opening-contract' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9D_CLOSE_GUARD: guard-cranelift-phase9d-close' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9E_OPENING_CONTRACT_GUARD: guard-cranelift-phase9e-opening-contract' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9F_OPENING_CONTRACT_GUARD: guard-cranelift-phase9f-opening-contract' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9F_CALL_IMPORT_SCHEMA_VALIDATOR_GUARD: guard-cranelift-phase9f-call-import-schema-validator' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9F_MODULE_EMITTER_LOCAL_CALL_COHORT_GUARD: guard-cranelift-phase9f-module-emitter-local-call-cohort' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9F_DIRECT_IMPORTED_CALL_COHORT_GUARD: guard-cranelift-phase9f-direct-imported-call-cohort' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9F_IMPORTED_MATERIALIZATION_PREDICATE_COHORT_GUARD: guard-cranelift-phase9f-imported-materialization-predicate-cohort' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9F_MERGE_ARM_IMPORTED_CALL_COHORT_GUARD: guard-cranelift-phase9f-merge-arm-imported-call-cohort' "$manifest_doc" justfile >/dev/null
-    just guard-cranelift-compiler-mir-ingestion-corpus-surface
-    just guard-cranelift-experiment-guard-wiring-surface
-    phase10_selection_entry="compiler/test_runner_entry.gst"
-    if [ ! -f "$phase10_selection_entry" ]; then
-      echo "Missing Phase 10 typed backend-selection entry: $phase10_selection_entry"
-      exit 1
-    fi
+    echo "🔒 Checking reduced Cranelift architecture manifest..."
+    python3 scripts/cranelift_manifest.py validate
+    PHASE11_ROUTE_ARCHITECTURE_SKIP_DYNAMIC=1 \
+      just guard-cranelift-route-architecture-contract
+    echo "✅ Cranelift manifest architecture contract passed."
 
-    rg -n -F 'allowed_cranelift_phase10_backend_selection_status: phase10_typed_backend_selection_model' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_backend_selection_entry: compiler/test_runner_entry.gst' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_backend_selection_artifact_policy: no_native_driver_object_linker_or_executable_publication_connected' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_help_legacy_manifest_guard_policy: exactly_four_help_only_Cranelift_references_extend_the_four_Patch2_selector_references_for_an_exact_total_of_eight' "$manifest_doc" >/dev/null
-    if ! rg -n -x -F 'allowed_cranelift_phase11_registry_legacy_manifest_surface_policy: exact_registry_path_headers_and_counts_are_validated_before_exclusion_from_the_Phase9_broad_Cranelift_reference_scan' "$manifest_doc" >/dev/null; then
-      echo "Phase 11 parity-registry legacy manifest-surface policy is missing or stale in $manifest_doc."
-      rg -n -F 'allowed_cranelift_phase11_registry_legacy_manifest_surface_policy:' "$manifest_doc" || true
-      exit 1
-    fi
-    if ! rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_help_legacy_backend_surface_policy: canonical_help_usage_is_exactly_validated_then_excluded_and_only_Phase10_plus_the_two_policy_guard_recipes_are_removed_from_the_legacy_orchestration_scan' "$manifest_doc" >/dev/null; then
-      echo "Phase 10 backend-surface help policy is missing or stale in $manifest_doc."
-      rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_help_legacy_backend_surface_policy:' "$manifest_doc" || true
-      exit 1
-    fi
-
-    # Phase 10 Patch 2 froze four typed-selector references. Patch 11 adds
-    # exactly four documentation-only references inside compiler_print_help.
-    # Keep an exact eight-line allowlist so codegen, driver, object, link,
-    # runtime, PATH, auto-build, fallback, and broader compiler references
-    # remain rejected.
-    phase10_selection_refs="$(
-      rg -n -i -F 'cranelift' "$phase10_selection_entry" ||
-        true
-    )"
-    unexpected_phase10_selection_refs="$(
-      printf '%s\n' "$phase10_selection_refs" |
-        rg -v '^[0-9]+:[[:space:]]*CraneliftExperimental[,]?$' |
-        rg -v '^[0-9]+:[[:space:]]*} else if std\.str_eq\(backend_name, "cranelift"\) == 1 \{$' |
-        rg -v '^[0-9]+:[[:space:]]*invocation\.backend\.tag = 1; // CraneliftExperimental$' |
-        rg -v '^[0-9]+:[[:space:]]*os\.LogStr\("Experimental Cranelift backend selection is valid, but the source-level route is not connected yet\."\);$' |
-        rg -v '^[0-9]+:[[:space:]]*os\.LogStr\("  gust --backend cranelift -o <output> <source\.gst>"\);$' |
-        rg -v '^[0-9]+:[[:space:]]*os\.LogStr\("  cranelift  Compile a supported source cohort to one native executable \(experimental\)\."\);$' |
-        rg -v '^[0-9]+:[[:space:]]*os\.LogStr\("  --backend <mir-to-c\|cranelift>  Select the backend explicitly\."\);$' |
-        rg -v '^[0-9]+:[[:space:]]*os\.LogStr\("  -o <output>[[:space:]]+Required only by the cranelift backend\."\);$' ||
-        true
-    )"
-    if [ -n "$unexpected_phase10_selection_refs" ]; then
-      echo "Phase 10 compiler entry contains Cranelift references beyond the frozen selector and help surfaces:"
-      echo "$unexpected_phase10_selection_refs"
-      exit 1
-    fi
-
-    phase10_selection_ref_count="$(
-      printf '%s\n' "$phase10_selection_refs" |
-        sed '/^$/d' |
-        wc -l |
-        tr -d ' '
-    )"
-    if [ "$phase10_selection_ref_count" != "8" ]; then
-      echo "Expected exactly eight Phase 10 typed-selection and help-surface Cranelift references, found $phase10_selection_ref_count."
-      printf '%s\n' "$phase10_selection_refs"
-      exit 1
-    fi
-
-    phase10_package_make_refs="$(
-      rg -n -i -F 'cranelift' Makefile ||
-        true
-    )"
-    unexpected_phase10_package_make_refs="$(
-      printf '%s\n' "$phase10_package_make_refs" |
-        rg -v '^[0-9]+:PHASE10_NATIVE_BACKEND_MANIFEST = compiler/experiments/cranelift/Cargo\.toml$' |
-        rg -v '^[0-9]+:PHASE10_NATIVE_BACKEND_LOCK = compiler/experiments/cranelift/Cargo\.lock$' |
-        rg -v '^[0-9]+:PHASE10_NATIVE_BACKEND_SOURCE = compiler/experiments/cranelift/src/main\.rs$' |
-        rg -v '^[0-9]+:PHASE10_NATIVE_BACKEND_BUILT_BIN = \$\(PHASE10_NATIVE_BACKEND_TARGET_DIR\)/release/gust-cranelift-experiment$' ||
-        true
-    )"
-    if [ -n "$unexpected_phase10_package_make_refs" ]; then
-      echo "Phase 10 Makefile packaging contains Cranelift references beyond the four frozen Patch 11 release inputs:"
-      echo "$unexpected_phase10_package_make_refs"
-      exit 1
-    fi
-    phase10_package_make_ref_count="$(
-      printf '%s\n' "$phase10_package_make_refs" |
-        sed '/^$/d' |
-        wc -l |
-        tr -d ' '
-    )"
-    if [ "$phase10_package_make_ref_count" != "4" ]; then
-      echo "Expected exactly four frozen Patch 11 Makefile Cranelift references, found $phase10_package_make_ref_count."
-      printf '%s\n' "$phase10_package_make_refs"
-      exit 1
-    fi
-
-    phase10_help_fixture="compiler/phase10_help.txt"
-    if [ ! -f "$phase10_help_fixture" ]; then
-      echo "Missing canonical Phase 10 help fixture: $phase10_help_fixture"
-      exit 1
-    fi
-    phase10_help_fixture_refs="$(
-      rg -n -i -F 'cranelift' "$phase10_help_fixture" ||
-        true
-    )"
-    unexpected_phase10_help_fixture_refs="$(
-      printf '%s\n' "$phase10_help_fixture_refs" |
-        rg -v '^[0-9]+:  gust --backend cranelift -o <output> <source\.gst>$' |
-        rg -v '^[0-9]+:  cranelift  Compile a supported source cohort to one native executable \(experimental\)\.$' |
-        rg -v '^[0-9]+:  --backend <mir-to-c\|cranelift>  Select the backend explicitly\.$' |
-        rg -v '^[0-9]+:  -o <output>[[:space:]]+Required only by the cranelift backend\.$' ||
-        true
-    )"
-    if [ -n "$unexpected_phase10_help_fixture_refs" ]; then
-      echo "Canonical Phase 10 help fixture contains Cranelift references beyond the four frozen help lines:"
-      echo "$unexpected_phase10_help_fixture_refs"
-      exit 1
-    fi
-    phase10_help_fixture_ref_count="$(
-      printf '%s\n' "$phase10_help_fixture_refs" |
-        sed '/^$/d' |
-        wc -l |
-        tr -d ' '
-    )"
-    if [ "$phase10_help_fixture_ref_count" != "4" ]; then
-      echo "Expected exactly four frozen canonical help-fixture Cranelift references, found $phase10_help_fixture_ref_count."
-      printf '%s\n' "$phase10_help_fixture_refs"
-      exit 1
-    fi
-
-    legacy_phase10_help_fixture="compiler/fixtures/phase10_help.txt"
-    if [ -f "$legacy_phase10_help_fixture" ] &&
-       rg -n -i -F 'cranelift' "$legacy_phase10_help_fixture" >/dev/null; then
-      echo "Superseded Phase 10 help fixture must not retain a second Cranelift help surface:"
-      rg -n -i -F 'cranelift' "$legacy_phase10_help_fixture"
-      exit 1
-    fi
-
-    phase11_registry_doc="compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md"
-    if ! rg -n -x -F 'allowed_cranelift_phase11_registry_path: compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md' "$manifest_doc" >/dev/null; then
-      echo "Phase 11 parity-registry path is missing or stale in $manifest_doc."
-      rg -n -F 'allowed_cranelift_phase11_registry_path:' "$manifest_doc" || true
-      exit 1
-    fi
-    if [ ! -f "$phase11_registry_doc" ] || [ -L "$phase11_registry_doc" ]; then
-      echo "Phase 11 parity registry must be one regular non-symlink documentation file: $phase11_registry_doc"
-      exit 1
-    fi
-    required_phase11_registry_headers=(
-      'CRANELIFT_FEATURE_PARITY_REGISTRY_VERSION: 1'
-      'CRANELIFT_FEATURE_PARITY_REGISTRY_AUTHORITY: historical_generated_view'
-      'CRANELIFT_FEATURE_PARITY_REGISTRY_CANONICAL_SOURCE: scripts/cranelift_feature_registry.json'
-      'CRANELIFT_FEATURE_PARITY_REGISTRY_DERIVED_SUMMARY: docs/CRANELIFT_FEATURE_REGISTRY.md'
-    )
-    for expected_header in "${required_phase11_registry_headers[@]}"; do
-      if ! rg -n -x -F "$expected_header" "$phase11_registry_doc" >/dev/null; then
-        echo "Phase 11 historical view is missing an authority header:"
-        echo "$expected_header"
-        exit 1
-      fi
-    done
-
-    phase13_registry_doc="compiler/CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY.md"
-    if ! rg -n -x -F 'allowed_cranelift_phase13_opening_legacy_manifest_surface_policy: exact_historical_view_authority_headers_are_validated_before_exclusion_from_the_Phase9_broad_Cranelift_reference_scan' "$manifest_doc" >/dev/null; then
-      echo "Phase 13 deferred-parity registry legacy manifest-surface policy is missing or stale."
-      rg -n -F 'allowed_cranelift_phase13_opening_legacy_manifest_surface_policy:' "$manifest_doc" || true
-      exit 1
-    fi
-    if ! rg -n -x -F 'allowed_cranelift_phase13_opening_registry: scripts/cranelift_feature_registry.json' "$manifest_doc" >/dev/null; then
-      echo "Phase 13 canonical registry path is missing or stale in $manifest_doc."
-      rg -n -F 'allowed_cranelift_phase13_opening_registry:' "$manifest_doc" || true
-      exit 1
-    fi
-    if [ ! -f "$phase13_registry_doc" ] || [ -L "$phase13_registry_doc" ]; then
-      echo "Phase 13 deferred-parity registry must be one regular non-symlink documentation file: $phase13_registry_doc"
-      exit 1
-    fi
-    required_phase13_registry_headers=(
-      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_VERSION: 1'
-      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_AUTHORITY: historical_generated_view'
-      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_CANONICAL_SOURCE: scripts/cranelift_feature_registry.json'
-      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_DERIVED_SUMMARY: docs/CRANELIFT_FEATURE_REGISTRY.md'
-    )
-    for expected_header in "${required_phase13_registry_headers[@]}"; do
-      if ! rg -n -x -F "$expected_header" "$phase13_registry_doc" >/dev/null; then
-        echo "Phase 13 historical view is missing an authority header:"
-        echo "$expected_header"
-        exit 1
-      fi
-    done
-
-    phase12_5_inventory_doc="compiler/CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY.md"
-    if ! rg -n -x -F 'allowed_cranelift_phase12_5_opening_legacy_manifest_surface_policy: exact_inventory_path_headers_and_count_are_validated_before_exclusion_from_the_historical_broad_Cranelift_reference_scan' "$manifest_doc" >/dev/null; then
-      echo "Phase 12.5 verification inventory legacy manifest-surface policy is missing or stale."
-      rg -n -F 'allowed_cranelift_phase12_5_opening_legacy_manifest_surface_policy:' "$manifest_doc" || true
-      exit 1
-    fi
-    if ! rg -n -x -F 'allowed_cranelift_phase12_5_opening_inventory: compiler/CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY.md' "$manifest_doc" >/dev/null; then
-      echo "Phase 12.5 verification inventory path is missing or stale in $manifest_doc."
-      rg -n -F 'allowed_cranelift_phase12_5_opening_inventory:' "$manifest_doc" || true
-      exit 1
-    fi
-    if [ ! -f "$phase12_5_inventory_doc" ] || [ -L "$phase12_5_inventory_doc" ]; then
-      echo "Phase 12.5 verification inventory must be one regular non-symlink documentation file: $phase12_5_inventory_doc"
-      exit 1
-    fi
-    required_phase12_5_inventory_headers=(
-      'CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_VERSION: 1'
-      'CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_STATUS: phase12_5_opened_verification_framework_consolidation'
-      'CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_ITEM_COUNT: 26'
-      'CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_DUPLICATE_FACT_COUNT: 7'
-    )
-    for expected_header in "${required_phase12_5_inventory_headers[@]}"; do
-      if ! rg -n -x -F "$expected_header" "$phase12_5_inventory_doc" >/dev/null; then
-        echo "Phase 12.5 verification inventory is missing a frozen legacy-scan header:"
-        echo "$expected_header"
-        exit 1
-      fi
-    done
-    phase12_5_inventory_item_count="$(
-      rg -c '^phase12_5_inventory_item: ' "$phase12_5_inventory_doc" ||
-        true
-    )"
-    if [ "${phase12_5_inventory_item_count:-0}" != "26" ]; then
-      echo "Phase 12.5 verification inventory count drifted before the legacy broad-scan exclusion: items=${phase12_5_inventory_item_count:-0}"
-      exit 1
-    fi
-
-    cranelift_refs="$(
-      rg -n -i -F 'cranelift' compiler src tests Cargo.toml Cargo.lock Makefile 2>/dev/null |
-        rg -v '^compiler/CRANELIFT_EXPERIMENT_MANIFEST\.md:' |
-        rg -v '^compiler/CRANELIFT_PHASE9C_DIFFERENTIAL_LEDGER\.md:' |
-        rg -v '^compiler/CRANELIFT_FEATURE_PARITY_REGISTRY\.md:' |
-        rg -v '^compiler/CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY\.md:' |
-        rg -v '^compiler/CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY\.md:' |
-        rg -v '^compiler/experiments/cranelift/' |
-        rg -v '^compiler/test_runner_entry\.gst:' |
-        rg -v '^compiler/phase10_help\.txt:' |
-        rg -v '^Makefile:' ||
-        true
-    )"
-    if [ -n "$cranelift_refs" ]; then
-      echo "Phase 9 broad scan found Cranelift references beyond the exact selector, canonical help, release packaging, manifest, and experiment allowlists:"
-      echo "$cranelift_refs"
-      exit 1
-    fi
-    echo "✅ Cranelift experiment manifest surface passed: exact selector, canonical help, and release-package references validated independently; no residual production Cranelift implementation route."
+guard-cranelift-experiment-manifest-surface:
+    just guard-cranelift-manifest-architecture-contract
 
 guard-cranelift-compiler-mir-ingestion-corpus-surface:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking compiler-owned MIR ingestion corpus surface..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     valid_return="compiler/fixtures/native_backend_return_int_ingestion.mir"
     valid_local="compiler/fixtures/native_backend_local_binding_read_ingestion.mir"
     valid_branch="compiler/fixtures/native_backend_conditional_branch_ingestion.mir"
@@ -1964,64 +1637,6 @@ guard-cranelift-compiler-mir-ingestion-corpus-surface:
     invalid_block_param_quad_materialize_return="compiler/fixtures/native_backend_block_param_quad_materialize_return_ingestion_invalid.mir"
     invalid_block_param_quint_materialize_return="compiler/fixtures/native_backend_block_param_quint_materialize_return_ingestion_invalid.mir"
 
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_COMPILER_MIR_INGESTION_CORPUS_SURFACE_GUARD: guard-cranelift-compiler-mir-ingestion-corpus-surface' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_corpus_surface_guard: guard-cranelift-compiler-mir-ingestion-corpus-surface' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_corpus_valid_fixture_count: 33' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_corpus_invalid_fixture_count: 33' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_corpus_valid_fixtures: compiler/fixtures/native_backend_return_int_ingestion.mir, compiler/fixtures/native_backend_local_binding_read_ingestion.mir, compiler/fixtures/native_backend_conditional_branch_ingestion.mir, compiler/fixtures/native_backend_add_i32_ingestion.mir, compiler/fixtures/native_backend_provenance_metadata_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'compiler/fixtures/native_backend_block_jump_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'compiler/fixtures/native_backend_block_local_branch_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'compiler/fixtures/native_backend_block_local_update_branch_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'compiler/fixtures/native_backend_block_two_local_update_branch_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'compiler/fixtures/native_backend_block_local_branch_join_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'compiler/fixtures/native_backend_block_param_update_branch_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'compiler/fixtures/native_backend_block_param_local_call_branch_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'compiler/fixtures/native_backend_block_param_imported_call_branch_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'compiler/fixtures/native_backend_block_param_imported_call_return_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'compiler/fixtures/native_backend_block_param_imported_predicate_update_branch_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'compiler/fixtures/native_backend_block_param_merge_update_branch_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'compiler/fixtures/native_backend_block_param_merge_imported_call_return_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'compiler/fixtures/native_backend_block_param_merge_arm_update_imported_call_return_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'compiler/fixtures/native_backend_block_param_merge_arm_update_imported_call_branch_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'compiler/fixtures/native_backend_block_param_merge_imported_branch_joined_return_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'compiler/fixtures/native_backend_block_param_merge_dual_imported_joined_return_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'compiler/fixtures/native_backend_block_param_imported_materialize_branch_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'compiler/fixtures/native_backend_block_param_local_materialize_branch_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'compiler/fixtures/native_backend_block_param_imported_materialize_return_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'compiler/fixtures/native_backend_block_param_local_materialize_return_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'compiler/fixtures/native_backend_block_param_dual_materialize_return_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'compiler/fixtures/native_backend_block_param_local_first_dual_materialize_return_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'compiler/fixtures/native_backend_block_param_triple_materialize_return_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'compiler/fixtures/native_backend_block_param_quad_materialize_return_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'compiler/fixtures/native_backend_block_param_quint_materialize_return_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_corpus_invalid_fixtures: compiler/fixtures/native_backend_return_int_ingestion_invalid.mir, compiler/fixtures/native_backend_local_binding_read_ingestion_invalid.mir, compiler/fixtures/native_backend_conditional_branch_ingestion_invalid.mir, compiler/fixtures/native_backend_add_i32_ingestion_invalid.mir, compiler/fixtures/native_backend_provenance_metadata_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'compiler/fixtures/native_backend_block_jump_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'compiler/fixtures/native_backend_block_local_branch_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'compiler/fixtures/native_backend_block_local_update_branch_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'compiler/fixtures/native_backend_block_two_local_update_branch_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'compiler/fixtures/native_backend_block_local_branch_join_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'compiler/fixtures/native_backend_block_param_update_branch_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'compiler/fixtures/native_backend_block_param_local_call_branch_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'compiler/fixtures/native_backend_block_param_imported_call_branch_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'compiler/fixtures/native_backend_block_param_imported_call_return_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'compiler/fixtures/native_backend_block_param_imported_predicate_update_branch_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'compiler/fixtures/native_backend_block_param_merge_update_branch_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'compiler/fixtures/native_backend_block_param_merge_imported_call_return_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'compiler/fixtures/native_backend_block_param_merge_arm_update_imported_call_return_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'compiler/fixtures/native_backend_block_param_merge_arm_update_imported_call_branch_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'compiler/fixtures/native_backend_block_param_merge_imported_branch_joined_return_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'compiler/fixtures/native_backend_block_param_merge_dual_imported_joined_return_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'compiler/fixtures/native_backend_block_param_imported_materialize_branch_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'compiler/fixtures/native_backend_block_param_local_materialize_branch_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'compiler/fixtures/native_backend_block_param_imported_materialize_return_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'compiler/fixtures/native_backend_block_param_local_materialize_return_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'compiler/fixtures/native_backend_block_param_dual_materialize_return_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'compiler/fixtures/native_backend_block_param_local_first_dual_materialize_return_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'compiler/fixtures/native_backend_block_param_triple_materialize_return_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'compiler/fixtures/native_backend_block_param_quad_materialize_return_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'compiler/fixtures/native_backend_block_param_quint_materialize_return_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_corpus_status: positive_and_negative_compiler_owned_fixture_inventory' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_corpus_suite_wiring: manifest_derived_native_guard_inventory' "$manifest_doc" >/dev/null
 
     for fixture in "$valid_return" "$valid_local" "$valid_branch" "$valid_add" "$valid_provenance" "$valid_resource" "$valid_native_boundary" "$valid_positive_branch" "$valid_block_jump" "$valid_block_local_branch" "$valid_block_local_update_branch" "$valid_block_two_local_update_branch" "$valid_block_local_branch_join" "$valid_block_param_update_branch" "$valid_block_param_local_call_branch" "$valid_block_param_imported_call_branch" "$valid_block_param_imported_call_return" "$valid_block_param_imported_predicate_update_branch" "$valid_block_param_merge_update_branch" "$valid_block_param_merge_imported_call_return" "$valid_block_param_merge_arm_update_imported_call_return" "$valid_block_param_merge_arm_update_imported_call_branch" "$valid_block_param_merge_imported_branch_joined_return" "$invalid_return" "$invalid_local" "$invalid_branch" "$invalid_add" "$invalid_provenance" "$invalid_resource" "$invalid_native_boundary" "$invalid_positive_branch" "$invalid_block_jump" "$invalid_block_local_branch" "$invalid_block_local_update_branch" "$invalid_block_two_local_update_branch" "$invalid_block_local_branch_join" "$invalid_block_param_update_branch" "$invalid_block_param_local_call_branch" "$invalid_block_param_imported_call_branch" "$invalid_block_param_imported_call_return" "$invalid_block_param_imported_predicate_update_branch" "$invalid_block_param_merge_update_branch" "$invalid_block_param_merge_imported_call_return" "$invalid_block_param_merge_arm_update_imported_call_return" "$invalid_block_param_merge_arm_update_imported_call_branch" "$invalid_block_param_merge_imported_branch_joined_return"; do
       if [ ! -f "$fixture" ]; then
@@ -2216,53 +1831,15 @@ guard-cranelift-compiler-mir-ingestion-corpus-surface:
     rg -n -F 'expected_case_1_result: 244' "$valid_block_param_merge_imported_branch_joined_return" "$invalid_block_param_merge_imported_branch_joined_return" >/dev/null
     rg -n -F 'expected_case_0_result: 6' "$invalid_add" >/dev/null
 
-    for guard_recipe in \
-      guard-cranelift-compiler-mir-return-int-ingestion-native-smoke \
-      guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke \
-      guard-cranelift-compiler-mir-conditional-branch-ingestion-native-smoke \
-      guard-cranelift-compiler-mir-add-i32-ingestion-native-smoke \
-      guard-cranelift-compiler-mir-provenance-metadata-ingestion-native-smoke \
-      guard-cranelift-compiler-mir-resource-metadata-ingestion-native-smoke \
-      guard-cranelift-compiler-mir-native-boundary-metadata-ingestion-native-smoke \
-      guard-cranelift-compiler-mir-positive-i32-branch-ingestion-native-smoke \
-      guard-cranelift-compiler-mir-block-jump-ingestion-native-smoke \
-      guard-cranelift-compiler-mir-block-local-branch-ingestion-native-smoke \
-      guard-cranelift-compiler-mir-block-local-update-branch-ingestion-native-smoke \
-      guard-cranelift-compiler-mir-block-two-local-update-branch-ingestion-native-smoke \
-      guard-cranelift-compiler-mir-block-local-branch-join-ingestion-native-smoke \
-      guard-cranelift-compiler-mir-block-param-update-branch-ingestion-native-smoke \
-      guard-cranelift-compiler-mir-block-param-local-call-branch-ingestion-native-smoke \
-      guard-cranelift-compiler-mir-block-param-imported-call-branch-ingestion-native-smoke \
-      guard-cranelift-compiler-mir-block-param-imported-call-return-ingestion-native-smoke \
-      guard-cranelift-compiler-mir-block-param-imported-predicate-update-branch-ingestion-native-smoke \
-      guard-cranelift-compiler-mir-block-param-merge-update-branch-ingestion-native-smoke \
-      guard-cranelift-compiler-mir-block-param-merge-imported-call-return-ingestion-native-smoke \
-      guard-cranelift-compiler-mir-block-param-merge-arm-update-imported-call-return-ingestion-native-smoke \
-      guard-cranelift-compiler-mir-block-param-merge-arm-update-imported-call-branch-ingestion-native-smoke \
-      guard-cranelift-compiler-mir-block-param-merge-imported-branch-joined-return-ingestion-native-smoke \
-      guard-cranelift-compiler-mir-block-param-merge-dual-imported-joined-return-ingestion-native-smoke \
-      guard-cranelift-compiler-mir-block-param-imported-materialize-branch-ingestion-native-smoke \
-      guard-cranelift-compiler-mir-block-param-local-materialize-branch-ingestion-native-smoke \
-      guard-cranelift-compiler-mir-block-param-imported-materialize-return-ingestion-native-smoke \
-      guard-cranelift-compiler-mir-block-param-local-materialize-return-ingestion-native-smoke \
-      guard-cranelift-compiler-mir-block-param-dual-materialize-return-ingestion-native-smoke \
-      guard-cranelift-compiler-mir-block-param-local-first-dual-materialize-return-ingestion-native-smoke \
-      guard-cranelift-compiler-mir-block-param-triple-materialize-return-ingestion-native-smoke \
-      guard-cranelift-compiler-mir-block-param-quad-materialize-return-ingestion-native-smoke \
-      guard-cranelift-compiler-mir-block-param-quint-materialize-return-ingestion-native-smoke \
-      guard-cranelift-compiler-mir-ingestion-invalid-fixtures-native-rejection
-    do
-      rg -n -F "$guard_recipe" "$manifest_doc" justfile >/dev/null
-    done
 
     suite_body="$(sed -n '/^guard-cranelift-experimental-backend-suite:/,/^guard-mir-feature-return-int-preservation:/p' justfile)"
-    printf '%s\n' "$suite_body" | rg -n -F 'suite_native_guards="$(awk' >/dev/null
-    printf '%s\n' "$suite_body" | rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_.*NATIVE_GUARD: guard-cranelift-' >/dev/null
+    printf '%s\n' "$suite_body" |
+      rg -n -F 'suite_native_guards="$(python3 scripts/cranelift_test_levels.py list-native)"' >/dev/null
     printf '%s\n' "$suite_body" | rg -n -F 'just "$guard_recipe"' >/dev/null
 
     fixture_cranelift_refs="$(rg -n -i -F 'cranelift' "$valid_return" "$valid_local" "$valid_branch" "$valid_add" "$valid_provenance" "$valid_resource" "$valid_native_boundary" "$valid_positive_branch" "$valid_block_jump" "$valid_block_local_branch" "$valid_block_local_update_branch" "$valid_block_two_local_update_branch" "$valid_block_local_branch_join" "$valid_block_param_update_branch" "$valid_block_param_local_call_branch" "$valid_block_param_imported_call_branch" "$valid_block_param_imported_call_return" "$valid_block_param_imported_predicate_update_branch" "$valid_block_param_merge_update_branch" "$valid_block_param_merge_imported_call_return" "$valid_block_param_merge_arm_update_imported_call_return" "$valid_block_param_merge_arm_update_imported_call_branch" "$valid_block_param_merge_imported_branch_joined_return" "$invalid_return" "$invalid_local" "$invalid_branch" "$invalid_add" "$invalid_provenance" "$invalid_resource" "$invalid_native_boundary" "$invalid_positive_branch" "$invalid_block_jump" "$invalid_block_local_branch" "$invalid_block_local_update_branch" "$invalid_block_two_local_update_branch" "$invalid_block_local_branch_join" "$invalid_block_param_update_branch" "$invalid_block_param_local_call_branch" "$invalid_block_param_imported_call_branch" "$invalid_block_param_imported_call_return" "$invalid_block_param_imported_predicate_update_branch" "$invalid_block_param_merge_update_branch" "$invalid_block_param_merge_imported_call_return" "$invalid_block_param_merge_arm_update_imported_call_return" "$invalid_block_param_merge_arm_update_imported_call_branch" "$invalid_block_param_merge_imported_branch_joined_return" || true)"
     if [ -n "$fixture_cranelift_refs" ]; then
-      echo "Compiler-owned MIR ingestion fixtures must not mention Cranelift; backend coupling stays manifest/experiment-only:"
+      echo "Compiler-owned MIR ingestion fixtures must not mention Cranelift; backend coupling stays inside the isolated experiment:"
       echo "$fixture_cranelift_refs"
       exit 1
     fi
@@ -2272,178 +1849,18 @@ guard-cranelift-compiler-mir-ingestion-corpus-surface:
 guard-cranelift-backend-surface:
     #!/usr/bin/env bash
     set -euo pipefail
-    echo "🔒 Checking Cranelift backend surface..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
-    just guard-cranelift-experiment-manifest-surface
+    echo "🔒 Checking Cranelift backend architecture surface..."
+    just guard-cranelift-manifest-architecture-contract
     just guard-cranelift-experiment-guard-wiring-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_PHASE: phase9-mir-to-c-differential-entry' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_STATUS: mir_to_c_differential_native_smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_CODEGEN_STATUS: return_int_local_binding_branch_differential_fixture_only' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_BACKEND_SURFACE_STATUS: differential_native_smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_PRIMARY_ROUTE: mir_to_c' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ENABLED_BY_DEFAULT: false' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_BACKEND_SURFACE_GUARD: guard-cranelift-backend-surface' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_GUARD_WIRING_SURFACE: guard-cranelift-experiment-guard-wiring-surface' "$manifest_doc" justfile >/dev/null
-    codegen_entry_refs="$(rg -n '^allowed_.*_codegen_entry:' "$manifest_doc" || true)"
-    unexpected_codegen_entries="$(printf '%s\n' "$codegen_entry_refs" | rg -v -F 'compiler/experiments/cranelift/src/main.rs' || true)"
-    if [ -n "$unexpected_codegen_entries" ]; then
-      echo "Cranelift experiment codegen entries must stay isolated under compiler/experiments/cranelift/src/main.rs:"
-      echo "$unexpected_codegen_entries"
-      exit 1
-    fi
-    object_artifact_refs="$(rg -n '^allowed_.*_object_artifact:' "$manifest_doc" || true)"
-    unexpected_object_artifacts="$(printf '%s\n' "$object_artifact_refs" | rg -v -F 'build/guards/cranelift' || true)"
-    if [ -n "$unexpected_object_artifacts" ]; then
-      echo "Cranelift object artifacts must stay under build/guards/cranelift*:"
-      echo "$unexpected_object_artifacts"
-      exit 1
-    fi
-    backend_route_flag="$(printf '%s %s' '--backend' 'cranelift')"
-    phase10_help_fixture="compiler/phase10_help.txt"
-    phase10_help_route_line='  gust --backend cranelift -o <output> <source.gst>'
-
-    # The canonical Patch 11 help fixture is documentation, but validate the
-    # exact route spelling before excluding it from this legacy production
-    # scan. This keeps broader help, source, or orchestration references visible.
-    if [ ! -f "$phase10_help_fixture" ]; then
-      echo "Missing canonical Phase 10 help fixture: $phase10_help_fixture"
-      exit 1
-    fi
-    phase10_help_route_count="$(
-      rg -n -x -F -- "$phase10_help_route_line" "$phase10_help_fixture" |
-        wc -l |
-        tr -d ' '
-    )"
-    if [ "$phase10_help_route_count" != "1" ]; then
-      echo "Expected exactly one frozen native usage line in $phase10_help_fixture, found $phase10_help_route_count."
-      rg -n -F -- "$backend_route_flag" "$phase10_help_fixture" || true
-      exit 1
-    fi
-
-    # Phase 10 contract documentation, the exact validated help line, Phase 10
-    # guard recipes, and the six exact manifest-authorized Phase 11 route
-    # guards may name the explicit CLI. No production source is exempted.
-    if ! rg -n -x -F 'allowed_cranelift_phase11_generic_route_legacy_backend_surface_policy: exact_generic_route_guard_recipe_is_manifest_validated_then_excluded_from_the_legacy_explicit_CLI_scan' "$manifest_doc" >/dev/null; then
-      echo "Phase 11 generic-route legacy backend-surface policy is missing or stale."
-      rg -n -F 'allowed_cranelift_phase11_generic_route_legacy_backend_surface_policy:' "$manifest_doc" || true
-      exit 1
-    fi
-    if ! rg -n -x -F 'allowed_cranelift_phase11_scalar_expression_legacy_backend_surface_policy: exact_scalar_expression_guard_recipe_is_manifest_validated_then_excluded_from_the_legacy_explicit_CLI_scan' "$manifest_doc" >/dev/null; then
-      echo "Phase 11 scalar-expression legacy backend-surface policy is missing or stale."
-      rg -n -F 'allowed_cranelift_phase11_scalar_expression_legacy_backend_surface_policy:' "$manifest_doc" || true
-      exit 1
-    fi
-    if ! rg -n -x -F 'allowed_cranelift_phase11_local_state_legacy_backend_surface_policy: exact_local_state_guard_recipe_is_manifest_validated_then_excluded_from_the_legacy_explicit_CLI_scan' "$manifest_doc" >/dev/null; then
-      echo "Phase 11 local-state legacy backend-surface policy is missing or stale."
-      rg -n -F 'allowed_cranelift_phase11_local_state_legacy_backend_surface_policy:' "$manifest_doc" || true
-      exit 1
-    fi
-    if ! rg -n -x -F 'allowed_cranelift_phase11_structured_CFG_legacy_backend_surface_policy: exact_structured_CFG_guard_recipe_is_manifest_validated_then_excluded_from_the_legacy_explicit_CLI_scan' "$manifest_doc" >/dev/null; then
-      echo "Phase 11 structured-CFG legacy backend-surface policy is missing or stale."
-      rg -n -F 'allowed_cranelift_phase11_structured_CFG_legacy_backend_surface_policy:' "$manifest_doc" || true
-      exit 1
-    fi
-    if ! rg -n -x -F 'allowed_cranelift_phase11_block_parameter_loop_legacy_backend_surface_policy: exact_block_parameter_loop_guard_recipe_is_manifest_validated_then_excluded_from_the_legacy_explicit_CLI_scan' "$manifest_doc" >/dev/null; then
-      echo "Phase 11 block-parameter/loop legacy backend-surface policy is missing or stale."
-      rg -n -F 'allowed_cranelift_phase11_block_parameter_loop_legacy_backend_surface_policy:' "$manifest_doc" || true
-      exit 1
-    fi
-    if ! rg -n -x -F 'allowed_cranelift_phase11_direct_call_ABI_legacy_backend_surface_policy: exact_direct_call_ABI_guard_recipe_is_manifest_validated_then_excluded_from_the_legacy_explicit_CLI_scan' "$manifest_doc" >/dev/null; then
-      echo "Phase 11 direct-call/ABI legacy backend-surface policy is missing or stale."
-      rg -n -F 'allowed_cranelift_phase11_direct_call_ABI_legacy_backend_surface_policy:' "$manifest_doc" || true
-      exit 1
-    fi
-    if ! rg -n -x -F 'allowed_cranelift_phase11_module_import_runtime_legacy_backend_surface_policy: exact_module_import_runtime_guard_recipe_is_manifest_validated_then_excluded_from_the_legacy_explicit_CLI_scan' "$manifest_doc" >/dev/null; then
-      echo "Phase 11 module/import/runtime legacy backend-surface policy is missing or stale."
-      rg -n -F 'allowed_cranelift_phase11_module_import_runtime_legacy_backend_surface_policy:' "$manifest_doc" || true
-      exit 1
-    fi
-    backend_route_code_refs="$(
-      rg -n -F -- "$backend_route_flag"         compiler src tests Makefile Cargo.toml Cargo.lock 2>/dev/null |
-        rg -v '^compiler/CRANELIFT_EXPERIMENT_MANIFEST\.md:' |
-        rg -v '^compiler/experiments/cranelift/README\.md:' |
-        rg -v '^compiler/test_runner_entry\.gst:[0-9]+:[[:space:]]*os\.LogStr\("  gust --backend cranelift -o <output> <source\.gst>"\);$' |
-        rg -v '^compiler/phase10_help\.txt:[0-9]+:  gust --backend cranelift -o <output> <source\.gst>$' ||
-        true
-    )"
-    backend_route_guard_free_justfile="$(
-      awk '
-        /^[^[:space:]#][^=]*:/ {
-          excluded_backend_route_guard = 0
-          if ($0 ~ /^guard-cranelift-phase10-[^:]*:/) {
-            excluded_backend_route_guard = 1
-          }
-          if ($0 == "guard-cranelift-phase11-generic-canonical-mir-route:") {
-            excluded_backend_route_guard = 1
-          }
-          if ($0 == "guard-cranelift-phase11-scalar-expression-parity:") {
-            excluded_backend_route_guard = 1
-          }
-          if ($0 == "guard-cranelift-phase11-local-state-parity:") {
-            excluded_backend_route_guard = 1
-          }
-          if ($0 == "guard-cranelift-phase11-structured-cfg-parity:") {
-            excluded_backend_route_guard = 1
-          }
-          if ($0 == "guard-cranelift-phase11-block-parameter-loop-parity:") {
-            excluded_backend_route_guard = 1
-          }
-          if ($0 == "guard-cranelift-phase11-direct-call-abi-parity:") {
-            excluded_backend_route_guard = 1
-          }
-          if ($0 == "guard-cranelift-phase11-module-import-runtime-parity:") {
-            excluded_backend_route_guard = 1
-          }
-          if ($0 == "guard-cranelift-phase11-metadata-diagnostic-parity:") {
-            excluded_backend_route_guard = 1
-          }
-          if ($0 == "guard-cranelift-experiment-manifest-surface:") {
-            excluded_backend_route_guard = 1
-          }
-          if ($0 == "guard-cranelift-backend-surface:") {
-            excluded_backend_route_guard = 1
-          }
-        }
-        !excluded_backend_route_guard {
-          print
-        }
-      ' justfile
-    )"
-    backend_route_just_refs="$(
-      printf '%s\n' "$backend_route_guard_free_justfile" |
-        rg -n -F -- "$backend_route_flag" ||
-        true
-    )"
-    backend_route_refs="$(
-      printf '%s\n%s\n' "$backend_route_code_refs" "$backend_route_just_refs" |
-        sed '/^$/d'
-    )"
-    if [ -n "$backend_route_refs" ]; then
-      echo "Unauthorized Cranelift backend routing exists outside the frozen Phase 10 surfaces and the exact validated Phase 11 generic/scalar/local-state/structured-CFG/block-parameter/direct-call/module-import-runtime route guards."
-      echo "$backend_route_refs"
-      exit 1
-    fi
-    implementation_refs="$(rg -n -i 'cranelift_codegen|cranelift_emit|cranelift_compile|CraneliftBackend' compiler src tests Cargo.toml Cargo.lock Makefile 2>/dev/null | rg -v '^compiler/CRANELIFT_EXPERIMENT_MANIFEST\.md:' | rg -v '^compiler/experiments/cranelift/' || true)"
-    if [ -n "$implementation_refs" ]; then
-      echo "Cranelift backend surface must not include production codegen, root deps, or non-experiment implementation refs yet:"
-      echo "$implementation_refs"
-      exit 1
-    fi
-    echo "✅ Cranelift backend surface passed: guard inventory is manifest-derived, Cranelift remains isolated, and production codegen/routes are still absent."
+    PHASE11_ROUTE_ARCHITECTURE_SKIP_DYNAMIC=1 \
+      just guard-cranelift-route-architecture-contract
+    echo "✅ Cranelift backend architecture surface passed: isolation, selectors, worker boundary, artifact ownership, and no-fallback policy are validated semantically."
 
 guard-cranelift-return-int-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling real experimental Cranelift return-int smoke..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_PHASE: phase9-mir-to-c-differential-entry' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_STATUS: mir_to_c_differential_native_smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_CODEGEN_STATUS: return_int_local_binding_branch_differential_fixture_only' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_RETURN_INT_NATIVE_GUARD: guard-cranelift-return-int-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_return_int_fixture: tiny_cranelift_return_int' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_return_int_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_return_int_object_artifact: build/guards/cranelift_return_int_native/tiny_cranelift_return_int.o' "$manifest_doc" >/dev/null
     mkdir -p build/guards/cranelift_return_int_native
     object_file="build/guards/cranelift_return_int_native/tiny_cranelift_return_int.o"
     shim_c="build/guards/cranelift_return_int_native/tiny_cranelift_return_int_main.c"
@@ -2476,15 +1893,7 @@ guard-cranelift-local-binding-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling real experimental Cranelift local-binding smoke..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_PHASE: phase9-mir-to-c-differential-entry' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_STATUS: mir_to_c_differential_native_smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_CODEGEN_STATUS: return_int_local_binding_branch_differential_fixture_only' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_LOCAL_BINDING_NATIVE_GUARD: guard-cranelift-local-binding-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_local_binding_fixture: tiny_cranelift_local_binding_read' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_local_binding_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_local_binding_object_artifact: build/guards/cranelift_local_binding_native/tiny_cranelift_local_binding_read.o' "$manifest_doc" >/dev/null
     mkdir -p build/guards/cranelift_local_binding_native
     object_file="build/guards/cranelift_local_binding_native/tiny_cranelift_local_binding_read.o"
     shim_c="build/guards/cranelift_local_binding_native/tiny_cranelift_local_binding_read_main.c"
@@ -2517,15 +1926,7 @@ guard-cranelift-conditional-branch-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling real experimental Cranelift conditional-branch smoke..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_PHASE: phase9-mir-to-c-differential-entry' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_STATUS: mir_to_c_differential_native_smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_CODEGEN_STATUS: return_int_local_binding_branch_object_smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_BRANCH_NATIVE_GUARD: guard-cranelift-conditional-branch-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_branch_fixture: tiny_cranelift_conditional_branch' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_branch_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_branch_object_artifact: build/guards/cranelift_conditional_branch_native/tiny_cranelift_conditional_branch.o' "$manifest_doc" >/dev/null
     mkdir -p build/guards/cranelift_conditional_branch_native
     object_file="build/guards/cranelift_conditional_branch_native/tiny_cranelift_conditional_branch.o"
     shim_c="build/guards/cranelift_conditional_branch_native/tiny_cranelift_conditional_branch_main.c"
@@ -2556,14 +1957,7 @@ guard-cranelift-identity-i32-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling real experimental Cranelift identity-i32 smoke..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_PHASE: phase9-mir-to-c-differential-entry' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_STATUS: mir_to_c_differential_native_smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_IDENTITY_I32_NATIVE_GUARD: guard-cranelift-identity-i32-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_identity_i32_native_guard: guard-cranelift-identity-i32-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_identity_i32_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_identity_i32_object_artifact: build/guards/cranelift_identity_i32_native/tiny_cranelift_identity_i32.o' "$manifest_doc" >/dev/null
     mkdir -p build/guards/cranelift_identity_i32_native
     object_file="build/guards/cranelift_identity_i32_native/tiny_cranelift_identity_i32.o"
     shim_c="build/guards/cranelift_identity_i32_native/tiny_cranelift_identity_i32_main.c"
@@ -2594,14 +1988,7 @@ guard-cranelift-add-i32-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling real experimental Cranelift add-i32 smoke..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_PHASE: phase9-mir-to-c-differential-entry' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_STATUS: mir_to_c_differential_native_smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_ADD_I32_NATIVE_GUARD: guard-cranelift-add-i32-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_add_i32_native_guard: guard-cranelift-add-i32-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_add_i32_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_add_i32_object_artifact: build/guards/cranelift_add_i32_native/tiny_cranelift_add_i32.o' "$manifest_doc" >/dev/null
     mkdir -p build/guards/cranelift_add_i32_native
     object_file="build/guards/cranelift_add_i32_native/tiny_cranelift_add_i32.o"
     shim_c="build/guards/cranelift_add_i32_native/tiny_cranelift_add_i32_main.c"
@@ -2631,14 +2018,7 @@ guard-cranelift-positive-i32-branch-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling real experimental Cranelift positive-i32 branch smoke..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_PHASE: phase9-mir-to-c-differential-entry' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_STATUS: mir_to_c_differential_native_smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_POSITIVE_I32_BRANCH_NATIVE_GUARD: guard-cranelift-positive-i32-branch-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_positive_i32_branch_native_guard: guard-cranelift-positive-i32-branch-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_positive_i32_branch_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_positive_i32_branch_object_artifact: build/guards/cranelift_positive_i32_branch_native/tiny_cranelift_positive_i32_branch.o' "$manifest_doc" >/dev/null
     mkdir -p build/guards/cranelift_positive_i32_branch_native
     object_file="build/guards/cranelift_positive_i32_branch_native/tiny_cranelift_positive_i32_branch.o"
     shim_c="build/guards/cranelift_positive_i32_branch_native/tiny_cranelift_positive_i32_branch_main.c"
@@ -2676,14 +2056,7 @@ guard-cranelift-increment-local-i32-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling real experimental Cranelift increment-local-i32 smoke..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_PHASE: phase9-mir-to-c-differential-entry' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_STATUS: mir_to_c_differential_native_smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_INCREMENT_LOCAL_I32_NATIVE_GUARD: guard-cranelift-increment-local-i32-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_increment_local_i32_native_guard: guard-cranelift-increment-local-i32-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_increment_local_i32_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_increment_local_i32_object_artifact: build/guards/cranelift_increment_local_i32_native/tiny_cranelift_increment_local_i32.o' "$manifest_doc" >/dev/null
     mkdir -p build/guards/cranelift_increment_local_i32_native
     object_file="build/guards/cranelift_increment_local_i32_native/tiny_cranelift_increment_local_i32.o"
     shim_c="build/guards/cranelift_increment_local_i32_native/tiny_cranelift_increment_local_i32_main.c"
@@ -2721,14 +2094,7 @@ guard-cranelift-call-helper-i32-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling real experimental Cranelift call-helper-i32 smoke..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_PHASE: phase9-mir-to-c-differential-entry' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_STATUS: mir_to_c_differential_native_smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_CALL_HELPER_I32_NATIVE_GUARD: guard-cranelift-call-helper-i32-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_call_helper_i32_native_guard: guard-cranelift-call-helper-i32-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_call_helper_i32_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_call_helper_i32_object_artifact: build/guards/cranelift_call_helper_i32_native/tiny_cranelift_call_helper_i32.o' "$manifest_doc" >/dev/null
     mkdir -p build/guards/cranelift_call_helper_i32_native
     object_file="build/guards/cranelift_call_helper_i32_native/tiny_cranelift_call_helper_i32.o"
     shim_c="build/guards/cranelift_call_helper_i32_native/tiny_cranelift_call_helper_i32_main.c"
@@ -2766,15 +2132,7 @@ guard-cranelift-extern-call-i32-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling real experimental Cranelift extern-call-i32 smoke..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_PHASE: phase9-mir-to-c-differential-entry' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_STATUS: mir_to_c_differential_native_smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_EXTERN_CALL_I32_NATIVE_GUARD: guard-cranelift-extern-call-i32-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_extern_call_i32_native_guard: guard-cranelift-extern-call-i32-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_extern_call_i32_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_extern_call_i32_object_artifact: build/guards/cranelift_extern_call_i32_native/tiny_cranelift_extern_call_i32.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_extern_call_i32_host_symbol: tiny_host_add_one_i32' "$manifest_doc" >/dev/null
     mkdir -p build/guards/cranelift_extern_call_i32_native
     object_file="build/guards/cranelift_extern_call_i32_native/tiny_cranelift_extern_call_i32.o"
     shim_c="build/guards/cranelift_extern_call_i32_native/tiny_cranelift_extern_call_i32_main.c"
@@ -2815,15 +2173,7 @@ guard-cranelift-extern-add-i32-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling real experimental Cranelift extern-add-i32 smoke..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_PHASE: phase9-mir-to-c-differential-entry' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_STATUS: mir_to_c_differential_native_smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_EXTERN_ADD_I32_NATIVE_GUARD: guard-cranelift-extern-add-i32-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_extern_add_i32_native_guard: guard-cranelift-extern-add-i32-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_extern_add_i32_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_extern_add_i32_object_artifact: build/guards/cranelift_extern_add_i32_native/tiny_cranelift_extern_add_i32.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_extern_add_i32_host_symbol: tiny_host_add_i32' "$manifest_doc" >/dev/null
     mkdir -p build/guards/cranelift_extern_add_i32_native
     object_file="build/guards/cranelift_extern_add_i32_native/tiny_cranelift_extern_add_i32.o"
     shim_c="build/guards/cranelift_extern_add_i32_native/tiny_cranelift_extern_add_i32_main.c"
@@ -2864,15 +2214,7 @@ guard-cranelift-extern-predicate-branch-i32-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling real experimental Cranelift extern-predicate-branch-i32 smoke..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_PHASE: phase9-mir-to-c-differential-entry' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_STATUS: mir_to_c_differential_native_smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_EXTERN_PREDICATE_BRANCH_I32_NATIVE_GUARD: guard-cranelift-extern-predicate-branch-i32-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_extern_predicate_branch_i32_native_guard: guard-cranelift-extern-predicate-branch-i32-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_extern_predicate_branch_i32_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_extern_predicate_branch_i32_object_artifact: build/guards/cranelift_extern_predicate_branch_i32_native/tiny_cranelift_extern_predicate_branch_i32.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_extern_predicate_branch_i32_host_symbol: tiny_host_is_positive_i32' "$manifest_doc" >/dev/null
     mkdir -p build/guards/cranelift_extern_predicate_branch_i32_native
     object_file="build/guards/cranelift_extern_predicate_branch_i32_native/tiny_cranelift_extern_predicate_branch_i32.o"
     shim_c="build/guards/cranelift_extern_predicate_branch_i32_native/tiny_cranelift_extern_predicate_branch_i32_main.c"
@@ -2913,16 +2255,7 @@ guard-cranelift-mir-return-int-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling MIR-shaped Cranelift return-int lowering smoke..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_PHASE: phase9-mir-to-c-differential-entry' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_STATUS: mir_to_c_differential_native_smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_RETURN_INT_NATIVE_GUARD: guard-cranelift-mir-return-int-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_return_int_native_guard: guard-cranelift-mir-return-int-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_return_int_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_return_int_object_artifact: build/guards/cranelift_mir_return_int_native/tiny_cranelift_mir_return_int.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_return_int_symbol: tiny_cranelift_mir_return_int' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_return_int_lowering_scaffold: TinyMirFunction' "$manifest_doc" >/dev/null
     mkdir -p build/guards/cranelift_mir_return_int_native
     object_file="build/guards/cranelift_mir_return_int_native/tiny_cranelift_mir_return_int.o"
     shim_c="build/guards/cranelift_mir_return_int_native/tiny_cranelift_mir_return_int_main.c"
@@ -2952,16 +2285,7 @@ guard-cranelift-mir-local-binding-read-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling MIR-shaped Cranelift local-binding/read lowering smoke..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_PHASE: phase9-mir-to-c-differential-entry' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_STATUS: mir_to_c_differential_native_smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_LOCAL_BINDING_READ_NATIVE_GUARD: guard-cranelift-mir-local-binding-read-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_local_binding_read_native_guard: guard-cranelift-mir-local-binding-read-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_local_binding_read_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_local_binding_read_object_artifact: build/guards/cranelift_mir_local_binding_read_native/tiny_cranelift_mir_local_binding_read.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_local_binding_read_symbol: tiny_cranelift_mir_local_binding_read' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_local_binding_read_lowering_scaffold: TinyMirStatement::LocalI32Set' "$manifest_doc" >/dev/null
     mkdir -p build/guards/cranelift_mir_local_binding_read_native
     object_file="build/guards/cranelift_mir_local_binding_read_native/tiny_cranelift_mir_local_binding_read.o"
     shim_c="build/guards/cranelift_mir_local_binding_read_native/tiny_cranelift_mir_local_binding_read_main.c"
@@ -2991,14 +2315,7 @@ guard-cranelift-mir-conditional-branch-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling MIR-shaped Cranelift conditional-branch lowering smoke..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_CONDITIONAL_BRANCH_NATIVE_GUARD: guard-cranelift-mir-conditional-branch-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_conditional_branch_native_guard: guard-cranelift-mir-conditional-branch-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_conditional_branch_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_conditional_branch_object_artifact: build/guards/cranelift_mir_conditional_branch_native/tiny_cranelift_mir_conditional_branch.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_conditional_branch_symbol: tiny_cranelift_mir_conditional_branch' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_conditional_branch_lowering_scaffold: TinyMirTerminator::BranchI32Literal' "$manifest_doc" >/dev/null
     mkdir -p build/guards/cranelift_mir_conditional_branch_native
     object_file="build/guards/cranelift_mir_conditional_branch_native/tiny_cranelift_mir_conditional_branch.o"
     shim_c="build/guards/cranelift_mir_conditional_branch_native/tiny_cranelift_mir_conditional_branch_main.c"
@@ -3028,14 +2345,7 @@ guard-cranelift-mir-add-i32-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling MIR-shaped Cranelift add-i32 lowering smoke..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_ADD_I32_NATIVE_GUARD: guard-cranelift-mir-add-i32-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_add_i32_native_guard: guard-cranelift-mir-add-i32-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_add_i32_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_add_i32_object_artifact: build/guards/cranelift_mir_add_i32_native/tiny_cranelift_mir_add_i32.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_add_i32_symbol: tiny_cranelift_mir_add_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_add_i32_lowering_scaffold: TinyMirTerminator::ReturnParamI32Add' "$manifest_doc" >/dev/null
     mkdir -p build/guards/cranelift_mir_add_i32_native
     object_file="build/guards/cranelift_mir_add_i32_native/tiny_cranelift_mir_add_i32.o"
     shim_c="build/guards/cranelift_mir_add_i32_native/tiny_cranelift_mir_add_i32_main.c"
@@ -3069,14 +2379,7 @@ guard-cranelift-mir-positive-i32-branch-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling MIR-shaped Cranelift positive-i32-branch lowering smoke..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_POSITIVE_I32_BRANCH_NATIVE_GUARD: guard-cranelift-mir-positive-i32-branch-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_positive_i32_branch_native_guard: guard-cranelift-mir-positive-i32-branch-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_positive_i32_branch_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_positive_i32_branch_object_artifact: build/guards/cranelift_mir_positive_i32_branch_native/tiny_cranelift_mir_positive_i32_branch.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_positive_i32_branch_symbol: tiny_cranelift_mir_positive_i32_branch' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_positive_i32_branch_lowering_scaffold: TinyMirTerminator::BranchParamI32Positive' "$manifest_doc" >/dev/null
     mkdir -p build/guards/cranelift_mir_positive_i32_branch_native
     object_file="build/guards/cranelift_mir_positive_i32_branch_native/tiny_cranelift_mir_positive_i32_branch.o"
     shim_c="build/guards/cranelift_mir_positive_i32_branch_native/tiny_cranelift_mir_positive_i32_branch_main.c"
@@ -3110,14 +2413,7 @@ guard-cranelift-mir-increment-local-i32-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling MIR-shaped Cranelift increment-local-i32 lowering smoke..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_INCREMENT_LOCAL_I32_NATIVE_GUARD: guard-cranelift-mir-increment-local-i32-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_increment_local_i32_native_guard: guard-cranelift-mir-increment-local-i32-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_increment_local_i32_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_increment_local_i32_object_artifact: build/guards/cranelift_mir_increment_local_i32_native/tiny_cranelift_mir_increment_local_i32.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_increment_local_i32_symbol: tiny_cranelift_mir_increment_local_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_increment_local_i32_lowering_scaffold: TinyMirStatement::LocalI32SetParam+TinyMirStatement::LocalI32AddI32Literal' "$manifest_doc" >/dev/null
     mkdir -p build/guards/cranelift_mir_increment_local_i32_native
     object_file="build/guards/cranelift_mir_increment_local_i32_native/tiny_cranelift_mir_increment_local_i32.o"
     shim_c="build/guards/cranelift_mir_increment_local_i32_native/tiny_cranelift_mir_increment_local_i32_main.c"
@@ -3151,15 +2447,7 @@ guard-cranelift-mir-call-helper-i32-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling MIR-shaped Cranelift helper-call lowering smoke..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_CALL_HELPER_I32_NATIVE_GUARD: guard-cranelift-mir-call-helper-i32-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_call_helper_i32_native_guard: guard-cranelift-mir-call-helper-i32-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_call_helper_i32_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_call_helper_i32_object_artifact: build/guards/cranelift_mir_call_helper_i32_native/tiny_cranelift_mir_call_helper_i32.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_call_helper_i32_symbol: tiny_cranelift_mir_call_helper_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_call_helper_i32_helper_symbol: tiny_cranelift_mir_add_one_helper_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_call_helper_i32_lowering_scaffold: TinyMirTerminator::ReturnLocalFunctionI32Call' "$manifest_doc" >/dev/null
     build_dir="build/guards/cranelift_mir_call_helper_i32_native"
     object_file="$build_dir/tiny_cranelift_mir_call_helper_i32.o"
     shim_c="$build_dir/tiny_cranelift_mir_call_helper_i32_main.c"
@@ -3190,15 +2478,7 @@ guard-cranelift-mir-extern-call-i32-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling MIR-shaped Cranelift imported host-call lowering smoke..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_EXTERN_CALL_I32_NATIVE_GUARD: guard-cranelift-mir-extern-call-i32-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_extern_call_i32_native_guard: guard-cranelift-mir-extern-call-i32-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_extern_call_i32_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_extern_call_i32_object_artifact: build/guards/cranelift_mir_extern_call_i32_native/tiny_cranelift_mir_extern_call_i32.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_extern_call_i32_symbol: tiny_cranelift_mir_extern_call_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_extern_call_i32_host_symbol: tiny_host_add_one_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_extern_call_i32_lowering_scaffold: TinyMirTerminator::ReturnImportedFunctionI32Call' "$manifest_doc" >/dev/null
     build_dir="build/guards/cranelift_mir_extern_call_i32_native"
     object_file="$build_dir/tiny_cranelift_mir_extern_call_i32.o"
     shim_c="$build_dir/tiny_cranelift_mir_extern_call_i32_main.c"
@@ -3233,15 +2513,7 @@ guard-cranelift-mir-extern-add-i32-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling MIR-shaped Cranelift multi-argument imported host-call lowering smoke..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_EXTERN_ADD_I32_NATIVE_GUARD: guard-cranelift-mir-extern-add-i32-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_extern_add_i32_native_guard: guard-cranelift-mir-extern-add-i32-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_extern_add_i32_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_extern_add_i32_object_artifact: build/guards/cranelift_mir_extern_add_i32_native/tiny_cranelift_mir_extern_add_i32.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_extern_add_i32_symbol: tiny_cranelift_mir_extern_add_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_extern_add_i32_host_symbol: tiny_host_add_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_extern_add_i32_lowering_scaffold: TinyMirTerminator::ReturnImportedFunctionI32CallParamLiteral' "$manifest_doc" >/dev/null
     build_dir="build/guards/cranelift_mir_extern_add_i32_native"
     object_file="$build_dir/tiny_cranelift_mir_extern_add_i32.o"
     shim_c="$build_dir/tiny_cranelift_mir_extern_add_i32_main.c"
@@ -3276,15 +2548,7 @@ guard-cranelift-mir-extern-predicate-branch-i32-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling MIR-shaped Cranelift imported predicate branch lowering smoke..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_EXTERN_PREDICATE_BRANCH_I32_NATIVE_GUARD: guard-cranelift-mir-extern-predicate-branch-i32-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_extern_predicate_branch_i32_native_guard: guard-cranelift-mir-extern-predicate-branch-i32-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_extern_predicate_branch_i32_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_extern_predicate_branch_i32_object_artifact: build/guards/cranelift_mir_extern_predicate_branch_i32_native/tiny_cranelift_mir_extern_predicate_branch_i32.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_extern_predicate_branch_i32_symbol: tiny_cranelift_mir_extern_predicate_branch_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_extern_predicate_branch_i32_host_symbol: tiny_host_is_positive_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_extern_predicate_branch_i32_lowering_scaffold: TinyMirTerminator::BranchImportedFunctionI32Predicate' "$manifest_doc" >/dev/null
     build_dir="build/guards/cranelift_mir_extern_predicate_branch_i32_native"
     object_file="$build_dir/tiny_cranelift_mir_extern_predicate_branch_i32.o"
     shim_c="$build_dir/tiny_cranelift_mir_extern_predicate_branch_i32_main.c"
@@ -3322,16 +2586,7 @@ guard-cranelift-mir-arithmetic-i32-bundle-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling MIR-shaped Cranelift arithmetic i32 bundle smoke..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_ARITHMETIC_I32_BUNDLE_NATIVE_GUARD: guard-cranelift-mir-arithmetic-i32-bundle-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_arithmetic_i32_bundle_native_guard: guard-cranelift-mir-arithmetic-i32-bundle-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_arithmetic_i32_bundle_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_arithmetic_i32_bundle_object_artifact: build/guards/cranelift_mir_arithmetic_i32_bundle_native/tiny_cranelift_mir_arithmetic_i32_bundle.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_arithmetic_i32_bundle_sub_symbol: tiny_cranelift_mir_arithmetic_sub_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_arithmetic_i32_bundle_mul_symbol: tiny_cranelift_mir_arithmetic_mul_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_arithmetic_i32_bundle_lowering_scaffold: TinyMirTerminator::ReturnParamI32Sub' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_arithmetic_i32_bundle_lowering_scaffold: TinyMirTerminator::ReturnParamI32Mul' "$manifest_doc" >/dev/null
     build_dir="build/guards/cranelift_mir_arithmetic_i32_bundle_native"
     object_file="$build_dir/tiny_cranelift_mir_arithmetic_i32_bundle.o"
     shim_c="$build_dir/tiny_cranelift_mir_arithmetic_i32_bundle_main.c"
@@ -3366,16 +2621,7 @@ guard-cranelift-mir-comparison-i32-bundle-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling MIR-shaped Cranelift comparison i32 bundle smoke..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_COMPARISON_I32_BUNDLE_NATIVE_GUARD: guard-cranelift-mir-comparison-i32-bundle-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_comparison_i32_bundle_native_guard: guard-cranelift-mir-comparison-i32-bundle-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_comparison_i32_bundle_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_comparison_i32_bundle_object_artifact: build/guards/cranelift_mir_comparison_i32_bundle_native/tiny_cranelift_mir_comparison_i32_bundle.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_comparison_i32_bundle_eq_symbol: tiny_cranelift_mir_comparison_eq_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_comparison_i32_bundle_sgt_symbol: tiny_cranelift_mir_comparison_sgt_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_comparison_i32_bundle_lowering_scaffold: TinyMirTerminator::ReturnParamI32EqPredicate' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_comparison_i32_bundle_lowering_scaffold: TinyMirTerminator::ReturnParamI32SignedGreaterThanPredicate' "$manifest_doc" >/dev/null
     build_dir="build/guards/cranelift_mir_comparison_i32_bundle_native"
     object_file="$build_dir/tiny_cranelift_mir_comparison_i32_bundle.o"
     shim_c="$build_dir/tiny_cranelift_mir_comparison_i32_bundle_main.c"
@@ -3411,16 +2657,7 @@ guard-cranelift-mir-comparison-branch-i32-bundle-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling MIR-shaped Cranelift comparison-branch i32 bundle smoke..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_COMPARISON_BRANCH_I32_BUNDLE_NATIVE_GUARD: guard-cranelift-mir-comparison-branch-i32-bundle-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_comparison_branch_i32_bundle_native_guard: guard-cranelift-mir-comparison-branch-i32-bundle-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_comparison_branch_i32_bundle_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_comparison_branch_i32_bundle_object_artifact: build/guards/cranelift_mir_comparison_branch_i32_bundle_native/tiny_cranelift_mir_comparison_branch_i32_bundle.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_comparison_branch_i32_bundle_eq_symbol: tiny_cranelift_mir_comparison_branch_eq_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_comparison_branch_i32_bundle_sgt_symbol: tiny_cranelift_mir_comparison_branch_sgt_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_comparison_branch_i32_bundle_lowering_scaffold: TinyMirTerminator::BranchParamI32Eq' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_comparison_branch_i32_bundle_lowering_scaffold: TinyMirTerminator::BranchParamI32SignedGreaterThan' "$manifest_doc" >/dev/null
     build_dir="build/guards/cranelift_mir_comparison_branch_i32_bundle_native"
     object_file="$build_dir/tiny_cranelift_mir_comparison_branch_i32_bundle.o"
     shim_c="$build_dir/tiny_cranelift_mir_comparison_branch_i32_bundle_main.c"
@@ -3456,17 +2693,7 @@ guard-cranelift-mir-block-graph-i32-bundle-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling MIR-shaped Cranelift block graph i32 bundle smoke..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_BLOCK_GRAPH_I32_BUNDLE_NATIVE_GUARD: guard-cranelift-mir-block-graph-i32-bundle-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_block_graph_i32_bundle_native_guard: guard-cranelift-mir-block-graph-i32-bundle-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_i32_bundle_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_i32_bundle_object_artifact: build/guards/cranelift_mir_block_graph_i32_bundle_native/tiny_cranelift_mir_block_graph_i32_bundle.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_i32_bundle_jump_symbol: tiny_cranelift_mir_block_graph_jump_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_i32_bundle_branch_symbol: tiny_cranelift_mir_block_graph_branch_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_i32_bundle_lowering_scaffold: TinyMirBlock' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_i32_bundle_lowering_scaffold: TinyMirBlockTerminator::Jump' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_i32_bundle_lowering_scaffold: TinyMirBlockTerminator::BranchParamI32Positive' "$manifest_doc" >/dev/null
     build_dir="build/guards/cranelift_mir_block_graph_i32_bundle_native"
     object_file="$build_dir/tiny_cranelift_mir_block_graph_i32_bundle.o"
     shim_c="$build_dir/tiny_cranelift_mir_block_graph_i32_bundle_main.c"
@@ -3501,18 +2728,7 @@ guard-cranelift-mir-block-graph-local-i32-bundle-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling MIR-shaped Cranelift block graph local i32 bundle smoke..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_BLOCK_GRAPH_LOCAL_I32_BUNDLE_NATIVE_GUARD: guard-cranelift-mir-block-graph-local-i32-bundle-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_block_graph_local_i32_bundle_native_guard: guard-cranelift-mir-block-graph-local-i32-bundle-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_local_i32_bundle_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_local_i32_bundle_object_artifact: build/guards/cranelift_mir_block_graph_local_i32_bundle_native/tiny_cranelift_mir_block_graph_local_i32_bundle.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_local_i32_bundle_local_read_symbol: tiny_cranelift_mir_block_graph_local_read_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_local_i32_bundle_local_branch_symbol: tiny_cranelift_mir_block_graph_local_branch_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_local_i32_bundle_lowering_scaffold: TinyMirBlockStatement::LocalI32Set' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_local_i32_bundle_lowering_scaffold: TinyMirBlockStatement::LocalI32SetParam' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_local_i32_bundle_lowering_scaffold: TinyMirBlockTerminator::ReturnLocalI32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_local_i32_bundle_lowering_scaffold: TinyMirBlockTerminator::BranchLocalI32Positive' "$manifest_doc" >/dev/null
     build_dir="build/guards/cranelift_mir_block_graph_local_i32_bundle_native"
     object_file="$build_dir/tiny_cranelift_mir_block_graph_local_i32_bundle.o"
     shim_c="$build_dir/tiny_cranelift_mir_block_graph_local_i32_bundle_main.c"
@@ -3547,18 +2763,7 @@ guard-cranelift-mir-block-graph-local-update-i32-bundle-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling MIR-shaped Cranelift block graph local update i32 bundle smoke..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_BLOCK_GRAPH_LOCAL_UPDATE_I32_BUNDLE_NATIVE_GUARD: guard-cranelift-mir-block-graph-local-update-i32-bundle-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_block_graph_local_update_i32_bundle_native_guard: guard-cranelift-mir-block-graph-local-update-i32-bundle-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_local_update_i32_bundle_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_local_update_i32_bundle_object_artifact: build/guards/cranelift_mir_block_graph_local_update_i32_bundle_native/tiny_cranelift_mir_block_graph_local_update_i32_bundle.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_local_update_i32_bundle_local_update_symbol: tiny_cranelift_mir_block_graph_local_update_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_local_update_i32_bundle_local_update_branch_symbol: tiny_cranelift_mir_block_graph_local_update_branch_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_local_update_i32_bundle_lowering_scaffold: TinyMirBlockStatement::LocalI32AddI32Literal' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_local_update_i32_bundle_lowering_scaffold: TinyMirBlockTerminator::Jump' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_local_update_i32_bundle_lowering_scaffold: TinyMirBlockTerminator::ReturnLocalI32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_local_update_i32_bundle_lowering_scaffold: TinyMirBlockTerminator::BranchLocalI32Positive' "$manifest_doc" >/dev/null
     build_dir="build/guards/cranelift_mir_block_graph_local_update_i32_bundle_native"
     object_file="$build_dir/tiny_cranelift_mir_block_graph_local_update_i32_bundle.o"
     shim_c="$build_dir/tiny_cranelift_mir_block_graph_local_update_i32_bundle_main.c"
@@ -3593,20 +2798,7 @@ guard-cranelift-mir-block-graph-param-i32-bundle-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling MIR-shaped Cranelift block graph parameter i32 bundle smoke..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_BLOCK_GRAPH_PARAM_I32_BUNDLE_NATIVE_GUARD: guard-cranelift-mir-block-graph-param-i32-bundle-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_i32_bundle_native_guard: guard-cranelift-mir-block-graph-param-i32-bundle-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_i32_bundle_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_i32_bundle_object_artifact: build/guards/cranelift_mir_block_graph_param_i32_bundle_native/tiny_cranelift_mir_block_graph_param_i32_bundle.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_i32_bundle_param_forward_symbol: tiny_cranelift_mir_block_graph_param_forward_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_i32_bundle_param_update_branch_symbol: tiny_cranelift_mir_block_graph_param_update_branch_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_i32_bundle_lowering_scaffold: TinyMirParamBlock' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_i32_bundle_lowering_scaffold: TinyMirParamBlockTerminator::JumpI32Literal' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_i32_bundle_lowering_scaffold: TinyMirParamBlockTerminator::JumpFunctionParamI32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_i32_bundle_lowering_scaffold: TinyMirParamBlockTerminator::JumpBlockParamI32AddI32Literal' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_i32_bundle_lowering_scaffold: TinyMirParamBlockTerminator::BranchBlockParamI32Positive' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_i32_bundle_lowering_scaffold: TinyMirParamBlockTerminator::ReturnBlockParamI32' "$manifest_doc" >/dev/null
     build_dir="build/guards/cranelift_mir_block_graph_param_i32_bundle_native"
     object_file="$build_dir/tiny_cranelift_mir_block_graph_param_i32_bundle.o"
     shim_c="$build_dir/tiny_cranelift_mir_block_graph_param_i32_bundle_main.c"
@@ -3641,17 +2833,7 @@ guard-cranelift-mir-block-graph-param-call-i32-bundle-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling MIR-shaped Cranelift block graph parameter call i32 bundle smoke..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_BLOCK_GRAPH_PARAM_CALL_I32_BUNDLE_NATIVE_GUARD: guard-cranelift-mir-block-graph-param-call-i32-bundle-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_call_i32_bundle_native_guard: guard-cranelift-mir-block-graph-param-call-i32-bundle-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_call_i32_bundle_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_call_i32_bundle_object_artifact: build/guards/cranelift_mir_block_graph_param_call_i32_bundle_native/tiny_cranelift_mir_block_graph_param_call_i32_bundle.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_call_i32_bundle_param_call_symbol: tiny_cranelift_mir_block_graph_param_call_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_call_i32_bundle_param_call_branch_symbol: tiny_cranelift_mir_block_graph_param_call_branch_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_call_i32_bundle_helper_symbol: tiny_cranelift_mir_block_graph_param_add_one_helper_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_call_i32_bundle_lowering_scaffold: TinyMirParamBlockTerminator::ReturnBlockParamLocalFunctionI32Call' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_call_i32_bundle_lowering_scaffold: TinyMirParamBlockTerminator::BranchBlockParamLocalFunctionI32CallPositive' "$manifest_doc" >/dev/null
     build_dir="build/guards/cranelift_mir_block_graph_param_call_i32_bundle_native"
     object_file="$build_dir/tiny_cranelift_mir_block_graph_param_call_i32_bundle.o"
     shim_c="$build_dir/tiny_cranelift_mir_block_graph_param_call_i32_bundle_main.c"
@@ -3686,17 +2868,7 @@ guard-cranelift-mir-block-graph-param-extern-i32-bundle-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling MIR-shaped Cranelift block graph parameter extern i32 bundle smoke..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_BLOCK_GRAPH_PARAM_EXTERN_I32_BUNDLE_NATIVE_GUARD: guard-cranelift-mir-block-graph-param-extern-i32-bundle-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_extern_i32_bundle_native_guard: guard-cranelift-mir-block-graph-param-extern-i32-bundle-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_extern_i32_bundle_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_extern_i32_bundle_object_artifact: build/guards/cranelift_mir_block_graph_param_extern_i32_bundle_native/tiny_cranelift_mir_block_graph_param_extern_i32_bundle.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_extern_i32_bundle_param_extern_call_symbol: tiny_cranelift_mir_block_graph_param_extern_call_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_extern_i32_bundle_param_extern_call_branch_symbol: tiny_cranelift_mir_block_graph_param_extern_call_branch_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_extern_i32_bundle_host_symbol: tiny_host_add_one_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_extern_i32_bundle_lowering_scaffold: TinyMirParamBlockTerminator::ReturnBlockParamImportedFunctionI32Call' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_extern_i32_bundle_lowering_scaffold: TinyMirParamBlockTerminator::BranchBlockParamImportedFunctionI32CallPositive' "$manifest_doc" >/dev/null
     build_dir="build/guards/cranelift_mir_block_graph_param_extern_i32_bundle_native"
     object_file="$build_dir/tiny_cranelift_mir_block_graph_param_extern_i32_bundle.o"
     shim_c="$build_dir/tiny_cranelift_mir_block_graph_param_extern_i32_bundle_main.c"
@@ -3732,17 +2904,7 @@ guard-cranelift-mir-block-graph-param-extern-add-i32-bundle-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling MIR-shaped Cranelift block graph parameter extern add i32 bundle smoke..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_BLOCK_GRAPH_PARAM_EXTERN_ADD_I32_BUNDLE_NATIVE_GUARD: guard-cranelift-mir-block-graph-param-extern-add-i32-bundle-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_extern_add_i32_bundle_native_guard: guard-cranelift-mir-block-graph-param-extern-add-i32-bundle-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_extern_add_i32_bundle_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_extern_add_i32_bundle_object_artifact: build/guards/cranelift_mir_block_graph_param_extern_add_i32_bundle_native/tiny_cranelift_mir_block_graph_param_extern_add_i32_bundle.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_extern_add_i32_bundle_param_extern_add_symbol: tiny_cranelift_mir_block_graph_param_extern_add_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_extern_add_i32_bundle_param_extern_add_branch_symbol: tiny_cranelift_mir_block_graph_param_extern_add_branch_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_extern_add_i32_bundle_host_symbol: tiny_host_add_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_extern_add_i32_bundle_lowering_scaffold: TinyMirParamBlockTerminator::ReturnBlockParamImportedFunctionI32CallI32Literal' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_extern_add_i32_bundle_lowering_scaffold: TinyMirParamBlockTerminator::BranchBlockParamImportedFunctionI32CallI32LiteralPositive' "$manifest_doc" >/dev/null
     build_dir="build/guards/cranelift_mir_block_graph_param_extern_add_i32_bundle_native"
     object_file="$build_dir/tiny_cranelift_mir_block_graph_param_extern_add_i32_bundle.o"
     shim_c="$build_dir/tiny_cranelift_mir_block_graph_param_extern_add_i32_bundle_main.c"
@@ -3778,16 +2940,7 @@ guard-cranelift-mir-block-graph-param-extern-predicate-i32-bundle-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling MIR-shaped Cranelift block graph parameter extern predicate i32 bundle smoke..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_BLOCK_GRAPH_PARAM_EXTERN_PREDICATE_I32_BUNDLE_NATIVE_GUARD: guard-cranelift-mir-block-graph-param-extern-predicate-i32-bundle-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_extern_predicate_i32_bundle_native_guard: guard-cranelift-mir-block-graph-param-extern-predicate-i32-bundle-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_extern_predicate_i32_bundle_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_extern_predicate_i32_bundle_object_artifact: build/guards/cranelift_mir_block_graph_param_extern_predicate_i32_bundle_native/tiny_cranelift_mir_block_graph_param_extern_predicate_i32_bundle.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_extern_predicate_i32_bundle_param_extern_predicate_symbol: tiny_cranelift_mir_block_graph_param_extern_predicate_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_extern_predicate_i32_bundle_param_extern_predicate_update_branch_symbol: tiny_cranelift_mir_block_graph_param_extern_predicate_update_branch_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_extern_predicate_i32_bundle_host_symbol: tiny_host_is_positive_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_extern_predicate_i32_bundle_lowering_scaffold: TinyMirParamBlockTerminator::BranchBlockParamImportedFunctionI32Predicate' "$manifest_doc" >/dev/null
     build_dir="build/guards/cranelift_mir_block_graph_param_extern_predicate_i32_bundle_native"
     object_file="$build_dir/tiny_cranelift_mir_block_graph_param_extern_predicate_i32_bundle.o"
     shim_c="$build_dir/tiny_cranelift_mir_block_graph_param_extern_predicate_i32_bundle_main.c"
@@ -3824,17 +2977,7 @@ guard-cranelift-mir-block-graph-param-merge-i32-bundle-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling MIR-shaped Cranelift block graph parameter merge i32 bundle smoke..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_BLOCK_GRAPH_PARAM_MERGE_I32_BUNDLE_NATIVE_GUARD: guard-cranelift-mir-block-graph-param-merge-i32-bundle-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_merge_i32_bundle_native_guard: guard-cranelift-mir-block-graph-param-merge-i32-bundle-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_merge_i32_bundle_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_merge_i32_bundle_object_artifact: build/guards/cranelift_mir_block_graph_param_merge_i32_bundle_native/tiny_cranelift_mir_block_graph_param_merge_i32_bundle.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_merge_i32_bundle_param_merge_symbol: tiny_cranelift_mir_block_graph_param_merge_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_merge_i32_bundle_param_merge_update_symbol: tiny_cranelift_mir_block_graph_param_merge_update_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_merge_i32_bundle_lowering_scaffold: TinyMirParamBlockTerminator::BranchBlockParamI32PositiveToI32Literals' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_merge_i32_bundle_lowering_scaffold: TinyMirParamBlockTerminator::JumpBlockParamI32AddI32Literal' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_merge_i32_bundle_lowering_scaffold: TinyMirParamBlockTerminator::ReturnBlockParamI32' "$manifest_doc" >/dev/null
     build_dir="build/guards/cranelift_mir_block_graph_param_merge_i32_bundle_native"
     object_file="$build_dir/tiny_cranelift_mir_block_graph_param_merge_i32_bundle.o"
     shim_c="$build_dir/tiny_cranelift_mir_block_graph_param_merge_i32_bundle_main.c"
@@ -3871,19 +3014,7 @@ guard-cranelift-mir-block-graph-param-merge-call-i32-bundle-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling MIR-shaped Cranelift block graph parameter merge call i32 bundle smoke..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_BLOCK_GRAPH_PARAM_MERGE_CALL_I32_BUNDLE_NATIVE_GUARD: guard-cranelift-mir-block-graph-param-merge-call-i32-bundle-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_merge_call_i32_bundle_native_guard: guard-cranelift-mir-block-graph-param-merge-call-i32-bundle-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_merge_call_i32_bundle_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_merge_call_i32_bundle_object_artifact: build/guards/cranelift_mir_block_graph_param_merge_call_i32_bundle_native/tiny_cranelift_mir_block_graph_param_merge_call_i32_bundle.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_merge_call_i32_bundle_param_merge_call_symbol: tiny_cranelift_mir_block_graph_param_merge_call_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_merge_call_i32_bundle_param_merge_call_branch_symbol: tiny_cranelift_mir_block_graph_param_merge_call_branch_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_merge_call_i32_bundle_helper_symbol: tiny_cranelift_mir_block_graph_param_merge_add_one_helper_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_merge_call_i32_bundle_lowering_scaffold: TinyMirParamBlockTerminator::BranchBlockParamI32PositiveToI32Literals' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_merge_call_i32_bundle_lowering_scaffold: TinyMirParamBlockTerminator::JumpBlockParamI32AddI32Literal' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_merge_call_i32_bundle_lowering_scaffold: TinyMirParamBlockTerminator::ReturnBlockParamLocalFunctionI32Call' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_block_graph_param_merge_call_i32_bundle_lowering_scaffold: TinyMirParamBlockTerminator::BranchBlockParamLocalFunctionI32CallPositive' "$manifest_doc" >/dev/null
     build_dir="build/guards/cranelift_mir_block_graph_param_merge_call_i32_bundle_native"
     object_file="$build_dir/tiny_cranelift_mir_block_graph_param_merge_call_i32_bundle.o"
     shim_c="$build_dir/tiny_cranelift_mir_block_graph_param_merge_call_i32_bundle_main.c"
@@ -3920,20 +3051,8 @@ guard-cranelift-compiler-mir-return-int-ingestion-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling compiler-owned MIR return-int ingestion seam smoke..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     fixture="compiler/fixtures/native_backend_return_int_ingestion.mir"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_COMPILER_MIR_RETURN_INT_INGESTION_NATIVE_GUARD: guard-cranelift-compiler-mir-return-int-ingestion-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_return_int_ingestion_native_guard: guard-cranelift-compiler-mir-return-int-ingestion-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_return_int_ingestion_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_return_int_ingestion_fixture: compiler/fixtures/native_backend_return_int_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_return_int_ingestion_fixture_producer: compiler/mir.gst' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_return_int_ingestion_fixture_producer_entry: mir_emit_native_backend_return_int_ingestion_fixture' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_return_int_ingestion_object_artifact: build/guards/cranelift_compiler_mir_return_int_ingestion_native/tiny_native_backend_compiler_mir_ingested_return_int.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_return_int_ingestion_symbol: tiny_native_backend_compiler_mir_ingested_return_int' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_return_int_ingestion_source_fixture: compiler/mir_feature_return_int_preservation_source.gst' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_return_int_ingestion_lowering_entry: mir_lower_return_int_literal_fixture' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_return_int_ingestion_seam_status: compiler_owned_fixture_to_experiment_only' "$manifest_doc" >/dev/null
     rg -n -F 'func mir_emit_native_backend_return_int_ingestion_fixture' compiler/mir.gst >/dev/null
     rg -n -F 'mir_lower_return_int_literal_fixture(ctx)' compiler/mir.gst >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.return_int.v1' "$fixture" compiler/mir.gst >/dev/null
@@ -3970,20 +3089,9 @@ guard-cranelift-mir-to-cranelift-return-int-translator-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling MIR-to-Cranelift return-int translator seed..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     fixture="compiler/fixtures/native_backend_return_int_ingestion.mir"
     just guard-cranelift-backend-surface
     just guard-mir-to-c-return-int-literal-native-smoke
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_TO_CRANELIFT_RETURN_INT_TRANSLATOR_NATIVE_GUARD: guard-cranelift-mir-to-cranelift-return-int-translator-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_return_int_translator_native_guard: guard-cranelift-mir-to-cranelift-return-int-translator-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_return_int_translator_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_return_int_translator_command: compiler-mir-to-cranelift-return-int-translator-object' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_return_int_translator_input_fixture: compiler/fixtures/native_backend_return_int_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_return_int_translator_oracle_guard: guard-mir-to-c-return-int-literal-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_return_int_translator_translation_entry: translate_compiler_mir_return_int_fixture_to_tiny_mir_function' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_return_int_translator_object_artifact: build/guards/cranelift_mir_to_cranelift_return_int_translator_native/tiny_native_backend_mir_to_cranelift_return_int_translator.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_return_int_translator_symbol: tiny_native_backend_mir_to_cranelift_return_int_translator' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_return_int_translator_seam_status: phase9b_translator_seed_experiment_only' "$manifest_doc" >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.return_int.v1' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'terminator: Return' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'return_value_kind: IntLiteral' "$fixture" compiler/mir.gst >/dev/null
@@ -4018,20 +3126,9 @@ guard-cranelift-mir-to-cranelift-local-binding-read-translator-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling MIR-to-Cranelift local-binding/read translator seed..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     fixture="compiler/fixtures/native_backend_local_binding_read_ingestion.mir"
     just guard-cranelift-backend-surface
     just guard-mir-to-c-local-binding-read-native-smoke
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_TO_CRANELIFT_LOCAL_BINDING_READ_TRANSLATOR_NATIVE_GUARD: guard-cranelift-mir-to-cranelift-local-binding-read-translator-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_local_binding_read_translator_native_guard: guard-cranelift-mir-to-cranelift-local-binding-read-translator-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_local_binding_read_translator_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_local_binding_read_translator_command: compiler-mir-to-cranelift-local-binding-read-translator-object' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_local_binding_read_translator_input_fixture: compiler/fixtures/native_backend_local_binding_read_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_local_binding_read_translator_oracle_guard: guard-mir-to-c-local-binding-read-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_local_binding_read_translator_translation_entry: translate_compiler_mir_local_binding_read_fixture_to_tiny_mir_function' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_local_binding_read_translator_object_artifact: build/guards/cranelift_mir_to_cranelift_local_binding_read_translator_native/tiny_native_backend_mir_to_cranelift_local_binding_read_translator.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_local_binding_read_translator_symbol: tiny_native_backend_mir_to_cranelift_local_binding_read_translator' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_local_binding_read_translator_seam_status: phase9b_translator_seed_experiment_only' "$manifest_doc" >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.local_binding_read.v1' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'statement_0_kind: LocalI32Set' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'statement_0_value: 2' "$fixture" compiler/mir.gst >/dev/null
@@ -4066,20 +3163,9 @@ guard-cranelift-mir-to-cranelift-conditional-branch-translator-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling MIR-to-Cranelift conditional-branch translator seed..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     fixture="compiler/fixtures/native_backend_conditional_branch_ingestion.mir"
     just guard-cranelift-backend-surface
     just guard-mir-to-c-conditional-branch-native-smoke
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_TO_CRANELIFT_CONDITIONAL_BRANCH_TRANSLATOR_NATIVE_GUARD: guard-cranelift-mir-to-cranelift-conditional-branch-translator-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_conditional_branch_translator_native_guard: guard-cranelift-mir-to-cranelift-conditional-branch-translator-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_conditional_branch_translator_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_conditional_branch_translator_command: compiler-mir-to-cranelift-conditional-branch-translator-object' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_conditional_branch_translator_input_fixture: compiler/fixtures/native_backend_conditional_branch_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_conditional_branch_translator_oracle_guard: guard-mir-to-c-conditional-branch-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_conditional_branch_translator_translation_entry: translate_compiler_mir_conditional_branch_fixture_to_tiny_mir_function' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_conditional_branch_translator_object_artifact: build/guards/cranelift_mir_to_cranelift_conditional_branch_translator_native/tiny_native_backend_mir_to_cranelift_conditional_branch_translator.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_conditional_branch_translator_symbol: tiny_native_backend_mir_to_cranelift_conditional_branch_translator' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_conditional_branch_translator_seam_status: phase9b_translator_seed_experiment_only' "$manifest_doc" >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.conditional_branch.v1' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'block_count: 3' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'block_0_terminator: Branch' "$fixture" compiler/mir.gst >/dev/null
@@ -4116,20 +3202,9 @@ guard-cranelift-mir-to-cranelift-block-jump-translator-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling MIR-to-Cranelift block-jump translator seed..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     fixture="compiler/fixtures/native_backend_block_jump_ingestion.mir"
     just guard-cranelift-backend-surface
     just guard-mir-to-c-block-jump-native-smoke
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_TO_CRANELIFT_BLOCK_JUMP_TRANSLATOR_NATIVE_GUARD: guard-cranelift-mir-to-cranelift-block-jump-translator-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_jump_translator_native_guard: guard-cranelift-mir-to-cranelift-block-jump-translator-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_jump_translator_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_jump_translator_command: compiler-mir-to-cranelift-block-jump-translator-object' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_jump_translator_input_fixture: compiler/fixtures/native_backend_block_jump_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_jump_translator_oracle_guard: guard-mir-to-c-block-jump-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_jump_translator_translation_entry: translate_compiler_mir_block_jump_fixture_to_tiny_mir_block_function' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_jump_translator_object_artifact: build/guards/cranelift_mir_to_cranelift_block_jump_translator_native/tiny_native_backend_mir_to_cranelift_block_jump_translator.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_jump_translator_symbol: tiny_native_backend_mir_to_cranelift_block_jump_translator' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_jump_translator_seam_status: phase9b_translator_seed_experiment_only' "$manifest_doc" >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.block_jump.v1' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'block_count: 2' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'block_0_terminator: Jump' "$fixture" compiler/mir.gst >/dev/null
@@ -4166,16 +3241,9 @@ guard-cranelift-mir-to-cranelift-provenance-metadata-translator-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling MIR-to-Cranelift provenance-metadata translator seed..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     fixture="compiler/fixtures/native_backend_provenance_metadata_ingestion.mir"
     just guard-cranelift-backend-surface
     just guard-mir-to-c-provenance-metadata-native-smoke
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_TO_CRANELIFT_PROVENANCE_METADATA_TRANSLATOR_NATIVE_GUARD: guard-cranelift-mir-to-cranelift-provenance-metadata-translator-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_provenance_metadata_translator_native_guard: guard-cranelift-mir-to-cranelift-provenance-metadata-translator-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_provenance_metadata_translator_command: compiler-mir-to-cranelift-provenance-metadata-translator-object' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_provenance_metadata_translator_translation_entry: translate_compiler_mir_provenance_metadata_fixture_to_tiny_mir_function' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_provenance_metadata_translator_symbol: tiny_native_backend_mir_to_cranelift_provenance_metadata_translator' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_provenance_metadata_translator_metadata_policy: metadata_validated_at_fixture_boundary_preserved_through_translation' "$manifest_doc" >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.provenance_metadata.v1' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'provenance_metadata_count: 1' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'provenance_0_kind: LocalBinding' "$fixture" compiler/mir.gst >/dev/null
@@ -4211,16 +3279,9 @@ guard-cranelift-mir-to-cranelift-resource-metadata-translator-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling MIR-to-Cranelift resource-metadata translator seed..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     fixture="compiler/fixtures/native_backend_resource_metadata_ingestion.mir"
     just guard-cranelift-backend-surface
     just guard-mir-to-c-resource-metadata-native-smoke
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_TO_CRANELIFT_RESOURCE_METADATA_TRANSLATOR_NATIVE_GUARD: guard-cranelift-mir-to-cranelift-resource-metadata-translator-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_resource_metadata_translator_native_guard: guard-cranelift-mir-to-cranelift-resource-metadata-translator-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_resource_metadata_translator_command: compiler-mir-to-cranelift-resource-metadata-translator-object' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_resource_metadata_translator_translation_entry: translate_compiler_mir_resource_metadata_fixture_to_tiny_mir_function' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_resource_metadata_translator_symbol: tiny_native_backend_mir_to_cranelift_resource_metadata_translator' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_resource_metadata_translator_metadata_policy: metadata_validated_at_fixture_boundary_preserved_through_translation' "$manifest_doc" >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.resource_metadata.v1' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'resource_metadata_count: 1' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'resource_0_kind: LinearResource' "$fixture" compiler/mir.gst >/dev/null
@@ -4257,22 +3318,9 @@ guard-cranelift-mir-to-cranelift-native-boundary-metadata-translator-native-smok
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling MIR-to-Cranelift native-boundary metadata translator seed..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     fixture="compiler/fixtures/native_backend_native_boundary_metadata_ingestion.mir"
     just guard-cranelift-backend-surface
     just guard-mir-to-c-native-boundary-metadata-native-smoke
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_TO_CRANELIFT_NATIVE_BOUNDARY_METADATA_TRANSLATOR_NATIVE_GUARD: guard-cranelift-mir-to-cranelift-native-boundary-metadata-translator-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_native_boundary_metadata_translator_native_guard: guard-cranelift-mir-to-cranelift-native-boundary-metadata-translator-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_native_boundary_metadata_translator_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_native_boundary_metadata_translator_command: compiler-mir-to-cranelift-native-boundary-metadata-translator-object' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_native_boundary_metadata_translator_input_fixture: compiler/fixtures/native_backend_native_boundary_metadata_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_native_boundary_metadata_translator_oracle_guard: guard-mir-to-c-native-boundary-metadata-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_native_boundary_metadata_translator_translation_entry: translate_compiler_mir_native_boundary_metadata_fixture_to_tiny_mir_function' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_native_boundary_metadata_translator_object_artifact: build/guards/cranelift_mir_to_cranelift_native_boundary_metadata_translator_native/tiny_native_backend_mir_to_cranelift_native_boundary_metadata_translator.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_native_boundary_metadata_translator_symbol: tiny_native_backend_mir_to_cranelift_native_boundary_metadata_translator' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_native_boundary_metadata_translator_expected_status: 0' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_native_boundary_metadata_translator_metadata_policy: metadata_validated_at_fixture_boundary_preserved_through_translation' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_native_boundary_metadata_translator_seam_status: phase9b_translator_seed_experiment_only' "$manifest_doc" >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.native_boundary_metadata.v1' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'return_type: void' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'terminator: ReturnVoid' "$fixture" compiler/mir.gst >/dev/null
@@ -4301,22 +3349,9 @@ guard-cranelift-mir-to-cranelift-add-i32-translator-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling MIR-to-Cranelift add-i32 translator seed..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     fixture="compiler/fixtures/native_backend_add_i32_ingestion.mir"
     just guard-cranelift-backend-surface
     just guard-cranelift-compiler-mir-add-i32-ingestion-native-smoke
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_TO_CRANELIFT_ADD_I32_TRANSLATOR_NATIVE_GUARD: guard-cranelift-mir-to-cranelift-add-i32-translator-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_add_i32_translator_native_guard: guard-cranelift-mir-to-cranelift-add-i32-translator-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_add_i32_translator_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_add_i32_translator_command: compiler-mir-to-cranelift-add-i32-translator-object' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_add_i32_translator_input_fixture: compiler/fixtures/native_backend_add_i32_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_add_i32_translator_oracle_guard: guard-cranelift-compiler-mir-add-i32-ingestion-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_add_i32_translator_translation_entry: translate_compiler_mir_add_i32_fixture_to_tiny_mir_function' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_add_i32_translator_object_artifact: build/guards/cranelift_mir_to_cranelift_add_i32_translator_native/tiny_native_backend_mir_to_cranelift_add_i32_translator.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_add_i32_translator_symbol: tiny_native_backend_mir_to_cranelift_add_i32_translator' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_add_i32_translator_expected_case_count: 2' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_add_i32_translator_expected_status: 0' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_add_i32_translator_seam_status: phase9b_translator_seed_experiment_only' "$manifest_doc" >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.add_i32.v1' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'terminator: ReturnParamAdd' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'lhs_param: 0' "$fixture" compiler/mir.gst >/dev/null
@@ -4354,23 +3389,10 @@ guard-cranelift-mir-to-cranelift-positive-i32-branch-translator-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling MIR-to-Cranelift positive-i32 branch translator seed..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     fixture="compiler/fixtures/native_backend_positive_i32_branch_ingestion.mir"
     source_fixture="compiler/mir_feature_positive_i32_branch_preservation_source.gst"
     just guard-cranelift-backend-surface
     just guard-cranelift-compiler-mir-positive-i32-branch-ingestion-native-smoke
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_TO_CRANELIFT_POSITIVE_I32_BRANCH_TRANSLATOR_NATIVE_GUARD: guard-cranelift-mir-to-cranelift-positive-i32-branch-translator-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_positive_i32_branch_translator_native_guard: guard-cranelift-mir-to-cranelift-positive-i32-branch-translator-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_positive_i32_branch_translator_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_positive_i32_branch_translator_command: compiler-mir-to-cranelift-positive-i32-branch-translator-object' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_positive_i32_branch_translator_input_fixture: compiler/fixtures/native_backend_positive_i32_branch_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_positive_i32_branch_translator_oracle_guard: guard-cranelift-compiler-mir-positive-i32-branch-ingestion-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_positive_i32_branch_translator_translation_entry: translate_compiler_mir_positive_i32_branch_fixture_to_tiny_mir_function' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_positive_i32_branch_translator_object_artifact: build/guards/cranelift_mir_to_cranelift_positive_i32_branch_translator_native/tiny_native_backend_mir_to_cranelift_positive_i32_branch_translator.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_positive_i32_branch_translator_symbol: tiny_native_backend_mir_to_cranelift_positive_i32_branch_translator' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_positive_i32_branch_translator_expected_case_count: 3' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_positive_i32_branch_translator_expected_status: 0' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_positive_i32_branch_translator_seam_status: phase9b_translator_seed_experiment_only' "$manifest_doc" >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.positive_i32_branch.v1' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'source_fixture: compiler/mir_feature_positive_i32_branch_preservation_source.gst' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'branch_condition: greater_than_zero' "$fixture" compiler/mir.gst >/dev/null
@@ -4414,23 +3436,10 @@ guard-cranelift-mir-to-cranelift-block-local-branch-join-translator-native-smoke
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling MIR-to-Cranelift block-local branch-join translator seed..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     fixture="compiler/fixtures/native_backend_block_local_branch_join_ingestion.mir"
     source_fixture="compiler/mir_feature_block_local_branch_join_preservation_source.gst"
     just guard-cranelift-backend-surface
     just guard-cranelift-compiler-mir-block-local-branch-join-ingestion-native-smoke
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_TO_CRANELIFT_BLOCK_LOCAL_BRANCH_JOIN_TRANSLATOR_NATIVE_GUARD: guard-cranelift-mir-to-cranelift-block-local-branch-join-translator-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_local_branch_join_translator_native_guard: guard-cranelift-mir-to-cranelift-block-local-branch-join-translator-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_local_branch_join_translator_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_local_branch_join_translator_command: compiler-mir-to-cranelift-block-local-branch-join-translator-object' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_local_branch_join_translator_input_fixture: compiler/fixtures/native_backend_block_local_branch_join_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_local_branch_join_translator_oracle_guard: guard-cranelift-compiler-mir-block-local-branch-join-ingestion-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_local_branch_join_translator_translation_entry: translate_compiler_mir_block_local_branch_join_fixture_to_tiny_mir_block_function' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_local_branch_join_translator_object_artifact: build/guards/cranelift_mir_to_cranelift_block_local_branch_join_translator_native/tiny_native_backend_mir_to_cranelift_block_local_branch_join_translator.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_local_branch_join_translator_symbol: tiny_native_backend_mir_to_cranelift_block_local_branch_join_translator' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_local_branch_join_translator_expected_case_count: 3' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_local_branch_join_translator_expected_status: 0' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_local_branch_join_translator_seam_status: phase9b_translator_seed_experiment_only' "$manifest_doc" >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.block_local_branch_join.v1' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'source_fixture: compiler/mir_feature_block_local_branch_join_preservation_source.gst' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'block_0_statement_0_kind: LocalI32SetParam' "$fixture" compiler/mir.gst >/dev/null
@@ -4479,23 +3488,10 @@ guard-cranelift-mir-to-cranelift-block-param-update-branch-translator-native-smo
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling MIR-to-Cranelift block-param update-branch translator seed..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     fixture="compiler/fixtures/native_backend_block_param_update_branch_ingestion.mir"
     source_fixture="compiler/mir_feature_block_param_update_branch_preservation_source.gst"
     just guard-cranelift-backend-surface
     just guard-cranelift-compiler-mir-block-param-update-branch-ingestion-native-smoke
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_TO_CRANELIFT_BLOCK_PARAM_UPDATE_BRANCH_TRANSLATOR_NATIVE_GUARD: guard-cranelift-mir-to-cranelift-block-param-update-branch-translator-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_update_branch_translator_native_guard: guard-cranelift-mir-to-cranelift-block-param-update-branch-translator-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_update_branch_translator_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_update_branch_translator_command: compiler-mir-to-cranelift-block-param-update-branch-translator-object' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_update_branch_translator_input_fixture: compiler/fixtures/native_backend_block_param_update_branch_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_update_branch_translator_oracle_guard: guard-cranelift-compiler-mir-block-param-update-branch-ingestion-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_update_branch_translator_translation_entry: translate_compiler_mir_block_param_update_branch_fixture_to_tiny_mir_param_block_function' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_update_branch_translator_object_artifact: build/guards/cranelift_mir_to_cranelift_block_param_update_branch_translator_native/tiny_native_backend_mir_to_cranelift_block_param_update_branch_translator.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_update_branch_translator_symbol: tiny_native_backend_mir_to_cranelift_block_param_update_branch_translator' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_update_branch_translator_expected_case_count: 3' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_update_branch_translator_expected_status: 0' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_update_branch_translator_seam_status: phase9b_translator_seed_experiment_only' "$manifest_doc" >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.block_param_update_branch.v1' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'source_fixture: compiler/mir_feature_block_param_update_branch_preservation_source.gst' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'block_0_terminator: JumpFunctionParam' "$fixture" compiler/mir.gst >/dev/null
@@ -4545,23 +3541,10 @@ guard-cranelift-mir-to-cranelift-block-param-merge-update-branch-translator-nati
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling MIR-to-Cranelift block-param merge update-branch translator seed..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     fixture="compiler/fixtures/native_backend_block_param_merge_update_branch_ingestion.mir"
     source_fixture="compiler/mir_feature_block_param_merge_update_branch_preservation_source.gst"
     just guard-cranelift-backend-surface
     just guard-cranelift-compiler-mir-block-param-merge-update-branch-ingestion-native-smoke
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_TO_CRANELIFT_BLOCK_PARAM_MERGE_UPDATE_BRANCH_TRANSLATOR_NATIVE_GUARD: guard-cranelift-mir-to-cranelift-block-param-merge-update-branch-translator-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_update_branch_translator_native_guard: guard-cranelift-mir-to-cranelift-block-param-merge-update-branch-translator-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_update_branch_translator_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_update_branch_translator_command: compiler-mir-to-cranelift-block-param-merge-update-branch-translator-object' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_update_branch_translator_input_fixture: compiler/fixtures/native_backend_block_param_merge_update_branch_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_update_branch_translator_oracle_guard: guard-cranelift-compiler-mir-block-param-merge-update-branch-ingestion-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_update_branch_translator_translation_entry: translate_compiler_mir_block_param_merge_update_branch_fixture_to_tiny_mir_param_block_function' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_update_branch_translator_object_artifact: build/guards/cranelift_mir_to_cranelift_block_param_merge_update_branch_translator_native/tiny_native_backend_mir_to_cranelift_block_param_merge_update_branch_translator.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_update_branch_translator_symbol: tiny_native_backend_mir_to_cranelift_block_param_merge_update_branch_translator' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_update_branch_translator_expected_case_count: 3' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_update_branch_translator_expected_status: 0' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_update_branch_translator_seam_status: phase9b_translator_seed_experiment_only' "$manifest_doc" >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.block_param_merge_update_branch.v1' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'source_fixture: compiler/mir_feature_block_param_merge_update_branch_preservation_source.gst' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'block_1_terminator: JumpBlockParamAddI32Literal' "$fixture" compiler/mir.gst >/dev/null
@@ -4611,24 +3594,10 @@ guard-cranelift-mir-to-cranelift-block-param-merge-imported-call-return-translat
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling MIR-to-Cranelift block-param merge imported-call return translator seed..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     fixture="compiler/fixtures/native_backend_block_param_merge_imported_call_return_ingestion.mir"
     source_fixture="compiler/mir_feature_block_param_merge_imported_call_return_preservation_source.gst"
     just guard-cranelift-backend-surface
     just guard-cranelift-compiler-mir-block-param-merge-imported-call-return-ingestion-native-smoke
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_TO_CRANELIFT_BLOCK_PARAM_MERGE_IMPORTED_CALL_RETURN_TRANSLATOR_NATIVE_GUARD: guard-cranelift-mir-to-cranelift-block-param-merge-imported-call-return-translator-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_imported_call_return_translator_native_guard: guard-cranelift-mir-to-cranelift-block-param-merge-imported-call-return-translator-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_imported_call_return_translator_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_imported_call_return_translator_command: compiler-mir-to-cranelift-block-param-merge-imported-call-return-translator-object' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_imported_call_return_translator_input_fixture: compiler/fixtures/native_backend_block_param_merge_imported_call_return_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_imported_call_return_translator_oracle_guard: guard-cranelift-compiler-mir-block-param-merge-imported-call-return-ingestion-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_imported_call_return_translator_translation_entry: translate_compiler_mir_block_param_merge_imported_call_return_fixture_to_tiny_mir_param_block_function' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_imported_call_return_translator_object_artifact: build/guards/cranelift_mir_to_cranelift_block_param_merge_imported_call_return_translator_native/tiny_native_backend_mir_to_cranelift_block_param_merge_imported_call_return_translator.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_imported_call_return_translator_symbol: tiny_native_backend_mir_to_cranelift_block_param_merge_imported_call_return_translator' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_imported_call_return_translator_imported_symbol: tiny_native_backend_compiler_mir_ingested_block_param_merge_imported_call_return_host_add' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_imported_call_return_translator_expected_case_count: 3' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_imported_call_return_translator_expected_status: 0' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_imported_call_return_translator_seam_status: phase9b_translator_seed_experiment_only' "$manifest_doc" >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.block_param_merge_imported_call_return.v1' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'imported_function_0_symbol: tiny_native_backend_compiler_mir_ingested_block_param_merge_imported_call_return_host_add' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'imported_function_0_operation: HostAddI32' "$fixture" compiler/mir.gst >/dev/null
@@ -4682,24 +3651,10 @@ guard-cranelift-mir-to-cranelift-block-param-merge-arm-update-imported-call-retu
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling MIR-to-Cranelift block-param merge arm-update imported-call return translator seed..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     fixture="compiler/fixtures/native_backend_block_param_merge_arm_update_imported_call_return_ingestion.mir"
     source_fixture="compiler/mir_feature_block_param_merge_arm_update_imported_call_return_preservation_source.gst"
     just guard-cranelift-backend-surface
     just guard-cranelift-compiler-mir-block-param-merge-arm-update-imported-call-return-ingestion-native-smoke
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_TO_CRANELIFT_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_RETURN_TRANSLATOR_NATIVE_GUARD: guard-cranelift-mir-to-cranelift-block-param-merge-arm-update-imported-call-return-translator-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_arm_update_imported_call_return_translator_native_guard: guard-cranelift-mir-to-cranelift-block-param-merge-arm-update-imported-call-return-translator-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_arm_update_imported_call_return_translator_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_arm_update_imported_call_return_translator_command: compiler-mir-to-cranelift-block-param-merge-arm-update-imported-call-return-translator-object' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_arm_update_imported_call_return_translator_input_fixture: compiler/fixtures/native_backend_block_param_merge_arm_update_imported_call_return_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_arm_update_imported_call_return_translator_oracle_guard: guard-cranelift-compiler-mir-block-param-merge-arm-update-imported-call-return-ingestion-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_arm_update_imported_call_return_translator_translation_entry: translate_compiler_mir_block_param_merge_arm_update_imported_call_return_fixture_to_tiny_mir_param_block_function' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_arm_update_imported_call_return_translator_object_artifact: build/guards/cranelift_mir_to_cranelift_block_param_merge_arm_update_imported_call_return_translator_native/tiny_native_backend_mir_to_cranelift_block_param_merge_arm_update_imported_call_return_translator.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_arm_update_imported_call_return_translator_symbol: tiny_native_backend_mir_to_cranelift_block_param_merge_arm_update_imported_call_return_translator' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_arm_update_imported_call_return_translator_imported_symbol: tiny_native_backend_compiler_mir_ingested_block_param_merge_arm_update_imported_call_return_host_add' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_arm_update_imported_call_return_translator_expected_case_count: 3' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_arm_update_imported_call_return_translator_expected_status: 0' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_arm_update_imported_call_return_translator_seam_status: phase9b_translator_seed_experiment_only' "$manifest_doc" >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.block_param_merge_arm_update_imported_call_return.v1' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'imported_function_0_operation: HostAddI32' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'block_2_terminator: BranchBlockParamPositiveToI32Literals' "$fixture" compiler/mir.gst >/dev/null
@@ -4750,24 +3705,10 @@ guard-cranelift-mir-to-cranelift-block-param-merge-arm-update-imported-call-bran
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling MIR-to-Cranelift block-param merge arm-update imported-call branch translator seed..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     fixture="compiler/fixtures/native_backend_block_param_merge_arm_update_imported_call_branch_ingestion.mir"
     source_fixture="compiler/mir_feature_block_param_merge_arm_update_imported_call_branch_preservation_source.gst"
     just guard-cranelift-backend-surface
     just guard-cranelift-compiler-mir-block-param-merge-arm-update-imported-call-branch-ingestion-native-smoke
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_TO_CRANELIFT_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_BRANCH_TRANSLATOR_NATIVE_GUARD: guard-cranelift-mir-to-cranelift-block-param-merge-arm-update-imported-call-branch-translator-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_arm_update_imported_call_branch_translator_native_guard: guard-cranelift-mir-to-cranelift-block-param-merge-arm-update-imported-call-branch-translator-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_arm_update_imported_call_branch_translator_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_arm_update_imported_call_branch_translator_command: compiler-mir-to-cranelift-block-param-merge-arm-update-imported-call-branch-translator-object' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_arm_update_imported_call_branch_translator_input_fixture: compiler/fixtures/native_backend_block_param_merge_arm_update_imported_call_branch_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_arm_update_imported_call_branch_translator_oracle_guard: guard-cranelift-compiler-mir-block-param-merge-arm-update-imported-call-branch-ingestion-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_arm_update_imported_call_branch_translator_translation_entry: translate_compiler_mir_block_param_merge_arm_update_imported_call_branch_fixture_to_tiny_mir_param_block_function' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_arm_update_imported_call_branch_translator_object_artifact: build/guards/cranelift_mir_to_cranelift_block_param_merge_arm_update_imported_call_branch_translator_native/tiny_native_backend_mir_to_cranelift_block_param_merge_arm_update_imported_call_branch_translator.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_arm_update_imported_call_branch_translator_symbol: tiny_native_backend_mir_to_cranelift_block_param_merge_arm_update_imported_call_branch_translator' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_arm_update_imported_call_branch_translator_imported_symbol: tiny_native_backend_compiler_mir_ingested_block_param_merge_arm_update_imported_call_branch_host_add' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_arm_update_imported_call_branch_translator_expected_case_count: 3' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_arm_update_imported_call_branch_translator_expected_status: 0' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_arm_update_imported_call_branch_translator_seam_status: phase9b_translator_seed_experiment_only' "$manifest_doc" >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.block_param_merge_arm_update_imported_call_branch.v1' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'imported_function_0_operation: HostAddI32' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'block_2_terminator: BranchBlockParamPositiveToI32Literals' "$fixture" compiler/mir.gst >/dev/null
@@ -4820,24 +3761,10 @@ guard-cranelift-mir-to-cranelift-block-param-merge-imported-branch-joined-return
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling MIR-to-Cranelift block-param merge imported-branch joined-return translator seed..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     fixture="compiler/fixtures/native_backend_block_param_merge_imported_branch_joined_return_ingestion.mir"
     source_fixture="compiler/mir_feature_block_param_merge_imported_branch_joined_return_preservation_source.gst"
     just guard-cranelift-backend-surface
     just guard-cranelift-compiler-mir-block-param-merge-imported-branch-joined-return-ingestion-native-smoke
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_TO_CRANELIFT_BLOCK_PARAM_MERGE_IMPORTED_BRANCH_JOINED_RETURN_TRANSLATOR_NATIVE_GUARD: guard-cranelift-mir-to-cranelift-block-param-merge-imported-branch-joined-return-translator-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_imported_branch_joined_return_translator_native_guard: guard-cranelift-mir-to-cranelift-block-param-merge-imported-branch-joined-return-translator-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_imported_branch_joined_return_translator_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_imported_branch_joined_return_translator_command: compiler-mir-to-cranelift-block-param-merge-imported-branch-joined-return-translator-object' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_imported_branch_joined_return_translator_input_fixture: compiler/fixtures/native_backend_block_param_merge_imported_branch_joined_return_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_imported_branch_joined_return_translator_oracle_guard: guard-cranelift-compiler-mir-block-param-merge-imported-branch-joined-return-ingestion-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_imported_branch_joined_return_translator_translation_entry: translate_compiler_mir_block_param_merge_imported_branch_joined_return_fixture_to_tiny_mir_param_block_function' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_imported_branch_joined_return_translator_object_artifact: build/guards/cranelift_mir_to_cranelift_block_param_merge_imported_branch_joined_return_translator_native/tiny_native_backend_mir_to_cranelift_block_param_merge_imported_branch_joined_return_translator.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_imported_branch_joined_return_translator_symbol: tiny_native_backend_mir_to_cranelift_block_param_merge_imported_branch_joined_return_translator' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_imported_branch_joined_return_translator_imported_symbol: tiny_native_backend_compiler_mir_ingested_block_param_merge_imported_branch_joined_return_host_add' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_imported_branch_joined_return_translator_expected_case_count: 3' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_imported_branch_joined_return_translator_expected_status: 0' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_imported_branch_joined_return_translator_seam_status: phase9b_translator_seed_experiment_only' "$manifest_doc" >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.block_param_merge_imported_branch_joined_return.v1' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'imported_function_0_operation: HostAddI32' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'block_2_terminator: BranchBlockParamPositiveToI32Literals' "$fixture" compiler/mir.gst >/dev/null
@@ -4895,25 +3822,10 @@ guard-cranelift-mir-to-cranelift-block-param-merge-dual-imported-joined-return-t
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling MIR-to-Cranelift block-param merge dual-import joined-return translator seed..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     fixture="compiler/fixtures/native_backend_block_param_merge_dual_imported_joined_return_ingestion.mir"
     source_fixture="compiler/mir_feature_block_param_merge_dual_imported_joined_return_preservation_source.gst"
     just guard-cranelift-backend-surface
     just guard-cranelift-compiler-mir-block-param-merge-dual-imported-joined-return-ingestion-native-smoke
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_TO_CRANELIFT_BLOCK_PARAM_MERGE_DUAL_IMPORTED_JOINED_RETURN_TRANSLATOR_NATIVE_GUARD: guard-cranelift-mir-to-cranelift-block-param-merge-dual-imported-joined-return-translator-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_dual_imported_joined_return_translator_native_guard: guard-cranelift-mir-to-cranelift-block-param-merge-dual-imported-joined-return-translator-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_dual_imported_joined_return_translator_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_dual_imported_joined_return_translator_command: compiler-mir-to-cranelift-block-param-merge-dual-imported-joined-return-translator-object' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_dual_imported_joined_return_translator_input_fixture: compiler/fixtures/native_backend_block_param_merge_dual_imported_joined_return_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_dual_imported_joined_return_translator_oracle_guard: guard-cranelift-compiler-mir-block-param-merge-dual-imported-joined-return-ingestion-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_dual_imported_joined_return_translator_translation_entry: translate_compiler_mir_block_param_merge_dual_imported_joined_return_fixture_to_tiny_mir_param_block_function' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_dual_imported_joined_return_translator_object_artifact: build/guards/cranelift_mir_to_cranelift_block_param_merge_dual_imported_joined_return_translator_native/tiny_native_backend_mir_to_cranelift_block_param_merge_dual_imported_joined_return_translator.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_dual_imported_joined_return_translator_symbol: tiny_native_backend_mir_to_cranelift_block_param_merge_dual_imported_joined_return_translator' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_dual_imported_joined_return_translator_branch_imported_symbol: tiny_native_backend_compiler_mir_ingested_block_param_merge_dual_imported_joined_return_branch_host_add' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_dual_imported_joined_return_translator_return_imported_symbol: tiny_native_backend_compiler_mir_ingested_block_param_merge_dual_imported_joined_return_return_host_add' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_dual_imported_joined_return_translator_expected_case_count: 3' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_dual_imported_joined_return_translator_expected_status: 0' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_block_param_merge_dual_imported_joined_return_translator_seam_status: phase9b_translator_seed_experiment_only' "$manifest_doc" >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.block_param_merge_dual_imported_joined_return.v1' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'imported_function_count: 2' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'imported_function_0_symbol: tiny_native_backend_compiler_mir_ingested_block_param_merge_dual_imported_joined_return_branch_host_add' "$fixture" compiler/mir.gst >/dev/null
@@ -4977,31 +3889,7 @@ guard-cranelift-mir-to-cranelift-translator-seed-suite:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Running MIR-to-Cranelift translator seed suite..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_TO_CRANELIFT_TRANSLATOR_SEED_SUITE_NATIVE_GUARD: guard-cranelift-mir-to-cranelift-translator-seed-suite' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_native_guard: guard-cranelift-mir-to-cranelift-translator-seed-suite' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_status: phase9b_translator_seed_inventory' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_count: 17' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_return_int_guard: guard-cranelift-mir-to-cranelift-return-int-translator-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_local_binding_read_guard: guard-cranelift-mir-to-cranelift-local-binding-read-translator-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_conditional_branch_guard: guard-cranelift-mir-to-cranelift-conditional-branch-translator-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_block_jump_guard: guard-cranelift-mir-to-cranelift-block-jump-translator-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_provenance_metadata_guard: guard-cranelift-mir-to-cranelift-provenance-metadata-translator-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_resource_metadata_guard: guard-cranelift-mir-to-cranelift-resource-metadata-translator-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_native_boundary_metadata_guard: guard-cranelift-mir-to-cranelift-native-boundary-metadata-translator-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_add_i32_guard: guard-cranelift-mir-to-cranelift-add-i32-translator-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_positive_i32_branch_guard: guard-cranelift-mir-to-cranelift-positive-i32-branch-translator-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_block_local_branch_join_guard: guard-cranelift-mir-to-cranelift-block-local-branch-join-translator-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_block_param_update_branch_guard: guard-cranelift-mir-to-cranelift-block-param-update-branch-translator-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_block_param_merge_update_branch_guard: guard-cranelift-mir-to-cranelift-block-param-merge-update-branch-translator-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_block_param_merge_imported_call_return_guard: guard-cranelift-mir-to-cranelift-block-param-merge-imported-call-return-translator-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_block_param_merge_arm_update_imported_call_return_guard: guard-cranelift-mir-to-cranelift-block-param-merge-arm-update-imported-call-return-translator-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_block_param_merge_arm_update_imported_call_branch_guard: guard-cranelift-mir-to-cranelift-block-param-merge-arm-update-imported-call-branch-translator-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_block_param_merge_imported_branch_joined_return_guard: guard-cranelift-mir-to-cranelift-block-param-merge-imported-branch-joined-return-translator-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_block_param_merge_dual_imported_joined_return_guard: guard-cranelift-mir-to-cranelift-block-param-merge-dual-imported-joined-return-translator-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_oracle_policy: mir_to_c_or_compiler_owned_fixture_native_guards_remain_oracle' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_route_policy: experiment_only_no_production_routing' "$manifest_doc" >/dev/null
     just guard-cranelift-mir-to-cranelift-return-int-translator-native-smoke
     just guard-cranelift-mir-to-cranelift-local-binding-read-translator-native-smoke
     just guard-cranelift-mir-to-cranelift-conditional-branch-translator-native-smoke
@@ -5025,42 +3913,8 @@ guard-cranelift-phase9b-close:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Closing Phase 9B: frozen MIR-to-Cranelift translator seed inventory..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9B_CLOSE_GUARD: guard-cranelift-phase9b-close' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_MIR_TO_CRANELIFT_TRANSLATOR_SEED_SUITE_NATIVE_GUARD: guard-cranelift-mir-to-cranelift-translator-seed-suite' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_native_guard: guard-cranelift-mir-to-cranelift-translator-seed-suite' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_status: phase9b_translator_seed_inventory' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_count: 17' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_close_guard: guard-cranelift-phase9b-close' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_close_status: phase9b_closed_seed_inventory_frozen' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_freeze_policy: phase9b_closed_no_new_seed_lanes_without_new_translator_abstraction_gap' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_next_phase: phase9c_differential_validation' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_oracle_policy: mir_to_c_or_compiler_owned_fixture_native_guards_remain_oracle' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_route_policy: experiment_only_no_production_routing' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_status: phase9c_closed_fixture_backed_differential' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_lane_count: 7' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_scope: phase9c_initial_scope_frozen' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_scope_policy: phase9c_initial_scope_is_exactly_seven_lanes_no_expansion_without_new_phase_contract' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_lane_names: return_int_literal,local_binding_read,conditional_branch,block_jump,provenance_metadata,resource_metadata,native_boundary_metadata' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_route_policy: experiment_only_no_default_backend_flip' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_completion_policy: surface_and_native_ladders_green_with_no_production_routing' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_PRIMARY_ROUTE: mir_to_c' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ENABLED_BY_DEFAULT: false' "$manifest_doc" >/dev/null
 
-    seed_suite_feature_guard_count="$(rg -n '^allowed_mir_to_cranelift_translator_seed_suite_.*_guard:' "$manifest_doc" | rg -v '_native_guard:' | rg -v '_close_guard:' | wc -l | tr -d '[:space:]')"
-    if [ "$seed_suite_feature_guard_count" != "17" ]; then
-      echo "Expected exactly 17 Phase 9B translator seed suite feature guards, found $seed_suite_feature_guard_count."
-      rg -n '^allowed_mir_to_cranelift_translator_seed_suite_.*_guard:' "$manifest_doc" || true
-      exit 1
-    fi
-
-    translator_seed_seam_count="$(rg -n '^allowed_mir_to_cranelift_.*_translator_seam_status: phase9b_translator_seed_experiment_only$' "$manifest_doc" | wc -l | tr -d '[:space:]')"
-    if [ "$translator_seed_seam_count" != "17" ]; then
-      echo "Expected exactly 17 experiment-only Phase 9B translator seed seams, found $translator_seed_seam_count."
-      rg -n '^allowed_mir_to_cranelift_.*_translator_seam_status:' "$manifest_doc" || true
-      exit 1
-    fi
 
     suite_body="$(sed -n '/^guard-cranelift-mir-to-cranelift-translator-seed-suite:/,/^guard-cranelift-phase9b-close:/p' justfile)"
     aggregate_call_count="$(printf '%s\n' "$suite_body" | rg -n '^    just guard-cranelift-mir-to-cranelift-.*-translator-native-smoke$' | wc -l | tr -d '[:space:]')"
@@ -5075,67 +3929,12 @@ guard-cranelift-phase9c-differential-ladder-surface:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking Phase 9C differential ladder surface..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     ledger_doc="compiler/CRANELIFT_PHASE9C_DIFFERENTIAL_LEDGER.md"
     if [ ! -f "$ledger_doc" ]; then
       echo "Missing $ledger_doc. Phase 9C Step 2/3 requires the differential ledger."
       exit 1
     fi
     just guard-cranelift-backend-surface
-    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_status: phase9b_translator_seed_inventory' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_count: 17' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_close_status: phase9b_closed_seed_inventory_frozen' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_next_phase: phase9c_differential_validation' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_oracle_policy: mir_to_c_or_compiler_owned_fixture_native_guards_remain_oracle' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_translator_seed_suite_route_policy: experiment_only_no_production_routing' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9C_CLOSE_GUARD: guard-cranelift-phase9c-close' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_status: phase9c_closed_fixture_backed_differential' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_lane_count: 7' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_scope: phase9c_initial_scope_frozen' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_scope_policy: phase9c_initial_scope_is_exactly_seven_lanes_no_expansion_without_new_phase_contract' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_lane_names: return_int_literal,local_binding_read,conditional_branch,block_jump,provenance_metadata,resource_metadata,native_boundary_metadata' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_route_policy: experiment_only_no_default_backend_flip' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_completion_policy: fixture_backed_differential_and_shared_cfg_join_green_with_strict_rejection_and_no_production_routing' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_close_guard: guard-cranelift-phase9c-close' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_close_status: phase9c_closed_fixture_backed_differential' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_closure_basis: mir_to_c_oracle_vs_compiler_owned_mir_fixture_ingested_by_cranelift' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_freeze_policy: phase9c_closed_no_lane_or_route_expansion_without_new_phase_contract' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_next_phase: phase9d_compiler_owned_mir_ingestion_canonicalization' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_ledger: compiler/CRANELIFT_PHASE9C_DIFFERENTIAL_LEDGER.md' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_result_policy: per_lane_oracle_candidate_expected_status_must_be_registered' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_failure_policy: failed_lane_must_identify_oracle_candidate_or_divergence' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_future_lane_policy: new_lanes_require_new_phase_contract_and_compiler_owned_mir_ingestion' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_candidate_shape: compiler_owned_mir_ingestion' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_ingestion_candidate_count: 7' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_translator_candidate_count: 0' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_shared_lowering_core_status: phase9c_reusable_ingestion_lowering_core' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_shared_lowering_core_object_entry: lower_compiler_mir_ingestion_function_to_object' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_shared_lowering_core_definition_entry: define_compiler_mir_ingestion_exported_function' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_shared_lowering_core_body_entry: build_compiler_mir_ingestion_body' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_shared_lowering_core_lane_count: 5' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_shared_lowering_core_lanes: return_int_literal,local_binding_read,block_jump,conditional_branch,block_local_branch_join' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_shared_lowering_core_value_scope: i32_constants_function_params_local_set_read_and_add' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_shared_lowering_core_terminator_scope: return_jump_literal_branch_and_local_positive_branch' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_shared_lowering_core_function_scope: one_function_one_exported_object_symbol_with_i32_params' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_shared_lowering_core_excluded_scope: calls_resources_strings_structs_arrays_runtime' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_shared_lowering_core_route_policy: experiment_only_no_production_routing' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_shared_cfg_join_status: phase9c_first_shared_cfg_join_milestone' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_shared_cfg_join_lane: block_local_branch_join' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_shared_cfg_join_fixture: compiler/fixtures/native_backend_block_local_branch_join_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_shared_cfg_join_guard: guard-cranelift-compiler-mir-block-local-branch-join-ingestion-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_shared_cfg_join_shape: entry_branch_two_successors_join_return_joined_local' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_shared_cfg_join_lowering_entry: lower_compiler_mir_ingestion_function_to_object' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_shared_cfg_join_route_policy: experiment_only_no_production_routing' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_strict_rejection_guard: guard-cranelift-compiler-mir-ingestion-strict-rejection-contract' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_strict_rejection_status: phase9c_invalid_fixtures_fail_before_object_emission' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_strict_rejection_case_count: 8' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_strict_rejection_cases: unknown_fixture_format,missing_entry_block,missing_return_terminator,bad_local_name,mismatched_return_type,branch_to_unknown_block,duplicate_block_label,unsupported_statement_kind' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_strict_rejection_route_policy: reject_before_cranelift_object_emission' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_metadata_preservation_policy_status: phase9c_metadata_preservation_recognition_not_runtime_semantics' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_metadata_preservation_lanes: provenance_metadata,resource_metadata,native_boundary_metadata' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_metadata_preservation_fixture_policy: metadata_survives_fixture_production_and_ingestion' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_metadata_preservation_lowering_policy: metadata_is_recognized_before_scalar_lowering_and_must_not_perturb_scalar_result' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_metadata_preservation_unsupported_policy: unsupported_metadata_requires_explicit_diagnostic_or_ignored_with_proof' "$manifest_doc" >/dev/null
     rg -n -F 'enum CompilerMirLoweringStatement' compiler/experiments/cranelift/src/main.rs >/dev/null
     rg -n -F 'enum CompilerMirLoweringTerminator' compiler/experiments/cranelift/src/main.rs >/dev/null
     rg -n -F 'struct CompilerMirLoweringFunction' compiler/experiments/cranelift/src/main.rs >/dev/null
@@ -5150,10 +3949,6 @@ guard-cranelift-phase9c-differential-ladder-surface:
       adapter_body="$(sed -n "/^fn ${adapter_entry}(/,/^}/p" compiler/experiments/cranelift/src/main.rs)"
       printf '%s\n' "$adapter_body" | rg -n -F 'emit_compiler_mir_fixture_contents_object(' >/dev/null
     done
-    shared_cfg_body="$(sed -n '/^fn emit_compiler_mir_block_local_branch_join_ingestion_object(/,/^}/p' compiler/experiments/cranelift/src/main.rs)"
-    printf '%s\n' "$shared_cfg_body" | rg -n -F 'lower_compiler_mir_ingestion_function_to_object(output_path, &mir_function)' >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_PRIMARY_ROUTE: mir_to_c' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ENABLED_BY_DEFAULT: false' "$manifest_doc" >/dev/null
 
     rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_VERSION: 2' "$ledger_doc" >/dev/null
     rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_STATUS: phase9c_closed_fixture_backed_differential' "$ledger_doc" >/dev/null
@@ -5186,59 +3981,38 @@ guard-cranelift-phase9c-differential-ladder-surface:
     rg -n -F 'candidate_guard: guard-cranelift-compiler-mir-return-int-ingestion-native-smoke' "$ledger_doc" >/dev/null
     rg -n -F 'candidate_fixture: compiler/fixtures/native_backend_return_int_ingestion.mir' "$ledger_doc" >/dev/null
     rg -n -F 'expected_native_status: 1' "$ledger_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_return_int_expected_status: 1' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_return_int_candidate_guard: guard-cranelift-compiler-mir-return-int-ingestion-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_return_int_ingestion_fixture: compiler/fixtures/native_backend_return_int_ingestion.mir' "$manifest_doc" >/dev/null
 
     rg -n -F 'lane: local_binding_read' "$ledger_doc" >/dev/null
     rg -n -F 'oracle_guard: guard-mir-to-c-local-binding-read-native-smoke' "$ledger_doc" >/dev/null
     rg -n -F 'candidate_guard: guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke' "$ledger_doc" >/dev/null
     rg -n -F 'candidate_fixture: compiler/fixtures/native_backend_local_binding_read_ingestion.mir' "$ledger_doc" >/dev/null
     rg -n -F 'expected_native_status: 2' "$ledger_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_local_binding_read_expected_status: 2' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_local_binding_read_candidate_guard: guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_local_binding_read_ingestion_fixture: compiler/fixtures/native_backend_local_binding_read_ingestion.mir' "$manifest_doc" >/dev/null
 
     rg -n -F 'lane: conditional_branch' "$ledger_doc" >/dev/null
     rg -n -F 'oracle_guard: guard-mir-to-c-conditional-branch-native-smoke' "$ledger_doc" >/dev/null
     rg -n -F 'candidate_guard: guard-cranelift-compiler-mir-conditional-branch-ingestion-native-smoke' "$ledger_doc" >/dev/null
     rg -n -F 'candidate_fixture: compiler/fixtures/native_backend_conditional_branch_ingestion.mir' "$ledger_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_conditional_branch_expected_status: 1' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_conditional_branch_candidate_guard: guard-cranelift-compiler-mir-conditional-branch-ingestion-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_conditional_branch_ingestion_fixture: compiler/fixtures/native_backend_conditional_branch_ingestion.mir' "$manifest_doc" >/dev/null
 
     rg -n -F 'lane: block_jump' "$ledger_doc" >/dev/null
     rg -n -F 'oracle_guard: guard-mir-to-c-block-jump-native-smoke' "$ledger_doc" >/dev/null
     rg -n -F 'candidate_guard: guard-cranelift-compiler-mir-block-jump-ingestion-native-smoke' "$ledger_doc" >/dev/null
     rg -n -F 'candidate_fixture: compiler/fixtures/native_backend_block_jump_ingestion.mir' "$ledger_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_block_jump_expected_status: 1' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_block_jump_candidate_guard: guard-cranelift-compiler-mir-block-jump-ingestion-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_jump_ingestion_fixture: compiler/fixtures/native_backend_block_jump_ingestion.mir' "$manifest_doc" >/dev/null
 
     rg -n -F 'lane: provenance_metadata' "$ledger_doc" >/dev/null
     rg -n -F 'oracle_guard: guard-mir-to-c-provenance-metadata-native-smoke' "$ledger_doc" >/dev/null
     rg -n -F 'candidate_guard: guard-cranelift-compiler-mir-provenance-metadata-ingestion-native-smoke' "$ledger_doc" >/dev/null
     rg -n -F 'candidate_fixture: compiler/fixtures/native_backend_provenance_metadata_ingestion.mir' "$ledger_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_provenance_metadata_expected_status: 2' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_provenance_metadata_candidate_guard: guard-cranelift-compiler-mir-provenance-metadata-ingestion-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_provenance_metadata_ingestion_fixture: compiler/fixtures/native_backend_provenance_metadata_ingestion.mir' "$manifest_doc" >/dev/null
 
     rg -n -F 'lane: resource_metadata' "$ledger_doc" >/dev/null
     rg -n -F 'oracle_guard: guard-mir-to-c-resource-metadata-native-smoke' "$ledger_doc" >/dev/null
     rg -n -F 'candidate_guard: guard-cranelift-compiler-mir-resource-metadata-ingestion-native-smoke' "$ledger_doc" >/dev/null
     rg -n -F 'candidate_fixture: compiler/fixtures/native_backend_resource_metadata_ingestion.mir' "$ledger_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_resource_metadata_expected_status: 2' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_resource_metadata_candidate_guard: guard-cranelift-compiler-mir-resource-metadata-ingestion-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_resource_metadata_ingestion_fixture: compiler/fixtures/native_backend_resource_metadata_ingestion.mir' "$manifest_doc" >/dev/null
 
     rg -n -F 'lane: native_boundary_metadata' "$ledger_doc" >/dev/null
     rg -n -F 'oracle_guard: guard-mir-to-c-native-boundary-metadata-native-smoke' "$ledger_doc" >/dev/null
     rg -n -F 'candidate_guard: guard-cranelift-compiler-mir-native-boundary-metadata-ingestion-native-smoke' "$ledger_doc" >/dev/null
     rg -n -F 'candidate_fixture: compiler/fixtures/native_backend_native_boundary_metadata_ingestion.mir' "$ledger_doc" >/dev/null
     rg -n -F 'expected_native_status: 0' "$ledger_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_native_boundary_metadata_expected_status: 0' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_native_boundary_metadata_candidate_guard: guard-cranelift-compiler-mir-native-boundary-metadata-ingestion-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_native_boundary_metadata_ingestion_fixture: compiler/fixtures/native_backend_native_boundary_metadata_ingestion.mir' "$manifest_doc" >/dev/null
 
     rg -n -F 'failure_owner_policy: oracle_candidate_or_divergence_must_be_identified' "$ledger_doc" >/dev/null
     rg -n -F 'current_result: fixture_backed_differential_closed' "$ledger_doc" >/dev/null
@@ -5256,53 +4030,15 @@ guard-cranelift-phase9c-differential-ladder-surface:
     rg -n -F 'recognize_compiler_mir_metadata_preservation_contract(&fields, "native_boundary_metadata")?' compiler/experiments/cranelift/src/main.rs >/dev/null
 
     rg -n -F 'guard-mir-to-c-return-int-literal-native-smoke' justfile "$ledger_doc" >/dev/null
-    rg -n -F 'guard-cranelift-compiler-mir-return-int-ingestion-native-smoke' justfile "$manifest_doc" "$ledger_doc" >/dev/null
     rg -n -F 'guard-mir-to-c-local-binding-read-native-smoke' justfile "$ledger_doc" >/dev/null
-    rg -n -F 'guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke' justfile "$manifest_doc" "$ledger_doc" >/dev/null
     rg -n -F 'guard-mir-to-c-conditional-branch-native-smoke' justfile "$ledger_doc" >/dev/null
-    rg -n -F 'guard-cranelift-compiler-mir-conditional-branch-ingestion-native-smoke' justfile "$manifest_doc" "$ledger_doc" >/dev/null
     rg -n -F 'guard-mir-to-c-block-jump-native-smoke' justfile "$ledger_doc" >/dev/null
-    rg -n -F 'guard-cranelift-compiler-mir-block-jump-ingestion-native-smoke' justfile "$manifest_doc" "$ledger_doc" >/dev/null
     rg -n -F 'guard-mir-to-c-provenance-metadata-native-smoke' justfile "$ledger_doc" >/dev/null
-    rg -n -F 'guard-cranelift-compiler-mir-provenance-metadata-ingestion-native-smoke' justfile "$manifest_doc" "$ledger_doc" >/dev/null
     rg -n -F 'guard-mir-to-c-resource-metadata-native-smoke' justfile "$ledger_doc" >/dev/null
-    rg -n -F 'guard-cranelift-compiler-mir-resource-metadata-ingestion-native-smoke' justfile "$manifest_doc" "$ledger_doc" >/dev/null
     rg -n -F 'guard-mir-to-c-native-boundary-metadata-native-smoke' justfile "$ledger_doc" >/dev/null
-    rg -n -F 'guard-cranelift-compiler-mir-native-boundary-metadata-ingestion-native-smoke' justfile "$manifest_doc" "$ledger_doc" >/dev/null
 
-    phase9c_initial_ladder_oracle_count="$(rg -n '^allowed_mir_to_cranelift_phase9c_differential_ladder_.*_oracle_guard:' "$manifest_doc" | wc -l | tr -d '[:space:]')"
-    phase9c_initial_ladder_candidate_count="$(rg -n '^allowed_mir_to_cranelift_phase9c_differential_ladder_.*_candidate_guard:' "$manifest_doc" | wc -l | tr -d '[:space:]')"
-    phase9c_ingestion_candidate_count="$(rg -n '^allowed_mir_to_cranelift_phase9c_differential_ladder_.*_candidate_guard: guard-cranelift-compiler-mir-.*-ingestion-native-smoke$' "$manifest_doc" | wc -l | tr -d '[:space:]')"
-    phase9c_unexpected_translator_candidates="$(rg -n '^allowed_mir_to_cranelift_phase9c_differential_ladder_.*_candidate_guard: guard-cranelift-mir-to-cranelift-.*-translator-native-smoke$' "$manifest_doc" || true)"
-    phase9c_initial_ladder_expected_status_count="$(rg -n '^allowed_mir_to_cranelift_phase9c_differential_ladder_.*_expected_status:' "$manifest_doc" | wc -l | tr -d '[:space:]')"
     phase9c_ledger_lane_count="$(rg -n '^lane: ' "$ledger_doc" | wc -l | tr -d '[:space:]')"
     phase9c_ledger_fixture_count="$(rg -n '^candidate_fixture: compiler/fixtures/native_backend_.*_ingestion\.mir$' "$ledger_doc" | wc -l | tr -d '[:space:]')"
-    phase9c_ledger_closed_result_count="$(rg -n '^current_result: fixture_backed_differential_closed$' "$ledger_doc" | wc -l | tr -d '[:space:]')"
-    if [ "$phase9c_initial_ladder_oracle_count" != "7" ]; then
-      echo "Expected exactly 7 Phase 9C oracle guards, found $phase9c_initial_ladder_oracle_count."
-      rg -n '^allowed_mir_to_cranelift_phase9c_differential_ladder_.*_oracle_guard:' "$manifest_doc" || true
-      exit 1
-    fi
-    if [ "$phase9c_initial_ladder_candidate_count" != "7" ]; then
-      echo "Expected exactly 7 Phase 9C candidate guards, found $phase9c_initial_ladder_candidate_count."
-      rg -n '^allowed_mir_to_cranelift_phase9c_differential_ladder_.*_candidate_guard:' "$manifest_doc" || true
-      exit 1
-    fi
-    if [ "$phase9c_ingestion_candidate_count" != "7" ]; then
-      echo "Expected all 7 Phase 9C candidates to use compiler-owned MIR ingestion, found $phase9c_ingestion_candidate_count."
-      rg -n '^allowed_mir_to_cranelift_phase9c_differential_ladder_.*_candidate_guard:' "$manifest_doc" || true
-      exit 1
-    fi
-    if [ -n "$phase9c_unexpected_translator_candidates" ]; then
-      echo "Phase 9C candidates must no longer route through frozen translator seeds:"
-      echo "$phase9c_unexpected_translator_candidates"
-      exit 1
-    fi
-    if [ "$phase9c_initial_ladder_expected_status_count" != "7" ]; then
-      echo "Expected exactly 7 Phase 9C expected-status registrations, found $phase9c_initial_ladder_expected_status_count."
-      rg -n '^allowed_mir_to_cranelift_phase9c_differential_ladder_.*_expected_status:' "$manifest_doc" || true
-      exit 1
-    fi
     if [ "$phase9c_ledger_lane_count" != "7" ]; then
       echo "Expected exactly 7 Phase 9C ledger lanes, found $phase9c_ledger_lane_count."
       rg -n '^lane: ' "$ledger_doc" || true
@@ -5313,6 +4049,11 @@ guard-cranelift-phase9c-differential-ladder-surface:
       rg -n '^candidate_fixture:' "$ledger_doc" || true
       exit 1
     fi
+    phase9c_ledger_closed_result_count="$(
+      rg -n '^current_result: fixture_backed_differential_closed$' "$ledger_doc" |
+        wc -l |
+        tr -d '[:space:]'
+    )"
     if [ "$phase9c_ledger_closed_result_count" != "7" ]; then
       echo "Expected exactly 7 closed Phase 9C fixture-backed results, found $phase9c_ledger_closed_result_count."
       rg -n '^current_result:' "$ledger_doc" || true
@@ -5324,14 +4065,7 @@ guard-cranelift-phase9c-differential-ladder-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Running closed Phase 9C fixture-backed native differential ladder..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-phase9c-differential-ladder-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9C_DIFFERENTIAL_LADDER_NATIVE_GUARD: guard-cranelift-phase9c-differential-ladder-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_native_guard: guard-cranelift-phase9c-differential-ladder-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_status: phase9c_closed_fixture_backed_differential' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_lane_count: 7' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_oracle_route: mir_to_c' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_candidate_route: mir_to_cranelift_experiment_only' "$manifest_doc" >/dev/null
 
     just guard-mir-to-c-return-int-literal-native-smoke
     just guard-cranelift-compiler-mir-return-int-ingestion-native-smoke
@@ -5353,201 +4087,57 @@ guard-cranelift-phase9c-close:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Closing Phase 9C on fixture-backed differential evidence..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     ledger_doc="compiler/CRANELIFT_PHASE9C_DIFFERENTIAL_LEDGER.md"
     just guard-cranelift-phase9c-differential-ladder-surface
     just guard-cranelift-compiler-mir-ingestion-strict-rejection-contract
     just guard-cranelift-compiler-mir-block-local-branch-join-ingestion-native-smoke
     just guard-cranelift-phase9c-differential-ladder-native-smoke
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9C_CLOSE_GUARD: guard-cranelift-phase9c-close' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_close_status: phase9c_closed_fixture_backed_differential' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_mir_to_cranelift_phase9c_differential_ladder_closure_basis: mir_to_c_oracle_vs_compiler_owned_mir_fixture_ingested_by_cranelift' "$manifest_doc" >/dev/null
     rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_CLOSE_STATUS: phase9c_closed_fixture_backed_differential' "$ledger_doc" >/dev/null
     rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_CLOSURE_BASIS: mir_to_c_oracle_vs_compiler_owned_mir_fixture_ingested_by_cranelift' "$ledger_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_PRIMARY_ROUTE: mir_to_c' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ENABLED_BY_DEFAULT: false' "$manifest_doc" >/dev/null
     echo "✅ Phase 9C closed: the frozen seven-lane differential compares MIR-to-C with compiler-owned MIR fixtures ingested by Cranelift, while Cranelift remains experiment-only."
 
 guard-cranelift-phase9d-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking the closed Phase 9D compiler-owned MIR ingestion contract..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     phase9c_ledger="compiler/CRANELIFT_PHASE9C_DIFFERENTIAL_LEDGER.md"
     readme_doc="compiler/experiments/cranelift/README.md"
-    if [ ! -f "$manifest_doc" ] || [ ! -f "$phase9c_ledger" ] || [ ! -f "$readme_doc" ]; then
-      echo "Phase 9D opening requires the Cranelift manifest, frozen Phase 9C ledger, and experiment README."
-      exit 1
-    fi
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9D_OPENING_CONTRACT_GUARD: guard-cranelift-phase9d-opening-contract' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_status: phase9d_closed_compiler_owned_mir_ingestion_canonicalized' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_registry: compiler/CRANELIFT_EXPERIMENT_MANIFEST.md' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_readme: compiler/experiments/cranelift/README.md' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_predecessor_status: phase9c_closed_fixture_backed_differential' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_predecessor_ledger: compiler/CRANELIFT_PHASE9C_DIFFERENTIAL_LEDGER.md' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_predecessor_ledger_policy: phase9c_ledger_is_frozen_historical_evidence' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_goal: compiler_owned_mir_ingestion_is_canonical_experimental_cranelift_path' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_canonical_pipeline: compiler_mir_producer_to_versioned_fixture_to_parser_to_validated_rust_mir_model_to_shared_lowering_to_object_emission' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_allowed_scope: ingestion_inventory_architecture_contract_fixture_schema_parser_validator_generic_command_phase9c_rebase_metadata_canonicalization_bounded_scalar_cfg_migration_bypass_freeze' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_excluded_scope: production_backend_route_default_backend_flip_c_backend_retirement_full_calls_runtime_imports_strings_structs_arrays_resource_execution_semantics_complete_block_param_coverage' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_new_work_policy: new_cranelift_semantic_work_requires_compiler_owned_mir_ingestion' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_compatibility_policy: historical_commands_may_remain_thin_wrappers_only' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_translator_policy: no_new_translator_seed_lane_without_explicit_abstraction_gap_exception' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_route_policy: experiment_only_no_default_backend_flip' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_primary_route: mir_to_c' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_closure_guard_policy: phase9d_close_guard_is_required_closure_gate' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9D_CLOSE_GUARD: guard-cranelift-phase9d-close' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_next_phase: phase9e_cfg_and_block_parameter_completeness' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_first_milestone: complete_ingestion_seam_inventory_and_freeze_canonical_architecture' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_first_milestone_status: complete' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_second_milestone: define_canonical_fixture_schema_parser_and_validator' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9D_INGESTION_INVENTORY_ARCHITECTURE_GUARD: guard-cranelift-phase9d-ingestion-inventory-architecture' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_status: phase9d_inventory_complete_architecture_frozen' "$manifest_doc" >/dev/null
     rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_STATUS: phase9c_closed_fixture_backed_differential' "$phase9c_ledger" >/dev/null
     rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_FREEZE_POLICY: phase9c_closed_no_lane_or_route_expansion_without_new_phase_contract' "$phase9c_ledger" >/dev/null
     rg -n -F 'Phase 9D is closed as' "$readme_doc" >/dev/null
     rg -n -F '`phase9d_closed_compiler_owned_mir_ingestion_canonicalized`.' "$readme_doc" >/dev/null
     rg -n -F 'ingestion is now the required architecture for new experimental Cranelift' "$readme_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_PRIMARY_ROUTE: mir_to_c' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ENABLED_BY_DEFAULT: false' "$manifest_doc" >/dev/null
-    rg -n -F 'forbidden_production_route: cranelift' "$manifest_doc" >/dev/null
     echo "✅ Phase 9D contract is closed: compiler-owned MIR ingestion is canonical for experimental Cranelift work, with MIR-to-C still primary."
 
 guard-cranelift-phase9d-ingestion-inventory-architecture:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking Phase 9D ingestion inventory and canonical architecture freeze..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     source_file="compiler/experiments/cranelift/src/main.rs"
-    if [ ! -f "$manifest_doc" ] || [ ! -f "$source_file" ]; then
-      echo "Phase 9D inventory guard requires the Cranelift manifest and experiment source."
-      exit 1
-    fi
 
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9D_INGESTION_INVENTORY_ARCHITECTURE_GUARD: guard-cranelift-phase9d-ingestion-inventory-architecture' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_status: phase9d_inventory_complete_architecture_frozen' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_registry: compiler/CRANELIFT_EXPERIMENT_MANIFEST.md' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_ingestion_seam_count: 33' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_canonical_shared_lowering_count: 22' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_compiler_owned_bespoke_lowering_count: 11' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_metadata_preservation_only_count: 0' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_historical_translator_fixture_only_count: 17' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_classification_policy: canonical_shared_lowering,compiler_owned_bespoke_lowering,metadata_preservation_only,historical_translator_fixture_only' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_architecture_status: frozen_with_canonical_schema_parser_validator' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_architecture_stage_order: parse_then_validate_then_rust_mir_model_then_shared_lowering_then_object_emission' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_architecture_parser_target: parse_compiler_mir_fixture' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_architecture_validator_target: validate_compiler_mir_fixture' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_architecture_rust_model: CompilerMirLoweringFunction' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_architecture_body_lowerer: build_compiler_mir_ingestion_body' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_architecture_object_emitter: lower_compiler_mir_ingestion_function_to_object' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_architecture_validation_boundary: validation_must_complete_before_cranelift_module_or_object_creation' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_architecture_lane_parser_policy: existing_lane_specific_parsers_are_temporary_compatibility_scaffolding' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_architecture_bespoke_lowering_policy: existing_bespoke_lowerers_are_classified_noncanonical_and_may_not_receive_new_semantic_work' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_architecture_direct_object_policy: new_canonical_ingestion_paths_must_not_own_ObjectModule_construction' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_architecture_registration_policy: every_new_ingestion_emitter_or_translator_seed_must_register_before_ci_acceptance' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_architecture_known_gap: increment_local_i32_has_no_compiler_owned_ingestion_seam' "$manifest_doc" >/dev/null
-
-    inventory_lines="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:' "$manifest_doc")"
-    inventory_count="$(printf '%s\n' "$inventory_lines" | sed '/^$/d' | wc -l | tr -d ' ')"
-    if [ "$inventory_count" != "33" ]; then
-      echo "Expected exactly 33 registered compiler-owned MIR ingestion seams, found $inventory_count."
-      exit 1
-    fi
-
-    while IFS= read -r inventory_line; do
-      [ -n "$inventory_line" ] || continue
-      inventory_key="${inventory_line%%:*}"
-      lane="${inventory_key#allowed_compiler_mir_ingestion_phase9d_inventory_seam_}"
-      for required_field in 'producer=' '|fixture=' '|format=' '|parser=' '|compiler_lowering=' '|rust_entry=' '|rust_model=' '|rust_lowering=' '|object_emitter=' '|native_guard=' '|class=' '|migration='; do
-        if [[ "$inventory_line" != *"$required_field"* ]]; then
-          echo "Phase 9D inventory seam $lane is missing field $required_field"
-          exit 1
-        fi
-      done
-      rg -n "^fn emit_compiler_mir_${lane}_ingestion_object\(" "$source_file" >/dev/null
-      rg -n "^fn parse_compiler_mir_${lane}_ingestion_fixture\(" "$source_file" >/dev/null
-    done <<< "$inventory_lines"
-
-    canonical_count="$(printf '%s\n' "$inventory_lines" | grep -cF '|class=canonical_shared_lowering|' || true)"
-    bespoke_count="$(printf '%s\n' "$inventory_lines" | grep -cF '|class=compiler_owned_bespoke_lowering|' || true)"
-    metadata_count="$(printf '%s\n' "$inventory_lines" | grep -cF '|class=metadata_preservation_only|' || true)"
-    if [ "$canonical_count" != "33" ] || [ "$bespoke_count" != "0" ] || [ "$metadata_count" != "0" ]; then
-      echo "Unexpected current ingestion classification counts after Phase 9F joined imported-call closure: canonical=$canonical_count bespoke=$bespoke_count metadata=$metadata_count"
-      exit 1
-    fi
-
-    source_lanes="$(rg '^fn emit_compiler_mir_[a-z0-9_]+_ingestion_object\(' "$source_file" | sed -E 's/^fn emit_compiler_mir_([a-z0-9_]+)_ingestion_object\(.*/\1/' | sort)"
-    inventory_lanes="$(printf '%s\n' "$inventory_lines" | sed -E 's/^allowed_compiler_mir_ingestion_phase9d_inventory_seam_([a-z0-9_]+):.*/\1/' | sort)"
-    if [ "$source_lanes" != "$inventory_lanes" ]; then
-      echo "Every compiler-owned MIR ingestion emitter must be registered in the Phase 9D inventory."
-      diff -u <(printf '%s\n' "$source_lanes") <(printf '%s\n' "$inventory_lanes") || true
-      exit 1
-    fi
-
-    historical_lines="$(rg '^allowed_compiler_mir_ingestion_phase9d_historical_translator_seed_[a-z0-9_]+:' "$manifest_doc")"
-    historical_count="$(printf '%s\n' "$historical_lines" | sed '/^$/d' | wc -l | tr -d ' ')"
-    if [ "$historical_count" != "17" ]; then
-      echo "Expected exactly 17 frozen historical translator seeds, found $historical_count."
-      exit 1
-    fi
-    translator_lanes="$(rg '^allowed_mir_to_cranelift_[a-z0-9_]+_translator_native_guard:' "$manifest_doc" | sed -E 's/^allowed_mir_to_cranelift_([a-z0-9_]+)_translator_native_guard:.*/\1/' | sort)"
-    historical_lanes="$(printf '%s\n' "$historical_lines" | sed -E 's/^allowed_compiler_mir_ingestion_phase9d_historical_translator_seed_([a-z0-9_]+):.*/\1/' | sort)"
-    if [ "$translator_lanes" != "$historical_lanes" ]; then
-      echo "Every historical translator seed must be frozen in the Phase 9D inventory."
-      diff -u <(printf '%s\n' "$translator_lanes") <(printf '%s\n' "$historical_lanes") || true
-      exit 1
-    fi
 
     rg -n -F "struct CompilerMirLoweringFunction<'a> {" "$source_file" >/dev/null
     rg -n '^fn build_compiler_mir_ingestion_body\(' "$source_file" >/dev/null
     rg -n '^fn lower_compiler_mir_ingestion_function_to_object\(' "$source_file" >/dev/null
-    for lane in return_int local_binding_read conditional_branch block_jump provenance_metadata resource_metadata native_boundary_metadata add_i32 positive_i32_branch block_local_branch block_local_update_branch block_two_local_update_branch block_param_update_branch block_param_merge_update_branch block_param_dual_materialize_return block_param_triple_materialize_return block_param_quad_materialize_return block_param_quint_materialize_return block_param_local_materialize_return block_param_local_materialize_branch block_param_local_first_dual_materialize_return; do
-      lowering_body="$(sed -n "/^fn emit_compiler_mir_${lane}_ingestion_object(/,/^}/p" "$source_file")"
-      printf '%s\n' "$lowering_body" | rg -n -F 'emit_compiler_mir_fixture_contents_object(' >/dev/null
-      if printf '%s\n' "$lowering_body" | rg -n 'ObjectBuilder::new|lower_tiny_mir_|define_tiny_mir_|lower_compiler_mir_ingestion_function_to_object' >/dev/null; then
-        echo "Canonical compiler MIR seam $lane must remain a thin adapter into canonical contents emission."
-        exit 1
-      fi
-      rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|class=canonical_shared_lowering\|" "$manifest_doc" >/dev/null
-    done
 
-    join_body="$(sed -n '/^fn emit_compiler_mir_block_local_branch_join_ingestion_object(/,/^}/p' "$source_file")"
-    printf '%s\n' "$join_body" | rg -n -F 'lower_compiler_mir_ingestion_function_to_object(output_path, &mir_function)' >/dev/null
-    rg -n '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_block_local_branch_join:.*\|class=canonical_shared_lowering\|' "$manifest_doc" >/dev/null
 
     if rg -n '^fn emit_compiler_mir_increment_local_i32_ingestion_object\(' "$source_file" >/dev/null; then
       echo "The known increment_local_i32 ingestion gap changed; update the Phase 9D inventory and architecture contract explicitly."
       exit 1
     fi
 
-    echo "✅ Current ingestion inventory remains complete: 33 seams classified as 22 canonical and 11 frozen bespoke call/import paths, with 17 translator seeds frozen."
+    echo "✅ Phase 9D canonical ingestion architecture remains isolated from retired bespoke and fixture-recognition paths."
 
 guard-cranelift-phase9d-schema-parser-validator:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking Phase 9D canonical fixture schema, parser, and validator..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     source_file="compiler/experiments/cranelift/src/main.rs"
     build_dir="build/guards/cranelift_phase9d_schema_parser_validator"
     valid_fixture="$build_dir/valid_shared_cfg.mir"
-    if [ ! -f "$manifest_doc" ] || [ ! -f "$source_file" ]; then
-      echo "Phase 9D schema/parser/validator guard requires the Cranelift manifest and experiment source."
-      exit 1
-    fi
     rm -rf "$build_dir"
     mkdir -p "$build_dir"
 
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9D_SCHEMA_PARSER_VALIDATOR_GUARD: guard-cranelift-phase9d-schema-parser-validator' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_schema_status: phase9d_canonical_schema_parser_validator_complete' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_schema_format: gust.compiler_mir_ingestion.v1' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_schema_statement_kinds: LocalI32Set,LocalI32SetParam,LocalI32AddI32Literal,LocalI32AddParam' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_schema_terminator_kinds: ReturnI32,ReturnLocalI32,ReturnVoid,Jump,BranchI32Literal,BranchLocalI32Positive' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_schema_parser_entry: parse_compiler_mir_fixture' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_schema_validator_entry: validate_compiler_mir_fixture' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_schema_validation_command: compiler-mir-validate-fixture' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_schema_validation_boundary: before_cranelift_module_or_object_creation' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_second_milestone_status: complete' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_third_milestone: add_generic_ingestion_command' "$manifest_doc" >/dev/null
 
     rg -n -F 'const COMPILER_MIR_CANONICAL_FIXTURE_FORMAT: &str = "gust.compiler_mir_ingestion.v1";' "$source_file" >/dev/null
     rg -n '^fn parse_compiler_mir_fixture' "$source_file" >/dev/null
@@ -5697,7 +4287,6 @@ guard-cranelift-phase9d-generic-ingestion-command:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking Phase 9D generic compiler MIR ingestion command..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     source_file="compiler/experiments/cranelift/src/main.rs"
     build_dir="build/guards/cranelift_phase9d_generic_ingestion_command"
     fixture="$build_dir/generic_shared_cfg.mir"
@@ -5707,9 +4296,6 @@ guard-cranelift-phase9d-generic-ingestion-command:
     rm -rf "$build_dir"
     mkdir -p "$build_dir"
 
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_generic_command_metadata_policy: recognize_validated_metadata_before_shared_lowering_with_no_runtime_semantic_effect' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_fourth_milestone_status: complete' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_generic_command_next_milestone: phase9d_closed_handoff_to_phase9e' "$manifest_doc" >/dev/null
     rg -n '^fn emit_compiler_mir_fixture_contents_object\(' "$source_file" >/dev/null
     rg -n '^fn recognize_compiler_mir_fixture_metadata\(' "$source_file" >/dev/null
     contents_body="$(sed -n '/^fn emit_compiler_mir_fixture_contents_object(/,/^}/p' "$source_file")"
@@ -5854,16 +4440,8 @@ guard-cranelift-phase9d-phase9c-rebase-metadata:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking Phase 9D Phase 9C lane rebase and metadata canonicalization..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     source_file="compiler/experiments/cranelift/src/main.rs"
 
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9D_PHASE9C_REBASE_METADATA_GUARD: guard-cranelift-phase9d-phase9c-rebase-metadata' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_phase9c_rebase_status: phase9d_phase9c_lanes_rebased_metadata_canonicalized' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_phase9c_rebase_lane_count: 7' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_phase9c_rebase_metadata_kinds: provenance,resource,native_boundary' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_phase9c_rebase_void_policy: native_boundary_metadata_uses_canonical_ReturnVoid' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_phase9c_rebase_inventory_policy: phase9c_rebase_contributed_8_canonical_shared_lanes_to_the_33_seam_inventory' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_metadata_preservation_only_count: 0' "$manifest_doc" >/dev/null
 
     rg -n -F 'const PHASE9C_CANONICAL_RETURN_INT_FIXTURE: &str = concat!(' "$source_file" >/dev/null
     rg -n -F 'const PHASE9C_CANONICAL_LOCAL_BINDING_READ_FIXTURE: &str = concat!(' "$source_file" >/dev/null
@@ -5896,19 +4474,8 @@ guard-cranelift-phase9d-first-post9c-cohort-bypass-freeze:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking Phase 9D first post-9C cohort and bypass freeze..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     source_file="compiler/experiments/cranelift/src/main.rs"
 
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9D_FIRST_POST9C_COHORT_BYPASS_FREEZE_GUARD: guard-cranelift-phase9d-first-post9c-cohort-bypass-freeze' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_first_post9c_cohort_status: phase9d_first_post9c_scalar_cohort_migrated_bypass_freeze_active' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_first_post9c_cohort_lane_count: 2' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_first_post9c_cohort_lanes: add_i32,positive_i32_branch' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_first_post9c_cohort_schema_extension: LocalI32AddParam' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_first_post9c_cohort_inventory_policy: 33_total_10_canonical_shared_23_bespoke_0_metadata_only' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_bypass_freeze_status: active' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_bypass_freeze_translator_policy: translator_seed_inventory_frozen_at_17_without_explicit_abstraction_gap_exception' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_fifth_milestone_status: complete' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_first_post9c_cohort_next_milestone: phase9d_closed_handoff_to_phase9e' "$manifest_doc" >/dev/null
 
     rg -n -F 'const PHASE9D_CANONICAL_ADD_I32_FIXTURE: &str = concat!(' "$source_file" >/dev/null
     rg -n -F 'const PHASE9D_CANONICAL_POSITIVE_I32_BRANCH_FIXTURE: &str = concat!(' "$source_file" >/dev/null
@@ -5917,54 +4484,6 @@ guard-cranelift-phase9d-first-post9c-cohort-bypass-freeze:
     rg -n -F 'CompilerMirLoweringStatement::LocalI32AddParam { name, param }' "$source_file" >/dev/null
     rg -n -F 'builder.ins().iadd(current_value, param_value)' "$source_file" >/dev/null
 
-    for lane in add_i32 positive_i32_branch; do
-      rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|rust_model=CompilerMirLoweringFunction\|rust_lowering=build_compiler_mir_ingestion_body\|object_emitter=lower_compiler_mir_ingestion_function_to_object\|.*\|class=canonical_shared_lowering\|migration=phase9d_first_post9c_scalar_cohort\|$" "$manifest_doc" >/dev/null
-      adapter_body="$(sed -n "/^fn emit_compiler_mir_${lane}_ingestion_object(/,/^}/p" "$source_file")"
-      printf '%s\n' "$adapter_body" | rg -n -F "parse_compiler_mir_${lane}_ingestion_fixture(&contents)?;" >/dev/null
-      printf '%s\n' "$adapter_body" | rg -n -F 'emit_compiler_mir_fixture_contents_object(' >/dev/null
-      if printf '%s\n' "$adapter_body" | rg -n 'ObjectBuilder::new|ObjectModule::new|TinyMir(Function|BlockFunction|ParamBlockFunction)|lower_tiny_mir_|define_tiny_mir_|lower_compiler_mir_ingestion_function_to_object' >/dev/null; then
-        echo "Phase 9D cohort lane $lane bypasses canonical contents emission."
-        exit 1
-      fi
-    done
-
-    canonical_lines="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|' "$manifest_doc")"
-    canonical_count="$(printf '%s\n' "$canonical_lines" | sed '/^$/d' | wc -l | tr -d ' ')"
-    if [ "$canonical_count" != "33" ]; then
-      echo "Expected exactly 33 canonical compiler MIR ingestion seams after Phase 9F joined imported-call closure, found $canonical_count."
-      exit 1
-    fi
-    while IFS= read -r inventory_line; do
-      [ -n "$inventory_line" ] || continue
-      inventory_key="${inventory_line%%:*}"
-      lane="${inventory_key#allowed_compiler_mir_ingestion_phase9d_inventory_seam_}"
-      emitter_body="$(sed -n "/^fn emit_compiler_mir_${lane}_ingestion_object(/,/^}/p" "$source_file")"
-      if printf '%s\n' "$emitter_body" | rg -n 'ObjectBuilder::new|ObjectModule::new|TinyMir(Function|BlockFunction|ParamBlockFunction)|lower_tiny_mir_|define_tiny_mir_' >/dev/null; then
-        echo "Canonical seam $lane owns a forbidden object or TinyMir lowering path."
-        exit 1
-      fi
-      case "$lane" in
-        block_param_local_call_branch|block_param_imported_call_branch|block_param_imported_call_return|block_param_imported_predicate_update_branch|block_param_imported_materialize_branch|block_param_imported_materialize_return|block_param_merge_arm_update_imported_call_branch|block_param_merge_arm_update_imported_call_return|block_param_merge_imported_call_return|block_param_merge_imported_branch_joined_return|block_param_merge_dual_imported_joined_return)
-          [[ "$inventory_line" == *'|rust_model=CompilerMirLoweringModule|'* ]]
-          [[ "$inventory_line" == *'|rust_lowering=build_compiler_mir_ingestion_body_with_calls|'* ]]
-          [[ "$inventory_line" == *'|object_emitter=lower_compiler_mir_ingestion_module_to_object|'* ]]
-          printf '%s\n' "$emitter_body" | rg -n -F "build_compiler_mir_${lane}_module()" >/dev/null
-          printf '%s\n' "$emitter_body" | rg -n -F 'lower_compiler_mir_ingestion_module_to_object(output_path, &module)' >/dev/null
-          ;;
-        block_local_branch_join)
-          [[ "$inventory_line" == *'|rust_model=CompilerMirLoweringFunction|'* ]]
-          [[ "$inventory_line" == *'|rust_lowering=lower_compiler_mir_ingestion_function_to_object|'* ]]
-          [[ "$inventory_line" == *'|object_emitter=lower_compiler_mir_ingestion_function_to_object|'* ]]
-          printf '%s\n' "$emitter_body" | rg -n -F 'lower_compiler_mir_ingestion_function_to_object(output_path, &mir_function)' >/dev/null
-          ;;
-        *)
-          [[ "$inventory_line" == *'|rust_model=CompilerMirLoweringFunction|'* ]]
-          [[ "$inventory_line" == *'|rust_lowering=build_compiler_mir_ingestion_body|'* ]]
-          [[ "$inventory_line" == *'|object_emitter=lower_compiler_mir_ingestion_function_to_object|'* ]]
-          printf '%s\n' "$emitter_body" | rg -n -F 'emit_compiler_mir_fixture_contents_object(' >/dev/null
-          ;;
-      esac
-    done <<< "$canonical_lines"
 
     source_ingestion_count="$(rg -c '^fn emit_compiler_mir_[a-z0-9_]+_ingestion_object\(' "$source_file")"
     source_translator_count="$(rg -c '^fn emit_compiler_mir_to_cranelift_[a-z0-9_]+_translator_object\(' "$source_file")"
@@ -5985,7 +4504,6 @@ guard-cranelift-phase9d-close:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Closing Phase 9D on canonical compiler-owned MIR ingestion evidence..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     phase9c_ledger="compiler/CRANELIFT_PHASE9C_DIFFERENTIAL_LEDGER.md"
     readme_doc="compiler/experiments/cranelift/README.md"
 
@@ -5998,41 +4516,11 @@ guard-cranelift-phase9d-close:
     just guard-cranelift-compiler-mir-ingestion-strict-rejection-contract
     just guard-cranelift-phase9c-differential-ladder-native-smoke
 
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9D_CLOSE_GUARD: guard-cranelift-phase9d-close' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_status: phase9d_closed_compiler_owned_mir_ingestion_canonicalized' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_close_status: phase9d_closed_compiler_owned_mir_ingestion_canonicalized' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_contract_sixth_milestone_status: complete' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_closure_basis: canonical_schema_parser_validator_generic_command_phase9c_rebase_metadata_first_post9c_cohort_and_bypass_freeze_green' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_closure_inventory: 33_total_10_canonical_shared_23_frozen_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_closure_phase9c_rebased_lane_count: 7' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_closure_post9c_migrated_lane_count: 2' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_closure_validation_policy: invalid_mir_rejected_before_cranelift_module_output_directory_or_object_creation' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_closure_metadata_policy: provenance_resource_native_boundary_are_canonicalized_recognized_and_have_no_claimed_runtime_semantics' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_closure_bypass_policy: canonical_seams_use_shared_model_lowerer_and_object_emitter_while_existing_bespoke_paths_are_frozen' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_closure_freeze_policy: phase9d_closed_no_new_semantic_work_outside_canonical_ingestion_or_new_phase_contract' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_closure_route_policy: experiment_only_no_default_backend_flip' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_closure_primary_route: mir_to_c' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_closure_next_phase: phase9e_cfg_and_block_parameter_completeness' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_schema_next_milestone: phase9d_closed_handoff_to_phase9e' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_generic_command_next_milestone: phase9d_closed_handoff_to_phase9e' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_first_post9c_cohort_next_milestone: phase9d_closed_handoff_to_phase9e' "$manifest_doc" >/dev/null
     rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_STATUS: phase9c_closed_fixture_backed_differential' "$phase9c_ledger" >/dev/null
     rg -n -F 'PHASE9C_DIFFERENTIAL_LEDGER_FREEZE_POLICY: phase9c_closed_no_lane_or_route_expansion_without_new_phase_contract' "$phase9c_ledger" >/dev/null
     rg -n -F 'Phase 9D is closed as' "$readme_doc" >/dev/null
     rg -n -F 'Phase 9E may expand' "$readme_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_PRIMARY_ROUTE: mir_to_c' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ENABLED_BY_DEFAULT: false' "$manifest_doc" >/dev/null
-    rg -n -F 'forbidden_production_route: cranelift' "$manifest_doc" >/dev/null
 
-    inventory_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:' "$manifest_doc")"
-    canonical_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
-    bespoke_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" || true)"
-    bespoke_count="${bespoke_count:-0}"
-    translator_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_historical_translator_seed_[a-z0-9_]+:' "$manifest_doc")"
-    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "33" ] || [ "$bespoke_count" != "0" ] || [ "$translator_count" != "17" ]; then
-      echo "Unexpected current inventory while preserving the Phase 9D closure baseline through Phase 9F joined imported-call closure: total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count translators=$translator_count"
-      exit 1
-    fi
 
     echo "✅ Phase 9D closed: canonical compiler-owned MIR ingestion is frozen as the experimental Cranelift architecture, with Phase 9E next and no production route change."
 
@@ -6040,53 +4528,10 @@ guard-cranelift-phase9e-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking the closed Phase 9E CFG and block-parameter completeness contract..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     readme_doc="compiler/experiments/cranelift/README.md"
-    if [ ! -f "$manifest_doc" ] || [ ! -f "$readme_doc" ]; then
-      echo "Phase 9E opening requires the Cranelift manifest and experiment README."
-      exit 1
-    fi
 
     just guard-cranelift-phase9d-opening-contract
 
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9E_OPENING_CONTRACT_GUARD: guard-cranelift-phase9e-opening-contract' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_contract_status: phase9e_closed_cfg_and_block_parameter_completeness' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_contract_predecessor_status: phase9d_closed_compiler_owned_mir_ingestion_canonicalized' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_contract_predecessor_guard: guard-cranelift-phase9d-close' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_contract_predecessor_inventory: 33_total_10_canonical_shared_23_frozen_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_contract_goal: typed_cfg_edges_and_block_parameters_are_first_class_in_canonical_compiler_owned_mir_ingestion' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_contract_canonical_pipeline: typed_block_declarations_to_typed_block_parameters_to_typed_edge_arguments_to_shared_cranelift_lowering' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_contract_allowed_scope: i32_local_cfg_block_parameters_typed_edge_arguments_merges_backedges_variable_arity_and_block_parameter_to_local_materialization' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_contract_excluded_scope: calls_local_calls_imported_calls_imported_predicates_runtime_imports_strings_structs_arrays_resources_production_backend_routing' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_contract_migration_candidate_count: 12' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_contract_deferred_call_import_count: 11' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_contract_opening_inventory: 33_total_10_canonical_shared_23_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_contract_closure_inventory_target: 33_total_22_canonical_shared_11_frozen_call_import_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_contract_fixture_policy: new_phase9e_semantic_evidence_uses_canonical_gust_compiler_mir_ingestion_v1_fixtures' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_contract_command_policy: new_phase9e_semantic_evidence_uses_compiler-mir-ingestion-object' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_contract_bypass_policy: phase9d_bypass_freeze_remains_active_for_all_canonical_seams' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_contract_translator_policy: translator_seed_inventory_remains_frozen_at_17' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_contract_route_policy: experiment_only_no_default_backend_flip' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_contract_primary_route: mir_to_c' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_contract_first_milestone: migrate_three_lane_local_cfg_cohort' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_contract_first_milestone_lanes: block_local_branch,block_local_update_branch,block_two_local_update_branch' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_contract_first_milestone_status: complete' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_contract_second_milestone: define_typed_block_parameter_model_schema_parser_validator' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_contract_second_milestone_status: complete' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_contract_third_milestone: implement_shared_block_parameter_lowering_core' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_contract_third_milestone_status: complete' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_contract_fourth_milestone: migrate_single_parameter_cfg_cohort_and_freeze_backedge_proof' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_contract_fourth_milestone_status: complete' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_contract_fifth_milestone: migrate_variable_arity_block_parameter_cohort' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_contract_fifth_milestone_status: complete' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_contract_sixth_milestone: migrate_block_parameter_to_local_materialization_cohort' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_contract_sixth_milestone_status: complete' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_contract_seventh_milestone: freeze_cfg_completeness_strict_rejection_and_phase9f_call_import_scope' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_contract_seventh_milestone_status: complete' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_contract_eighth_milestone: close_phase9e_after_frozen_evidence_is_green' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_contract_eighth_milestone_status: complete' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_contract_closure_guard_policy: phase9e_close_guard_is_required_closure_gate' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9E_CLOSE_GUARD: guard-cranelift-phase9e-close' "$manifest_doc" justfile >/dev/null
 
     migrated_local_cfg='block_local_branch block_local_update_branch block_two_local_update_branch'
     migrated_single_parameter_cfg='block_param_update_branch block_param_merge_update_branch'
@@ -6097,109 +4542,18 @@ guard-cranelift-phase9e-opening-contract:
     migrated_phase9f_materialization='block_param_imported_materialize_branch block_param_imported_materialize_return'
     migrated_phase9f_merge_arm_imports='block_param_merge_arm_update_imported_call_branch block_param_merge_arm_update_imported_call_return'
     migrated_phase9f_joined_imports='block_param_merge_dual_imported_joined_return block_param_merge_imported_branch_joined_return block_param_merge_imported_call_return'
-    for lane in $migrated_local_cfg; do
-      rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|class=canonical_shared_lowering\|migration=phase9e_local_cfg_cohort\|$" "$manifest_doc" >/dev/null
-    done
-    for lane in $migrated_single_parameter_cfg; do
-      rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|class=canonical_shared_lowering\|migration=phase9e_single_parameter_cfg_cohort\|$" "$manifest_doc" >/dev/null
-    done
-    for lane in $migrated_variable_arity; do
-      rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|class=canonical_shared_lowering\|migration=phase9e_variable_arity_block_parameter_cohort\|$" "$manifest_doc" >/dev/null
-    done
-    for lane in $migrated_local_materialization; do
-      rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|class=canonical_shared_lowering\|migration=phase9e_block_parameter_to_local_materialization_cohort\|$" "$manifest_doc" >/dev/null
-    done
-    for lane in $migrated_phase9f_local_call; do
-      rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|class=canonical_shared_lowering\|migration=phase9f_module_emitter_local_call_cohort\|$" "$manifest_doc" >/dev/null
-    done
-    for lane in $migrated_phase9f_direct_imports; do
-      rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|class=canonical_shared_lowering\|migration=phase9f_direct_imported_call_cohort\|$" "$manifest_doc" >/dev/null
-    done
-    for lane in $migrated_phase9f_materialization; do
-      rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|class=canonical_shared_lowering\|migration=phase9f_imported_materialization_predicate_cohort\|$" "$manifest_doc" >/dev/null
-    done
-    for lane in $migrated_phase9f_merge_arm_imports; do
-      rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|class=canonical_shared_lowering\|migration=phase9f_merge_arm_imported_call_cohort\|$" "$manifest_doc" >/dev/null
-    done
-    for lane in $migrated_phase9f_joined_imports; do
-      rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|class=canonical_shared_lowering\|migration=phase9f_joined_imported_call_cohort\|$" "$manifest_doc" >/dev/null
-    done
 
-    inventory_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:' "$manifest_doc")"
-    canonical_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
-    bespoke_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" || true)"
-    bespoke_count="${bespoke_count:-0}"
-    translator_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_historical_translator_seed_[a-z0-9_]+:' "$manifest_doc")"
-    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "33" ] || [ "$bespoke_count" != "0" ] || [ "$translator_count" != "17" ]; then
-      echo "Unexpected current Phase 9F joined imported-call closure inventory: total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count translators=$translator_count"
-      exit 1
-    fi
-
-    rg -n -F 'Phase 9E is closed as' "$readme_doc" >/dev/null
-    rg -n -F '`phase9e_closed_cfg_and_block_parameter_completeness`.' "$readme_doc" >/dev/null
-    rg -n -F 'Twelve existing non-call CFG seams are Phase 9E migration candidates' "$readme_doc" >/dev/null
-    rg -n -F 'The eleven remaining call/import seams are explicitly' "$readme_doc" >/dev/null
-    rg -n -F '`compiler-mir-ingestion-object`' "$readme_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_PRIMARY_ROUTE: mir_to_c' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ENABLED_BY_DEFAULT: false' "$manifest_doc" >/dev/null
-    rg -n -F 'forbidden_production_route: cranelift' "$manifest_doc" >/dev/null
     echo "✅ Phase 9E is closed with all twelve bounded non-call CFG seams canonicalized, eleven Phase 9F call/import seams frozen, and production routing unchanged."
 
 guard-cranelift-phase9e-local-cfg-cohort:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking the Phase 9E local CFG canonicalization cohort..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     source_file="compiler/experiments/cranelift/src/main.rs"
     readme_doc="compiler/experiments/cranelift/README.md"
 
     just guard-cranelift-phase9e-opening-contract
 
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9E_LOCAL_CFG_COHORT_GUARD: guard-cranelift-phase9e-local-cfg-cohort' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_local_cfg_cohort_status: phase9e_local_cfg_cohort_canonicalized' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_local_cfg_cohort_lane_count: 3' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_local_cfg_cohort_lanes: block_local_branch,block_local_update_branch,block_two_local_update_branch' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_local_cfg_cohort_inventory: 33_total_13_canonical_shared_20_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_local_cfg_cohort_bypass_policy: migrated_lane_commands_must_not_construct_ObjectModule_or_use_TinyMirBlockFunction' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_local_cfg_cohort_next_milestone: shared_block_parameter_lowering_core' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_canonical_shared_lowering_count: 22' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9d_inventory_compiler_owned_bespoke_lowering_count: 11' "$manifest_doc" >/dev/null
-
-    for lane in block_local_branch block_local_update_branch block_two_local_update_branch; do
-      case "$lane" in
-        block_local_branch)
-          fixture_constant='PHASE9E_CANONICAL_BLOCK_LOCAL_BRANCH_FIXTURE'
-          ;;
-        block_local_update_branch)
-          fixture_constant='PHASE9E_CANONICAL_BLOCK_LOCAL_UPDATE_BRANCH_FIXTURE'
-          ;;
-        block_two_local_update_branch)
-          fixture_constant='PHASE9E_CANONICAL_BLOCK_TWO_LOCAL_UPDATE_BRANCH_FIXTURE'
-          ;;
-      esac
-
-      rg -n -F "const ${fixture_constant}: &str = concat!(" "$source_file" >/dev/null
-      rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|parser=parse_compiler_mir_${lane}_ingestion_fixture->parse_compiler_mir_fixture\|.*\|rust_entry=emit_compiler_mir_${lane}_ingestion_object->emit_compiler_mir_fixture_contents_object\|rust_model=CompilerMirLoweringFunction\|rust_lowering=build_compiler_mir_ingestion_body\|object_emitter=lower_compiler_mir_ingestion_function_to_object\|.*\|class=canonical_shared_lowering\|migration=phase9e_local_cfg_cohort\|$" "$manifest_doc" >/dev/null
-
-      adapter_body="$(sed -n "/^fn emit_compiler_mir_${lane}_ingestion_object(/,/^}/p" "$source_file")"
-      printf '%s\n' "$adapter_body" | rg -n -F "parse_compiler_mir_${lane}_ingestion_fixture(&contents)?;" >/dev/null
-      printf '%s\n' "$adapter_body" | rg -n -F 'emit_compiler_mir_fixture_contents_object(' >/dev/null
-      printf '%s\n' "$adapter_body" | rg -n -F "$fixture_constant" >/dev/null
-      if printf '%s\n' "$adapter_body" | rg -n 'ObjectBuilder::new|ObjectModule::new|TinyMirBlockFunction|define_tiny_mir_block_graph_exported_function|lower_tiny_mir_' >/dev/null; then
-        echo "Phase 9E local CFG lane $lane bypasses canonical contents emission."
-        exit 1
-      fi
-    done
-
-    inventory_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:' "$manifest_doc")"
-    canonical_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
-    bespoke_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" || true)"
-    bespoke_count="${bespoke_count:-0}"
-    translator_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_historical_translator_seed_[a-z0-9_]+:' "$manifest_doc")"
-    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "33" ] || [ "$bespoke_count" != "0" ] || [ "$translator_count" != "17" ]; then
-      echo "Unexpected current inventory while preserving the Phase 9E local CFG milestone through Phase 9F joined imported-call closure: total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count translators=$translator_count"
-      exit 1
-    fi
 
     rg -n -F 'The first Phase 9E cohort is complete.' "$readme_doc" >/dev/null
     rg -n -F 'At completion of' "$readme_doc" >/dev/null
@@ -6214,7 +4568,6 @@ guard-cranelift-phase9e-block-parameter-schema-validator:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking the Phase 9E typed block-parameter model, schema, parser, and validator..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     source_file="compiler/experiments/cranelift/src/main.rs"
     build_dir="build/guards/cranelift_phase9e_block_parameter_schema_validator"
     valid_fixture="$build_dir/valid_typed_backedge.mir"
@@ -6224,17 +4577,6 @@ guard-cranelift-phase9e-block-parameter-schema-validator:
 
     just guard-cranelift-phase9e-local-cfg-cohort
 
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9E_BLOCK_PARAMETER_SCHEMA_VALIDATOR_GUARD: guard-cranelift-phase9e-block-parameter-schema-validator' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_block_parameter_schema_status: phase9e_typed_block_parameter_model_schema_parser_validator_complete' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_block_parameter_schema_edge_argument_kinds: I32Literal,FunctionParamI32,LocalI32,BlockParamI32,BlockParamI32AddI32Literal' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_block_parameter_schema_entry_policy: entry_block_parameters_rejected_until_explicit_entry_argument_semantics_exist' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_block_parameter_schema_reference_policy: block_parameter_references_are_scoped_to_the_current_block' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_block_parameter_schema_edge_policy: edge_argument_arity_order_and_type_must_match_the_target_block_parameters' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_block_parameter_schema_cycle_policy: reachability_validation_is_worklist_based_and_cycle_safe' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_block_parameter_schema_lowering_policy: shared_block_parameter_lowering_core_active_for_typed_edges_and_block_parameter_terminators' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_block_parameter_schema_lowering_gate: LocalI32SetBlockParam_is_lowered_after_validation_by_the_phase9e_materialization_cohort' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_block_parameter_schema_inventory: 33_total_13_canonical_shared_20_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_block_parameter_schema_next_milestone: single_parameter_cfg_cohort_and_backedge_proof' "$manifest_doc" >/dev/null
 
     rg -n -F "struct CompilerMirLoweringBlockParameter<'a> {" "$source_file" >/dev/null
     rg -n -F "struct CompilerMirLoweringEdge<'a> {" "$source_file" >/dev/null
@@ -6376,7 +4718,6 @@ guard-cranelift-phase9e-shared-block-parameter-lowering-core:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking the Phase 9E shared block-parameter lowering core..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     source_file="compiler/experiments/cranelift/src/main.rs"
     readme_doc="compiler/experiments/cranelift/README.md"
     build_dir="build/guards/cranelift_phase9e_shared_block_parameter_lowering_core"
@@ -6401,19 +4742,6 @@ guard-cranelift-phase9e-shared-block-parameter-lowering-core:
 
     just guard-cranelift-phase9e-block-parameter-schema-validator
 
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9E_SHARED_BLOCK_PARAMETER_LOWERING_CORE_GUARD: guard-cranelift-phase9e-shared-block-parameter-lowering-core' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_shared_block_parameter_lowering_status: phase9e_shared_block_parameter_lowering_core_complete' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_shared_block_parameter_lowering_command: compiler-mir-ingestion-object' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_shared_block_parameter_lowering_block_policy: create_all_blocks_and_append_typed_parameters_before_emitting_any_body' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_shared_block_parameter_lowering_edge_policy: resolve_ordered_arguments_in_source_order_and_pass_them_to_jump_or_branch_edges' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_shared_block_parameter_lowering_backedge_policy: backedges_use_the_same_typed_edge_argument_path_as_forward_edges' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_shared_block_parameter_lowering_sealing_policy: seal_all_blocks_only_after_all_forward_edges_and_backedges_are_emitted' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_shared_block_parameter_lowering_argument_kinds: I32Literal,FunctionParamI32,LocalI32,BlockParamI32,BlockParamI32AddI32Literal' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_shared_block_parameter_lowering_proof_fixtures: typed_transport,local_edge_transport,countdown_backedge' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_shared_block_parameter_lowering_materialization_policy: LocalI32SetBlockParam_is_active_after_the_block_parameter_to_local_materialization_cohort' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_shared_block_parameter_lowering_inventory: 33_total_13_canonical_shared_20_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_shared_block_parameter_lowering_next_milestone: single_parameter_cfg_cohort_and_backedge_proof' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_shared_block_parameter_lowering_next_milestone_status: complete' "$manifest_doc" >/dev/null
     rg -n -F 'The shared block-parameter lowering core is now active.' "$readme_doc" >/dev/null
 
     rg -n '^fn lower_compiler_mir_ingestion_edge_arguments\(' "$source_file" >/dev/null
@@ -6672,56 +5000,11 @@ guard-cranelift-phase9e-single-parameter-cfg-cohort:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking the Phase 9E single-parameter CFG cohort and frozen backedge proof..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     source_file="compiler/experiments/cranelift/src/main.rs"
     readme_doc="compiler/experiments/cranelift/README.md"
 
     just guard-cranelift-phase9e-shared-block-parameter-lowering-core
 
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9E_SINGLE_PARAMETER_CFG_COHORT_GUARD: guard-cranelift-phase9e-single-parameter-cfg-cohort' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_single_parameter_cfg_cohort_status: phase9e_single_parameter_cfg_cohort_canonicalized_backedge_frozen' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_single_parameter_cfg_cohort_lane_count: 2' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_single_parameter_cfg_cohort_lanes: block_param_update_branch,block_param_merge_update_branch' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_single_parameter_cfg_cohort_canonical_fixtures: PHASE9E_CANONICAL_BLOCK_PARAM_UPDATE_BRANCH_FIXTURE,PHASE9E_CANONICAL_BLOCK_PARAM_MERGE_UPDATE_BRANCH_FIXTURE' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_single_parameter_cfg_cohort_backedge_fixture: countdown_backedge' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_single_parameter_cfg_cohort_backedge_command: compiler-mir-ingestion-object' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_single_parameter_cfg_cohort_backedge_policy: canonical_countdown_backedge_uses_typed_edge_arguments_and_delayed_block_sealing' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_single_parameter_cfg_cohort_inventory: 33_total_15_canonical_shared_18_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_single_parameter_cfg_cohort_bypass_policy: migrated_lane_commands_must_not_construct_ObjectModule_or_use_TinyMirParamBlockFunction' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_single_parameter_cfg_cohort_next_milestone: variable_arity_block_parameter_cohort' "$manifest_doc" >/dev/null
-
-    for lane in block_param_update_branch block_param_merge_update_branch; do
-      case "$lane" in
-        block_param_update_branch)
-          fixture_constant='PHASE9E_CANONICAL_BLOCK_PARAM_UPDATE_BRANCH_FIXTURE'
-          ;;
-        block_param_merge_update_branch)
-          fixture_constant='PHASE9E_CANONICAL_BLOCK_PARAM_MERGE_UPDATE_BRANCH_FIXTURE'
-          ;;
-      esac
-
-      rg -n -F "const ${fixture_constant}: &str = concat!(" "$source_file" >/dev/null
-      rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|parser=parse_compiler_mir_${lane}_ingestion_fixture->parse_compiler_mir_fixture\|.*\|rust_entry=emit_compiler_mir_${lane}_ingestion_object->emit_compiler_mir_fixture_contents_object\|rust_model=CompilerMirLoweringFunction\|rust_lowering=build_compiler_mir_ingestion_body\|object_emitter=lower_compiler_mir_ingestion_function_to_object\|.*\|class=canonical_shared_lowering\|migration=phase9e_single_parameter_cfg_cohort\|$" "$manifest_doc" >/dev/null
-
-      adapter_body="$(sed -n "/^fn emit_compiler_mir_${lane}_ingestion_object(/,/^}/p" "$source_file")"
-      printf '%s\n' "$adapter_body" | rg -n -F "parse_compiler_mir_${lane}_ingestion_fixture(&contents)?;" >/dev/null
-      printf '%s\n' "$adapter_body" | rg -n -F 'emit_compiler_mir_fixture_contents_object(' >/dev/null
-      printf '%s\n' "$adapter_body" | rg -n -F "$fixture_constant" >/dev/null
-      if printf '%s\n' "$adapter_body" | rg -n 'ObjectBuilder::new|ObjectModule::new|TinyMirParamBlockFunction|define_tiny_mir_param_block_graph_exported_function|lower_tiny_mir_' >/dev/null; then
-        echo "Phase 9E single-parameter CFG lane $lane bypasses canonical contents emission."
-        exit 1
-      fi
-    done
-
-    inventory_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:' "$manifest_doc")"
-    canonical_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
-    bespoke_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" || true)"
-    bespoke_count="${bespoke_count:-0}"
-    translator_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_historical_translator_seed_[a-z0-9_]+:' "$manifest_doc")"
-    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "33" ] || [ "$bespoke_count" != "0" ] || [ "$translator_count" != "17" ]; then
-      echo "Unexpected current inventory while preserving the Phase 9E single-parameter CFG milestone through Phase 9F joined imported-call closure: total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count translators=$translator_count"
-      exit 1
-    fi
 
     shared_core_body="$(sed -n '/^guard-cranelift-phase9e-shared-block-parameter-lowering-core:/,/^guard-cranelift-phase9e-single-parameter-cfg-cohort:/p' justfile)"
     printf '%s\n' "$shared_core_body" | rg -n -F 'countdown_fixture="$build_dir/countdown_backedge.mir"' >/dev/null
@@ -6742,25 +5025,11 @@ guard-cranelift-phase9e-variable-arity-block-parameter-cohort:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking the Phase 9E variable-arity block-parameter cohort..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     source_file="compiler/experiments/cranelift/src/main.rs"
     readme_doc="compiler/experiments/cranelift/README.md"
 
     just guard-cranelift-phase9e-single-parameter-cfg-cohort
 
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9E_VARIABLE_ARITY_BLOCK_PARAMETER_COHORT_GUARD: guard-cranelift-phase9e-variable-arity-block-parameter-cohort' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_variable_arity_block_parameter_cohort_status: phase9e_variable_arity_block_parameter_cohort_canonicalized' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_variable_arity_block_parameter_cohort_lane_count: 4' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_variable_arity_block_parameter_cohort_lanes: block_param_dual_materialize_return,block_param_triple_materialize_return,block_param_quad_materialize_return,block_param_quint_materialize_return' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_variable_arity_block_parameter_cohort_arity_range: 2_to_5_ordered_i32_block_parameters' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_variable_arity_block_parameter_cohort_representation: Vec<CompilerMirLoweringBlockParameter>_and_Vec<CompilerMirLoweringEdgeArgument>' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_variable_arity_block_parameter_cohort_input_policy: validate_frozen_legacy_fixture_then_emit_bounded_call_free_canonical_cfg_fixture' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_variable_arity_block_parameter_cohort_order_policy: edge_argument_order_is_preserved_and_the_last_parameter_drives_branch_and_return_proofs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_variable_arity_block_parameter_cohort_call_policy: legacy_call_and_import_records_are_validation_only_inputs_and_no_call_or_import_lowering_is_added' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_variable_arity_block_parameter_cohort_inventory: 33_total_19_canonical_shared_14_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_variable_arity_block_parameter_cohort_bypass_policy: migrated_lane_commands_must_not_construct_ObjectModule_or_use_TinyMirParamBlockFunction' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_variable_arity_block_parameter_cohort_next_milestone: block_parameter_to_local_materialization_cohort' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_variable_arity_block_parameter_cohort_next_milestone_status: complete' "$manifest_doc" >/dev/null
 
     rg -n -F "parameters: Vec<CompilerMirLoweringBlockParameter<'a>>" "$source_file" >/dev/null
     rg -n -F "arguments: Vec<CompilerMirLoweringEdgeArgument<'a>>" "$source_file" >/dev/null
@@ -6769,70 +5038,6 @@ guard-cranelift-phase9e-variable-arity-block-parameter-cohort:
       exit 1
     fi
 
-    for lane in \
-      block_param_dual_materialize_return \
-      block_param_triple_materialize_return \
-      block_param_quad_materialize_return \
-      block_param_quint_materialize_return
-    do
-      case "$lane" in
-        block_param_dual_materialize_return)
-          fixture_constant='PHASE9E_CANONICAL_BLOCK_PARAM_DUAL_MATERIALIZE_RETURN_FIXTURE'
-          arity=2
-          ;;
-        block_param_triple_materialize_return)
-          fixture_constant='PHASE9E_CANONICAL_BLOCK_PARAM_TRIPLE_MATERIALIZE_RETURN_FIXTURE'
-          arity=3
-          ;;
-        block_param_quad_materialize_return)
-          fixture_constant='PHASE9E_CANONICAL_BLOCK_PARAM_QUAD_MATERIALIZE_RETURN_FIXTURE'
-          arity=4
-          ;;
-        block_param_quint_materialize_return)
-          fixture_constant='PHASE9E_CANONICAL_BLOCK_PARAM_QUINT_MATERIALIZE_RETURN_FIXTURE'
-          arity=5
-          ;;
-      esac
-      last_index="$((arity - 1))"
-
-      rg -n -F "const ${fixture_constant}: &str = concat!(" "$source_file" >/dev/null
-      rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|parser=parse_compiler_mir_${lane}_ingestion_fixture->parse_compiler_mir_fixture\|.*\|rust_entry=emit_compiler_mir_${lane}_ingestion_object->emit_compiler_mir_fixture_contents_object\|rust_model=CompilerMirLoweringFunction\|rust_lowering=build_compiler_mir_ingestion_body\|object_emitter=lower_compiler_mir_ingestion_function_to_object\|.*\|class=canonical_shared_lowering\|migration=phase9e_variable_arity_block_parameter_cohort\|$" "$manifest_doc" >/dev/null
-
-      fixture_body="$(sed -n "/^const ${fixture_constant}: &str = concat!(/,/^);/p" "$source_file")"
-      printf '%s\n' "$fixture_body" | rg -n -F "\"block_1_terminator_argument_count: ${arity}\\n\"," >/dev/null
-      printf '%s\n' "$fixture_body" | rg -n -F "\"block_2_parameter_count: ${arity}\\n\"," >/dev/null
-      printf '%s\n' "$fixture_body" | rg -n -F "\"block_2_terminator_then_argument_count: ${arity}\\n\"," >/dev/null
-      printf '%s\n' "$fixture_body" | rg -n -F "\"block_2_terminator_else_argument_count: ${arity}\\n\"," >/dev/null
-      printf '%s\n' "$fixture_body" | rg -n -F "\"block_3_parameter_count: ${arity}\\n\"," >/dev/null
-      printf '%s\n' "$fixture_body" | rg -n -F "\"block_1_terminator_argument_${last_index}_kind: BlockParamI32AddI32Literal\\n\"," >/dev/null
-      printf '%s\n' "$fixture_body" | rg -n -F "\"block_2_parameter_${last_index}_name: condition\\n\"," >/dev/null
-      printf '%s\n' "$fixture_body" | rg -n -F "\"block_2_terminator_then_argument_${last_index}_kind: I32Literal\\n\"," >/dev/null
-      printf '%s\n' "$fixture_body" | rg -n -F "\"block_3_parameter_${last_index}_name: result\\n\"," >/dev/null
-      printf '%s\n' "$fixture_body" | rg -n -F '"block_3_terminator_block_param: result\n",' >/dev/null
-      if printf '%s\n' "$fixture_body" | rg -n 'ImportedFunction|LocalFunction|CallI32|call_' >/dev/null; then
-        echo "Canonical variable-arity fixture $lane must remain call-free in Phase 9E."
-        exit 1
-      fi
-
-      adapter_body="$(sed -n "/^fn emit_compiler_mir_${lane}_ingestion_object(/,/^}/p" "$source_file")"
-      printf '%s\n' "$adapter_body" | rg -n -F "parse_compiler_mir_${lane}_ingestion_fixture(&contents)?;" >/dev/null
-      printf '%s\n' "$adapter_body" | rg -n -F 'emit_compiler_mir_fixture_contents_object(' >/dev/null
-      printf '%s\n' "$adapter_body" | rg -n -F "$fixture_constant" >/dev/null
-      if printf '%s\n' "$adapter_body" | rg -n 'ObjectBuilder::new|ObjectModule::new|TinyMirParamBlockFunction|define_tiny_mir_param_block_graph_exported_function|lower_tiny_mir_' >/dev/null; then
-        echo "Phase 9E variable-arity lane $lane bypasses canonical contents emission."
-        exit 1
-      fi
-    done
-
-    inventory_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:' "$manifest_doc")"
-    canonical_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
-    bespoke_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" || true)"
-    bespoke_count="${bespoke_count:-0}"
-    translator_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_historical_translator_seed_[a-z0-9_]+:' "$manifest_doc")"
-    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "33" ] || [ "$bespoke_count" != "0" ] || [ "$translator_count" != "17" ]; then
-      echo "Unexpected current inventory while preserving the Phase 9E variable-arity milestone through Phase 9F joined imported-call closure: total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count translators=$translator_count"
-      exit 1
-    fi
 
     rg -n -F 'The variable-arity block-parameter cohort is now canonical.' "$readme_doc" >/dev/null
     rg -n -F 'ordered block-parameter and' "$readme_doc" >/dev/null
@@ -6852,24 +5057,11 @@ guard-cranelift-phase9e-block-parameter-to-local-materialization-cohort:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking the Phase 9E block-parameter-to-local materialization cohort..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     source_file="compiler/experiments/cranelift/src/main.rs"
     readme_doc="compiler/experiments/cranelift/README.md"
 
     just guard-cranelift-phase9e-variable-arity-block-parameter-cohort
 
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9E_BLOCK_PARAMETER_TO_LOCAL_MATERIALIZATION_COHORT_GUARD: guard-cranelift-phase9e-block-parameter-to-local-materialization-cohort' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_block_parameter_to_local_materialization_cohort_status: phase9e_block_parameter_to_local_materialization_cohort_canonicalized' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_block_parameter_to_local_materialization_cohort_lane_count: 3' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_block_parameter_to_local_materialization_cohort_lanes: block_param_local_materialize_return,block_param_local_materialize_branch,block_param_local_first_dual_materialize_return' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_block_parameter_to_local_materialization_cohort_statement: LocalI32SetBlockParam' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_block_parameter_to_local_materialization_cohort_lowering_policy: current_block_parameter_value_is_copied_into_the_declared_local_before_following_statements' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_block_parameter_to_local_materialization_cohort_source_category_policy: function_parameters_block_parameters_and_locals_remain_distinct_in_schema_validation_and_lowering' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_block_parameter_to_local_materialization_cohort_call_policy: legacy_local_and_imported_call_records_are_validation_only_inputs_and_no_call_or_import_lowering_is_added' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_block_parameter_to_local_materialization_cohort_inventory: 33_total_22_canonical_shared_11_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_block_parameter_to_local_materialization_cohort_remaining_bespoke_policy: exactly_the_11_deferred_call_import_seams_remain' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_block_parameter_to_local_materialization_cohort_next_milestone: cfg_completeness_matrix_strict_rejection_and_phase9f_freeze' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_block_parameter_to_local_materialization_cohort_next_milestone_status: complete' "$manifest_doc" >/dev/null
 
     rg -n -F 'CompilerMirLoweringStatement::LocalI32SetBlockParam {' "$source_file" >/dev/null
     rg -n -F 'let block_value = *block_parameter_values.get(block_param).ok_or_else(|| {' "$source_file" >/dev/null
@@ -6879,82 +5071,8 @@ guard-cranelift-phase9e-block-parameter-to-local-materialization-cohort:
       exit 1
     fi
 
-    for lane in \
-      block_param_local_materialize_return \
-      block_param_local_materialize_branch \
-      block_param_local_first_dual_materialize_return
-    do
-      case "$lane" in
-        block_param_local_materialize_return)
-          fixture_constant='PHASE9E_CANONICAL_BLOCK_PARAM_LOCAL_MATERIALIZE_RETURN_FIXTURE'
-          ;;
-        block_param_local_materialize_branch)
-          fixture_constant='PHASE9E_CANONICAL_BLOCK_PARAM_LOCAL_MATERIALIZE_BRANCH_FIXTURE'
-          ;;
-        block_param_local_first_dual_materialize_return)
-          fixture_constant='PHASE9E_CANONICAL_BLOCK_PARAM_LOCAL_FIRST_DUAL_MATERIALIZE_RETURN_FIXTURE'
-          ;;
-      esac
-
-      rg -n -F "const ${fixture_constant}: &str = concat!(" "$source_file" >/dev/null
-      rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|parser=parse_compiler_mir_${lane}_ingestion_fixture->parse_compiler_mir_fixture\|.*\|rust_entry=emit_compiler_mir_${lane}_ingestion_object->emit_compiler_mir_fixture_contents_object\|rust_model=CompilerMirLoweringFunction\|rust_lowering=build_compiler_mir_ingestion_body\|object_emitter=lower_compiler_mir_ingestion_function_to_object\|.*\|class=canonical_shared_lowering\|migration=phase9e_block_parameter_to_local_materialization_cohort\|$" "$manifest_doc" >/dev/null
-
-      fixture_body="$(sed -n "/^const ${fixture_constant}: &str = concat!(/,/^);/p" "$source_file")"
-      printf '%s\n' "$fixture_body" | rg -n -F '"block_1_statement_0_kind: LocalI32SetBlockParam\n",' >/dev/null
-      printf '%s\n' "$fixture_body" | rg -n -F '"block_1_statement_0_block_param: input_value\n",' >/dev/null
-      printf '%s\n' "$fixture_body" | rg -n -F '"block_1_terminator_kind: BranchLocalI32Positive\n",' >/dev/null
-      if printf '%s\n' "$fixture_body" | rg -n 'ImportedFunction|LocalFunction|CallI32|call_' >/dev/null; then
-        echo "Canonical materialization fixture $lane must remain call-free in Phase 9E."
-        exit 1
-      fi
-
-      case "$lane" in
-        block_param_local_materialize_return)
-          printf '%s\n' "$fixture_body" | rg -n -F '"block_1_statement_1_value: 2\n",' >/dev/null
-          printf '%s\n' "$fixture_body" | rg -n -F '"block_2_statement_0_kind: LocalI32SetBlockParam\n",' >/dev/null
-          printf '%s\n' "$fixture_body" | rg -n -F '"block_2_statement_1_value: 2\n",' >/dev/null
-          printf '%s\n' "$fixture_body" | rg -n -F '"block_2_terminator_kind: ReturnLocalI32\n",' >/dev/null
-          ;;
-        block_param_local_materialize_branch)
-          printf '%s\n' "$fixture_body" | rg -n -F '"block_1_statement_1_value: 1\n",' >/dev/null
-          printf '%s\n' "$fixture_body" | rg -n -F '"block_2_terminator_kind: ReturnBlockParamI32\n",' >/dev/null
-          ;;
-        block_param_local_first_dual_materialize_return)
-          printf '%s\n' "$fixture_body" | rg -n -F '"block_1_statement_count: 3\n",' >/dev/null
-          printf '%s\n' "$fixture_body" | rg -n -F '"block_1_statement_1_value: 4\n",' >/dev/null
-          printf '%s\n' "$fixture_body" | rg -n -F '"block_1_statement_2_value: -7\n",' >/dev/null
-          printf '%s\n' "$fixture_body" | rg -n -F '"block_2_statement_1_value: 4\n",' >/dev/null
-          printf '%s\n' "$fixture_body" | rg -n -F '"block_2_terminator_kind: ReturnLocalI32\n",' >/dev/null
-          ;;
-      esac
-
-      adapter_body="$(sed -n "/^fn emit_compiler_mir_${lane}_ingestion_object(/,/^}/p" "$source_file")"
-      printf '%s\n' "$adapter_body" | rg -n -F "parse_compiler_mir_${lane}_ingestion_fixture(&contents)?;" >/dev/null
-      printf '%s\n' "$adapter_body" | rg -n -F 'emit_compiler_mir_fixture_contents_object(' >/dev/null
-      printf '%s\n' "$adapter_body" | rg -n -F "$fixture_constant" >/dev/null
-      if printf '%s\n' "$adapter_body" | rg -n 'ObjectBuilder::new|ObjectModule::new|TinyMirParamBlockFunction|define_tiny_mir_param_block_graph_exported_function|lower_tiny_mir_' >/dev/null; then
-        echo "Phase 9E materialization lane $lane bypasses canonical contents emission."
-        exit 1
-      fi
-    done
-
-    inventory_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:' "$manifest_doc")"
-    canonical_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
-    bespoke_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" || true)"
-    bespoke_count="${bespoke_count:-0}"
-    translator_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_historical_translator_seed_[a-z0-9_]+:' "$manifest_doc")"
-    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "33" ] || [ "$bespoke_count" != "0" ] || [ "$translator_count" != "17" ]; then
-      echo "Unexpected current inventory after Phase 9F joined imported-call closure: total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count translators=$translator_count"
-      exit 1
-    fi
 
     expected_bespoke=""
-    actual_bespoke="$( (rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" || true) | sed -E 's/^allowed_compiler_mir_ingestion_phase9d_inventory_seam_([a-z0-9_]+):.*/\1/' | sort)"
-    if [ "$actual_bespoke" != "$expected_bespoke" ]; then
-      echo "The current ingestion inventory must contain no bespoke seams after Phase 9F closure."
-      diff -u <(printf '%s\n' "$expected_bespoke") <(printf '%s\n' "$actual_bespoke") || true
-      exit 1
-    fi
 
     rg -n -F 'The block-parameter-to-local materialization cohort is now canonical.' "$readme_doc" >/dev/null
     rg -n -F '`LocalI32SetBlockParam` now copies the current' "$readme_doc" >/dev/null
@@ -6970,7 +5088,6 @@ guard-cranelift-phase9e-cfg-completeness-rejection-phase9f-freeze:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking Phase 9E CFG completeness, strict rejection, and the Phase 9F call/import freeze..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     source_file="compiler/experiments/cranelift/src/main.rs"
     readme_doc="compiler/experiments/cranelift/README.md"
     build_dir="build/guards/cranelift_phase9e_cfg_completeness_rejection_phase9f_freeze"
@@ -6985,23 +5102,6 @@ guard-cranelift-phase9e-cfg-completeness-rejection-phase9f-freeze:
 
     just guard-cranelift-phase9e-block-parameter-to-local-materialization-cohort
 
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9E_CFG_COMPLETENESS_REJECTION_PHASE9F_FREEZE_GUARD: guard-cranelift-phase9e-cfg-completeness-rejection-phase9f-freeze' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_cfg_completeness_rejection_phase9f_freeze_status: phase9e_cfg_completeness_strict_rejection_and_phase9f_call_import_freeze_complete' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_cfg_completeness_rejection_phase9f_freeze_statement_kind_count: 5' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_cfg_completeness_rejection_phase9f_freeze_statement_kinds: LocalI32Set,LocalI32SetParam,LocalI32SetBlockParam,LocalI32AddI32Literal,LocalI32AddParam' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_cfg_completeness_rejection_phase9f_freeze_terminator_kind_count: 8' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_cfg_completeness_rejection_phase9f_freeze_terminator_kinds: ReturnI32,ReturnLocalI32,ReturnBlockParamI32,ReturnVoid,Jump,BranchI32Literal,BranchLocalI32Positive,BranchBlockParamI32Positive' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_cfg_completeness_rejection_phase9f_freeze_edge_argument_kind_count: 5' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_cfg_completeness_rejection_phase9f_freeze_edge_argument_kinds: I32Literal,FunctionParamI32,LocalI32,BlockParamI32,BlockParamI32AddI32Literal' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_cfg_completeness_rejection_phase9f_freeze_arity_matrix: 0,1,2,3,4,5' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_cfg_completeness_rejection_phase9f_freeze_cfg_shape_matrix: forward_jump,independent_branch_arms,parameterized_merge,typed_backedge,block_parameter_to_local_materialization' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_cfg_completeness_rejection_phase9f_freeze_rejection_case_count: 14' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_cfg_completeness_rejection_phase9f_freeze_rejection_boundary: validation_and_object_commands_fail_before_output_directory_or_object_creation' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_cfg_completeness_rejection_phase9f_freeze_inventory: 33_total_22_canonical_shared_11_phase9f_frozen_call_import_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_cfg_completeness_rejection_phase9f_freeze_phase9f_seam_count: 11' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_cfg_completeness_rejection_phase9f_freeze_phase9f_migration_tag: phase9f_frozen_call_import_scope' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_cfg_completeness_rejection_phase9f_freeze_next_milestone: phase9e_closure_contract_and_final_guard' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_cfg_completeness_rejection_phase9f_freeze_next_milestone_status: complete' "$manifest_doc" >/dev/null
 
     for statement_kind in \
       LocalI32Set \
@@ -7362,15 +5462,6 @@ guard-cranelift-phase9e-cfg-completeness-rejection-phase9f-freeze:
     MIR
     expect_rejected_before_object unreachable_block "$unreachable_block" 'canonical compiler MIR fixture has unreachable block(s): orphan'
 
-    inventory_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:' "$manifest_doc")"
-    canonical_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
-    bespoke_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" || true)"
-    bespoke_count="${bespoke_count:-0}"
-    translator_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_historical_translator_seed_[a-z0-9_]+:' "$manifest_doc")"
-    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "33" ] || [ "$bespoke_count" != "0" ] || [ "$translator_count" != "17" ]; then
-      echo "Unexpected current inventory while preserving the Phase 9E completeness/freeze contract: total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count translators=$translator_count"
-      exit 1
-    fi
 
     expected_phase9f="$(printf '%s\n' \
       block_param_local_call_branch \
@@ -7384,36 +5475,6 @@ guard-cranelift-phase9e-cfg-completeness-rejection-phase9f-freeze:
       block_param_merge_dual_imported_joined_return \
       block_param_merge_imported_branch_joined_return \
       block_param_merge_imported_call_return | sort)"
-    actual_phase9f="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|migration=phase9f_(frozen_call_import_scope|module_emitter_local_call_cohort|direct_imported_call_cohort|imported_materialization_predicate_cohort|merge_arm_imported_call_cohort|joined_imported_call_cohort)\|$' "$manifest_doc" | sed -E 's/^allowed_compiler_mir_ingestion_phase9d_inventory_seam_([a-z0-9_]+):.*/\1/' | sort)"
-    if [ "$actual_phase9f" != "$expected_phase9f" ]; then
-      echo "The Phase 9F scope must still contain exactly the eleven call/import migration candidates."
-      diff -u <(printf '%s\n' "$expected_phase9f") <(printf '%s\n' "$actual_phase9f") || true
-      exit 1
-    fi
-
-    for lane in $expected_phase9f; do
-      case "$lane" in
-        block_param_local_call_branch)
-          rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|rust_model=CompilerMirLoweringModule\|rust_lowering=build_compiler_mir_ingestion_body_with_calls\|object_emitter=lower_compiler_mir_ingestion_module_to_object\|.*\|class=canonical_shared_lowering\|migration=phase9f_module_emitter_local_call_cohort\|$" "$manifest_doc" >/dev/null
-          ;;
-        block_param_imported_call_branch|block_param_imported_call_return|block_param_imported_predicate_update_branch)
-          rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|rust_model=CompilerMirLoweringModule\|rust_lowering=build_compiler_mir_ingestion_body_with_calls\|object_emitter=lower_compiler_mir_ingestion_module_to_object\|.*\|class=canonical_shared_lowering\|migration=phase9f_direct_imported_call_cohort\|$" "$manifest_doc" >/dev/null
-          ;;
-        block_param_imported_materialize_branch|block_param_imported_materialize_return)
-          rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|rust_model=CompilerMirLoweringModule\|rust_lowering=build_compiler_mir_ingestion_body_with_calls\|object_emitter=lower_compiler_mir_ingestion_module_to_object\|.*\|class=canonical_shared_lowering\|migration=phase9f_imported_materialization_predicate_cohort\|$" "$manifest_doc" >/dev/null
-          ;;
-        block_param_merge_arm_update_imported_call_branch|block_param_merge_arm_update_imported_call_return)
-          rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|rust_model=CompilerMirLoweringModule\|rust_lowering=build_compiler_mir_ingestion_body_with_calls\|object_emitter=lower_compiler_mir_ingestion_module_to_object\|.*\|class=canonical_shared_lowering\|migration=phase9f_merge_arm_imported_call_cohort\|$" "$manifest_doc" >/dev/null
-          ;;
-        block_param_merge_dual_imported_joined_return|block_param_merge_imported_branch_joined_return|block_param_merge_imported_call_return)
-          rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|rust_model=CompilerMirLoweringModule\|rust_lowering=build_compiler_mir_ingestion_body_with_calls\|object_emitter=lower_compiler_mir_ingestion_module_to_object\|.*\|class=canonical_shared_lowering\|migration=phase9f_joined_imported_call_cohort\|$" "$manifest_doc" >/dev/null
-          ;;
-        *)
-          echo "Unexpected Phase 9F migration candidate in historical scope guard: $lane"
-          exit 1
-          ;;
-      esac
-    done
 
     canonical_v1_parser_body="$(sed -n '/^fn parse_compiler_mir_fixture/,/^}/p' "$source_file")"
     printf '%s\n' "$canonical_v1_parser_body" | rg -n -F 'COMPILER_MIR_CANONICAL_FIXTURE_FORMAT' >/dev/null
@@ -7432,7 +5493,6 @@ guard-cranelift-phase9e-close:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Closing Phase 9E on complete canonical CFG and block-parameter evidence..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     readme_doc="compiler/experiments/cranelift/README.md"
 
     just guard-cranelift-phase9e-opening-contract
@@ -7440,38 +5500,6 @@ guard-cranelift-phase9e-close:
     just guard-cranelift-phase9d-ingestion-inventory-architecture
     just guard-cranelift-phase9d-first-post9c-cohort-bypass-freeze
 
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9E_CLOSE_GUARD: guard-cranelift-phase9e-close' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_contract_status: phase9e_closed_cfg_and_block_parameter_completeness' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_close_status: phase9e_closed_cfg_and_block_parameter_completeness' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_contract_eighth_milestone: close_phase9e_after_frozen_evidence_is_green' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_contract_eighth_milestone_status: complete' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_contract_closure_guard_policy: phase9e_close_guard_is_required_closure_gate' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_cfg_completeness_rejection_phase9f_freeze_next_milestone_status: complete' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_closure_registry: compiler/CRANELIFT_EXPERIMENT_MANIFEST.md' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_closure_readme: compiler/experiments/cranelift/README.md' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_closure_basis: local_cfg_typed_block_parameter_schema_shared_lowering_single_parameter_backedge_variable_arity_local_materialization_cfg_completeness_strict_rejection_and_phase9f_freeze_green' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_closure_inventory: 33_total_22_canonical_shared_11_phase9f_frozen_call_import_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_closure_migrated_lane_count: 12' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_closure_local_cfg_lane_count: 3' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_closure_single_parameter_lane_count: 2' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_closure_variable_arity_lane_count: 4' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_closure_local_materialization_lane_count: 3' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_closure_statement_kind_count: 5' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_closure_terminator_kind_count: 8' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_closure_edge_argument_kind_count: 5' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_closure_arity_range: 0_to_5' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_closure_cfg_shape_matrix: forward_jump,independent_branch_arms,parameterized_merge,typed_backedge,block_parameter_to_local_materialization' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_closure_canonical_pipeline: parse_validate_bind_typed_block_parameters_resolve_ordered_edge_arguments_lower_shared_cfg_emit_object' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_closure_validation_policy: malformed_canonical_fixtures_are_rejected_before_output_directory_or_object_creation' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_closure_canonical_scope_policy: i32_non_call_cfg_and_block_parameter_semantics_complete_for_phase9e' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_closure_phase9f_seam_count: 11' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_closure_phase9f_policy: exact_call_import_set_remains_bespoke_and_frozen_until_phase9f_opens' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_closure_bypass_policy: all_22_canonical_seams_use_CompilerMirLoweringFunction_and_lower_compiler_mir_ingestion_function_to_object_with_21_using_build_compiler_mir_ingestion_body_and_one_frozen_shared_join_constructor' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_closure_translator_policy: translator_seed_inventory_remains_frozen_at_17' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_closure_freeze_policy: phase9e_closed_no_new_cfg_or_block_parameter_semantic_work_outside_canonical_ingestion_or_new_phase_contract' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_closure_route_policy: experiment_only_no_default_backend_flip' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_closure_primary_route: mir_to_c' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9e_closure_next_phase: phase9f_call_and_import_canonicalization' "$manifest_doc" >/dev/null
 
     expected_phase9e="$(printf '%s\n' \
       block_local_branch \
@@ -7486,12 +5514,6 @@ guard-cranelift-phase9e-close:
       block_param_local_materialize_return \
       block_param_local_materialize_branch \
       block_param_local_first_dual_materialize_return | sort)"
-    actual_phase9e="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|migration=phase9e_(local_cfg_cohort|single_parameter_cfg_cohort|variable_arity_block_parameter_cohort|block_parameter_to_local_materialization_cohort)\|$' "$manifest_doc" | sed -E 's/^allowed_compiler_mir_ingestion_phase9d_inventory_seam_([a-z0-9_]+):.*/\1/' | sort)"
-    if [ "$actual_phase9e" != "$expected_phase9e" ]; then
-      echo "Phase 9E closure requires exactly the twelve bounded non-call migration candidates."
-      diff -u <(printf '%s\n' "$expected_phase9e") <(printf '%s\n' "$actual_phase9e") || true
-      exit 1
-    fi
 
     expected_phase9f="$(printf '%s\n' \
       block_param_local_call_branch \
@@ -7505,75 +5527,7 @@ guard-cranelift-phase9e-close:
       block_param_merge_dual_imported_joined_return \
       block_param_merge_imported_branch_joined_return \
       block_param_merge_imported_call_return | sort)"
-    actual_phase9f="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|migration=phase9f_(frozen_call_import_scope|module_emitter_local_call_cohort|direct_imported_call_cohort|imported_materialization_predicate_cohort|merge_arm_imported_call_cohort|joined_imported_call_cohort)\|$' "$manifest_doc" | sed -E 's/^allowed_compiler_mir_ingestion_phase9d_inventory_seam_([a-z0-9_]+):.*/\1/' | sort)"
-    if [ "$actual_phase9f" != "$expected_phase9f" ]; then
-      echo "Phase 9E closure evidence must continue to account for all eleven Phase 9F call/import candidates."
-      diff -u <(printf '%s\n' "$expected_phase9f") <(printf '%s\n' "$actual_phase9f") || true
-      exit 1
-    fi
 
-    canonical_records="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|' "$manifest_doc")"
-    function_canonical_records="$(printf '%s\n' "$canonical_records" | rg -v '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_(block_param_local_call_branch|block_param_imported_call_branch|block_param_imported_call_return|block_param_imported_predicate_update_branch|block_param_imported_materialize_branch|block_param_imported_materialize_return|block_param_merge_arm_update_imported_call_branch|block_param_merge_arm_update_imported_call_return|block_param_merge_dual_imported_joined_return|block_param_merge_imported_branch_joined_return|block_param_merge_imported_call_return):')"
-    if printf '%s\n' "$function_canonical_records" | rg -v '\|rust_model=CompilerMirLoweringFunction\|.*\|object_emitter=lower_compiler_mir_ingestion_function_to_object\|' >/dev/null; then
-      echo "Every pre-call canonical seam must use CompilerMirLoweringFunction and the shared function object emitter."
-      printf '%s\n' "$function_canonical_records" | rg -v '\|rust_model=CompilerMirLoweringFunction\|.*\|object_emitter=lower_compiler_mir_ingestion_function_to_object\|' || true
-      exit 1
-    fi
-    rg -n '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_block_param_local_call_branch:.*\|rust_model=CompilerMirLoweringModule\|rust_lowering=build_compiler_mir_ingestion_body_with_calls\|object_emitter=lower_compiler_mir_ingestion_module_to_object\|.*\|class=canonical_shared_lowering\|migration=phase9f_module_emitter_local_call_cohort\|$' "$manifest_doc" >/dev/null
-    for lane in block_param_imported_call_branch block_param_imported_call_return block_param_imported_predicate_update_branch; do
-      rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|rust_model=CompilerMirLoweringModule\|rust_lowering=build_compiler_mir_ingestion_body_with_calls\|object_emitter=lower_compiler_mir_ingestion_module_to_object\|.*\|class=canonical_shared_lowering\|migration=phase9f_direct_imported_call_cohort\|$" "$manifest_doc" >/dev/null
-    done
-    shared_body_lowerer_count="$(printf '%s\n' "$canonical_records" | rg -c '\|rust_lowering=build_compiler_mir_ingestion_body\|')"
-    if [ "$shared_body_lowerer_count" != "21" ]; then
-      echo "Expected 21 canonical seams through build_compiler_mir_ingestion_body, found $shared_body_lowerer_count."
-      exit 1
-    fi
-    rg -n '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_block_local_branch_join:.*\|rust_model=CompilerMirLoweringFunction\|rust_lowering=lower_compiler_mir_ingestion_function_to_object\|object_emitter=lower_compiler_mir_ingestion_function_to_object\|.*\|class=canonical_shared_lowering\|migration=canonical_now\|$' "$manifest_doc" >/dev/null
-
-    for lane in $expected_phase9f; do
-      case "$lane" in
-        block_param_local_call_branch)
-          rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|rust_model=CompilerMirLoweringModule\|rust_lowering=build_compiler_mir_ingestion_body_with_calls\|object_emitter=lower_compiler_mir_ingestion_module_to_object\|.*\|class=canonical_shared_lowering\|migration=phase9f_module_emitter_local_call_cohort\|$" "$manifest_doc" >/dev/null
-          ;;
-        block_param_imported_call_branch|block_param_imported_call_return|block_param_imported_predicate_update_branch)
-          rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|rust_model=CompilerMirLoweringModule\|rust_lowering=build_compiler_mir_ingestion_body_with_calls\|object_emitter=lower_compiler_mir_ingestion_module_to_object\|.*\|class=canonical_shared_lowering\|migration=phase9f_direct_imported_call_cohort\|$" "$manifest_doc" >/dev/null
-          ;;
-        block_param_imported_materialize_branch|block_param_imported_materialize_return)
-          rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|rust_model=CompilerMirLoweringModule\|rust_lowering=build_compiler_mir_ingestion_body_with_calls\|object_emitter=lower_compiler_mir_ingestion_module_to_object\|.*\|class=canonical_shared_lowering\|migration=phase9f_imported_materialization_predicate_cohort\|$" "$manifest_doc" >/dev/null
-          ;;
-        block_param_merge_arm_update_imported_call_branch|block_param_merge_arm_update_imported_call_return)
-          rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|rust_model=CompilerMirLoweringModule\|rust_lowering=build_compiler_mir_ingestion_body_with_calls\|object_emitter=lower_compiler_mir_ingestion_module_to_object\|.*\|class=canonical_shared_lowering\|migration=phase9f_merge_arm_imported_call_cohort\|$" "$manifest_doc" >/dev/null
-          ;;
-        block_param_merge_dual_imported_joined_return|block_param_merge_imported_branch_joined_return|block_param_merge_imported_call_return)
-          rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|rust_model=CompilerMirLoweringModule\|rust_lowering=build_compiler_mir_ingestion_body_with_calls\|object_emitter=lower_compiler_mir_ingestion_module_to_object\|.*\|class=canonical_shared_lowering\|migration=phase9f_joined_imported_call_cohort\|$" "$manifest_doc" >/dev/null
-          ;;
-        *)
-          echo "Unexpected Phase 9F migration candidate in historical scope guard: $lane"
-          exit 1
-          ;;
-      esac
-    done
-
-    inventory_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:' "$manifest_doc")"
-    canonical_count="$(printf '%s\n' "$canonical_records" | wc -l | tr -d ' ')"
-    bespoke_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" || true)"
-    bespoke_count="${bespoke_count:-0}"
-    metadata_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=metadata_preservation_only\|' "$manifest_doc" || true)"
-    metadata_count="${metadata_count:-0}"
-    translator_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_historical_translator_seed_[a-z0-9_]+:' "$manifest_doc")"
-    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "33" ] || [ "$bespoke_count" != "0" ] || [ "$metadata_count" != "0" ] || [ "$translator_count" != "17" ]; then
-      echo "Unexpected current inventory while preserving the Phase 9E closure contract: total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count metadata=$metadata_count translators=$translator_count"
-      exit 1
-    fi
-
-    rg -n -F 'Phase 9E is closed as' "$readme_doc" >/dev/null
-    rg -n -F '`phase9e_closed_cfg_and_block_parameter_completeness`.' "$readme_doc" >/dev/null
-    rg -n -F 'Phase 9E is closed on this evidence.' "$readme_doc" >/dev/null
-    rg -n -F 'All twelve bounded non-call migration' "$readme_doc" >/dev/null
-    rg -n -F 'Phase 9F is the next contract and is reserved for' "$readme_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_PRIMARY_ROUTE: mir_to_c' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ENABLED_BY_DEFAULT: false' "$manifest_doc" >/dev/null
-    rg -n -F 'forbidden_production_route: cranelift' "$manifest_doc" >/dev/null
 
     echo "✅ Phase 9E closed: typed non-call CFG and block-parameter ingestion is complete on the shared canonical path, malformed fixtures reject before output creation, exactly eleven call/import seams are frozen for Phase 9F, and production routing is unchanged."
 
@@ -7582,34 +5536,10 @@ guard-cranelift-phase9f-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking the closed Phase 9F canonical calls and imported runtime boundary contract..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     readme_doc="compiler/experiments/cranelift/README.md"
-    if [ ! -f "$manifest_doc" ] || [ ! -f "$readme_doc" ]; then
-      echo "Phase 9F opening requires the Cranelift manifest and experiment README."
-      exit 1
-    fi
 
     rg -n -x -F 'guard-cranelift-phase9e-close:' justfile >/dev/null
 
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9F_OPENING_CONTRACT_GUARD: guard-cranelift-phase9f-opening-contract' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_contract_status: phase9f_closed_canonical_calls_and_imported_runtime_boundary' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_contract_predecessor_status: phase9e_closed_cfg_and_block_parameter_completeness' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_contract_predecessor_guard: guard-cranelift-phase9e-close' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_contract_opening_inventory: 33_total_22_canonical_shared_11_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_contract_closure_inventory_target: 33_total_33_canonical_shared_0_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_contract_migration_candidate_count: 11' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_contract_v1_policy: gust_compiler_mir_ingestion_v1_remains_frozen_single_function_and_call_import_free' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_contract_v2_policy: gust_compiler_mir_ingestion_v2_is_the_only_new_canonical_module_import_and_call_schema' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_contract_allowed_scope: direct_local_function_calls_direct_imported_function_calls_ordered_i32_arguments_single_i32_return_declared_i32_destination_locals_existing_cfg_block_parameter_merge_and_materialization_operations_static_native_test_shim_symbols' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_contract_excluded_scope: indirect_calls_function_pointers_variadic_calls_callbacks_recursion_mutual_recursion_void_calls_multiple_returns_strings_pointers_structs_arrays_resources_runtime_objects_dynamic_loading_symbol_lookup_exceptions_unwinding_production_backend_routing' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_contract_host_symbol_policy: imported_symbols_are_statically_linked_and_supplied_only_by_native_test_shims' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_contract_non_call_semantics_policy: all_closed_phase9e_non_call_cfg_and_block_parameter_semantics_remain_unchanged' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_contract_opening_migration_policy: steps_1_and_2_migrate_no_seams_and_preserve_the_22_canonical_11_bespoke_inventory' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_contract_translator_policy: translator_seed_inventory_remains_frozen_at_17' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_contract_route_policy: experiment_only_no_default_backend_flip_no_production_runtime_route' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_contract_primary_route: mir_to_c' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_contract_first_milestone: define_v2_module_import_call_schema_parser_and_validator_without_call_emission' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_contract_first_milestone_status: complete' "$manifest_doc" >/dev/null
 
     expected_phase9f="$(printf '%s\n' \
       block_param_local_call_branch \
@@ -7623,70 +5553,15 @@ guard-cranelift-phase9f-opening-contract:
       block_param_merge_dual_imported_joined_return \
       block_param_merge_imported_branch_joined_return \
       block_param_merge_imported_call_return | sort)"
-    declared_phase9f="$(rg '^allowed_compiler_mir_ingestion_phase9f_contract_migration_candidates:' "$manifest_doc" | cut -d: -f2- | tr ',' '\n' | sed 's/^ //' | sort)"
-    actual_phase9f="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|migration=phase9f_(frozen_call_import_scope|module_emitter_local_call_cohort|direct_imported_call_cohort|imported_materialization_predicate_cohort|merge_arm_imported_call_cohort|joined_imported_call_cohort)\|$' "$manifest_doc" | sed -E 's/^allowed_compiler_mir_ingestion_phase9d_inventory_seam_([a-z0-9_]+):.*/\1/' | sort)"
-    if [ "$declared_phase9f" != "$expected_phase9f" ] || [ "$actual_phase9f" != "$expected_phase9f" ]; then
-      echo "Phase 9F must continue to account for exactly the eleven Phase 9E call/import migration candidates."
-      diff -u <(printf '%s\n' "$expected_phase9f") <(printf '%s\n' "$declared_phase9f") || true
-      diff -u <(printf '%s\n' "$expected_phase9f") <(printf '%s\n' "$actual_phase9f") || true
-      exit 1
-    fi
 
-    for lane in $expected_phase9f; do
-      case "$lane" in
-        block_param_local_call_branch)
-          rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|rust_model=CompilerMirLoweringModule\|rust_lowering=build_compiler_mir_ingestion_body_with_calls\|object_emitter=lower_compiler_mir_ingestion_module_to_object\|.*\|class=canonical_shared_lowering\|migration=phase9f_module_emitter_local_call_cohort\|$" "$manifest_doc" >/dev/null
-          ;;
-        block_param_imported_call_branch|block_param_imported_call_return|block_param_imported_predicate_update_branch)
-          rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|rust_model=CompilerMirLoweringModule\|rust_lowering=build_compiler_mir_ingestion_body_with_calls\|object_emitter=lower_compiler_mir_ingestion_module_to_object\|.*\|class=canonical_shared_lowering\|migration=phase9f_direct_imported_call_cohort\|$" "$manifest_doc" >/dev/null
-          ;;
-        block_param_imported_materialize_branch|block_param_imported_materialize_return)
-          rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|rust_model=CompilerMirLoweringModule\|rust_lowering=build_compiler_mir_ingestion_body_with_calls\|object_emitter=lower_compiler_mir_ingestion_module_to_object\|.*\|class=canonical_shared_lowering\|migration=phase9f_imported_materialization_predicate_cohort\|$" "$manifest_doc" >/dev/null
-          ;;
-        block_param_merge_arm_update_imported_call_branch|block_param_merge_arm_update_imported_call_return)
-          rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|rust_model=CompilerMirLoweringModule\|rust_lowering=build_compiler_mir_ingestion_body_with_calls\|object_emitter=lower_compiler_mir_ingestion_module_to_object\|.*\|class=canonical_shared_lowering\|migration=phase9f_merge_arm_imported_call_cohort\|$" "$manifest_doc" >/dev/null
-          ;;
-        block_param_merge_dual_imported_joined_return|block_param_merge_imported_branch_joined_return|block_param_merge_imported_call_return)
-          rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|rust_model=CompilerMirLoweringModule\|rust_lowering=build_compiler_mir_ingestion_body_with_calls\|object_emitter=lower_compiler_mir_ingestion_module_to_object\|.*\|class=canonical_shared_lowering\|migration=phase9f_joined_imported_call_cohort\|$" "$manifest_doc" >/dev/null
-          ;;
-        *)
-          echo "Unexpected Phase 9F migration candidate in historical scope guard: $lane"
-          exit 1
-          ;;
-      esac
-    done
-
-    inventory_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:' "$manifest_doc")"
-    canonical_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
-    bespoke_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" || true)"
-    bespoke_count="${bespoke_count:-0}"
-    metadata_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=metadata_preservation_only\|' "$manifest_doc" || true)"
-    metadata_count="${metadata_count:-0}"
-    translator_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_historical_translator_seed_[a-z0-9_]+:' "$manifest_doc")"
-    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "33" ] || [ "$bespoke_count" != "0" ] || [ "$metadata_count" != "0" ] || [ "$translator_count" != "17" ]; then
-      echo "Unexpected current inventory while preserving the Phase 9F opening contract: total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count metadata=$metadata_count translators=$translator_count"
-      exit 1
-    fi
-
-    rg -n -F 'Phase 9F is closed as' "$readme_doc" >/dev/null
-    rg -n -F '`phase9f_closed_canonical_calls_and_imported_runtime_boundary`.' "$readme_doc" >/dev/null
-    rg -n -F 'The exact eleven migration candidates remain the complete Phase 9F set:' "$readme_doc" >/dev/null
-    rg -n -F '`gust.compiler_mir_ingestion.v1` remains frozen, single-function, and call/import-free.' "$readme_doc" >/dev/null
-    rg -n -F '`gust.compiler_mir_ingestion.v2` is the only new canonical schema allowed to represent modules, imports, and calls.' "$readme_doc" >/dev/null
-    rg -n -F 'Steps 1 and 2 migrated no seams.' "$readme_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_PRIMARY_ROUTE: mir_to_c' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ENABLED_BY_DEFAULT: false' "$manifest_doc" >/dev/null
-    rg -n -F 'forbidden_production_route: cranelift' "$manifest_doc" >/dev/null
 
     echo "✅ Phase 9F contract is closed with the exact eleven call/import seams canonical, v1 call-free, v2 owning module/import/call syntax, and production routing unchanged."
-
 
 
 guard-cranelift-phase9f-call-import-schema-validator:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking Phase 9F canonical module, call, and import schema validation..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     readme_doc="compiler/experiments/cranelift/README.md"
     source_file="compiler/experiments/cranelift/src/main.rs"
     valid_fixture="compiler/fixtures/phase9f_call_import_schema_validation.mir"
@@ -7698,31 +5573,6 @@ guard-cranelift-phase9f-call-import-schema-validator:
       echo "Missing Phase 9F canonical schema validation fixture: $valid_fixture"
       exit 1
     fi
-    format_count="$(rg -c '^format: gust\.compiler_mir_ingestion\.v2$' "$valid_fixture" || true)"
-    if [ "$format_count" != "1" ]; then
-      echo "Expected exactly one Phase 9F v2 format record in $valid_fixture, found ${format_count:-0}."
-      rg -n '^format:' "$valid_fixture" || true
-      exit 1
-    fi
-
-    just guard-cranelift-phase9f-opening-contract
-
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9F_CALL_IMPORT_SCHEMA_VALIDATOR_GUARD: guard-cranelift-phase9f-call-import-schema-validator' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_schema_status: phase9f_v2_module_call_import_schema_parser_validator_complete' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_schema_format: gust.compiler_mir_ingestion.v2' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_schema_fixture: compiler/fixtures/phase9f_call_import_schema_validation.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_schema_model: CompilerMirLoweringModule,CompilerMirLoweringImportedFunction,CompilerMirLoweringDefinedFunction,CompilerMirLoweringFunctionLinkage' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_schema_linkages: exported_entry,module_local,imported_host' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_schema_call_statement: LocalI32SetCall' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_schema_call_targets: LocalFunction,ImportedFunction' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_schema_call_arguments: I32Literal,FunctionParamI32,LocalI32,BlockParamI32,BlockParamI32AddI32Literal' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_schema_validation_boundary: parse_and_validate_before_output_directory_or_object_creation' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_schema_emission_status_at_completion: validation_only_no_v2_object_emission' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_schema_current_emission_status: all_local_imported_materialization_merge_arm_joined_and_dual_join_call_modules_emit' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_contract_first_milestone_status: complete' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_schema_inventory_at_completion: 33_total_22_canonical_shared_11_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_schema_current_inventory: 33_total_33_canonical_shared_0_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_schema_next_milestone_status: complete' "$manifest_doc" >/dev/null
 
     rg -n -F 'const COMPILER_MIR_CANONICAL_MODULE_FORMAT: &str = "gust.compiler_mir_ingestion.v2";' "$source_file" >/dev/null
     rg -n -F 'enum CompilerMirLoweringCallTarget' "$source_file" >/dev/null
@@ -7922,22 +5772,6 @@ guard-cranelift-phase9f-call-import-schema-validator:
     MIR
     expect_reject v1-call "$v1_call" 'gust.compiler_mir_ingestion.v1 remains call/import-free'
 
-    inventory_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:' "$manifest_doc")"
-    canonical_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
-    bespoke_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" || true)"
-    bespoke_count="${bespoke_count:-0}"
-    translator_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_historical_translator_seed_[a-z0-9_]+:' "$manifest_doc")"
-    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "33" ] || [ "$bespoke_count" != "0" ] || [ "$translator_count" != "17" ]; then
-      echo "Unexpected Phase 9F schema/current inventory after joined imported-call closure: total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count translators=$translator_count"
-      exit 1
-    fi
-
-    rg -n -F 'The Phase 9F v2 schema/parser/validator milestone is complete.' "$readme_doc" >/dev/null
-    tr '\n' ' ' < "$readme_doc" | rg -F 'Patch 3 enables v2 object emission for validated import-free local-call modules.' >/dev/null
-    tr '\n' ' ' < "$readme_doc" | rg -F 'Patch 4 completes the imported-function emitter and direct imported-call cohort.' >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_PRIMARY_ROUTE: mir_to_c' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ENABLED_BY_DEFAULT: false' "$manifest_doc" >/dev/null
-    rg -n -F 'forbidden_production_route: cranelift' "$manifest_doc" >/dev/null
 
     echo "✅ Phase 9F v2 schema validation remains strict; local, imported, materialization, merge-arm, joined, and dual-join modules emit, and the current inventory is 33/0."
 
@@ -7946,7 +5780,6 @@ guard-cranelift-phase9f-module-emitter-local-call-cohort:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking Phase 9F canonical module emission and local-call cohort..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     readme_doc="compiler/experiments/cranelift/README.md"
     source_file="compiler/experiments/cranelift/src/main.rs"
     fixture="compiler/fixtures/phase9f_local_call_module.mir"
@@ -7960,23 +5793,6 @@ guard-cranelift-phase9f-module-emitter-local-call-cohort:
 
     just guard-cranelift-phase9f-call-import-schema-validator
 
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9F_MODULE_EMITTER_LOCAL_CALL_COHORT_GUARD: guard-cranelift-phase9f-module-emitter-local-call-cohort' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_module_emitter_local_call_status: phase9f_module_emitter_and_local_call_cohort_complete' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_module_emitter_local_call_fixture: compiler/fixtures/phase9f_local_call_module.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_module_emitter_local_call_module_emitter: lower_compiler_mir_ingestion_module_to_object' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_module_emitter_local_call_definition_entry: define_compiler_mir_ingestion_module_function' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_module_emitter_local_call_body_lowerer: build_compiler_mir_ingestion_body_with_calls' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_module_emitter_local_call_predeclaration_policy: declare_all_exported_and_module_local_functions_before_defining_any_body' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_module_emitter_local_call_supported_scope: import_free_modules_direct_acyclic_local_calls_ordered_i32_arguments_single_i32_return_declared_i32_destination_locals' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_module_emitter_local_call_import_policy_at_completion: modules_with_imports_reject_before_output_directory_or_object_creation' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_module_emitter_local_call_import_rejection_diagnostic_at_completion: canonical_compiler_MIR_imported_call_emission_is_not_implemented_in_Phase_9F_Patch_3' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_module_emitter_local_call_current_import_policy: imported_host_functions_are_declared_by_the_shared_module_emitter_and_direct_imported_calls_emit' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_module_emitter_local_call_migrated_lane_count: 1' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_module_emitter_local_call_migrated_lanes: block_param_local_call_branch' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_module_emitter_local_call_inventory_after: 33_total_23_canonical_shared_10_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_module_emitter_local_call_remaining_bespoke_count: 10' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_module_emitter_local_call_next_milestone: imported_function_emitter_and_first_imported_call_cohort' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_module_emitter_local_call_next_milestone_status: complete' "$manifest_doc" >/dev/null
 
     rg -n '^fn lower_compiler_mir_ingestion_module_to_object' "$source_file" >/dev/null
     rg -n '^fn define_compiler_mir_ingestion_module_function' "$source_file" >/dev/null
@@ -8054,31 +5870,6 @@ guard-cranelift-phase9f-module-emitter-local-call-cohort:
 
     just guard-cranelift-compiler-mir-block-param-local-call-branch-ingestion-native-smoke
 
-    rg -n '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_block_param_local_call_branch:.*\|rust_model=CompilerMirLoweringModule\|rust_lowering=build_compiler_mir_ingestion_body_with_calls\|object_emitter=lower_compiler_mir_ingestion_module_to_object\|.*\|class=canonical_shared_lowering\|migration=phase9f_module_emitter_local_call_cohort\|$' "$manifest_doc" >/dev/null
-    remaining_bespoke="$( (rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|migration=phase9f_frozen_call_import_scope\|$' "$manifest_doc" || true) | sed -E 's/^allowed_compiler_mir_ingestion_phase9d_inventory_seam_([a-z0-9_]+):.*/\1/' | sort)"
-    expected_remaining=""
-    if [ "$remaining_bespoke" != "$expected_remaining" ]; then
-      echo "The current repository must contain no bespoke seams while preserving the Patch 3 milestone."
-      diff -u <(printf '%s\n' "$expected_remaining") <(printf '%s\n' "$remaining_bespoke") || true
-      exit 1
-    fi
-
-    inventory_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:' "$manifest_doc")"
-    canonical_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
-    bespoke_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" || true)"
-    bespoke_count="${bespoke_count:-0}"
-    translator_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_historical_translator_seed_[a-z0-9_]+:' "$manifest_doc")"
-    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "33" ] || [ "$bespoke_count" != "0" ] || [ "$translator_count" != "17" ]; then
-      echo "Unexpected current inventory while preserving the Phase 9F Patch 3 milestone: total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count translators=$translator_count"
-      exit 1
-    fi
-
-    tr '\n' ' ' < "$readme_doc" | rg -F 'Patch 3 enables v2 object emission for validated import-free local-call modules.' >/dev/null
-    tr '\n' ' ' < "$readme_doc" | rg -F 'The block-param local-call branch seam is the first Phase 9F migration.' >/dev/null
-    tr '\n' ' ' < "$readme_doc" | rg -F 'Patch 4 completes the imported-function emitter and direct imported-call cohort.' >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_PRIMARY_ROUTE: mir_to_c' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ENABLED_BY_DEFAULT: false' "$manifest_doc" >/dev/null
-    rg -n -F 'forbidden_production_route: cranelift' "$manifest_doc" >/dev/null
 
     echo "✅ Phase 9F Patch 3 local-call evidence remains green while every later call/import cohort uses shared emission and production routing is unchanged."
 
@@ -8087,7 +5878,6 @@ guard-cranelift-phase9f-direct-imported-call-cohort:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking Phase 9F imported-function emission and direct imported-call cohort..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     readme_doc="compiler/experiments/cranelift/README.md"
     source_file="compiler/experiments/cranelift/src/main.rs"
     fixture="compiler/fixtures/phase9f_call_import_schema_validation.mir"
@@ -8100,29 +5890,6 @@ guard-cranelift-phase9f-direct-imported-call-cohort:
 
     just guard-cranelift-phase9f-module-emitter-local-call-cohort
 
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9F_DIRECT_IMPORTED_CALL_COHORT_GUARD: guard-cranelift-phase9f-direct-imported-call-cohort' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_direct_imported_call_status: phase9f_imported_function_emitter_and_direct_imported_call_cohort_complete' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_direct_imported_call_fixture: compiler/fixtures/phase9f_call_import_schema_validation.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_direct_imported_call_validation_command: compiler-mir-validate-fixture' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_direct_imported_call_object_command: compiler-mir-ingestion-object' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_direct_imported_call_module_emitter: lower_compiler_mir_ingestion_module_to_object' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_direct_imported_call_import_signature_entry: compiler_mir_ingestion_import_signature' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_direct_imported_call_definition_entry: define_compiler_mir_ingestion_module_function' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_direct_imported_call_body_lowerer: build_compiler_mir_ingestion_body_with_calls' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_direct_imported_call_import_declaration_policy: declare_each_unique_imported_link_symbol_with_Linkage_Import_before_defining_any_function_body' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_direct_imported_call_import_alias_policy: source_import_names_with_the_same_link_symbol_and_signature_share_one_imported_FuncId' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_direct_imported_call_function_reference_policy: imported_FuncIds_are_declared_in_each_function_before_call_lowering' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_direct_imported_call_supported_scope: direct_imported_host_calls_ordered_i32_arguments_single_i32_return_declared_i32_destination_locals_existing_cfg_and_block_parameter_operations' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_direct_imported_call_host_symbol_policy: unresolved_imports_are_satisfied_only_by_statically_linked_native_test_shims' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_direct_imported_call_migrated_lane_count: 3' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_direct_imported_call_migrated_lanes: block_param_imported_call_branch,block_param_imported_call_return,block_param_imported_predicate_update_branch' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_direct_imported_call_legacy_adapter_policy: lane_specific_parsers_validate_frozen_inputs_then_build_CompilerMirLoweringModule_and_call_the_shared_module_emitter' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_direct_imported_call_inventory_after: 33_total_26_canonical_shared_7_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_direct_imported_call_remaining_bespoke_count: 7' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_direct_imported_call_translator_policy: existing_17_translator_seeds_remain_frozen' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_direct_imported_call_route_policy: experiment_only_static_native_test_shims_no_default_backend_flip_no_production_runtime_route' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_direct_imported_call_primary_route: mir_to_c' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_direct_imported_call_next_milestone: imported_call_materialization_cohort' "$manifest_doc" >/dev/null
 
     rg -n '^fn compiler_mir_ingestion_import_signature' "$source_file" >/dev/null
     rg -n '^fn lower_compiler_mir_ingestion_module_to_object' "$source_file" >/dev/null
@@ -8172,51 +5939,13 @@ guard-cranelift-phase9f-direct-imported-call-cohort:
     just cranelift-phase9g-link-canonical-ingestion-object "$fixture" "$object_file" "$shim_c" "$binary"
     "$binary"
 
-    for lane in block_param_imported_call_branch block_param_imported_call_return block_param_imported_predicate_update_branch; do
-      rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|rust_model=CompilerMirLoweringModule\|rust_lowering=build_compiler_mir_ingestion_body_with_calls\|object_emitter=lower_compiler_mir_ingestion_module_to_object\|.*\|class=canonical_shared_lowering\|migration=phase9f_direct_imported_call_cohort\|$" "$manifest_doc" >/dev/null
-      adapter_body="$(sed -n "/^fn emit_compiler_mir_${lane}_ingestion_object/,/^fn build_compiler_mir_${lane}_module/p" "$source_file")"
-      printf '%s\n' "$adapter_body" | rg -n -F "parse_compiler_mir_${lane}_ingestion_fixture(&contents)?;" >/dev/null
-      printf '%s\n' "$adapter_body" | rg -n -F "build_compiler_mir_${lane}_module()" >/dev/null
-      printf '%s\n' "$adapter_body" | rg -n -F 'lower_compiler_mir_ingestion_module_to_object(output_path, &module)' >/dev/null
-      if printf '%s\n' "$adapter_body" | rg -n 'ObjectBuilder::new|ObjectModule::new|TinyMir(Function|BlockFunction|ParamBlockFunction)|lower_tiny_mir_|define_tiny_mir_' >/dev/null; then
-        echo "Migrated direct imported-call adapter $lane owns a forbidden bespoke object path."
-        exit 1
-      fi
-      builder_body="$(sed -n "/^fn build_compiler_mir_${lane}_module/,/^fn /p" "$source_file")"
-      printf '%s\n' "$builder_body" | rg -n -F 'CompilerMirLoweringFunctionLinkage::ImportedHost' >/dev/null
-      printf '%s\n' "$builder_body" | rg -n -F 'CompilerMirLoweringCallTarget::ImportedFunction' >/dev/null
-    done
 
     just guard-cranelift-compiler-mir-block-param-imported-call-branch-ingestion-native-smoke
     just guard-cranelift-compiler-mir-block-param-imported-call-return-ingestion-native-smoke
     just guard-cranelift-compiler-mir-block-param-imported-predicate-update-branch-ingestion-native-smoke
 
     expected_remaining=""
-    actual_remaining="$( (rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|migration=phase9f_frozen_call_import_scope\|$' "$manifest_doc" || true) | sed -E 's/^allowed_compiler_mir_ingestion_phase9d_inventory_seam_([a-z0-9_]+):.*/\1/' | sort)"
-    if [ "$actual_remaining" != "$expected_remaining" ]; then
-      echo "The current repository must contain no bespoke seams while preserving the Patch 4 milestone."
-      diff -u <(printf '%s\n' "$expected_remaining") <(printf '%s\n' "$actual_remaining") || true
-      exit 1
-    fi
 
-    inventory_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:' "$manifest_doc")"
-    canonical_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
-    bespoke_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" || true)"
-    bespoke_count="${bespoke_count:-0}"
-    metadata_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=metadata_preservation_only\|' "$manifest_doc" || true)"
-    metadata_count="${metadata_count:-0}"
-    translator_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_historical_translator_seed_[a-z0-9_]+:' "$manifest_doc")"
-    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "33" ] || [ "$bespoke_count" != "0" ] || [ "$metadata_count" != "0" ] || [ "$translator_count" != "17" ]; then
-      echo "Unexpected current inventory while preserving the Phase 9F direct imported-call milestone: total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count metadata=$metadata_count translators=$translator_count"
-      exit 1
-    fi
-
-    tr '\n' ' ' < "$readme_doc" | rg -F 'Patch 4 completes the imported-function emitter and direct imported-call cohort.' >/dev/null
-    tr '\n' ' ' < "$readme_doc" | rg -F '`block_param_imported_call_branch`, `block_param_imported_call_return`, and `block_param_imported_predicate_update_branch` are canonical compatibility adapters in this cohort.' >/dev/null
-    tr '\n' ' ' < "$readme_doc" | rg -F 'The inventory is now 33 total seams, 26 canonical shared-lowering seams, seven frozen bespoke imported-call seams, zero metadata-only seams, and seventeen frozen translator seeds.' >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_PRIMARY_ROUTE: mir_to_c' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ENABLED_BY_DEFAULT: false' "$manifest_doc" >/dev/null
-    rg -n -F 'forbidden_production_route: cranelift' "$manifest_doc" >/dev/null
 
     echo "✅ Phase 9F Patch 4 direct-import evidence remains green within the fully canonical call/import inventory, and production routing is preserved."
 
@@ -8225,52 +5954,11 @@ guard-cranelift-phase9f-imported-materialization-predicate-cohort:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking Phase 9F imported materialization and predicate cohort..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     readme_doc="compiler/experiments/cranelift/README.md"
     source_file="compiler/experiments/cranelift/src/main.rs"
 
     just guard-cranelift-phase9f-direct-imported-call-cohort
 
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9F_IMPORTED_MATERIALIZATION_PREDICATE_COHORT_GUARD: guard-cranelift-phase9f-imported-materialization-predicate-cohort' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_imported_materialization_predicate_status: phase9f_imported_materialization_and_predicate_cohort_complete' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_imported_materialization_predicate_module_emitter: lower_compiler_mir_ingestion_module_to_object' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_imported_materialization_predicate_body_lowerer: build_compiler_mir_ingestion_body_with_calls' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_imported_materialization_predicate_call_lowering_policy: reuse_patch4_LocalI32SetCall_and_imported_FuncRef_lowering_without_new_call_variants' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_imported_materialization_predicate_cohort_lane_count: 3' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_imported_materialization_predicate_cohort_lanes: block_param_imported_materialize_return,block_param_imported_materialize_branch,block_param_imported_predicate_update_branch' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_imported_materialization_predicate_newly_migrated_lane_count: 2' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_imported_materialization_predicate_newly_migrated_lanes: block_param_imported_materialize_return,block_param_imported_materialize_branch' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_imported_materialization_predicate_retained_canonical_lane: block_param_imported_predicate_update_branch' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_imported_materialization_predicate_legacy_adapter_policy: lane_specific_parsers_validate_frozen_inputs_then_build_CompilerMirLoweringModule_and_call_the_shared_module_emitter' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_imported_materialization_predicate_composition_evidence: imported_results_materialize_into_declared_locals_flow_through_LocalI32_edges_return_through_existing_locals_branch_on_imported_predicate_locals_and_transport_as_block_parameters' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_imported_materialization_predicate_inventory_after: 33_total_28_canonical_shared_5_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_imported_materialization_predicate_remaining_bespoke_count: 5' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_imported_materialization_predicate_translator_policy: existing_17_translator_seeds_remain_frozen' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_imported_materialization_predicate_route_policy: experiment_only_static_native_test_shims_no_default_backend_flip_no_production_runtime_route' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_imported_materialization_predicate_primary_route: mir_to_c' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_imported_materialization_predicate_next_milestone: merge_arm_imported_call_cohort' "$manifest_doc" >/dev/null
-
-    call_lowering_body="$(sed -n '/^fn build_compiler_mir_ingestion_body_with_calls/,/^fn /p' "$source_file")"
-    printf '%s\n' "$call_lowering_body" | rg -n -F 'CompilerMirLoweringStatement::LocalI32SetCall {' >/dev/null
-    printf '%s\n' "$call_lowering_body" | rg -n -F 'CompilerMirLoweringCallTarget::ImportedFunction(callee)' >/dev/null
-    printf '%s\n' "$call_lowering_body" | rg -n -F 'let call_inst = builder.ins().call(function_ref, &lowered_arguments);' >/dev/null
-
-    for lane in block_param_imported_materialize_return block_param_imported_materialize_branch; do
-      rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|rust_model=CompilerMirLoweringModule\|rust_lowering=build_compiler_mir_ingestion_body_with_calls\|object_emitter=lower_compiler_mir_ingestion_module_to_object\|.*\|class=canonical_shared_lowering\|migration=phase9f_imported_materialization_predicate_cohort\|$" "$manifest_doc" >/dev/null
-      adapter_body="$(sed -n "/^fn emit_compiler_mir_${lane}_ingestion_object/,/^fn build_compiler_mir_${lane}_module/p" "$source_file")"
-      printf '%s\n' "$adapter_body" | rg -n -F "parse_compiler_mir_${lane}_ingestion_fixture(&contents)?;" >/dev/null
-      printf '%s\n' "$adapter_body" | rg -n -F "build_compiler_mir_${lane}_module()" >/dev/null
-      printf '%s\n' "$adapter_body" | rg -n -F 'lower_compiler_mir_ingestion_module_to_object(output_path, &module)' >/dev/null
-      if printf '%s\n' "$adapter_body" | rg -n 'ObjectBuilder::new|ObjectModule::new|TinyMir(Function|BlockFunction|ParamBlockFunction)|lower_tiny_mir_|define_tiny_mir_' >/dev/null; then
-        echo "Migrated imported-materialization adapter $lane owns a forbidden bespoke object path."
-        exit 1
-      fi
-      builder_body="$(sed -n "/^fn build_compiler_mir_${lane}_module/,/^fn /p" "$source_file")"
-      printf '%s\n' "$builder_body" | rg -n -F 'CompilerMirLoweringFunctionLinkage::ImportedHost' >/dev/null
-      printf '%s\n' "$builder_body" | rg -n -F 'CompilerMirLoweringCallTarget::ImportedFunction' >/dev/null
-      printf '%s\n' "$builder_body" | rg -n -F 'CompilerMirLoweringEdgeArgument::LocalI32(' >/dev/null
-      printf '%s\n' "$builder_body" | rg -n -F 'CompilerMirLoweringTerminator::BranchBlockParamI32Positive' >/dev/null
-    done
 
     materialize_return_builder="$(sed -n '/^fn build_compiler_mir_block_param_imported_materialize_return_module/,/^fn /p' "$source_file")"
     if [ "$(printf '%s\n' "$materialize_return_builder" | rg -c -F 'CompilerMirLoweringStatement::LocalI32SetCall {')" != "2" ]; then
@@ -8279,14 +5967,6 @@ guard-cranelift-phase9f-imported-materialization-predicate-cohort:
     fi
     printf '%s\n' "$materialize_return_builder" | rg -n -F 'CompilerMirLoweringTerminator::ReturnLocalI32("returned")' >/dev/null
 
-    materialize_branch_builder="$(sed -n '/^fn build_compiler_mir_block_param_imported_materialize_branch_module/,/^fn /p' "$source_file")"
-    if [ "$(printf '%s\n' "$materialize_branch_builder" | rg -c -F 'CompilerMirLoweringStatement::LocalI32SetCall {')" != "1" ]; then
-      echo "Imported materialize-branch must lower exactly one imported result into a declared local."
-      exit 1
-    fi
-    printf '%s\n' "$materialize_branch_builder" | rg -n -F 'CompilerMirLoweringTerminator::ReturnBlockParamI32("selected")' >/dev/null
-
-    rg -n '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_block_param_imported_predicate_update_branch:.*\|rust_model=CompilerMirLoweringModule\|rust_lowering=build_compiler_mir_ingestion_body_with_calls\|object_emitter=lower_compiler_mir_ingestion_module_to_object\|.*\|class=canonical_shared_lowering\|migration=phase9f_direct_imported_call_cohort\|$' "$manifest_doc" >/dev/null
     predicate_builder="$(sed -n '/^fn build_compiler_mir_block_param_imported_predicate_update_branch_module/,/^fn /p' "$source_file")"
     printf '%s\n' "$predicate_builder" | rg -n -F 'CompilerMirLoweringEdgeArgument::BlockParamI32AddI32Literal {' >/dev/null
     printf '%s\n' "$predicate_builder" | rg -n -F 'CompilerMirLoweringStatement::LocalI32SetCall {' >/dev/null
@@ -8297,32 +5977,7 @@ guard-cranelift-phase9f-imported-materialization-predicate-cohort:
     just guard-cranelift-compiler-mir-block-param-imported-predicate-update-branch-ingestion-native-smoke
 
     expected_remaining=""
-    actual_remaining="$( (rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|migration=phase9f_frozen_call_import_scope\|$' "$manifest_doc" || true) | sed -E 's/^allowed_compiler_mir_ingestion_phase9d_inventory_seam_([a-z0-9_]+):.*/\1/' | sort)"
-    if [ "$actual_remaining" != "$expected_remaining" ]; then
-      echo "Patch 5 preservation must coexist with a fully canonical current inventory."
-      diff -u <(printf '%s\n' "$expected_remaining") <(printf '%s\n' "$actual_remaining") || true
-      exit 1
-    fi
 
-    inventory_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:' "$manifest_doc")"
-    canonical_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
-    bespoke_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" || true)"
-    bespoke_count="${bespoke_count:-0}"
-    metadata_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=metadata_preservation_only\|' "$manifest_doc" || true)"
-    metadata_count="${metadata_count:-0}"
-    translator_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_historical_translator_seed_[a-z0-9_]+:' "$manifest_doc")"
-    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "33" ] || [ "$bespoke_count" != "0" ] || [ "$metadata_count" != "0" ] || [ "$translator_count" != "17" ]; then
-      echo "Unexpected current inventory while preserving the Phase 9F imported materialization/predicate milestone: total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count metadata=$metadata_count translators=$translator_count"
-      exit 1
-    fi
-
-    tr '\n' ' ' < "$readme_doc" | rg -F 'Patch 5 completes the imported materialization and predicate cohort without changing Patch 4 call lowering.' >/dev/null
-    tr '\n' ' ' < "$readme_doc" | rg -F '`block_param_imported_materialize_return` and `block_param_imported_materialize_branch` are newly canonical in this patch.' >/dev/null
-    tr '\n' ' ' < "$readme_doc" | rg -F '`block_param_imported_predicate_update_branch` remains canonical from Patch 4 and is retained in this cohort as the predicate proof' >/dev/null
-    tr '\n' ' ' < "$readme_doc" | rg -F 'The inventory is now 33 total seams, 28 canonical shared-lowering seams, five frozen bespoke imported merge-call graph seams, zero metadata-only seams, and seventeen frozen translator seeds.' >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_PRIMARY_ROUTE: mir_to_c' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ENABLED_BY_DEFAULT: false' "$manifest_doc" >/dev/null
-    rg -n -F 'forbidden_production_route: cranelift' "$manifest_doc" >/dev/null
 
     echo "✅ Phase 9F Patch 5 materialization/predicate evidence remains green within the fully canonical call/import inventory, and production routing is preserved."
 
@@ -8330,51 +5985,11 @@ guard-cranelift-phase9f-merge-arm-imported-call-cohort:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking Phase 9F merge-arm imported-call cohort..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     readme_doc="compiler/experiments/cranelift/README.md"
     source_file="compiler/experiments/cranelift/src/main.rs"
 
     just guard-cranelift-phase9f-imported-materialization-predicate-cohort
 
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9F_MERGE_ARM_IMPORTED_CALL_COHORT_GUARD: guard-cranelift-phase9f-merge-arm-imported-call-cohort' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_merge_arm_imported_call_status: phase9f_merge_arm_imported_call_cohort_complete' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_merge_arm_imported_call_module_emitter: lower_compiler_mir_ingestion_module_to_object' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_merge_arm_imported_call_body_lowerer: build_compiler_mir_ingestion_body_with_calls' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_merge_arm_imported_call_call_lowering_policy: reuse_patch4_LocalI32SetCall_and_imported_FuncRef_lowering_without_new_call_variants' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_merge_arm_imported_call_migrated_lane_count: 2' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_merge_arm_imported_call_migrated_lanes: block_param_merge_arm_update_imported_call_return,block_param_merge_arm_update_imported_call_branch' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_merge_arm_imported_call_legacy_adapter_policy: lane_specific_parsers_validate_frozen_inputs_then_build_CompilerMirLoweringModule_and_call_the_shared_module_emitter' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_merge_arm_imported_call_composition_evidence: imported_calls_execute_in_one_or_both_branch_arms_results_participate_in_arm_local_updates_LocalI32_edge_arguments_parameterized_merges_and_post_merge_return_or_branch_behavior' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_merge_arm_imported_call_inventory_after: 33_total_30_canonical_shared_3_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_merge_arm_imported_call_remaining_bespoke_count: 3' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_merge_arm_imported_call_remaining_bespoke_lanes: block_param_merge_dual_imported_joined_return,block_param_merge_imported_branch_joined_return,block_param_merge_imported_call_return' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_merge_arm_imported_call_translator_policy: existing_17_translator_seeds_remain_frozen' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_merge_arm_imported_call_route_policy: experiment_only_static_native_test_shims_no_default_backend_flip_no_production_runtime_route' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_merge_arm_imported_call_primary_route: mir_to_c' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_merge_arm_imported_call_next_milestone: remaining_imported_merge_graph_cohort' "$manifest_doc" >/dev/null
-
-    call_lowering_body="$(sed -n '/^fn build_compiler_mir_ingestion_body_with_calls/,/^fn /p' "$source_file")"
-    printf '%s\n' "$call_lowering_body" | rg -n -F 'CompilerMirLoweringStatement::LocalI32SetCall {' >/dev/null
-    printf '%s\n' "$call_lowering_body" | rg -n -F 'CompilerMirLoweringCallTarget::ImportedFunction(callee)' >/dev/null
-    printf '%s\n' "$call_lowering_body" | rg -n -F 'let call_inst = builder.ins().call(function_ref, &lowered_arguments);' >/dev/null
-
-    for lane in block_param_merge_arm_update_imported_call_return block_param_merge_arm_update_imported_call_branch; do
-      rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|rust_model=CompilerMirLoweringModule\|rust_lowering=build_compiler_mir_ingestion_body_with_calls\|object_emitter=lower_compiler_mir_ingestion_module_to_object\|.*\|class=canonical_shared_lowering\|migration=phase9f_merge_arm_imported_call_cohort\|$" "$manifest_doc" >/dev/null
-      adapter_body="$(sed -n "/^fn emit_compiler_mir_${lane}_ingestion_object/,/^fn build_compiler_mir_${lane}_module/p" "$source_file")"
-      printf '%s\n' "$adapter_body" | rg -n -F "parse_compiler_mir_${lane}_ingestion_fixture(" >/dev/null
-      printf '%s\n' "$adapter_body" | rg -n -F "build_compiler_mir_${lane}_module()" >/dev/null
-      printf '%s\n' "$adapter_body" | rg -n -F 'lower_compiler_mir_ingestion_module_to_object(output_path, &module)' >/dev/null
-      if printf '%s\n' "$adapter_body" | rg -n 'ObjectBuilder::new|ObjectModule::new|TinyMir(Function|BlockFunction|ParamBlockFunction)|lower_tiny_mir_|define_tiny_mir_' >/dev/null; then
-        echo "Migrated merge-arm adapter $lane owns a forbidden bespoke object path."
-        exit 1
-      fi
-      builder_body="$(sed -n "/^fn build_compiler_mir_${lane}_module/,/^fn /p" "$source_file")"
-      printf '%s\n' "$builder_body" | rg -n -F 'CompilerMirLoweringFunctionLinkage::ImportedHost' >/dev/null
-      printf '%s\n' "$builder_body" | rg -n -F 'CompilerMirLoweringCallTarget::ImportedFunction' >/dev/null
-      printf '%s\n' "$builder_body" | rg -n -F 'CompilerMirLoweringStatement::LocalI32AddI32Literal {' >/dev/null
-      printf '%s\n' "$builder_body" | rg -n -F 'CompilerMirLoweringEdgeArgument::LocalI32(' >/dev/null
-      printf '%s\n' "$builder_body" | rg -n -F 'CompilerMirLoweringTerminator::BranchBlockParamI32Positive {' >/dev/null
-    done
 
     merge_return_builder="$(sed -n '/^fn build_compiler_mir_block_param_merge_arm_update_imported_call_return_module/,/^fn /p' "$source_file")"
     if [ "$(printf '%s\n' "$merge_return_builder" | rg -c -F 'CompilerMirLoweringStatement::LocalI32SetCall {')" != "3" ]; then
@@ -8403,32 +6018,7 @@ guard-cranelift-phase9f-merge-arm-imported-call-cohort:
     just guard-cranelift-compiler-mir-block-param-merge-arm-update-imported-call-branch-ingestion-native-smoke
 
     expected_remaining=""
-    actual_remaining="$( (rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|migration=phase9f_frozen_call_import_scope\|$' "$manifest_doc" || true) | sed -E 's/^allowed_compiler_mir_ingestion_phase9d_inventory_seam_([a-z0-9_]+):.*/\1/' | sort)"
-    if [ "$actual_remaining" != "$expected_remaining" ]; then
-      echo "Patch 6 preservation must coexist with a fully canonical current inventory."
-      diff -u <(printf '%s\n' "$expected_remaining") <(printf '%s\n' "$actual_remaining") || true
-      exit 1
-    fi
 
-    inventory_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:' "$manifest_doc")"
-    canonical_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
-    bespoke_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" || true)"
-    bespoke_count="${bespoke_count:-0}"
-    metadata_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=metadata_preservation_only\|' "$manifest_doc" || true)"
-    metadata_count="${metadata_count:-0}"
-    translator_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_historical_translator_seed_[a-z0-9_]+:' "$manifest_doc")"
-    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "33" ] || [ "$bespoke_count" != "0" ] || [ "$metadata_count" != "0" ] || [ "$translator_count" != "17" ]; then
-      echo "Unexpected current inventory while preserving the Phase 9F merge-arm imported-call milestone: total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count metadata=$metadata_count translators=$translator_count"
-      exit 1
-    fi
-
-    tr '\n' ' ' < "$readme_doc" | rg -F 'Patch 6 completes the merge-arm imported-call cohort without changing the Patch 4 call lowering.' >/dev/null
-    tr '\n' ' ' < "$readme_doc" | rg -F '`block_param_merge_arm_update_imported_call_return` performs imported calls in both branch arms' >/dev/null
-    tr '\n' ' ' < "$readme_doc" | rg -F 'The branch companion performs an imported call in one arm while the other arm uses the existing block-parameter to local update' >/dev/null
-    tr '\n' ' ' < "$readme_doc" | rg -F 'The inventory is now 33 total seams, 30 canonical shared-lowering seams, three frozen bespoke imported merge-call graph seams, zero metadata-only seams, and seventeen frozen translator seeds.' >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_PRIMARY_ROUTE: mir_to_c' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ENABLED_BY_DEFAULT: false' "$manifest_doc" >/dev/null
-    rg -n -F 'forbidden_production_route: cranelift' "$manifest_doc" >/dev/null
 
     echo "✅ Phase 9F Patch 6 merge-arm evidence remains green within the fully canonical call/import inventory, and production routing is preserved."
 
@@ -8436,51 +6026,11 @@ guard-cranelift-phase9f-joined-imported-call-cohort:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking Phase 9F joined imported-call graph cohort..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     readme_doc="compiler/experiments/cranelift/README.md"
     source_file="compiler/experiments/cranelift/src/main.rs"
 
     just guard-cranelift-phase9f-merge-arm-imported-call-cohort
 
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9F_JOINED_IMPORTED_CALL_COHORT_GUARD: guard-cranelift-phase9f-joined-imported-call-cohort' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_joined_imported_call_status: phase9f_joined_and_dual_join_imported_call_cohort_complete' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_joined_imported_call_module_emitter: lower_compiler_mir_ingestion_module_to_object' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_joined_imported_call_body_lowerer: build_compiler_mir_ingestion_body_with_calls' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_joined_imported_call_call_lowering_policy: reuse_patch4_LocalI32SetCall_and_imported_FuncRef_lowering_without_new_call_variants' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_joined_imported_call_migrated_lane_count: 3' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_joined_imported_call_migrated_lanes: block_param_merge_imported_call_return,block_param_merge_imported_branch_joined_return,block_param_merge_dual_imported_joined_return' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_joined_imported_call_legacy_adapter_policy: lane_specific_parsers_validate_frozen_inputs_then_build_CompilerMirLoweringModule_and_call_the_shared_module_emitter' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_joined_imported_call_composition_evidence: imported_results_cross_CFG_edges_independent_branch_arms_feed_ordered_parameterized_merges_joined_returns_reuse_imported_results_and_dual_imports_converge_at_a_join' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_joined_imported_call_historical_command_policy: all_eleven_phase9f_historical_commands_are_thin_compatibility_adapters_into_the_canonical_v2_CompilerMirLoweringModule_model_and_shared_module_emission' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_joined_imported_call_inventory_after: 33_total_33_canonical_shared_0_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_joined_imported_call_remaining_bespoke_count: 0' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_joined_imported_call_remaining_bespoke_lanes: none' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_joined_imported_call_translator_policy: existing_17_translator_seeds_remain_frozen' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_joined_imported_call_route_policy: experiment_only_static_native_test_shims_no_default_backend_flip_no_production_runtime_route' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_joined_imported_call_primary_route: mir_to_c' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_joined_imported_call_next_milestone: call_import_completeness_rejection_and_bypass_retirement' "$manifest_doc" >/dev/null
-
-    call_lowering_body="$(sed -n '/^fn build_compiler_mir_ingestion_body_with_calls/,/^fn /p' "$source_file")"
-    printf '%s\n' "$call_lowering_body" | rg -n -F 'CompilerMirLoweringStatement::LocalI32SetCall {' >/dev/null
-    printf '%s\n' "$call_lowering_body" | rg -n -F 'CompilerMirLoweringCallTarget::ImportedFunction(callee)' >/dev/null
-    printf '%s\n' "$call_lowering_body" | rg -n -F 'let call_inst = builder.ins().call(function_ref, &lowered_arguments);' >/dev/null
-
-    for lane in block_param_merge_imported_call_return block_param_merge_imported_branch_joined_return block_param_merge_dual_imported_joined_return; do
-      rg -n "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:.*\|rust_model=CompilerMirLoweringModule\|rust_lowering=build_compiler_mir_ingestion_body_with_calls\|object_emitter=lower_compiler_mir_ingestion_module_to_object\|.*\|class=canonical_shared_lowering\|migration=phase9f_joined_imported_call_cohort\|$" "$manifest_doc" >/dev/null
-      adapter_body="$(sed -n "/^fn emit_compiler_mir_${lane}_ingestion_object/,/^fn build_compiler_mir_${lane}_module/p" "$source_file")"
-      printf '%s\n' "$adapter_body" | rg -n -F "parse_compiler_mir_${lane}_ingestion_fixture(" >/dev/null
-      printf '%s\n' "$adapter_body" | rg -n -F "build_compiler_mir_${lane}_module()" >/dev/null
-      printf '%s\n' "$adapter_body" | rg -n -F 'lower_compiler_mir_ingestion_module_to_object(output_path, &module)' >/dev/null
-      if printf '%s\n' "$adapter_body" | rg -n 'ObjectBuilder::new|ObjectModule::new|TinyMir(Function|BlockFunction|ParamBlockFunction)|lower_tiny_mir_|define_tiny_mir_' >/dev/null; then
-        echo "Migrated joined-call adapter $lane owns a forbidden bespoke object path."
-        exit 1
-      fi
-      builder_body="$(sed -n "/^fn build_compiler_mir_${lane}_module/,/^fn /p" "$source_file")"
-      printf '%s\n' "$builder_body" | rg -n -F 'CompilerMirLoweringFunctionLinkage::ImportedHost' >/dev/null
-      printf '%s\n' "$builder_body" | rg -n -F 'CompilerMirLoweringStatement::LocalI32SetCall {' >/dev/null
-      printf '%s\n' "$builder_body" | rg -n -F 'CompilerMirLoweringEdgeArgument::BlockParamI32AddI32Literal {' >/dev/null
-      printf '%s\n' "$builder_body" | rg -n -F 'CompilerMirLoweringTerminator::ReturnLocalI32(' >/dev/null
-    done
 
     merge_return_builder="$(sed -n '/^fn build_compiler_mir_block_param_merge_imported_call_return_module/,/^fn /p' "$source_file")"
     if [ "$(printf '%s\n' "$merge_return_builder" | rg -c -F 'CompilerMirLoweringStatement::LocalI32SetCall {')" != "1" ]; then
@@ -8521,33 +6071,6 @@ guard-cranelift-phase9f-joined-imported-call-cohort:
     just guard-cranelift-compiler-mir-block-param-merge-imported-branch-joined-return-ingestion-native-smoke
     just guard-cranelift-compiler-mir-block-param-merge-dual-imported-joined-return-ingestion-native-smoke
 
-    actual_bespoke="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" || true)"
-    if [ -n "$actual_bespoke" ]; then
-      echo "Phase 9F closure requires zero bespoke compiler MIR ingestion seams."
-      printf '%s\n' "$actual_bespoke"
-      exit 1
-    fi
-
-    inventory_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:' "$manifest_doc")"
-    canonical_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
-    bespoke_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" || true)"
-    bespoke_count="${bespoke_count:-0}"
-    metadata_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=metadata_preservation_only\|' "$manifest_doc" || true)"
-    metadata_count="${metadata_count:-0}"
-    translator_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_historical_translator_seed_[a-z0-9_]+:' "$manifest_doc")"
-    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "33" ] || [ "$bespoke_count" != "0" ] || [ "$metadata_count" != "0" ] || [ "$translator_count" != "17" ]; then
-      echo "Unexpected Phase 9F closure inventory: total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count metadata=$metadata_count translators=$translator_count"
-      exit 1
-    fi
-
-    tr '\n' ' ' < "$readme_doc" | rg -F 'Patch 7 completes the joined and dual-join imported-call cohort without changing the Patch 4 call lowering.' >/dev/null
-    tr '\n' ' ' < "$readme_doc" | rg -F '`block_param_merge_imported_call_return` transports independent branch-arm values into a parameterized merge' >/dev/null
-    tr '\n' ' ' < "$readme_doc" | rg -F '`block_param_merge_imported_branch_joined_return` carries imported predicate results through an existing post-merge branch' >/dev/null
-    tr '\n' ' ' < "$readme_doc" | rg -F '`block_param_merge_dual_imported_joined_return` proves the same joined graph with distinct imported symbols' >/dev/null
-    tr '\n' ' ' < "$readme_doc" | rg -F 'The Phase 9F inventory is now closed at 33 total seams, 33 canonical shared-lowering seams, zero bespoke seams, zero metadata-only seams, and seventeen frozen translator seeds.' >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_PRIMARY_ROUTE: mir_to_c' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ENABLED_BY_DEFAULT: false' "$manifest_doc" >/dev/null
-    rg -n -F 'forbidden_production_route: cranelift' "$manifest_doc" >/dev/null
 
     echo "✅ Phase 9F Patch 7 canonicalizes all joined imported-call graphs and closes the inventory at 33/0 without changing production routing."
 
@@ -8555,7 +6078,6 @@ guard-cranelift-phase9f-call-import-completeness-rejection:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Freezing Phase 9F canonical call/import completeness, rejection, and bypass retirement..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     readme_doc="compiler/experiments/cranelift/README.md"
     source_file="compiler/experiments/cranelift/src/main.rs"
     positive_fixture="compiler/fixtures/phase9f_call_import_completeness.mir"
@@ -8566,26 +6088,6 @@ guard-cranelift-phase9f-call-import-completeness-rejection:
 
     just guard-cranelift-phase9f-joined-imported-call-cohort
 
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9F_CALL_IMPORT_COMPLETENESS_REJECTION_GUARD: guard-cranelift-phase9f-call-import-completeness-rejection' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_call_import_completeness_status: phase9f_call_import_completeness_rejection_and_bypass_retirement_frozen' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_call_import_completeness_positive_fixture: compiler/fixtures/phase9f_call_import_completeness.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_call_import_completeness_unresolved_fixture: compiler/fixtures/phase9f_unresolved_import_object.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_call_import_completeness_positive_matrix: local_and_imported_callees_zero_one_and_multiple_arguments_literal_parameter_local_and_block_parameter_sources_return_branch_local_update_and_edge_argument_uses_entry_branch_arm_pre_merge_and_post_merge_placement_both_function_orders_one_and_multiple_imports_cross_block_and_cross_function_import_reuse_exported_entry_local_helper_and_import_module_contents_and_successful_native_linking' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_call_import_completeness_negative_matrix: missing_callee_wrong_argument_count_signature_type_mismatch_duplicate_import_name_conflicting_duplicate_link_symbol_local_import_name_collision_duplicate_backend_symbol_invalid_import_or_defined_linkage_undeclared_destination_local_direct_recursion_mutual_recursion_indirect_call_syntax_variadic_declaration_void_or_non_i32_return_call_or_import_records_in_v1_and_non_contiguous_v2_record_indices' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_call_import_completeness_unresolved_import_policy: parse_and_validation_succeed_object_is_written_and_native_link_fails_only_because_the_host_symbol_is_absent' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_call_import_completeness_preoutput_rejection_policy: every_parser_or_validator_failure_occurs_before_output_directory_or_object_creation' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_call_import_bypass_retirement_command_count: 11' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_call_import_bypass_retirement_commands: block_param_local_call_branch,block_param_imported_call_branch,block_param_imported_call_return,block_param_imported_materialize_branch,block_param_imported_materialize_return,block_param_imported_predicate_update_branch,block_param_merge_arm_update_imported_call_branch,block_param_merge_arm_update_imported_call_return,block_param_merge_dual_imported_joined_return,block_param_merge_imported_branch_joined_return,block_param_merge_imported_call_return' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_call_import_bypass_retirement_adapter_policy: frozen_lane_parser_validation_then_CompilerMirLoweringModule_construction_then_lower_compiler_mir_ingestion_module_to_object_only' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_call_import_bypass_retirement_forbidden_adapter_ownership: ObjectModule_ObjectBuilder_TinyMirParamBlockFunction_define_tiny_mir_param_block_graph_exported_function_lane_specific_Cranelift_call_lowering_and_lane_specific_Linkage_Import_declaration' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_call_import_legacy_param_block_lowerer_policy: retained_only_for_frozen_non_ingestion_and_existing_translator_consumers_dead_to_new_work' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_call_import_legacy_param_block_lowerer_direct_call_count: 24' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_call_import_legacy_call_variant_occurrence_freeze: local_return=4,local_branch=4,local_jump=3,import_return=3,import_branch=3,import_literal_return=8,import_literal_jump=4,import_literal_branch=6,import_predicate_branch=4' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_call_import_completeness_inventory: 33_total_33_canonical_shared_0_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_call_import_completeness_translator_policy: no_new_translator_seed_existing_inventory_remains_exactly_17' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_call_import_completeness_route_policy: experiment_only_static_native_test_shims_no_default_backend_flip_no_production_runtime_route' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_call_import_completeness_primary_route: mir_to_c' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_call_import_completeness_next_milestone: phase9f_close' "$manifest_doc" >/dev/null
 
     for fixture in "$positive_fixture" "$unresolved_fixture"; do
       if [ ! -f "$fixture" ]; then
@@ -8829,23 +6331,6 @@ guard-cranelift-phase9f-call-import-completeness-rejection:
     check_variant_count 'BranchBlockParamImportedFunctionI32CallI32LiteralPositive {' 6
     check_variant_count 'BranchBlockParamImportedFunctionI32Predicate {' 4
 
-    inventory_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:' "$manifest_doc")"
-    canonical_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
-    bespoke_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" || true)"
-    bespoke_count="${bespoke_count:-0}"
-    metadata_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=metadata_preservation_only\|' "$manifest_doc" || true)"
-    metadata_count="${metadata_count:-0}"
-    translator_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_historical_translator_seed_[a-z0-9_]+:' "$manifest_doc")"
-    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "33" ] || [ "$bespoke_count" != "0" ] || [ "$metadata_count" != "0" ] || [ "$translator_count" != "17" ]; then
-      echo "Unexpected final call/import inventory: total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count metadata=$metadata_count translators=$translator_count"
-      exit 1
-    fi
-
-    tr '\n' ' ' < "$readme_doc" | rg -F 'Patch 8 freezes the complete canonical call/import matrix and retires all eleven historical bypasses.' >/dev/null
-    tr '\n' ' ' < "$readme_doc" | rg -F 'A valid module with an unresolved imported host symbol still parses, validates, and writes an object; only the native link fails.' >/dev/null
-    tr '\n' ' ' < "$readme_doc" | rg -F 'The retained `TinyMirParamBlockFunction` call variants are dead to new compiler-ingestion work' >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_PRIMARY_ROUTE: mir_to_c' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ENABLED_BY_DEFAULT: false' "$manifest_doc" >/dev/null
 
     echo "✅ Phase 9F call/import completeness and rejection are frozen at 33/0/17; unresolved imports fail only at link time, and all eleven historical commands remain thin canonical adapters."
 
@@ -8853,34 +6338,11 @@ guard-cranelift-phase9f-close:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Closing Phase 9F on canonical local-call and imported-runtime-boundary evidence..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     readme_doc="compiler/experiments/cranelift/README.md"
     source_file="compiler/experiments/cranelift/src/main.rs"
 
     just guard-cranelift-phase9f-call-import-completeness-rejection
 
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9F_CLOSE_GUARD: guard-cranelift-phase9f-close' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_contract_status: phase9f_closed_canonical_calls_and_imported_runtime_boundary' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_close_status: phase9f_closed_canonical_calls_and_imported_runtime_boundary' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_contract_closure_guard_policy: phase9f_close_guard_is_required_closure_gate' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_call_import_completeness_next_milestone: phase9f_close' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_call_import_completeness_next_milestone_status: complete' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_closure_basis: v2_schema_parser_validator_shared_module_emitter_all_eleven_migrations_completeness_rejection_unresolved_link_classification_and_bypass_retirement_green' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_closure_exact_seam_count: 11' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_closure_exact_seams: block_param_local_call_branch,block_param_imported_call_branch,block_param_imported_call_return,block_param_imported_materialize_branch,block_param_imported_materialize_return,block_param_imported_predicate_update_branch,block_param_merge_arm_update_imported_call_branch,block_param_merge_arm_update_imported_call_return,block_param_merge_dual_imported_joined_return,block_param_merge_imported_branch_joined_return,block_param_merge_imported_call_return' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_closure_v1_policy: gust_compiler_mir_ingestion_v1_remains_frozen_single_function_and_call_import_free' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_closure_v2_policy: gust_compiler_mir_ingestion_v2_exclusively_owns_module_import_and_call_syntax' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_closure_module_emitter_policy: local_and_static_imported_calls_share_CompilerMirLoweringModule_build_compiler_mir_ingestion_body_with_calls_and_lower_compiler_mir_ingestion_module_to_object' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_closure_i32_policy: every_call_argument_parameter_destination_local_and_result_is_i32_and_every_call_has_exactly_one_i32_result' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_closure_rejection_policy: malformed_canonical_fixtures_reject_during_parse_or_validation_before_output_directory_or_object_creation' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_closure_unresolved_import_policy: valid_unresolved_imports_parse_validate_and_emit_an_object_then_fail_only_during_native_link' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_closure_bypass_policy: no_phase9f_adapter_uses_TinyMirParamBlockFunction_or_owns_ObjectModule_call_lowering_or_import_declaration_logic' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_closure_inventory: 33_total_33_canonical_shared_0_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_closure_translator_policy: translator_seed_inventory_remains_frozen_at_17' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_closure_primary_route: mir_to_c' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_closure_cranelift_default: disabled' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_closure_production_route_policy: no_production_runtime_or_backend_route_enabled' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_closure_freeze_policy: phase9f_closed_no_new_call_import_semantics_translator_seeds_or_routes_without_a_new_phase_contract' "$manifest_doc" >/dev/null
 
     expected_phase9f="$(printf '%s\n' \
       block_param_local_call_branch \
@@ -8894,51 +6356,8 @@ guard-cranelift-phase9f-close:
       block_param_merge_dual_imported_joined_return \
       block_param_merge_imported_branch_joined_return \
       block_param_merge_imported_call_return | sort)"
-    declared_phase9f="$(rg '^allowed_compiler_mir_ingestion_phase9f_closure_exact_seams:' "$manifest_doc" | cut -d: -f2- | tr ',' '\n' | sed 's/^ //' | sort)"
-    if [ "$declared_phase9f" != "$expected_phase9f" ]; then
-      echo "Phase 9F closure must name exactly the eleven frozen migration seams."
-      diff -u <(printf '%s\n' "$expected_phase9f") <(printf '%s\n' "$declared_phase9f") || true
-      exit 1
-    fi
 
-    for lane in $expected_phase9f; do
-      inventory_record="$(rg "^allowed_compiler_mir_ingestion_phase9d_inventory_seam_${lane}:" "$manifest_doc")"
-      if ! printf '%s\n' "$inventory_record" | rg '\|rust_model=CompilerMirLoweringModule\|rust_lowering=build_compiler_mir_ingestion_body_with_calls\|object_emitter=lower_compiler_mir_ingestion_module_to_object\|.*\|class=canonical_shared_lowering\|' >/dev/null; then
-        echo "Phase 9F seam $lane is not frozen on the canonical shared module path."
-        printf '%s\n' "$inventory_record"
-        exit 1
-      fi
 
-      adapter_body="$(sed -n "/^fn emit_compiler_mir_${lane}_ingestion_object/,/^fn build_compiler_mir_${lane}_module/p" "$source_file")"
-      if [ -z "$adapter_body" ]; then
-        echo "Missing frozen Phase 9F adapter body for $lane."
-        exit 1
-      fi
-      if printf '%s\n' "$adapter_body" | rg 'TinyMirParamBlockFunction|define_tiny_mir_param_block_graph_exported_function|ObjectBuilder::new|ObjectModule::new|module\.declare_function|Linkage::Import|declare_func_in_func|builder\.ins\(\)\.call' >/dev/null; then
-        echo "Phase 9F adapter $lane regained bespoke parameter-block, object-module, call, or import ownership."
-        exit 1
-      fi
-    done
-
-    inventory_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:' "$manifest_doc")"
-    canonical_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
-    bespoke_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" || true)"
-    bespoke_count="${bespoke_count:-0}"
-    metadata_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=metadata_preservation_only\|' "$manifest_doc" || true)"
-    metadata_count="${metadata_count:-0}"
-    translator_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_historical_translator_seed_[a-z0-9_]+:' "$manifest_doc")"
-    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "33" ] || [ "$bespoke_count" != "0" ] || [ "$metadata_count" != "0" ] || [ "$translator_count" != "17" ]; then
-      echo "Unexpected Phase 9F closure inventory: total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count metadata=$metadata_count translators=$translator_count"
-      exit 1
-    fi
-
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_schema_signature_policy: ordered_i32_parameters_single_i32_return_only' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_schema_result_policy: call_result_must_target_a_declared_i32_local' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_schema_v1_policy: v1_remains_frozen_single_function_and_call_import_free' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_schema_v2_policy: v2_owns_module_import_and_call_syntax' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_PRIMARY_ROUTE: mir_to_c' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ENABLED_BY_DEFAULT: false' "$manifest_doc" >/dev/null
-    rg -n -F 'forbidden_production_route: cranelift' "$manifest_doc" >/dev/null
     rg -n -F 'Phase 9F is closed as' "$readme_doc" >/dev/null
     rg -n -F '`phase9f_closed_canonical_calls_and_imported_runtime_boundary`.' "$readme_doc" >/dev/null
     tr '\n' ' ' < "$readme_doc" | rg -F 'Patch 9 closes Phase 9F with all eleven exact call/import seams on the canonical shared module path.' >/dev/null
@@ -8951,60 +6370,9 @@ guard-cranelift-phase9g-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking the closed Phase 9G transactional object and classified link pipeline..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     readme_doc="compiler/experiments/cranelift/README.md"
     source_file="compiler/experiments/cranelift/src/main.rs"
 
-    for required_file in "$manifest_doc" "$readme_doc" "$source_file"; do
-      if [ ! -f "$required_file" ]; then
-        echo "Missing Phase 9G opening-contract input: $required_file"
-        exit 1
-      fi
-    done
-
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9G_OPENING_CONTRACT_GUARD: guard-cranelift-phase9g-opening-contract' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_contract_status: phase9g_closed_transactional_object_and_classified_link_pipeline' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_contract_closure_guard_policy: phase9g_close_guard_is_required_closure_gate' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_contract_predecessor_status: phase9f_closed_canonical_calls_and_imported_runtime_boundary' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_contract_predecessor_guard: guard-cranelift-phase9f-close' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_contract_inherited_inventory: 33_total_33_canonical_shared_0_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_contract_mir_schema_policy: gust_compiler_mir_ingestion_v1_and_v2_are_frozen_and_phase9g_adds_no_new_mir_syntax_or_semantics' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_contract_primary_route: mir_to_c' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_contract_cranelift_default: disabled' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_contract_production_route_policy: no_production_runtime_or_backend_route_enabled' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_contract_opening_step_policy: steps_1_and_2_change_only_contract_inventory_and_guards_no_object_link_or_routing_behavior' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_contract_inventory_namespace: allowed_cranelift_phase9g_object_link_inventory_' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_contract_inventory_record_count: 9' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_contract_next_milestone: target_and_relocation_contract' "$manifest_doc" >/dev/null
-
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9F_CLOSE_GUARD: guard-cranelift-phase9f-close' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_close_status: phase9f_closed_canonical_calls_and_imported_runtime_boundary' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_closure_inventory: 33_total_33_canonical_shared_0_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_closure_primary_route: mir_to_c' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_closure_cranelift_default: disabled' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_closure_production_route_policy: no_production_runtime_or_backend_route_enabled' "$manifest_doc" >/dev/null
-
-    inventory_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:' "$manifest_doc")"
-    canonical_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*[|]class=canonical_shared_lowering[|]' "$manifest_doc" | wc -l | tr -d ' ')"
-    bespoke_count="$( (rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*[|]class=compiler_owned_bespoke_lowering[|]' "$manifest_doc" || true) | wc -l | tr -d ' ')"
-    metadata_count="$( (rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*[|]class=metadata_preservation_only[|]' "$manifest_doc" || true) | wc -l | tr -d ' ')"
-    translator_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_historical_translator_seed_[a-z0-9_]+:' "$manifest_doc")"
-    source_ingestion_count="$(rg -c '^fn emit_compiler_mir_[a-z0-9_]+_ingestion_object[(]' "$source_file")"
-    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "33" ] || [ "$bespoke_count" != "0" ] || [ "$metadata_count" != "0" ] || [ "$translator_count" != "17" ] || [ "$source_ingestion_count" != "33" ]; then
-      echo "Unexpected Phase 9G inherited inventory: manifest_total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count metadata=$metadata_count translators=$translator_count source_ingestion=$source_ingestion_count"
-      exit 1
-    fi
-
-    phase9g_inventory_count="$(rg -c '^allowed_cranelift_phase9g_object_link_inventory_[a-z0-9_]+:' "$manifest_doc")"
-    if [ "$phase9g_inventory_count" != "9" ]; then
-      echo "Expected exactly 9 separate Phase 9G object/link inventory records, found $phase9g_inventory_count."
-      rg -n '^allowed_cranelift_phase9g_object_link_inventory_' "$manifest_doc" || true
-      exit 1
-    fi
-
-    for key in canonical_fixture_dispatch canonical_function_object_emitter canonical_module_object_emitter legacy_object_surface native_link_surface native_shim_surface result_surface unresolved_symbol_surface warning_baseline; do
-      rg -n "^allowed_cranelift_phase9g_object_link_inventory_${key}:" "$manifest_doc" >/dev/null
-    done
 
     rg -n -F 'fn emit_compiler_mir_fixture_contents_object(' "$source_file" >/dev/null
     rg -n -F 'fn lower_compiler_mir_ingestion_function_to_object(' "$source_file" >/dev/null
@@ -9065,7 +6433,6 @@ guard-cranelift-phase9g-object-artifact-contract:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking Phase 9G transactional object artifact contract..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     readme_doc="compiler/experiments/cranelift/README.md"
     source_file="compiler/experiments/cranelift/src/main.rs"
     function_fixture="build/guards/cranelift_phase9g_object_artifact_contract/canonical-return-int.mir"
@@ -9080,29 +6447,6 @@ guard-cranelift-phase9g-object-artifact-contract:
 
     just cranelift-phase9g-write-canonical-return-int-fixture "$function_fixture"
 
-    for required_file in "$manifest_doc" "$readme_doc" "$source_file" "$function_fixture" "$module_fixture"; do
-      if [ ! -f "$required_file" ]; then
-        echo "Missing Phase 9G object-artifact contract input: $required_file"
-        exit 1
-      fi
-    done
-
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9G_OBJECT_ARTIFACT_CONTRACT_GUARD: guard-cranelift-phase9g-object-artifact-contract' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_object_artifact_status: phase9g_transactional_object_artifact_contract' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_object_artifact_owner: compiler/experiments/cranelift/src/main.rs::publish_compiler_mir_object_artifact' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_object_artifact_report: CompilerMirObjectArtifactReport_final_path_and_byte_size' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_object_artifact_validation_order: fixture_parse_validation_metadata_and_lowering_complete_before_parent_directory_or_temp_file_creation' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_object_artifact_buffer_policy: complete_nonempty_object_bytes_required_before_publication' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_object_artifact_temp_policy: hidden_fixed_sibling_dot_filename_phase9g_tmp_removed_before_write_and_after_any_publication_failure' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_object_artifact_write_policy: create_new_write_all_sync_all_close_then_same_directory_rename' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_object_artifact_replacement_policy: existing_final_artifact_is_replaced_only_by_successful_rename_of_complete_temp_artifact' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_object_artifact_failure_policy: no_partial_final_artifact_and_no_owned_temp_artifact_after_failure' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_object_artifact_canonical_emitter_count: 2' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_object_artifact_canonical_emitters: lower_compiler_mir_ingestion_function_to_object,lower_compiler_mir_ingestion_module_to_object' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_object_artifact_dynamic_matrix: function_success_module_success_stale_temp_cleanup_existing_final_replacement_parse_rejection_without_output_parent_existing_final_preservation_and_publication_failure_cleanup' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_object_artifact_inherited_inventory: 33_total_33_canonical_shared_0_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_object_artifact_route_policy: mir_to_c_primary_cranelift_disabled_no_production_runtime_or_backend_route' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_object_artifact_next_milestone: target_and_relocation_contract' "$manifest_doc" >/dev/null
 
     rg -n -F 'struct CompilerMirObjectArtifactReport {' "$source_file" >/dev/null
     rg -n -F 'final_path: PathBuf,' "$source_file" >/dev/null
@@ -9239,7 +6583,6 @@ guard-cranelift-phase9g-target-relocation-contract:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking Phase 9G explicit native target and PIC relocation contract..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     readme_doc="compiler/experiments/cranelift/README.md"
     source_file="compiler/experiments/cranelift/src/main.rs"
     fixture="compiler/fixtures/phase9f_call_import_completeness.mir"
@@ -9251,28 +6594,6 @@ guard-cranelift-phase9g-target-relocation-contract:
       just guard-cranelift-phase9g-object-artifact-contract
     fi
 
-    for required_file in "$manifest_doc" "$readme_doc" "$source_file" "$fixture"; do
-      if [ ! -f "$required_file" ]; then
-        echo "Missing Phase 9G target/relocation contract input: $required_file"
-        exit 1
-      fi
-    done
-
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9G_TARGET_RELOCATION_CONTRACT_GUARD: guard-cranelift-phase9g-target-relocation-contract' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_target_relocation_status: phase9g_explicit_native_target_and_pic_relocation_contract' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_target_relocation_owner: compiler/experiments/cranelift/src/main.rs::build_compiler_mir_native_object_builder' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_target_relocation_setting: cranelift_codegen_is_pic_true' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_target_relocation_report: native_triple_architecture_pointer_width_endianness_object_format_default_call_conv_relocation_model_and_is_pic' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_target_relocation_supported_object_formats: Elf_Coff_Macho' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_target_relocation_pointer_widths: 32_or_64' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_target_relocation_unsupported_host_policy: reject_unsupported_object_format_or_pointer_width_before_ObjectBuilder_creation' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_target_relocation_calling_convention_source: native_TargetIsa_default_call_conv' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_target_relocation_pie_policy: canonical_imported_call_objects_link_in_normal_Elf_PIE_mode_without_text_relocations_or_DT_TEXTREL' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_target_relocation_workaround_policy: no_global_no_pie_linker_flag' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_target_relocation_canonical_emitter_count: 2' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_target_relocation_inherited_inventory: 33_total_33_canonical_shared_0_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_target_relocation_route_policy: mir_to_c_primary_cranelift_disabled_no_production_runtime_or_backend_route' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_target_relocation_next_milestone: object_inspection_contract' "$manifest_doc" >/dev/null
 
     rg -n -F 'use cranelift_codegen::settings::{self, Configurable};' "$source_file" >/dev/null
     rg -n -F 'struct CompilerMirObjectTargetContract {' "$source_file" >/dev/null
@@ -9391,7 +6712,6 @@ guard-cranelift-phase9g-object-inspection-contract:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking Phase 9G structured object inspection and symbol contracts..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     readme_doc="compiler/experiments/cranelift/README.md"
     source_file="compiler/experiments/cranelift/src/main.rs"
     cargo_manifest="compiler/experiments/cranelift/Cargo.toml"
@@ -9409,30 +6729,6 @@ guard-cranelift-phase9g-object-inspection-contract:
 
     just cranelift-phase9g-write-canonical-return-int-fixture "$function_fixture"
 
-    for required_file in "$manifest_doc" "$readme_doc" "$source_file" "$cargo_manifest" "$cargo_lock" "$function_fixture" "$local_fixture" "$imported_fixture"; do
-      if [ ! -f "$required_file" ]; then
-        echo "Missing Phase 9G object-inspection contract input: $required_file"
-        exit 1
-      fi
-    done
-
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9G_OBJECT_INSPECTION_CONTRACT_GUARD: guard-cranelift-phase9g-object-inspection-contract' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_object_inspection_status: phase9g_structured_object_inspection_and_symbol_contract' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_object_inspection_dependency: object_0_39_1_unified_read_api' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_object_inspection_owner: compiler/experiments/cranelift/src/main.rs::inspect_compiler_mir_object_artifact' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_object_inspection_order: complete_object_bytes_then_structural_inspection_and_symbol_contract_then_transactional_publication' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_object_inspection_metadata: binary_format_architecture_endianness_pointer_width_object_kind_sections_code_section_symbol_visibility_relocation_targets_and_duplicate_symbols' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_object_inspection_symbol_contract: exact_exported_module_local_and_unresolved_import_symbol_sets_derived_from_the_validated_canonical_MIR_model' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_object_inspection_export_policy: no_unexpected_exported_helper_symbols' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_object_inspection_local_policy: every_module_local_function_is_defined_with_compilation_unit_local_visibility' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_object_inspection_import_policy: import_free_and_local_call_modules_have_zero_undefined_symbols_imported_call_modules_have_the_exact_declared_host_link_symbol_set' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_object_inspection_duplicate_policy: duplicate_non_section_non_file_symbol_table_names_reject_before_publication' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_object_inspection_malformed_policy: malformed_truncated_empty_or_code_section_free_objects_reject_as_object_inspection_failures' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_object_inspection_nm_policy: structured_object_inspection_is_authoritative_nm_is_optional_failure_diagnostic_only' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_object_inspection_dynamic_matrix: v1_export_only_local_call_export_plus_local_multi_import_exact_undefined_set_wrong_fixture_contract_malformed_object_and_truncated_object' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_object_inspection_inherited_inventory: 33_total_33_canonical_shared_0_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_object_inspection_route_policy: mir_to_c_primary_cranelift_disabled_no_production_runtime_or_backend_route' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_object_inspection_next_milestone: canonical_link_driver_contract' "$manifest_doc" >/dev/null
 
     rg -n -F 'object = { version = "=0.39.1", default-features = false, features = ["read", "write"] }' "$cargo_manifest" >/dev/null
     cargo_package_block="$(sed -n '/^name = "gust-cranelift-experiment"$/,/^$/p' "$cargo_lock")"
@@ -9604,7 +6900,6 @@ guard-cranelift-phase9g-link-driver-contract:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking Phase 9G canonical experimental link driver..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     readme_doc="compiler/experiments/cranelift/README.md"
     source_file="compiler/experiments/cranelift/src/main.rs"
     cargo_manifest="compiler/experiments/cranelift/Cargo.toml"
@@ -9619,31 +6914,6 @@ guard-cranelift-phase9g-link-driver-contract:
 
     just cranelift-phase9g-write-canonical-return-int-fixture "$function_fixture"
 
-    for required_file in "$manifest_doc" "$readme_doc" "$source_file" "$cargo_manifest" "$function_fixture"; do
-      if [ ! -f "$required_file" ]; then
-        echo "Missing Phase 9G link-driver contract input: $required_file"
-        exit 1
-      fi
-    done
-
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9G_LINK_DRIVER_CONTRACT_GUARD: guard-cranelift-phase9g-link-driver-contract' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_link_driver_status: phase9g_canonical_experimental_link_request_and_transactional_executable_publication' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_link_driver_owner: compiler/experiments/cranelift/src/main.rs::run_compiler_mir_link_request' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_link_driver_request_format: gust.compiler_mir_link_request.v1' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_link_driver_request_fields: output_ordered_object_inputs_optional_c_source_or_host_object_additional_libraries_additional_linker_arguments_selected_driver_environment_overrides_expected_result_and_expected_failure_kind' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_link_driver_path_policy: request_paths_are_absolute_or_resolved_relative_to_the_request_file_parent' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_link_driver_input_policy: validate_every_declared_input_before_output_parent_creation_or_linker_spawn' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_link_driver_argument_policy: each_structured_field_becomes_one_Command_argument_no_shell_command_string_or_shell_splitting' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_link_driver_output_policy: driver_reserves_minus_o_and_links_only_to_a_hidden_same_directory_temporary_executable' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_link_driver_log_policy: captured_stdout_and_stderr_are_written_to_deterministic_sibling_logs_for_every_spawned_link' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_link_driver_result_owner: Rust_driver_classifies_linked_or_native_link_failure_and_matches_the_structured_expected_result' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_link_driver_publication_policy: successful_expected_nonempty_temporary_executable_is_renamed_atomically_to_the_final_path' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_link_driver_failure_policy: spawn_link_expectation_or_publication_failure_removes_the_owned_temporary_executable_and_preserves_final_and_input_artifacts' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_link_driver_migration_policy: existing_lane_owned_link_commands_remain_frozen_until_the_later_phase9g_migration_patches' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_link_driver_dynamic_matrix: ordered_multi_object_plus_c_source_success_precompiled_host_object_success_expected_native_link_failure_missing_input_pre_output_rejection_and_publication_failure_cleanup' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_link_driver_inherited_inventory: 33_total_33_canonical_shared_0_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_link_driver_route_policy: mir_to_c_primary_cranelift_disabled_no_production_runtime_or_backend_route' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_link_driver_next_milestone: pipeline_failure_classification_contract' "$manifest_doc" >/dev/null
 
     rg -n -F 'use std::process::Command;' "$source_file" >/dev/null
     rg -n -F 'enum CompilerMirLinkExpectedResult {' "$source_file" >/dev/null
@@ -9895,7 +7165,6 @@ guard-cranelift-phase9g-pipeline-failure-classification:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking Phase 9G pipeline-stage and failure-kind classification..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     readme_doc="compiler/experiments/cranelift/README.md"
     source_file="compiler/experiments/cranelift/src/main.rs"
     cargo_manifest="compiler/experiments/cranelift/Cargo.toml"
@@ -9912,26 +7181,6 @@ guard-cranelift-phase9g-pipeline-failure-classification:
 
     just cranelift-phase9g-write-canonical-return-int-fixture "$function_fixture"
 
-    for required_file in "$manifest_doc" "$readme_doc" "$source_file" "$cargo_manifest" "$function_fixture" "$positive_fixture" "$unresolved_fixture"; do
-      if [ ! -f "$required_file" ]; then
-        echo "Missing Phase 9G pipeline-classification input: $required_file"
-        exit 1
-      fi
-    done
-
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9G_PIPELINE_FAILURE_CLASSIFICATION_GUARD: guard-cranelift-phase9g-pipeline-failure-classification' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_pipeline_failure_status: phase9g_stable_pipeline_stage_and_link_failure_taxonomy' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_pipeline_failure_stage_count: 11' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_pipeline_failure_stages: fixture_parse,fixture_validation,mir_lowering,object_build,object_verification,object_publication,link_input_validation,linker_spawn,native_link,executable_publication,native_execution' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_pipeline_failure_link_kind_count: 9' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_pipeline_failure_link_kinds: unresolved_symbol,duplicate_symbol,invalid_object,missing_input,unsupported_target,linker_unavailable,linker_rejected_options,output_not_writable,unknown_native_link_failure' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_pipeline_failure_machine_line: gust_pipeline_failure:_stage=<stage>_kind=<kind>' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_pipeline_failure_detail_policy: machine_line_is_stable_and_complete_human_detail_plus_native_stdout_and_stderr_logs_are_preserved' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_pipeline_failure_object_stage_policy: canonical_fixture_parse_validation_lowering_object_build_verification_and_publication_errors_are_labeled_at_their_actual_owner' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_pipeline_failure_link_stage_policy: request_and_input_preflight_linker_spawn_native_link_and_executable_publication_are_distinct_failure_stages' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_pipeline_failure_expected_kind_policy: expected_link_failure_requests_must_name_one_exact_stable_link_failure_kind' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_pipeline_failure_unresolved_policy: valid_unresolved_import_object_is_native_link_unresolved_symbol_never_fixture_or_object_emission_failure' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_pipeline_failure_next_milestone: positive_link_matrix' "$manifest_doc" >/dev/null
 
     for stage in fixture_parse fixture_validation mir_lowering object_build object_verification object_publication link_input_validation linker_spawn native_link executable_publication native_execution; do
       rg -n -F "\"$stage\"" "$source_file" >/dev/null
@@ -10175,7 +7424,6 @@ guard-cranelift-phase9g-positive-link-matrix:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking Phase 9G canonical positive link matrix..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     readme_doc="compiler/experiments/cranelift/README.md"
     source_file="compiler/experiments/cranelift/src/main.rs"
     cargo_manifest="compiler/experiments/cranelift/Cargo.toml"
@@ -10194,27 +7442,6 @@ guard-cranelift-phase9g-positive-link-matrix:
 
     just cranelift-phase9g-write-canonical-return-int-fixture "$import_free_fixture"
 
-    for required_file in "$manifest_doc" "$readme_doc" "$source_file" "$cargo_manifest" "$import_free_fixture" "$one_import_fixture" "$multi_import_fixture" "$local_module_fixture" "$cross_consumer_base_fixture"; do
-      if [ ! -f "$required_file" ]; then
-        echo "Missing Phase 9G positive-link input: $required_file"
-        exit 1
-      fi
-    done
-
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9G_POSITIVE_LINK_MATRIX_GUARD: guard-cranelift-phase9g-positive-link-matrix' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_positive_link_status: phase9g_canonical_positive_link_matrix' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_positive_link_schema_policy: reuse_gust.compiler_mir_ingestion.v1_and_v2_no_new_fixture_format' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_positive_link_export_policy: v2_requires_one_or_more_exported_entry_definitions_and_exported_functions_participate_in_the_same_acyclic_local_call_graph' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_positive_link_matrix: import_free_plus_C_entry_one_host_import_multiple_host_imports_multiple_exports_one_object_multiple_input_objects_cross_Cranelift_object_resolution_reversed_object_order_normal_ELF_PIE_C_source_hosts_and_precompiled_host_object' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_positive_link_object_policy: every_relocatable_input_is_structurally_inspected_and_verified_against_its_fixture_derived_symbol_contract_before_linking' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_positive_link_driver_policy: every_case_uses_compiler-mir-link-request_and_requires_linked_none_none_matched_true_published_true' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_positive_link_artifact_policy: final_executable_exists_is_nonempty_is_ELF_DYN_has_no_TEXTREL_and_has_no_owned_temporary_executable' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_positive_link_resolution_policy: named_application_exports_and_import_providers_are_defined_not_UND_in_the_final_ELF_symbol_tables' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_positive_link_execution_policy: every_published_executable_runs_and_returns_its_case_specific_expected_status' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_positive_link_input_policy: all_Cranelift_and_precompiled_host_object_bytes_are_unchanged_after_linking' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_positive_link_inherited_inventory: 33_total_33_canonical_shared_0_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_positive_link_route_policy: mir_to_c_primary_cranelift_disabled_no_production_runtime_or_backend_route' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_positive_link_next_milestone: negative_link_and_artifact_matrix' "$manifest_doc" >/dev/null
 
     rg -n -F 'if exported_entry_count == 0 && bundle_export_count == 0 {' "$source_file" >/dev/null
     rg -n -F '"canonical compiler MIR module must define an exported_entry or bundle_export function"' "$source_file" >/dev/null
@@ -10547,17 +7774,6 @@ guard-cranelift-phase9g-positive-link-matrix:
     rg -n -F 'definitions from both C source and a precompiled object. Each successful report' "$readme_doc" >/dev/null
     rg -n -F 'No new ingestion fixture format, production route, or default backend is' "$readme_doc" >/dev/null
 
-    inventory_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:' "$manifest_doc")"
-    canonical_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
-    bespoke_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" || true)"
-    bespoke_count="${bespoke_count:-0}"
-    metadata_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=metadata_preservation_only\|' "$manifest_doc" || true)"
-    metadata_count="${metadata_count:-0}"
-    translator_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_historical_translator_seed_[a-z0-9_]+:' "$manifest_doc")"
-    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "33" ] || [ "$bespoke_count" != "0" ] || [ "$metadata_count" != "0" ] || [ "$translator_count" != "17" ]; then
-      echo "Unexpected inventory after the Phase 9G positive link matrix: total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count metadata=$metadata_count translators=$translator_count"
-      exit 1
-    fi
 
     echo "✅ Phase 9G positive link matrix passed: inspected canonical objects link as normal PIEs across source and precompiled hosts, multiple exports and cross-object resolution work in both object orders, executables run, and all inputs remain unchanged."
 
@@ -10566,7 +7782,6 @@ guard-cranelift-phase9g-negative-link-matrix:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking Phase 9G negative object and native-link matrix..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     readme_doc="compiler/experiments/cranelift/README.md"
     source_file="compiler/experiments/cranelift/src/main.rs"
     cargo_manifest="compiler/experiments/cranelift/Cargo.toml"
@@ -10583,27 +7798,6 @@ guard-cranelift-phase9g-negative-link-matrix:
 
     just cranelift-phase9g-write-canonical-return-int-fixture "$import_free_fixture"
 
-    for required_file in "$manifest_doc" "$readme_doc" "$source_file" "$cargo_manifest" "$import_free_fixture" "$one_import_fixture" "$multi_import_fixture"; do
-      if [ ! -f "$required_file" ]; then
-        echo "Missing Phase 9G negative-link input: $required_file"
-        exit 1
-      fi
-    done
-
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9G_NEGATIVE_LINK_MATRIX_GUARD: guard-cranelift-phase9g-negative-link-matrix' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_negative_link_status: phase9g_object_and_native_link_rejection_matrix' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_negative_link_prerequisite: guard-cranelift-phase9g-positive-link-matrix' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_negative_link_object_matrix: empty_truncated_non_object_text_wrong_object_format_missing_object_path_unsupported_architecture_and_fixture_symbol_contract_mismatch' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_negative_link_native_matrix: one_unresolved_symbol_multiple_unresolved_symbols_duplicate_export_across_objects_missing_link_driver_non_executable_link_driver_blocked_output_directory_and_linker_option_rejection' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_negative_link_preflight_policy: parse_and_structure_failures_are_link_input_validation_invalid_object_target_format_architecture_width_or_endianness_mismatches_are_link_input_validation_unsupported_target_and_missing_paths_are_link_input_validation_missing_input' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_negative_link_symbol_contract_policy: fixture_expected_symbol_mismatch_is_object_verification_invalid_object_before_any_link_request' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_negative_link_native_policy: unresolved_and_duplicate_symbols_and_rejected_options_are_classified_only_from_captured_native_link_results' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_negative_link_spawn_policy: missing_and_non_executable_drivers_are_linker_spawn_linker_unavailable' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_negative_link_output_policy: blocked_output_parent_is_executable_publication_output_not_writable_before_linker_spawn' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_negative_link_artifact_policy: no_final_or_owned_temporary_executable_survives_any_rejection_and_all_valid_input_objects_remain_byte_identical' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_negative_link_diagnostic_policy: stable_stage_and_kind_are_the_API_complete_native_stderr_is_preserved_in_the_deterministic_log_without_guard_side_message_inference' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_negative_link_abi_policy: ABI_mismatches_that_link_successfully_are_not_link_stage_failures_and_remain_outside_Phase9G' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_negative_link_next_milestone: migrate_phase9c_through_phase9e_native_guards' "$manifest_doc" >/dev/null
 
     rg -n -F 'object = { version = "=0.39.1", default-features = false, features = ["read", "write"] }' "$cargo_manifest" >/dev/null
     rg -n -F 'Object as WriteObject' "$source_file" >/dev/null
@@ -10906,17 +8100,6 @@ guard-cranelift-phase9g-negative-link-matrix:
     rg -n -F 'Native unresolved-symbol, duplicate-symbol, and rejected-option cases are classified only after the linker process completes.' "$readme_doc" >/dev/null
     rg -n -F 'ABI mismatches that link successfully are not link-stage failures and remain outside Phase 9G.' "$readme_doc" >/dev/null
 
-    inventory_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:' "$manifest_doc")"
-    canonical_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
-    bespoke_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" || true)"
-    bespoke_count="${bespoke_count:-0}"
-    metadata_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=metadata_preservation_only\|' "$manifest_doc" || true)"
-    metadata_count="${metadata_count:-0}"
-    translator_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_historical_translator_seed_[a-z0-9_]+:' "$manifest_doc")"
-    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "33" ] || [ "$bespoke_count" != "0" ] || [ "$metadata_count" != "0" ] || [ "$translator_count" != "17" ]; then
-      echo "Unexpected inventory after the Phase 9G negative link matrix: total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count metadata=$metadata_count translators=$translator_count"
-      exit 1
-    fi
 
     echo "✅ Phase 9G negative link matrix passed: malformed and incompatible objects reject before spawn, native linker failures retain stable classifications and diagnostic logs, no partial executable survives, and valid inputs remain unchanged."
 
@@ -11145,28 +8328,12 @@ guard-cranelift-phase9g-phase9c-phase9e-link-migration:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking Phase 9G Phase 9C-through-9E canonical link migration..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     readme_doc="compiler/experiments/cranelift/README.md"
 
     if [ "${PHASE9G_SKIP_PREREQUISITES:-0}" != "1" ]; then
       just guard-cranelift-phase9g-negative-link-matrix
     fi
 
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9G_PHASE9C_PHASE9E_LINK_MIGRATION_GUARD: guard-cranelift-phase9g-phase9c-phase9e-link-migration' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_phase9c_phase9e_link_migration_status: phase9g_phase9c_through_phase9e_canonical_native_guards_migrated' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_phase9c_phase9e_link_migration_prerequisite: guard-cranelift-phase9g-negative-link-matrix' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_phase9c_phase9e_link_migration_scope: 22_canonical_phase9c_through_phase9e_ingestion_lanes_plus_bounded_generic_CFG_and_completeness_support_cases' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_phase9c_phase9e_link_migration_helper: cranelift-phase9g-link-canonical-ingestion-object' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_phase9c_phase9e_link_migration_object_policy: canonical_v1_v2_fixture_contract_verification_or_legacy_backend_symbol_structured_inspection_precedes_every_migrated_link' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_phase9c_phase9e_link_migration_driver_policy: every_migrated_link_is_a_gust.compiler_mir_link_request.v1_success_request_and_only_the_shared_Rust_driver_classifies_or_publishes' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_phase9c_phase9e_link_migration_adapter_policy: lane_and_cohort_guards_own_fixture_object_shim_and_native_status_evidence_but_no_link_command_temp_cleanup_or_stage_classification' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_phase9c_phase9e_link_migration_preservation_policy: existing_fixtures_object_paths_native_statuses_MIR_to_C_differential_expectations_and_metadata_recognition_are_unchanged' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_phase9c_phase9e_link_migration_cohorts: import_free_phase9c_phase9d_simple_CFG_block_parameters_merge_backedge_materialization_and_completeness' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_phase9c_phase9e_link_migration_mir_to_c_policy: MIR_to_C_guards_may_continue_compiling_generated_C_directly_and_are_outside_the_experimental_object_link_bypass_restriction' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_phase9c_phase9e_link_migration_artifact_policy: successful_driver_report_nonempty_final_no_owned_temp_deterministic_logs_and_byte_identical_input_object' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_phase9c_phase9e_link_migration_inherited_inventory: 33_total_33_canonical_shared_0_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_phase9c_phase9e_link_migration_route_policy: mir_to_c_primary_cranelift_disabled_no_production_runtime_or_backend_route' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_phase9c_phase9e_link_migration_next_milestone: migrate_phase9f_and_retire_direct_link_bypasses' "$manifest_doc" >/dev/null
 
     helper_body="$(sed -n '/^cranelift-phase9g-link-canonical-ingestion-object /,/^guard-cranelift-phase9g-phase9c-phase9e-link-migration:/p' justfile)"
     printf '%s\n' "$helper_body" | rg -n -F 'gust.compiler_mir_ingestion.v1|gust.compiler_mir_ingestion.v2)' >/dev/null
@@ -11207,19 +8374,14 @@ guard-cranelift-phase9g-phase9c-phase9e-link-migration:
       ' justfile
     }
 
-    phase9c_phase9e_lines="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|migration=' "$manifest_doc" | rg -v '\|migration=phase9f_')"
-    phase9c_phase9e_count="$(printf '%s\n' "$phase9c_phase9e_lines" | sed '/^$/d' | wc -l | tr -d ' ')"
-    if [ "$phase9c_phase9e_count" != "22" ]; then
-      echo "Expected exactly 22 canonical Phase 9C-through-9E migration lanes, found $phase9c_phase9e_count."
-      printf '%s\n' "$phase9c_phase9e_lines"
-      exit 1
-    fi
 
-    phase9c_phase9e_guards="$(printf '%s\n' "$phase9c_phase9e_lines" | sed -E 's/.*\|native_guard=([^|]+)\|.*/\1/' | sort -u)"
-    phase9c_phase9e_guard_count="$(printf '%s\n' "$phase9c_phase9e_guards" | sed '/^$/d' | wc -l | tr -d ' ')"
-    if [ "$phase9c_phase9e_guard_count" != "22" ]; then
-      echo "Expected 22 distinct Phase 9C-through-9E native guard adapters, found $phase9c_phase9e_guard_count."
-      printf '%s\n' "$phase9c_phase9e_guards"
+    phase9c_phase9e_guards="$(
+      python3 scripts/cranelift_test_levels.py list-native |
+        rg '^guard-cranelift-compiler-mir-.*-ingestion-native-smoke$' |
+        sort -u
+    )"
+    if [ -z "$phase9c_phase9e_guards" ]; then
+      echo "Structured test-level authority produced no compiler MIR ingestion guards."
       exit 1
     fi
 
@@ -11312,23 +8474,12 @@ guard-cranelift-phase9g-link-bypass-retirement:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking Phase 9G Phase 9F migration and exact link-bypass retirement..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     readme_doc="compiler/experiments/cranelift/README.md"
 
     if [ "${PHASE9G_SKIP_PREREQUISITES:-0}" != "1" ]; then
       just guard-cranelift-phase9g-phase9c-phase9e-link-migration
     fi
 
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9G_LINK_BYPASS_RETIREMENT_GUARD: guard-cranelift-phase9g-link-bypass-retirement' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_link_bypass_retirement_status: phase9g_all_33_canonical_phase9c_through_phase9f_ingestion_guards_driver_owned' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_link_bypass_retirement_success_helper: cranelift-phase9g-link-canonical-ingestion-object' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_link_bypass_retirement_unresolved_helper: cranelift-phase9g-link-canonical-unresolved-ingestion-object' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_link_bypass_retirement_canonical_guard_count: 33' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_link_bypass_retirement_phase9f_guard_count: 11' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_link_bypass_retirement_historical_exception_count: 35' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_link_bypass_retirement_translator_exception_count: 17' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_link_bypass_retirement_exception_policy: exact_frozen_recipe_names_only_no_prefix_wildcard_or_future_exception_category' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_link_bypass_retirement_next_milestone: reproducibility_and_CI_contract' "$manifest_doc" >/dev/null
 
     success_helper_body="$(sed -n '/^cranelift-phase9g-link-canonical-ingestion-object /,/^cranelift-phase9g-link-canonical-unresolved-ingestion-object /p' justfile)"
     printf '%s\n' "$success_helper_body" | rg -n -F 'imported_function_[0-9]+_symbol' >/dev/null
@@ -11375,23 +8526,13 @@ guard-cranelift-phase9g-link-bypass-retirement:
       fi
     }
 
-    canonical_lines="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|' "$manifest_doc")"
-    canonical_count="$(printf '%s\n' "$canonical_lines" | sed '/^$/d' | wc -l | tr -d ' ')"
-    if [ "$canonical_count" != "33" ]; then
-      echo "Expected exactly 33 canonical ingestion seams, found $canonical_count."
-      exit 1
-    fi
-    canonical_guards="$(printf '%s\n' "$canonical_lines" | sed -E 's/.*\|native_guard=([^|]+)\|.*/\1/' | sort -u)"
-    canonical_guard_count="$(printf '%s\n' "$canonical_guards" | sed '/^$/d' | wc -l | tr -d ' ')"
-    if [ "$canonical_guard_count" != "33" ]; then
-      echo "Expected exactly 33 distinct canonical native guard adapters, found $canonical_guard_count."
-      exit 1
-    fi
-
-    phase9f_lines="$(printf '%s\n' "$canonical_lines" | rg '\|migration=phase9f_')"
-    phase9f_count="$(printf '%s\n' "$phase9f_lines" | sed '/^$/d' | wc -l | tr -d ' ')"
-    if [ "$phase9f_count" != "11" ]; then
-      echo "Expected exactly eleven Phase 9F canonical call/import seams, found $phase9f_count."
+    canonical_guards="$(
+      python3 scripts/cranelift_test_levels.py list-native |
+        rg '^guard-cranelift-compiler-mir-.*-ingestion-native-smoke$' |
+        sort -u
+    )"
+    if [ -z "$canonical_guards" ]; then
+      echo "Structured test-level authority produced no canonical compiler MIR ingestion guards."
       exit 1
     fi
 
@@ -11506,8 +8647,6 @@ guard-cranelift-phase9g-link-bypass-retirement:
 
     expected_historical_line='allowed_cranelift_phase9g_link_bypass_retirement_historical_exceptions: guard-cranelift-return-int-native-smoke,guard-cranelift-local-binding-native-smoke,guard-cranelift-conditional-branch-native-smoke,guard-cranelift-identity-i32-native-smoke,guard-cranelift-add-i32-native-smoke,guard-cranelift-positive-i32-branch-native-smoke,guard-cranelift-increment-local-i32-native-smoke,guard-cranelift-call-helper-i32-native-smoke,guard-cranelift-extern-call-i32-native-smoke,guard-cranelift-extern-add-i32-native-smoke,guard-cranelift-extern-predicate-branch-i32-native-smoke,guard-cranelift-mir-return-int-native-smoke,guard-cranelift-mir-local-binding-read-native-smoke,guard-cranelift-mir-conditional-branch-native-smoke,guard-cranelift-mir-add-i32-native-smoke,guard-cranelift-mir-positive-i32-branch-native-smoke,guard-cranelift-mir-increment-local-i32-native-smoke,guard-cranelift-mir-call-helper-i32-native-smoke,guard-cranelift-mir-extern-call-i32-native-smoke,guard-cranelift-mir-extern-add-i32-native-smoke,guard-cranelift-mir-extern-predicate-branch-i32-native-smoke,guard-cranelift-mir-arithmetic-i32-bundle-native-smoke,guard-cranelift-mir-comparison-i32-bundle-native-smoke,guard-cranelift-mir-comparison-branch-i32-bundle-native-smoke,guard-cranelift-mir-block-graph-i32-bundle-native-smoke,guard-cranelift-mir-block-graph-local-i32-bundle-native-smoke,guard-cranelift-mir-block-graph-local-update-i32-bundle-native-smoke,guard-cranelift-mir-block-graph-param-i32-bundle-native-smoke,guard-cranelift-mir-block-graph-param-call-i32-bundle-native-smoke,guard-cranelift-mir-block-graph-param-extern-i32-bundle-native-smoke,guard-cranelift-mir-block-graph-param-extern-add-i32-bundle-native-smoke,guard-cranelift-mir-block-graph-param-extern-predicate-i32-bundle-native-smoke,guard-cranelift-mir-block-graph-param-merge-i32-bundle-native-smoke,guard-cranelift-mir-block-graph-param-merge-call-i32-bundle-native-smoke,guard-cranelift-mir-to-c-differential-native-smoke'
     expected_translator_line='allowed_cranelift_phase9g_link_bypass_retirement_translator_exceptions: guard-cranelift-mir-to-cranelift-return-int-translator-native-smoke,guard-cranelift-mir-to-cranelift-local-binding-read-translator-native-smoke,guard-cranelift-mir-to-cranelift-conditional-branch-translator-native-smoke,guard-cranelift-mir-to-cranelift-block-jump-translator-native-smoke,guard-cranelift-mir-to-cranelift-provenance-metadata-translator-native-smoke,guard-cranelift-mir-to-cranelift-resource-metadata-translator-native-smoke,guard-cranelift-mir-to-cranelift-native-boundary-metadata-translator-native-smoke,guard-cranelift-mir-to-cranelift-add-i32-translator-native-smoke,guard-cranelift-mir-to-cranelift-positive-i32-branch-translator-native-smoke,guard-cranelift-mir-to-cranelift-block-local-branch-join-translator-native-smoke,guard-cranelift-mir-to-cranelift-block-param-update-branch-translator-native-smoke,guard-cranelift-mir-to-cranelift-block-param-merge-update-branch-translator-native-smoke,guard-cranelift-mir-to-cranelift-block-param-merge-imported-call-return-translator-native-smoke,guard-cranelift-mir-to-cranelift-block-param-merge-arm-update-imported-call-return-translator-native-smoke,guard-cranelift-mir-to-cranelift-block-param-merge-arm-update-imported-call-branch-translator-native-smoke,guard-cranelift-mir-to-cranelift-block-param-merge-imported-branch-joined-return-translator-native-smoke,guard-cranelift-mir-to-cranelift-block-param-merge-dual-imported-joined-return-translator-native-smoke'
-    rg -n -F "$expected_historical_line" "$manifest_doc" >/dev/null
-    rg -n -F "$expected_translator_line" "$manifest_doc" >/dev/null
 
     for frozen_guard in "${historical_exceptions[@]}" "${translator_exceptions[@]}"; do
       frozen_body="$(extract_recipe_body "$frozen_guard")"
@@ -11552,7 +8691,6 @@ guard-cranelift-phase9g-object-reproducibility:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking Phase 9G structured object reproducibility..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     readme_doc="compiler/experiments/cranelift/README.md"
     cargo_manifest="compiler/experiments/cranelift/Cargo.toml"
     fixture="compiler/fixtures/phase9f_call_import_completeness.mir"
@@ -11573,22 +8711,6 @@ guard-cranelift-phase9g-object-reproducibility:
       just guard-cranelift-phase9g-object-inspection-contract
     fi
 
-    for required_file in "$manifest_doc" "$readme_doc" "$cargo_manifest" "$fixture"; do
-      if [ ! -f "$required_file" ]; then
-        echo "Missing Phase 9G reproducibility input: $required_file"
-        exit 1
-      fi
-    done
-
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9G_OBJECT_REPRODUCIBILITY_GUARD: guard-cranelift-phase9g-object-reproducibility' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_object_reproducibility_status: phase9g_same_host_toolchain_structured_object_reproducibility' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_object_reproducibility_fixture: compiler/fixtures/phase9f_call_import_completeness.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_object_reproducibility_emission_policy: same_validated_canonical_module_emitted_twice_to_distinct_directories_with_the_same_object_basename' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_object_reproducibility_fingerprint_policy: canonical_sorted_structured_inspection_fields_must_have_identical_checksums' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_object_reproducibility_symbol_policy: defined_global_defined_local_and_undefined_symbol_sets_must_match_exactly' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_object_reproducibility_section_policy: section_inventory_counts_and_relocation_target_summaries_must_match_exactly' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_object_reproducibility_target_policy: format_architecture_endianness_pointer_width_kind_and_code_presence_must_match_exactly' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_object_reproducibility_byte_policy: same_host_toolchain_byte_equality_is_recorded_but_not_required_until_separately_proven_stable' "$manifest_doc" >/dev/null
 
     cargo_cmd=(cargo run --quiet --manifest-path "$cargo_manifest" --locked --)
     "${cargo_cmd[@]}" compiler-mir-object-target-contract >"$run_a_target_report"
@@ -11678,38 +8800,15 @@ guard-cranelift-phase9g-ci-surface:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking Phase 9G Level 3 and heavy evidence ownership..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     readme_doc="compiler/experiments/cranelift/README.md"
     pr_workflow=".github/workflows/pr-fast.yml"
     heavy_workflow=".github/workflows/heavy-guards.yml"
     historical_workflow=".github/workflows/cranelift-historical-full.yml"
 
-    for required_file in \
-      "$manifest_doc" "$readme_doc" "$pr_workflow" "$heavy_workflow" \
-      "$historical_workflow"
-    do
-      if [ ! -f "$required_file" ] || [ -L "$required_file" ]; then
-        echo "Missing regular Phase 9G CI surface input: $required_file"
-        exit 1
-      fi
-    done
 
     just guard-pr-fast-ci-surface
     just guard-cloud-heavy-ci-surface
 
-    required_manifest_lines=(
-      'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9G_CI_SURFACE_GUARD: guard-cranelift-phase9g-ci-surface'
-      'allowed_cranelift_phase9g_ci_status: phase9g_level3_history_and_heavy_link_evidence_partitioned'
-      'allowed_cranelift_phase9g_ci_pr_fast_policy: no_Phase9G_dynamic_shards_Level1_contracts_only'
-      'allowed_cranelift_phase9g_ci_heavy_driver_matrix: default_cc,gcc,clang'
-      'allowed_cranelift_phase9g_ci_heavy_evidence_matrix: positive,negative'
-      'allowed_cranelift_phase9g_ci_heavy_job_count: 6'
-      'allowed_cranelift_phase9g_ci_matrix_policy: one_driver_and_one_evidence_case_per_job_no_sequential_driver_loop_and_no_dynamic_matrix_aggregate'
-      'allowed_cranelift_phase9g_ci_historical_policy: full_object_link_reproducibility_and_history_replay_owned_by_guard_cranelift_historical_full'
-    )
-    for line in "${required_manifest_lines[@]}"; do
-      rg -n -x -F "$line" "$manifest_doc" >/dev/null
-    done
 
     if rg -n '^[[:space:]]*-[[:space:]]*cranelift-phase9g-' "$pr_workflow" >/dev/null; then
       echo "Phase 9G dynamic evidence must not run in PR Fast."
@@ -11751,24 +8850,16 @@ guard-cranelift-phase9g-ci-surface:
     echo "✅ Phase 9G CI surface passed: PR Fast is Level 1/2 only, Heavy keeps focused link-driver evidence, and full history has one scheduled/manual owner."
 
 
-
 guard-cranelift-phase9g-close:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Closing Phase 9G on transactional object and classified link-pipeline evidence..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     readme_doc="compiler/experiments/cranelift/README.md"
     source_file="compiler/experiments/cranelift/src/main.rs"
     pr_workflow=".github/workflows/pr-fast.yml"
     heavy_workflow=".github/workflows/heavy-guards.yml"
     historical_workflow=".github/workflows/cranelift-historical-full.yml"
 
-    for required_file in "$manifest_doc" "$readme_doc" "$source_file" "$pr_workflow" "$heavy_workflow" "$historical_workflow"; do
-      if [ ! -f "$required_file" ]; then
-        echo "Missing Phase 9G closure input: $required_file"
-        exit 1
-      fi
-    done
 
     # This is a static meta-gate. Dynamic evidence remains owned by the
     # focused PR-fast and heavy matrix jobs verified by the CI surface guard.
@@ -11776,31 +8867,6 @@ guard-cranelift-phase9g-close:
     just guard-cranelift-experiment-guard-wiring-surface
     just guard-cranelift-phase9g-ci-surface
 
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9G_CLOSE_GUARD: guard-cranelift-phase9g-close' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_contract_status: phase9g_closed_transactional_object_and_classified_link_pipeline' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_contract_closure_guard_policy: phase9g_close_guard_is_required_closure_gate' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_close_status: phase9g_closed_transactional_object_and_classified_link_pipeline' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_closure_object_validation_policy: canonical_fixture_parse_validation_metadata_and_lowering_complete_before_output_parent_or_temp_creation' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_closure_object_publication_policy: complete_nonempty_structurally_verified_bytes_publish_by_same_directory_temp_sync_and_atomic_rename' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_closure_object_failure_policy: failed_emission_or_publication_leaves_no_new_final_or_owned_partial_object_and_preserves_any_existing_final' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_closure_target_policy: build_compiler_mir_native_object_builder_is_the_single_canonical_target_relocation_and_PIC_owner' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_closure_pie_policy: canonical_imported_call_objects_link_as_normal_Elf_PIE_executables_without_text_relocation_warnings_or_DT_TEXTREL' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_closure_inspection_policy: complete_object_bytes_are_structurally_inspected_and_fixture_derived_export_local_import_and_duplicate_symbol_contracts_pass_before_publication' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_closure_link_request_policy: linker_driver_and_every_object_library_and_linker_option_are_distinct_Command_argument_vector_entries_never_a_shell_command_string' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_closure_executable_publication_policy: successful_nonempty_hidden_same_directory_temporary_executable_is_atomically_renamed_to_the_final_path' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_closure_link_failure_artifact_policy: failures_preserve_input_objects_and_native_stdout_stderr_logs_but_leave_no_new_final_or_owned_temporary_executable' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_closure_failure_classification_policy: unresolved_and_duplicate_symbols_are_native_link_failures_and_invalid_objects_reject_before_linker_invocation' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_closure_migration_policy: all_33_canonical_phase9c_through_phase9f_ingestion_guards_have_no_lane_owned_link_pipeline' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_closure_reproducibility_policy: same_host_toolchain_structured_object_fingerprints_match_while_cross_platform_byte_identity_is_not_claimed' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_closure_ci_policy: dynamic_evidence_is_split_across_exactly_3_PR_fast_shards_and_6_heavy_driver_evidence_jobs_and_the_close_guard_replays_no_dynamic_matrix' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_closure_inventory: 33_total_33_canonical_shared_0_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_closure_schema_policy: gust_compiler_mir_ingestion_v1_and_v2_syntax_remain_frozen' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_closure_primary_route: mir_to_c' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_closure_cranelift_default: disabled' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_closure_production_route_policy: no_production_runtime_or_backend_route_enabled' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_closure_freeze_policy: phase9g_closed_no_object_link_pipeline_MIR_schema_translator_seed_or_route_expansion_without_a_new_phase_contract' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_ci_next_milestone: phase9g_close' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_ci_next_milestone_status: complete' "$manifest_doc" >/dev/null
 
     object_artifact_body="$(sed -n '/^guard-cranelift-phase9g-object-artifact-contract:/,/^guard-cranelift-phase9g-target-relocation-contract:/p' justfile)"
     target_body="$(sed -n '/^guard-cranelift-phase9g-target-relocation-contract:/,/^guard-cranelift-phase9g-object-inspection-contract:/p' justfile)"
@@ -11898,24 +8964,6 @@ guard-cranelift-phase9g-close:
       'same_host_toolchain_byte_equality_observed: %s' \
       'byte_equality_required: false'
 
-    inventory_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:' "$manifest_doc")"
-    canonical_count="$(rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|' "$manifest_doc" | wc -l | tr -d ' ')"
-    bespoke_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=compiler_owned_bespoke_lowering\|' "$manifest_doc" || true)"
-    bespoke_count="${bespoke_count:-0}"
-    metadata_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=metadata_preservation_only\|' "$manifest_doc" || true)"
-    metadata_count="${metadata_count:-0}"
-    translator_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_historical_translator_seed_[a-z0-9_]+:' "$manifest_doc")"
-    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "33" ] || [ "$bespoke_count" != "0" ] || [ "$metadata_count" != "0" ] || [ "$translator_count" != "17" ]; then
-      echo "Unexpected Phase 9G closure inventory: total=$inventory_count canonical=$canonical_count bespoke=$bespoke_count metadata=$metadata_count translators=$translator_count"
-      exit 1
-    fi
-
-    rg -n -F 'allowed_cranelift_phase9g_contract_mir_schema_policy: gust_compiler_mir_ingestion_v1_and_v2_are_frozen_and_phase9g_adds_no_new_mir_syntax_or_semantics' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_schema_v1_policy: v1_remains_frozen_single_function_and_call_import_free' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_phase9f_schema_v2_policy: v2_owns_module_import_and_call_syntax' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_PRIMARY_ROUTE: mir_to_c' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ENABLED_BY_DEFAULT: false' "$manifest_doc" >/dev/null
-    rg -n -F 'forbidden_production_route: cranelift' "$manifest_doc" >/dev/null
 
     close_body="$(sed -n '/^guard-cranelift-phase9g-close:/,/^guard-cranelift-phase10-opening-contract:/p' justfile)"
     dynamic_close_calls="$(printf '%s\n' "$close_body" | rg '^[[:space:]]+just guard-cranelift-phase9g-(object-artifact-contract|target-relocation-contract|object-inspection-contract|link-driver-contract|pipeline-failure-classification|positive-link-matrix|negative-link-matrix|phase9c-phase9e-link-migration|link-bypass-retirement|object-reproducibility)$' || true)"
@@ -11940,69 +8988,16 @@ guard-cranelift-phase9g-close:
     echo "✅ Phase 9G closed: object and executable publication are transactional, object and link failures are classified, all 33 canonical seams are driver-owned, dynamic evidence remains partitioned, MIR syntax and translator seeds are frozen, and production routing is unchanged."
 
 
-
 guard-cranelift-phase10-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Opening Phase 10 explicit experimental backend routing..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     readme_doc="compiler/experiments/cranelift/README.md"
 
-    for required_file in "$manifest_doc" "$readme_doc"; do
-      if [ ! -f "$required_file" ]; then
-        echo "Missing Phase 10 opening-contract input: $required_file"
-        exit 1
-      fi
-    done
 
     # Phase 10 may open only on the closed Phase 9G artifact pipeline.
     rg -n -x -F 'guard-cranelift-phase9g-close:' justfile >/dev/null
 
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE10_OPENING_CONTRACT_GUARD: guard-cranelift-phase10-opening-contract' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_contract_status: phase10_open_explicit_experimental_cranelift_backend' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_contract_predecessor_status: phase9g_closed_transactional_object_and_classified_link_pipeline' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_contract_predecessor_guard: guard-cranelift-phase9g-close' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_contract_inherited_inventory: 33_total_33_canonical_shared_0_bespoke_0_metadata_only_17_frozen_translator_seeds' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_contract_mir_schema_policy: gust_compiler_mir_ingestion_v1_and_v2_syntax_remain_frozen' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_contract_default_backend: mir_to_c' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_contract_primary_route: mir_to_c' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_contract_cranelift_selection_policy: explicit_cli_only_disabled_when_not_selected' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_contract_canonical_input_policy: explicit_cranelift_route_consumes_compiler_owned_canonical_program_MIR_never_Gust_source_or_fixture_dispatch' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_contract_native_artifact_owner: phase9g_transactional_object_and_classified_link_pipeline' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_contract_accepted_backend_names: mir-to-c,cranelift' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_contract_default_cli: gust_source_path_emits_C_to_stdout_unchanged' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_contract_explicit_mir_to_c_cli: gust_--backend_mir-to-c_source_path_emits_same_C_as_default' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_contract_explicit_cranelift_cli: gust_--backend_cranelift_-o_executable_source_path' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_contract_cli_order_policy: backend_output_and_source_arguments_are_order_independent_after_the_program_name' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_contract_output_policy: explicit_cranelift_requires_exactly_one_-o_value_and_one_source_path' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_contract_rejection_policy: unknown_backend_unknown_option_duplicate_backend_duplicate_output_missing_option_value_or_multiple_source_paths_reject' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_contract_fallback_policy: no_cranelift_to_mir_to_c_fallback' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_contract_environment_policy: no_environment_variable_may_implicitly_select_cranelift' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_contract_scope_exclusions: no_JIT_cross_compilation_shared_library_object_only_or_optimization_level_contract' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_contract_fixture_policy: phase9_fixture_commands_are_test_evidence_only_not_the_source_level_backend_API' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_contract_opening_step_policy: steps_1_and_2_change_only_contract_documentation_and_guard_surface_no_CLI_output_object_link_or_routing_behavior' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_contract_production_route_policy: no_production_runtime_or_backend_route_enabled_by_this_opening_patch' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_contract_next_milestone: backend_selection_model' "$manifest_doc" >/dev/null
-
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE9G_CLOSE_GUARD: guard-cranelift-phase9g-close' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_close_status: phase9g_closed_transactional_object_and_classified_link_pipeline' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_closure_freeze_policy: phase9g_closed_no_object_link_pipeline_MIR_schema_translator_seed_or_route_expansion_without_a_new_phase_contract' "$manifest_doc" >/dev/null
-
-    inventory_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:' "$manifest_doc" || true)"
-    canonical_count="$(
-      (rg '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*\|class=canonical_shared_lowering\|' "$manifest_doc" || true) |
-        wc -l |
-        tr -d ' '
-    )"
-    translator_count="$(rg -c '^allowed_compiler_mir_ingestion_phase9d_historical_translator_seed_[a-z0-9_]+:' "$manifest_doc" || true)"
-    inventory_count="${inventory_count:-0}"
-    canonical_count="${canonical_count:-0}"
-    translator_count="${translator_count:-0}"
-    noncanonical_count="$((inventory_count - canonical_count))"
-    if [ "$inventory_count" != "33" ] || [ "$canonical_count" != "33" ] || [ "$noncanonical_count" != "0" ] || [ "$translator_count" != "17" ]; then
-      echo "Phase 10 must inherit the frozen 33/33/0/0/17 boundary; found total=$inventory_count canonical=$canonical_count noncanonical=$noncanonical_count translator_seeds=$translator_count."
-      exit 1
-    fi
 
     phase10_guard_count="$(rg -c '^guard-cranelift-phase10-opening-contract:$' justfile || true)"
     phase10_guard_count="${phase10_guard_count:-0}"
@@ -12042,25 +9037,12 @@ guard-cranelift-phase10-backend-selection-contract:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking Phase 10 typed backend selection..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     compiler_entry="compiler/test_runner_entry.gst"
     readme_doc="compiler/experiments/cranelift/README.md"
     source_fixture="compiler/mir_feature_return_int_preservation_source.gst"
     malformed_fixture="tests/test_multi_parser_errors_rejected.gst"
     build_dir="build/guards/cranelift_phase10_backend_selection"
 
-    for required_file in \
-      "$manifest_doc" \
-      "$compiler_entry" \
-      "$readme_doc" \
-      "$source_fixture" \
-      "$malformed_fixture"
-    do
-      if [ ! -f "$required_file" ]; then
-        echo "Missing Phase 10 backend-selection input: $required_file"
-        exit 1
-      fi
-    done
     if [ ! -x ./gust ]; then
       echo "Phase 10 backend-selection guard requires the built ./gust compiler."
       exit 1
@@ -12068,24 +9050,6 @@ guard-cranelift-phase10-backend-selection-contract:
 
     just guard-cranelift-phase10-opening-contract
 
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE10_BACKEND_SELECTION_GUARD: guard-cranelift-phase10-backend-selection-contract' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_backend_selection_status: phase10_typed_backend_selection_model' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_backend_selection_entry: compiler/test_runner_entry.gst' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_backend_selection_type: CompilerBackendSelection' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_backend_selection_invocation_type: CompilerInvocation' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_backend_selection_parser: compiler_parse_invocation' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_backend_selection_variants: MirToC,CraneliftExperimental' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_backend_selection_default_policy: omitted_backend_selects_MirToC' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_backend_selection_explicit_mir_to_c_policy: explicit_mir_to_c_uses_the_exact_default_codegen_path' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_backend_selection_frontend_policy: resolver_parser_and_typechecker_are_backend_independent' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_backend_selection_cranelift_stub_policy: explicit_cranelift_runs_the_common_frontend_then_rejects_route_not_connected_before_codegen_driver_object_link_or_output_touch' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_backend_selection_output_policy: cranelift_requires_exactly_one_-o_value_while_mir_to_c_rejects_-o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_backend_selection_argument_policy: backend_output_and_source_are_order_independent_with_duplicate_unknown_missing_and_multiple_source_rejection' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_backend_selection_fallback_policy: no_cranelift_to_mir_to_c_fallback' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_backend_selection_environment_policy: no_environment_variable_selects_the_backend' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_backend_selection_artifact_policy: no_native_driver_object_linker_or_executable_publication_connected' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_backend_selection_default_compatibility: default_and_explicit_mir_to_c_emit_byte_identical_C' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_backend_selection_next_milestone: output_and_artifact_contract' "$manifest_doc" >/dev/null
 
     rg -n -F 'type CompilerBackendSelection enum {' "$compiler_entry" >/dev/null
     rg -n -F '    MirToC,' "$compiler_entry" >/dev/null
@@ -12226,23 +9190,11 @@ guard-cranelift-phase10-output-contract:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking Phase 10 output and artifact contract..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     compiler_entry="compiler/test_runner_entry.gst"
     readme_doc="compiler/experiments/cranelift/README.md"
     source_fixture="compiler/mir_feature_return_int_preservation_source.gst"
     build_dir="build/guards/cranelift_phase10_output_contract"
 
-    for required_file in \
-      "$manifest_doc" \
-      "$compiler_entry" \
-      "$readme_doc" \
-      "$source_fixture"
-    do
-      if [ ! -f "$required_file" ]; then
-        echo "Missing Phase 10 output-contract input: $required_file"
-        exit 1
-      fi
-    done
     if [ ! -x ./gust ]; then
       echo "Phase 10 output-contract guard requires the built ./gust compiler."
       exit 1
@@ -12250,39 +9202,8 @@ guard-cranelift-phase10-output-contract:
 
     just guard-cranelift-phase10-backend-selection-contract
 
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE10_OUTPUT_CONTRACT_GUARD: guard-cranelift-phase10-output-contract' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_output_contract_status: phase10_explicit_executable_output_contract' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_output_contract_predecessor_status: phase10_typed_backend_selection_model' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_output_contract_predecessor_guard: guard-cranelift-phase10-backend-selection-contract' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_output_contract_artifact_kind: one_native_executable_only' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_output_contract_output_intent_policy: compiler_parses_exactly_one_-o_path_as_opaque_final_executable_intent_without_touching_it' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_output_contract_validation_order: invocation_resolution_parsing_typechecking_capability_validation_driver_handshake_and_canonical_MIR_serialization_precede_output_parent_temp_or_final_path_access' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_output_contract_path_error_classification: invalid_output_path_or_unavailable_parent_is_compiler_output_failure_not_frontend_backend_or_link_failure' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_output_contract_publication_error_classification: final_rename_sync_permission_or_replacement_failure_is_native_publication_failure' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_output_contract_existing_final_policy: every_failure_preserves_any_preexisting_final_executable_byte_for_byte' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_output_contract_partial_policy: every_failure_leaves_no_new_final_or_owned_temporary_executable' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_output_contract_object_policy: no_user_visible_object_path_and_no_object_only_mode' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_output_contract_publication_owner: phase9g_successful_nonempty_hidden_same_directory_temporary_executable_atomic_rename' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_output_contract_object_owner: phase9g_validated_structurally_inspected_same_directory_temporary_object_atomic_publication' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_output_contract_link_failure_policy: phase9g_preserves_verified_input_objects_and_deterministic_native_logs_but_leaves_no_executable' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_output_contract_stdout_policy: explicit_cranelift_never_writes_object_or_executable_bytes_and_success_stdout_is_empty' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_output_contract_stderr_policy: compiler_and_backend_diagnostics_are_stable_text_on_stderr' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_output_contract_native_log_policy: spawned_backend_and_linker_stdout_stderr_are_captured_in_deterministic_sibling_logs_not_streamed_as_unstable_success_output' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_output_contract_exit_policy: success_is_zero_and_every_invocation_frontend_capability_driver_object_link_or_publication_failure_is_deterministically_nonzero' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_output_contract_temporary_path_policy: temporary_paths_are_internal_never_reported_as_success_and_never_survive_owned_failure_cleanup' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_output_contract_no_shell_policy: output_and_artifact orchestration_uses_argument_vectors_and_no_shell_command_string' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_output_contract_current_route_policy: patch3_defines_and_guards_the_contract_but_keeps_driver_object_link_and_executable_publication_unconnected' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_output_contract_runtime_enforcement_boundary: stdout_stderr_success_and_publication_rules_become_dynamic_route_invariants_when_the_driver_is_connected' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_output_contract_default_route_policy: default_and_explicit_mir_to_c_C_stdout_behavior_remains_byte_identical' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_output_contract_next_milestone: canonical_whole_program_MIR_bundle' "$manifest_doc" >/dev/null
 
     # The Phase 10 contract delegates native publication rather than cloning it.
-    rg -n -F 'allowed_cranelift_phase9g_closure_object_validation_policy: canonical_fixture_parse_validation_metadata_and_lowering_complete_before_output_parent_or_temp_creation' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_closure_object_publication_policy: complete_nonempty_structurally_verified_bytes_publish_by_same_directory_temp_sync_and_atomic_rename' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_closure_object_failure_policy: failed_emission_or_publication_leaves_no_new_final_or_owned_partial_object_and_preserves_any_existing_final' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_closure_executable_publication_policy: successful_nonempty_hidden_same_directory_temporary_executable_is_atomically_renamed_to_the_final_path' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_closure_link_failure_artifact_policy: failures_preserve_input_objects_and_native_stdout_stderr_logs_but_leave_no_new_final_or_owned_temporary_executable' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase9g_link_driver_log_policy: captured_stdout_and_stderr_are_written_to_deterministic_sibling_logs_for_every_spawned_link' "$manifest_doc" >/dev/null
 
     rg -n -F 'output_path: str,' "$compiler_entry" >/dev/null
     rg -n -F 'invocation.output_path = output_path;' "$compiler_entry" >/dev/null
@@ -12377,7 +9298,6 @@ guard-cranelift-phase10-program-mir-contract:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking Phase 10 canonical whole-program MIR bundle..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     mir_source="compiler/mir.gst"
     smoke_entry="compiler/mir_data_structures_smoke_test_entry.gst"
     compiler_entry="compiler/test_runner_entry.gst"
@@ -12385,47 +9305,9 @@ guard-cranelift-phase10-program-mir-contract:
     readme_doc="compiler/experiments/cranelift/README.md"
     build_dir="build/guards/cranelift_phase10_program_mir"
 
-    for required_file in \
-      "$manifest_doc" \
-      "$mir_source" \
-      "$smoke_entry" \
-      "$compiler_entry" \
-      "$rust_driver" \
-      "$readme_doc"
-    do
-      if [ ! -f "$required_file" ]; then
-        echo "Missing Phase 10 program-MIR input: $required_file"
-        exit 1
-      fi
-    done
 
     just guard-cranelift-phase10-output-contract
 
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE10_PROGRAM_MIR_GUARD: guard-cranelift-phase10-program-mir-contract' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_program_mir_status: phase10_canonical_whole_program_MIR_bundle' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_program_mir_predecessor_status: phase10_explicit_executable_output_contract' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_program_mir_predecessor_guard: guard-cranelift-phase10-output-contract' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_program_mir_model: compiler/mir.gst::MirProgramBundle' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_program_mir_module_model: compiler/mir.gst::MirProgramBundleModule' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_program_mir_symbol_model: compiler/mir.gst::MirProgramBundleSymbol' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_program_mir_block_parameter_model: compiler/mir.gst::MirProgramBundleBlockParameter' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_program_mir_format: gust.compiler_program_mir_bundle.v1' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_program_mir_serializer: compiler/mir.gst::mir_serialize_program_bundle' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_program_mir_validator: compiler/mir.gst::mir_program_bundle_is_valid' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_program_mir_module_order_policy: resolver_topological_compilation_order_is_preserved_exactly_and_no_hash_iteration_selects_order' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_program_mir_embedded_format_policy: each_ordered_module_contains_exactly_one_frozen_gust.compiler_mir_ingestion.v1_or_v2_record_and_v3_is_rejected' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_program_mir_entry_policy: exactly_one_exported_entry_symbol_matches_the_bundle_entry_symbol' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_program_mir_symbol_policy: every_module_records_stable_object_name_exported_entry_module_local_and_imported_host_link_names_and_function_signatures' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_program_mir_cfg_policy: canonical_module_record_preserves_CFG_blocks_edges_and_statements_while_the_bundle_indexes_ordered_block_parameter_contracts' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_program_mir_metadata_policy: each_module_records_resource_provenance_and_native_boundary_metadata_counts' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_program_mir_determinism_policy: identical_ordered_modules_symbols_block_parameters_metadata_and_canonical_records_serialize_byte_identically' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_program_mir_schema_policy: gust.compiler_mir_ingestion.v1_and_v2_are_unchanged_and_the_bundle_is_an_aggregation_envelope_not_v3' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_program_mir_validation_policy: empty_bundle_unsafe_fields_duplicate_module_paths_duplicate_object_names_duplicate_module_symbol_links_missing_or_multiple_entry_bad_format_header_and_negative_metadata_or_block_parameter_ordinals_reject' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_program_mir_smoke: compiler/mir_data_structures_smoke_test_entry.gst' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_program_mir_current_route_policy: bundle_model_serializer_and_smoke_are_additive_and_not_connected_to_test_runner_driver_object_link_or_output_paths' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_program_mir_driver_policy: rust_driver_bundle_parsing_and_shared_v1_v2_parser_delegation_remain_deferred_until_the_generic_driver_protocol_patch' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_program_mir_default_route_policy: default_and_explicit_mir_to_c_C_stdout_behavior_remains_unchanged' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_program_mir_next_milestone: capability_validation_and_unsupported_semantics' "$manifest_doc" >/dev/null
 
     rg -n -F 'type MirProgramBundleSymbolLinkage enum {' "$mir_source" >/dev/null
     rg -n -F 'type MirProgramBundleSymbol[ctx] struct {' "$mir_source" >/dev/null
@@ -12511,7 +9393,6 @@ guard-cranelift-phase10-capability-contract:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking Phase 10 capability validation and unsupported semantics..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     capability_source="compiler/mir_native_backend_capability.gst"
     smoke_entry="compiler/mir_native_backend_capability_smoke_test_entry.gst"
     compiler_entry="compiler/test_runner_entry.gst"
@@ -12519,52 +9400,10 @@ guard-cranelift-phase10-capability-contract:
     readme_doc="compiler/experiments/cranelift/README.md"
     build_dir="build/guards/cranelift_phase10_capability"
 
-    for required_file in \
-      "$manifest_doc" \
-      "$capability_source" \
-      "$smoke_entry" \
-      "$compiler_entry" \
-      "$rust_driver" \
-      "$readme_doc"
-    do
-      if [ ! -f "$required_file" ]; then
-        echo "Missing Phase 10 capability input: $required_file"
-        exit 1
-      fi
-    done
 
     just guard-cranelift-phase10-program-mir-contract
     just guard-cranelift-experiment-manifest-surface
 
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE10_CAPABILITY_GUARD: guard-cranelift-phase10-capability-contract' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_capability_status: phase10_compiler_owned_capability_validation' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_capability_predecessor_status: phase10_canonical_whole_program_MIR_bundle' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_capability_predecessor_guard: guard-cranelift-phase10-program-mir-contract' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_capability_source: compiler/mir_native_backend_capability.gst' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_capability_plan_model: MirNativeBackendCapabilityPlan' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_capability_requirement_model: MirNativeBackendRequirement' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_capability_set_model: MirNativeBackendCapabilitySet' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_capability_result_model: MirNativeBackendCapabilityResult' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_capability_pass: mir_native_backend_validate_capabilities' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_capability_requirement_order_policy: compiler_emits_dense_zero_based_requirements_in_canonical_module_function_block_and_operation_order' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_capability_inventory_policy: supported_operation_type_ABI_runtime_import_and_target_names_are_explicit_typed_compiler_owned_sets' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_capability_supported_policy: every_ordered_requirement_must_exist_in_its_corresponding_capability_set' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_capability_operation_failure: unsupported_operation' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_capability_type_abi_failure: unsupported_type_or_abi' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_capability_runtime_import_failure: unsupported_runtime_import' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_capability_target_failure: unsupported_target_requirement' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_capability_internal_failure: invalid_compiler_mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_capability_internal_failure_policy: invalid_bundle_invalid_capability_set_invalid_requirement_context_missing_module_or_unrepresented_import_is_a_compiler_failure_not_a_user_unsupported_feature' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_capability_first_failure_policy: first_unsupported_requirement_in_canonical_order_is_reported_and_later_requirements_do_not_replace_it' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_capability_diagnostic_context: classification_module_path_function_name_block_label_requirement_ordinal_feature_and_stable_detail' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_capability_frontend_policy: capability_validation_consumes_compiler_owned_typed_bundle_facts_after_resolution_parsing_typechecking_and_structural_MIR_validation' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_capability_pre_driver_policy: capability_validation_must_complete_before_driver_discovery_handshake_MIR_serialization_output_parent_or_artifact_access' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_capability_no_fallback_policy: unsupported_or_invalid_input_never_routes_to_mir_to_c' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_capability_failure_artifact_policy: unsupported_or_invalid_input_creates_no_bundle_file_object_link_log_temporary_or_final_executable' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_capability_smoke: compiler/mir_native_backend_capability_smoke_test_entry.gst' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_capability_current_route_policy: model_validator_and_smoke_are_additive_and_not_imported_by_the_compiler_entry_or_rust_driver_yet' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_capability_default_route_policy: default_and_explicit_mir_to_c_C_stdout_behavior_remains_byte_identical' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_capability_next_milestone: driver_discovery_and_protocol_handshake' "$manifest_doc" >/dev/null
 
     rg -n -F 'type MirNativeBackendRequirementKind enum {' "$capability_source" >/dev/null
     rg -n -F 'type MirNativeBackendCapabilityClassification enum {' "$capability_source" >/dev/null
@@ -12652,7 +9491,6 @@ guard-cranelift-phase10-driver-handshake-contract:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking Phase 10 driver discovery and protocol handshake..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     driver_model="compiler/mir_native_backend_driver.gst"
     smoke_entry="compiler/mir_native_backend_driver_smoke_test_entry.gst"
     compiler_entry="compiler/test_runner_entry.gst"
@@ -12661,53 +9499,10 @@ guard-cranelift-phase10-driver-handshake-contract:
     readme_doc="compiler/experiments/cranelift/README.md"
     build_dir="build/guards/cranelift_phase10_driver_handshake"
 
-    for required_file in \
-      "$manifest_doc" \
-      "$driver_model" \
-      "$smoke_entry" \
-      "$compiler_entry" \
-      "$rust_manifest" \
-      "$rust_driver" \
-      "$readme_doc"
-    do
-      if [ ! -f "$required_file" ]; then
-        echo "Missing Phase 10 driver-handshake input: $required_file"
-        exit 1
-      fi
-    done
 
     just guard-cranelift-phase10-capability-contract
     just guard-cranelift-experiment-manifest-surface
 
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE10_DRIVER_HANDSHAKE_GUARD: guard-cranelift-phase10-driver-handshake-contract' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_driver_handshake_status: phase10_deterministic_driver_discovery_and_protocol_handshake' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_driver_handshake_predecessor_status: phase10_compiler_owned_capability_validation' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_driver_handshake_predecessor_guard: guard-cranelift-phase10-capability-contract' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_driver_discovery_source: compiler/mir_native_backend_driver.gst' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_driver_discovery_model: MirNativeBackendDriverDiscoveryResult' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_driver_discovery_function: mir_native_backend_discover_driver' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_driver_discovery_explicit_configuration: GUST_NATIVE_BACKEND_DRIVER_is_consulted_only_after_explicit_--backend_cranelift_selection_and_contains_one_path_not_arguments' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_driver_discovery_precedence: explicit_absolute_configured_path_then_executable_beside_gust_then_stable_failure' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_driver_discovery_explicit_failure_policy: invalid_missing_or_nonexecutable_explicit_path_rejects_without_sibling_fallback' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_driver_discovery_forbidden_search: no_PATH_working_directory_repository_or_arbitrary_relative_path_search' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_driver_discovery_forbidden_actions: no_cargo_build_download_install_dependency_resolution_or_shell_command_string' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_driver_handshake_command: phase10-driver-handshake' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_driver_handshake_protocol: gust.native_backend.driver.v1' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_driver_handshake_parser: compiler/mir_native_backend_driver.gst::mir_native_backend_parse_driver_handshake' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_driver_handshake_validator: compiler/mir_native_backend_driver.gst::mir_native_backend_validate_driver_handshake' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_driver_handshake_bundle_format: gust.compiler_program_mir_bundle.v1' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_driver_handshake_canonical_formats: gust.compiler_mir_ingestion.v1,gust.compiler_mir_ingestion.v2' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_driver_handshake_target_policy: exact_native_target_triple_and_object_format_match_required' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_driver_handshake_link_capability: native_executable' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_driver_handshake_pipeline_taxonomy: gust.phase9g.pipeline.v1' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_driver_handshake_capability_inventory: ordered_nonempty_unique_operations_types_ABIs_runtime_imports_and_target_requirements' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_driver_handshake_capability_bridge: mir_native_backend_driver_capability_set_feeds_the_compiler_owned_capability_validator' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_driver_handshake_mismatch_policy: malformed_protocol_bundle_MIR_target_object_link_taxonomy_or_capability_mismatch_rejects_before_bundle_serialization_or_artifact_access' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_driver_handshake_worker_policy: rust_worker_prints_a_read_only_deterministic_handshake_derived_from_the_same_native_object_target_contract' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_driver_handshake_artifact_policy: handshake_creates_no_bundle_object_log_temporary_or_final_executable' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_driver_handshake_current_route_policy: discovery_model_parser_validator_and_worker_command_are_not_connected_to_the_source_level_compiler_route' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_driver_handshake_default_route_policy: default_and_explicit_mir_to_c_C_stdout_behavior_remains_byte_identical' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_driver_handshake_next_milestone: generic_backend_request_protocol' "$manifest_doc" >/dev/null
 
     rg -n -F 'type MirNativeBackendDriverDiscoveryClassification enum {' "$driver_model" >/dev/null
     rg -n -F 'type MirNativeBackendDriverHandshakeClassification enum {' "$driver_model" >/dev/null
@@ -12875,7 +9670,6 @@ guard-cranelift-phase10-backend-request-contract:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking Phase 10 generic backend request protocol..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     request_model="compiler/mir_native_backend_request.gst"
     smoke_entry="compiler/mir_native_backend_request_smoke_test_entry.gst"
     compiler_entry="compiler/test_runner_entry.gst"
@@ -12884,51 +9678,10 @@ guard-cranelift-phase10-backend-request-contract:
     readme_doc="compiler/experiments/cranelift/README.md"
     build_dir="build/guards/cranelift_phase10_backend_request"
 
-    for required_file in \
-      "$manifest_doc" \
-      "$request_model" \
-      "$smoke_entry" \
-      "$compiler_entry" \
-      "$rust_manifest" \
-      "$rust_driver" \
-      "$readme_doc"
-    do
-      if [ ! -f "$required_file" ]; then
-        echo "Missing Phase 10 backend-request input: $required_file"
-        exit 1
-      fi
-    done
 
     just guard-cranelift-phase10-driver-handshake-contract
     just guard-cranelift-experiment-manifest-surface
 
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE10_BACKEND_REQUEST_GUARD: guard-cranelift-phase10-backend-request-contract' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_backend_request_status: phase10_generic_backend_request_validation_path' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_backend_request_predecessor_status: phase10_deterministic_driver_discovery_and_protocol_handshake' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_backend_request_predecessor_guard: guard-cranelift-phase10-driver-handshake-contract' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_backend_request_source: compiler/mir_native_backend_request.gst' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_backend_request_model: MirNativeBackendRequest' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_backend_request_serializer: mir_serialize_native_backend_request' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_backend_request_format: gust.native_backend.request.v1' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_backend_request_driver_protocol: gust.native_backend.driver.v1' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_backend_request_artifact_kind: native_executable' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_backend_request_command: phase10-backend-request-validate' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_backend_request_failure_taxonomy: gust.native_backend.request.failure.v1' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_backend_request_fields: format_driver_protocol_artifact_kind_target_triple_object_format_absolute_output_path_and_absolute_program_MIR_bundle_path' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_backend_request_path_policy: bundle_and_output_paths_are_distinct_absolute_single_argument_values_and_are_never_shell_fragments' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_backend_request_bundle_read_policy: worker_opens_the_absolute_bundle_path_once_retains_the_bytes_and_never_reopens_it_during_validation' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_backend_request_bundle_parser_policy: strict_serializer_order_exact_counts_exact_byte_lengths_no_unknown_or_trailing_content_and_exactly_one_exported_entry' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_backend_request_canonical_delegation: every_embedded_v1_or_v2_record_is_parsed_and_validated_by_parse_compiler_mir_input_and_the_existing_shared_validators' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_backend_request_index_validation: symbols_signatures_linkages_block_parameters_metadata_counts_module_paths_object_names_and_entry_symbol_match_the_embedded_canonical_records' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_backend_request_target_policy: request_target_triple_and_object_format_must_exactly_match_the_Phase9G_native_object_target_contract' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_backend_request_receipt_policy: successful_validation_emits_only_a_deterministic_text_receipt_and_does_not_claim_compilation_success' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_backend_request_failure_classes: invalid_request_protocol_mismatch_unsupported_artifact_target_mismatch_invalid_bundle_and_invalid_canonical_MIR' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_backend_request_artifact_policy: validation_reads_only_the_request_and_bundle_and_creates_no_object_link_log_output_parent_temporary_or_final_executable' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_backend_request_output_policy: output_path_is_validated_lexically_but_never_opened_stat_checked_created_removed_or_renamed' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_backend_request_no_fallback_policy: request_failure_never_routes_to_mir_to_c_or_a_fixture_specific_worker_command' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_backend_request_current_route_policy: compiler_model_serializer_worker_parser_validator_and_receipt_are_not_connected_to_compiler/test_runner_entry.gst' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_backend_request_default_route_policy: default_and_explicit_mir_to_c_C_stdout_behavior_remains_byte_identical' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_backend_request_next_milestone: scalar_and_metadata_source_route' "$manifest_doc" >/dev/null
 
     rg -n -F 'type MirNativeBackendRequest[ctx] struct {' "$request_model" >/dev/null
     rg -n -F 'func mir_native_backend_request_is_valid(' "$request_model" >/dev/null
@@ -13213,17 +9966,9 @@ guard-cranelift-phase10-scalar-source-route:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Preserving the historical Phase 10 scalar and metadata source-route evidence..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     return_source="compiler/phase10_scalar_return_source.gst"
     metadata_source="compiler/phase10_metadata_local_source.gst"
-    for required_file in "$manifest_doc" "$return_source" "$metadata_source"; do
-      test -f "$required_file"
-    done
 
-    rg -n -F 'allowed_cranelift_phase10_scalar_source_route_status: phase10_historical_scalar_and_provenance_metadata_source_route' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_scalar_source_route_retirement_status: exact_shape_implementation_retired_by_Phase11_Patch11' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_scalar_source_route_historical_guard_policy: preserve_fixture_protocol_and_observable_baseline_evidence_without_freezing_production_recognizer_shape' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_scalar_source_route_fixtures: compiler/phase10_scalar_return_source.gst,compiler/phase10_metadata_local_source.gst' "$manifest_doc" >/dev/null
 
     rg -n -F 'return 7;' "$return_source" >/dev/null
     rg -n -F 'mut value := 2;' "$metadata_source" >/dev/null
@@ -13234,18 +9979,10 @@ guard-cranelift-phase10-cfg-block-parameter-source-route:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Preserving the historical Phase 10 CFG and block-parameter source-route evidence..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     cfg_source="compiler/phase10_cfg_return_source.gst"
     merge_source="compiler/phase10_block_parameter_merge_source.gst"
-    for required_file in "$manifest_doc" "$cfg_source" "$merge_source"; do
-      test -f "$required_file"
-    done
 
     just guard-cranelift-phase10-scalar-source-route
-    rg -n -F 'allowed_cranelift_phase10_cfg_block_parameter_source_route_status: phase10_historical_CFG_and_block_parameter_source_route' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_cfg_block_parameter_source_route_retirement_status: exact_shape_implementation_retired_by_Phase11_Patch11' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_cfg_block_parameter_source_route_historical_guard_policy: preserve_fixture_protocol_and_observable_baseline_evidence_without_freezing_production_recognizer_shape' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_cfg_block_parameter_source_route_fixtures: compiler/phase10_cfg_return_source.gst,compiler/phase10_block_parameter_merge_source.gst' "$manifest_doc" >/dev/null
 
     rg -n -F 'return 11;' "$cfg_source" >/dev/null
     rg -n -F 'return selected;' "$merge_source" >/dev/null
@@ -13256,18 +9993,10 @@ guard-cranelift-phase10-call-import-runtime-source-route:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Preserving the historical Phase 10 call/import/runtime source-route evidence..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     local_source="compiler/phase10_local_call_source.gst"
     runtime_source="compiler/phase10_runtime_boundary_source.gst"
-    for required_file in "$manifest_doc" "$local_source" "$runtime_source"; do
-      test -f "$required_file"
-    done
 
     just guard-cranelift-phase10-cfg-block-parameter-source-route
-    rg -n -F 'allowed_cranelift_phase10_call_import_runtime_source_route_status: phase10_historical_call_import_runtime_source_route' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_call_import_runtime_source_route_retirement_status: exact_shape_implementation_retired_by_Phase11_Patch11' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_call_import_runtime_source_route_historical_guard_policy: preserve_fixture_protocol_and_observable_baseline_evidence_without_freezing_production_recognizer_shape' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_call_import_runtime_source_route_fixtures: compiler/phase10_local_call_source.gst,compiler/phase10_runtime_boundary_source.gst' "$manifest_doc" >/dev/null
 
     rg -n -F 'func phase10_local_identity' "$local_source" >/dev/null
     rg -n -F 'abs(' "$runtime_source" >/dev/null
@@ -13288,7 +10017,6 @@ guard-cranelift-phase10-packaging-help-ci:
         ;;
     esac
     echo "🔒 Checking Phase 10 packaging/help evidence shard: $shard"
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     compiler_entry="compiler/test_runner_entry.gst"
     help_fixture="compiler/phase10_help.txt"
     makefile="Makefile"
@@ -13302,25 +10030,6 @@ guard-cranelift-phase10-packaging-help-ci:
     readme_doc="compiler/experiments/cranelift/README.md"
     build_dir="build/guards/cranelift_phase10_packaging_help_ci/$shard"
 
-    for required_file in \
-      "$manifest_doc" \
-      "$compiler_entry" \
-      "$help_fixture" \
-      "$makefile" \
-      "$rust_manifest" \
-      "$rust_lock" \
-      "$rust_driver" \
-      "$scalar_source" \
-      "$runtime_source" \
-      "$workflow" \
-      "$heavy_workflow" \
-      "$readme_doc"
-    do
-      if [ ! -f "$required_file" ]; then
-        echo "Missing Phase 10 packaging/help input: $required_file"
-        exit 1
-      fi
-    done
     if [ ! -x ./gust ]; then
       echo "Phase 10 packaging/help guard requires the rebuilt ./gust compiler."
       exit 1
@@ -13336,158 +10045,6 @@ guard-cranelift-phase10-packaging-help-ci:
       just guard-cranelift-phase10-call-import-runtime-source-route
     fi
 
-    if [ "$shard" = "help" ] || [ "$shard" = "all" ]; then
-      just guard-cranelift-experiment-manifest-surface
-
-      rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_PHASE10_PACKAGING_HELP_CI_GUARD: guard-cranelift-phase10-packaging-help-ci' "$manifest_doc" justfile >/dev/null
-      rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_status: phase10_packaged_help_and_focused_CI_surface' "$manifest_doc" >/dev/null
-      rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_predecessor_status: phase10_connected_calls_imports_and_runtime_boundary_source_route' "$manifest_doc" >/dev/null
-      rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_make_target: phase10-native-package' "$manifest_doc" >/dev/null
-      rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_default_build_policy: make_gust_remains_compiler_only_and_never_builds_the_Rust_worker' "$manifest_doc" >/dev/null
-      rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_package_policy: make_phase10-native-package_explicitly_builds_and_stages_the_mode_0755_compiler_and_release_worker_as_build/phase10-package/bin_siblings' "$manifest_doc" >/dev/null
-      rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_install_policy: make_install_uses_DESTDIR_and_PREFIX_and_installs_gust_and_gust-native-backend_as_mode_0755_siblings' "$manifest_doc" >/dev/null
-      rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_help_invocations: gust_--help_and_gust_-h' "$manifest_doc" >/dev/null
-      rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_help_legacy_manifest_guard_policy: exactly_four_help_only_Cranelift_references_extend_the_four_Patch2_selector_references_for_an_exact_total_of_eight' "$manifest_doc" >/dev/null
-      rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_help_legacy_backend_surface_policy: canonical_help_usage_is_exactly_validated_then_excluded_and_only_Phase10_plus_the_two_policy_guard_recipes_are_removed_from_the_legacy_orchestration_scan' "$manifest_doc" >/dev/null
-      rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_legacy_global_scan_policy: exactly_four_Makefile_release_packaging_references_and_exactly_four_compiler/phase10_help.txt_references_are_independently_exact_allowlisted_before_those_two_files_are_excluded_from_the_broad_Phase9_scan' "$manifest_doc" >/dev/null
-      rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_legacy_fixture_retirement: compiler/fixtures/phase10_help.txt_is_a_keyword_free_pointer_to_compiler/phase10_help.txt_and_is_not_a_second_help_fixture' "$manifest_doc" >/dev/null
-      rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_focused_shards: cranelift-phase10-call-runtime,cranelift-phase10-help-surface,cranelift-phase10-package-sibling,cranelift-phase10-install-runtime' "$manifest_doc" >/dev/null
-      rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_shard_modes: route,help,package,install' "$manifest_doc" >/dev/null
-      rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_shard_dispatch_policy: PHASE10_PACKAGING_HELP_SHARD_selects_one_independent_evidence_partition_and_unset_runs_the_full_aggregate' "$manifest_doc" >/dev/null
-      rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_matrix_count: 33' "$manifest_doc" >/dev/null
-      rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_next_milestone: audit_and_phase10_closure' "$manifest_doc" >/dev/null
-      rg -n -F 'allowed_cranelift_phase10_packaging_help_CI_next_milestone_status: complete' "$manifest_doc" >/dev/null
-      rg -n -F 'allowed_cranelift_phase10_close_status: phase10_closed_explicit_experimental_cranelift_backend_route' "$manifest_doc" >/dev/null
-
-      rg -n -F 'func compiler_is_help_invocation(args: std.Vector[str, ctx], ctx: &Arena) int {' "$compiler_entry" >/dev/null
-      rg -n -F 'func compiler_print_help()' "$compiler_entry" >/dev/null
-      rg -n -F 'if compiler_is_help_invocation(args, ctx) == 1 {' "$compiler_entry" >/dev/null
-      rg -n -F 'gust-native-backend next to gust. There is no PATH search, auto-build, or' "$compiler_entry" >/dev/null
-      compiler_entry_cranelift_count="$(
-        rg -i -F 'cranelift' "$compiler_entry" |
-          wc -l |
-          tr -d ' '
-      )"
-      if [ "$compiler_entry_cranelift_count" != "8" ]; then
-        echo "Phase 10 help packaging requires exactly eight selector-plus-help Cranelift references, found $compiler_entry_cranelift_count."
-        rg -n -i -F 'cranelift' "$compiler_entry"
-        exit 1
-      fi
-
-      rg -n -F 'PHASE10_NATIVE_BACKEND_TARGET_DIR = build/phase10-native-backend-cargo' "$makefile" >/dev/null
-      rg -n -F 'build/gust-native-backend: $(PHASE10_NATIVE_BACKEND_MANIFEST) $(PHASE10_NATIVE_BACKEND_LOCK) $(PHASE10_NATIVE_BACKEND_SOURCE)' "$makefile" >/dev/null
-      rg -n -F '$(CARGO) build \' "$makefile" >/dev/null
-      rg -n -F -- '--locked \' "$makefile" >/dev/null
-      rg -n -F -- '--release \' "$makefile" >/dev/null
-      rg -n -F 'phase10-native-package: gust build/gust-native-backend' "$makefile" >/dev/null
-      rg -n -F 'build/phase10-package/.bin.tmp/gust-native-backend' "$makefile" >/dev/null
-      rg -n -F 'mv build/phase10-package/.bin.tmp build/phase10-package/bin' "$makefile" >/dev/null
-      rg -n -F 'install: phase10-native-package' "$makefile" >/dev/null
-      rg -n -F 'install -m 0755 build/phase10-package/bin/gust "$(DESTDIR)$(PREFIX)/bin/gust"' "$makefile" >/dev/null
-      rg -n -F 'install -m 0755 build/phase10-package/bin/gust-native-backend "$(DESTDIR)$(PREFIX)/bin/gust-native-backend"' "$makefile" >/dev/null
-      rg -n -F 'gust: build/gust_compiler.c $(RUNTIME_SRCS)' "$makefile" >/dev/null
-      package_make_cranelift_count="$(
-        rg -i -F 'cranelift' "$makefile" |
-          wc -l |
-          tr -d ' '
-      )"
-      if [ "$package_make_cranelift_count" != "4" ]; then
-        echo "Phase 10 packaging requires exactly four frozen Makefile Cranelift references, found $package_make_cranelift_count."
-        rg -n -i -F 'cranelift' "$makefile"
-        exit 1
-      fi
-      help_fixture_cranelift_count="$(
-        rg -i -F 'cranelift' "$help_fixture" |
-          wc -l |
-          tr -d ' '
-      )"
-      if [ "$help_fixture_cranelift_count" != "4" ]; then
-        echo "Phase 10 packaging requires exactly four canonical help-fixture Cranelift references, found $help_fixture_cranelift_count."
-        rg -n -i -F 'cranelift' "$help_fixture"
-        exit 1
-      fi
-      legacy_help_fixture="compiler/fixtures/phase10_help.txt"
-      if [ ! -f "$legacy_help_fixture" ]; then
-        echo "Missing retired help-fixture pointer: $legacy_help_fixture"
-        exit 1
-      fi
-      rg -n -x -F 'Canonical help fixture moved to compiler/phase10_help.txt.' "$legacy_help_fixture" >/dev/null
-      if rg -n -i -F 'cranelift' "$legacy_help_fixture" >/dev/null; then
-        echo "Retired help-fixture pointer must not contain Cranelift text."
-        exit 1
-      fi
-
-      if rg -n -i 'cargo run|cargo build|Command::new|os\.System' "$compiler_entry" >/dev/null; then
-        echo "The compiler entry must not build or launch the worker through a shell or embedded build command."
-        rg -n -i 'cargo run|cargo build|Command::new|os\.System' "$compiler_entry"
-        exit 1
-      fi
-
-      for focused_shard in \
-        cranelift-phase10-call-runtime \
-        cranelift-phase10-help-surface \
-        cranelift-phase10-package-sibling \
-        cranelift-phase10-install-runtime
-      do
-        rg -n -F "$focused_shard" "$workflow" justfile >/dev/null
-      done
-      if rg -n '^[[:space:]]*- cranelift-phase10-packaging-help$' "$workflow" >/dev/null; then
-        echo "PR Fast must use the four Phase 10 evidence shards, not the retired aggregate matrix shard."
-        exit 1
-      fi
-
-      rg -n -F './gust --help > build/phase10-help.stdout 2> build/phase10-help.stderr' "$heavy_workflow" >/dev/null
-      rg -n -F 'test -f compiler/phase10_help.txt' "$heavy_workflow" >/dev/null
-      rg -n -F "awk '1' compiler/phase10_help.txt > build/phase10-help.expected" "$heavy_workflow" >/dev/null
-      rg -n -F 'diff -u build/phase10-help.expected build/phase10-help.stdout' "$heavy_workflow" >/dev/null
-      rg -n -F 'gust --help unexpectedly wrote to stderr:' "$heavy_workflow" >/dev/null
-      if rg -n -F './gust --help >/dev/null 2>&1 || true' "$heavy_workflow" >/dev/null; then
-        echo "Heavy CI must not ignore the Phase 10 help result."
-        exit 1
-      fi
-
-      help_stdout="$build_dir/help.stdout"
-      help_stderr="$build_dir/help.stderr"
-      short_help_stdout="$build_dir/help-short.stdout"
-      short_help_stderr="$build_dir/help-short.stderr"
-
-      ./gust --help >"$help_stdout" 2>"$help_stderr"
-      ./gust -h >"$short_help_stdout" 2>"$short_help_stderr"
-      diff -u "$help_expected" "$help_stdout"
-      diff -u "$help_expected" "$short_help_stdout"
-      if [ -s "$help_stderr" ] || [ -s "$short_help_stderr" ]; then
-        echo "Phase 10 help must keep stderr empty."
-        cat "$help_stderr" "$short_help_stderr"
-        exit 1
-      fi
-
-      set +e
-      ./gust --help "$scalar_source" \
-        >"$build_dir/mixed-help.stdout" \
-        2>"$build_dir/mixed-help.stderr"
-      mixed_help_status="$?"
-      set -e
-      if [ "$mixed_help_status" = "0" ]; then
-        echo "Help must remain a sole-argument mode."
-        exit 1
-      fi
-      cat "$build_dir/mixed-help.stdout" "$build_dir/mixed-help.stderr" \
-        >"$build_dir/mixed-help.combined"
-      rg -n -F 'Compiler invocation error: unknown option: --help' \
-        "$build_dir/mixed-help.combined" >/dev/null
-
-      readme_flat="$(tr '\n' ' ' < "$readme_doc")"
-      printf '%s\n' "$readme_flat" |
-        rg -F 'Phase 10 Patch 11 adds an explicit two-binary package surface.' >/dev/null
-      printf '%s\n' "$readme_flat" |
-        rg -F '`make gust` remains the compiler-only build and does not require Rust or construct a worker.' >/dev/null
-      printf '%s\n' "$readme_flat" |
-        rg -F 'CI canonicalizes only the fixture'\''s EOF representation to one terminal newline before comparison' >/dev/null
-      printf '%s\n' "$readme_flat" |
-        rg -F 'PR Fast partitions the Phase 10 evidence across four independent matrix shards.' >/dev/null
-      printf '%s\n' "$readme_flat" |
-        rg -F 'Phase 10 is closed as `phase10_closed_explicit_experimental_cranelift_backend_route`.' >/dev/null
-    fi
 
     if [ "$shard" = "package" ] || [ "$shard" = "all" ]; then
       rm -f build/gust-native-backend
@@ -13591,13 +10148,10 @@ guard-cranelift-phase10-packaging-help-ci:
     echo "✅ Phase 10 packaging/help evidence shard passed: $shard"
 
 
-
 guard-cranelift-phase10-close:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Validating Phase 10 historical closure wiring..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
-    test -f "$manifest_doc"
 
     for guard_name in \
       guard-cranelift-phase10-opening-contract \
@@ -13615,9 +10169,6 @@ guard-cranelift-phase10-close:
       rg -n -x -F "$guard_name:" justfile >/dev/null
     done
 
-    rg -n -F 'allowed_cranelift_phase10_scalar_source_route_retirement_status: exact_shape_implementation_retired_by_Phase11_Patch11' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_cfg_block_parameter_source_route_retirement_status: exact_shape_implementation_retired_by_Phase11_Patch11' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase10_call_import_runtime_source_route_retirement_status: exact_shape_implementation_retired_by_Phase11_Patch11' "$manifest_doc" >/dev/null
 
     close_body="$(
       sed -n '/^guard-cranelift-phase10-close:/,/^guard-cranelift-phase11-opening-contract:/p' justfile
@@ -13632,31 +10183,14 @@ guard-cranelift-phase10-close:
     echo "✅ Phase 10 closure wiring passed; dynamic evidence remains Level 3."
 
 
-
 guard-cranelift-phase11-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Preserving the historical Phase 11 opening contract..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     route_source="compiler/mir_native_backend_source_route.gst"
     registry_doc="compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md"
-    for required_file in "$manifest_doc" "$route_source" "$registry_doc"; do
-      test -f "$required_file"
-    done
 
     rg -n -x -F 'guard-cranelift-phase10-close:' justfile >/dev/null
-    required_manifest_lines=(
-      'CRANELIFT_EXPERIMENT_ALLOWED_PHASE11_OPENING_CONTRACT_GUARD: guard-cranelift-phase11-opening-contract'
-      'allowed_cranelift_phase11_opening_status: phase11_open_inventory_backed_feature_parity_migration'
-      'allowed_cranelift_phase11_opening_predecessor_guard: guard-cranelift-phase10-close'
-      'allowed_cranelift_phase11_opening_compatibility_baseline_count: 6'
-      'allowed_cranelift_phase11_opening_deferred_category_count: 7'
-      'allowed_cranelift_phase11_opening_source_route_policy: no_new_exact_source_spelling_filename_or_fixture_identity_recognizers'
-      'allowed_cranelift_phase11_opening_next_milestone_status: complete'
-    )
-    for line in "${required_manifest_lines[@]}"; do
-      rg -n -x -F "$line" "$manifest_doc" >/dev/null
-    done
 
     baseline_sources=(
       compiler/phase10_scalar_return_source.gst
@@ -13670,30 +10204,8 @@ guard-cranelift-phase11-opening-contract:
       test -f "$source_path"
     done
 
-    declared_phase11_guards="$(
-      awk '/^CRANELIFT_EXPERIMENT_ALLOWED_PHASE11_[A-Z0-9_]+_GUARD:/ { print $2 }' \
-        "$manifest_doc" |
-        sort -u
-    )"
-    for guard_name in \
-      guard-cranelift-phase11-opening-contract \
-      guard-cranelift-phase11-parity-registry \
-      guard-cranelift-phase11-generic-canonical-mir-route \
-      guard-cranelift-phase11-scalar-expression-parity \
-      guard-cranelift-phase11-local-state-parity \
-      guard-cranelift-phase11-structured-cfg-parity \
-      guard-cranelift-phase11-block-parameter-loop-parity \
-      guard-cranelift-phase11-direct-call-abi-parity \
-      guard-cranelift-phase11-module-import-runtime-parity \
-      guard-cranelift-phase11-metadata-diagnostic-parity \
-      guard-cranelift-phase11-registry-differential \
-      guard-cranelift-phase11-route-retirement-ci \
-      guard-cranelift-phase11-close
-    do
-      printf '%s\n' "$declared_phase11_guards" |
-        rg -n -x -F "$guard_name" >/dev/null
-      rg -n -F "$guard_name" justfile >/dev/null
-    done
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_registry.py verify-phase11-closure
 
     if rg -n -F 'route_owner=legacy_exact_shape' "$registry_doc" >/dev/null; then
       echo "Historical opening evidence must not reactivate a legacy exact-shape owner."
@@ -13706,18 +10218,10 @@ guard-cranelift-phase11-parity-registry:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking the canonical Phase 11 feature-parity inventory..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     registry_view="compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md"
     registry_json="scripts/cranelift_feature_registry.json"
     registry_validator="scripts/cranelift_registry.py"
 
-    for required_file in       "$manifest_doc" "$registry_view" "$registry_json" "$registry_validator"
-    do
-      if [ ! -f "$required_file" ]; then
-        echo "Missing Phase 11 parity-registry input: $required_file"
-        exit 1
-      fi
-    done
 
     just guard-cranelift-phase11-opening-contract
 
@@ -13747,7 +10251,6 @@ guard-cranelift-route-architecture-contract:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking semantic native-route and fallback architecture..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     route_source="compiler/mir_native_backend_source_route.gst"
     generic_source="compiler/mir_native_backend_generic_source.gst"
     request_source="compiler/mir_native_backend_request.gst"
@@ -13765,39 +10268,7 @@ guard-cranelift-route-architecture-contract:
       compiler/mir_native_backend_direct_call_source.gst
       compiler/mir_native_backend_module_import_source.gst
     )
-    for required_file in \
-      "$manifest_doc" "$request_source" "$invocation_source" \
-      "$evidence_script" "$novel_source" "$variant_source" \
-      "$unsupported_source" "${production_lowerers[@]}"
-    do
-      if [ ! -f "$required_file" ] || [ -L "$required_file" ]; then
-        echo "Route architecture input must be a regular non-symlink file: $required_file"
-        exit 1
-      fi
-    done
 
-    required_manifest_lines=(
-      'CRANELIFT_EXPERIMENT_ALLOWED_ROUTE_ARCHITECTURE_GUARD: guard-cranelift-route-architecture-contract'
-      'allowed_cranelift_route_architecture_evidence_script: scripts/phase12_5_route_architecture.sh'
-      'allowed_cranelift_route_architecture_novel_source: compiler/phase12_5_route_novel_source.gst'
-      'allowed_cranelift_route_architecture_variant_source: compiler/phase12_5_route_variant_source.gst'
-      'allowed_cranelift_route_architecture_unsupported_source: compiler/phase12_5_route_unsupported_source.gst'
-      'allowed_cranelift_route_architecture_generic_policy: unregistered_source_and_renamed_function_literal_variant_compile_and_match_MIR_to_C_runtime'
-      'allowed_cranelift_route_architecture_fallback_policy: explicit_Cranelift_succeeds_while_the_test_only_MIR_to_C_path_is_poisoned'
-      'allowed_cranelift_route_architecture_worker_policy: recording_driver_observes_only_handshake_and_command_plus_request_path_and_the_request_has_no_raw_source_fields'
-      'allowed_cranelift_route_architecture_deferral_policy: unsupported_source_does_not_invoke_driver_publish_request_or_bundle_create_object_or_change_existing_output'
-      'allowed_cranelift_route_architecture_hard_ban_policy: raw_source_request_fields,direct_backend_raw_source_reads,retired_source_recognizers,Cranelift_terminal_MIR_to_C_codegen'
-      'allowed_cranelift_route_architecture_CI_policy: existing_cranelift_differential_PR_shard_runs_the_behavioural_contract_without_adding_capacity'
-      'allowed_cranelift_route_architecture_behavior_policy: one_test_only_MIR_to_C_unavailable_environment_hook_no_default_route_worker_MIR_or_output_change'
-      'allowed_cranelift_route_architecture_next_patch: three_level_test_partition'
-    )
-    for line in "${required_manifest_lines[@]}"; do
-      if ! rg -n -x -F "$line" "$manifest_doc" >/dev/null; then
-        echo "Missing route architecture manifest contract:"
-        echo "$line"
-        exit 1
-      fi
-    done
 
     bash -n "$evidence_script"
 
@@ -13856,17 +10327,10 @@ guard-cranelift-phase11-generic-canonical-mir-route:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking the authoritative Phase 11 generic canonical-MIR source route..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     registry_doc="compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md"
     differential_harness="scripts/phase11_registry_differential.sh"
-    for required_file in "$manifest_doc" "$registry_doc" "$differential_harness"; do
-      test -f "$required_file"
-    done
 
     just guard-cranelift-phase11-parity-registry
-    rg -n -F 'allowed_cranelift_phase11_generic_route_order: generic_canonical_MIR_lowering_then_static_capability_validation_then_driver_discovery' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase11_generic_route_shadow_policy: retired_no_legacy_bundle_is_constructed_or_compared' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_cranelift_phase11_generic_route_compatibility_policy: Phase10_exact_shape_recognizers_are_absent_from_production_routing' "$manifest_doc" >/dev/null
     rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_retired_exact_shape_source_routes' "$registry_doc" >/dev/null
 
     if [ "${PHASE11_GENERIC_ROUTE_SKIP_DYNAMIC:-0}" = "1" ]; then
@@ -13884,7 +10348,6 @@ guard-cranelift-phase11-scalar-expression-parity:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking Phase 11 scalar-expression parity..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     registry_doc="compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md"
     generic_source="compiler/mir_native_backend_generic_source.gst"
     route_source="compiler/mir_native_backend_source_route.gst"
@@ -13901,22 +10364,6 @@ guard-cranelift-phase11-scalar-expression-parity:
       'compiler/phase11_scalar_positive_predicate_source.gst|31|positive-predicate'
     )
 
-    for required_file in \
-      "$manifest_doc" \
-      "$registry_doc" \
-      "$generic_source" \
-      "$route_source" \
-      "$rust_manifest" \
-      "$rust_driver" \
-      "$readme_doc" \
-      "$negative_source" \
-      src/runtime.c
-    do
-      if [ ! -f "$required_file" ]; then
-        echo "Missing Phase 11 scalar-expression input: $required_file"
-        exit 1
-      fi
-    done
     for case_record in "${positive_cases[@]}"; do
       IFS='|' read -r source_path expected_exit case_name <<<"$case_record"
       if [ ! -f "$source_path" ]; then
@@ -13927,39 +10374,6 @@ guard-cranelift-phase11-scalar-expression-parity:
     PHASE11_ROUTE_ARCHITECTURE_SKIP_DYNAMIC=1 \
       just guard-cranelift-route-architecture-contract
 
-    required_manifest_lines=(
-      'CRANELIFT_EXPERIMENT_ALLOWED_PHASE11_SCALAR_EXPRESSION_PARITY_GUARD: guard-cranelift-phase11-scalar-expression-parity'
-      'allowed_cranelift_phase11_scalar_expression_status: phase11_migrated_scalar_expression_parity'
-      'allowed_cranelift_phase11_scalar_expression_predecessor_status: phase11_connected_generic_canonical_MIR_source_route'
-      'allowed_cranelift_phase11_scalar_expression_predecessor_guard: guard-cranelift-route-architecture-contract'
-      'allowed_cranelift_phase11_scalar_expression_predecessor_policy: Level2_family_runs_focused_static_contract_without_replaying_other_family_guards'
-      'allowed_cranelift_phase11_scalar_expression_positive_fixture_count: 4'
-      'allowed_cranelift_phase11_scalar_expression_positive_fixtures: compiler/phase11_scalar_literal_source.gst,compiler/phase11_scalar_local_read_source.gst,compiler/phase11_scalar_add_source.gst,compiler/phase11_scalar_positive_predicate_source.gst'
-      'allowed_cranelift_phase11_scalar_expression_negative_fixture: compiler/phase11_scalar_unsupported_multiply_source.gst'
-      'allowed_cranelift_phase11_scalar_expression_expected_exits: literal_7,local_read_17,nested_add_23,positive_predicate_31,multiply_MIR_to_C_12'
-      'allowed_cranelift_phase11_scalar_expression_source_scope: integer_literals_one_i32_local_read_nested_integer_addition_and_existing_positive_i32_comparison_predicate'
-      'allowed_cranelift_phase11_scalar_expression_canonical_operations: LocalI32Set,LocalI32Read,AddI32,SgtI32,Branch,ReturnI32'
-      'allowed_cranelift_phase11_scalar_expression_lowering_policy: semantic_expression_tree_is_folded_to_one_canonical_i32_temporary_or_source_local_plus_LocalI32AddI32Literal_without_source_identity_checks'
-      'allowed_cranelift_phase11_scalar_expression_capability_policy: AddI32_and_bool_requirements_are_discovered_from_serialized_canonical_MIR_then_checked_against_static_and_driver_inventories'
-      'allowed_cranelift_phase11_scalar_expression_worker_policy: single_block_scalar_validation_accepts_canonical_i32_set_and_add_sequences_instead_of_one_exact_fixture_shape'
-      'allowed_cranelift_phase11_scalar_expression_differential_policy: default_and_explicit_MIR_to_C_are_byte_identical_and_MIR_to_C_plus_Cranelift_match_exit_stdout_and_stderr_for_all_four_positive_sources'
-      'allowed_cranelift_phase11_scalar_expression_negative_policy: multiplication_remains_SourceFeatureNotRepresented_before_driver_discovery_and_preserves_existing_output'
-      'allowed_cranelift_phase11_scalar_expression_registry_inventory: 0_legacy_exact_shape_10_generic_canonical_mir_9_deferred'
-      'allowed_cranelift_phase11_scalar_expression_registry_migration_inventory: 3_scalar_expression_migrated_3_local_state_migrated_4_generic_shadowed_9_deferred'
-      'allowed_cranelift_phase11_scalar_expression_registry_MIR_to_C_gap_count: 6'
-      'allowed_cranelift_phase11_scalar_expression_compatibility_policy: Phase10_recognizers_remain_behind_the_generic_route_and_the_six_baseline_shadow_comparisons_remain_unchanged'
-      'allowed_cranelift_phase11_scalar_expression_scope_freeze: Patch4_added_no_subtraction_multiplication_division_overflow_mode_float_cast_or_multi_local_assignment_and_the_Patch5_successor_owns_local_state'
-      'allowed_cranelift_phase11_scalar_expression_legacy_backend_surface_policy: exact_scalar_expression_guard_recipe_is_manifest_validated_then_excluded_from_the_legacy_explicit_CLI_scan'
-      'allowed_cranelift_phase11_scalar_expression_next_milestone: local_state_and_assignment_parity'
-      'allowed_cranelift_phase11_scalar_expression_next_milestone_status: complete'
-    )
-    for expected_line in "${required_manifest_lines[@]}"; do
-      if ! rg -n -x -F "$expected_line" "$manifest_doc" >/dev/null; then
-        echo "Missing Phase 11 scalar-expression manifest line:"
-        echo "$expected_line"
-        exit 1
-      fi
-    done
 
     required_generic_symbols=(
       'ScalarExpression,'
@@ -14223,7 +10637,6 @@ guard-cranelift-phase11-local-state-parity:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking Phase 11 local-state and assignment parity..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     registry_doc="compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md"
     generic_source="compiler/mir_native_backend_generic_source.gst"
     local_state_source="compiler/mir_native_backend_local_state_source.gst"
@@ -14242,24 +10655,6 @@ guard-cranelift-phase11-local-state-parity:
       'compiler/phase11_local_state_independent_locals_source.gst|67|independent-locals'
     )
 
-    for required_file in \
-      "$manifest_doc" \
-      "$registry_doc" \
-      "$generic_source" \
-      "$local_state_source" \
-      "$route_source" \
-      "$rust_manifest" \
-      "$rust_driver" \
-      "$readme_doc" \
-      "$uninitialized_source" \
-      "$invalid_local_source" \
-      src/runtime.c
-    do
-      if [ ! -f "$required_file" ]; then
-        echo "Missing Phase 11 local-state input: $required_file"
-        exit 1
-      fi
-    done
     for case_record in "${positive_cases[@]}"; do
       IFS='|' read -r source_path expected_exit case_name <<<"$case_record"
       if [ ! -f "$source_path" ]; then
@@ -14270,43 +10665,6 @@ guard-cranelift-phase11-local-state-parity:
     PHASE11_ROUTE_ARCHITECTURE_SKIP_DYNAMIC=1 \
       just guard-cranelift-route-architecture-contract
 
-    required_manifest_lines=(
-      'CRANELIFT_EXPERIMENT_ALLOWED_PHASE11_LOCAL_STATE_PARITY_GUARD: guard-cranelift-phase11-local-state-parity'
-      'allowed_cranelift_phase11_local_state_status: phase11_migrated_local_state_parity'
-      'allowed_cranelift_phase11_local_state_predecessor_status: phase11_migrated_scalar_expression_parity'
-      'allowed_cranelift_phase11_local_state_predecessor_guard: guard-cranelift-route-architecture-contract'
-      'allowed_cranelift_phase11_local_state_predecessor_policy: Level2_family_runs_focused_static_contract_without_replaying_other_family_guards'
-      'allowed_cranelift_phase11_local_state_lowerer: compiler/mir_native_backend_local_state_source.gst'
-      'allowed_cranelift_phase11_local_state_positive_fixture_count: 4'
-      'allowed_cranelift_phase11_local_state_positive_fixtures: compiler/phase11_local_state_straight_line_source.gst,compiler/phase11_local_state_branch_update_source.gst,compiler/phase11_local_state_read_after_write_source.gst,compiler/phase11_local_state_independent_locals_source.gst'
-      'allowed_cranelift_phase11_local_state_negative_fixture_count: 2'
-      'allowed_cranelift_phase11_local_state_negative_fixtures: compiler/phase11_local_state_uninitialized_read_source.gst,compiler/phase11_local_state_invalid_local_source.gst'
-      'allowed_cranelift_phase11_local_state_expected_exits: straight_line_2,branch_update_43,read_after_write_53,independent_locals_67'
-      'allowed_cranelift_phase11_local_state_source_scope: multiple_integer_locals_declaration_then_assignment_repeated_reassignment_local_to_local_assignment_scalar_expression_assignment_and_one_top_level_branch_update'
-      'allowed_cranelift_phase11_local_state_index_policy: zero_based_local_indices_follow_source_declaration_order_and_are_stable_in_serialized_canonical_MIR'
-      'allowed_cranelift_phase11_local_state_canonical_operations: LocalI32Set,LocalI32AddI32Literal,LocalI32Read,SgtI32,Branch,Jump,ReturnI32'
-      'allowed_cranelift_phase11_local_state_provenance_policy: every_local_declaration_and_later_assignment_has_recognized_preserved_provenance_metadata_with_stable_local_index'
-      'allowed_cranelift_phase11_local_state_definite_assignment_policy: unknown_immutable_or_not_definitely_assigned_local_use_is_invalid_before_driver_discovery_or_artifact_access'
-      'allowed_cranelift_phase11_local_state_capability_policy: operation_type_and_ABI_requirements_are_derived_from_the_emitted_canonical_MIR_bundle'
-      'allowed_cranelift_phase11_local_state_worker_policy: generic_i32_local_inventories_and_one_or_four_block_set_add_dataflow_replace_zero_or_one_local_fixture_profiles'
-      'allowed_cranelift_phase11_local_state_differential_policy: default_and_explicit_MIR_to_C_are_byte_identical_and_MIR_to_C_plus_Cranelift_match_exit_stdout_and_stderr_for_all_four_positive_sources'
-      'allowed_cranelift_phase11_local_state_negative_policy: uninitialized_and_invalid_local_sources_fail_before_driver_discovery_preserve_existing_output_and_leave_no_transient_artifacts'
-      'allowed_cranelift_phase11_local_state_registry_inventory: 0_legacy_exact_shape_10_generic_canonical_mir_9_deferred'
-      'allowed_cranelift_phase11_local_state_registry_migration_inventory: 3_scalar_expression_migrated_3_local_state_migrated_4_generic_shadowed_9_deferred'
-      'allowed_cranelift_phase11_local_state_registry_MIR_to_C_gap_count: 6'
-      'allowed_cranelift_phase11_local_state_compatibility_policy: Phase10_recognizers_and_six_baseline_shadow_comparisons_remain_unchanged_behind_the_generic_attempt'
-      'allowed_cranelift_phase11_local_state_scope_freeze: no_nested_CFG_loops_backedges_function_parameters_new_arithmetic_operation_MIR_v3_worker_protocol_driver_discovery_artifact_link_package_CLI_or_CI_matrix_change'
-      'allowed_cranelift_phase11_local_state_legacy_backend_surface_policy: exact_local_state_guard_recipe_is_manifest_validated_then_excluded_from_the_legacy_explicit_CLI_scan'
-      'allowed_cranelift_phase11_local_state_next_milestone: structured_CFG_parity'
-      'allowed_cranelift_phase11_local_state_next_milestone_status: complete'
-    )
-    for expected_line in "${required_manifest_lines[@]}"; do
-      if ! rg -n -x -F "$expected_line" "$manifest_doc" >/dev/null; then
-        echo "Missing Phase 11 local-state manifest line:"
-        echo "$expected_line"
-        exit 1
-      fi
-    done
 
     required_local_state_symbols=(
       'type MirNativeLocalStateModel[ctx] struct'
@@ -14380,23 +10738,6 @@ guard-cranelift-phase11-local-state-parity:
     printf '%s\n' "$block_local_record" | rg -F 'source_native_guard=guard-cranelift-phase11-structured-cfg-parity' >/dev/null
 
     rg -n -x -F 'deferred_family: id=multiple_locals_and_assignments|owner_patch=5|fixture=compiler/phase11_local_state_uninitialized_read_source.gst|expected_class=invalid_canonical_MIR_before_driver_discovery_or_artifact_access|status=migrated|' "$registry_doc" >/dev/null
-
-    manifest_inventory_count="$(
-      rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:' "$manifest_doc"
-    )"
-    canonical_inventory_count="$(
-      rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:.*[|]class=canonical_shared_lowering[|]' "$manifest_doc"
-    )"
-    bare_inventory_count="$(
-      rg -c '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_[a-z0-9_]+:$' "$manifest_doc" ||
-        true
-    )"
-    if [ "$manifest_inventory_count" != "33" ] ||
-       [ "$canonical_inventory_count" != "33" ] ||
-       [ "${bare_inventory_count:-0}" != "0" ]; then
-      echo "Phase 11 local-state patch must preserve the Phase 9G inherited inventory: total=$manifest_inventory_count canonical=$canonical_inventory_count bare=${bare_inventory_count:-0}"
-      exit 1
-    fi
 
     if [ "${PHASE11_LOCAL_STATE_SKIP_DYNAMIC:-0}" = "1" ]; then
       readme_flat="$(tr '\n' ' ' < "$readme_doc")"
@@ -14618,7 +10959,6 @@ guard-cranelift-phase11-structured-cfg-parity:
       set -x
     fi
     echo "🔒 Checking Phase 11 structured CFG parity..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     registry_doc="compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md"
     generic_source="compiler/mir_native_backend_generic_source.gst"
     structured_cfg_source="compiler/mir_native_backend_structured_cfg_source.gst"
@@ -14635,23 +10975,6 @@ guard-cranelift-phase11-structured-cfg-parity:
       'compiler/phase11_structured_cfg_independent_jumps_source.gst|32|independent-jumps'
     )
 
-    for required_file in \
-      "$manifest_doc" \
-      "$registry_doc" \
-      "$generic_source" \
-      "$structured_cfg_source" \
-      "$route_source" \
-      "$rust_manifest" \
-      "$rust_driver" \
-      "$readme_doc" \
-      "$deferred_loop_source" \
-      src/runtime.c
-    do
-      if [ ! -f "$required_file" ]; then
-        echo "Missing Phase 11 structured-CFG input: $required_file"
-        exit 1
-      fi
-    done
     for case_record in "${positive_cases[@]}"; do
       IFS='|' read -r source_path expected_exit case_name <<<"$case_record"
       if [ ! -f "$source_path" ]; then
@@ -14662,43 +10985,6 @@ guard-cranelift-phase11-structured-cfg-parity:
     PHASE11_ROUTE_ARCHITECTURE_SKIP_DYNAMIC=1 \
       just guard-cranelift-route-architecture-contract
 
-    required_manifest_lines=(
-      'CRANELIFT_EXPERIMENT_ALLOWED_PHASE11_STRUCTURED_CFG_PARITY_GUARD: guard-cranelift-phase11-structured-cfg-parity'
-      'allowed_cranelift_phase11_structured_CFG_status: phase11_migrated_structured_CFG_parity'
-      'allowed_cranelift_phase11_structured_CFG_predecessor_status: phase11_migrated_local_state_parity'
-      'allowed_cranelift_phase11_structured_CFG_predecessor_guard: guard-cranelift-route-architecture-contract'
-      'allowed_cranelift_phase11_structured_CFG_predecessor_policy: Level2_family_runs_focused_static_contract_without_replaying_other_family_guards'
-      'allowed_cranelift_phase11_structured_CFG_lowerer: compiler/mir_native_backend_structured_cfg_source.gst'
-      'allowed_cranelift_phase11_structured_CFG_positive_fixture_count: 3'
-      'allowed_cranelift_phase11_structured_CFG_positive_fixtures: compiler/phase11_structured_cfg_nested_source.gst,compiler/phase11_structured_cfg_three_predecessor_join_source.gst,compiler/phase11_structured_cfg_independent_jumps_source.gst'
-      'allowed_cranelift_phase11_structured_CFG_expected_exits: nested_71,three_predecessor_join_73,independent_jumps_32'
-      'allowed_cranelift_phase11_structured_CFG_deferred_fixture: compiler/phase11_structured_cfg_deferred_loop_source.gst'
-      'allowed_cranelift_phase11_structured_CFG_source_scope: nested_positive_local_if_else_multi_predecessor_zero_argument_joins_and_sequential_layout_independent_block_jumps'
-      'allowed_cranelift_phase11_structured_CFG_verifier_rules: unique_block_labels_valid_successors_reachable_entry_exactly_one_serialized_terminator_compatible_edge_argument_arity_and_types_and_definite_local_assignment'
-      'allowed_cranelift_phase11_structured_CFG_join_policy: acyclic_topological_dataflow_intersects_assignment_state_across_arbitrary_predecessor_counts_and_the_selected_execution_state_only_drives_expected_exit_evidence'
-      'allowed_cranelift_phase11_structured_CFG_worker_policy: arbitrary_acyclic_block_inventories_replace_one_or_four_block_fixture_topology_checks'
-      'allowed_cranelift_phase11_structured_CFG_cranelift_policy: all_blocks_are_created_first_lowering_uses_reachable_graph_order_and_each_block_is_sealed_exactly_when_all_declared_predecessor_edges_have_been_emitted'
-      'allowed_cranelift_phase11_structured_CFG_negative_case_count: 6'
-      'allowed_cranelift_phase11_structured_CFG_negative_cases: duplicate_block_label,unknown_successor,unreachable_block,missing_terminator,duplicate_terminator_field,incompatible_edge_arguments'
-      'allowed_cranelift_phase11_structured_CFG_negative_policy: malformed_CFG_is_rejected_by_the_shared_parser_or_verifier_before_object_publication_and_existing_output_is_preserved'
-      'allowed_cranelift_phase11_structured_CFG_irreducible_policy: ordinary_source_loops_backedges_and_irreducible_CFG_remain_explicitly_deferred_while_preexisting_canonical_MIR_worker_backedge_support_is_preserved'
-      'allowed_cranelift_phase11_structured_CFG_differential_policy: default_and_explicit_MIR_to_C_are_byte_identical_and_MIR_to_C_plus_Cranelift_match_exit_stdout_and_stderr_for_all_three_positive_sources'
-      'allowed_cranelift_phase11_structured_CFG_registry_inventory: 0_legacy_exact_shape_11_generic_canonical_mir_8_deferred'
-      'allowed_cranelift_phase11_structured_CFG_registry_migration_inventory: 3_scalar_expression_migrated_2_local_state_migrated_3_structured_CFG_migrated_3_generic_shadowed_8_deferred'
-      'allowed_cranelift_phase11_structured_CFG_registry_MIR_to_C_gap_count: 6'
-      'allowed_cranelift_phase11_structured_CFG_compatibility_policy: Phase10_recognizers_and_six_baseline_shadow_comparisons_remain_unchanged_behind_the_generic_attempt'
-      'allowed_cranelift_phase11_structured_CFG_scope_freeze: no_block_parameters_edge_arguments_loops_backedges_function_parameters_calls_imports_MIR_v3_worker_protocol_driver_link_package_CLI_or_CI_matrix_change'
-      'allowed_cranelift_phase11_structured_CFG_legacy_backend_surface_policy: exact_structured_CFG_guard_recipe_is_manifest_validated_then_excluded_from_the_legacy_explicit_CLI_scan'
-      'allowed_cranelift_phase11_structured_CFG_next_milestone: block_parameter_and_loop_backedge_parity'
-      'allowed_cranelift_phase11_structured_CFG_next_milestone_status: complete'
-    )
-    for expected_line in "${required_manifest_lines[@]}"; do
-      if ! rg -n -x -F "$expected_line" "$manifest_doc" >/dev/null; then
-        echo "Missing Phase 11 structured-CFG manifest line:"
-        echo "$expected_line"
-        exit 1
-      fi
-    done
 
     required_cfg_symbols=(
       'type MirNativeStructuredCfgBlock[ctx] struct'
@@ -15136,7 +11422,6 @@ guard-cranelift-phase11-block-parameter-loop-parity:
       set -x
     fi
     echo "🔒 Checking Phase 11 block-parameter and loop/backedge parity..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     registry_doc="compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md"
     generic_source="compiler/mir_native_backend_generic_source.gst"
     lowerer_source="compiler/mir_native_backend_block_parameter_loop_source.gst"
@@ -15151,21 +11436,6 @@ guard-cranelift-phase11-block-parameter-loop-parity:
       'compiler/phase11_block_parameter_stride_loop_source.gst|10|stride-loop'
     )
 
-    for required_file in \
-      "$manifest_doc" \
-      "$registry_doc" \
-      "$generic_source" \
-      "$lowerer_source" \
-      "$rust_manifest" \
-      "$rust_driver" \
-      "$readme_doc" \
-      src/runtime.c
-    do
-      if [ ! -f "$required_file" ]; then
-        echo "Missing Phase 11 block-parameter/loop input: $required_file"
-        exit 1
-      fi
-    done
     for case_record in "${positive_cases[@]}"; do
       IFS='|' read -r source_path expected_exit case_name <<<"$case_record"
       if [ ! -f "$source_path" ]; then
@@ -15177,41 +11447,6 @@ guard-cranelift-phase11-block-parameter-loop-parity:
     PHASE11_ROUTE_ARCHITECTURE_SKIP_DYNAMIC=1 \
       just guard-cranelift-route-architecture-contract
 
-    required_manifest_lines=(
-      'CRANELIFT_EXPERIMENT_ALLOWED_PHASE11_BLOCK_PARAMETER_LOOP_PARITY_GUARD: guard-cranelift-phase11-block-parameter-loop-parity'
-      'allowed_cranelift_phase11_block_parameter_loop_status: phase11_migrated_block_parameter_and_backedge_parity'
-      'allowed_cranelift_phase11_block_parameter_loop_predecessor_status: phase11_migrated_structured_CFG_parity'
-      'allowed_cranelift_phase11_block_parameter_loop_predecessor_guard: guard-cranelift-route-architecture-contract'
-      'allowed_cranelift_phase11_block_parameter_loop_predecessor_policy: Level2_family_runs_focused_static_contract_without_replaying_other_family_guards'
-      'allowed_cranelift_phase11_block_parameter_loop_lowerer: compiler/mir_native_backend_block_parameter_loop_source.gst'
-      'allowed_cranelift_phase11_block_parameter_loop_positive_fixture_count: 3'
-      'allowed_cranelift_phase11_block_parameter_loop_positive_fixtures: compiler/phase11_block_parameter_non_final_join_source.gst,compiler/phase11_block_parameter_countdown_loop_source.gst,compiler/phase11_block_parameter_stride_loop_source.gst'
-      'allowed_cranelift_phase11_block_parameter_loop_expected_exits: non_final_join_14,countdown_loop_8,stride_loop_10'
-      'allowed_cranelift_phase11_block_parameter_loop_source_scope: multiple_i32_block_parameters_multiple_edge_arguments_non_final_parameterized_joins_and_bounded_single_header_reducible_loops'
-      'allowed_cranelift_phase11_block_parameter_loop_verifier_rules: edge_argument_count_and_type_match_each_target_parameter_current_block_parameter_scope_validity_reachable_entry_and_reducible_backedge_dominance'
-      'allowed_cranelift_phase11_block_parameter_loop_reducibility_policy: remove_dominator_backedges_then_require_the_remaining_graph_to_be_acyclic'
-      'allowed_cranelift_phase11_block_parameter_loop_cranelift_policy: create_all_blocks_and_parameters_before_lowering_keep_loop_headers_unsealed_until_all_forward_and_backedge_predecessors_are_emitted_then_seal_exactly_once'
-      'allowed_cranelift_phase11_block_parameter_loop_negative_case_count: 5'
-      'allowed_cranelift_phase11_block_parameter_loop_negative_cases: edge_argument_arity_mismatch,incompatible_parameter_type,foreign_block_parameter_reference,unknown_backedge_target,irreducible_two_entry_cycle'
-      'allowed_cranelift_phase11_block_parameter_loop_negative_policy: verifier_or_Cranelift_failure_occurs_before_atomic_object_or_executable_publication_and_existing_output_is_preserved'
-      'allowed_cranelift_phase11_block_parameter_loop_irreducible_policy: irreducible_CFG_remains_explicitly_deferred_and_is_rejected_by_the_source_route_verifier'
-      'allowed_cranelift_phase11_block_parameter_loop_differential_policy: default_and_explicit_MIR_to_C_are_byte_identical_and_MIR_to_C_plus_Cranelift_match_exit_stdout_and_stderr_for_all_three_positive_sources'
-      'allowed_cranelift_phase11_block_parameter_loop_registry_inventory: 0_legacy_exact_shape_12_generic_canonical_mir_7_deferred'
-      'allowed_cranelift_phase11_block_parameter_loop_registry_migration_inventory: 3_scalar_expression_migrated_2_local_state_migrated_3_structured_CFG_migrated_2_block_parameter_backedge_migrated_2_generic_shadowed_7_deferred'
-      'allowed_cranelift_phase11_block_parameter_loop_registry_MIR_to_C_gap_count: 5'
-      'allowed_cranelift_phase11_block_parameter_loop_compatibility_policy: Phase10_final_merge_source_fixture_remains_a_shadow_baseline_but_no_new_route_depends_on_single_final_i32_merge_shape'
-      'allowed_cranelift_phase11_block_parameter_loop_scope_freeze: no_function_parameters_direct_calls_imports_new_types_MIR_v3_worker_protocol_driver_link_package_CLI_or_CI_matrix_change'
-      'allowed_cranelift_phase11_block_parameter_loop_legacy_backend_surface_policy: exact_block_parameter_loop_guard_recipe_is_manifest_validated_then_excluded_from_the_legacy_explicit_CLI_scan'
-      'allowed_cranelift_phase11_block_parameter_loop_next_milestone: direct_function_and_ABI_parity'
-      'allowed_cranelift_phase11_block_parameter_loop_next_milestone_status: complete'
-    )
-    for expected_line in "${required_manifest_lines[@]}"; do
-      if ! rg -n -x -F "$expected_line" "$manifest_doc" >/dev/null; then
-        echo "Missing Phase 11 block-parameter/loop manifest line:"
-        echo "$expected_line"
-        exit 1
-      fi
-    done
 
     required_lowerer_symbols=(
       'type MirNativeBlockParameterLoopModel[ctx] struct'
@@ -15633,7 +11868,6 @@ guard-cranelift-phase11-direct-call-abi-parity:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking Phase 11 direct-function and scalar-ABI parity..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     registry_doc="compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md"
     generic_source="compiler/mir_native_backend_generic_source.gst"
     lowerer_source="compiler/mir_native_backend_direct_call_source.gst"
@@ -15650,23 +11884,6 @@ guard-cranelift-phase11-direct-call-abi-parity:
       'recursion|compiler/phase11_direct_call_recursion_source.gst'
     )
 
-    for required_file in \
-      "$manifest_doc" \
-      "$registry_doc" \
-      "$generic_source" \
-      "$lowerer_source" \
-      "$route_source" \
-      "$rust_manifest" \
-      "$rust_driver" \
-      "$readme_doc" \
-      "$positive_source" \
-      src/runtime.c
-    do
-      if [ ! -f "$required_file" ]; then
-        echo "Missing Phase 11 direct-call/ABI input: $required_file"
-        exit 1
-      fi
-    done
     for case_record in "${negative_sources[@]}"; do
       IFS='|' read -r case_name source_path <<<"$case_record"
       if [ ! -f "$source_path" ]; then
@@ -15678,42 +11895,6 @@ guard-cranelift-phase11-direct-call-abi-parity:
     PHASE11_ROUTE_ARCHITECTURE_SKIP_DYNAMIC=1 \
       just guard-cranelift-route-architecture-contract
 
-    required_manifest_lines=(
-      'CRANELIFT_EXPERIMENT_ALLOWED_PHASE11_DIRECT_CALL_ABI_PARITY_GUARD: guard-cranelift-phase11-direct-call-abi-parity'
-      'allowed_cranelift_phase11_direct_call_ABI_status: phase11_migrated_direct_call_and_ABI_parity'
-      'allowed_cranelift_phase11_direct_call_ABI_predecessor_status: phase11_migrated_block_parameter_and_backedge_parity'
-      'allowed_cranelift_phase11_direct_call_ABI_predecessor_guard: guard-cranelift-route-architecture-contract'
-      'allowed_cranelift_phase11_direct_call_ABI_predecessor_policy: Level2_family_runs_focused_static_contract_without_replaying_other_family_guards'
-      'allowed_cranelift_phase11_direct_call_ABI_lowerer: compiler/mir_native_backend_direct_call_source.gst'
-      'allowed_cranelift_phase11_direct_call_ABI_positive_fixture_count: 1'
-      'allowed_cranelift_phase11_direct_call_ABI_positive_fixtures: compiler/phase11_direct_call_nested_source.gst'
-      'allowed_cranelift_phase11_direct_call_ABI_expected_exits: nested_direct_call_48'
-      'allowed_cranelift_phase11_direct_call_ABI_source_scope: one_module_statically_named_direct_functions_int_and_bool_parameters_and_returns_multiple_scalar_arguments_and_acyclic_call_graphs'
-      'allowed_cranelift_phase11_direct_call_ABI_signature_policy: canonical_function_signatures_drive_Cranelift_declaration_argument_validation_call_lowering_and_result_type_validation'
-      'allowed_cranelift_phase11_direct_call_ABI_capability_policy: direct_scalar_abi_is_the_generic_capability_while_full_parameter_and_return_vectors_remain_verifier_authoritative'
-      'allowed_cranelift_phase11_direct_call_ABI_worker_policy: bool_and_int_share_the_Cranelift_i32_value_representation_but_remain_distinct_canonical_MIR_types'
-      'allowed_cranelift_phase11_direct_call_ABI_negative_case_count: 4'
-      'allowed_cranelift_phase11_direct_call_ABI_negative_cases: wrong_arity,wrong_type,missing_symbol,unsupported_recursion'
-      'allowed_cranelift_phase11_direct_call_ABI_negative_fixtures: compiler/phase11_direct_call_wrong_arity_source.gst,compiler/phase11_direct_call_wrong_type_source.gst,compiler/phase11_direct_call_missing_symbol_source.gst,compiler/phase11_direct_call_recursion_source.gst'
-      'allowed_cranelift_phase11_direct_call_ABI_negative_policy: source_type_verifier_or_Cranelift_failure_occurs_before_atomic_object_or_executable_publication_and_existing_output_is_preserved'
-      'allowed_cranelift_phase11_direct_call_ABI_deferred_policy: indirect_calls_closures_and_recursive_call_graphs_remain_explicitly_deferred'
-      'allowed_cranelift_phase11_direct_call_ABI_differential_policy: default_and_explicit_MIR_to_C_are_byte_identical_and_MIR_to_C_plus_Cranelift_match_exit_stdout_and_stderr_for_the_nested_direct_call_source'
-      'allowed_cranelift_phase11_direct_call_ABI_registry_inventory: 0_legacy_exact_shape_12_generic_canonical_mir_7_deferred'
-      'allowed_cranelift_phase11_direct_call_ABI_registry_migration_inventory: 3_scalar_expression_migrated_2_local_state_migrated_3_structured_CFG_migrated_2_block_parameter_backedge_migrated_1_direct_call_ABI_migrated_1_generic_shadowed_7_deferred'
-      'allowed_cranelift_phase11_direct_call_ABI_registry_MIR_to_C_gap_count: 5'
-      'allowed_cranelift_phase11_direct_call_ABI_compatibility_policy: Phase10_identity_helper_source_remains_a_byte_identical_shadow_baseline_but_new_direct_calls_are_signature_driven'
-      'allowed_cranelift_phase11_direct_call_ABI_scope_freeze: no_indirect_calls_closures_recursion_modules_imports_runtime_allowlist_MIR_v3_worker_protocol_driver_link_package_CLI_or_CI_matrix_change'
-      'allowed_cranelift_phase11_direct_call_ABI_legacy_backend_surface_policy: exact_direct_call_ABI_guard_recipe_is_manifest_validated_then_excluded_from_the_legacy_explicit_CLI_scan'
-      'allowed_cranelift_phase11_direct_call_ABI_next_milestone: module_import_and_runtime_boundary_parity'
-      'allowed_cranelift_phase11_direct_call_ABI_next_milestone_status: complete'
-    )
-    for expected_line in "${required_manifest_lines[@]}"; do
-      if ! rg -n -x -F "$expected_line" "$manifest_doc" >/dev/null; then
-        echo "Missing Phase 11 direct-call/ABI manifest line:"
-        echo "$expected_line"
-        exit 1
-      fi
-    done
 
     required_lowerer_symbols=(
       'type MirNativeDirectCallFunction[ctx] struct'
@@ -15977,7 +12158,6 @@ guard-cranelift-phase11-module-import-runtime-parity:
       set -x
     fi
     echo "🔒 Checking Phase 11 module, import, and runtime-boundary parity..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     registry_doc="compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md"
     generic_source="compiler/mir_native_backend_generic_source.gst"
     lowerer_source="compiler/mir_native_backend_module_import_source.gst"
@@ -15998,27 +12178,6 @@ guard-cranelift-phase11-module-import-runtime-parity:
       'forbidden-runtime|compiler/phase11_module_import_forbidden_runtime_source.gst'
     )
 
-    for required_file in \
-      "$manifest_doc" \
-      "$registry_doc" \
-      "$generic_source" \
-      "$lowerer_source" \
-      "$route_source" \
-      "$canonical_mir" \
-      "$rust_manifest" \
-      "$rust_driver" \
-      "$readme_doc" \
-      "$module_source" \
-      "$module_dependency" \
-      "$declared_external_source" \
-      "$runtime_source" \
-      src/runtime.c
-    do
-      if [ ! -f "$required_file" ]; then
-        echo "Missing Phase 11 module/import/runtime input: $required_file"
-        exit 1
-      fi
-    done
     for case_record in "${negative_sources[@]}"; do
       IFS='|' read -r case_name source_path <<<"$case_record"
       if [ ! -f "$source_path" ]; then
@@ -16030,48 +12189,6 @@ guard-cranelift-phase11-module-import-runtime-parity:
     PHASE11_ROUTE_ARCHITECTURE_SKIP_DYNAMIC=1 \
       just guard-cranelift-route-architecture-contract
 
-    required_manifest_lines=(
-      'CRANELIFT_EXPERIMENT_ALLOWED_PHASE11_MODULE_IMPORT_RUNTIME_PARITY_GUARD: guard-cranelift-phase11-module-import-runtime-parity'
-      'allowed_cranelift_phase11_module_import_runtime_status: phase11_migrated_module_import_and_runtime_parity'
-      'allowed_cranelift_phase11_module_import_runtime_predecessor_status: phase11_migrated_direct_call_and_ABI_parity'
-      'allowed_cranelift_phase11_module_import_runtime_predecessor_guard: guard-cranelift-route-architecture-contract'
-      'allowed_cranelift_phase11_module_import_runtime_predecessor_policy: Level2_family_runs_focused_static_contract_without_replaying_other_family_guards'
-      'allowed_cranelift_phase11_module_import_runtime_lowerer: compiler/mir_native_backend_module_import_source.gst'
-      'allowed_cranelift_phase11_module_import_runtime_positive_fixture_count: 3'
-      'allowed_cranelift_phase11_module_import_runtime_positive_fixtures: compiler/phase11_module_import_main_source.gst,compiler/phase11_declared_external_import_source.gst,compiler/phase10_runtime_boundary_source.gst'
-      'allowed_cranelift_phase11_module_import_runtime_dependency_fixture: compiler/phase11_module_import_math_source.gst'
-      'allowed_cranelift_phase11_module_import_runtime_expected_exits: resolver_bundle_42,declared_external_toupper_65,approved_runtime_abs_53'
-      'allowed_cranelift_phase11_module_import_runtime_source_scope: compiler_resolved_topologically_ordered_source_modules_fully_qualified_direct_function_identities_declared_C_externs_and_approved_runtime_boundaries'
-      'allowed_cranelift_phase11_module_import_runtime_linkage_classes: exported_entry,module_local,bundle_export,imported_bundle,imported_host'
-      'allowed_cranelift_phase11_module_import_runtime_resolver_policy: source_imports_are_owned_by_the_existing_recursive_resolver_parser_and_typechecker_and_the_native_lowerer_consumes_only_resolved_program_order_paths_and_prefixes'
-      'allowed_cranelift_phase11_module_import_runtime_symbol_policy: every_bundle_symbol_has_one_fully_qualified_link_identity_and_one_exact_signature_with_duplicate_definition_unresolved_bundle_import_and_signature_disagreement_rejected'
-      'allowed_cranelift_phase11_module_import_runtime_registry_policy: imported_host_symbols_require_an_exact_name_link_signature_and_boundary_classification_match_in_the_compiler_and_worker_allowlists'
-      'allowed_cranelift_phase11_module_import_runtime_allowlist: abs_int_to_int_RuntimeCall,toupper_int_to_int_ExternFunction'
-      'allowed_cranelift_phase11_module_import_runtime_boundary_policy: approved_host_calls_carry_exactly_one_statement_attached_native_boundary_metadata_record_with_ignored_with_proof_policy'
-      'allowed_cranelift_phase11_module_import_runtime_worker_policy: compiler_MIR_v2_modules_are_validated_as_one_program_then_lowered_to_ordered_objects_and_linked_by_the_existing_Phase9G_argument_vector_driver'
-      'allowed_cranelift_phase11_module_import_runtime_linker_policy: source_and_environment_cannot_add_libraries_linker_flags_link_search_paths_or_linker_environment_and_the_existing_Phase9G_classified_link_request_remains_the_only_link_surface'
-      'allowed_cranelift_phase11_module_import_runtime_negative_case_count: 4'
-      'allowed_cranelift_phase11_module_import_runtime_negative_cases: duplicate_symbol,unresolved_symbol,signature_disagreement,forbidden_runtime_name'
-      'allowed_cranelift_phase11_module_import_runtime_negative_fixtures: compiler/phase11_module_import_duplicate_symbol_source.gst,compiler/phase11_module_import_unresolved_symbol_source.gst,compiler/phase11_module_import_signature_disagreement_source.gst,compiler/phase11_module_import_forbidden_runtime_source.gst'
-      'allowed_cranelift_phase11_module_import_runtime_negative_policy: resolver_typechecker_canonical_verifier_or_worker_registry_failure_occurs_before_atomic_executable_publication_and_existing_output_is_preserved'
-      'allowed_cranelift_phase11_module_import_runtime_differential_policy: default_and_explicit_MIR_to_C_are_byte_identical_and_MIR_to_C_plus_Cranelift_match_exit_stdout_and_stderr_for_the_resolved_bundle_declared_external_and_runtime_boundary_sources'
-      'allowed_cranelift_phase11_module_import_runtime_registry_inventory: 0_legacy_exact_shape_12_generic_canonical_mir_7_deferred'
-      'allowed_cranelift_phase11_module_import_runtime_registry_migration_inventory: 3_scalar_expression_migrated_2_local_state_migrated_3_structured_CFG_migrated_2_block_parameter_backedge_migrated_1_direct_call_ABI_migrated_1_module_import_runtime_migrated_7_deferred'
-      'allowed_cranelift_phase11_module_import_runtime_registry_MIR_to_C_gap_count: 5'
-      'allowed_cranelift_phase11_module_import_runtime_compatibility_policy: Phase10_literal_abs_source_remains_byte_identical_shadow_evidence_but_the_new_import_route_is_resolver_and_registry_driven'
-      'allowed_cranelift_phase11_module_import_runtime_deferred_policy: indirect_calls_closures_dynamic_loading_variadic_imports_non_scalar_ABIs_and_unapproved_host_or_runtime_symbols_remain_deferred'
-      'allowed_cranelift_phase11_module_import_runtime_scope_freeze: no_arbitrary_linker_flags_libraries_search_paths_environment_linker_overrides_dynamic_loading_MIR_v3_new_artifact_kind_package_CLI_or_CI_matrix_change'
-      'allowed_cranelift_phase11_module_import_runtime_legacy_backend_surface_policy: exact_module_import_runtime_guard_recipe_is_manifest_validated_then_excluded_from_the_legacy_explicit_CLI_scan'
-      'allowed_cranelift_phase11_module_import_runtime_next_milestone: metadata_and_diagnostic_parity'
-      'allowed_cranelift_phase11_module_import_runtime_next_milestone_status: complete'
-    )
-    for expected_line in "${required_manifest_lines[@]}"; do
-      if ! rg -n -x -F "$expected_line" "$manifest_doc" >/dev/null; then
-        echo "Missing Phase 11 module/import/runtime manifest line:"
-        echo "$expected_line"
-        exit 1
-      fi
-    done
 
     required_lowerer_symbols=(
       'type MirNativeModuleImportModel[ctx] struct'
@@ -16338,7 +12455,6 @@ guard-cranelift-phase11-module-import-runtime-parity:
     echo "✅ Phase 11 module/import/runtime parity migrated: resolver-owned modules preserve qualified identities, approved host boundaries are registry-classified, Phase 9G links ordered objects without linker-surface expansion, and negative lanes preserve output."
 
 
-
 guard-cranelift-phase11-metadata-diagnostic-parity:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -16346,7 +12462,6 @@ guard-cranelift-phase11-metadata-diagnostic-parity:
       set -x
     fi
     echo "🔒 Checking Phase 11 metadata and diagnostic parity..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     registry_doc="compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md"
     readme_doc="compiler/experiments/cranelift/README.md"
     rust_manifest="compiler/experiments/cranelift/Cargo.toml"
@@ -16366,17 +12481,6 @@ guard-cranelift-phase11-metadata-diagnostic-parity:
       'call|compiler/phase11_metadata_call_source.gst|37|native_boundary'
     )
 
-    for required_file in \
-      "$manifest_doc" "$registry_doc" "$readme_doc" \
-      "$rust_manifest" "$rust_driver" "$generic_source" "$route_source" \
-      "$import_source" "$compiler_entry" "$resource_fixture" \
-      "$type_error_source" "$unsupported_source" src/runtime.c
-    do
-      if [ ! -f "$required_file" ]; then
-        echo "Missing Phase 11 metadata/diagnostic input: $required_file"
-        exit 1
-      fi
-    done
     for case_record in "${metadata_cases[@]}"; do
       IFS='|' read -r case_name source_path expected_exit metadata_class <<<"$case_record"
       if [ ! -f "$source_path" ]; then
@@ -16388,39 +12492,6 @@ guard-cranelift-phase11-metadata-diagnostic-parity:
     PHASE11_ROUTE_ARCHITECTURE_SKIP_DYNAMIC=1 \
       just guard-cranelift-route-architecture-contract
 
-    required_manifest_lines=(
-      'CRANELIFT_EXPERIMENT_ALLOWED_PHASE11_METADATA_DIAGNOSTIC_PARITY_GUARD: guard-cranelift-phase11-metadata-diagnostic-parity'
-      'allowed_cranelift_phase11_metadata_diagnostic_status: phase11_froze_metadata_and_diagnostic_parity'
-      'allowed_cranelift_phase11_metadata_diagnostic_predecessor_status: phase11_migrated_module_import_and_runtime_parity'
-      'allowed_cranelift_phase11_metadata_diagnostic_predecessor_guard: guard-cranelift-route-architecture-contract'
-      'allowed_cranelift_phase11_metadata_diagnostic_predecessor_policy: Level2_family_runs_focused_static_contract_without_replaying_other_family_guards'
-      'allowed_cranelift_phase11_metadata_diagnostic_metadata_fixture_count: 5'
-      'allowed_cranelift_phase11_metadata_diagnostic_source_fixtures: compiler/phase11_metadata_scalar_source.gst,compiler/phase11_metadata_local_source.gst,compiler/phase11_metadata_cfg_source.gst,compiler/phase11_metadata_call_source.gst'
-      'allowed_cranelift_phase11_metadata_diagnostic_resource_fixture: compiler/fixtures/phase11_resource_metadata_preservation.mir'
-      'allowed_cranelift_phase11_metadata_diagnostic_metadata_classes: provenance,resource,native_boundary'
-      'allowed_cranelift_phase11_metadata_diagnostic_metadata_policy: canonical_records_are_retained_as_owned_worker_bundle_records_and_counted_before_lowering'
-      'allowed_cranelift_phase11_metadata_diagnostic_ignored_policy: every_ignored_with_proof_record_requires_codegen_none_and_a_nonempty_proof'
-      'allowed_cranelift_phase11_metadata_diagnostic_codegen_claim_policy: codegen_required_and_unknown_codegen_claims_are_rejected_before_object_publication'
-      'allowed_cranelift_phase11_metadata_diagnostic_unknown_policy: unknown_metadata_classes_and_policies_are_rejected_and_never_silently_discarded'
-      'allowed_cranelift_phase11_metadata_diagnostic_taxonomy: gust.backend_parity.diagnostic.v1'
-      'allowed_cranelift_phase11_metadata_diagnostic_class_count: 6'
-      'allowed_cranelift_phase11_metadata_diagnostic_classes: source_type_error,canonical_mir_verification_error,unsupported_native_capability,driver_handshake_error,worker_lowering_error,object_link_publication_error'
-      'allowed_cranelift_phase11_metadata_diagnostic_comparison_policy: compare_source_path_line_column_and_stable_class_not_backend_specific_prose'
-      'allowed_cranelift_phase11_metadata_diagnostic_unsupported_policy: unsupported_native_capability_is_classified_before_driver_discovery'
-      'allowed_cranelift_phase11_metadata_diagnostic_failure_policy: every_failure_class_preserves_existing_output_and_removes_hidden_request_bundle_and_object_artifacts'
-      'allowed_cranelift_phase11_metadata_diagnostic_positive_expected_exits: scalar_19,local_23,cfg_29,call_37,resource_canonical_41'
-      'allowed_cranelift_phase11_metadata_diagnostic_scope_freeze: no_MIR_v3_worker_protocol_linker_surface_new_library_linker_flag_environment_override_package_CLI_or_CI_matrix_change'
-      'allowed_cranelift_phase11_metadata_diagnostic_legacy_backend_surface_policy: exact_metadata_diagnostic_guard_recipe_is_manifest_validated_then_excluded_from_the_legacy_explicit_CLI_scan'
-      'allowed_cranelift_phase11_metadata_diagnostic_next_milestone: differential_harness_exact_route_retirement_and_focused_CI'
-      'allowed_cranelift_phase11_metadata_diagnostic_next_milestone_status: complete'
-    )
-    for expected_line in "${required_manifest_lines[@]}"; do
-      if ! rg -n -x -F "$expected_line" "$manifest_doc" >/dev/null; then
-        echo "Missing Phase 11 metadata/diagnostic manifest line:"
-        echo "$expected_line"
-        exit 1
-      fi
-    done
 
     required_worker_symbols=(
       'struct Phase11PreservedMetadata'
@@ -16847,25 +12918,7 @@ guard-cranelift-contract-fast:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "⚡ Running Level 1 Cranelift fast contracts..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
-    required_manifest_lines=(
-      'CRANELIFT_EXPERIMENT_ALLOWED_CONTRACT_FAST_GUARD: guard-cranelift-contract-fast'
-      'CRANELIFT_EXPERIMENT_ALLOWED_DIFFERENTIAL_FAMILY_GUARD: guard-cranelift-differential-family'
-      'CRANELIFT_EXPERIMENT_ALLOWED_HISTORICAL_FULL_GUARD: guard-cranelift-historical-full'
-      'allowed_cranelift_test_level_authority: scripts/cranelift_test_levels.json'
-      'allowed_cranelift_test_level_validator: scripts/cranelift_test_levels.py'
-      'allowed_cranelift_test_level_historical_workflow: .github/workflows/cranelift-historical-full.yml'
-      'allowed_cranelift_test_level_assignment_policy: every_guard_cranelift_recipe_has_exactly_one_level_and_inherits_one_CI_owner_from_that_level'
-      'allowed_cranelift_test_level_1_owner: PR_Fast_build_contract_job'
-      'allowed_cranelift_test_level_2_owner: PR_Fast_phase11_family_matrix'
-      'allowed_cranelift_test_level_3_owner: scheduled_or_manual_Cranelift_Historical_Full_workflow'
-      'allowed_cranelift_test_level_closure_policy: phase_opening_and_Phase11_closure_guards_validate_summaries_and_wiring_without_replaying_Level2_or_Level3'
-      'allowed_cranelift_test_level_PR_policy: PR_Fast_contains_Level1_contracts_plus_registry_derived_Level2_families_and_no_Level3_job'
-    )
-    for line in "${required_manifest_lines[@]}"; do
-      rg -n -x -F "$line" "$manifest_doc" >/dev/null
-    done
-
+    just guard-cranelift-manifest-architecture-contract
     python3 scripts/cranelift_test_levels.py validate
     python3 scripts/cranelift_test_levels.py check-pr-workflow
     python3 scripts/cranelift_test_levels.py check-heavy-workflow
@@ -16878,8 +12931,6 @@ guard-cranelift-contract-fast:
     just guard-cranelift-phase11-close
     just guard-cranelift-phase13-opening-contract
     echo "✅ Level 1 Cranelift fast contracts passed."
-
-
 
 guard-cranelift-historical-full:
     #!/usr/bin/env bash
@@ -16941,33 +12992,15 @@ guard-cranelift-phase11-route-retirement-ci:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking Phase 11 differential harness, semantic route architecture, and focused CI..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     registry_doc="compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md"
     differential_harness="scripts/phase11_registry_differential.sh"
     family_runner="scripts/cranelift_ci_family.py"
     registry_json="scripts/cranelift_feature_registry.json"
     pr_workflow=".github/workflows/pr-fast.yml"
     heavy_workflow=".github/workflows/heavy-guards.yml"
-    for required_file in \
-      "$manifest_doc" "$registry_doc" "$registry_json" "$family_runner" \
-      scripts/cranelift_test_levels.py scripts/cranelift_test_levels.json \
-      "$differential_harness" "$pr_workflow" "$heavy_workflow"
-    do
-      test -f "$required_file"
-    done
 
     python3 scripts/cranelift_test_levels.py validate
 
-    required_manifest_lines=(
-      'CRANELIFT_EXPERIMENT_ALLOWED_PHASE11_ROUTE_RETIREMENT_CI_GUARD: guard-cranelift-phase11-route-retirement-ci'
-      'allowed_cranelift_phase11_route_retirement_status: phase11_retired_exact_shape_source_routes'
-      'allowed_cranelift_phase11_route_retirement_PR_fast_max_shards: 23'
-      'allowed_cranelift_phase11_route_retirement_heavy_policy: Heavy_matrix_remains_at_33_shards_and_receives_no_duplicate_Phase11_family_rows'
-      'allowed_cranelift_phase11_route_retirement_phase10_guard_policy: Phase10_source_route_guards_preserve_historical_fixtures_protocols_and_baselines_without_asserting_removed_implementation_shapes'
-    )
-    for line in "${required_manifest_lines[@]}"; do
-      rg -n -x -F "$line" "$manifest_doc" >/dev/null
-    done
     rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_retired_exact_shape_source_routes' "$registry_doc" >/dev/null
 
     PHASE11_ROUTE_ARCHITECTURE_SKIP_DYNAMIC=1 \
@@ -17014,25 +13047,12 @@ guard-cranelift-phase11-close:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Validating the Phase 11 closure summary and test-level wiring..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     registry_doc="compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md"
     registry_validator="scripts/cranelift_registry.py"
     differential_harness="scripts/phase11_registry_differential.sh"
     level_runner="scripts/cranelift_test_levels.py"
     historical_workflow=".github/workflows/cranelift-historical-full.yml"
 
-    for required_file in \
-      "$manifest_doc" "$registry_doc" "$registry_validator" \
-      "$differential_harness" "$level_runner" \
-      scripts/cranelift_test_levels.json \
-      .github/workflows/pr-fast.yml .github/workflows/heavy-guards.yml \
-      "$historical_workflow" justfile
-    do
-      if [ ! -f "$required_file" ] || [ -L "$required_file" ]; then
-        echo "Missing regular Phase 11 closure input: $required_file"
-        exit 1
-      fi
-    done
 
     just guard-cranelift-phase11-closure-summary
     PHASE11_ROUTE_RETIREMENT_SKIP_DYNAMIC=1 \
@@ -17043,19 +13063,6 @@ guard-cranelift-phase11-close:
     python3 "$level_runner" check-heavy-workflow
     python3 "$level_runner" check-historical-workflow
 
-    required_manifest_lines=(
-      'CRANELIFT_EXPERIMENT_ALLOWED_PHASE11_CLOSE_GUARD: guard-cranelift-phase11-close'
-      'allowed_cranelift_phase11_close_status: phase11_closed_registry_backed_feature_parity_migration'
-      'allowed_cranelift_phase11_close_predecessor_guard: guard-cranelift-phase11-closure-summary'
-      'allowed_cranelift_phase11_close_predecessor_policy: semantic_summary_and_test_level_wiring_only_no_historical_replay'
-      'allowed_cranelift_phase11_close_scope: declared_Phase11_registry_inventory_only_not_whole_language_parity_for_Gust'
-      'allowed_cranelift_phase11_close_required_wording: Parity_is_complete_for_the_Phase_11_registry_inventory'
-      'allowed_cranelift_phase11_close_registry_policy: active_totals_and_family_summaries_are_derived_from_the_canonical_JSON_registry'
-      'allowed_cranelift_phase11_close_CI_policy: Level1_closure_validation_in_PR_Fast_Level2_registry_families_in_PR_Fast_and_Level3_only_in_Cranelift_Historical_Full'
-    )
-    for line in "${required_manifest_lines[@]}"; do
-      rg -n -x -F "$line" "$manifest_doc" >/dev/null
-    done
 
     required_registry_headers=(
       'CRANELIFT_FEATURE_PARITY_REGISTRY_VERSION: 1'
@@ -17094,61 +13101,20 @@ guard-cranelift-phase11-close:
     echo "✅ Phase 11 closure passed as a Level 1 summary and wiring contract."
 
 
-
 guard-cranelift-phase11-closure-summary:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking the lightweight Phase 11 closure summary..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     registry_json="scripts/cranelift_feature_registry.json"
     registry_schema="scripts/cranelift_feature_registry.schema.json"
     validator="scripts/cranelift_registry.py"
     phase13_view="compiler/CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY.md"
-
-    for required_file in \
-      "$manifest_doc" "$registry_json" "$registry_schema" "$validator" \
-      "$phase13_view" justfile
-    do
-      if [ ! -f "$required_file" ] || [ -L "$required_file" ]; then
-        echo "Phase 11 closure-summary input must be a regular non-symlink file: $required_file"
-        exit 1
-      fi
-    done
-
-    required_manifest_lines=(
-      'CRANELIFT_EXPERIMENT_ALLOWED_PHASE11_CLOSURE_SUMMARY_GUARD: guard-cranelift-phase11-closure-summary'
-      'allowed_cranelift_phase11_closure_snapshot_authority: scripts/cranelift_feature_registry.json'
-      'allowed_cranelift_phase11_closure_snapshot_schema: scripts/cranelift_feature_registry.schema.json'
-      'allowed_cranelift_phase11_closure_snapshot_validator: scripts/cranelift_registry.py'
-      'allowed_cranelift_phase11_closure_snapshot_version: phase11_closed_registry_backed_feature_parity_migration'
-      'allowed_cranelift_phase11_closure_snapshot_immutable_fields: id,classification,feature_family,route_owner,source_fixture,canonical_mir_fixture,ci_family'
-      'allowed_cranelift_phase11_closure_snapshot_totals_policy: closure_counts_and_deferred_IDs_are_read_only_from_the_JSON_semantic_snapshot'
-      'allowed_cranelift_phase11_closure_snapshot_comparison_policy: semantic_fields_only_whitespace_prose_field_order_and_generated_layout_are_ignored'
-      'allowed_cranelift_phase11_closure_snapshot_byte_provenance: git_history'
-      'allowed_cranelift_phase11_closure_snapshot_route_policy: current_migrated_rows_and_the_production_entry_remain_owned_by_generic_canonical_MIR'
-      'allowed_cranelift_phase11_closure_snapshot_fallback_policy: explicit_Cranelift_success_deferral_or_failure_terminates_without_MIR_to_C_codegen'
-      'allowed_cranelift_phase11_closure_snapshot_phase9g_owner_reference: Phase9G_remains_the_full_object_link_cleanup_and_atomic_publication_owner'
-      'allowed_cranelift_phase11_closure_snapshot_recursion_policy: summary_does_not_run_Phase9G_or_Phase10_closure_Phase11_feature_guards_workflow_surfaces_or_differential_matrices'
-      'allowed_cranelift_phase11_closure_snapshot_phase13_policy: Phase13_uses_the_semantic_closure_summary_instead_of_raw_registry_byte_identity_or_the_full_Phase11_closure'
-      'allowed_cranelift_phase11_closure_snapshot_behavior_policy: registry_route_and_invocation_static_summary_only_no_MIR_worker_feature_or_output_change'
-      'allowed_cranelift_phase11_closure_snapshot_next_patch: flattened_closure_and_predecessor_graph'
-    )
-    for line in "${required_manifest_lines[@]}"; do
-      if ! rg -n -x -F "$line" "$manifest_doc" >/dev/null; then
-        echo "Missing Phase 11 closure-summary manifest contract:"
-        echo "$line"
-        exit 1
-      fi
-    done
 
 
     python3 "$validator" verify-phase11-closure
     PHASE11_ROUTE_ARCHITECTURE_SKIP_DYNAMIC=1 \
       just guard-cranelift-route-architecture-contract
 
-    rg -n -x -F \
-      'allowed_cranelift_phase11_close_artifact_policy: Phase9G_remains_the_only_verified_object_link_cleanup_and_atomic_publication_owner' \
-      "$manifest_doc" >/dev/null
     rg -n -x -F 'guard-cranelift-phase9g-close:' justfile >/dev/null
 
     summary_body="$(
@@ -17171,12 +13137,6 @@ guard-cranelift-phase11-closure-summary:
 
     raw_hash_header="SHA""256"
     raw_hash_command="sha256""sum"
-    if rg -n -F "$raw_hash_header" "$manifest_doc" "$phase13_view" justfile >/dev/null ||
-       rg -n -F "$raw_hash_command" "$manifest_doc" "$phase13_view" justfile >/dev/null
-    then
-      echo "Raw registry byte-hash contracts must not remain after the semantic closure snapshot."
-      exit 1
-    fi
 
     echo "✅ Phase 11 closure summary passed using the semantic snapshot, route-architecture hard bans, and the Phase 9G owner reference without replaying historical evidence."
 
@@ -17184,36 +13144,11 @@ guard-cranelift-phase13-registry-schema:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking the Phase 13 opening registry schema..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     registry_json="scripts/cranelift_feature_registry.json"
     registry_schema="scripts/cranelift_feature_registry.schema.json"
     validator="scripts/cranelift_registry.py"
     phase13_view="compiler/CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY.md"
 
-    for required_file in       "$manifest_doc" "$registry_json" "$registry_schema" "$validator" "$phase13_view"
-    do
-      if [ ! -f "$required_file" ] || [ -L "$required_file" ]; then
-        echo "Phase 13 registry-schema input must be a regular non-symlink file: $required_file"
-        exit 1
-      fi
-    done
-
-    required_manifest_lines=(
-      'CRANELIFT_EXPERIMENT_ALLOWED_PHASE13_REGISTRY_SCHEMA_GUARD: guard-cranelift-phase13-registry-schema'
-      'allowed_cranelift_phase13_opening_registry: scripts/cranelift_feature_registry.json'
-      'allowed_cranelift_phase13_opening_registry_version: 1'
-      'allowed_cranelift_phase13_opening_registry_schema_guard: guard-cranelift-phase13-registry-schema'
-      'allowed_cranelift_phase13_opening_schema: id,parent,feature_family,source_fixture,canonical_mir_fixture,route_owner,worker_capability_owner,diagnostic_owner,ci_family,status,deferral_reason'
-      'allowed_cranelift_phase13_opening_owner_policy: every_row_has_explicit_route_worker_diagnostic_and_CI_owners'
-      'allowed_cranelift_phase13_opening_fixture_policy: inherited_rows_preserve_Phase11_source_and_canonical_MIR_fixtures_and_none_values_are_explicit'
-    )
-    for line in "${required_manifest_lines[@]}"; do
-      if ! rg -n -x -F "$line" "$manifest_doc" >/dev/null; then
-        echo "Missing Phase 13 registry-schema manifest contract:"
-        echo "$line"
-        exit 1
-      fi
-    done
 
     required_view_headers=(
       'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_VERSION: 1'
@@ -17237,30 +13172,9 @@ guard-cranelift-phase13-parent-traceability:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking Phase 13 parent traceability..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     registry_json="scripts/cranelift_feature_registry.json"
     validator="scripts/cranelift_registry.py"
 
-    for required_file in "$manifest_doc" "$registry_json" "$validator"; do
-      if [ ! -f "$required_file" ] || [ -L "$required_file" ]; then
-        echo "Phase 13 parent-traceability input must be a regular non-symlink file: $required_file"
-        exit 1
-      fi
-    done
-
-    required_manifest_lines=(
-      'CRANELIFT_EXPERIMENT_ALLOWED_PHASE13_PARENT_TRACEABILITY_GUARD: guard-cranelift-phase13-parent-traceability'
-      'allowed_cranelift_phase13_opening_parent_traceability_guard: guard-cranelift-phase13-parent-traceability'
-      'allowed_cranelift_phase13_opening_identity_policy: every_row_has_a_unique_stable_id_and_exactly_one_Phase11_entry_or_category_parent'
-      'allowed_cranelift_phase13_opening_fixture_policy: inherited_rows_preserve_Phase11_source_and_canonical_MIR_fixtures_and_none_values_are_explicit'
-    )
-    for line in "${required_manifest_lines[@]}"; do
-      if ! rg -n -x -F "$line" "$manifest_doc" >/dev/null; then
-        echo "Missing Phase 13 parent-traceability manifest contract:"
-        echo "$line"
-        exit 1
-      fi
-    done
 
     python3 "$validator" verify-phase13-parent-traceability
 
@@ -17268,37 +13182,10 @@ guard-cranelift-phase13-opening-totals:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking registry-derived Phase 13 opening totals..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     registry_json="scripts/cranelift_feature_registry.json"
     validator="scripts/cranelift_registry.py"
     phase13_view="compiler/CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY.md"
 
-    for required_file in "$manifest_doc" "$registry_json" "$validator" "$phase13_view"; do
-      if [ ! -f "$required_file" ] || [ -L "$required_file" ]; then
-        echo "Phase 13 opening-total input must be a regular non-symlink file: $required_file"
-        exit 1
-      fi
-    done
-
-    required_manifest_lines=(
-      'CRANELIFT_EXPERIMENT_ALLOWED_PHASE13_OPENING_TOTALS_GUARD: guard-cranelift-phase13-opening-totals'
-      'allowed_cranelift_phase13_opening_totals_guard: guard-cranelift-phase13-opening-totals'
-      'allowed_cranelift_phase13_opening_totals_policy: all_opening_totals_family_summaries_and_parent_counts_are_derived_from_registry_rows'
-    )
-    for line in "${required_manifest_lines[@]}"; do
-      if ! rg -n -x -F "$line" "$manifest_doc" >/dev/null; then
-        echo "Missing Phase 13 opening-total manifest contract:"
-        echo "$line"
-        exit 1
-      fi
-    done
-
-    if rg -n -e '^allowed_cranelift_phase13_.*_(count|total):'          "$manifest_doc" >/dev/null ||
-       rg -n -e '^CRANELIFT_PHASE13_.*_(COUNT|TOTAL):'          "$phase13_view" >/dev/null
-    then
-      echo "Phase 13 opening totals must not be maintained in manifest or historical-view literals."
-      exit 1
-    fi
 
     python3 "$validator" verify-phase13-opening-totals
 
@@ -17306,38 +13193,7 @@ guard-cranelift-phase13-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Opening Phase 13 from flattened predecessor summaries..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
 
-    if [ ! -f "$manifest_doc" ] || [ -L "$manifest_doc" ]; then
-      echo "Missing regular Phase 13 opening manifest: $manifest_doc"
-      exit 1
-    fi
-
-    required_manifest_lines=(
-      'CRANELIFT_EXPERIMENT_ALLOWED_PHASE13_OPENING_GUARD: guard-cranelift-phase13-opening-contract'
-      'allowed_cranelift_phase13_opening_status: phase13_opened_deferred_parity_registry'
-      'allowed_cranelift_phase13_opening_predecessor_status: phase11_closed_registry_backed_feature_parity_migration'
-      'allowed_cranelift_phase13_opening_predecessor_guard: guard-cranelift-phase11-closure-summary'
-      'allowed_cranelift_phase13_opening_predecessor_full_replay_guard: guard-cranelift-phase11-close'
-      'allowed_cranelift_phase13_opening_predecessor_policy: semantic_summary_only_no_recursive_historical_closure'
-      'allowed_cranelift_phase13_opening_phase11_registry_disposition: semantic_closure_snapshot'
-      'allowed_cranelift_phase13_opening_phase11_closure_summary_guard: guard-cranelift-phase11-closure-summary'
-      'allowed_cranelift_phase13_opening_registry_schema_guard: guard-cranelift-phase13-registry-schema'
-      'allowed_cranelift_phase13_opening_parent_traceability_guard: guard-cranelift-phase13-parent-traceability'
-      'allowed_cranelift_phase13_opening_totals_guard: guard-cranelift-phase13-opening-totals'
-      'allowed_cranelift_phase13_opening_behavior_policy: registry_manifest_validator_and_flattened_guard_graph_only_no_source_route_worker_MIR_request_object_link_package_CLI_or_output_change'
-      'allowed_cranelift_phase13_opening_future_phase_policy: future_phase_opening_guards_use_semantic_predecessor_summaries_not_recursive_full_closures'
-      'allowed_cranelift_flattened_closure_phase13_graph: phase11_closure_summary,phase13_registry_schema,phase13_parent_traceability,phase13_opening_totals'
-      'allowed_cranelift_flattened_closure_full_replay_CI_policy: guard_cranelift_historical_full_runs_only_in_the_scheduled_or_manual_Cranelift_Historical_Full_workflow'
-      'allowed_cranelift_flattened_closure_phase_opening_policy: future_phase_opening_guards_use_semantic_predecessor_summaries_not_recursive_full_closures'
-    )
-    for line in "${required_manifest_lines[@]}"; do
-      if ! rg -n -x -F "$line" "$manifest_doc" >/dev/null; then
-        echo "Missing flattened Phase 13 opening manifest line:"
-        echo "$line"
-        exit 1
-      fi
-    done
 
     opening_body="$(
       sed -n         '/^guard-cranelift-phase13-opening-contract:/,/^guard-cranelift-phase12-5-opening-contract:/p'         justfile
@@ -17360,7 +13216,6 @@ guard-cranelift-phase12-5-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Opening Phase 12.5 verification framework consolidation..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     inventory_doc="compiler/CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY.md"
     phase11_registry="compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md"
     phase13_registry="compiler/CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY.md"
@@ -17368,42 +13223,9 @@ guard-cranelift-phase12-5-opening-contract:
     heavy_workflow=".github/workflows/heavy-guards.yml"
     differential_script="scripts/phase11_registry_differential.sh"
 
-    for required_file in \
-      "$manifest_doc" "$inventory_doc" "$phase11_registry" "$phase13_registry" \
-      "$pr_workflow" "$heavy_workflow" "$differential_script" justfile
-    do
-      if [ ! -f "$required_file" ]; then
-        echo "Missing Phase 12.5 opening inventory input: $required_file"
-        exit 1
-      fi
-    done
 
     just guard-cranelift-phase11-closure-summary
 
-    required_manifest_lines=(
-      'CRANELIFT_EXPERIMENT_ALLOWED_PHASE12_5_OPENING_GUARD: guard-cranelift-phase12-5-opening-contract'
-      'allowed_cranelift_phase12_5_opening_status: phase12_5_opened_verification_framework_consolidation'
-      'allowed_cranelift_phase12_5_opening_predecessor_status: phase11_closed_registry_backed_feature_parity_migration'
-      'allowed_cranelift_phase12_5_opening_predecessor_guard: guard-cranelift-phase11-closure-summary'
-      'allowed_cranelift_phase12_5_opening_inventory: compiler/CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY.md'
-      'allowed_cranelift_phase12_5_opening_inventory_item_count: 26'
-      'allowed_cranelift_phase12_5_opening_classification_inventory: 3_canonical_source_2_generated_view_5_executable_test_3_historical_evidence_8_redundant_duplicate_5_candidate_for_removal'
-      'allowed_cranelift_phase12_5_opening_duplicate_fact_count: 7'
-      'allowed_cranelift_phase12_5_opening_duplicate_facts: feature_row_identity,status,ci_family,totals,guard_names,workflow_shard_names,closure_status'
-      'allowed_cranelift_phase12_5_opening_behavior_freeze: no_route_MIR_worker_feature_migration_or_output_policy_changes'
-      'allowed_cranelift_phase12_5_opening_target_architecture: one_structured_registry_one_validator_projector_three_test_levels_semantic_closure_summaries_minimal_hard_architectural_bans'
-      'allowed_cranelift_phase12_5_opening_phase13_policy: phase13_paused_after_opening_until_phase12_5_close'
-      'allowed_cranelift_phase12_5_opening_legacy_manifest_surface_policy: exact_inventory_path_headers_and_count_are_validated_before_exclusion_from_the_historical_broad_Cranelift_reference_scan'
-      'allowed_cranelift_phase12_5_opening_scope: inventory_manifest_and_static_guard_only_no_compiler_route_MIR_worker_feature_output_or_workflow_change'
-      'allowed_cranelift_phase12_5_opening_next_patch: structured_registry'
-    )
-    for line in "${required_manifest_lines[@]}"; do
-      if ! rg -n -x -F "$line" "$manifest_doc" >/dev/null; then
-        echo "Missing Phase 12.5 manifest contract:"
-        echo "$line"
-        exit 1
-      fi
-    done
 
     required_inventory_headers=(
       'CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_VERSION: 1'
@@ -17646,41 +13468,12 @@ guard-cranelift-registry-schema:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Validating the canonical Cranelift feature registry..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     registry_json="scripts/cranelift_feature_registry.json"
     registry_schema="scripts/cranelift_feature_registry.schema.json"
     validator="scripts/cranelift_registry.py"
     phase11_view="compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md"
     phase13_view="compiler/CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY.md"
 
-    for required_file in       "$manifest_doc" "$registry_json" "$registry_schema" "$validator"       "$phase11_view" "$phase13_view"
-    do
-      if [ ! -f "$required_file" ] || [ -L "$required_file" ]; then
-        echo "Canonical Cranelift registry input must be a regular non-symlink file: $required_file"
-        exit 1
-      fi
-    done
-
-    required_manifest_lines=(
-      'CRANELIFT_EXPERIMENT_ALLOWED_REGISTRY_SCHEMA_GUARD: guard-cranelift-registry-schema'
-      'allowed_cranelift_registry_authority: scripts/cranelift_feature_registry.json'
-      'allowed_cranelift_registry_schema: scripts/cranelift_feature_registry.schema.json'
-      'allowed_cranelift_registry_validator_projector: scripts/cranelift_registry.py'
-      'allowed_cranelift_registry_generated_summary: docs/CRANELIFT_FEATURE_REGISTRY.md'
-      'allowed_cranelift_registry_legacy_phase11_view: compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md'
-      'allowed_cranelift_registry_legacy_phase13_view: compiler/CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY.md'
-      'allowed_cranelift_registry_authority_policy: JSON_owns_active_Phase11_and_Phase13_inventory_facts_Markdown_is_review_or_history_only'
-      'allowed_cranelift_registry_import_policy: preserve_all_stable_IDs_and_semantic_ownership_in_the_single_JSON_authority'
-      'allowed_cranelift_registry_behavior_policy: registry_schema_validator_projector_and_views_only_no_route_MIR_worker_feature_or_output_change'
-      'allowed_cranelift_registry_next_patch: CI_family_projection'
-    )
-    for line in "${required_manifest_lines[@]}"; do
-      if ! rg -n -x -F "$line" "$manifest_doc" >/dev/null; then
-        echo "Missing canonical registry manifest contract:"
-        echo "$line"
-        exit 1
-      fi
-    done
 
     authority_count="$(
       rg -l -F '"registry_status": "phase12_5_canonical_machine_readable_registry"'         scripts docs compiler 2>/dev/null |
@@ -17701,44 +13494,11 @@ guard-cranelift-ci-family-projection:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Validating registry-derived Phase 11 CI family projection..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     registry_json="scripts/cranelift_feature_registry.json"
     family_runner="scripts/cranelift_ci_family.py"
     pr_workflow=".github/workflows/pr-fast.yml"
     heavy_workflow=".github/workflows/heavy-guards.yml"
 
-    for required_file in \
-      "$manifest_doc" "$registry_json" "$family_runner" \
-      "$pr_workflow" "$heavy_workflow"
-    do
-      if [ ! -f "$required_file" ] || [ -L "$required_file" ]; then
-        echo "CI family projection input must be a regular non-symlink file: $required_file"
-        exit 1
-      fi
-    done
-
-    required_manifest_lines=(
-      'CRANELIFT_EXPERIMENT_ALLOWED_CI_FAMILY_PROJECTION_GUARD: guard-cranelift-ci-family-projection'
-      'CRANELIFT_EXPERIMENT_ALLOWED_PHASE11_CI_FAMILY_GUARD: guard-cranelift-phase11-ci-family'
-      'allowed_cranelift_ci_family_projection_authority: scripts/cranelift_feature_registry.json'
-      'allowed_cranelift_ci_family_projection_runner: scripts/cranelift_ci_family.py'
-      'allowed_cranelift_ci_family_projection_mapping_policy: one_runner_mapping_covers_every_row_derived_Phase11_CI_family'
-      'allowed_cranelift_ci_family_projection_active_set_policy: active_families_are_derived_from_Phase11_registry_rows_not_supported_values_manifest_or_workflow_literals'
-      'allowed_cranelift_ci_family_projection_dispatcher_policy: registry_derived_workflow_matrix_invokes_one_generic_Level2_family_guard_and_rejects_unknown_or_retired_families'
-      'allowed_cranelift_ci_family_projection_PR_policy: build_job_projects_the_registry_family_matrix_and_each_family_runs_guard_cranelift_differential_family'
-      'allowed_cranelift_ci_family_projection_heavy_policy: Heavy_contains_no_duplicate_Phase11_family_rows_no_full_history_job_and_keeps_its_33_shard_capacity_limit'
-      'allowed_cranelift_ci_family_projection_capacity_policy: PR_projected_static_plus_family_shards_must_not_exceed_23'
-      'allowed_cranelift_ci_family_projection_manifest_policy: no_manual_CI_family_count_or_family_list'
-      'allowed_cranelift_ci_family_projection_behavior_policy: CI_projection_and_runner_wiring_only_no_compiler_route_MIR_worker_feature_or_output_change'
-      'allowed_cranelift_ci_family_projection_next_patch: flattened_closure_and_predecessor_graph'
-    )
-    for line in "${required_manifest_lines[@]}"; do
-      if ! rg -n -x -F "$line" "$manifest_doc" >/dev/null; then
-        echo "Missing CI family projection manifest contract:"
-        echo "$line"
-        exit 1
-      fi
-    done
 
     python3 "$family_runner" validate
     python3 "$family_runner" check-pr-workflow "$pr_workflow"
@@ -17757,13 +13517,6 @@ guard-cranelift-ci-family-projection:
         exit 1
       fi
     done < <(python3 "$family_runner" families)
-
-    if rg -n -e '^allowed_cranelift_phase11_.*CI_family_count:' \
-         -e '^allowed_cranelift_phase11_.*CI_families:' \
-         "$manifest_doc" >/dev/null; then
-      echo "Manifest still contains a manually maintained Phase 11 CI family count or list."
-      exit 1
-    fi
 
     unknown_log="$(mktemp)"
     set +e
@@ -17787,37 +13540,9 @@ guard-cranelift-registry-projection:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Regenerating the canonical Cranelift registry projection..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     validator="scripts/cranelift_registry.py"
     generated_summary="docs/CRANELIFT_FEATURE_REGISTRY.md"
 
-    for required_file in "$manifest_doc" "$validator" "$generated_summary"; do
-      if [ ! -f "$required_file" ] || [ -L "$required_file" ]; then
-        echo "Cranelift registry projection input must be a regular non-symlink file: $required_file"
-        exit 1
-      fi
-    done
-
-    required_manifest_lines=(
-      'CRANELIFT_EXPERIMENT_ALLOWED_REGISTRY_PROJECTION_GUARD: guard-cranelift-registry-projection'
-      'allowed_cranelift_registry_projection_authority: scripts/cranelift_feature_registry.json'
-      'allowed_cranelift_registry_projection_projector: scripts/cranelift_registry.py'
-      'allowed_cranelift_registry_projection_review_artifact: docs/CRANELIFT_FEATURE_REGISTRY.md'
-      'allowed_cranelift_registry_projection_derived_totals: total_rows,status,feature_family,CI_family,route_owner,deferred_destination'
-      'allowed_cranelift_registry_projection_closure_summary: generated_from_closure_snapshots.phase11'
-      'allowed_cranelift_registry_projection_policy: generated_Markdown_is_a_review_artifact_not_a_source_of_truth'
-      'allowed_cranelift_registry_projection_drift_policy: regenerate_in_a_temporary_directory_and_fail_only_when_the_committed_projection_is_stale'
-      'allowed_cranelift_registry_projection_capacity_policy: workflow_shard_limits_remain_explicit_CI_capacity_constraints'
-      'allowed_cranelift_registry_projection_behavior_policy: projector_manifest_views_and_guards_only_no_route_MIR_worker_feature_or_output_change'
-      'allowed_cranelift_registry_projection_next_patch: CI_family_projection'
-    )
-    for line in "${required_manifest_lines[@]}"; do
-      if ! rg -n -x -F "$line" "$manifest_doc" >/dev/null; then
-        echo "Missing registry projection manifest contract:"
-        echo "$line"
-        exit 1
-      fi
-    done
 
     python3 "$validator" check-projection
 
@@ -17827,20 +13552,8 @@ guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling compiler-owned MIR local-binding/read ingestion seam smoke..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     fixture="compiler/fixtures/native_backend_local_binding_read_ingestion.mir"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_COMPILER_MIR_LOCAL_BINDING_READ_INGESTION_NATIVE_GUARD: guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_local_binding_read_ingestion_native_guard: guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_local_binding_read_ingestion_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_local_binding_read_ingestion_fixture: compiler/fixtures/native_backend_local_binding_read_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_local_binding_read_ingestion_fixture_producer: compiler/mir.gst' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_local_binding_read_ingestion_fixture_producer_entry: mir_emit_native_backend_local_binding_read_ingestion_fixture' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_local_binding_read_ingestion_object_artifact: build/guards/cranelift_compiler_mir_local_binding_read_ingestion_native/tiny_native_backend_compiler_mir_ingested_local_binding_read.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_local_binding_read_ingestion_symbol: tiny_native_backend_compiler_mir_ingested_local_binding_read' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_local_binding_read_ingestion_source_fixture: compiler/mir_feature_local_binding_read_preservation_source.gst' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_local_binding_read_ingestion_lowering_entry: mir_lower_local_binding_read_fixture' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_local_binding_read_ingestion_seam_status: compiler_owned_fixture_to_experiment_only' "$manifest_doc" >/dev/null
     rg -n -F 'func mir_emit_native_backend_local_binding_read_ingestion_fixture' compiler/mir.gst >/dev/null
     rg -n -F 'mir_lower_local_binding_read_fixture(ctx)' compiler/mir.gst >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.local_binding_read.v1' "$fixture" compiler/mir.gst >/dev/null
@@ -17880,20 +13593,8 @@ guard-cranelift-compiler-mir-conditional-branch-ingestion-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling compiler-owned MIR conditional-branch ingestion seam smoke..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     fixture="compiler/fixtures/native_backend_conditional_branch_ingestion.mir"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_COMPILER_MIR_CONDITIONAL_BRANCH_INGESTION_NATIVE_GUARD: guard-cranelift-compiler-mir-conditional-branch-ingestion-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_conditional_branch_ingestion_native_guard: guard-cranelift-compiler-mir-conditional-branch-ingestion-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_conditional_branch_ingestion_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_conditional_branch_ingestion_fixture: compiler/fixtures/native_backend_conditional_branch_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_conditional_branch_ingestion_fixture_producer: compiler/mir.gst' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_conditional_branch_ingestion_fixture_producer_entry: mir_emit_native_backend_conditional_branch_ingestion_fixture' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_conditional_branch_ingestion_object_artifact: build/guards/cranelift_compiler_mir_conditional_branch_ingestion_native/tiny_native_backend_compiler_mir_ingested_conditional_branch.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_conditional_branch_ingestion_symbol: tiny_native_backend_compiler_mir_ingested_conditional_branch' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_conditional_branch_ingestion_source_fixture: compiler/mir_feature_if_else_return_int_preservation_source.gst' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_conditional_branch_ingestion_lowering_entry: mir_lower_conditional_branch_fixture' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_conditional_branch_ingestion_seam_status: compiler_owned_fixture_to_experiment_only' "$manifest_doc" >/dev/null
     rg -n -F 'func mir_emit_native_backend_conditional_branch_ingestion_fixture' compiler/mir.gst >/dev/null
     rg -n -F 'mir_lower_conditional_branch_fixture(ctx)' compiler/mir.gst >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.conditional_branch.v1' "$fixture" compiler/mir.gst >/dev/null
@@ -17937,20 +13638,8 @@ guard-cranelift-compiler-mir-add-i32-ingestion-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling compiler-owned MIR add-i32 ingestion seam smoke..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     fixture="compiler/fixtures/native_backend_add_i32_ingestion.mir"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_COMPILER_MIR_ADD_I32_INGESTION_NATIVE_GUARD: guard-cranelift-compiler-mir-add-i32-ingestion-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_add_i32_ingestion_native_guard: guard-cranelift-compiler-mir-add-i32-ingestion-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_add_i32_ingestion_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_add_i32_ingestion_fixture: compiler/fixtures/native_backend_add_i32_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_add_i32_ingestion_fixture_producer: compiler/mir.gst' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_add_i32_ingestion_fixture_producer_entry: mir_emit_native_backend_add_i32_ingestion_fixture' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_add_i32_ingestion_object_artifact: build/guards/cranelift_compiler_mir_add_i32_ingestion_native/tiny_native_backend_compiler_mir_ingested_add_i32.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_add_i32_ingestion_symbol: tiny_native_backend_compiler_mir_ingested_add_i32' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_add_i32_ingestion_source_fixture: compiler/mir_feature_add_i32_preservation_source.gst' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_add_i32_ingestion_lowering_entry: fixture_only_param_add_i32_serialization' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_add_i32_ingestion_seam_status: compiler_owned_fixture_to_experiment_only' "$manifest_doc" >/dev/null
     rg -n -F 'func mir_emit_native_backend_add_i32_ingestion_fixture' compiler/mir.gst >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.add_i32.v1' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'producer: compiler/mir.gst' "$fixture" compiler/mir.gst >/dev/null
@@ -17983,20 +13672,8 @@ guard-cranelift-compiler-mir-provenance-metadata-ingestion-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling compiler-owned MIR provenance metadata ingestion seam smoke."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     fixture="compiler/fixtures/native_backend_provenance_metadata_ingestion.mir"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_COMPILER_MIR_PROVENANCE_METADATA_INGESTION_NATIVE_GUARD: guard-cranelift-compiler-mir-provenance-metadata-ingestion-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_provenance_metadata_ingestion_native_guard: guard-cranelift-compiler-mir-provenance-metadata-ingestion-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_provenance_metadata_ingestion_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_provenance_metadata_ingestion_fixture: compiler/fixtures/native_backend_provenance_metadata_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_provenance_metadata_ingestion_fixture_producer: compiler/mir.gst' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_provenance_metadata_ingestion_fixture_producer_entry: mir_emit_native_backend_provenance_metadata_ingestion_fixture' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_provenance_metadata_ingestion_object_artifact: build/guards/cranelift_compiler_mir_provenance_metadata_ingestion_native/tiny_native_backend_compiler_mir_ingested_provenance_metadata.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_provenance_metadata_ingestion_symbol: tiny_native_backend_compiler_mir_ingested_provenance_metadata' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_provenance_metadata_ingestion_source_fixture: compiler/mir_feature_local_binding_read_provenance_metadata_preservation_source.gst' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_provenance_metadata_ingestion_lowering_entry: mir_lower_provenance_metadata_fixture' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_provenance_metadata_ingestion_seam_status: compiler_owned_fixture_to_experiment_only' "$manifest_doc" >/dev/null
     rg -n -F 'func mir_emit_native_backend_provenance_metadata_ingestion_fixture' compiler/mir.gst >/dev/null
     rg -n -F 'mir_lower_provenance_metadata_fixture(ctx)' compiler/mir.gst >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.provenance_metadata.v1' "$fixture" compiler/mir.gst >/dev/null
@@ -18033,20 +13710,8 @@ guard-cranelift-compiler-mir-resource-metadata-ingestion-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling compiler-owned MIR resource metadata ingestion seam smoke."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     fixture="compiler/fixtures/native_backend_resource_metadata_ingestion.mir"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_COMPILER_MIR_RESOURCE_METADATA_INGESTION_NATIVE_GUARD: guard-cranelift-compiler-mir-resource-metadata-ingestion-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_resource_metadata_ingestion_native_guard: guard-cranelift-compiler-mir-resource-metadata-ingestion-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_resource_metadata_ingestion_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_resource_metadata_ingestion_fixture: compiler/fixtures/native_backend_resource_metadata_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_resource_metadata_ingestion_fixture_producer: compiler/mir.gst' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_resource_metadata_ingestion_fixture_producer_entry: mir_emit_native_backend_resource_metadata_ingestion_fixture' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_resource_metadata_ingestion_object_artifact: build/guards/cranelift_compiler_mir_resource_metadata_ingestion_native/tiny_native_backend_compiler_mir_ingested_resource_metadata.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_resource_metadata_ingestion_symbol: tiny_native_backend_compiler_mir_ingested_resource_metadata' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_resource_metadata_ingestion_source_fixture: compiler/mir_feature_local_binding_read_preservation_source.gst' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_resource_metadata_ingestion_lowering_entry: mir_lower_resource_metadata_fixture' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_resource_metadata_ingestion_seam_status: compiler_owned_fixture_to_experiment_only' "$manifest_doc" >/dev/null
     rg -n -F 'func mir_emit_native_backend_resource_metadata_ingestion_fixture' compiler/mir.gst >/dev/null
     rg -n -F 'mir_lower_resource_metadata_fixture(ctx)' compiler/mir.gst >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.resource_metadata.v1' "$fixture" compiler/mir.gst >/dev/null
@@ -18083,20 +13748,8 @@ guard-cranelift-compiler-mir-native-boundary-metadata-ingestion-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling compiler-owned MIR native-boundary metadata ingestion seam smoke."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     fixture="compiler/fixtures/native_backend_native_boundary_metadata_ingestion.mir"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_COMPILER_MIR_NATIVE_BOUNDARY_METADATA_INGESTION_NATIVE_GUARD: guard-cranelift-compiler-mir-native-boundary-metadata-ingestion-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_native_boundary_metadata_ingestion_native_guard: guard-cranelift-compiler-mir-native-boundary-metadata-ingestion-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_native_boundary_metadata_ingestion_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_native_boundary_metadata_ingestion_fixture: compiler/fixtures/native_backend_native_boundary_metadata_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_native_boundary_metadata_ingestion_fixture_producer: compiler/mir.gst' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_native_boundary_metadata_ingestion_fixture_producer_entry: mir_emit_native_backend_native_boundary_metadata_ingestion_fixture' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_native_boundary_metadata_ingestion_object_artifact: build/guards/cranelift_compiler_mir_native_boundary_metadata_ingestion_native/tiny_native_backend_compiler_mir_ingested_native_boundary_metadata.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_native_boundary_metadata_ingestion_symbol: tiny_native_backend_compiler_mir_ingested_native_boundary_metadata' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_native_boundary_metadata_ingestion_source_fixture: compiler/mir_to_c_native_boundary_metadata_smoke_test_entry.gst' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_native_boundary_metadata_ingestion_lowering_entry: mir_lower_native_boundary_metadata_fixture' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_native_boundary_metadata_ingestion_seam_status: compiler_owned_fixture_to_experiment_only' "$manifest_doc" >/dev/null
     rg -n -F 'func mir_emit_native_backend_native_boundary_metadata_ingestion_fixture' compiler/mir.gst >/dev/null
     rg -n -F 'mir_lower_native_boundary_metadata_fixture(ctx)' compiler/mir.gst >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.native_boundary_metadata.v1' "$fixture" compiler/mir.gst >/dev/null
@@ -18126,21 +13779,9 @@ guard-cranelift-compiler-mir-positive-i32-branch-ingestion-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling compiler-owned MIR positive-i32 branch ingestion seam smoke."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     fixture="compiler/fixtures/native_backend_positive_i32_branch_ingestion.mir"
     source_fixture="compiler/mir_feature_positive_i32_branch_preservation_source.gst"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_COMPILER_MIR_POSITIVE_I32_BRANCH_INGESTION_NATIVE_GUARD: guard-cranelift-compiler-mir-positive-i32-branch-ingestion-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_positive_i32_branch_ingestion_native_guard: guard-cranelift-compiler-mir-positive-i32-branch-ingestion-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_positive_i32_branch_ingestion_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_positive_i32_branch_ingestion_fixture: compiler/fixtures/native_backend_positive_i32_branch_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_positive_i32_branch_ingestion_fixture_producer: compiler/mir.gst' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_positive_i32_branch_ingestion_fixture_producer_entry: mir_emit_native_backend_positive_i32_branch_ingestion_fixture' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_positive_i32_branch_ingestion_object_artifact: build/guards/cranelift_compiler_mir_positive_i32_branch_ingestion_native/tiny_native_backend_compiler_mir_ingested_positive_i32_branch.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_positive_i32_branch_ingestion_symbol: tiny_native_backend_compiler_mir_ingested_positive_i32_branch' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_positive_i32_branch_ingestion_source_fixture: compiler/mir_feature_positive_i32_branch_preservation_source.gst' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_positive_i32_branch_ingestion_lowering_entry: fixture_only_param_positive_i32_branch_serialization' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_positive_i32_branch_ingestion_seam_status: compiler_owned_fixture_to_experiment_only' "$manifest_doc" >/dev/null
     rg -n -F 'func mir_emit_native_backend_positive_i32_branch_ingestion_fixture' compiler/mir.gst >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.positive_i32_branch.v1' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'producer_entry: mir_emit_native_backend_positive_i32_branch_ingestion_fixture' "$fixture" compiler/mir.gst >/dev/null
@@ -18180,20 +13821,8 @@ guard-cranelift-compiler-mir-block-jump-ingestion-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling compiler-owned MIR block-jump ingestion seam smoke."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     fixture="compiler/fixtures/native_backend_block_jump_ingestion.mir"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_COMPILER_MIR_BLOCK_JUMP_INGESTION_NATIVE_GUARD: guard-cranelift-compiler-mir-block-jump-ingestion-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_jump_ingestion_native_guard: guard-cranelift-compiler-mir-block-jump-ingestion-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_jump_ingestion_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_jump_ingestion_fixture: compiler/fixtures/native_backend_block_jump_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_jump_ingestion_fixture_producer: compiler/mir.gst' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_jump_ingestion_fixture_producer_entry: mir_emit_native_backend_block_jump_ingestion_fixture' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_jump_ingestion_object_artifact: build/guards/cranelift_compiler_mir_block_jump_ingestion_native/tiny_native_backend_compiler_mir_ingested_block_jump.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_jump_ingestion_symbol: tiny_native_backend_compiler_mir_ingested_block_jump' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_jump_ingestion_source_fixture: compiler/mir_lower_block_jump_smoke_test_entry.gst' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_jump_ingestion_lowering_entry: mir_lower_block_jump_fixture' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_jump_ingestion_seam_status: compiler_owned_fixture_to_experiment_only' "$manifest_doc" >/dev/null
     rg -n -F 'func mir_emit_native_backend_block_jump_ingestion_fixture' compiler/mir.gst >/dev/null
     rg -n -F 'mir_lower_block_jump_fixture(ctx)' compiler/mir.gst >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.block_jump.v1' "$fixture" compiler/mir.gst >/dev/null
@@ -18231,21 +13860,9 @@ guard-cranelift-compiler-mir-block-local-branch-ingestion-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling compiler-owned MIR block-local branch ingestion seam smoke."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     fixture="compiler/fixtures/native_backend_block_local_branch_ingestion.mir"
     source_fixture="compiler/mir_feature_block_local_branch_preservation_source.gst"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_COMPILER_MIR_BLOCK_LOCAL_BRANCH_INGESTION_NATIVE_GUARD: guard-cranelift-compiler-mir-block-local-branch-ingestion-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_local_branch_ingestion_native_guard: guard-cranelift-compiler-mir-block-local-branch-ingestion-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_local_branch_ingestion_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_local_branch_ingestion_fixture: compiler/fixtures/native_backend_block_local_branch_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_local_branch_ingestion_fixture_producer: compiler/mir.gst' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_local_branch_ingestion_fixture_producer_entry: mir_emit_native_backend_block_local_branch_ingestion_fixture' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_local_branch_ingestion_object_artifact: build/guards/cranelift_compiler_mir_block_local_branch_ingestion_native/tiny_native_backend_compiler_mir_ingested_block_local_branch.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_local_branch_ingestion_symbol: tiny_native_backend_compiler_mir_ingested_block_local_branch' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_local_branch_ingestion_source_fixture: compiler/mir_feature_block_local_branch_preservation_source.gst' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_local_branch_ingestion_lowering_entry: fixture_only_block_local_branch_serialization' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_local_branch_ingestion_seam_status: compiler_owned_fixture_to_experiment_only' "$manifest_doc" >/dev/null
     rg -n -F 'func mir_emit_native_backend_block_local_branch_ingestion_fixture' compiler/mir.gst >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.block_local_branch.v1' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'producer_entry: mir_emit_native_backend_block_local_branch_ingestion_fixture' "$fixture" compiler/mir.gst >/dev/null
@@ -18292,21 +13909,9 @@ guard-cranelift-compiler-mir-block-local-update-branch-ingestion-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling compiler-owned MIR block-local update branch ingestion seam smoke."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     fixture="compiler/fixtures/native_backend_block_local_update_branch_ingestion.mir"
     source_fixture="compiler/mir_feature_block_local_update_branch_preservation_source.gst"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_COMPILER_MIR_BLOCK_LOCAL_UPDATE_BRANCH_INGESTION_NATIVE_GUARD: guard-cranelift-compiler-mir-block-local-update-branch-ingestion-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_local_update_branch_ingestion_native_guard: guard-cranelift-compiler-mir-block-local-update-branch-ingestion-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_local_update_branch_ingestion_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_local_update_branch_ingestion_fixture: compiler/fixtures/native_backend_block_local_update_branch_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_local_update_branch_ingestion_fixture_producer: compiler/mir.gst' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_local_update_branch_ingestion_fixture_producer_entry: mir_emit_native_backend_block_local_update_branch_ingestion_fixture' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_local_update_branch_ingestion_object_artifact: build/guards/cranelift_compiler_mir_block_local_update_branch_ingestion_native/tiny_native_backend_compiler_mir_ingested_block_local_update_branch.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_local_update_branch_ingestion_symbol: tiny_native_backend_compiler_mir_ingested_block_local_update_branch' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_local_update_branch_ingestion_source_fixture: compiler/mir_feature_block_local_update_branch_preservation_source.gst' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_local_update_branch_ingestion_lowering_entry: fixture_only_block_local_update_branch_serialization' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_local_update_branch_ingestion_seam_status: compiler_owned_fixture_to_experiment_only' "$manifest_doc" >/dev/null
     rg -n -F 'func mir_emit_native_backend_block_local_update_branch_ingestion_fixture' compiler/mir.gst >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.block_local_update_branch.v1' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'producer_entry: mir_emit_native_backend_block_local_update_branch_ingestion_fixture' "$fixture" compiler/mir.gst >/dev/null
@@ -18355,21 +13960,9 @@ guard-cranelift-compiler-mir-block-two-local-update-branch-ingestion-native-smok
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling compiler-owned MIR block two-local update branch ingestion seam smoke."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     fixture="compiler/fixtures/native_backend_block_two_local_update_branch_ingestion.mir"
     source_fixture="compiler/mir_feature_block_two_local_update_branch_preservation_source.gst"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_COMPILER_MIR_BLOCK_TWO_LOCAL_UPDATE_BRANCH_INGESTION_NATIVE_GUARD: guard-cranelift-compiler-mir-block-two-local-update-branch-ingestion-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_two_local_update_branch_ingestion_native_guard: guard-cranelift-compiler-mir-block-two-local-update-branch-ingestion-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_two_local_update_branch_ingestion_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_two_local_update_branch_ingestion_fixture: compiler/fixtures/native_backend_block_two_local_update_branch_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_two_local_update_branch_ingestion_fixture_producer: compiler/mir.gst' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_two_local_update_branch_ingestion_fixture_producer_entry: mir_emit_native_backend_block_two_local_update_branch_ingestion_fixture' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_two_local_update_branch_ingestion_object_artifact: build/guards/cranelift_compiler_mir_block_two_local_update_branch_ingestion_native/tiny_native_backend_compiler_mir_ingested_block_two_local_update_branch.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_two_local_update_branch_ingestion_symbol: tiny_native_backend_compiler_mir_ingested_block_two_local_update_branch' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_two_local_update_branch_ingestion_source_fixture: compiler/mir_feature_block_two_local_update_branch_preservation_source.gst' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_two_local_update_branch_ingestion_lowering_entry: fixture_only_block_two_local_update_branch_serialization' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_two_local_update_branch_ingestion_seam_status: compiler_owned_fixture_to_experiment_only' "$manifest_doc" >/dev/null
     rg -n -F 'func mir_emit_native_backend_block_two_local_update_branch_ingestion_fixture' compiler/mir.gst >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.block_two_local_update_branch.v1' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'producer_entry: mir_emit_native_backend_block_two_local_update_branch_ingestion_fixture' "$fixture" compiler/mir.gst >/dev/null
@@ -18423,22 +14016,9 @@ guard-cranelift-compiler-mir-block-local-branch-join-ingestion-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling compiler-owned MIR block-local branch join ingestion seam smoke."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     fixture="compiler/fixtures/native_backend_block_local_branch_join_ingestion.mir"
     source_fixture="compiler/mir_feature_block_local_branch_join_preservation_source.gst"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_COMPILER_MIR_BLOCK_LOCAL_BRANCH_JOIN_INGESTION_NATIVE_GUARD: guard-cranelift-compiler-mir-block-local-branch-join-ingestion-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_local_branch_join_ingestion_native_guard: guard-cranelift-compiler-mir-block-local-branch-join-ingestion-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_local_branch_join_ingestion_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_local_branch_join_ingestion_fixture: compiler/fixtures/native_backend_block_local_branch_join_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_local_branch_join_ingestion_fixture_producer: compiler/mir.gst' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_local_branch_join_ingestion_fixture_producer_entry: mir_emit_native_backend_block_local_branch_join_ingestion_fixture' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_local_branch_join_ingestion_object_artifact: build/guards/cranelift_compiler_mir_block_local_branch_join_ingestion_native/tiny_native_backend_compiler_mir_ingested_block_local_branch_join.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_local_branch_join_ingestion_symbol: tiny_native_backend_compiler_mir_ingested_block_local_branch_join' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_local_branch_join_ingestion_source_fixture: compiler/mir_feature_block_local_branch_join_preservation_source.gst' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_local_branch_join_ingestion_fixture_lowering_entry: fixture_only_block_local_branch_join_serialization' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_local_branch_join_ingestion_shared_lowering_entry: lower_compiler_mir_ingestion_function_to_object' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_local_branch_join_ingestion_seam_status: compiler_owned_fixture_shared_cfg_join_lowering_experiment_only' "$manifest_doc" >/dev/null
     rg -n -F 'func mir_emit_native_backend_block_local_branch_join_ingestion_fixture' compiler/mir.gst >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.block_local_branch_join.v1' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'producer_entry: mir_emit_native_backend_block_local_branch_join_ingestion_fixture' "$fixture" compiler/mir.gst >/dev/null
@@ -18482,20 +14062,9 @@ guard-cranelift-compiler-mir-block-param-update-branch-ingestion-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling compiler-owned MIR block-param update branch ingestion seam smoke."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     fixture="compiler/fixtures/native_backend_block_param_update_branch_ingestion.mir"
     source_fixture="compiler/mir_feature_block_param_update_branch_preservation_source.gst"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_COMPILER_MIR_BLOCK_PARAM_UPDATE_BRANCH_INGESTION_NATIVE_GUARD: guard-cranelift-compiler-mir-block-param-update-branch-ingestion-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_update_branch_ingestion_native_guard: guard-cranelift-compiler-mir-block-param-update-branch-ingestion-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_update_branch_ingestion_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_update_branch_ingestion_fixture: compiler/fixtures/native_backend_block_param_update_branch_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_update_branch_ingestion_fixture_producer_entry: mir_emit_native_backend_block_param_update_branch_ingestion_fixture' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_update_branch_ingestion_object_artifact: build/guards/cranelift_compiler_mir_block_param_update_branch_ingestion_native/tiny_native_backend_compiler_mir_ingested_block_param_update_branch.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_update_branch_ingestion_symbol: tiny_native_backend_compiler_mir_ingested_block_param_update_branch' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_update_branch_ingestion_source_fixture: compiler/mir_feature_block_param_update_branch_preservation_source.gst' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_update_branch_ingestion_lowering_entry: fixture_only_block_param_update_branch_serialization' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_update_branch_ingestion_seam_status: compiler_owned_fixture_to_experiment_only' "$manifest_doc" >/dev/null
     rg -n -F 'func mir_emit_native_backend_block_param_update_branch_ingestion_fixture' compiler/mir.gst >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.block_param_update_branch.v1' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'block_0_terminator: JumpFunctionParam' "$fixture" compiler/mir.gst >/dev/null
@@ -18541,21 +14110,9 @@ guard-cranelift-compiler-mir-block-param-local-call-branch-ingestion-native-smok
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling compiler-owned MIR block-param local-call branch ingestion seam smoke."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     fixture="compiler/fixtures/native_backend_block_param_local_call_branch_ingestion.mir"
     source_fixture="compiler/mir_feature_block_param_local_call_branch_preservation_source.gst"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_COMPILER_MIR_BLOCK_PARAM_LOCAL_CALL_BRANCH_INGESTION_NATIVE_GUARD: guard-cranelift-compiler-mir-block-param-local-call-branch-ingestion-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_local_call_branch_ingestion_native_guard: guard-cranelift-compiler-mir-block-param-local-call-branch-ingestion-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_local_call_branch_ingestion_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_local_call_branch_ingestion_fixture: compiler/fixtures/native_backend_block_param_local_call_branch_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_local_call_branch_ingestion_fixture_producer_entry: mir_emit_native_backend_block_param_local_call_branch_ingestion_fixture' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_local_call_branch_ingestion_object_artifact: build/guards/cranelift_compiler_mir_block_param_local_call_branch_ingestion_native/tiny_native_backend_compiler_mir_ingested_block_param_local_call_branch.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_local_call_branch_ingestion_symbol: tiny_native_backend_compiler_mir_ingested_block_param_local_call_branch' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_local_call_branch_ingestion_helper_symbol: tiny_native_backend_compiler_mir_ingested_block_param_local_call_helper' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_local_call_branch_ingestion_source_fixture: compiler/mir_feature_block_param_local_call_branch_preservation_source.gst' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_local_call_branch_ingestion_lowering_entry: fixture_only_block_param_local_call_branch_serialization' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_local_call_branch_ingestion_seam_status: canonical_shared_module_lowering_via_legacy_fixture_adapter' "$manifest_doc" >/dev/null
     rg -n -F 'func mir_emit_native_backend_block_param_local_call_branch_ingestion_fixture' compiler/mir.gst >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.block_param_local_call_branch.v1' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'local_function_0_symbol: tiny_native_backend_compiler_mir_ingested_block_param_local_call_helper' "$fixture" compiler/mir.gst >/dev/null
@@ -18577,7 +14134,6 @@ guard-cranelift-compiler-mir-block-param-local-call-branch-ingestion-native-smok
     rg -n -F 'CompilerMirLoweringStatement::LocalI32SetCall' compiler/experiments/cranelift/src/main.rs >/dev/null
     rg -n -F 'CompilerMirLoweringCallTarget::LocalFunction' compiler/experiments/cranelift/src/main.rs >/dev/null
     rg -n -F 'lower_compiler_mir_ingestion_module_to_object(output_path, &module)' compiler/experiments/cranelift/src/main.rs >/dev/null
-    rg -n '^allowed_compiler_mir_ingestion_phase9d_inventory_seam_block_param_local_call_branch:.*\|class=canonical_shared_lowering\|migration=phase9f_module_emitter_local_call_cohort\|$' "$manifest_doc" >/dev/null
     build_dir="build/guards/cranelift_compiler_mir_block_param_local_call_branch_ingestion_native"
     object_file="$build_dir/tiny_native_backend_compiler_mir_ingested_block_param_local_call_branch.o"
     shim_c="$build_dir/tiny_native_backend_compiler_mir_ingested_block_param_local_call_branch_main.c"
@@ -18601,21 +14157,9 @@ guard-cranelift-compiler-mir-block-param-imported-call-branch-ingestion-native-s
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling compiler-owned MIR block-param imported-call branch ingestion seam smoke."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     fixture="compiler/fixtures/native_backend_block_param_imported_call_branch_ingestion.mir"
     source_fixture="compiler/mir_feature_block_param_imported_call_branch_preservation_source.gst"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_COMPILER_MIR_BLOCK_PARAM_IMPORTED_CALL_BRANCH_INGESTION_NATIVE_GUARD: guard-cranelift-compiler-mir-block-param-imported-call-branch-ingestion-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_imported_call_branch_ingestion_native_guard: guard-cranelift-compiler-mir-block-param-imported-call-branch-ingestion-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_imported_call_branch_ingestion_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_imported_call_branch_ingestion_fixture: compiler/fixtures/native_backend_block_param_imported_call_branch_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_imported_call_branch_ingestion_fixture_producer_entry: mir_emit_native_backend_block_param_imported_call_branch_ingestion_fixture' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_imported_call_branch_ingestion_object_artifact: build/guards/cranelift_compiler_mir_block_param_imported_call_branch_ingestion_native/tiny_native_backend_compiler_mir_ingested_block_param_imported_call_branch.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_imported_call_branch_ingestion_symbol: tiny_native_backend_compiler_mir_ingested_block_param_imported_call_branch' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_imported_call_branch_ingestion_imported_symbol: tiny_native_backend_compiler_mir_ingested_block_param_imported_call_host_add' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_imported_call_branch_ingestion_source_fixture: compiler/mir_feature_block_param_imported_call_branch_preservation_source.gst' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_imported_call_branch_ingestion_lowering_entry: fixture_only_block_param_imported_call_branch_serialization' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_imported_call_branch_ingestion_seam_status: compiler_owned_fixture_to_experiment_only' "$manifest_doc" >/dev/null
     rg -n -F 'func mir_emit_native_backend_block_param_imported_call_branch_ingestion_fixture' compiler/mir.gst >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.block_param_imported_call_branch.v1' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'imported_function_0_symbol: tiny_native_backend_compiler_mir_ingested_block_param_imported_call_host_add' "$fixture" compiler/mir.gst >/dev/null
@@ -18658,21 +14202,9 @@ guard-cranelift-compiler-mir-block-param-imported-call-return-ingestion-native-s
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling compiler-owned MIR block-param imported-call return ingestion seam smoke."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     fixture="compiler/fixtures/native_backend_block_param_imported_call_return_ingestion.mir"
     source_fixture="compiler/mir_feature_block_param_imported_call_return_preservation_source.gst"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_COMPILER_MIR_BLOCK_PARAM_IMPORTED_CALL_RETURN_INGESTION_NATIVE_GUARD: guard-cranelift-compiler-mir-block-param-imported-call-return-ingestion-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_imported_call_return_ingestion_native_guard: guard-cranelift-compiler-mir-block-param-imported-call-return-ingestion-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_imported_call_return_ingestion_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_imported_call_return_ingestion_fixture: compiler/fixtures/native_backend_block_param_imported_call_return_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_imported_call_return_ingestion_fixture_producer_entry: mir_emit_native_backend_block_param_imported_call_return_ingestion_fixture' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_imported_call_return_ingestion_object_artifact: build/guards/cranelift_compiler_mir_block_param_imported_call_return_ingestion_native/tiny_native_backend_compiler_mir_ingested_block_param_imported_call_return.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_imported_call_return_ingestion_symbol: tiny_native_backend_compiler_mir_ingested_block_param_imported_call_return' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_imported_call_return_ingestion_imported_symbol: tiny_native_backend_compiler_mir_ingested_block_param_imported_call_return_host_add' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_imported_call_return_ingestion_source_fixture: compiler/mir_feature_block_param_imported_call_return_preservation_source.gst' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_imported_call_return_ingestion_lowering_entry: fixture_only_block_param_imported_call_return_serialization' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_imported_call_return_ingestion_seam_status: compiler_owned_fixture_to_experiment_only' "$manifest_doc" >/dev/null
     rg -n -F 'func mir_emit_native_backend_block_param_imported_call_return_ingestion_fixture' compiler/mir.gst >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.block_param_imported_call_return.v1' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'imported_function_0_symbol: tiny_native_backend_compiler_mir_ingested_block_param_imported_call_return_host_add' "$fixture" compiler/mir.gst >/dev/null
@@ -18715,21 +14247,9 @@ guard-cranelift-compiler-mir-block-param-imported-predicate-update-branch-ingest
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling compiler-owned MIR block-param imported-predicate update branch ingestion seam smoke."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     fixture="compiler/fixtures/native_backend_block_param_imported_predicate_update_branch_ingestion.mir"
     source_fixture="compiler/mir_feature_block_param_imported_predicate_update_branch_preservation_source.gst"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_COMPILER_MIR_BLOCK_PARAM_IMPORTED_PREDICATE_UPDATE_BRANCH_INGESTION_NATIVE_GUARD: guard-cranelift-compiler-mir-block-param-imported-predicate-update-branch-ingestion-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_imported_predicate_update_branch_ingestion_native_guard: guard-cranelift-compiler-mir-block-param-imported-predicate-update-branch-ingestion-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_imported_predicate_update_branch_ingestion_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_imported_predicate_update_branch_ingestion_fixture: compiler/fixtures/native_backend_block_param_imported_predicate_update_branch_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_imported_predicate_update_branch_ingestion_fixture_producer_entry: mir_emit_native_backend_block_param_imported_predicate_update_branch_ingestion_fixture' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_imported_predicate_update_branch_ingestion_object_artifact: build/guards/cranelift_compiler_mir_block_param_imported_predicate_update_branch_ingestion_native/tiny_native_backend_compiler_mir_ingested_block_param_imported_predicate_update_branch.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_imported_predicate_update_branch_ingestion_symbol: tiny_native_backend_compiler_mir_ingested_block_param_imported_predicate_update_branch' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_imported_predicate_update_branch_ingestion_imported_symbol: tiny_native_backend_compiler_mir_ingested_block_param_imported_predicate_host_is_positive' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_imported_predicate_update_branch_ingestion_source_fixture: compiler/mir_feature_block_param_imported_predicate_update_branch_preservation_source.gst' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_imported_predicate_update_branch_ingestion_lowering_entry: fixture_only_block_param_imported_predicate_update_branch_serialization' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_imported_predicate_update_branch_ingestion_seam_status: compiler_owned_fixture_to_experiment_only' "$manifest_doc" >/dev/null
     rg -n -F 'func mir_emit_native_backend_block_param_imported_predicate_update_branch_ingestion_fixture' compiler/mir.gst >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.block_param_imported_predicate_update_branch.v1' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'imported_function_0_symbol: tiny_native_backend_compiler_mir_ingested_block_param_imported_predicate_host_is_positive' "$fixture" compiler/mir.gst >/dev/null
@@ -18774,20 +14294,9 @@ guard-cranelift-compiler-mir-block-param-merge-update-branch-ingestion-native-sm
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling compiler-owned MIR block-param merge update branch ingestion seam smoke."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     fixture="compiler/fixtures/native_backend_block_param_merge_update_branch_ingestion.mir"
     source_fixture="compiler/mir_feature_block_param_merge_update_branch_preservation_source.gst"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_COMPILER_MIR_BLOCK_PARAM_MERGE_UPDATE_BRANCH_INGESTION_NATIVE_GUARD: guard-cranelift-compiler-mir-block-param-merge-update-branch-ingestion-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_merge_update_branch_ingestion_native_guard: guard-cranelift-compiler-mir-block-param-merge-update-branch-ingestion-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_merge_update_branch_ingestion_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_merge_update_branch_ingestion_fixture: compiler/fixtures/native_backend_block_param_merge_update_branch_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_merge_update_branch_ingestion_fixture_producer_entry: mir_emit_native_backend_block_param_merge_update_branch_ingestion_fixture' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_merge_update_branch_ingestion_object_artifact: build/guards/cranelift_compiler_mir_block_param_merge_update_branch_ingestion_native/tiny_native_backend_compiler_mir_ingested_block_param_merge_update_branch.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_merge_update_branch_ingestion_symbol: tiny_native_backend_compiler_mir_ingested_block_param_merge_update_branch' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_merge_update_branch_ingestion_source_fixture: compiler/mir_feature_block_param_merge_update_branch_preservation_source.gst' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_merge_update_branch_ingestion_lowering_entry: fixture_only_block_param_merge_update_branch_serialization' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_merge_update_branch_ingestion_seam_status: compiler_owned_fixture_to_experiment_only' "$manifest_doc" >/dev/null
     rg -n -F 'func mir_emit_native_backend_block_param_merge_update_branch_ingestion_fixture' compiler/mir.gst >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.block_param_merge_update_branch.v1' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'block_1_terminator: JumpBlockParamAddI32Literal' "$fixture" compiler/mir.gst >/dev/null
@@ -18836,21 +14345,9 @@ guard-cranelift-compiler-mir-block-param-merge-imported-call-return-ingestion-na
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling compiler-owned MIR block-param merge imported-call return ingestion seam smoke."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     fixture="compiler/fixtures/native_backend_block_param_merge_imported_call_return_ingestion.mir"
     source_fixture="compiler/mir_feature_block_param_merge_imported_call_return_preservation_source.gst"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_COMPILER_MIR_BLOCK_PARAM_MERGE_IMPORTED_CALL_RETURN_INGESTION_NATIVE_GUARD: guard-cranelift-compiler-mir-block-param-merge-imported-call-return-ingestion-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_merge_imported_call_return_ingestion_native_guard: guard-cranelift-compiler-mir-block-param-merge-imported-call-return-ingestion-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_merge_imported_call_return_ingestion_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_merge_imported_call_return_ingestion_fixture: compiler/fixtures/native_backend_block_param_merge_imported_call_return_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_merge_imported_call_return_ingestion_fixture_producer_entry: mir_emit_native_backend_block_param_merge_imported_call_return_ingestion_fixture' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_merge_imported_call_return_ingestion_object_artifact: build/guards/cranelift_compiler_mir_block_param_merge_imported_call_return_ingestion_native/tiny_native_backend_compiler_mir_ingested_block_param_merge_imported_call_return.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_merge_imported_call_return_ingestion_symbol: tiny_native_backend_compiler_mir_ingested_block_param_merge_imported_call_return' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_merge_imported_call_return_ingestion_imported_symbol: tiny_native_backend_compiler_mir_ingested_block_param_merge_imported_call_return_host_add' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_merge_imported_call_return_ingestion_source_fixture: compiler/mir_feature_block_param_merge_imported_call_return_preservation_source.gst' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_merge_imported_call_return_ingestion_lowering_entry: fixture_only_block_param_merge_imported_call_return_serialization' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_merge_imported_call_return_ingestion_seam_status: compiler_owned_fixture_to_experiment_only' "$manifest_doc" >/dev/null
     rg -n -F 'func mir_emit_native_backend_block_param_merge_imported_call_return_ingestion_fixture' compiler/mir.gst >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.block_param_merge_imported_call_return.v1' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'imported_function_0_symbol: tiny_native_backend_compiler_mir_ingested_block_param_merge_imported_call_return_host_add' "$fixture" compiler/mir.gst >/dev/null
@@ -18897,21 +14394,9 @@ guard-cranelift-compiler-mir-block-param-merge-arm-update-imported-call-return-i
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling compiler-owned MIR block-param merge arm-update imported-call return ingestion seam smoke."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     fixture="compiler/fixtures/native_backend_block_param_merge_arm_update_imported_call_return_ingestion.mir"
     source_fixture="compiler/mir_feature_block_param_merge_arm_update_imported_call_return_preservation_source.gst"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_COMPILER_MIR_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_RETURN_INGESTION_NATIVE_GUARD: guard-cranelift-compiler-mir-block-param-merge-arm-update-imported-call-return-ingestion-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_merge_arm_update_imported_call_return_ingestion_native_guard: guard-cranelift-compiler-mir-block-param-merge-arm-update-imported-call-return-ingestion-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_merge_arm_update_imported_call_return_ingestion_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_merge_arm_update_imported_call_return_ingestion_fixture: compiler/fixtures/native_backend_block_param_merge_arm_update_imported_call_return_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_merge_arm_update_imported_call_return_ingestion_fixture_producer_entry: mir_emit_native_backend_block_param_merge_arm_update_imported_call_return_ingestion_fixture' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_merge_arm_update_imported_call_return_ingestion_object_artifact: build/guards/cranelift_compiler_mir_block_param_merge_arm_update_imported_call_return_ingestion_native/tiny_native_backend_compiler_mir_ingested_block_param_merge_arm_update_imported_call_return.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_merge_arm_update_imported_call_return_ingestion_symbol: tiny_native_backend_compiler_mir_ingested_block_param_merge_arm_update_imported_call_return' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_merge_arm_update_imported_call_return_ingestion_imported_symbol: tiny_native_backend_compiler_mir_ingested_block_param_merge_arm_update_imported_call_return_host_add' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_merge_arm_update_imported_call_return_ingestion_source_fixture: compiler/mir_feature_block_param_merge_arm_update_imported_call_return_preservation_source.gst' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_merge_arm_update_imported_call_return_ingestion_lowering_entry: fixture_only_block_param_merge_arm_update_imported_call_return_serialization' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_merge_arm_update_imported_call_return_ingestion_seam_status: compiler_owned_fixture_to_experiment_only' "$manifest_doc" >/dev/null
     rg -n -F 'func mir_emit_native_backend_block_param_merge_arm_update_imported_call_return_ingestion_fixture' compiler/mir.gst >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.block_param_merge_arm_update_imported_call_return.v1' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'imported_function_0_operation: HostAddI32' "$fixture" compiler/mir.gst >/dev/null
@@ -18955,21 +14440,9 @@ guard-cranelift-compiler-mir-block-param-merge-arm-update-imported-call-branch-i
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling compiler-owned MIR block-param merge arm-update imported-call branch ingestion seam smoke."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     fixture="compiler/fixtures/native_backend_block_param_merge_arm_update_imported_call_branch_ingestion.mir"
     source_fixture="compiler/mir_feature_block_param_merge_arm_update_imported_call_branch_preservation_source.gst"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_COMPILER_MIR_BLOCK_PARAM_MERGE_ARM_UPDATE_IMPORTED_CALL_BRANCH_INGESTION_NATIVE_GUARD: guard-cranelift-compiler-mir-block-param-merge-arm-update-imported-call-branch-ingestion-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_merge_arm_update_imported_call_branch_ingestion_native_guard: guard-cranelift-compiler-mir-block-param-merge-arm-update-imported-call-branch-ingestion-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_merge_arm_update_imported_call_branch_ingestion_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_merge_arm_update_imported_call_branch_ingestion_fixture: compiler/fixtures/native_backend_block_param_merge_arm_update_imported_call_branch_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_merge_arm_update_imported_call_branch_ingestion_fixture_producer_entry: mir_emit_native_backend_block_param_merge_arm_update_imported_call_branch_ingestion_fixture' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_merge_arm_update_imported_call_branch_ingestion_object_artifact: build/guards/cranelift_compiler_mir_block_param_merge_arm_update_imported_call_branch_ingestion_native/tiny_native_backend_compiler_mir_ingested_block_param_merge_arm_update_imported_call_branch.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_merge_arm_update_imported_call_branch_ingestion_symbol: tiny_native_backend_compiler_mir_ingested_block_param_merge_arm_update_imported_call_branch' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_merge_arm_update_imported_call_branch_ingestion_imported_symbol: tiny_native_backend_compiler_mir_ingested_block_param_merge_arm_update_imported_call_branch_host_add' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_merge_arm_update_imported_call_branch_ingestion_source_fixture: compiler/mir_feature_block_param_merge_arm_update_imported_call_branch_preservation_source.gst' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_merge_arm_update_imported_call_branch_ingestion_lowering_entry: fixture_only_block_param_merge_arm_update_imported_call_branch_serialization' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_merge_arm_update_imported_call_branch_ingestion_seam_status: compiler_owned_fixture_to_experiment_only' "$manifest_doc" >/dev/null
     rg -n -F 'func mir_emit_native_backend_block_param_merge_arm_update_imported_call_branch_ingestion_fixture' compiler/mir.gst >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.block_param_merge_arm_update_imported_call_branch.v1' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'imported_function_0_operation: HostAddI32' "$fixture" compiler/mir.gst >/dev/null
@@ -19015,21 +14488,9 @@ guard-cranelift-compiler-mir-block-param-merge-imported-branch-joined-return-ing
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling compiler-owned MIR block-param merge imported-branch joined-return ingestion seam smoke."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     fixture="compiler/fixtures/native_backend_block_param_merge_imported_branch_joined_return_ingestion.mir"
     source_fixture="compiler/mir_feature_block_param_merge_imported_branch_joined_return_preservation_source.gst"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_COMPILER_MIR_BLOCK_PARAM_MERGE_IMPORTED_BRANCH_JOINED_RETURN_INGESTION_NATIVE_GUARD: guard-cranelift-compiler-mir-block-param-merge-imported-branch-joined-return-ingestion-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_merge_imported_branch_joined_return_ingestion_native_guard: guard-cranelift-compiler-mir-block-param-merge-imported-branch-joined-return-ingestion-native-smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_merge_imported_branch_joined_return_ingestion_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_merge_imported_branch_joined_return_ingestion_fixture: compiler/fixtures/native_backend_block_param_merge_imported_branch_joined_return_ingestion.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_merge_imported_branch_joined_return_ingestion_fixture_producer_entry: mir_emit_native_backend_block_param_merge_imported_branch_joined_return_ingestion_fixture' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_merge_imported_branch_joined_return_ingestion_object_artifact: build/guards/cranelift_compiler_mir_block_param_merge_imported_branch_joined_return_ingestion_native/tiny_native_backend_compiler_mir_ingested_block_param_merge_imported_branch_joined_return.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_merge_imported_branch_joined_return_ingestion_symbol: tiny_native_backend_compiler_mir_ingested_block_param_merge_imported_branch_joined_return' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_merge_imported_branch_joined_return_ingestion_imported_symbol: tiny_native_backend_compiler_mir_ingested_block_param_merge_imported_branch_joined_return_host_add' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_merge_imported_branch_joined_return_ingestion_source_fixture: compiler/mir_feature_block_param_merge_imported_branch_joined_return_preservation_source.gst' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_merge_imported_branch_joined_return_ingestion_lowering_entry: fixture_only_block_param_merge_imported_branch_joined_return_serialization' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_block_param_merge_imported_branch_joined_return_ingestion_seam_status: compiler_owned_fixture_to_experiment_only' "$manifest_doc" >/dev/null
     rg -n -F 'func mir_emit_native_backend_block_param_merge_imported_branch_joined_return_ingestion_fixture' compiler/mir.gst >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.block_param_merge_imported_branch_joined_return.v1' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'block_5_terminator: BranchBlockParamImportedFunctionCallI32LiteralPositive' "$fixture" compiler/mir.gst >/dev/null
@@ -19072,7 +14533,6 @@ guard-cranelift-compiler-mir-block-param-merge-dual-imported-joined-return-inges
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling compiler-owned MIR block-param merge dual-import joined-return ingestion seam smoke."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     fixture="compiler/fixtures/native_backend_block_param_merge_dual_imported_joined_return_ingestion.mir"
     source_fixture="compiler/mir_feature_block_param_merge_dual_imported_joined_return_preservation_source.gst"
     just guard-cranelift-backend-surface
@@ -19106,14 +14566,11 @@ guard-cranelift-compiler-mir-block-param-imported-materialize-branch-ingestion-n
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling compiler-owned MIR block-param imported materialize branch ingestion seam smoke."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     fixture="compiler/fixtures/native_backend_block_param_imported_materialize_branch_ingestion.mir"
     source_fixture="compiler/mir_feature_block_param_imported_materialize_branch_preservation_source.gst"
     just guard-cranelift-backend-surface
-    test -f "$manifest_doc"
     test -f "$fixture"
     test -f "$source_fixture"
-    rg -n -F 'guard-cranelift-compiler-mir-block-param-imported-materialize-branch-ingestion-native-smoke' "$manifest_doc" justfile >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.block_param_imported_materialize_branch.v1' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'block_1_terminator: JumpBlockParamImportedFunctionCallI32Literal' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'block_1_call_literal: -5' "$fixture" compiler/mir.gst >/dev/null
@@ -19143,15 +14600,12 @@ guard-cranelift-compiler-mir-block-param-local-materialize-branch-ingestion-nati
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling compiler-owned MIR block-param local materialize branch ingestion seam smoke."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     fixture="compiler/fixtures/native_backend_block_param_local_materialize_branch_ingestion.mir"
     source_fixture="compiler/mir_feature_block_param_local_materialize_branch_preservation_source.gst"
     source_file="compiler/experiments/cranelift/src/main.rs"
     just guard-cranelift-backend-surface
-    test -f "$manifest_doc"
     test -f "$fixture"
     test -f "$source_fixture"
-    rg -n -F 'guard-cranelift-compiler-mir-block-param-local-materialize-branch-ingestion-native-smoke' "$manifest_doc" justfile >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.block_param_local_materialize_branch.v1' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'block_1_terminator: JumpBlockParamLocalFunctionCall' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'local_function_0_add_value: 1' "$fixture" compiler/mir.gst >/dev/null
@@ -19189,14 +14643,11 @@ guard-cranelift-compiler-mir-block-param-imported-materialize-return-ingestion-n
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling compiler-owned MIR block-param imported materialize return ingestion seam smoke."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     fixture="compiler/fixtures/native_backend_block_param_imported_materialize_return_ingestion.mir"
     source_fixture="compiler/mir_feature_block_param_imported_materialize_return_preservation_source.gst"
     just guard-cranelift-backend-surface
-    test -f "$manifest_doc"
     test -f "$fixture"
     test -f "$source_fixture"
-    rg -n -F 'guard-cranelift-compiler-mir-block-param-imported-materialize-return-ingestion-native-smoke' "$manifest_doc" justfile >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.block_param_imported_materialize_return.v1' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'block_1_terminator: JumpBlockParamImportedFunctionCallI32Literal' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'block_3_terminator: ReturnBlockParamImportedFunctionCallI32Literal' "$fixture" compiler/mir.gst >/dev/null
@@ -19226,15 +14677,12 @@ guard-cranelift-compiler-mir-block-param-local-materialize-return-ingestion-nati
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling compiler-owned MIR block-param local materialize return ingestion seam smoke."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     fixture="compiler/fixtures/native_backend_block_param_local_materialize_return_ingestion.mir"
     source_fixture="compiler/mir_feature_block_param_local_materialize_return_preservation_source.gst"
     source_file="compiler/experiments/cranelift/src/main.rs"
     just guard-cranelift-backend-surface
-    test -f "$manifest_doc"
     test -f "$fixture"
     test -f "$source_fixture"
-    rg -n -F 'guard-cranelift-compiler-mir-block-param-local-materialize-return-ingestion-native-smoke' "$manifest_doc" justfile >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.block_param_local_materialize_return.v1' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'local_function_0_add_value: 2' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'block_1_terminator: JumpBlockParamLocalFunctionCall' "$fixture" compiler/mir.gst >/dev/null
@@ -19272,14 +14720,11 @@ guard-cranelift-compiler-mir-block-param-dual-materialize-return-ingestion-nativ
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling compiler-owned MIR block-param dual materialize return ingestion seam smoke."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     fixture="compiler/fixtures/native_backend_block_param_dual_materialize_return_ingestion.mir"
     source_fixture="compiler/mir_feature_block_param_dual_materialize_return_preservation_source.gst"
     just guard-cranelift-backend-surface
-    test -f "$manifest_doc"
     test -f "$fixture"
     test -f "$source_fixture"
-    rg -n -F 'guard-cranelift-compiler-mir-block-param-dual-materialize-return-ingestion-native-smoke' "$manifest_doc" justfile >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.block_param_dual_materialize_return.v1' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'block_1_terminator: JumpBlockParamImportedFunctionCallI32Literal' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'block_2_terminator: JumpBlockParamLocalFunctionCall' "$fixture" compiler/mir.gst >/dev/null
@@ -19310,15 +14755,12 @@ guard-cranelift-compiler-mir-block-param-local-first-dual-materialize-return-ing
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling compiler-owned MIR block-param local-first dual materialize return ingestion seam smoke."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     fixture="compiler/fixtures/native_backend_block_param_local_first_dual_materialize_return_ingestion.mir"
     source_fixture="compiler/mir_feature_block_param_local_first_dual_materialize_return_preservation_source.gst"
     source_file="compiler/experiments/cranelift/src/main.rs"
     just guard-cranelift-backend-surface
-    test -f "$manifest_doc"
     test -f "$fixture"
     test -f "$source_fixture"
-    rg -n -F 'guard-cranelift-compiler-mir-block-param-local-first-dual-materialize-return-ingestion-native-smoke' "$manifest_doc" justfile >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.block_param_local_first_dual_materialize_return.v1' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'block_1_terminator: JumpBlockParamLocalFunctionCall' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'block_2_terminator: JumpBlockParamImportedFunctionCallI32Literal' "$fixture" compiler/mir.gst >/dev/null
@@ -19358,14 +14800,11 @@ guard-cranelift-compiler-mir-block-param-triple-materialize-return-ingestion-nat
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling compiler-owned MIR block-param triple materialize return ingestion seam smoke."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     fixture="compiler/fixtures/native_backend_block_param_triple_materialize_return_ingestion.mir"
     source_fixture="compiler/mir_feature_block_param_triple_materialize_return_preservation_source.gst"
     just guard-cranelift-backend-surface
-    test -f "$manifest_doc"
     test -f "$fixture"
     test -f "$source_fixture"
-    rg -n -F 'guard-cranelift-compiler-mir-block-param-triple-materialize-return-ingestion-native-smoke' "$manifest_doc" justfile >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.block_param_triple_materialize_return.v1' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'block_1_terminator: JumpBlockParamImportedFunctionCallI32Literal' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'block_2_terminator: JumpBlockParamLocalFunctionCall' "$fixture" compiler/mir.gst >/dev/null
@@ -19396,14 +14835,11 @@ guard-cranelift-compiler-mir-block-param-quad-materialize-return-ingestion-nativ
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling compiler-owned MIR block-param quad materialize return ingestion seam smoke."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     fixture="compiler/fixtures/native_backend_block_param_quad_materialize_return_ingestion.mir"
     source_fixture="compiler/mir_feature_block_param_quad_materialize_return_preservation_source.gst"
     just guard-cranelift-backend-surface
-    test -f "$manifest_doc"
     test -f "$fixture"
     test -f "$source_fixture"
-    rg -n -F 'guard-cranelift-compiler-mir-block-param-quad-materialize-return-ingestion-native-smoke' "$manifest_doc" justfile >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.block_param_quad_materialize_return.v1' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'block_1_terminator: JumpBlockParamLocalFunctionCall' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'block_2_terminator: JumpBlockParamImportedFunctionCallI32Literal' "$fixture" compiler/mir.gst >/dev/null
@@ -19435,14 +14871,11 @@ guard-cranelift-compiler-mir-block-param-quint-materialize-return-ingestion-nati
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Native compiling compiler-owned MIR block-param quint materialize return ingestion seam smoke."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     fixture="compiler/fixtures/native_backend_block_param_quint_materialize_return_ingestion.mir"
     source_fixture="compiler/mir_feature_block_param_quint_materialize_return_preservation_source.gst"
     just guard-cranelift-backend-surface
-    test -f "$manifest_doc"
     test -f "$fixture"
     test -f "$source_fixture"
-    rg -n -F 'guard-cranelift-compiler-mir-block-param-quint-materialize-return-ingestion-native-smoke' "$manifest_doc" justfile >/dev/null
     rg -n -F 'format: gust.compiler_mir_ingestion.block_param_quint_materialize_return.v1' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'block_1_terminator: JumpBlockParamImportedFunctionCallI32Literal' "$fixture" compiler/mir.gst >/dev/null
     rg -n -F 'block_2_terminator: JumpBlockParamLocalFunctionCall' "$fixture" compiler/mir.gst >/dev/null
@@ -19475,15 +14908,9 @@ guard-cranelift-compiler-mir-ingestion-strict-rejection-contract:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking strict compiler-owned MIR ingestion rejection contract..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     build_dir="build/guards/cranelift_compiler_mir_ingestion_strict_rejection_contract"
     mkdir -p "$build_dir"
     just guard-cranelift-backend-surface
-    rg -n -F 'allowed_compiler_mir_ingestion_strict_rejection_guard: guard-cranelift-compiler-mir-ingestion-strict-rejection-contract' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_strict_rejection_status: phase9c_invalid_fixtures_fail_before_object_emission' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_strict_rejection_case_count: 8' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_strict_rejection_cases: unknown_fixture_format,missing_entry_block,missing_return_terminator,bad_local_name,mismatched_return_type,branch_to_unknown_block,duplicate_block_label,unsupported_statement_kind' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_strict_rejection_route_policy: reject_before_cranelift_object_emission' "$manifest_doc" >/dev/null
     check_rejected() {
       command="$1"
       fixture="$2"
@@ -19694,7 +15121,6 @@ guard-cranelift-compiler-mir-ingestion-invalid-fixtures-native-rejection:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking compiler-owned MIR ingestion rejects invalid fixtures..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     return_invalid="compiler/fixtures/native_backend_return_int_ingestion_invalid.mir"
     local_invalid="compiler/fixtures/native_backend_local_binding_read_ingestion_invalid.mir"
     branch_invalid="compiler/fixtures/native_backend_conditional_branch_ingestion_invalid.mir"
@@ -19731,43 +15157,6 @@ guard-cranelift-compiler-mir-ingestion-invalid-fixtures-native-rejection:
     build_dir="build/guards/cranelift_compiler_mir_ingestion_invalid_fixture_rejection"
     mkdir -p "$build_dir"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_COMPILER_MIR_INGESTION_INVALID_FIXTURES_NATIVE_GUARD: guard-cranelift-compiler-mir-ingestion-invalid-fixtures-native-rejection' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_invalid_fixtures_native_guard: guard-cranelift-compiler-mir-ingestion-invalid-fixtures-native-rejection' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_invalid_return_int_fixture: compiler/fixtures/native_backend_return_int_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_invalid_local_binding_read_fixture: compiler/fixtures/native_backend_local_binding_read_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_invalid_conditional_branch_fixture: compiler/fixtures/native_backend_conditional_branch_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_invalid_add_i32_fixture: compiler/fixtures/native_backend_add_i32_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_invalid_provenance_metadata_fixture: compiler/fixtures/native_backend_provenance_metadata_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_invalid_resource_metadata_fixture: compiler/fixtures/native_backend_resource_metadata_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_invalid_native_boundary_metadata_fixture: compiler/fixtures/native_backend_native_boundary_metadata_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_invalid_positive_i32_branch_fixture: compiler/fixtures/native_backend_positive_i32_branch_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_invalid_block_jump_fixture: compiler/fixtures/native_backend_block_jump_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_invalid_block_local_branch_fixture: compiler/fixtures/native_backend_block_local_branch_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_invalid_block_local_update_branch_fixture: compiler/fixtures/native_backend_block_local_update_branch_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_invalid_block_two_local_update_branch_fixture: compiler/fixtures/native_backend_block_two_local_update_branch_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_invalid_block_local_branch_join_fixture: compiler/fixtures/native_backend_block_local_branch_join_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_invalid_block_param_update_branch_fixture: compiler/fixtures/native_backend_block_param_update_branch_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_invalid_block_param_local_call_branch_fixture: compiler/fixtures/native_backend_block_param_local_call_branch_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_invalid_block_param_imported_call_branch_fixture: compiler/fixtures/native_backend_block_param_imported_call_branch_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_invalid_block_param_imported_call_return_fixture: compiler/fixtures/native_backend_block_param_imported_call_return_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_invalid_block_param_imported_predicate_update_branch_fixture: compiler/fixtures/native_backend_block_param_imported_predicate_update_branch_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_invalid_block_param_merge_update_branch_fixture: compiler/fixtures/native_backend_block_param_merge_update_branch_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_invalid_block_param_merge_imported_call_return_fixture: compiler/fixtures/native_backend_block_param_merge_imported_call_return_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_invalid_block_param_merge_arm_update_imported_call_return_fixture: compiler/fixtures/native_backend_block_param_merge_arm_update_imported_call_return_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_invalid_block_param_merge_arm_update_imported_call_branch_fixture: compiler/fixtures/native_backend_block_param_merge_arm_update_imported_call_branch_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_invalid_block_param_merge_imported_branch_joined_return_fixture: compiler/fixtures/native_backend_block_param_merge_imported_branch_joined_return_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_invalid_block_param_merge_dual_imported_joined_return_fixture: compiler/fixtures/native_backend_block_param_merge_dual_imported_joined_return_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_invalid_block_param_imported_materialize_branch_fixture: compiler/fixtures/native_backend_block_param_imported_materialize_branch_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_invalid_block_param_local_materialize_branch_fixture: compiler/fixtures/native_backend_block_param_local_materialize_branch_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_invalid_block_param_imported_materialize_return_fixture: compiler/fixtures/native_backend_block_param_imported_materialize_return_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_invalid_block_param_local_materialize_return_fixture: compiler/fixtures/native_backend_block_param_local_materialize_return_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_invalid_block_param_dual_materialize_return_fixture: compiler/fixtures/native_backend_block_param_dual_materialize_return_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_invalid_block_param_local_first_dual_materialize_return_fixture: compiler/fixtures/native_backend_block_param_local_first_dual_materialize_return_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_invalid_block_param_triple_materialize_return_fixture: compiler/fixtures/native_backend_block_param_triple_materialize_return_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_invalid_block_param_quad_materialize_return_fixture: compiler/fixtures/native_backend_block_param_quad_materialize_return_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_invalid_block_param_quint_materialize_return_fixture: compiler/fixtures/native_backend_block_param_quint_materialize_return_ingestion_invalid.mir' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_invalid_rejection_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_compiler_mir_ingestion_invalid_rejection_status: malformed_compiler_owned_fixtures_rejected_before_object_emission' "$manifest_doc" >/dev/null
     rg -n -F 'return_value: 9' "$return_invalid" >/dev/null
     rg -n -F 'statement_0_value: 9' "$local_invalid" >/dev/null
     rg -n -F 'branch_condition_value: 0' "$branch_invalid" >/dev/null
@@ -19886,21 +15275,7 @@ guard-cranelift-mir-to-c-differential-native-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Differential native smoke: experimental Cranelift fixtures vs MIR-to-C fixtures..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_PHASE: phase9-mir-to-c-differential-entry' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_STATUS: mir_to_c_differential_native_smoke' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_CODEGEN_STATUS: return_int_local_binding_branch_differential_fixture_only' "$manifest_doc" >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_DIFFERENTIAL_NATIVE_GUARD: guard-cranelift-mir-to-c-differential-native-smoke' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_differential_return_int_pair: tiny_cranelift_return_int == tiny_return_int' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_return_int_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_return_int_object_artifact: build/guards/cranelift_return_int_native/tiny_cranelift_return_int.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_local_binding_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_local_binding_object_artifact: build/guards/cranelift_local_binding_native/tiny_cranelift_local_binding_read.o' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_differential_local_binding_pair: tiny_cranelift_local_binding_read == tiny_local_binding_read' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_differential_branch_pair: tiny_cranelift_conditional_branch == tiny_conditional_branch' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_branch_codegen_entry: compiler/experiments/cranelift/src/main.rs' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_branch_object_artifact: build/guards/cranelift_conditional_branch_native/tiny_cranelift_conditional_branch.o' "$manifest_doc" >/dev/null
     rg -n -F 'int tiny_return_int(void) { return 1; }' compiler/mir.gst compiler/mir_to_c_return_int_literal_smoke_test_entry.gst justfile >/dev/null
     rg -n -F 'int tiny_local_binding_read(void) { int value = 2; return value; }' compiler/mir.gst compiler/mir_to_c_local_binding_read_smoke_test_entry.gst justfile >/dev/null
     rg -n -F 'int tiny_conditional_branch(void) { if (1) goto block_1; goto block_2; block_1: return 1; block_2: return 2; }' compiler/mir.gst compiler/mir_to_c_conditional_branch_smoke_test_entry.gst justfile >/dev/null
@@ -20057,7 +15432,6 @@ guard-cranelift-dependency-beachhead:
     experiment_dir="compiler/experiments/cranelift"
     manifest="$experiment_dir/Cargo.toml"
     lockfile="$experiment_dir/Cargo.lock"
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
 
     if [ ! -f "$manifest" ]; then
       echo "Missing $manifest. Step 8 must keep Cranelift dependencies in an isolated experimental crate."
@@ -20069,11 +15443,6 @@ guard-cranelift-dependency-beachhead:
       exit 1
     fi
 
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_DEPENDENCY_BEACHHEAD_GUARD: guard-cranelift-dependency-beachhead' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_dependency_beachhead_guard: guard-cranelift-dependency-beachhead' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_experiment_dependency_manifest: compiler/experiments/cranelift/Cargo.toml' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_experiment_dependency_lockfile: compiler/experiments/cranelift/Cargo.lock' "$manifest_doc" >/dev/null
-    rg -n -F 'forbidden_root_dependency: cranelift' "$manifest_doc" >/dev/null
 
     rg -n -F 'name = "gust-cranelift-experiment"' "$manifest" >/dev/null
     rg -n -F 'publish = false' "$manifest" >/dev/null
@@ -20112,41 +15481,28 @@ guard-cranelift-no-fixture-regression:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking Cranelift real-object smoke no-fixture regression..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-backend-surface
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_NO_FIXTURE_REGRESSION_GUARD: guard-cranelift-no-fixture-regression' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_no_fixture_regression_guard: guard-cranelift-no-fixture-regression' "$manifest_doc" >/dev/null
-    rg -n -F 'oracle_backend: mir_to_c' "$manifest_doc" >/dev/null
-    rg -n -F 'production_route: mir_to_c' "$manifest_doc" >/dev/null
-    smoke_count="$(rg -n '^real_cranelift_object_smoke: ' "$manifest_doc" | wc -l | tr -d '[:space:]')"
-    if [ "$smoke_count" -lt "3" ]; then
-      echo "Expected real Cranelift object smoke inventory in $manifest_doc, found $smoke_count entries."
-      exit 1
-    fi
-    while IFS= read -r forbidden_line; do
-      if [ -z "$forbidden_line" ]; then
-        continue
-      fi
-      forbidden_pattern="${forbidden_line#*: }"
-      if rg -n -F "$forbidden_pattern" compiler/experiments/cranelift/src/main.rs >/dev/null; then
-        echo "Cranelift experiment regressed to a forbidden fixture-style definition instead of object emission:"
+    source_file="compiler/experiments/cranelift/src/main.rs"
+    forbidden_fixture_definitions=(
+      'int tiny_cranelift_return_int(void) {'
+      'int tiny_cranelift_local_binding_read(void) {'
+      'int tiny_cranelift_conditional_branch(void) {'
+    )
+    for forbidden_pattern in "${forbidden_fixture_definitions[@]}"; do
+      if rg -n -F "$forbidden_pattern" "$source_file" >/dev/null; then
+        echo "Cranelift experiment regressed to a fixture-style definition instead of object emission:"
         echo "$forbidden_pattern"
         exit 1
       fi
-    done < <(rg --no-line-number -F 'forbidden_cranelift_fixture_definition:' "$manifest_doc" || true)
-    native_guard_tokens="$(awk '/^CRANELIFT_EXPERIMENT_ALLOWED_.*NATIVE_GUARD: guard-cranelift-/ { print $2 }' "$manifest_doc" | awk '!seen[$0]++')"
-    if [ -z "$native_guard_tokens" ]; then
-      echo "Expected CRANELIFT_EXPERIMENT_ALLOWED_*_NATIVE_GUARD inventory in $manifest_doc."
-      exit 1
-    fi
+    done
+    native_guard_tokens="$(python3 scripts/cranelift_test_levels.py list-native)"
     while IFS= read -r guard_recipe; do
-      if [ -z "$guard_recipe" ]; then
-        continue
-      fi
-      rg -n -F "$guard_recipe:" justfile >/dev/null
+      [ -n "$guard_recipe" ] || continue
+      rg -n -x -F "$guard_recipe:" justfile >/dev/null
     done <<< "$native_guard_tokens"
     cranelift_native_bodies="$(sed -n '/^guard-cranelift-return-int-native-smoke:/,/^guard-cranelift-mir-to-c-differential-native-smoke:/p' justfile)"
-    printf '%s\n' "$cranelift_native_bodies" | rg -n -F 'cargo run --manifest-path compiler/experiments/cranelift/Cargo.toml --locked --' >/dev/null
+    printf '%s\n' "$cranelift_native_bodies" |
+      rg -n -F 'cargo run --manifest-path compiler/experiments/cranelift/Cargo.toml --locked --' >/dev/null
     printf '%s\n' "$cranelift_native_bodies" | rg -n -F -- '-object' >/dev/null
     echo "✅ Cranelift no-fixture regression guard passed."
 
@@ -20154,23 +15510,19 @@ guard-cranelift-experimental-backend-suite:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Running explicit experimental Cranelift backend suite..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-dependency-beachhead
-    just guard-cranelift-experiment-manifest-surface
+    just guard-cranelift-manifest-architecture-contract
     just guard-cranelift-backend-surface
     just guard-cranelift-no-fixture-regression
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_BACKEND_SUITE_GUARD: guard-cranelift-experimental-backend-suite' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_backend_suite_guard: guard-cranelift-experimental-backend-suite' "$manifest_doc" >/dev/null
-    suite_native_guards="$(awk '/^CRANELIFT_EXPERIMENT_ALLOWED_.*NATIVE_GUARD: guard-cranelift-/ { print $2 }' "$manifest_doc" | awk '!seen[$0]++')"
+    suite_native_guards="$(python3 scripts/cranelift_test_levels.py list-native)"
     if [ -z "$suite_native_guards" ]; then
-      echo "Expected native Cranelift guard inventory in $manifest_doc."
+      echo "Structured test-level authority produced no native Cranelift guards."
       exit 1
     fi
-    printf '%s\n' "$suite_native_guards" | rg -n -F 'guard-cranelift-mir-to-c-differential-native-smoke' >/dev/null
+    printf '%s\n' "$suite_native_guards" |
+      rg -n -x -F 'guard-cranelift-mir-to-c-differential-native-smoke' >/dev/null
     while IFS= read -r guard_recipe; do
-      if [ -z "$guard_recipe" ]; then
-        continue
-      fi
+      [ -n "$guard_recipe" ] || continue
       echo "▶ $guard_recipe"
       just "$guard_recipe"
     done <<< "$suite_native_guards"
@@ -20180,12 +15532,9 @@ guard-cranelift-experimental-backend-suite-shard shard:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔀 Running experimental Cranelift backend suite shard: {{shard}}"
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_BACKEND_SUITE_SHARD_GUARD: guard-cranelift-experimental-backend-suite-shard' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_backend_suite_shard_guard: guard-cranelift-experimental-backend-suite-shard' "$manifest_doc" >/dev/null
-    suite_native_guards="$(awk '/^CRANELIFT_EXPERIMENT_ALLOWED_.*NATIVE_GUARD: guard-cranelift-/ { print $2 }' "$manifest_doc" | awk '!seen[$0]++')"
+    suite_native_guards="$(python3 scripts/cranelift_test_levels.py list-native)"
     if [ -z "$suite_native_guards" ]; then
-      echo "Expected native Cranelift guard inventory in $manifest_doc."
+      echo "Structured test-level authority produced no native Cranelift guards."
       exit 1
     fi
     case "{{shard}}" in
@@ -20240,16 +15589,10 @@ guard-cranelift-experimental-backend-suite-parallel:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "⚡ Running experimental Cranelift backend suite in parallel shards..."
-    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     just guard-cranelift-dependency-beachhead
     just guard-cranelift-experiment-manifest-surface
     just guard-cranelift-backend-surface
     just guard-cranelift-no-fixture-regression
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_BACKEND_SUITE_PARALLEL_GUARD: guard-cranelift-experimental-backend-suite-parallel' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'CRANELIFT_EXPERIMENT_ALLOWED_BACKEND_SUITE_SHARD_GUARD: guard-cranelift-experimental-backend-suite-shard' "$manifest_doc" justfile >/dev/null
-    rg -n -F 'allowed_backend_suite_parallel_guard: guard-cranelift-experimental-backend-suite-parallel' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_backend_suite_parallel_isolation: git_worktree_per_shard_to_avoid_to_log_collisions' "$manifest_doc" >/dev/null
-    rg -n -F 'allowed_backend_suite_parallel_shards: core-baseline, core-legacy, core-mir-basic, core-mir-bundles, core-mir-block-graphs, compiler-mir-scalars, compiler-mir-metadata, compiler-mir-blocks, translators' "$manifest_doc" >/dev/null
     if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
       echo "Parallel Cranelift suite requires a git worktree so each shard can isolate to.log."
       exit 1

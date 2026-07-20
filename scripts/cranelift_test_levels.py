@@ -27,6 +27,16 @@ DIRECT_CALL_PATTERN = re.compile(
     re.MULTILINE,
 )
 
+NATIVE_SUITE_EXCLUSIONS = {
+    "guard-cranelift-branch-native-smoke",
+    "guard-cranelift-differential-native-smoke",
+    "guard-cranelift-local-binding-read-native-smoke",
+}
+NATIVE_SUITE_AGGREGATES = {
+    "guard-cranelift-mir-to-cranelift-translator-seed-suite",
+    "guard-cranelift-phase9c-differential-ladder-native-smoke",
+}
+
 
 class Error(RuntimeError):
     pass
@@ -203,6 +213,26 @@ def print_level(policy: dict, level: int) -> None:
             print(guard)
 
 
+def native_suite_guards(policy: dict) -> list[str]:
+    guards = []
+    for guard, level in sorted(policy["guards"].items()):
+        if level != 3 or guard in NATIVE_SUITE_EXCLUSIONS:
+            continue
+        if (
+            guard.endswith("-native-smoke")
+            or guard.endswith("-native-rejection")
+            or guard in NATIVE_SUITE_AGGREGATES
+        ):
+            guards.append(guard)
+    require(guards, "structured test-level authority contains no native suite guards")
+    return guards
+
+
+def print_native(policy: dict) -> None:
+    for guard in native_suite_guards(policy):
+        print(guard)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -211,6 +241,7 @@ def main() -> int:
             "validate",
             "level",
             "list-level",
+            "list-native",
             "check-pr-workflow",
             "check-heavy-workflow",
             "check-historical-workflow",
@@ -240,6 +271,9 @@ def main() -> int:
         elif args.command == "list-level":
             require(args.value in {"1", "2", "3"}, "list-level requires 1, 2, or 3")
             print_level(policy, int(args.value))
+        elif args.command == "list-native":
+            require(args.value is None, "list-native does not accept a value")
+            print_native(policy)
         elif args.command == "check-pr-workflow":
             check_pr_workflow(policy)
             print("✅ PR Fast owns only Level 1 contracts and Level 2 families.")

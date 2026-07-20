@@ -78,6 +78,7 @@
     "guard-cranelift-increment-local-i32-native-smoke": 3,
     "guard-cranelift-local-binding-native-smoke": 3,
     "guard-cranelift-local-binding-read-native-smoke": 3,
+    "guard-cranelift-manifest-architecture-contract": 1,
     "guard-cranelift-mir-add-i32-native-smoke": 3,
     "guard-cranelift-mir-arithmetic-i32-bundle-native-smoke": 3,
     "guard-cranelift-mir-block-graph-i32-bundle-native-smoke": 3,
