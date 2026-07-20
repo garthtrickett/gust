@@ -17,7 +17,8 @@ AMBIGUOUS = {"", "unknown", "tbd", "ownerless", "ambiguous"}
 TOP_FIELDS = {
     "schema", "schema_version", "registry_version", "registry_status",
     "current_phase", "closed_phase_versions", "closure_snapshots",
-    "planning_categories", "supported_values", "legacy_views", "entries",
+    "opening_snapshots", "planning_categories", "supported_values",
+    "legacy_views", "entries",
 }
 ENTRY_FIELDS = {
     "id", "origin_phase", "parent", "feature_family", "ci_family", "status",
@@ -42,6 +43,27 @@ PHASE11_IMMUTABLE_FIELDS = (
     "id", "classification", "feature_family", "route_owner",
     "source_fixture", "canonical_mir_fixture", "ci_family",
 )
+PHASE13_OPENING_SNAPSHOT_FIELDS = {
+    "opening_version", "inventory_version", "status",
+    "predecessor_closure_version", "immutable_fields", "entries",
+    "comparison_policy", "behavior_policy", "next_patch",
+}
+PHASE13_OPENING_SNAPSHOT_ENTRY_FIELDS = {"id", "parent"}
+PHASE13_OPENING_IMMUTABLE_FIELDS = ("id", "parent")
+PHASE13_OPENING_VERSION = (
+    "phase13_opening_inventory_rebased_on_phase12_5_framework"
+)
+PHASE13_INVENTORY_VERSION = "phase13_opening_inventory_v1"
+PHASE13_COMPARISON_POLICY = (
+    "semantic_ids_and_parent_relationships_only_generated_totals_and_"
+    "markdown_are_derived"
+)
+PHASE13_BEHAVIOR_POLICY = (
+    "registry_projection_and_guard_rebase_only_no_compiler_route_worker_"
+    "MIR_request_object_link_package_CLI_or_workflow_change"
+)
+
+
 class Error(RuntimeError):
     pass
 
@@ -204,6 +226,79 @@ def validate_phase11_snapshot_structure(registry):
     return snapshot
 
 
+def validate_phase13_opening_snapshot_structure(registry):
+    snapshots = registry["opening_snapshots"]
+    require(
+        isinstance(snapshots, dict) and set(snapshots) == {"phase13"},
+        "opening_snapshots must contain exactly phase13",
+    )
+    snapshot = snapshots["phase13"]
+    require(
+        isinstance(snapshot, dict)
+        and set(snapshot) == PHASE13_OPENING_SNAPSHOT_FIELDS,
+        "Phase 13 opening snapshot fields drifted",
+    )
+    require(
+        snapshot["opening_version"] == PHASE13_OPENING_VERSION,
+        "Phase 13 opening rebase version drifted",
+    )
+    require(
+        snapshot["inventory_version"] == PHASE13_INVENTORY_VERSION,
+        "Phase 13 opening inventory version drifted",
+    )
+    require(
+        snapshot["status"] == "ready_for_patch13_1",
+        "Phase 13 opening is not ready for Patch 13.1",
+    )
+    require(
+        snapshot["predecessor_closure_version"]
+        == registry["closed_phase_versions"]["phase11"],
+        "Phase 13 predecessor differs from the Phase 11 semantic closure",
+    )
+    require(
+        snapshot["immutable_fields"] == list(PHASE13_OPENING_IMMUTABLE_FIELDS),
+        "Phase 13 opening immutable-field set drifted",
+    )
+    require(
+        snapshot["comparison_policy"] == PHASE13_COMPARISON_POLICY,
+        "Phase 13 opening comparison policy drifted",
+    )
+    require(
+        snapshot["behavior_policy"] == PHASE13_BEHAVIOR_POLICY,
+        "Phase 13 opening behavior-freeze policy drifted",
+    )
+    require(
+        snapshot["next_patch"] == "13.1",
+        "Phase 13 opening next patch must be 13.1",
+    )
+
+    rows = snapshot["entries"]
+    require(
+        isinstance(rows, list) and rows,
+        "Phase 13 opening snapshot must contain rows",
+    )
+    ids = set()
+    for index, row in enumerate(rows):
+        context = f"opening_snapshots.phase13.entries[{index}]"
+        require(
+            isinstance(row, dict)
+            and set(row) == PHASE13_OPENING_SNAPSHOT_ENTRY_FIELDS,
+            f"{context} fields drifted",
+        )
+        entry_id = text(row["id"], f"{context}.id")
+        require(
+            entry_id not in ids,
+            f"duplicate Phase 13 opening snapshot ID: {entry_id}",
+        )
+        ids.add(entry_id)
+        parent = text(row["parent"], f"{context}.parent")
+        require(
+            parent.startswith(("phase11_entry:", "phase11_category:")),
+            f"{entry_id}: invalid Phase 13 opening parent {parent}",
+        )
+    return snapshot
+
+
 def validate():
     registry = read_json(REGISTRY)
     schema = read_json(SCHEMA)
@@ -216,11 +311,41 @@ def validate():
     require(schema.get("$id") == registry["schema"], "schema path and $id differ")
     require(set(schema.get("required", [])) == TOP_FIELDS,
             "schema top-level required fields drifted")
-    entry_schema = schema.get("$defs", {}).get("entry", {})
+    definitions = schema.get("$defs", {})
+    entry_schema = definitions.get("entry", {})
     require(set(entry_schema.get("required", [])) == ENTRY_FIELDS,
             "schema entry required fields drifted")
     require(entry_schema.get("additionalProperties") is False,
             "schema entries must reject unknown fields")
+
+    opening_schema = schema.get("properties", {}).get("opening_snapshots", {})
+    require(
+        set(opening_schema.get("required", [])) == {"phase13"},
+        "schema opening snapshot keys drifted",
+    )
+    phase13_snapshot_schema = definitions.get("phase13_opening_snapshot", {})
+    require(
+        set(phase13_snapshot_schema.get("required", []))
+        == PHASE13_OPENING_SNAPSHOT_FIELDS,
+        "schema Phase 13 opening snapshot fields drifted",
+    )
+    require(
+        phase13_snapshot_schema.get("additionalProperties") is False,
+        "schema Phase 13 opening snapshot must reject unknown fields",
+    )
+    phase13_snapshot_entry_schema = definitions.get(
+        "phase13_opening_snapshot_entry",
+        {},
+    )
+    require(
+        set(phase13_snapshot_entry_schema.get("required", []))
+        == PHASE13_OPENING_SNAPSHOT_ENTRY_FIELDS,
+        "schema Phase 13 opening snapshot entry fields drifted",
+    )
+    require(
+        phase13_snapshot_entry_schema.get("additionalProperties") is False,
+        "schema Phase 13 opening snapshot entries must reject unknown fields",
+    )
 
     require(registry["schema"] == "scripts/cranelift_feature_registry.schema.json",
             "registry schema path is not canonical")
@@ -239,6 +364,7 @@ def validate():
         "closed phase versions drifted",
     )
     validate_phase11_snapshot_structure(registry)
+    validate_phase13_opening_snapshot_structure(registry)
 
     categories = set(unique_strings(registry["planning_categories"], "planning_categories"))
     supported = registry["supported_values"]
@@ -344,8 +470,11 @@ def validate():
             )
             phase11.append(entry)
         else:
-            require(closure == "phase13_opening_inventory_v1",
-                    f"{entry_id}: Phase 13 closure version drifted")
+            require(
+                closure
+                == registry["opening_snapshots"]["phase13"]["inventory_version"],
+                f"{entry_id}: Phase 13 closure version drifted",
+            )
             phase13.append(entry)
 
     phase11_by_id = {entry["id"]: entry for entry in phase11}
@@ -391,15 +520,17 @@ def validate():
 def verify_legacy_import(registry):
     views = registry["legacy_views"]
     p11 = legacy_records(ROOT / views["phase11"], "parity_entry: ")
-    p13 = legacy_records(ROOT / views["phase13"], "phase13_entry: ")
-    require(len(p11) == 19 and len(p13) == 16,
-            f"legacy row totals drifted: phase11={len(p11)} phase13={len(p13)}")
     entries = {entry["id"]: entry for entry in registry["entries"]}
 
-    json_p11 = {entry["id"] for entry in registry["entries"]
-                if entry["origin_phase"] == "phase11"}
-    require({row["id"] for row in p11} == json_p11,
-            "Phase 11 stable IDs differ from the historical view")
+    json_p11 = {
+        entry["id"]
+        for entry in registry["entries"]
+        if entry["origin_phase"] == "phase11"
+    }
+    require(
+        {row["id"] for row in p11} == json_p11,
+        "Phase 11 stable IDs differ from the historical view",
+    )
     for row in p11:
         entry = entries[row["id"]]
         expected = {
@@ -408,26 +539,19 @@ def verify_legacy_import(registry):
             "canonical_mir_fixture": row["mir_fixture"],
             "route_owner": row["route_owner"],
             "ci_family": row["ci_family"],
-            "status": "deferred" if row["migration_status"] == "deferred" else "migrated",
+            "status": (
+                "deferred"
+                if row["migration_status"] == "deferred"
+                else "migrated"
+            ),
         }
         for field, value in expected.items():
-            require(entry[field] == value,
-                    f"Phase 11 {row['id']} {field} differs from historical view")
+            require(
+                entry[field] == value,
+                f"Phase 11 {row['id']} {field} differs from historical view",
+            )
 
-    json_p13 = {entry["id"] for entry in registry["entries"]
-                if entry["origin_phase"] == "phase13"}
-    require({row["id"] for row in p13} == json_p13,
-            "Phase 13 stable IDs differ from the historical view")
-    fields = (
-        "parent", "feature_family", "source_fixture", "canonical_mir_fixture",
-        "route_owner", "worker_capability_owner", "diagnostic_owner",
-        "ci_family", "status", "deferral_reason",
-    )
-    for row in p13:
-        entry = entries[row["id"]]
-        for field in fields:
-            require(entry[field] == row[field],
-                    f"Phase 13 {row['id']} {field} differs from historical view")
+    verify_phase13_opening_rebase(registry)
 
 
 def verify_phase11_closure(registry):
@@ -496,7 +620,23 @@ def phase_entries(registry, origin_phase):
     return rows
 
 
+def verify_phase13_opening_rebase(registry):
+    snapshot = validate_phase13_opening_snapshot_structure(registry)
+    rows = phase_entries(registry, "phase13")
+    current = [
+        {"id": entry["id"], "parent": entry["parent"]}
+        for entry in rows
+    ]
+    require(
+        current == snapshot["entries"],
+        "Phase 13 stable IDs or parent relationships differ from the "
+        "semantic opening snapshot",
+    )
+    return snapshot
+
+
 def verify_phase13_registry_schema(registry):
+    snapshot = verify_phase13_opening_rebase(registry)
     rows = phase_entries(registry, "phase13")
     allowed_statuses = {"inherited_deferred", "candidate_deferred"}
     required_owners = (
@@ -509,7 +649,7 @@ def verify_phase13_registry_schema(registry):
     for entry in rows:
         entry_id = entry["id"]
         require(
-            entry["closure_version"] == "phase13_opening_inventory_v1",
+            entry["closure_version"] == snapshot["inventory_version"],
             f"{entry_id}: Phase 13 opening version drifted",
         )
         require(
@@ -682,6 +822,104 @@ def cell(value):
     return str(value).replace("|", r"\|").replace("\n", " ")
 
 
+PHASE13_VIEW_FIELDS = (
+    "id", "parent", "feature_family", "source_fixture",
+    "canonical_mir_fixture", "route_owner", "worker_capability_owner",
+    "diagnostic_owner", "ci_family", "status", "deferral_reason",
+)
+
+
+def phase13_record(entry):
+    fields = [
+        f"{field}={entry[field]}"
+        for field in PHASE13_VIEW_FIELDS
+    ]
+    return "phase13_entry: " + "|".join(fields) + "|"
+
+
+def render_phase13(registry):
+    snapshot = verify_phase13_opening_rebase(registry)
+    totals = verify_phase13_opening_totals(registry)
+    rows = phase_entries(registry, "phase13")
+    status_counts = totals["status_counts"]
+    parent_kinds = totals["parent_kinds"]
+
+    lines = [
+        "# Cranelift Phase 13 Opening Inventory",
+        "",
+        "<!-- Generated by scripts/cranelift_registry.py; do not edit by hand. -->",
+        "",
+        "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_VERSION: 2",
+        "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_AUTHORITY: generated_review_view",
+        "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_CANONICAL_SOURCE: scripts/cranelift_feature_registry.json",
+        (
+            "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_OPENING_VERSION: "
+            f"{snapshot['opening_version']}"
+        ),
+        (
+            "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_INVENTORY_VERSION: "
+            f"{snapshot['inventory_version']}"
+        ),
+        (
+            "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_STATUS: "
+            f"{snapshot['status']}"
+        ),
+        (
+            "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PREDECESSOR_VERSION: "
+            f"{snapshot['predecessor_closure_version']}"
+        ),
+        "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_DERIVED_SUMMARY: docs/CRANELIFT_FEATURE_REGISTRY.md",
+        (
+            "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_OPENING_POLICY: "
+            f"{snapshot['behavior_policy']}"
+        ),
+        "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_NEXT_MILESTONE: patch13_1_capability_and_deferral_contract",
+        "",
+        "This review artifact is generated from the structured registry. Stable",
+        "Phase 13 IDs and parent relationships are frozen semantically by",
+        "`opening_snapshots.phase13`; totals and Markdown layout are derived.",
+        "",
+        "## Derived opening totals",
+        "",
+        f"- Opening rows: `{totals['row_count']}`",
+        f"- Inherited deferred rows: `{status_counts['inherited_deferred']}`",
+        f"- Candidate deferred rows: `{status_counts['candidate_deferred']}`",
+        f"- Phase 11 entry parents: `{parent_kinds['phase11_entry']}`",
+        f"- Phase 11 category parents: `{parent_kinds['phase11_category']}`",
+        "",
+        "### Feature families",
+        "",
+        *count_lines(totals["feature_counts"]),
+        "",
+        "### CI families",
+        "",
+        *count_lines(totals["ci_counts"]),
+        "",
+        "## Opening entries",
+        "",
+        *[phase13_record(entry) for entry in rows],
+        "",
+        "## Opening invariants",
+        "",
+        "- The Phase 11 semantic closure summary is the opening predecessor.",
+        "- Every opening row is owned by the JSON registry and remains deferred.",
+        "- Stable IDs and parent relationships must match the semantic opening snapshot.",
+        "- Parent traceability and totals are validated from registry rows.",
+        "- Full historical replay remains owned by the explicit Level 3 suite.",
+        "- This rebase changes no compiler, route, worker, MIR, request, artifact, package, CLI, or workflow behavior.",
+        "",
+        "Phase 13 is ready to resume at Patch 13.1.",
+        "",
+    ]
+    rendered = "\n".join(lines)
+    for banned in ("SHA256", "SHA-256", "sha256sum"):
+        require(
+            banned not in rendered,
+            f"Phase 13 generated view contains banned raw-hash token: {banned}",
+        )
+    return rendered
+
+
 def render(registry):
     entries = registry["entries"]
     totals = derived_totals(registry)
@@ -733,20 +971,44 @@ def render(registry):
     return "\n".join(lines)
 
 
-def check_projection(registry):
-    path = summary_path(registry)
-    require(path.is_file(), f"missing generated summary: {path.relative_to(ROOT)}")
-    with tempfile.TemporaryDirectory(prefix="cranelift-registry-projection-") as temp_dir:
+def check_rendered_projection(path, rendered, label):
+    require(path.is_file(), f"missing {label}: {path.relative_to(ROOT)}")
+    with tempfile.TemporaryDirectory(
+        prefix="cranelift-registry-projection-"
+    ) as temp_dir:
         candidate = Path(temp_dir) / path.name
-        candidate.write_text(render(registry), encoding="utf-8")
+        candidate.write_text(rendered, encoding="utf-8")
         require(
-            path.read_text(encoding="utf-8") == candidate.read_text(encoding="utf-8"),
-            "generated summary is stale; run `python3 scripts/cranelift_registry.py project`",
+            path.read_text(encoding="utf-8")
+            == candidate.read_text(encoding="utf-8"),
+            f"{label} is stale; run "
+            "`python3 scripts/cranelift_registry.py project`",
         )
+
+
+def check_phase13_projection(registry):
+    check_rendered_projection(
+        phase13_summary_path(registry),
+        render_phase13(registry),
+        "generated Phase 13 opening summary",
+    )
+
+
+def check_projection(registry):
+    check_rendered_projection(
+        summary_path(registry),
+        render(registry),
+        "generated canonical registry summary",
+    )
+    check_phase13_projection(registry)
 
 
 def summary_path(registry):
     return ROOT / registry["legacy_views"]["generated_summary"]
+
+
+def phase13_summary_path(registry):
+    return ROOT / registry["legacy_views"]["phase13"]
 
 
 def main():
@@ -758,9 +1020,11 @@ def main():
             "verify-legacy-import",
             "verify-phase11-closure",
             "verify-phase13-schema",
+            "verify-phase13-opening-rebase",
             "verify-phase13-parent-traceability",
             "verify-phase13-opening-totals",
             "project",
+            "check-phase13-projection",
             "check-projection",
         ),
     )
@@ -773,14 +1037,21 @@ def main():
             verify_phase11_closure(registry)
         elif command == "verify-phase13-schema":
             verify_phase13_registry_schema(registry)
+        elif command == "verify-phase13-opening-rebase":
+            verify_phase13_opening_rebase(registry)
         elif command == "verify-phase13-parent-traceability":
             verify_phase13_parent_traceability(registry)
         elif command == "verify-phase13-opening-totals":
             verify_phase13_opening_totals(registry)
         elif command == "project":
-            path = summary_path(registry)
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(render(registry), encoding="utf-8")
+            canonical_path = summary_path(registry)
+            phase13_path = phase13_summary_path(registry)
+            canonical_path.parent.mkdir(parents=True, exist_ok=True)
+            phase13_path.parent.mkdir(parents=True, exist_ok=True)
+            canonical_path.write_text(render(registry), encoding="utf-8")
+            phase13_path.write_text(render_phase13(registry), encoding="utf-8")
+        elif command == "check-phase13-projection":
+            check_phase13_projection(registry)
         elif command == "check-projection":
             check_projection(registry)
     except Error as exc:
@@ -799,8 +1070,8 @@ def main():
             f"{totals['total_rows']} unique entries."
         ),
         "verify-legacy-import": (
-            "✅ Canonical registry preserves all historical Phase 11 and "
-            "Phase 13 rows."
+            "✅ Canonical registry preserves the historical Phase 11 import; "
+            "Phase 13 is registry-owned and generated."
         ),
         "verify-phase11-closure": (
             "✅ Phase 11 semantic closure snapshot passed: "
@@ -813,6 +1084,10 @@ def main():
             "✅ Phase 13 opening registry schema passed: "
             f"{phase13_totals['row_count']} structurally owned rows."
         ),
+        "verify-phase13-opening-rebase": (
+            "✅ Phase 13 opening rebase passed: stable IDs and parent "
+            "relationships match the semantic snapshot; ready for Patch 13.1."
+        ),
         "verify-phase13-parent-traceability": (
             "✅ Phase 13 parent traceability passed: "
             f"{phase13_parents['phase11_entry']} entry parents and "
@@ -824,10 +1099,16 @@ def main():
             f"{phase13_statuses['inherited_deferred']} inherited, "
             f"{phase13_statuses['candidate_deferred']} candidate."
         ),
-        "project": "✅ Canonical Cranelift registry Markdown summary generated.",
+        "project": (
+            "✅ Canonical Cranelift registry and Phase 13 Markdown summaries "
+            "generated."
+        ),
+        "check-phase13-projection": (
+            "✅ Phase 13 generated opening summary matches the registry."
+        ),
         "check-projection": (
-            "✅ Canonical Cranelift registry projection was regenerated "
-            "and matches the committed review artifact."
+            "✅ Canonical Cranelift registry and Phase 13 projections match "
+            "their committed review artifacts."
         ),
     }
     print(messages[command])

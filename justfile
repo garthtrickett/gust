@@ -13105,11 +13105,7 @@ guard-cranelift-phase11-closure-summary:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking the lightweight Phase 11 closure summary..."
-    registry_json="scripts/cranelift_feature_registry.json"
-    registry_schema="scripts/cranelift_feature_registry.schema.json"
     validator="scripts/cranelift_registry.py"
-    phase13_view="compiler/CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY.md"
-
 
     python3 "$validator" verify-phase11-closure
     PHASE11_ROUTE_ARCHITECTURE_SKIP_DYNAMIC=1 \
@@ -13135,82 +13131,41 @@ guard-cranelift-phase11-closure-summary:
       exit 1
     fi
 
-    raw_hash_header="SHA""256"
-    raw_hash_command="sha256""sum"
-
     echo "✅ Phase 11 closure summary passed using the semantic snapshot, route-architecture hard bans, and the Phase 9G owner reference without replaying historical evidence."
 
 guard-cranelift-phase13-registry-schema:
     #!/usr/bin/env bash
     set -euo pipefail
-    echo "🔒 Checking the Phase 13 opening registry schema..."
-    registry_json="scripts/cranelift_feature_registry.json"
-    registry_schema="scripts/cranelift_feature_registry.schema.json"
+    echo "🔒 Checking the registry-owned Phase 13 opening schema and projection..."
     validator="scripts/cranelift_registry.py"
-    phase13_view="compiler/CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY.md"
-
-
-    required_view_headers=(
-      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_VERSION: 1'
-      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_AUTHORITY: historical_generated_view'
-      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_CANONICAL_SOURCE: scripts/cranelift_feature_registry.json'
-      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_DERIVED_SUMMARY: docs/CRANELIFT_FEATURE_REGISTRY.md'
-      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_STATUS: phase13_opened_deferred_parity_registry'
-      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_OPENING_POLICY: inventory_only_no_source_route_worker_MIR_request_object_link_package_CLI_or_workflow_change'
-    )
-    for header in "${required_view_headers[@]}"; do
-      if ! rg -n -x -F "$header" "$phase13_view" >/dev/null; then
-        echo "Missing Phase 13 historical-view header:"
-        echo "$header"
-        exit 1
-      fi
-    done
 
     python3 "$validator" verify-phase13-schema
+    python3 "$validator" verify-phase13-opening-rebase
+    python3 "$validator" check-phase13-projection
 
 guard-cranelift-phase13-parent-traceability:
     #!/usr/bin/env bash
     set -euo pipefail
-    echo "🔒 Checking Phase 13 parent traceability..."
-    registry_json="scripts/cranelift_feature_registry.json"
-    validator="scripts/cranelift_registry.py"
-
-
-    python3 "$validator" verify-phase13-parent-traceability
+    echo "🔒 Checking semantic Phase 13 parent traceability..."
+    python3 scripts/cranelift_registry.py verify-phase13-parent-traceability
 
 guard-cranelift-phase13-opening-totals:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking registry-derived Phase 13 opening totals..."
-    registry_json="scripts/cranelift_feature_registry.json"
-    validator="scripts/cranelift_registry.py"
-    phase13_view="compiler/CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY.md"
-
-
-    python3 "$validator" verify-phase13-opening-totals
+    python3 scripts/cranelift_registry.py verify-phase13-opening-totals
 
 guard-cranelift-phase13-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail
-    echo "🔒 Opening Phase 13 from flattened predecessor summaries..."
-
-
-    opening_body="$(
-      sed -n         '/^guard-cranelift-phase13-opening-contract:/,/^guard-cranelift-phase12-5-opening-contract:/p'         justfile
-    )"
-    if printf '%s\n' "$opening_body" |
-       rg -n          -e '^[[:space:]]+just guard-cranelift-phase11-close([[:space:]]|$)'          -e '^[[:space:]]+just guard-cranelift-phase10-close([[:space:]]|$)'          -e '^[[:space:]]+just guard-cranelift-phase9g-close([[:space:]]|$)'          >/dev/null
-    then
-      echo "Phase 13 opening recursively calls a historical closure."
-      exit 1
-    fi
+    echo "🔒 Validating the rebased Phase 13 opening prerequisites..."
 
     just guard-cranelift-phase11-closure-summary
     just guard-cranelift-phase13-registry-schema
     just guard-cranelift-phase13-parent-traceability
     just guard-cranelift-phase13-opening-totals
 
-    echo "✅ Phase 13 opening prerequisites passed directly without replaying the historical Phase 9G, Phase 10, or Phase 11 test tree."
+    echo "✅ Phase 13 opening is registry-owned, semantically traceable, derived-total based, and ready to resume at Patch 13.1."
 
 guard-cranelift-phase12-5-opening-contract:
     #!/usr/bin/env bash
@@ -13539,14 +13494,9 @@ guard-cranelift-ci-family-projection:
 guard-cranelift-registry-projection:
     #!/usr/bin/env bash
     set -euo pipefail
-    echo "🔒 Regenerating the canonical Cranelift registry projection..."
-    validator="scripts/cranelift_registry.py"
-    generated_summary="docs/CRANELIFT_FEATURE_REGISTRY.md"
-
-
-    python3 "$validator" check-projection
-
-    echo "✅ Registry projection is current: all totals, tables, and the closure summary are derived from the JSON authority."
+    echo "🔒 Checking canonical registry and Phase 13 generated projections..."
+    python3 scripts/cranelift_registry.py check-projection
+    echo "✅ Registry projections are current: totals, tables, closure summary, and the Phase 13 opening view are derived from JSON."
 
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
     #!/usr/bin/env bash

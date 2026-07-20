@@ -212,6 +212,87 @@
       "comparison_policy": "semantic_fields_only_whitespace_prose_field_order_and_generated_layout_are_ignored"
     }
   },
+  "opening_snapshots": {
+    "phase13": {
+      "opening_version": "phase13_opening_inventory_rebased_on_phase12_5_framework",
+      "inventory_version": "phase13_opening_inventory_v1",
+      "status": "ready_for_patch13_1",
+      "predecessor_closure_version": "phase11_closed_registry_backed_feature_parity_migration",
+      "immutable_fields": [
+        "id",
+        "parent"
+      ],
+      "entries": [
+        {
+          "id": "p13_resource_metadata_source_route",
+          "parent": "phase11_entry:resource_metadata"
+        },
+        {
+          "id": "p13_native_boundary_metadata_source_route",
+          "parent": "phase11_entry:native_boundary_metadata"
+        },
+        {
+          "id": "p13_imported_call_return_source_route",
+          "parent": "phase11_entry:block_param_merge_imported_call_return"
+        },
+        {
+          "id": "p13_imported_arm_update_return_source_route",
+          "parent": "phase11_entry:block_param_merge_arm_update_imported_call_return"
+        },
+        {
+          "id": "p13_imported_arm_update_branch_source_route",
+          "parent": "phase11_entry:block_param_merge_arm_update_imported_call_branch"
+        },
+        {
+          "id": "p13_imported_branch_joined_return_source_route",
+          "parent": "phase11_entry:block_param_merge_imported_branch_joined_return"
+        },
+        {
+          "id": "p13_dual_imported_joined_return_source_route",
+          "parent": "phase11_entry:block_param_merge_dual_imported_joined_return"
+        },
+        {
+          "id": "p13_scalar_multiply_i32",
+          "parent": "phase11_category:broader_scalar_expressions"
+        },
+        {
+          "id": "p13_two_local_update_branch_source_route",
+          "parent": "phase11_category:multiple_locals_and_assignments"
+        },
+        {
+          "id": "p13_nested_local_update_branch_source_route",
+          "parent": "phase11_category:nested_CFG"
+        },
+        {
+          "id": "p13_general_loop_backedge_source_route",
+          "parent": "phase11_category:loops_and_backedges"
+        },
+        {
+          "id": "p13_parameterized_local_call_branch_source_route",
+          "parent": "phase11_category:function_parameters_and_multiple_arguments"
+        },
+        {
+          "id": "p13_recursive_direct_call_policy",
+          "parent": "phase11_category:function_parameters_and_multiple_arguments"
+        },
+        {
+          "id": "p13_multi_module_bundle_composition",
+          "parent": "phase11_category:multiple_modules_and_source_imports"
+        },
+        {
+          "id": "p13_imported_predicate_update_branch_source_route",
+          "parent": "phase11_category:broader_direct_and_imported_calls"
+        },
+        {
+          "id": "p13_unapproved_host_symbol_policy",
+          "parent": "phase11_category:broader_direct_and_imported_calls"
+        }
+      ],
+      "comparison_policy": "semantic_ids_and_parent_relationships_only_generated_totals_and_markdown_are_derived",
+      "behavior_policy": "registry_projection_and_guard_rebase_only_no_compiler_route_worker_MIR_request_object_link_package_CLI_or_workflow_change",
+      "next_patch": "13.1"
+    }
+  },
   "planning_categories": [
     "broader_scalar_expressions",
     "multiple_locals_and_assignments",

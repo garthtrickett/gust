@@ -21,8 +21,8 @@ JUSTFILE = ROOT / "justfile"
 EXPECTED_KEYS = {
     "CRANELIFT_ARCHITECTURE_MANIFEST_VERSION": "2",
     "CRANELIFT_ARCHITECTURE_HIGH_LEVEL_STATUS": (
-        "phase11_closed_phase12_5_verification_consolidation_"
-        "phase13_opening_inventory"
+        "phase11_closed_phase12_5_framework_consolidated_"
+        "phase13_opening_rebased_ready_for_patch13_1"
     ),
     "CRANELIFT_ARCHITECTURE_BACKEND_ISOLATION": (
         "implementation_and_dependencies_live_under_"

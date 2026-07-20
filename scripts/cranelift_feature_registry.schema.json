@@ -12,6 +12,7 @@
     "current_phase",
     "closed_phase_versions",
     "closure_snapshots",
+    "opening_snapshots",
     "planning_categories",
     "supported_values",
     "legacy_views",
@@ -56,6 +57,18 @@
       "properties": {
         "phase11": {
           "$ref": "#/$defs/phase11_closure_snapshot"
+        }
+      }
+    },
+    "opening_snapshots": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "phase13"
+      ],
+      "properties": {
+        "phase13": {
+          "$ref": "#/$defs/phase13_opening_snapshot"
         }
       }
     },
@@ -290,6 +303,83 @@
         "ci_family": {
           "type": "string",
           "minLength": 1
+        }
+      }
+    },
+    "phase13_opening_snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "opening_version",
+        "inventory_version",
+        "status",
+        "predecessor_closure_version",
+        "immutable_fields",
+        "entries",
+        "comparison_policy",
+        "behavior_policy",
+        "next_patch"
+      ],
+      "properties": {
+        "opening_version": {
+          "const": "phase13_opening_inventory_rebased_on_phase12_5_framework"
+        },
+        "inventory_version": {
+          "const": "phase13_opening_inventory_v1"
+        },
+        "status": {
+          "const": "ready_for_patch13_1"
+        },
+        "predecessor_closure_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "immutable_fields": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "id",
+              "parent"
+            ]
+          }
+        },
+        "entries": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/phase13_opening_snapshot_entry"
+          }
+        },
+        "comparison_policy": {
+          "const": "semantic_ids_and_parent_relationships_only_generated_totals_and_markdown_are_derived"
+        },
+        "behavior_policy": {
+          "const": "registry_projection_and_guard_rebase_only_no_compiler_route_worker_MIR_request_object_link_package_CLI_or_workflow_change"
+        },
+        "next_patch": {
+          "const": "13.1"
+        }
+      }
+    },
+    "phase13_opening_snapshot_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "parent"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_]+$"
+        },
+        "parent": {
+          "type": "string",
+          "pattern": "^phase11_(entry|category):[A-Za-z0-9_]+$"
         }
       }
     },
