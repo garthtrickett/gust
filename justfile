@@ -17745,7 +17745,8 @@ guard-cranelift-ci-family-projection:
     python3 "$family_runner" check-heavy-workflow "$heavy_workflow"
 
     rg -n -F 'guard-cranelift-differential-family family:' justfile >/dev/null
-    rg -n -F 'just guard-cranelift-differential-family "${{ matrix.family }}"'       "$pr_workflow" >/dev/null
+    matrix_family_token='just guard-cranelift-differential-family "$''{''{ matrix.family }''}"'
+    rg -n -F "$matrix_family_token" "$pr_workflow" >/dev/null
     rg -n -F 'guard-cranelift-phase11-ci-family family:' justfile >/dev/null
 
     while IFS= read -r family; do
