@@ -26,16 +26,13 @@
       "const": 1
     },
     "registry_version": {
-      "type": "integer",
-      "minimum": 1
+      "const": 2
     },
     "registry_status": {
-      "type": "string",
-      "minLength": 1
+      "const": "phase12_5_closed_cranelift_verification_framework_consolidation"
     },
     "current_phase": {
-      "type": "string",
-      "minLength": 1
+      "const": "phase13"
     },
     "closed_phase_versions": {
       "type": "object",
@@ -45,7 +42,8 @@
       },
       "required": [
         "phase11",
-        "phase12_5_opening"
+        "phase12_5_opening",
+        "phase12_5"
       ]
     },
     "closure_snapshots": {

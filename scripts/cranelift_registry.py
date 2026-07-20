@@ -350,16 +350,18 @@ def validate():
     require(registry["schema"] == "scripts/cranelift_feature_registry.schema.json",
             "registry schema path is not canonical")
     require(registry["schema_version"] == 1, "schema_version must be 1")
-    require(registry["registry_version"] == 1, "registry_version must be 1")
+    require(registry["registry_version"] == 2, "registry_version must be 2")
     require(
-        registry["registry_status"] == "phase12_5_canonical_machine_readable_registry",
+        registry["registry_status"]
+        == "phase12_5_closed_cranelift_verification_framework_consolidation",
         "registry status is missing or stale",
     )
-    require(registry["current_phase"] == "phase12.5", "current_phase must be phase12.5")
+    require(registry["current_phase"] == "phase13", "current_phase must be phase13")
     require(
         registry["closed_phase_versions"] == {
             "phase11": "phase11_closed_registry_backed_feature_parity_migration",
             "phase12_5_opening": "phase12_5_opened_verification_framework_consolidation",
+            "phase12_5": "phase12_5_closed_cranelift_verification_framework_consolidation",
         },
         "closed phase versions drifted",
     )
@@ -868,6 +870,10 @@ def render_phase13(registry):
             "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PREDECESSOR_VERSION: "
             f"{snapshot['predecessor_closure_version']}"
         ),
+        (
+            "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_FRAMEWORK_CLOSURE_VERSION: "
+            f"{registry['closed_phase_versions']['phase12_5']}"
+        ),
         "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_DERIVED_SUMMARY: docs/CRANELIFT_FEATURE_REGISTRY.md",
         (
             "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_OPENING_POLICY: "
@@ -875,9 +881,10 @@ def render_phase13(registry):
         ),
         "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_NEXT_MILESTONE: patch13_1_capability_and_deferral_contract",
         "",
-        "This review artifact is generated from the structured registry. Stable",
-        "Phase 13 IDs and parent relationships are frozen semantically by",
-        "`opening_snapshots.phase13`; totals and Markdown layout are derived.",
+        "This review artifact is generated from the structured registry. Phase 12.5",
+        "is closed under the recorded framework closure version. Stable Phase 13 IDs",
+        "and parent relationships are frozen semantically by `opening_snapshots.phase13`;",
+        "totals and Markdown layout are derived.",
         "",
         "## Derived opening totals",
         "",
@@ -905,6 +912,7 @@ def render_phase13(registry):
         "- Every opening row is owned by the JSON registry and remains deferred.",
         "- Stable IDs and parent relationships must match the semantic opening snapshot.",
         "- Parent traceability and totals are validated from registry rows.",
+        "- Phase 12.5 framework consolidation is formally closed before capability work resumes.",
         "- Full historical replay remains owned by the explicit Level 3 suite.",
         "- This rebase changes no compiler, route, worker, MIR, request, artifact, package, CLI, or workflow behavior.",
         "",
@@ -929,6 +937,8 @@ def render(registry):
         f"- Schema version: `{registry['schema_version']}`",
         f"- Registry version: `{registry['registry_version']}`",
         f"- Registry status: `{registry['registry_status']}`",
+        f"- Current phase: `{registry['current_phase']}`",
+        f"- Phase 12.5 closure: `{registry['closed_phase_versions']['phase12_5']}`",
         f"- Total rows: `{totals['total_rows']}`",
         "",
         "## Derived origin-phase totals", "",

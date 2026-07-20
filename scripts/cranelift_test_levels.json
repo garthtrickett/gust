@@ -4,7 +4,7 @@
     "1": {
       "name": "contract-fast",
       "ci_owner": "PR Fast contract job",
-      "policy": "seconds; schema, traceability, route/fallback/deferral boundaries, and lightweight closure summaries"
+      "policy": "seconds; Phase 12.5 consolidation closure, schema, traceability, route/fallback/deferral boundaries, and lightweight closure summaries"
     },
     "2": {
       "name": "differential-family",
@@ -150,6 +150,7 @@
     "guard-cranelift-phase11-route-retirement-ci": 1,
     "guard-cranelift-phase11-scalar-expression-parity": 2,
     "guard-cranelift-phase11-structured-cfg-parity": 2,
+    "guard-cranelift-phase12-5-close": 1,
     "guard-cranelift-phase12-5-opening-contract": 1,
     "guard-cranelift-phase13-opening-contract": 1,
     "guard-cranelift-phase13-opening-totals": 1,

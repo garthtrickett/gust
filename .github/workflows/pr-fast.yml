@@ -39,8 +39,8 @@ jobs:
       - name: Build Gust
         run: make gust
 
-      - name: Level 1 fast contracts
-        run: just guard-cranelift-contract-fast
+      - name: Phase 12.5 consolidation closure
+        run: just guard-cranelift-phase12-5-close
 
       - name: Upload Gust build outputs
         uses: actions/upload-artifact@v4

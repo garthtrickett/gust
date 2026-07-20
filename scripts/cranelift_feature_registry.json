@@ -1,12 +1,13 @@
 {
   "schema": "scripts/cranelift_feature_registry.schema.json",
   "schema_version": 1,
-  "registry_version": 1,
-  "registry_status": "phase12_5_canonical_machine_readable_registry",
-  "current_phase": "phase12.5",
+  "registry_version": 2,
+  "registry_status": "phase12_5_closed_cranelift_verification_framework_consolidation",
+  "current_phase": "phase13",
   "closed_phase_versions": {
     "phase11": "phase11_closed_registry_backed_feature_parity_migration",
-    "phase12_5_opening": "phase12_5_opened_verification_framework_consolidation"
+    "phase12_5_opening": "phase12_5_opened_verification_framework_consolidation",
+    "phase12_5": "phase12_5_closed_cranelift_verification_framework_consolidation"
   },
   "closure_snapshots": {
     "phase11": {

@@ -21,8 +21,7 @@ JUSTFILE = ROOT / "justfile"
 EXPECTED_KEYS = {
     "CRANELIFT_ARCHITECTURE_MANIFEST_VERSION": "2",
     "CRANELIFT_ARCHITECTURE_HIGH_LEVEL_STATUS": (
-        "phase11_closed_phase12_5_framework_consolidated_"
-        "phase13_opening_rebased_ready_for_patch13_1"
+        "phase12_5_closed_cranelift_verification_framework_consolidation"
     ),
     "CRANELIFT_ARCHITECTURE_BACKEND_ISOLATION": (
         "implementation_and_dependencies_live_under_"
@@ -246,8 +245,8 @@ def validate() -> None:
     validate_guard_ownership()
     validate_authorities()
     print(
-        "✅ Cranelift architecture manifest passed: stable backend policy only; "
-        "operational inventory remains in structured authorities and executable guards."
+        "✅ Cranelift architecture manifest passed: Phase 12.5 is closed; stable backend "
+        "policy remains in the manifest and operational inventory remains in structured authorities."
     )
 
 

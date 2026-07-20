@@ -1,9 +1,9 @@
 # Cranelift verification framework inventory
 
-CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_VERSION: 1
-CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_STATUS: phase12_5_opened_verification_framework_consolidation
+CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_VERSION: 2
+CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_STATUS: phase12_5_closed_cranelift_verification_framework_consolidation
 CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_PREDECESSOR_STATUS: phase11_closed_registry_backed_feature_parity_migration
-CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_PHASE13_POLICY: phase13_paused_after_opening_until_phase12_5_close
+CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_PHASE13_POLICY: phase13_ready_to_resume_at_patch13_1_after_phase12_5_close
 CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_ITEM_COUNT: 26
 CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_CLASSIFICATION_COUNT: 6
 CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_CLASSIFICATION_COUNTS: canonical_source_3,generated_view_2,executable_test_5,historical_evidence_3,redundant_duplicate_8,candidate_for_removal_5
@@ -14,9 +14,9 @@ CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_DUPLICATE_FACTS: feature_row_identity
 CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_BEHAVIOR_FREEZE_COUNT: 5
 CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_TARGET_COMPONENT_COUNT: 5
 CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_TEST_LEVEL_COUNT: 3
-CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_NEXT_PATCH: structured_registry
+CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_NEXT_PATCH: patch13_1_capability_and_deferral_contract
 
-This is an inventory and migration plan, not a new feature registry. It freezes compiler behavior while Phase 12.5 consolidates verification ownership. Phase 11 remains the semantic baseline, and Phase 13 remains paused after its opening inventory.
+This document preserves the Phase 12.5 opening inventory and records its completed consolidation outcome. Compiler behavior remained frozen, Phase 11 remains the semantic baseline, and Phase 13 may resume at Patch 13.1.
 
 ## Inventory records
 
@@ -75,8 +75,18 @@ phase12_5_target_component: component=minimal_hard_architectural_bans|policy=beh
 
 phase12_5_test_level: level=fast_contract|owner=PR_Fast_and_local_contract_runner
 phase12_5_test_level: level=focused_differential|owner=registry_family_shards
-phase12_5_test_level: level=historical_full|owner=Heavy_nightly_release_or_explicit_full_history_runner
+phase12_5_test_level: level=historical_full|owner=scheduled_or_manual_Cranelift_Historical_Full
+
+## Consolidation closure
+
+phase12_5_closure_status: phase12_5_closed_cranelift_verification_framework_consolidation
+phase12_5_closure_guard: guard-cranelift-phase12-5-close
+phase12_5_closure_ci_owner: PR_Fast_build_Level_1_contract
+phase12_5_historical_evidence_owner: scheduled_or_manual_Cranelift_Historical_Full
+phase12_5_next_patch: patch13_1_capability_and_deferral_contract
+
+The framework now has one structured feature-state authority, semantic predecessor checks, registry-derived CI families and summaries, explicit Level 1/2/3 ownership, a reduced architecture manifest, and a separately runnable historical suite. No Cranelift capability or feature-parity claim changed during this phase.
 
 ## Exit gate
 
-Every duplicated verification fact has a recorded current owner set, one future owner, and a removal or projection patch. No compiler capability changes are authorised by this opening inventory.
+Every duplicated verification fact has a recorded owner or generated projection, active totals are derived, exact matrix size is treated only as a resource-capacity policy, and Phase 13 is authorised to resume at Patch 13.1.

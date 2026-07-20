@@ -9,13 +9,15 @@ CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_OPENING_VERSION: phase13_opening_inve
 CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_INVENTORY_VERSION: phase13_opening_inventory_v1
 CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_STATUS: ready_for_patch13_1
 CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PREDECESSOR_VERSION: phase11_closed_registry_backed_feature_parity_migration
+CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_FRAMEWORK_CLOSURE_VERSION: phase12_5_closed_cranelift_verification_framework_consolidation
 CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_DERIVED_SUMMARY: docs/CRANELIFT_FEATURE_REGISTRY.md
 CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_OPENING_POLICY: registry_projection_and_guard_rebase_only_no_compiler_route_worker_MIR_request_object_link_package_CLI_or_workflow_change
 CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_NEXT_MILESTONE: patch13_1_capability_and_deferral_contract
 
-This review artifact is generated from the structured registry. Stable
-Phase 13 IDs and parent relationships are frozen semantically by
-`opening_snapshots.phase13`; totals and Markdown layout are derived.
+This review artifact is generated from the structured registry. Phase 12.5
+is closed under the recorded framework closure version. Stable Phase 13 IDs
+and parent relationships are frozen semantically by `opening_snapshots.phase13`;
+totals and Markdown layout are derived.
 
 ## Derived opening totals
 
@@ -70,6 +72,7 @@ phase13_entry: id=p13_unapproved_host_symbol_policy|parent=phase11_category:broa
 - Every opening row is owned by the JSON registry and remains deferred.
 - Stable IDs and parent relationships must match the semantic opening snapshot.
 - Parent traceability and totals are validated from registry rows.
+- Phase 12.5 framework consolidation is formally closed before capability work resumes.
 - Full historical replay remains owned by the explicit Level 3 suite.
 - This rebase changes no compiler, route, worker, MIR, request, artifact, package, CLI, or workflow behavior.
 

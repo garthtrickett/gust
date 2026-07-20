@@ -1,7 +1,7 @@
 # Cranelift backend architecture manifest
 
 CRANELIFT_ARCHITECTURE_MANIFEST_VERSION: 2
-CRANELIFT_ARCHITECTURE_HIGH_LEVEL_STATUS: phase11_closed_phase12_5_framework_consolidated_phase13_opening_rebased_ready_for_patch13_1
+CRANELIFT_ARCHITECTURE_HIGH_LEVEL_STATUS: phase12_5_closed_cranelift_verification_framework_consolidation
 CRANELIFT_ARCHITECTURE_BACKEND_ISOLATION: implementation_and_dependencies_live_under_compiler/experiments/cranelift
 CRANELIFT_ARCHITECTURE_DEFAULT_BACKEND: mir-to-c
 CRANELIFT_ARCHITECTURE_SUPPORTED_BACKEND_SELECTORS: mir-to-c,cranelift
@@ -51,9 +51,9 @@ path. There is no PATH search or automatic worker build during compilation.
 ## Phase status
 
 Phase 11 is semantically closed for its canonical registry inventory. Phase 12.5
-has consolidated verification ownership without changing compiler behavior.
-The Phase 13 opening inventory is rebased onto that framework, preserves all
-stable IDs and parent relationships, and is ready to resume at Patch 13.1.
-Detailed historical decisions and evidence remain available through git history
-and the explicit Level 3 historical suite.
+is formally closed after consolidating verification ownership without changing
+compiler behavior or feature parity. The Phase 13 opening inventory is rebased
+onto that framework, preserves all stable IDs and parent relationships, and is
+ready to resume at Patch 13.1. Detailed historical decisions and evidence remain
+available through git history and the explicit Level 3 historical suite.
 

@@ -118,8 +118,8 @@ guard-pr-fast-ci-surface:
       'push:'
       'workflow_dispatch:'
       'build and Level 1 contracts'
-      'Level 1 fast contracts'
-      'just guard-cranelift-contract-fast'
+      'Phase 12.5 consolidation closure'
+      'just guard-cranelift-phase12-5-close'
       'phase11-family:'
       'phase11_families:'
       'matrix.family'
@@ -650,14 +650,16 @@ guard-cloud-heavy-ci-surface:
       exit 1
     fi
 
+    # This is an intentional resource-capacity limit, not a correctness inventory.
+    cloud_heavy_shard_capacity=40
     shard_count="$(awk '/shard:/{flag=1; next} flag && /^[[:space:]]*steps:/{flag=0} flag && /^[[:space:]]*- /{count++} END{print count+0}' "$workflow")"
-    if [ "$shard_count" != "33" ]; then
-      echo "Expected exactly 33 cloud heavy matrix shards, found $shard_count."
+    if [ "$shard_count" -gt "$cloud_heavy_shard_capacity" ]; then
+      echo "Cloud heavy matrix shard capacity exceeded: maximum=$cloud_heavy_shard_capacity actual=$shard_count."
       awk '/shard:/{flag=1; next} flag && /^[[:space:]]*steps:/{flag=0} flag{print}' "$workflow"
       exit 1
     fi
 
-    echo "✅ Cloud heavy CI surface guard passed."
+    echo "✅ Cloud heavy CI surface guard passed: shards=$shard_count within max=$cloud_heavy_shard_capacity."
 
 guard-step51-hashmap-get-value:
     just guard compiler/typechecker_hashmap_get_value_provenance_test_entry.gst
@@ -12917,20 +12919,8 @@ guard-cranelift-phase11-ci-family family:
 guard-cranelift-contract-fast:
     #!/usr/bin/env bash
     set -euo pipefail
-    echo "⚡ Running Level 1 Cranelift fast contracts..."
-    just guard-cranelift-manifest-architecture-contract
-    python3 scripts/cranelift_test_levels.py validate
-    python3 scripts/cranelift_test_levels.py check-pr-workflow
-    python3 scripts/cranelift_test_levels.py check-heavy-workflow
-    python3 scripts/cranelift_test_levels.py check-historical-workflow
-    just guard-cranelift-experiment-guard-wiring-surface
-    just guard-cranelift-phase9g-ci-surface
-    just guard-cranelift-registry-schema
-    just guard-cranelift-ci-family-projection
-    just guard-cranelift-route-architecture-contract
-    just guard-cranelift-phase11-close
-    just guard-cranelift-phase13-opening-contract
-    echo "✅ Level 1 Cranelift fast contracts passed."
+    echo "⚡ guard-cranelift-contract-fast is the local Level 1 compatibility alias."
+    just guard-cranelift-phase12-5-close
 
 guard-cranelift-historical-full:
     #!/usr/bin/env bash
@@ -13167,10 +13157,107 @@ guard-cranelift-phase13-opening-contract:
 
     echo "✅ Phase 13 opening is registry-owned, semantically traceable, derived-total based, and ready to resume at Patch 13.1."
 
+guard-cranelift-phase12-5-close:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo '🔒 Closing Phase 12.5 verification framework consolidation...'
+    closure_status='phase12_5_closed_cranelift_verification_framework_consolidation'
+    registry_json='scripts/cranelift_feature_registry.json'
+    canonical_summary='docs/CRANELIFT_FEATURE_REGISTRY.md'
+    inventory_doc='compiler/CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY.md'
+    manifest='compiler/CRANELIFT_EXPERIMENT_MANIFEST.md'
+    phase13_view='compiler/CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY.md'
+    differential_harness='scripts/phase11_registry_differential.sh'
+    level_runner='scripts/cranelift_test_levels.py'
+    pr_workflow='.github/workflows/pr-fast.yml'
+    historical_workflow='.github/workflows/cranelift-historical-full.yml'
+
+    just guard-cranelift-registry-schema
+    just guard-cranelift-registry-projection
+    just guard-cranelift-phase11-closure-summary
+    just guard-cranelift-ci-family-projection
+    just guard-cranelift-route-architecture-contract
+    python3 "$level_runner" validate
+    python3 "$level_runner" check-pr-workflow
+    python3 "$level_runner" check-heavy-workflow
+    python3 "$level_runner" check-historical-workflow
+    just guard-cranelift-manifest-architecture-contract
+    just guard-cranelift-phase13-opening-contract
+    just guard-cranelift-phase9g-ci-surface
+
+    required_files=(
+      "$registry_json"
+      "$canonical_summary"
+      "$inventory_doc"
+      "$manifest"
+      "$phase13_view"
+      "$differential_harness"
+      "$pr_workflow"
+      "$historical_workflow"
+    )
+    for required_file in "${required_files[@]}"; do
+      if [ ! -f "$required_file" ] || [ -L "$required_file" ]; then
+        echo "Missing regular Phase 12.5 closure input: $required_file"
+        exit 1
+      fi
+    done
+
+    rg -n -F "$closure_status" "$registry_json" >/dev/null
+    rg -n -F '"current_phase": "phase13"' "$registry_json" >/dev/null
+    rg -n -x -F "CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_STATUS: $closure_status" "$inventory_doc" >/dev/null
+    rg -n -x -F "CRANELIFT_ARCHITECTURE_HIGH_LEVEL_STATUS: $closure_status" "$manifest" >/dev/null
+    rg -n -x -F "phase12_5_closure_status: $closure_status" "$inventory_doc" >/dev/null
+    rg -n -x -F 'phase12_5_next_patch: patch13_1_capability_and_deferral_contract' "$inventory_doc" >/dev/null
+    rg -n -F "$closure_status" "$canonical_summary" >/dev/null
+    rg -n -x -F "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_FRAMEWORK_CLOSURE_VERSION: $closure_status" "$phase13_view" >/dev/null
+
+    if rg -n -i -e 'sha-?256|sha256sum' "$registry_json" "$manifest" "$phase13_view" "$canonical_summary" >/dev/null; then
+      echo 'Active Cranelift state still contains an obsolete raw byte-hash contract.'
+      rg -n -i -e 'sha-?256|sha256sum' "$registry_json" "$manifest" "$phase13_view" "$canonical_summary"
+      exit 1
+    fi
+
+    if rg -n -e 'CRANELIFT_ARCHITECTURE_.*(COUNT|TOTAL)' "$manifest" >/dev/null; then
+      echo 'The architecture manifest must not manually own active row, family, or shard totals.'
+      rg -n -e 'CRANELIFT_ARCHITECTURE_.*(COUNT|TOTAL)' "$manifest"
+      exit 1
+    fi
+    if rg -n -F 'Expected exactly 33 cloud heavy matrix shards' justfile >/dev/null; then
+      echo 'Cloud Heavy still treats an exact matrix total as backend correctness.'
+      exit 1
+    fi
+    rg -n -F 'cloud_heavy_shard_capacity=40' justfile >/dev/null
+
+    if [ "$(rg -c -F 'just guard-cranelift-historical-full' "$historical_workflow")" != '1' ]; then
+      echo 'The scheduled/manual Level 3 workflow must invoke the full historical guard exactly once.'
+      exit 1
+    fi
+    closure_ci_count="$( (rg -n -F 'just guard-cranelift-phase12-5-close' .github/workflows --glob '*.yml' || true) | wc -l | tr -d ' ' )"
+    if [ "$closure_ci_count" != '1' ]; then
+      echo "Phase 12.5 closure must be wired into CI exactly once, found $closure_ci_count occurrences."
+      exit 1
+    fi
+    rg -n -x -F '        run: just guard-cranelift-phase12-5-close' "$pr_workflow" >/dev/null
+
+    rg -n -x -F 'CRANELIFT_ARCHITECTURE_ARTIFACT_OWNERSHIP_BOUNDARY: compiler_owns_request_staging_linking_cleanup_and_atomic_executable_publication_worker_owns_requested_object_emission' "$manifest" >/dev/null
+    rg -n -x -F 'CRANELIFT_ARCHITECTURE_DEFAULT_BACKEND: mir-to-c' "$manifest" >/dev/null
+    rg -n -x -F 'CRANELIFT_ARCHITECTURE_NO_FALLBACK_POLICY: explicit_cranelift_success_deferral_or_failure_terminates_without_MIR-to-C_codegen' "$manifest" >/dev/null
+    rg -n -F './gust "$source_fixture"' "$differential_harness" >/dev/null
+    rg -n -F './gust --backend mir-to-c "$source_fixture"' "$differential_harness" >/dev/null
+    rg -n -F 'cmp -s "$case_dir/default.c" "$case_dir/explicit.c"' "$differential_harness" >/dev/null
+
+    close_body="$(sed -n '/^guard-cranelift-phase12-5-close:/,/^guard-cranelift-phase12-5-opening-contract:/p' justfile)"
+    if printf '%s\n' "$close_body" | rg -n -e '^[[:space:]]+just guard-cranelift-historical-full([[:space:]]|$)' -e '^[[:space:]]+just guard-cranelift-differential-family([[:space:]]|$)' -e '^[[:space:]]+just guard-cranelift-phase11-close([[:space:]]|$)' -e '^[[:space:]]+just guard-cranelift-phase(9g|10)-close([[:space:]]|$)' >/dev/null; then
+      echo 'Phase 12.5 closure must validate summaries and wiring without replaying Level 2 or Level 3 evidence.'
+      exit 1
+    fi
+
+    echo '✅ Phase 12.5 closed around one structured registry, semantic contracts, registry-derived families, focused differential ownership, and separately scheduled historical evidence; Phase 13 may resume at Patch 13.1.'
+
 guard-cranelift-phase12-5-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail
-    echo "🔒 Opening Phase 12.5 verification framework consolidation..."
+    echo "🔒 Checking the retained Phase 12.5 inventory lineage after consolidation closure..."
     inventory_doc="compiler/CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY.md"
     phase11_registry="compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md"
     phase13_registry="compiler/CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY.md"
@@ -13183,10 +13270,10 @@ guard-cranelift-phase12-5-opening-contract:
 
 
     required_inventory_headers=(
-      'CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_VERSION: 1'
-      'CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_STATUS: phase12_5_opened_verification_framework_consolidation'
+      'CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_VERSION: 2'
+      'CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_STATUS: phase12_5_closed_cranelift_verification_framework_consolidation'
       'CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_PREDECESSOR_STATUS: phase11_closed_registry_backed_feature_parity_migration'
-      'CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_PHASE13_POLICY: phase13_paused_after_opening_until_phase12_5_close'
+      'CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_PHASE13_POLICY: phase13_ready_to_resume_at_patch13_1_after_phase12_5_close'
       'CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_ITEM_COUNT: 26'
       'CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_CLASSIFICATION_COUNT: 6'
       'CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_CLASSIFICATION_COUNTS: canonical_source_3,generated_view_2,executable_test_5,historical_evidence_3,redundant_duplicate_8,candidate_for_removal_5'
@@ -13197,7 +13284,7 @@ guard-cranelift-phase12-5-opening-contract:
       'CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_BEHAVIOR_FREEZE_COUNT: 5'
       'CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_TARGET_COMPONENT_COUNT: 5'
       'CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_TEST_LEVEL_COUNT: 3'
-      'CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_NEXT_PATCH: structured_registry'
+      'CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_NEXT_PATCH: patch13_1_capability_and_deferral_contract'
     )
     for header in "${required_inventory_headers[@]}"; do
       if ! rg -n -x -F "$header" "$inventory_doc" >/dev/null; then
@@ -13400,7 +13487,7 @@ guard-cranelift-phase12-5-opening-contract:
     required_test_levels=(
       'phase12_5_test_level: level=fast_contract|owner=PR_Fast_and_local_contract_runner'
       'phase12_5_test_level: level=focused_differential|owner=registry_family_shards'
-      'phase12_5_test_level: level=historical_full|owner=Heavy_nightly_release_or_explicit_full_history_runner'
+      'phase12_5_test_level: level=historical_full|owner=scheduled_or_manual_Cranelift_Historical_Full'
     )
     for level in "${required_test_levels[@]}"; do
       rg -n -x -F "$level" "$inventory_doc" >/dev/null
@@ -13417,7 +13504,7 @@ guard-cranelift-phase12-5-opening-contract:
       exit 1
     fi
 
-    echo "✅ Phase 12.5 opened: 26 verification items and seven duplicated facts have explicit future owners and consolidation patches; compiler behavior remains frozen."
+    echo "✅ Phase 12.5 inventory lineage remains valid after closure: 26 verification items and seven duplicated facts retain explicit owners and dispositions; compiler behavior stayed frozen."
 
 guard-cranelift-registry-schema:
     #!/usr/bin/env bash
@@ -13431,7 +13518,7 @@ guard-cranelift-registry-schema:
 
 
     authority_count="$(
-      rg -l -F '"registry_status": "phase12_5_canonical_machine_readable_registry"'         scripts docs compiler 2>/dev/null |
+      rg -l -F '"registry_status": "phase12_5_closed_cranelift_verification_framework_consolidation"'         scripts docs compiler 2>/dev/null |
         wc -l |
         tr -d ' '
     )"
@@ -13443,7 +13530,7 @@ guard-cranelift-registry-schema:
     python3 "$validator" validate
     python3 "$validator" verify-phase11-closure
 
-    echo "✅ Canonical Cranelift registry schema and semantic closure passed; totals are derived by the projector."
+    echo "✅ Canonical Cranelift registry schema and semantic closures passed; Phase 12.5 is closed and totals are projector-derived."
 
 guard-cranelift-ci-family-projection:
     #!/usr/bin/env bash

@@ -148,8 +148,8 @@ def check_pr_workflow(policy: dict) -> None:
     text = read_text(PR_WORKFLOW)
     require("pull_request:" in text, "PR Fast must remain a pull-request workflow")
     require(
-        text.count("just guard-cranelift-contract-fast") == 1,
-        "PR Fast must invoke guard-cranelift-contract-fast exactly once",
+        text.count("just guard-cranelift-phase12-5-close") == 1,
+        "PR Fast must invoke guard-cranelift-phase12-5-close exactly once",
     )
     require(
         text.count(
