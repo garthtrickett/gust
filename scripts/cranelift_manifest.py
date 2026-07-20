@@ -125,6 +125,29 @@ def validate_manifest() -> None:
     require(len(text.splitlines()) <= 80, "architecture manifest must remain concise")
 
 
+def verify_phase12_5_closure() -> None:
+    validate_manifest()
+    keys = parse_keys(read(MANIFEST))
+    closure_keys = (
+        "CRANELIFT_ARCHITECTURE_HIGH_LEVEL_STATUS",
+        "CRANELIFT_ARCHITECTURE_DEFAULT_BACKEND",
+        "CRANELIFT_ARCHITECTURE_ARTIFACT_OWNERSHIP_BOUNDARY",
+        "CRANELIFT_ARCHITECTURE_NO_FALLBACK_POLICY",
+        "CRANELIFT_ARCHITECTURE_HISTORICAL_EVIDENCE_OWNER",
+    )
+    for key in closure_keys:
+        require(
+            keys.get(key) == EXPECTED_KEYS[key],
+            f"Phase 12.5 closure manifest contract drifted for {key}",
+        )
+
+    print(
+        "✅ Phase 12.5 manifest closure passed: closed status, MIR-to-C default, "
+        "Phase 9G artifact ownership, no fallback, historical-suite ownership, "
+        "no raw hashes, and no manually maintained active totals."
+    )
+
+
 def validate_compiler_and_package_surface() -> None:
     test_runner = read(TEST_RUNNER)
     require(
@@ -252,12 +275,17 @@ def validate() -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", choices=("validate",))
+    parser.add_argument(
+        "command",
+        choices=("validate", "verify-phase12-5-closure"),
+    )
     args = parser.parse_args()
 
     try:
         if args.command == "validate":
             validate()
+        elif args.command == "verify-phase12-5-closure":
+            verify_phase12_5_closure()
     except (Error, OSError) as exc:
         print(f"cranelift manifest error: {exc}", file=sys.stderr)
         return 2

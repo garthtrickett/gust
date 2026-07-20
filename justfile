@@ -13165,7 +13165,6 @@ guard-cranelift-phase12-5-close:
     registry_json='scripts/cranelift_feature_registry.json'
     canonical_summary='docs/CRANELIFT_FEATURE_REGISTRY.md'
     inventory_doc='compiler/CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY.md'
-    manifest='compiler/CRANELIFT_EXPERIMENT_MANIFEST.md'
     phase13_view='compiler/CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY.md'
     differential_harness='scripts/phase11_registry_differential.sh'
     level_runner='scripts/cranelift_test_levels.py'
@@ -13182,6 +13181,7 @@ guard-cranelift-phase12-5-close:
     python3 "$level_runner" check-heavy-workflow
     python3 "$level_runner" check-historical-workflow
     just guard-cranelift-manifest-architecture-contract
+    python3 scripts/cranelift_manifest.py verify-phase12-5-closure
     just guard-cranelift-phase13-opening-contract
     just guard-cranelift-phase9g-ci-surface
 
@@ -13189,7 +13189,6 @@ guard-cranelift-phase12-5-close:
       "$registry_json"
       "$canonical_summary"
       "$inventory_doc"
-      "$manifest"
       "$phase13_view"
       "$differential_harness"
       "$pr_workflow"
@@ -13205,23 +13204,17 @@ guard-cranelift-phase12-5-close:
     rg -n -F "$closure_status" "$registry_json" >/dev/null
     rg -n -F '"current_phase": "phase13"' "$registry_json" >/dev/null
     rg -n -x -F "CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_STATUS: $closure_status" "$inventory_doc" >/dev/null
-    rg -n -x -F "CRANELIFT_ARCHITECTURE_HIGH_LEVEL_STATUS: $closure_status" "$manifest" >/dev/null
     rg -n -x -F "phase12_5_closure_status: $closure_status" "$inventory_doc" >/dev/null
     rg -n -x -F 'phase12_5_next_patch: patch13_1_capability_and_deferral_contract' "$inventory_doc" >/dev/null
     rg -n -F "$closure_status" "$canonical_summary" >/dev/null
     rg -n -x -F "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_FRAMEWORK_CLOSURE_VERSION: $closure_status" "$phase13_view" >/dev/null
 
-    if rg -n -i -e 'sha-?256|sha256sum' "$registry_json" "$manifest" "$phase13_view" "$canonical_summary" >/dev/null; then
-      echo 'Active Cranelift state still contains an obsolete raw byte-hash contract.'
-      rg -n -i -e 'sha-?256|sha256sum' "$registry_json" "$manifest" "$phase13_view" "$canonical_summary"
+    if rg -n -i -e 'sha-?256|sha256sum' "$registry_json" "$phase13_view" "$canonical_summary" >/dev/null; then
+      echo 'Active registry or generated views still contain an obsolete raw byte-hash contract.'
+      rg -n -i -e 'sha-?256|sha256sum' "$registry_json" "$phase13_view" "$canonical_summary"
       exit 1
     fi
 
-    if rg -n -e 'CRANELIFT_ARCHITECTURE_.*(COUNT|TOTAL)' "$manifest" >/dev/null; then
-      echo 'The architecture manifest must not manually own active row, family, or shard totals.'
-      rg -n -e 'CRANELIFT_ARCHITECTURE_.*(COUNT|TOTAL)' "$manifest"
-      exit 1
-    fi
     if rg -n -F 'Expected exactly 33 cloud heavy matrix shards' justfile >/dev/null; then
       echo 'Cloud Heavy still treats an exact matrix total as backend correctness.'
       exit 1
@@ -13239,9 +13232,6 @@ guard-cranelift-phase12-5-close:
     fi
     rg -n -x -F '        run: just guard-cranelift-phase12-5-close' "$pr_workflow" >/dev/null
 
-    rg -n -x -F 'CRANELIFT_ARCHITECTURE_ARTIFACT_OWNERSHIP_BOUNDARY: compiler_owns_request_staging_linking_cleanup_and_atomic_executable_publication_worker_owns_requested_object_emission' "$manifest" >/dev/null
-    rg -n -x -F 'CRANELIFT_ARCHITECTURE_DEFAULT_BACKEND: mir-to-c' "$manifest" >/dev/null
-    rg -n -x -F 'CRANELIFT_ARCHITECTURE_NO_FALLBACK_POLICY: explicit_cranelift_success_deferral_or_failure_terminates_without_MIR-to-C_codegen' "$manifest" >/dev/null
     rg -n -F './gust "$source_fixture"' "$differential_harness" >/dev/null
     rg -n -F './gust --backend mir-to-c "$source_fixture"' "$differential_harness" >/dev/null
     rg -n -F 'cmp -s "$case_dir/default.c" "$case_dir/explicit.c"' "$differential_harness" >/dev/null
