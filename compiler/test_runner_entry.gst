@@ -405,7 +405,20 @@ func main() {
         os.Exit(1);
     }
 
+    // Test-only poison used by the semantic route architecture evidence.
+    // Normal invocations never set this environment variable.
+    if std.str_eq(
+        os.GetEnv(ctx, "GUST_TEST_MIR_TO_C_UNAVAILABLE"),
+        "1"
+    ) == 1 {
+        os.LogError(
+            "MIR-to-C intentionally unavailable for route architecture evidence."
+        );
+        os.Exit(1);
+    }
+
     // Default and explicit MIR-to-C selections share this exact codegen path.
     mut c_code := codegen.codegen_generate(programs, module_prefixes, &env, ctx);
     os.LogStr(c_code);
 }
+

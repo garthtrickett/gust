@@ -68,7 +68,7 @@ guard-pr-fast-shard shard:
       cranelift-differential)
         just guard-cranelift-experiment-manifest-surface
         just guard-cranelift-backend-surface
-        just guard-cranelift-mir-to-c-differential-native-smoke
+        just guard-cranelift-route-architecture-contract
         ;;
       cranelift-phase9d-ingestion-ladder)
         just guard-cranelift-phase9c-differential-ladder-surface
@@ -161,6 +161,14 @@ guard-pr-fast-ci-surface:
     fi
     python3 "$family_runner" validate
     python3 "$family_runner" check-pr-workflow "$workflow"
+
+    pr_dispatcher_body="$(
+      sed -n '/^guard-pr-fast-shard shard:/,/^guard-pr-fast-ci-surface:/p' justfile
+    )"
+    printf '%s\n' "$pr_dispatcher_body" |
+      rg -n -F 'cranelift-differential)' >/dev/null
+    printf '%s\n' "$pr_dispatcher_body" |
+      rg -n -F 'just guard-cranelift-route-architecture-contract' >/dev/null
 
     required_workflow_tokens=(
       'name: PR Fast'
@@ -13369,10 +13377,9 @@ guard-cranelift-phase10-scalar-source-route:
     set -euo pipefail
     echo "🔒 Preserving the historical Phase 10 scalar and metadata source-route evidence..."
     manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
-    route_source="compiler/mir_native_backend_source_route.gst"
     return_source="compiler/phase10_scalar_return_source.gst"
     metadata_source="compiler/phase10_metadata_local_source.gst"
-    for required_file in "$manifest_doc" "$route_source" "$return_source" "$metadata_source"; do
+    for required_file in "$manifest_doc" "$return_source" "$metadata_source"; do
       test -f "$required_file"
     done
 
@@ -13383,23 +13390,17 @@ guard-cranelift-phase10-scalar-source-route:
 
     rg -n -F 'return 7;' "$return_source" >/dev/null
     rg -n -F 'mut value := 2;' "$metadata_source" >/dev/null
-    rg -n -F 'generic_source.mir_native_generic_source_lower(' "$route_source" >/dev/null
-    if rg -n -F 'func mir_native_scalar_source_lower(' "$route_source" >/dev/null; then
-      echo "The historical Phase 10 scalar exact-shape recognizer must remain retired."
-      exit 1
-    fi
 
-    echo "✅ Historical Phase 10 scalar/metadata evidence preserved without freezing a production recognizer."
+    echo "✅ Historical Phase 10 scalar/metadata fixture evidence preserved without asserting a current production implementation shape."
 
 guard-cranelift-phase10-cfg-block-parameter-source-route:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Preserving the historical Phase 10 CFG and block-parameter source-route evidence..."
     manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
-    route_source="compiler/mir_native_backend_source_route.gst"
     cfg_source="compiler/phase10_cfg_return_source.gst"
     merge_source="compiler/phase10_block_parameter_merge_source.gst"
-    for required_file in "$manifest_doc" "$route_source" "$cfg_source" "$merge_source"; do
+    for required_file in "$manifest_doc" "$cfg_source" "$merge_source"; do
       test -f "$required_file"
     done
 
@@ -13411,22 +13412,17 @@ guard-cranelift-phase10-cfg-block-parameter-source-route:
 
     rg -n -F 'return 11;' "$cfg_source" >/dev/null
     rg -n -F 'return selected;' "$merge_source" >/dev/null
-    if rg -n -F 'func mir_native_cfg_source_lower(' "$route_source" >/dev/null; then
-      echo "The historical Phase 10 CFG/merge exact-shape recognizer must remain retired."
-      exit 1
-    fi
 
-    echo "✅ Historical Phase 10 CFG/block-parameter evidence preserved without freezing a production recognizer."
+    echo "✅ Historical Phase 10 CFG/block-parameter fixture evidence preserved without asserting a current production implementation shape."
 
 guard-cranelift-phase10-call-import-runtime-source-route:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Preserving the historical Phase 10 call/import/runtime source-route evidence..."
     manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
-    route_source="compiler/mir_native_backend_source_route.gst"
     local_source="compiler/phase10_local_call_source.gst"
     runtime_source="compiler/phase10_runtime_boundary_source.gst"
-    for required_file in "$manifest_doc" "$route_source" "$local_source" "$runtime_source"; do
+    for required_file in "$manifest_doc" "$local_source" "$runtime_source"; do
       test -f "$required_file"
     done
 
@@ -13438,14 +13434,8 @@ guard-cranelift-phase10-call-import-runtime-source-route:
 
     rg -n -F 'func phase10_local_identity' "$local_source" >/dev/null
     rg -n -F 'abs(' "$runtime_source" >/dev/null
-    if rg -n -F 'func mir_native_call_import_source_lower(' "$route_source" >/dev/null ||
-       rg -n -F 'phase10_local_identity' "$route_source" >/dev/null ||
-       rg -n -F 'phase10_runtime_boundary' "$route_source" >/dev/null; then
-      echo "Historical Phase 10 call/import/runtime shapes must not appear in production routing."
-      exit 1
-    fi
 
-    echo "✅ Historical Phase 10 call/import/runtime evidence preserved without freezing a production recognizer."
+    echo "✅ Historical Phase 10 call/import/runtime fixture evidence preserved without asserting a current production implementation shape."
 
 guard-cranelift-phase10-packaging-help-ci:
     #!/usr/bin/env bash
@@ -13770,9 +13760,7 @@ guard-cranelift-phase10-close:
     set -euo pipefail
     echo "🔒 Preserving Phase 10 as historical evidence after exact-route retirement..."
     manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
-    route_source="compiler/mir_native_backend_source_route.gst"
     test -f "$manifest_doc"
-    test -f "$route_source"
 
     just guard-cranelift-phase9g-close
     just guard-cranelift-backend-surface
@@ -13780,28 +13768,16 @@ guard-cranelift-phase10-close:
     just guard-cranelift-phase10-scalar-source-route
     just guard-cranelift-phase10-cfg-block-parameter-source-route
     just guard-cranelift-phase10-call-import-runtime-source-route
+    PHASE11_ROUTE_ARCHITECTURE_SKIP_DYNAMIC=1 \
+      just guard-cranelift-route-architecture-contract
     just guard-pr-fast-ci-surface
     just guard-cloud-heavy-ci-surface
 
     rg -n -F 'allowed_cranelift_phase10_scalar_source_route_retirement_status: exact_shape_implementation_retired_by_Phase11_Patch11' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_cfg_block_parameter_source_route_retirement_status: exact_shape_implementation_retired_by_Phase11_Patch11' "$manifest_doc" >/dev/null
     rg -n -F 'allowed_cranelift_phase10_call_import_runtime_source_route_retirement_status: exact_shape_implementation_retired_by_Phase11_Patch11' "$manifest_doc" >/dev/null
-    rg -n -F 'generic_source.mir_native_generic_source_lower(' "$route_source" >/dev/null
 
-    retired_symbols=(
-      'func mir_native_scalar_source_lower('
-      'func mir_native_cfg_source_lower('
-      'func mir_native_call_import_source_lower('
-      'generic and compatibility canonical MIR bundles differ'
-    )
-    for symbol in "${retired_symbols[@]}"; do
-      if rg -n -F "$symbol" "$route_source" >/dev/null; then
-        echo "Phase 10 closure found retired production implementation: $symbol"
-        exit 1
-      fi
-    done
-
-    echo "✅ Phase 10 remains closed as historical fixture/protocol evidence; production native routing is generic canonical MIR only."
+    echo "✅ Phase 10 remains closed as historical fixture/protocol evidence; current route architecture is owned by the semantic architecture contract."
 
 guard-cranelift-phase11-opening-contract:
     #!/usr/bin/env bash
@@ -13913,19 +13889,123 @@ guard-cranelift-phase11-parity-registry:
 
     echo "✅ Phase 11 parity inventory is canonical JSON; counts and family summaries are projector-derived."
 
+guard-cranelift-route-architecture-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking semantic native-route and fallback architecture..."
+    manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    route_source="compiler/mir_native_backend_source_route.gst"
+    generic_source="compiler/mir_native_backend_generic_source.gst"
+    request_source="compiler/mir_native_backend_request.gst"
+    invocation_source="compiler/test_runner_entry.gst"
+    evidence_script="scripts/phase12_5_route_architecture.sh"
+    novel_source="compiler/phase12_5_route_novel_source.gst"
+    variant_source="compiler/phase12_5_route_variant_source.gst"
+    unsupported_source="compiler/phase12_5_route_unsupported_source.gst"
+    production_lowerers=(
+      "$route_source"
+      "$generic_source"
+      compiler/mir_native_backend_local_state_source.gst
+      compiler/mir_native_backend_structured_cfg_source.gst
+      compiler/mir_native_backend_block_parameter_loop_source.gst
+      compiler/mir_native_backend_direct_call_source.gst
+      compiler/mir_native_backend_module_import_source.gst
+    )
+    for required_file in \
+      "$manifest_doc" "$request_source" "$invocation_source" \
+      "$evidence_script" "$novel_source" "$variant_source" \
+      "$unsupported_source" "${production_lowerers[@]}"
+    do
+      if [ ! -f "$required_file" ] || [ -L "$required_file" ]; then
+        echo "Route architecture input must be a regular non-symlink file: $required_file"
+        exit 1
+      fi
+    done
+
+    required_manifest_lines=(
+      'CRANELIFT_EXPERIMENT_ALLOWED_ROUTE_ARCHITECTURE_GUARD: guard-cranelift-route-architecture-contract'
+      'allowed_cranelift_route_architecture_evidence_script: scripts/phase12_5_route_architecture.sh'
+      'allowed_cranelift_route_architecture_novel_source: compiler/phase12_5_route_novel_source.gst'
+      'allowed_cranelift_route_architecture_variant_source: compiler/phase12_5_route_variant_source.gst'
+      'allowed_cranelift_route_architecture_unsupported_source: compiler/phase12_5_route_unsupported_source.gst'
+      'allowed_cranelift_route_architecture_generic_policy: unregistered_source_and_renamed_function_literal_variant_compile_and_match_MIR_to_C_runtime'
+      'allowed_cranelift_route_architecture_fallback_policy: explicit_Cranelift_succeeds_while_the_test_only_MIR_to_C_path_is_poisoned'
+      'allowed_cranelift_route_architecture_worker_policy: recording_driver_observes_only_handshake_and_command_plus_request_path_and_the_request_has_no_raw_source_fields'
+      'allowed_cranelift_route_architecture_deferral_policy: unsupported_source_does_not_invoke_driver_publish_request_or_bundle_create_object_or_change_existing_output'
+      'allowed_cranelift_route_architecture_hard_ban_policy: raw_source_request_fields,direct_backend_raw_source_reads,retired_source_recognizers,Cranelift_terminal_MIR_to_C_codegen'
+      'allowed_cranelift_route_architecture_CI_policy: existing_cranelift_differential_PR_shard_runs_the_behavioural_contract_without_adding_capacity'
+      'allowed_cranelift_route_architecture_behavior_policy: one_test_only_MIR_to_C_unavailable_environment_hook_no_default_route_worker_MIR_or_output_change'
+      'allowed_cranelift_route_architecture_next_patch: three_level_test_partition'
+    )
+    for line in "${required_manifest_lines[@]}"; do
+      if ! rg -n -x -F "$line" "$manifest_doc" >/dev/null; then
+        echo "Missing route architecture manifest contract:"
+        echo "$line"
+        exit 1
+      fi
+    done
+
+    bash -n "$evidence_script"
+
+    if rg -n \
+        -e '^[[:space:]]*(source_path|source_text|source_bytes|ast_program):' \
+        "$request_source" >/dev/null; then
+      echo "Native worker request model exposes a forbidden raw-source field."
+      exit 1
+    fi
+
+    if rg -n -e 'os\.(ReadFile|OpenFile)' \
+        "${production_lowerers[@]}" >/dev/null; then
+      echo "Production native route or lowerer directly reads raw source text."
+      exit 1
+    fi
+    if rg -n \
+        -e 'std\.str_(eq|find)\([^;]*source_path' \
+        "${production_lowerers[@]}" >/dev/null; then
+      echo "Production native route or lowerer recognizes programs by source path."
+      exit 1
+    fi
+
+    retired_recognizers=(
+      'func mir_native_scalar_source_lower('
+      'func mir_native_cfg_source_lower('
+      'func mir_native_call_import_source_lower('
+    )
+    for recognizer in "${retired_recognizers[@]}"; do
+      if rg -n -F "$recognizer" "${production_lowerers[@]}" >/dev/null; then
+        echo "Retired exact-shape source recognizer remains: $recognizer"
+        exit 1
+      fi
+    done
+
+    native_branch="$(
+      sed -n \
+        '/if invocation.backend.tag == 1 {/,/Default and explicit MIR-to-C selections/p' \
+        "$invocation_source"
+    )"
+    if printf '%s\n' "$native_branch" |
+       rg -n -F 'codegen.codegen_generate(' >/dev/null; then
+      echo "Explicit Cranelift terminal path calls MIR-to-C code generation."
+      exit 1
+    fi
+
+    if [ "${PHASE11_ROUTE_ARCHITECTURE_SKIP_DYNAMIC:-0}" = "1" ]; then
+      echo "✅ Route architecture hard bans passed; behavioural evidence was intentionally skipped."
+      exit 0
+    fi
+
+    bash "$evidence_script"
+    echo "✅ Native-route architecture is protected by behavioural evidence plus four explicit hard-ban classes."
+
+
 guard-cranelift-phase11-generic-canonical-mir-route:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking the authoritative Phase 11 generic canonical-MIR source route..."
     manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     registry_doc="compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md"
-    generic_source="compiler/mir_native_backend_generic_source.gst"
-    route_source="compiler/mir_native_backend_source_route.gst"
     differential_harness="scripts/phase11_registry_differential.sh"
-    for required_file in \
-      "$manifest_doc" "$registry_doc" "$generic_source" \
-      "$route_source" "$differential_harness"
-    do
+    for required_file in "$manifest_doc" "$registry_doc" "$differential_harness"; do
       test -f "$required_file"
     done
 
@@ -13935,80 +14015,16 @@ guard-cranelift-phase11-generic-canonical-mir-route:
     rg -n -F 'allowed_cranelift_phase11_generic_route_compatibility_policy: Phase10_exact_shape_recognizers_are_absent_from_production_routing' "$manifest_doc" >/dev/null
     rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_retired_exact_shape_source_routes' "$registry_doc" >/dev/null
 
-    required_generic_symbols=(
-      'type MirNativeGenericEligibility enum'
-      'LoweredAndEligible,'
-      'SourceFeatureNotRepresented,'
-      'NativeCapabilityUnsupported,'
-      'InvalidCanonicalMir'
-      'func mir_native_generic_source_lower('
-      'mir_native_module_import_source_lower('
-      'mir_native_direct_call_source_lower('
-      'mir_native_block_parameter_loop_source_lower('
-      'mir_native_structured_cfg_source_lower('
-      'mir_native_local_state_source_lower('
-    )
-    for symbol in "${required_generic_symbols[@]}"; do
-      rg -n -F "$symbol" "$generic_source" >/dev/null
-    done
-
-    if [ "$(rg -c -F 'generic_source.mir_native_generic_source_lower(' "$route_source")" != "1" ]; then
-      echo "Production native routing must invoke the generic canonical-MIR lowerer exactly once."
-      exit 1
-    fi
-    if [ "$(rg -c -F 'return mir_native_scalar_source_deferred_result(ctx);' "$route_source")" != "1" ]; then
-      echo "Production native routing must preserve exactly one typed deferred result."
-      exit 1
-    fi
-
-    retired_symbols=(
-      'func mir_native_scalar_source_lower('
-      'func mir_native_cfg_source_lower('
-      'func mir_native_call_import_source_lower('
-      'generic and compatibility canonical MIR bundles differ'
-      'legacy_serialized'
-      'compatibility route'
-    )
-    for symbol in "${retired_symbols[@]}"; do
-      if rg -n -F "$symbol" "$route_source" >/dev/null; then
-        echo "Retired exact-route implementation remains in $route_source: $symbol"
-        exit 1
-      fi
-    done
-
-    if rg -n -e 'phase10_[A-Za-z0-9_]*_source\.gst|phase11_[A-Za-z0-9_]*_source\.gst' \
-      "$route_source" "$generic_source" >/dev/null; then
-      echo "Production generic routing must not contain source fixture identities."
-      exit 1
-    fi
-    if rg -n -e 'os\.(ReadFile|OpenFile)|std\.str_(eq|find)\([^;]*source_path' \
-      "$route_source" "$generic_source" >/dev/null; then
-      echo "Production generic routing must not inspect raw source text or compare source paths."
-      exit 1
-    fi
-
-    compile_body="$(sed -n '/^func mir_native_scalar_source_compile_inner(/,/^}/p' "$route_source")"
-    generic_line="$(printf '%s\n' "$compile_body" | rg -n -F 'generic_source.mir_native_generic_source_lower(' | cut -d: -f1)"
-    deferred_line="$(printf '%s\n' "$compile_body" | rg -n -F 'mir_native_scalar_source_deferred_result(ctx)' | cut -d: -f1)"
-    static_line="$(printf '%s\n' "$compile_body" | rg -n -F 'capability.mir_native_backend_validate_capabilities(' | head -n1 | cut -d: -f1)"
-    discovery_line="$(printf '%s\n' "$compile_body" | rg -n -F 'driver.mir_native_backend_discover_driver(' | cut -d: -f1)"
-    if [ -z "$generic_line" ] || [ -z "$deferred_line" ] ||
-       [ -z "$static_line" ] || [ -z "$discovery_line" ] ||
-       [ "$generic_line" -ge "$deferred_line" ] ||
-       [ "$deferred_line" -ge "$static_line" ] ||
-       [ "$static_line" -ge "$discovery_line" ]; then
-      echo "Generic lowering, typed deferral, static validation, and driver discovery are misordered."
-      printf '%s\n' "$compile_body"
-      exit 1
-    fi
-
     if [ "${PHASE11_GENERIC_ROUTE_SKIP_DYNAMIC:-0}" = "1" ]; then
-      echo "✅ Authoritative generic-route static contract passed; differential replay was intentionally skipped."
+      PHASE11_ROUTE_ARCHITECTURE_SKIP_DYNAMIC=1 \
+        just guard-cranelift-route-architecture-contract
+      echo "✅ Authoritative generic-route static contract passed; behavioural and differential evidence were intentionally skipped."
       exit 0
     fi
 
+    just guard-cranelift-route-architecture-contract
     bash "$differential_harness" all
-    echo "✅ Authoritative generic canonical-MIR route passed all supported registry entries."
+    echo "✅ Authoritative generic canonical-MIR route passed novel, renamed-variant, no-fallback, early-deferral, worker-isolation, and registry differential evidence."
 
 guard-cranelift-phase11-scalar-expression-parity:
     #!/usr/bin/env bash
@@ -16968,20 +16984,17 @@ guard-cranelift-phase11-ci-family family:
 guard-cranelift-phase11-route-retirement-ci:
     #!/usr/bin/env bash
     set -euo pipefail
-    echo "🔒 Checking Phase 11 differential harness, exact-route retirement, and focused CI..."
+    echo "🔒 Checking Phase 11 differential harness, semantic route architecture, and focused CI..."
     manifest_doc="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     registry_doc="compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md"
-    route_source="compiler/mir_native_backend_source_route.gst"
-    generic_source="compiler/mir_native_backend_generic_source.gst"
     differential_harness="scripts/phase11_registry_differential.sh"
     family_runner="scripts/cranelift_ci_family.py"
     registry_json="scripts/cranelift_feature_registry.json"
     pr_workflow=".github/workflows/pr-fast.yml"
     heavy_workflow=".github/workflows/heavy-guards.yml"
     for required_file in \
-      "$manifest_doc" "$registry_doc" "$route_source" "$generic_source" \
-      "$registry_json" "$family_runner" "$differential_harness" \
-      "$pr_workflow" "$heavy_workflow"
+      "$manifest_doc" "$registry_doc" "$registry_json" "$family_runner" \
+      "$differential_harness" "$pr_workflow" "$heavy_workflow"
     do
       test -f "$required_file"
     done
@@ -17008,40 +17021,11 @@ guard-cranelift-phase11-route-retirement-ci:
     done
     rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_retired_exact_shape_source_routes' "$registry_doc" >/dev/null
 
-    if [ "$(rg -c -F 'generic_source.mir_native_generic_source_lower(' "$route_source")" != "1" ]; then
-      echo "Production native routing must contain exactly one generic canonical-MIR entry."
-      exit 1
-    fi
-    if [ "$(rg -c -F 'return mir_native_scalar_source_deferred_result(ctx);' "$route_source")" != "1" ]; then
-      echo "Production native routing must contain exactly one typed deferred result."
-      exit 1
-    fi
-
-    prohibited_route_symbols=(
-      'func mir_native_scalar_source_lower('
-      'func mir_native_cfg_source_lower('
-      'func mir_native_call_import_source_lower('
-      'phase10_scalar_module'
-      'phase10_cfg_module'
-      'phase10_block_parameter_module'
-      'phase10_local_identity'
-      'phase10_runtime_boundary'
-      'legacy_serialized'
-      'generic and compatibility canonical MIR bundles differ'
-    )
-    for symbol in "${prohibited_route_symbols[@]}"; do
-      if rg -n -F "$symbol" "$route_source" >/dev/null; then
-        echo "Retired exact-shape route symbol remains: $symbol"
-        exit 1
-      fi
-    done
-    if rg -n -e 'phase(10|11)_[A-Za-z0-9_]*_source\.gst' "$route_source" >/dev/null; then
-      echo "Production route contains a source fixture identity."
-      exit 1
-    fi
-    if rg -n -e 'os\.(ReadFile|OpenFile)|std\.str_(eq|find)\([^;]*source_path' "$route_source" >/dev/null; then
-      echo "Production route contains a raw-source or literal source-path check."
-      exit 1
+    if [ "${PHASE11_ROUTE_RETIREMENT_SKIP_DYNAMIC:-0}" = "1" ]; then
+      PHASE11_ROUTE_ARCHITECTURE_SKIP_DYNAMIC=1 \
+        just guard-cranelift-route-architecture-contract
+    else
+      just guard-cranelift-route-architecture-contract
     fi
 
     required_harness_tokens=(
@@ -17076,12 +17060,12 @@ guard-cranelift-phase11-route-retirement-ci:
     just guard-cranelift-phase10-call-import-runtime-source-route
 
     if [ "${PHASE11_ROUTE_RETIREMENT_SKIP_DYNAMIC:-0}" = "1" ]; then
-      echo "✅ Phase 11 route-retirement and CI static contract passed; full differential replay was intentionally skipped."
+      echo "✅ Phase 11 route-retirement and CI static contract passed; behavioural and differential evidence were intentionally skipped."
       exit 0
     fi
 
     bash "$differential_harness" all
-    echo "✅ Phase 11 exact-shape routes are retired, all supported registry entries are differentially covered, and focused PR CI is authoritative."
+    echo "✅ Phase 11 exact-shape routes are retired by semantic route evidence, all supported registry entries are differentially covered, and focused PR CI is authoritative."
 
 guard-cranelift-phase11-close:
     #!/usr/bin/env bash
@@ -17091,28 +17075,12 @@ guard-cranelift-phase11-close:
     registry_doc="compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md"
     registry_json="scripts/cranelift_feature_registry.json"
     registry_validator="scripts/cranelift_registry.py"
-    route_source="compiler/mir_native_backend_source_route.gst"
-    generic_source="compiler/mir_native_backend_generic_source.gst"
-    invocation_source="compiler/test_runner_entry.gst"
-    request_source="compiler/mir_native_backend_request.gst"
-    worker_source="compiler/experiments/cranelift/src/main.rs"
     differential_harness="scripts/phase11_registry_differential.sh"
     pr_workflow=".github/workflows/pr-fast.yml"
     heavy_workflow=".github/workflows/heavy-guards.yml"
-    production_lowerers=(
-      "$route_source"
-      "$generic_source"
-      compiler/mir_native_backend_local_state_source.gst
-      compiler/mir_native_backend_structured_cfg_source.gst
-      compiler/mir_native_backend_block_parameter_loop_source.gst
-      compiler/mir_native_backend_direct_call_source.gst
-      compiler/mir_native_backend_module_import_source.gst
-    )
     for required_file in \
       "$manifest_doc" "$registry_doc" "$registry_json" "$registry_validator" \
-      "$invocation_source" "$request_source" "$worker_source" \
-      "$differential_harness" "$pr_workflow" "$heavy_workflow" \
-      "${production_lowerers[@]}"
+      "$differential_harness" "$pr_workflow" "$heavy_workflow" justfile
     do
       if [ ! -f "$required_file" ]; then
         echo "Missing Phase 11 closure input: $required_file"
@@ -17175,167 +17143,10 @@ guard-cranelift-phase11-close:
     python3 "$registry_validator" validate
     python3 "$registry_validator" verify-phase11-closure
 
-    if [ "$(rg -c -F 'generic_source.mir_native_generic_source_lower(' "$route_source")" != "1" ]; then
-      echo "Phase 11 closure requires exactly one generic canonical-MIR production route."
-      exit 1
-    fi
-    if [ "$(rg -c -F 'return mir_native_scalar_source_deferred_result(ctx);' "$route_source")" != "1" ]; then
-      echo "Phase 11 closure requires exactly one typed deferred production result."
-      exit 1
-    fi
-    prohibited_route_symbols=(
-      'func mir_native_scalar_source_lower('
-      'func mir_native_cfg_source_lower('
-      'func mir_native_call_import_source_lower('
-      'legacy_serialized'
-      'generic and compatibility canonical MIR bundles differ'
-    )
-    for symbol in "${prohibited_route_symbols[@]}"; do
-      if rg -n -F "$symbol" "$route_source" >/dev/null; then
-        echo "Phase 11 closure found a retired exact-shape recognizer: $symbol"
-        exit 1
-      fi
-    done
-    if rg -n -e 'phase(10|11)_[A-Za-z0-9_]*_source\.gst' \
-      "${production_lowerers[@]}" >/dev/null; then
-      echo "Phase 11 production lowering contains a source-fixture identity."
-      exit 1
-    fi
-    if rg -n -e 'os\.(ReadFile|OpenFile)' \
-      "${production_lowerers[@]}" >/dev/null; then
-      echo "Phase 11 production lowering reads raw source text."
-      exit 1
-    fi
-
-    compile_body="$(
-      sed -n \
-        '/^func mir_native_scalar_source_compile_inner(/,/^}/p' \
-        "$route_source"
-    )"
-    unsupported_line="$(
-      printf '%s\n' "$compile_body" |
-        rg -n -F 'if generic_result.eligibility.tag == 2' |
-        head -n1 | cut -d: -f1
-    )"
-    deferred_line="$(
-      printf '%s\n' "$compile_body" |
-        rg -n -F 'if generic_result.eligibility.tag == 1' |
-        head -n1 | cut -d: -f1
-    )"
-    static_line="$(
-      printf '%s\n' "$compile_body" |
-        rg -n -F 'capability.mir_native_backend_validate_capabilities(' |
-        head -n1 | cut -d: -f1
-    )"
-    discovery_line="$(
-      printf '%s\n' "$compile_body" |
-        rg -n -F 'driver.mir_native_backend_discover_driver(' |
-        head -n1 | cut -d: -f1
-    )"
-    artifact_line="$(
-      printf '%s\n' "$compile_body" |
-        rg -n -F 'mut absolute_output := os.PathAbsolute' |
-        head -n1 | cut -d: -f1
-    )"
-    write_line="$(
-      printf '%s\n' "$compile_body" |
-        rg -n -F 'os.WriteFile(bundle_path' |
-        head -n1 | cut -d: -f1
-    )"
-    if [ -z "$unsupported_line" ] || [ -z "$deferred_line" ] ||
-       [ -z "$static_line" ] || [ -z "$discovery_line" ] ||
-       [ -z "$artifact_line" ] || [ -z "$write_line" ] ||
-       [ "$unsupported_line" -ge "$static_line" ] ||
-       [ "$deferred_line" -ge "$static_line" ] ||
-       [ "$static_line" -ge "$discovery_line" ] ||
-       [ "$discovery_line" -ge "$artifact_line" ] ||
-       [ "$artifact_line" -ge "$write_line" ]; then
-      echo "Unsupported/deferred classification, driver discovery, and artifact access are misordered."
-      printf '%s\n' "$compile_body"
-      exit 1
-    fi
-    for token in \
-      'deferred or unsupported source reached driver discovery' \
-      'failed native compilation changed the existing output' \
-      'failed native compilation left transient request artifacts'
-    do
-      rg -n -F "$token" "$differential_harness" >/dev/null
-    done
-
-    if [ "$(rg -c -F 'invocation.backend.tag = 0; // MirToC' "$invocation_source")" != "2" ]; then
-      echo "Default and explicit MIR-to-C selections must map to the same typed backend tag."
-      exit 1
-    fi
-    if [ "$(rg -c -F 'mut c_code := codegen.codegen_generate(' "$invocation_source")" != "1" ]; then
-      echo "MIR-to-C must retain exactly one shared code-generation path."
-      exit 1
-    fi
     rg -n -F 'cmp -s "$case_dir/default.c" "$case_dir/explicit.c"' \
       "$differential_harness" >/dev/null
     rg -n -F 'default and explicit MIR-to-C output are not byte-identical' \
       "$differential_harness" >/dev/null
-
-    native_branch="$(
-      sed -n \
-        '/if invocation.backend.tag == 1 {/,/Default and explicit MIR-to-C selections/p' \
-        "$invocation_source"
-    )"
-    if printf '%s\n' "$native_branch" |
-       rg -n -F 'codegen.codegen_generate(' >/dev/null; then
-      echo "Explicit Cranelift selection contains a MIR-to-C fallback."
-      exit 1
-    fi
-    if [ "$(printf '%s\n' "$native_branch" | rg -c -F 'os.Exit(0);')" != "1" ] ||
-       [ "$(printf '%s\n' "$native_branch" | rg -c -F 'os.Exit(1);')" != "2" ]; then
-      echo "Explicit Cranelift selection must terminate on success, deferral, and failure."
-      printf '%s\n' "$native_branch"
-      exit 1
-    fi
-    rg -n -F 'fallback to MIR-to-C.' "$invocation_source" >/dev/null
-
-    process_body="$(
-      sed -n \
-        '/^func mir_native_scalar_source_process(/,/^}/p' \
-        "$route_source"
-    )"
-    if [ "$(printf '%s\n' "$process_body" | rg -c -F 'arguments.Push(')" != "3" ]; then
-      echo "Native worker process invocation must contain only driver, command, and optional request path."
-      printf '%s\n' "$process_body"
-      exit 1
-    fi
-    for token in \
-      'arguments.Push(std.Clone(ctx, driver_path));' \
-      'arguments.Push(std.Clone(ctx, command_name));' \
-      'arguments.Push(std.Clone(ctx, request_path));'
-    do
-      printf '%s\n' "$process_body" | rg -n -F "$token" >/dev/null
-    done
-    rg -n -F '"phase10-backend-request-compile"' "$route_source" >/dev/null
-    rg -n -F 'compile_phase10_scalar_metadata_request_path(' "$worker_source" >/dev/null
-    worker_command_body="$(
-      sed -n \
-        '/"phase10-backend-request-compile" => {/,/^        }/p' \
-        "$worker_source"
-    )"
-    for token in \
-      'let Some(request_path) = args.next()' \
-      'if args.next().is_some()' \
-      'Path::new(&request_path)'
-    do
-      printf '%s\n' "$worker_command_body" | rg -n -F "$token" >/dev/null
-    done
-    for forbidden_request_field in source_path source_text source_bytes ast_program; do
-      if rg -n -F "$forbidden_request_field" "$request_source" >/dev/null; then
-        echo "Native worker request exposes forbidden source input: $forbidden_request_field"
-        exit 1
-      fi
-    done
-    for request_field in \
-      target_triple object_format output_path \
-      program_mir_bundle_path program_bundle
-    do
-      rg -n -F "$request_field" "$request_source" >/dev/null
-    done
 
     phase10_close_body="$(
       sed -n \
@@ -17368,10 +17179,10 @@ guard-cranelift-phase11-closure-summary:
     registry_schema="scripts/cranelift_feature_registry.schema.json"
     validator="scripts/cranelift_registry.py"
     phase13_view="compiler/CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY.md"
-    route_source="compiler/mir_native_backend_source_route.gst"
-    invocation_source="compiler/test_runner_entry.gst"
 
-    for required_file in       "$manifest_doc" "$registry_json" "$registry_schema" "$validator"       "$phase13_view" "$route_source" "$invocation_source" justfile
+    for required_file in \
+      "$manifest_doc" "$registry_json" "$registry_schema" "$validator" \
+      "$phase13_view" justfile
     do
       if [ ! -f "$required_file" ] || [ -L "$required_file" ]; then
         echo "Phase 11 closure-summary input must be a regular non-symlink file: $required_file"
@@ -17405,46 +17216,29 @@ guard-cranelift-phase11-closure-summary:
       fi
     done
 
+
     python3 "$validator" verify-phase11-closure
+    PHASE11_ROUTE_ARCHITECTURE_SKIP_DYNAMIC=1 \
+      just guard-cranelift-route-architecture-contract
 
-    if [ "$(rg -c -F 'generic_source.mir_native_generic_source_lower(' "$route_source")" != "1" ]; then
-      echo "Phase 11 closure summary requires exactly one generic canonical-MIR production entry."
-      exit 1
-    fi
-    if [ "$(rg -c -F 'return mir_native_scalar_source_deferred_result(ctx);' "$route_source")" != "1" ]; then
-      echo "Phase 11 closure summary requires exactly one typed deferred production result."
-      exit 1
-    fi
-    for retired_symbol in       'func mir_native_scalar_source_lower('       'func mir_native_cfg_source_lower('       'func mir_native_call_import_source_lower('
-    do
-      if rg -n -F "$retired_symbol" "$route_source" >/dev/null; then
-        echo "Phase 11 closure summary found a retired exact-shape route: $retired_symbol"
-        exit 1
-      fi
-    done
-
-    native_branch="$(
-      sed -n         '/if invocation.backend.tag == 1 {/,/Default and explicit MIR-to-C selections/p'         "$invocation_source"
-    )"
-    if printf '%s\n' "$native_branch" |
-       rg -n -F 'codegen.codegen_generate(' >/dev/null; then
-      echo "Explicit Cranelift selection contains a MIR-to-C fallback."
-      exit 1
-    fi
-    if [ "$(printf '%s\n' "$native_branch" | rg -c -F 'os.Exit(0);')" != "1" ] ||
-       [ "$(printf '%s\n' "$native_branch" | rg -c -F 'os.Exit(1);')" != "2" ]; then
-      echo "Explicit Cranelift selection must terminate on success, deferral, and failure."
-      exit 1
-    fi
-
-    rg -n -x -F       'allowed_cranelift_phase11_close_artifact_policy: Phase9G_remains_the_only_verified_object_link_cleanup_and_atomic_publication_owner'       "$manifest_doc" >/dev/null
+    rg -n -x -F \
+      'allowed_cranelift_phase11_close_artifact_policy: Phase9G_remains_the_only_verified_object_link_cleanup_and_atomic_publication_owner' \
+      "$manifest_doc" >/dev/null
     rg -n -x -F 'guard-cranelift-phase9g-close:' justfile >/dev/null
 
     summary_body="$(
-      sed -n         '/^guard-cranelift-phase11-closure-summary:/,/^guard-cranelift-phase13-registry-schema:/p'         justfile
+      sed -n \
+        '/^guard-cranelift-phase11-closure-summary:/,/^guard-cranelift-phase13-registry-schema:/p' \
+        justfile
     )"
     if printf '%s\n' "$summary_body" |
-       rg -n          -e '^[[:space:]]+just guard-cranelift-phase9g-close([[:space:]]|$)'          -e '^[[:space:]]+just guard-cranelift-phase10-close([[:space:]]|$)'          -e '^[[:space:]]+just guard-cranelift-phase11-(generic-route|scalar-expression-parity|local-state-parity|structured-cfg-parity|block-parameter-loop-parity|direct-call-abi-parity|module-import-runtime-parity|metadata-diagnostic-parity)([[:space:]]|$)'          -e '^[[:space:]]+just guard-(pr-fast|cloud-heavy)-ci-surface([[:space:]]|$)'          -e '^[[:space:]]+bash .*phase11_registry_differential\.sh([[:space:]]|$)'          >/dev/null
+       rg -n \
+         -e '^[[:space:]]+just guard-cranelift-phase9g-close([[:space:]]|$)' \
+         -e '^[[:space:]]+just guard-cranelift-phase10-close([[:space:]]|$)' \
+         -e '^[[:space:]]+just guard-cranelift-phase11-(generic-canonical-mir-route|scalar-expression-parity|local-state-parity|structured-cfg-parity|block-parameter-loop-parity|direct-call-abi-parity|module-import-runtime-parity|metadata-diagnostic-parity)([[:space:]]|$)' \
+         -e '^[[:space:]]+just guard-(pr-fast|cloud-heavy)-ci-surface([[:space:]]|$)' \
+         -e '^[[:space:]]+bash .*phase11_registry_differential\.sh([[:space:]]|$)' \
+         >/dev/null
     then
       echo "Phase 11 closure summary recursively replays historical evidence."
       exit 1
@@ -17459,7 +17253,7 @@ guard-cranelift-phase11-closure-summary:
       exit 1
     fi
 
-    echo "✅ Phase 11 closure summary passed without replaying Phase 9G, Phase 10, feature, workflow, or differential guards."
+    echo "✅ Phase 11 closure summary passed using the semantic snapshot, route-architecture hard bans, and the Phase 9G owner reference without replaying historical evidence."
 
 guard-cranelift-phase13-registry-schema:
     #!/usr/bin/env bash

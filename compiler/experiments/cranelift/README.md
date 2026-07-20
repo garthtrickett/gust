@@ -1552,39 +1552,37 @@ disabled by default, and no production runtime or backend route is enabled.
 
 
 
-Phase 11 Patch 11 retires the exact-shape compatibility implementation as
-`phase11_retired_exact_shape_source_routes`. The production source orchestrator
-contains one entry into `mir_native_generic_source_lower`; it no longer
-constructs scalar, literal-CFG, merge, local-identity-call, or runtime-`abs`
-bundles itself and no longer shadow-compares a legacy bundle. The semantic
-lowerers for local state, structured CFG, block parameters and reducible
-backedges, direct scalar calls, and resolver-owned modules/imports remain behind
-the generic canonical-MIR owner. Unsupported source semantics return the single
-typed `SourceFeatureNotRepresented` result before driver discovery.
+Phase 12.5 moves current native-route architecture protection from positive
+implementation-name and source-order checks to observable evidence.
+`guard-cranelift-route-architecture-contract` keeps only four explicit source
+bans: raw Gust-source fields in the worker request, direct raw-source reads or
+source-path recognition in production route lowerers, the three retired
+exact-shape recognizer functions, and a MIR-to-C code-generation call inside
+the explicit Cranelift terminal branch.
 
-`scripts/phase11_registry_differential.sh` treats every
-`route_owner=generic_canonical_mir` registry entry as executable evidence. For
-each selected entry it proves default and explicit MIR-to-C byte identity,
-builds and executes the emitted C, compiles and executes the explicit Cranelift
-result, compares exit status plus stdout and stderr bytes, and verifies that the
-entry's deferred fixture cannot modify an existing output or reach a missing
-driver. Every failure names the owning parity entry and focused CI family.
+`scripts/phase12_5_route_architecture.sh` supplies the primary evidence. It
+compiles an unregistered scalar source and a renamed-function, altered-literal
+direct-call variant, compares their native behavior with the MIR-to-C runtime
+oracle, and runs explicit Cranelift while a test-only MIR-to-C poison is active.
+A recording driver proves that the worker receives only the handshake command
+and the compile command plus one request path; the captured request contains no
+raw source fields or source path. An unsupported multiplication source uses an
+executable poisoned driver and a sentinel output to prove early deferral:
+the driver is not invoked, no request or canonical bundle is published, no
+object, link temporary, or linker log is created, and the existing output is
+unchanged.
 
-PR Fast replaces seventeen Phase 10 and broad backend-suite rows with seven
-focused families: `cranelift-phase11-scalars`, `cranelift-phase11-locals`,
-`cranelift-phase11-cfg`, `cranelift-phase11-block-params`,
-`cranelift-phase11-direct-calls`, `cranelift-phase11-imports`, and
-`cranelift-phase11-metadata-diagnostics`. This reduces PR Fast from 33 to 23
-rows. The 33-row Heavy matrix remains unchanged, so the new families are not
-silently duplicated. Phase 10 scalar, CFG/merge, and call/import/runtime guards
-now preserve historical fixtures, protocol records, and observable baselines
-without requiring removed production recognizer functions.
-`guard-cranelift-phase11-route-retirement-ci` owns the retirement, differential,
-historical-guard, registry, and CI-shape contract. The next milestone is
-aggregate and resource code-generation parity.
+The existing `cranelift-differential` PR shard runs this behavioral contract
+without increasing the 23-shard capacity. Registry-derived family jobs retain
+feature-level differential coverage, while Phase 10 source-route guards now
+preserve historical fixtures and protocol baselines without asserting a
+current production implementation shape. The next milestone is the
+three-level test partition.
+
 
 The checked-in lockfile for this crate is owned by:
 
 ```bash
 cargo generate-lockfile --manifest-path compiler/experiments/cranelift/Cargo.toml
 ```
+
