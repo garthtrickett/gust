@@ -1366,7 +1366,7 @@
       "capability_id": "phase13_generic_source_to_mir",
       "capability_decision_owner": "compiler_generic_native_capability_planner",
       "capability_decision": "supported",
-      "capability_reason_code": "supported_p13_scalar_mul_sub_literal_chain",
+      "capability_reason_code": "supported_p13_scalar_multiply_i32",
       "expected_failure_stage": "none_supported",
       "source_fixture": "compiler/phase11_scalar_unsupported_multiply_source.gst",
       "canonical_mir_fixture": "compiler/fixtures/native_backend_phase13_scalar_expression_ingestion.mir",

@@ -844,7 +844,7 @@ def verify_phase13_scalar_expression_contract(registry):
     )
     require(
         entry["capability_reason_code"]
-        == "supported_p13_scalar_mul_sub_literal_chain",
+        == "supported_p13_scalar_multiply_i32",
         "Phase 13 scalar-expression capability reason code drifted",
     )
     require(
