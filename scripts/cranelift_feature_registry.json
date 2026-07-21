@@ -1371,8 +1371,8 @@
       "source_fixture": "compiler/phase11_scalar_unsupported_multiply_source.gst",
       "canonical_mir_fixture": "compiler/fixtures/native_backend_phase13_scalar_expression_ingestion.mir",
       "differential_case_id": "phase13_opening:p13_scalar_multiply_i32",
-      "deferral_reason": "none_migrated_bounded_mul_sub_literal_chain",
-      "future_destination_phase": "none",
+      "deferral_reason": "none_migrated",
+      "future_destination_phase": "none_migrated",
       "closure_version": "phase13_opening_inventory_v1",
       "evidence": {
         "opening_record_kind": "candidate",

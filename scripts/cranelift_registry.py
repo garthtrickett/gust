@@ -857,8 +857,9 @@ def verify_phase13_scalar_expression_contract(registry):
         "Phase 13 scalar-expression canonical MIR fixture drifted",
     )
     require(
-        entry["future_destination_phase"] == "none",
-        "Migrated Phase 13 scalar-expression row must not retain a future phase",
+        entry["deferral_reason"] == "none_migrated"
+        and entry["future_destination_phase"] == "none_migrated",
+        "Migrated Phase 13 scalar-expression row must use canonical migrated fields",
     )
 
     evidence = entry["evidence"]
