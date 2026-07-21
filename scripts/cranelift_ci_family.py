@@ -361,11 +361,9 @@ def main():
                 f"{len(families)} row-derived families and one runner mapping."
             )
         elif args.command == "families":
-            print_families(registry)
             print("\n".join(families))
         elif args.command == "matrix-json":
             print(json.dumps(families, separators=(",", ":")))
-            print_matrix(registry)
         elif args.command == "validate-family":
             require(args.value is not None, "validate-family requires a family")
             validate_family(registry, args.value)

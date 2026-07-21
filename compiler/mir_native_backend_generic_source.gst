@@ -1915,7 +1915,7 @@ func mir_native_generic_plan_from_bundle(bundle: mir.MirProgramBundle[ctx], ctx:
         ) == 1 ||
            mir_native_generic_contains(
                canonical,
-               "LocalI32AddParam"
+               "BlockParamI32AddI32Literal"
            ) == 1
         {
             has_add = 1;
@@ -1935,7 +1935,6 @@ func mir_native_generic_plan_from_bundle(bundle: mir.MirProgramBundle[ctx], ctx:
         if mir_native_generic_contains(
             canonical,
             "BranchLocalI32Positive"
-        ) == 1 {
         ) == 1 ||
            mir_native_generic_contains(
                canonical,
