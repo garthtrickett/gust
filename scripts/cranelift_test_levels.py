@@ -153,6 +153,14 @@ def check_pr_workflow(policy: dict) -> None:
     )
     require(
         text.count(
+            "just guard-cranelift-phase13-capability-deferral-contract"
+        )
+        == 1,
+        "PR Fast must invoke the Phase 13 capability/deferral contract "
+        "exactly once",
+    )
+    require(
+        text.count(
             'just guard-cranelift-differential-family "${{ matrix.family }}"'
         )
         == 1,

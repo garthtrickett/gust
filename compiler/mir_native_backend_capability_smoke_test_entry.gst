@@ -349,5 +349,138 @@ func main() {
         fail("Capability smoke: absent requirement module must be an internal MIR failure");
     }
 
+    mut supported_route_decision :=
+        capability.mir_native_backend_supported_route_decision(ctx);
+    supported_route_decision =
+        capability.mir_native_backend_route_decision_with_location(
+            supported_route_decision,
+            "compiler/phase13_capability_supported_source.gst",
+            1,
+            1,
+            ctx
+        );
+    if capability.mir_native_backend_route_decision_is_valid(
+        supported_route_decision
+    ) == 0 ||
+       supported_route_decision.kind.tag != 0
+    {
+        fail("Capability smoke: supported Phase 13 route decision drifted");
+    }
+    mut supported_route_line :=
+        capability.mir_native_backend_route_decision_line(
+            supported_route_decision,
+            ctx
+        );
+    if std.str_find(
+        supported_route_line,
+        "decision=supported capability=phase13_generic_source_to_mir"
+    ) == 0 - 1 ||
+       std.str_find(
+           supported_route_line,
+           "owner=compiler_generic_native_capability_planner"
+       ) == 0 - 1 ||
+       std.str_find(
+           supported_route_line,
+           "reason_code=supported expected_failure_stage=none_supported"
+       ) == 0 - 1
+    {
+        fail("Capability smoke: supported Phase 13 decision line drifted");
+    }
+
+    mut deferred_route_decision :=
+        capability.mir_native_backend_deferred_route_decision(
+            "source_feature_not_represented",
+            ctx
+        );
+    deferred_route_decision =
+        capability.mir_native_backend_route_decision_with_location(
+            deferred_route_decision,
+            "compiler/phase13_capability_deferred_source.gst",
+            4,
+            7,
+            ctx
+        );
+    if capability.mir_native_backend_route_decision_is_valid(
+        deferred_route_decision
+    ) == 0 ||
+       deferred_route_decision.kind.tag != 1
+    {
+        fail("Capability smoke: deferred Phase 13 route decision drifted");
+    }
+    mut deferred_route_line :=
+        capability.mir_native_backend_route_decision_line(
+            deferred_route_decision,
+            ctx
+        );
+    if std.str_find(
+        deferred_route_line,
+        "decision=deferred capability=phase13_generic_source_to_mir"
+    ) == 0 - 1 ||
+       std.str_find(
+           deferred_route_line,
+           "reason_code=source_feature_not_represented"
+       ) == 0 - 1 ||
+       std.str_find(
+           deferred_route_line,
+           "expected_failure_stage=before_driver_discovery"
+       ) == 0 - 1 ||
+       std.str_find(
+           deferred_route_line,
+           "source=compiler/phase13_capability_deferred_source.gst line=4 column=7"
+       ) == 0 - 1
+    {
+        fail("Capability smoke: deferred Phase 13 decision line drifted");
+    }
+
+    mut source_failure_route_decision :=
+        capability.mir_native_backend_source_or_type_failure_route_decision(
+            "source_or_type_failure",
+            ctx
+        );
+    source_failure_route_decision =
+        capability.mir_native_backend_route_decision_with_location(
+            source_failure_route_decision,
+            "compiler/phase13_invalid_source.gst",
+            3,
+            2,
+            ctx
+        );
+    if capability.mir_native_backend_route_decision_is_valid(
+        source_failure_route_decision
+    ) == 0 ||
+       source_failure_route_decision.kind.tag != 2
+    {
+        fail("Capability smoke: source/type failure decision drifted");
+    }
+    mut source_failure_route_line :=
+        capability.mir_native_backend_route_decision_line(
+            source_failure_route_decision,
+            ctx
+        );
+    if std.str_find(
+        source_failure_route_line,
+        "decision=source_or_type_failure"
+    ) == 0 - 1 ||
+       std.str_find(
+           source_failure_route_line,
+           "reason_code=source_or_type_failure"
+       ) == 0 - 1
+    {
+        fail("Capability smoke: source/type failure decision line drifted");
+    }
+
+    mut invalid_route_decision :=
+        capability.mir_native_backend_make_route_decision(
+            9,
+            "invalid",
+            "before_driver_discovery",
+            ctx
+        );
+    if capability.mir_native_backend_route_decision_is_valid(
+        invalid_route_decision
+    ) != 0 {
+        fail("Capability smoke: invalid decision kind unexpectedly validated");
+    }
+
     os.LogStr("SUCCESS: MIR native backend capability validation smoke");
 }

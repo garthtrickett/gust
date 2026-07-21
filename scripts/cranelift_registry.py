@@ -26,6 +26,15 @@ ENTRY_FIELDS = {
     "source_fixture", "canonical_mir_fixture", "differential_case_id",
     "deferral_reason", "future_destination_phase", "closure_version", "evidence",
 }
+PHASE13_CAPABILITY_FIELDS = {
+    "capability_id", "capability_decision_owner", "capability_decision",
+    "capability_reason_code", "expected_failure_stage",
+}
+PHASE13_CAPABILITY_ID = "phase13_generic_source_to_mir"
+PHASE13_CAPABILITY_OWNER = "compiler_generic_native_capability_planner"
+PHASE13_CAPABILITY_DECISIONS = {
+    "supported", "deferred", "source_or_type_failure",
+}
 SUPPORTED_FIELDS = {
     "statuses", "origin_phases", "feature_families",
     "route_owners", "worker_capability_owners", "diagnostic_owners",
@@ -350,7 +359,7 @@ def validate():
     require(registry["schema"] == "scripts/cranelift_feature_registry.schema.json",
             "registry schema path is not canonical")
     require(registry["schema_version"] == 1, "schema_version must be 1")
-    require(registry["registry_version"] == 2, "registry_version must be 2")
+    require(registry["registry_version"] == 3, "registry_version must be 3")
     require(
         registry["registry_status"]
         == "phase12_5_closed_cranelift_verification_framework_consolidation",
@@ -392,8 +401,11 @@ def validate():
     phase13 = []
     for index, entry in enumerate(entries):
         context = f"entries[{index}]"
-        require(isinstance(entry, dict) and set(entry) == ENTRY_FIELDS,
-                f"{context} fields drifted")
+        require(isinstance(entry, dict), f"{context} must be an object")
+        expected_fields = set(ENTRY_FIELDS)
+        if entry.get("origin_phase") == "phase13":
+            expected_fields.update(PHASE13_CAPABILITY_FIELDS)
+        require(set(entry) == expected_fields, f"{context} fields drifted")
         entry_id = text(entry["id"], f"{context}.id")
         require(all(ch.isalnum() or ch == "_" for ch in entry_id),
                 f"{entry_id}: unsupported ID characters")
@@ -477,6 +489,72 @@ def validate():
                 == registry["opening_snapshots"]["phase13"]["inventory_version"],
                 f"{entry_id}: Phase 13 closure version drifted",
             )
+            capability_id = text(
+                entry["capability_id"],
+                f"{entry_id}.capability_id",
+            )
+            capability_owner = text(
+                entry["capability_decision_owner"],
+                f"{entry_id}.capability_decision_owner",
+            )
+            capability_decision = text(
+                entry["capability_decision"],
+                f"{entry_id}.capability_decision",
+            )
+            capability_reason = text(
+                entry["capability_reason_code"],
+                f"{entry_id}.capability_reason_code",
+            )
+            expected_failure_stage = text(
+                entry["expected_failure_stage"],
+                f"{entry_id}.expected_failure_stage",
+            )
+            require(
+                capability_id == PHASE13_CAPABILITY_ID,
+                f"{entry_id}: capability ID drifted",
+            )
+            require(
+                capability_owner == PHASE13_CAPABILITY_OWNER,
+                f"{entry_id}: capability decision owner drifted",
+            )
+            require(
+                capability_decision in PHASE13_CAPABILITY_DECISIONS,
+                f"{entry_id}: unknown capability decision "
+                f"{capability_decision}",
+            )
+            require(
+                capability_reason
+                == f"{capability_decision}_{entry_id}",
+                f"{entry_id}: capability reason code must be derived from "
+                "the decision and stable row ID",
+            )
+            if capability_decision == "supported":
+                require(
+                    status == "migrated",
+                    f"{entry_id}: supported capability requires migrated status",
+                )
+                require(
+                    expected_failure_stage == "none_supported",
+                    f"{entry_id}: supported capability has a failure stage",
+                )
+            elif capability_decision == "deferred":
+                require(
+                    status in DEFERRED,
+                    f"{entry_id}: deferred capability requires deferred status",
+                )
+                require(
+                    expected_failure_stage == "before_driver_discovery",
+                    f"{entry_id}: deferred capability must stop before discovery",
+                )
+            else:
+                require(
+                    status == "excluded",
+                    f"{entry_id}: source/type failure requires excluded status",
+                )
+                require(
+                    expected_failure_stage == "before_driver_discovery",
+                    f"{entry_id}: source/type failure must stop before discovery",
+                )
             phase13.append(entry)
 
     phase11_by_id = {entry["id"]: entry for entry in phase11}
@@ -487,8 +565,11 @@ def validate():
             require(parent_id in phase11_by_id, f"{entry['id']}: missing parent {parent_id}")
             require(phase11_by_id[parent_id]["status"] == "deferred",
                     f"{entry['id']}: inherited parent is not deferred")
-            require(entry["status"] == "inherited_deferred",
-                    f"{entry['id']}: entry parent requires inherited_deferred")
+            require(
+                entry["status"]
+                in {"inherited_deferred", "migrated", "excluded"},
+                f"{entry['id']}: entry parent has invalid current status",
+            )
             require(
                 entry["source_fixture"] == phase11_by_id[parent_id]["source_fixture"],
                 f"{entry['id']}: inherited source fixture differs from Phase 11",
@@ -501,8 +582,11 @@ def validate():
         elif parent.startswith("phase11_category:"):
             category = parent.split(":", 1)[1]
             require(category in categories, f"{entry['id']}: unknown category {category}")
-            require(entry["status"] == "candidate_deferred",
-                    f"{entry['id']}: category parent requires candidate_deferred")
+            require(
+                entry["status"]
+                in {"candidate_deferred", "migrated", "excluded"},
+                f"{entry['id']}: category parent has invalid current status",
+            )
         else:
             raise Error(f"{entry['id']}: invalid parent {parent}")
 
@@ -640,12 +724,18 @@ def verify_phase13_opening_rebase(registry):
 def verify_phase13_registry_schema(registry):
     snapshot = verify_phase13_opening_rebase(registry)
     rows = phase_entries(registry, "phase13")
-    allowed_statuses = {"inherited_deferred", "candidate_deferred"}
+    allowed_statuses = {
+        "inherited_deferred", "candidate_deferred", "migrated", "excluded",
+    }
     required_owners = (
         "route_owner",
         "worker_capability_owner",
         "diagnostic_owner",
         "ci_family",
+        "capability_id",
+        "capability_decision_owner",
+        "capability_reason_code",
+        "expected_failure_stage",
     )
 
     for entry in rows:
@@ -656,15 +746,8 @@ def verify_phase13_registry_schema(registry):
         )
         require(
             entry["status"] in allowed_statuses,
-            f"{entry_id}: unsupported Phase 13 opening status {entry['status']}",
-        )
-        require(
-            entry["route_owner"] == "deferred",
-            f"{entry_id}: Phase 13 opening route owner must remain deferred",
-        )
-        require(
-            entry["future_destination_phase"] == "phase13",
-            f"{entry_id}: Phase 13 opening destination drifted",
+            f"{entry_id}: unsupported Phase 13 current status "
+            f"{entry['status']}",
         )
         require(
             entry["differential_case_id"] == f"phase13_opening:{entry_id}",
@@ -674,20 +757,51 @@ def verify_phase13_registry_schema(registry):
             text(entry[field], f"{entry_id}.{field}")
 
         evidence = entry["evidence"]
-        require(
-            set(evidence) == {"opening_record_kind"},
-            f"{entry_id}: Phase 13 opening evidence fields drifted",
-        )
         expected_kind = (
             "inherited"
-            if entry["status"] == "inherited_deferred"
+            if entry["parent"].startswith("phase11_entry:")
             else "candidate"
         )
         require(
-            evidence["opening_record_kind"] == expected_kind,
+            evidence.get("opening_record_kind") == expected_kind,
             f"{entry_id}: Phase 13 opening record kind drifted",
         )
     return rows
+
+
+def verify_phase13_capability_contract(registry):
+    rows = verify_phase13_registry_schema(registry)
+    decisions = Counter()
+    reason_codes = set()
+
+    for entry in rows:
+        entry_id = entry["id"]
+        decisions[entry["capability_decision"]] += 1
+        reason_code = entry["capability_reason_code"]
+        require(
+            reason_code not in reason_codes,
+            f"duplicate Phase 13 capability reason code: {reason_code}",
+        )
+        reason_codes.add(reason_code)
+        require(
+            entry["capability_id"] == PHASE13_CAPABILITY_ID,
+            f"{entry_id}: Phase 13 capability ID drifted",
+        )
+        require(
+            entry["capability_decision_owner"] == PHASE13_CAPABILITY_OWNER,
+            f"{entry_id}: Phase 13 capability owner drifted",
+        )
+
+    require(
+        sum(decisions.values()) == len(rows),
+        "Phase 13 capability decisions do not cover every registry row",
+    )
+    return {
+        "row_count": len(rows),
+        "capability_id": PHASE13_CAPABILITY_ID,
+        "decision_owner": PHASE13_CAPABILITY_OWNER,
+        "decision_counts": decisions,
+    }
 
 
 def verify_phase13_parent_traceability(registry):
@@ -712,8 +826,9 @@ def verify_phase13_parent_traceability(registry):
                 f"{entry_id}: inherited parent is not deferred",
             )
             require(
-                entry["status"] == "inherited_deferred",
-                f"{entry_id}: entry parent requires inherited_deferred",
+                entry["status"]
+                in {"inherited_deferred", "migrated", "excluded"},
+                f"{entry_id}: entry parent has invalid current status",
             )
             require(
                 entry["source_fixture"] == parent_entry["source_fixture"],
@@ -729,8 +844,9 @@ def verify_phase13_parent_traceability(registry):
             category = parent.split(":", 1)[1]
             require(category in categories, f"{entry_id}: unknown category {category}")
             require(
-                entry["status"] == "candidate_deferred",
-                f"{entry_id}: category parent requires candidate_deferred",
+                entry["status"]
+                in {"candidate_deferred", "migrated", "excluded"},
+                f"{entry_id}: category parent has invalid current status",
             )
         else:
             raise Error(f"{entry_id}: invalid parent {parent}")
@@ -745,7 +861,14 @@ def verify_phase13_parent_traceability(registry):
 def verify_phase13_opening_totals(registry):
     rows = verify_phase13_registry_schema(registry)
     parent_kinds = verify_phase13_parent_traceability(registry)
-    status_counts = Counter(entry["status"] for entry in rows)
+    status_counts = Counter(
+        (
+            "inherited_deferred"
+            if entry["evidence"]["opening_record_kind"] == "inherited"
+            else "candidate_deferred"
+        )
+        for entry in rows
+    )
     feature_counts = Counter(entry["feature_family"] for entry in rows)
     ci_counts = Counter(entry["ci_family"] for entry in rows)
 
@@ -827,7 +950,9 @@ def cell(value):
 PHASE13_VIEW_FIELDS = (
     "id", "parent", "feature_family", "source_fixture",
     "canonical_mir_fixture", "route_owner", "worker_capability_owner",
-    "diagnostic_owner", "ci_family", "status", "deferral_reason",
+    "diagnostic_owner", "capability_id", "capability_decision_owner",
+    "capability_decision", "capability_reason_code",
+    "expected_failure_stage", "ci_family", "status", "deferral_reason",
 )
 
 
@@ -842,6 +967,7 @@ def phase13_record(entry):
 def render_phase13(registry):
     snapshot = verify_phase13_opening_rebase(registry)
     totals = verify_phase13_opening_totals(registry)
+    capability_contract = verify_phase13_capability_contract(registry)
     rows = phase_entries(registry, "phase13")
     status_counts = totals["status_counts"]
     parent_kinds = totals["parent_kinds"]
@@ -851,7 +977,7 @@ def render_phase13(registry):
         "",
         "<!-- Generated by scripts/cranelift_registry.py; do not edit by hand. -->",
         "",
-        "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_VERSION: 2",
+        "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_VERSION: 3",
         "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_AUTHORITY: generated_review_view",
         "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_CANONICAL_SOURCE: scripts/cranelift_feature_registry.json",
         (
@@ -876,10 +1002,22 @@ def render_phase13(registry):
         ),
         "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_DERIVED_SUMMARY: docs/CRANELIFT_FEATURE_REGISTRY.md",
         (
+            "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_CAPABILITY_ID: "
+            f"{capability_contract['capability_id']}"
+        ),
+        (
+            "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_CAPABILITY_DECISION_OWNER: "
+            f"{capability_contract['decision_owner']}"
+        ),
+        (
+            "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_CAPABILITY_CONTRACT_STATUS: "
+            "patch13_1_capability_deferral_contract_active"
+        ),
+        (
             "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_OPENING_POLICY: "
             f"{snapshot['behavior_policy']}"
         ),
-        "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_NEXT_MILESTONE: patch13_1_capability_and_deferral_contract",
+        "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_NEXT_MILESTONE: patch13_2_broader_scalar_expression_lowering",
         "",
         "This review artifact is generated from the structured registry. Phase 12.5",
         "is closed under the recorded framework closure version. Stable Phase 13 IDs",
@@ -902,6 +1040,10 @@ def render_phase13(registry):
         "",
         *count_lines(totals["ci_counts"]),
         "",
+        "### Current capability decisions",
+        "",
+        *count_lines(capability_contract["decision_counts"]),
+        "",
         "## Opening entries",
         "",
         *[phase13_record(entry) for entry in rows],
@@ -909,14 +1051,14 @@ def render_phase13(registry):
         "## Opening invariants",
         "",
         "- The Phase 11 semantic closure summary is the opening predecessor.",
-        "- Every opening row is owned by the JSON registry and remains deferred.",
+        "- Every opening row is JSON-registry owned and has one validated capability decision.",
         "- Stable IDs and parent relationships must match the semantic opening snapshot.",
         "- Parent traceability and totals are validated from registry rows.",
         "- Phase 12.5 framework consolidation is formally closed before capability work resumes.",
         "- Full historical replay remains owned by the explicit Level 3 suite.",
         "- This rebase changes no compiler, route, worker, MIR, request, artifact, package, CLI, or workflow behavior.",
         "",
-        "Phase 13 is ready to resume at Patch 13.1.",
+        "Patch 13.1 capability and deferral ownership is active; Phase 13 may proceed to Patch 13.2.",
         "",
     ]
     rendered = "\n".join(lines)
@@ -1030,6 +1172,7 @@ def main():
             "verify-legacy-import",
             "verify-phase11-closure",
             "verify-phase13-schema",
+            "verify-phase13-capability-contract",
             "verify-phase13-opening-rebase",
             "verify-phase13-parent-traceability",
             "verify-phase13-opening-totals",
@@ -1047,6 +1190,8 @@ def main():
             verify_phase11_closure(registry)
         elif command == "verify-phase13-schema":
             verify_phase13_registry_schema(registry)
+        elif command == "verify-phase13-capability-contract":
+            verify_phase13_capability_contract(registry)
         elif command == "verify-phase13-opening-rebase":
             verify_phase13_opening_rebase(registry)
         elif command == "verify-phase13-parent-traceability":
@@ -1072,6 +1217,7 @@ def main():
     snapshot = registry["closure_snapshots"]["phase11"]
     classifications = snapshot["classification_counts"]
     phase13_totals = verify_phase13_opening_totals(registry)
+    phase13_contract = verify_phase13_capability_contract(registry)
     phase13_statuses = phase13_totals["status_counts"]
     phase13_parents = phase13_totals["parent_kinds"]
     messages = {
@@ -1093,6 +1239,15 @@ def main():
         "verify-phase13-schema": (
             "✅ Phase 13 opening registry schema passed: "
             f"{phase13_totals['row_count']} structurally owned rows."
+        ),
+        "verify-phase13-capability-contract": (
+            "✅ Phase 13 capability contract passed: "
+            f"{phase13_contract['row_count']} rows use "
+            f"{phase13_contract['capability_id']} with decisions "
+            f"supported={phase13_contract['decision_counts']['supported']}, "
+            f"deferred={phase13_contract['decision_counts']['deferred']}, "
+            "source_or_type_failure="
+            f"{phase13_contract['decision_counts']['source_or_type_failure']}."
         ),
         "verify-phase13-opening-rebase": (
             "✅ Phase 13 opening rebase passed: stable IDs and parent "

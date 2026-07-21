@@ -120,6 +120,8 @@ guard-pr-fast-ci-surface:
       'build and Level 1 contracts'
       'Phase 12.5 consolidation closure'
       'just guard-cranelift-phase12-5-close'
+      'Phase 13 capability and deferral contract'
+      'just guard-cranelift-phase13-capability-deferral-contract'
       'phase11-family:'
       'phase11_families:'
       'matrix.family'
@@ -12919,8 +12921,9 @@ guard-cranelift-phase11-ci-family family:
 guard-cranelift-contract-fast:
     #!/usr/bin/env bash
     set -euo pipefail
-    echo "⚡ guard-cranelift-contract-fast is the local Level 1 compatibility alias."
+    echo "⚡ Running the current local Level 1 Cranelift contracts."
     just guard-cranelift-phase12-5-close
+    just guard-cranelift-phase13-capability-deferral-contract
 
 guard-cranelift-historical-full:
     #!/usr/bin/env bash
@@ -13156,6 +13159,124 @@ guard-cranelift-phase13-opening-contract:
     just guard-cranelift-phase13-opening-totals
 
     echo "✅ Phase 13 opening is registry-owned, semantically traceable, derived-total based, and ready to resume at Patch 13.1."
+
+guard-cranelift-phase13-capability-deferral-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking the Phase 13 generic capability and deferral contract..."
+    capability_source="compiler/mir_native_backend_capability.gst"
+    capability_smoke="compiler/mir_native_backend_capability_smoke_test_entry.gst"
+    route_source="compiler/mir_native_backend_source_route.gst"
+    request_source="compiler/mir_native_backend_request.gst"
+    compiler_entry="compiler/test_runner_entry.gst"
+    registry_validator="scripts/cranelift_registry.py"
+    level_runner="scripts/cranelift_test_levels.py"
+    evidence_script="scripts/phase13_capability_deferral.sh"
+    pr_workflow=".github/workflows/pr-fast.yml"
+
+    for required_file in \
+      "$capability_source" "$capability_smoke" "$route_source" \
+      "$request_source" "$compiler_entry" "$registry_validator" \
+      "$level_runner" "$evidence_script" "$pr_workflow"
+    do
+      if [ ! -f "$required_file" ] || [ -L "$required_file" ]; then
+        echo "Missing regular Phase 13 capability-contract input: $required_file"
+        exit 1
+      fi
+    done
+
+    just guard-cranelift-phase13-opening-contract
+    python3 "$registry_validator" verify-phase13-capability-contract
+    just guard-mir-native-backend-capability-smoke
+    PHASE11_ROUTE_ARCHITECTURE_SKIP_DYNAMIC=1 \
+      just guard-cranelift-route-architecture-contract
+    just guard-cranelift-manifest-architecture-contract
+    python3 "$level_runner" validate
+    python3 "$level_runner" check-pr-workflow
+
+    required_capability_symbols=(
+      'type MirNativeBackendRouteDecisionKind enum {'
+      'type MirNativeBackendRouteDecision[ctx] struct {'
+      'func mir_native_backend_supported_route_decision('
+      'func mir_native_backend_deferred_route_decision('
+      'func mir_native_backend_source_or_type_failure_route_decision('
+      'func mir_native_backend_route_decision_with_location('
+      'func mir_native_backend_route_decision_is_valid('
+      'func mir_native_backend_route_decision_line('
+    )
+    for required_symbol in "${required_capability_symbols[@]}"; do
+      rg -n -F "$required_symbol" "$capability_source" >/dev/null
+    done
+
+    rg -n -F 'decision: capability.MirNativeBackendRouteDecision[ctx]' \
+      "$route_source" >/dev/null
+    rg -n -F 'mir_native_backend_route_decision_with_location(' \
+      "$route_source" >/dev/null
+    rg -n -F 'mir_native_scalar_source_capability_decision_line(' \
+      "$route_source" "$compiler_entry" >/dev/null
+
+    planning_line="$(
+      rg -n -m 1 -F 'mut static_result :=' "$route_source" |
+        cut -d: -f1
+    )"
+    discovery_line="$(
+      rg -n -m 1 -F 'mut discovery :=' "$route_source" |
+        cut -d: -f1
+    )"
+    request_line="$(
+      rg -n -m 1 -F 'mut serialized_request :=' "$route_source" |
+        cut -d: -f1
+    )"
+    first_write_line="$(
+      rg -n -m 1 -F 'os.WriteFile(bundle_path' "$route_source" |
+        cut -d: -f1
+    )"
+    if [ -z "$planning_line" ] ||
+       [ -z "$discovery_line" ] ||
+       [ -z "$request_line" ] ||
+       [ -z "$first_write_line" ] ||
+       [ "$planning_line" -ge "$discovery_line" ] ||
+       [ "$planning_line" -ge "$request_line" ] ||
+       [ "$planning_line" -ge "$first_write_line" ]
+    then
+      echo "Capability planning must complete before driver discovery, request serialization, or publication."
+      exit 1
+    fi
+
+    if rg -n \
+        -e '^[[:space:]]*(source_path|source_text|source_bytes|ast_program):' \
+        "$request_source" >/dev/null
+    then
+      echo "Phase 13 capability contract changed the worker request boundary."
+      exit 1
+    fi
+
+    bash -n "$evidence_script"
+    bash "$evidence_script"
+
+    if [ "$(rg -c -F 'just guard-cranelift-phase13-capability-deferral-contract' "$pr_workflow")" != "1" ]; then
+      echo "PR Fast must invoke the Phase 13 capability contract exactly once."
+      exit 1
+    fi
+
+    contract_body="$(
+      sed -n \
+        '/^guard-cranelift-phase13-capability-deferral-contract:/,/^guard-cranelift-phase12-5-close:/p' \
+        justfile
+    )"
+    if printf '%s\n' "$contract_body" |
+       rg -n \
+         -e '^[[:space:]]+just guard-cranelift-differential-family([[:space:]]|$)' \
+         -e '^[[:space:]]+just guard-cranelift-historical-full([[:space:]]|$)' \
+         -e '^[[:space:]]+just guard-cranelift-phase11-metadata-diagnostic-parity([[:space:]]|$)' \
+         -e '^[[:space:]]+just guard-cranelift-phase9g-close([[:space:]]|$)' \
+         >/dev/null
+    then
+      echo "Phase 13 capability contract must remain Level 1 and must not replay Level 2 or Level 3 evidence."
+      exit 1
+    fi
+
+    echo "✅ Phase 13.1 established one registry-owned supported/deferred/source-failure decision path before driver and artifact access, with preserved outputs, MIR-to-C default ownership, worker isolation, and no explicit-Cranelift fallback."
 
 guard-cranelift-phase12-5-close:
     #!/usr/bin/env bash

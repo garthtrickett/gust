@@ -54,6 +54,26 @@ type MirNativeBackendCapabilityResult[ctx] struct {
     detail: str
 }
 
+// Phase 13 compiler-owned decision for the generic source-to-canonical-MIR
+// native route. It is created before driver discovery or artifact access and
+// remains independent of any worker implementation.
+type MirNativeBackendRouteDecisionKind enum {
+    Supported,
+    Deferred,
+    SourceOrTypeFailure
+}
+
+type MirNativeBackendRouteDecision[ctx] struct {
+    kind: MirNativeBackendRouteDecisionKind,
+    capability_id: str,
+    decision_owner: str,
+    reason_code: str,
+    source_path: str,
+    line: int,
+    column: int,
+    expected_failure_stage: str
+}
+
 func mir_native_backend_empty_requirement_vector(ctx: &Arena) Index[std.Vector[MirNativeBackendRequirement[ctx], ctx], ctx] {
     mut requirements: std.Vector[MirNativeBackendRequirement[ctx], ctx] := std.VectorNew(ctx);
     mut requirements_idx: Index[std.Vector[MirNativeBackendRequirement[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
@@ -231,6 +251,152 @@ func mir_native_backend_make_capability_result(classification_tag: int, requirem
     result.feature = std.Clone(ctx, feature);
     result.detail = std.Clone(ctx, detail);
     return result;
+}
+
+func mir_native_backend_make_route_decision(kind_tag: int, reason_code: str, expected_failure_stage: str, ctx: &Arena) MirNativeBackendRouteDecision[ctx] {
+    mut decision: MirNativeBackendRouteDecision[ctx];
+    unsafe {
+        decision.kind.tag = kind_tag;
+    }
+    decision.capability_id = std.Clone(
+        ctx,
+        "phase13_generic_source_to_mir"
+    );
+    decision.decision_owner = std.Clone(
+        ctx,
+        "compiler_generic_native_capability_planner"
+    );
+    decision.reason_code = std.Clone(ctx, reason_code);
+    decision.source_path = std.Clone(ctx, "<source>");
+    decision.line = 1;
+    decision.column = 1;
+    decision.expected_failure_stage = std.Clone(
+        ctx,
+        expected_failure_stage
+    );
+    return decision;
+}
+
+func mir_native_backend_supported_route_decision(ctx: &Arena) MirNativeBackendRouteDecision[ctx] {
+    return mir_native_backend_make_route_decision(
+        0,
+        "supported",
+        "none_supported",
+        ctx
+    );
+}
+
+func mir_native_backend_deferred_route_decision(reason_code: str, ctx: &Arena) MirNativeBackendRouteDecision[ctx] {
+    return mir_native_backend_make_route_decision(
+        1,
+        reason_code,
+        "before_driver_discovery",
+        ctx
+    );
+}
+
+func mir_native_backend_source_or_type_failure_route_decision(reason_code: str, ctx: &Arena) MirNativeBackendRouteDecision[ctx] {
+    return mir_native_backend_make_route_decision(
+        2,
+        reason_code,
+        "before_driver_discovery",
+        ctx
+    );
+}
+
+func mir_native_backend_route_decision_with_location(decision: MirNativeBackendRouteDecision[ctx], source_path: str, line: int, column: int, ctx: &Arena) MirNativeBackendRouteDecision[ctx] {
+    mut located := decision;
+    located.source_path = std.Clone(ctx, source_path);
+    located.line = line;
+    located.column = column;
+    return located;
+}
+
+func mir_native_backend_route_decision_kind_name(decision: MirNativeBackendRouteDecision[ctx]) str {
+    if decision.kind.tag == 0 {
+        return "supported";
+    }
+    if decision.kind.tag == 1 {
+        return "deferred";
+    }
+    if decision.kind.tag == 2 {
+        return "source_or_type_failure";
+    }
+    return "invalid";
+}
+
+func mir_native_backend_route_decision_is_valid(decision: MirNativeBackendRouteDecision[ctx]) int {
+    if decision.kind.tag != 0 &&
+       decision.kind.tag != 1 &&
+       decision.kind.tag != 2
+    {
+        return 0;
+    }
+    if std.str_eq(
+        decision.capability_id,
+        "phase13_generic_source_to_mir"
+    ) == 0 {
+        return 0;
+    }
+    if std.str_eq(
+        decision.decision_owner,
+        "compiler_generic_native_capability_planner"
+    ) == 0 {
+        return 0;
+    }
+    if len(decision.reason_code) == 0 ||
+       len(decision.source_path) == 0 ||
+       len(decision.expected_failure_stage) == 0 ||
+       decision.line <= 0 ||
+       decision.column <= 0
+    {
+        return 0;
+    }
+
+    if decision.kind.tag == 0 {
+        if std.str_eq(decision.reason_code, "supported") == 0 ||
+           std.str_eq(
+               decision.expected_failure_stage,
+               "none_supported"
+           ) == 0
+        {
+            return 0;
+        }
+        return 1;
+    }
+
+    if std.str_eq(decision.reason_code, "supported") == 1 ||
+       std.str_eq(
+           decision.expected_failure_stage,
+           "before_driver_discovery"
+       ) == 0
+    {
+        return 0;
+    }
+    return 1;
+}
+
+func mir_native_backend_route_decision_line(decision: MirNativeBackendRouteDecision[ctx], ctx: &Arena) str {
+    mut output := "gust_native_capability_decision: contract=gust.native_backend.capability.v1 decision=";
+    output = std.Concat(
+        output,
+        mir_native_backend_route_decision_kind_name(decision)
+    );
+    output = std.Concat(output, " capability=");
+    output = std.Concat(output, decision.capability_id);
+    output = std.Concat(output, " owner=");
+    output = std.Concat(output, decision.decision_owner);
+    output = std.Concat(output, " reason_code=");
+    output = std.Concat(output, decision.reason_code);
+    output = std.Concat(output, " expected_failure_stage=");
+    output = std.Concat(output, decision.expected_failure_stage);
+    output = std.Concat(output, " source=");
+    output = std.Concat(output, decision.source_path);
+    output = std.Concat(output, " line=");
+    output = std.Concat(output, std.FormatInt(decision.line));
+    output = std.Concat(output, " column=");
+    output = std.Concat(output, std.FormatInt(decision.column));
+    return std.Clone(ctx, output);
 }
 
 func mir_native_backend_invalid_compiler_mir_result(module_path: str, function_name: str, block_label: str, ordinal: int, feature: str, detail: str, ctx: &Arena) MirNativeBackendCapabilityResult[ctx] {

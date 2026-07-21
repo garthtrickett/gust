@@ -392,6 +392,12 @@ func main() {
             os.Exit(0);
         }
         os.LogStr(
+            native_source_route.mir_native_scalar_source_capability_decision_line(
+                native_result,
+                ctx
+            )
+        );
+        os.LogStr(
             native_source_route.mir_native_scalar_source_diagnostic_line(
                 native_result,
                 ctx

@@ -10,8 +10,8 @@ import "mir_native_backend_request.gst" as request;
 // Patch 11 retires the Phase 10 exact-shape compatibility implementation.
 // Every supported source program is lowered by the registry-owned generic
 // canonical-MIR pipeline before capability validation or driver discovery.
-// Unsupported source semantics return one typed deferred result; invalid MIR
-// and unsupported native capabilities remain classified failures.
+// Phase 13 maps every generic route attempt to one compiler-owned supported,
+// deferred, or source/type-failure decision before any driver or artifact access.
 type MirNativeDiagnosticClass enum {
     SourceTypeError,
     CanonicalMirVerificationError,
@@ -27,18 +27,13 @@ type MirNativeDiagnosticLocation[ctx] struct {
     column: int
 }
 
-type MirNativeDeferredReason enum {
-    NotDeferred,
-    SourceFeatureNotRepresented
-}
-
 type MirNativeScalarSourceRouteResult[ctx] struct {
     status: int,
     diagnostic: str,
     source_path: str,
     line: int,
     column: int,
-    deferred_reason: MirNativeDeferredReason
+    decision: capability.MirNativeBackendRouteDecision[ctx]
 }
 
 func mir_native_scalar_source_route_result(status: int, diagnostic: str, ctx: &Arena) MirNativeScalarSourceRouteResult[ctx] {
@@ -48,17 +43,31 @@ func mir_native_scalar_source_route_result(status: int, diagnostic: str, ctx: &A
     result.source_path = std.Clone(ctx, "");
     result.line = 1;
     result.column = 1;
-    unsafe {
-        result.deferred_reason.tag = 0;
-    }
+    // Direct route results occur only after static capability planning has
+    // selected the supported lane. Deferred and source/type failures use the
+    // dedicated constructors below.
+    result.decision =
+        capability.mir_native_backend_supported_route_decision(ctx);
     return result;
 }
 
-func mir_native_scalar_source_deferred_result(ctx: &Arena) MirNativeScalarSourceRouteResult[ctx] {
-    mut result := mir_native_scalar_source_route_result(2, "", ctx);
-    unsafe {
-        result.deferred_reason.tag = 1;
-    }
+func mir_native_scalar_source_deferred_result(reason_code: str, diagnostic: str, ctx: &Arena) MirNativeScalarSourceRouteResult[ctx] {
+    mut result := mir_native_scalar_source_route_result(2, diagnostic, ctx);
+    result.decision =
+        capability.mir_native_backend_deferred_route_decision(
+            reason_code,
+            ctx
+        );
+    return result;
+}
+
+func mir_native_scalar_source_failure_result(reason_code: str, diagnostic: str, ctx: &Arena) MirNativeScalarSourceRouteResult[ctx] {
+    mut result := mir_native_scalar_source_route_result(1, diagnostic, ctx);
+    result.decision =
+        capability.mir_native_backend_source_or_type_failure_route_decision(
+            reason_code,
+            ctx
+        );
     return result;
 }
 
@@ -211,6 +220,13 @@ func mir_native_scalar_source_diagnostic_class_name(classification: MirNativeDia
     return "worker_lowering_error";
 }
 
+func mir_native_scalar_source_capability_decision_line(result: MirNativeScalarSourceRouteResult[ctx], ctx: &Arena) str {
+    return capability.mir_native_backend_route_decision_line(
+        result.decision,
+        ctx
+    );
+}
+
 func mir_native_scalar_source_diagnostic_line(result: MirNativeScalarSourceRouteResult[ctx], ctx: &Arena) str {
     mut classification :=
         mir_native_scalar_source_diagnostic_class(result);
@@ -356,22 +372,26 @@ func mir_native_scalar_source_compile_inner(programs: std.Vector[ast.Program[ctx
     );
 
     if generic_result.eligibility.tag == 3 {
-        return mir_native_scalar_source_route_result(
-            1,
+        return mir_native_scalar_source_failure_result(
+            "source_or_type_failure",
             generic_result.diagnostic,
             ctx
         );
     }
     if generic_result.eligibility.tag == 2 {
-        return mir_native_scalar_source_route_result(
-            1,
+        return mir_native_scalar_source_deferred_result(
+            "native_capability_unsupported",
             generic_result.diagnostic,
             ctx
         );
     }
 
     if generic_result.eligibility.tag == 1 {
-        return mir_native_scalar_source_deferred_result(ctx);
+        return mir_native_scalar_source_deferred_result(
+            "source_feature_not_represented",
+            "",
+            ctx
+        );
     }
 
     mut serialized_generic_bundle := mir.mir_serialize_program_bundle(
@@ -379,8 +399,8 @@ func mir_native_scalar_source_compile_inner(programs: std.Vector[ast.Program[ctx
         ctx
     );
     if std.str_eq(serialized_generic_bundle, "format: invalid\n") == 1 {
-        return mir_native_scalar_source_route_result(
-            1,
+        return mir_native_scalar_source_failure_result(
+            "invalid_canonical_mir",
             "Native backend internal error: generic canonical MIR bundle validation failed",
             ctx
         );
@@ -392,9 +412,19 @@ func mir_native_scalar_source_compile_inner(programs: std.Vector[ast.Program[ctx
         static_capabilities,
         ctx
     );
+    if static_result.classification.tag == 5 {
+        return mir_native_scalar_source_failure_result(
+            "invalid_compiler_mir",
+            capability.mir_native_backend_capability_diagnostic(
+                static_result,
+                ctx
+            ),
+            ctx
+        );
+    }
     if static_result.classification.tag != 0 {
-        return mir_native_scalar_source_route_result(
-            1,
+        return mir_native_scalar_source_deferred_result(
+            "native_capability_unsupported",
             capability.mir_native_backend_capability_diagnostic(
                 static_result,
                 ctx
@@ -655,5 +685,13 @@ func mir_native_scalar_source_compile(programs: std.Vector[ast.Program[ctx], ctx
     result.source_path = std.Clone(ctx, location.source_path);
     result.line = location.line;
     result.column = location.column;
+    result.decision =
+        capability.mir_native_backend_route_decision_with_location(
+            result.decision,
+            location.source_path,
+            location.line,
+            location.column,
+            ctx
+        );
     return result;
 }

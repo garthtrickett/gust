@@ -26,7 +26,7 @@
       "const": 1
     },
     "registry_version": {
-      "const": 2
+      "const": 3
     },
     "registry_status": {
       "const": "phase12_5_closed_cranelift_verification_framework_consolidation"
@@ -402,6 +402,29 @@
         "closure_version",
         "evidence"
       ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "origin_phase": {
+                "const": "phase13"
+              }
+            },
+            "required": [
+              "origin_phase"
+            ]
+          },
+          "then": {
+            "required": [
+              "capability_id",
+              "capability_decision_owner",
+              "capability_decision",
+              "capability_reason_code",
+              "expected_failure_stage"
+            ]
+          }
+        }
+      ],
       "properties": {
         "id": {
           "type": "string",
@@ -438,6 +461,31 @@
         "diagnostic_owner": {
           "type": "string",
           "minLength": 1
+        },
+        "capability_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_]+$"
+        },
+        "capability_decision_owner": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_]+$"
+        },
+        "capability_decision": {
+          "enum": [
+            "supported",
+            "deferred",
+            "source_or_type_failure"
+          ]
+        },
+        "capability_reason_code": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_]+$"
+        },
+        "expected_failure_stage": {
+          "enum": [
+            "none_supported",
+            "before_driver_discovery"
+          ]
         },
         "source_fixture": {
           "type": "string",
