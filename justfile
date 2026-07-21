@@ -13215,11 +13215,17 @@ guard-cranelift-phase12-5-close:
       exit 1
     fi
 
-    if rg -n -F 'Expected exactly 33 cloud heavy matrix shards' justfile >/dev/null; then
-      echo 'Cloud Heavy still treats an exact matrix total as backend correctness.'
+    cloud_heavy_contract_body="$(sed -n '/^guard-cloud-heavy-ci-surface:/,/^guard-step51-hashmap-get-value:/p' justfile)"
+    if printf '%s\n' "$cloud_heavy_contract_body" |
+        rg -n -e 'shard_count.*33' -e '33.*shard_count' >/dev/null
+    then
+      echo 'Cloud Heavy still compares its shard count to the obsolete literal total 33.'
+      printf '%s\n' "$cloud_heavy_contract_body" |
+        rg -n -e 'shard_count.*33' -e '33.*shard_count'
       exit 1
     fi
-    rg -n -F 'cloud_heavy_shard_capacity=40' justfile >/dev/null
+    printf '%s\n' "$cloud_heavy_contract_body" |
+      rg -n -F 'cloud_heavy_shard_capacity=40' >/dev/null
 
     if [ "$(rg -c -F 'just guard-cranelift-historical-full' "$historical_workflow")" != '1' ]; then
       echo 'The scheduled/manual Level 3 workflow must invoke the full historical guard exactly once.'
