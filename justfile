@@ -15788,7 +15788,15 @@ guard-cranelift-dependency-beachhead:
       exit 1
     fi
 
-    production_refs="$(rg -n -i 'cranelift_codegen|cranelift_frontend|cranelift_module|cranelift_native|cranelift_object|CraneliftBackend|backend[[:space:]]*[:=][[:space:]]*cranelift|--backend[=[:space:]]*cranelift' compiler src tests Cargo.toml Cargo.lock Makefile 2>/dev/null | rg -v '^compiler/experiments/cranelift/' | rg -v '^compiler/CRANELIFT_EXPERIMENT_MANIFEST\.md:' || true)"
+    production_refs="$(
+      rg -n -i 'cranelift_codegen|cranelift_frontend|cranelift_module|cranelift_native|cranelift_object|CraneliftBackend|backend[[:space:]]*[:=][[:space:]]*cranelift|--backend[=[:space:]]*cranelift' \
+        compiler src tests Cargo.toml Cargo.lock Makefile 2>/dev/null |
+        rg -v '^compiler/experiments/cranelift/' |
+        rg -v '^compiler/CRANELIFT_EXPERIMENT_MANIFEST\.md:' |
+        rg -v '^compiler/test_runner_entry\.gst:[0-9]+:[[:space:]]*os\.LogStr\("  gust --backend cranelift -o <output> <source\.gst>"\);$' |
+        rg -v '^compiler/phase10_help\.txt:[0-9]+:  gust --backend cranelift -o <output> <source\.gst>$' ||
+        true
+    )"
     if [ -n "$production_refs" ]; then
       echo "Cranelift dependency beachhead must not add production codegen routes or imports yet:"
       echo "$production_refs"
