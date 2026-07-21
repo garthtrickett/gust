@@ -1193,7 +1193,6 @@
       "capability_decision": "deferred",
       "capability_reason_code": "deferred_p13_resource_metadata_source_route",
       "expected_failure_stage": "before_driver_discovery",
-      "source_fixture":
       "source_fixture": "compiler/mir_feature_local_binding_read_preservation_source.gst",
       "canonical_mir_fixture": "compiler/fixtures/native_backend_resource_metadata_ingestion.mir",
       "differential_case_id": "phase13_opening:p13_resource_metadata_source_route",
@@ -1219,7 +1218,6 @@
       "capability_decision": "deferred",
       "capability_reason_code": "deferred_p13_native_boundary_metadata_source_route",
       "expected_failure_stage": "before_driver_discovery",
-      "source_fixture":
       "source_fixture": "compiler/mir_to_c_native_boundary_metadata_smoke_test_entry.gst",
       "canonical_mir_fixture": "compiler/fixtures/native_backend_native_boundary_metadata_ingestion.mir",
       "differential_case_id": "phase13_opening:p13_native_boundary_metadata_source_route",
@@ -1245,7 +1243,6 @@
       "capability_decision": "deferred",
       "capability_reason_code": "deferred_p13_imported_call_return_source_route",
       "expected_failure_stage": "before_driver_discovery",
-      "source_fixture":
       "source_fixture": "compiler/mir_feature_block_param_merge_imported_call_return_preservation_source.gst",
       "canonical_mir_fixture": "compiler/fixtures/native_backend_block_param_merge_imported_call_return_ingestion.mir",
       "differential_case_id": "phase13_opening:p13_imported_call_return_source_route",
@@ -1271,7 +1268,6 @@
       "capability_decision": "deferred",
       "capability_reason_code": "deferred_p13_imported_arm_update_return_source_route",
       "expected_failure_stage": "before_driver_discovery",
-      "source_fixture":
       "source_fixture": "compiler/mir_feature_block_param_merge_arm_update_imported_call_return_preservation_source.gst",
       "canonical_mir_fixture": "compiler/fixtures/native_backend_block_param_merge_arm_update_imported_call_return_ingestion.mir",
       "differential_case_id": "phase13_opening:p13_imported_arm_update_return_source_route",
@@ -1297,7 +1293,6 @@
       "capability_decision": "deferred",
       "capability_reason_code": "deferred_p13_imported_arm_update_branch_source_route",
       "expected_failure_stage": "before_driver_discovery",
-      "source_fixture":
       "source_fixture": "compiler/mir_feature_block_param_merge_arm_update_imported_call_branch_preservation_source.gst",
       "canonical_mir_fixture": "compiler/fixtures/native_backend_block_param_merge_arm_update_imported_call_branch_ingestion.mir",
       "differential_case_id": "phase13_opening:p13_imported_arm_update_branch_source_route",
@@ -1323,7 +1318,6 @@
       "capability_decision": "deferred",
       "capability_reason_code": "deferred_p13_imported_branch_joined_return_source_route",
       "expected_failure_stage": "before_driver_discovery",
-      "source_fixture":
       "source_fixture": "compiler/mir_feature_block_param_merge_imported_branch_joined_return_preservation_source.gst",
       "canonical_mir_fixture": "compiler/fixtures/native_backend_block_param_merge_imported_branch_joined_return_ingestion.mir",
       "differential_case_id": "phase13_opening:p13_imported_branch_joined_return_source_route",
@@ -1349,7 +1343,6 @@
       "capability_decision": "deferred",
       "capability_reason_code": "deferred_p13_dual_imported_joined_return_source_route",
       "expected_failure_stage": "before_driver_discovery",
-      "source_fixture":
       "source_fixture": "compiler/mir_feature_block_param_merge_dual_imported_joined_return_preservation_source.gst",
       "canonical_mir_fixture": "compiler/fixtures/native_backend_block_param_merge_dual_imported_joined_return_ingestion.mir",
       "differential_case_id": "phase13_opening:p13_dual_imported_joined_return_source_route",
@@ -1375,7 +1368,6 @@
       "capability_decision": "deferred",
       "capability_reason_code": "deferred_p13_scalar_multiply_i32",
       "expected_failure_stage": "before_driver_discovery",
-      "source_fixture":
       "source_fixture": "compiler/phase11_scalar_unsupported_multiply_source.gst",
       "canonical_mir_fixture": "none_phase13_multiply_i32_canonical_fixture_pending",
       "differential_case_id": "phase13_opening:p13_scalar_multiply_i32",
@@ -1401,7 +1393,6 @@
       "capability_decision": "deferred",
       "capability_reason_code": "deferred_p13_two_local_update_branch_source_route",
       "expected_failure_stage": "before_driver_discovery",
-      "source_fixture":
       "source_fixture": "compiler/mir_feature_block_two_local_update_branch_preservation_source.gst",
       "canonical_mir_fixture": "compiler/fixtures/native_backend_block_two_local_update_branch_ingestion.mir",
       "differential_case_id": "phase13_opening:p13_two_local_update_branch_source_route",
@@ -1427,7 +1418,6 @@
       "capability_decision": "deferred",
       "capability_reason_code": "deferred_p13_nested_local_update_branch_source_route",
       "expected_failure_stage": "before_driver_discovery",
-      "source_fixture":
       "source_fixture": "compiler/mir_feature_block_local_update_branch_preservation_source.gst",
       "canonical_mir_fixture": "compiler/fixtures/native_backend_block_local_update_branch_ingestion.mir",
       "differential_case_id": "phase13_opening:p13_nested_local_update_branch_source_route",
@@ -1453,7 +1443,6 @@
       "capability_decision": "deferred",
       "capability_reason_code": "deferred_p13_general_loop_backedge_source_route",
       "expected_failure_stage": "before_driver_discovery",
-      "source_fixture":
       "source_fixture": "compiler/phase11_block_parameter_stride_loop_source.gst",
       "canonical_mir_fixture": "none_compiler_generated_phase13_general_loop_bundle_pending",
       "differential_case_id": "phase13_opening:p13_general_loop_backedge_source_route",
@@ -1479,7 +1468,6 @@
       "capability_decision": "deferred",
       "capability_reason_code": "deferred_p13_parameterized_local_call_branch_source_route",
       "expected_failure_stage": "before_driver_discovery",
-      "source_fixture":
       "source_fixture": "compiler/mir_feature_block_param_local_call_branch_preservation_source.gst",
       "canonical_mir_fixture": "compiler/fixtures/native_backend_block_param_local_call_branch_ingestion.mir",
       "differential_case_id": "phase13_opening:p13_parameterized_local_call_branch_source_route",
@@ -1505,7 +1493,6 @@
       "capability_decision": "deferred",
       "capability_reason_code": "deferred_p13_recursive_direct_call_policy",
       "expected_failure_stage": "before_driver_discovery",
-      "source_fixture":
       "source_fixture": "compiler/phase11_direct_call_recursion_source.gst",
       "canonical_mir_fixture": "none_rejected_before_canonical_MIR",
       "differential_case_id": "phase13_opening:p13_recursive_direct_call_policy",
@@ -1531,7 +1518,6 @@
       "capability_decision": "deferred",
       "capability_reason_code": "deferred_p13_multi_module_bundle_composition",
       "expected_failure_stage": "before_driver_discovery",
-      "source_fixture":
       "source_fixture": "compiler/phase11_module_import_main_source.gst",
       "canonical_mir_fixture": "none_compiler_generated_phase13_multi_module_bundle_pending",
       "differential_case_id": "phase13_opening:p13_multi_module_bundle_composition",
@@ -1557,7 +1543,6 @@
       "capability_decision": "deferred",
       "capability_reason_code": "deferred_p13_imported_predicate_update_branch_source_route",
       "expected_failure_stage": "before_driver_discovery",
-      "source_fixture":
       "source_fixture": "compiler/mir_feature_block_param_imported_predicate_update_branch_preservation_source.gst",
       "canonical_mir_fixture": "compiler/fixtures/native_backend_block_param_imported_predicate_update_branch_ingestion.mir",
       "differential_case_id": "phase13_opening:p13_imported_predicate_update_branch_source_route",
@@ -1583,7 +1568,6 @@
       "capability_decision": "deferred",
       "capability_reason_code": "deferred_p13_unapproved_host_symbol_policy",
       "expected_failure_stage": "before_driver_discovery",
-      "source_fixture":
       "source_fixture": "compiler/phase11_module_import_forbidden_runtime_source.gst",
       "canonical_mir_fixture": "none_rejected_before_canonical_MIR",
       "differential_case_id": "phase13_opening:p13_unapproved_host_symbol_policy",
