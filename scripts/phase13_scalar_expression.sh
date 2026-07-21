@@ -67,7 +67,7 @@ cat "$build_root/malformed-fixture.stdout" \
     "$build_root/malformed-fixture.stderr" \
     >"$build_root/malformed-fixture.combined"
 rg -n -F \
-  'missing required canonical compiler MIR fixture field: block_0_statement_1_value' \
+  'missing canonical compiler MIR fixture field: block_0_statement_1_value' \
   "$build_root/malformed-fixture.combined" >/dev/null
 if find "$build_root" -maxdepth 1 -type f -name '*.o' -print -quit | grep -q .; then
   echo "Scalar-expression fixture validation emitted an object before acceptance." >&2

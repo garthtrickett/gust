@@ -9,7 +9,6 @@ route_deferred_fixture="compiler/phase13_scalar_unsupported_divide_source.gst"
 build_root="build/guards/cranelift_phase11_registry_differential/${requested_family}"
 cargo_target="$build_root/cargo-target"
 
-for required_file in \
 if [ "$requested_family" != "all" ]; then
   python3 "$family_runner" validate-family "$requested_family" >/dev/null
 fi
