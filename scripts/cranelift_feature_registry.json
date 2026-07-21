@@ -1,7 +1,7 @@
 {
   "schema": "scripts/cranelift_feature_registry.schema.json",
   "schema_version": 1,
-  "registry_version": 3,
+  "registry_version": 4,
   "registry_status": "phase12_5_closed_cranelift_verification_framework_consolidation",
   "current_phase": "phase13",
   "closed_phase_versions": {
@@ -1359,23 +1359,47 @@
       "parent": "phase11_category:broader_scalar_expressions",
       "feature_family": "scalar",
       "ci_family": "scalars",
-      "status": "candidate_deferred",
-      "route_owner": "deferred",
+      "status": "migrated",
+      "route_owner": "generic_canonical_mir",
       "worker_capability_owner": "worker_scalar_expression_lowering",
-      "diagnostic_owner": "generic_source_capability_classifier",
+      "diagnostic_owner": "canonical_mir_scalar_verifier",
       "capability_id": "phase13_generic_source_to_mir",
       "capability_decision_owner": "compiler_generic_native_capability_planner",
-      "capability_decision": "deferred",
-      "capability_reason_code": "deferred_p13_scalar_multiply_i32",
-      "expected_failure_stage": "before_driver_discovery",
+      "capability_decision": "supported",
+      "capability_reason_code": "supported_p13_scalar_mul_sub_literal_chain",
+      "expected_failure_stage": "none_supported",
       "source_fixture": "compiler/phase11_scalar_unsupported_multiply_source.gst",
-      "canonical_mir_fixture": "none_phase13_multiply_i32_canonical_fixture_pending",
+      "canonical_mir_fixture": "compiler/fixtures/native_backend_phase13_scalar_expression_ingestion.mir",
       "differential_case_id": "phase13_opening:p13_scalar_multiply_i32",
-      "deferral_reason": "MultiplyI32_is_not_represented_by_the_current_generic_source_model",
-      "future_destination_phase": "phase13",
+      "deferral_reason": "none_migrated_bounded_mul_sub_literal_chain",
+      "future_destination_phase": "none",
       "closure_version": "phase13_opening_inventory_v1",
       "evidence": {
-        "opening_record_kind": "candidate"
+        "opening_record_kind": "candidate",
+        "selected_operations": [
+          "MulI32",
+          "SubI32"
+        ],
+        "retained_composition_operations": [
+          "AddI32",
+          "SgtI32"
+        ],
+        "bounded_expression_grammar": "left_associated_non_negative_i32_literal_chain_intermediates_0_to_255",
+        "focused_source_fixtures": [
+          "compiler/phase11_scalar_unsupported_multiply_source.gst",
+          "compiler/phase13_scalar_subtract_source.gst",
+          "compiler/phase13_scalar_nested_mixed_source.gst",
+          "compiler/phase13_scalar_arithmetic_comparison_source.gst"
+        ],
+        "negative_source_fixtures": [
+          "compiler/phase13_scalar_unsupported_divide_source.gst",
+          "compiler/phase13_scalar_invalid_operand_source.gst",
+          "compiler/phase13_scalar_unsupported_conversion_source.gst",
+          "compiler/phase13_scalar_layout_deferred_source.gst"
+        ],
+        "malformed_canonical_mir_fixture": "compiler/fixtures/native_backend_phase13_scalar_expression_malformed.mir",
+        "deferred_fixture": "compiler/phase13_scalar_unsupported_divide_source.gst",
+        "positive_expectation": "exit_12_phase13_scalar_multiply"
       }
     },
     {

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Project and run Phase 11 CI families from the canonical registry."""
+"""Project and run registry-derived Cranelift CI families."""
 
 import argparse
 import json
@@ -11,13 +11,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 REGISTRY = ROOT / "scripts/cranelift_feature_registry.json"
 
-# This is the single runner mapping. The active family set itself is derived
-# from Phase 11 registry rows and must match these keys exactly.
+# This is the single runner mapping. The stable family set is derived from
+# Phase 11 rows; migrated Phase 13 rows join their existing family without
+# creating a new workflow matrix.
 RUNNERS = (
     (
         "scalars",
-        "guard-cranelift-phase11-scalar-expression-parity",
-        "PHASE11_SCALAR_EXPRESSION_SKIP_DYNAMIC",
+        "guard-cranelift-phase13-scalar-expression-parity",
+        "PHASE13_SCALAR_EXPRESSION_SKIP_DYNAMIC",
     ),
     (
         "locals",
@@ -93,6 +94,21 @@ def phase11_rows(registry):
     return rows
 
 
+def migrated_phase13_rows(registry):
+    return [
+        entry
+        for entry in registry["entries"]
+        if entry.get("origin_phase") == "phase13"
+        and entry.get("status") == "migrated"
+        and entry.get("route_owner") == "generic_canonical_mir"
+        and entry.get("capability_decision") == "supported"
+    ]
+
+
+def differential_registry_rows(registry):
+    return phase11_rows(registry) + migrated_phase13_rows(registry)
+
+
 def active_family_set(registry):
     families = set()
     for entry in phase11_rows(registry):
@@ -114,10 +130,11 @@ def ordered_active_families(registry):
         f"registry_only={sorted(active - mapped)} mapping_only={sorted(mapped - active)}",
     )
     return [family for family, _, _ in RUNNERS]
+    return json.dumps(families, separators=(",", ":"))
 
 
 def selected_rows(registry, family, migrated_only=False):
-    rows = phase11_rows(registry)
+    rows = differential_registry_rows(registry)
     if family != "all":
         validate_family(registry, family)
         rows = [entry for entry in rows if entry["ci_family"] == family]
@@ -128,7 +145,7 @@ def selected_rows(registry, family, migrated_only=False):
             if entry.get("status") == "migrated"
             and entry.get("route_owner") == "generic_canonical_mir"
         ]
-    require(rows, f"Phase 11 CI family {family!r} selects no registry rows")
+    require(rows, f"Cranelift CI family {family!r} selects no registry rows")
     return rows
 
 
@@ -140,7 +157,13 @@ def validate_registry_projection(registry):
         family = entry.get("ci_family")
         require(
             family in active,
-            f"{entry.get('id', '<unknown>')}: CI family {family!r} is not active in Phase 11",
+            f"{entry.get('id', '<unknown>')}: CI family {family!r} is not active in the stable family set",
+        )
+
+    for entry in migrated_phase13_rows(registry):
+        require(
+            entry.get("capability_decision") == "supported",
+            f"{entry['id']}: migrated Phase 13 row must have a supported capability decision",
         )
 
     for family in families:
@@ -255,10 +278,11 @@ def run_static(registry, family):
     runner = validate_family(registry, family)
     rows = selected_rows(registry, family)
     print(
-        "▶ Phase 11 CI family static contract: "
+        "▶ Cranelift CI family static contract: "
         f"family={family} rows={','.join(entry['id'] for entry in rows)}"
     )
     environment = os.environ.copy()
+    environment[runner["skip_env"]] = "1"
     environment[runner["skip_dynamic_env"]] = "1"
     completed = subprocess.run(
         ["just", runner["static_guard"]],
@@ -277,10 +301,11 @@ def run_focused(registry, family):
     runner = validate_family(registry, family)
     rows = selected_rows(registry, family)
     print(
-        "▶ Phase 11 CI family focused contract: "
+        "▶ Cranelift CI family focused contract: "
         f"family={family} rows={','.join(entry['id'] for entry in rows)}"
     )
     completed = subprocess.run(
+        ["just", runner["guard"]],
         ["just", runner["static_guard"]],
         cwd=ROOT,
         check=False,
@@ -304,7 +329,7 @@ def run_family(registry, family):
             f"Phase 11 CI family {family!r} differential cases failed "
             f"with exit code {completed.returncode}"
         )
-    print(f"✅ Phase 11 CI family runner passed: {family}")
+    print(f"✅ Cranelift CI family runner passed: {family}")
 
 
 def main():
@@ -332,17 +357,19 @@ def main():
 
         if args.command == "validate":
             print(
-                "✅ Phase 11 CI family projection passed: "
+                "✅ Cranelift CI family projection passed: "
                 f"{len(families)} row-derived families and one runner mapping."
             )
         elif args.command == "families":
+            print_families(registry)
             print("\n".join(families))
         elif args.command == "matrix-json":
             print(json.dumps(families, separators=(",", ":")))
+            print_matrix(registry)
         elif args.command == "validate-family":
             require(args.value is not None, "validate-family requires a family")
             validate_family(registry, args.value)
-            print(f"✅ Active Phase 11 CI family: {args.value}")
+            print(f"✅ Active Cranelift CI family: {args.value}")
         elif args.command == "differential-rows":
             require(args.value is not None, "differential-rows requires a family or all")
             if args.value != "all":
@@ -357,11 +384,11 @@ def main():
         elif args.command == "check-pr-workflow":
             require(args.value is not None, "check-pr-workflow requires a path")
             check_pr_workflow(ROOT / args.value)
-            print("✅ PR Fast Phase 11 family matrix is registry-derived.")
+            print("✅ PR Fast family matrix is registry-derived.")
         elif args.command == "check-heavy-workflow":
             require(args.value is not None, "check-heavy-workflow requires a path")
             check_heavy_workflow(ROOT / args.value)
-            print("✅ Heavy Guards contains no duplicated Phase 11 family matrix.")
+            print("✅ Heavy Guards contains no duplicated registry family matrix.")
     except (Error, OSError) as exc:
         print(f"cranelift CI family error: {exc}", file=sys.stderr)
         return 2

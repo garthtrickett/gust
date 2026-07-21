@@ -10271,6 +10271,7 @@ guard-cranelift-route-architecture-contract:
       compiler/mir_native_backend_block_parameter_loop_source.gst
       compiler/mir_native_backend_direct_call_source.gst
       compiler/mir_native_backend_module_import_source.gst
+      compiler/mir_native_backend_scalar_expression_source.gst
     )
 
 
@@ -10358,7 +10359,8 @@ guard-cranelift-phase11-scalar-expression-parity:
     rust_manifest="compiler/experiments/cranelift/Cargo.toml"
     rust_driver="compiler/experiments/cranelift/src/main.rs"
     readme_doc="compiler/experiments/cranelift/README.md"
-    negative_source="compiler/phase11_scalar_unsupported_multiply_source.gst"
+    historical_negative_source="compiler/phase11_scalar_unsupported_multiply_source.gst"
+    negative_source="compiler/phase13_scalar_unsupported_divide_source.gst"
     build_dir="build/guards/cranelift_phase11_scalar_expression_parity"
 
     positive_cases=(
@@ -10448,8 +10450,8 @@ guard-cranelift-phase11-scalar-expression-parity:
       printf '%s\n' "$scalar_record" |
         rg -F 'mir_to_c_guard=guard-cranelift-phase11-scalar-expression-parity' >/dev/null
     done
-    if [ "$(rg -c -F "deferred_fixture=$negative_source" "$registry_doc")" != "2" ]; then
-      echo "The two arithmetic scalar registry entries must share the adjacent unsupported multiplication fixture."
+    if [ "$(rg -c -F "deferred_fixture=$historical_negative_source" "$registry_doc")" != "2" ]; then
+      echo "The two historical arithmetic scalar registry entries must retain the adjacent multiplication fixture."
       exit 1
     fi
 
@@ -10570,24 +10572,26 @@ guard-cranelift-phase11-scalar-expression-parity:
       compile_and_compare "$source_path" "$expected_exit" "$case_name"
     done
 
-    negative_dir="$build_dir/unsupported-multiply"
+    negative_dir="$build_dir/unsupported-division"
     mkdir -p "$negative_dir"
     ./gust "$negative_source" \
       >"$negative_dir/default.c" 2>"$negative_dir/default.compiler.stderr"
     if [ -s "$negative_dir/default.compiler.stderr" ]; then
-      echo "MIR-to-C rejected the adjacent multiplication source."
+      echo "MIR-to-C rejected the current unselected division source."
       cat "$negative_dir/default.compiler.stderr"
       exit 1
     fi
+    cat src/runtime.c "$negative_dir/default.c" >"$negative_dir/final.c"
     cat src/runtime.c "$negative_dir/default.c" >"$negative_dir/default.final.c"
     "$CC_BIN" $CFLAGS_VAL -Isrc \
       "$negative_dir/default.final.c" \
+      "$negative_dir/final.c" \
       -o "$negative_dir/mir-to-c-program"
     execute_and_capture \
       "$negative_dir/mir-to-c-program" \
       "$negative_dir/mir-to-c"
-    if [ "$(cat "$negative_dir/mir-to-c.status")" != "12" ]; then
-      echo "Adjacent multiplication MIR-to-C program must exit 12."
+    if [ "$(cat "$negative_dir/mir-to-c.status")" != "8" ]; then
+      echo "Unselected division MIR-to-C program must exit 8."
       exit 1
     fi
 
@@ -10602,26 +10606,27 @@ guard-cranelift-phase11-scalar-expression-parity:
         "$negative_source" \
         >"$negative_dir/native.stdout" \
         2>"$negative_dir/native.stderr"
+        >"$negative_dir/native.stdout" 2>"$negative_dir/native.stderr"
     negative_status="$?"
     set -e
     if [ "$negative_status" = "0" ]; then
-      echo "Unsupported multiplication unexpectedly compiled natively."
+      echo "Unsupported division unexpectedly compiled natively."
       exit 1
     fi
     cat "$negative_dir/native.stdout" "$negative_dir/native.stderr" \
       >"$negative_dir/native.combined"
-    rg -n -F 'Experimental Cranelift backend selection is valid, but the source-level route is not connected yet.' \
+    rg -n -F 'class=unsupported_native_capability' \
       "$negative_dir/native.combined" >/dev/null
     if rg -n -F 'Native backend driver discovery error:' "$negative_dir/native.combined" >/dev/null ||
        rg -n -F 'driver discovery' "$negative_dir/native.combined" >/dev/null; then
-      echo "Unsupported multiplication reached driver discovery."
+      echo "Unsupported division reached driver discovery."
       cat "$negative_dir/native.combined"
       exit 1
     fi
     cmp -s "$negative_dir/existing-output.expected" "$negative_output"
     if [ -e "$negative_output.phase10.bundle" ] ||
        [ -e "$negative_output.phase10.request" ]; then
-      echo "Unsupported multiplication created transient backend artifacts."
+      echo "Unsupported division created transient backend artifacts."
       exit 1
     fi
 
@@ -10635,7 +10640,7 @@ guard-cranelift-phase11-scalar-expression-parity:
     printf '%s\n' "$readme_flat" |
       rg -F 'The next milestone is structured CFG parity.' >/dev/null
 
-    echo "✅ Phase 11 scalar-expression parity migrated: ordinary-source literal, local read, nested addition, and positive comparison match MIR-to-C; multiplication remains deferred before driver access; existing output is preserved."
+    echo "✅ Phase 11 scalar-expression parity remains intact: ordinary-source literal, local read, nested addition, and positive comparison match MIR-to-C; the current unselected division boundary defers before driver access and preserves existing output."
 
 guard-cranelift-phase11-local-state-parity:
     #!/usr/bin/env bash
@@ -13261,7 +13266,7 @@ guard-cranelift-phase13-capability-deferral-contract:
 
     contract_body="$(
       sed -n \
-        '/^guard-cranelift-phase13-capability-deferral-contract:/,/^guard-cranelift-phase12-5-close:/p' \
+        '/^guard-cranelift-phase13-capability-deferral-contract:/,/^guard-cranelift-phase13-scalar-expression-parity:/p' \
         justfile
     )"
     if printf '%s\n' "$contract_body" |
@@ -13277,6 +13282,169 @@ guard-cranelift-phase13-capability-deferral-contract:
     fi
 
     echo "✅ Phase 13.1 established one registry-owned supported/deferred/source-failure decision path before driver and artifact access, with preserved outputs, MIR-to-C default ownership, worker isolation, and no explicit-Cranelift fallback."
+
+guard-cranelift-phase13-scalar-expression-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 13.2 bounded scalar-expression parity..."
+    scalar_source="compiler/mir_native_backend_scalar_expression_source.gst"
+    generic_source="compiler/mir_native_backend_generic_source.gst"
+    route_source="compiler/mir_native_backend_source_route.gst"
+    request_source="compiler/mir_native_backend_request.gst"
+    rust_driver="compiler/experiments/cranelift/src/main.rs"
+    registry_validator="scripts/cranelift_registry.py"
+    family_runner="scripts/cranelift_ci_family.py"
+    level_runner="scripts/cranelift_test_levels.py"
+    evidence_script="scripts/phase13_scalar_expression.sh"
+    canonical_fixture="compiler/fixtures/native_backend_phase13_scalar_expression_ingestion.mir"
+    malformed_fixture="compiler/fixtures/native_backend_phase13_scalar_expression_malformed.mir"
+
+    required_files=(
+      "$scalar_source"
+      "$generic_source"
+      "$route_source"
+      "$request_source"
+      "$rust_driver"
+      "$registry_validator"
+      "$family_runner"
+      "$level_runner"
+      "$evidence_script"
+      "$canonical_fixture"
+      "$malformed_fixture"
+      compiler/phase11_scalar_unsupported_multiply_source.gst
+      compiler/phase13_scalar_subtract_source.gst
+      compiler/phase13_scalar_nested_mixed_source.gst
+      compiler/phase13_scalar_arithmetic_comparison_source.gst
+      compiler/phase13_scalar_unsupported_divide_source.gst
+      compiler/phase13_scalar_invalid_operand_source.gst
+      compiler/phase13_scalar_unsupported_conversion_source.gst
+      compiler/phase13_scalar_layout_deferred_source.gst
+    )
+    for required_file in "${required_files[@]}"; do
+      if [ ! -f "$required_file" ] || [ -L "$required_file" ]; then
+        echo "Missing regular Phase 13 scalar-expression input: $required_file"
+        exit 1
+      fi
+    done
+
+    just guard-cranelift-phase13-capability-deferral-contract
+    python3 "$registry_validator" verify-phase13-scalar-expression-contract
+    python3 "$registry_validator" check-projection
+    PHASE11_SCALAR_EXPRESSION_SKIP_DYNAMIC=1 \
+      just guard-cranelift-phase11-scalar-expression-parity
+    PHASE11_ROUTE_ARCHITECTURE_SKIP_DYNAMIC=1 \
+      just guard-cranelift-route-architecture-contract
+
+    level_record="$(
+      python3 "$level_runner" level \
+        guard-cranelift-phase13-scalar-expression-parity
+    )"
+    printf '%s\n' "$level_record" |
+      rg -n -F $'guard-cranelift-phase13-scalar-expression-parity\t2\t' >/dev/null
+
+    required_scalar_symbols=(
+      'type MirNativeScalarExpressionStepKind enum {'
+      'type MirNativeScalarExpressionPlan[ctx] struct {'
+      'func mir_native_scalar_expression_plan('
+      'func mir_native_scalar_expression_selected('
+      'func mir_native_scalar_expression_analyze_function('
+      'func mir_native_scalar_expression_emit('
+      'func mir_native_scalar_expression_source_lower('
+      'LocalI32SubI32Literal'
+      'LocalI32MulI32Literal'
+      'std.str_eq(expression.Binary.op, "-")'
+      'std.str_eq(expression.Binary.op, "*")'
+      'std.str_eq(condition.Binary.op, ">")'
+      'mir_native_scalar_expression_value_is_bounded'
+    )
+    for required_symbol in "${required_scalar_symbols[@]}"; do
+      rg -n -F "$required_symbol" "$scalar_source" >/dev/null
+    done
+
+    rg -n -F \
+      'import "mir_native_backend_scalar_expression_source.gst" as scalar_expression;' \
+      "$generic_source" >/dev/null
+    rg -n -F \
+      'scalar_expression.mir_native_scalar_expression_source_lower(' \
+      "$generic_source" >/dev/null
+
+    capability_body="$(
+      sed -n \
+        '/^func mir_native_scalar_source_capabilities(/,/^func mir_native_scalar_source_process(/p' \
+        "$route_source"
+    )"
+    for selected_operation in SubI32 MulI32; do
+      if [ "$(printf '%s\n' "$capability_body" |
+            rg -c -x "[[:space:]]*\"$selected_operation\",")" != "1" ]; then
+        echo "Compiler-owned static capabilities must advertise $selected_operation exactly once."
+        exit 1
+      fi
+    done
+
+    plan_body="$(
+      sed -n \
+        '/^func mir_native_generic_plan_from_bundle(/,/^func mir_native_generic_source_lower(/p' \
+        "$generic_source"
+    )"
+    for selected_operation in SubI32 MulI32; do
+      printf '%s\n' "$plan_body" |
+        rg -n -F "\"$selected_operation\"" >/dev/null
+    done
+
+    required_worker_symbols=(
+      'CompilerMirLoweringStatement::LocalI32SubI32Literal'
+      'CompilerMirLoweringStatement::LocalI32MulI32Literal'
+      'fn is_phase13_scalar_expression_fixture('
+      'fn validate_phase13_scalar_expression_fixture('
+      'source_route = "phase13_scalar_expression";'
+      '"LocalI32SubI32Literal" => {'
+      '"LocalI32MulI32Literal" => {'
+      'builder.ins().isub(current_value, literal_value)'
+      'builder.ins().imul(current_value, literal_value)'
+    )
+    for required_symbol in "${required_worker_symbols[@]}"; do
+      rg -n -F "$required_symbol" "$rust_driver" >/dev/null
+    done
+
+    if rg -n \
+        -e 'os\.(ReadFile|OpenFile)' \
+        -e 'std\.str_(eq|find)\([^;]*(source_path|source_text)' \
+        "$scalar_source" >/dev/null
+    then
+      echo "Phase 13 scalar lowering must consume semantic AST structure, not raw source or source identity."
+      exit 1
+    fi
+    if rg -n \
+        -e 'phase11_scalar_[A-Za-z0-9_]*_source\.gst' \
+        -e 'phase13_scalar_[A-Za-z0-9_]*_source\.gst' \
+        "$scalar_source" "$generic_source" "$route_source" >/dev/null
+    then
+      echo "Phase 13 scalar lowering embeds a source fixture identity."
+      exit 1
+    fi
+    if rg -n \
+        -F 'std.str_eq(expression.Binary.op, "/")' \
+        "$scalar_source" >/dev/null
+    then
+      echo "Patch 13.2 must leave division outside the selected operation set."
+      exit 1
+    fi
+    if rg -n \
+        -e '^[[:space:]]*(source_path|source_text|source_bytes|ast_program):' \
+        "$request_source" >/dev/null
+    then
+      echo "Phase 13 scalar parity changed the isolated worker request boundary."
+      exit 1
+    fi
+
+    bash -n "$evidence_script"
+    if [ "${PHASE13_SCALAR_EXPRESSION_SKIP_DYNAMIC:-0}" = "1" ]; then
+      echo "✅ Phase 13.2 scalar-expression static contract passed; focused differential evidence was intentionally skipped."
+      exit 0
+    fi
+
+    bash "$evidence_script"
+    echo "✅ Phase 13.2 migrated the registry-selected MulI32/SubI32 literal-chain grammar through generic canonical MIR, composed it with AddI32/SgtI32, and kept all unselected scalar forms deferred before driver access."
 
 guard-cranelift-phase12-5-close:
     #!/usr/bin/env bash

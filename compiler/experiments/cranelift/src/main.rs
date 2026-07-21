@@ -1382,6 +1382,14 @@ enum CompilerMirLoweringStatement<'a> {
         name: &'a str,
         value: i32,
     },
+    LocalI32SubI32Literal {
+        name: &'a str,
+        value: i32,
+    },
+    LocalI32MulI32Literal {
+        name: &'a str,
+        value: i32,
+    },
     LocalI32AddParam {
         name: &'a str,
         param: usize,
@@ -4039,6 +4047,128 @@ fn validate_phase11_scalar_expression_fixture(
     Ok(())
 }
 
+fn is_phase13_scalar_expression_fixture(
+    fixture: &ParsedCompilerMirFixture<'_>,
+) -> bool {
+    fixture.function.blocks.iter().any(|block| {
+        block.statements.iter().any(|statement| {
+            matches!(
+                statement,
+                CompilerMirLoweringStatement::LocalI32SubI32Literal { .. }
+                    | CompilerMirLoweringStatement::LocalI32MulI32Literal { .. }
+            )
+        })
+    })
+}
+
+fn validate_phase13_scalar_expression_fixture(
+    fixture: &ParsedCompilerMirFixture<'_>,
+) -> Result<(), Box<dyn Error>> {
+    let function = &fixture.function;
+    if !function.params.is_empty() || function.return_type != TinyMirType::I32 {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 13 scalar-expression route requires a zero-argument i32 entry",
+        ));
+    }
+    if !matches!(function.blocks.len(), 1 | 3)
+        || function.entry_block != function.blocks[0].label
+    {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 13 scalar-expression route requires one return block or a three-block positive comparison",
+        ));
+    }
+    if function.locals.len() != 1
+        || function
+            .locals
+            .iter()
+            .any(|local| local.ty != TinyMirType::I32)
+    {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 13 scalar-expression route requires exactly one i32 temporary local",
+        ));
+    }
+
+    let mut selected_operation_count = 0usize;
+    for (block_index, block) in function.blocks.iter().enumerate() {
+        if !block.parameters.is_empty() {
+            return Err(phase10_backend_request_error(
+                Phase10BackendRequestStage::CanonicalMirValidation,
+                Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                "Phase 13 scalar-expression route does not accept block parameters",
+            ));
+        }
+        if block_index > 0 && !block.statements.is_empty() {
+            return Err(phase10_backend_request_error(
+                Phase10BackendRequestStage::CanonicalMirValidation,
+                Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                "Phase 13 scalar-expression comparison return blocks must contain no statements",
+            ));
+        }
+        for statement in &block.statements {
+            match statement {
+                CompilerMirLoweringStatement::LocalI32Set { .. }
+                | CompilerMirLoweringStatement::LocalI32AddI32Literal { .. } => {}
+                CompilerMirLoweringStatement::LocalI32SubI32Literal { .. }
+                | CompilerMirLoweringStatement::LocalI32MulI32Literal { .. } => {
+                    selected_operation_count += 1;
+                }
+                _ => {
+                    return Err(phase10_backend_request_error(
+                        Phase10BackendRequestStage::CanonicalMirValidation,
+                        Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                        "Phase 13 scalar-expression route accepts only bounded i32 literal arithmetic",
+                    ));
+                }
+            }
+        }
+    }
+    if selected_operation_count == 0 {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 13 scalar-expression route requires SubI32 or MulI32 ownership",
+        ));
+    }
+
+    if function.blocks.len() == 1 {
+        if !matches!(
+            &function.blocks[0].terminator,
+            CompilerMirLoweringTerminator::ReturnLocalI32(_)
+        ) {
+            return Err(phase10_backend_request_error(
+                Phase10BackendRequestStage::CanonicalMirValidation,
+                Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                "Phase 13 scalar-expression single-block route requires a local i32 return",
+            ));
+        }
+    } else {
+        if !matches!(
+            &function.blocks[0].terminator,
+            CompilerMirLoweringTerminator::BranchLocalI32Positive { .. }
+        ) || function.blocks[1..].iter().any(|block| {
+            !matches!(
+                &block.terminator,
+                CompilerMirLoweringTerminator::ReturnI32(_)
+            )
+        }) {
+            return Err(phase10_backend_request_error(
+                Phase10BackendRequestStage::CanonicalMirValidation,
+                Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                "Phase 13 scalar-expression comparison route requires one local-positive branch and two literal returns",
+            ));
+        }
+    }
+
+    recognize_compiler_mir_fixture_metadata(&fixture.metadata)?;
+    Ok(())
+}
+
 fn validate_phase10_scalar_metadata_fixture(
     fixture: &ParsedCompilerMirFixture<'_>,
 ) -> Result<(), Box<dyn Error>> {
@@ -4815,7 +4945,10 @@ fn compile_phase10_scalar_metadata_request_path(
                     ));
                 }
                 validate_compiler_mir_fixture(&fixture)?;
-                if is_phase11_block_parameter_loop_fixture(&fixture) {
+                if is_phase13_scalar_expression_fixture(&fixture) {
+                    validate_phase13_scalar_expression_fixture(&fixture)?;
+                    source_route = "phase13_scalar_expression";
+                } else if is_phase11_block_parameter_loop_fixture(&fixture) {
                     validate_phase11_block_parameter_loop_fixture(&fixture)?;
                     source_route = "block_parameter_loop";
                 } else if is_phase11_structured_cfg_fixture(&fixture) {
@@ -6680,6 +6813,38 @@ fn parse_compiler_mir_fixture_field_map<'a>(
                         )?,
                     }
                 }
+                "LocalI32SubI32Literal" => {
+                    let local_key = format!("{prefix}_local");
+                    let value_key = format!("{prefix}_value");
+                    CompilerMirLoweringStatement::LocalI32SubI32Literal {
+                        name: required_canonical_compiler_mir_fixture_field(
+                            &fields,
+                            &mut consumed,
+                            &local_key,
+                        )?,
+                        value: parse_canonical_compiler_mir_i32_field(
+                            &fields,
+                            &mut consumed,
+                            &value_key,
+                        )?,
+                    }
+                }
+                "LocalI32MulI32Literal" => {
+                    let local_key = format!("{prefix}_local");
+                    let value_key = format!("{prefix}_value");
+                    CompilerMirLoweringStatement::LocalI32MulI32Literal {
+                        name: required_canonical_compiler_mir_fixture_field(
+                            &fields,
+                            &mut consumed,
+                            &local_key,
+                        )?,
+                        value: parse_canonical_compiler_mir_i32_field(
+                            &fields,
+                            &mut consumed,
+                            &value_key,
+                        )?,
+                    }
+                }
                 "LocalI32AddParam" => {
                     let local_key = format!("{prefix}_local");
                     let param_key = format!("{prefix}_param");
@@ -7420,7 +7585,9 @@ fn validate_compiler_mir_function_fixture(
                         .into());
                     }
                 }
-                CompilerMirLoweringStatement::LocalI32AddI32Literal { name, .. } => {
+                CompilerMirLoweringStatement::LocalI32AddI32Literal { name, .. }
+                | CompilerMirLoweringStatement::LocalI32SubI32Literal { name, .. }
+                | CompilerMirLoweringStatement::LocalI32MulI32Literal { name, .. } => {
                     validate_canonical_compiler_mir_local_reference(
                         &local_names,
                         name,
@@ -7431,7 +7598,7 @@ fn validate_compiler_mir_function_fixture(
                         return Err(IoError::new(
                             ErrorKind::InvalidInput,
                             format!(
-                                "canonical compiler MIR integer addition requires int local {name} at block {} statement {statement_index}",
+                                "canonical compiler MIR integer arithmetic requires int local {name} at block {} statement {statement_index}",
                                 block.label
                             ),
                         )
@@ -20247,6 +20414,32 @@ fn build_compiler_mir_ingestion_body_with_calls(
                     })?;
                     let current_value = builder.use_var(slot);
                     let updated_value = builder.ins().iadd_imm(current_value, i64::from(value));
+                    builder.def_var(slot, updated_value);
+                }
+                CompilerMirLoweringStatement::LocalI32SubI32Literal { name, value } => {
+                    let slot = *local_slots.get(name).ok_or_else(|| {
+                        IoError::new(
+                            ErrorKind::InvalidInput,
+                            format!("unknown compiler MIR lowering local subtract target: {name}"),
+                        )
+                    })?;
+                    let current_value = builder.use_var(slot);
+                    let literal_value =
+                        builder.ins().iconst(types::I32, i64::from(value));
+                    let updated_value = builder.ins().isub(current_value, literal_value);
+                    builder.def_var(slot, updated_value);
+                }
+                CompilerMirLoweringStatement::LocalI32MulI32Literal { name, value } => {
+                    let slot = *local_slots.get(name).ok_or_else(|| {
+                        IoError::new(
+                            ErrorKind::InvalidInput,
+                            format!("unknown compiler MIR lowering local multiply target: {name}"),
+                        )
+                    })?;
+                    let current_value = builder.use_var(slot);
+                    let literal_value =
+                        builder.ins().iconst(types::I32, i64::from(value));
+                    let updated_value = builder.ins().imul(current_value, literal_value);
                     builder.def_var(slot, updated_value);
                 }
                 CompilerMirLoweringStatement::LocalI32AddParam { name, param } => {

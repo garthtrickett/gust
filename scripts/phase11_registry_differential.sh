@@ -5,10 +5,11 @@ requested_family="${1:-all}"
 registry_json="scripts/cranelift_feature_registry.json"
 family_runner="scripts/cranelift_ci_family.py"
 rust_manifest="compiler/experiments/cranelift/Cargo.toml"
-route_deferred_fixture="compiler/phase11_scalar_unsupported_multiply_source.gst"
+route_deferred_fixture="compiler/phase13_scalar_unsupported_divide_source.gst"
 build_root="build/guards/cranelift_phase11_registry_differential/${requested_family}"
 cargo_target="$build_root/cargo-target"
 
+for required_file in \
 if [ "$requested_family" != "all" ]; then
   python3 "$family_runner" validate-family "$requested_family" >/dev/null
 fi
@@ -18,12 +19,12 @@ for required_file in \
   "$route_deferred_fixture" src/runtime.c ./gust
 do
   if [ ! -e "$required_file" ]; then
-    echo "Phase 11 differential harness is missing $required_file" >&2
+    echo "Registry differential harness is missing $required_file" >&2
     exit 1
   fi
 done
 if [ ! -x ./gust ]; then
-  echo "Phase 11 differential harness requires the rebuilt ./gust compiler." >&2
+  echo "Registry differential harness requires the rebuilt ./gust compiler." >&2
   exit 1
 fi
 
@@ -36,7 +37,7 @@ CARGO_TARGET_DIR="$cargo_target" cargo build \
   --manifest-path "$rust_manifest"
 driver_bin="$cargo_target/debug/gust-cranelift-experiment"
 if [ ! -x "$driver_bin" ]; then
-  echo "Phase 11 differential harness did not build $driver_bin" >&2
+  echo "Registry differential harness did not build $driver_bin" >&2
   exit 1
 fi
 driver_abs="$(cd "$(dirname "$driver_bin")" && pwd)/$(basename "$driver_bin")"
@@ -61,7 +62,7 @@ do
   context="parity_entry=$id ci_family=$ci_family source=$source_fixture"
 
   fail_entry() {
-    echo "❌ Phase 11 differential failure [$context]: $*" >&2
+    echo "❌ Registry differential failure [$context]: $*" >&2
     exit 1
   }
 
@@ -194,14 +195,14 @@ do
     fail_entry "failed native compilation left transient request artifacts"
   fi
 
-  echo "✅ Phase 11 differential entry passed [$context]"
+  echo "✅ Registry differential entry passed [$context]"
 done < <(
   python3 "$family_runner" differential-rows "$requested_family"
 )
 
 if [ "$entry_count" = "0" ]; then
-  echo "Phase 11 differential family $requested_family selected no migrated registry entries." >&2
+  echo "Registry differential family $requested_family selected no migrated registry entries." >&2
   exit 1
 fi
 
-echo "✅ Phase 11 registry differential harness passed: family=$requested_family entries=$entry_count"
+echo "✅ Registry differential harness passed: family=$requested_family entries=$entry_count"

@@ -9,7 +9,7 @@
     "2": {
       "name": "differential-family",
       "ci_owner": "PR Fast registry-derived Phase 11 family matrix",
-      "policy": "focused MIR-to-C versus Cranelift execution, malformed cases, and composition cases"
+      "policy": "focused MIR-to-C versus Cranelift execution, malformed cases, composition cases, and migrated Phase 13 family evidence"
     },
     "3": {
       "name": "historical-full",
@@ -157,6 +157,7 @@
     "guard-cranelift-phase13-opening-totals": 1,
     "guard-cranelift-phase13-parent-traceability": 1,
     "guard-cranelift-phase13-registry-schema": 1,
+    "guard-cranelift-phase13-scalar-expression-parity": 2,
     "guard-cranelift-phase9b-close": 3,
     "guard-cranelift-phase9c-close": 3,
     "guard-cranelift-phase9c-differential-ladder-native-shard": 3,

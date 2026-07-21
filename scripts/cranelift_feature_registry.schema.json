@@ -26,7 +26,7 @@
       "const": 1
     },
     "registry_version": {
-      "const": 3
+      "const": 4
     },
     "registry_status": {
       "const": "phase12_5_closed_cranelift_verification_framework_consolidation"

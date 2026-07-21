@@ -35,6 +35,12 @@ PHASE13_CAPABILITY_OWNER = "compiler_generic_native_capability_planner"
 PHASE13_CAPABILITY_DECISIONS = {
     "supported", "deferred", "source_or_type_failure",
 }
+PHASE13_SCALAR_EXPRESSION_ENTRY_ID = "p13_scalar_multiply_i32"
+PHASE13_SCALAR_EXPRESSION_SELECTED_OPERATIONS = ["MulI32", "SubI32"]
+PHASE13_SCALAR_EXPRESSION_COMPOSITION_OPERATIONS = ["AddI32", "SgtI32"]
+PHASE13_SCALAR_EXPRESSION_GRAMMAR = (
+    "left_associated_non_negative_i32_literal_chain_intermediates_0_to_255"
+)
 SUPPORTED_FIELDS = {
     "statuses", "origin_phases", "feature_families",
     "route_owners", "worker_capability_owners", "diagnostic_owners",
@@ -359,7 +365,7 @@ def validate():
     require(registry["schema"] == "scripts/cranelift_feature_registry.schema.json",
             "registry schema path is not canonical")
     require(registry["schema_version"] == 1, "schema_version must be 1")
-    require(registry["registry_version"] == 3, "registry_version must be 3")
+    require(registry["registry_version"] == 4, "registry_version must be 4")
     require(
         registry["registry_status"]
         == "phase12_5_closed_cranelift_verification_framework_consolidation",
@@ -804,6 +810,121 @@ def verify_phase13_capability_contract(registry):
     }
 
 
+def verify_phase13_scalar_expression_contract(registry):
+    verify_phase13_capability_contract(registry)
+    rows = {
+        entry["id"]: entry
+        for entry in phase_entries(registry, "phase13")
+    }
+    require(
+        PHASE13_SCALAR_EXPRESSION_ENTRY_ID in rows,
+        "Phase 13 scalar-expression registry row is missing",
+    )
+    entry = rows[PHASE13_SCALAR_EXPRESSION_ENTRY_ID]
+    require(
+        entry["status"] == "migrated",
+        "Phase 13 scalar-expression row must be migrated",
+    )
+    require(
+        entry["route_owner"] == "generic_canonical_mir",
+        "Phase 13 scalar-expression row must use the generic canonical-MIR route",
+    )
+    require(
+        entry["worker_capability_owner"]
+        == "worker_scalar_expression_lowering",
+        "Phase 13 scalar-expression worker owner drifted",
+    )
+    require(
+        entry["diagnostic_owner"] == "canonical_mir_scalar_verifier",
+        "Phase 13 scalar-expression diagnostic owner drifted",
+    )
+    require(
+        entry["capability_decision"] == "supported",
+        "Phase 13 scalar-expression capability decision must be supported",
+    )
+    require(
+        entry["capability_reason_code"]
+        == "supported_p13_scalar_mul_sub_literal_chain",
+        "Phase 13 scalar-expression capability reason code drifted",
+    )
+    require(
+        entry["expected_failure_stage"] == "none_supported",
+        "Phase 13 scalar-expression supported row has a failure stage",
+    )
+    require(
+        entry["canonical_mir_fixture"]
+        == "compiler/fixtures/native_backend_phase13_scalar_expression_ingestion.mir",
+        "Phase 13 scalar-expression canonical MIR fixture drifted",
+    )
+    require(
+        entry["future_destination_phase"] == "none",
+        "Migrated Phase 13 scalar-expression row must not retain a future phase",
+    )
+
+    evidence = entry["evidence"]
+    require(
+        evidence.get("selected_operations")
+        == PHASE13_SCALAR_EXPRESSION_SELECTED_OPERATIONS,
+        "Phase 13 scalar-expression selected operation inventory drifted",
+    )
+    require(
+        evidence.get("retained_composition_operations")
+        == PHASE13_SCALAR_EXPRESSION_COMPOSITION_OPERATIONS,
+        "Phase 13 scalar-expression composition operation inventory drifted",
+    )
+    require(
+        evidence.get("bounded_expression_grammar")
+        == PHASE13_SCALAR_EXPRESSION_GRAMMAR,
+        "Phase 13 scalar-expression bounded grammar drifted",
+    )
+    focused = evidence.get("focused_source_fixtures")
+    negatives = evidence.get("negative_source_fixtures")
+    require(
+        isinstance(focused, list) and len(focused) == 4,
+        "Phase 13 scalar-expression focused source inventory must contain four fixtures",
+    )
+    require(
+        isinstance(negatives, list) and len(negatives) == 4,
+        "Phase 13 scalar-expression negative source inventory must contain four fixtures",
+    )
+    for index, path in enumerate(focused):
+        fixture(path, f"{entry['id']}.evidence.focused_source_fixtures[{index}]")
+    for index, path in enumerate(negatives):
+        fixture(path, f"{entry['id']}.evidence.negative_source_fixtures[{index}]")
+    fixture(
+        evidence.get("malformed_canonical_mir_fixture"),
+        f"{entry['id']}.evidence.malformed_canonical_mir_fixture",
+    )
+    fixture(
+        evidence.get("deferred_fixture"),
+        f"{entry['id']}.evidence.deferred_fixture",
+    )
+    require(
+        evidence.get("positive_expectation")
+        == "exit_12_phase13_scalar_multiply",
+        "Phase 13 scalar-expression differential expectation drifted",
+    )
+
+    other_supported = [
+        row["id"]
+        for row in rows.values()
+        if row["id"] != PHASE13_SCALAR_EXPRESSION_ENTRY_ID
+        and row["capability_decision"] == "supported"
+    ]
+    require(
+        not other_supported,
+        "Patch 13.2 must not migrate unrelated Phase 13 rows: "
+        f"{sorted(other_supported)}",
+    )
+    return {
+        "entry_id": entry["id"],
+        "selected_operations": evidence["selected_operations"],
+        "composition_operations": evidence["retained_composition_operations"],
+        "focused_fixture_count": len(focused),
+        "negative_fixture_count": len(negatives),
+    }
+
+
 def verify_phase13_parent_traceability(registry):
     phase11 = {
         entry["id"]: entry
@@ -968,8 +1089,10 @@ def render_phase13(registry):
     snapshot = verify_phase13_opening_rebase(registry)
     totals = verify_phase13_opening_totals(registry)
     capability_contract = verify_phase13_capability_contract(registry)
+    scalar_contract = verify_phase13_scalar_expression_contract(registry)
     rows = phase_entries(registry, "phase13")
     status_counts = totals["status_counts"]
+    current_status_counts = Counter(entry["status"] for entry in rows)
     parent_kinds = totals["parent_kinds"]
 
     lines = [
@@ -977,7 +1100,7 @@ def render_phase13(registry):
         "",
         "<!-- Generated by scripts/cranelift_registry.py; do not edit by hand. -->",
         "",
-        "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_VERSION: 3",
+        "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_VERSION: 4",
         "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_AUTHORITY: generated_review_view",
         "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_CANONICAL_SOURCE: scripts/cranelift_feature_registry.json",
         (
@@ -1014,10 +1137,18 @@ def render_phase13(registry):
             "patch13_1_capability_deferral_contract_active"
         ),
         (
+            "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_SCALAR_EXPRESSION_STATUS: "
+            "patch13_2_bounded_mul_sub_literal_chain_migrated"
+        ),
+        (
+            "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_SCALAR_EXPRESSION_OPERATIONS: "
+            + ",".join(scalar_contract["selected_operations"])
+        ),
+        (
             "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_OPENING_POLICY: "
             f"{snapshot['behavior_policy']}"
         ),
-        "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_NEXT_MILESTONE: patch13_2_broader_scalar_expression_lowering",
+        "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_NEXT_MILESTONE: patch13_3_multiple_locals_and_assignments",
         "",
         "This review artifact is generated from the structured registry. Phase 12.5",
         "is closed under the recorded framework closure version. Stable Phase 13 IDs",
@@ -1044,6 +1175,39 @@ def render_phase13(registry):
         "",
         *count_lines(capability_contract["decision_counts"]),
         "",
+        "### Current Phase 13 dispositions",
+        "",
+        *count_lines(current_status_counts),
+        "",
+        "### Patch 13.2 scalar-expression selection",
+        "",
+        (
+            "- Migrated row: "
+            f"`{scalar_contract['entry_id']}`"
+        ),
+        (
+            "- Selected operations: "
+            + ", ".join(
+                f"`{operation}`"
+                for operation in scalar_contract["selected_operations"]
+            )
+        ),
+        (
+            "- Composition operations: "
+            + ", ".join(
+                f"`{operation}`"
+                for operation in scalar_contract["composition_operations"]
+            )
+        ),
+        (
+            "- Focused source fixtures: "
+            f"`{scalar_contract['focused_fixture_count']}`"
+        ),
+        (
+            "- Negative fixtures: "
+            f"`{scalar_contract['negative_fixture_count']}`"
+        ),
+        "",
         "## Opening entries",
         "",
         *[phase13_record(entry) for entry in rows],
@@ -1056,9 +1220,10 @@ def render_phase13(registry):
         "- Parent traceability and totals are validated from registry rows.",
         "- Phase 12.5 framework consolidation is formally closed before capability work resumes.",
         "- Full historical replay remains owned by the explicit Level 3 suite.",
-        "- This rebase changes no compiler, route, worker, MIR, request, artifact, package, CLI, or workflow behavior.",
+        "- Patch 13.2 changes only the bounded scalar-expression capability selected in the registry.",
+        "- Unselected scalar operators, conversions, and layout-sensitive forms remain deferred before driver discovery.",
         "",
-        "Patch 13.1 capability and deferral ownership is active; Phase 13 may proceed to Patch 13.2.",
+        "Patch 13.2 bounded scalar-expression parity is active; Phase 13 may proceed to Patch 13.3.",
         "",
     ]
     rendered = "\n".join(lines)
@@ -1173,6 +1338,7 @@ def main():
             "verify-phase11-closure",
             "verify-phase13-schema",
             "verify-phase13-capability-contract",
+            "verify-phase13-scalar-expression-contract",
             "verify-phase13-opening-rebase",
             "verify-phase13-parent-traceability",
             "verify-phase13-opening-totals",
@@ -1192,6 +1358,8 @@ def main():
             verify_phase13_registry_schema(registry)
         elif command == "verify-phase13-capability-contract":
             verify_phase13_capability_contract(registry)
+        elif command == "verify-phase13-scalar-expression-contract":
+            verify_phase13_scalar_expression_contract(registry)
         elif command == "verify-phase13-opening-rebase":
             verify_phase13_opening_rebase(registry)
         elif command == "verify-phase13-parent-traceability":
@@ -1218,6 +1386,7 @@ def main():
     classifications = snapshot["classification_counts"]
     phase13_totals = verify_phase13_opening_totals(registry)
     phase13_contract = verify_phase13_capability_contract(registry)
+    scalar_contract = verify_phase13_scalar_expression_contract(registry)
     phase13_statuses = phase13_totals["status_counts"]
     phase13_parents = phase13_totals["parent_kinds"]
     messages = {
@@ -1246,8 +1415,16 @@ def main():
             f"{phase13_contract['capability_id']} with decisions "
             f"supported={phase13_contract['decision_counts']['supported']}, "
             f"deferred={phase13_contract['decision_counts']['deferred']}, "
+            f"{phase13_contract['decision_counts']['deferred']}, "
             "source_or_type_failure="
             f"{phase13_contract['decision_counts']['source_or_type_failure']}."
+        ),
+        "verify-phase13-scalar-expression-contract": (
+            "✅ Phase 13 scalar-expression registry contract passed: "
+            f"{scalar_contract['entry_id']} owns "
+            f"{','.join(scalar_contract['selected_operations'])} with "
+            f"{scalar_contract['focused_fixture_count']} focused and "
+            f"{scalar_contract['negative_fixture_count']} negative fixtures."
         ),
         "verify-phase13-opening-rebase": (
             "✅ Phase 13 opening rebase passed: stable IDs and parent "
