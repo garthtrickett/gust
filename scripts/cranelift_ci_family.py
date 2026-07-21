@@ -282,7 +282,6 @@ def run_static(registry, family):
         f"family={family} rows={','.join(entry['id'] for entry in rows)}"
     )
     environment = os.environ.copy()
-    environment[runner["skip_env"]] = "1"
     environment[runner["skip_dynamic_env"]] = "1"
     completed = subprocess.run(
         ["just", runner["static_guard"]],
@@ -292,7 +291,7 @@ def run_static(registry, family):
     )
     if completed.returncode != 0:
         raise Error(
-            f"Phase 11 CI family {family!r} static guard "
+            f"Cranelift CI family {family!r} static guard "
             f"{runner['static_guard']} failed with exit code {completed.returncode}"
         )
 
@@ -305,14 +304,13 @@ def run_focused(registry, family):
         f"family={family} rows={','.join(entry['id'] for entry in rows)}"
     )
     completed = subprocess.run(
-        ["just", runner["guard"]],
         ["just", runner["static_guard"]],
         cwd=ROOT,
         check=False,
     )
     if completed.returncode != 0:
         raise Error(
-            f"Phase 11 CI family {family!r} focused guard "
+            f"Cranelift CI family {family!r} focused guard "
             f"{runner['static_guard']} failed with exit code {completed.returncode}"
         )
 
