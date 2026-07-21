@@ -12481,7 +12481,7 @@ guard-cranelift-phase11-metadata-diagnostic-parity:
     compiler_entry="compiler/test_runner_entry.gst"
     resource_fixture="compiler/fixtures/phase11_resource_metadata_preservation.mir"
     type_error_source="compiler/phase11_diagnostic_type_error_source.gst"
-    unsupported_source="compiler/phase11_scalar_unsupported_multiply_source.gst"
+    unsupported_source="compiler/phase13_scalar_unsupported_divide_source.gst"
     build_dir="build/guards/cranelift_phase11_metadata_diagnostic_parity"
     metadata_cases=(
       'scalar|compiler/phase11_metadata_scalar_source.gst|19|provenance'
@@ -12806,7 +12806,7 @@ guard-cranelift-phase11-metadata-diagnostic-parity:
       >"$build_dir/unsupported.diagnostic"
     if [ "$unsupported_status" = "0" ] ||
        ! rg -n -F 'class=unsupported_native_capability' "$build_dir/unsupported.diagnostic" >/dev/null ||
-       ! rg -n -F 'source=compiler/phase11_scalar_unsupported_multiply_source.gst' "$build_dir/unsupported.diagnostic" >/dev/null ||
+       ! rg -n -F 'source=compiler/phase13_scalar_unsupported_divide_source.gst' "$build_dir/unsupported.diagnostic" >/dev/null ||
        ! rg -n -e 'line=[1-9][0-9]* column=[1-9][0-9]*' "$build_dir/unsupported.diagnostic" >/dev/null
     then
       echo "Unsupported-capability diagnostic contract failed with status $unsupported_status."
