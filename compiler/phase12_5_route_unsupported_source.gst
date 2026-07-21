@@ -1,3 +1,3 @@
 func main() int {
-    return 6 * 7;
+    return 84 / 2;
 }
