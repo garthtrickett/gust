@@ -392,11 +392,8 @@ func mir_native_scalar_expression_append_int(
     value: int,
     ctx: &Arena
 ) str {
-    return mir_native_scalar_expression_append(
-        output,
-        std.FormatInt(value),
-        ctx
-    );
+    mut formatted := std.FormatInt(value);
+    return std.Clone(ctx, std.Concat(output, formatted));
 }
 
 func mir_native_scalar_expression_step_kind_name(
