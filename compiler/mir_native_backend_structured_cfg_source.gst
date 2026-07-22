@@ -1970,14 +1970,14 @@ func mir_native_structured_cfg_deferred_reason(
                     ctx
                 );
                 if len(nested) > 0 {
-                    return nested;
+                    return std.Clone(ctx, nested);
                 }
                 nested = mir_native_structured_cfg_deferred_reason(
                     else_statements,
                     ctx
                 );
                 if len(nested) > 0 {
-                    return nested;
+                    return std.Clone(ctx, nested);
                 }
             }
             if statement.tag == 9 || statement.tag == 10 {
