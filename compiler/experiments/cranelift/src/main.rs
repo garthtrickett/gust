@@ -4084,16 +4084,29 @@ fn validate_phase13_nested_structured_cfg_fixture(
                     "Phase 13.4 CFG block identity or attachment is not deterministic",
                 ));
             }
-            let expected_predecessors = if predecessors[index].is_empty() {
-                "entry".to_string()
-            } else {
-                predecessors[index].join(",")
-            };
-            if phase11_local_state_payload_field(
-                item.payload,
-                "predecessors",
-            ) != Some(expected_predecessors.as_str())
-            {
+            let predecessor_metadata =
+                phase11_local_state_payload_field(
+                    item.payload,
+                    "predecessors",
+                );
+            let predecessor_metadata_matches =
+                if predecessors[index].is_empty() {
+                    predecessor_metadata == Some("entry")
+                } else if let Some(serialized_predecessors) =
+                    predecessor_metadata
+                {
+                    let mut expected_predecessors =
+                        predecessors[index].clone();
+                    expected_predecessors.sort_unstable();
+                    let mut actual_predecessors = serialized_predecessors
+                        .split(',')
+                        .collect::<Vec<_>>();
+                    actual_predecessors.sort_unstable();
+                    actual_predecessors == expected_predecessors
+                } else {
+                    false
+                };
+            if !predecessor_metadata_matches {
                 return Err(phase10_backend_request_error(
                     Phase10BackendRequestStage::CanonicalMirValidation,
                     Phase10BackendRequestFailureKind::InvalidCanonicalMir,

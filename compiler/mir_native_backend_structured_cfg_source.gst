@@ -2046,17 +2046,6 @@ func mir_native_structured_cfg_source_lower(
                         statements,
                         ctx
                     );
-                    if len(reason) == 0 &&
-                       mir_native_structured_cfg_contains_branch(
-                           statements,
-                           ctx
-                       ) == 1
-                    {
-                        reason = std.Clone(
-                            ctx,
-                            "deferred_p13_structured_cfg_shape"
-                        );
-                    }
                     if len(reason) > 0 {
                         result.deferred = 1;
                         result.reason_code = reason;
