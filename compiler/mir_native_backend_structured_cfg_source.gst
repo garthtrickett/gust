@@ -1928,7 +1928,7 @@ func mir_native_structured_cfg_deferred_reason(
     while statement_index < len(statements) {
         mut statement := statements[statement_index];
         unsafe {
-            if statement.tag == 8 {
+            if statement.tag == 6 {
                 return std.Clone(
                     ctx,
                     "deferred_p13_structured_cfg_loop_or_backedge"
@@ -1980,7 +1980,7 @@ func mir_native_structured_cfg_deferred_reason(
                     return std.Clone(ctx, nested);
                 }
             }
-            if statement.tag == 9 || statement.tag == 10 {
+            if statement.tag == 8 || statement.tag == 9 {
                 return std.Clone(
                     ctx,
                     "deferred_p13_structured_cfg_non_reducible_shape"
@@ -2000,7 +2000,11 @@ func mir_native_structured_cfg_contains_branch(
     while statement_index < len(statements) {
         mut statement := statements[statement_index];
         unsafe {
-            if statement.tag == 7 || statement.tag == 8 {
+            if statement.tag == 6 ||
+               statement.tag == 7 ||
+               statement.tag == 8 ||
+               statement.tag == 9
+            {
                 return 1;
             }
         }
