@@ -2026,10 +2026,21 @@ func mir_native_structured_cfg_source_lower(
         module_prefixes,
         ctx
     );
-    if model.invalid == 1 {
-        if model.branch_count < 2 {
+    if model.branch_count < 2 {
+        mut local_state_result :=
+            local_state.mir_native_local_state_source_lower(
+                programs,
+                module_paths,
+                module_prefixes,
+                ctx
+            );
+        if local_state_result.represented == 1 ||
+           local_state_result.invalid == 1
+        {
             return result;
         }
+    }
+    if model.invalid == 1 {
         result.represented = 1;
         result.invalid = 1;
         result.diagnostic = model.diagnostic;
