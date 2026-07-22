@@ -2027,6 +2027,9 @@ func mir_native_structured_cfg_source_lower(
         ctx
     );
     if model.invalid == 1 {
+        if model.branch_count < 2 {
+            return result;
+        }
         result.represented = 1;
         result.invalid = 1;
         result.diagnostic = model.diagnostic;
