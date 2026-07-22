@@ -63,7 +63,8 @@ type MirNativeGenericSourceResult[ctx] struct {
     eligibility: MirNativeGenericEligibility,
     bundle: mir.MirProgramBundle[ctx],
     plan: capability.MirNativeBackendCapabilityPlan[ctx],
-    diagnostic: str
+    diagnostic: str,
+    reason_code: str
 }
 
 func mir_native_generic_append(output: str, value: str, ctx: &Arena) str {
@@ -164,6 +165,7 @@ func mir_native_generic_make_result(eligibility_tag: int, bundle: mir.MirProgram
     result.bundle = bundle;
     result.plan = plan;
     result.diagnostic = std.Clone(ctx, diagnostic);
+    result.reason_code = std.Clone(ctx, "");
     return result;
 }
 
@@ -175,6 +177,16 @@ func mir_native_generic_empty_result(eligibility_tag: int, diagnostic: str, ctx:
         diagnostic,
         ctx
     );
+}
+
+func mir_native_generic_deferred_result(
+    reason_code: str,
+    diagnostic: str,
+    ctx: &Arena
+) MirNativeGenericSourceResult[ctx] {
+    mut result := mir_native_generic_empty_result(1, diagnostic, ctx);
+    result.reason_code = std.Clone(ctx, reason_code);
+    return result;
 }
 
 func mir_native_generic_function_is_zero_argument_int_entry(statement: ast.Statement[ctx], ctx: &Arena) int {
@@ -2370,6 +2382,13 @@ func mir_native_generic_source_lower(programs: std.Vector[ast.Program[ctx], ctx]
                         if structured_cfg_result.invalid == 1 {
                             return mir_native_generic_empty_result(
                                 3,
+                                structured_cfg_result.diagnostic,
+                                ctx
+                            );
+                        }
+                        if structured_cfg_result.deferred == 1 {
+                            return mir_native_generic_deferred_result(
+                                structured_cfg_result.reason_code,
                                 structured_cfg_result.diagnostic,
                                 ctx
                             );

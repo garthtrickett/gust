@@ -18,7 +18,9 @@ type MirNativeLocalStateProvenance struct {
     event_kind: int,
     local_index: int,
     block_index: int,
-    statement_index: int
+    statement_index: int,
+    line: int,
+    column: int
 }
 
 type MirNativeLocalStateExpression struct {
@@ -29,7 +31,9 @@ type MirNativeLocalStateExpression struct {
     local_read_count: int,
     target_read_count: int,
     literal_total: int,
-    add_count: int
+    add_count: int,
+    target_literal_operation_kind: int,
+    target_literal_operation_value: int
 }
 
 type MirNativeLocalStateBlockResult[ctx] struct {
@@ -54,6 +58,7 @@ type MirNativeLocalStateModel[ctx] struct {
     entry_writes: std.Vector[MirNativeLocalStateWrite, ctx],
     then_writes: std.Vector[MirNativeLocalStateWrite, ctx],
     else_writes: std.Vector[MirNativeLocalStateWrite, ctx],
+    merge_writes: std.Vector[MirNativeLocalStateWrite, ctx],
     provenance: std.Vector[MirNativeLocalStateProvenance, ctx],
     has_branch: int,
     condition_local_index: int,
@@ -88,6 +93,8 @@ func mir_native_local_state_empty_expression() MirNativeLocalStateExpression {
     result.target_read_count = 0;
     result.literal_total = 0;
     result.add_count = 0;
+    result.target_literal_operation_kind = 0;
+    result.target_literal_operation_value = 0;
     return result;
 }
 
@@ -104,6 +111,7 @@ func mir_native_local_state_empty_model(ctx: &Arena) MirNativeLocalStateModel[ct
     model.entry_writes = std.VectorNew(ctx);
     model.then_writes = std.VectorNew(ctx);
     model.else_writes = std.VectorNew(ctx);
+    model.merge_writes = std.VectorNew(ctx);
     model.provenance = std.VectorNew(ctx);
     model.has_branch = 0;
     model.condition_local_index = 0 - 1;
@@ -223,9 +231,17 @@ func mir_native_local_state_expression(
             return lowered;
         }
 
-        if expression.tag != 10 ||
-           std.str_eq(expression.Binary.op, "+") == 0
-        {
+        if expression.tag != 10 {
+            return lowered;
+        }
+        mut operation_kind := 0;
+        if std.str_eq(expression.Binary.op, "+") == 1 {
+            operation_kind = 1;
+        } else if std.str_eq(expression.Binary.op, "-") == 1 {
+            operation_kind = 2;
+        } else if std.str_eq(expression.Binary.op, "*") == 1 {
+            operation_kind = 3;
+        } else {
             return lowered;
         }
 
@@ -258,14 +274,34 @@ func mir_native_local_state_expression(
         }
 
         lowered.represented = 1;
-        lowered.value = left.value + right.value;
+        if operation_kind == 1 {
+            lowered.value = left.value + right.value;
+            lowered.literal_total =
+                left.literal_total + right.literal_total;
+            lowered.add_count = left.add_count + right.add_count + 1;
+        } else if operation_kind == 2 {
+            lowered.value = left.value - right.value;
+            lowered.literal_total =
+                left.literal_total - right.literal_total;
+            lowered.add_count = left.add_count + right.add_count;
+        } else {
+            lowered.value = left.value * right.value;
+            lowered.literal_total =
+                left.literal_total * right.literal_total;
+            lowered.add_count = left.add_count + right.add_count;
+        }
         lowered.local_read_count =
             left.local_read_count + right.local_read_count;
         lowered.target_read_count =
             left.target_read_count + right.target_read_count;
-        lowered.literal_total =
-            left.literal_total + right.literal_total;
-        lowered.add_count = left.add_count + right.add_count + 1;
+
+        if left.local_read_count == 1 &&
+           left.target_read_count == 1 &&
+           right.local_read_count == 0
+        {
+            lowered.target_literal_operation_kind = operation_kind;
+            lowered.target_literal_operation_value = right.value;
+        }
         return lowered;
     }
 }
@@ -292,6 +328,18 @@ func mir_native_local_state_invalid_diagnostic(
             "Native backend internal error: generic local-state MIR assigns an immutable local"
         );
     }
+    if failure_tag == 4 {
+        return std.Clone(
+            ctx,
+            "Native backend internal error: generic local-state MIR uses an invalid join state"
+        );
+    }
+    if failure_tag == 5 {
+        return std.Clone(
+            ctx,
+            "Native backend internal error: generic local-state MIR contains a duplicate local declaration"
+        );
+    }
     return std.Clone(
         ctx,
         "Native backend internal error: generic local-state MIR is invalid"
@@ -314,13 +362,17 @@ func mir_native_local_state_make_provenance(
     event_kind: int,
     local_index: int,
     block_index: int,
-    statement_index: int
+    statement_index: int,
+    line: int,
+    column: int
 ) MirNativeLocalStateProvenance {
     mut provenance: MirNativeLocalStateProvenance;
     provenance.event_kind = event_kind;
     provenance.local_index = local_index;
     provenance.block_index = block_index;
     provenance.statement_index = statement_index;
+    provenance.line = line;
+    provenance.column = column;
     return provenance;
 }
 
@@ -416,12 +468,10 @@ func mir_native_local_state_apply_assignment(
         mut write_kind := 0;
         mut write_value := lowered.value;
         if result.initialized[target_index] == 1 &&
-           lowered.add_count > 0 &&
-           lowered.local_read_count == 1 &&
-           lowered.target_read_count == 1
+           lowered.target_literal_operation_kind > 0
         {
-            write_kind = 1;
-            write_value = lowered.literal_total;
+            write_kind = lowered.target_literal_operation_kind;
+            write_value = lowered.target_literal_operation_value;
         }
 
         mut statement_index := len(result.writes);
@@ -437,7 +487,9 @@ func mir_native_local_state_apply_assignment(
                 1,
                 target_index,
                 block_index,
-                statement_index
+                statement_index,
+                statement.Assignment.span.start.line,
+                statement.Assignment.span.start.column
             )
         );
         result.values.Set(target_index, lowered.value);
@@ -570,7 +622,7 @@ func mir_native_local_state_analyze(
                     model.represented = 1;
                     model.invalid = 1;
                     model.diagnostic =
-                        mir_native_local_state_invalid_diagnostic(1, ctx);
+                        mir_native_local_state_invalid_diagnostic(5, ctx);
                     return model;
                 }
 
@@ -586,7 +638,9 @@ func mir_native_local_state_analyze(
                         0,
                         local_index,
                         0,
-                        0 - 1
+                        0 - 1,
+                        statement.VarDecl.span.start.line,
+                        statement.VarDecl.span.start.column
                     )
                 );
 
@@ -642,10 +696,16 @@ func mir_native_local_state_analyze(
             }
 
             if statement.tag == 5 {
-                if branch_closed == 1 || saw_return == 1 {
+                if saw_return == 1 {
                     return mir_native_local_state_empty_model(ctx);
                 }
                 saw_local_state_feature = 1;
+                mut target_writes := model.entry_writes;
+                mut target_block_index := 0;
+                if branch_closed == 1 {
+                    target_writes = model.merge_writes;
+                    target_block_index = 3;
+                }
                 mut assignment_result :=
                     mir_native_local_state_apply_assignment(
                         statement,
@@ -653,9 +713,9 @@ func mir_native_local_state_analyze(
                         model.local_mutable,
                         model.local_values,
                         model.local_initialized,
-                        model.entry_writes,
+                        target_writes,
                         model.provenance,
-                        0,
+                        target_block_index,
                         ctx
                     );
                 if assignment_result.invalid == 1 {
@@ -669,7 +729,11 @@ func mir_native_local_state_analyze(
                 }
                 model.local_values = assignment_result.values;
                 model.local_initialized = assignment_result.initialized;
-                model.entry_writes = assignment_result.writes;
+                if branch_closed == 1 {
+                    model.merge_writes = assignment_result.writes;
+                } else {
+                    model.entry_writes = assignment_result.writes;
+                }
                 model.provenance = assignment_result.provenance;
                 statement_index = statement_index + 1;
                 continue;
@@ -918,6 +982,18 @@ func mir_native_local_state_emit_write(
         output = mir_native_local_state_append(
             output,
             "LocalI32AddI32Literal\n",
+            ctx
+        );
+    } else if write.kind == 2 {
+        output = mir_native_local_state_append(
+            output,
+            "LocalI32SubI32Literal\n",
+            ctx
+        );
+    } else if write.kind == 3 {
+        output = mir_native_local_state_append(
+            output,
+            "LocalI32MulI32Literal\n",
             ctx
         );
     } else {
@@ -1209,6 +1285,26 @@ func mir_native_local_state_emit_metadata(
             model.source_path,
             ctx
         );
+        output = mir_native_local_state_append(
+            output,
+            ";line=",
+            ctx
+        );
+        output = mir_native_local_state_append_int(
+            output,
+            event.line,
+            ctx
+        );
+        output = mir_native_local_state_append(
+            output,
+            ";column=",
+            ctx
+        );
+        output = mir_native_local_state_append_int(
+            output,
+            event.column,
+            ctx
+        );
         output = mir_native_local_state_append(output, "\n", ctx);
         metadata_index = metadata_index + 1;
     }
@@ -1343,15 +1439,12 @@ func mir_native_local_state_emit_bundle(
             ctx
         );
 
-        mut no_merge_writes:
-            std.Vector[MirNativeLocalStateWrite, ctx] :=
-                std.VectorNew(ctx);
         canonical =
             mir_native_local_state_emit_block_header_and_writes(
                 canonical,
                 3,
                 "merge",
-                no_merge_writes,
+                model.merge_writes,
                 model.local_names,
                 ctx
             );

@@ -10713,10 +10713,8 @@ guard-cranelift-phase11-local-state-parity:
         "$generic_source" "$local_state_source" "$route_source"
       exit 1
     fi
-    if rg -n -F 'std.str_eq(expression.Binary.op, "*")' "$local_state_source" >/dev/null ||
-       rg -n -F 'std.str_eq(expression.Binary.op, "-")' "$local_state_source" >/dev/null ||
-       rg -n -F 'std.str_eq(expression.Binary.op, "/")' "$local_state_source" >/dev/null; then
-      echo "Patch 5 must not add new arithmetic operations."
+    if rg -n -F 'std.str_eq(expression.Binary.op, "/")' "$local_state_source" >/dev/null; then
+      echo "Phase 13.3 multiple-local composition must leave division outside the selected operation set."
       exit 1
     fi
 
@@ -11035,11 +11033,11 @@ guard-cranelift-phase11-structured-cfg-parity:
         "$generic_source" "$structured_cfg_source" "$route_source"
       exit 1
     fi
-    if rg -n -F 'statement.tag == 8' "$structured_cfg_source" >/dev/null ||
-       rg -n -F 'statement.While' "$structured_cfg_source" >/dev/null; then
+    if rg -n -F 'statement.While' "$structured_cfg_source" >/dev/null; then
       echo "Patch 6 must not lower loops or backedges from ordinary source."
       exit 1
     fi
+    rg -n -F 'deferred_p13_structured_cfg_loop_or_backedge'       "$structured_cfg_source" >/dev/null
 
     required_worker_symbols=(
       'fn compiler_mir_cfg_successors'
@@ -13445,6 +13443,297 @@ guard-cranelift-phase13-scalar-expression-parity:
 
     bash "$evidence_script"
     echo "✅ Phase 13.2 migrated the registry-selected MulI32/SubI32 literal-chain grammar through generic canonical MIR, composed it with AddI32/SgtI32, and kept all unselected scalar forms deferred before driver access."
+
+guard-cranelift-phase13-multiple-locals-assignments-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 13.3 multiple-local and assignment parity..."
+    local_state_source="compiler/mir_native_backend_local_state_source.gst"
+    direct_call_source="compiler/mir_native_backend_direct_call_source.gst"
+    generic_source="compiler/mir_native_backend_generic_source.gst"
+    route_source="compiler/mir_native_backend_source_route.gst"
+    request_source="compiler/mir_native_backend_request.gst"
+    rust_driver="compiler/experiments/cranelift/src/main.rs"
+    registry_validator="scripts/cranelift_registry.py"
+    family_runner="scripts/cranelift_ci_family.py"
+    level_runner="scripts/cranelift_test_levels.py"
+    evidence_script="scripts/phase13_multiple_locals_assignments.sh"
+    canonical_fixture="compiler/fixtures/native_backend_phase13_multiple_locals_assignments_ingestion.mir"
+    invalid_index_fixture="compiler/fixtures/native_backend_phase13_multiple_locals_invalid_index.mir"
+    duplicate_local_fixture="compiler/fixtures/native_backend_phase13_multiple_locals_duplicate_local.mir"
+    invalid_join_fixture="compiler/fixtures/native_backend_phase13_multiple_locals_invalid_join.mir"
+
+    required_files=(
+      "$local_state_source"
+      "$direct_call_source"
+      "$generic_source"
+      "$route_source"
+      "$request_source"
+      "$rust_driver"
+      "$registry_validator"
+      "$family_runner"
+      "$level_runner"
+      "$evidence_script"
+      "$canonical_fixture"
+      "$invalid_index_fixture"
+      "$duplicate_local_fixture"
+      "$invalid_join_fixture"
+      compiler/phase13_multiple_locals_assignments_source.gst
+      compiler/phase13_multiple_locals_call_sequence_source.gst
+      compiler/phase13_multiple_locals_duplicate_source.gst
+      compiler/phase13_multiple_locals_type_mismatch_source.gst
+      compiler/phase13_multiple_locals_invalid_join_source.gst
+      compiler/phase11_local_state_uninitialized_read_source.gst
+      compiler/phase11_local_state_invalid_local_source.gst
+      compiler/phase11_block_parameter_countdown_loop_source.gst
+    )
+    for required_file in "${required_files[@]}"; do
+      if [ ! -f "$required_file" ] || [ -L "$required_file" ]; then
+        echo "Missing regular Phase 13.3 local-state input: $required_file"
+        exit 1
+      fi
+    done
+
+    PHASE13_SCALAR_EXPRESSION_SKIP_DYNAMIC=1 \
+      just guard-cranelift-phase13-scalar-expression-parity
+    python3 "$registry_validator" verify-phase13-multiple-locals-contract
+    python3 "$registry_validator" check-projection
+    PHASE11_LOCAL_STATE_SKIP_DYNAMIC=1 \
+      just guard-cranelift-phase11-local-state-parity
+    PHASE11_DIRECT_CALL_ABI_SKIP_DYNAMIC=1 \
+      just guard-cranelift-phase11-direct-call-abi-parity
+    PHASE11_BLOCK_PARAMETER_LOOP_SKIP_DYNAMIC=1 \
+      just guard-cranelift-phase11-block-parameter-loop-parity
+    PHASE11_ROUTE_ARCHITECTURE_SKIP_DYNAMIC=1 \
+      just guard-cranelift-route-architecture-contract
+
+    level_record="$(
+      python3 "$level_runner" level \
+        guard-cranelift-phase13-multiple-locals-assignments-parity
+    )"
+    printf '%s\n' "$level_record" |
+      rg -n -F $'guard-cranelift-phase13-multiple-locals-assignments-parity\t2\t' >/dev/null
+
+    required_local_state_symbols=(
+      'merge_writes: std.Vector[MirNativeLocalStateWrite, ctx]'
+      'target_literal_operation_kind: int'
+      'target_literal_operation_value: int'
+      'statement.Assignment.span.start.line'
+      'statement.Assignment.span.start.column'
+      'statement.VarDecl.span.start.line'
+      'statement.VarDecl.span.start.column'
+      'model.merge_writes = assignment_result.writes;'
+      'LocalI32SubI32Literal'
+      'LocalI32MulI32Literal'
+      'std.str_eq(expression.Binary.op, "-")'
+      'std.str_eq(expression.Binary.op, "*")'
+      ';line='
+      ';column='
+    )
+    for required_symbol in "${required_local_state_symbols[@]}"; do
+      rg -n -F "$required_symbol" "$local_state_source" >/dev/null
+    done
+
+    required_call_composition_symbols=(
+      'function.profile = 3;'
+      'sequence_first_local: str'
+      'sequence_second_local: str'
+      'sequence_before_add: int'
+      'sequence_after_add: int'
+      'argument_0_kind: LocalI32'
+      'function.sequence_initial_value +'
+      'function.sequence_before_add'
+      'function.sequence_after_add'
+    )
+    for required_symbol in "${required_call_composition_symbols[@]}"; do
+      rg -n -F "$required_symbol" "$direct_call_source" >/dev/null
+    done
+
+    required_worker_symbols=(
+      'CompilerMirLoweringStatement::LocalI32SubI32Literal'
+      'CompilerMirLoweringStatement::LocalI32MulI32Literal'
+      'Phase 13 local-state source route accepts only canonical i32 set/add/sub/mul statements'
+      'fn phase11_cfg_intersect_assignment_state('
+      'phase11_local_state_validate_return('
+      'CompilerMirLoweringCallArgument::LocalI32'
+    )
+    for required_symbol in "${required_worker_symbols[@]}"; do
+      rg -n -F "$required_symbol" "$rust_driver" >/dev/null
+    done
+
+    rg -n -F \
+      'import "mir_native_backend_local_state_source.gst" as local_state;' \
+      "$generic_source" >/dev/null
+    rg -n -F \
+      'local_state.mir_native_local_state_source_lower(' \
+      "$generic_source" >/dev/null
+
+    if rg -n \
+        -e 'os\.(ReadFile|OpenFile)' \
+        -e 'std\.str_(eq|find)\([^;]*(source_path|source_text)' \
+        "$local_state_source" "$direct_call_source" >/dev/null
+    then
+      echo "Phase 13.3 lowering must consume semantic AST structure rather than raw source."
+      exit 1
+    fi
+    if rg -n \
+        -e 'phase13_multiple_locals_[A-Za-z0-9_]*_source\.gst' \
+        "$local_state_source" "$direct_call_source" "$generic_source" "$route_source" >/dev/null
+    then
+      echo "Phase 13.3 lowering embeds a source fixture identity."
+      exit 1
+    fi
+    if rg -n -F 'std.str_eq(expression.Binary.op, "/")' \
+        "$local_state_source" >/dev/null
+    then
+      echo "Patch 13.3 must leave division outside multiple-local scalar composition."
+      exit 1
+    fi
+    if rg -n \
+        -e '^[[:space:]]*(source_path|source_text|source_bytes|ast_program):' \
+        "$request_source" >/dev/null
+    then
+      echo "Phase 13.3 changed the isolated worker request boundary."
+      exit 1
+    fi
+
+    bash -n "$evidence_script"
+    if [ "${PHASE13_MULTIPLE_LOCALS_SKIP_DYNAMIC:-0}" = "1" ]; then
+      echo "✅ Phase 13.3 multiple-local static contract passed; focused differential evidence was intentionally skipped."
+      exit 0
+    fi
+
+    bash "$evidence_script"
+    echo "✅ Phase 13.3 migrated deterministic multiple-local state, repeated assignment, scalar/CFG/call/loop composition, post-join sequencing, and source-location provenance through the generic route."
+
+guard-cranelift-phase13-nested-structured-cfg-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 13.4 nested structured-control-flow parity..."
+    structured_cfg_source="compiler/mir_native_backend_structured_cfg_source.gst"
+    generic_source="compiler/mir_native_backend_generic_source.gst"
+    route_source="compiler/mir_native_backend_source_route.gst"
+    request_source="compiler/mir_native_backend_request.gst"
+    rust_driver="compiler/experiments/cranelift/src/main.rs"
+    registry_validator="scripts/cranelift_registry.py"
+    family_runner="scripts/cranelift_ci_family.py"
+    level_runner="scripts/cranelift_test_levels.py"
+    evidence_script="scripts/phase13_nested_structured_cfg.sh"
+    canonical_fixture="compiler/fixtures/native_backend_phase13_nested_structured_cfg_ingestion.mir"
+
+    required_files=(
+      "$structured_cfg_source"
+      "$generic_source"
+      "$route_source"
+      "$request_source"
+      "$rust_driver"
+      "$registry_validator"
+      "$family_runner"
+      "$level_runner"
+      "$evidence_script"
+      "$canonical_fixture"
+      compiler/phase13_nested_structured_cfg_source.gst
+      compiler/phase13_nested_structured_cfg_negative_source.gst
+      compiler/phase13_sequential_structured_cfg_source.gst
+      compiler/phase13_early_return_structured_cfg_source.gst
+      compiler/phase13_branch_local_structured_cfg_source.gst
+      compiler/phase13_nested_condition_structured_cfg_source.gst
+      compiler/phase11_structured_cfg_deferred_loop_source.gst
+      compiler/phase13_structured_cfg_short_circuit_deferred_source.gst
+      compiler/phase13_structured_cfg_condition_deferred_source.gst
+      compiler/fixtures/native_backend_phase13_nested_cfg_missing_target.mir
+      compiler/fixtures/native_backend_phase13_nested_cfg_invalid_join.mir
+      compiler/fixtures/native_backend_phase13_nested_cfg_incorrect_arguments.mir
+      compiler/fixtures/native_backend_phase13_nested_cfg_malformed_block_parameters.mir
+      compiler/fixtures/native_backend_phase13_nested_cfg_unterminated.mir
+      compiler/fixtures/native_backend_phase13_nested_cfg_invalid_early_return.mir
+    )
+    for required_file in "${required_files[@]}"; do
+      if [ ! -f "$required_file" ] || [ -L "$required_file" ]; then
+        echo "Missing regular Phase 13.4 structured-CFG input: $required_file"
+        exit 1
+      fi
+    done
+
+    PHASE13_MULTIPLE_LOCALS_SKIP_DYNAMIC=1 \
+      just guard-cranelift-phase13-multiple-locals-assignments-parity
+    python3 "$registry_validator" verify-phase13-nested-structured-cfg-contract
+    python3 "$registry_validator" check-projection
+    PHASE11_STRUCTURED_CFG_SKIP_DYNAMIC=1 \
+      just guard-cranelift-phase11-structured-cfg-parity
+    PHASE11_ROUTE_ARCHITECTURE_SKIP_DYNAMIC=1 \
+      just guard-cranelift-route-architecture-contract
+
+    level_record="$(
+      python3 "$level_runner" level \
+        guard-cranelift-phase13-nested-structured-cfg-parity
+    )"
+    printf '%s\n' "$level_record" |
+      rg -n -F $'guard-cranelift-phase13-nested-structured-cfg-parity	2	' >/dev/null
+
+    required_cfg_symbols=(
+      'predecessors: std.Vector[int, ctx]'
+      'origin_line: int'
+      'origin_column: int'
+      'parameter_owner_index: int'
+      'func mir_native_structured_cfg_collect_declarations('
+      'func mir_native_structured_cfg_apply_declaration('
+      'func mir_native_structured_cfg_materialize_condition('
+      'func mir_native_structured_cfg_add_predecessor('
+      'func mir_native_structured_cfg_extend_state_inventory('
+      'structured CFG contains an unreachable statement after early return'
+      'kind=CfgBlock;index='
+      ';predecessors='
+      ';termination='
+      ';parameter_owner=none;origin='
+      ';contract=phase13_4;branch_count='
+      'deferred_p13_structured_cfg_short_circuit'
+      'deferred_p13_structured_cfg_condition_operator'
+      'deferred_p13_structured_cfg_loop_or_backedge'
+    )
+    for required_symbol in "${required_cfg_symbols[@]}"; do
+      rg -n -F "$required_symbol" "$structured_cfg_source" >/dev/null
+    done
+
+    required_worker_symbols=(
+      'fn is_phase13_nested_structured_cfg_fixture('
+      'fn validate_phase13_nested_structured_cfg_fixture('
+      'fn phase13_structured_cfg_terminator_name('
+      'source_route = "phase13_nested_structured_cfg";'
+      'predecessor metadata is inconsistent'
+      'termination metadata is inconsistent'
+      'malformed block-parameter ownership'
+      'one origin/predecessor record per block'
+    )
+    for required_symbol in "${required_worker_symbols[@]}"; do
+      rg -n -F "$required_symbol" "$rust_driver" >/dev/null
+    done
+
+    rg -n -F 'mir_native_generic_deferred_result(' "$generic_source" >/dev/null
+    rg -n -F 'generic_result.reason_code' "$route_source" >/dev/null
+    if rg -n \
+        -e 'phase13_(nested|sequential|early_return|branch_local|nested_condition)_.*_source\.gst' \
+        "$structured_cfg_source" "$generic_source" "$route_source" >/dev/null
+    then
+      echo "Phase 13.4 lowering embeds a source fixture identity."
+      exit 1
+    fi
+    if rg -n \
+        -e '^[[:space:]]*(source_path|source_text|source_bytes|ast_program):' \
+        "$request_source" >/dev/null
+    then
+      echo "Phase 13.4 changed the isolated worker request boundary."
+      exit 1
+    fi
+
+    bash -n "$evidence_script"
+    if [ "${PHASE13_NESTED_STRUCTURED_CFG_SKIP_DYNAMIC:-0}" = "1" ]; then
+      echo "✅ Phase 13.4 nested structured-CFG static contract passed; focused differential evidence was intentionally skipped."
+      exit 0
+    fi
+
+    bash "$evidence_script"
+    echo "✅ Phase 13.4 migrated reducible nested CFG shapes with deterministic blocks, source origins, stable predecessors, explicit termination, branch-local state, early returns, expression conditions, and precise pre-driver deferrals."
 
 guard-cranelift-phase12-5-close:
     #!/usr/bin/env bash

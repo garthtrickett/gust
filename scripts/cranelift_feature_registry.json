@@ -1408,23 +1408,61 @@
       "parent": "phase11_category:multiple_locals_and_assignments",
       "feature_family": "local_state",
       "ci_family": "locals",
-      "status": "candidate_deferred",
-      "route_owner": "deferred",
+      "status": "migrated",
+      "route_owner": "generic_canonical_mir",
       "worker_capability_owner": "worker_local_state_lowering",
-      "diagnostic_owner": "generic_source_capability_classifier",
+      "diagnostic_owner": "canonical_mir_scalar_verifier",
       "capability_id": "phase13_generic_source_to_mir",
       "capability_decision_owner": "compiler_generic_native_capability_planner",
-      "capability_decision": "deferred",
-      "capability_reason_code": "deferred_p13_two_local_update_branch_source_route",
-      "expected_failure_stage": "before_driver_discovery",
-      "source_fixture": "compiler/mir_feature_block_two_local_update_branch_preservation_source.gst",
-      "canonical_mir_fixture": "compiler/fixtures/native_backend_block_two_local_update_branch_ingestion.mir",
+      "capability_decision": "supported",
+      "capability_reason_code": "supported_p13_two_local_update_branch_source_route",
+      "expected_failure_stage": "none_supported",
+      "source_fixture": "compiler/phase13_multiple_locals_assignments_source.gst",
+      "canonical_mir_fixture": "compiler/fixtures/native_backend_phase13_multiple_locals_assignments_ingestion.mir",
       "differential_case_id": "phase13_opening:p13_two_local_update_branch_source_route",
-      "deferral_reason": "two_local_update_branch_has_canonical_MIR_evidence_but_no_Phase13_source_native_owner",
-      "future_destination_phase": "phase13",
+      "deferral_reason": "none_migrated",
+      "future_destination_phase": "none_migrated",
       "closure_version": "phase13_opening_inventory_v1",
       "evidence": {
-        "opening_record_kind": "candidate"
+        "opening_record_kind": "candidate",
+        "selected_operations": [
+          "LocalI32Set",
+          "LocalI32Read",
+          "LocalI32AddI32Literal",
+          "LocalI32SubI32Literal",
+          "LocalI32MulI32Literal"
+        ],
+        "composition_features": [
+          "multiple_local_declaration_order",
+          "repeated_assignment",
+          "multi_local_expression",
+          "branch_arm_assignment",
+          "post_join_assignment",
+          "direct_call_sequence",
+          "supported_loop_state",
+          "source_location_provenance"
+        ],
+        "sequencing_policy": "source_order_stable_local_indices_and_definite_assignment_intersection_at_cfg_joins",
+        "focused_source_fixtures": [
+          "compiler/phase13_multiple_locals_assignments_source.gst",
+          "compiler/phase11_local_state_straight_line_source.gst",
+          "compiler/phase13_multiple_locals_call_sequence_source.gst",
+          "compiler/phase11_block_parameter_countdown_loop_source.gst"
+        ],
+        "negative_source_fixtures": [
+          "compiler/phase11_local_state_uninitialized_read_source.gst",
+          "compiler/phase11_local_state_invalid_local_source.gst",
+          "compiler/phase13_multiple_locals_duplicate_source.gst",
+          "compiler/phase13_multiple_locals_type_mismatch_source.gst",
+          "compiler/phase13_multiple_locals_invalid_join_source.gst"
+        ],
+        "malformed_canonical_mir_fixtures": [
+          "compiler/fixtures/native_backend_phase13_multiple_locals_invalid_index.mir",
+          "compiler/fixtures/native_backend_phase13_multiple_locals_duplicate_local.mir",
+          "compiler/fixtures/native_backend_phase13_multiple_locals_invalid_join.mir"
+        ],
+        "deferred_fixture": "compiler/phase11_local_state_uninitialized_read_source.gst",
+        "positive_expectation": "exit_20_phase13_multiple_locals_assignments"
       }
     },
     {
@@ -1433,23 +1471,71 @@
       "parent": "phase11_category:nested_CFG",
       "feature_family": "cfg",
       "ci_family": "cfg",
-      "status": "candidate_deferred",
-      "route_owner": "deferred",
+      "status": "migrated",
+      "route_owner": "generic_canonical_mir",
       "worker_capability_owner": "worker_structured_cfg_lowering",
       "diagnostic_owner": "canonical_mir_cfg_verifier",
       "capability_id": "phase13_generic_source_to_mir",
       "capability_decision_owner": "compiler_generic_native_capability_planner",
-      "capability_decision": "deferred",
-      "capability_reason_code": "deferred_p13_nested_local_update_branch_source_route",
-      "expected_failure_stage": "before_driver_discovery",
-      "source_fixture": "compiler/mir_feature_block_local_update_branch_preservation_source.gst",
-      "canonical_mir_fixture": "compiler/fixtures/native_backend_block_local_update_branch_ingestion.mir",
+      "capability_decision": "supported",
+      "capability_reason_code": "supported_p13_nested_local_update_branch_source_route",
+      "expected_failure_stage": "none_supported",
+      "source_fixture": "compiler/phase13_nested_structured_cfg_source.gst",
+      "canonical_mir_fixture": "compiler/fixtures/native_backend_phase13_nested_structured_cfg_ingestion.mir",
       "differential_case_id": "phase13_opening:p13_nested_local_update_branch_source_route",
-      "deferral_reason": "nested_block_local_update_branch_requires_generic_source_composition_audit",
-      "future_destination_phase": "phase13",
+      "deferral_reason": "none_migrated",
+      "future_destination_phase": "none_migrated",
       "closure_version": "phase13_opening_inventory_v1",
       "evidence": {
-        "opening_record_kind": "candidate"
+        "opening_record_kind": "candidate",
+        "selected_shapes": [
+          "nested_if_else",
+          "branch_inside_branch_arm",
+          "sequential_branches",
+          "multiple_joins",
+          "branch_local_values",
+          "early_returns",
+          "nested_expression_conditions"
+        ],
+        "block_identity_policy": "source_order_cfg_indices_with_origin_and_stable_predecessor_metadata",
+        "validation_invariants": [
+          "reachability",
+          "explicit_termination",
+          "target_existence",
+          "edge_argument_arity",
+          "edge_argument_type",
+          "join_consistency",
+          "block_parameter_ownership"
+        ],
+        "focused_source_fixtures": [
+          "compiler/phase13_nested_structured_cfg_source.gst",
+          "compiler/phase13_nested_structured_cfg_negative_source.gst",
+          "compiler/phase13_sequential_structured_cfg_source.gst",
+          "compiler/phase13_early_return_structured_cfg_source.gst",
+          "compiler/phase13_branch_local_structured_cfg_source.gst",
+          "compiler/phase13_nested_condition_structured_cfg_source.gst"
+        ],
+        "malformed_canonical_mir_fixtures": [
+          "compiler/fixtures/native_backend_phase13_nested_cfg_missing_target.mir",
+          "compiler/fixtures/native_backend_phase13_nested_cfg_invalid_join.mir",
+          "compiler/fixtures/native_backend_phase13_nested_cfg_incorrect_arguments.mir",
+          "compiler/fixtures/native_backend_phase13_nested_cfg_malformed_block_parameters.mir",
+          "compiler/fixtures/native_backend_phase13_nested_cfg_unterminated.mir",
+          "compiler/fixtures/native_backend_phase13_nested_cfg_invalid_early_return.mir"
+        ],
+        "deferred_source_fixtures": [
+          "compiler/phase11_structured_cfg_deferred_loop_source.gst",
+          "compiler/phase13_structured_cfg_short_circuit_deferred_source.gst",
+          "compiler/phase13_structured_cfg_condition_deferred_source.gst"
+        ],
+        "deferral_reason_prefix": "deferred_p13_structured_cfg_",
+        "positive_expectation": "exit_36_phase13_nested_structured_cfg",
+        "deferred_fixture": "compiler/phase11_structured_cfg_deferred_loop_source.gst",
+        "deferred_fixture_reason_codes": [
+          "deferred_p13_structured_cfg_loop_or_backedge",
+          "deferred_p13_structured_cfg_short_circuit",
+          "deferred_p13_structured_cfg_condition_operator"
+        ]
       }
     },
     {

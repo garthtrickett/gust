@@ -10,11 +10,15 @@ import "mir_native_backend_local_state_source.gst" as local_state;
 // loops/backedges to the dedicated block-parameter/loop lowerer.
 type MirNativeStructuredCfgBlock[ctx] struct {
     writes: std.Vector[local_state.MirNativeLocalStateWrite, ctx],
+    predecessors: std.Vector[int, ctx],
     terminator_kind: int,
     condition_local_index: int,
     first_target_index: int,
     second_target_index: int,
-    return_local_index: int
+    return_local_index: int,
+    origin_line: int,
+    origin_column: int,
+    parameter_owner_index: int
 }
 
 type MirNativeStructuredCfgState[ctx] struct {
@@ -52,8 +56,19 @@ type MirNativeStructuredCfgLowerResult[ctx] struct {
 type MirNativeStructuredCfgSourceResult[ctx] struct {
     represented: int,
     invalid: int,
+    deferred: int,
+    reason_code: str,
     diagnostic: str,
     bundle: mir.MirProgramBundle[ctx]
+}
+
+type MirNativeStructuredCfgConditionResult[ctx] struct {
+    represented: int,
+    invalid: int,
+    diagnostic: str,
+    local_index: int,
+    model: MirNativeStructuredCfgModel[ctx],
+    state: MirNativeStructuredCfgState[ctx]
 }
 
 func mir_native_structured_cfg_append(
@@ -78,11 +93,15 @@ func mir_native_structured_cfg_empty_block(
 ) MirNativeStructuredCfgBlock[ctx] {
     mut block: MirNativeStructuredCfgBlock[ctx];
     block.writes = std.VectorNew(ctx);
+    block.predecessors = std.VectorNew(ctx);
     block.terminator_kind = 0;
     block.condition_local_index = 0 - 1;
     block.first_target_index = 0 - 1;
     block.second_target_index = 0 - 1;
     block.return_local_index = 0 - 1;
+    block.origin_line = 1;
+    block.origin_column = 1;
+    block.parameter_owner_index = 0 - 1;
     return block;
 }
 
@@ -125,8 +144,25 @@ func mir_native_structured_cfg_empty_source_result(
     mut result: MirNativeStructuredCfgSourceResult[ctx];
     result.represented = 0;
     result.invalid = 0;
+    result.deferred = 0;
+    result.reason_code = std.Clone(ctx, "");
     result.diagnostic = std.Clone(ctx, "");
     result.bundle = mir.mir_make_program_bundle("invalid", ctx);
+    return result;
+}
+
+func mir_native_structured_cfg_empty_condition_result(
+    model: MirNativeStructuredCfgModel[ctx],
+    state: MirNativeStructuredCfgState[ctx],
+    ctx: &Arena
+) MirNativeStructuredCfgConditionResult[ctx] {
+    mut result: MirNativeStructuredCfgConditionResult[ctx];
+    result.represented = 0;
+    result.invalid = 0;
+    result.diagnostic = std.Clone(ctx, "");
+    result.local_index = 0 - 1;
+    result.model = model;
+    result.state = state;
     return result;
 }
 
@@ -227,6 +263,173 @@ func mir_native_structured_cfg_condition_local(
     }
 }
 
+func mir_native_structured_cfg_materialize_condition(
+    expression: ast.Expression[ctx],
+    model: MirNativeStructuredCfgModel[ctx],
+    state: MirNativeStructuredCfgState[ctx],
+    line: int,
+    column: int,
+    ctx: &Arena
+) MirNativeStructuredCfgConditionResult[ctx] {
+    mut result := mir_native_structured_cfg_empty_condition_result(
+        model,
+        state,
+        ctx
+    );
+    mut simple_local := mir_native_structured_cfg_condition_local(
+        expression,
+        model,
+        state.initialized,
+        ctx
+    );
+    if simple_local == 0 - 2 {
+        result.invalid = 1;
+        result.diagnostic =
+            local_state.mir_native_local_state_invalid_diagnostic(1, ctx);
+        return result;
+    }
+    if simple_local == 0 - 3 {
+        result.invalid = 1;
+        result.diagnostic =
+            local_state.mir_native_local_state_invalid_diagnostic(2, ctx);
+        return result;
+    }
+    if simple_local >= 0 {
+        result.represented = 1;
+        result.local_index = simple_local;
+        return result;
+    }
+
+    unsafe {
+        if expression.tag != 10 ||
+           std.str_eq(expression.Binary.op, ">") == 0
+        {
+            return result;
+        }
+        mut right := ctx[expression.Binary.right];
+        if right.tag != 1 || right.Integer.val != 0 {
+            return result;
+        }
+        mut left := ctx[expression.Binary.left];
+        mut lowered := local_state.mir_native_local_state_expression(
+            left,
+            result.model.local_names,
+            result.state.values,
+            result.state.initialized,
+            0 - 1,
+            ctx
+        );
+        if lowered.invalid == 1 {
+            result.invalid = 1;
+            result.diagnostic =
+                local_state.mir_native_local_state_invalid_diagnostic(
+                    lowered.failure_tag,
+                    ctx
+                );
+            return result;
+        }
+        if lowered.represented == 0 {
+            return result;
+        }
+
+        mut temporary_index := len(result.model.local_names);
+        mut temporary_name := std.Clone(ctx, "__cfg_condition_");
+        temporary_name = mir_native_structured_cfg_append_int(
+            temporary_name,
+            result.model.branch_count,
+            ctx
+        );
+        while local_state.mir_native_local_state_find_local(
+            result.model.local_names,
+            temporary_name
+        ) >= 0 {
+            temporary_name = mir_native_structured_cfg_append(
+                temporary_name,
+                "_",
+                ctx
+            );
+        }
+        result.model.local_names.Push(temporary_name);
+        result.model.local_values.Push(lowered.value);
+        result.model.local_initialized.Push(1);
+        result.model.local_mutable.Push(1);
+        result.state.values.Push(lowered.value);
+        result.state.initialized.Push(1);
+
+        mut block := result.model.blocks[result.state.block_index];
+        mut statement_index := len(block.writes);
+        block.writes.Push(
+            local_state.mir_native_local_state_make_write(
+                temporary_index,
+                0,
+                lowered.value
+            )
+        );
+        result.model.blocks.Set(result.state.block_index, block);
+        result.model.provenance.Push(
+            local_state.mir_native_local_state_make_provenance(
+                0,
+                temporary_index,
+                result.state.block_index,
+                0 - 1,
+                line,
+                column
+            )
+        );
+        result.model.provenance.Push(
+            local_state.mir_native_local_state_make_provenance(
+                1,
+                temporary_index,
+                result.state.block_index,
+                statement_index,
+                line,
+                column
+            )
+        );
+        result.represented = 1;
+        result.local_index = temporary_index;
+        return result;
+    }
+}
+
+func mir_native_structured_cfg_extend_state_inventory(
+    states: std.Vector[MirNativeStructuredCfgState[ctx], ctx],
+    local_count: int,
+    ctx: &Arena
+) std.Vector[MirNativeStructuredCfgState[ctx], ctx] {
+    mut extended := states;
+    mut state_index := 0;
+    while state_index < len(extended) {
+        mut state := extended[state_index];
+        while len(state.values) < local_count {
+            state.values.Push(0);
+            state.initialized.Push(0);
+        }
+        extended.Set(state_index, state);
+        state_index = state_index + 1;
+    }
+    return extended;
+}
+
+func mir_native_structured_cfg_add_predecessor(
+    model: MirNativeStructuredCfgModel[ctx],
+    target_index: int,
+    predecessor_index: int
+) MirNativeStructuredCfgModel[ctx] {
+    mut updated := model;
+    mut target := updated.blocks[target_index];
+    mut predecessor_offset := 0;
+    while predecessor_offset < len(target.predecessors) {
+        if target.predecessors[predecessor_offset] == predecessor_index {
+            return updated;
+        }
+        predecessor_offset = predecessor_offset + 1;
+    }
+    target.predecessors.Push(predecessor_index);
+    updated.blocks.Set(target_index, target);
+    return updated;
+}
+
 func mir_native_structured_cfg_set_jump(
     model: MirNativeStructuredCfgModel[ctx],
     block_index: int,
@@ -237,6 +440,11 @@ func mir_native_structured_cfg_set_jump(
     block.terminator_kind = 2;
     block.first_target_index = target_index;
     updated.blocks.Set(block_index, block);
+    updated = mir_native_structured_cfg_add_predecessor(
+        updated,
+        target_index,
+        block_index
+    );
     return updated;
 }
 
@@ -253,9 +461,11 @@ func mir_native_structured_cfg_merge_states(
     }
 
     mut join_index := len(result.model.blocks);
-    result.model.blocks.Push(
-        mir_native_structured_cfg_empty_block(ctx)
-    );
+    mut join_block := mir_native_structured_cfg_empty_block(ctx);
+    mut origin_block := result.model.blocks[states[0].block_index];
+    join_block.origin_line = origin_block.origin_line;
+    join_block.origin_column = origin_block.origin_column;
+    result.model.blocks.Push(join_block);
 
     mut merged_initialized :=
         local_state.mir_native_local_state_clone_ints(
@@ -288,6 +498,14 @@ func mir_native_structured_cfg_merge_states(
             join_index
         );
         if predecessor.selected == 1 {
+            if selected_state_index >= 0 {
+                result.invalid = 1;
+                result.diagnostic = std.Clone(
+                    ctx,
+                    "Native backend internal error: structured CFG join has multiple selected predecessor states"
+                );
+                return result;
+            }
             merged_selected = 1;
             selected_state_index = state_index;
         }
@@ -323,6 +541,165 @@ func mir_native_structured_cfg_merge_states(
     );
     result.states = merged_states;
     return result;
+}
+
+func mir_native_structured_cfg_collect_declarations(
+    statements: std.Vector[ast.Statement[ctx], ctx],
+    model: MirNativeStructuredCfgModel[ctx],
+    ctx: &Arena
+) MirNativeStructuredCfgModel[ctx] {
+    mut collected := model;
+    mut statement_index := 0;
+    while statement_index < len(statements) {
+        mut statement := statements[statement_index];
+        unsafe {
+            if statement.tag == 4 {
+                if local_state.mir_native_local_state_declared_type_is_int(
+                    statement,
+                    ctx
+                ) == 0 {
+                    collected.represented = 1;
+                    collected.invalid = 1;
+                    collected.diagnostic = std.Clone(
+                        ctx,
+                        "Native backend internal error: structured CFG local declaration is not i32"
+                    );
+                    return collected;
+                }
+                if local_state.mir_native_local_state_find_local(
+                    collected.local_names,
+                    statement.VarDecl.name
+                ) >= 0 {
+                    collected.represented = 1;
+                    collected.invalid = 1;
+                    collected.diagnostic =
+                        local_state.mir_native_local_state_invalid_diagnostic(
+                            5,
+                            ctx
+                        );
+                    return collected;
+                }
+                mut local_index := len(collected.local_names);
+                collected.local_names.Push(
+                    std.Clone(ctx, statement.VarDecl.name)
+                );
+                collected.local_values.Push(0);
+                collected.local_initialized.Push(0);
+                collected.local_mutable.Push(statement.VarDecl.is_mut);
+                collected.provenance.Push(
+                    local_state.mir_native_local_state_make_provenance(
+                        0,
+                        local_index,
+                        0,
+                        0 - 1,
+                        statement.VarDecl.span.start.line,
+                        statement.VarDecl.span.start.column
+                    )
+                );
+            } else if statement.tag == 7 {
+                mut consequence := ctx[statement.If.consequence];
+                mut alternative := ctx[statement.If.alternative];
+                mut then_statements:
+                    std.Vector[ast.Statement[ctx], ctx] :=
+                        ctx[consequence.statements];
+                mut else_statements:
+                    std.Vector[ast.Statement[ctx], ctx] :=
+                        ctx[alternative.statements];
+                collected = mir_native_structured_cfg_collect_declarations(
+                    then_statements,
+                    collected,
+                    ctx
+                );
+                if collected.invalid == 1 {
+                    return collected;
+                }
+                collected = mir_native_structured_cfg_collect_declarations(
+                    else_statements,
+                    collected,
+                    ctx
+                );
+                if collected.invalid == 1 {
+                    return collected;
+                }
+            }
+        }
+        statement_index = statement_index + 1;
+    }
+    return collected;
+}
+
+func mir_native_structured_cfg_apply_declaration(
+    model: MirNativeStructuredCfgModel[ctx],
+    states: std.Vector[MirNativeStructuredCfgState[ctx], ctx],
+    statement: ast.Statement[ctx],
+    ctx: &Arena
+) MirNativeStructuredCfgLowerResult[ctx] {
+    mut result := mir_native_structured_cfg_empty_lower_result(ctx);
+    result.model = model;
+    result.states = states;
+    unsafe {
+        mut local_index := local_state.mir_native_local_state_find_local(
+            result.model.local_names,
+            statement.VarDecl.name
+        );
+        if local_index < 0 {
+            result.invalid = 1;
+            result.diagnostic =
+                local_state.mir_native_local_state_invalid_diagnostic(1, ctx);
+            return result;
+        }
+        mut state_index := 0;
+        while state_index < len(result.states) {
+            mut state := result.states[state_index];
+            if statement.VarDecl.value !=
+               empty[Index[ast.Expression[ctx], ctx]]
+            {
+                mut initializer := ctx[statement.VarDecl.value];
+                mut lowered := local_state.mir_native_local_state_expression(
+                    initializer,
+                    result.model.local_names,
+                    state.values,
+                    state.initialized,
+                    local_index,
+                    ctx
+                );
+                if lowered.invalid == 1 {
+                    result.invalid = 1;
+                    result.diagnostic =
+                        local_state.mir_native_local_state_invalid_diagnostic(
+                            lowered.failure_tag,
+                            ctx
+                        );
+                    return result;
+                }
+                if lowered.represented == 0 {
+                    result.represented = 0;
+                    return result;
+                }
+                mut block := result.model.blocks[state.block_index];
+                block.writes.Push(
+                    local_state.mir_native_local_state_make_write(
+                        local_index,
+                        0,
+                        lowered.value
+                    )
+                );
+                result.model.blocks.Set(state.block_index, block);
+                state.values.Set(local_index, lowered.value);
+                state.initialized.Set(local_index, 1);
+                if state.selected == 1 {
+                    result.model.local_values.Set(
+                        local_index,
+                        lowered.value
+                    );
+                    result.model.local_initialized.Set(local_index, 1);
+                }
+            }
+            result.states.Set(state_index, state);
+            state_index = state_index + 1;
+        }
+        return result;
+    }
 }
 
 func mir_native_structured_cfg_apply_assignment(
@@ -396,7 +773,11 @@ func mir_native_structured_cfg_lower_sequence(
     while statement_index < len(statements) {
         mut statement := statements[statement_index];
         if len(result.states) == 0 {
-            result.represented = 0;
+            result.invalid = 1;
+            result.diagnostic = std.Clone(
+                ctx,
+                "Native backend internal error: structured CFG contains an unreachable statement after early return"
+            );
             return result;
         }
 
@@ -411,6 +792,22 @@ func mir_native_structured_cfg_lower_sequence(
             }
             result.model = joined.model;
             result.states = joined.states;
+        }
+
+        if statement.tag == 4 {
+            mut declared := mir_native_structured_cfg_apply_declaration(
+                result.model,
+                result.states,
+                statement,
+                ctx
+            );
+            if declared.invalid == 1 || declared.represented == 0 {
+                return declared;
+            }
+            result.model = declared.model;
+            result.states = declared.states;
+            statement_index = statement_index + 1;
+            continue;
         }
 
         if statement.tag == 5 {
@@ -441,44 +838,38 @@ func mir_native_structured_cfg_lower_sequence(
                         ctx[alternative.statements];
                 mut source_state := result.states[0];
                 mut condition := ctx[statement.If.condition];
-                mut condition_local :=
-                    mir_native_structured_cfg_condition_local(
+                mut materialized :=
+                    mir_native_structured_cfg_materialize_condition(
                         condition,
                         result.model,
-                        source_state.initialized,
+                        source_state,
+                        statement.If.span.start.line,
+                        statement.If.span.start.column,
                         ctx
                     );
-                if condition_local == 0 - 2 {
+                if materialized.invalid == 1 {
                     result.invalid = 1;
-                    result.diagnostic =
-                        local_state.mir_native_local_state_invalid_diagnostic(
-                            1,
-                            ctx
-                        );
+                    result.diagnostic = materialized.diagnostic;
                     return result;
                 }
-                if condition_local == 0 - 3 {
-                    result.invalid = 1;
-                    result.diagnostic =
-                        local_state.mir_native_local_state_invalid_diagnostic(
-                            2,
-                            ctx
-                        );
-                    return result;
-                }
-                if condition_local < 0 {
+                if materialized.represented == 0 {
                     result.represented = 0;
                     return result;
                 }
+                result.model = materialized.model;
+                source_state = materialized.state;
+                mut condition_local := materialized.local_index;
 
                 mut then_index := len(result.model.blocks);
-                result.model.blocks.Push(
-                    mir_native_structured_cfg_empty_block(ctx)
-                );
+                mut then_block := mir_native_structured_cfg_empty_block(ctx);
+                then_block.origin_line = statement.If.span.start.line;
+                then_block.origin_column = statement.If.span.start.column;
+                result.model.blocks.Push(then_block);
                 mut else_index := len(result.model.blocks);
-                result.model.blocks.Push(
-                    mir_native_structured_cfg_empty_block(ctx)
-                );
+                mut else_block := mir_native_structured_cfg_empty_block(ctx);
+                else_block.origin_line = statement.If.span.start.line;
+                else_block.origin_column = statement.If.span.start.column;
+                result.model.blocks.Push(else_block);
                 mut source_block :=
                     result.model.blocks[source_state.block_index];
                 if source_block.terminator_kind != 0 {
@@ -496,6 +887,16 @@ func mir_native_structured_cfg_lower_sequence(
                 result.model.blocks.Set(
                     source_state.block_index,
                     source_block
+                );
+                result.model = mir_native_structured_cfg_add_predecessor(
+                    result.model,
+                    then_index,
+                    source_state.block_index
+                );
+                result.model = mir_native_structured_cfg_add_predecessor(
+                    result.model,
+                    else_index,
+                    source_state.block_index
                 );
                 result.model.branch_count =
                     result.model.branch_count + 1;
@@ -564,6 +965,12 @@ func mir_native_structured_cfg_lower_sequence(
                 {
                     return then_result;
                 }
+                else_states =
+                    mir_native_structured_cfg_extend_state_inventory(
+                        else_states,
+                        len(then_result.model.local_names),
+                        ctx
+                    );
                 mut else_result :=
                     mir_native_structured_cfg_lower_sequence(
                         else_statements,
@@ -578,13 +985,18 @@ func mir_native_structured_cfg_lower_sequence(
                     return else_result;
                 }
 
-                mut branch_states := else_result.states;
-                mut then_state_index := 0;
-                while then_state_index < len(then_result.states) {
-                    branch_states.Push(
-                        then_result.states[then_state_index]
+                mut branch_states :=
+                    mir_native_structured_cfg_extend_state_inventory(
+                        then_result.states,
+                        len(else_result.model.local_names),
+                        ctx
                     );
-                    then_state_index = then_state_index + 1;
+                mut else_state_index := 0;
+                while else_state_index < len(else_result.states) {
+                    branch_states.Push(
+                        else_result.states[else_state_index]
+                    );
+                    else_state_index = else_state_index + 1;
                 }
                 result.model = else_result.model;
                 result.states = branch_states;
@@ -594,10 +1006,6 @@ func mir_native_structured_cfg_lower_sequence(
         }
 
         if statement.tag == 12 {
-            if statement_index + 1 != len(statements) {
-                result.represented = 0;
-                return result;
-            }
             unsafe {
                 mut return_expression := ctx[statement.Return.expr];
                 if return_expression.tag != 0 {
@@ -700,108 +1108,23 @@ func mir_native_structured_cfg_analyze(
         mut statements: std.Vector[ast.Statement[ctx], ctx] :=
             ctx[body.statements];
         model.source_path = std.Clone(ctx, module_paths[0]);
-        model.blocks.Push(
-            mir_native_structured_cfg_empty_block(ctx)
+        mut entry_block := mir_native_structured_cfg_empty_block(ctx);
+        entry_block.origin_line = function_statement.FunctionDecl.span.start.line;
+        entry_block.origin_column = function_statement.FunctionDecl.span.start.column;
+        model.blocks.Push(entry_block);
+
+        model = mir_native_structured_cfg_collect_declarations(
+            statements,
+            model,
+            ctx
         );
-
-        mut first_control_statement := 0;
-        while first_control_statement < len(statements) &&
-              statements[first_control_statement].tag == 4
-        {
-            mut declaration := statements[first_control_statement];
-            if local_state.mir_native_local_state_declared_type_is_int(
-                declaration,
-                ctx
-            ) == 0 {
-                return mir_native_structured_cfg_empty_model(ctx);
-            }
-            if local_state.mir_native_local_state_find_local(
-                model.local_names,
-                declaration.VarDecl.name
-            ) >= 0 {
-                model.represented = 1;
-                model.invalid = 1;
-                model.diagnostic =
-                    local_state.mir_native_local_state_invalid_diagnostic(
-                        1,
-                        ctx
-                    );
-                return model;
-            }
-
-            mut local_index := len(model.local_names);
-            model.local_names.Push(
-                std.Clone(ctx, declaration.VarDecl.name)
-            );
-            model.local_values.Push(0);
-            model.local_initialized.Push(0);
-            model.local_mutable.Push(declaration.VarDecl.is_mut);
-            model.provenance.Push(
-                local_state.mir_native_local_state_make_provenance(
-                    0,
-                    local_index,
-                    0,
-                    0 - 1
-                )
-            );
-
-            if declaration.VarDecl.value !=
-               empty[Index[ast.Expression[ctx], ctx]]
-            {
-                mut initializer := ctx[declaration.VarDecl.value];
-                mut lowered_initializer :=
-                    local_state.mir_native_local_state_expression(
-                        initializer,
-                        model.local_names,
-                        model.local_values,
-                        model.local_initialized,
-                        local_index,
-                        ctx
-                    );
-                if lowered_initializer.invalid == 1 {
-                    model.represented = 1;
-                    model.invalid = 1;
-                    model.diagnostic =
-                        local_state.mir_native_local_state_invalid_diagnostic(
-                            lowered_initializer.failure_tag,
-                            ctx
-                        );
-                    return model;
-                }
-                if lowered_initializer.represented == 0 {
-                    return mir_native_structured_cfg_empty_model(ctx);
-                }
-                mut entry_block := model.blocks[0];
-                entry_block.writes.Push(
-                    local_state.mir_native_local_state_make_write(
-                        local_index,
-                        0,
-                        lowered_initializer.value
-                    )
-                );
-                model.blocks.Set(0, entry_block);
-                model.local_values.Set(
-                    local_index,
-                    lowered_initializer.value
-                );
-                model.local_initialized.Set(local_index, 1);
-            }
-            first_control_statement = first_control_statement + 1;
+        if model.invalid == 1 {
+            return model;
         }
-
-        if len(model.local_names) == 0 ||
-           first_control_statement >= len(statements)
-        {
+        if len(model.local_names) == 0 {
             return mir_native_structured_cfg_empty_model(ctx);
         }
 
-        mut remaining_statements:
-            std.Vector[ast.Statement[ctx], ctx] := std.VectorNew(ctx);
-        mut remaining_index := first_control_statement;
-        while remaining_index < len(statements) {
-            remaining_statements.Push(statements[remaining_index]);
-            remaining_index = remaining_index + 1;
-        }
         mut initial_states:
             std.Vector[MirNativeStructuredCfgState[ctx], ctx] :=
                 std.VectorNew(ctx);
@@ -820,7 +1143,7 @@ func mir_native_structured_cfg_analyze(
             )
         );
         mut lowered := mir_native_structured_cfg_lower_sequence(
-            remaining_statements,
+            statements,
             initial_states,
             model,
             0,
@@ -1051,6 +1374,47 @@ func mir_native_structured_cfg_emit_block(
     );
 }
 
+func mir_native_structured_cfg_terminator_name(
+    terminator_kind: int
+) str {
+    if terminator_kind == 1 {
+        return "return";
+    }
+    if terminator_kind == 2 {
+        return "jump";
+    }
+    if terminator_kind == 3 {
+        return "branch";
+    }
+    return "unterminated";
+}
+
+func mir_native_structured_cfg_predecessor_payload(
+    predecessors: std.Vector[int, ctx],
+    ctx: &Arena
+) str {
+    if len(predecessors) == 0 {
+        return std.Clone(ctx, "entry");
+    }
+    mut output := std.Clone(ctx, "");
+    mut predecessor_index := 0;
+    while predecessor_index < len(predecessors) {
+        if predecessor_index > 0 {
+            output = mir_native_structured_cfg_append(output, ",", ctx);
+        }
+        output = mir_native_structured_cfg_append(
+            output,
+            mir_native_structured_cfg_block_label(
+                predecessors[predecessor_index],
+                ctx
+            ),
+            ctx
+        );
+        predecessor_index = predecessor_index + 1;
+    }
+    return output;
+}
+
 func mir_native_structured_cfg_emit_metadata(
     output: str,
     model: MirNativeStructuredCfgModel[ctx],
@@ -1063,7 +1427,7 @@ func mir_native_structured_cfg_emit_metadata(
     );
     emitted = mir_native_structured_cfg_append_int(
         emitted,
-        len(model.provenance) + 1,
+        len(model.provenance) + len(model.blocks) + 1,
         ctx
     );
     emitted = mir_native_structured_cfg_append(emitted, "\n", ctx);
@@ -1208,6 +1572,147 @@ func mir_native_structured_cfg_emit_metadata(
         metadata_index = metadata_index + 1;
     }
 
+    mut block_metadata_index := 0;
+    while block_metadata_index < len(model.blocks) {
+        mut block := model.blocks[block_metadata_index];
+        mut block_label := mir_native_structured_cfg_block_label(
+            block_metadata_index,
+            ctx
+        );
+        emitted = mir_native_structured_cfg_append(
+            emitted,
+            "metadata_",
+            ctx
+        );
+        emitted = mir_native_structured_cfg_append_int(
+            emitted,
+            metadata_index,
+            ctx
+        );
+        emitted = mir_native_structured_cfg_append(
+            emitted,
+            "_kind: provenance\nmetadata_",
+            ctx
+        );
+        emitted = mir_native_structured_cfg_append_int(
+            emitted,
+            metadata_index,
+            ctx
+        );
+        emitted = mir_native_structured_cfg_append(
+            emitted,
+            "_attachment: block:",
+            ctx
+        );
+        emitted = mir_native_structured_cfg_append(
+            emitted,
+            block_label,
+            ctx
+        );
+        emitted = mir_native_structured_cfg_append(
+            emitted,
+            "\nmetadata_",
+            ctx
+        );
+        emitted = mir_native_structured_cfg_append_int(
+            emitted,
+            metadata_index,
+            ctx
+        );
+        emitted = mir_native_structured_cfg_append(
+            emitted,
+            "_policy: recognized_preserved\nmetadata_",
+            ctx
+        );
+        emitted = mir_native_structured_cfg_append_int(
+            emitted,
+            metadata_index,
+            ctx
+        );
+        emitted = mir_native_structured_cfg_append(
+            emitted,
+            "_payload: kind=CfgBlock;index=",
+            ctx
+        );
+        emitted = mir_native_structured_cfg_append_int(
+            emitted,
+            block_metadata_index,
+            ctx
+        );
+        emitted = mir_native_structured_cfg_append(
+            emitted,
+            ";label=",
+            ctx
+        );
+        emitted = mir_native_structured_cfg_append(
+            emitted,
+            block_label,
+            ctx
+        );
+        emitted = mir_native_structured_cfg_append(
+            emitted,
+            ";predecessors=",
+            ctx
+        );
+        emitted = mir_native_structured_cfg_append(
+            emitted,
+            mir_native_structured_cfg_predecessor_payload(
+                block.predecessors,
+                ctx
+            ),
+            ctx
+        );
+        emitted = mir_native_structured_cfg_append(
+            emitted,
+            ";termination=",
+            ctx
+        );
+        emitted = mir_native_structured_cfg_append(
+            emitted,
+            mir_native_structured_cfg_terminator_name(
+                block.terminator_kind
+            ),
+            ctx
+        );
+        emitted = mir_native_structured_cfg_append(
+            emitted,
+            ";parameter_owner=none;origin=",
+            ctx
+        );
+        emitted = mir_native_structured_cfg_append(
+            emitted,
+            model.source_path,
+            ctx
+        );
+        emitted = mir_native_structured_cfg_append(
+            emitted,
+            ";line=",
+            ctx
+        );
+        emitted = mir_native_structured_cfg_append_int(
+            emitted,
+            block.origin_line,
+            ctx
+        );
+        emitted = mir_native_structured_cfg_append(
+            emitted,
+            ";column=",
+            ctx
+        );
+        emitted = mir_native_structured_cfg_append_int(
+            emitted,
+            block.origin_column,
+            ctx
+        );
+        emitted = mir_native_structured_cfg_append(
+            emitted,
+            "\n",
+            ctx
+        );
+        metadata_index = metadata_index + 1;
+        block_metadata_index = block_metadata_index + 1;
+    }
+
     emitted = mir_native_structured_cfg_append(
         emitted,
         "metadata_",
@@ -1256,6 +1761,26 @@ func mir_native_structured_cfg_emit_metadata(
     emitted = mir_native_structured_cfg_append_int(
         emitted,
         len(model.blocks),
+        ctx
+    );
+    emitted = mir_native_structured_cfg_append(
+        emitted,
+        ";contract=phase13_4;branch_count=",
+        ctx
+    );
+    emitted = mir_native_structured_cfg_append_int(
+        emitted,
+        model.branch_count,
+        ctx
+    );
+    emitted = mir_native_structured_cfg_append(
+        emitted,
+        ";maximum_depth=",
+        ctx
+    );
+    emitted = mir_native_structured_cfg_append_int(
+        emitted,
+        model.maximum_branch_depth,
         ctx
     );
     emitted = mir_native_structured_cfg_append(
@@ -1373,7 +1898,7 @@ func mir_native_structured_cfg_emit_bundle(
         "gust.compiler_mir_ingestion.v1",
         canonical,
         0,
-        len(model.provenance) + 1,
+        len(model.provenance) + len(model.blocks) + 1,
         0,
         ctx
     );
@@ -1393,6 +1918,95 @@ func mir_native_structured_cfg_emit_bundle(
         bundle_module,
         ctx
     );
+}
+
+func mir_native_structured_cfg_deferred_reason(
+    statements: std.Vector[ast.Statement[ctx], ctx],
+    ctx: &Arena
+) str {
+    mut statement_index := 0;
+    while statement_index < len(statements) {
+        mut statement := statements[statement_index];
+        unsafe {
+            if statement.tag == 8 {
+                return std.Clone(
+                    ctx,
+                    "deferred_p13_structured_cfg_loop_or_backedge"
+                );
+            }
+            if statement.tag == 7 {
+                mut condition := ctx[statement.If.condition];
+                if condition.tag == 10 &&
+                   (std.str_eq(condition.Binary.op, "&&") == 1 ||
+                    std.str_eq(condition.Binary.op, "||") == 1)
+                {
+                    return std.Clone(
+                        ctx,
+                        "deferred_p13_structured_cfg_short_circuit"
+                    );
+                }
+                if condition.tag != 10 {
+                    return std.Clone(
+                        ctx,
+                        "deferred_p13_structured_cfg_condition_shape"
+                    );
+                }
+                if std.str_eq(condition.Binary.op, ">") == 0 {
+                    return std.Clone(
+                        ctx,
+                        "deferred_p13_structured_cfg_condition_operator"
+                    );
+                }
+                mut consequence := ctx[statement.If.consequence];
+                mut alternative := ctx[statement.If.alternative];
+                mut then_statements:
+                    std.Vector[ast.Statement[ctx], ctx] :=
+                        ctx[consequence.statements];
+                mut else_statements:
+                    std.Vector[ast.Statement[ctx], ctx] :=
+                        ctx[alternative.statements];
+                mut nested := mir_native_structured_cfg_deferred_reason(
+                    then_statements,
+                    ctx
+                );
+                if len(nested) > 0 {
+                    return nested;
+                }
+                nested = mir_native_structured_cfg_deferred_reason(
+                    else_statements,
+                    ctx
+                );
+                if len(nested) > 0 {
+                    return nested;
+                }
+            }
+            if statement.tag == 9 || statement.tag == 10 {
+                return std.Clone(
+                    ctx,
+                    "deferred_p13_structured_cfg_non_reducible_shape"
+                );
+            }
+        }
+        statement_index = statement_index + 1;
+    }
+    return std.Clone(ctx, "");
+}
+
+func mir_native_structured_cfg_contains_branch(
+    statements: std.Vector[ast.Statement[ctx], ctx],
+    ctx: &Arena
+) int {
+    mut statement_index := 0;
+    while statement_index < len(statements) {
+        mut statement := statements[statement_index];
+        unsafe {
+            if statement.tag == 7 || statement.tag == 8 {
+                return 1;
+            }
+        }
+        statement_index = statement_index + 1;
+    }
+    return 0;
 }
 
 func mir_native_structured_cfg_source_lower(
@@ -1415,6 +2029,41 @@ func mir_native_structured_cfg_source_lower(
         return result;
     }
     if model.represented == 0 {
+        if len(programs) == 1 {
+            unsafe {
+                mut program := programs[0];
+                mut top_level: std.Vector[ast.Statement[ctx], ctx] :=
+                    ctx[program.statements];
+                if len(top_level) == 1 && top_level[0].tag == 3 {
+                    mut body := ctx[top_level[0].FunctionDecl.body];
+                    mut statements: std.Vector[ast.Statement[ctx], ctx] :=
+                        ctx[body.statements];
+                    mut reason := mir_native_structured_cfg_deferred_reason(
+                        statements,
+                        ctx
+                    );
+                    if len(reason) == 0 &&
+                       mir_native_structured_cfg_contains_branch(
+                           statements,
+                           ctx
+                       ) == 1
+                    {
+                        reason = std.Clone(
+                            ctx,
+                            "deferred_p13_structured_cfg_shape"
+                        );
+                    }
+                    if len(reason) > 0 {
+                        result.deferred = 1;
+                        result.reason_code = reason;
+                        result.diagnostic = std.Clone(
+                            ctx,
+                            "Structured CFG deferral: source control-flow shape is outside the bounded reducible Phase 13.4 inventory"
+                        );
+                    }
+                }
+            }
+        }
         return result;
     }
     result.represented = 1;

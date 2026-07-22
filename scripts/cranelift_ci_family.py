@@ -22,13 +22,13 @@ RUNNERS = (
     ),
     (
         "locals",
-        "guard-cranelift-phase11-local-state-parity",
-        "PHASE11_LOCAL_STATE_SKIP_DYNAMIC",
+        "guard-cranelift-phase13-multiple-locals-assignments-parity",
+        "PHASE13_MULTIPLE_LOCALS_SKIP_DYNAMIC",
     ),
     (
         "cfg",
-        "guard-cranelift-phase11-structured-cfg-parity",
-        "PHASE11_STRUCTURED_CFG_SKIP_DYNAMIC",
+        "guard-cranelift-phase13-nested-structured-cfg-parity",
+        "PHASE13_NESTED_STRUCTURED_CFG_SKIP_DYNAMIC",
     ),
     (
         "block-params",

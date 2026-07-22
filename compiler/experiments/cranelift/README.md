@@ -1577,3 +1577,29 @@ The checked-in lockfile for this crate is owned by:
 cargo generate-lockfile --manifest-path compiler/experiments/cranelift/Cargo.toml
 ```
 
+
+
+Phase 13 Patch 13.4 migrates nested structured control flow as
+`phase13_migrated_nested_structured_CFG_parity`. The generic source lowerer
+assigns each emitted block a deterministic `cfg_<source-order-index>` identity,
+records its source line and column, derives an ordered predecessor inventory,
+and serializes exactly one explicit terminator. Reducible nested `if`/`else`,
+branches inside branch arms, sequential branches, multiple joins,
+branch-local scalar values, early returns, and arithmetic expression conditions
+share the same source-to-canonical-MIR construction path.
+
+The worker validates reachability, target existence, explicit termination,
+edge-argument arity and type, join consistency, block-parameter ownership, and
+the one-to-one block origin/predecessor metadata contract before lowering any
+object. Six malformed canonical-MIR fixtures cover missing targets, invalid
+join state, incorrect block arguments, malformed block parameters, reachable
+unterminated blocks, and inconsistent early-return predecessor metadata.
+
+Six differential source lanes cover positive and negative nested branches,
+sequential branches, early returns, branch-local state, and nested arithmetic
+conditions. Loops or backedges, short-circuit conditions, and unselected
+control-flow conditions remain precise `deferred_p13_structured_cfg_*`
+capability decisions before driver discovery, with existing outputs and the
+isolated worker boundary preserved. The registry-owned CFG family runs
+`guard-cranelift-phase13-nested-structured-cfg-parity` at Level 2. The next
+milestone is Phase 13 Patch 13.5.

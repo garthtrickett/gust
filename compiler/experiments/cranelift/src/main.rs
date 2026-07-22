@@ -3189,6 +3189,14 @@ fn phase11_local_state_apply_statements(
             CompilerMirLoweringStatement::LocalI32AddI32Literal {
                 name,
                 ..
+            }
+            | CompilerMirLoweringStatement::LocalI32SubI32Literal {
+                name,
+                ..
+            }
+            | CompilerMirLoweringStatement::LocalI32MulI32Literal {
+                name,
+                ..
             } => {
                 let local_index =
                     phase11_local_state_local_index(function, name)?;
@@ -3197,7 +3205,7 @@ fn phase11_local_state_apply_statements(
                         Phase10BackendRequestStage::CanonicalMirValidation,
                         Phase10BackendRequestFailureKind::InvalidCanonicalMir,
                         format!(
-                            "Phase 11 local-state canonical MIR reads local {name} before definite assignment"
+                            "Phase 13 local-state canonical MIR reads local {name} before definite assignment"
                         ),
                     ));
                 }
@@ -3206,7 +3214,7 @@ fn phase11_local_state_apply_statements(
                 return Err(phase10_backend_request_error(
                     Phase10BackendRequestStage::CanonicalMirValidation,
                     Phase10BackendRequestFailureKind::InvalidCanonicalMir,
-                    "Phase 11 local-state source route accepts only canonical i32 set/add statements",
+                    "Phase 13 local-state source route accepts only canonical i32 set/add/sub/mul statements",
                 ));
             }
         }
@@ -3697,6 +3705,15 @@ fn is_phase11_structured_cfg_fixture(
     })
 }
 
+fn is_phase13_nested_structured_cfg_fixture(
+    fixture: &ParsedCompilerMirFixture<'_>,
+) -> bool {
+    fixture.metadata.iter().any(|item| {
+        phase11_local_state_payload_field(item.payload, "contract")
+            == Some("phase13_4")
+    })
+}
+
 fn phase11_cfg_intersect_assignment_state(
     incoming: &mut Option<Vec<bool>>,
     candidate: &[bool],
@@ -3968,6 +3985,226 @@ fn validate_phase11_local_state_fixture(
         }
     }
 
+    Ok(())
+}
+
+fn phase13_structured_cfg_terminator_name(
+    terminator: &CompilerMirLoweringTerminator<'_>,
+) -> &'static str {
+    match terminator {
+        CompilerMirLoweringTerminator::ReturnI32(_)
+        | CompilerMirLoweringTerminator::ReturnLocalI32(_)
+        | CompilerMirLoweringTerminator::ReturnBlockParamI32(_)
+        | CompilerMirLoweringTerminator::ReturnVoid => "return",
+        CompilerMirLoweringTerminator::Jump { .. } => "jump",
+        CompilerMirLoweringTerminator::BranchI32Literal { .. }
+        | CompilerMirLoweringTerminator::BranchLocalI32Positive { .. }
+        | CompilerMirLoweringTerminator::BranchBlockParamI32Positive { .. } => {
+            "branch"
+        }
+    }
+}
+
+fn validate_phase13_nested_structured_cfg_fixture(
+    fixture: &ParsedCompilerMirFixture<'_>,
+) -> Result<(), Box<dyn Error>> {
+    validate_phase11_local_state_fixture(fixture)?;
+    let function = &fixture.function;
+    if function.blocks.len() < 5 {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 13.4 nested structured CFG requires at least five deterministic blocks",
+        ));
+    }
+
+    let block_indices = compiler_mir_cfg_block_indices(function);
+    let mut predecessors = vec![Vec::<&str>::new(); function.blocks.len()];
+    for block in &function.blocks {
+        for successor in compiler_mir_cfg_successors(&block.terminator) {
+            let successor_index = *block_indices.get(successor).ok_or_else(|| {
+                phase10_backend_request_error(
+                    Phase10BackendRequestStage::CanonicalMirValidation,
+                    Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                    format!(
+                        "Phase 13.4 structured CFG block {} targets missing block {successor}",
+                        block.label
+                    ),
+                )
+            })?;
+            predecessors[successor_index].push(block.label);
+        }
+    }
+
+    let mut block_metadata_seen = vec![false; function.blocks.len()];
+    let mut structured_metadata_seen = false;
+    for item in &fixture.metadata {
+        let Some(kind) =
+            phase11_local_state_payload_field(item.payload, "kind")
+        else {
+            continue;
+        };
+        if kind == "CfgBlock" {
+            let index: usize = phase11_local_state_payload_field(
+                item.payload,
+                "index",
+            )
+            .ok_or_else(|| {
+                phase10_backend_request_error(
+                    Phase10BackendRequestStage::CanonicalMirValidation,
+                    Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                    "Phase 13.4 CFG block metadata is missing its deterministic index",
+                )
+            })?
+            .parse()
+            .map_err(|_| {
+                phase10_backend_request_error(
+                    Phase10BackendRequestStage::CanonicalMirValidation,
+                    Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                    "Phase 13.4 CFG block metadata has an invalid deterministic index",
+                )
+            })?;
+            if index >= function.blocks.len() || block_metadata_seen[index] {
+                return Err(phase10_backend_request_error(
+                    Phase10BackendRequestStage::CanonicalMirValidation,
+                    Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                    "Phase 13.4 CFG block metadata index is duplicate or out of range",
+                ));
+            }
+            let block = &function.blocks[index];
+            let expected_label = format!("cfg_{index}");
+            if block.label != expected_label
+                || phase11_local_state_payload_field(item.payload, "label")
+                    != Some(block.label)
+                || item.attachment != format!("block:{}", block.label)
+            {
+                return Err(phase10_backend_request_error(
+                    Phase10BackendRequestStage::CanonicalMirValidation,
+                    Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                    "Phase 13.4 CFG block identity or attachment is not deterministic",
+                ));
+            }
+            let expected_predecessors = if predecessors[index].is_empty() {
+                "entry".to_string()
+            } else {
+                predecessors[index].join(",")
+            };
+            if phase11_local_state_payload_field(
+                item.payload,
+                "predecessors",
+            ) != Some(expected_predecessors.as_str())
+            {
+                return Err(phase10_backend_request_error(
+                    Phase10BackendRequestStage::CanonicalMirValidation,
+                    Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                    format!(
+                        "Phase 13.4 CFG block {} predecessor metadata is inconsistent",
+                        block.label
+                    ),
+                ));
+            }
+            if phase11_local_state_payload_field(
+                item.payload,
+                "termination",
+            ) != Some(phase13_structured_cfg_terminator_name(
+                &block.terminator,
+            ))
+            {
+                return Err(phase10_backend_request_error(
+                    Phase10BackendRequestStage::CanonicalMirValidation,
+                    Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                    format!(
+                        "Phase 13.4 CFG block {} termination metadata is inconsistent",
+                        block.label
+                    ),
+                ));
+            }
+            if phase11_local_state_payload_field(
+                item.payload,
+                "parameter_owner",
+            ) != Some("none")
+                || !block.parameters.is_empty()
+            {
+                return Err(phase10_backend_request_error(
+                    Phase10BackendRequestStage::CanonicalMirValidation,
+                    Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                    format!(
+                        "Phase 13.4 CFG block {} has malformed block-parameter ownership",
+                        block.label
+                    ),
+                ));
+            }
+            let line = phase11_local_state_payload_field(item.payload, "line")
+                .and_then(|value| value.parse::<usize>().ok())
+                .unwrap_or(0);
+            let column = phase11_local_state_payload_field(
+                item.payload,
+                "column",
+            )
+            .and_then(|value| value.parse::<usize>().ok())
+            .unwrap_or(0);
+            if line == 0 || column == 0 {
+                return Err(phase10_backend_request_error(
+                    Phase10BackendRequestStage::CanonicalMirValidation,
+                    Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                    format!(
+                        "Phase 13.4 CFG block {} is missing source origin metadata",
+                        block.label
+                    ),
+                ));
+            }
+            block_metadata_seen[index] = true;
+        } else if kind == "StructuredCfg" {
+            if phase11_local_state_payload_field(item.payload, "contract")
+                != Some("phase13_4")
+                || item.attachment != "function"
+            {
+                return Err(phase10_backend_request_error(
+                    Phase10BackendRequestStage::CanonicalMirValidation,
+                    Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                    "Phase 13.4 structured CFG ownership metadata drifted",
+                ));
+            }
+            let block_count = phase11_local_state_payload_field(
+                item.payload,
+                "block_count",
+            )
+            .and_then(|value| value.parse::<usize>().ok())
+            .unwrap_or(0);
+            let branch_count = phase11_local_state_payload_field(
+                item.payload,
+                "branch_count",
+            )
+            .and_then(|value| value.parse::<usize>().ok())
+            .unwrap_or(0);
+            let maximum_depth = phase11_local_state_payload_field(
+                item.payload,
+                "maximum_depth",
+            )
+            .and_then(|value| value.parse::<usize>().ok())
+            .unwrap_or(0);
+            if block_count != function.blocks.len()
+                || branch_count < 2
+                || maximum_depth < 1
+            {
+                return Err(phase10_backend_request_error(
+                    Phase10BackendRequestStage::CanonicalMirValidation,
+                    Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                    "Phase 13.4 structured CFG summary does not prove nested reducible ownership",
+                ));
+            }
+            structured_metadata_seen = true;
+        }
+    }
+    if block_metadata_seen.iter().any(|seen| !seen)
+        || !structured_metadata_seen
+    {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 13.4 structured CFG requires one origin/predecessor record per block",
+        ));
+    }
     Ok(())
 }
 
@@ -4951,6 +5188,9 @@ fn compile_phase10_scalar_metadata_request_path(
                 } else if is_phase11_block_parameter_loop_fixture(&fixture) {
                     validate_phase11_block_parameter_loop_fixture(&fixture)?;
                     source_route = "block_parameter_loop";
+                } else if is_phase13_nested_structured_cfg_fixture(&fixture) {
+                    validate_phase13_nested_structured_cfg_fixture(&fixture)?;
+                    source_route = "phase13_nested_structured_cfg";
                 } else if is_phase11_structured_cfg_fixture(&fixture) {
                     validate_phase11_local_state_fixture(&fixture)?;
                     source_route = "structured_cfg";
@@ -9056,8 +9296,16 @@ fn validate_compiler_mir_fixture_path(input_path: &Path) -> Result<(), Box<dyn E
         ParsedCompilerMirInput::V1(fixture) => {
             validate_compiler_mir_fixture(&fixture)?;
             recognize_compiler_mir_fixture_metadata(&fixture.metadata)?;
-            if is_phase11_block_parameter_loop_fixture(&fixture) {
+            if is_phase13_scalar_expression_fixture(&fixture) {
+                validate_phase13_scalar_expression_fixture(&fixture)?;
+            } else if is_phase11_block_parameter_loop_fixture(&fixture) {
                 validate_phase11_block_parameter_loop_fixture(&fixture)?;
+            } else if is_phase13_nested_structured_cfg_fixture(&fixture) {
+                validate_phase13_nested_structured_cfg_fixture(&fixture)?;
+            } else if is_phase11_structured_cfg_fixture(&fixture)
+                || is_phase11_local_state_fixture(&fixture)
+            {
+                validate_phase11_local_state_fixture(&fixture)?;
             }
             let counts = phase10_metadata_counts(&fixture.metadata);
             println!(

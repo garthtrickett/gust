@@ -16,10 +16,10 @@
 
 ## Derived status totals
 
-- `candidate_deferred`: `8`
+- `candidate_deferred`: `6`
 - `deferred`: `7`
 - `inherited_deferred`: `7`
-- `migrated`: `13`
+- `migrated`: `15`
 
 ## Derived feature-family totals
 
@@ -43,12 +43,12 @@
 
 ## Derived route-owner totals
 
-- `deferred`: `22`
-- `generic_canonical_mir`: `13`
+- `deferred`: `20`
+- `generic_canonical_mir`: `15`
 
 ## Derived deferred-destination totals
 
-- `phase13`: `22`
+- `phase13`: `20`
 
 ## Phase 11 semantic closure summary
 
@@ -99,8 +99,8 @@ This text is generated from the semantic closure snapshot in the JSON registry.
 | p13_imported_branch_joined_return_source_route | phase13 | phase11_entry:block_param_merge_imported_branch_joined_return | import_runtime | imports | inherited_deferred | deferred | worker_module_import_lowering | resolver_signature_and_canonical_mir_verifier | compiler/mir_feature_block_param_merge_imported_branch_joined_return_preservation_source.gst | compiler/fixtures/native_backend_block_param_merge_imported_branch_joined_return_ingestion.mir | phase13_opening:p13_imported_branch_joined_return_source_route | phase13 | source_module_import_joined_result_route_not_connected | phase13_opening_inventory_v1 |
 | p13_dual_imported_joined_return_source_route | phase13 | phase11_entry:block_param_merge_dual_imported_joined_return | import_runtime | imports | inherited_deferred | deferred | worker_module_import_lowering | resolver_signature_and_canonical_mir_verifier | compiler/mir_feature_block_param_merge_dual_imported_joined_return_preservation_source.gst | compiler/fixtures/native_backend_block_param_merge_dual_imported_joined_return_ingestion.mir | phase13_opening:p13_dual_imported_joined_return_source_route | phase13 | dual_source_module_import_joined_result_route_not_connected | phase13_opening_inventory_v1 |
 | p13_scalar_multiply_i32 | phase13 | phase11_category:broader_scalar_expressions | scalar | scalars | migrated | generic_canonical_mir | worker_scalar_expression_lowering | canonical_mir_scalar_verifier | compiler/phase11_scalar_unsupported_multiply_source.gst | compiler/fixtures/native_backend_phase13_scalar_expression_ingestion.mir | phase13_opening:p13_scalar_multiply_i32 | none_migrated | none_migrated | phase13_opening_inventory_v1 |
-| p13_two_local_update_branch_source_route | phase13 | phase11_category:multiple_locals_and_assignments | local_state | locals | candidate_deferred | deferred | worker_local_state_lowering | generic_source_capability_classifier | compiler/mir_feature_block_two_local_update_branch_preservation_source.gst | compiler/fixtures/native_backend_block_two_local_update_branch_ingestion.mir | phase13_opening:p13_two_local_update_branch_source_route | phase13 | two_local_update_branch_has_canonical_MIR_evidence_but_no_Phase13_source_native_owner | phase13_opening_inventory_v1 |
-| p13_nested_local_update_branch_source_route | phase13 | phase11_category:nested_CFG | cfg | cfg | candidate_deferred | deferred | worker_structured_cfg_lowering | canonical_mir_cfg_verifier | compiler/mir_feature_block_local_update_branch_preservation_source.gst | compiler/fixtures/native_backend_block_local_update_branch_ingestion.mir | phase13_opening:p13_nested_local_update_branch_source_route | phase13 | nested_block_local_update_branch_requires_generic_source_composition_audit | phase13_opening_inventory_v1 |
+| p13_two_local_update_branch_source_route | phase13 | phase11_category:multiple_locals_and_assignments | local_state | locals | migrated | generic_canonical_mir | worker_local_state_lowering | canonical_mir_scalar_verifier | compiler/phase13_multiple_locals_assignments_source.gst | compiler/fixtures/native_backend_phase13_multiple_locals_assignments_ingestion.mir | phase13_opening:p13_two_local_update_branch_source_route | none_migrated | none_migrated | phase13_opening_inventory_v1 |
+| p13_nested_local_update_branch_source_route | phase13 | phase11_category:nested_CFG | cfg | cfg | migrated | generic_canonical_mir | worker_structured_cfg_lowering | canonical_mir_cfg_verifier | compiler/phase13_nested_structured_cfg_source.gst | compiler/fixtures/native_backend_phase13_nested_structured_cfg_ingestion.mir | phase13_opening:p13_nested_local_update_branch_source_route | none_migrated | none_migrated | phase13_opening_inventory_v1 |
 | p13_general_loop_backedge_source_route | phase13 | phase11_category:loops_and_backedges | block_parameter | block-params | candidate_deferred | deferred | worker_block_parameter_loop_lowering | canonical_mir_cfg_verifier | compiler/phase11_block_parameter_stride_loop_source.gst | none_compiler_generated_phase13_general_loop_bundle_pending | phase13_opening:p13_general_loop_backedge_source_route | phase13 | general_loop_carried_state_beyond_the_bounded_Phase11_shapes_is_not_connected | phase13_opening_inventory_v1 |
 | p13_parameterized_local_call_branch_source_route | phase13 | phase11_category:function_parameters_and_multiple_arguments | direct_call | direct-calls | candidate_deferred | deferred | worker_direct_call_lowering | source_signature_and_call_graph_verifier | compiler/mir_feature_block_param_local_call_branch_preservation_source.gst | compiler/fixtures/native_backend_block_param_local_call_branch_ingestion.mir | phase13_opening:p13_parameterized_local_call_branch_source_route | phase13 | parameterized_local_call_result_branch_has_canonical_MIR_evidence_but_no_source_native_owner | phase13_opening_inventory_v1 |
 | p13_recursive_direct_call_policy | phase13 | phase11_category:function_parameters_and_multiple_arguments | direct_call | direct-calls | candidate_deferred | deferred | worker_direct_call_lowering | source_signature_and_call_graph_verifier | compiler/phase11_direct_call_recursion_source.gst | none_rejected_before_canonical_MIR | phase13_opening:p13_recursive_direct_call_policy | phase13 | recursive_call_graphs_remain_explicitly_deferred_before_driver_discovery | phase13_opening_inventory_v1 |

@@ -24,7 +24,12 @@ type MirNativeDirectCallFunction[ctx] struct {
     first_parameter: int,
     second_parameter: int,
     callee: str,
-    arguments: Index[std.Vector[MirNativeDirectCallArgument[ctx], ctx], ctx]
+    arguments: Index[std.Vector[MirNativeDirectCallArgument[ctx], ctx], ctx],
+    sequence_first_local: str,
+    sequence_second_local: str,
+    sequence_initial_value: int,
+    sequence_before_add: int,
+    sequence_after_add: int
 }
 
 type MirNativeDirectCallModel[ctx] struct {
@@ -198,6 +203,11 @@ func mir_native_direct_call_analyze_function(statement: ast.Statement[ctx], ctx:
     function.second_parameter = 0 - 1;
     function.callee = std.Clone(ctx, "");
     function.arguments = mir_native_direct_call_empty_argument_vector(ctx);
+    function.sequence_first_local = std.Clone(ctx, "");
+    function.sequence_second_local = std.Clone(ctx, "");
+    function.sequence_initial_value = 0;
+    function.sequence_before_add = 0;
+    function.sequence_after_add = 0;
 
     unsafe {
         if statement.tag != 3 || statement.FunctionDecl.is_extern == 1 {
@@ -236,6 +246,137 @@ func mir_native_direct_call_analyze_function(statement: ast.Statement[ctx], ctx:
         mut body := ctx[statement.FunctionDecl.body];
         mut statements: std.Vector[ast.Statement[ctx], ctx] :=
             ctx[body.statements];
+
+        if std.str_eq(function.name, "main") == 1 &&
+           len(parameter_names) == 0 &&
+           std.str_eq(function.return_type, "int") == 1 &&
+           len(statements) == 5 &&
+           statements[0].tag == 4 &&
+           statements[1].tag == 5 &&
+           statements[2].tag == 4 &&
+           statements[3].tag == 5 &&
+           statements[4].tag == 12
+        {
+            mut first_decl := statements[0];
+            mut before_assignment := statements[1];
+            mut second_decl := statements[2];
+            mut after_assignment := statements[3];
+            mut return_statement := statements[4];
+
+            if first_decl.VarDecl.is_mut == 0 ||
+               second_decl.VarDecl.is_mut == 0 ||
+               first_decl.VarDecl.value ==
+                   empty[Index[ast.Expression[ctx], ctx]] ||
+               second_decl.VarDecl.value ==
+                   empty[Index[ast.Expression[ctx], ctx]]
+            {
+                return function;
+            }
+            if first_decl.VarDecl.var_type !=
+                   empty[Index[ast.Type[ctx], ctx]] &&
+               ctx[first_decl.VarDecl.var_type].tag != 0
+            {
+                return function;
+            }
+            if second_decl.VarDecl.var_type !=
+                   empty[Index[ast.Type[ctx], ctx]] &&
+               ctx[second_decl.VarDecl.var_type].tag != 0
+            {
+                return function;
+            }
+            if std.str_eq(
+                   first_decl.VarDecl.name,
+                   second_decl.VarDecl.name
+               ) == 1
+            {
+                return function;
+            }
+
+            mut initial_expression := ctx[first_decl.VarDecl.value];
+            mut before_left := ctx[before_assignment.Assignment.left];
+            mut before_value := ctx[before_assignment.Assignment.value];
+            mut call_expression := ctx[second_decl.VarDecl.value];
+            mut after_left := ctx[after_assignment.Assignment.left];
+            mut after_value := ctx[after_assignment.Assignment.value];
+            mut return_expression := ctx[return_statement.Return.expr];
+            if initial_expression.tag != 1 ||
+               before_left.tag != 0 ||
+               std.str_eq(
+                   before_left.Identifier.name,
+                   first_decl.VarDecl.name
+               ) == 0 ||
+               before_value.tag != 10 ||
+               std.str_eq(before_value.Binary.op, "+") == 0 ||
+               call_expression.tag != 12 ||
+               after_left.tag != 0 ||
+               std.str_eq(
+                   after_left.Identifier.name,
+                   second_decl.VarDecl.name
+               ) == 0 ||
+               after_value.tag != 10 ||
+               std.str_eq(after_value.Binary.op, "+") == 0 ||
+               return_expression.tag != 0 ||
+               std.str_eq(
+                   return_expression.Identifier.name,
+                   second_decl.VarDecl.name
+               ) == 0
+            {
+                return function;
+            }
+
+            mut before_add_left := ctx[before_value.Binary.left];
+            mut before_add_right := ctx[before_value.Binary.right];
+            mut after_add_left := ctx[after_value.Binary.left];
+            mut after_add_right := ctx[after_value.Binary.right];
+            mut callee_expression := ctx[call_expression.Call.function];
+            mut call_arguments: std.Vector[ast.Expression[ctx], ctx] :=
+                ctx[call_expression.Call.arguments];
+            if before_add_left.tag != 0 ||
+               std.str_eq(
+                   before_add_left.Identifier.name,
+                   first_decl.VarDecl.name
+               ) == 0 ||
+               before_add_right.tag != 1 ||
+               after_add_left.tag != 0 ||
+               std.str_eq(
+                   after_add_left.Identifier.name,
+                   second_decl.VarDecl.name
+               ) == 0 ||
+               after_add_right.tag != 1 ||
+               callee_expression.tag != 0 ||
+               len(call_arguments) != 1 ||
+               call_arguments[0].tag != 0 ||
+               std.str_eq(
+                   call_arguments[0].Identifier.name,
+                   first_decl.VarDecl.name
+               ) == 0
+            {
+                return function;
+            }
+
+            function.profile = 3;
+            function.callee =
+                std.Clone(ctx, callee_expression.Identifier.name);
+            function.sequence_first_local =
+                std.Clone(ctx, first_decl.VarDecl.name);
+            function.sequence_second_local =
+                std.Clone(ctx, second_decl.VarDecl.name);
+            function.sequence_initial_value = initial_expression.Integer.val;
+            function.sequence_before_add = before_add_right.Integer.val;
+            function.sequence_after_add = after_add_right.Integer.val;
+
+            mut arguments: std.Vector[MirNativeDirectCallArgument[ctx], ctx] :=
+                std.VectorNew(ctx);
+            mut local_argument: MirNativeDirectCallArgument[ctx];
+            local_argument.kind = 3;
+            local_argument.value = 0;
+            local_argument.parameter_index = 0 - 1;
+            local_argument.value_type = std.Clone(ctx, "int");
+            arguments.Push(local_argument);
+            ctx.Set(function.arguments, arguments);
+            return function;
+        }
+
         if len(statements) != 1 || statements[0].tag != 12 {
             return function;
         }
@@ -331,7 +472,7 @@ func mir_native_direct_call_validate_calls(model: MirNativeDirectCallModel[ctx],
     mut caller_index := 0;
     while caller_index < len(functions) {
         mut caller := functions[caller_index];
-        if caller.profile == 2 {
+        if caller.profile == 2 || caller.profile == 3 {
             mut callee_index := mir_native_direct_call_function_index(
                 functions,
                 caller.callee,
@@ -398,7 +539,7 @@ func mir_native_direct_call_validate_acyclic(model: MirNativeDirectCallModel[ctx
     index = 0;
     while index < len(functions) {
         mut function := functions[index];
-        if function.profile == 2 {
+        if function.profile == 2 || function.profile == 3 {
             mut callee_index := mir_native_direct_call_function_index(
                 functions,
                 function.callee,
@@ -437,7 +578,7 @@ func mir_native_direct_call_validate_acyclic(model: MirNativeDirectCallModel[ctx
         removed.Set(selected, 1);
         visited = visited + 1;
         mut selected_function := functions[selected];
-        if selected_function.profile == 2 {
+        if selected_function.profile == 2 || selected_function.profile == 3 {
             mut selected_callee := mir_native_direct_call_function_index(
                 functions,
                 selected_function.callee,
@@ -532,6 +673,35 @@ func mir_native_direct_call_evaluate(functions: std.Vector[MirNativeDirectCallFu
         );
     }
 
+    if function.profile == 3 {
+        mut callee_index := mir_native_direct_call_function_index(
+            functions,
+            function.callee,
+            ctx
+        );
+        if callee_index < 0 {
+            return evaluation;
+        }
+        mut call_values: std.Vector[int, ctx] := std.VectorNew(ctx);
+        call_values.Push(
+            function.sequence_initial_value +
+            function.sequence_before_add
+        );
+        mut called := mir_native_direct_call_evaluate(
+            functions,
+            callee_index,
+            call_values,
+            depth + 1,
+            ctx
+        );
+        if called.valid == 0 {
+            return evaluation;
+        }
+        evaluation.valid = 1;
+        evaluation.value = called.value + function.sequence_after_add;
+        return evaluation;
+    }
+
     return evaluation;
 }
 
@@ -589,7 +759,7 @@ func mir_native_direct_call_analyze(programs: std.Vector[ast.Program[ctx], ctx],
             }
             entry_index = index;
         }
-        if function.profile == 2 {
+        if function.profile == 2 || function.profile == 3 {
             has_call = 1;
         }
         functions.Push(function);
@@ -788,6 +958,35 @@ func mir_native_direct_call_emit_argument(output: str, function_index: int, argu
     return std.Clone(ctx, emitted);
 }
 
+func mir_native_direct_call_statement_prefix(
+    output: str,
+    function_index: int,
+    statement_index: int,
+    ctx: &Arena
+) str {
+    mut emitted := mir_native_direct_call_append(
+        output,
+        "function_",
+        ctx
+    );
+    emitted = mir_native_direct_call_append_int(
+        emitted,
+        function_index,
+        ctx
+    );
+    emitted = mir_native_direct_call_append(
+        emitted,
+        "_block_0_statement_",
+        ctx
+    );
+    emitted = mir_native_direct_call_append_int(
+        emitted,
+        statement_index,
+        ctx
+    );
+    return mir_native_direct_call_append(emitted, "_", ctx);
+}
+
 func mir_native_direct_call_emit_function(output: str, function: MirNativeDirectCallFunction[ctx], function_index: int, expected_exit: int, ctx: &Arena) str {
     mut emitted := output;
     emitted = mir_native_direct_call_append(emitted, "function_", ctx);
@@ -875,34 +1074,119 @@ func mir_native_direct_call_emit_function(output: str, function: MirNativeDirect
         ctx
     );
     emitted = mir_native_direct_call_append_int(emitted, function_index, ctx);
-    emitted = mir_native_direct_call_append(
-        emitted,
-        "_local_count: 1\nfunction_",
-        ctx
-    );
-    emitted = mir_native_direct_call_append_int(emitted, function_index, ctx);
-    emitted = mir_native_direct_call_append(
-        emitted,
-        "_local_0_name: return_value\nfunction_",
-        ctx
-    );
-    emitted = mir_native_direct_call_append_int(emitted, function_index, ctx);
-    emitted = mir_native_direct_call_append(
-        emitted,
-        "_local_0_type: ",
-        ctx
-    );
-    emitted = mir_native_direct_call_append(
-        emitted,
-        function.return_type,
-        ctx
-    );
-    emitted = mir_native_direct_call_append(
-        emitted,
-        "\nfunction_",
-        ctx
-    );
-    emitted = mir_native_direct_call_append_int(emitted, function_index, ctx);
+    if function.profile == 3 {
+        emitted = mir_native_direct_call_append(
+            emitted,
+            "_local_count: 2\nfunction_",
+            ctx
+        );
+        emitted = mir_native_direct_call_append_int(
+            emitted,
+            function_index,
+            ctx
+        );
+        emitted = mir_native_direct_call_append(
+            emitted,
+            "_local_0_name: ",
+            ctx
+        );
+        emitted = mir_native_direct_call_append(
+            emitted,
+            function.sequence_first_local,
+            ctx
+        );
+        emitted = mir_native_direct_call_append(
+            emitted,
+            "\nfunction_",
+            ctx
+        );
+        emitted = mir_native_direct_call_append_int(
+            emitted,
+            function_index,
+            ctx
+        );
+        emitted = mir_native_direct_call_append(
+            emitted,
+            "_local_0_type: int\nfunction_",
+            ctx
+        );
+        emitted = mir_native_direct_call_append_int(
+            emitted,
+            function_index,
+            ctx
+        );
+        emitted = mir_native_direct_call_append(
+            emitted,
+            "_local_1_name: ",
+            ctx
+        );
+        emitted = mir_native_direct_call_append(
+            emitted,
+            function.sequence_second_local,
+            ctx
+        );
+        emitted = mir_native_direct_call_append(
+            emitted,
+            "\nfunction_",
+            ctx
+        );
+        emitted = mir_native_direct_call_append_int(
+            emitted,
+            function_index,
+            ctx
+        );
+        emitted = mir_native_direct_call_append(
+            emitted,
+            "_local_1_type: int\nfunction_",
+            ctx
+        );
+        emitted = mir_native_direct_call_append_int(
+            emitted,
+            function_index,
+            ctx
+        );
+    } else {
+        emitted = mir_native_direct_call_append(
+            emitted,
+            "_local_count: 1\nfunction_",
+            ctx
+        );
+        emitted = mir_native_direct_call_append_int(
+            emitted,
+            function_index,
+            ctx
+        );
+        emitted = mir_native_direct_call_append(
+            emitted,
+            "_local_0_name: return_value\nfunction_",
+            ctx
+        );
+        emitted = mir_native_direct_call_append_int(
+            emitted,
+            function_index,
+            ctx
+        );
+        emitted = mir_native_direct_call_append(
+            emitted,
+            "_local_0_type: ",
+            ctx
+        );
+        emitted = mir_native_direct_call_append(
+            emitted,
+            function.return_type,
+            ctx
+        );
+        emitted = mir_native_direct_call_append(
+            emitted,
+            "\nfunction_",
+            ctx
+        );
+        emitted = mir_native_direct_call_append_int(
+            emitted,
+            function_index,
+            ctx
+        );
+    }
     emitted = mir_native_direct_call_append(
         emitted,
         "_entry_block: entry\nfunction_",
@@ -1052,6 +1336,246 @@ func mir_native_direct_call_emit_function(output: str, function: MirNativeDirect
             ctx
         );
         emitted = mir_native_direct_call_append(emitted, "\n", ctx);
+    } else if function.profile == 3 {
+        emitted = mir_native_direct_call_append(
+            emitted,
+            "_block_0_statement_count: 4\n",
+            ctx
+        );
+
+        emitted = mir_native_direct_call_statement_prefix(
+            emitted,
+            function_index,
+            0,
+            ctx
+        );
+        emitted = mir_native_direct_call_append(
+            emitted,
+            "kind: LocalI32Set\n",
+            ctx
+        );
+        emitted = mir_native_direct_call_statement_prefix(
+            emitted,
+            function_index,
+            0,
+            ctx
+        );
+        emitted = mir_native_direct_call_append(
+            emitted,
+            "local: ",
+            ctx
+        );
+        emitted = mir_native_direct_call_append(
+            emitted,
+            function.sequence_first_local,
+            ctx
+        );
+        emitted = mir_native_direct_call_append(emitted, "\n", ctx);
+        emitted = mir_native_direct_call_statement_prefix(
+            emitted,
+            function_index,
+            0,
+            ctx
+        );
+        emitted = mir_native_direct_call_append(
+            emitted,
+            "value: ",
+            ctx
+        );
+        emitted = mir_native_direct_call_append_int(
+            emitted,
+            function.sequence_initial_value,
+            ctx
+        );
+        emitted = mir_native_direct_call_append(emitted, "\n", ctx);
+
+        emitted = mir_native_direct_call_statement_prefix(
+            emitted,
+            function_index,
+            1,
+            ctx
+        );
+        emitted = mir_native_direct_call_append(
+            emitted,
+            "kind: LocalI32AddI32Literal\n",
+            ctx
+        );
+        emitted = mir_native_direct_call_statement_prefix(
+            emitted,
+            function_index,
+            1,
+            ctx
+        );
+        emitted = mir_native_direct_call_append(
+            emitted,
+            "local: ",
+            ctx
+        );
+        emitted = mir_native_direct_call_append(
+            emitted,
+            function.sequence_first_local,
+            ctx
+        );
+        emitted = mir_native_direct_call_append(emitted, "\n", ctx);
+        emitted = mir_native_direct_call_statement_prefix(
+            emitted,
+            function_index,
+            1,
+            ctx
+        );
+        emitted = mir_native_direct_call_append(
+            emitted,
+            "value: ",
+            ctx
+        );
+        emitted = mir_native_direct_call_append_int(
+            emitted,
+            function.sequence_before_add,
+            ctx
+        );
+        emitted = mir_native_direct_call_append(emitted, "\n", ctx);
+
+        emitted = mir_native_direct_call_statement_prefix(
+            emitted,
+            function_index,
+            2,
+            ctx
+        );
+        emitted = mir_native_direct_call_append(
+            emitted,
+            "kind: LocalI32SetCall\n",
+            ctx
+        );
+        emitted = mir_native_direct_call_statement_prefix(
+            emitted,
+            function_index,
+            2,
+            ctx
+        );
+        emitted = mir_native_direct_call_append(
+            emitted,
+            "local: ",
+            ctx
+        );
+        emitted = mir_native_direct_call_append(
+            emitted,
+            function.sequence_second_local,
+            ctx
+        );
+        emitted = mir_native_direct_call_append(emitted, "\n", ctx);
+        emitted = mir_native_direct_call_statement_prefix(
+            emitted,
+            function_index,
+            2,
+            ctx
+        );
+        emitted = mir_native_direct_call_append(
+            emitted,
+            "callee_kind: LocalFunction\n",
+            ctx
+        );
+        emitted = mir_native_direct_call_statement_prefix(
+            emitted,
+            function_index,
+            2,
+            ctx
+        );
+        emitted = mir_native_direct_call_append(
+            emitted,
+            "callee: ",
+            ctx
+        );
+        emitted = mir_native_direct_call_append(
+            emitted,
+            function.callee,
+            ctx
+        );
+        emitted = mir_native_direct_call_append(emitted, "\n", ctx);
+        emitted = mir_native_direct_call_statement_prefix(
+            emitted,
+            function_index,
+            2,
+            ctx
+        );
+        emitted = mir_native_direct_call_append(
+            emitted,
+            "argument_count: 1\n",
+            ctx
+        );
+        emitted = mir_native_direct_call_statement_prefix(
+            emitted,
+            function_index,
+            2,
+            ctx
+        );
+        emitted = mir_native_direct_call_append(
+            emitted,
+            "argument_0_kind: LocalI32\n",
+            ctx
+        );
+        emitted = mir_native_direct_call_statement_prefix(
+            emitted,
+            function_index,
+            2,
+            ctx
+        );
+        emitted = mir_native_direct_call_append(
+            emitted,
+            "argument_0_local: ",
+            ctx
+        );
+        emitted = mir_native_direct_call_append(
+            emitted,
+            function.sequence_first_local,
+            ctx
+        );
+        emitted = mir_native_direct_call_append(emitted, "\n", ctx);
+
+        emitted = mir_native_direct_call_statement_prefix(
+            emitted,
+            function_index,
+            3,
+            ctx
+        );
+        emitted = mir_native_direct_call_append(
+            emitted,
+            "kind: LocalI32AddI32Literal\n",
+            ctx
+        );
+        emitted = mir_native_direct_call_statement_prefix(
+            emitted,
+            function_index,
+            3,
+            ctx
+        );
+        emitted = mir_native_direct_call_append(
+            emitted,
+            "local: ",
+            ctx
+        );
+        emitted = mir_native_direct_call_append(
+            emitted,
+            function.sequence_second_local,
+            ctx
+        );
+        emitted = mir_native_direct_call_append(emitted, "\n", ctx);
+        emitted = mir_native_direct_call_statement_prefix(
+            emitted,
+            function_index,
+            3,
+            ctx
+        );
+        emitted = mir_native_direct_call_append(
+            emitted,
+            "value: ",
+            ctx
+        );
+        emitted = mir_native_direct_call_append_int(
+            emitted,
+            function.sequence_after_add,
+            ctx
+        );
+        emitted = mir_native_direct_call_append(emitted, "\n", ctx);
     } else {
         emitted = mir_native_direct_call_append(
             emitted,
@@ -1149,7 +1673,25 @@ func mir_native_direct_call_emit_function(output: str, function: MirNativeDirect
     emitted = mir_native_direct_call_append_int(emitted, function_index, ctx);
     emitted = mir_native_direct_call_append(
         emitted,
-        "_block_0_terminator_local: return_value\nfunction_",
+        "_block_0_terminator_local: ",
+        ctx
+    );
+    if function.profile == 3 {
+        emitted = mir_native_direct_call_append(
+            emitted,
+            function.sequence_second_local,
+            ctx
+        );
+    } else {
+        emitted = mir_native_direct_call_append(
+            emitted,
+            "return_value",
+            ctx
+        );
+    }
+    emitted = mir_native_direct_call_append(
+        emitted,
+        "\nfunction_",
         ctx
     );
     emitted = mir_native_direct_call_append_int(emitted, function_index, ctx);

@@ -397,9 +397,13 @@ func mir_native_scalar_source_compile_inner(programs: std.Vector[ast.Program[ctx
     }
 
     if generic_result.eligibility.tag == 1 {
+        mut reason_code := generic_result.reason_code;
+        if len(reason_code) == 0 {
+            reason_code = "source_feature_not_represented";
+        }
         return mir_native_scalar_source_deferred_result(
-            "source_feature_not_represented",
-            "",
+            reason_code,
+            generic_result.diagnostic,
             ctx
         );
     }
