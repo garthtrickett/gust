@@ -4300,7 +4300,14 @@ fn validate_phase11_scalar_expression_fixture(
 fn is_phase13_scalar_expression_fixture(
     fixture: &ParsedCompilerMirFixture<'_>,
 ) -> bool {
-    fixture.function.blocks.iter().any(|block| {
+    let function = &fixture.function;
+    if function.locals.len() != 1
+        || !matches!(function.blocks.len(), 1 | 3)
+    {
+        return false;
+    }
+
+    function.blocks.iter().any(|block| {
         block.statements.iter().any(|statement| {
             matches!(
                 statement,
