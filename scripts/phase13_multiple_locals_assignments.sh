@@ -294,7 +294,7 @@ assert_rejected_before_driver \
 assert_rejected_before_driver \
   "$duplicate_source" \
   duplicate-declaration \
-  'TypeError'
+  'generic local-state MIR contains a duplicate local declaration'
 assert_rejected_before_driver \
   "$type_mismatch_source" \
   type-mismatched-assignment \
