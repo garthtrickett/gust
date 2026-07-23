@@ -1631,3 +1631,31 @@ decisions before driver discovery, preserving existing output and creating no
 request or object artifact. The registry-owned block-params family runs
 `guard-cranelift-phase13-general-loop-parity` at Level 2. The next milestone is
 Phase 13 Patch 13.6.
+
+Phase 13 Patch 13.6 migrates scalar function parameters and multiple arguments as
+`phase13_migrated_parameter_and_argument_parity`. A compiler-owned semantic
+lowerer runs inside the existing generic source-to-canonical-MIR dispatcher and
+recognizes one bounded three-`int`-parameter helper together with direct call
+composition in a zero-argument `main`. Parameter declaration order, identity,
+function namespace, scalar type, and source line/column are serialized as
+recognized provenance metadata rather than worker-visible source fields.
+
+The selected direct-call profiles cover a call result used as a branch
+condition, repeated three-argument calls feeding a larger scalar expression,
+call assignments in both CFG arms followed by a joined return, and call-updated
+state inside the already-supported single-header loop form. Existing Phase 11
+direct and imported multi-argument programs remain differential composition
+evidence, so this patch extends source composition without creating a second
+module/import or call ABI.
+
+The worker continues to consume only canonical MIR and request data. It validates
+ordered argument count and scalar type, result-local compatibility, exactly
+three ordered helper parameters, and the Phase 13.6 parameter provenance
+contract before lowering an object. Six malformed canonical-MIR fixtures cover
+wrong arity, wrong argument order, wrong argument type, result type mismatch,
+parameter metadata order, and function namespace drift. Aggregate parameters,
+aggregate returns, and target-dependent scalar ABI forms remain precise
+`deferred_p13_parameter_argument_*` decisions before driver discovery, with
+existing output preserved. The registry-owned direct-calls family runs
+`guard-cranelift-phase13-parameter-argument-parity` at Level 2. The next
+milestone is Phase 13 Patch 13.7.

@@ -5403,6 +5403,337 @@ fn validate_phase11_import_boundary_metadata(
     Ok(())
 }
 
+
+fn is_phase13_parameter_argument_module(
+    module: &CompilerMirLoweringModule<'_>,
+) -> bool {
+    module.name == "phase13_parameter_arguments"
+}
+
+fn validate_phase13_parameter_argument_module(
+    module: &CompilerMirLoweringModule<'_>,
+) -> Result<(), Box<dyn Error>> {
+    validate_compiler_mir_module(module)?;
+
+    if !is_phase13_parameter_argument_module(module) {
+        return Err(IoError::new(
+            ErrorKind::InvalidInput,
+            "Phase 13.6 parameter/argument validator received a different module",
+        )
+        .into());
+    }
+    if !module.imports.is_empty() || module.functions.len() != 2 {
+        return Err(IoError::new(
+            ErrorKind::InvalidInput,
+            "Phase 13.6 parameter/argument module must define exactly two local functions and no imports",
+        )
+        .into());
+    }
+
+    let main = module
+        .functions
+        .iter()
+        .find(|defined| defined.fixture.function.object_name == "main")
+        .ok_or_else(|| {
+            IoError::new(
+                ErrorKind::InvalidInput,
+                "Phase 13.6 parameter/argument module is missing main",
+            )
+        })?;
+    let helper = module
+        .functions
+        .iter()
+        .find(|defined| defined.fixture.function.object_name != "main")
+        .ok_or_else(|| {
+            IoError::new(
+                ErrorKind::InvalidInput,
+                "Phase 13.6 parameter/argument module is missing its helper",
+            )
+        })?;
+
+    if main.linkage != CompilerMirLoweringFunctionLinkage::ExportedEntry
+        || !main.fixture.function.params.is_empty()
+        || main.fixture.return_type != TinyMirType::I32
+    {
+        return Err(IoError::new(
+            ErrorKind::InvalidInput,
+            "Phase 13.6 main must be an exported zero-argument int entry",
+        )
+        .into());
+    }
+    if helper.linkage != CompilerMirLoweringFunctionLinkage::ModuleLocal
+        || helper.fixture.function.params.as_slice()
+            != &[TinyMirType::I32, TinyMirType::I32, TinyMirType::I32]
+        || helper.fixture.return_type != TinyMirType::I32
+    {
+        return Err(IoError::new(
+            ErrorKind::InvalidInput,
+            "Phase 13.6 helper must preserve exactly three ordered int parameters and one int result",
+        )
+        .into());
+    }
+
+    if helper.fixture.metadata.len() != 3 {
+        return Err(IoError::new(
+            ErrorKind::InvalidInput,
+            "Phase 13.6 helper requires exactly three parameter provenance records",
+        )
+        .into());
+    }
+    let mut parameter_names = HashSet::new();
+    for (parameter_index, metadata) in
+        helper.fixture.metadata.iter().enumerate()
+    {
+        let expected_index = parameter_index.to_string();
+        if metadata.kind != "provenance"
+            || metadata.attachment != "function"
+            || metadata.policy != "recognized_preserved"
+            || compiler_mir_metadata_payload_field(metadata.payload, "kind")
+                != Some("FunctionParameter")
+            || compiler_mir_metadata_payload_field(
+                metadata.payload,
+                "contract",
+            ) != Some("phase13_6")
+            || compiler_mir_metadata_payload_field(metadata.payload, "index")
+                != Some(expected_index.as_str())
+            || compiler_mir_metadata_payload_field(metadata.payload, "type")
+                != Some("int")
+            || compiler_mir_metadata_payload_field(
+                metadata.payload,
+                "namespace",
+            ) != Some(helper.fixture.function.object_name)
+            || compiler_mir_metadata_payload_field(
+                metadata.payload,
+                "codegen",
+            ) != Some("preserved")
+        {
+            return Err(IoError::new(
+                ErrorKind::InvalidInput,
+                format!(
+                    "Phase 13.6 parameter provenance drifted at declaration-order index {parameter_index}",
+                ),
+            )
+            .into());
+        }
+
+        let name = compiler_mir_metadata_payload_field(
+            metadata.payload,
+            "name",
+        )
+        .filter(|name| !name.is_empty())
+        .ok_or_else(|| {
+            IoError::new(
+                ErrorKind::InvalidInput,
+                format!(
+                    "Phase 13.6 parameter provenance is missing identity at index {parameter_index}",
+                ),
+            )
+        })?;
+        if !parameter_names.insert(name) {
+            return Err(IoError::new(
+                ErrorKind::InvalidInput,
+                format!(
+                    "Phase 13.6 parameter provenance duplicates identity {name}",
+                ),
+            )
+            .into());
+        }
+        for location_field in ["line", "column"] {
+            let value = compiler_mir_metadata_payload_field(
+                metadata.payload,
+                location_field,
+            )
+            .and_then(|value| value.parse::<usize>().ok())
+            .unwrap_or(0);
+            if value == 0 {
+                return Err(IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!(
+                        "Phase 13.6 parameter provenance requires a positive {location_field} at index {parameter_index}",
+                    ),
+                )
+                .into());
+            }
+        }
+    }
+
+    if main.fixture.metadata.len() != 1 {
+        return Err(IoError::new(
+            ErrorKind::InvalidInput,
+            "Phase 13.6 main requires exactly one parameter/argument contract record",
+        )
+        .into());
+    }
+    let contract = &main.fixture.metadata[0];
+    let profile = compiler_mir_metadata_payload_field(
+        contract.payload,
+        "profile",
+    )
+    .unwrap_or("");
+    if contract.kind != "provenance"
+        || contract.attachment != "function"
+        || contract.policy != "recognized_preserved"
+        || compiler_mir_metadata_payload_field(contract.payload, "kind")
+            != Some("ParameterArgumentContract")
+        || compiler_mir_metadata_payload_field(contract.payload, "contract")
+            != Some("phase13_6")
+        || compiler_mir_metadata_payload_field(
+            contract.payload,
+            "parameter_order",
+        ) != Some("source")
+        || compiler_mir_metadata_payload_field(
+            contract.payload,
+            "argument_order",
+        ) != Some("source")
+        || compiler_mir_metadata_payload_field(
+            contract.payload,
+            "namespace",
+        ) != Some("single_module")
+        || compiler_mir_metadata_payload_field(contract.payload, "codegen")
+            != Some("preserved")
+        || !matches!(
+            profile,
+            "branch_condition"
+                | "repeated_calls_expression"
+                | "cfg_join"
+                | "loop_carried_call_state"
+        )
+    {
+        return Err(IoError::new(
+            ErrorKind::InvalidInput,
+            "Phase 13.6 parameter/argument contract metadata is invalid",
+        )
+        .into());
+    }
+
+    let helper_name = helper.fixture.function.object_name;
+    let mut call_count = 0usize;
+    let mut call_blocks = HashSet::new();
+    let mut call_result_locals = HashSet::new();
+    for block in &main.fixture.function.blocks {
+        for statement in &block.statements {
+            if let CompilerMirLoweringStatement::LocalI32SetCall {
+                name,
+                target: CompilerMirLoweringCallTarget::LocalFunction(callee),
+                arguments,
+            } = statement
+            {
+                if *callee != helper_name || arguments.len() != 3 {
+                    return Err(IoError::new(
+                        ErrorKind::InvalidInput,
+                        "Phase 13.6 local calls must target the ordered three-parameter helper",
+                    )
+                    .into());
+                }
+                call_count += 1;
+                call_blocks.insert(block.label);
+                call_result_locals.insert(*name);
+            }
+        }
+    }
+    if call_count == 0 {
+        return Err(IoError::new(
+            ErrorKind::InvalidInput,
+            "Phase 13.6 main must contain at least one multi-argument local call",
+        )
+        .into());
+    }
+
+    match profile {
+        "branch_condition" => {
+            if call_count != 1
+                || !main.fixture.function.blocks.iter().any(|block| {
+                    matches!(
+                        &block.terminator,
+                        CompilerMirLoweringTerminator::BranchLocalI32Positive {
+                            name,
+                            ..
+                        } if call_result_locals.contains(*name)
+                    )
+                })
+            {
+                return Err(IoError::new(
+                    ErrorKind::InvalidInput,
+                    "Phase 13.6 branch profile must branch on its call result",
+                )
+                .into());
+            }
+        }
+        "repeated_calls_expression" => {
+            if call_count < 2
+                || !main.fixture.function.blocks.iter().any(|block| {
+                    block.statements.iter().any(|statement| {
+                        matches!(
+                            statement,
+                            CompilerMirLoweringStatement::LocalI32AddI32Literal {
+                                ..
+                            }
+                        )
+                    })
+                })
+            {
+                return Err(IoError::new(
+                    ErrorKind::InvalidInput,
+                    "Phase 13.6 repeated-call profile requires two calls and a larger scalar expression",
+                )
+                .into());
+            }
+        }
+        "cfg_join" => {
+            let has_join_return =
+                main.fixture.function.blocks.iter().any(|block| {
+                    matches!(
+                        &block.terminator,
+                        CompilerMirLoweringTerminator::ReturnLocalI32(_)
+                    ) && block.statements.is_empty()
+                });
+            if call_count < 3
+                || call_blocks.len() < 3
+                || !has_join_return
+            {
+                return Err(IoError::new(
+                    ErrorKind::InvalidInput,
+                    "Phase 13.6 CFG-join profile requires calls in both arms and a joined local return",
+                )
+                .into());
+            }
+        }
+        "loop_carried_call_state" => {
+            let backedge_count = compiler_mir_cfg_reducible_backedge_count(
+                &main.fixture.function,
+            )?;
+            let has_block_parameter_call = main
+                .fixture
+                .function
+                .blocks
+                .iter()
+                .flat_map(|block| block.statements.iter())
+                .any(|statement| {
+                    matches!(
+                        statement,
+                        CompilerMirLoweringStatement::LocalI32SetCall {
+                            arguments,
+                            ..
+                        } if arguments.iter().any(|argument| matches!(
+                            argument,
+                            CompilerMirLoweringCallArgument::BlockParamI32(_)
+                        ))
+                    )
+                });
+            if backedge_count != 1 || !has_block_parameter_call {
+                return Err(IoError::new(
+                    ErrorKind::InvalidInput,
+                    "Phase 13.6 loop profile requires one natural backedge and call-updated loop-carried state",
+                )
+                .into());
+            }
+        }
+        _ => unreachable!(),
+    }
+
+    Ok(())
+}
+
 fn validate_phase11_module_import_runtime_module(
     module: &CompilerMirLoweringModule<'_>,
 ) -> Result<&'static str, Box<dyn Error>> {
@@ -5660,15 +5991,21 @@ fn compile_phase10_scalar_metadata_request_path(
                     ));
                 }
 
-                let module_route = if matches!(
-                    module.name,
-                    "phase10_local_call" | "phase10_runtime_boundary"
-                ) {
-                    validate_phase10_calls_imports_runtime_module(&module)?
-                } else {
-                    validate_phase11_module_import_runtime_module(&module)?
-                };
-                if module_route == "module_import_runtime" {
+                let module_route =
+                    if is_phase13_parameter_argument_module(&module) {
+                        validate_phase13_parameter_argument_module(&module)?;
+                        "phase13_parameter_arguments"
+                    } else if matches!(
+                        module.name,
+                        "phase10_local_call" | "phase10_runtime_boundary"
+                    ) {
+                        validate_phase10_calls_imports_runtime_module(&module)?
+                    } else {
+                        validate_phase11_module_import_runtime_module(&module)?
+                    };
+                if module_route == "phase13_parameter_arguments" {
+                    source_route = "phase13_parameter_arguments";
+                } else if module_route == "module_import_runtime" {
                     source_route = "module_import_runtime";
                 } else if source_route != "module_import_runtime"
                     && module_route == "declared_external_import"
@@ -9746,6 +10083,9 @@ fn validate_compiler_mir_fixture_path(input_path: &Path) -> Result<(), Box<dyn E
         }
         ParsedCompilerMirInput::V2(module) => {
             validate_compiler_mir_module(&module)?;
+            if is_phase13_parameter_argument_module(&module) {
+                validate_phase13_parameter_argument_module(&module)?;
+            }
             let mut metadata_record_count = 0usize;
             let mut resource_metadata_count = 0usize;
             let mut provenance_metadata_count = 0usize;
@@ -9825,6 +10165,13 @@ fn emit_compiler_mir_fixture_object(
             )
         }
         ParsedCompilerMirInput::V2(module) => {
+            if is_phase13_parameter_argument_module(&module) {
+                compiler_mir_pipeline_wrap_box(
+                    validate_phase13_parameter_argument_module(&module),
+                    CompilerMirPipelineStage::FixtureValidation,
+                    CompilerMirPipelineFailureKind::InvalidFixture,
+                )?;
+            }
             lower_compiler_mir_ingestion_module_to_object(output_path, &module)
         }
     }

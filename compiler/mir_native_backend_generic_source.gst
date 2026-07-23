@@ -6,6 +6,7 @@ import "mir_native_backend_capability.gst" as capability;
 import "mir_native_backend_direct_call_source.gst" as direct_call;
 import "mir_native_backend_local_state_source.gst" as local_state;
 import "mir_native_backend_module_import_source.gst" as module_import;
+import "mir_native_backend_parameter_argument_source.gst" as parameter_argument;
 import "mir_native_backend_structured_cfg_source.gst" as structured_cfg;
 import "mir_native_backend_scalar_expression_source.gst" as scalar_expression;
 
@@ -2321,24 +2322,48 @@ func mir_native_generic_source_lower(programs: std.Vector[ast.Program[ctx], ctx]
         if scalar_expression_result.represented == 1 {
             bundle = scalar_expression_result.bundle;
         } else {
-            mut module_import_result :=
-                module_import.mir_native_module_import_source_lower(
+            mut parameter_argument_result :=
+                parameter_argument.mir_native_parameter_argument_source_lower(
                     programs,
                     module_paths,
                     module_prefixes,
                     ctx
                 );
-            if module_import_result.invalid == 1 {
+            if parameter_argument_result.invalid == 1 {
                 return mir_native_generic_empty_result(
                     3,
-                    module_import_result.diagnostic,
+                    parameter_argument_result.diagnostic,
                     ctx
                 );
             }
-            if module_import_result.represented == 1 {
-                bundle = module_import_result.bundle;
+            if parameter_argument_result.deferred == 1 {
+                return mir_native_generic_deferred_result(
+                    parameter_argument_result.reason_code,
+                    parameter_argument_result.diagnostic,
+                    ctx
+                );
+            }
+            if parameter_argument_result.represented == 1 {
+                bundle = parameter_argument_result.bundle;
             } else {
-                mut direct_call_result :=
+                mut module_import_result :=
+                    module_import.mir_native_module_import_source_lower(
+                        programs,
+                        module_paths,
+                        module_prefixes,
+                        ctx
+                    );
+                if module_import_result.invalid == 1 {
+                    return mir_native_generic_empty_result(
+                        3,
+                        module_import_result.diagnostic,
+                        ctx
+                    );
+                }
+                if module_import_result.represented == 1 {
+                    bundle = module_import_result.bundle;
+                } else {
+                    mut direct_call_result :=
                     direct_call.mir_native_direct_call_source_lower(
                         programs,
                         module_paths,
@@ -2426,6 +2451,7 @@ func mir_native_generic_source_lower(programs: std.Vector[ast.Program[ctx], ctx]
                 }
             }
         }
+    }
     }
 
     mut serialized := mir.mir_serialize_program_bundle(bundle, ctx);

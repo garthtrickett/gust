@@ -153,9 +153,12 @@
     "guard-cranelift-phase12-5-close": 1,
     "guard-cranelift-phase12-5-opening-contract": 1,
     "guard-cranelift-phase13-capability-deferral-contract": 1,
+    "guard-cranelift-phase13-general-loop-parity": 2,
     "guard-cranelift-phase13-multiple-locals-assignments-parity": 2,
+    "guard-cranelift-phase13-nested-structured-cfg-parity": 2,
     "guard-cranelift-phase13-opening-contract": 1,
     "guard-cranelift-phase13-opening-totals": 1,
+    "guard-cranelift-phase13-parameter-argument-parity": 2,
     "guard-cranelift-phase13-parent-traceability": 1,
     "guard-cranelift-phase13-registry-schema": 1,
     "guard-cranelift-phase13-scalar-expression-parity": 2,
@@ -206,8 +209,6 @@
     "guard-cranelift-registry-projection": 1,
     "guard-cranelift-registry-schema": 1,
     "guard-cranelift-return-int-native-smoke": 3,
-    "guard-cranelift-route-architecture-contract": 1,
-    "guard-cranelift-phase13-nested-structured-cfg-parity": 2,
-    "guard-cranelift-phase13-general-loop-parity": 2
+    "guard-cranelift-route-architecture-contract": 1
   }
 }

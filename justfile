@@ -10271,6 +10271,7 @@ guard-cranelift-route-architecture-contract:
       compiler/mir_native_backend_block_parameter_loop_source.gst
       compiler/mir_native_backend_direct_call_source.gst
       compiler/mir_native_backend_module_import_source.gst
+      compiler/mir_native_backend_parameter_argument_source.gst
       compiler/mir_native_backend_scalar_expression_source.gst
     )
 
@@ -13883,6 +13884,152 @@ guard-cranelift-phase13-general-loop-parity:
 
     bash "$evidence_script"
     echo "✅ Phase 13.5 migrated the selected single-header reducible-loop inventory with one- and two-value block-parameter state, bounded execution, natural-backedge validation, and precise residual deferrals."
+
+guard-cranelift-phase13-parameter-argument-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 13.6 scalar parameter and argument parity..."
+    lowerer_source="compiler/mir_native_backend_parameter_argument_source.gst"
+    generic_source="compiler/mir_native_backend_generic_source.gst"
+    route_source="compiler/mir_native_backend_source_route.gst"
+    request_source="compiler/mir_native_backend_request.gst"
+    rust_driver="compiler/experiments/cranelift/src/main.rs"
+    registry_validator="scripts/cranelift_registry.py"
+    family_runner="scripts/cranelift_ci_family.py"
+    level_runner="scripts/cranelift_test_levels.py"
+    evidence_script="scripts/phase13_parameter_argument.sh"
+    canonical_fixture="compiler/fixtures/native_backend_phase13_parameter_argument_ingestion.mir"
+
+    required_files=(
+      "$lowerer_source"
+      "$generic_source"
+      "$route_source"
+      "$request_source"
+      "$rust_driver"
+      "$registry_validator"
+      "$family_runner"
+      "$level_runner"
+      "$evidence_script"
+      "$canonical_fixture"
+      compiler/phase13_parameter_argument_branch_source.gst
+      compiler/phase13_parameter_argument_repeated_source.gst
+      compiler/phase13_parameter_argument_join_source.gst
+      compiler/phase13_parameter_argument_loop_source.gst
+      compiler/phase13_parameter_argument_aggregate_parameter_source.gst
+      compiler/phase13_parameter_argument_aggregate_return_source.gst
+      compiler/phase13_parameter_argument_target_abi_source.gst
+      compiler/fixtures/native_backend_phase13_parameter_argument_wrong_arity.mir
+      compiler/fixtures/native_backend_phase13_parameter_argument_wrong_order.mir
+      compiler/fixtures/native_backend_phase13_parameter_argument_wrong_type.mir
+      compiler/fixtures/native_backend_phase13_parameter_argument_result_type.mir
+      compiler/fixtures/native_backend_phase13_parameter_argument_metadata_order.mir
+      compiler/fixtures/native_backend_phase13_parameter_argument_namespace.mir
+    )
+    for required_file in "${required_files[@]}"; do
+      if [ ! -f "$required_file" ] || [ -L "$required_file" ]; then
+        echo "Missing regular Phase 13.6 parameter/argument input: $required_file"
+        exit 1
+      fi
+    done
+
+    PHASE13_GENERAL_LOOP_SKIP_DYNAMIC=1 \
+      just guard-cranelift-phase13-general-loop-parity
+    python3 "$registry_validator" verify-phase13-parameter-argument-contract
+    python3 "$registry_validator" check-projection
+    PHASE11_DIRECT_CALL_ABI_SKIP_DYNAMIC=1 \
+      just guard-cranelift-phase11-direct-call-abi-parity
+    PHASE11_MODULE_IMPORT_RUNTIME_SKIP_DYNAMIC=1 \
+      just guard-cranelift-phase11-module-import-runtime-parity
+    PHASE11_ROUTE_ARCHITECTURE_SKIP_DYNAMIC=1 \
+      just guard-cranelift-route-architecture-contract
+
+    level_record="$(
+      python3 "$level_runner" level \
+        guard-cranelift-phase13-parameter-argument-parity
+    )"
+    printf '%s\n' "$level_record" |
+      rg -n -F $'guard-cranelift-phase13-parameter-argument-parity	2	' >/dev/null
+
+    required_lowerer_symbols=(
+      'type MirNativeParameterArgumentModel[ctx] struct'
+      'func mir_native_parameter_argument_analyze_helper('
+      'func mir_native_parameter_argument_analyze_branch('
+      'func mir_native_parameter_argument_analyze_repeated('
+      'func mir_native_parameter_argument_analyze_join('
+      'func mir_native_parameter_argument_analyze_loop('
+      'kind=FunctionParameter;contract=phase13_6'
+      'kind=ParameterArgumentContract;contract=phase13_6'
+      'parameter_order=source;argument_order=source;namespace=single_module'
+      'deferred_p13_parameter_argument_aggregate_parameter'
+      'deferred_p13_parameter_argument_aggregate_return'
+      'deferred_p13_parameter_argument_target_dependent_abi'
+    )
+    for required_symbol in "${required_lowerer_symbols[@]}"; do
+      rg -n -F "$required_symbol" "$lowerer_source" >/dev/null
+    done
+
+    required_worker_symbols=(
+      'fn is_phase13_parameter_argument_module('
+      'fn validate_phase13_parameter_argument_module('
+      'source_route = "phase13_parameter_arguments";'
+      'must preserve exactly three ordered int parameters'
+      'parameter provenance drifted at declaration-order index'
+      'branch profile must branch on its call result'
+      'repeated-call profile requires two calls'
+      'CFG-join profile requires calls in both arms'
+      'loop profile requires one natural backedge'
+    )
+    for required_symbol in "${required_worker_symbols[@]}"; do
+      rg -n -F "$required_symbol" "$rust_driver" >/dev/null
+    done
+
+    rg -n -F \
+      'import "mir_native_backend_parameter_argument_source.gst" as parameter_argument;' \
+      "$generic_source" >/dev/null
+    parameter_line="$(
+      rg -n -F 'parameter_argument.mir_native_parameter_argument_source_lower(' \
+        "$generic_source" | cut -d: -f1
+    )"
+    module_line="$(
+      rg -n -F 'module_import.mir_native_module_import_source_lower(' \
+        "$generic_source" | cut -d: -f1
+    )"
+    direct_line="$(
+      rg -n -F 'direct_call.mir_native_direct_call_source_lower(' \
+        "$generic_source" | cut -d: -f1
+    )"
+    if [ -z "$parameter_line" ] ||
+       [ -z "$module_line" ] ||
+       [ -z "$direct_line" ] ||
+       [ "$parameter_line" -ge "$module_line" ] ||
+       [ "$parameter_line" -ge "$direct_line" ]; then
+      echo "Phase 13.6 parameter/argument lowering must precede compatibility call lowerers."
+      exit 1
+    fi
+    if rg -n \
+        -e 'phase13_parameter_argument_.*_source\.gst' \
+        "$lowerer_source" "$generic_source" "$route_source" >/dev/null
+    then
+      echo "Phase 13.6 lowering embeds a source fixture identity."
+      exit 1
+    fi
+    if rg -n \
+        -e '^[[:space:]]*(source_path|source_text|source_bytes|ast_program):' \
+        "$request_source" >/dev/null
+    then
+      echo "Phase 13.6 changed the isolated worker request boundary."
+      exit 1
+    fi
+
+    bash -n "$evidence_script"
+    if [ "${PHASE13_PARAMETER_ARGUMENT_SKIP_DYNAMIC:-0}" = "1" ]; then
+      echo "✅ Phase 13.6 parameter/argument static contract passed; focused differential evidence was intentionally skipped."
+      exit 0
+    fi
+
+    bash "$evidence_script"
+    echo "✅ Phase 13.6 migrated ordered scalar parameters and multi-argument calls through direct, imported, repeated, expression, CFG-join, and supported loop composition while preserving precise ABI deferrals."
+
 
 guard-cranelift-phase12-5-close:
     #!/usr/bin/env bash

@@ -120,6 +120,39 @@ PHASE13_GENERAL_LOOP_DEFERRED_REASONS = [
     "deferred_p13_general_loop_body_control_flow",
     "deferred_p13_general_loop_condition_operator",
 ]
+PHASE13_PARAMETER_ARGUMENT_ENTRY_ID = (
+    "p13_parameterized_local_call_branch_source_route"
+)
+PHASE13_PARAMETER_ARGUMENT_SHAPES = [
+    "direct_multi_argument_call",
+    "imported_multi_argument_call_inherited",
+    "repeated_calls",
+    "call_result_local_assignment",
+    "call_result_larger_expression",
+    "call_result_branch_condition",
+    "call_result_cfg_join",
+    "call_result_loop_carried_state",
+]
+PHASE13_PARAMETER_ARGUMENT_POLICY = (
+    "int_parameters_in_source_declaration_order_with_function_namespace_"
+    "and_source_location_provenance"
+)
+PHASE13_PARAMETER_ARGUMENT_INVARIANTS = [
+    "argument_count",
+    "argument_order",
+    "argument_scalar_type",
+    "result_scalar_type",
+    "parameter_identity",
+    "parameter_declaration_order",
+    "function_namespace",
+    "source_location",
+    "scalar_type",
+]
+PHASE13_PARAMETER_ARGUMENT_DEFERRED_REASONS = [
+    "deferred_p13_parameter_argument_aggregate_parameter",
+    "deferred_p13_parameter_argument_aggregate_return",
+    "deferred_p13_parameter_argument_target_dependent_abi",
+]
 SUPPORTED_FIELDS = {
     "statuses", "origin_phases", "feature_families",
     "route_owners", "worker_capability_owners", "diagnostic_owners",
@@ -993,6 +1026,7 @@ def verify_phase13_scalar_expression_contract(registry):
             PHASE13_MULTIPLE_LOCALS_ENTRY_ID,
             PHASE13_NESTED_STRUCTURED_CFG_ENTRY_ID,
             PHASE13_GENERAL_LOOP_ENTRY_ID,
+            PHASE13_PARAMETER_ARGUMENT_ENTRY_ID,
         }
         and row["capability_decision"] == "supported"
     ]
@@ -1130,6 +1164,7 @@ def verify_phase13_multiple_locals_contract(registry):
             PHASE13_MULTIPLE_LOCALS_ENTRY_ID,
             PHASE13_NESTED_STRUCTURED_CFG_ENTRY_ID,
             PHASE13_GENERAL_LOOP_ENTRY_ID,
+            PHASE13_PARAMETER_ARGUMENT_ENTRY_ID,
         }
         and row["capability_decision"] == "supported"
     ]
@@ -1279,6 +1314,7 @@ def verify_phase13_nested_structured_cfg_contract(registry):
             PHASE13_MULTIPLE_LOCALS_ENTRY_ID,
             PHASE13_NESTED_STRUCTURED_CFG_ENTRY_ID,
             PHASE13_GENERAL_LOOP_ENTRY_ID,
+            PHASE13_PARAMETER_ARGUMENT_ENTRY_ID,
         }
         and row["capability_decision"] == "supported"
     ]
@@ -1425,6 +1461,7 @@ def verify_phase13_general_loop_contract(registry):
             PHASE13_MULTIPLE_LOCALS_ENTRY_ID,
             PHASE13_NESTED_STRUCTURED_CFG_ENTRY_ID,
             PHASE13_GENERAL_LOOP_ENTRY_ID,
+            PHASE13_PARAMETER_ARGUMENT_ENTRY_ID,
         }
         and row["capability_decision"] == "supported"
     ]
@@ -1436,6 +1473,154 @@ def verify_phase13_general_loop_contract(registry):
     return {
         "entry_id": entry["id"],
         "selected_shapes": evidence["selected_loop_shapes"],
+        "validation_invariants": evidence["validation_invariants"],
+        "focused_fixture_count": len(focused),
+        "malformed_fixture_count": len(malformed),
+        "invalid_fixture_count": len(invalid),
+        "deferred_fixture_count": len(deferred),
+        "deferred_reason_codes": evidence["deferred_fixture_reason_codes"],
+    }
+
+
+def verify_phase13_parameter_argument_contract(registry):
+    verify_phase13_general_loop_contract(registry)
+    rows = {
+        entry["id"]: entry
+        for entry in phase_entries(registry, "phase13")
+    }
+    require(
+        PHASE13_PARAMETER_ARGUMENT_ENTRY_ID in rows,
+        "Phase 13 parameter/argument registry row is missing",
+    )
+    entry = rows[PHASE13_PARAMETER_ARGUMENT_ENTRY_ID]
+    require(
+        entry["status"] == "migrated",
+        "Phase 13 parameter/argument row must be migrated",
+    )
+    require(
+        entry["route_owner"] == "generic_canonical_mir",
+        "Phase 13 parameter/argument row must use generic canonical MIR",
+    )
+    require(
+        entry["worker_capability_owner"] == "worker_direct_call_lowering",
+        "Phase 13 parameter/argument worker owner drifted",
+    )
+    require(
+        entry["diagnostic_owner"]
+        == "source_signature_and_call_graph_verifier",
+        "Phase 13 parameter/argument diagnostic owner drifted",
+    )
+    require(
+        entry["capability_decision"] == "supported",
+        "Phase 13 parameter/argument capability must be supported",
+    )
+    require(
+        entry["capability_reason_code"]
+        == "supported_p13_parameterized_local_call_branch_source_route",
+        "Phase 13 parameter/argument capability reason drifted",
+    )
+    require(
+        entry["expected_failure_stage"] == "none_supported",
+        "Phase 13 parameter/argument supported row has a failure stage",
+    )
+    require(
+        entry["source_fixture"]
+        == "compiler/phase13_parameter_argument_branch_source.gst",
+        "Phase 13 parameter/argument source fixture drifted",
+    )
+    require(
+        entry["canonical_mir_fixture"]
+        == "compiler/fixtures/native_backend_phase13_parameter_argument_ingestion.mir",
+        "Phase 13 parameter/argument canonical MIR fixture drifted",
+    )
+    require(
+        entry["deferral_reason"] == "none_migrated"
+        and entry["future_destination_phase"] == "none_migrated",
+        "Migrated Phase 13 parameter/argument row must use migrated fields",
+    )
+
+    evidence = entry["evidence"]
+    require(
+        evidence.get("selected_shapes") == PHASE13_PARAMETER_ARGUMENT_SHAPES,
+        "Phase 13 parameter/argument selected shape inventory drifted",
+    )
+    require(
+        evidence.get("parameter_identity_policy")
+        == PHASE13_PARAMETER_ARGUMENT_POLICY,
+        "Phase 13 parameter identity policy drifted",
+    )
+    require(
+        evidence.get("validation_invariants")
+        == PHASE13_PARAMETER_ARGUMENT_INVARIANTS,
+        "Phase 13 parameter/argument validation inventory drifted",
+    )
+    focused = evidence.get("focused_source_fixtures")
+    malformed = evidence.get("malformed_canonical_mir_fixtures")
+    invalid = evidence.get("invalid_source_fixtures")
+    deferred = evidence.get("deferred_source_fixtures")
+    require(
+        isinstance(focused, list) and len(focused) == 6,
+        "Phase 13 parameter/argument focused inventory must contain six fixtures",
+    )
+    require(
+        isinstance(malformed, list) and len(malformed) == 6,
+        "Phase 13 parameter/argument malformed MIR inventory must contain six fixtures",
+    )
+    require(
+        isinstance(invalid, list) and len(invalid) == 2,
+        "Phase 13 parameter/argument invalid source inventory must contain two fixtures",
+    )
+    require(
+        isinstance(deferred, list) and len(deferred) == 3,
+        "Phase 13 parameter/argument deferred source inventory must contain three fixtures",
+    )
+    for group_name, paths in (
+        ("focused_source_fixtures", focused),
+        ("malformed_canonical_mir_fixtures", malformed),
+        ("invalid_source_fixtures", invalid),
+        ("deferred_source_fixtures", deferred),
+    ):
+        for index, path in enumerate(paths):
+            fixture(
+                path,
+                f"{entry['id']}.evidence.{group_name}[{index}]",
+            )
+    require(
+        evidence.get("deferred_fixture_reason_codes")
+        == PHASE13_PARAMETER_ARGUMENT_DEFERRED_REASONS,
+        "Phase 13 parameter/argument deferred reason inventory drifted",
+    )
+    require(
+        evidence.get("positive_expectation")
+        == "exit_42_phase13_three_argument_branch",
+        "Phase 13 parameter/argument differential expectation drifted",
+    )
+    require(
+        evidence.get("deferred_fixture")
+        == "compiler/phase13_parameter_argument_aggregate_parameter_source.gst",
+        "Phase 13 parameter/argument deferred fixture drifted",
+    )
+
+    other_supported = [
+        row["id"]
+        for row in rows.values()
+        if row["id"] not in {
+            PHASE13_SCALAR_EXPRESSION_ENTRY_ID,
+            PHASE13_MULTIPLE_LOCALS_ENTRY_ID,
+            PHASE13_NESTED_STRUCTURED_CFG_ENTRY_ID,
+            PHASE13_GENERAL_LOOP_ENTRY_ID,
+            PHASE13_PARAMETER_ARGUMENT_ENTRY_ID,
+        }
+        and row["capability_decision"] == "supported"
+    ]
+    require(
+        not other_supported,
+        "Patch 13.6 must not migrate unrelated Phase 13 rows: "
+        f"{sorted(other_supported)}",
+    )
+    return {
+        "entry_id": entry["id"],
+        "selected_shapes": evidence["selected_shapes"],
         "validation_invariants": evidence["validation_invariants"],
         "focused_fixture_count": len(focused),
         "malformed_fixture_count": len(malformed),
@@ -1613,6 +1798,7 @@ def render_phase13(registry):
     local_state_contract = verify_phase13_multiple_locals_contract(registry)
     cfg_contract = verify_phase13_nested_structured_cfg_contract(registry)
     loop_contract = verify_phase13_general_loop_contract(registry)
+    parameter_contract = verify_phase13_parameter_argument_contract(registry)
     rows = phase_entries(registry, "phase13")
     status_counts = totals["status_counts"]
     current_status_counts = Counter(entry["status"] for entry in rows)
@@ -1623,7 +1809,7 @@ def render_phase13(registry):
         "",
         "<!-- Generated by scripts/cranelift_registry.py; do not edit by hand. -->",
         "",
-        "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_VERSION: 6",
+        "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_VERSION: 7",
         "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_AUTHORITY: generated_review_view",
         "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_CANONICAL_SOURCE: scripts/cranelift_feature_registry.json",
         (
@@ -1695,7 +1881,15 @@ def render_phase13(registry):
             "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_GENERAL_LOOP_SHAPES: "
             + ",".join(loop_contract["selected_shapes"])
         ),
-        "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_NEXT_MILESTONE: patch13_6_parameters_and_arguments",
+        (
+            "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PARAMETER_ARGUMENT_STATUS: "
+            "patch13_6_parameters_and_arguments_migrated"
+        ),
+        (
+            "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PARAMETER_ARGUMENT_SHAPES: "
+            + ",".join(parameter_contract["selected_shapes"])
+        ),
+        "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_NEXT_MILESTONE: patch13_7_direct_call_graphs",
         "",
         "This review artifact is generated from the structured registry. Phase 12.5",
         "is closed under the recorded framework closure version. Stable Phase 13 IDs",
@@ -2009,6 +2203,7 @@ def main():
             "verify-phase13-multiple-locals-contract",
             "verify-phase13-nested-structured-cfg-contract",
             "verify-phase13-general-loop-contract",
+            "verify-phase13-parameter-argument-contract",
             "verify-phase13-opening-rebase",
             "verify-phase13-parent-traceability",
             "verify-phase13-opening-totals",
@@ -2036,6 +2231,8 @@ def main():
             verify_phase13_nested_structured_cfg_contract(registry)
         elif command == "verify-phase13-general-loop-contract":
             verify_phase13_general_loop_contract(registry)
+        elif command == "verify-phase13-parameter-argument-contract":
+            verify_phase13_parameter_argument_contract(registry)
         elif command == "verify-phase13-opening-rebase":
             verify_phase13_opening_rebase(registry)
         elif command == "verify-phase13-parent-traceability":
@@ -2066,6 +2263,7 @@ def main():
     local_state_contract = verify_phase13_multiple_locals_contract(registry)
     cfg_contract = verify_phase13_nested_structured_cfg_contract(registry)
     loop_contract = verify_phase13_general_loop_contract(registry)
+    parameter_contract = verify_phase13_parameter_argument_contract(registry)
     phase13_statuses = phase13_totals["status_counts"]
     phase13_parents = phase13_totals["parent_kinds"]
     messages = {
@@ -2128,6 +2326,15 @@ def main():
             f"{loop_contract['malformed_fixture_count']} malformed MIR, "
             f"{loop_contract['invalid_fixture_count']} invalid source, and "
             f"{loop_contract['deferred_fixture_count']} deferred fixtures."
+        ),
+        "verify-phase13-parameter-argument-contract": (
+            "✅ Phase 13 parameter/argument registry contract passed: "
+            f"{parameter_contract['entry_id']} owns "
+            f"{','.join(parameter_contract['selected_shapes'])} with "
+            f"{parameter_contract['focused_fixture_count']} focused, "
+            f"{parameter_contract['malformed_fixture_count']} malformed MIR, "
+            f"{parameter_contract['invalid_fixture_count']} invalid source, and "
+            f"{parameter_contract['deferred_fixture_count']} deferred fixtures."
         ),
         "verify-phase13-opening-rebase": (
             "✅ Phase 13 opening rebase passed: stable IDs and parent "

@@ -1613,23 +1613,77 @@
       "parent": "phase11_category:function_parameters_and_multiple_arguments",
       "feature_family": "direct_call",
       "ci_family": "direct-calls",
-      "status": "candidate_deferred",
-      "route_owner": "deferred",
+      "status": "migrated",
+      "route_owner": "generic_canonical_mir",
       "worker_capability_owner": "worker_direct_call_lowering",
       "diagnostic_owner": "source_signature_and_call_graph_verifier",
       "capability_id": "phase13_generic_source_to_mir",
       "capability_decision_owner": "compiler_generic_native_capability_planner",
-      "capability_decision": "deferred",
-      "capability_reason_code": "deferred_p13_parameterized_local_call_branch_source_route",
-      "expected_failure_stage": "before_driver_discovery",
-      "source_fixture": "compiler/mir_feature_block_param_local_call_branch_preservation_source.gst",
-      "canonical_mir_fixture": "compiler/fixtures/native_backend_block_param_local_call_branch_ingestion.mir",
+      "capability_decision": "supported",
+      "capability_reason_code": "supported_p13_parameterized_local_call_branch_source_route",
+      "expected_failure_stage": "none_supported",
+      "source_fixture": "compiler/phase13_parameter_argument_branch_source.gst",
+      "canonical_mir_fixture": "compiler/fixtures/native_backend_phase13_parameter_argument_ingestion.mir",
       "differential_case_id": "phase13_opening:p13_parameterized_local_call_branch_source_route",
-      "deferral_reason": "parameterized_local_call_result_branch_has_canonical_MIR_evidence_but_no_source_native_owner",
-      "future_destination_phase": "phase13",
+      "deferral_reason": "none_migrated",
+      "future_destination_phase": "none_migrated",
       "closure_version": "phase13_opening_inventory_v1",
       "evidence": {
-        "opening_record_kind": "candidate"
+        "opening_record_kind": "candidate",
+        "selected_shapes": [
+          "direct_multi_argument_call",
+          "imported_multi_argument_call_inherited",
+          "repeated_calls",
+          "call_result_local_assignment",
+          "call_result_larger_expression",
+          "call_result_branch_condition",
+          "call_result_cfg_join",
+          "call_result_loop_carried_state"
+        ],
+        "parameter_identity_policy": "int_parameters_in_source_declaration_order_with_function_namespace_and_source_location_provenance",
+        "validation_invariants": [
+          "argument_count",
+          "argument_order",
+          "argument_scalar_type",
+          "result_scalar_type",
+          "parameter_identity",
+          "parameter_declaration_order",
+          "function_namespace",
+          "source_location",
+          "scalar_type"
+        ],
+        "focused_source_fixtures": [
+          "compiler/phase13_parameter_argument_branch_source.gst",
+          "compiler/phase13_parameter_argument_repeated_source.gst",
+          "compiler/phase13_parameter_argument_join_source.gst",
+          "compiler/phase13_parameter_argument_loop_source.gst",
+          "compiler/phase11_direct_call_nested_source.gst",
+          "compiler/phase11_module_import_main_source.gst"
+        ],
+        "malformed_canonical_mir_fixtures": [
+          "compiler/fixtures/native_backend_phase13_parameter_argument_wrong_arity.mir",
+          "compiler/fixtures/native_backend_phase13_parameter_argument_wrong_order.mir",
+          "compiler/fixtures/native_backend_phase13_parameter_argument_wrong_type.mir",
+          "compiler/fixtures/native_backend_phase13_parameter_argument_result_type.mir",
+          "compiler/fixtures/native_backend_phase13_parameter_argument_metadata_order.mir",
+          "compiler/fixtures/native_backend_phase13_parameter_argument_namespace.mir"
+        ],
+        "invalid_source_fixtures": [
+          "compiler/phase11_direct_call_wrong_arity_source.gst",
+          "compiler/phase11_direct_call_wrong_type_source.gst"
+        ],
+        "deferred_source_fixtures": [
+          "compiler/phase13_parameter_argument_aggregate_parameter_source.gst",
+          "compiler/phase13_parameter_argument_aggregate_return_source.gst",
+          "compiler/phase13_parameter_argument_target_abi_source.gst"
+        ],
+        "deferred_fixture_reason_codes": [
+          "deferred_p13_parameter_argument_aggregate_parameter",
+          "deferred_p13_parameter_argument_aggregate_return",
+          "deferred_p13_parameter_argument_target_dependent_abi"
+        ],
+        "positive_expectation": "exit_42_phase13_three_argument_branch",
+        "deferred_fixture": "compiler/phase13_parameter_argument_aggregate_parameter_source.gst"
       }
     },
     {
