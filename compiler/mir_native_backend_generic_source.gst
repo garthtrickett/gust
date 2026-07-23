@@ -2377,6 +2377,13 @@ func mir_native_generic_source_lower(programs: std.Vector[ast.Program[ctx], ctx]
                         ctx
                     );
                 }
+                if direct_call_result.deferred == 1 {
+                    return mir_native_generic_deferred_result(
+                        direct_call_result.reason_code,
+                        direct_call_result.diagnostic,
+                        ctx
+                    );
+                }
                 if direct_call_result.represented == 1 {
                     bundle = direct_call_result.bundle;
                 } else {

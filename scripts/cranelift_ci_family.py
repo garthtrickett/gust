@@ -37,8 +37,8 @@ RUNNERS = (
     ),
     (
         "direct-calls",
-        "guard-cranelift-phase13-parameter-argument-parity",
-        "PHASE13_PARAMETER_ARGUMENT_SKIP_DYNAMIC",
+        "guard-cranelift-phase13-direct-call-graph-parity",
+        "PHASE13_DIRECT_CALL_GRAPH_SKIP_DYNAMIC",
     ),
     (
         "imports",

@@ -14031,6 +14031,147 @@ guard-cranelift-phase13-parameter-argument-parity:
     echo "✅ Phase 13.6 migrated ordered scalar parameters and multi-argument calls through direct, imported, repeated, expression, CFG-join, and supported loop composition while preserving precise ABI deferrals."
 
 
+guard-cranelift-phase13-direct-call-graph-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 13.7 multi-function direct-call graph parity..."
+    lowerer_source="compiler/mir_native_backend_direct_call_source.gst"
+    generic_source="compiler/mir_native_backend_generic_source.gst"
+    route_source="compiler/mir_native_backend_source_route.gst"
+    request_source="compiler/mir_native_backend_request.gst"
+    rust_driver="compiler/experiments/cranelift/src/main.rs"
+    registry_validator="scripts/cranelift_registry.py"
+    family_runner="scripts/cranelift_ci_family.py"
+    level_runner="scripts/cranelift_test_levels.py"
+    evidence_script="scripts/phase13_direct_call_graph.sh"
+    canonical_fixture="compiler/fixtures/native_backend_phase13_direct_call_graph_ingestion.mir"
+
+    required_files=(
+      "$lowerer_source"
+      "$generic_source"
+      "$route_source"
+      "$request_source"
+      "$rust_driver"
+      "$registry_validator"
+      "$family_runner"
+      "$level_runner"
+      "$evidence_script"
+      "$canonical_fixture"
+      compiler/phase13_direct_call_graph_source.gst
+      compiler/phase13_direct_call_mutual_recursion_source.gst
+      compiler/phase11_direct_call_recursion_source.gst
+      compiler/phase13_parameter_argument_branch_source.gst
+      compiler/phase13_parameter_argument_join_source.gst
+      compiler/phase13_parameter_argument_loop_source.gst
+      compiler/fixtures/native_backend_phase13_direct_call_graph_duplicate_declaration.mir
+      compiler/fixtures/native_backend_phase13_direct_call_graph_missing_callee.mir
+      compiler/fixtures/native_backend_phase13_direct_call_graph_incompatible_declaration.mir
+      compiler/fixtures/native_backend_phase13_direct_call_graph_invalid_signature.mir
+      compiler/fixtures/native_backend_phase13_direct_call_graph_invalid_result_use.mir
+      compiler/fixtures/native_backend_phase13_direct_call_graph_direct_recursion.mir
+      compiler/fixtures/native_backend_phase13_direct_call_graph_mutual_recursion.mir
+    )
+    for required_file in "${required_files[@]}"; do
+      if [ ! -f "$required_file" ] || [ -L "$required_file" ]; then
+        echo "Missing regular Phase 13.7 direct-call graph input: $required_file"
+        exit 1
+      fi
+    done
+
+    PHASE13_PARAMETER_ARGUMENT_SKIP_DYNAMIC=1 \
+      just guard-cranelift-phase13-parameter-argument-parity
+    python3 "$registry_validator" verify-phase13-direct-call-graph-contract
+    python3 "$registry_validator" check-projection
+
+    level_record="$(
+      python3 "$level_runner" level \
+        guard-cranelift-phase13-direct-call-graph-parity
+    )"
+    printf '%s\n' "$level_record" |
+      rg -n -F $'guard-cranelift-phase13-direct-call-graph-parity\t2\t' >/dev/null
+
+    required_lowerer_symbols=(
+      'graph_first_callee: str'
+      'graph_second_callee: str'
+      'graph_profile: int'
+      'function.profile = 4'
+      'func mir_native_direct_call_emit_graph_call_literal('
+      'func mir_native_direct_call_emit_graph_call_local('
+      'phase13_direct_call_graph__'
+      'phase13_direct_call_graph_module.o'
+      'deferred_p13_recursive_direct_call_policy'
+      'deferred_p13_mutual_recursive_direct_call_policy'
+      'direct-call graph declarations are incompatible'
+    )
+    for required_symbol in "${required_lowerer_symbols[@]}"; do
+      rg -n -F "$required_symbol" "$lowerer_source" >/dev/null
+    done
+
+    rg -n -F 'if direct_call_result.deferred == 1' "$generic_source" >/dev/null
+    rg -n -F 'direct_call_result.reason_code' "$generic_source" >/dev/null
+    if rg -n \
+        -e 'phase13_direct_call_graph_source\.gst' \
+        -e 'phase13_direct_call_mutual_recursion_source\.gst' \
+        "$lowerer_source" "$generic_source" "$route_source" >/dev/null
+    then
+      echo "Phase 13.7 direct-call graph lowering embeds a source fixture identity."
+      exit 1
+    fi
+    if rg -n \
+        -e '^[[:space:]]*(source_path|source_text|source_bytes|ast_program):' \
+        "$request_source" >/dev/null
+    then
+      echo "Phase 13.7 changed the isolated worker request boundary."
+      exit 1
+    fi
+
+    required_worker_symbols=(
+      'duplicate canonical compiler MIR local function name'
+      'unknown canonical compiler MIR local callee'
+      'duplicate canonical compiler MIR emitted backend symbol'
+      'must use only int/bool parameters and one int/bool return'
+      'canonical compiler MIR call result type mismatch'
+      'canonical compiler MIR local call graph must not contain recursion or mutual recursion'
+      'let mut local_function_ids: HashMap<&str, FuncId>'
+      'module.declare_function('
+      'define_compiler_mir_ingestion_module_function('
+    )
+    for required_symbol in "${required_worker_symbols[@]}"; do
+      rg -n -F "$required_symbol" "$rust_driver" >/dev/null
+    done
+
+    module_lowering_body="$(
+      sed -n \
+        '/^fn lower_compiler_mir_ingestion_module_to_object(/,/^fn define_compiler_mir_ingestion_module_function(/p' \
+        "$rust_driver"
+    )"
+    declaration_line="$(
+      printf '%s\n' "$module_lowering_body" |
+        rg -n -m 1 -F 'local_function_ids.insert(' |
+        cut -d: -f1
+    )"
+    definition_line="$(
+      printf '%s\n' "$module_lowering_body" |
+        rg -n -m 1 -F 'define_compiler_mir_ingestion_module_function(' |
+        cut -d: -f1
+    )"
+    if [ -z "$declaration_line" ] ||
+       [ -z "$definition_line" ] ||
+       [ "$declaration_line" -ge "$definition_line" ]
+    then
+      echo "Phase 13.7 requires all local function declarations before any body lowering."
+      exit 1
+    fi
+
+    bash -n "$evidence_script"
+    if [ "${PHASE13_DIRECT_CALL_GRAPH_SKIP_DYNAMIC:-0}" = "1" ]; then
+      echo "✅ Phase 13.7 direct-call graph static contract passed; focused differential evidence was intentionally skipped."
+      exit 0
+    fi
+
+    bash "$evidence_script"
+    echo "✅ Phase 13.7 migrated acyclic multi-function direct scalar graphs with forward calls, multiple calls and callers, qualified deterministic helper symbols, declaration-before-body lowering, inherited branch/join/loop composition, and explicit recursive/non-direct policy rows."
+
 guard-cranelift-phase12-5-close:
     #!/usr/bin/env bash
     set -euo pipefail

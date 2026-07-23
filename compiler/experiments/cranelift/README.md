@@ -1659,3 +1659,33 @@ aggregate returns, and target-dependent scalar ABI forms remain precise
 existing output preserved. The registry-owned direct-calls family runs
 `guard-cranelift-phase13-parameter-argument-parity` at Level 2. The next
 milestone is Phase 13 Patch 13.7.
+
+
+Phase 13 Patch 13.7 migrates acyclic multi-function direct scalar call graphs as
+`phase13_migrated_multi_function_direct_call_graph_parity`. The existing
+compiler-owned direct-call lowerer now recognizes several local Gust functions
+in one program, records every scalar signature before body emission, preserves
+source declaration order, and assigns deterministic qualified backend symbols
+to non-entry functions. Forward references therefore share the same canonical
+MIR declaration table as already-ordered calls rather than requiring source
+reordering or worker-visible source identity.
+
+The selected graph profile covers multiple calls in one caller, multiple
+callers of one leaf, a call result passed as a later call argument, and call
+results composed with scalar local arithmetic. Phase 13.6 branch, join, and
+supported-loop call programs remain inherited cross-feature evidence for
+parameters, locals, expressions, structured CFG, and loop-carried state. The
+worker validates duplicate local names, duplicate or incompatible backend
+symbols, scalar signatures, callee existence, argument and result use, and the
+acyclic local call graph before object lowering. All local function IDs are
+declared before any function body is defined.
+
+No recursive form is selected for Patch 13.7. Direct recursion and mutual
+recursion remain separate `deferred_p13_*_recursive_direct_call_policy`
+decisions before driver discovery; indirect calls and function values remain
+explicit policy-only deferred rows for a later phase. Seven malformed
+canonical-MIR fixtures cover duplicate declarations, missing callees,
+incompatible declarations, invalid signatures, invalid result use, direct
+recursion, and mutual recursion. The registry-owned direct-calls family runs
+`guard-cranelift-phase13-direct-call-graph-parity` at Level 2. The next
+milestone is Phase 13 Patch 13.8.

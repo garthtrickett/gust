@@ -153,6 +153,38 @@ PHASE13_PARAMETER_ARGUMENT_DEFERRED_REASONS = [
     "deferred_p13_parameter_argument_aggregate_return",
     "deferred_p13_parameter_argument_target_dependent_abi",
 ]
+PHASE13_DIRECT_CALL_GRAPH_ENTRY_ID = (
+    "p13_multi_function_direct_call_graph_source_route"
+)
+PHASE13_DIRECT_CALL_GRAPH_POLICY_IDS = [
+    "p13_recursive_direct_call_policy",
+    "p13_mutual_recursive_direct_call_policy",
+    "p13_indirect_direct_call_policy",
+    "p13_function_value_call_policy",
+]
+PHASE13_DIRECT_CALL_GRAPH_SHAPES = [
+    "forward_calls",
+    "several_calls_in_one_function",
+    "several_callers_of_one_callee",
+    "call_result_as_later_call_argument",
+    "call_result_arithmetic_composition",
+    "qualified_deterministic_helper_symbols",
+    "branch_and_join_composition_inherited",
+    "supported_loop_call_composition_inherited",
+]
+PHASE13_DIRECT_CALL_GRAPH_INVARIANTS = [
+    "duplicate_declarations",
+    "missing_callees",
+    "incompatible_declarations",
+    "invalid_scalar_signatures",
+    "invalid_call_result_use",
+    "direct_recursion",
+    "mutual_recursion",
+]
+PHASE13_DIRECT_CALL_GRAPH_DEFERRED_REASONS = [
+    "deferred_p13_recursive_direct_call_policy",
+    "deferred_p13_mutual_recursive_direct_call_policy",
+]
 SUPPORTED_FIELDS = {
     "statuses", "origin_phases", "feature_families",
     "route_owners", "worker_capability_owners", "diagnostic_owners",
@@ -477,7 +509,7 @@ def validate():
     require(registry["schema"] == "scripts/cranelift_feature_registry.schema.json",
             "registry schema path is not canonical")
     require(registry["schema_version"] == 1, "schema_version must be 1")
-    require(registry["registry_version"] == 4, "registry_version must be 4")
+    require(registry["registry_version"] == 5, "registry_version must be 5")
     require(
         registry["registry_status"]
         == "phase12_5_closed_cranelift_verification_framework_consolidation",
@@ -1027,6 +1059,7 @@ def verify_phase13_scalar_expression_contract(registry):
             PHASE13_NESTED_STRUCTURED_CFG_ENTRY_ID,
             PHASE13_GENERAL_LOOP_ENTRY_ID,
             PHASE13_PARAMETER_ARGUMENT_ENTRY_ID,
+            PHASE13_DIRECT_CALL_GRAPH_ENTRY_ID,
         }
         and row["capability_decision"] == "supported"
     ]
@@ -1165,6 +1198,7 @@ def verify_phase13_multiple_locals_contract(registry):
             PHASE13_NESTED_STRUCTURED_CFG_ENTRY_ID,
             PHASE13_GENERAL_LOOP_ENTRY_ID,
             PHASE13_PARAMETER_ARGUMENT_ENTRY_ID,
+            PHASE13_DIRECT_CALL_GRAPH_ENTRY_ID,
         }
         and row["capability_decision"] == "supported"
     ]
@@ -1315,6 +1349,7 @@ def verify_phase13_nested_structured_cfg_contract(registry):
             PHASE13_NESTED_STRUCTURED_CFG_ENTRY_ID,
             PHASE13_GENERAL_LOOP_ENTRY_ID,
             PHASE13_PARAMETER_ARGUMENT_ENTRY_ID,
+            PHASE13_DIRECT_CALL_GRAPH_ENTRY_ID,
         }
         and row["capability_decision"] == "supported"
     ]
@@ -1462,6 +1497,7 @@ def verify_phase13_general_loop_contract(registry):
             PHASE13_NESTED_STRUCTURED_CFG_ENTRY_ID,
             PHASE13_GENERAL_LOOP_ENTRY_ID,
             PHASE13_PARAMETER_ARGUMENT_ENTRY_ID,
+            PHASE13_DIRECT_CALL_GRAPH_ENTRY_ID,
         }
         and row["capability_decision"] == "supported"
     ]
@@ -1610,6 +1646,7 @@ def verify_phase13_parameter_argument_contract(registry):
             PHASE13_NESTED_STRUCTURED_CFG_ENTRY_ID,
             PHASE13_GENERAL_LOOP_ENTRY_ID,
             PHASE13_PARAMETER_ARGUMENT_ENTRY_ID,
+            PHASE13_DIRECT_CALL_GRAPH_ENTRY_ID,
         }
         and row["capability_decision"] == "supported"
     ]
@@ -1629,6 +1666,174 @@ def verify_phase13_parameter_argument_contract(registry):
         "deferred_reason_codes": evidence["deferred_fixture_reason_codes"],
     }
 
+
+
+def verify_phase13_direct_call_graph_contract(registry):
+    verify_phase13_parameter_argument_contract(registry)
+    rows = {
+        entry["id"]: entry
+        for entry in phase_entries(registry, "phase13")
+    }
+    require(
+        PHASE13_DIRECT_CALL_GRAPH_ENTRY_ID in rows,
+        "Phase 13 direct-call graph registry row is missing",
+    )
+    entry = rows[PHASE13_DIRECT_CALL_GRAPH_ENTRY_ID]
+    require(
+        entry["status"] == "migrated",
+        "Phase 13 direct-call graph row must be migrated",
+    )
+    require(
+        entry["route_owner"] == "generic_canonical_mir",
+        "Phase 13 direct-call graph row must use generic canonical MIR",
+    )
+    require(
+        entry["worker_capability_owner"] == "worker_direct_call_lowering",
+        "Phase 13 direct-call graph worker owner drifted",
+    )
+    require(
+        entry["diagnostic_owner"]
+        == "source_signature_and_call_graph_verifier",
+        "Phase 13 direct-call graph diagnostic owner drifted",
+    )
+    require(
+        entry["capability_decision"] == "supported"
+        and entry["capability_reason_code"]
+        == "supported_p13_multi_function_direct_call_graph_source_route"
+        and entry["expected_failure_stage"] == "none_supported",
+        "Phase 13 direct-call graph capability contract drifted",
+    )
+    require(
+        entry["source_fixture"]
+        == "compiler/phase13_direct_call_graph_source.gst",
+        "Phase 13 direct-call graph source fixture drifted",
+    )
+    require(
+        entry["canonical_mir_fixture"]
+        == "compiler/fixtures/native_backend_phase13_direct_call_graph_ingestion.mir",
+        "Phase 13 direct-call graph canonical MIR fixture drifted",
+    )
+    require(
+        entry["deferral_reason"] == "none_migrated"
+        and entry["future_destination_phase"] == "none_migrated",
+        "Migrated Phase 13 direct-call graph row must use migrated fields",
+    )
+
+    evidence = entry["evidence"]
+    require(
+        evidence.get("selected_shapes") == PHASE13_DIRECT_CALL_GRAPH_SHAPES,
+        "Phase 13 direct-call graph selected shape inventory drifted",
+    )
+    require(
+        evidence.get("declaration_policy")
+        == "declare_all_scalar_function_signatures_before_lowering_any_function_body",
+        "Phase 13 direct-call graph declaration policy drifted",
+    )
+    require(
+        evidence.get("identity_policy")
+        == "source_function_identity_preserved_with_phase13_7_module_qualified_backend_symbols",
+        "Phase 13 direct-call graph identity policy drifted",
+    )
+    require(
+        evidence.get("recursion_policy")
+        == "no_recursive_form_selected_for_phase13_7",
+        "Phase 13 direct-call graph recursion policy drifted",
+    )
+    require(
+        evidence.get("validation_invariants")
+        == PHASE13_DIRECT_CALL_GRAPH_INVARIANTS,
+        "Phase 13 direct-call graph validation inventory drifted",
+    )
+    focused = evidence.get("focused_source_fixtures")
+    malformed = evidence.get("malformed_canonical_mir_fixtures")
+    deferred = evidence.get("deferred_source_fixtures")
+    require(
+        isinstance(focused, list) and len(focused) == 4,
+        "Phase 13 direct-call graph focused inventory must contain four fixtures",
+    )
+    require(
+        isinstance(malformed, list) and len(malformed) == 7,
+        "Phase 13 direct-call graph malformed MIR inventory must contain seven fixtures",
+    )
+    require(
+        isinstance(deferred, list) and len(deferred) == 2,
+        "Phase 13 direct-call graph deferred source inventory must contain two fixtures",
+    )
+    for group_name, paths in (
+        ("focused_source_fixtures", focused),
+        ("malformed_canonical_mir_fixtures", malformed),
+        ("deferred_source_fixtures", deferred),
+    ):
+        for index, path in enumerate(paths):
+            fixture(
+                path,
+                f"{entry['id']}.evidence.{group_name}[{index}]",
+            )
+    require(
+        evidence.get("deferred_fixture_reason_codes")
+        == PHASE13_DIRECT_CALL_GRAPH_DEFERRED_REASONS,
+        "Phase 13 direct-call graph deferred reason inventory drifted",
+    )
+    require(
+        evidence.get("positive_expectation")
+        == "exit_14_phase13_multi_function_direct_call_graph",
+        "Phase 13 direct-call graph differential expectation drifted",
+    )
+
+    policy_expectations = {
+        "p13_recursive_direct_call_policy": (
+            "direct_recursion",
+            "deferred_p13_recursive_direct_call_policy",
+        ),
+        "p13_mutual_recursive_direct_call_policy": (
+            "mutual_recursion",
+            "deferred_p13_mutual_recursive_direct_call_policy",
+        ),
+        "p13_indirect_direct_call_policy": (
+            "indirect_calls",
+            "deferred_p13_indirect_direct_call_policy",
+        ),
+        "p13_function_value_call_policy": (
+            "function_values",
+            "deferred_p13_function_value_call_policy",
+        ),
+    }
+    require(
+        list(policy_expectations) == PHASE13_DIRECT_CALL_GRAPH_POLICY_IDS,
+        "Phase 13 direct-call graph policy ID inventory drifted",
+    )
+    for policy_id, (unsupported_form, reason_code) in policy_expectations.items():
+        require(
+            policy_id in rows,
+            f"Phase 13 direct-call graph policy row is missing: {policy_id}",
+        )
+        policy = rows[policy_id]
+        require(
+            policy["status"] == "candidate_deferred"
+            and policy["route_owner"] == "deferred"
+            and policy["capability_decision"] == "deferred"
+            and policy["capability_reason_code"] == reason_code
+            and policy["expected_failure_stage"]
+            == "before_driver_discovery",
+            f"{policy_id}: direct-call graph deferred policy drifted",
+        )
+        require(
+            policy["evidence"].get("unsupported_form") == unsupported_form
+            and policy["evidence"].get("deferred_reason_code")
+            == reason_code,
+            f"{policy_id}: direct-call graph policy evidence drifted",
+        )
+
+    return {
+        "entry_id": entry["id"],
+        "selected_shapes": evidence["selected_shapes"],
+        "validation_invariants": evidence["validation_invariants"],
+        "focused_fixture_count": len(focused),
+        "malformed_fixture_count": len(malformed),
+        "deferred_fixture_count": len(deferred),
+        "deferred_reason_codes": evidence["deferred_fixture_reason_codes"],
+        "policy_row_count": len(policy_expectations),
+    }
 
 def verify_phase13_parent_traceability(registry):
     phase11 = {
@@ -1799,6 +2004,7 @@ def render_phase13(registry):
     cfg_contract = verify_phase13_nested_structured_cfg_contract(registry)
     loop_contract = verify_phase13_general_loop_contract(registry)
     parameter_contract = verify_phase13_parameter_argument_contract(registry)
+    graph_contract = verify_phase13_direct_call_graph_contract(registry)
     rows = phase_entries(registry, "phase13")
     status_counts = totals["status_counts"]
     current_status_counts = Counter(entry["status"] for entry in rows)
@@ -1809,7 +2015,7 @@ def render_phase13(registry):
         "",
         "<!-- Generated by scripts/cranelift_registry.py; do not edit by hand. -->",
         "",
-        "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_VERSION: 7",
+        "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_VERSION: 8",
         "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_AUTHORITY: generated_review_view",
         "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_CANONICAL_SOURCE: scripts/cranelift_feature_registry.json",
         (
@@ -1889,7 +2095,15 @@ def render_phase13(registry):
             "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_PARAMETER_ARGUMENT_SHAPES: "
             + ",".join(parameter_contract["selected_shapes"])
         ),
-        "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_NEXT_MILESTONE: patch13_7_direct_call_graphs",
+        (
+            "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_DIRECT_CALL_GRAPH_STATUS: "
+            "patch13_7_multi_function_direct_call_graph_migrated"
+        ),
+        (
+            "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_DIRECT_CALL_GRAPH_SHAPES: "
+            + ",".join(graph_contract["selected_shapes"])
+        ),
+        "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_NEXT_MILESTONE: patch13_8_multi_module_composition",
         "",
         "This review artifact is generated from the structured registry. Phase 12.5",
         "is closed under the recorded framework closure version. Stable Phase 13 IDs",
@@ -2204,6 +2418,7 @@ def main():
             "verify-phase13-nested-structured-cfg-contract",
             "verify-phase13-general-loop-contract",
             "verify-phase13-parameter-argument-contract",
+            "verify-phase13-direct-call-graph-contract",
             "verify-phase13-opening-rebase",
             "verify-phase13-parent-traceability",
             "verify-phase13-opening-totals",
@@ -2233,6 +2448,8 @@ def main():
             verify_phase13_general_loop_contract(registry)
         elif command == "verify-phase13-parameter-argument-contract":
             verify_phase13_parameter_argument_contract(registry)
+        elif command == "verify-phase13-direct-call-graph-contract":
+            verify_phase13_direct_call_graph_contract(registry)
         elif command == "verify-phase13-opening-rebase":
             verify_phase13_opening_rebase(registry)
         elif command == "verify-phase13-parent-traceability":
@@ -2264,6 +2481,7 @@ def main():
     cfg_contract = verify_phase13_nested_structured_cfg_contract(registry)
     loop_contract = verify_phase13_general_loop_contract(registry)
     parameter_contract = verify_phase13_parameter_argument_contract(registry)
+    graph_contract = verify_phase13_direct_call_graph_contract(registry)
     phase13_statuses = phase13_totals["status_counts"]
     phase13_parents = phase13_totals["parent_kinds"]
     messages = {
@@ -2335,6 +2553,15 @@ def main():
             f"{parameter_contract['malformed_fixture_count']} malformed MIR, "
             f"{parameter_contract['invalid_fixture_count']} invalid source, and "
             f"{parameter_contract['deferred_fixture_count']} deferred fixtures."
+        ),
+        "verify-phase13-direct-call-graph-contract": (
+            "✅ Phase 13 direct-call graph registry contract passed: "
+            f"{graph_contract['entry_id']} owns "
+            f"{','.join(graph_contract['selected_shapes'])} with "
+            f"{graph_contract['focused_fixture_count']} focused, "
+            f"{graph_contract['malformed_fixture_count']} malformed MIR, "
+            f"{graph_contract['deferred_fixture_count']} runtime-deferred fixtures, and "
+            f"{graph_contract['policy_row_count']} explicit unsupported-form policy rows."
         ),
         "verify-phase13-opening-rebase": (
             "✅ Phase 13 opening rebase passed: stable IDs and parent "

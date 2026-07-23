@@ -1,7 +1,7 @@
 {
   "schema": "scripts/cranelift_feature_registry.schema.json",
   "schema_version": 1,
-  "registry_version": 4,
+  "registry_version": 5,
   "registry_status": "phase12_5_closed_cranelift_verification_framework_consolidation",
   "current_phase": "phase13",
   "closed_phase_versions": {
@@ -273,7 +273,23 @@
           "parent": "phase11_category:function_parameters_and_multiple_arguments"
         },
         {
+          "id": "p13_multi_function_direct_call_graph_source_route",
+          "parent": "phase11_category:function_parameters_and_multiple_arguments"
+        },
+        {
           "id": "p13_recursive_direct_call_policy",
+          "parent": "phase11_category:function_parameters_and_multiple_arguments"
+        },
+        {
+          "id": "p13_mutual_recursive_direct_call_policy",
+          "parent": "phase11_category:function_parameters_and_multiple_arguments"
+        },
+        {
+          "id": "p13_indirect_direct_call_policy",
+          "parent": "phase11_category:function_parameters_and_multiple_arguments"
+        },
+        {
+          "id": "p13_function_value_call_policy",
           "parent": "phase11_category:function_parameters_and_multiple_arguments"
         },
         {
@@ -1687,6 +1703,78 @@
       }
     },
     {
+      "id": "p13_multi_function_direct_call_graph_source_route",
+      "origin_phase": "phase13",
+      "parent": "phase11_category:function_parameters_and_multiple_arguments",
+      "feature_family": "direct_call",
+      "ci_family": "direct-calls",
+      "status": "migrated",
+      "route_owner": "generic_canonical_mir",
+      "worker_capability_owner": "worker_direct_call_lowering",
+      "diagnostic_owner": "source_signature_and_call_graph_verifier",
+      "capability_id": "phase13_generic_source_to_mir",
+      "capability_decision_owner": "compiler_generic_native_capability_planner",
+      "capability_decision": "supported",
+      "capability_reason_code": "supported_p13_multi_function_direct_call_graph_source_route",
+      "expected_failure_stage": "none_supported",
+      "source_fixture": "compiler/phase13_direct_call_graph_source.gst",
+      "canonical_mir_fixture": "compiler/fixtures/native_backend_phase13_direct_call_graph_ingestion.mir",
+      "differential_case_id": "phase13_opening:p13_multi_function_direct_call_graph_source_route",
+      "deferral_reason": "none_migrated",
+      "future_destination_phase": "none_migrated",
+      "closure_version": "phase13_opening_inventory_v1",
+      "evidence": {
+        "opening_record_kind": "candidate",
+        "selected_shapes": [
+          "forward_calls",
+          "several_calls_in_one_function",
+          "several_callers_of_one_callee",
+          "call_result_as_later_call_argument",
+          "call_result_arithmetic_composition",
+          "qualified_deterministic_helper_symbols",
+          "branch_and_join_composition_inherited",
+          "supported_loop_call_composition_inherited"
+        ],
+        "declaration_policy": "declare_all_scalar_function_signatures_before_lowering_any_function_body",
+        "identity_policy": "source_function_identity_preserved_with_phase13_7_module_qualified_backend_symbols",
+        "recursion_policy": "no_recursive_form_selected_for_phase13_7",
+        "validation_invariants": [
+          "duplicate_declarations",
+          "missing_callees",
+          "incompatible_declarations",
+          "invalid_scalar_signatures",
+          "invalid_call_result_use",
+          "direct_recursion",
+          "mutual_recursion"
+        ],
+        "focused_source_fixtures": [
+          "compiler/phase13_direct_call_graph_source.gst",
+          "compiler/phase13_parameter_argument_branch_source.gst",
+          "compiler/phase13_parameter_argument_join_source.gst",
+          "compiler/phase13_parameter_argument_loop_source.gst"
+        ],
+        "malformed_canonical_mir_fixtures": [
+          "compiler/fixtures/native_backend_phase13_direct_call_graph_duplicate_declaration.mir",
+          "compiler/fixtures/native_backend_phase13_direct_call_graph_missing_callee.mir",
+          "compiler/fixtures/native_backend_phase13_direct_call_graph_incompatible_declaration.mir",
+          "compiler/fixtures/native_backend_phase13_direct_call_graph_invalid_signature.mir",
+          "compiler/fixtures/native_backend_phase13_direct_call_graph_invalid_result_use.mir",
+          "compiler/fixtures/native_backend_phase13_direct_call_graph_direct_recursion.mir",
+          "compiler/fixtures/native_backend_phase13_direct_call_graph_mutual_recursion.mir"
+        ],
+        "deferred_source_fixtures": [
+          "compiler/phase11_direct_call_recursion_source.gst",
+          "compiler/phase13_direct_call_mutual_recursion_source.gst"
+        ],
+        "deferred_fixture_reason_codes": [
+          "deferred_p13_recursive_direct_call_policy",
+          "deferred_p13_mutual_recursive_direct_call_policy"
+        ],
+        "positive_expectation": "exit_14_phase13_multi_function_direct_call_graph",
+        "deferred_fixture": "compiler/phase11_direct_call_recursion_source.gst"
+      }
+    },
+    {
       "id": "p13_recursive_direct_call_policy",
       "origin_phase": "phase13",
       "parent": "phase11_category:function_parameters_and_multiple_arguments",
@@ -1704,11 +1792,98 @@
       "source_fixture": "compiler/phase11_direct_call_recursion_source.gst",
       "canonical_mir_fixture": "none_rejected_before_canonical_MIR",
       "differential_case_id": "phase13_opening:p13_recursive_direct_call_policy",
-      "deferral_reason": "recursive_call_graphs_remain_explicitly_deferred_before_driver_discovery",
-      "future_destination_phase": "phase13",
+      "deferral_reason": "direct_recursion_remains_explicitly_deferred_before_driver_discovery",
+      "future_destination_phase": "phase14",
       "closure_version": "phase13_opening_inventory_v1",
       "evidence": {
-        "opening_record_kind": "candidate"
+        "opening_record_kind": "candidate",
+        "unsupported_form": "direct_recursion",
+        "policy": "deferred_before_canonical_MIR_and_driver_discovery",
+        "deferred_reason_code": "deferred_p13_recursive_direct_call_policy"
+      }
+    },
+    {
+      "id": "p13_mutual_recursive_direct_call_policy",
+      "origin_phase": "phase13",
+      "parent": "phase11_category:function_parameters_and_multiple_arguments",
+      "feature_family": "direct_call",
+      "ci_family": "direct-calls",
+      "status": "candidate_deferred",
+      "route_owner": "deferred",
+      "worker_capability_owner": "worker_direct_call_lowering",
+      "diagnostic_owner": "source_signature_and_call_graph_verifier",
+      "capability_id": "phase13_generic_source_to_mir",
+      "capability_decision_owner": "compiler_generic_native_capability_planner",
+      "capability_decision": "deferred",
+      "capability_reason_code": "deferred_p13_mutual_recursive_direct_call_policy",
+      "expected_failure_stage": "before_driver_discovery",
+      "source_fixture": "compiler/phase13_direct_call_mutual_recursion_source.gst",
+      "canonical_mir_fixture": "none_rejected_before_canonical_MIR",
+      "differential_case_id": "phase13_opening:p13_mutual_recursive_direct_call_policy",
+      "deferral_reason": "mutual_recursion_remains_explicitly_deferred_before_driver_discovery",
+      "future_destination_phase": "phase14",
+      "closure_version": "phase13_opening_inventory_v1",
+      "evidence": {
+        "opening_record_kind": "candidate",
+        "unsupported_form": "mutual_recursion",
+        "policy": "deferred_before_canonical_MIR_and_driver_discovery",
+        "deferred_reason_code": "deferred_p13_mutual_recursive_direct_call_policy"
+      }
+    },
+    {
+      "id": "p13_indirect_direct_call_policy",
+      "origin_phase": "phase13",
+      "parent": "phase11_category:function_parameters_and_multiple_arguments",
+      "feature_family": "direct_call",
+      "ci_family": "direct-calls",
+      "status": "candidate_deferred",
+      "route_owner": "deferred",
+      "worker_capability_owner": "worker_direct_call_lowering",
+      "diagnostic_owner": "source_signature_and_call_graph_verifier",
+      "capability_id": "phase13_generic_source_to_mir",
+      "capability_decision_owner": "compiler_generic_native_capability_planner",
+      "capability_decision": "deferred",
+      "capability_reason_code": "deferred_p13_indirect_direct_call_policy",
+      "expected_failure_stage": "before_driver_discovery",
+      "source_fixture": "none_policy_only_indirect_call",
+      "canonical_mir_fixture": "none_rejected_before_canonical_MIR",
+      "differential_case_id": "phase13_opening:p13_indirect_direct_call_policy",
+      "deferral_reason": "indirect_calls_remain_explicitly_deferred",
+      "future_destination_phase": "phase14",
+      "closure_version": "phase13_opening_inventory_v1",
+      "evidence": {
+        "opening_record_kind": "candidate",
+        "unsupported_form": "indirect_calls",
+        "policy": "no_indirect_call_lowering_in_phase13_7",
+        "deferred_reason_code": "deferred_p13_indirect_direct_call_policy"
+      }
+    },
+    {
+      "id": "p13_function_value_call_policy",
+      "origin_phase": "phase13",
+      "parent": "phase11_category:function_parameters_and_multiple_arguments",
+      "feature_family": "direct_call",
+      "ci_family": "direct-calls",
+      "status": "candidate_deferred",
+      "route_owner": "deferred",
+      "worker_capability_owner": "worker_direct_call_lowering",
+      "diagnostic_owner": "source_signature_and_call_graph_verifier",
+      "capability_id": "phase13_generic_source_to_mir",
+      "capability_decision_owner": "compiler_generic_native_capability_planner",
+      "capability_decision": "deferred",
+      "capability_reason_code": "deferred_p13_function_value_call_policy",
+      "expected_failure_stage": "before_driver_discovery",
+      "source_fixture": "none_policy_only_function_value",
+      "canonical_mir_fixture": "none_rejected_before_canonical_MIR",
+      "differential_case_id": "phase13_opening:p13_function_value_call_policy",
+      "deferral_reason": "function_values_remain_explicitly_deferred",
+      "future_destination_phase": "phase14",
+      "closure_version": "phase13_opening_inventory_v1",
+      "evidence": {
+        "opening_record_kind": "candidate",
+        "unsupported_form": "function_values",
+        "policy": "no_function_value_lowering_in_phase13_7",
+        "deferred_reason_code": "deferred_p13_function_value_call_policy"
       }
     },
     {

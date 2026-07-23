@@ -29,17 +29,26 @@ type MirNativeDirectCallFunction[ctx] struct {
     sequence_second_local: str,
     sequence_initial_value: int,
     sequence_before_add: int,
-    sequence_after_add: int
+    sequence_after_add: int,
+    graph_first_local: str,
+    graph_second_local: str,
+    graph_first_callee: str,
+    graph_second_callee: str,
+    graph_first_argument: int,
+    graph_after_add: int
 }
 
 type MirNativeDirectCallModel[ctx] struct {
     represented: int,
     invalid: int,
+    deferred: int,
+    reason_code: str,
     diagnostic: str,
     source_path: str,
     functions: Index[std.Vector[MirNativeDirectCallFunction[ctx], ctx], ctx],
     entry_index: int,
-    expected_exit: int
+    expected_exit: int,
+    graph_profile: int
 }
 
 type MirNativeDirectCallEvaluation struct {
@@ -50,6 +59,8 @@ type MirNativeDirectCallEvaluation struct {
 type MirNativeDirectCallSourceResult[ctx] struct {
     represented: int,
     invalid: int,
+    deferred: int,
+    reason_code: str,
     diagnostic: str,
     bundle: mir.MirProgramBundle[ctx]
 }
@@ -95,11 +106,14 @@ func mir_native_direct_call_empty_model(ctx: &Arena) MirNativeDirectCallModel[ct
     mut model: MirNativeDirectCallModel[ctx];
     model.represented = 0;
     model.invalid = 0;
+    model.deferred = 0;
+    model.reason_code = std.Clone(ctx, "");
     model.diagnostic = std.Clone(ctx, "");
     model.source_path = std.Clone(ctx, "");
     model.functions = mir_native_direct_call_empty_function_vector(ctx);
     model.entry_index = 0 - 1;
     model.expected_exit = 0;
+    model.graph_profile = 0;
     return model;
 }
 
@@ -107,6 +121,8 @@ func mir_native_direct_call_empty_result(ctx: &Arena) MirNativeDirectCallSourceR
     mut result: MirNativeDirectCallSourceResult[ctx];
     result.represented = 0;
     result.invalid = 0;
+    result.deferred = 0;
+    result.reason_code = std.Clone(ctx, "");
     result.diagnostic = std.Clone(ctx, "");
     result.bundle = mir.mir_make_program_bundle("invalid", ctx);
     return result;
@@ -118,6 +134,20 @@ func mir_native_direct_call_invalid(model: MirNativeDirectCallModel[ctx], diagno
     invalid.invalid = 1;
     invalid.diagnostic = std.Clone(ctx, diagnostic);
     return invalid;
+}
+
+func mir_native_direct_call_deferred(
+    model: MirNativeDirectCallModel[ctx],
+    reason_code: str,
+    diagnostic: str,
+    ctx: &Arena
+) MirNativeDirectCallModel[ctx] {
+    mut deferred := model;
+    deferred.represented = 1;
+    deferred.deferred = 1;
+    deferred.reason_code = std.Clone(ctx, reason_code);
+    deferred.diagnostic = std.Clone(ctx, diagnostic);
+    return deferred;
 }
 
 func mir_native_direct_call_type_name(value_type: ast.Type[ctx], ctx: &Arena) str {
@@ -208,6 +238,12 @@ func mir_native_direct_call_analyze_function(statement: ast.Statement[ctx], ctx:
     function.sequence_initial_value = 0;
     function.sequence_before_add = 0;
     function.sequence_after_add = 0;
+    function.graph_first_local = std.Clone(ctx, "");
+    function.graph_second_local = std.Clone(ctx, "");
+    function.graph_first_callee = std.Clone(ctx, "");
+    function.graph_second_callee = std.Clone(ctx, "");
+    function.graph_first_argument = 0;
+    function.graph_after_add = 0;
 
     unsafe {
         if statement.tag != 3 || statement.FunctionDecl.is_extern == 1 {
@@ -246,6 +282,114 @@ func mir_native_direct_call_analyze_function(statement: ast.Statement[ctx], ctx:
         mut body := ctx[statement.FunctionDecl.body];
         mut statements: std.Vector[ast.Statement[ctx], ctx] :=
             ctx[body.statements];
+
+        if std.str_eq(function.name, "main") == 1 &&
+           len(parameter_names) == 0 &&
+           std.str_eq(function.return_type, "int") == 1 &&
+           len(statements) == 4 &&
+           statements[0].tag == 4 &&
+           statements[1].tag == 4 &&
+           statements[2].tag == 5 &&
+           statements[3].tag == 12
+        {
+            mut first_decl := statements[0];
+            mut second_decl := statements[1];
+            mut after_assignment := statements[2];
+            mut return_statement := statements[3];
+            if first_decl.VarDecl.is_mut == 0 ||
+               second_decl.VarDecl.is_mut == 0 ||
+               first_decl.VarDecl.value ==
+                   empty[Index[ast.Expression[ctx], ctx]] ||
+               second_decl.VarDecl.value ==
+                   empty[Index[ast.Expression[ctx], ctx]]
+            {
+                return function;
+            }
+            if first_decl.VarDecl.var_type !=
+                   empty[Index[ast.Type[ctx], ctx]] &&
+               ctx[first_decl.VarDecl.var_type].tag != 0
+            {
+                return function;
+            }
+            if second_decl.VarDecl.var_type !=
+                   empty[Index[ast.Type[ctx], ctx]] &&
+               ctx[second_decl.VarDecl.var_type].tag != 0
+            {
+                return function;
+            }
+            if std.str_eq(
+                   first_decl.VarDecl.name,
+                   second_decl.VarDecl.name
+               ) == 1
+            {
+                return function;
+            }
+
+            mut first_call := ctx[first_decl.VarDecl.value];
+            mut second_call := ctx[second_decl.VarDecl.value];
+            mut assignment_left := ctx[after_assignment.Assignment.left];
+            mut assignment_value := ctx[after_assignment.Assignment.value];
+            mut return_expression := ctx[return_statement.Return.expr];
+            if first_call.tag != 12 ||
+               second_call.tag != 12 ||
+               assignment_left.tag != 0 ||
+               std.str_eq(
+                   assignment_left.Identifier.name,
+                   second_decl.VarDecl.name
+               ) == 0 ||
+               assignment_value.tag != 10 ||
+               std.str_eq(assignment_value.Binary.op, "+") == 0 ||
+               return_expression.tag != 0 ||
+               std.str_eq(
+                   return_expression.Identifier.name,
+                   second_decl.VarDecl.name
+               ) == 0
+            {
+                return function;
+            }
+
+            mut first_callee := ctx[first_call.Call.function];
+            mut second_callee := ctx[second_call.Call.function];
+            mut first_arguments: std.Vector[ast.Expression[ctx], ctx] :=
+                ctx[first_call.Call.arguments];
+            mut second_arguments: std.Vector[ast.Expression[ctx], ctx] :=
+                ctx[second_call.Call.arguments];
+            mut add_left := ctx[assignment_value.Binary.left];
+            mut add_right := ctx[assignment_value.Binary.right];
+            if first_callee.tag != 0 ||
+               second_callee.tag != 0 ||
+               len(first_arguments) != 1 ||
+               first_arguments[0].tag != 1 ||
+               len(second_arguments) != 1 ||
+               second_arguments[0].tag != 0 ||
+               std.str_eq(
+                   second_arguments[0].Identifier.name,
+                   first_decl.VarDecl.name
+               ) == 0 ||
+               add_left.tag != 0 ||
+               std.str_eq(
+                   add_left.Identifier.name,
+                   second_decl.VarDecl.name
+               ) == 0 ||
+               add_right.tag != 1
+            {
+                return function;
+            }
+
+            function.profile = 4;
+            function.graph_first_local =
+                std.Clone(ctx, first_decl.VarDecl.name);
+            function.graph_second_local =
+                std.Clone(ctx, second_decl.VarDecl.name);
+            function.graph_first_callee =
+                std.Clone(ctx, first_callee.Identifier.name);
+            function.graph_second_callee =
+                std.Clone(ctx, second_callee.Identifier.name);
+            function.graph_first_argument =
+                first_arguments[0].Integer.val;
+            function.graph_after_add = add_right.Integer.val;
+            return function;
+        }
 
         if std.str_eq(function.name, "main") == 1 &&
            len(parameter_names) == 0 &&
@@ -518,6 +662,44 @@ func mir_native_direct_call_validate_calls(model: MirNativeDirectCallModel[ctx],
                     ctx
                 );
             }
+        } else if caller.profile == 4 {
+            mut first_index := mir_native_direct_call_function_index(
+                functions,
+                caller.graph_first_callee,
+                ctx
+            );
+            mut second_index := mir_native_direct_call_function_index(
+                functions,
+                caller.graph_second_callee,
+                ctx
+            );
+            if first_index < 0 || second_index < 0 {
+                return mir_native_direct_call_invalid(
+                    model,
+                    "Native backend canonical MIR verification failed: missing direct-call graph symbol",
+                    ctx
+                );
+            }
+            mut first_callee := functions[first_index];
+            mut second_callee := functions[second_index];
+            mut first_parameters: std.Vector[str, ctx] :=
+                ctx[first_callee.parameter_types];
+            mut second_parameters: std.Vector[str, ctx] :=
+                ctx[second_callee.parameter_types];
+            if len(first_parameters) != 1 ||
+               len(second_parameters) != 1 ||
+               std.str_eq(first_parameters[0], "int") == 0 ||
+               std.str_eq(second_parameters[0], "int") == 0 ||
+               std.str_eq(first_callee.return_type, "int") == 0 ||
+               std.str_eq(second_callee.return_type, "int") == 0 ||
+               std.str_eq(caller.return_type, "int") == 0
+            {
+                return mir_native_direct_call_invalid(
+                    model,
+                    "Native backend canonical MIR verification failed: direct-call graph declarations are incompatible",
+                    ctx
+                );
+            }
         }
         caller_index = caller_index + 1;
     }
@@ -552,7 +734,43 @@ func mir_native_direct_call_validate_acyclic(model: MirNativeDirectCallModel[ctx
                     ctx
                 );
             }
+            if callee_index == index {
+                return mir_native_direct_call_deferred(
+                    model,
+                    "deferred_p13_recursive_direct_call_policy",
+                    "Native backend direct-call graph must be acyclic: direct recursion remains deferred in Phase 13.7",
+                    ctx
+                );
+            }
             indegree.Set(callee_index, indegree[callee_index] + 1);
+        } else if function.profile == 4 {
+            mut first_index := mir_native_direct_call_function_index(
+                functions,
+                function.graph_first_callee,
+                ctx
+            );
+            mut second_index := mir_native_direct_call_function_index(
+                functions,
+                function.graph_second_callee,
+                ctx
+            );
+            if first_index < 0 || second_index < 0 {
+                return mir_native_direct_call_invalid(
+                    model,
+                    "Native backend canonical MIR verification failed: missing direct-call graph symbol",
+                    ctx
+                );
+            }
+            if first_index == index || second_index == index {
+                return mir_native_direct_call_deferred(
+                    model,
+                    "deferred_p13_recursive_direct_call_policy",
+                    "Native backend direct-call graph must be acyclic: direct recursion remains deferred in Phase 13.7",
+                    ctx
+                );
+            }
+            indegree.Set(first_index, indegree[first_index] + 1);
+            indegree.Set(second_index, indegree[second_index] + 1);
         }
         index = index + 1;
     }
@@ -569,16 +787,19 @@ func mir_native_direct_call_validate_acyclic(model: MirNativeDirectCallModel[ctx
             index = index + 1;
         }
         if selected < 0 {
-            return mir_native_direct_call_invalid(
+            return mir_native_direct_call_deferred(
                 model,
-                "Native backend canonical MIR verification failed: direct-call graph must be acyclic",
+                "deferred_p13_mutual_recursive_direct_call_policy",
+                "Native backend direct-call graph must be acyclic: mutual recursion remains deferred in Phase 13.7",
                 ctx
             );
         }
         removed.Set(selected, 1);
         visited = visited + 1;
         mut selected_function := functions[selected];
-        if selected_function.profile == 2 || selected_function.profile == 3 {
+        if selected_function.profile == 2 ||
+           selected_function.profile == 3
+        {
             mut selected_callee := mir_native_direct_call_function_index(
                 functions,
                 selected_function.callee,
@@ -587,6 +808,25 @@ func mir_native_direct_call_validate_acyclic(model: MirNativeDirectCallModel[ctx
             indegree.Set(
                 selected_callee,
                 indegree[selected_callee] - 1
+            );
+        } else if selected_function.profile == 4 {
+            mut first_callee := mir_native_direct_call_function_index(
+                functions,
+                selected_function.graph_first_callee,
+                ctx
+            );
+            mut second_callee := mir_native_direct_call_function_index(
+                functions,
+                selected_function.graph_second_callee,
+                ctx
+            );
+            indegree.Set(
+                first_callee,
+                indegree[first_callee] - 1
+            );
+            indegree.Set(
+                second_callee,
+                indegree[second_callee] - 1
             );
         }
     }
@@ -702,6 +942,50 @@ func mir_native_direct_call_evaluate(functions: std.Vector[MirNativeDirectCallFu
         return evaluation;
     }
 
+    if function.profile == 4 {
+        mut first_index := mir_native_direct_call_function_index(
+            functions,
+            function.graph_first_callee,
+            ctx
+        );
+        mut second_index := mir_native_direct_call_function_index(
+            functions,
+            function.graph_second_callee,
+            ctx
+        );
+        if first_index < 0 || second_index < 0 {
+            return evaluation;
+        }
+        mut first_values: std.Vector[int, ctx] := std.VectorNew(ctx);
+        first_values.Push(function.graph_first_argument);
+        mut first_called := mir_native_direct_call_evaluate(
+            functions,
+            first_index,
+            first_values,
+            depth + 1,
+            ctx
+        );
+        if first_called.valid == 0 {
+            return evaluation;
+        }
+        mut second_values: std.Vector[int, ctx] := std.VectorNew(ctx);
+        second_values.Push(first_called.value);
+        mut second_called := mir_native_direct_call_evaluate(
+            functions,
+            second_index,
+            second_values,
+            depth + 1,
+            ctx
+        );
+        if second_called.valid == 0 {
+            return evaluation;
+        }
+        evaluation.valid = 1;
+        evaluation.value =
+            second_called.value + function.graph_after_add;
+        return evaluation;
+    }
+
     return evaluation;
 }
 
@@ -759,8 +1043,14 @@ func mir_native_direct_call_analyze(programs: std.Vector[ast.Program[ctx], ctx],
             }
             entry_index = index;
         }
-        if function.profile == 2 || function.profile == 3 {
+        if function.profile == 2 ||
+           function.profile == 3 ||
+           function.profile == 4
+        {
             has_call = 1;
+        }
+        if function.profile == 4 {
+            model.graph_profile = 1;
         }
         functions.Push(function);
         index = index + 1;
@@ -846,6 +1136,23 @@ func mir_native_direct_call_signature(function: MirNativeDirectCallFunction[ctx]
         ctx
     );
     return std.Clone(ctx, signature);
+}
+
+func mir_native_direct_call_backend_symbol(
+    function: MirNativeDirectCallFunction[ctx],
+    graph_profile: int,
+    ctx: &Arena
+) str {
+    if graph_profile == 1 &&
+       std.str_eq(function.name, "main") == 0
+    {
+        return mir_native_direct_call_append(
+            "phase13_direct_call_graph__",
+            function.name,
+            ctx
+        );
+    }
+    return std.Clone(ctx, function.name);
 }
 
 func mir_native_direct_call_emit_argument(output: str, function_index: int, argument_index: int, argument: MirNativeDirectCallArgument[ctx], ctx: &Arena) str {
@@ -987,7 +1294,140 @@ func mir_native_direct_call_statement_prefix(
     return mir_native_direct_call_append(emitted, "_", ctx);
 }
 
-func mir_native_direct_call_emit_function(output: str, function: MirNativeDirectCallFunction[ctx], function_index: int, expected_exit: int, ctx: &Arena) str {
+func mir_native_direct_call_emit_graph_call_literal(
+    output: str,
+    function_index: int,
+    statement_index: int,
+    result_local: str,
+    callee: str,
+    value: int,
+    ctx: &Arena
+) str {
+    mut prefix := mir_native_direct_call_statement_prefix(
+        "",
+        function_index,
+        statement_index,
+        ctx
+    );
+    mut emitted := mir_native_direct_call_append(
+        output,
+        prefix,
+        ctx
+    );
+    emitted = mir_native_direct_call_append(
+        emitted,
+        "kind: LocalI32SetCall\n",
+        ctx
+    );
+    emitted = mir_native_direct_call_append(emitted, prefix, ctx);
+    emitted = mir_native_direct_call_append(emitted, "local: ", ctx);
+    emitted = mir_native_direct_call_append(emitted, result_local, ctx);
+    emitted = mir_native_direct_call_append(emitted, "\n", ctx);
+    emitted = mir_native_direct_call_append(emitted, prefix, ctx);
+    emitted = mir_native_direct_call_append(
+        emitted,
+        "callee_kind: LocalFunction\n",
+        ctx
+    );
+    emitted = mir_native_direct_call_append(emitted, prefix, ctx);
+    emitted = mir_native_direct_call_append(emitted, "callee: ", ctx);
+    emitted = mir_native_direct_call_append(emitted, callee, ctx);
+    emitted = mir_native_direct_call_append(emitted, "\n", ctx);
+    emitted = mir_native_direct_call_append(emitted, prefix, ctx);
+    emitted = mir_native_direct_call_append(
+        emitted,
+        "argument_count: 1\n",
+        ctx
+    );
+    emitted = mir_native_direct_call_append(emitted, prefix, ctx);
+    emitted = mir_native_direct_call_append(
+        emitted,
+        "argument_0_kind: I32Literal\n",
+        ctx
+    );
+    emitted = mir_native_direct_call_append(emitted, prefix, ctx);
+    emitted = mir_native_direct_call_append(
+        emitted,
+        "argument_0_value: ",
+        ctx
+    );
+    emitted = mir_native_direct_call_append_int(emitted, value, ctx);
+    return mir_native_direct_call_append(emitted, "\n", ctx);
+}
+
+func mir_native_direct_call_emit_graph_call_local(
+    output: str,
+    function_index: int,
+    statement_index: int,
+    result_local: str,
+    callee: str,
+    argument_local: str,
+    ctx: &Arena
+) str {
+    mut prefix := mir_native_direct_call_statement_prefix(
+        "",
+        function_index,
+        statement_index,
+        ctx
+    );
+    mut emitted := mir_native_direct_call_append(
+        output,
+        prefix,
+        ctx
+    );
+    emitted = mir_native_direct_call_append(
+        emitted,
+        "kind: LocalI32SetCall\n",
+        ctx
+    );
+    emitted = mir_native_direct_call_append(emitted, prefix, ctx);
+    emitted = mir_native_direct_call_append(emitted, "local: ", ctx);
+    emitted = mir_native_direct_call_append(emitted, result_local, ctx);
+    emitted = mir_native_direct_call_append(emitted, "\n", ctx);
+    emitted = mir_native_direct_call_append(emitted, prefix, ctx);
+    emitted = mir_native_direct_call_append(
+        emitted,
+        "callee_kind: LocalFunction\n",
+        ctx
+    );
+    emitted = mir_native_direct_call_append(emitted, prefix, ctx);
+    emitted = mir_native_direct_call_append(emitted, "callee: ", ctx);
+    emitted = mir_native_direct_call_append(emitted, callee, ctx);
+    emitted = mir_native_direct_call_append(emitted, "\n", ctx);
+    emitted = mir_native_direct_call_append(emitted, prefix, ctx);
+    emitted = mir_native_direct_call_append(
+        emitted,
+        "argument_count: 1\n",
+        ctx
+    );
+    emitted = mir_native_direct_call_append(emitted, prefix, ctx);
+    emitted = mir_native_direct_call_append(
+        emitted,
+        "argument_0_kind: LocalI32\n",
+        ctx
+    );
+    emitted = mir_native_direct_call_append(emitted, prefix, ctx);
+    emitted = mir_native_direct_call_append(
+        emitted,
+        "argument_0_local: ",
+        ctx
+    );
+    emitted = mir_native_direct_call_append(
+        emitted,
+        argument_local,
+        ctx
+    );
+    return mir_native_direct_call_append(emitted, "\n", ctx);
+}
+
+func mir_native_direct_call_emit_function(
+    output: str,
+    function: MirNativeDirectCallFunction[ctx],
+    function_index: int,
+    expected_exit: int,
+    graph_profile: int,
+    ctx: &Arena
+) str {
     mut emitted := output;
     emitted = mir_native_direct_call_append(emitted, "function_", ctx);
     emitted = mir_native_direct_call_append_int(emitted, function_index, ctx);
@@ -1015,7 +1455,15 @@ func mir_native_direct_call_emit_function(output: str, function: MirNativeDirect
         "_backend_symbol: ",
         ctx
     );
-    emitted = mir_native_direct_call_append(emitted, function.name, ctx);
+    emitted = mir_native_direct_call_append(
+        emitted,
+        mir_native_direct_call_backend_symbol(
+            function,
+            graph_profile,
+            ctx
+        ),
+        ctx
+    );
     emitted = mir_native_direct_call_append(emitted, "\nfunction_", ctx);
     emitted = mir_native_direct_call_append_int(emitted, function_index, ctx);
 
@@ -1074,7 +1522,13 @@ func mir_native_direct_call_emit_function(output: str, function: MirNativeDirect
         ctx
     );
     emitted = mir_native_direct_call_append_int(emitted, function_index, ctx);
-    if function.profile == 3 {
+    mut first_local_name := first_local_name;
+    mut second_local_name := second_local_name;
+    if function.profile == 4 {
+        first_local_name = function.graph_first_local;
+        second_local_name = function.graph_second_local;
+    }
+    if function.profile == 3 || function.profile == 4 {
         emitted = mir_native_direct_call_append(
             emitted,
             "_local_count: 2\nfunction_",
@@ -1092,7 +1546,7 @@ func mir_native_direct_call_emit_function(output: str, function: MirNativeDirect
         );
         emitted = mir_native_direct_call_append(
             emitted,
-            function.sequence_first_local,
+            first_local_name,
             ctx
         );
         emitted = mir_native_direct_call_append(
@@ -1122,7 +1576,7 @@ func mir_native_direct_call_emit_function(output: str, function: MirNativeDirect
         );
         emitted = mir_native_direct_call_append(
             emitted,
-            function.sequence_second_local,
+            second_local_name,
             ctx
         );
         emitted = mir_native_direct_call_append(
@@ -1576,6 +2030,78 @@ func mir_native_direct_call_emit_function(output: str, function: MirNativeDirect
             ctx
         );
         emitted = mir_native_direct_call_append(emitted, "\n", ctx);
+    } else if function.profile == 4 {
+        emitted = mir_native_direct_call_append(
+            emitted,
+            "_block_0_statement_count: 3\n",
+            ctx
+        );
+        emitted = mir_native_direct_call_emit_graph_call_literal(
+            emitted,
+            function_index,
+            0,
+            function.graph_first_local,
+            function.graph_first_callee,
+            function.graph_first_argument,
+            ctx
+        );
+        emitted = mir_native_direct_call_emit_graph_call_local(
+            emitted,
+            function_index,
+            1,
+            function.graph_second_local,
+            function.graph_second_callee,
+            function.graph_first_local,
+            ctx
+        );
+        mut add_prefix := mir_native_direct_call_statement_prefix(
+            "",
+            function_index,
+            2,
+            ctx
+        );
+        emitted = mir_native_direct_call_append(
+            emitted,
+            add_prefix,
+            ctx
+        );
+        emitted = mir_native_direct_call_append(
+            emitted,
+            "kind: LocalI32AddI32Literal\n",
+            ctx
+        );
+        emitted = mir_native_direct_call_append(
+            emitted,
+            add_prefix,
+            ctx
+        );
+        emitted = mir_native_direct_call_append(
+            emitted,
+            "local: ",
+            ctx
+        );
+        emitted = mir_native_direct_call_append(
+            emitted,
+            function.graph_second_local,
+            ctx
+        );
+        emitted = mir_native_direct_call_append(emitted, "\n", ctx);
+        emitted = mir_native_direct_call_append(
+            emitted,
+            add_prefix,
+            ctx
+        );
+        emitted = mir_native_direct_call_append(
+            emitted,
+            "value: ",
+            ctx
+        );
+        emitted = mir_native_direct_call_append_int(
+            emitted,
+            function.graph_after_add,
+            ctx
+        );
+        emitted = mir_native_direct_call_append(emitted, "\n", ctx);
     } else {
         emitted = mir_native_direct_call_append(
             emitted,
@@ -1682,6 +2208,12 @@ func mir_native_direct_call_emit_function(output: str, function: MirNativeDirect
             function.sequence_second_local,
             ctx
         );
+    } else if function.profile == 4 {
+        emitted = mir_native_direct_call_append(
+            emitted,
+            function.graph_second_local,
+            ctx
+        );
     } else {
         emitted = mir_native_direct_call_append(
             emitted,
@@ -1718,8 +2250,30 @@ func mir_native_direct_call_emit_function(output: str, function: MirNativeDirect
 func mir_native_direct_call_emit_bundle(model: MirNativeDirectCallModel[ctx], ctx: &Arena) mir.MirProgramBundle[ctx] {
     mut functions: std.Vector[MirNativeDirectCallFunction[ctx], ctx] :=
         ctx[model.functions];
+    mut module_name := std.Clone(ctx, "phase11_direct_call_abi");
+    mut object_name := std.Clone(
+        ctx,
+        "phase11_direct_call_abi_module.o"
+    );
+    if model.graph_profile == 1 {
+        module_name = std.Clone(ctx, "phase13_direct_call_graph");
+        object_name = std.Clone(
+            ctx,
+            "phase13_direct_call_graph_module.o"
+        );
+    }
     mut canonical :=
-        "format: gust.compiler_mir_ingestion.v2\nmodule: phase11_direct_call_abi\nimport_count: 0\nfunction_count: ";
+        "format: gust.compiler_mir_ingestion.v2\nmodule: ";
+    canonical = mir_native_direct_call_append(
+        canonical,
+        module_name,
+        ctx
+    );
+    canonical = mir_native_direct_call_append(
+        canonical,
+        "\nimport_count: 0\nfunction_count: ",
+        ctx
+    );
     canonical = mir_native_direct_call_append_int(
         canonical,
         len(functions),
@@ -1738,6 +2292,7 @@ func mir_native_direct_call_emit_bundle(model: MirNativeDirectCallModel[ctx], ct
             functions[function_index],
             function_index,
             expected_exit,
+            model.graph_profile,
             ctx
         );
         function_index = function_index + 1;
@@ -1747,7 +2302,7 @@ func mir_native_direct_call_emit_bundle(model: MirNativeDirectCallModel[ctx], ct
     mut module := mir.mir_make_program_bundle_module(
         model.source_path,
         "",
-        "phase11_direct_call_abi_module.o",
+        object_name,
         "gust.compiler_mir_ingestion.v2",
         canonical,
         0,
@@ -1766,7 +2321,11 @@ func mir_native_direct_call_emit_bundle(model: MirNativeDirectCallModel[ctx], ct
             module,
             mir.mir_make_program_bundle_symbol(
                 function.name,
-                function.name,
+                mir_native_direct_call_backend_symbol(
+                    function,
+                    model.graph_profile,
+                    ctx
+                ),
                 mir_native_direct_call_signature(function, ctx),
                 linkage,
                 ctx
@@ -1786,6 +2345,12 @@ func mir_native_direct_call_source_lower(programs: std.Vector[ast.Program[ctx], 
         module_prefixes,
         ctx
     );
+    if model.deferred == 1 {
+        result.deferred = 1;
+        result.reason_code = model.reason_code;
+        result.diagnostic = model.diagnostic;
+        return result;
+    }
     if model.represented == 0 {
         return result;
     }
