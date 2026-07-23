@@ -4,50 +4,54 @@ set -euo pipefail
 registry_json="scripts/cranelift_feature_registry.json"
 family_runner="scripts/cranelift_ci_family.py"
 rust_manifest="compiler/experiments/cranelift/Cargo.toml"
-canonical_fixture="compiler/fixtures/native_backend_phase13_nested_structured_cfg_ingestion.mir"
-missing_target_fixture="compiler/fixtures/native_backend_phase13_nested_cfg_missing_target.mir"
-invalid_join_fixture="compiler/fixtures/native_backend_phase13_nested_cfg_invalid_join.mir"
-incorrect_arguments_fixture="compiler/fixtures/native_backend_phase13_nested_cfg_incorrect_arguments.mir"
-malformed_parameters_fixture="compiler/fixtures/native_backend_phase13_nested_cfg_malformed_block_parameters.mir"
-unterminated_fixture="compiler/fixtures/native_backend_phase13_nested_cfg_unterminated.mir"
-invalid_early_return_fixture="compiler/fixtures/native_backend_phase13_nested_cfg_invalid_early_return.mir"
-short_circuit_deferred="compiler/phase13_structured_cfg_short_circuit_deferred_source.gst"
-condition_deferred="compiler/phase13_structured_cfg_condition_deferred_source.gst"
-build_root="build/guards/cranelift_phase13_nested_structured_cfg"
+canonical_fixture="compiler/fixtures/native_backend_phase13_general_loop_ingestion.mir"
+missing_backedge_fixture="compiler/fixtures/native_backend_phase13_general_loop_missing_backedge_argument.mir"
+wrong_type_fixture="compiler/fixtures/native_backend_phase13_general_loop_wrong_argument_type.mir"
+invalid_header_fixture="compiler/fixtures/native_backend_phase13_general_loop_invalid_header.mir"
+missing_exit_fixture="compiler/fixtures/native_backend_phase13_general_loop_missing_exit.mir"
+malformed_state_fixture="compiler/fixtures/native_backend_phase13_general_loop_malformed_state.mir"
+irreducible_fixture="compiler/fixtures/native_backend_phase13_general_loop_irreducible.mir"
+selected_source="compiler/phase11_structured_cfg_deferred_loop_source.gst"
+countdown_source="compiler/phase11_block_parameter_countdown_loop_source.gst"
+stride_source="compiler/phase11_block_parameter_stride_loop_source.gst"
+non_decreasing_source="compiler/phase13_loop_non_decreasing_invalid_source.gst"
+early_return_deferred="compiler/phase13_loop_early_return_deferred_source.gst"
+nested_loop_deferred="compiler/phase13_loop_nested_deferred_source.gst"
+body_control_flow_deferred="compiler/phase13_loop_body_control_flow_deferred_source.gst"
+condition_deferred="compiler/phase13_loop_condition_deferred_source.gst"
+build_root="build/guards/cranelift_phase13_general_loop"
 cargo_target="$build_root/cargo-target"
 
 positive_cases=(
-  'compiler/phase13_nested_structured_cfg_source.gst|36|nested-positive|1'
-  'compiler/phase13_nested_structured_cfg_negative_source.gst|18|nested-negative|0'
-  'compiler/phase13_sequential_structured_cfg_source.gst|29|sequential|0'
-  'compiler/phase13_early_return_structured_cfg_source.gst|12|early-return|0'
-  'compiler/phase13_branch_local_structured_cfg_source.gst|14|branch-local|0'
-  'compiler/phase13_nested_condition_structured_cfg_source.gst|32|nested-condition|0'
+  "$selected_source|0|single-carried|1"
+  "$countdown_source|8|countdown-two-carried|0"
+  "$stride_source|10|stride-two-carried|0"
 )
 
 for required_file in \
   "$registry_json" "$family_runner" "$rust_manifest" \
-  "$canonical_fixture" "$missing_target_fixture" \
-  "$invalid_join_fixture" "$incorrect_arguments_fixture" \
-  "$malformed_parameters_fixture" "$unterminated_fixture" \
-  "$invalid_early_return_fixture" \
-  "$short_circuit_deferred" "$condition_deferred" \
+  "$canonical_fixture" "$missing_backedge_fixture" \
+  "$wrong_type_fixture" "$invalid_header_fixture" \
+  "$missing_exit_fixture" "$malformed_state_fixture" \
+  "$irreducible_fixture" "$non_decreasing_source" \
+  "$early_return_deferred" "$nested_loop_deferred" \
+  "$body_control_flow_deferred" "$condition_deferred" \
   src/runtime.c ./gust
 do
   if [ ! -e "$required_file" ]; then
-    echo "Phase 13.4 structured-CFG evidence is missing $required_file" >&2
+    echo "Phase 13.5 general-loop evidence is missing $required_file" >&2
     exit 1
   fi
 done
 for case_record in "${positive_cases[@]}"; do
   IFS='|' read -r source_path _ _ _ <<<"$case_record"
   if [ ! -f "$source_path" ]; then
-    echo "Phase 13.4 structured-CFG evidence is missing $source_path" >&2
+    echo "Phase 13.5 general-loop evidence is missing $source_path" >&2
     exit 1
   fi
 done
 if [ ! -x ./gust ]; then
-  echo "Phase 13.4 structured-CFG evidence requires the rebuilt ./gust compiler." >&2
+  echo "Phase 13.5 general-loop evidence requires the rebuilt ./gust compiler." >&2
   exit 1
 fi
 
@@ -60,7 +64,7 @@ CARGO_TARGET_DIR="$cargo_target" cargo build \
   --manifest-path "$rust_manifest"
 driver_bin="$cargo_target/debug/gust-cranelift-experiment"
 if [ ! -x "$driver_bin" ]; then
-  echo "Phase 13.4 structured-CFG evidence did not build $driver_bin" >&2
+  echo "Phase 13.5 general-loop evidence did not build $driver_bin" >&2
   exit 1
 fi
 driver_abs="$(cd "$(dirname "$driver_bin")" && pwd)/$(basename "$driver_bin")"
@@ -85,7 +89,7 @@ expect_invalid_fixture() {
   local status="$?"
   set -e
   if [ "$status" = "0" ]; then
-    echo "Invalid Phase 13.4 structured-CFG MIR unexpectedly validated: $name" >&2
+    echo "Invalid Phase 13.5 general-loop MIR unexpectedly validated: $name" >&2
     exit 1
   fi
   cat "$build_root/$name.stdout" "$build_root/$name.stderr" \
@@ -94,32 +98,32 @@ expect_invalid_fixture() {
 }
 
 expect_invalid_fixture \
-  missing-target \
-  "$missing_target_fixture" \
-  'unknown canonical compiler MIR jump target missing_cfg from block cfg_5'
-expect_invalid_fixture \
-  invalid-join \
-  "$invalid_join_fixture" \
-  'returns local value before definite assignment'
-expect_invalid_fixture \
-  incorrect-block-arguments \
-  "$incorrect_arguments_fixture" \
+  missing-backedge-argument \
+  "$missing_backedge_fixture" \
   'passes 0 argument(s), but target declares 1 block parameter(s)'
 expect_invalid_fixture \
-  malformed-block-parameters \
-  "$malformed_parameters_fixture" \
-  'duplicate canonical compiler MIR block parameter joined in block cfg_1'
+  wrong-backedge-argument-type \
+  "$wrong_type_fixture" \
+  'does not match target block parameter loop_value in block loop_header'
 expect_invalid_fixture \
-  reachable-unterminated \
-  "$unterminated_fixture" \
-  'missing canonical compiler MIR fixture field: block_4_terminator_kind'
+  invalid-loop-header \
+  "$invalid_header_fixture" \
+  'Phase 13.5 general-loop loop-header metadata is inconsistent'
 expect_invalid_fixture \
-  invalid-early-return-path \
-  "$invalid_early_return_fixture" \
-  'Phase 13.4 CFG block cfg_3 termination metadata is inconsistent'
+  missing-reachable-exit \
+  "$missing_exit_fixture" \
+  'canonical compiler MIR fixture entry graph has no reachable Return terminator'
+expect_invalid_fixture \
+  malformed-loop-carried-state \
+  "$malformed_state_fixture" \
+  'Phase 13.5 general-loop loop-carried state metadata is inconsistent'
+expect_invalid_fixture \
+  irreducible-graph \
+  "$irreducible_fixture" \
+  'irreducible cycle or a backedge whose target does not dominate its source'
 
 if find "$build_root" -maxdepth 1 -type f -name '*.o' -print -quit | grep -q .; then
-  echo "Phase 13.4 fixture validation emitted an object before acceptance." >&2
+  echo "Phase 13.5 fixture validation emitted an object before acceptance." >&2
   exit 1
 fi
 
@@ -217,14 +221,14 @@ run_positive_case() {
   native_status="$(cat "$case_dir/native.status")"
   if [ "$mir_status" != "$expected_status" ] ||
      [ "$native_status" != "$expected_status" ]; then
-    echo "Phase 13.4 parity status mismatch for $case_name: MIR-to-C=$mir_status Cranelift=$native_status expected=$expected_status" >&2
+    echo "Phase 13.5 parity status mismatch for $case_name: MIR-to-C=$mir_status Cranelift=$native_status expected=$expected_status" >&2
     exit 1
   fi
   cmp -s "$case_dir/mir-to-c.stdout" "$case_dir/native.stdout"
   cmp -s "$case_dir/mir-to-c.stderr" "$case_dir/native.stderr"
   if [ -e "$case_dir/native-program.phase10.bundle" ] ||
      [ -e "$case_dir/native-program.phase10.request" ]; then
-    echo "Phase 13.4 positive case left transient request artifacts: $case_name" >&2
+    echo "Phase 13.5 positive case left transient request artifacts: $case_name" >&2
     exit 1
   fi
 }
@@ -234,17 +238,16 @@ for case_record in "${positive_cases[@]}"; do
   run_positive_case "$source_path" "$expected_status" "$case_name" "$capture"
 done
 
-selected_bundle="$build_root/nested-positive/capture.bundle"
+selected_bundle="$build_root/single-carried/capture.bundle"
 test -f "$selected_bundle"
-rg -n -F 'entry_block: cfg_0' "$selected_bundle" >/dev/null
-rg -n -F 'block_count: 7' "$selected_bundle" >/dev/null
-rg -n -F 'kind=StructuredCfg;reducibility=acyclic;block_count=7;contract=phase13_4;branch_count=2;maximum_depth=2;' \
+rg -n -F 'entry_block: entry' "$selected_bundle" >/dev/null
+rg -n -F 'block_count: 4' "$selected_bundle" >/dev/null
+rg -n -F 'block_1_label: loop_header' "$selected_bundle" >/dev/null
+rg -n -F 'block_1_parameter_count: 1' "$selected_bundle" >/dev/null
+rg -n -F 'block_2_terminator_target: loop_header' "$selected_bundle" >/dev/null
+rg -n -F 'block_2_terminator_argument_0_kind: BlockParamI32AddI32Literal' \
   "$selected_bundle" >/dev/null
-rg -n -e 'kind=CfgBlock;index=[0-9]+;label=cfg_[0-9]+;predecessors=[^;]+;termination=(branch|jump|return);parameter_owner=none;origin=[^;]+;line=[1-9][0-9]*;column=[1-9][0-9]*' \
-  "$selected_bundle" >/dev/null
-rg -n -F 'label=cfg_5;predecessors=cfg_3,cfg_4;termination=jump' \
-  "$selected_bundle" >/dev/null
-rg -n -F 'label=cfg_6;predecessors=cfg_5,cfg_2;termination=return' \
+rg -n -F 'kind=BlockParameterLoop;profile=general_loop;reducibility=single_header;parameter_arity=1;contract=phase13_5;loop_header=loop_header;backedge_count=1;reachable_exit=loop_exit;termination=bounded;' \
   "$selected_bundle" >/dev/null
 
 poison_marker="$build_root/poison-driver-invoked"
@@ -252,26 +255,27 @@ poison_driver="$build_root/poison-driver"
 cat >"$poison_driver" <<'EOF_POISON'
 #!/usr/bin/env bash
 set -euo pipefail
-printf 'invoked\n' >>"${GUST_PHASE13_CFG_POISON_MARKER:?}"
+printf 'invoked\n' >>"${GUST_PHASE13_LOOP_POISON_MARKER:?}"
 exit 97
 EOF_POISON
 chmod +x "$poison_driver"
 poison_driver_abs="$(cd "$(dirname "$poison_driver")" && pwd)/$(basename "$poison_driver")"
 
-assert_deferred_before_driver() {
+assert_preserved_pre_driver_failure() {
   local source_path="$1"
   local case_name="$2"
-  local reason_code="$3"
+  local expected="$3"
+  local decision="$4"
   local case_dir="$build_root/$case_name"
   local output="$case_dir/existing-output"
   mkdir -p "$case_dir"
-  printf 'phase13-structured-cfg-output-sentinel\n' >"$output"
+  printf 'phase13-general-loop-output-sentinel\n' >"$output"
   cp "$output" "$output.expected"
   rm -f "$poison_marker"
 
   set +e
   GUST_TEST_MIR_TO_C_UNAVAILABLE=1 \
-  GUST_PHASE13_CFG_POISON_MARKER="$poison_marker" \
+  GUST_PHASE13_LOOP_POISON_MARKER="$poison_marker" \
   GUST_NATIVE_BACKEND_DRIVER="$poison_driver_abs" \
     ./gust --backend cranelift \
       -o "$output" \
@@ -281,21 +285,19 @@ assert_deferred_before_driver() {
   local status="$?"
   set -e
   if [ "$status" = "0" ]; then
-    echo "Unsupported Phase 13.4 control-flow shape unexpectedly compiled: $case_name" >&2
+    echo "Unsupported or invalid Phase 13.5 loop unexpectedly compiled: $case_name" >&2
     exit 1
   fi
   if [ -e "$poison_marker" ]; then
-    echo "Deferred Phase 13.4 control-flow shape reached driver discovery: $case_name" >&2
+    echo "Phase 13.5 pre-driver failure reached driver discovery: $case_name" >&2
     cat "$poison_marker" >&2
     exit 1
   fi
   cat "$case_dir/compiler.stdout" "$case_dir/compiler.stderr" \
     >"$case_dir/compiler.combined"
-  rg -n -F 'decision=deferred' "$case_dir/compiler.combined" >/dev/null
-  rg -n -F "reason_code=$reason_code" "$case_dir/compiler.combined" >/dev/null
+  rg -n -F "decision=$decision" "$case_dir/compiler.combined" >/dev/null
+  rg -n -F "$expected" "$case_dir/compiler.combined" >/dev/null
   rg -n -F 'expected_failure_stage=before_driver_discovery' \
-    "$case_dir/compiler.combined" >/dev/null
-  rg -n -F 'class=unsupported_native_capability' \
     "$case_dir/compiler.combined" >/dev/null
   cmp -s "$output.expected" "$output"
   if [ -e "$output.phase10.bundle" ] ||
@@ -303,21 +305,38 @@ assert_deferred_before_driver() {
      find "$case_dir" -maxdepth 1 -type f \
        -name '.existing-output.phase10-source-route*.o' -print -quit | grep -q .
   then
-    echo "Deferred Phase 13.4 control-flow shape created transient artifacts: $case_name" >&2
+    echo "Phase 13.5 pre-driver failure created transient artifacts: $case_name" >&2
     exit 1
   fi
 }
 
-assert_deferred_before_driver \
-  "$short_circuit_deferred" \
-  short-circuit \
-  deferred_p13_structured_cfg_short_circuit
-assert_deferred_before_driver \
+assert_preserved_pre_driver_failure \
+  "$non_decreasing_source" \
+  non-decreasing-loop \
+  'strictly decreasing positive loop parameter' \
+  source_or_type_failure
+assert_preserved_pre_driver_failure \
+  "$early_return_deferred" \
+  early-return \
+  deferred_p13_general_loop_early_return \
+  deferred
+assert_preserved_pre_driver_failure \
+  "$nested_loop_deferred" \
+  nested-loop \
+  deferred_p13_general_loop_nested_loop \
+  deferred
+assert_preserved_pre_driver_failure \
+  "$body_control_flow_deferred" \
+  body-control-flow \
+  deferred_p13_general_loop_body_control_flow \
+  deferred
+assert_preserved_pre_driver_failure \
   "$condition_deferred" \
-  unselected-condition \
-  deferred_p13_structured_cfg_condition_operator
+  condition-operator \
+  deferred_p13_general_loop_condition_operator \
+  deferred
 
-python3 "$family_runner" differential-rows cfg |
-  rg -n -F 'p13_nested_local_update_branch_source_route' >/dev/null
+python3 "$family_runner" differential-rows block-params |
+  rg -n -F 'p13_general_loop_backedge_source_route' >/dev/null
 
-echo "✅ Phase 13.4 nested structured-CFG evidence passed: positive/negative nesting, sequential joins, early returns, branch-local state, expression conditions, block origin/predecessor metadata, six malformed CFG classes, and precise residual pre-driver deferrals."
+echo "✅ Phase 13.5 general-loop evidence passed: one- and two-value loop-carried state, conditional header exit, bounded execution, natural-backedge validation, six malformed MIR classes, one invalid loop, and four precise residual deferrals."

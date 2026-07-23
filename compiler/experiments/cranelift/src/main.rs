@@ -3514,12 +3514,414 @@ fn compiler_mir_cfg_reducible_backedge_count(
     Ok(backedge_count)
 }
 
+fn compiler_mir_cfg_natural_backedges(
+    function: &CompilerMirLoweringFunction<'_>,
+) -> Result<Vec<(usize, usize)>, Box<dyn Error>> {
+    compiler_mir_cfg_reducible_backedge_count(function)?;
+    let block_indices = compiler_mir_cfg_block_indices(function);
+    let dominators = compiler_mir_cfg_dominators(function)?;
+    let mut backedges = Vec::new();
+    for (source_index, block) in function.blocks.iter().enumerate() {
+        for successor in compiler_mir_cfg_successors(&block.terminator) {
+            let target_index = *block_indices.get(successor).ok_or_else(|| {
+                IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!(
+                        "unknown compiler MIR lowering successor {successor} from block {}",
+                        block.label
+                    ),
+                )
+            })?;
+            if dominators[source_index].contains(&target_index) {
+                backedges.push((source_index, target_index));
+            }
+        }
+    }
+    Ok(backedges)
+}
+
 fn is_phase11_block_parameter_loop_fixture(
     fixture: &ParsedCompilerMirFixture<'_>,
 ) -> bool {
     fixture.metadata.iter().any(|item| {
         item.payload.starts_with("kind=BlockParameterLoop;")
     })
+}
+
+fn is_phase13_general_loop_fixture(
+    fixture: &ParsedCompilerMirFixture<'_>,
+) -> bool {
+    fixture.metadata.iter().any(|item| {
+        phase11_local_state_payload_field(item.payload, "contract")
+            == Some("phase13_5")
+    })
+}
+
+fn validate_phase13_general_loop_fixture(
+    fixture: &ParsedCompilerMirFixture<'_>,
+) -> Result<(), Box<dyn Error>> {
+    let function = &fixture.function;
+    if !function.params.is_empty()
+        || function.return_type != TinyMirType::I32
+    {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 13.5 general-loop source route requires a zero-argument i32 entry",
+        ));
+    }
+    if !function.locals.is_empty() {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 13.5 general-loop source route transports loop-carried state through block parameters",
+        ));
+    }
+
+    recognize_compiler_mir_fixture_metadata(&fixture.metadata)?;
+    let metadata = fixture.metadata.iter().find(|item| {
+        phase11_local_state_payload_field(item.payload, "contract")
+            == Some("phase13_5")
+    }).ok_or_else(|| {
+        phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 13.5 general-loop source route is missing its ownership metadata",
+        )
+    })?;
+    if metadata.attachment != "function" {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 13.5 general-loop ownership metadata must attach to the function",
+        ));
+    }
+    if phase11_local_state_payload_field(metadata.payload, "profile")
+        != Some("general_loop")
+        || phase11_local_state_payload_field(
+            metadata.payload,
+            "reducibility",
+        ) != Some("single_header")
+        || phase11_local_state_payload_field(
+            metadata.payload,
+            "termination",
+        ) != Some("bounded")
+    {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 13.5 general-loop ownership metadata has an unsupported profile",
+        ));
+    }
+
+    let parameter_arity = phase11_local_state_payload_field(
+        metadata.payload,
+        "parameter_arity",
+    ).ok_or_else(|| {
+        phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 13.5 general-loop metadata is missing parameter_arity",
+        )
+    })?.parse::<usize>().map_err(|_| {
+        phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 13.5 general-loop metadata has invalid parameter_arity",
+        )
+    })?;
+    if !(1..=2).contains(&parameter_arity) {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 13.5 general-loop parameter arity must be one or two",
+        ));
+    }
+    let expected_backedge_count = phase11_local_state_payload_field(
+        metadata.payload,
+        "backedge_count",
+    ).ok_or_else(|| {
+        phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 13.5 general-loop metadata is missing backedge_count",
+        )
+    })?.parse::<usize>().map_err(|_| {
+        phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 13.5 general-loop metadata has invalid backedge_count",
+        )
+    })?;
+    let header_label = phase11_local_state_payload_field(
+        metadata.payload,
+        "loop_header",
+    ).ok_or_else(|| {
+        phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 13.5 general-loop metadata is missing loop_header",
+        )
+    })?;
+    let exit_label = phase11_local_state_payload_field(
+        metadata.payload,
+        "reachable_exit",
+    ).ok_or_else(|| {
+        phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 13.5 general-loop metadata is missing reachable_exit",
+        )
+    })?;
+
+    let block_indices = compiler_mir_cfg_block_indices(function);
+    let header_index = *block_indices.get(header_label).ok_or_else(|| {
+        phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 13.5 general-loop loop-header metadata is inconsistent",
+        )
+    })?;
+    let exit_index = *block_indices.get(exit_label).ok_or_else(|| {
+        phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 13.5 general-loop reachable-exit metadata is inconsistent",
+        )
+    })?;
+    if function.blocks[header_index].parameters.len() != parameter_arity {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 13.5 general-loop loop-carried state metadata is inconsistent",
+        ));
+    }
+    if !matches!(
+        &function.blocks[exit_index].terminator,
+        CompilerMirLoweringTerminator::ReturnBlockParamI32(_)
+    ) {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 13.5 general-loop reachable exit must return transported scalar state",
+        ));
+    }
+
+    let mut parameterized_non_final_blocks = 0usize;
+    for block in &function.blocks {
+        if block
+            .parameters
+            .iter()
+            .any(|parameter| parameter.ty != TinyMirType::I32)
+        {
+            return Err(phase10_backend_request_error(
+                Phase10BackendRequestStage::CanonicalMirValidation,
+                Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                format!(
+                    "Phase 13.5 general-loop block {} has a non-i32 parameter",
+                    block.label
+                ),
+            ));
+        }
+        if !block.parameters.is_empty()
+            && !matches!(
+                &block.terminator,
+                CompilerMirLoweringTerminator::ReturnBlockParamI32(_)
+            )
+        {
+            parameterized_non_final_blocks += 1;
+        }
+        if !block.statements.is_empty() {
+            return Err(phase10_backend_request_error(
+                Phase10BackendRequestStage::CanonicalMirValidation,
+                Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                "Phase 13.5 general-loop route keeps loop-carried state on edges and accepts no block statements",
+            ));
+        }
+        let edges: Vec<&CompilerMirLoweringEdge<'_>> = match &block.terminator {
+            CompilerMirLoweringTerminator::Jump { edge } => vec![edge],
+            CompilerMirLoweringTerminator::BranchBlockParamI32Positive {
+                then_edge,
+                else_edge,
+                ..
+            } => vec![then_edge, else_edge],
+            CompilerMirLoweringTerminator::ReturnBlockParamI32(_) => Vec::new(),
+            _ => {
+                return Err(phase10_backend_request_error(
+                    Phase10BackendRequestStage::CanonicalMirValidation,
+                    Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                    "Phase 13.5 general-loop route accepts parameterized jumps, positive block-parameter branches, and block-parameter returns",
+                ));
+            }
+        };
+        for edge in edges {
+            for argument in &edge.arguments {
+                if !matches!(
+                    argument,
+                    CompilerMirLoweringEdgeArgument::I32Literal(_)
+                        | CompilerMirLoweringEdgeArgument::BlockParamI32(_)
+                        | CompilerMirLoweringEdgeArgument::BlockParamI32AddI32Literal {
+                            ..
+                        }
+                ) {
+                    return Err(phase10_backend_request_error(
+                        Phase10BackendRequestStage::CanonicalMirValidation,
+                        Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                        "Phase 13.5 general-loop route accepts only i32 loop-carried edge arguments",
+                    ));
+                }
+            }
+        }
+    }
+    if parameterized_non_final_blocks == 0 {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 13.5 general-loop requires parameterized non-final blocks",
+        ));
+    }
+
+    let backedges = compiler_mir_cfg_natural_backedges(function).map_err(|error| {
+        phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            error.to_string(),
+        )
+    })?;
+    if expected_backedge_count != 1 || backedges.len() != 1 {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 13.5 general-loop requires exactly one natural backedge",
+        ));
+    }
+    if backedges[0].1 != header_index {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 13.5 general-loop loop-header metadata is inconsistent",
+        ));
+    }
+
+    let predecessors = compiler_mir_cfg_predecessors(function).map_err(|error| {
+        phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            error.to_string(),
+        )
+    })?;
+    let preheaders: Vec<usize> = predecessors[header_index]
+        .iter()
+        .copied()
+        .filter(|source_index| *source_index != backedges[0].0)
+        .collect();
+    if preheaders.len() != 1 {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 13.5 general-loop requires exactly one non-backedge preheader",
+        ));
+    }
+
+    let edge_to_header = |source_index: usize| {
+        let source = &function.blocks[source_index];
+        match &source.terminator {
+            CompilerMirLoweringTerminator::Jump { edge }
+                if edge.target == header_label => Some(edge),
+            CompilerMirLoweringTerminator::BranchI32Literal {
+                then_edge,
+                else_edge,
+                ..
+            }
+            | CompilerMirLoweringTerminator::BranchLocalI32Positive {
+                then_edge,
+                else_edge,
+                ..
+            }
+            | CompilerMirLoweringTerminator::BranchBlockParamI32Positive {
+                then_edge,
+                else_edge,
+                ..
+            } => {
+                if then_edge.target == header_label {
+                    Some(then_edge)
+                } else if else_edge.target == header_label {
+                    Some(else_edge)
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        }
+    };
+    let preheader_edge = edge_to_header(preheaders[0]).ok_or_else(|| {
+        phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 13.5 general-loop preheader does not target the declared loop header",
+        )
+    })?;
+    let initial_value = match preheader_edge.arguments.first() {
+        Some(CompilerMirLoweringEdgeArgument::I32Literal(value)) => *value,
+        _ => {
+            return Err(phase10_backend_request_error(
+                Phase10BackendRequestStage::CanonicalMirValidation,
+                Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                "Phase 13.5 general-loop primary carried value requires a literal preheader seed",
+            ));
+        }
+    };
+    let backedge_edge = edge_to_header(backedges[0].0).ok_or_else(|| {
+        phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "Phase 13.5 general-loop natural backedge does not target the declared loop header",
+        )
+    })?;
+    let primary_delta = match backedge_edge.arguments.first() {
+        Some(
+            CompilerMirLoweringEdgeArgument::BlockParamI32AddI32Literal {
+                value,
+                ..
+            },
+        ) if *value < 0 => *value,
+        _ => {
+            return Err(phase10_backend_request_error(
+                Phase10BackendRequestStage::CanonicalMirValidation,
+                Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                "Phase 13.5 general-loop requires a strictly decreasing primary backedge value",
+            ));
+        }
+    };
+    if initial_value > 0 {
+        let step = 0i64 - i64::from(primary_delta);
+        let iterations =
+            (i64::from(initial_value) + step - 1) / step;
+        if iterations > 1024 {
+            return Err(phase10_backend_request_error(
+                Phase10BackendRequestStage::CanonicalMirValidation,
+                Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                "Phase 13.5 general-loop exceeds the deterministic iteration limit",
+            ));
+        }
+    }
+
+    match &function.blocks[header_index].terminator {
+        CompilerMirLoweringTerminator::BranchBlockParamI32Positive {
+            name,
+            else_edge,
+            ..
+        } if *name == function.blocks[header_index].parameters[0].name
+            && else_edge.target == exit_label => {}
+        _ => {
+            return Err(phase10_backend_request_error(
+                Phase10BackendRequestStage::CanonicalMirValidation,
+                Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                "Phase 13.5 general-loop header must expose one reachable conditional exit",
+            ));
+        }
+    }
+    Ok(())
 }
 
 fn validate_phase11_block_parameter_loop_fixture(
@@ -5205,6 +5607,9 @@ fn compile_phase10_scalar_metadata_request_path(
                 if is_phase13_scalar_expression_fixture(&fixture) {
                     validate_phase13_scalar_expression_fixture(&fixture)?;
                     source_route = "phase13_scalar_expression";
+                } else if is_phase13_general_loop_fixture(&fixture) {
+                    validate_phase13_general_loop_fixture(&fixture)?;
+                    source_route = "phase13_general_loop";
                 } else if is_phase11_block_parameter_loop_fixture(&fixture) {
                     validate_phase11_block_parameter_loop_fixture(&fixture)?;
                     source_route = "block_parameter_loop";
@@ -9318,6 +9723,8 @@ fn validate_compiler_mir_fixture_path(input_path: &Path) -> Result<(), Box<dyn E
             recognize_compiler_mir_fixture_metadata(&fixture.metadata)?;
             if is_phase13_scalar_expression_fixture(&fixture) {
                 validate_phase13_scalar_expression_fixture(&fixture)?;
+            } else if is_phase13_general_loop_fixture(&fixture) {
+                validate_phase13_general_loop_fixture(&fixture)?;
             } else if is_phase11_block_parameter_loop_fixture(&fixture) {
                 validate_phase11_block_parameter_loop_fixture(&fixture)?;
             } else if is_phase13_nested_structured_cfg_fixture(&fixture) {
@@ -9399,7 +9806,13 @@ fn emit_compiler_mir_fixture_object(
                 CompilerMirPipelineStage::FixtureValidation,
                 CompilerMirPipelineFailureKind::InvalidFixture,
             )?;
-            if is_phase11_block_parameter_loop_fixture(&fixture) {
+            if is_phase13_general_loop_fixture(&fixture) {
+                compiler_mir_pipeline_wrap_box(
+                    validate_phase13_general_loop_fixture(&fixture),
+                    CompilerMirPipelineStage::FixtureValidation,
+                    CompilerMirPipelineFailureKind::InvalidFixture,
+                )?;
+            } else if is_phase11_block_parameter_loop_fixture(&fixture) {
                 compiler_mir_pipeline_wrap_box(
                     validate_phase11_block_parameter_loop_fixture(&fixture),
                     CompilerMirPipelineStage::FixtureValidation,
@@ -9436,6 +9849,19 @@ fn emit_compiler_mir_fixture_contents_object(
         CompilerMirPipelineStage::FixtureValidation,
         CompilerMirPipelineFailureKind::InvalidFixture,
     )?;
+    if is_phase13_general_loop_fixture(&fixture) {
+        compiler_mir_pipeline_wrap_box(
+            validate_phase13_general_loop_fixture(&fixture),
+            CompilerMirPipelineStage::FixtureValidation,
+            CompilerMirPipelineFailureKind::InvalidFixture,
+        )?;
+    } else if is_phase11_block_parameter_loop_fixture(&fixture) {
+        compiler_mir_pipeline_wrap_box(
+            validate_phase11_block_parameter_loop_fixture(&fixture),
+            CompilerMirPipelineStage::FixtureValidation,
+            CompilerMirPipelineFailureKind::InvalidFixture,
+        )?;
+    }
     lower_compiler_mir_ingestion_function_to_object(
         output_path,
         &fixture.function,

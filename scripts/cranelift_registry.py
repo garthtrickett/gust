@@ -90,9 +90,35 @@ PHASE13_NESTED_STRUCTURED_CFG_BLOCK_POLICY = (
     "source_order_cfg_indices_with_origin_and_stable_predecessor_metadata"
 )
 PHASE13_NESTED_STRUCTURED_CFG_DEFERRED_REASONS = [
-    "deferred_p13_structured_cfg_loop_or_backedge",
     "deferred_p13_structured_cfg_short_circuit",
     "deferred_p13_structured_cfg_condition_operator",
+]
+PHASE13_GENERAL_LOOP_ENTRY_ID = (
+    "p13_general_loop_backedge_source_route"
+)
+PHASE13_GENERAL_LOOP_SHAPES = [
+    "single_loop_carried_scalar",
+    "multiple_loop_carried_scalars",
+    "conditional_header_exit",
+]
+PHASE13_GENERAL_LOOP_PARAMETER_POLICY = (
+    "one_or_two_i32_block_parameters_in_source_declaration_order"
+)
+PHASE13_GENERAL_LOOP_INVARIANTS = [
+    "loop_header_identity",
+    "dominance",
+    "reachability",
+    "reducibility",
+    "reachable_exit",
+    "termination_structure",
+    "backedge_argument_arity",
+    "backedge_argument_type",
+]
+PHASE13_GENERAL_LOOP_DEFERRED_REASONS = [
+    "deferred_p13_general_loop_early_return",
+    "deferred_p13_general_loop_nested_loop",
+    "deferred_p13_general_loop_body_control_flow",
+    "deferred_p13_general_loop_condition_operator",
 ]
 SUPPORTED_FIELDS = {
     "statuses", "origin_phases", "feature_families",
@@ -966,6 +992,7 @@ def verify_phase13_scalar_expression_contract(registry):
             PHASE13_SCALAR_EXPRESSION_ENTRY_ID,
             PHASE13_MULTIPLE_LOCALS_ENTRY_ID,
             PHASE13_NESTED_STRUCTURED_CFG_ENTRY_ID,
+            PHASE13_GENERAL_LOOP_ENTRY_ID,
         }
         and row["capability_decision"] == "supported"
     ]
@@ -1102,6 +1129,7 @@ def verify_phase13_multiple_locals_contract(registry):
             PHASE13_SCALAR_EXPRESSION_ENTRY_ID,
             PHASE13_MULTIPLE_LOCALS_ENTRY_ID,
             PHASE13_NESTED_STRUCTURED_CFG_ENTRY_ID,
+            PHASE13_GENERAL_LOOP_ENTRY_ID,
         }
         and row["capability_decision"] == "supported"
     ]
@@ -1204,8 +1232,8 @@ def verify_phase13_nested_structured_cfg_contract(registry):
         "Phase 13 nested structured-CFG malformed MIR inventory must contain six fixtures",
     )
     require(
-        isinstance(deferred, list) and len(deferred) == 3,
-        "Phase 13 nested structured-CFG deferred inventory must contain three fixtures",
+        isinstance(deferred, list) and len(deferred) == 2,
+        "Phase 13 nested structured-CFG deferred inventory must contain two fixtures",
     )
     for index, path in enumerate(focused):
         fixture(
@@ -1239,7 +1267,7 @@ def verify_phase13_nested_structured_cfg_contract(registry):
     )
     require(
         evidence.get("deferred_fixture")
-        == "compiler/phase11_structured_cfg_deferred_loop_source.gst",
+        == "compiler/phase13_structured_cfg_short_circuit_deferred_source.gst",
         "Phase 13 nested structured-CFG differential deferred fixture drifted",
     )
 
@@ -1250,6 +1278,7 @@ def verify_phase13_nested_structured_cfg_contract(registry):
             PHASE13_SCALAR_EXPRESSION_ENTRY_ID,
             PHASE13_MULTIPLE_LOCALS_ENTRY_ID,
             PHASE13_NESTED_STRUCTURED_CFG_ENTRY_ID,
+            PHASE13_GENERAL_LOOP_ENTRY_ID,
         }
         and row["capability_decision"] == "supported"
     ]
@@ -1264,6 +1293,153 @@ def verify_phase13_nested_structured_cfg_contract(registry):
         "validation_invariants": evidence["validation_invariants"],
         "focused_fixture_count": len(focused),
         "malformed_fixture_count": len(malformed),
+        "deferred_fixture_count": len(deferred),
+        "deferred_reason_codes": evidence["deferred_fixture_reason_codes"],
+    }
+
+
+def verify_phase13_general_loop_contract(registry):
+    verify_phase13_nested_structured_cfg_contract(registry)
+    rows = {
+        entry["id"]: entry
+        for entry in phase_entries(registry, "phase13")
+    }
+    require(
+        PHASE13_GENERAL_LOOP_ENTRY_ID in rows,
+        "Phase 13 general-loop registry row is missing",
+    )
+    entry = rows[PHASE13_GENERAL_LOOP_ENTRY_ID]
+    require(
+        entry["status"] == "migrated",
+        "Phase 13 general-loop row must be migrated",
+    )
+    require(
+        entry["route_owner"] == "generic_canonical_mir",
+        "Phase 13 general-loop row must use generic canonical MIR",
+    )
+    require(
+        entry["worker_capability_owner"]
+        == "worker_block_parameter_loop_lowering",
+        "Phase 13 general-loop worker owner drifted",
+    )
+    require(
+        entry["diagnostic_owner"] == "canonical_mir_cfg_verifier",
+        "Phase 13 general-loop diagnostic owner drifted",
+    )
+    require(
+        entry["capability_decision"] == "supported",
+        "Phase 13 general-loop capability decision must be supported",
+    )
+    require(
+        entry["capability_reason_code"]
+        == "supported_p13_general_loop_backedge_source_route",
+        "Phase 13 general-loop capability reason code drifted",
+    )
+    require(
+        entry["expected_failure_stage"] == "none_supported",
+        "Phase 13 general-loop supported row has a failure stage",
+    )
+    require(
+        entry["source_fixture"]
+        == "compiler/phase11_structured_cfg_deferred_loop_source.gst",
+        "Phase 13 general-loop source fixture drifted",
+    )
+    require(
+        entry["canonical_mir_fixture"]
+        == "compiler/fixtures/native_backend_phase13_general_loop_ingestion.mir",
+        "Phase 13 general-loop canonical MIR fixture drifted",
+    )
+    require(
+        entry["deferral_reason"] == "none_migrated"
+        and entry["future_destination_phase"] == "none_migrated",
+        "Migrated Phase 13 general-loop row must use canonical migrated fields",
+    )
+
+    evidence = entry["evidence"]
+    require(
+        evidence.get("selected_loop_shapes") == PHASE13_GENERAL_LOOP_SHAPES,
+        "Phase 13 general-loop selected shape inventory drifted",
+    )
+    require(
+        evidence.get("parameter_arity_policy")
+        == PHASE13_GENERAL_LOOP_PARAMETER_POLICY,
+        "Phase 13 general-loop parameter policy drifted",
+    )
+    require(
+        evidence.get("validation_invariants")
+        == PHASE13_GENERAL_LOOP_INVARIANTS,
+        "Phase 13 general-loop validation inventory drifted",
+    )
+    focused = evidence.get("focused_source_fixtures")
+    malformed = evidence.get("malformed_canonical_mir_fixtures")
+    invalid = evidence.get("invalid_source_fixtures")
+    deferred = evidence.get("deferred_source_fixtures")
+    require(
+        isinstance(focused, list) and len(focused) == 3,
+        "Phase 13 general-loop focused source inventory must contain three fixtures",
+    )
+    require(
+        isinstance(malformed, list) and len(malformed) == 6,
+        "Phase 13 general-loop malformed MIR inventory must contain six fixtures",
+    )
+    require(
+        isinstance(invalid, list) and len(invalid) == 1,
+        "Phase 13 general-loop invalid source inventory must contain one fixture",
+    )
+    require(
+        isinstance(deferred, list) and len(deferred) == 4,
+        "Phase 13 general-loop deferred source inventory must contain four fixtures",
+    )
+    for group_name, paths in (
+        ("focused_source_fixtures", focused),
+        ("malformed_canonical_mir_fixtures", malformed),
+        ("invalid_source_fixtures", invalid),
+        ("deferred_source_fixtures", deferred),
+    ):
+        for index, path in enumerate(paths):
+            fixture(
+                path,
+                f"{entry['id']}.evidence.{group_name}[{index}]",
+            )
+    require(
+        evidence.get("deferred_fixture_reason_codes")
+        == PHASE13_GENERAL_LOOP_DEFERRED_REASONS,
+        "Phase 13 general-loop deferred reason inventory drifted",
+    )
+    require(
+        evidence.get("positive_expectation")
+        == "exit_0_phase13_single_carried_loop",
+        "Phase 13 general-loop differential expectation drifted",
+    )
+    require(
+        evidence.get("deferred_fixture")
+        == "compiler/phase13_loop_early_return_deferred_source.gst",
+        "Phase 13 general-loop differential deferred fixture drifted",
+    )
+
+    other_supported = [
+        row["id"]
+        for row in rows.values()
+        if row["id"] not in {
+            PHASE13_SCALAR_EXPRESSION_ENTRY_ID,
+            PHASE13_MULTIPLE_LOCALS_ENTRY_ID,
+            PHASE13_NESTED_STRUCTURED_CFG_ENTRY_ID,
+            PHASE13_GENERAL_LOOP_ENTRY_ID,
+        }
+        and row["capability_decision"] == "supported"
+    ]
+    require(
+        not other_supported,
+        "Patch 13.5 must not migrate unrelated Phase 13 rows: "
+        f"{sorted(other_supported)}",
+    )
+    return {
+        "entry_id": entry["id"],
+        "selected_shapes": evidence["selected_loop_shapes"],
+        "validation_invariants": evidence["validation_invariants"],
+        "focused_fixture_count": len(focused),
+        "malformed_fixture_count": len(malformed),
+        "invalid_fixture_count": len(invalid),
         "deferred_fixture_count": len(deferred),
         "deferred_reason_codes": evidence["deferred_fixture_reason_codes"],
     }
@@ -1436,6 +1612,7 @@ def render_phase13(registry):
     scalar_contract = verify_phase13_scalar_expression_contract(registry)
     local_state_contract = verify_phase13_multiple_locals_contract(registry)
     cfg_contract = verify_phase13_nested_structured_cfg_contract(registry)
+    loop_contract = verify_phase13_general_loop_contract(registry)
     rows = phase_entries(registry, "phase13")
     status_counts = totals["status_counts"]
     current_status_counts = Counter(entry["status"] for entry in rows)
@@ -1446,7 +1623,7 @@ def render_phase13(registry):
         "",
         "<!-- Generated by scripts/cranelift_registry.py; do not edit by hand. -->",
         "",
-        "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_VERSION: 5",
+        "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_VERSION: 6",
         "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_AUTHORITY: generated_review_view",
         "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_CANONICAL_SOURCE: scripts/cranelift_feature_registry.json",
         (
@@ -1510,7 +1687,15 @@ def render_phase13(registry):
             "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_STRUCTURED_CFG_SHAPES: "
             + ",".join(cfg_contract["selected_shapes"])
         ),
-        "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_NEXT_MILESTONE: patch13_5_block_parameter_expansion",
+        (
+            "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_GENERAL_LOOP_STATUS: "
+            "patch13_5_general_loop_backedge_migrated"
+        ),
+        (
+            "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_GENERAL_LOOP_SHAPES: "
+            + ",".join(loop_contract["selected_shapes"])
+        ),
+        "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_NEXT_MILESTONE: patch13_6_parameters_and_arguments",
         "",
         "This review artifact is generated from the structured registry. Phase 12.5",
         "is closed under the recorded framework closure version. Stable Phase 13 IDs",
@@ -1643,6 +1828,50 @@ def render_phase13(registry):
             )
         ),
         "",
+        "### Patch 13.5 general-loop and backedge selection",
+        "",
+        (
+            "- Migrated row: "
+            f"`{loop_contract['entry_id']}`"
+        ),
+        (
+            "- Selected shapes: "
+            + ", ".join(
+                f"`{shape}`"
+                for shape in loop_contract["selected_shapes"]
+            )
+        ),
+        (
+            "- Validation invariants: "
+            + ", ".join(
+                f"`{invariant}`"
+                for invariant in loop_contract["validation_invariants"]
+            )
+        ),
+        (
+            "- Focused source fixtures: "
+            f"`{loop_contract['focused_fixture_count']}`"
+        ),
+        (
+            "- Malformed MIR fixtures: "
+            f"`{loop_contract['malformed_fixture_count']}`"
+        ),
+        (
+            "- Invalid source fixtures: "
+            f"`{loop_contract['invalid_fixture_count']}`"
+        ),
+        (
+            "- Deferred source fixtures: "
+            f"`{loop_contract['deferred_fixture_count']}`"
+        ),
+        (
+            "- Deferred reason codes: "
+            + ", ".join(
+                f"`{reason}`"
+                for reason in loop_contract["deferred_reason_codes"]
+            )
+        ),
+        "",
         "## Opening entries",
         "",
         *[phase13_record(entry) for entry in rows],
@@ -1658,9 +1887,10 @@ def render_phase13(registry):
         "- Patch 13.2 changes only the bounded scalar-expression capability selected in the registry.",
         "- Patch 13.3 migrates the selected multiple-local row without changing stable IDs or parent relationships.",
         "- Patch 13.4 migrates the selected nested-CFG row with deterministic blocks, origins, predecessors, and explicit termination.",
-        "- Unsupported cyclic, short-circuit, and non-reducible control-flow shapes remain deferred before driver discovery.",
+        "- Patch 13.5 migrates the selected single-header loop row with block-parameter-carried state and precise residual deferrals.",
+        "- Unsupported early-return, nested-loop, body-control-flow, and condition-operator loop shapes remain deferred before driver discovery.",
         "",
-        "Patch 13.4 nested structured-control-flow parity is active; Phase 13 may proceed to Patch 13.5.",
+        "Patch 13.5 general-loop and backedge parity is active; Phase 13 may proceed to Patch 13.6.",
         "",
     ]
     rendered = "\n".join(lines)
@@ -1778,6 +2008,7 @@ def main():
             "verify-phase13-scalar-expression-contract",
             "verify-phase13-multiple-locals-contract",
             "verify-phase13-nested-structured-cfg-contract",
+            "verify-phase13-general-loop-contract",
             "verify-phase13-opening-rebase",
             "verify-phase13-parent-traceability",
             "verify-phase13-opening-totals",
@@ -1803,6 +2034,8 @@ def main():
             verify_phase13_multiple_locals_contract(registry)
         elif command == "verify-phase13-nested-structured-cfg-contract":
             verify_phase13_nested_structured_cfg_contract(registry)
+        elif command == "verify-phase13-general-loop-contract":
+            verify_phase13_general_loop_contract(registry)
         elif command == "verify-phase13-opening-rebase":
             verify_phase13_opening_rebase(registry)
         elif command == "verify-phase13-parent-traceability":
@@ -1832,6 +2065,7 @@ def main():
     scalar_contract = verify_phase13_scalar_expression_contract(registry)
     local_state_contract = verify_phase13_multiple_locals_contract(registry)
     cfg_contract = verify_phase13_nested_structured_cfg_contract(registry)
+    loop_contract = verify_phase13_general_loop_contract(registry)
     phase13_statuses = phase13_totals["status_counts"]
     phase13_parents = phase13_totals["parent_kinds"]
     messages = {
@@ -1885,6 +2119,15 @@ def main():
             f"{cfg_contract['focused_fixture_count']} focused, "
             f"{cfg_contract['malformed_fixture_count']} malformed MIR, and "
             f"{cfg_contract['deferred_fixture_count']} deferred fixtures."
+        ),
+        "verify-phase13-general-loop-contract": (
+            "✅ Phase 13 general-loop registry contract passed: "
+            f"{loop_contract['entry_id']} owns "
+            f"{','.join(loop_contract['selected_shapes'])} with "
+            f"{loop_contract['focused_fixture_count']} focused, "
+            f"{loop_contract['malformed_fixture_count']} malformed MIR, "
+            f"{loop_contract['invalid_fixture_count']} invalid source, and "
+            f"{loop_contract['deferred_fixture_count']} deferred fixtures."
         ),
         "verify-phase13-opening-rebase": (
             "✅ Phase 13 opening rebase passed: stable IDs and parent "

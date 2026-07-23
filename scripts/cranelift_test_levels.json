@@ -207,6 +207,7 @@
     "guard-cranelift-registry-schema": 1,
     "guard-cranelift-return-int-native-smoke": 3,
     "guard-cranelift-route-architecture-contract": 1,
-    "guard-cranelift-phase13-nested-structured-cfg-parity": 2
+    "guard-cranelift-phase13-nested-structured-cfg-parity": 2,
+    "guard-cranelift-phase13-general-loop-parity": 2
   }
 }

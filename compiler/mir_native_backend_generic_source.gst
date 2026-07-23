@@ -2369,6 +2369,13 @@ func mir_native_generic_source_lower(programs: std.Vector[ast.Program[ctx], ctx]
                             ctx
                         );
                     }
+                    if block_parameter_loop_result.deferred == 1 {
+                        return mir_native_generic_deferred_result(
+                            block_parameter_loop_result.reason_code,
+                            block_parameter_loop_result.diagnostic,
+                            ctx
+                        );
+                    }
                     if block_parameter_loop_result.represented == 1 {
                         bundle = block_parameter_loop_result.bundle;
                     } else {

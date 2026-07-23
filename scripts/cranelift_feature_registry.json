@@ -1524,15 +1524,13 @@
           "compiler/fixtures/native_backend_phase13_nested_cfg_invalid_early_return.mir"
         ],
         "deferred_source_fixtures": [
-          "compiler/phase11_structured_cfg_deferred_loop_source.gst",
           "compiler/phase13_structured_cfg_short_circuit_deferred_source.gst",
           "compiler/phase13_structured_cfg_condition_deferred_source.gst"
         ],
         "deferral_reason_prefix": "deferred_p13_structured_cfg_",
         "positive_expectation": "exit_36_phase13_nested_structured_cfg",
-        "deferred_fixture": "compiler/phase11_structured_cfg_deferred_loop_source.gst",
+        "deferred_fixture": "compiler/phase13_structured_cfg_short_circuit_deferred_source.gst",
         "deferred_fixture_reason_codes": [
-          "deferred_p13_structured_cfg_loop_or_backedge",
           "deferred_p13_structured_cfg_short_circuit",
           "deferred_p13_structured_cfg_condition_operator"
         ]
@@ -1544,23 +1542,69 @@
       "parent": "phase11_category:loops_and_backedges",
       "feature_family": "block_parameter",
       "ci_family": "block-params",
-      "status": "candidate_deferred",
-      "route_owner": "deferred",
+      "status": "migrated",
+      "route_owner": "generic_canonical_mir",
       "worker_capability_owner": "worker_block_parameter_loop_lowering",
       "diagnostic_owner": "canonical_mir_cfg_verifier",
       "capability_id": "phase13_generic_source_to_mir",
       "capability_decision_owner": "compiler_generic_native_capability_planner",
-      "capability_decision": "deferred",
-      "capability_reason_code": "deferred_p13_general_loop_backedge_source_route",
-      "expected_failure_stage": "before_driver_discovery",
-      "source_fixture": "compiler/phase11_block_parameter_stride_loop_source.gst",
-      "canonical_mir_fixture": "none_compiler_generated_phase13_general_loop_bundle_pending",
+      "capability_decision": "supported",
+      "capability_reason_code": "supported_p13_general_loop_backedge_source_route",
+      "expected_failure_stage": "none_supported",
+      "source_fixture": "compiler/phase11_structured_cfg_deferred_loop_source.gst",
+      "canonical_mir_fixture": "compiler/fixtures/native_backend_phase13_general_loop_ingestion.mir",
       "differential_case_id": "phase13_opening:p13_general_loop_backedge_source_route",
-      "deferral_reason": "general_loop_carried_state_beyond_the_bounded_Phase11_shapes_is_not_connected",
-      "future_destination_phase": "phase13",
+      "deferral_reason": "none_migrated",
+      "future_destination_phase": "none_migrated",
       "closure_version": "phase13_opening_inventory_v1",
       "evidence": {
-        "opening_record_kind": "candidate"
+        "opening_record_kind": "candidate",
+        "selected_loop_shapes": [
+          "single_loop_carried_scalar",
+          "multiple_loop_carried_scalars",
+          "conditional_header_exit"
+        ],
+        "parameter_arity_policy": "one_or_two_i32_block_parameters_in_source_declaration_order",
+        "validation_invariants": [
+          "loop_header_identity",
+          "dominance",
+          "reachability",
+          "reducibility",
+          "reachable_exit",
+          "termination_structure",
+          "backedge_argument_arity",
+          "backedge_argument_type"
+        ],
+        "focused_source_fixtures": [
+          "compiler/phase11_structured_cfg_deferred_loop_source.gst",
+          "compiler/phase11_block_parameter_countdown_loop_source.gst",
+          "compiler/phase11_block_parameter_stride_loop_source.gst"
+        ],
+        "malformed_canonical_mir_fixtures": [
+          "compiler/fixtures/native_backend_phase13_general_loop_missing_backedge_argument.mir",
+          "compiler/fixtures/native_backend_phase13_general_loop_wrong_argument_type.mir",
+          "compiler/fixtures/native_backend_phase13_general_loop_invalid_header.mir",
+          "compiler/fixtures/native_backend_phase13_general_loop_missing_exit.mir",
+          "compiler/fixtures/native_backend_phase13_general_loop_malformed_state.mir",
+          "compiler/fixtures/native_backend_phase13_general_loop_irreducible.mir"
+        ],
+        "invalid_source_fixtures": [
+          "compiler/phase13_loop_non_decreasing_invalid_source.gst"
+        ],
+        "deferred_source_fixtures": [
+          "compiler/phase13_loop_early_return_deferred_source.gst",
+          "compiler/phase13_loop_nested_deferred_source.gst",
+          "compiler/phase13_loop_body_control_flow_deferred_source.gst",
+          "compiler/phase13_loop_condition_deferred_source.gst"
+        ],
+        "deferred_fixture_reason_codes": [
+          "deferred_p13_general_loop_early_return",
+          "deferred_p13_general_loop_nested_loop",
+          "deferred_p13_general_loop_body_control_flow",
+          "deferred_p13_general_loop_condition_operator"
+        ],
+        "positive_expectation": "exit_0_phase13_single_carried_loop",
+        "deferred_fixture": "compiler/phase13_loop_early_return_deferred_source.gst"
       }
     },
     {

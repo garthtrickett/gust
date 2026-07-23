@@ -10967,6 +10967,7 @@ guard-cranelift-phase11-structured-cfg-parity:
     fi
     echo "🔒 Checking Phase 11 structured CFG parity..."
     registry_doc="compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md"
+    phase13_registry_json="scripts/cranelift_feature_registry.json"
     generic_source="compiler/mir_native_backend_generic_source.gst"
     structured_cfg_source="compiler/mir_native_backend_structured_cfg_source.gst"
     route_source="compiler/mir_native_backend_source_route.gst"
@@ -11212,41 +11213,63 @@ guard-cranelift-phase11-structured-cfg-parity:
       compile_and_compare "$source_path" "$expected_exit" "$case_name"
     done
 
-    deferred_dir="$build_dir/deferred-loop"
-    mkdir -p "$deferred_dir"
-    deferred_output="$deferred_dir/existing-output"
-    missing_driver="/phase11/missing/structured-cfg/backend"
-    printf 'phase11-structured-cfg-output-sentinel\n' >"$deferred_output"
-    cp "$deferred_output" "$deferred_dir/existing-output.expected"
-    set +e
-    GUST_NATIVE_BACKEND_DRIVER="$missing_driver" \
-      ./gust --backend cranelift \
-        -o "$deferred_output" \
+    phase13_loop_status="$(python3 - "$phase13_registry_json" <<'PY_PHASE13_LOOP_STATUS'
+    import json
+    import sys
+
+    with open(sys.argv[1], encoding="utf-8") as registry_file:
+        registry = json.load(registry_file)
+
+    for entry in registry["phase13"]["entries"]:
+        if entry["id"] == "p13_general_loop_backedge_source_route":
+            print(entry["status"])
+            break
+    else:
+        raise SystemExit("missing Phase 13 general-loop registry row")
+    PY_PHASE13_LOOP_STATUS
+    )"
+    if [ "$phase13_loop_status" = "migrated" ]; then
+      compile_and_compare \
         "$deferred_loop_source" \
-        >"$deferred_dir/native.stdout" \
-        2>"$deferred_dir/native.stderr"
-    deferred_status="$?"
-    set -e
-    if [ "$deferred_status" = "0" ]; then
-      echo "Loop/backedge source unexpectedly entered the Phase 11 structured-CFG route."
-      exit 1
-    fi
-    cat "$deferred_dir/native.stdout" "$deferred_dir/native.stderr" >"$deferred_dir/native.combined"
-    if ! rg -n -F 'Experimental Cranelift backend selection is valid, but the source-level route is not connected yet.' "$deferred_dir/native.combined" >/dev/null; then
-      echo "Deferred loop/backedge source did not emit the expected typed deferred diagnostic."
-      cat "$deferred_dir/native.combined"
-      exit 1
-    fi
-    if rg -n -F 'Native backend driver discovery error:' "$deferred_dir/native.combined" >/dev/null ||
-       rg -n -F "$missing_driver" "$deferred_dir/native.combined" >/dev/null; then
-      echo "Deferred loop/backedge source reached driver discovery."
-      cat "$deferred_dir/native.combined"
-      exit 1
-    fi
-    if ! cmp -s "$deferred_dir/existing-output.expected" "$deferred_output"; then
-      echo "Deferred loop/backedge source modified the protected existing output."
-      diff -u "$deferred_dir/existing-output.expected" "$deferred_output" || true
-      exit 1
+        0 \
+        phase13-successor-general-loop
+    else
+      deferred_dir="$build_dir/deferred-loop"
+      mkdir -p "$deferred_dir"
+      deferred_output="$deferred_dir/existing-output"
+      missing_driver="/phase11/missing/structured-cfg/backend"
+      printf 'phase11-structured-cfg-output-sentinel\n' >"$deferred_output"
+      cp "$deferred_output" "$deferred_dir/existing-output.expected"
+      set +e
+      GUST_NATIVE_BACKEND_DRIVER="$missing_driver" \
+        ./gust --backend cranelift \
+          -o "$deferred_output" \
+          "$deferred_loop_source" \
+          >"$deferred_dir/native.stdout" \
+          2>"$deferred_dir/native.stderr"
+      deferred_status="$?"
+      set -e
+      if [ "$deferred_status" = "0" ]; then
+        echo "Loop/backedge source unexpectedly entered the Phase 11 structured-CFG route."
+        exit 1
+      fi
+      cat "$deferred_dir/native.stdout" "$deferred_dir/native.stderr" >"$deferred_dir/native.combined"
+      if ! rg -n -F 'Experimental Cranelift backend selection is valid, but the source-level route is not connected yet.' "$deferred_dir/native.combined" >/dev/null; then
+        echo "Deferred loop/backedge source did not emit the expected typed deferred diagnostic."
+        cat "$deferred_dir/native.combined"
+        exit 1
+      fi
+      if rg -n -F 'Native backend driver discovery error:' "$deferred_dir/native.combined" >/dev/null ||
+         rg -n -F "$missing_driver" "$deferred_dir/native.combined" >/dev/null; then
+        echo "Deferred loop/backedge source reached driver discovery."
+        cat "$deferred_dir/native.combined"
+        exit 1
+      fi
+      if ! cmp -s "$deferred_dir/existing-output.expected" "$deferred_output"; then
+        echo "Deferred loop/backedge source modified the protected existing output."
+        diff -u "$deferred_dir/existing-output.expected" "$deferred_output" || true
+        exit 1
+      fi
     fi
 
     malformed_dir="$build_dir/malformed"
@@ -11419,7 +11442,7 @@ guard-cranelift-phase11-structured-cfg-parity:
     printf '%s\n' "$readme_flat" |
       rg -F 'The next milestone is block-parameter and loop/backedge parity.' >/dev/null
 
-    echo "✅ Phase 11 structured-CFG parity migrated: nested branches, arbitrary acyclic joins and jumps, predecessor-driven Cranelift sealing, six malformed-CFG rejections, and explicit source-level loop deferral are covered."
+    echo "✅ Phase 11 structured-CFG parity migrated: nested branches, arbitrary acyclic joins and jumps, predecessor-driven Cranelift sealing, six malformed-CFG rejections, and successor-aware loop ownership are covered."
 
 
 guard-cranelift-phase11-block-parameter-loop-parity:
@@ -13638,7 +13661,6 @@ guard-cranelift-phase13-nested-structured-cfg-parity:
       compiler/phase13_early_return_structured_cfg_source.gst
       compiler/phase13_branch_local_structured_cfg_source.gst
       compiler/phase13_nested_condition_structured_cfg_source.gst
-      compiler/phase11_structured_cfg_deferred_loop_source.gst
       compiler/phase13_structured_cfg_short_circuit_deferred_source.gst
       compiler/phase13_structured_cfg_condition_deferred_source.gst
       compiler/fixtures/native_backend_phase13_nested_cfg_missing_target.mir
@@ -13689,7 +13711,6 @@ guard-cranelift-phase13-nested-structured-cfg-parity:
       ';contract=phase13_4;branch_count='
       'deferred_p13_structured_cfg_short_circuit'
       'deferred_p13_structured_cfg_condition_operator'
-      'deferred_p13_structured_cfg_loop_or_backedge'
     )
     for required_symbol in "${required_cfg_symbols[@]}"; do
       rg -n -F "$required_symbol" "$structured_cfg_source" >/dev/null
@@ -13733,7 +13754,135 @@ guard-cranelift-phase13-nested-structured-cfg-parity:
     fi
 
     bash "$evidence_script"
-    echo "✅ Phase 13.4 migrated reducible nested CFG shapes with deterministic blocks, source origins, stable predecessors, explicit termination, branch-local state, early returns, expression conditions, and precise pre-driver deferrals."
+    echo "✅ Phase 13.4 migrated reducible nested CFG shapes with deterministic blocks, source origins, stable predecessors, explicit termination, branch-local state, early returns, expression conditions, and precise residual pre-driver deferrals."
+
+guard-cranelift-phase13-general-loop-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 13.5 general-loop and backedge parity..."
+    lowerer_source="compiler/mir_native_backend_block_parameter_loop_source.gst"
+    generic_source="compiler/mir_native_backend_generic_source.gst"
+    route_source="compiler/mir_native_backend_source_route.gst"
+    request_source="compiler/mir_native_backend_request.gst"
+    rust_driver="compiler/experiments/cranelift/src/main.rs"
+    registry_validator="scripts/cranelift_registry.py"
+    family_runner="scripts/cranelift_ci_family.py"
+    level_runner="scripts/cranelift_test_levels.py"
+    evidence_script="scripts/phase13_general_loop.sh"
+    canonical_fixture="compiler/fixtures/native_backend_phase13_general_loop_ingestion.mir"
+
+    required_files=(
+      "$lowerer_source"
+      "$generic_source"
+      "$route_source"
+      "$request_source"
+      "$rust_driver"
+      "$registry_validator"
+      "$family_runner"
+      "$level_runner"
+      "$evidence_script"
+      "$canonical_fixture"
+      compiler/phase11_structured_cfg_deferred_loop_source.gst
+      compiler/phase11_block_parameter_countdown_loop_source.gst
+      compiler/phase11_block_parameter_stride_loop_source.gst
+      compiler/phase13_loop_non_decreasing_invalid_source.gst
+      compiler/phase13_loop_early_return_deferred_source.gst
+      compiler/phase13_loop_nested_deferred_source.gst
+      compiler/phase13_loop_body_control_flow_deferred_source.gst
+      compiler/phase13_loop_condition_deferred_source.gst
+      compiler/fixtures/native_backend_phase13_general_loop_missing_backedge_argument.mir
+      compiler/fixtures/native_backend_phase13_general_loop_wrong_argument_type.mir
+      compiler/fixtures/native_backend_phase13_general_loop_invalid_header.mir
+      compiler/fixtures/native_backend_phase13_general_loop_missing_exit.mir
+      compiler/fixtures/native_backend_phase13_general_loop_malformed_state.mir
+      compiler/fixtures/native_backend_phase13_general_loop_irreducible.mir
+    )
+    for required_file in "${required_files[@]}"; do
+      if [ ! -f "$required_file" ] || [ -L "$required_file" ]; then
+        echo "Missing regular Phase 13.5 general-loop input: $required_file"
+        exit 1
+      fi
+    done
+
+    PHASE13_NESTED_STRUCTURED_CFG_SKIP_DYNAMIC=1 \
+      just guard-cranelift-phase13-nested-structured-cfg-parity
+    python3 "$registry_validator" verify-phase13-general-loop-contract
+    python3 "$registry_validator" check-projection
+    PHASE11_BLOCK_PARAMETER_LOOP_SKIP_DYNAMIC=1 \
+      just guard-cranelift-phase11-block-parameter-loop-parity
+    PHASE11_ROUTE_ARCHITECTURE_SKIP_DYNAMIC=1 \
+      just guard-cranelift-route-architecture-contract
+
+    level_record="$(
+      python3 "$level_runner" level \
+        guard-cranelift-phase13-general-loop-parity
+    )"
+    printf '%s\n' "$level_record" |
+      rg -n -F $'guard-cranelift-phase13-general-loop-parity	2	' >/dev/null
+
+    required_lowerer_symbols=(
+      'parameter_arity: int'
+      'deferred: int'
+      'reason_code: str'
+      'func mir_native_block_parameter_analyze_single_loop('
+      'func mir_native_block_parameter_loop_deferred_reason('
+      'func mir_native_block_parameter_emit_single_loop('
+      'profile=general_loop'
+      'contract=phase13_5'
+      'loop_header=loop_header'
+      'backedge_count=1'
+      'reachable_exit=loop_exit'
+      'termination=bounded'
+      'deferred_p13_general_loop_early_return'
+      'deferred_p13_general_loop_nested_loop'
+      'deferred_p13_general_loop_body_control_flow'
+      'deferred_p13_general_loop_condition_operator'
+      'iteration_count >= 1024'
+    )
+    for required_symbol in "${required_lowerer_symbols[@]}"; do
+      rg -n -F "$required_symbol" "$lowerer_source" >/dev/null
+    done
+
+    required_worker_symbols=(
+      'fn compiler_mir_cfg_natural_backedges('
+      'fn is_phase13_general_loop_fixture('
+      'fn validate_phase13_general_loop_fixture('
+      'source_route = "phase13_general_loop";'
+      'requires exactly one natural backedge'
+      'loop-header metadata is inconsistent'
+      'reachable exit must return transported scalar state'
+      'loop-carried state metadata is inconsistent'
+    )
+    for required_symbol in "${required_worker_symbols[@]}"; do
+      rg -n -F "$required_symbol" "$rust_driver" >/dev/null
+    done
+
+    rg -n -F 'block_parameter_loop_result.deferred == 1' "$generic_source" >/dev/null
+    rg -n -F 'block_parameter_loop_result.reason_code' "$generic_source" >/dev/null
+    rg -n -F 'generic_result.reason_code' "$route_source" >/dev/null
+    if rg -n \
+        -e 'phase13_loop_.*_source\.gst' \
+        "$lowerer_source" "$generic_source" "$route_source" >/dev/null
+    then
+      echo "Phase 13.5 lowering embeds a source fixture identity."
+      exit 1
+    fi
+    if rg -n \
+        -e '^[[:space:]]*(source_path|source_text|source_bytes|ast_program):' \
+        "$request_source" >/dev/null
+    then
+      echo "Phase 13.5 changed the isolated worker request boundary."
+      exit 1
+    fi
+
+    bash -n "$evidence_script"
+    if [ "${PHASE13_GENERAL_LOOP_SKIP_DYNAMIC:-0}" = "1" ]; then
+      echo "✅ Phase 13.5 general-loop static contract passed; focused differential evidence was intentionally skipped."
+      exit 0
+    fi
+
+    bash "$evidence_script"
+    echo "✅ Phase 13.5 migrated the selected single-header reducible-loop inventory with one- and two-value block-parameter state, bounded execution, natural-backedge validation, and precise residual deferrals."
 
 guard-cranelift-phase12-5-close:
     #!/usr/bin/env bash

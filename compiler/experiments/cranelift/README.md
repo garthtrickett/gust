@@ -1597,9 +1597,37 @@ unterminated blocks, and inconsistent early-return predecessor metadata.
 
 Six differential source lanes cover positive and negative nested branches,
 sequential branches, early returns, branch-local state, and nested arithmetic
-conditions. Loops or backedges, short-circuit conditions, and unselected
-control-flow conditions remain precise `deferred_p13_structured_cfg_*`
-capability decisions before driver discovery, with existing outputs and the
-isolated worker boundary preserved. The registry-owned CFG family runs
-`guard-cranelift-phase13-nested-structured-cfg-parity` at Level 2. The next
-milestone is Phase 13 Patch 13.5.
+conditions. Short-circuit conditions and unselected control-flow predicates
+remain precise `deferred_p13_structured_cfg_*` capability decisions before
+driver discovery, with existing outputs and the isolated worker boundary
+preserved. Loop and backedge ownership moves to Patch 13.5. The registry-owned
+CFG family runs `guard-cranelift-phase13-nested-structured-cfg-parity` at Level
+2.
+
+Phase 13 Patch 13.5 migrates the selected general-loop row as
+`phase13_migrated_general_loop_backedge_parity`. The compiler-owned
+block-parameter lowerer now accepts a single mutable scalar carried through a
+single natural backedge, in addition to the existing two-value countdown and
+stride loop forms. Entry, loop-header, body, and exit blocks transport state
+only through ordered `i32` block parameters and edge arguments. The selected
+header condition remains a positive scalar test, execution is bounded by the
+existing deterministic 1024-iteration ceiling, and the source route emits no
+fixture-name or source-text recognizer.
+
+The Phase 13.5 worker contract identifies the loop header, verifies one natural
+backedge, checks dominance and reducibility, requires a reachable conditional
+exit, confirms one or two carried `i32` values, and rejects edge-argument arity
+or type drift before object lowering. Six malformed canonical-MIR fixtures
+cover a missing backedge argument, wrong argument type, inconsistent header
+metadata, no reachable return, malformed carried-state metadata, and an
+irreducible graph.
+
+Focused differential evidence compares default MIR-to-C, explicit MIR-to-C,
+and explicit Cranelift for the new one-value loop and the inherited two-value
+countdown and stride loops. A non-decreasing loop is rejected as an invalid
+bounded model. Early returns, nested loops, branch-shaped loop bodies, and
+unselected condition operators remain precise `deferred_p13_general_loop_*`
+decisions before driver discovery, preserving existing output and creating no
+request or object artifact. The registry-owned block-params family runs
+`guard-cranelift-phase13-general-loop-parity` at Level 2. The next milestone is
+Phase 13 Patch 13.6.

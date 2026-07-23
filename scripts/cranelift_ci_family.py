@@ -32,8 +32,8 @@ RUNNERS = (
     ),
     (
         "block-params",
-        "guard-cranelift-phase11-block-parameter-loop-parity",
-        "PHASE11_BLOCK_PARAMETER_LOOP_SKIP_DYNAMIC",
+        "guard-cranelift-phase13-general-loop-parity",
+        "PHASE13_GENERAL_LOOP_SKIP_DYNAMIC",
     ),
     (
         "direct-calls",

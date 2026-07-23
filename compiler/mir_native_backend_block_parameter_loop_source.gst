@@ -24,6 +24,7 @@ type MirNativeBlockParameterLoopModel[ctx] struct {
     diagnostic: str,
     source_path: str,
     profile: int,
+    parameter_arity: int,
     first_initial: int,
     second_initial: int,
     first_then_delta: int,
@@ -40,6 +41,8 @@ type MirNativeBlockParameterLoopModel[ctx] struct {
 type MirNativeBlockParameterLoopSourceResult[ctx] struct {
     represented: int,
     invalid: int,
+    deferred: int,
+    reason_code: str,
     diagnostic: str,
     bundle: mir.MirProgramBundle[ctx]
 }
@@ -75,6 +78,7 @@ func mir_native_block_parameter_empty_model(ctx: &Arena) MirNativeBlockParameter
     model.diagnostic = std.Clone(ctx, "");
     model.source_path = std.Clone(ctx, "");
     model.profile = 0;
+    model.parameter_arity = 0;
     model.first_initial = 0;
     model.second_initial = 0;
     model.first_then_delta = 0;
@@ -93,6 +97,8 @@ func mir_native_block_parameter_empty_result(ctx: &Arena) MirNativeBlockParamete
     mut result: MirNativeBlockParameterLoopSourceResult[ctx];
     result.represented = 0;
     result.invalid = 0;
+    result.deferred = 0;
+    result.reason_code = std.Clone(ctx, "");
     result.diagnostic = std.Clone(ctx, "");
     result.bundle = mir.mir_make_program_bundle("invalid", ctx);
     return result;
@@ -262,6 +268,155 @@ func mir_native_block_parameter_return_name(statement: ast.Statement[ctx], name:
     }
 }
 
+func mir_native_block_parameter_statements_contain_tag(
+    statements: std.Vector[ast.Statement[ctx], ctx],
+    target_tag: int,
+    ctx: &Arena
+) int {
+    mut statement_index := 0;
+    while statement_index < len(statements) {
+        mut statement := statements[statement_index];
+        unsafe {
+            if statement.tag == target_tag {
+                return 1;
+            }
+            if statement.tag == 6 {
+                mut body := ctx[statement.While.body];
+                mut body_statements: std.Vector[ast.Statement[ctx], ctx] :=
+                    ctx[body.statements];
+                if mir_native_block_parameter_statements_contain_tag(
+                    body_statements,
+                    target_tag,
+                    ctx
+                ) == 1 {
+                    return 1;
+                }
+            }
+            if statement.tag == 7 {
+                mut consequence := ctx[statement.If.consequence];
+                mut consequence_statements:
+                    std.Vector[ast.Statement[ctx], ctx] :=
+                        ctx[consequence.statements];
+                if mir_native_block_parameter_statements_contain_tag(
+                    consequence_statements,
+                    target_tag,
+                    ctx
+                ) == 1 {
+                    return 1;
+                }
+                if statement.If.alternative !=
+                    empty[Index[ast.BlockStatement[ctx], ctx]]
+                {
+                    mut alternative := ctx[statement.If.alternative];
+                    mut alternative_statements:
+                        std.Vector[ast.Statement[ctx], ctx] :=
+                            ctx[alternative.statements];
+                    if mir_native_block_parameter_statements_contain_tag(
+                        alternative_statements,
+                        target_tag,
+                        ctx
+                    ) == 1 {
+                        return 1;
+                    }
+                }
+            }
+        }
+        statement_index = statement_index + 1;
+    }
+    return 0;
+}
+
+func mir_native_block_parameter_loop_deferred_reason(
+    programs: std.Vector[ast.Program[ctx], ctx],
+    module_prefixes: std.Vector[str, ctx],
+    ctx: &Arena
+) str {
+    if len(programs) != 1 || len(module_prefixes) != 1 ||
+       std.str_eq(module_prefixes[0], "") == 0
+    {
+        return std.Clone(ctx, "");
+    }
+    mut program := programs[0];
+    mut top_level: std.Vector[ast.Statement[ctx], ctx] :=
+        ctx[program.statements];
+    if len(top_level) != 1 ||
+       mir_native_block_parameter_entry_function(top_level[0], ctx) == 0
+    {
+        return std.Clone(ctx, "");
+    }
+    unsafe {
+        mut function_statement := top_level[0];
+        mut function_body := ctx[function_statement.FunctionDecl.body];
+        mut statements: std.Vector[ast.Statement[ctx], ctx] :=
+            ctx[function_body.statements];
+        mut statement_index := 0;
+        while statement_index < len(statements) {
+            mut statement := statements[statement_index];
+            if statement.tag == 6 {
+                mut body := ctx[statement.While.body];
+                mut body_statements: std.Vector[ast.Statement[ctx], ctx] :=
+                    ctx[body.statements];
+                if mir_native_block_parameter_statements_contain_tag(
+                    body_statements,
+                    6,
+                    ctx
+                ) == 1 {
+                    return std.Clone(
+                        ctx,
+                        "deferred_p13_general_loop_nested_loop"
+                    );
+                }
+                if mir_native_block_parameter_statements_contain_tag(
+                    body_statements,
+                    12,
+                    ctx
+                ) == 1 {
+                    return std.Clone(
+                        ctx,
+                        "deferred_p13_general_loop_early_return"
+                    );
+                }
+                if mir_native_block_parameter_statements_contain_tag(
+                    body_statements,
+                    7,
+                    ctx
+                ) == 1 {
+                    return std.Clone(
+                        ctx,
+                        "deferred_p13_general_loop_body_control_flow"
+                    );
+                }
+                mut condition := ctx[statement.While.condition];
+                if condition.tag != 10 ||
+                   std.str_eq(condition.Binary.op, ">") == 0
+                {
+                    return std.Clone(
+                        ctx,
+                        "deferred_p13_general_loop_condition_operator"
+                    );
+                }
+                mut condition_left := ctx[condition.Binary.left];
+                mut condition_right := ctx[condition.Binary.right];
+                if condition_left.tag != 0 ||
+                   condition_right.tag != 1 ||
+                   condition_right.Integer.val != 0
+                {
+                    return std.Clone(
+                        ctx,
+                        "deferred_p13_general_loop_condition_shape"
+                    );
+                }
+                return std.Clone(
+                    ctx,
+                    "deferred_p13_general_loop_body_shape"
+                );
+            }
+            statement_index = statement_index + 1;
+        }
+    }
+    return std.Clone(ctx, "");
+}
+
 func mir_native_block_parameter_analyze_non_final_join(statements: std.Vector[ast.Statement[ctx], ctx], source_path: str, ctx: &Arena) MirNativeBlockParameterLoopModel[ctx] {
     mut model := mir_native_block_parameter_empty_model(ctx);
     if len(statements) != 5 || statements[2].tag != 7 ||
@@ -350,6 +505,7 @@ func mir_native_block_parameter_analyze_non_final_join(statements: std.Vector[as
         model.represented = 1;
         model.source_path = std.Clone(ctx, source_path);
         model.profile = 0;
+        model.parameter_arity = 2;
         model.first_initial = first_decl.delta;
         model.second_initial = second_decl.delta;
         model.first_then_delta = then_arm.first_delta;
@@ -359,6 +515,83 @@ func mir_native_block_parameter_analyze_non_final_join(statements: std.Vector[as
         model.final_then_delta = final_then.delta;
         model.final_else_delta = final_else.delta;
         model.expected_exit = selected_first + selected_final_delta;
+        return model;
+    }
+}
+
+func mir_native_block_parameter_analyze_single_loop(
+    statements: std.Vector[ast.Statement[ctx], ctx],
+    source_path: str,
+    ctx: &Arena
+) MirNativeBlockParameterLoopModel[ctx] {
+    mut model := mir_native_block_parameter_empty_model(ctx);
+    if len(statements) != 3 || statements[1].tag != 6 {
+        return model;
+    }
+    mut carried_decl := mir_native_block_parameter_decl_literal(
+        statements[0],
+        ctx
+    );
+    if carried_decl.represented == 0 {
+        return model;
+    }
+    unsafe {
+        mut carried_name := statements[0].VarDecl.name;
+        mut while_statement := statements[1];
+        mut condition := ctx[while_statement.While.condition];
+        if mir_native_block_parameter_condition(
+            condition,
+            carried_name,
+            ctx
+        ) == 0 {
+            return model;
+        }
+        mut body := ctx[while_statement.While.body];
+        mut updates := mir_native_block_parameter_single_assignment_arm(
+            body,
+            carried_name,
+            ctx
+        );
+        if updates.represented == 0 ||
+           mir_native_block_parameter_return_name(
+               statements[2],
+               carried_name,
+               ctx
+           ) == 0
+        {
+            return model;
+        }
+
+        model.represented = 1;
+        model.source_path = std.Clone(ctx, source_path);
+        model.profile = 2;
+        model.parameter_arity = 1;
+        model.first_initial = carried_decl.delta;
+        model.loop_first_delta = updates.delta;
+        if model.first_initial > 0 && model.loop_first_delta >= 0 {
+            model.invalid = 1;
+            model.diagnostic = std.Clone(
+                ctx,
+                "Native backend general-loop lowering requires a strictly decreasing positive loop parameter"
+            );
+            return model;
+        }
+
+        mut carried_value := model.first_initial;
+        mut iteration_count := 0;
+        while carried_value > 0 {
+            if iteration_count >= 1024 {
+                model.invalid = 1;
+                model.diagnostic = std.Clone(
+                    ctx,
+                    "Native backend general-loop lowering exceeded the deterministic iteration limit"
+                );
+                return model;
+            }
+            carried_value = carried_value + model.loop_first_delta;
+            iteration_count = iteration_count + 1;
+        }
+        model.expected_exit = carried_value;
         return model;
     }
 }
@@ -400,6 +633,7 @@ func mir_native_block_parameter_analyze_loop(statements: std.Vector[ast.Statemen
         model.represented = 1;
         model.source_path = std.Clone(ctx, source_path);
         model.profile = 1;
+        model.parameter_arity = 2;
         model.first_initial = first_decl.delta;
         model.second_initial = second_decl.delta;
         model.loop_first_delta = updates.first_delta;
@@ -453,6 +687,14 @@ func mir_native_block_parameter_analyze(programs: std.Vector[ast.Program[ctx], c
         mut body := ctx[function_statement.FunctionDecl.body];
         mut statements: std.Vector[ast.Statement[ctx], ctx] := ctx[body.statements];
         model = mir_native_block_parameter_analyze_non_final_join(
+            statements,
+            module_paths[0],
+            ctx
+        );
+        if model.represented == 1 {
+            return model;
+        }
+        model = mir_native_block_parameter_analyze_single_loop(
             statements,
             module_paths[0],
             ctx
@@ -648,6 +890,91 @@ func mir_native_block_parameter_emit_loop(model: MirNativeBlockParameterLoopMode
     return std.Clone(ctx, emitted);
 }
 
+func mir_native_block_parameter_emit_single_loop(
+    model: MirNativeBlockParameterLoopModel[ctx],
+    ctx: &Arena
+) str {
+    mut emitted :=
+        "format: gust.compiler_mir_ingestion.v1\nfunction: main\nbackend_symbol: main\nparameter_count: 0\nreturn_type: int\nlocal_count: 0\nentry_block: entry\nblock_count: 4\nblock_0_label: entry\nblock_0_parameter_count: 0\nblock_0_statement_count: 0\nblock_0_terminator_kind: Jump\nblock_0_terminator_target: loop_header\nblock_0_terminator_argument_count: 1\n";
+    emitted = mir_native_block_parameter_emit_edge_argument(
+        emitted,
+        0,
+        "",
+        0,
+        "I32Literal",
+        "",
+        model.first_initial,
+        ctx
+    );
+    emitted = mir_native_block_parameter_append(
+        emitted,
+        "block_1_label: loop_header\nblock_1_parameter_count: 1\nblock_1_parameter_0_name: loop_value\nblock_1_parameter_0_type: int\nblock_1_statement_count: 0\nblock_1_terminator_kind: BranchBlockParamI32Positive\nblock_1_terminator_block_param: loop_value\nblock_1_terminator_then: loop_body\nblock_1_terminator_then_argument_count: 1\n",
+        ctx
+    );
+    emitted = mir_native_block_parameter_emit_edge_argument(
+        emitted,
+        1,
+        "then_",
+        0,
+        "BlockParamI32",
+        "loop_value",
+        0,
+        ctx
+    );
+    emitted = mir_native_block_parameter_append(
+        emitted,
+        "block_1_terminator_else: loop_exit\nblock_1_terminator_else_argument_count: 1\n",
+        ctx
+    );
+    emitted = mir_native_block_parameter_emit_edge_argument(
+        emitted,
+        1,
+        "else_",
+        0,
+        "BlockParamI32",
+        "loop_value",
+        0,
+        ctx
+    );
+    emitted = mir_native_block_parameter_append(
+        emitted,
+        "block_2_label: loop_body\nblock_2_parameter_count: 1\nblock_2_parameter_0_name: body_value\nblock_2_parameter_0_type: int\nblock_2_statement_count: 0\nblock_2_terminator_kind: Jump\nblock_2_terminator_target: loop_header\nblock_2_terminator_argument_count: 1\n",
+        ctx
+    );
+    emitted = mir_native_block_parameter_emit_edge_argument(
+        emitted,
+        2,
+        "",
+        0,
+        "BlockParamI32AddI32Literal",
+        "body_value",
+        model.loop_first_delta,
+        ctx
+    );
+    emitted = mir_native_block_parameter_append(
+        emitted,
+        "block_3_label: loop_exit\nblock_3_parameter_count: 1\nblock_3_parameter_0_name: result_value\nblock_3_parameter_0_type: int\nblock_3_statement_count: 0\nblock_3_terminator_kind: ReturnBlockParamI32\nblock_3_terminator_block_param: result_value\nmetadata_count: 1\nmetadata_0_kind: provenance\nmetadata_0_attachment: function\nmetadata_0_policy: recognized_preserved\nmetadata_0_payload: kind=BlockParameterLoop;profile=general_loop;reducibility=single_header;parameter_arity=1;contract=phase13_5;loop_header=loop_header;backedge_count=1;reachable_exit=loop_exit;termination=bounded;origin=",
+        ctx
+    );
+    emitted = mir_native_block_parameter_append(
+        emitted,
+        model.source_path,
+        ctx
+    );
+    emitted = mir_native_block_parameter_append(
+        emitted,
+        "\nexpected_exit: ",
+        ctx
+    );
+    emitted = mir_native_block_parameter_append_int(
+        emitted,
+        model.expected_exit,
+        ctx
+    );
+    emitted = mir_native_block_parameter_append(emitted, "\n", ctx);
+    return std.Clone(ctx, emitted);
+}
+
 func mir_native_block_parameter_add_parameter(module: mir.MirProgramBundleModule[ctx], block_label: str, ordinal: int, name: str, ctx: &Arena) mir.MirProgramBundleModule[ctx] {
     return mir.mir_program_bundle_module_with_block_parameter(
         module,
@@ -669,6 +996,9 @@ func mir_native_block_parameter_emit_bundle(model: MirNativeBlockParameterLoopMo
     if model.profile == 1 {
         canonical = mir_native_block_parameter_emit_loop(model, ctx);
         object_name = "phase11_block_parameter_loop_module.o";
+    } else if model.profile == 2 {
+        canonical = mir_native_block_parameter_emit_single_loop(model, ctx);
+        object_name = "phase13_general_loop_module.o";
     }
     mut bundle := mir.mir_make_program_bundle("main", ctx);
     mut module := mir.mir_make_program_bundle_module(
@@ -703,7 +1033,7 @@ func mir_native_block_parameter_emit_bundle(model: MirNativeBlockParameterLoopMo
         module = mir_native_block_parameter_add_parameter(
             module, "result", 0, "result_value", ctx
         );
-    } else {
+    } else if model.profile == 1 {
         module = mir_native_block_parameter_add_parameter(
             module, "loop_header", 0, "loop_first", ctx
         );
@@ -715,6 +1045,16 @@ func mir_native_block_parameter_emit_bundle(model: MirNativeBlockParameterLoopMo
         );
         module = mir_native_block_parameter_add_parameter(
             module, "loop_body", 1, "body_second", ctx
+        );
+        module = mir_native_block_parameter_add_parameter(
+            module, "loop_exit", 0, "result_value", ctx
+        );
+    } else {
+        module = mir_native_block_parameter_add_parameter(
+            module, "loop_header", 0, "loop_value", ctx
+        );
+        module = mir_native_block_parameter_add_parameter(
+            module, "loop_body", 0, "body_value", ctx
         );
         module = mir_native_block_parameter_add_parameter(
             module, "loop_exit", 0, "result_value", ctx
@@ -732,6 +1072,20 @@ func mir_native_block_parameter_loop_source_lower(programs: std.Vector[ast.Progr
         ctx
     );
     if model.represented == 0 {
+        mut deferred_reason :=
+            mir_native_block_parameter_loop_deferred_reason(
+                programs,
+                module_prefixes,
+                ctx
+            );
+        if len(deferred_reason) > 0 {
+            result.deferred = 1;
+            result.reason_code = deferred_reason;
+            result.diagnostic = std.Clone(
+                ctx,
+                "General-loop deferral: source loop shape is outside the bounded reducible Phase 13.5 inventory"
+            );
+        }
         return result;
     }
     result.represented = 1;
