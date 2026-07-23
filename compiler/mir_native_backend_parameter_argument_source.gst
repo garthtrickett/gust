@@ -442,11 +442,16 @@ func mir_native_parameter_argument_analyze_branch(
 
         mut condition := ctx[branch.If.condition];
         mut consequence := ctx[branch.If.consequence];
-        mut alternative := ctx[branch.If.alternative];
         mut then_statements: std.Vector[ast.Statement[ctx], ctx] :=
             ctx[consequence.statements];
         mut else_statements: std.Vector[ast.Statement[ctx], ctx] :=
-            ctx[alternative.statements];
+            std.VectorNew(ctx);
+        if branch.If.alternative !=
+            empty[Index[ast.BlockStatement[ctx], ctx]]
+        {
+            mut alternative := ctx[branch.If.alternative];
+            else_statements = ctx[alternative.statements];
+        }
         mut fallback_expression := ctx[fallback.Return.expr];
         if condition.tag != 10 ||
            std.str_eq(condition.Binary.op, ">") == 0 ||
