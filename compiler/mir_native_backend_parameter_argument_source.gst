@@ -71,11 +71,8 @@ func mir_native_parameter_argument_append_int(
     value: int,
     ctx: &Arena
 ) str {
-    return mir_native_parameter_argument_append(
-        output,
-        std.FormatInt(value),
-        ctx
-    );
+    mut formatted := std.FormatInt(value);
+    return std.Clone(ctx, std.Concat(output, formatted));
 }
 
 func mir_native_parameter_argument_field(
@@ -87,7 +84,8 @@ func mir_native_parameter_argument_field(
     mut emitted := mir_native_parameter_argument_append(output, key, ctx);
     emitted = mir_native_parameter_argument_append(emitted, ": ", ctx);
     emitted = mir_native_parameter_argument_append(emitted, value, ctx);
-    return mir_native_parameter_argument_append(emitted, "\n", ctx);
+    emitted = mir_native_parameter_argument_append(emitted, "\n", ctx);
+    return std.Clone(ctx, emitted);
 }
 
 func mir_native_parameter_argument_int_field(
@@ -96,12 +94,14 @@ func mir_native_parameter_argument_int_field(
     value: int,
     ctx: &Arena
 ) str {
-    return mir_native_parameter_argument_field(
+    mut formatted := std.FormatInt(value);
+    mut emitted := mir_native_parameter_argument_field(
         output,
         key,
-        std.FormatInt(value),
+        formatted,
         ctx
     );
+    return std.Clone(ctx, emitted);
 }
 
 func mir_native_parameter_argument_empty_helper(
@@ -1031,12 +1031,13 @@ func mir_native_parameter_argument_emit_call_literal(
         "I32Literal",
         ctx
     );
-    return mir_native_parameter_argument_int_field(
+    emitted = mir_native_parameter_argument_int_field(
         emitted,
         mir_native_parameter_argument_append(key, "_value", ctx),
         value,
         ctx
     );
+    return std.Clone(ctx, emitted);
 }
 
 func mir_native_parameter_argument_emit_call_local(
@@ -1058,12 +1059,13 @@ func mir_native_parameter_argument_emit_call_local(
         "LocalI32",
         ctx
     );
-    return mir_native_parameter_argument_field(
+    emitted = mir_native_parameter_argument_field(
         emitted,
         mir_native_parameter_argument_append(key, "_local", ctx),
         local_name,
         ctx
     );
+    return std.Clone(ctx, emitted);
 }
 
 func mir_native_parameter_argument_emit_call_block_parameter(
@@ -1085,7 +1087,7 @@ func mir_native_parameter_argument_emit_call_block_parameter(
         "BlockParamI32",
         ctx
     );
-    return mir_native_parameter_argument_field(
+    emitted = mir_native_parameter_argument_field(
         emitted,
         mir_native_parameter_argument_append(
             key,
@@ -1095,6 +1097,7 @@ func mir_native_parameter_argument_emit_call_block_parameter(
         parameter_name,
         ctx
     );
+    return std.Clone(ctx, emitted);
 }
 
 func mir_native_parameter_argument_emit_call_header(
@@ -1132,7 +1135,7 @@ func mir_native_parameter_argument_emit_call_header(
         helper_name,
         ctx
     );
-    return mir_native_parameter_argument_int_field(
+    emitted = mir_native_parameter_argument_int_field(
         emitted,
         mir_native_parameter_argument_append(
             prefix,
@@ -1142,6 +1145,7 @@ func mir_native_parameter_argument_emit_call_header(
         3,
         ctx
     );
+    return std.Clone(ctx, emitted);
 }
 
 func mir_native_parameter_argument_emit_edge_literal(
@@ -1163,12 +1167,13 @@ func mir_native_parameter_argument_emit_edge_literal(
         "I32Literal",
         ctx
     );
-    return mir_native_parameter_argument_int_field(
+    emitted = mir_native_parameter_argument_int_field(
         emitted,
         mir_native_parameter_argument_append(key, "_value", ctx),
         value,
         ctx
     );
+    return std.Clone(ctx, emitted);
 }
 
 func mir_native_parameter_argument_emit_edge_block_parameter(
@@ -1214,7 +1219,7 @@ func mir_native_parameter_argument_emit_edge_block_parameter(
             ctx
         );
     }
-    return emitted;
+    return std.Clone(ctx, emitted);
 }
 
 func mir_native_parameter_argument_emit_edge_local(
@@ -1236,12 +1241,13 @@ func mir_native_parameter_argument_emit_edge_local(
         "LocalI32",
         ctx
     );
-    return mir_native_parameter_argument_field(
+    emitted = mir_native_parameter_argument_field(
         emitted,
         mir_native_parameter_argument_append(key, "_local", ctx),
         local_name,
         ctx
     );
+    return std.Clone(ctx, emitted);
 }
 
 func mir_native_parameter_argument_profile_name(
@@ -1341,12 +1347,13 @@ func mir_native_parameter_argument_emit_parameter_metadata(
         ";codegen=preserved",
         ctx
     );
-    return mir_native_parameter_argument_field(
+    emitted = mir_native_parameter_argument_field(
         emitted,
         mir_native_parameter_argument_append(prefix, "_payload", ctx),
         payload,
         ctx
     );
+    return std.Clone(ctx, emitted);
 }
 
 func mir_native_parameter_argument_emit_helper(
@@ -1533,12 +1540,13 @@ func mir_native_parameter_argument_emit_helper(
         );
         parameter_index = parameter_index + 1;
     }
-    return mir_native_parameter_argument_int_field(
+    emitted = mir_native_parameter_argument_int_field(
         emitted,
         "function_0_expected_exit",
         0,
         ctx
     );
+    return std.Clone(ctx, emitted);
 }
 
 func mir_native_parameter_argument_emit_main_metadata(
@@ -1600,12 +1608,13 @@ func mir_native_parameter_argument_emit_main_metadata(
         payload,
         ctx
     );
-    return mir_native_parameter_argument_int_field(
+    emitted = mir_native_parameter_argument_int_field(
         emitted,
         "function_1_expected_exit",
         model.expected_exit,
         ctx
     );
+    return std.Clone(ctx, emitted);
 }
 
 func mir_native_parameter_argument_emit_main_header(
@@ -1683,12 +1692,13 @@ func mir_native_parameter_argument_emit_main_header(
             ctx
         );
     }
-    return mir_native_parameter_argument_field(
+    emitted = mir_native_parameter_argument_field(
         emitted,
         "function_1_entry_block",
         "entry",
         ctx
     );
+    return std.Clone(ctx, emitted);
 }
 
 func mir_native_parameter_argument_emit_first_call(
@@ -1719,13 +1729,14 @@ func mir_native_parameter_argument_emit_first_call(
         model.first_argument_1,
         ctx
     );
-    return mir_native_parameter_argument_emit_call_literal(
+    emitted = mir_native_parameter_argument_emit_call_literal(
         emitted,
         prefix,
         2,
         model.first_argument_2,
         ctx
     );
+    return std.Clone(ctx, emitted);
 }
 
 func mir_native_parameter_argument_emit_branch_profile(
@@ -1868,11 +1879,12 @@ func mir_native_parameter_argument_emit_branch_profile(
         model.else_value,
         ctx
     );
-    return mir_native_parameter_argument_emit_main_metadata(
+    emitted = mir_native_parameter_argument_emit_main_metadata(
         emitted,
         model,
         ctx
     );
+    return std.Clone(ctx, emitted);
 }
 
 func mir_native_parameter_argument_emit_repeated_profile(
@@ -1975,11 +1987,12 @@ func mir_native_parameter_argument_emit_repeated_profile(
         model.second_local,
         ctx
     );
-    return mir_native_parameter_argument_emit_main_metadata(
+    emitted = mir_native_parameter_argument_emit_main_metadata(
         emitted,
         model,
         ctx
     );
+    return std.Clone(ctx, emitted);
 }
 
 func mir_native_parameter_argument_emit_join_profile(
@@ -2239,11 +2252,12 @@ func mir_native_parameter_argument_emit_join_profile(
         model.second_local,
         ctx
     );
-    return mir_native_parameter_argument_emit_main_metadata(
+    emitted = mir_native_parameter_argument_emit_main_metadata(
         emitted,
         model,
         ctx
     );
+    return std.Clone(ctx, emitted);
 }
 
 func mir_native_parameter_argument_emit_loop_profile(
@@ -2589,11 +2603,12 @@ func mir_native_parameter_argument_emit_loop_profile(
         "exit_total",
         ctx
     );
-    return mir_native_parameter_argument_emit_main_metadata(
+    emitted = mir_native_parameter_argument_emit_main_metadata(
         emitted,
         model,
         ctx
     );
+    return std.Clone(ctx, emitted);
 }
 
 func mir_native_parameter_argument_emit_bundle(
