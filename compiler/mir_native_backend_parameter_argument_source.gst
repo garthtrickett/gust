@@ -2616,6 +2616,27 @@ func mir_native_parameter_argument_emit_loop_profile(
     return std.Clone(ctx, emitted);
 }
 
+func mir_native_parameter_argument_add_block_parameter(
+    module: mir.MirProgramBundleModule[ctx],
+    block_label: str,
+    ordinal: int,
+    name: str,
+    ctx: &Arena
+) mir.MirProgramBundleModule[ctx] {
+    return mir.mir_program_bundle_module_with_block_parameter(
+        module,
+        mir.mir_make_program_bundle_block_parameter(
+            "main",
+            block_label,
+            ordinal,
+            name,
+            "int",
+            ctx
+        ),
+        ctx
+    );
+}
+
 func mir_native_parameter_argument_emit_bundle(
     model: MirNativeParameterArgumentModel[ctx],
     ctx: &Arena
@@ -2687,6 +2708,50 @@ func mir_native_parameter_argument_emit_bundle(
         ),
         ctx
     );
+    if model.profile == 3 {
+        module = mir_native_parameter_argument_add_block_parameter(
+            module,
+            "loop_header",
+            0,
+            model.first_local,
+            ctx
+        );
+        module = mir_native_parameter_argument_add_block_parameter(
+            module,
+            "loop_header",
+            1,
+            model.second_local,
+            ctx
+        );
+        module = mir_native_parameter_argument_add_block_parameter(
+            module,
+            "loop_body",
+            0,
+            "body_remaining",
+            ctx
+        );
+        module = mir_native_parameter_argument_add_block_parameter(
+            module,
+            "loop_body",
+            1,
+            "body_total",
+            ctx
+        );
+        module = mir_native_parameter_argument_add_block_parameter(
+            module,
+            "loop_exit",
+            0,
+            "exit_remaining",
+            ctx
+        );
+        module = mir_native_parameter_argument_add_block_parameter(
+            module,
+            "loop_exit",
+            1,
+            "exit_total",
+            ctx
+        );
+    }
     return mir.mir_program_bundle_with_module(bundle, module, ctx);
 }
 
