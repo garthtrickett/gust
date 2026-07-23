@@ -1522,8 +1522,8 @@ func mir_native_direct_call_emit_function(
         ctx
     );
     emitted = mir_native_direct_call_append_int(emitted, function_index, ctx);
-    mut first_local_name := first_local_name;
-    mut second_local_name := second_local_name;
+    mut first_local_name := function.sequence_first_local;
+    mut second_local_name := function.sequence_second_local;
     if function.profile == 4 {
         first_local_name = function.graph_first_local;
         second_local_name = function.graph_second_local;
