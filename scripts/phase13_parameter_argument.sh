@@ -261,12 +261,26 @@ assert_preserved_pre_driver_failure() {
   fi
   cat "$case_dir/compiler.stdout" "$case_dir/compiler.stderr" \
     >"$case_dir/compiler.combined"
-  rg -n -F "decision=$decision" "$case_dir/compiler.combined" >/dev/null
   rg -n -F "$expected" "$case_dir/compiler.combined" >/dev/null
-  if [ "$decision" = "deferred" ]; then
-    rg -n -F 'expected_failure_stage=before_driver_discovery' \
-      "$case_dir/compiler.combined" >/dev/null
-  fi
+  case "$decision" in
+    deferred)
+      rg -n -F 'decision=deferred' "$case_dir/compiler.combined" >/dev/null
+      rg -n -F 'expected_failure_stage=before_driver_discovery' \
+        "$case_dir/compiler.combined" >/dev/null
+      ;;
+    source_or_type_failure)
+      if rg -n -F 'decision=deferred' \
+          "$case_dir/compiler.combined" >/dev/null; then
+        cat "$case_dir/compiler.combined" >&2
+        echo "Phase 13.6 source/type failure was incorrectly reported as deliberate deferral: $case_name" >&2
+        exit 1
+      fi
+      ;;
+    *)
+      echo "Unknown Phase 13.6 negative decision expectation: $decision" >&2
+      exit 1
+      ;;
+  esac
   cmp -s "$output.expected" "$output"
   if [ -e "$output.phase10.bundle" ] ||
      [ -e "$output.phase10.request" ] ||
