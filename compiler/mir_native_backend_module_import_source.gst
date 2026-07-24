@@ -760,9 +760,14 @@ func mir_native_module_import_analyze_host_predicate_branch(function: MirNativeM
             return analyzed;
         }
 
-        mut alternative := ctx[statements[1].If.alternative];
         mut alternative_statements: std.Vector[ast.Statement[ctx], ctx] :=
-            ctx[alternative.statements];
+            std.VectorNew(ctx);
+        if statements[1].If.alternative !=
+            empty[Index[ast.BlockStatement[ctx], ctx]]
+        {
+            mut alternative := ctx[statements[1].If.alternative];
+            alternative_statements = ctx[alternative.statements];
+        }
         if len(alternative_statements) != 0 {
             return analyzed;
         }

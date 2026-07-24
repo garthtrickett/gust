@@ -84,6 +84,23 @@ required_plan_symbols=(
   'if std.str_eq(symbol.signature, "(int,int)->int") == 1 {'
   'if has_two_int_abi == 1 {'
 )
+
+predicate_analyzer_body="$(
+  sed -n \
+    '/^func mir_native_module_import_analyze_host_predicate_branch(/,/^func mir_native_module_import_analyze_function_body(/p' \
+    compiler/mir_native_backend_module_import_source.gst
+)"
+for required_predicate_symbol in \
+  'empty[Index[ast.BlockStatement[ctx], ctx]]' \
+  'alternative_statements = ctx[alternative.statements];' \
+  'analyzed.profile = 4;'
+do
+  if ! printf '%s\n' "$predicate_analyzer_body" |
+      rg -n -F "$required_predicate_symbol" >/dev/null; then
+    echo "Predicate imported-call analyzer is missing fall-through branch handling: $required_predicate_symbol"
+    exit 1
+  fi
+done
 for required_plan_symbol in "${required_plan_symbols[@]}"; do
   if ! printf '%s\n' "$plan_body" |
       rg -n -F "$required_plan_symbol" >/dev/null; then
