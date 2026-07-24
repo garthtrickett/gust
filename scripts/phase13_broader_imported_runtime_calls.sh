@@ -315,8 +315,26 @@ expect_source_failure() {
   fi
   cat "$case_dir/compiler.stdout" "$case_dir/compiler.stderr" \
     >"$case_dir/compiler.combined"
-  rg -n -F 'gust_backend_parity_diagnostic:' \
-    "$case_dir/compiler.combined" >/dev/null
+  case "$name" in
+    unapproved|wrong-signature)
+      rg -n -F 'gust_backend_parity_diagnostic:' \
+        "$case_dir/compiler.combined" >/dev/null
+      ;;
+    wrong-arity)
+      rg -n -F "TypeError in $source_path" \
+        "$case_dir/compiler.combined" >/dev/null
+      rg -n -F 'expects 2 arguments but got 1' \
+        "$case_dir/compiler.combined" >/dev/null
+      ;;
+    wrong-type)
+      rg -n -F "TypeError in $source_path" \
+        "$case_dir/compiler.combined" >/dev/null
+      ;;
+    *)
+      echo "Unknown Phase 13.9 negative runtime case: $name"
+      exit 1
+      ;;
+  esac
 }
 
 for case_record in "${negative_cases[@]}"; do
