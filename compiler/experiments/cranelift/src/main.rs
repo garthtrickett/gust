@@ -9049,7 +9049,6 @@ fn validate_compiler_mir_module(
     let mut exported_entry_count = 0usize;
     let mut bundle_export_count = 0usize;
     for defined in &module.functions {
-        validate_compiler_mir_function_fixture(&defined.fixture, true)?;
         let function = &defined.fixture.function;
         if function
             .params
@@ -9069,6 +9068,9 @@ fn validate_compiler_mir_module(
             )
             .into());
         }
+
+        validate_compiler_mir_function_fixture(&defined.fixture, true)?;
+
         if function_names.insert(function.object_name, defined).is_some() {
             return Err(IoError::new(
                 ErrorKind::InvalidInput,
