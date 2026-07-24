@@ -6,5 +6,6 @@
 #include "runtime/collections.c"
 #include "runtime/file_io.c"
 #include "runtime/mock_payload.c"
+#include "runtime/approved_scalar_imports.c"
 
 

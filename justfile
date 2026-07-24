@@ -12275,8 +12275,8 @@ guard-cranelift-phase11-module-import-runtime-parity:
       '"bundle_export"'
       '"imported_bundle"'
       'phase11_import_registry_classification('
-      '"abs" if imported.name == "abs" => Some("RuntimeCall")'
-      '"toupper" if imported.name == "toupper" => Some("ExternFunction")'
+      '("abs", "abs", [TinyMirType::I32])'
+      '("toupper", "toupper", [TinyMirType::I32])'
       'validate_phase11_import_boundary_metadata('
       'unresolved imported bundle symbol'
       'whole-program symbol signature disagreement'
@@ -12485,6 +12485,107 @@ guard-cranelift-phase11-module-import-runtime-parity:
 
     echo "✅ Phase 11 module/import/runtime parity migrated: resolver-owned modules preserve qualified identities, approved host boundaries are registry-classified, Phase 9G links ordered objects without linker-surface expansion, and negative lanes preserve output."
 
+
+guard-cranelift-phase13-broader-imported-runtime-calls-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 13.9 broader imported and runtime-call parity..."
+    lowerer_source="compiler/mir_native_backend_module_import_source.gst"
+    rust_driver="compiler/experiments/cranelift/src/main.rs"
+    runtime_source="src/runtime/approved_scalar_imports.c"
+    evidence_script="scripts/phase13_broader_imported_runtime_calls.sh"
+    registry_validator="scripts/cranelift_registry.py"
+    level_runner="scripts/cranelift_test_levels.py"
+
+    for required_file in \
+      "$lowerer_source" "$rust_driver" "$runtime_source" \
+      "$evidence_script" "$registry_validator" "$level_runner" \
+      scripts/cranelift_feature_registry.json \
+      scripts/cranelift_ci_family.py
+    do
+      test -f "$required_file"
+      test ! -L "$required_file"
+    done
+
+    PHASE11_MODULE_IMPORT_RUNTIME_SKIP_DYNAMIC=1 \
+      just guard-cranelift-phase11-module-import-runtime-parity
+
+    python3 "$registry_validator" \
+      verify-phase13-broader-runtime-call-contract
+    python3 "$registry_validator" check-projection
+
+    level_record="$(
+      python3 "$level_runner" level \
+        guard-cranelift-phase13-broader-imported-runtime-calls-parity
+    )"
+    printf '%s\n' "$level_record" |
+      rg -n -F $'guard-cranelift-phase13-broader-imported-runtime-calls-parity\t2\t' >/dev/null
+
+    required_lowerer_symbols=(
+      'func mir_native_module_import_host_boundary('
+      'func mir_native_module_import_analyze_host_composition('
+      'func mir_native_module_import_analyze_host_predicate_branch('
+      'func mir_native_module_import_emit_host_composition_function('
+      'func mir_native_module_import_emit_host_predicate_function('
+      'tiny_host_add_one_i32'
+      'tiny_host_add_i32'
+      'tiny_host_is_positive_i32'
+      'len(parameter_types) == 2'
+      'argument.kind = 3'
+      'LocalI32AddI32Literal'
+      'BranchLocalI32Positive'
+      'runtime_boundary_classification_is_registry_validated'
+    )
+    for symbol in "${required_lowerer_symbols[@]}"; do
+      rg -n -F "$symbol" "$lowerer_source" >/dev/null
+    done
+
+    required_worker_symbols=(
+      'fn phase11_import_registry_classification('
+      '("abs", "abs", [TinyMirType::I32])'
+      '"tiny_host_add_one_i32"'
+      '"tiny_host_add_i32"'
+      '"tiny_host_is_positive_i32"'
+      'fn phase13_approved_scalar_host_requires_object('
+      'fn emit_phase13_approved_scalar_host_object('
+      'fn build_host_is_positive_i32_body('
+      'host_object: approved_host_object.clone()'
+      'additional_libraries: Vec::new()'
+      'additional_linker_args: Vec::new()'
+      'environment_overrides: Vec::new()'
+      '.phase13-approved-scalar-host.o'
+    )
+    for symbol in "${required_worker_symbols[@]}"; do
+      rg -n -F "$symbol" "$rust_driver" >/dev/null
+    done
+
+    required_runtime_symbols=(
+      'int32_t tiny_host_add_one_i32(int32_t value)'
+      'int32_t tiny_host_add_i32(int32_t left, int32_t right)'
+      'int32_t tiny_host_is_positive_i32(int32_t value)'
+    )
+    for symbol in "${required_runtime_symbols[@]}"; do
+      rg -n -F "$symbol" "$runtime_source" >/dev/null
+    done
+
+    if rg -n \
+        -e 'dlopen|dlsym|LoadLibrary|GetProcAddress' \
+        -e 'RUSTFLAGS|LIBRARY_PATH|LD_LIBRARY_PATH' \
+        -e 'additional_libraries:[[:space:]]*vec!\[[^]]' \
+        -e 'additional_linker_args:[[:space:]]*vec!\[[^]]' \
+        "$lowerer_source" "$runtime_source" scripts/phase13_broader_imported_runtime_calls.sh >/dev/null
+    then
+      echo "Phase 13.9 must not add dynamic lookup or source/environment linker expansion."
+      exit 1
+    fi
+
+    bash -n "$evidence_script"
+    if [ "${PHASE13_BROADER_IMPORTED_RUNTIME_CALLS_SKIP_DYNAMIC:-0}" = "1" ]; then
+      echo "✅ Phase 13.9 broader imported/runtime-call static contract passed; dynamic parity was intentionally skipped."
+      exit 0
+    fi
+
+    bash "$evidence_script"
 
 guard-cranelift-phase11-metadata-diagnostic-parity:
     #!/usr/bin/env bash

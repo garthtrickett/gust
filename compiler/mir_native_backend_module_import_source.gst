@@ -11,6 +11,7 @@ type MirNativeModuleImportArgument[ctx] struct {
     kind: int,
     value: int,
     parameter_index: int,
+    local_name: str,
     value_type: str
 }
 
@@ -39,7 +40,12 @@ type MirNativeModuleImportFunction[ctx] struct {
     callee_name: str,
     callee_link_name: str,
     boundary_kind: int,
-    arguments: Index[std.Vector[MirNativeModuleImportArgument[ctx], ctx], ctx]
+    arguments: Index[std.Vector[MirNativeModuleImportArgument[ctx], ctx], ctx],
+    second_arguments: Index[std.Vector[MirNativeModuleImportArgument[ctx], ctx], ctx],
+    result_local_name: str,
+    expression_add_value: int,
+    branch_then_value: int,
+    branch_else_value: int
 }
 
 type MirNativeModuleImportModel[ctx] struct {
@@ -52,6 +58,14 @@ type MirNativeModuleImportModel[ctx] struct {
     hosts: Index[std.Vector[MirNativeModuleImportHost[ctx], ctx], ctx],
     entry_index: int,
     expected_exit: int
+}
+
+type MirNativeModuleImportHostCall[ctx] struct {
+    valid: int,
+    callee_name: str,
+    callee_link_name: str,
+    boundary_kind: int,
+    arguments: Index[std.Vector[MirNativeModuleImportArgument[ctx], ctx], ctx]
 }
 
 type MirNativeModuleImportEvaluation struct {
@@ -240,19 +254,38 @@ func mir_native_module_import_host_index(hosts: std.Vector[MirNativeModuleImport
 }
 
 func mir_native_module_import_host_boundary(name: str, link_name: str, parameter_types: std.Vector[str, ctx], return_type: str, ctx: &Arena) int {
-    if len(parameter_types) != 1 ||
-       std.str_eq(parameter_types[0], "int") == 0 ||
-       std.str_eq(return_type, "int") == 0
-    {
+    if std.str_eq(return_type, "int") == 0 {
         return 0;
     }
-    if std.str_eq(name, "abs") == 1 &&
-       std.str_eq(link_name, "abs") == 1
+    if len(parameter_types) == 1 &&
+       std.str_eq(parameter_types[0], "int") == 1
     {
-        return 1;
+        if std.str_eq(name, "abs") == 1 &&
+           std.str_eq(link_name, "abs") == 1
+        {
+            return 1;
+        }
+        if std.str_eq(name, "toupper") == 1 &&
+           std.str_eq(link_name, "toupper") == 1
+        {
+            return 2;
+        }
+        if std.str_eq(name, "tiny_host_add_one_i32") == 1 &&
+           std.str_eq(link_name, "tiny_host_add_one_i32") == 1
+        {
+            return 2;
+        }
+        if std.str_eq(name, "tiny_host_is_positive_i32") == 1 &&
+           std.str_eq(link_name, "tiny_host_is_positive_i32") == 1
+        {
+            return 2;
+        }
     }
-    if std.str_eq(name, "toupper") == 1 &&
-       std.str_eq(link_name, "toupper") == 1
+    if len(parameter_types) == 2 &&
+       std.str_eq(parameter_types[0], "int") == 1 &&
+       std.str_eq(parameter_types[1], "int") == 1 &&
+       std.str_eq(name, "tiny_host_add_i32") == 1 &&
+       std.str_eq(link_name, "tiny_host_add_i32") == 1
     {
         return 2;
     }
@@ -298,11 +331,12 @@ func mir_native_module_import_host_signature(host: MirNativeModuleImportHost[ctx
     return std.Clone(ctx, signature);
 }
 
-func mir_native_module_import_analyze_argument(expression: ast.Expression[ctx], parameter_names: std.Vector[str, ctx], parameter_types: std.Vector[str, ctx], ctx: &Arena) MirNativeModuleImportArgument[ctx] {
+func mir_native_module_import_analyze_argument(expression: ast.Expression[ctx], parameter_names: std.Vector[str, ctx], parameter_types: std.Vector[str, ctx], allowed_local: str, ctx: &Arena) MirNativeModuleImportArgument[ctx] {
     mut argument: MirNativeModuleImportArgument[ctx];
     argument.kind = 0 - 1;
     argument.value = 0;
     argument.parameter_index = 0 - 1;
+    argument.local_name = std.Clone(ctx, "");
     argument.value_type = std.Clone(ctx, "");
     unsafe {
         if expression.tag == 1 {
@@ -323,17 +357,87 @@ func mir_native_module_import_analyze_argument(expression: ast.Expression[ctx], 
                 expression.Identifier.name,
                 ctx
             );
-            if parameter_index < 0 {
+            if parameter_index >= 0 {
+                argument.kind = 2;
+                argument.parameter_index = parameter_index;
+                argument.value_type =
+                    std.Clone(ctx, parameter_types[parameter_index]);
                 return argument;
             }
-            argument.kind = 2;
-            argument.parameter_index = parameter_index;
-            argument.value_type =
-                std.Clone(ctx, parameter_types[parameter_index]);
+            if len(allowed_local) > 0 &&
+               std.str_eq(expression.Identifier.name, allowed_local) == 1
+            {
+                argument.kind = 3;
+                argument.local_name = std.Clone(ctx, allowed_local);
+                argument.value_type = std.Clone(ctx, "int");
+                return argument;
+            }
             return argument;
         }
     }
     return argument;
+}
+
+func mir_native_module_import_analyze_host_call(expression: ast.Expression[ctx], function: MirNativeModuleImportFunction[ctx], hosts: std.Vector[MirNativeModuleImportHost[ctx], ctx], allowed_local: str, ctx: &Arena) MirNativeModuleImportHostCall[ctx] {
+    mut call: MirNativeModuleImportHostCall[ctx];
+    call.valid = 0;
+    call.callee_name = std.Clone(ctx, "");
+    call.callee_link_name = std.Clone(ctx, "");
+    call.boundary_kind = 0;
+    call.arguments = mir_native_module_import_empty_argument_vector(ctx);
+
+    unsafe {
+        if expression.tag != 12 {
+            return call;
+        }
+        mut callee := ctx[expression.Call.function];
+        if callee.tag != 0 {
+            return call;
+        }
+        mut host_index := mir_native_module_import_host_index(
+            hosts,
+            function.module_index,
+            callee.Identifier.name,
+            ctx
+        );
+        if host_index < 0 {
+            return call;
+        }
+        mut host := hosts[host_index];
+        if host.boundary_kind == 0 {
+            return call;
+        }
+
+        mut parameter_names: std.Vector[str, ctx] :=
+            ctx[function.parameter_names];
+        mut parameter_types: std.Vector[str, ctx] :=
+            ctx[function.parameter_types];
+        mut arguments: std.Vector[MirNativeModuleImportArgument[ctx], ctx] :=
+            std.VectorNew(ctx);
+        mut source_arguments: std.Vector[ast.Expression[ctx], ctx] :=
+            ctx[expression.Call.arguments];
+        mut argument_index := 0;
+        while argument_index < len(source_arguments) {
+            mut argument := mir_native_module_import_analyze_argument(
+                source_arguments[argument_index],
+                parameter_names,
+                parameter_types,
+                allowed_local,
+                ctx
+            );
+            if argument.kind < 0 {
+                return call;
+            }
+            arguments.Push(argument);
+            argument_index = argument_index + 1;
+        }
+        ctx.Set(call.arguments, arguments);
+        call.valid = 1;
+        call.callee_name = std.Clone(ctx, host.name);
+        call.callee_link_name = std.Clone(ctx, host.link_name);
+        call.boundary_kind = host.boundary_kind;
+    }
+    return call;
 }
 
 func mir_native_module_import_make_function_signature(statement: ast.Statement[ctx], module_index: int, module_path: str, module_prefix: str, ctx: &Arena) MirNativeModuleImportFunction[ctx] {
@@ -354,6 +458,11 @@ func mir_native_module_import_make_function_signature(statement: ast.Statement[c
     function.callee_link_name = std.Clone(ctx, "");
     function.boundary_kind = 0;
     function.arguments = mir_native_module_import_empty_argument_vector(ctx);
+    function.second_arguments = mir_native_module_import_empty_argument_vector(ctx);
+    function.result_local_name = std.Clone(ctx, "return_value");
+    function.expression_add_value = 0;
+    function.branch_then_value = 0;
+    function.branch_else_value = 0;
 
     unsafe {
         if statement.tag != 3 || statement.FunctionDecl.is_extern == 1 {
@@ -498,6 +607,179 @@ func mir_native_module_import_alias_prefix(top_level: std.Vector[ast.Statement[c
     return std.Clone(ctx, "");
 }
 
+func mir_native_module_import_analyze_host_composition(function: MirNativeModuleImportFunction[ctx], statements: std.Vector[ast.Statement[ctx], ctx], hosts: std.Vector[MirNativeModuleImportHost[ctx], ctx], ctx: &Arena) MirNativeModuleImportFunction[ctx] {
+    mut analyzed := function;
+    if len(statements) != 3 {
+        return analyzed;
+    }
+    unsafe {
+        if statements[0].tag != 4 ||
+           statements[1].tag != 5 ||
+           statements[2].tag != 12
+        {
+            return analyzed;
+        }
+        mut local_name := statements[0].VarDecl.name;
+        mut assignment_left := ctx[statements[1].Assignment.left];
+        if assignment_left.tag != 0 ||
+           std.str_eq(assignment_left.Identifier.name, local_name) == 0
+        {
+            return analyzed;
+        }
+
+        mut first_expression := ctx[statements[0].VarDecl.value];
+        mut first_call := mir_native_module_import_analyze_host_call(
+            first_expression,
+            function,
+            hosts,
+            "",
+            ctx
+        );
+        if first_call.valid == 0 {
+            return analyzed;
+        }
+        mut second_expression := ctx[statements[1].Assignment.value];
+        mut second_call := mir_native_module_import_analyze_host_call(
+            second_expression,
+            function,
+            hosts,
+            local_name,
+            ctx
+        );
+        if second_call.valid == 0 ||
+           std.str_eq(first_call.callee_name, second_call.callee_name) == 0 ||
+           std.str_eq(
+               first_call.callee_link_name,
+               second_call.callee_link_name
+           ) == 0 ||
+           first_call.boundary_kind != second_call.boundary_kind
+        {
+            return analyzed;
+        }
+
+        mut return_expression := ctx[statements[2].Return.expr];
+        mut add_value := 0;
+        if return_expression.tag == 0 {
+            if std.str_eq(return_expression.Identifier.name, local_name) == 0 {
+                return analyzed;
+            }
+        } else if return_expression.tag == 10 &&
+                  std.str_eq(return_expression.Binary.op, "+") == 1
+        {
+            mut left := ctx[return_expression.Binary.left];
+            mut right := ctx[return_expression.Binary.right];
+            if left.tag == 0 && right.tag == 1 &&
+               std.str_eq(left.Identifier.name, local_name) == 1
+            {
+                add_value = right.Integer.val;
+            } else if left.tag == 1 && right.tag == 0 &&
+                      std.str_eq(right.Identifier.name, local_name) == 1
+            {
+                add_value = left.Integer.val;
+            } else {
+                return analyzed;
+            }
+        } else {
+            return analyzed;
+        }
+
+        analyzed.profile = 3;
+        analyzed.callee_kind = 2;
+        analyzed.callee_name = std.Clone(ctx, first_call.callee_name);
+        analyzed.callee_link_name =
+            std.Clone(ctx, first_call.callee_link_name);
+        analyzed.boundary_kind = first_call.boundary_kind;
+        analyzed.arguments = first_call.arguments;
+        analyzed.second_arguments = second_call.arguments;
+        analyzed.result_local_name = std.Clone(ctx, local_name);
+        analyzed.expression_add_value = add_value;
+    }
+    return analyzed;
+}
+
+func mir_native_module_import_analyze_host_predicate_branch(function: MirNativeModuleImportFunction[ctx], statements: std.Vector[ast.Statement[ctx], ctx], hosts: std.Vector[MirNativeModuleImportHost[ctx], ctx], ctx: &Arena) MirNativeModuleImportFunction[ctx] {
+    mut analyzed := function;
+    if len(statements) != 3 {
+        return analyzed;
+    }
+    unsafe {
+        if statements[0].tag != 4 ||
+           statements[1].tag != 7 ||
+           statements[2].tag != 12
+        {
+            return analyzed;
+        }
+        mut local_name := statements[0].VarDecl.name;
+        mut call_expression := ctx[statements[0].VarDecl.value];
+        mut call := mir_native_module_import_analyze_host_call(
+            call_expression,
+            function,
+            hosts,
+            "",
+            ctx
+        );
+        if call.valid == 0 ||
+           std.str_eq(
+               call.callee_link_name,
+               "tiny_host_is_positive_i32"
+           ) == 0
+        {
+            return analyzed;
+        }
+
+        mut condition := ctx[statements[1].If.condition];
+        if condition.tag == 0 {
+            if std.str_eq(condition.Identifier.name, local_name) == 0 {
+                return analyzed;
+            }
+        } else if condition.tag == 10 &&
+                  std.str_eq(condition.Binary.op, ">") == 1
+        {
+            mut left := ctx[condition.Binary.left];
+            mut right := ctx[condition.Binary.right];
+            if left.tag != 0 || right.tag != 1 || right.Integer.val != 0 ||
+               std.str_eq(left.Identifier.name, local_name) == 0
+            {
+                return analyzed;
+            }
+        } else {
+            return analyzed;
+        }
+
+        mut consequence := ctx[statements[1].If.consequence];
+        mut consequence_statements: std.Vector[ast.Statement[ctx], ctx] :=
+            ctx[consequence.statements];
+        if len(consequence_statements) != 1 ||
+           consequence_statements[0].tag != 12
+        {
+            return analyzed;
+        }
+        mut then_expression := ctx[consequence_statements[0].Return.expr];
+        mut else_expression := ctx[statements[2].Return.expr];
+        if then_expression.tag != 1 || else_expression.tag != 1 {
+            return analyzed;
+        }
+
+        mut alternative := ctx[statements[1].If.alternative];
+        mut alternative_statements: std.Vector[ast.Statement[ctx], ctx] :=
+            ctx[alternative.statements];
+        if len(alternative_statements) != 0 {
+            return analyzed;
+        }
+
+        analyzed.profile = 4;
+        analyzed.callee_kind = 2;
+        analyzed.callee_name = std.Clone(ctx, call.callee_name);
+        analyzed.callee_link_name = std.Clone(ctx, call.callee_link_name);
+        analyzed.boundary_kind = call.boundary_kind;
+        analyzed.arguments = call.arguments;
+        analyzed.result_local_name = std.Clone(ctx, local_name);
+        analyzed.branch_then_value = then_expression.Integer.val;
+        analyzed.branch_else_value = else_expression.Integer.val;
+    }
+    return analyzed;
+}
+
 func mir_native_module_import_analyze_function_body(function: MirNativeModuleImportFunction[ctx], statement: ast.Statement[ctx], top_level: std.Vector[ast.Statement[ctx], ctx], module_prefixes: std.Vector[str, ctx], functions: std.Vector[MirNativeModuleImportFunction[ctx], ctx], hosts: std.Vector[MirNativeModuleImportHost[ctx], ctx], ctx: &Arena) MirNativeModuleImportFunction[ctx] {
     mut analyzed := function;
     mut parameter_names: std.Vector[str, ctx] := ctx[function.parameter_names];
@@ -507,6 +789,31 @@ func mir_native_module_import_analyze_function_body(function: MirNativeModuleImp
         mut body := ctx[statement.FunctionDecl.body];
         mut statements: std.Vector[ast.Statement[ctx], ctx] :=
             ctx[body.statements];
+        if len(statements) == 1 && statements[0].tag == 10 {
+            mut unsafe_body := ctx[statements[0].UnsafeBlock.body];
+            mut unsafe_statements: std.Vector[ast.Statement[ctx], ctx] :=
+                ctx[unsafe_body.statements];
+            mut composition :=
+                mir_native_module_import_analyze_host_composition(
+                    function,
+                    unsafe_statements,
+                    hosts,
+                    ctx
+                );
+            if composition.profile == 3 {
+                return composition;
+            }
+            mut predicate_branch :=
+                mir_native_module_import_analyze_host_predicate_branch(
+                    function,
+                    unsafe_statements,
+                    hosts,
+                    ctx
+                );
+            if predicate_branch.profile == 4 {
+                return predicate_branch;
+            }
+        }
         if len(statements) != 1 {
             return analyzed;
         }
@@ -655,6 +962,7 @@ func mir_native_module_import_analyze_function_body(function: MirNativeModuleImp
                 source_arguments[argument_index],
                 parameter_names,
                 parameter_types,
+                "",
                 ctx
             );
             if argument.kind < 0 {
@@ -678,10 +986,17 @@ func mir_native_module_import_validate_calls(model: MirNativeModuleImportModel[c
     mut caller_index := 0;
     while caller_index < len(functions) {
         mut caller := functions[caller_index];
-        if caller.profile == 2 {
+        if caller.profile == 2 || caller.profile == 3 || caller.profile == 4 {
             mut expected_parameter_types: std.Vector[str, ctx] :=
                 std.VectorNew(ctx);
             mut expected_return_type := std.Clone(ctx, "");
+            if caller.profile >= 3 && caller.callee_kind != 2 {
+                return mir_native_module_import_invalid(
+                    model,
+                    "Native backend canonical MIR verification failed: runtime-call composition requires an approved host target",
+                    ctx
+                );
+            }
             if caller.callee_kind == 0 || caller.callee_kind == 1 {
                 mut callee_index := mir_native_module_import_function_index(
                     functions,
@@ -779,6 +1094,31 @@ func mir_native_module_import_validate_calls(model: MirNativeModuleImportModel[c
                     );
                 }
                 argument_index = argument_index + 1;
+            }
+            if caller.profile == 3 {
+                mut second_arguments: std.Vector[MirNativeModuleImportArgument[ctx], ctx] :=
+                    ctx[caller.second_arguments];
+                if len(second_arguments) != len(expected_parameter_types) {
+                    return mir_native_module_import_invalid(
+                        model,
+                        "Native backend canonical MIR verification failed: composed imported call argument count does not match approved parameter count",
+                        ctx
+                    );
+                }
+                argument_index = 0;
+                while argument_index < len(second_arguments) {
+                    if std.str_eq(
+                        second_arguments[argument_index].value_type,
+                        expected_parameter_types[argument_index]
+                    ) == 0 {
+                        return mir_native_module_import_invalid(
+                            model,
+                            "Native backend canonical MIR verification failed: composed imported call argument type does not match approved parameter type",
+                            ctx
+                        );
+                    }
+                    argument_index = argument_index + 1;
+                }
             }
             if std.str_eq(caller.return_type, expected_return_type) == 0 {
                 return mir_native_module_import_invalid(
@@ -904,6 +1244,63 @@ func mir_native_module_import_validate_acyclic(model: MirNativeModuleImportModel
     return model;
 }
 
+func mir_native_module_import_evaluate_host(link_name: str, boundary_kind: int, values: std.Vector[int, ctx], ctx: &Arena) MirNativeModuleImportEvaluation {
+    mut evaluation: MirNativeModuleImportEvaluation;
+    evaluation.valid = 0;
+    evaluation.value = 0;
+    if boundary_kind == 1 &&
+       std.str_eq(link_name, "abs") == 1 &&
+       len(values) == 1
+    {
+        mut value := values[0];
+        if value < 0 {
+            value = 0 - value;
+        }
+        evaluation.valid = 1;
+        evaluation.value = value;
+        return evaluation;
+    }
+    if boundary_kind == 2 &&
+       std.str_eq(link_name, "toupper") == 1 &&
+       len(values) == 1
+    {
+        mut value := values[0];
+        if value >= 97 && value <= 122 {
+            value = value - 32;
+        }
+        evaluation.valid = 1;
+        evaluation.value = value;
+        return evaluation;
+    }
+    if boundary_kind == 2 &&
+       std.str_eq(link_name, "tiny_host_add_one_i32") == 1 &&
+       len(values) == 1
+    {
+        evaluation.valid = 1;
+        evaluation.value = values[0] + 1;
+        return evaluation;
+    }
+    if boundary_kind == 2 &&
+       std.str_eq(link_name, "tiny_host_add_i32") == 1 &&
+       len(values) == 2
+    {
+        evaluation.valid = 1;
+        evaluation.value = values[0] + values[1];
+        return evaluation;
+    }
+    if boundary_kind == 2 &&
+       std.str_eq(link_name, "tiny_host_is_positive_i32") == 1 &&
+       len(values) == 1
+    {
+        evaluation.valid = 1;
+        if values[0] > 0 {
+            evaluation.value = 1;
+        }
+        return evaluation;
+    }
+    return evaluation;
+}
+
 func mir_native_module_import_evaluate(functions: std.Vector[MirNativeModuleImportFunction[ctx], ctx], function_index: int, parameter_values: std.Vector[int, ctx], depth: int, ctx: &Arena) MirNativeModuleImportEvaluation {
     mut evaluation: MirNativeModuleImportEvaluation;
     evaluation.valid = 0;
@@ -969,31 +1366,12 @@ func mir_native_module_import_evaluate(functions: std.Vector[MirNativeModuleImpo
         }
 
         if function.callee_kind == 2 {
-            if len(call_values) != 1 {
-                return evaluation;
-            }
-            mut value := call_values[0];
-            if function.boundary_kind == 1 &&
-               std.str_eq(function.callee_link_name, "abs") == 1
-            {
-                if value < 0 {
-                    value = 0 - value;
-                }
-                evaluation.valid = 1;
-                evaluation.value = value;
-                return evaluation;
-            }
-            if function.boundary_kind == 2 &&
-               std.str_eq(function.callee_link_name, "toupper") == 1
-            {
-                if value >= 97 && value <= 122 {
-                    value = value - 32;
-                }
-                evaluation.valid = 1;
-                evaluation.value = value;
-                return evaluation;
-            }
-            return evaluation;
+            return mir_native_module_import_evaluate_host(
+                function.callee_link_name,
+                function.boundary_kind,
+                call_values,
+                ctx
+            );
         }
 
         mut callee_index := mir_native_module_import_function_index(
@@ -1011,6 +1389,85 @@ func mir_native_module_import_evaluate(functions: std.Vector[MirNativeModuleImpo
             depth + 1,
             ctx
         );
+    }
+
+    if function.profile == 3 || function.profile == 4 {
+        mut first_values: std.Vector[int, ctx] := std.VectorNew(ctx);
+        mut first_arguments: std.Vector[MirNativeModuleImportArgument[ctx], ctx] :=
+            ctx[function.arguments];
+        mut argument_index := 0;
+        while argument_index < len(first_arguments) {
+            mut argument := first_arguments[argument_index];
+            if argument.kind == 0 || argument.kind == 1 {
+                first_values.Push(argument.value);
+            } else if argument.kind == 2 &&
+                      argument.parameter_index >= 0 &&
+                      argument.parameter_index < len(parameter_values)
+            {
+                first_values.Push(parameter_values[argument.parameter_index]);
+            } else {
+                return evaluation;
+            }
+            argument_index = argument_index + 1;
+        }
+        mut first_result := mir_native_module_import_evaluate_host(
+            function.callee_link_name,
+            function.boundary_kind,
+            first_values,
+            ctx
+        );
+        if first_result.valid == 0 {
+            return evaluation;
+        }
+
+        if function.profile == 4 {
+            evaluation.valid = 1;
+            if first_result.value > 0 {
+                evaluation.value = function.branch_then_value;
+            } else {
+                evaluation.value = function.branch_else_value;
+            }
+            return evaluation;
+        }
+
+        mut second_values: std.Vector[int, ctx] := std.VectorNew(ctx);
+        mut second_arguments: std.Vector[MirNativeModuleImportArgument[ctx], ctx] :=
+            ctx[function.second_arguments];
+        argument_index = 0;
+        while argument_index < len(second_arguments) {
+            mut argument := second_arguments[argument_index];
+            if argument.kind == 0 || argument.kind == 1 {
+                second_values.Push(argument.value);
+            } else if argument.kind == 2 &&
+                      argument.parameter_index >= 0 &&
+                      argument.parameter_index < len(parameter_values)
+            {
+                second_values.Push(parameter_values[argument.parameter_index]);
+            } else if argument.kind == 3 &&
+                      std.str_eq(
+                          argument.local_name,
+                          function.result_local_name
+                      ) == 1
+            {
+                second_values.Push(first_result.value);
+            } else {
+                return evaluation;
+            }
+            argument_index = argument_index + 1;
+        }
+        mut second_result := mir_native_module_import_evaluate_host(
+            function.callee_link_name,
+            function.boundary_kind,
+            second_values,
+            ctx
+        );
+        if second_result.valid == 0 {
+            return evaluation;
+        }
+        evaluation.valid = 1;
+        evaluation.value =
+            second_result.value + function.expression_add_value;
+        return evaluation;
     }
 
     return evaluation;
@@ -1310,7 +1767,7 @@ func mir_native_module_import_analyze(programs: std.Vector[ast.Program[ctx], ctx
     model.expected_exit = evaluation.value;
     return model;
 }
-func mir_native_module_import_emit_argument(output: str, function_index: int, argument_index: int, argument: MirNativeModuleImportArgument[ctx], ctx: &Arena) str {
+func mir_native_module_import_emit_argument(output: str, function_index: int, statement_index: int, argument_index: int, argument: MirNativeModuleImportArgument[ctx], ctx: &Arena) str {
     mut emitted := output;
     emitted = mir_native_module_import_append(emitted, "function_", ctx);
     emitted = mir_native_module_import_append_int(
@@ -1320,7 +1777,17 @@ func mir_native_module_import_emit_argument(output: str, function_index: int, ar
     );
     emitted = mir_native_module_import_append(
         emitted,
-        "_block_0_statement_0_argument_",
+        "_block_0_statement_",
+        ctx
+    );
+    emitted = mir_native_module_import_append_int(
+        emitted,
+        statement_index,
+        ctx
+    );
+    emitted = mir_native_module_import_append(
+        emitted,
+        "_argument_",
         ctx
     );
     emitted = mir_native_module_import_append_int(
@@ -1330,96 +1797,628 @@ func mir_native_module_import_emit_argument(output: str, function_index: int, ar
     );
     emitted = mir_native_module_import_append(emitted, "_kind: ", ctx);
     if argument.kind == 0 {
-        emitted = mir_native_module_import_append(
-            emitted,
-            "I32Literal\n",
-            ctx
-        );
-        emitted = mir_native_module_import_append(emitted, "function_", ctx);
-        emitted = mir_native_module_import_append_int(
-            emitted,
-            function_index,
-            ctx
-        );
-        emitted = mir_native_module_import_append(
-            emitted,
-            "_block_0_statement_0_argument_",
-            ctx
-        );
-        emitted = mir_native_module_import_append_int(
-            emitted,
-            argument_index,
-            ctx
-        );
-        emitted = mir_native_module_import_append(emitted, "_value: ", ctx);
-        emitted = mir_native_module_import_append_int(
-            emitted,
-            argument.value,
-            ctx
-        );
-        emitted = mir_native_module_import_append(emitted, "\n", ctx);
+        emitted = mir_native_module_import_append(emitted, "I32Literal\n", ctx);
     } else if argument.kind == 1 {
-        emitted = mir_native_module_import_append(
-            emitted,
-            "BoolLiteral\n",
-            ctx
-        );
-        emitted = mir_native_module_import_append(emitted, "function_", ctx);
-        emitted = mir_native_module_import_append_int(
-            emitted,
-            function_index,
-            ctx
-        );
-        emitted = mir_native_module_import_append(
-            emitted,
-            "_block_0_statement_0_argument_",
-            ctx
-        );
-        emitted = mir_native_module_import_append_int(
-            emitted,
-            argument_index,
-            ctx
-        );
+        emitted = mir_native_module_import_append(emitted, "BoolLiteral\n", ctx);
+    } else if argument.kind == 2 {
+        emitted = mir_native_module_import_append(emitted, "FunctionParamI32\n", ctx);
+    } else {
+        emitted = mir_native_module_import_append(emitted, "LocalI32\n", ctx);
+    }
+
+    emitted = mir_native_module_import_append(emitted, "function_", ctx);
+    emitted = mir_native_module_import_append_int(
+        emitted,
+        function_index,
+        ctx
+    );
+    emitted = mir_native_module_import_append(
+        emitted,
+        "_block_0_statement_",
+        ctx
+    );
+    emitted = mir_native_module_import_append_int(
+        emitted,
+        statement_index,
+        ctx
+    );
+    emitted = mir_native_module_import_append(
+        emitted,
+        "_argument_",
+        ctx
+    );
+    emitted = mir_native_module_import_append_int(
+        emitted,
+        argument_index,
+        ctx
+    );
+    if argument.kind == 0 || argument.kind == 1 {
         emitted = mir_native_module_import_append(emitted, "_value: ", ctx);
         emitted = mir_native_module_import_append_int(
             emitted,
             argument.value,
             ctx
         );
-        emitted = mir_native_module_import_append(emitted, "\n", ctx);
-    } else {
-        emitted = mir_native_module_import_append(
-            emitted,
-            "FunctionParamI32\n",
-            ctx
-        );
-        emitted = mir_native_module_import_append(emitted, "function_", ctx);
-        emitted = mir_native_module_import_append_int(
-            emitted,
-            function_index,
-            ctx
-        );
-        emitted = mir_native_module_import_append(
-            emitted,
-            "_block_0_statement_0_argument_",
-            ctx
-        );
-        emitted = mir_native_module_import_append_int(
-            emitted,
-            argument_index,
-            ctx
-        );
+    } else if argument.kind == 2 {
         emitted = mir_native_module_import_append(emitted, "_param: ", ctx);
         emitted = mir_native_module_import_append_int(
             emitted,
             argument.parameter_index,
             ctx
         );
-        emitted = mir_native_module_import_append(emitted, "\n", ctx);
+    } else {
+        emitted = mir_native_module_import_append(emitted, "_local: ", ctx);
+        emitted = mir_native_module_import_append(
+            emitted,
+            argument.local_name,
+            ctx
+        );
+    }
+    emitted = mir_native_module_import_append(emitted, "\n", ctx);
+    return std.Clone(ctx, emitted);
+}
+
+func mir_native_module_import_emit_call_statement(output: str, function: MirNativeModuleImportFunction[ctx], function_index: int, statement_index: int, local_name: str, arguments: std.Vector[MirNativeModuleImportArgument[ctx], ctx], ctx: &Arena) str {
+    mut emitted := output;
+    emitted = mir_native_module_import_append(emitted, "function_", ctx);
+    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
+    emitted = mir_native_module_import_append(emitted, "_block_0_statement_", ctx);
+    emitted = mir_native_module_import_append_int(emitted, statement_index, ctx);
+    emitted = mir_native_module_import_append(
+        emitted,
+        "_kind: LocalI32SetCall\nfunction_",
+        ctx
+    );
+    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
+    emitted = mir_native_module_import_append(emitted, "_block_0_statement_", ctx);
+    emitted = mir_native_module_import_append_int(emitted, statement_index, ctx);
+    emitted = mir_native_module_import_append(emitted, "_local: ", ctx);
+    emitted = mir_native_module_import_append(emitted, local_name, ctx);
+    emitted = mir_native_module_import_append(emitted, "\nfunction_", ctx);
+    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
+    emitted = mir_native_module_import_append(emitted, "_block_0_statement_", ctx);
+    emitted = mir_native_module_import_append_int(emitted, statement_index, ctx);
+    emitted = mir_native_module_import_append(
+        emitted,
+        "_callee_kind: ImportedFunction\nfunction_",
+        ctx
+    );
+    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
+    emitted = mir_native_module_import_append(emitted, "_block_0_statement_", ctx);
+    emitted = mir_native_module_import_append_int(emitted, statement_index, ctx);
+    emitted = mir_native_module_import_append(emitted, "_callee: ", ctx);
+    emitted = mir_native_module_import_append(
+        emitted,
+        function.callee_name,
+        ctx
+    );
+    emitted = mir_native_module_import_append(emitted, "\nfunction_", ctx);
+    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
+    emitted = mir_native_module_import_append(emitted, "_block_0_statement_", ctx);
+    emitted = mir_native_module_import_append_int(emitted, statement_index, ctx);
+    emitted = mir_native_module_import_append(
+        emitted,
+        "_argument_count: ",
+        ctx
+    );
+    emitted = mir_native_module_import_append_int(
+        emitted,
+        len(arguments),
+        ctx
+    );
+    emitted = mir_native_module_import_append(emitted, "\n", ctx);
+    mut argument_index := 0;
+    while argument_index < len(arguments) {
+        emitted = mir_native_module_import_emit_argument(
+            emitted,
+            function_index,
+            statement_index,
+            argument_index,
+            arguments[argument_index],
+            ctx
+        );
+        argument_index = argument_index + 1;
     }
     return std.Clone(ctx, emitted);
 }
+
+func mir_native_module_import_emit_boundary_metadata(output: str, function: MirNativeModuleImportFunction[ctx], function_index: int, metadata_index: int, statement_index: int, ctx: &Arena) str {
+    mut emitted := output;
+    emitted = mir_native_module_import_append(emitted, "function_", ctx);
+    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
+    emitted = mir_native_module_import_append(emitted, "_metadata_", ctx);
+    emitted = mir_native_module_import_append_int(emitted, metadata_index, ctx);
+    emitted = mir_native_module_import_append(
+        emitted,
+        "_kind: native_boundary\nfunction_",
+        ctx
+    );
+    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
+    emitted = mir_native_module_import_append(emitted, "_metadata_", ctx);
+    emitted = mir_native_module_import_append_int(emitted, metadata_index, ctx);
+    emitted = mir_native_module_import_append(
+        emitted,
+        "_attachment: statement:entry:",
+        ctx
+    );
+    emitted = mir_native_module_import_append_int(
+        emitted,
+        statement_index,
+        ctx
+    );
+    emitted = mir_native_module_import_append(emitted, "\nfunction_", ctx);
+    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
+    emitted = mir_native_module_import_append(emitted, "_metadata_", ctx);
+    emitted = mir_native_module_import_append_int(emitted, metadata_index, ctx);
+    emitted = mir_native_module_import_append(
+        emitted,
+        "_policy: ignored_with_proof\nfunction_",
+        ctx
+    );
+    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
+    emitted = mir_native_module_import_append(emitted, "_metadata_", ctx);
+    emitted = mir_native_module_import_append_int(emitted, metadata_index, ctx);
+    emitted = mir_native_module_import_append(emitted, "_payload: kind=", ctx);
+    if function.boundary_kind == 1 {
+        emitted = mir_native_module_import_append(emitted, "RuntimeCall", ctx);
+    } else {
+        emitted = mir_native_module_import_append(emitted, "ExternFunction", ctx);
+    }
+    emitted = mir_native_module_import_append(emitted, ";symbol=", ctx);
+    emitted = mir_native_module_import_append(
+        emitted,
+        function.callee_link_name,
+        ctx
+    );
+    emitted = mir_native_module_import_append(
+        emitted,
+        ";codegen=none;proof=runtime_boundary_classification_is_registry_validated;origin=",
+        ctx
+    );
+    emitted = mir_native_module_import_append(
+        emitted,
+        function.module_path,
+        ctx
+    );
+    emitted = mir_native_module_import_append(emitted, "\n", ctx);
+    return std.Clone(ctx, emitted);
+}
+
+func mir_native_module_import_emit_special_header(output: str, function: MirNativeModuleImportFunction[ctx], function_index: int, linkage_name: str, block_count: int, ctx: &Arena) str {
+    mut emitted := output;
+    emitted = mir_native_module_import_append(emitted, "function_", ctx);
+    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
+    emitted = mir_native_module_import_append(emitted, "_linkage: ", ctx);
+    emitted = mir_native_module_import_append(emitted, linkage_name, ctx);
+    emitted = mir_native_module_import_append(emitted, "\nfunction_", ctx);
+    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
+    emitted = mir_native_module_import_append(emitted, "_function: ", ctx);
+    emitted = mir_native_module_import_append(
+        emitted,
+        function.qualified_name,
+        ctx
+    );
+    emitted = mir_native_module_import_append(emitted, "\nfunction_", ctx);
+    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
+    emitted = mir_native_module_import_append(
+        emitted,
+        "_backend_symbol: ",
+        ctx
+    );
+    emitted = mir_native_module_import_append(
+        emitted,
+        function.qualified_name,
+        ctx
+    );
+    emitted = mir_native_module_import_append(emitted, "\nfunction_", ctx);
+    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
+    mut parameter_types: std.Vector[str, ctx] := ctx[function.parameter_types];
+    emitted = mir_native_module_import_append(
+        emitted,
+        "_parameter_count: ",
+        ctx
+    );
+    emitted = mir_native_module_import_append_int(
+        emitted,
+        len(parameter_types),
+        ctx
+    );
+    emitted = mir_native_module_import_append(emitted, "\n", ctx);
+    mut parameter_index := 0;
+    while parameter_index < len(parameter_types) {
+        emitted = mir_native_module_import_append(emitted, "function_", ctx);
+        emitted = mir_native_module_import_append_int(
+            emitted,
+            function_index,
+            ctx
+        );
+        emitted = mir_native_module_import_append(
+            emitted,
+            "_parameter_",
+            ctx
+        );
+        emitted = mir_native_module_import_append_int(
+            emitted,
+            parameter_index,
+            ctx
+        );
+        emitted = mir_native_module_import_append(emitted, "_type: ", ctx);
+        emitted = mir_native_module_import_append(
+            emitted,
+            parameter_types[parameter_index],
+            ctx
+        );
+        emitted = mir_native_module_import_append(emitted, "\n", ctx);
+        parameter_index = parameter_index + 1;
+    }
+    emitted = mir_native_module_import_append(emitted, "function_", ctx);
+    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
+    emitted = mir_native_module_import_append(emitted, "_return_type: ", ctx);
+    emitted = mir_native_module_import_append(
+        emitted,
+        function.return_type,
+        ctx
+    );
+    emitted = mir_native_module_import_append(emitted, "\nfunction_", ctx);
+    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
+    emitted = mir_native_module_import_append(
+        emitted,
+        "_local_count: 1\nfunction_",
+        ctx
+    );
+    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
+    emitted = mir_native_module_import_append(emitted, "_local_0_name: ", ctx);
+    emitted = mir_native_module_import_append(
+        emitted,
+        function.result_local_name,
+        ctx
+    );
+    emitted = mir_native_module_import_append(emitted, "\nfunction_", ctx);
+    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
+    emitted = mir_native_module_import_append(
+        emitted,
+        "_local_0_type: int\nfunction_",
+        ctx
+    );
+    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
+    emitted = mir_native_module_import_append(
+        emitted,
+        "_entry_block: entry\nfunction_",
+        ctx
+    );
+    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
+    emitted = mir_native_module_import_append(emitted, "_block_count: ", ctx);
+    emitted = mir_native_module_import_append_int(emitted, block_count, ctx);
+    emitted = mir_native_module_import_append(emitted, "\n", ctx);
+    return std.Clone(ctx, emitted);
+}
+
+func mir_native_module_import_emit_host_composition_function(output: str, function: MirNativeModuleImportFunction[ctx], function_index: int, linkage_name: str, expected_exit: int, ctx: &Arena) str {
+    mut emitted := mir_native_module_import_emit_special_header(
+        output,
+        function,
+        function_index,
+        linkage_name,
+        1,
+        ctx
+    );
+    emitted = mir_native_module_import_append(emitted, "function_", ctx);
+    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
+    emitted = mir_native_module_import_append(
+        emitted,
+        "_block_0_label: entry\nfunction_",
+        ctx
+    );
+    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
+    emitted = mir_native_module_import_append(
+        emitted,
+        "_block_0_parameter_count: 0\nfunction_",
+        ctx
+    );
+    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
+    emitted = mir_native_module_import_append(
+        emitted,
+        "_block_0_statement_count: 3\n",
+        ctx
+    );
+    mut first_arguments: std.Vector[MirNativeModuleImportArgument[ctx], ctx] :=
+        ctx[function.arguments];
+    emitted = mir_native_module_import_emit_call_statement(
+        emitted,
+        function,
+        function_index,
+        0,
+        function.result_local_name,
+        first_arguments,
+        ctx
+    );
+    mut second_arguments: std.Vector[MirNativeModuleImportArgument[ctx], ctx] :=
+        ctx[function.second_arguments];
+    emitted = mir_native_module_import_emit_call_statement(
+        emitted,
+        function,
+        function_index,
+        1,
+        function.result_local_name,
+        second_arguments,
+        ctx
+    );
+    emitted = mir_native_module_import_append(emitted, "function_", ctx);
+    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
+    emitted = mir_native_module_import_append(
+        emitted,
+        "_block_0_statement_2_kind: LocalI32AddI32Literal\nfunction_",
+        ctx
+    );
+    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
+    emitted = mir_native_module_import_append(
+        emitted,
+        "_block_0_statement_2_local: ",
+        ctx
+    );
+    emitted = mir_native_module_import_append(
+        emitted,
+        function.result_local_name,
+        ctx
+    );
+    emitted = mir_native_module_import_append(emitted, "\nfunction_", ctx);
+    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
+    emitted = mir_native_module_import_append(
+        emitted,
+        "_block_0_statement_2_value: ",
+        ctx
+    );
+    emitted = mir_native_module_import_append_int(
+        emitted,
+        function.expression_add_value,
+        ctx
+    );
+    emitted = mir_native_module_import_append(emitted, "\nfunction_", ctx);
+    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
+    emitted = mir_native_module_import_append(
+        emitted,
+        "_block_0_terminator_kind: ReturnLocalI32\nfunction_",
+        ctx
+    );
+    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
+    emitted = mir_native_module_import_append(
+        emitted,
+        "_block_0_terminator_local: ",
+        ctx
+    );
+    emitted = mir_native_module_import_append(
+        emitted,
+        function.result_local_name,
+        ctx
+    );
+    emitted = mir_native_module_import_append(emitted, "\nfunction_", ctx);
+    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
+    emitted = mir_native_module_import_append(
+        emitted,
+        "_metadata_count: 2\n",
+        ctx
+    );
+    emitted = mir_native_module_import_emit_boundary_metadata(
+        emitted,
+        function,
+        function_index,
+        0,
+        0,
+        ctx
+    );
+    emitted = mir_native_module_import_emit_boundary_metadata(
+        emitted,
+        function,
+        function_index,
+        1,
+        1,
+        ctx
+    );
+    emitted = mir_native_module_import_append(emitted, "function_", ctx);
+    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
+    emitted = mir_native_module_import_append(emitted, "_expected_exit: ", ctx);
+    emitted = mir_native_module_import_append_int(emitted, expected_exit, ctx);
+    emitted = mir_native_module_import_append(emitted, "\n", ctx);
+    return std.Clone(ctx, emitted);
+}
+
+func mir_native_module_import_emit_host_predicate_function(output: str, function: MirNativeModuleImportFunction[ctx], function_index: int, linkage_name: str, expected_exit: int, ctx: &Arena) str {
+    mut emitted := mir_native_module_import_emit_special_header(
+        output,
+        function,
+        function_index,
+        linkage_name,
+        3,
+        ctx
+    );
+    emitted = mir_native_module_import_append(emitted, "function_", ctx);
+    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
+    emitted = mir_native_module_import_append(
+        emitted,
+        "_block_0_label: entry\nfunction_",
+        ctx
+    );
+    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
+    emitted = mir_native_module_import_append(
+        emitted,
+        "_block_0_parameter_count: 0\nfunction_",
+        ctx
+    );
+    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
+    emitted = mir_native_module_import_append(
+        emitted,
+        "_block_0_statement_count: 1\n",
+        ctx
+    );
+    mut arguments: std.Vector[MirNativeModuleImportArgument[ctx], ctx] :=
+        ctx[function.arguments];
+    emitted = mir_native_module_import_emit_call_statement(
+        emitted,
+        function,
+        function_index,
+        0,
+        function.result_local_name,
+        arguments,
+        ctx
+    );
+    emitted = mir_native_module_import_append(emitted, "function_", ctx);
+    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
+    emitted = mir_native_module_import_append(
+        emitted,
+        "_block_0_terminator_kind: BranchLocalI32Positive\nfunction_",
+        ctx
+    );
+    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
+    emitted = mir_native_module_import_append(
+        emitted,
+        "_block_0_terminator_local: ",
+        ctx
+    );
+    emitted = mir_native_module_import_append(
+        emitted,
+        function.result_local_name,
+        ctx
+    );
+    emitted = mir_native_module_import_append(emitted, "\nfunction_", ctx);
+    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
+    emitted = mir_native_module_import_append(
+        emitted,
+        "_block_0_terminator_then: host_positive\nfunction_",
+        ctx
+    );
+    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
+    emitted = mir_native_module_import_append(
+        emitted,
+        "_block_0_terminator_then_argument_count: 0\nfunction_",
+        ctx
+    );
+    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
+    emitted = mir_native_module_import_append(
+        emitted,
+        "_block_0_terminator_else: host_non_positive\nfunction_",
+        ctx
+    );
+    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
+    emitted = mir_native_module_import_append(
+        emitted,
+        "_block_0_terminator_else_argument_count: 0\nfunction_",
+        ctx
+    );
+    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
+    emitted = mir_native_module_import_append(
+        emitted,
+        "_block_1_label: host_positive\nfunction_",
+        ctx
+    );
+    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
+    emitted = mir_native_module_import_append(
+        emitted,
+        "_block_1_parameter_count: 0\nfunction_",
+        ctx
+    );
+    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
+    emitted = mir_native_module_import_append(
+        emitted,
+        "_block_1_statement_count: 0\nfunction_",
+        ctx
+    );
+    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
+    emitted = mir_native_module_import_append(
+        emitted,
+        "_block_1_terminator_kind: ReturnI32\nfunction_",
+        ctx
+    );
+    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
+    emitted = mir_native_module_import_append(
+        emitted,
+        "_block_1_terminator_value: ",
+        ctx
+    );
+    emitted = mir_native_module_import_append_int(
+        emitted,
+        function.branch_then_value,
+        ctx
+    );
+    emitted = mir_native_module_import_append(emitted, "\nfunction_", ctx);
+    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
+    emitted = mir_native_module_import_append(
+        emitted,
+        "_block_2_label: host_non_positive\nfunction_",
+        ctx
+    );
+    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
+    emitted = mir_native_module_import_append(
+        emitted,
+        "_block_2_parameter_count: 0\nfunction_",
+        ctx
+    );
+    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
+    emitted = mir_native_module_import_append(
+        emitted,
+        "_block_2_statement_count: 0\nfunction_",
+        ctx
+    );
+    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
+    emitted = mir_native_module_import_append(
+        emitted,
+        "_block_2_terminator_kind: ReturnI32\nfunction_",
+        ctx
+    );
+    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
+    emitted = mir_native_module_import_append(
+        emitted,
+        "_block_2_terminator_value: ",
+        ctx
+    );
+    emitted = mir_native_module_import_append_int(
+        emitted,
+        function.branch_else_value,
+        ctx
+    );
+    emitted = mir_native_module_import_append(emitted, "\nfunction_", ctx);
+    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
+    emitted = mir_native_module_import_append(
+        emitted,
+        "_metadata_count: 1\n",
+        ctx
+    );
+    emitted = mir_native_module_import_emit_boundary_metadata(
+        emitted,
+        function,
+        function_index,
+        0,
+        0,
+        ctx
+    );
+    emitted = mir_native_module_import_append(emitted, "function_", ctx);
+    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
+    emitted = mir_native_module_import_append(emitted, "_expected_exit: ", ctx);
+    emitted = mir_native_module_import_append_int(emitted, expected_exit, ctx);
+    emitted = mir_native_module_import_append(emitted, "\n", ctx);
+    return std.Clone(ctx, emitted);
+}
+
 func mir_native_module_import_emit_function(output: str, function: MirNativeModuleImportFunction[ctx], function_index: int, linkage_name: str, expected_exit: int, ctx: &Arena) str {
+    if function.profile == 3 {
+        return mir_native_module_import_emit_host_composition_function(
+            output,
+            function,
+            function_index,
+            linkage_name,
+            expected_exit,
+            ctx
+        );
+    }
+    if function.profile == 4 {
+        return mir_native_module_import_emit_host_predicate_function(
+            output,
+            function,
+            function_index,
+            linkage_name,
+            expected_exit,
+            ctx
+        );
+    }
     mut emitted := output;
     emitted = mir_native_module_import_append(emitted, "function_", ctx);
     emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
@@ -1760,6 +2759,7 @@ func mir_native_module_import_emit_function(output: str, function: MirNativeModu
             emitted = mir_native_module_import_emit_argument(
                 emitted,
                 function_index,
+                0,
                 argument_index,
                 arguments[argument_index],
                 ctx
@@ -1914,7 +2914,7 @@ func mir_native_module_import_function_linkage_tag(function: MirNativeModuleImpo
 
 func mir_native_module_import_is_first_import(function_index: int, functions: std.Vector[MirNativeModuleImportFunction[ctx], ctx], ctx: &Arena) int {
     mut function := functions[function_index];
-    if function.profile != 2 ||
+    if function.profile < 2 ||
        (function.callee_kind != 1 && function.callee_kind != 2)
     {
         return 0;
@@ -1923,7 +2923,7 @@ func mir_native_module_import_is_first_import(function_index: int, functions: st
     while prior_index < function_index {
         mut prior := functions[prior_index];
         if prior.module_index == function.module_index &&
-           prior.profile == 2 &&
+           prior.profile >= 2 &&
            prior.callee_kind == function.callee_kind &&
            std.str_eq(
                prior.callee_link_name,
@@ -2299,6 +3299,9 @@ func mir_native_module_import_emit_bundle(model: MirNativeModuleImportModel[ctx]
                functions[function_index].callee_kind == 2
             {
                 native_boundary_count = native_boundary_count + 1;
+                if functions[function_index].profile == 3 {
+                    native_boundary_count = native_boundary_count + 1;
+                }
             }
             function_index = function_index + 1;
         }

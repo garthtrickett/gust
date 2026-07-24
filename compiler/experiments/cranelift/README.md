@@ -1689,3 +1689,39 @@ incompatible declarations, invalid signatures, invalid result use, direct
 recursion, and mutual recursion. The registry-owned direct-calls family runs
 `guard-cranelift-phase13-direct-call-graph-parity` at Level 2. The next
 milestone is Phase 13 Patch 13.8.
+
+
+Phase 13 Patch 13.9 broadens the approved scalar imported/runtime-call boundary
+as `phase13_migrated_broader_imported_runtime_call_parity`. Symbol approval is
+kept separate from resolver-owned source-module import resolution. The shared
+compiler/worker authority now contains exactly five symbol-and-signature tuples:
+`abs(int)->int` as `RuntimeCall`; `toupper(int)->int`,
+`tiny_host_add_one_i32(int)->int`, `tiny_host_add_i32(int,int)->int`, and
+`tiny_host_is_positive_i32(int)->int` as `ExternFunction`. Source declarations
+must match the real link symbol, ordered scalar parameter types, scalar return,
+and native-boundary classification exactly.
+
+The compiler-owned module/import lowerer now accepts two-argument approved host
+calls, repeated calls to one approved symbol in a function, call-result local
+assignment, call-result scalar expression composition, and an approved
+predicate result controlling structured branching. A resolver-owned dependency
+module may call an approved host function and export its scalar result to the
+entry module without exposing source paths or resolver decisions to the worker.
+Every imported call carries one statement-attached native-boundary metadata
+record.
+
+The worker emits one fixed hidden object only when a canonical bundle references
+one of the three repository-owned `tiny_host_*` symbols. That object defines
+only the approved scalar helpers and is passed through the existing Phase 9G
+`host_object` field. Source and environment data cannot select its path,
+contents, symbols, libraries, linker arguments, dynamic lookup mechanism, or
+environment overrides. The hidden object and all source-route module objects
+are removed after linking; publication remains atomic.
+
+Unapproved names, wrong arity, wrong scalar argument types, incompatible
+approved declarations, indirect calls, variadic calls, layout-sensitive calls,
+and non-scalar ABI values remain rejected or narrowly deferred before driver
+discovery. Existing output is preserved and no request, bundle, module object,
+or fixed host object is published on those failures. The registry-owned imports
+family runs `guard-cranelift-phase13-broader-imported-runtime-calls-parity` at
+Level 2.

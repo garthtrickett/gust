@@ -5324,16 +5324,134 @@ fn phase11_import_registry_classification(
     imported: &CompilerMirLoweringImportedFunction<'_>,
 ) -> Option<&'static str> {
     if imported.linkage != CompilerMirLoweringFunctionLinkage::ImportedHost
-        || imported.params.as_slice() != [TinyMirType::I32]
         || imported.return_type != TinyMirType::I32
     {
         return None;
     }
-    match imported.link_symbol {
-        "abs" if imported.name == "abs" => Some("RuntimeCall"),
-        "toupper" if imported.name == "toupper" => Some("ExternFunction"),
+    match (
+        imported.name,
+        imported.link_symbol,
+        imported.params.as_slice(),
+    ) {
+        ("abs", "abs", [TinyMirType::I32]) => Some("RuntimeCall"),
+        ("toupper", "toupper", [TinyMirType::I32]) => {
+            Some("ExternFunction")
+        }
+        (
+            "tiny_host_add_one_i32",
+            "tiny_host_add_one_i32",
+            [TinyMirType::I32],
+        ) => Some("ExternFunction"),
+        (
+            "tiny_host_add_i32",
+            "tiny_host_add_i32",
+            [TinyMirType::I32, TinyMirType::I32],
+        ) => Some("ExternFunction"),
+        (
+            "tiny_host_is_positive_i32",
+            "tiny_host_is_positive_i32",
+            [TinyMirType::I32],
+        ) => Some("ExternFunction"),
         _ => None,
     }
+}
+
+fn phase13_approved_scalar_host_requires_object(
+    imported: &CompilerMirLoweringImportedFunction<'_>,
+) -> bool {
+    phase11_import_registry_classification(imported).is_some()
+        && matches!(
+            imported.link_symbol,
+            "tiny_host_add_one_i32"
+                | "tiny_host_add_i32"
+                | "tiny_host_is_positive_i32"
+        )
+}
+
+fn emit_phase13_approved_scalar_host_object(
+    output_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    if let Some(parent) = output_path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+
+    let isa_builder = cranelift_native::builder()
+        .map_err(|message| IoError::new(ErrorKind::Other, message))?;
+    let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
+    let object_builder = ObjectBuilder::new(
+        isa,
+        "gust_phase13_approved_scalar_hosts",
+        default_libcall_names(),
+    )?;
+    let mut module = ObjectModule::new(object_builder);
+
+    let mut add_one_signature = module.make_signature();
+    add_one_signature.params.push(AbiParam::new(types::I32));
+    add_one_signature.returns.push(AbiParam::new(types::I32));
+    let add_one_id = module.declare_function(
+        HOST_ADD_ONE_I32_SYMBOL,
+        Linkage::Export,
+        &add_one_signature,
+    )?;
+    let mut add_one_context = module.make_context();
+    add_one_context.func.signature = add_one_signature;
+    let mut add_one_builder_context = FunctionBuilderContext::new();
+    let mut add_one_builder = FunctionBuilder::new(
+        &mut add_one_context.func,
+        &mut add_one_builder_context,
+    );
+    build_add_one_helper_i32_body(&mut add_one_builder);
+    add_one_builder.seal_all_blocks();
+    add_one_builder.finalize();
+    module.define_function(add_one_id, &mut add_one_context)?;
+    module.clear_context(&mut add_one_context);
+
+    let mut add_signature = module.make_signature();
+    add_signature.params.push(AbiParam::new(types::I32));
+    add_signature.params.push(AbiParam::new(types::I32));
+    add_signature.returns.push(AbiParam::new(types::I32));
+    let add_id = module.declare_function(
+        HOST_ADD_I32_SYMBOL,
+        Linkage::Export,
+        &add_signature,
+    )?;
+    let mut add_context = module.make_context();
+    add_context.func.signature = add_signature;
+    let mut add_builder_context = FunctionBuilderContext::new();
+    let mut add_builder = FunctionBuilder::new(
+        &mut add_context.func,
+        &mut add_builder_context,
+    );
+    build_add_i32_body(&mut add_builder);
+    add_builder.seal_all_blocks();
+    add_builder.finalize();
+    module.define_function(add_id, &mut add_context)?;
+    module.clear_context(&mut add_context);
+
+    let mut predicate_signature = module.make_signature();
+    predicate_signature.params.push(AbiParam::new(types::I32));
+    predicate_signature.returns.push(AbiParam::new(types::I32));
+    let predicate_id = module.declare_function(
+        HOST_IS_POSITIVE_I32_SYMBOL,
+        Linkage::Export,
+        &predicate_signature,
+    )?;
+    let mut predicate_context = module.make_context();
+    predicate_context.func.signature = predicate_signature;
+    let mut predicate_builder_context = FunctionBuilderContext::new();
+    let mut predicate_builder = FunctionBuilder::new(
+        &mut predicate_context.func,
+        &mut predicate_builder_context,
+    );
+    build_host_is_positive_i32_body(&mut predicate_builder);
+    predicate_builder.seal_all_blocks();
+    predicate_builder.finalize();
+    module.define_function(predicate_id, &mut predicate_context)?;
+    module.clear_context(&mut predicate_context);
+
+    let object_product = module.finish();
+    fs::write(output_path, object_product.emit()?)?;
+    Ok(())
 }
 
 fn validate_phase11_import_boundary_metadata(
@@ -5861,6 +5979,7 @@ fn compile_phase10_scalar_metadata_request_path(
     let mut preserved_resource_metadata_count = 0usize;
     let mut preserved_provenance_metadata_count = 0usize;
     let mut preserved_native_boundary_metadata_count = 0usize;
+    let mut requires_phase13_approved_scalar_host_object = false;
 
     for (module_index, module_record) in bundle.modules.iter().enumerate() {
         preserved_metadata_count += module_record.metadata.len();
@@ -5991,6 +6110,14 @@ fn compile_phase10_scalar_metadata_request_path(
                     ));
                 }
 
+                if module
+                    .imports
+                    .iter()
+                    .any(phase13_approved_scalar_host_requires_object)
+                {
+                    requires_phase13_approved_scalar_host_object = true;
+                }
+
                 let module_route =
                     if is_phase13_parameter_argument_module(&module) {
                         validate_phase13_parameter_argument_module(&module)?;
@@ -6029,13 +6156,24 @@ fn compile_phase10_scalar_metadata_request_path(
         reported_object_name = &module_record.object_name;
     }
 
+    let approved_host_object = if requires_phase13_approved_scalar_host_object {
+        let path = compiler_mir_link_sibling_path(
+            &request.output_path,
+            ".phase13-approved-scalar-host.o",
+        )?;
+        emit_phase13_approved_scalar_host_object(&path)?;
+        Some(path)
+    } else {
+        None
+    };
+
     let linker_driver =
         env::var_os("CC").unwrap_or_else(|| OsString::from("cc"));
     let link_request = CompilerMirLinkRequest {
         output_path: request.output_path.clone(),
         ordered_object_inputs: object_paths.clone(),
         c_source: None,
-        host_object: None,
+        host_object: approved_host_object.clone(),
         additional_libraries: Vec::new(),
         additional_linker_args: Vec::new(),
         linker_driver,
@@ -6044,7 +6182,22 @@ fn compile_phase10_scalar_metadata_request_path(
         expected_failure_kind: None,
     };
 
-    let report = run_compiler_mir_link_request(link_request)?;
+    let link_result = run_compiler_mir_link_request(link_request);
+    if let Some(host_object) = &approved_host_object {
+        if host_object.exists() {
+            fs::remove_file(host_object).map_err(|error| {
+                phase10_backend_request_error(
+                    Phase10BackendRequestStage::RequestValidation,
+                    Phase10BackendRequestFailureKind::InvalidRequest,
+                    format!(
+                        "could not remove fixed approved scalar host object {}: {error}",
+                        host_object.display()
+                    ),
+                )
+            })?;
+        }
+    }
+    let report = link_result?;
     if !report.published {
         return Err(phase10_backend_request_error(
             Phase10BackendRequestStage::RequestValidation,
@@ -23334,6 +23487,30 @@ fn build_add_i32_body(builder: &mut FunctionBuilder<'_>) {
     let rhs = block_params[1];
     let sum = builder.ins().iadd(lhs, rhs);
     builder.ins().return_(&[sum]);
+}
+
+fn build_host_is_positive_i32_body(builder: &mut FunctionBuilder<'_>) {
+    let entry_block = builder.create_block();
+    let then_block = builder.create_block();
+    let else_block = builder.create_block();
+
+    builder.append_block_params_for_function_params(entry_block);
+    builder.switch_to_block(entry_block);
+    let argument_value = builder.block_params(entry_block)[0];
+    let is_positive = builder
+        .ins()
+        .icmp_imm(IntCC::SignedGreaterThan, argument_value, 0);
+    builder
+        .ins()
+        .brif(is_positive, then_block, &[], else_block, &[]);
+
+    builder.switch_to_block(then_block);
+    let then_value = builder.ins().iconst(types::I32, 1);
+    builder.ins().return_(&[then_value]);
+
+    builder.switch_to_block(else_block);
+    let else_value = builder.ins().iconst(types::I32, 0);
+    builder.ins().return_(&[else_value]);
 }
 
 fn build_positive_i32_branch_body(builder: &mut FunctionBuilder<'_>) {

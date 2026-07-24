@@ -185,6 +185,42 @@ PHASE13_DIRECT_CALL_GRAPH_DEFERRED_REASONS = [
     "deferred_p13_recursive_direct_call_policy",
     "deferred_p13_mutual_recursive_direct_call_policy",
 ]
+PHASE13_BROADER_RUNTIME_CALL_ENTRY_ID = (
+    "p13_imported_predicate_update_branch_source_route"
+)
+PHASE13_BROADER_RUNTIME_CALL_POLICY_ID = "p13_unapproved_host_symbol_policy"
+PHASE13_BROADER_RUNTIME_APPROVED_SYMBOLS = [
+    "abs",
+    "toupper",
+    "tiny_host_add_one_i32",
+    "tiny_host_add_i32",
+    "tiny_host_is_positive_i32",
+]
+PHASE13_BROADER_RUNTIME_APPROVED_SIGNATURES = [
+    "abs(int)->int:RuntimeCall",
+    "toupper(int)->int:ExternFunction",
+    "tiny_host_add_one_i32(int)->int:ExternFunction",
+    "tiny_host_add_i32(int,int)->int:ExternFunction",
+    "tiny_host_is_positive_i32(int)->int:ExternFunction",
+]
+PHASE13_BROADER_RUNTIME_SHAPES = [
+    "multiple_scalar_arguments",
+    "multiple_approved_calls_in_one_function",
+    "imported_result_local_assignment",
+    "imported_result_expression",
+    "imported_result_control_flow",
+    "source_module_and_host_call_composition",
+]
+PHASE13_BROADER_RUNTIME_UNSUPPORTED_FORMS = [
+    "unapproved_host_symbol",
+    "wrong_argument_count",
+    "wrong_scalar_argument_type",
+    "unsupported_return_convention",
+    "variadic_call",
+    "indirect_call",
+    "layout_sensitive_call",
+    "non_scalar_abi_value",
+]
 SUPPORTED_FIELDS = {
     "statuses", "origin_phases", "feature_families",
     "route_owners", "worker_capability_owners", "diagnostic_owners",
@@ -1060,6 +1096,7 @@ def verify_phase13_scalar_expression_contract(registry):
             PHASE13_GENERAL_LOOP_ENTRY_ID,
             PHASE13_PARAMETER_ARGUMENT_ENTRY_ID,
             PHASE13_DIRECT_CALL_GRAPH_ENTRY_ID,
+            PHASE13_BROADER_RUNTIME_CALL_ENTRY_ID,
         }
         and row["capability_decision"] == "supported"
     ]
@@ -1199,6 +1236,7 @@ def verify_phase13_multiple_locals_contract(registry):
             PHASE13_GENERAL_LOOP_ENTRY_ID,
             PHASE13_PARAMETER_ARGUMENT_ENTRY_ID,
             PHASE13_DIRECT_CALL_GRAPH_ENTRY_ID,
+            PHASE13_BROADER_RUNTIME_CALL_ENTRY_ID,
         }
         and row["capability_decision"] == "supported"
     ]
@@ -1350,6 +1388,7 @@ def verify_phase13_nested_structured_cfg_contract(registry):
             PHASE13_GENERAL_LOOP_ENTRY_ID,
             PHASE13_PARAMETER_ARGUMENT_ENTRY_ID,
             PHASE13_DIRECT_CALL_GRAPH_ENTRY_ID,
+            PHASE13_BROADER_RUNTIME_CALL_ENTRY_ID,
         }
         and row["capability_decision"] == "supported"
     ]
@@ -1498,6 +1537,7 @@ def verify_phase13_general_loop_contract(registry):
             PHASE13_GENERAL_LOOP_ENTRY_ID,
             PHASE13_PARAMETER_ARGUMENT_ENTRY_ID,
             PHASE13_DIRECT_CALL_GRAPH_ENTRY_ID,
+            PHASE13_BROADER_RUNTIME_CALL_ENTRY_ID,
         }
         and row["capability_decision"] == "supported"
     ]
@@ -1647,6 +1687,7 @@ def verify_phase13_parameter_argument_contract(registry):
             PHASE13_GENERAL_LOOP_ENTRY_ID,
             PHASE13_PARAMETER_ARGUMENT_ENTRY_ID,
             PHASE13_DIRECT_CALL_GRAPH_ENTRY_ID,
+            PHASE13_BROADER_RUNTIME_CALL_ENTRY_ID,
         }
         and row["capability_decision"] == "supported"
     ]
@@ -1835,6 +1876,142 @@ def verify_phase13_direct_call_graph_contract(registry):
         "policy_row_count": len(policy_expectations),
     }
 
+def verify_phase13_broader_runtime_call_contract(registry):
+    verify_phase13_direct_call_graph_contract(registry)
+    rows = {
+        entry["id"]: entry
+        for entry in phase_entries(registry, "phase13")
+    }
+    require(
+        PHASE13_BROADER_RUNTIME_CALL_ENTRY_ID in rows,
+        "Phase 13 broader runtime-call registry row is missing",
+    )
+    entry = rows[PHASE13_BROADER_RUNTIME_CALL_ENTRY_ID]
+    require(
+        entry["status"] == "migrated"
+        and entry["route_owner"] == "generic_canonical_mir"
+        and entry["capability_decision"] == "supported"
+        and entry["capability_reason_code"]
+        == "supported_p13_imported_predicate_update_branch_source_route"
+        and entry["expected_failure_stage"] == "none_supported",
+        "Phase 13 broader runtime-call capability contract drifted",
+    )
+    require(
+        entry["worker_capability_owner"] == "worker_module_import_lowering"
+        and entry["diagnostic_owner"]
+        == "resolver_signature_and_canonical_mir_verifier",
+        "Phase 13 broader runtime-call ownership drifted",
+    )
+    require(
+        entry["source_fixture"]
+        == "compiler/phase13_runtime_predicate_branch_source.gst",
+        "Phase 13 broader runtime-call selected source fixture drifted",
+    )
+    require(
+        entry["deferral_reason"] == "none_migrated"
+        and entry["future_destination_phase"] == "none_migrated",
+        "Migrated broader runtime-call row must use migrated fields",
+    )
+    evidence = entry["evidence"]
+    require(
+        evidence.get("selected_shapes") == PHASE13_BROADER_RUNTIME_SHAPES,
+        "Phase 13 broader runtime-call composition inventory drifted",
+    )
+    require(
+        evidence.get("approved_symbols")
+        == PHASE13_BROADER_RUNTIME_APPROVED_SYMBOLS,
+        "Phase 13 broader runtime-call approved symbol inventory drifted",
+    )
+    require(
+        evidence.get("approved_signatures")
+        == PHASE13_BROADER_RUNTIME_APPROVED_SIGNATURES,
+        "Phase 13 broader runtime-call approved signature inventory drifted",
+    )
+    require(
+        evidence.get("authority_policy")
+        == "approved_host_symbol_and_exact_scalar_signature_registry_is_separate_from_source_module_import_resolution",
+        "Phase 13 broader runtime-call authority separation drifted",
+    )
+    require(
+        evidence.get("link_policy")
+        == "worker_owned_fixed_host_object_only_no_source_or_environment_linker_expansion",
+        "Phase 13 broader runtime-call link policy drifted",
+    )
+    focused = evidence.get("focused_source_fixtures")
+    negative = evidence.get("negative_source_fixtures")
+    require(
+        isinstance(focused, list) and len(focused) == 7,
+        "Phase 13 broader runtime-call focused inventory must contain seven fixtures",
+    )
+    require(
+        isinstance(negative, list) and len(negative) == 4,
+        "Phase 13 broader runtime-call negative inventory must contain four fixtures",
+    )
+    for group_name, paths in (
+        ("focused_source_fixtures", focused),
+        ("negative_source_fixtures", negative),
+    ):
+        for index, path in enumerate(paths):
+            fixture(path, f"{entry['id']}.evidence.{group_name}[{index}]")
+
+    require(
+        PHASE13_BROADER_RUNTIME_CALL_POLICY_ID in rows,
+        "Phase 13 unapproved-host policy row is missing",
+    )
+    policy = rows[PHASE13_BROADER_RUNTIME_CALL_POLICY_ID]
+    require(
+        policy["status"] == "candidate_deferred"
+        and policy["route_owner"] == "deferred"
+        and policy["capability_decision"] == "deferred"
+        and policy["capability_reason_code"]
+        == "deferred_p13_unapproved_host_symbol_policy"
+        and policy["expected_failure_stage"]
+        == "before_driver_discovery",
+        "Phase 13 unapproved-host policy must remain narrowly deferred",
+    )
+    require(
+        policy["evidence"].get("unsupported_forms")
+        == PHASE13_BROADER_RUNTIME_UNSUPPORTED_FORMS,
+        "Phase 13 unapproved-host rejected-form inventory drifted",
+    )
+    for key in (
+        "environment_symbol_approval",
+        "dynamic_symbol_lookup",
+        "arbitrary_libraries",
+        "arbitrary_linker_flags",
+    ):
+        require(
+            policy["evidence"].get(key) == "forbidden",
+            f"Phase 13 unapproved-host policy must forbid {key}",
+        )
+
+    phase11_import = next(
+        row
+        for row in phase_entries(registry, "phase11")
+        if row["id"] == "imported_runtime_call_i32"
+    )
+    require(
+        phase11_import["evidence"].get("approved_symbols")
+        == PHASE13_BROADER_RUNTIME_APPROVED_SYMBOLS,
+        "Phase 11 imported-runtime evidence must share the Phase 13.9 symbol authority",
+    )
+    require(
+        phase11_import["evidence"].get("approved_signatures")
+        == PHASE13_BROADER_RUNTIME_APPROVED_SIGNATURES,
+        "Phase 11 imported-runtime evidence must share the Phase 13.9 ABI authority",
+    )
+
+    return {
+        "entry_id": entry["id"],
+        "approved_symbol_count": len(PHASE13_BROADER_RUNTIME_APPROVED_SYMBOLS),
+        "approved_signature_count": len(PHASE13_BROADER_RUNTIME_APPROVED_SIGNATURES),
+        "selected_shapes": evidence["selected_shapes"],
+        "focused_fixture_count": len(focused),
+        "negative_fixture_count": len(negative),
+        "unsupported_forms": policy["evidence"]["unsupported_forms"],
+    }
+
+
 def verify_phase13_parent_traceability(registry):
     phase11 = {
         entry["id"]: entry
@@ -2005,6 +2182,7 @@ def render_phase13(registry):
     loop_contract = verify_phase13_general_loop_contract(registry)
     parameter_contract = verify_phase13_parameter_argument_contract(registry)
     graph_contract = verify_phase13_direct_call_graph_contract(registry)
+    runtime_contract = verify_phase13_broader_runtime_call_contract(registry)
     rows = phase_entries(registry, "phase13")
     status_counts = totals["status_counts"]
     current_status_counts = Counter(entry["status"] for entry in rows)
@@ -2419,6 +2597,7 @@ def main():
             "verify-phase13-general-loop-contract",
             "verify-phase13-parameter-argument-contract",
             "verify-phase13-direct-call-graph-contract",
+            "verify-phase13-broader-runtime-call-contract",
             "verify-phase13-opening-rebase",
             "verify-phase13-parent-traceability",
             "verify-phase13-opening-totals",
@@ -2450,6 +2629,8 @@ def main():
             verify_phase13_parameter_argument_contract(registry)
         elif command == "verify-phase13-direct-call-graph-contract":
             verify_phase13_direct_call_graph_contract(registry)
+        elif command == "verify-phase13-broader-runtime-call-contract":
+            verify_phase13_broader_runtime_call_contract(registry)
         elif command == "verify-phase13-opening-rebase":
             verify_phase13_opening_rebase(registry)
         elif command == "verify-phase13-parent-traceability":
@@ -2482,6 +2663,7 @@ def main():
     loop_contract = verify_phase13_general_loop_contract(registry)
     parameter_contract = verify_phase13_parameter_argument_contract(registry)
     graph_contract = verify_phase13_direct_call_graph_contract(registry)
+    runtime_contract = verify_phase13_broader_runtime_call_contract(registry)
     phase13_statuses = phase13_totals["status_counts"]
     phase13_parents = phase13_totals["parent_kinds"]
     messages = {
@@ -2562,6 +2744,14 @@ def main():
             f"{graph_contract['malformed_fixture_count']} malformed MIR, "
             f"{graph_contract['deferred_fixture_count']} runtime-deferred fixtures, and "
             f"{graph_contract['policy_row_count']} explicit unsupported-form policy rows."
+        ),
+        "verify-phase13-broader-runtime-call-contract": (
+            "✅ Phase 13 broader imported/runtime-call registry contract passed: "
+            f"{runtime_contract['entry_id']} owns "
+            f"{runtime_contract['approved_symbol_count']} approved symbols, "
+            f"{runtime_contract['focused_fixture_count']} focused fixtures, "
+            f"{runtime_contract['negative_fixture_count']} negative fixtures, and "
+            f"{len(runtime_contract['unsupported_forms'])} narrowly deferred ABI forms."
         ),
         "verify-phase13-opening-rebase": (
             "✅ Phase 13 opening rebase passed: stable IDs and parent "

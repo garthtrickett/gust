@@ -1173,25 +1173,53 @@
         "canonical_mir_operations": [
           "ImportedCallI32",
           "NativeBoundaryMetadata",
+          "LocalI32Set",
+          "LocalI32Read",
+          "AddI32",
+          "Branch",
           "ReturnI32"
         ],
         "types_and_abis": [
           "int",
+          "bool",
           "()->int",
           "import(int)->int",
+          "import(int,int)->int",
           "imported_bundle",
           "imported_host"
         ],
         "mir_registry_feature": "none",
-        "mir_to_c_guard": "guard-cranelift-phase11-module-import-runtime-parity",
-        "canonical_oracle_guard": "guard-cranelift-phase11-module-import-runtime-parity",
+        "mir_to_c_guard": "guard-cranelift-phase13-broader-imported-runtime-calls-parity",
+        "canonical_oracle_guard": "guard-cranelift-phase13-broader-imported-runtime-calls-parity",
         "translator_seed_guard": "none_phase10_only",
-        "source_native_guard": "guard-cranelift-phase11-module-import-runtime-parity",
+        "source_native_guard": "guard-cranelift-phase13-broader-imported-runtime-calls-parity",
         "baseline_source": "compiler/phase10_runtime_boundary_source.gst",
-        "positive_expectation": "resolver_bundle_exit_42_declared_external_exit_65_runtime_boundary_exit_53_stdout_empty_stderr_empty",
-        "deferred_expectation": "duplicate_unresolved_signature_or_forbidden_boundary_rejected_before_publication_output_unchanged",
+        "positive_expectation": "approved_abs_toupper_add_one_add_and_predicate_boundaries_execute_with_mir_to_c_parity",
+        "deferred_expectation": "unapproved_wrong_arity_wrong_type_wrong_signature_indirect_variadic_layout_sensitive_and_non_scalar_forms_rejected_before_driver_discovery",
         "legacy_migration_status": "module_import_runtime_migrated",
-        "seed_import": 0
+        "seed_import": 0,
+        "approved_symbols": [
+          "abs",
+          "toupper",
+          "tiny_host_add_one_i32",
+          "tiny_host_add_i32",
+          "tiny_host_is_positive_i32"
+        ],
+        "approved_signatures": [
+          "abs(int)->int:RuntimeCall",
+          "toupper(int)->int:ExternFunction",
+          "tiny_host_add_one_i32(int)->int:ExternFunction",
+          "tiny_host_add_i32(int,int)->int:ExternFunction",
+          "tiny_host_is_positive_i32(int)->int:ExternFunction"
+        ],
+        "composition_features": [
+          "multiple_scalar_arguments",
+          "multiple_approved_calls_in_one_function",
+          "imported_result_local_assignment",
+          "imported_result_expression",
+          "imported_result_control_flow",
+          "source_module_and_host_call_composition"
+        ]
       }
     },
     {
@@ -1917,23 +1945,64 @@
       "parent": "phase11_category:broader_direct_and_imported_calls",
       "feature_family": "import_runtime",
       "ci_family": "imports",
-      "status": "candidate_deferred",
-      "route_owner": "deferred",
+      "status": "migrated",
+      "route_owner": "generic_canonical_mir",
       "worker_capability_owner": "worker_module_import_lowering",
       "diagnostic_owner": "resolver_signature_and_canonical_mir_verifier",
       "capability_id": "phase13_generic_source_to_mir",
       "capability_decision_owner": "compiler_generic_native_capability_planner",
-      "capability_decision": "deferred",
-      "capability_reason_code": "deferred_p13_imported_predicate_update_branch_source_route",
-      "expected_failure_stage": "before_driver_discovery",
-      "source_fixture": "compiler/mir_feature_block_param_imported_predicate_update_branch_preservation_source.gst",
-      "canonical_mir_fixture": "compiler/fixtures/native_backend_block_param_imported_predicate_update_branch_ingestion.mir",
+      "capability_decision": "supported",
+      "capability_reason_code": "supported_p13_imported_predicate_update_branch_source_route",
+      "expected_failure_stage": "none_supported",
+      "source_fixture": "compiler/phase13_runtime_predicate_branch_source.gst",
+      "canonical_mir_fixture": "none_compiler_generated_phase13_runtime_predicate_bundle",
       "differential_case_id": "phase13_opening:p13_imported_predicate_update_branch_source_route",
-      "deferral_reason": "imported_predicate_update_branch_has_canonical_MIR_evidence_but_no_source_native_owner",
-      "future_destination_phase": "phase13",
+      "deferral_reason": "none_migrated",
+      "future_destination_phase": "none_migrated",
       "closure_version": "phase13_opening_inventory_v1",
       "evidence": {
-        "opening_record_kind": "candidate"
+        "opening_record_kind": "candidate",
+        "selected_shapes": [
+          "multiple_scalar_arguments",
+          "multiple_approved_calls_in_one_function",
+          "imported_result_local_assignment",
+          "imported_result_expression",
+          "imported_result_control_flow",
+          "source_module_and_host_call_composition"
+        ],
+        "approved_symbols": [
+          "abs",
+          "toupper",
+          "tiny_host_add_one_i32",
+          "tiny_host_add_i32",
+          "tiny_host_is_positive_i32"
+        ],
+        "approved_signatures": [
+          "abs(int)->int:RuntimeCall",
+          "toupper(int)->int:ExternFunction",
+          "tiny_host_add_one_i32(int)->int:ExternFunction",
+          "tiny_host_add_i32(int,int)->int:ExternFunction",
+          "tiny_host_is_positive_i32(int)->int:ExternFunction"
+        ],
+        "focused_source_fixtures": [
+          "compiler/phase10_runtime_boundary_source.gst",
+          "compiler/phase11_declared_external_import_source.gst",
+          "compiler/phase13_runtime_add_one_source.gst",
+          "compiler/phase13_runtime_add_i32_source.gst",
+          "compiler/phase13_runtime_multiple_calls_source.gst",
+          "compiler/phase13_runtime_predicate_branch_source.gst",
+          "compiler/phase13_runtime_module_main_source.gst"
+        ],
+        "negative_source_fixtures": [
+          "compiler/phase11_module_import_forbidden_runtime_source.gst",
+          "compiler/phase13_runtime_wrong_arity_source.gst",
+          "compiler/phase13_runtime_wrong_type_source.gst",
+          "compiler/phase13_runtime_wrong_signature_source.gst"
+        ],
+        "authority_policy": "approved_host_symbol_and_exact_scalar_signature_registry_is_separate_from_source_module_import_resolution",
+        "link_policy": "worker_owned_fixed_host_object_only_no_source_or_environment_linker_expansion",
+        "positive_expectation": "all_selected_cases_exit_with_mir_to_c_status_stdout_and_stderr_parity",
+        "deferred_fixture": "compiler/phase11_module_import_forbidden_runtime_source.gst"
       }
     },
     {
@@ -1958,7 +2027,23 @@
       "future_destination_phase": "phase13",
       "closure_version": "phase13_opening_inventory_v1",
       "evidence": {
-        "opening_record_kind": "candidate"
+        "opening_record_kind": "candidate",
+        "unsupported_forms": [
+          "unapproved_host_symbol",
+          "wrong_argument_count",
+          "wrong_scalar_argument_type",
+          "unsupported_return_convention",
+          "variadic_call",
+          "indirect_call",
+          "layout_sensitive_call",
+          "non_scalar_abi_value"
+        ],
+        "approval_source": "compile_time_exact_symbol_and_signature_registry_only",
+        "environment_symbol_approval": "forbidden",
+        "dynamic_symbol_lookup": "forbidden",
+        "arbitrary_libraries": "forbidden",
+        "arbitrary_linker_flags": "forbidden",
+        "deferred_reason_code": "deferred_p13_unapproved_host_symbol_policy"
       }
     }
   ]
