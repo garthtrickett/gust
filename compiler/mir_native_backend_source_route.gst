@@ -330,7 +330,27 @@ func mir_native_scalar_source_capabilities(ctx: &Arena) capability.MirNativeBack
     );
     capabilities = capability.mir_native_backend_capability_set_with_type_or_abi(
         capabilities,
+        "(int,int)->int",
+        ctx
+    );
+    capabilities = capability.mir_native_backend_capability_set_with_type_or_abi(
+        capabilities,
         "direct_scalar_abi",
+        ctx
+    );
+    capabilities = capability.mir_native_backend_capability_set_with_runtime_import(
+        capabilities,
+        "tiny_host_add_one_i32",
+        ctx
+    );
+    capabilities = capability.mir_native_backend_capability_set_with_runtime_import(
+        capabilities,
+        "tiny_host_add_i32",
+        ctx
+    );
+    capabilities = capability.mir_native_backend_capability_set_with_runtime_import(
+        capabilities,
+        "tiny_host_is_positive_i32",
         ctx
     );
     capabilities = capability.mir_native_backend_capability_set_with_runtime_import(

@@ -1904,6 +1904,7 @@ func mir_native_generic_plan_from_bundle(bundle: mir.MirProgramBundle[ctx], ctx:
     mut has_bool := 0;
     mut has_zero_int_abi := 0;
     mut has_one_int_abi := 0;
+    mut has_two_int_abi := 0;
     mut has_direct_scalar_abi := 0;
 
     mut module_index := 0;
@@ -2045,6 +2046,9 @@ func mir_native_generic_plan_from_bundle(bundle: mir.MirProgramBundle[ctx], ctx:
             }
             if std.str_eq(symbol.signature, "(int)->int") == 1 {
                 has_one_int_abi = 1;
+            }
+            if std.str_eq(symbol.signature, "(int,int)->int") == 1 {
+                has_two_int_abi = 1;
             }
             symbol_index = symbol_index + 1;
         }
@@ -2225,6 +2229,17 @@ func mir_native_generic_plan_from_bundle(bundle: mir.MirProgramBundle[ctx], ctx:
             module_path,
             ordinal,
             "(int)->int",
+            ctx
+        );
+        ordinal = ordinal + 1;
+    }
+    if has_two_int_abi == 1 {
+        plan = mir_native_generic_plan_add(
+            plan,
+            1,
+            module_path,
+            ordinal,
+            "(int,int)->int",
             ctx
         );
         ordinal = ordinal + 1;

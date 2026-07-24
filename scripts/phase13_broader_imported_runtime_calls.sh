@@ -4,6 +4,8 @@ set -euo pipefail
 registry_json="scripts/cranelift_feature_registry.json"
 family_runner="scripts/cranelift_ci_family.py"
 rust_manifest="compiler/experiments/cranelift/Cargo.toml"
+generic_source="compiler/mir_native_backend_generic_source.gst"
+route_source="compiler/mir_native_backend_source_route.gst"
 build_root="build/guards/cranelift_phase13_broader_imported_runtime_calls"
 
 positive_cases=(
@@ -25,6 +27,7 @@ negative_cases=(
 for required_file in \
   "$registry_json" "$family_runner" "$rust_manifest" \
   scripts/cranelift_registry.py \
+  "$generic_source" "$route_source" \
   compiler/mir_native_backend_module_import_source.gst \
   compiler/experiments/cranelift/src/main.rs \
   src/runtime.c src/runtime/approved_scalar_imports.c \
@@ -40,6 +43,62 @@ for case_record in "${negative_cases[@]}"; do
   IFS='|' read -r _ source_path <<<"$case_record"
   test -f "$source_path"
 done
+
+capability_body="$(
+  sed -n \
+    '/^func mir_native_scalar_source_capabilities(/,/^func mir_native_scalar_source_process(/p' \
+    "$route_source"
+)"
+for approved_import in \
+  tiny_host_add_one_i32 \
+  tiny_host_add_i32 \
+  tiny_host_is_positive_i32 \
+  abs \
+  toupper
+do
+  approved_import_count="$(
+    printf '%s\n' "$capability_body" |
+      rg -c -F "\"$approved_import\"" || true
+  )"
+  if [ "$approved_import_count" != "1" ]; then
+    echo "Compiler-owned static capabilities must advertise approved runtime import exactly once: $approved_import"
+    exit 1
+  fi
+done
+approved_two_int_abi_count="$(
+  printf '%s\n' "$capability_body" |
+    rg -c -F '"(int,int)->int"' || true
+)"
+if [ "$approved_two_int_abi_count" != "1" ]; then
+  echo "Compiler-owned static capabilities must advertise (int,int)->int exactly once."
+  exit 1
+fi
+
+plan_body="$(
+  sed -n \
+    '/^func mir_native_generic_plan_from_bundle(/,/^func mir_native_generic_source_lower(/p' \
+    "$generic_source"
+)"
+required_plan_symbols=(
+  'mut has_two_int_abi := 0;'
+  'if std.str_eq(symbol.signature, "(int,int)->int") == 1 {'
+  'if has_two_int_abi == 1 {'
+)
+for required_plan_symbol in "${required_plan_symbols[@]}"; do
+  if ! printf '%s\n' "$plan_body" |
+      rg -n -F "$required_plan_symbol" >/dev/null; then
+    echo "Generic capability planning is missing the two-int ABI seam: $required_plan_symbol"
+    exit 1
+  fi
+done
+plan_two_int_abi_count="$(
+  printf '%s\n' "$plan_body" |
+    rg -c -F '"(int,int)->int"' || true
+)"
+if [ "$plan_two_int_abi_count" != "2" ]; then
+  echo "Generic capability planning must detect and require (int,int)->int exactly once each."
+  exit 1
+fi
 
 test -x ./gust
 rm -rf "$build_root"
