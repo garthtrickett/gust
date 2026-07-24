@@ -279,7 +279,7 @@ assert_deferred_graph() {
   rg -n -F "reason_code=$reason_code" "$case_dir/compiler.combined" >/dev/null
   rg -n -F 'expected_failure_stage=before_driver_discovery' \
     "$case_dir/compiler.combined" >/dev/null
-  rg -n -F 'direct-call graph must be acyclic' \
+  rg -n -F 'class=unsupported_native_capability' \
     "$case_dir/compiler.combined" >/dev/null
   cmp -s "$output.expected" "$output"
   test ! -e "$output.phase10.bundle"
