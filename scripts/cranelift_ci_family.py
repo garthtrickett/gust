@@ -42,8 +42,8 @@ RUNNERS = (
     ),
     (
         "imports",
-        "guard-cranelift-phase13-multiple-source-modules-parity",
-        "PHASE13_MULTIPLE_SOURCE_MODULES_SKIP_DYNAMIC",
+        "guard-cranelift-phase11-module-import-runtime-parity",
+        "PHASE11_MODULE_IMPORT_RUNTIME_SKIP_DYNAMIC",
     ),
     (
         "metadata-diagnostics",

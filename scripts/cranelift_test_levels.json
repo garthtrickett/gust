@@ -154,7 +154,6 @@
     "guard-cranelift-phase12-5-opening-contract": 1,
     "guard-cranelift-phase13-capability-deferral-contract": 1,
     "guard-cranelift-phase13-direct-call-graph-parity": 2,
-    "guard-cranelift-phase13-multiple-source-modules-parity": 2,
     "guard-cranelift-phase13-general-loop-parity": 2,
     "guard-cranelift-phase13-multiple-locals-assignments-parity": 2,
     "guard-cranelift-phase13-nested-structured-cfg-parity": 2,
