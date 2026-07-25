@@ -4,7 +4,7 @@
     "1": {
       "name": "contract-fast",
       "ci_owner": "PR Fast contract job",
-      "policy": "seconds; Phase 12.5 consolidation closure, Phase 13 capability/deferral ownership, schema, traceability, route/fallback boundaries, and lightweight closure summaries"
+      "policy": "seconds; Phase 12.5 consolidation closure, Phase 13 capability/deferral ownership, deferred-residue freeze, schema, traceability, route/fallback boundaries, and lightweight closure summaries"
     },
     "2": {
       "name": "differential-family",
@@ -155,6 +155,7 @@
     "guard-cranelift-phase13-broader-imported-runtime-calls-parity": 2,
     "guard-cranelift-phase13-capability-deferral-contract": 1,
     "guard-cranelift-phase13-composition-differential": 2,
+    "guard-cranelift-phase13-deferred-residue-audit": 1,
     "guard-cranelift-phase13-direct-call-graph-parity": 2,
     "guard-cranelift-phase13-general-loop-parity": 2,
     "guard-cranelift-phase13-multiple-locals-assignments-parity": 2,

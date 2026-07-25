@@ -13,6 +13,7 @@
     "closed_phase_versions",
     "closure_snapshots",
     "opening_snapshots",
+    "residual_snapshots",
     "planning_categories",
     "supported_values",
     "legacy_views",
@@ -26,7 +27,7 @@
       "const": 1
     },
     "registry_version": {
-      "const": 4
+      "const": 6
     },
     "registry_status": {
       "const": "phase12_5_closed_cranelift_verification_framework_consolidation"
@@ -67,6 +68,18 @@
       "properties": {
         "phase13": {
           "$ref": "#/$defs/phase13_opening_snapshot"
+        }
+      }
+    },
+    "residual_snapshots": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "phase13"
+      ],
+      "properties": {
+        "phase13": {
+          "$ref": "#/$defs/phase13_residual_snapshot"
         }
       }
     },
@@ -513,6 +526,148 @@
         },
         "evidence": {
           "type": "object"
+        }
+      }
+    },
+    "phase13_residual_snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "status",
+        "source_opening_version",
+        "immutable_fields",
+        "broad_description_bans",
+        "resolution_policy",
+        "freeze_policy",
+        "rows"
+      ],
+      "properties": {
+        "version": {
+          "const": "phase13_deferred_residue_v1"
+        },
+        "status": {
+          "const": "frozen_for_future_phases"
+        },
+        "source_opening_version": {
+          "const": "phase13_opening_inventory_v1"
+        },
+        "immutable_fields": {
+          "type": "array",
+          "minItems": 14,
+          "maxItems": 14,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "broad_description_bans": {
+          "type": "array",
+          "minItems": 8,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "resolution_policy": {
+          "type": "string",
+          "minLength": 1
+        },
+        "freeze_policy": {
+          "type": "string",
+          "minLength": 1
+        },
+        "rows": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/phase13_residual_row"
+          }
+        }
+      }
+    },
+    "phase13_residual_row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "feature_family",
+        "ci_family",
+        "capability_owner",
+        "diagnostic_owner",
+        "capability",
+        "concrete_reason",
+        "destination_phase",
+        "prerequisite_capability",
+        "current_failure_stage",
+        "positive_future_fixture",
+        "negative_current_fixture",
+        "diagnostic_reason_code",
+        "source_phase13_entry_ids"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_]+$"
+        },
+        "feature_family": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ci_family": {
+          "type": "string",
+          "minLength": 1
+        },
+        "capability_owner": {
+          "type": "string",
+          "minLength": 1
+        },
+        "diagnostic_owner": {
+          "type": "string",
+          "minLength": 1
+        },
+        "capability": {
+          "type": "string",
+          "minLength": 1
+        },
+        "concrete_reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "destination_phase": {
+          "type": "string",
+          "pattern": "^phase[0-9]+$"
+        },
+        "prerequisite_capability": {
+          "type": "string",
+          "minLength": 1
+        },
+        "current_failure_stage": {
+          "type": "string",
+          "minLength": 1
+        },
+        "positive_future_fixture": {
+          "type": "string",
+          "minLength": 1
+        },
+        "negative_current_fixture": {
+          "type": "string",
+          "minLength": 1
+        },
+        "diagnostic_reason_code": {
+          "type": "string",
+          "pattern": "^deferred_[A-Za-z0-9_]+$"
+        },
+        "source_phase13_entry_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_]+$"
+          }
         }
       }
     }

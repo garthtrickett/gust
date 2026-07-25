@@ -1,0 +1,17 @@
+mir_version: 1
+program: phase14_irreducible_cfg_future
+module_count: 1
+module: main
+function_count: 1
+function: main
+signature: ()->int
+block_count: 4
+entry_block: 0
+block: 0
+branch_i32: 1 1 2
+block: 1
+jump: 3
+block: 2
+jump: 3
+block: 3
+branch_i32: 1 1 2

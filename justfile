@@ -122,6 +122,8 @@ guard-pr-fast-ci-surface:
       'just guard-cranelift-phase12-5-close'
       'Phase 13 capability and deferral contract'
       'just guard-cranelift-phase13-capability-deferral-contract'
+      'Phase 13 deferred residue audit'
+      'just guard-cranelift-phase13-deferred-residue-audit'
       'phase11-family:'
       'phase11_families:'
       'matrix.family'
@@ -13133,6 +13135,69 @@ guard-cranelift-phase13-composition-differential family:
       rg -n -F $'guard-cranelift-phase13-composition-differential\t2\t' >/dev/null
     bash scripts/phase13_registry_differential.sh "{{family}}"
 
+guard-cranelift-phase13-deferred-residue-audit:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Auditing and freezing the Phase 13 deferred residue..."
+    registry="scripts/cranelift_feature_registry.json"
+    schema="scripts/cranelift_feature_registry.schema.json"
+    validator="scripts/cranelift_registry.py"
+    review="compiler/CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY.md"
+    level_runner="scripts/cranelift_test_levels.py"
+    pr_workflow=".github/workflows/pr-fast.yml"
+
+    for required_file in \
+      "$registry" "$schema" "$validator" "$review" "$level_runner" "$pr_workflow"
+    do
+      if [ ! -f "$required_file" ] || [ -L "$required_file" ]; then
+        echo "Missing regular Phase 13 residue-audit input: $required_file"
+        exit 1
+      fi
+    done
+
+    python3 "$validator" verify-phase13-deferred-residue-audit
+    python3 "$validator" check-phase13-projection
+    python3 "$level_runner" validate
+    python3 "$level_runner" level guard-cranelift-phase13-deferred-residue-audit |
+      rg -n -F $'guard-cranelift-phase13-deferred-residue-audit\t1\t' >/dev/null
+
+    required_review_tokens=(
+      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_VERSION: 10'
+      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_RESIDUE_STATUS: frozen_for_future_phases'
+      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_RESIDUE_VERSION: phase13_deferred_residue_v1'
+      '## Patch 13.12 deferred residue audit'
+      '## Opening entries with final dispositions'
+      '### Frozen residual capabilities'
+    )
+    for token in "${required_review_tokens[@]}"; do
+      rg -n -F "$token" "$review" >/dev/null
+    done
+
+    if [ "$(rg -c -F 'just guard-cranelift-phase13-deferred-residue-audit' "$pr_workflow")" != "1" ]; then
+      echo "PR Fast must invoke the Phase 13 deferred residue audit exactly once."
+      exit 1
+    fi
+
+    guard_body="$(
+      sed -n \
+        '/^guard-cranelift-phase13-deferred-residue-audit:/,/^guard-cranelift-phase11-registry-differential family:/p' \
+        justfile
+    )"
+    if printf '%s\n' "$guard_body" |
+       rg -n \
+         -e '^[[:space:]]+bash scripts/phase13_registry_differential\.sh' \
+         -e '^[[:space:]]+just guard-cranelift-differential-family' \
+         -e '^[[:space:]]+just guard-cranelift-historical-full' \
+         -e '^[[:space:]]+\./gust([[:space:]]|$)' \
+         -e '^[[:space:]]+(cargo|cc|gcc|clang)([[:space:]]|$)' \
+         >/dev/null
+    then
+      echo "Phase 13 deferred residue audit must remain static and lightweight."
+      exit 1
+    fi
+
+    echo "✅ Phase 13 deferred residue audit passed: every opening row is migrated, excluded, or replaced; inherited residue is narrowed and the future inventory is semantically frozen."
+
 guard-cranelift-phase11-registry-differential family:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -13158,6 +13223,7 @@ guard-cranelift-contract-fast:
     echo "⚡ Running the current local Level 1 Cranelift contracts."
     just guard-cranelift-phase12-5-close
     just guard-cranelift-phase13-capability-deferral-contract
+    just guard-cranelift-phase13-deferred-residue-audit
 
 guard-cranelift-historical-full:
     #!/usr/bin/env bash

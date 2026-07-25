@@ -13,13 +13,14 @@ ROOT = Path(__file__).resolve().parent.parent
 REGISTRY = ROOT / "scripts/cranelift_feature_registry.json"
 SCHEMA = ROOT / "scripts/cranelift_feature_registry.schema.json"
 DEFERRED = {"deferred", "inherited_deferred", "candidate_deferred"}
+REPLACED = {"replaced"}
 AMBIGUOUS = {"", "unknown", "tbd", "ownerless", "ambiguous"}
 
 TOP_FIELDS = {
     "schema", "schema_version", "registry_version", "registry_status",
     "current_phase", "closed_phase_versions", "closure_snapshots",
-    "opening_snapshots", "planning_categories", "supported_values",
-    "legacy_views", "entries",
+    "opening_snapshots", "residual_snapshots", "planning_categories",
+    "supported_values", "legacy_views", "entries",
 }
 ENTRY_FIELDS = {
     "id", "origin_phase", "parent", "feature_family", "ci_family", "status",
@@ -280,6 +281,42 @@ PHASE13_OPENING_SNAPSHOT_FIELDS = {
 }
 PHASE13_OPENING_SNAPSHOT_ENTRY_FIELDS = {"id", "parent"}
 PHASE13_OPENING_IMMUTABLE_FIELDS = ("id", "parent")
+PHASE13_AUDIT_FIELDS = {
+    "version", "final_disposition", "replacement_residual_ids",
+    "related_residual_ids", "justification",
+}
+PHASE13_RESIDUAL_SNAPSHOT_FIELDS = {
+    "version", "status", "source_opening_version", "immutable_fields",
+    "broad_description_bans", "resolution_policy", "freeze_policy", "rows",
+}
+PHASE13_RESIDUAL_ROW_FIELDS = {
+    "id", "feature_family", "ci_family", "capability_owner",
+    "diagnostic_owner", "capability", "concrete_reason",
+    "destination_phase", "prerequisite_capability",
+    "current_failure_stage", "positive_future_fixture",
+    "negative_current_fixture", "diagnostic_reason_code",
+    "source_phase13_entry_ids",
+}
+PHASE13_RESIDUAL_VERSION = "phase13_deferred_residue_v1"
+PHASE13_RESIDUAL_STATUS = "frozen_for_future_phases"
+PHASE13_RESIDUAL_IMMUTABLE_FIELDS = (
+    "id", "feature_family", "ci_family", "capability_owner",
+    "diagnostic_owner", "capability", "concrete_reason",
+    "destination_phase", "prerequisite_capability",
+    "current_failure_stage", "positive_future_fixture",
+    "negative_current_fixture", "diagnostic_reason_code",
+    "source_phase13_entry_ids",
+)
+PHASE13_RESIDUAL_BROAD_DESCRIPTION_BANS = (
+    "broader_calls", "broader_CFG", "more_expressions", "more_imports",
+    "unsupported_metadata", "broader_direct_and_imported_calls",
+    "broader_scalar_expressions", "multiple_modules_and_source_imports",
+)
+PHASE13_RESIDUAL_FAILURE_STAGES = {
+    "before_driver_discovery",
+    "canonical_mir_validation_before_driver_discovery",
+    "source_or_type_failure_before_driver_discovery",
+}
 PHASE13_OPENING_VERSION = (
     "phase13_opening_inventory_rebased_on_phase12_5_framework"
 )
@@ -529,6 +566,110 @@ def validate_phase13_opening_snapshot_structure(registry):
     return snapshot
 
 
+def validate_phase13_residual_snapshot_structure(registry):
+    snapshots = registry["residual_snapshots"]
+    require(
+        isinstance(snapshots, dict) and set(snapshots) == {"phase13"},
+        "residual_snapshots must contain exactly phase13",
+    )
+    snapshot = snapshots["phase13"]
+    require(
+        isinstance(snapshot, dict)
+        and set(snapshot) == PHASE13_RESIDUAL_SNAPSHOT_FIELDS,
+        "Phase 13 residual snapshot fields drifted",
+    )
+    require(
+        snapshot["version"] == PHASE13_RESIDUAL_VERSION,
+        "Phase 13 residual snapshot version drifted",
+    )
+    require(
+        snapshot["status"] == PHASE13_RESIDUAL_STATUS,
+        "Phase 13 residual snapshot is not frozen",
+    )
+    require(
+        snapshot["source_opening_version"] == PHASE13_INVENTORY_VERSION,
+        "Phase 13 residual snapshot opening version drifted",
+    )
+    require(
+        snapshot["immutable_fields"]
+        == list(PHASE13_RESIDUAL_IMMUTABLE_FIELDS),
+        "Phase 13 residual immutable-field set drifted",
+    )
+    require(
+        snapshot["broad_description_bans"]
+        == list(PHASE13_RESIDUAL_BROAD_DESCRIPTION_BANS),
+        "Phase 13 residual broad-description ban set drifted",
+    )
+    text(snapshot["resolution_policy"], "residual_snapshots.phase13.resolution_policy")
+    text(snapshot["freeze_policy"], "residual_snapshots.phase13.freeze_policy")
+
+    rows = snapshot["rows"]
+    require(
+        isinstance(rows, list) and rows,
+        "Phase 13 residual snapshot must contain actionable rows",
+    )
+    ids = set()
+    reason_codes = set()
+    for index, row in enumerate(rows):
+        context = f"residual_snapshots.phase13.rows[{index}]"
+        require(
+            isinstance(row, dict)
+            and set(row) == PHASE13_RESIDUAL_ROW_FIELDS,
+            f"{context} fields drifted",
+        )
+        residual_id = text(row["id"], f"{context}.id")
+        require(
+            re.fullmatch(r"p[0-9]+_[A-Za-z0-9_]+", residual_id) is not None,
+            f"{residual_id}: residual ID must identify a destination-phase capability",
+        )
+        require(residual_id not in ids, f"duplicate residual ID: {residual_id}")
+        ids.add(residual_id)
+        for field in (
+            "feature_family", "ci_family", "capability_owner",
+            "diagnostic_owner", "capability", "concrete_reason",
+            "destination_phase", "prerequisite_capability",
+            "current_failure_stage", "diagnostic_reason_code",
+        ):
+            text(row[field], f"{residual_id}.{field}")
+        require(
+            re.fullmatch(r"phase[0-9]+", row["destination_phase"]) is not None,
+            f"{residual_id}: destination phase is not concrete",
+        )
+        require(
+            row["current_failure_stage"] in PHASE13_RESIDUAL_FAILURE_STAGES,
+            f"{residual_id}: current failure stage is not stable",
+        )
+        require(
+            row["diagnostic_reason_code"] == f"deferred_{residual_id}",
+            f"{residual_id}: diagnostic reason code must derive from the stable ID",
+        )
+        require(
+            row["diagnostic_reason_code"] not in reason_codes,
+            f"duplicate residual diagnostic reason code: {row['diagnostic_reason_code']}",
+        )
+        reason_codes.add(row["diagnostic_reason_code"])
+        for field in ("positive_future_fixture", "negative_current_fixture"):
+            fixture(row[field], f"{residual_id}.{field}")
+        require(
+            row["positive_future_fixture"] != row["negative_current_fixture"],
+            f"{residual_id}: future-positive and current-negative fixtures must differ",
+        )
+        source_ids = unique_strings(
+            row["source_phase13_entry_ids"],
+            f"{residual_id}.source_phase13_entry_ids",
+        )
+        require(source_ids, f"{residual_id}: residual row has no Phase 13 source")
+        searchable = "_".join(
+            (row["capability"], row["concrete_reason"], row["prerequisite_capability"])
+        )
+        for banned in PHASE13_RESIDUAL_BROAD_DESCRIPTION_BANS:
+            require(
+                banned.lower() not in searchable.lower(),
+                f"{residual_id}: broad residual description remains: {banned}",
+            )
+    return snapshot
+
+
 def validate():
     registry = read_json(REGISTRY)
     schema = read_json(SCHEMA)
@@ -576,11 +717,28 @@ def validate():
         phase13_snapshot_entry_schema.get("additionalProperties") is False,
         "schema Phase 13 opening snapshot entries must reject unknown fields",
     )
+    residual_schema = schema.get("properties", {}).get("residual_snapshots", {})
+    require(
+        set(residual_schema.get("required", [])) == {"phase13"},
+        "schema residual snapshot keys drifted",
+    )
+    phase13_residual_schema = definitions.get("phase13_residual_snapshot", {})
+    require(
+        set(phase13_residual_schema.get("required", []))
+        == PHASE13_RESIDUAL_SNAPSHOT_FIELDS,
+        "schema Phase 13 residual snapshot fields drifted",
+    )
+    phase13_residual_row_schema = definitions.get("phase13_residual_row", {})
+    require(
+        set(phase13_residual_row_schema.get("required", []))
+        == PHASE13_RESIDUAL_ROW_FIELDS,
+        "schema Phase 13 residual row fields drifted",
+    )
 
     require(registry["schema"] == "scripts/cranelift_feature_registry.schema.json",
             "registry schema path is not canonical")
     require(registry["schema_version"] == 1, "schema_version must be 1")
-    require(registry["registry_version"] == 5, "registry_version must be 5")
+    require(registry["registry_version"] == 6, "registry_version must be 6")
     require(
         registry["registry_status"]
         == "phase12_5_closed_cranelift_verification_framework_consolidation",
@@ -597,6 +755,7 @@ def validate():
     )
     validate_phase11_snapshot_structure(registry)
     validate_phase13_opening_snapshot_structure(registry)
+    residual_snapshot = validate_phase13_residual_snapshot_structure(registry)
 
     categories = set(unique_strings(registry["planning_categories"], "planning_categories"))
     supported = registry["supported_values"]
@@ -666,6 +825,15 @@ def validate():
                     f"{entry_id}: deferred status requires a reason")
             require(not destination.startswith("none_"),
                     f"{entry_id}: deferred status requires a future phase")
+        elif status in REPLACED:
+            require(entry["origin_phase"] == "phase13",
+                    f"{entry_id}: only Phase 13 rows may be replaced")
+            require(entry["route_owner"] == "deferred",
+                    f"{entry_id}: replaced status requires route_owner=deferred")
+            require(reason == "replaced_by_phase13_deferred_residue_snapshot",
+                    f"{entry_id}: replaced row reason drifted")
+            require(destination == "phase14_or_later_via_residual_snapshot",
+                    f"{entry_id}: replaced row destination drifted")
         elif status == "migrated":
             require(entry["route_owner"] == "generic_canonical_mir",
                     f"{entry_id}: migrated status requires generic canonical MIR")
@@ -760,8 +928,8 @@ def validate():
                 )
             elif capability_decision == "deferred":
                 require(
-                    status in DEFERRED,
-                    f"{entry_id}: deferred capability requires deferred status",
+                    status in DEFERRED | REPLACED,
+                    f"{entry_id}: deferred capability requires deferred or replaced status",
                 )
                 require(
                     expected_failure_stage == "before_driver_discovery",
@@ -788,7 +956,7 @@ def validate():
                     f"{entry['id']}: inherited parent is not deferred")
             require(
                 entry["status"]
-                in {"inherited_deferred", "migrated", "excluded"},
+                in {"inherited_deferred", "migrated", "excluded", "replaced"},
                 f"{entry['id']}: entry parent has invalid current status",
             )
             if entry["status"] == "inherited_deferred":
@@ -806,7 +974,7 @@ def validate():
             require(category in categories, f"{entry['id']}: unknown category {category}")
             require(
                 entry["status"]
-                in {"candidate_deferred", "migrated", "excluded"},
+                in {"candidate_deferred", "migrated", "excluded", "replaced"},
                 f"{entry['id']}: category parent has invalid current status",
             )
         else:
@@ -821,6 +989,110 @@ def validate():
             entry["ci_family"] in active_ci_families,
             f"{entry['id']}: Phase 13 introduces non-Phase11 CI family "
             f"{entry['ci_family']}",
+        )
+
+    phase13_by_id = {entry["id"]: entry for entry in phase13}
+    residual_by_id = {row["id"]: row for row in residual_snapshot["rows"]}
+    residual_source_ids = set()
+    for residual_id, row in residual_by_id.items():
+        require(
+            row["feature_family"] in allowed["feature_families"],
+            f"{residual_id}: unknown residual feature family",
+        )
+        require(
+            row["ci_family"] in active_ci_families,
+            f"{residual_id}: residual row uses inactive CI family",
+        )
+        require(
+            row["capability_owner"] in allowed["worker_capability_owners"],
+            f"{residual_id}: unknown residual capability owner",
+        )
+        require(
+            row["diagnostic_owner"] in allowed["diagnostic_owners"],
+            f"{residual_id}: unknown residual diagnostic owner",
+        )
+        for source_id in row["source_phase13_entry_ids"]:
+            require(
+                source_id in phase13_by_id,
+                f"{residual_id}: unknown Phase 13 source row {source_id}",
+            )
+            residual_source_ids.add(source_id)
+
+    disposition_counts = Counter()
+    for entry in phase13:
+        entry_id = entry["id"]
+        audit = entry["evidence"].get("phase13_12_audit")
+        require(
+            isinstance(audit, dict) and set(audit) == PHASE13_AUDIT_FIELDS,
+            f"{entry_id}: Phase 13.12 audit fields drifted",
+        )
+        require(
+            audit["version"] == PHASE13_RESIDUAL_VERSION,
+            f"{entry_id}: Phase 13.12 audit version drifted",
+        )
+        disposition = text(
+            audit["final_disposition"],
+            f"{entry_id}.evidence.phase13_12_audit.final_disposition",
+        )
+        require(
+            disposition in {"migrated", "excluded", "replaced"},
+            f"{entry_id}: invalid final disposition {disposition}",
+        )
+        require(
+            entry["status"] == disposition,
+            f"{entry_id}: status differs from final disposition",
+        )
+        replacements = unique_strings(
+            audit["replacement_residual_ids"],
+            f"{entry_id}.evidence.phase13_12_audit.replacement_residual_ids",
+        )
+        related = unique_strings(
+            audit["related_residual_ids"],
+            f"{entry_id}.evidence.phase13_12_audit.related_residual_ids",
+        )
+        require(
+            set(replacements).isdisjoint(related),
+            f"{entry_id}: residual IDs appear as both replacement and related",
+        )
+        for residual_id in replacements + related:
+            require(
+                residual_id in residual_by_id,
+                f"{entry_id}: unknown residual reference {residual_id}",
+            )
+            require(
+                entry_id in residual_by_id[residual_id]["source_phase13_entry_ids"],
+                f"{entry_id}: residual {residual_id} does not trace back to the row",
+            )
+        if disposition == "replaced":
+            require(replacements, f"{entry_id}: replaced row has no narrower residual")
+            require(not related, f"{entry_id}: replaced row must use replacement links")
+        else:
+            require(not replacements, f"{entry_id}: non-replaced row has replacement links")
+        text(audit["justification"], f"{entry_id}.evidence.phase13_12_audit.justification")
+        disposition_counts[disposition] += 1
+
+    require(
+        not any(entry["status"] in DEFERRED for entry in phase13),
+        "Phase 13 retains unchanged active deferred rows after the residue audit",
+    )
+    require(
+        residual_source_ids == set(phase13_by_id),
+        "Residual snapshot traceability does not cover every Phase 13 row",
+    )
+    inherited_children = {
+        entry["parent"].split(":", 1)[1]: entry
+        for entry in phase13
+        if entry["parent"].startswith("phase11_entry:")
+    }
+    for deferred_parent_id in registry["closure_snapshots"]["phase11"]["deferred_entry_ids"]:
+        require(
+            deferred_parent_id in inherited_children,
+            f"Phase 11 deferred parent lacks a Phase 13 resolution: {deferred_parent_id}",
+        )
+        require(
+            inherited_children[deferred_parent_id]["status"]
+            in {"migrated", "excluded", "replaced"},
+            f"Phase 11 deferred parent remains ambiguous: {deferred_parent_id}",
         )
     return registry
 
@@ -948,6 +1220,7 @@ def verify_phase13_registry_schema(registry):
     rows = phase_entries(registry, "phase13")
     allowed_statuses = {
         "inherited_deferred", "candidate_deferred", "migrated", "excluded",
+        "replaced",
     }
     required_owners = (
         "route_owner",
@@ -1897,7 +2170,7 @@ def verify_phase13_direct_call_graph_contract(registry):
         )
         policy = rows[policy_id]
         require(
-            policy["status"] == "candidate_deferred"
+            policy["status"] == "replaced"
             and policy["route_owner"] == "deferred"
             and policy["capability_decision"] == "deferred"
             and policy["capability_reason_code"] == reason_code
@@ -2007,14 +2280,14 @@ def verify_phase13_broader_runtime_call_contract(registry):
     )
     policy = rows[PHASE13_BROADER_RUNTIME_CALL_POLICY_ID]
     require(
-        policy["status"] == "candidate_deferred"
+        policy["status"] == "replaced"
         and policy["route_owner"] == "deferred"
         and policy["capability_decision"] == "deferred"
         and policy["capability_reason_code"]
         == "deferred_p13_unapproved_host_symbol_policy"
         and policy["expected_failure_stage"]
         == "before_driver_discovery",
-        "Phase 13 unapproved-host policy must remain narrowly deferred",
+        "Phase 13 unapproved-host policy must be replaced by narrow residual rows",
     )
     require(
         policy["evidence"].get("unsupported_forms")
@@ -2369,6 +2642,53 @@ def verify_phase13_composition_differential_contract(registry):
     }
 
 
+def verify_phase13_deferred_residue_audit(registry):
+    verify_phase13_composition_differential_contract(registry)
+    snapshot = validate_phase13_residual_snapshot_structure(registry)
+    rows = phase_entries(registry, "phase13")
+    disposition_counts = Counter(entry["status"] for entry in rows)
+    residual_rows = snapshot["rows"]
+    residual_family_counts = Counter(row["feature_family"] for row in residual_rows)
+    destination_counts = Counter(row["destination_phase"] for row in residual_rows)
+    inherited = [
+        entry for entry in rows
+        if entry["parent"].startswith("phase11_entry:")
+    ]
+
+    require(
+        set(disposition_counts) <= {"migrated", "excluded", "replaced"},
+        "Phase 13 final dispositions contain active deferred residue",
+    )
+    require(
+        disposition_counts["migrated"] + disposition_counts["excluded"]
+        + disposition_counts["replaced"] == len(rows),
+        "Phase 13 final disposition totals do not reconcile",
+    )
+    require(
+        all(entry["status"] in {"migrated", "excluded", "replaced"} for entry in inherited),
+        "An inherited Phase 11 deferred row remains unresolved",
+    )
+    require(
+        sum(residual_family_counts.values()) == len(residual_rows),
+        "Residual feature-family totals do not reconcile",
+    )
+    require(
+        sum(destination_counts.values()) == len(residual_rows),
+        "Residual destination totals do not reconcile",
+    )
+    return {
+        "version": snapshot["version"],
+        "status": snapshot["status"],
+        "phase13_row_count": len(rows),
+        "disposition_counts": disposition_counts,
+        "inherited_row_count": len(inherited),
+        "residual_row_count": len(residual_rows),
+        "residual_family_counts": residual_family_counts,
+        "destination_counts": destination_counts,
+        "residual_ids": [row["id"] for row in residual_rows],
+    }
+
+
 def verify_phase13_parent_traceability(registry):
     phase11 = {
         entry["id"]: entry
@@ -2392,7 +2712,7 @@ def verify_phase13_parent_traceability(registry):
             )
             require(
                 entry["status"]
-                in {"inherited_deferred", "migrated", "excluded"},
+                in {"inherited_deferred", "migrated", "excluded", "replaced"},
                 f"{entry_id}: entry parent has invalid current status",
             )
             if entry["status"] == "inherited_deferred":
@@ -2411,7 +2731,7 @@ def verify_phase13_parent_traceability(registry):
             require(category in categories, f"{entry_id}: unknown category {category}")
             require(
                 entry["status"]
-                in {"candidate_deferred", "migrated", "excluded"},
+                in {"candidate_deferred", "migrated", "excluded", "replaced"},
                 f"{entry_id}: category parent has invalid current status",
             )
         else:
@@ -2543,17 +2863,18 @@ def render_phase13(registry):
     runtime_contract = verify_phase13_broader_runtime_call_contract(registry)
     metadata_contract = verify_phase13_source_metadata_contract(registry)
     composition_contract = verify_phase13_composition_differential_contract(registry)
+    residue_contract = verify_phase13_deferred_residue_audit(registry)
     rows = phase_entries(registry, "phase13")
     status_counts = totals["status_counts"]
     current_status_counts = Counter(entry["status"] for entry in rows)
     parent_kinds = totals["parent_kinds"]
 
     lines = [
-        "# Cranelift Phase 13 Opening Inventory",
+        "# Cranelift Phase 13 Final Review and Deferred Residue",
         "",
         "<!-- Generated by scripts/cranelift_registry.py; do not edit by hand. -->",
         "",
-        "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_VERSION: 9",
+        "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_VERSION: 10",
         "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_AUTHORITY: generated_review_view",
         "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_CANONICAL_SOURCE: scripts/cranelift_feature_registry.json",
         (
@@ -2664,6 +2985,18 @@ def render_phase13(registry):
         (
             "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_COMPOSITION_FAMILIES: "
             f"{composition_contract['family_count']}"
+        ),
+        (
+            "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_RESIDUE_STATUS: "
+            f"{residue_contract['status']}"
+        ),
+        (
+            "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_RESIDUE_VERSION: "
+            f"{residue_contract['version']}"
+        ),
+        (
+            "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_RESIDUE_ROWS: "
+            f"{residue_contract['residual_row_count']}"
         ),
         "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_NEXT_MILESTONE: phase13_closure_gate",
         "",
@@ -2870,7 +3203,40 @@ def render_phase13(registry):
             for case_id in composition_contract["case_ids"]
         ],
         "",
-        "## Opening entries",
+        "## Patch 13.12 deferred residue audit",
+        "",
+        f"- Audited Phase 13 rows: `{residue_contract['phase13_row_count']}`",
+        f"- Migrated dispositions: `{residue_contract['disposition_counts']['migrated']}`",
+        f"- Replaced dispositions: `{residue_contract['disposition_counts']['replaced']}`",
+        f"- Excluded dispositions: `{residue_contract['disposition_counts']['excluded']}`",
+        f"- Inherited Phase 11 rows resolved: `{residue_contract['inherited_row_count']}`",
+        f"- Frozen residual rows: `{residue_contract['residual_row_count']}`",
+        "",
+        "### Residual destinations",
+        "",
+        *count_lines(residue_contract["destination_counts"]),
+        "",
+        "### Residual feature families",
+        "",
+        *count_lines(residue_contract["residual_family_counts"]),
+        "",
+        "### Frozen residual capabilities",
+        "",
+        *[
+            (
+                f"- `{row['id']}`: `{row['capability']}`; owner "
+                f"`{row['capability_owner']}`; diagnostic "
+                f"`{row['diagnostic_owner']}`; destination "
+                f"`{row['destination_phase']}`; prerequisite "
+                f"`{row['prerequisite_capability']}`; current failure "
+                f"`{row['current_failure_stage']}`; future fixture "
+                f"`{row['positive_future_fixture']}`; current fixture "
+                f"`{row['negative_current_fixture']}`."
+            )
+            for row in registry["residual_snapshots"]["phase13"]["rows"]
+        ],
+        "",
+        "## Opening entries with final dispositions",
         "",
         *[phase13_record(entry) for entry in rows],
         "",
@@ -2888,6 +3254,9 @@ def render_phase13(registry):
         "- Patch 13.5 migrates the selected single-header loop row with block-parameter-carried state and precise residual deferrals.",
         "- Unsupported early-return, nested-loop, body-control-flow, and condition-operator loop shapes remain deferred before driver discovery.",
         "- Patch 13.11 differential cases are generated from registry ownership rather than a separate Phase 13 feature list.",
+        "- Patch 13.12 leaves no active inherited_deferred or candidate_deferred Phase 13 row.",
+        "- Broad rows are marked replaced and point to smaller residual capabilities in the frozen semantic snapshot.",
+        "- Every residual capability has a stable owner, diagnostic owner, destination phase, prerequisite, failure stage, future-positive fixture, and current-negative fixture.",
         "- Every migrated row has individual evidence, a composition relationship, and a differential case owner.",
         "- The existing seven registry-derived CI families own all composition cases without a patch-specific workflow matrix.",
         "",
@@ -3015,6 +3384,7 @@ def main():
             "verify-phase13-broader-runtime-call-contract",
             "verify-phase13-source-metadata-contract",
             "verify-phase13-composition-differential-contract",
+            "verify-phase13-deferred-residue-audit",
             "verify-phase13-opening-rebase",
             "verify-phase13-parent-traceability",
             "verify-phase13-opening-totals",
@@ -3052,6 +3422,8 @@ def main():
             verify_phase13_source_metadata_contract(registry)
         elif command == "verify-phase13-composition-differential-contract":
             verify_phase13_composition_differential_contract(registry)
+        elif command == "verify-phase13-deferred-residue-audit":
+            verify_phase13_deferred_residue_audit(registry)
         elif command == "verify-phase13-opening-rebase":
             verify_phase13_opening_rebase(registry)
         elif command == "verify-phase13-parent-traceability":
@@ -3087,6 +3459,7 @@ def main():
     runtime_contract = verify_phase13_broader_runtime_call_contract(registry)
     metadata_contract = verify_phase13_source_metadata_contract(registry)
     composition_contract = verify_phase13_composition_differential_contract(registry)
+    residue_contract = verify_phase13_deferred_residue_audit(registry)
     phase13_statuses = phase13_totals["status_counts"]
     phase13_parents = phase13_totals["parent_kinds"]
     messages = {
@@ -3188,6 +3561,14 @@ def main():
             f"{composition_contract['composition_case_count']} composition cases "
             f"cover {composition_contract['family_count']} registry-derived families."
         ),
+        "verify-phase13-deferred-residue-audit": (
+            "✅ Phase 13 deferred residue audit passed: "
+            f"{residue_contract['phase13_row_count']} audited rows finish as "
+            f"{residue_contract['disposition_counts']['migrated']} migrated, "
+            f"{residue_contract['disposition_counts']['replaced']} replaced, and "
+            f"{residue_contract['disposition_counts']['excluded']} excluded; "
+            f"{residue_contract['residual_row_count']} concrete future capabilities are frozen."
+        ),
         "verify-phase13-opening-rebase": (
             "✅ Phase 13 opening rebase passed: stable IDs and parent "
             "relationships match the semantic snapshot; ready for Patch 13.1."
@@ -3208,7 +3589,7 @@ def main():
             "generated."
         ),
         "check-phase13-projection": (
-            "✅ Phase 13 generated opening summary matches the registry."
+            "✅ Phase 13 generated final review matches the registry."
         ),
         "check-projection": (
             "✅ Canonical Cranelift registry and Phase 13 projections match "
