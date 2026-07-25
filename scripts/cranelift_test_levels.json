@@ -164,6 +164,8 @@
     "guard-cranelift-phase13-parent-traceability": 1,
     "guard-cranelift-phase13-registry-schema": 1,
     "guard-cranelift-phase13-scalar-expression-parity": 2,
+    "guard-cranelift-phase13-source-metadata-contract": 1,
+    "guard-cranelift-phase13-source-metadata-parity": 2,
     "guard-cranelift-phase9b-close": 3,
     "guard-cranelift-phase9c-close": 3,
     "guard-cranelift-phase9c-differential-ladder-native-shard": 3,

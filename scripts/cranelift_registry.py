@@ -221,6 +221,33 @@ PHASE13_BROADER_RUNTIME_UNSUPPORTED_FORMS = [
     "layout_sensitive_call",
     "non_scalar_abi_value",
 ]
+
+PHASE13_SOURCE_METADATA_ENTRY_IDS = [
+    "p13_resource_metadata_source_route",
+    "p13_native_boundary_metadata_source_route",
+]
+PHASE13_SOURCE_METADATA_ROUTES = [
+    "compiler/phase13_source_resource_metadata_source.gst",
+    "compiler/phase13_scalar_nested_mixed_source.gst",
+    "compiler/phase13_nested_structured_cfg_source.gst",
+    "compiler/phase13_direct_call_graph_source.gst",
+    "compiler/phase13_runtime_multiple_calls_source.gst",
+]
+PHASE13_SOURCE_METADATA_MALFORMED_FIXTURES = [
+    "compiler/fixtures/phase13_source_metadata_missing_owner.mir",
+    "compiler/fixtures/phase13_source_metadata_invalid_source_location.mir",
+    "compiler/fixtures/phase13_source_metadata_incompatible_class.mir",
+    "compiler/fixtures/phase13_source_metadata_invalid_proof_state.mir",
+    "compiler/fixtures/phase13_source_metadata_incorrect_codegen_relevance.mir",
+    "compiler/fixtures/phase13_source_metadata_inconsistent_serialization.mir",
+]
+PHASE13_SOURCE_METADATA_DEFERRED_RESOURCE_SEMANTICS = [
+    "resource_values",
+    "movement",
+    "cleanup",
+    "destructor_scheduling",
+    "destruction_lowering",
+]
 SUPPORTED_FIELDS = {
     "statuses", "origin_phases", "feature_families",
     "route_owners", "worker_capability_owners", "diagnostic_owners",
@@ -756,15 +783,16 @@ def validate():
                 in {"inherited_deferred", "migrated", "excluded"},
                 f"{entry['id']}: entry parent has invalid current status",
             )
-            require(
-                entry["source_fixture"] == phase11_by_id[parent_id]["source_fixture"],
-                f"{entry['id']}: inherited source fixture differs from Phase 11",
-            )
-            require(
-                entry["canonical_mir_fixture"]
-                == phase11_by_id[parent_id]["canonical_mir_fixture"],
-                f"{entry['id']}: inherited canonical MIR fixture differs from Phase 11",
-            )
+            if entry["status"] == "inherited_deferred":
+                require(
+                    entry["source_fixture"] == phase11_by_id[parent_id]["source_fixture"],
+                    f"{entry['id']}: still-deferred inherited source fixture differs from Phase 11",
+                )
+                require(
+                    entry["canonical_mir_fixture"]
+                    == phase11_by_id[parent_id]["canonical_mir_fixture"],
+                    f"{entry['id']}: still-deferred inherited canonical MIR fixture differs from Phase 11",
+                )
         elif parent.startswith("phase11_category:"):
             category = parent.split(":", 1)[1]
             require(category in categories, f"{entry['id']}: unknown category {category}")
@@ -1097,6 +1125,7 @@ def verify_phase13_scalar_expression_contract(registry):
             PHASE13_PARAMETER_ARGUMENT_ENTRY_ID,
             PHASE13_DIRECT_CALL_GRAPH_ENTRY_ID,
             PHASE13_BROADER_RUNTIME_CALL_ENTRY_ID,
+            *PHASE13_SOURCE_METADATA_ENTRY_IDS,
         }
         and row["capability_decision"] == "supported"
     ]
@@ -1237,6 +1266,7 @@ def verify_phase13_multiple_locals_contract(registry):
             PHASE13_PARAMETER_ARGUMENT_ENTRY_ID,
             PHASE13_DIRECT_CALL_GRAPH_ENTRY_ID,
             PHASE13_BROADER_RUNTIME_CALL_ENTRY_ID,
+            *PHASE13_SOURCE_METADATA_ENTRY_IDS,
         }
         and row["capability_decision"] == "supported"
     ]
@@ -1389,6 +1419,7 @@ def verify_phase13_nested_structured_cfg_contract(registry):
             PHASE13_PARAMETER_ARGUMENT_ENTRY_ID,
             PHASE13_DIRECT_CALL_GRAPH_ENTRY_ID,
             PHASE13_BROADER_RUNTIME_CALL_ENTRY_ID,
+            *PHASE13_SOURCE_METADATA_ENTRY_IDS,
         }
         and row["capability_decision"] == "supported"
     ]
@@ -1538,6 +1569,7 @@ def verify_phase13_general_loop_contract(registry):
             PHASE13_PARAMETER_ARGUMENT_ENTRY_ID,
             PHASE13_DIRECT_CALL_GRAPH_ENTRY_ID,
             PHASE13_BROADER_RUNTIME_CALL_ENTRY_ID,
+            *PHASE13_SOURCE_METADATA_ENTRY_IDS,
         }
         and row["capability_decision"] == "supported"
     ]
@@ -1688,6 +1720,7 @@ def verify_phase13_parameter_argument_contract(registry):
             PHASE13_PARAMETER_ARGUMENT_ENTRY_ID,
             PHASE13_DIRECT_CALL_GRAPH_ENTRY_ID,
             PHASE13_BROADER_RUNTIME_CALL_ENTRY_ID,
+            *PHASE13_SOURCE_METADATA_ENTRY_IDS,
         }
         and row["capability_decision"] == "supported"
     ]
@@ -2012,6 +2045,87 @@ def verify_phase13_broader_runtime_call_contract(registry):
     }
 
 
+def verify_phase13_source_metadata_contract(registry):
+    verify_phase13_broader_runtime_call_contract(registry)
+    rows = {
+        entry["id"]: entry
+        for entry in phase_entries(registry, "phase13")
+    }
+    for entry_id in PHASE13_SOURCE_METADATA_ENTRY_IDS:
+        require(entry_id in rows, f"Phase 13 source metadata row is missing: {entry_id}")
+        entry = rows[entry_id]
+        require(
+            entry["status"] == "migrated"
+            and entry["route_owner"] == "generic_canonical_mir"
+            and entry["capability_decision"] == "supported"
+            and entry["expected_failure_stage"] == "none_supported"
+            and entry["deferral_reason"] == "none_migrated"
+            and entry["future_destination_phase"] == "none_migrated",
+            f"Phase 13 source metadata capability contract drifted: {entry_id}",
+        )
+        evidence = entry["evidence"]
+        require(
+            evidence.get("metadata_contract_version") == "phase13_10",
+            f"Phase 13 source metadata contract version drifted: {entry_id}",
+        )
+        require(
+            evidence.get("source_connected_routes")
+            == PHASE13_SOURCE_METADATA_ROUTES,
+            f"Phase 13 source metadata route inventory drifted: {entry_id}",
+        )
+        require(
+            evidence.get("malformed_metadata_fixtures")
+            == PHASE13_SOURCE_METADATA_MALFORMED_FIXTURES,
+            f"Phase 13 malformed metadata inventory drifted: {entry_id}",
+        )
+        for index, path in enumerate(evidence["source_connected_routes"]):
+            fixture(path, f"{entry_id}.evidence.source_connected_routes[{index}]")
+        for index, path in enumerate(evidence["malformed_metadata_fixtures"]):
+            fixture(path, f"{entry_id}.evidence.malformed_metadata_fixtures[{index}]")
+
+    resource = rows["p13_resource_metadata_source_route"]
+    require(
+        resource["capability_reason_code"]
+        == "supported_p13_resource_metadata_source_route"
+        and resource["source_fixture"]
+        == "compiler/phase13_source_resource_metadata_source.gst"
+        and resource["canonical_mir_fixture"]
+        == "compiler/fixtures/phase13_source_metadata_valid_resource.mir",
+        "Phase 13 resource metadata source contract drifted",
+    )
+    require(
+        resource["evidence"].get("classification")
+        == "validated_preserved"
+        and resource["evidence"].get("codegen_semantics") == "preserved"
+        and resource["evidence"].get("narrow_resource_deferral_reason_code")
+        == "deferred_p13_resource_runtime_semantics"
+        and resource["evidence"].get("deferred_resource_semantics")
+        == PHASE13_SOURCE_METADATA_DEFERRED_RESOURCE_SEMANTICS,
+        "Phase 13 resource metadata classification or narrow deferral drifted",
+    )
+
+    boundary = rows["p13_native_boundary_metadata_source_route"]
+    require(
+        boundary["capability_reason_code"]
+        == "supported_p13_native_boundary_metadata_source_route"
+        and boundary["source_fixture"]
+        == "compiler/phase13_runtime_multiple_calls_source.gst"
+        and boundary["evidence"].get("classification")
+        == "validated_codegen_relevant"
+        and boundary["evidence"].get("codegen_semantics") == "required"
+        and boundary["evidence"].get("bounded_codegen_relevance")
+        == "approved_import_symbol_signature_and_statement_owner_validation_only",
+        "Phase 13 native-boundary metadata classification drifted",
+    )
+
+    return {
+        "entry_ids": PHASE13_SOURCE_METADATA_ENTRY_IDS,
+        "source_route_count": len(PHASE13_SOURCE_METADATA_ROUTES),
+        "malformed_fixture_count": len(PHASE13_SOURCE_METADATA_MALFORMED_FIXTURES),
+        "deferred_resource_semantics": PHASE13_SOURCE_METADATA_DEFERRED_RESOURCE_SEMANTICS,
+    }
+
+
 def verify_phase13_parent_traceability(registry):
     phase11 = {
         entry["id"]: entry
@@ -2038,15 +2152,16 @@ def verify_phase13_parent_traceability(registry):
                 in {"inherited_deferred", "migrated", "excluded"},
                 f"{entry_id}: entry parent has invalid current status",
             )
-            require(
-                entry["source_fixture"] == parent_entry["source_fixture"],
-                f"{entry_id}: inherited source fixture differs from Phase 11",
-            )
-            require(
-                entry["canonical_mir_fixture"]
-                == parent_entry["canonical_mir_fixture"],
-                f"{entry_id}: inherited canonical MIR fixture differs from Phase 11",
-            )
+            if entry["status"] == "inherited_deferred":
+                require(
+                    entry["source_fixture"] == parent_entry["source_fixture"],
+                    f"{entry_id}: still-deferred inherited source fixture differs from Phase 11",
+                )
+                require(
+                    entry["canonical_mir_fixture"]
+                    == parent_entry["canonical_mir_fixture"],
+                    f"{entry_id}: still-deferred inherited canonical MIR fixture differs from Phase 11",
+                )
         elif parent.startswith("phase11_category:"):
             parent_kinds["phase11_category"] += 1
             category = parent.split(":", 1)[1]
@@ -2183,6 +2298,7 @@ def render_phase13(registry):
     parameter_contract = verify_phase13_parameter_argument_contract(registry)
     graph_contract = verify_phase13_direct_call_graph_contract(registry)
     runtime_contract = verify_phase13_broader_runtime_call_contract(registry)
+    metadata_contract = verify_phase13_source_metadata_contract(registry)
     rows = phase_entries(registry, "phase13")
     status_counts = totals["status_counts"]
     current_status_counts = Counter(entry["status"] for entry in rows)
@@ -2281,7 +2397,19 @@ def render_phase13(registry):
             "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_DIRECT_CALL_GRAPH_SHAPES: "
             + ",".join(graph_contract["selected_shapes"])
         ),
-        "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_NEXT_MILESTONE: patch13_8_multi_module_composition",
+        (
+            "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_BROADER_RUNTIME_CALL_STATUS: "
+            "patch13_9_broader_imported_runtime_calls_migrated"
+        ),
+        (
+            "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_SOURCE_METADATA_STATUS: "
+            "patch13_10_source_produced_metadata_integrated"
+        ),
+        (
+            "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_SOURCE_METADATA_ROWS: "
+            + ",".join(metadata_contract["entry_ids"])
+        ),
+        "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_NEXT_MILESTONE: patch13_11_registry_derived_composition_differential",
         "",
         "This review artifact is generated from the structured registry. Phase 12.5",
         "is closed under the recorded framework closure version. Stable Phase 13 IDs",
@@ -2598,6 +2726,7 @@ def main():
             "verify-phase13-parameter-argument-contract",
             "verify-phase13-direct-call-graph-contract",
             "verify-phase13-broader-runtime-call-contract",
+            "verify-phase13-source-metadata-contract",
             "verify-phase13-opening-rebase",
             "verify-phase13-parent-traceability",
             "verify-phase13-opening-totals",
@@ -2631,6 +2760,8 @@ def main():
             verify_phase13_direct_call_graph_contract(registry)
         elif command == "verify-phase13-broader-runtime-call-contract":
             verify_phase13_broader_runtime_call_contract(registry)
+        elif command == "verify-phase13-source-metadata-contract":
+            verify_phase13_source_metadata_contract(registry)
         elif command == "verify-phase13-opening-rebase":
             verify_phase13_opening_rebase(registry)
         elif command == "verify-phase13-parent-traceability":
@@ -2664,6 +2795,7 @@ def main():
     parameter_contract = verify_phase13_parameter_argument_contract(registry)
     graph_contract = verify_phase13_direct_call_graph_contract(registry)
     runtime_contract = verify_phase13_broader_runtime_call_contract(registry)
+    metadata_contract = verify_phase13_source_metadata_contract(registry)
     phase13_statuses = phase13_totals["status_counts"]
     phase13_parents = phase13_totals["parent_kinds"]
     messages = {
@@ -2752,6 +2884,12 @@ def main():
             f"{runtime_contract['focused_fixture_count']} focused fixtures, "
             f"{runtime_contract['negative_fixture_count']} negative fixtures, and "
             f"{len(runtime_contract['unsupported_forms'])} narrowly deferred ABI forms."
+        ),
+        "verify-phase13-source-metadata-contract": (
+            "✅ Phase 13 source metadata registry contract passed: "
+            f"{len(metadata_contract['entry_ids'])} metadata rows cover "
+            f"{metadata_contract['source_route_count']} generic source routes and "
+            f"{metadata_contract['malformed_fixture_count']} malformed fixtures."
         ),
         "verify-phase13-opening-rebase": (
             "✅ Phase 13 opening rebase passed: stable IDs and parent "

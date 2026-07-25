@@ -1,5 +1,6 @@
 import "ast.gst" as ast;
 import "mir.gst" as mir;
+import "mir_native_backend_metadata_source.gst" as metadata_source;
 
 // Compiler-owned module, import, and runtime-boundary lowering.
 //
@@ -30,6 +31,10 @@ type MirNativeModuleImportFunction[ctx] struct {
     module_prefix: str,
     source_name: str,
     qualified_name: str,
+    call_source_line: int,
+    call_source_column: int,
+    second_call_source_line: int,
+    second_call_source_column: int,
     parameter_names: Index[std.Vector[str, ctx], ctx],
     parameter_types: Index[std.Vector[str, ctx], ctx],
     return_type: str,
@@ -62,6 +67,8 @@ type MirNativeModuleImportModel[ctx] struct {
 
 type MirNativeModuleImportHostCall[ctx] struct {
     valid: int,
+    source_line: int,
+    source_column: int,
     callee_name: str,
     callee_link_name: str,
     boundary_kind: int,
@@ -381,6 +388,8 @@ func mir_native_module_import_analyze_argument(expression: ast.Expression[ctx], 
 func mir_native_module_import_analyze_host_call(expression: ast.Expression[ctx], function: MirNativeModuleImportFunction[ctx], hosts: std.Vector[MirNativeModuleImportHost[ctx], ctx], allowed_local: str, ctx: &Arena) MirNativeModuleImportHostCall[ctx] {
     mut call: MirNativeModuleImportHostCall[ctx];
     call.valid = 0;
+    call.source_line = 0;
+    call.source_column = 0;
     call.callee_name = std.Clone(ctx, "");
     call.callee_link_name = std.Clone(ctx, "");
     call.boundary_kind = 0;
@@ -433,6 +442,8 @@ func mir_native_module_import_analyze_host_call(expression: ast.Expression[ctx],
         }
         ctx.Set(call.arguments, arguments);
         call.valid = 1;
+        call.source_line = expression.Call.span.start.line;
+        call.source_column = expression.Call.span.start.column;
         call.callee_name = std.Clone(ctx, host.name);
         call.callee_link_name = std.Clone(ctx, host.link_name);
         call.boundary_kind = host.boundary_kind;
@@ -447,6 +458,10 @@ func mir_native_module_import_make_function_signature(statement: ast.Statement[c
     function.module_prefix = std.Clone(ctx, module_prefix);
     function.source_name = std.Clone(ctx, "");
     function.qualified_name = std.Clone(ctx, "");
+    function.call_source_line = 0;
+    function.call_source_column = 0;
+    function.second_call_source_line = 0;
+    function.second_call_source_column = 0;
     function.parameter_names = mir_native_module_import_empty_string_vector(ctx);
     function.parameter_types = mir_native_module_import_empty_string_vector(ctx);
     function.return_type = std.Clone(ctx, "");
@@ -690,7 +705,11 @@ func mir_native_module_import_analyze_host_composition(function: MirNativeModule
             std.Clone(ctx, first_call.callee_link_name);
         analyzed.boundary_kind = first_call.boundary_kind;
         analyzed.arguments = first_call.arguments;
+        analyzed.call_source_line = first_call.source_line;
+        analyzed.call_source_column = first_call.source_column;
         analyzed.second_arguments = second_call.arguments;
+        analyzed.second_call_source_line = second_call.source_line;
+        analyzed.second_call_source_column = second_call.source_column;
         analyzed.result_local_name = std.Clone(ctx, local_name);
         analyzed.expression_add_value = add_value;
     }
@@ -778,6 +797,8 @@ func mir_native_module_import_analyze_host_predicate_branch(function: MirNativeM
         analyzed.callee_link_name = std.Clone(ctx, call.callee_link_name);
         analyzed.boundary_kind = call.boundary_kind;
         analyzed.arguments = call.arguments;
+        analyzed.call_source_line = call.source_line;
+        analyzed.call_source_column = call.source_column;
         analyzed.result_local_name = std.Clone(ctx, local_name);
         analyzed.branch_then_value = then_expression.Integer.val;
         analyzed.branch_else_value = else_expression.Integer.val;
@@ -978,6 +999,8 @@ func mir_native_module_import_analyze_function_body(function: MirNativeModuleImp
             argument_index = argument_index + 1;
         }
         ctx.Set(analyzed.arguments, arguments);
+        analyzed.call_source_line = expression.Call.span.start.line;
+        analyzed.call_source_column = expression.Call.span.start.column;
         analyzed.profile = 2;
     }
     return analyzed;
@@ -1957,12 +1980,48 @@ func mir_native_module_import_emit_boundary_metadata(output: str, function: MirN
     emitted = mir_native_module_import_append_int(emitted, metadata_index, ctx);
     emitted = mir_native_module_import_append(
         emitted,
-        "_policy: ignored_with_proof\nfunction_",
+        "_policy: recognized_preserved\n",
         ctx
     );
-    emitted = mir_native_module_import_append_int(emitted, function_index, ctx);
-    emitted = mir_native_module_import_append(emitted, "_metadata_", ctx);
-    emitted = mir_native_module_import_append_int(emitted, metadata_index, ctx);
+    mut metadata_prefix := mir_native_module_import_append(
+        "function_",
+        std.FormatInt(function_index),
+        ctx
+    );
+    metadata_prefix = mir_native_module_import_append(
+        metadata_prefix,
+        "_metadata_",
+        ctx
+    );
+    metadata_prefix = mir_native_module_import_append(
+        metadata_prefix,
+        std.FormatInt(metadata_index),
+        ctx
+    );
+    mut owner := mir_native_module_import_append(
+        "statement:entry:",
+        std.FormatInt(statement_index),
+        ctx
+    );
+    mut source_line := function.call_source_line;
+    mut source_column := function.call_source_column;
+    if metadata_index == 1 {
+        source_line = function.second_call_source_line;
+        source_column = function.second_call_source_column;
+    }
+    emitted = metadata_source.mir_native_metadata_emit_contract(
+        emitted,
+        metadata_prefix,
+        function.module_path,
+        source_line,
+        source_column,
+        owner,
+        "validated_codegen_relevant",
+        "required",
+        "runtime_boundary_classification_and_symbol_are_registry_validated",
+        ctx
+    );
+    emitted = mir_native_module_import_append(emitted, metadata_prefix, ctx);
     emitted = mir_native_module_import_append(emitted, "_payload: kind=", ctx);
     if function.boundary_kind == 1 {
         emitted = mir_native_module_import_append(emitted, "RuntimeCall", ctx);
@@ -1977,7 +2036,7 @@ func mir_native_module_import_emit_boundary_metadata(output: str, function: MirN
     );
     emitted = mir_native_module_import_append(
         emitted,
-        ";codegen=none;proof=runtime_boundary_classification_is_registry_validated;origin=",
+        ";codegen=required;origin=",
         ctx
     );
     emitted = mir_native_module_import_append(

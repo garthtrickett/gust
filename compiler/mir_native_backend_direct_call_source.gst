@@ -1,5 +1,6 @@
 import "ast.gst" as ast;
 import "mir.gst" as mir;
+import "mir_native_backend_metadata_source.gst" as metadata_source;
 
 // Compiler-owned direct-function and scalar-ABI lowering.
 //
@@ -17,6 +18,8 @@ type MirNativeDirectCallArgument[ctx] struct {
 
 type MirNativeDirectCallFunction[ctx] struct {
     name: str,
+    source_line: int,
+    source_column: int,
     parameter_names: Index[std.Vector[str, ctx], ctx],
     parameter_types: Index[std.Vector[str, ctx], ctx],
     return_type: str,
@@ -225,6 +228,8 @@ func mir_native_direct_call_analyze_argument(expression: ast.Expression[ctx], pa
 func mir_native_direct_call_analyze_function(statement: ast.Statement[ctx], ctx: &Arena) MirNativeDirectCallFunction[ctx] {
     mut function: MirNativeDirectCallFunction[ctx];
     function.name = std.Clone(ctx, "");
+    function.source_line = 0;
+    function.source_column = 0;
     function.parameter_names = mir_native_direct_call_empty_string_vector(ctx);
     function.parameter_types = mir_native_direct_call_empty_string_vector(ctx);
     function.return_type = std.Clone(ctx, "");
@@ -250,6 +255,8 @@ func mir_native_direct_call_analyze_function(statement: ast.Statement[ctx], ctx:
             return function;
         }
         function.name = std.Clone(ctx, statement.FunctionDecl.name);
+        function.source_line = statement.FunctionDecl.span.start.line;
+        function.source_column = statement.FunctionDecl.span.start.column;
 
         mut parameter_names: std.Vector[str, ctx] := std.VectorNew(ctx);
         mut parameter_types: std.Vector[str, ctx] := std.VectorNew(ctx);
@@ -1426,6 +1433,7 @@ func mir_native_direct_call_emit_function(
     function_index: int,
     expected_exit: int,
     graph_profile: int,
+    source_path: str,
     ctx: &Arena
 ) str {
     mut emitted := output;
@@ -2229,7 +2237,57 @@ func mir_native_direct_call_emit_function(
     emitted = mir_native_direct_call_append_int(emitted, function_index, ctx);
     emitted = mir_native_direct_call_append(
         emitted,
-        "_metadata_count: 0\nfunction_",
+        "_metadata_count: 1\n",
+        ctx
+    );
+    mut metadata_prefix := mir_native_direct_call_append(
+        "function_",
+        std.FormatInt(function_index),
+        ctx
+    );
+    metadata_prefix = mir_native_direct_call_append(
+        metadata_prefix,
+        "_metadata_0",
+        ctx
+    );
+    emitted = mir_native_direct_call_append(
+        emitted,
+        metadata_prefix,
+        ctx
+    );
+    emitted = mir_native_direct_call_append(
+        emitted,
+        "_kind: provenance\n",
+        ctx
+    );
+    emitted = mir_native_direct_call_append(emitted, metadata_prefix, ctx);
+    emitted = mir_native_direct_call_append(
+        emitted,
+        "_attachment: function\n",
+        ctx
+    );
+    emitted = mir_native_direct_call_append(emitted, metadata_prefix, ctx);
+    emitted = mir_native_direct_call_append(
+        emitted,
+        "_policy: recognized_preserved\n",
+        ctx
+    );
+    emitted = metadata_source.mir_native_metadata_emit_contract(
+        emitted,
+        metadata_prefix,
+        source_path,
+        function.source_line,
+        function.source_column,
+        "function",
+        "validated_preserved",
+        "preserved",
+        "direct_call_graph_and_scalar_abi_are_validated_before_lowering",
+        ctx
+    );
+    emitted = mir_native_direct_call_append(emitted, metadata_prefix, ctx);
+    emitted = mir_native_direct_call_append(
+        emitted,
+        "_payload: kind=DirectCallGraph;contract=phase13_7;codegen=preserved\nfunction_",
         ctx
     );
     emitted = mir_native_direct_call_append_int(emitted, function_index, ctx);
@@ -2293,6 +2351,7 @@ func mir_native_direct_call_emit_bundle(model: MirNativeDirectCallModel[ctx], ct
             function_index,
             expected_exit,
             model.graph_profile,
+            model.source_path,
             ctx
         );
         function_index = function_index + 1;
@@ -2306,7 +2365,7 @@ func mir_native_direct_call_emit_bundle(model: MirNativeDirectCallModel[ctx], ct
         "gust.compiler_mir_ingestion.v2",
         canonical,
         0,
-        0,
+        len(functions),
         0,
         ctx
     );

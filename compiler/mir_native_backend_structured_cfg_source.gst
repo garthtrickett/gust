@@ -1,5 +1,6 @@
 import "ast.gst" as ast;
 import "mir.gst" as mir;
+import "mir_native_backend_metadata_source.gst" as metadata_source;
 import "mir_native_backend_local_state_source.gst" as local_state;
 
 // Compiler-owned acyclic structured-CFG lowering.
@@ -1745,12 +1746,29 @@ func mir_native_structured_cfg_emit_metadata(
     );
     emitted = mir_native_structured_cfg_append(
         emitted,
-        "_policy: recognized_preserved\nmetadata_",
+        "_policy: recognized_preserved\n",
         ctx
     );
-    emitted = mir_native_structured_cfg_append_int(
+    mut contract_prefix := mir_native_structured_cfg_append(
+        "metadata_",
+        std.FormatInt(metadata_index),
+        ctx
+    );
+    emitted = metadata_source.mir_native_metadata_emit_contract(
         emitted,
-        metadata_index,
+        contract_prefix,
+        model.source_path,
+        model.blocks[0].origin_line,
+        model.blocks[0].origin_column,
+        "function",
+        "validated_preserved",
+        "preserved",
+        "structured_cfg_ownership_reachability_and_termination_are_validated",
+        ctx
+    );
+    emitted = mir_native_structured_cfg_append(
+        emitted,
+        contract_prefix,
         ctx
     );
     emitted = mir_native_structured_cfg_append(

@@ -1,5 +1,6 @@
 import "ast.gst" as ast;
 import "mir.gst" as mir;
+import "mir_native_backend_metadata_source.gst" as metadata_source;
 
 // Phase 13 compiler-owned bounded scalar-expression lowering.
 //
@@ -40,6 +41,8 @@ type MirNativeScalarExpressionPlan[ctx] struct {
 type MirNativeScalarExpressionModel[ctx] struct {
     represented: int,
     source_path: str,
+    source_line: int,
+    source_column: int,
     plan: MirNativeScalarExpressionPlan[ctx],
     is_comparison_branch: int,
     then_value: int,
@@ -74,6 +77,8 @@ func mir_native_scalar_expression_empty_model(
     mut model: MirNativeScalarExpressionModel[ctx];
     model.represented = 0;
     model.source_path = std.Clone(ctx, "");
+    model.source_line = 0;
+    model.source_column = 0;
     model.plan = mir_native_scalar_expression_empty_plan(ctx);
     model.is_comparison_branch = 0;
     model.then_value = 0;
@@ -260,6 +265,8 @@ func mir_native_scalar_expression_analyze_function(
     }
 
     unsafe {
+        model.source_line = statement.FunctionDecl.span.start.line;
+        model.source_column = statement.FunctionDecl.span.start.column;
         mut body := ctx[statement.FunctionDecl.body];
         mut statements: std.Vector[ast.Statement[ctx], ctx] :=
             ctx[body.statements];
@@ -557,7 +564,24 @@ func mir_native_scalar_expression_emit(
 
     canonical = mir_native_scalar_expression_append(
         canonical,
-        "metadata_count: 0\nexpected_exit: ",
+        "metadata_count: 1\nmetadata_0_kind: provenance\nmetadata_0_attachment: function\nmetadata_0_policy: recognized_preserved\n",
+        ctx
+    );
+    canonical = metadata_source.mir_native_metadata_emit_contract(
+        canonical,
+        "metadata_0",
+        model.source_path,
+        model.source_line,
+        model.source_column,
+        "function",
+        "validated_preserved",
+        "preserved",
+        "bounded_scalar_expression_shape_and_result_are_validated_before_lowering",
+        ctx
+    );
+    canonical = mir_native_scalar_expression_append(
+        canonical,
+        "metadata_0_payload: kind=ScalarExpression;contract=phase13_2;codegen=preserved\nexpected_exit: ",
         ctx
     );
     canonical = mir_native_scalar_expression_append_int(
@@ -579,7 +603,7 @@ func mir_native_scalar_expression_emit(
         "gust.compiler_mir_ingestion.v1",
         canonical,
         0,
-        0,
+        1,
         0,
         ctx
     );

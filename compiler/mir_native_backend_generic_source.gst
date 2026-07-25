@@ -5,6 +5,7 @@ import "mir_native_backend_block_parameter_loop_source.gst" as block_parameter_l
 import "mir_native_backend_capability.gst" as capability;
 import "mir_native_backend_direct_call_source.gst" as direct_call;
 import "mir_native_backend_local_state_source.gst" as local_state;
+import "mir_native_backend_metadata_source.gst" as metadata_source;
 import "mir_native_backend_module_import_source.gst" as module_import;
 import "mir_native_backend_parameter_argument_source.gst" as parameter_argument;
 import "mir_native_backend_structured_cfg_source.gst" as structured_cfg;
@@ -2320,6 +2321,30 @@ func mir_native_generic_source_lower(programs: std.Vector[ast.Program[ctx], ctx]
     if model.represented == 1 {
         bundle = mir_native_generic_emit_bundle(model, ctx);
     } else {
+        mut metadata_source_result :=
+            metadata_source.mir_native_metadata_source_lower(
+                programs,
+                module_paths,
+                module_prefixes,
+                ctx
+            );
+        if metadata_source_result.invalid == 1 {
+            return mir_native_generic_empty_result(
+                3,
+                metadata_source_result.diagnostic,
+                ctx
+            );
+        }
+        if metadata_source_result.deferred == 1 {
+            return mir_native_generic_deferred_result(
+                metadata_source_result.reason_code,
+                metadata_source_result.diagnostic,
+                ctx
+            );
+        }
+        if metadata_source_result.represented == 1 {
+            bundle = metadata_source_result.bundle;
+        } else {
         mut scalar_expression_result :=
             scalar_expression.mir_native_scalar_expression_source_lower(
                 programs,
@@ -2473,6 +2498,7 @@ func mir_native_generic_source_lower(programs: std.Vector[ast.Program[ctx], ctx]
                 }
             }
         }
+    }
     }
     }
 

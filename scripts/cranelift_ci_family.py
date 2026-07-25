@@ -47,8 +47,8 @@ RUNNERS = (
     ),
     (
         "metadata-diagnostics",
-        "guard-cranelift-phase11-metadata-diagnostic-parity",
-        "PHASE11_METADATA_DIAGNOSTIC_SKIP_DYNAMIC",
+        "guard-cranelift-phase13-source-metadata-parity",
+        "PHASE13_SOURCE_METADATA_SKIP_DYNAMIC",
     ),
 )
 RUNNER_BY_FAMILY = {

@@ -12587,6 +12587,98 @@ guard-cranelift-phase13-broader-imported-runtime-calls-parity:
 
     bash "$evidence_script"
 
+guard-cranelift-phase13-source-metadata-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 13.10 source-produced metadata contracts..."
+    metadata_source="compiler/mir_native_backend_metadata_source.gst"
+    generic_source="compiler/mir_native_backend_generic_source.gst"
+    worker_source="compiler/experiments/cranelift/src/main.rs"
+    registry_validator="scripts/cranelift_registry.py"
+    level_runner="scripts/cranelift_test_levels.py"
+    evidence_script="scripts/phase13_source_metadata.sh"
+
+    required_files=(
+      "$metadata_source"
+      "$generic_source"
+      "$worker_source"
+      "$registry_validator"
+      "$level_runner"
+      "$evidence_script"
+      compiler/phase13_source_resource_metadata_source.gst
+      compiler/fixtures/phase13_source_metadata_valid_resource.mir
+      compiler/fixtures/phase13_source_metadata_missing_owner.mir
+      compiler/fixtures/phase13_source_metadata_invalid_source_location.mir
+      compiler/fixtures/phase13_source_metadata_incompatible_class.mir
+      compiler/fixtures/phase13_source_metadata_invalid_proof_state.mir
+      compiler/fixtures/phase13_source_metadata_incorrect_codegen_relevance.mir
+      compiler/fixtures/phase13_source_metadata_inconsistent_serialization.mir
+    )
+    for required in "${required_files[@]}"; do
+      test -f "$required"
+      test ! -L "$required"
+    done
+
+    python3 "$registry_validator" verify-phase13-source-metadata-contract
+    python3 "$level_runner" validate
+    python3 "$level_runner" level guard-cranelift-phase13-source-metadata-contract |
+      rg -n -F $'guard-cranelift-phase13-source-metadata-contract\t1\t' >/dev/null
+    python3 "$level_runner" level guard-cranelift-phase13-source-metadata-parity |
+      rg -n -F $'guard-cranelift-phase13-source-metadata-parity\t2\t' >/dev/null
+
+    required_source_symbols=(
+      'func mir_native_metadata_emit_contract('
+      'func mir_native_metadata_source_lower('
+      'phase13_10'
+      'validated_preserved'
+      'deferred_p13_resource_runtime_semantics'
+      'movement=deferred;cleanup=deferred;destruction=deferred'
+    )
+    for symbol in "${required_source_symbols[@]}"; do
+      rg -n -F "$symbol" "$metadata_source" >/dev/null
+    done
+    rg -n -F 'metadata_source.mir_native_metadata_source_lower(' "$generic_source" >/dev/null
+
+    required_worker_symbols=(
+      'fn validate_phase13_10_metadata_contract('
+      'fn phase13_metadata_summary('
+      'validated_codegen_relevant'
+      'owner does not match its owning MIR entity'
+      'has an invalid source location'
+      'has an invalid proof state'
+      'has an incorrect codegen-relevance claim'
+      'has inconsistent Phase 13.10 serialization'
+      'has inconsistent serialization between codegen fields'
+    )
+    for symbol in "${required_worker_symbols[@]}"; do
+      rg -n -F "$symbol" "$worker_source" >/dev/null
+    done
+
+    if rg -n \
+        -e 'MirResourceState\.DestructorScheduled' \
+        -e 'func .*destructor.*lower' \
+        -e 'func .*resource.*move.*lower' \
+        "$metadata_source" >/dev/null
+    then
+      echo "Patch 13.10 metadata lowering must not absorb resource runtime lowering."
+      exit 1
+    fi
+    bash -n "$evidence_script"
+    echo "✅ Phase 13.10 source metadata semantic contract passed."
+
+
+guard-cranelift-phase13-source-metadata-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 13.10 source-produced metadata parity..."
+    just guard-cranelift-phase13-source-metadata-contract
+    if [ "${PHASE13_SOURCE_METADATA_SKIP_DYNAMIC:-0}" = "1" ]; then
+      echo "✅ Phase 13.10 source metadata static parity contract passed; dynamic evidence was intentionally skipped."
+      exit 0
+    fi
+    bash scripts/phase13_source_metadata.sh
+
+
 guard-cranelift-phase11-metadata-diagnostic-parity:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -12668,13 +12760,12 @@ guard-cranelift-phase11-metadata-diagnostic-parity:
     done
     rg -n -F 'mir_native_scalar_source_diagnostic_line(' "$compiler_entry" >/dev/null
 
-    for proof in \
-      'codegen=none;proof=local_binding_metadata_is_diagnostic_only' \
-      'codegen=none;proof=runtime_boundary_classification_is_registry_validated' \
-      'codegen=none;proof=resource_cleanup_was_verified_before_native_lowering'
-    do
-      rg -n -F "$proof" "$generic_source" "$route_source" "$import_source" "$resource_fixture" "$rust_driver" >/dev/null
-    done
+    rg -n -F 'codegen=none;proof=local_binding_metadata_is_diagnostic_only' \
+      "$generic_source" "$route_source" "$rust_driver" >/dev/null
+    rg -n -F 'runtime_boundary_classification_and_symbol_are_registry_validated' \
+      "$import_source" "$rust_driver" >/dev/null
+    rg -n -F 'codegen=none;proof=resource_cleanup_was_verified_before_native_lowering' \
+      "$resource_fixture" "$rust_driver" >/dev/null
     rg -n -F 'metadata_0_policy: ignored_with_proof' "$resource_fixture" >/dev/null
     rg -n -F 'metadata_0_kind: resource' "$resource_fixture" >/dev/null
 
@@ -12791,9 +12882,14 @@ guard-cranelift-phase11-metadata-diagnostic-parity:
         cat "$case_dir/capture.bundle"
         exit 1
       fi
-      if ! rg -n -F 'metadata_0_policy: ignored_with_proof' "$case_dir/capture.bundle" >/dev/null ||
-         ! rg -n -F 'codegen=none;proof=' "$case_dir/capture.bundle" >/dev/null; then
-        echo "Metadata case $name did not preserve its ignored_with_proof contract."
+      if [ "$metadata_class" = "native_boundary" ]; then
+        rg -n -F 'metadata_0_policy: recognized_preserved' "$case_dir/capture.bundle" >/dev/null
+        rg -n -F 'metadata_0_contract: phase13_10' "$case_dir/capture.bundle" >/dev/null
+        rg -n -F 'metadata_0_classification: validated_codegen_relevant' "$case_dir/capture.bundle" >/dev/null
+        rg -n -F 'metadata_0_codegen_semantics: required' "$case_dir/capture.bundle" >/dev/null
+      elif ! rg -n -F 'metadata_0_policy: ignored_with_proof' "$case_dir/capture.bundle" >/dev/null ||
+           ! rg -n -F 'codegen=none;proof=' "$case_dir/capture.bundle" >/dev/null; then
+        echo "Metadata case $name did not preserve its legacy ignored_with_proof contract."
         cat "$case_dir/capture.bundle"
         exit 1
       fi

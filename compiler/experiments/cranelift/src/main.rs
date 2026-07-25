@@ -1478,6 +1478,14 @@ struct CompilerMirFixtureMetadata<'a> {
     attachment: &'a str,
     policy: &'a str,
     payload: &'a str,
+    contract: Option<&'a str>,
+    source_origin: Option<&'a str>,
+    source_line: Option<usize>,
+    source_column: Option<usize>,
+    owner: Option<&'a str>,
+    classification: Option<&'a str>,
+    codegen_semantics: Option<&'a str>,
+    proof: Option<&'a str>,
 }
 
 struct ParsedCompilerMirFixture<'a> {
@@ -2148,6 +2156,14 @@ struct Phase11PreservedMetadata {
     attachment: String,
     policy: String,
     payload: String,
+    contract: Option<String>,
+    source_origin: Option<String>,
+    source_line: Option<usize>,
+    source_column: Option<usize>,
+    owner: Option<String>,
+    classification: Option<String>,
+    codegen_semantics: Option<String>,
+    proof: Option<String>,
 }
 
 #[derive(Debug)]
@@ -2322,6 +2338,14 @@ fn phase11_preserve_metadata(
             attachment: item.attachment.to_string(),
             policy: item.policy.to_string(),
             payload: item.payload.to_string(),
+            contract: item.contract.map(str::to_string),
+            source_origin: item.source_origin.map(str::to_string),
+            source_line: item.source_line,
+            source_column: item.source_column,
+            owner: item.owner.map(str::to_string),
+            classification: item.classification.map(str::to_string),
+            codegen_semantics: item.codegen_semantics.map(str::to_string),
+            proof: item.proof.map(str::to_string),
         })
         .collect()
 }
@@ -5502,8 +5526,16 @@ fn validate_phase11_import_boundary_metadata(
                     .filter(|metadata| {
                         metadata.kind == "native_boundary"
                             && metadata.attachment == attachment
-                            && metadata.policy == "ignored_with_proof"
                             && metadata.payload.starts_with(&payload_prefix)
+                            && ((metadata.policy == "ignored_with_proof"
+                                && metadata.contract.is_none())
+                                || (metadata.policy == "recognized_preserved"
+                                    && metadata.contract == Some("phase13_10")
+                                    && metadata.owner == Some(metadata.attachment)
+                                    && metadata.classification
+                                        == Some("validated_codegen_relevant")
+                                    && metadata.codegen_semantics
+                                        == Some("required")))
                     })
                     .count();
                 if matching_metadata != 1 {
@@ -5979,6 +6011,7 @@ fn compile_phase10_scalar_metadata_request_path(
     let mut preserved_resource_metadata_count = 0usize;
     let mut preserved_provenance_metadata_count = 0usize;
     let mut preserved_native_boundary_metadata_count = 0usize;
+    let mut preserved_metadata_summaries = Vec::new();
     let mut requires_phase13_approved_scalar_host_object = false;
 
     for (module_index, module_record) in bundle.modules.iter().enumerate() {
@@ -6009,6 +6042,34 @@ fn compile_phase10_scalar_metadata_request_path(
                     Phase10BackendRequestStage::CanonicalMirValidation,
                     Phase10BackendRequestFailureKind::InvalidCanonicalMir,
                     "retained metadata record became incomplete before lowering",
+                ));
+            }
+            if metadata.contract.as_deref() == Some("phase13_10") {
+                if metadata.source_origin.as_deref().unwrap_or("").is_empty()
+                    || metadata.source_line.unwrap_or(0) == 0
+                    || metadata.source_column.unwrap_or(0) == 0
+                    || metadata.owner.as_deref()
+                        != Some(metadata.attachment.as_str())
+                    || metadata.classification.as_deref().unwrap_or("").is_empty()
+                    || metadata.codegen_semantics.as_deref().unwrap_or("").is_empty()
+                    || metadata.proof.as_deref().unwrap_or("").is_empty()
+                {
+                    return Err(phase10_backend_request_error(
+                        Phase10BackendRequestStage::CanonicalMirValidation,
+                        Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                        "Phase 13.10 metadata envelope drifted during request serialization or worker ingestion",
+                    ));
+                }
+                preserved_metadata_summaries.push(format!(
+                    "{}:{}:{}:{}:{}:{}:{}:{}",
+                    metadata.kind,
+                    metadata.attachment,
+                    metadata.classification.as_deref().unwrap_or(""),
+                    metadata.codegen_semantics.as_deref().unwrap_or(""),
+                    metadata.source_origin.as_deref().unwrap_or(""),
+                    metadata.source_line.unwrap_or(0),
+                    metadata.source_column.unwrap_or(0),
+                    metadata.proof.as_deref().unwrap_or("")
                 ));
             }
         }
@@ -6236,6 +6297,10 @@ fn compile_phase10_scalar_metadata_request_path(
     );
     println!(
         "native_boundary_metadata_count: {preserved_native_boundary_metadata_count}"
+    );
+    println!(
+        "metadata_summary: {}",
+        preserved_metadata_summaries.join("|")
     );
     println!("target_triple: {}", request.target_triple);
     println!("object_format: {}", request.object_format);
@@ -8281,6 +8346,47 @@ fn parse_compiler_mir_fixture_field_map<'a>(
         let attachment_key = format!("metadata_{index}_attachment");
         let policy_key = format!("metadata_{index}_policy");
         let payload_key = format!("metadata_{index}_payload");
+        let contract_key = format!("metadata_{index}_contract");
+        let source_origin_key = format!("metadata_{index}_source_origin");
+        let source_line_key = format!("metadata_{index}_source_line");
+        let source_column_key = format!("metadata_{index}_source_column");
+        let owner_key = format!("metadata_{index}_owner");
+        let classification_key = format!("metadata_{index}_classification");
+        let codegen_semantics_key =
+            format!("metadata_{index}_codegen_semantics");
+        let proof_key = format!("metadata_{index}_proof");
+        let source_line = parse_optional_canonical_compiler_mir_text_field(
+            &fields,
+            &mut consumed,
+            &source_line_key,
+        )
+        .map(|value| {
+            value.parse::<usize>().map_err(|_| {
+                IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!(
+                        "canonical compiler MIR fixture field {source_line_key} must be a usize, got {value}"
+                    ),
+                )
+            })
+        })
+        .transpose()?;
+        let source_column = parse_optional_canonical_compiler_mir_text_field(
+            &fields,
+            &mut consumed,
+            &source_column_key,
+        )
+        .map(|value| {
+            value.parse::<usize>().map_err(|_| {
+                IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!(
+                        "canonical compiler MIR fixture field {source_column_key} must be a usize, got {value}"
+                    ),
+                )
+            })
+        })
+        .transpose()?;
         metadata.push(CompilerMirFixtureMetadata {
             kind: required_canonical_compiler_mir_fixture_field(
                 &fields,
@@ -8302,6 +8408,38 @@ fn parse_compiler_mir_fixture_field_map<'a>(
                 &mut consumed,
                 &payload_key,
             )?,
+            contract: parse_optional_canonical_compiler_mir_text_field(
+                &fields,
+                &mut consumed,
+                &contract_key,
+            ),
+            source_origin: parse_optional_canonical_compiler_mir_text_field(
+                &fields,
+                &mut consumed,
+                &source_origin_key,
+            ),
+            source_line,
+            source_column,
+            owner: parse_optional_canonical_compiler_mir_text_field(
+                &fields,
+                &mut consumed,
+                &owner_key,
+            ),
+            classification: parse_optional_canonical_compiler_mir_text_field(
+                &fields,
+                &mut consumed,
+                &classification_key,
+            ),
+            codegen_semantics: parse_optional_canonical_compiler_mir_text_field(
+                &fields,
+                &mut consumed,
+                &codegen_semantics_key,
+            ),
+            proof: parse_optional_canonical_compiler_mir_text_field(
+                &fields,
+                &mut consumed,
+                &proof_key,
+            ),
         });
     }
 
@@ -9751,6 +9889,16 @@ fn required_canonical_compiler_mir_fixture_field<'a>(
     Ok(*value)
 }
 
+fn parse_optional_canonical_compiler_mir_text_field<'a>(
+    fields: &HashMap<&'a str, &'a str>,
+    consumed: &mut HashSet<&'a str>,
+    key: &str,
+) -> Option<&'a str> {
+    let (stored_key, value) = fields.get_key_value(key)?;
+    consumed.insert(*stored_key);
+    Some(*value)
+}
+
 fn parse_canonical_compiler_mir_usize_field<'a>(
     fields: &HashMap<&'a str, &'a str>,
     consumed: &mut HashSet<&'a str>,
@@ -10235,6 +10383,10 @@ fn validate_compiler_mir_fixture_path(input_path: &Path) -> Result<(), Box<dyn E
             println!("resource_metadata_count: {}", counts.0);
             println!("provenance_metadata_count: {}", counts.1);
             println!("native_boundary_metadata_count: {}", counts.2);
+            println!(
+                "metadata_summary: {}",
+                phase13_metadata_summary(&fixture.metadata)
+            );
         }
         ParsedCompilerMirInput::V2(module) => {
             validate_compiler_mir_module(&module)?;
@@ -10245,6 +10397,7 @@ fn validate_compiler_mir_fixture_path(input_path: &Path) -> Result<(), Box<dyn E
             let mut resource_metadata_count = 0usize;
             let mut provenance_metadata_count = 0usize;
             let mut native_boundary_metadata_count = 0usize;
+            let mut metadata_summary_records = Vec::new();
             for defined in &module.functions {
                 recognize_compiler_mir_fixture_metadata(
                     &defined.fixture.metadata,
@@ -10255,6 +10408,11 @@ fn validate_compiler_mir_fixture_path(input_path: &Path) -> Result<(), Box<dyn E
                 resource_metadata_count += counts.0;
                 provenance_metadata_count += counts.1;
                 native_boundary_metadata_count += counts.2;
+                metadata_summary_records.push(format!(
+                    "{}=[{}]",
+                    defined.fixture.function.symbol,
+                    phase13_metadata_summary(&defined.fixture.metadata)
+                ));
             }
             println!(
                 "validated canonical compiler MIR module: {} ({} defined, {} imported)",
@@ -10267,6 +10425,10 @@ fn validate_compiler_mir_fixture_path(input_path: &Path) -> Result<(), Box<dyn E
             println!("provenance_metadata_count: {provenance_metadata_count}");
             println!(
                 "native_boundary_metadata_count: {native_boundary_metadata_count}"
+            );
+            println!(
+                "metadata_summary: {}",
+                metadata_summary_records.join("|")
             );
         }
     }
@@ -10380,6 +10542,187 @@ fn compiler_mir_metadata_payload_field<'a>(
     })
 }
 
+fn validate_phase13_10_metadata_contract(
+    index: usize,
+    item: &CompilerMirFixtureMetadata<'_>,
+) -> Result<bool, Box<dyn Error>> {
+    let envelope_present = item.contract.is_some()
+        || item.source_origin.is_some()
+        || item.source_line.is_some()
+        || item.source_column.is_some()
+        || item.owner.is_some()
+        || item.classification.is_some()
+        || item.codegen_semantics.is_some()
+        || item.proof.is_some();
+    if !envelope_present {
+        return Ok(false);
+    }
+    if item.contract != Some("phase13_10") {
+        return Err(IoError::new(
+            ErrorKind::InvalidInput,
+            format!(
+                "canonical compiler MIR metadata {index} has inconsistent Phase 13.10 serialization"
+            ),
+        )
+        .into());
+    }
+    let Some(source_origin) = item.source_origin else {
+        return Err(IoError::new(
+            ErrorKind::InvalidInput,
+            format!("canonical compiler MIR metadata {index} is missing source_origin"),
+        )
+        .into());
+    };
+    let Some(source_line) = item.source_line else {
+        return Err(IoError::new(
+            ErrorKind::InvalidInput,
+            format!("canonical compiler MIR metadata {index} is missing source_line"),
+        )
+        .into());
+    };
+    let Some(source_column) = item.source_column else {
+        return Err(IoError::new(
+            ErrorKind::InvalidInput,
+            format!("canonical compiler MIR metadata {index} is missing source_column"),
+        )
+        .into());
+    };
+    let Some(owner) = item.owner else {
+        return Err(IoError::new(
+            ErrorKind::InvalidInput,
+            format!("canonical compiler MIR metadata {index} is missing owner"),
+        )
+        .into());
+    };
+    let Some(classification) = item.classification else {
+        return Err(IoError::new(
+            ErrorKind::InvalidInput,
+            format!("canonical compiler MIR metadata {index} is missing classification"),
+        )
+        .into());
+    };
+    let Some(codegen_semantics) = item.codegen_semantics else {
+        return Err(IoError::new(
+            ErrorKind::InvalidInput,
+            format!("canonical compiler MIR metadata {index} is missing codegen_semantics"),
+        )
+        .into());
+    };
+    let Some(proof) = item.proof else {
+        return Err(IoError::new(
+            ErrorKind::InvalidInput,
+            format!("canonical compiler MIR metadata {index} is missing proof"),
+        )
+        .into());
+    };
+    if source_origin.is_empty() || source_line == 0 || source_column == 0 {
+        return Err(IoError::new(
+            ErrorKind::InvalidInput,
+            format!("canonical compiler MIR metadata {index} has an invalid source location"),
+        )
+        .into());
+    }
+    if owner.is_empty() || owner != item.attachment {
+        return Err(IoError::new(
+            ErrorKind::InvalidInput,
+            format!(
+                "canonical compiler MIR metadata {index} owner does not match its owning MIR entity"
+            ),
+        )
+        .into());
+    }
+    if proof.is_empty() {
+        return Err(IoError::new(
+            ErrorKind::InvalidInput,
+            format!("canonical compiler MIR metadata {index} has an invalid proof state"),
+        )
+        .into());
+    }
+    if item.kind != "native_boundary" && codegen_semantics == "required" {
+        return Err(IoError::new(
+            ErrorKind::InvalidInput,
+            format!(
+                "canonical compiler MIR metadata {index} has an incorrect codegen-relevance claim for {} metadata",
+                item.kind
+            ),
+        )
+        .into());
+    }
+
+    let compatible = match item.kind {
+        "resource" => {
+            item.policy == "recognized_preserved"
+                && classification == "validated_preserved"
+                && codegen_semantics == "preserved"
+        }
+        "provenance" => {
+            (item.policy == "recognized_preserved"
+                && classification == "validated_preserved"
+                && codegen_semantics == "preserved")
+                || (item.policy == "ignored_with_proof"
+                    && classification == "ignored_with_proof"
+                    && codegen_semantics == "none")
+        }
+        "native_boundary" => {
+            item.policy == "recognized_preserved"
+                && classification == "validated_codegen_relevant"
+                && codegen_semantics == "required"
+        }
+        _ => false,
+    };
+    if !compatible {
+        return Err(IoError::new(
+            ErrorKind::InvalidInput,
+            format!(
+                "canonical compiler MIR metadata {index} has an incompatible class, classification, policy, or codegen claim"
+            ),
+        )
+        .into());
+    }
+    if let Some(payload_codegen) =
+        compiler_mir_metadata_payload_field(item.payload, "codegen")
+    {
+        if payload_codegen != codegen_semantics {
+            return Err(IoError::new(
+                ErrorKind::InvalidInput,
+                format!(
+                    "canonical compiler MIR metadata {index} has inconsistent serialization between codegen fields"
+                ),
+            )
+            .into());
+        }
+    }
+    Ok(true)
+}
+
+fn phase13_metadata_summary(
+    metadata: &[CompilerMirFixtureMetadata<'_>],
+) -> String {
+    metadata
+        .iter()
+        .enumerate()
+        .map(|(index, item)| {
+            format!(
+                "{index}:{}:{}:{}:{}:{}:{}:{}:{}:{}",
+                item.kind,
+                item.attachment,
+                item.classification.unwrap_or("legacy"),
+                item.codegen_semantics.unwrap_or("legacy"),
+                item.source_origin.unwrap_or("legacy"),
+                item.source_line
+                    .map(|value| value.to_string())
+                    .unwrap_or_else(|| "legacy".to_string()),
+                item.source_column
+                    .map(|value| value.to_string())
+                    .unwrap_or_else(|| "legacy".to_string()),
+                item.owner.unwrap_or("legacy"),
+                item.proof.unwrap_or("legacy")
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("|")
+}
+
 fn recognize_compiler_mir_fixture_metadata(
     metadata: &[CompilerMirFixtureMetadata<'_>],
 ) -> Result<(), Box<dyn Error>> {
@@ -10420,9 +10763,15 @@ fn recognize_compiler_mir_fixture_metadata(
             .into());
         }
 
+        let is_phase13_10 =
+            validate_phase13_10_metadata_contract(index, item)?;
         let codegen_claim =
             compiler_mir_metadata_payload_field(item.payload, "codegen");
-        if codegen_claim == Some("required") {
+        if codegen_claim == Some("required")
+            && !(is_phase13_10
+                && item.kind == "native_boundary"
+                && item.codegen_semantics == Some("required"))
+        {
             return Err(IoError::new(
                 ErrorKind::InvalidInput,
                 format!(
@@ -10432,7 +10781,11 @@ fn recognize_compiler_mir_fixture_metadata(
             .into());
         }
         if let Some(codegen_claim) = codegen_claim {
-            if !matches!(codegen_claim, "none" | "preserved") {
+            if !matches!(codegen_claim, "none" | "preserved")
+                && !(is_phase13_10
+                    && item.kind == "native_boundary"
+                    && codegen_claim == "required")
+            {
                 return Err(IoError::new(
                     ErrorKind::InvalidInput,
                     format!(
@@ -10443,7 +10796,9 @@ fn recognize_compiler_mir_fixture_metadata(
             }
         }
 
-        if matches!(item.kind, "provenance" | "native_boundary") {
+        if !is_phase13_10
+            && matches!(item.kind, "provenance" | "native_boundary")
+        {
             let origin = compiler_mir_metadata_payload_field(
                 item.payload,
                 "origin",
@@ -10459,7 +10814,7 @@ fn recognize_compiler_mir_fixture_metadata(
             }
         }
 
-        if item.policy == "ignored_with_proof" {
+        if item.policy == "ignored_with_proof" && !is_phase13_10 {
             if codegen_claim != Some("none") {
                 return Err(IoError::new(
                     ErrorKind::InvalidInput,
