@@ -23,23 +23,28 @@ func mir_native_metadata_append(output: str, value: str, ctx: &Arena) str {
 }
 
 func mir_native_metadata_append_int(output: str, value: int, ctx: &Arena) str {
-    return mir_native_metadata_append(output, std.FormatInt(value), ctx);
+    mut formatted := std.FormatInt(value);
+    mut emitted := std.Concat(output, formatted);
+    return std.Clone(ctx, emitted);
 }
 
 func mir_native_metadata_field(output: str, key: str, value: str, ctx: &Arena) str {
     mut emitted := mir_native_metadata_append(output, key, ctx);
     emitted = mir_native_metadata_append(emitted, ": ", ctx);
     emitted = mir_native_metadata_append(emitted, value, ctx);
-    return mir_native_metadata_append(emitted, "\n", ctx);
+    emitted = mir_native_metadata_append(emitted, "\n", ctx);
+    return std.Clone(ctx, emitted);
 }
 
 func mir_native_metadata_int_field(output: str, key: str, value: int, ctx: &Arena) str {
-    return mir_native_metadata_field(
+    mut formatted := std.FormatInt(value);
+    mut emitted := mir_native_metadata_field(
         output,
         key,
-        std.FormatInt(value),
+        formatted,
         ctx
     );
+    return std.Clone(ctx, emitted);
 }
 
 func mir_native_metadata_emit_contract(
@@ -96,12 +101,13 @@ func mir_native_metadata_emit_contract(
         codegen_semantics,
         ctx
     );
-    return mir_native_metadata_field(
+    emitted = mir_native_metadata_field(
         emitted,
         std.Concat(prefix, "_proof"),
         proof,
         ctx
     );
+    return std.Clone(ctx, emitted);
 }
 
 func mir_native_metadata_empty_result(ctx: &Arena) MirNativeMetadataSourceResult[ctx] {
