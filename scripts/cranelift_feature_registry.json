@@ -412,7 +412,7 @@
         "composition_case_ids": [
           "phase13_composition:scalars_locals_cfg"
         ],
-        "differential_failure_fixture": "compiler/phase11_scalar_unsupported_multiply_source.gst"
+        "differential_failure_fixture": "compiler/phase13_scalar_unsupported_divide_source.gst"
       }
     },
     {
@@ -508,7 +508,7 @@
         "composition_case_ids": [
           "phase13_composition:scalars_locals_cfg"
         ],
-        "differential_failure_fixture": "compiler/phase11_scalar_unsupported_multiply_source.gst"
+        "differential_failure_fixture": "compiler/phase13_scalar_unsupported_divide_source.gst"
       }
     },
     {
@@ -560,7 +560,7 @@
         "composition_case_ids": [
           "phase13_composition:nested_cfg_locals"
         ],
-        "differential_failure_fixture": "compiler/phase11_structured_cfg_deferred_loop_source.gst"
+        "differential_failure_fixture": "compiler/phase13_structured_cfg_short_circuit_deferred_source.gst"
       }
     },
     {
@@ -612,7 +612,7 @@
         "composition_case_ids": [
           "phase13_composition:nested_cfg_locals"
         ],
-        "differential_failure_fixture": "compiler/phase11_structured_cfg_deferred_loop_source.gst"
+        "differential_failure_fixture": "compiler/phase13_structured_cfg_short_circuit_deferred_source.gst"
       }
     },
     {
@@ -712,7 +712,7 @@
         "composition_case_ids": [
           "phase13_composition:nested_cfg_locals"
         ],
-        "differential_failure_fixture": "compiler/phase11_structured_cfg_deferred_loop_source.gst"
+        "differential_failure_fixture": "compiler/phase13_structured_cfg_short_circuit_deferred_source.gst"
       }
     },
     {

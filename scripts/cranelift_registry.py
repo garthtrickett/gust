@@ -2154,6 +2154,14 @@ def verify_phase13_composition_differential_contract(registry):
         len(migrated_by_id) == len(migrated),
         "Migrated differential entry IDs are not unique",
     )
+    migrated_source_owners = {
+        entry["source_fixture"]: entry["id"]
+        for entry in migrated
+    }
+    require(
+        len(migrated_source_owners) == len(migrated),
+        "Migrated differential source fixtures are not unique",
+    )
 
     active_families = {
         entry["ci_family"]
@@ -2199,9 +2207,18 @@ def verify_phase13_composition_differential_contract(registry):
             in PHASE13_DIFFERENTIAL_SIDE_EFFECT_POLICIES,
             f"{entry_id}: invalid differential side-effect policy",
         )
-        fixture(
+        failure_fixture = text(
             evidence.get("differential_failure_fixture"),
             f"{entry_id}.evidence.differential_failure_fixture",
+        )
+        fixture(
+            failure_fixture,
+            f"{entry_id}.evidence.differential_failure_fixture",
+        )
+        require(
+            failure_fixture not in migrated_source_owners,
+            f"{entry_id}: differential failure fixture is the active migrated "
+            f"source owned by {migrated_source_owners.get(failure_fixture)}",
         )
         fixture(entry["source_fixture"], f"{entry_id}.source_fixture")
 
@@ -2247,7 +2264,16 @@ def verify_phase13_composition_differential_contract(registry):
                 f"{case_id}: composition case uses inactive family {family}",
             )
             fixture(case["source_fixture"], f"{context}.source_fixture")
-            fixture(case["failure_fixture"], f"{context}.failure_fixture")
+            failure_fixture = text(
+                case["failure_fixture"],
+                f"{context}.failure_fixture",
+            )
+            fixture(failure_fixture, f"{context}.failure_fixture")
+            require(
+                failure_fixture not in migrated_source_owners,
+                f"{case_id}: composition failure fixture is the active migrated "
+                f"source owned by {migrated_source_owners.get(failure_fixture)}",
+            )
             require(
                 re.fullmatch(
                     r"exit_[0-9]+_.+",
