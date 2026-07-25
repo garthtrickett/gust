@@ -405,7 +405,14 @@
         "positive_expectation": "exit_7_stdout_empty_stderr_empty",
         "deferred_expectation": "compile_nonzero_route_not_connected_before_driver_output_unchanged",
         "legacy_migration_status": "scalar_expression_migrated",
-        "seed_import": 1
+        "seed_import": 1,
+        "individual_evidence_guard": "guard-cranelift-phase11-scalar-expression-parity",
+        "differential_stderr_policy": "stable_bytes",
+        "differential_side_effect_policy": "none",
+        "composition_case_ids": [
+          "phase13_composition:scalars_locals_cfg"
+        ],
+        "differential_failure_fixture": "compiler/phase11_scalar_unsupported_multiply_source.gst"
       }
     },
     {
@@ -446,7 +453,14 @@
         "positive_expectation": "exit_53_stdout_empty_stderr_empty",
         "deferred_expectation": "compile_nonzero_invalid_canonical_MIR_before_driver_output_unchanged",
         "legacy_migration_status": "local_state_migrated",
-        "seed_import": 1
+        "seed_import": 1,
+        "individual_evidence_guard": "guard-cranelift-phase11-local-state-parity",
+        "differential_stderr_policy": "stable_bytes",
+        "differential_side_effect_policy": "none",
+        "composition_case_ids": [
+          "phase13_composition:locals_direct_call"
+        ],
+        "differential_failure_fixture": "compiler/phase11_local_state_uninitialized_read_source.gst"
       }
     },
     {
@@ -487,7 +501,14 @@
         "positive_expectation": "exit_23_stdout_empty_stderr_empty",
         "deferred_expectation": "compile_nonzero_route_not_connected_before_driver_output_unchanged",
         "legacy_migration_status": "scalar_expression_migrated",
-        "seed_import": 1
+        "seed_import": 1,
+        "individual_evidence_guard": "guard-cranelift-phase11-scalar-expression-parity",
+        "differential_stderr_policy": "stable_bytes",
+        "differential_side_effect_policy": "none",
+        "composition_case_ids": [
+          "phase13_composition:scalars_locals_cfg"
+        ],
+        "differential_failure_fixture": "compiler/phase11_scalar_unsupported_multiply_source.gst"
       }
     },
     {
@@ -532,7 +553,14 @@
         "positive_expectation": "exit_71_stdout_empty_stderr_empty",
         "deferred_expectation": "cycles_and_backedges_deferred_before_driver_output_unchanged",
         "legacy_migration_status": "structured_CFG_migrated",
-        "seed_import": 1
+        "seed_import": 1,
+        "individual_evidence_guard": "guard-cranelift-phase11-structured-cfg-parity",
+        "differential_stderr_policy": "stable_bytes",
+        "differential_side_effect_policy": "none",
+        "composition_case_ids": [
+          "phase13_composition:nested_cfg_locals"
+        ],
+        "differential_failure_fixture": "compiler/phase11_structured_cfg_deferred_loop_source.gst"
       }
     },
     {
@@ -577,7 +605,14 @@
         "positive_expectation": "exit_32_stdout_empty_stderr_empty",
         "deferred_expectation": "cycles_and_backedges_deferred_before_driver_output_unchanged",
         "legacy_migration_status": "structured_CFG_migrated",
-        "seed_import": 1
+        "seed_import": 1,
+        "individual_evidence_guard": "guard-cranelift-phase11-structured-cfg-parity",
+        "differential_stderr_policy": "stable_bytes",
+        "differential_side_effect_policy": "none",
+        "composition_case_ids": [
+          "phase13_composition:nested_cfg_locals"
+        ],
+        "differential_failure_fixture": "compiler/phase11_structured_cfg_deferred_loop_source.gst"
       }
     },
     {
@@ -618,7 +653,14 @@
         "positive_expectation": "exit_31_stdout_empty_stderr_empty",
         "deferred_expectation": "compile_nonzero_route_not_connected_before_driver_output_unchanged",
         "legacy_migration_status": "scalar_expression_migrated",
-        "seed_import": 1
+        "seed_import": 1,
+        "individual_evidence_guard": "guard-cranelift-phase11-scalar-expression-parity",
+        "differential_stderr_policy": "stable_bytes",
+        "differential_side_effect_policy": "none",
+        "composition_case_ids": [
+          "phase13_composition:scalars_locals_cfg"
+        ],
+        "differential_failure_fixture": "compiler/mir_feature_block_local_branch_join_preservation_source.gst"
       }
     },
     {
@@ -663,7 +705,14 @@
         "positive_expectation": "exit_73_stdout_empty_stderr_empty",
         "deferred_expectation": "malformed_CFG_rejected_and_loops_deferred_before_object_publication",
         "legacy_migration_status": "structured_CFG_migrated",
-        "seed_import": 1
+        "seed_import": 1,
+        "individual_evidence_guard": "guard-cranelift-phase11-structured-cfg-parity",
+        "differential_stderr_policy": "stable_bytes",
+        "differential_side_effect_policy": "none",
+        "composition_case_ids": [
+          "phase13_composition:nested_cfg_locals"
+        ],
+        "differential_failure_fixture": "compiler/phase11_structured_cfg_deferred_loop_source.gst"
       }
     },
     {
@@ -707,7 +756,14 @@
         "positive_expectation": "exit_8_stdout_empty_stderr_empty",
         "deferred_expectation": "irreducible_or_malformed_backedge_rejected_before_publication_output_unchanged",
         "legacy_migration_status": "block_parameter_backedge_migrated",
-        "seed_import": 1
+        "seed_import": 1,
+        "individual_evidence_guard": "guard-cranelift-phase11-block-parameter-loop-parity",
+        "differential_stderr_policy": "stable_bytes",
+        "differential_side_effect_policy": "none",
+        "composition_case_ids": [
+          "phase13_composition:loop_parameters_direct_call"
+        ],
+        "differential_failure_fixture": "compiler/phase13_scalar_unsupported_divide_source.gst"
       }
     },
     {
@@ -751,7 +807,14 @@
         "positive_expectation": "exit_14_stdout_empty_stderr_empty",
         "deferred_expectation": "arity_type_or_parameter_scope_mismatch_rejected_before_publication_output_unchanged",
         "legacy_migration_status": "block_parameter_backedge_migrated",
-        "seed_import": 1
+        "seed_import": 1,
+        "individual_evidence_guard": "guard-cranelift-phase11-block-parameter-loop-parity",
+        "differential_stderr_policy": "stable_bytes",
+        "differential_side_effect_policy": "none",
+        "composition_case_ids": [
+          "phase13_composition:loop_parameters_direct_call"
+        ],
+        "differential_failure_fixture": "compiler/phase13_scalar_unsupported_divide_source.gst"
       }
     },
     {
@@ -793,7 +856,14 @@
         "positive_expectation": "exit_2_stdout_empty_stderr_empty",
         "deferred_expectation": "compile_nonzero_invalid_canonical_MIR_before_driver_output_unchanged",
         "legacy_migration_status": "local_state_migrated",
-        "seed_import": 1
+        "seed_import": 1,
+        "individual_evidence_guard": "guard-cranelift-phase11-local-state-parity",
+        "differential_stderr_policy": "stable_bytes",
+        "differential_side_effect_policy": "none",
+        "composition_case_ids": [
+          "phase13_composition:resource_metadata_scalar"
+        ],
+        "differential_failure_fixture": "compiler/phase11_local_state_uninitialized_read_source.gst"
       }
     },
     {
@@ -1148,7 +1218,15 @@
         "positive_expectation": "exit_48_stdout_empty_stderr_empty",
         "deferred_expectation": "wrong_arity_wrong_type_missing_symbol_or_recursion_rejected_before_publication_output_unchanged",
         "legacy_migration_status": "direct_call_ABI_migrated",
-        "seed_import": 0
+        "seed_import": 0,
+        "individual_evidence_guard": "guard-cranelift-phase11-direct-call-abi-parity",
+        "differential_stderr_policy": "stable_bytes",
+        "differential_side_effect_policy": "none",
+        "composition_case_ids": [
+          "phase13_composition:locals_direct_call",
+          "phase13_composition:direct_call_graph_parameters"
+        ],
+        "differential_failure_fixture": "compiler/phase11_direct_call_recursion_source.gst"
       }
     },
     {
@@ -1194,7 +1272,7 @@
         "translator_seed_guard": "none_phase10_only",
         "source_native_guard": "guard-cranelift-phase13-broader-imported-runtime-calls-parity",
         "baseline_source": "compiler/phase10_runtime_boundary_source.gst",
-        "positive_expectation": "approved_abs_toupper_add_one_add_and_predicate_boundaries_execute_with_mir_to_c_parity",
+        "positive_expectation": "exit_65_stdout_empty_stderr_empty",
         "deferred_expectation": "unapproved_wrong_arity_wrong_type_wrong_signature_indirect_variadic_layout_sensitive_and_non_scalar_forms_rejected_before_driver_discovery",
         "legacy_migration_status": "module_import_runtime_migrated",
         "seed_import": 0,
@@ -1219,7 +1297,15 @@
           "imported_result_expression",
           "imported_result_control_flow",
           "source_module_and_host_call_composition"
-        ]
+        ],
+        "individual_evidence_guard": "guard-cranelift-phase13-broader-imported-runtime-calls-parity",
+        "differential_stderr_policy": "stable_bytes",
+        "differential_side_effect_policy": "none",
+        "composition_case_ids": [
+          "phase13_composition:source_import_runtime",
+          "phase13_composition:native_metadata_runtime"
+        ],
+        "differential_failure_fixture": "compiler/phase11_module_import_forbidden_runtime_source.gst"
       }
     },
     {
@@ -1239,7 +1325,7 @@
       "expected_failure_stage": "none_supported",
       "source_fixture": "compiler/phase13_source_resource_metadata_source.gst",
       "canonical_mir_fixture": "compiler/fixtures/phase13_source_metadata_valid_resource.mir",
-      "differential_case_id": "phase13_opening:p13_resource_metadata_source_route",
+      "differential_case_id": "phase13_registry_differential:p13_resource_metadata_source_route",
       "deferral_reason": "none_migrated",
       "future_destination_phase": "none_migrated",
       "closure_version": "phase13_opening_inventory_v1",
@@ -1274,7 +1360,31 @@
           "cleanup",
           "destructor_scheduling",
           "destruction_lowering"
-        ]
+        ],
+        "individual_evidence_guard": "guard-cranelift-phase13-source-metadata-parity",
+        "differential_stderr_policy": "stable_bytes",
+        "differential_side_effect_policy": "none",
+        "composition_case_ids": [
+          "phase13_composition:resource_metadata_scalar"
+        ],
+        "composition_cases": [
+          {
+            "id": "phase13_composition:resource_metadata_scalar",
+            "owner_entry_id": "p13_resource_metadata_source_route",
+            "ci_family": "metadata-diagnostics",
+            "source_fixture": "compiler/phase13_composition_resource_metadata_source.gst",
+            "positive_expectation": "exit_17_phase13_composition_resource_metadata_scalar",
+            "stderr_policy": "stable_bytes",
+            "side_effect_policy": "none",
+            "failure_fixture": "compiler/phase13_scalar_unsupported_divide_source.gst",
+            "covers_entry_ids": [
+              "provenance_metadata",
+              "p13_resource_metadata_source_route"
+            ]
+          }
+        ],
+        "positive_expectation": "exit_31_phase13_resource_metadata_source",
+        "differential_failure_fixture": "compiler/phase13_scalar_unsupported_divide_source.gst"
       }
     },
     {
@@ -1294,7 +1404,7 @@
       "expected_failure_stage": "none_supported",
       "source_fixture": "compiler/phase13_runtime_multiple_calls_source.gst",
       "canonical_mir_fixture": "none_compiler_generated_phase13_native_boundary_bundle",
-      "differential_case_id": "phase13_opening:p13_native_boundary_metadata_source_route",
+      "differential_case_id": "phase13_registry_differential:p13_native_boundary_metadata_source_route",
       "deferral_reason": "none_migrated",
       "future_destination_phase": "none_migrated",
       "closure_version": "phase13_opening_inventory_v1",
@@ -1322,7 +1432,32 @@
           "compiler/fixtures/phase13_source_metadata_incorrect_codegen_relevance.mir",
           "compiler/fixtures/phase13_source_metadata_inconsistent_serialization.mir"
         ],
-        "publication_policy": "malformed_metadata_rejected_before_object_or_output_publication"
+        "publication_policy": "malformed_metadata_rejected_before_object_or_output_publication",
+        "individual_evidence_guard": "guard-cranelift-phase13-source-metadata-parity",
+        "differential_stderr_policy": "stable_bytes",
+        "differential_side_effect_policy": "none",
+        "composition_case_ids": [
+          "phase13_composition:native_metadata_runtime"
+        ],
+        "composition_cases": [
+          {
+            "id": "phase13_composition:native_metadata_runtime",
+            "owner_entry_id": "p13_native_boundary_metadata_source_route",
+            "ci_family": "metadata-diagnostics",
+            "source_fixture": "compiler/phase13_composition_native_metadata_source.gst",
+            "positive_expectation": "exit_42_phase13_composition_native_metadata_runtime",
+            "stderr_policy": "stable_bytes",
+            "side_effect_policy": "none",
+            "failure_fixture": "compiler/phase11_module_import_forbidden_runtime_source.gst",
+            "covers_entry_ids": [
+              "imported_runtime_call_i32",
+              "p13_imported_predicate_update_branch_source_route",
+              "p13_native_boundary_metadata_source_route"
+            ]
+          }
+        ],
+        "positive_expectation": "exit_42_phase13_native_boundary_metadata_source",
+        "differential_failure_fixture": "compiler/phase11_module_import_forbidden_runtime_source.gst"
       }
     },
     {
@@ -1467,7 +1602,7 @@
       "expected_failure_stage": "none_supported",
       "source_fixture": "compiler/phase11_scalar_unsupported_multiply_source.gst",
       "canonical_mir_fixture": "compiler/fixtures/native_backend_phase13_scalar_expression_ingestion.mir",
-      "differential_case_id": "phase13_opening:p13_scalar_multiply_i32",
+      "differential_case_id": "phase13_registry_differential:p13_scalar_multiply_i32",
       "deferral_reason": "none_migrated",
       "future_destination_phase": "none_migrated",
       "closure_version": "phase13_opening_inventory_v1",
@@ -1496,7 +1631,34 @@
         ],
         "malformed_canonical_mir_fixture": "compiler/fixtures/native_backend_phase13_scalar_expression_malformed.mir",
         "deferred_fixture": "compiler/phase13_scalar_unsupported_divide_source.gst",
-        "positive_expectation": "exit_12_phase13_scalar_multiply"
+        "positive_expectation": "exit_12_phase13_scalar_multiply",
+        "individual_evidence_guard": "guard-cranelift-phase13-scalar-expression-parity",
+        "differential_stderr_policy": "stable_bytes",
+        "differential_side_effect_policy": "none",
+        "composition_case_ids": [
+          "phase13_composition:scalars_locals_cfg"
+        ],
+        "composition_cases": [
+          {
+            "id": "phase13_composition:scalars_locals_cfg",
+            "owner_entry_id": "p13_scalar_multiply_i32",
+            "ci_family": "scalars",
+            "source_fixture": "compiler/phase13_composition_scalars_source.gst",
+            "positive_expectation": "exit_18_phase13_composition_scalars_locals_cfg",
+            "stderr_policy": "stable_bytes",
+            "side_effect_policy": "none",
+            "failure_fixture": "compiler/phase13_scalar_unsupported_divide_source.gst",
+            "covers_entry_ids": [
+              "return_int",
+              "add_i32",
+              "positive_i32_branch",
+              "p13_scalar_multiply_i32",
+              "p13_two_local_update_branch_source_route",
+              "p13_nested_local_update_branch_source_route"
+            ]
+          }
+        ],
+        "differential_failure_fixture": "compiler/phase13_scalar_unsupported_divide_source.gst"
       }
     },
     {
@@ -1516,7 +1678,7 @@
       "expected_failure_stage": "none_supported",
       "source_fixture": "compiler/phase13_multiple_locals_assignments_source.gst",
       "canonical_mir_fixture": "compiler/fixtures/native_backend_phase13_multiple_locals_assignments_ingestion.mir",
-      "differential_case_id": "phase13_opening:p13_two_local_update_branch_source_route",
+      "differential_case_id": "phase13_registry_differential:p13_two_local_update_branch_source_route",
       "deferral_reason": "none_migrated",
       "future_destination_phase": "none_migrated",
       "closure_version": "phase13_opening_inventory_v1",
@@ -1559,7 +1721,34 @@
           "compiler/fixtures/native_backend_phase13_multiple_locals_invalid_join.mir"
         ],
         "deferred_fixture": "compiler/phase11_local_state_uninitialized_read_source.gst",
-        "positive_expectation": "exit_20_phase13_multiple_locals_assignments"
+        "positive_expectation": "exit_20_phase13_multiple_locals_assignments",
+        "individual_evidence_guard": "guard-cranelift-phase13-multiple-locals-assignments-parity",
+        "differential_stderr_policy": "stable_bytes",
+        "differential_side_effect_policy": "none",
+        "composition_case_ids": [
+          "phase13_composition:scalars_locals_cfg",
+          "phase13_composition:locals_direct_call",
+          "phase13_composition:nested_cfg_locals"
+        ],
+        "composition_cases": [
+          {
+            "id": "phase13_composition:locals_direct_call",
+            "owner_entry_id": "p13_two_local_update_branch_source_route",
+            "ci_family": "locals",
+            "source_fixture": "compiler/phase13_composition_locals_source.gst",
+            "positive_expectation": "exit_15_phase13_composition_locals_direct_call",
+            "stderr_policy": "stable_bytes",
+            "side_effect_policy": "none",
+            "failure_fixture": "compiler/phase11_local_state_uninitialized_read_source.gst",
+            "covers_entry_ids": [
+              "local_binding_read",
+              "direct_call_i32",
+              "p13_two_local_update_branch_source_route",
+              "p13_parameterized_local_call_branch_source_route"
+            ]
+          }
+        ],
+        "differential_failure_fixture": "compiler/phase11_local_state_uninitialized_read_source.gst"
       }
     },
     {
@@ -1579,7 +1768,7 @@
       "expected_failure_stage": "none_supported",
       "source_fixture": "compiler/phase13_nested_structured_cfg_source.gst",
       "canonical_mir_fixture": "compiler/fixtures/native_backend_phase13_nested_structured_cfg_ingestion.mir",
-      "differential_case_id": "phase13_opening:p13_nested_local_update_branch_source_route",
+      "differential_case_id": "phase13_registry_differential:p13_nested_local_update_branch_source_route",
       "deferral_reason": "none_migrated",
       "future_destination_phase": "none_migrated",
       "closure_version": "phase13_opening_inventory_v1",
@@ -1630,7 +1819,34 @@
         "deferred_fixture_reason_codes": [
           "deferred_p13_structured_cfg_short_circuit",
           "deferred_p13_structured_cfg_condition_operator"
-        ]
+        ],
+        "individual_evidence_guard": "guard-cranelift-phase13-nested-structured-cfg-parity",
+        "differential_stderr_policy": "stable_bytes",
+        "differential_side_effect_policy": "none",
+        "composition_case_ids": [
+          "phase13_composition:scalars_locals_cfg",
+          "phase13_composition:nested_cfg_locals"
+        ],
+        "composition_cases": [
+          {
+            "id": "phase13_composition:nested_cfg_locals",
+            "owner_entry_id": "p13_nested_local_update_branch_source_route",
+            "ci_family": "cfg",
+            "source_fixture": "compiler/phase13_composition_cfg_source.gst",
+            "positive_expectation": "exit_14_phase13_composition_nested_cfg_locals",
+            "stderr_policy": "stable_bytes",
+            "side_effect_policy": "none",
+            "failure_fixture": "compiler/phase13_structured_cfg_short_circuit_deferred_source.gst",
+            "covers_entry_ids": [
+              "conditional_branch",
+              "block_jump",
+              "block_local_branch_join",
+              "p13_two_local_update_branch_source_route",
+              "p13_nested_local_update_branch_source_route"
+            ]
+          }
+        ],
+        "differential_failure_fixture": "compiler/phase13_structured_cfg_short_circuit_deferred_source.gst"
       }
     },
     {
@@ -1650,7 +1866,7 @@
       "expected_failure_stage": "none_supported",
       "source_fixture": "compiler/phase11_structured_cfg_deferred_loop_source.gst",
       "canonical_mir_fixture": "compiler/fixtures/native_backend_phase13_general_loop_ingestion.mir",
-      "differential_case_id": "phase13_opening:p13_general_loop_backedge_source_route",
+      "differential_case_id": "phase13_registry_differential:p13_general_loop_backedge_source_route",
       "deferral_reason": "none_migrated",
       "future_destination_phase": "none_migrated",
       "closure_version": "phase13_opening_inventory_v1",
@@ -1701,7 +1917,32 @@
           "deferred_p13_general_loop_condition_operator"
         ],
         "positive_expectation": "exit_0_phase13_single_carried_loop",
-        "deferred_fixture": "compiler/phase13_loop_early_return_deferred_source.gst"
+        "deferred_fixture": "compiler/phase13_loop_early_return_deferred_source.gst",
+        "individual_evidence_guard": "guard-cranelift-phase13-general-loop-parity",
+        "differential_stderr_policy": "stable_bytes",
+        "differential_side_effect_policy": "none",
+        "composition_case_ids": [
+          "phase13_composition:loop_parameters_direct_call"
+        ],
+        "composition_cases": [
+          {
+            "id": "phase13_composition:loop_parameters_direct_call",
+            "owner_entry_id": "p13_general_loop_backedge_source_route",
+            "ci_family": "block-params",
+            "source_fixture": "compiler/phase13_composition_loop_source.gst",
+            "positive_expectation": "exit_14_phase13_composition_loop_parameters_direct_call",
+            "stderr_policy": "stable_bytes",
+            "side_effect_policy": "none",
+            "failure_fixture": "compiler/phase13_loop_early_return_deferred_source.gst",
+            "covers_entry_ids": [
+              "block_param_update_branch",
+              "block_param_merge_update_branch",
+              "p13_general_loop_backedge_source_route",
+              "p13_parameterized_local_call_branch_source_route"
+            ]
+          }
+        ],
+        "differential_failure_fixture": "compiler/phase13_loop_early_return_deferred_source.gst"
       }
     },
     {
@@ -1721,7 +1962,7 @@
       "expected_failure_stage": "none_supported",
       "source_fixture": "compiler/phase13_parameter_argument_branch_source.gst",
       "canonical_mir_fixture": "compiler/fixtures/native_backend_phase13_parameter_argument_ingestion.mir",
-      "differential_case_id": "phase13_opening:p13_parameterized_local_call_branch_source_route",
+      "differential_case_id": "phase13_registry_differential:p13_parameterized_local_call_branch_source_route",
       "deferral_reason": "none_migrated",
       "future_destination_phase": "none_migrated",
       "closure_version": "phase13_opening_inventory_v1",
@@ -1780,7 +2021,16 @@
           "deferred_p13_parameter_argument_target_dependent_abi"
         ],
         "positive_expectation": "exit_42_phase13_three_argument_branch",
-        "deferred_fixture": "compiler/phase13_parameter_argument_aggregate_parameter_source.gst"
+        "deferred_fixture": "compiler/phase13_parameter_argument_aggregate_parameter_source.gst",
+        "individual_evidence_guard": "guard-cranelift-phase13-parameter-argument-parity",
+        "differential_stderr_policy": "stable_bytes",
+        "differential_side_effect_policy": "none",
+        "composition_case_ids": [
+          "phase13_composition:locals_direct_call",
+          "phase13_composition:loop_parameters_direct_call",
+          "phase13_composition:direct_call_graph_parameters"
+        ],
+        "differential_failure_fixture": "compiler/phase13_parameter_argument_aggregate_parameter_source.gst"
       }
     },
     {
@@ -1800,7 +2050,7 @@
       "expected_failure_stage": "none_supported",
       "source_fixture": "compiler/phase13_direct_call_graph_source.gst",
       "canonical_mir_fixture": "compiler/fixtures/native_backend_phase13_direct_call_graph_ingestion.mir",
-      "differential_case_id": "phase13_opening:p13_multi_function_direct_call_graph_source_route",
+      "differential_case_id": "phase13_registry_differential:p13_multi_function_direct_call_graph_source_route",
       "deferral_reason": "none_migrated",
       "future_destination_phase": "none_migrated",
       "closure_version": "phase13_opening_inventory_v1",
@@ -1852,7 +2102,31 @@
           "deferred_p13_mutual_recursive_direct_call_policy"
         ],
         "positive_expectation": "exit_14_phase13_multi_function_direct_call_graph",
-        "deferred_fixture": "compiler/phase11_direct_call_recursion_source.gst"
+        "deferred_fixture": "compiler/phase11_direct_call_recursion_source.gst",
+        "individual_evidence_guard": "guard-cranelift-phase13-direct-call-graph-parity",
+        "differential_stderr_policy": "stable_bytes",
+        "differential_side_effect_policy": "none",
+        "composition_case_ids": [
+          "phase13_composition:direct_call_graph_parameters"
+        ],
+        "composition_cases": [
+          {
+            "id": "phase13_composition:direct_call_graph_parameters",
+            "owner_entry_id": "p13_multi_function_direct_call_graph_source_route",
+            "ci_family": "direct-calls",
+            "source_fixture": "compiler/phase13_composition_direct_calls_source.gst",
+            "positive_expectation": "exit_14_phase13_composition_direct_call_graph_parameters",
+            "stderr_policy": "stable_bytes",
+            "side_effect_policy": "none",
+            "failure_fixture": "compiler/phase11_direct_call_recursion_source.gst",
+            "covers_entry_ids": [
+              "direct_call_i32",
+              "p13_parameterized_local_call_branch_source_route",
+              "p13_multi_function_direct_call_graph_source_route"
+            ]
+          }
+        ],
+        "differential_failure_fixture": "compiler/phase11_direct_call_recursion_source.gst"
       }
     },
     {
@@ -2009,7 +2283,7 @@
       "expected_failure_stage": "none_supported",
       "source_fixture": "compiler/phase13_runtime_predicate_branch_source.gst",
       "canonical_mir_fixture": "none_compiler_generated_phase13_runtime_predicate_bundle",
-      "differential_case_id": "phase13_opening:p13_imported_predicate_update_branch_source_route",
+      "differential_case_id": "phase13_registry_differential:p13_imported_predicate_update_branch_source_route",
       "deferral_reason": "none_migrated",
       "future_destination_phase": "none_migrated",
       "closure_version": "phase13_opening_inventory_v1",
@@ -2054,8 +2328,32 @@
         ],
         "authority_policy": "approved_host_symbol_and_exact_scalar_signature_registry_is_separate_from_source_module_import_resolution",
         "link_policy": "worker_owned_fixed_host_object_only_no_source_or_environment_linker_expansion",
-        "positive_expectation": "all_selected_cases_exit_with_mir_to_c_status_stdout_and_stderr_parity",
-        "deferred_fixture": "compiler/phase11_module_import_forbidden_runtime_source.gst"
+        "positive_expectation": "exit_42_phase13_runtime_predicate_branch",
+        "deferred_fixture": "compiler/phase11_module_import_forbidden_runtime_source.gst",
+        "individual_evidence_guard": "guard-cranelift-phase13-broader-imported-runtime-calls-parity",
+        "differential_stderr_policy": "stable_bytes",
+        "differential_side_effect_policy": "none",
+        "composition_case_ids": [
+          "phase13_composition:source_import_runtime",
+          "phase13_composition:native_metadata_runtime"
+        ],
+        "composition_cases": [
+          {
+            "id": "phase13_composition:source_import_runtime",
+            "owner_entry_id": "p13_imported_predicate_update_branch_source_route",
+            "ci_family": "imports",
+            "source_fixture": "compiler/phase13_composition_imports_source.gst",
+            "positive_expectation": "exit_42_phase13_composition_source_import_runtime",
+            "stderr_policy": "stable_bytes",
+            "side_effect_policy": "none",
+            "failure_fixture": "compiler/phase11_module_import_forbidden_runtime_source.gst",
+            "covers_entry_ids": [
+              "imported_runtime_call_i32",
+              "p13_imported_predicate_update_branch_source_route"
+            ]
+          }
+        ],
+        "differential_failure_fixture": "compiler/phase11_module_import_forbidden_runtime_source.gst"
       }
     },
     {

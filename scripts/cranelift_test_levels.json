@@ -8,8 +8,8 @@
     },
     "2": {
       "name": "differential-family",
-      "ci_owner": "PR Fast registry-derived Phase 11 family matrix",
-      "policy": "focused MIR-to-C versus Cranelift execution, malformed cases, composition cases, and migrated Phase 13 family evidence"
+      "ci_owner": "PR Fast registry-derived seven-family matrix",
+      "policy": "focused MIR-to-C versus Cranelift execution, byte-identical MIR-to-C emission, registry-owned composition cases, stable side effects, and migrated Phase 13 evidence"
     },
     "3": {
       "name": "historical-full",
@@ -152,9 +152,10 @@
     "guard-cranelift-phase11-structured-cfg-parity": 2,
     "guard-cranelift-phase12-5-close": 1,
     "guard-cranelift-phase12-5-opening-contract": 1,
-    "guard-cranelift-phase13-capability-deferral-contract": 1,
-    "guard-cranelift-phase13-direct-call-graph-parity": 2,
     "guard-cranelift-phase13-broader-imported-runtime-calls-parity": 2,
+    "guard-cranelift-phase13-capability-deferral-contract": 1,
+    "guard-cranelift-phase13-composition-differential": 2,
+    "guard-cranelift-phase13-direct-call-graph-parity": 2,
     "guard-cranelift-phase13-general-loop-parity": 2,
     "guard-cranelift-phase13-multiple-locals-assignments-parity": 2,
     "guard-cranelift-phase13-nested-structured-cfg-parity": 2,

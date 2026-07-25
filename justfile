@@ -10334,7 +10334,7 @@ guard-cranelift-phase11-generic-canonical-mir-route:
     set -euo pipefail
     echo "🔒 Checking the authoritative Phase 11 generic canonical-MIR source route..."
     registry_doc="compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md"
-    differential_harness="scripts/phase11_registry_differential.sh"
+    differential_harness="scripts/phase13_registry_differential.sh"
 
     just guard-cranelift-phase11-parity-registry
     rg -n -x -F 'CRANELIFT_FEATURE_PARITY_REGISTRY_ROUTE_STATUS: phase11_retired_exact_shape_source_routes' "$registry_doc" >/dev/null
@@ -13123,11 +13123,21 @@ guard-cranelift-phase11-metadata-diagnostic-parity:
     echo "✅ Phase 11 metadata and diagnostic parity frozen: metadata records survive bundle verification with explicit proofs, unknown/codegen metadata rejects, six stable failure classes carry source locations, unsupported features stop before driver discovery, and every failure preserves output."
 
 
+guard-cranelift-phase13-composition-differential family:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧭 Running Phase 13 registry-owned composition differential family: {{family}}"
+    python3 scripts/cranelift_registry.py verify-phase13-composition-differential-contract
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase13-composition-differential |
+      rg -n -F $'guard-cranelift-phase13-composition-differential\t2\t' >/dev/null
+    bash scripts/phase13_registry_differential.sh "{{family}}"
+
 guard-cranelift-phase11-registry-differential family:
     #!/usr/bin/env bash
     set -euo pipefail
-    echo "🧭 Running Phase 11 registry differential family: {{family}}"
-    bash scripts/phase11_registry_differential.sh "{{family}}"
+    echo "guard-cranelift-phase11-registry-differential is a compatibility alias for Patch 13.11."
+    just guard-cranelift-phase13-composition-differential "{{family}}"
 
 guard-cranelift-differential-family family:
     #!/usr/bin/env bash
@@ -13210,7 +13220,7 @@ guard-cranelift-phase11-route-retirement-ci:
     set -euo pipefail
     echo "🔒 Checking Phase 11 differential harness, semantic route architecture, and focused CI..."
     registry_doc="compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md"
-    differential_harness="scripts/phase11_registry_differential.sh"
+    differential_harness="scripts/phase13_registry_differential.sh"
     family_runner="scripts/cranelift_ci_family.py"
     registry_json="scripts/cranelift_feature_registry.json"
     pr_workflow=".github/workflows/pr-fast.yml"
@@ -13225,8 +13235,9 @@ guard-cranelift-phase11-route-retirement-ci:
 
     required_harness_tokens=(
       'family_runner="scripts/cranelift_ci_family.py"'
-      'differential-rows'
-      'route_owner'
+      'differential-cases'
+      'case_kind'
+      'owner_entry_id'
       'ci_family'
       'default.c'
       'explicit.c'
@@ -13236,7 +13247,8 @@ guard-cranelift-phase11-route-retirement-ci:
       'runtime stdout bytes differ'
       'runtime stderr bytes differ'
       'failed native compilation changed the existing output'
-      'parity_entry=$id ci_family=$ci_family source=$source_fixture'
+      'assert_side_effects'
+      'kind=$case_kind owner=$owner_entry_id ci_family=$ci_family'
     )
     for token in "${required_harness_tokens[@]}"; do
       rg -n -F "$token" "$differential_harness" >/dev/null
@@ -13341,7 +13353,7 @@ guard-cranelift-phase11-closure-summary:
          -e '^[[:space:]]+just guard-cranelift-phase10-close([[:space:]]|$)' \
          -e '^[[:space:]]+just guard-cranelift-phase11-(generic-canonical-mir-route|scalar-expression-parity|local-state-parity|structured-cfg-parity|block-parameter-loop-parity|direct-call-abi-parity|module-import-runtime-parity|metadata-diagnostic-parity)([[:space:]]|$)' \
          -e '^[[:space:]]+just guard-(pr-fast|cloud-heavy)-ci-surface([[:space:]]|$)' \
-         -e '^[[:space:]]+bash .*phase11_registry_differential\.sh([[:space:]]|$)' \
+         -e '^[[:space:]]+bash .*phase(11|13)_registry_differential\.sh([[:space:]]|$)' \
          >/dev/null
     then
       echo "Phase 11 closure summary recursively replays historical evidence."

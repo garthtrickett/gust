@@ -3,6 +3,7 @@
 
 import argparse
 import json
+import re
 import sys
 import tempfile
 from collections import Counter
@@ -248,6 +249,13 @@ PHASE13_SOURCE_METADATA_DEFERRED_RESOURCE_SEMANTICS = [
     "destructor_scheduling",
     "destruction_lowering",
 ]
+PHASE13_COMPOSITION_CASE_FIELDS = {
+    "id", "owner_entry_id", "ci_family", "source_fixture",
+    "positive_expectation", "stderr_policy", "side_effect_policy",
+    "failure_fixture", "covers_entry_ids",
+}
+PHASE13_DIFFERENTIAL_STDERR_POLICIES = {"stable_bytes", "ignored"}
+PHASE13_DIFFERENTIAL_SIDE_EFFECT_POLICIES = {"none", "compare_tree"}
 SUPPORTED_FIELDS = {
     "statuses", "origin_phases", "feature_families",
     "route_owners", "worker_capability_owners", "diagnostic_owners",
@@ -963,8 +971,14 @@ def verify_phase13_registry_schema(registry):
             f"{entry_id}: unsupported Phase 13 current status "
             f"{entry['status']}",
         )
+        expected_differential_case_id = (
+            f"phase13_registry_differential:{entry_id}"
+            if entry["status"] == "migrated"
+            and entry["route_owner"] == "generic_canonical_mir"
+            else f"phase13_opening:{entry_id}"
+        )
         require(
-            entry["differential_case_id"] == f"phase13_opening:{entry_id}",
+            entry["differential_case_id"] == expected_differential_case_id,
             f"{entry_id}: Phase 13 differential identity drifted",
         )
         for field in required_owners:
@@ -2126,6 +2140,209 @@ def verify_phase13_source_metadata_contract(registry):
     }
 
 
+def verify_phase13_composition_differential_contract(registry):
+    verify_phase13_source_metadata_contract(registry)
+    migrated = [
+        entry
+        for entry in registry["entries"]
+        if entry.get("status") == "migrated"
+        and entry.get("route_owner") == "generic_canonical_mir"
+    ]
+    require(migrated, "Registry contains no migrated differential rows")
+    migrated_by_id = {entry["id"]: entry for entry in migrated}
+    require(
+        len(migrated_by_id) == len(migrated),
+        "Migrated differential entry IDs are not unique",
+    )
+
+    active_families = {
+        entry["ci_family"]
+        for entry in phase_entries(registry, "phase11")
+    }
+    individual_case_ids = set()
+    composition_cases = {}
+    composition_owner_ids = set()
+    composition_references = {}
+
+    for entry in migrated:
+        entry_id = entry["id"]
+        case_id = text(
+            entry["differential_case_id"],
+            f"{entry_id}.differential_case_id",
+        )
+        require(
+            case_id not in individual_case_ids,
+            f"duplicate individual differential case ID: {case_id}",
+        )
+        individual_case_ids.add(case_id)
+
+        evidence = entry["evidence"]
+        text(
+            evidence.get("individual_evidence_guard"),
+            f"{entry_id}.evidence.individual_evidence_guard",
+        )
+        expectation = text(
+            evidence.get("positive_expectation"),
+            f"{entry_id}.evidence.positive_expectation",
+        )
+        require(
+            re.fullmatch(r"exit_[0-9]+_.+", expectation) is not None,
+            f"{entry_id}: positive expectation must declare an exit status",
+        )
+        require(
+            evidence.get("differential_stderr_policy")
+            in PHASE13_DIFFERENTIAL_STDERR_POLICIES,
+            f"{entry_id}: invalid differential stderr policy",
+        )
+        require(
+            evidence.get("differential_side_effect_policy")
+            in PHASE13_DIFFERENTIAL_SIDE_EFFECT_POLICIES,
+            f"{entry_id}: invalid differential side-effect policy",
+        )
+        fixture(
+            evidence.get("differential_failure_fixture"),
+            f"{entry_id}.evidence.differential_failure_fixture",
+        )
+        fixture(entry["source_fixture"], f"{entry_id}.source_fixture")
+
+        references = unique_strings(
+            evidence.get("composition_case_ids"),
+            f"{entry_id}.evidence.composition_case_ids",
+        )
+        require(
+            references,
+            f"{entry_id}: migrated row has no composition relationship",
+        )
+        composition_references[entry_id] = set(references)
+
+        owned_cases = evidence.get("composition_cases", [])
+        require(
+            isinstance(owned_cases, list),
+            f"{entry_id}.evidence.composition_cases must be an array",
+        )
+        for index, case in enumerate(owned_cases):
+            context = f"{entry_id}.evidence.composition_cases[{index}]"
+            require(
+                isinstance(case, dict)
+                and set(case) == PHASE13_COMPOSITION_CASE_FIELDS,
+                f"{context} fields drifted",
+            )
+            case_id = text(case["id"], f"{context}.id")
+            require(
+                case_id not in composition_cases
+                and case_id not in individual_case_ids,
+                f"duplicate differential case ID: {case_id}",
+            )
+            require(
+                case["owner_entry_id"] == entry_id,
+                f"{case_id}: composition owner does not match containing row",
+            )
+            require(
+                entry["origin_phase"] == "phase13",
+                f"{case_id}: composition case owner must be a Phase 13 row",
+            )
+            family = text(case["ci_family"], f"{context}.ci_family")
+            require(
+                family in active_families,
+                f"{case_id}: composition case uses inactive family {family}",
+            )
+            fixture(case["source_fixture"], f"{context}.source_fixture")
+            fixture(case["failure_fixture"], f"{context}.failure_fixture")
+            require(
+                re.fullmatch(
+                    r"exit_[0-9]+_.+",
+                    text(case["positive_expectation"], f"{context}.positive_expectation"),
+                )
+                is not None,
+                f"{case_id}: composition expectation must declare an exit status",
+            )
+            require(
+                case["stderr_policy"] in PHASE13_DIFFERENTIAL_STDERR_POLICIES,
+                f"{case_id}: invalid stderr policy",
+            )
+            require(
+                case["side_effect_policy"]
+                in PHASE13_DIFFERENTIAL_SIDE_EFFECT_POLICIES,
+                f"{case_id}: invalid side-effect policy",
+            )
+            covers = unique_strings(
+                case["covers_entry_ids"],
+                f"{context}.covers_entry_ids",
+            )
+            require(
+                len(covers) >= 2,
+                f"{case_id}: composition case must cover at least two migrated rows",
+            )
+            require(
+                entry_id in covers,
+                f"{case_id}: composition case does not cover its owner",
+            )
+            for covered_id in covers:
+                require(
+                    covered_id in migrated_by_id,
+                    f"{case_id}: unknown or non-migrated covered row {covered_id}",
+                )
+            composition_cases[case_id] = case
+            composition_owner_ids.add(entry_id)
+
+    require(
+        composition_cases,
+        "Phase 13 composition differential inventory is empty",
+    )
+    for entry_id, references in composition_references.items():
+        for case_id in references:
+            require(
+                case_id in composition_cases,
+                f"{entry_id}: unknown composition case reference {case_id}",
+            )
+            require(
+                entry_id in composition_cases[case_id]["covers_entry_ids"],
+                f"{entry_id}: composition reference {case_id} does not cover the row",
+            )
+
+    for case_id, case in composition_cases.items():
+        expected_referrers = set(case["covers_entry_ids"])
+        actual_referrers = {
+            entry_id
+            for entry_id, references in composition_references.items()
+            if case_id in references
+        }
+        require(
+            actual_referrers == expected_referrers,
+            f"{case_id}: registry references differ from covers_entry_ids",
+        )
+
+    composition_families = {
+        case["ci_family"]
+        for case in composition_cases.values()
+    }
+    require(
+        composition_families == active_families,
+        "Composition differential family coverage drifted: "
+        f"missing={sorted(active_families - composition_families)} "
+        f"extra={sorted(composition_families - active_families)}",
+    )
+
+    phase13_migrated = [
+        entry for entry in migrated if entry["origin_phase"] == "phase13"
+    ]
+    for entry in phase13_migrated:
+        require(
+            entry["id"] in composition_references,
+            f"{entry['id']}: Phase 13 migrated row lacks composition evidence",
+        )
+
+    return {
+        "migrated_row_count": len(migrated),
+        "phase13_migrated_row_count": len(phase13_migrated),
+        "individual_case_count": len(individual_case_ids),
+        "composition_case_count": len(composition_cases),
+        "composition_owner_count": len(composition_owner_ids),
+        "family_count": len(active_families),
+        "case_ids": sorted(composition_cases),
+    }
+
+
 def verify_phase13_parent_traceability(registry):
     phase11 = {
         entry["id"]: entry
@@ -2299,6 +2516,7 @@ def render_phase13(registry):
     graph_contract = verify_phase13_direct_call_graph_contract(registry)
     runtime_contract = verify_phase13_broader_runtime_call_contract(registry)
     metadata_contract = verify_phase13_source_metadata_contract(registry)
+    composition_contract = verify_phase13_composition_differential_contract(registry)
     rows = phase_entries(registry, "phase13")
     status_counts = totals["status_counts"]
     current_status_counts = Counter(entry["status"] for entry in rows)
@@ -2309,7 +2527,7 @@ def render_phase13(registry):
         "",
         "<!-- Generated by scripts/cranelift_registry.py; do not edit by hand. -->",
         "",
-        "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_VERSION: 8",
+        "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_VERSION: 9",
         "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_AUTHORITY: generated_review_view",
         "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_CANONICAL_SOURCE: scripts/cranelift_feature_registry.json",
         (
@@ -2409,7 +2627,19 @@ def render_phase13(registry):
             "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_SOURCE_METADATA_ROWS: "
             + ",".join(metadata_contract["entry_ids"])
         ),
-        "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_NEXT_MILESTONE: patch13_11_registry_derived_composition_differential",
+        (
+            "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_COMPOSITION_STATUS: "
+            "patch13_11_registry_derived_cross_feature_differential_active"
+        ),
+        (
+            "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_COMPOSITION_CASES: "
+            f"{composition_contract['composition_case_count']}"
+        ),
+        (
+            "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_COMPOSITION_FAMILIES: "
+            f"{composition_contract['family_count']}"
+        ),
+        "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_NEXT_MILESTONE: phase13_closure_gate",
         "",
         "This review artifact is generated from the structured registry. Phase 12.5",
         "is closed under the recorded framework closure version. Stable Phase 13 IDs",
@@ -2586,6 +2816,34 @@ def render_phase13(registry):
             )
         ),
         "",
+        "### Patch 13.11 cross-feature composition differential",
+        "",
+        (
+            "- Migrated differential rows: "
+            f"`{composition_contract['migrated_row_count']}`"
+        ),
+        (
+            "- Phase 13 migrated rows: "
+            f"`{composition_contract['phase13_migrated_row_count']}`"
+        ),
+        (
+            "- Individual registry-owned cases: "
+            f"`{composition_contract['individual_case_count']}`"
+        ),
+        (
+            "- Composition cases: "
+            f"`{composition_contract['composition_case_count']}`"
+        ),
+        (
+            "- Active CI families: "
+            f"`{composition_contract['family_count']}`"
+        ),
+        "- Composition case IDs:",
+        *[
+            f"  - `{case_id}`"
+            for case_id in composition_contract["case_ids"]
+        ],
+        "",
         "## Opening entries",
         "",
         *[phase13_record(entry) for entry in rows],
@@ -2603,8 +2861,11 @@ def render_phase13(registry):
         "- Patch 13.4 migrates the selected nested-CFG row with deterministic blocks, origins, predecessors, and explicit termination.",
         "- Patch 13.5 migrates the selected single-header loop row with block-parameter-carried state and precise residual deferrals.",
         "- Unsupported early-return, nested-loop, body-control-flow, and condition-operator loop shapes remain deferred before driver discovery.",
+        "- Patch 13.11 differential cases are generated from registry ownership rather than a separate Phase 13 feature list.",
+        "- Every migrated row has individual evidence, a composition relationship, and a differential case owner.",
+        "- The existing seven registry-derived CI families own all composition cases without a patch-specific workflow matrix.",
         "",
-        "Patch 13.5 general-loop and backedge parity is active; Phase 13 may proceed to Patch 13.6.",
+        "Patch 13.11 cross-feature composition and registry-derived differential evidence is active.",
         "",
     ]
     rendered = "\n".join(lines)
@@ -2727,6 +2988,7 @@ def main():
             "verify-phase13-direct-call-graph-contract",
             "verify-phase13-broader-runtime-call-contract",
             "verify-phase13-source-metadata-contract",
+            "verify-phase13-composition-differential-contract",
             "verify-phase13-opening-rebase",
             "verify-phase13-parent-traceability",
             "verify-phase13-opening-totals",
@@ -2762,6 +3024,8 @@ def main():
             verify_phase13_broader_runtime_call_contract(registry)
         elif command == "verify-phase13-source-metadata-contract":
             verify_phase13_source_metadata_contract(registry)
+        elif command == "verify-phase13-composition-differential-contract":
+            verify_phase13_composition_differential_contract(registry)
         elif command == "verify-phase13-opening-rebase":
             verify_phase13_opening_rebase(registry)
         elif command == "verify-phase13-parent-traceability":
@@ -2796,6 +3060,7 @@ def main():
     graph_contract = verify_phase13_direct_call_graph_contract(registry)
     runtime_contract = verify_phase13_broader_runtime_call_contract(registry)
     metadata_contract = verify_phase13_source_metadata_contract(registry)
+    composition_contract = verify_phase13_composition_differential_contract(registry)
     phase13_statuses = phase13_totals["status_counts"]
     phase13_parents = phase13_totals["parent_kinds"]
     messages = {
@@ -2890,6 +3155,12 @@ def main():
             f"{len(metadata_contract['entry_ids'])} metadata rows cover "
             f"{metadata_contract['source_route_count']} generic source routes and "
             f"{metadata_contract['malformed_fixture_count']} malformed fixtures."
+        ),
+        "verify-phase13-composition-differential-contract": (
+            "✅ Phase 13 composition differential registry contract passed: "
+            f"{composition_contract['individual_case_count']} individual and "
+            f"{composition_contract['composition_case_count']} composition cases "
+            f"cover {composition_contract['family_count']} registry-derived families."
         ),
         "verify-phase13-opening-rebase": (
             "✅ Phase 13 opening rebase passed: stable IDs and parent "

@@ -130,7 +130,6 @@ def ordered_active_families(registry):
         f"registry_only={sorted(active - mapped)} mapping_only={sorted(mapped - active)}",
     )
     return [family for family, _, _ in RUNNERS]
-    return json.dumps(families, separators=(",", ":"))
 
 
 def selected_rows(registry, family, migrated_only=False):
@@ -147,6 +146,109 @@ def selected_rows(registry, family, migrated_only=False):
         ]
     require(rows, f"Cranelift CI family {family!r} selects no registry rows")
     return rows
+
+
+def migrated_differential_rows(registry):
+    return [
+        entry
+        for entry in differential_registry_rows(registry)
+        if entry.get("status") == "migrated"
+        and entry.get("route_owner") == "generic_canonical_mir"
+    ]
+
+
+def composition_case_records(registry):
+    migrated = migrated_differential_rows(registry)
+    migrated_ids = {entry["id"] for entry in migrated}
+    cases = []
+    case_by_id = {}
+    references = {}
+
+    for entry in migrated:
+        evidence = entry.get("evidence")
+        require(isinstance(evidence, dict), f"{entry['id']}.evidence must be an object")
+        case_ids = evidence.get("composition_case_ids")
+        require(
+            isinstance(case_ids, list) and case_ids,
+            f"{entry['id']}: migrated row has no composition relationship",
+        )
+        require(
+            len(case_ids) == len(set(case_ids))
+            and all(isinstance(case_id, str) and case_id for case_id in case_ids),
+            f"{entry['id']}: invalid composition case references",
+        )
+        references[entry["id"]] = set(case_ids)
+
+        owned = evidence.get("composition_cases", [])
+        require(
+            isinstance(owned, list),
+            f"{entry['id']}.evidence.composition_cases must be an array",
+        )
+        for case in owned:
+            require(isinstance(case, dict), f"{entry['id']}: invalid composition case")
+            case_id = case.get("id")
+            require(
+                isinstance(case_id, str) and case_id and case_id not in case_by_id,
+                f"{entry['id']}: duplicate or missing composition case ID",
+            )
+            require(
+                case.get("owner_entry_id") == entry["id"],
+                f"{case_id}: composition owner mismatch",
+            )
+            covers = case.get("covers_entry_ids")
+            require(
+                isinstance(covers, list)
+                and len(covers) >= 2
+                and len(covers) == len(set(covers)),
+                f"{case_id}: composition coverage must contain unique migrated rows",
+            )
+            require(
+                entry["id"] in covers and all(item in migrated_ids for item in covers),
+                f"{case_id}: composition coverage contains an unknown row",
+            )
+            for fixture_field in ("source_fixture", "failure_fixture"):
+                fixture_path = case.get(fixture_field)
+                require(
+                    isinstance(fixture_path, str)
+                    and fixture_path
+                    and (ROOT / fixture_path).is_file(),
+                    f"{case_id}: missing {fixture_field}",
+                )
+            require(
+                isinstance(case.get("positive_expectation"), str)
+                and case["positive_expectation"].startswith("exit_"),
+                f"{case_id}: positive expectation must declare an exit status",
+            )
+            require(
+                case.get("stderr_policy") in {"stable_bytes", "ignored"},
+                f"{case_id}: invalid stderr policy",
+            )
+            require(
+                case.get("side_effect_policy") in {"none", "compare_tree"},
+                f"{case_id}: invalid side-effect policy",
+            )
+            case_by_id[case_id] = case
+            cases.append(case)
+
+    for entry_id, case_ids in references.items():
+        for case_id in case_ids:
+            require(case_id in case_by_id, f"{entry_id}: unknown composition case {case_id}")
+            require(
+                entry_id in case_by_id[case_id]["covers_entry_ids"],
+                f"{entry_id}: composition case {case_id} does not cover the row",
+            )
+
+    for case_id, case in case_by_id.items():
+        referrers = {
+            entry_id
+            for entry_id, case_ids in references.items()
+            if case_id in case_ids
+        }
+        require(
+            referrers == set(case["covers_entry_ids"]),
+            f"{case_id}: composition references differ from covers_entry_ids",
+        )
+    return cases
 
 
 def validate_registry_projection(registry):
@@ -171,6 +273,46 @@ def validate_registry_projection(registry):
         require(
             migrated,
             f"Phase 11 CI family {family!r} has no migrated differential rows",
+        )
+
+    composition_cases = composition_case_records(registry)
+    composition_families = {case.get("ci_family") for case in composition_cases}
+    require(
+        composition_families == set(families),
+        "Registry-derived composition cases do not cover the active CI families: "
+        f"missing={sorted(set(families) - composition_families)} "
+        f"extra={sorted(composition_families - set(families))}",
+    )
+
+    individual_ids = set()
+    for entry in migrated_differential_rows(registry):
+        evidence = entry["evidence"]
+        case_id = entry.get("differential_case_id")
+        require(
+            isinstance(case_id, str) and case_id and case_id not in individual_ids,
+            f"{entry['id']}: missing or duplicate individual differential case ID",
+        )
+        individual_ids.add(case_id)
+        require(
+            isinstance(evidence.get("individual_evidence_guard"), str)
+            and evidence["individual_evidence_guard"],
+            f"{entry['id']}: individual focused evidence guard is missing",
+        )
+        require(
+            evidence.get("differential_stderr_policy") in {"stable_bytes", "ignored"},
+            f"{entry['id']}: invalid differential stderr policy",
+        )
+        require(
+            evidence.get("differential_side_effect_policy")
+            in {"none", "compare_tree"},
+            f"{entry['id']}: invalid differential side-effect policy",
+        )
+        failure_fixture = evidence.get("differential_failure_fixture")
+        require(
+            isinstance(failure_fixture, str)
+            and failure_fixture
+            and (ROOT / failure_fixture).is_file(),
+            f"{entry['id']}: differential failure fixture is missing",
         )
 
     supported = registry.get("supported_values")
@@ -255,23 +397,72 @@ def tsv(value, context):
     return value
 
 
-def emit_differential_rows(registry, family):
+def differential_case_values(
+    *,
+    case_id,
+    case_kind,
+    owner_entry_id,
+    ci_family,
+    source_fixture,
+    failure_fixture,
+    positive_expectation,
+    stderr_policy,
+    side_effect_policy,
+    related_entry_ids,
+):
+    return (
+        tsv(case_id, f"{case_id}.case_id"),
+        tsv(case_kind, f"{case_id}.case_kind"),
+        tsv(owner_entry_id, f"{case_id}.owner_entry_id"),
+        tsv(ci_family, f"{case_id}.ci_family"),
+        tsv(source_fixture, f"{case_id}.source_fixture"),
+        tsv(failure_fixture, f"{case_id}.failure_fixture"),
+        tsv(positive_expectation, f"{case_id}.positive_expectation"),
+        tsv(stderr_policy, f"{case_id}.stderr_policy"),
+        tsv(side_effect_policy, f"{case_id}.side_effect_policy"),
+        tsv(",".join(related_entry_ids), f"{case_id}.related_entry_ids"),
+    )
+
+
+def emit_differential_cases(registry, family):
     rows = selected_rows(registry, family, migrated_only=True)
     for entry in rows:
         evidence = entry.get("evidence")
         require(isinstance(evidence, dict), f"{entry['id']}.evidence must be an object")
-        values = (
-            tsv(entry["id"], f"{entry['id']}.id"),
-            tsv(entry["route_owner"], f"{entry['id']}.route_owner"),
-            tsv(entry["ci_family"], f"{entry['id']}.ci_family"),
-            tsv(entry["source_fixture"], f"{entry['id']}.source_fixture"),
-            tsv(evidence.get("deferred_fixture"), f"{entry['id']}.deferred_fixture"),
-            tsv(
-                evidence.get("positive_expectation"),
-                f"{entry['id']}.positive_expectation",
-            ),
+        values = differential_case_values(
+            case_id=entry["differential_case_id"],
+            case_kind="individual",
+            owner_entry_id=entry["id"],
+            ci_family=entry["ci_family"],
+            source_fixture=entry["source_fixture"],
+            failure_fixture=evidence.get("differential_failure_fixture"),
+            positive_expectation=evidence.get("positive_expectation"),
+            stderr_policy=evidence.get("differential_stderr_policy"),
+            side_effect_policy=evidence.get("differential_side_effect_policy"),
+            related_entry_ids=[entry["id"]],
         )
         print("\t".join(values))
+
+    for case in composition_case_records(registry):
+        if family != "all" and case["ci_family"] != family:
+            continue
+        values = differential_case_values(
+            case_id=case["id"],
+            case_kind="composition",
+            owner_entry_id=case["owner_entry_id"],
+            ci_family=case["ci_family"],
+            source_fixture=case["source_fixture"],
+            failure_fixture=case["failure_fixture"],
+            positive_expectation=case["positive_expectation"],
+            stderr_policy=case["stderr_policy"],
+            side_effect_policy=case["side_effect_policy"],
+            related_entry_ids=case["covers_entry_ids"],
+        )
+        print("\t".join(values))
+
+
+def emit_differential_rows(registry, family):
+    emit_differential_cases(registry, family)
 
 
 def run_static(registry, family):
@@ -318,13 +509,13 @@ def run_focused(registry, family):
 def run_family(registry, family):
     run_focused(registry, family)
     completed = subprocess.run(
-        ["just", "guard-cranelift-phase11-registry-differential", family],
+        ["just", "guard-cranelift-phase13-composition-differential", family],
         cwd=ROOT,
         check=False,
     )
     if completed.returncode != 0:
         raise Error(
-            f"Phase 11 CI family {family!r} differential cases failed "
+            f"Registry-derived CI family {family!r} differential cases failed "
             f"with exit code {completed.returncode}"
         )
     print(f"✅ Cranelift CI family runner passed: {family}")
@@ -340,6 +531,7 @@ def main():
             "matrix-json",
             "validate-family",
             "differential-rows",
+            "differential-cases",
             "run-static",
             "run",
             "check-pr-workflow",
@@ -356,7 +548,8 @@ def main():
         if args.command == "validate":
             print(
                 "✅ Cranelift CI family projection passed: "
-                f"{len(families)} row-derived families and one runner mapping."
+                f"{len(families)} row-derived families, one runner mapping, "
+                f"and {len(composition_case_records(registry))} composition cases."
             )
         elif args.command == "families":
             print("\n".join(families))
@@ -366,11 +559,14 @@ def main():
             require(args.value is not None, "validate-family requires a family")
             validate_family(registry, args.value)
             print(f"✅ Active Cranelift CI family: {args.value}")
-        elif args.command == "differential-rows":
-            require(args.value is not None, "differential-rows requires a family or all")
+        elif args.command in {"differential-rows", "differential-cases"}:
+            require(
+                args.value is not None,
+                f"{args.command} requires a family or all",
+            )
             if args.value != "all":
                 validate_family(registry, args.value)
-            emit_differential_rows(registry, args.value)
+            emit_differential_cases(registry, args.value)
         elif args.command == "run-static":
             require(args.value is not None, "run-static requires a family")
             run_static(registry, args.value)
