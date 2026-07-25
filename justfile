@@ -14390,7 +14390,8 @@ guard-cranelift-phase12-5-close:
     canonical_summary='docs/CRANELIFT_FEATURE_REGISTRY.md'
     inventory_doc='compiler/CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY.md'
     phase13_view='compiler/CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY.md'
-    differential_harness='scripts/phase11_registry_differential.sh'
+    differential_harness='scripts/phase13_registry_differential.sh'
+    legacy_differential_harness='scripts/phase11_registry_differential.sh'
     level_runner='scripts/cranelift_test_levels.py'
     pr_workflow='.github/workflows/pr-fast.yml'
     historical_workflow='.github/workflows/cranelift-historical-full.yml'
@@ -14415,6 +14416,7 @@ guard-cranelift-phase12-5-close:
       "$inventory_doc"
       "$phase13_view"
       "$differential_harness"
+      "$legacy_differential_harness"
       "$pr_workflow"
       "$historical_workflow"
     )
@@ -14424,6 +14426,10 @@ guard-cranelift-phase12-5-close:
         exit 1
       fi
     done
+
+    rg -n -F \
+      'exec bash scripts/phase13_registry_differential.sh "${1:-all}"' \
+      "$legacy_differential_harness" >/dev/null
 
     rg -n -F "$closure_status" "$registry_json" >/dev/null
     rg -n -F '"current_phase": "phase13"' "$registry_json" >/dev/null
