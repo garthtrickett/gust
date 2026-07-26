@@ -27,10 +27,10 @@
       "const": 1
     },
     "registry_version": {
-      "const": 6
+      "const": 7
     },
     "registry_status": {
-      "const": "phase12_5_closed_cranelift_verification_framework_consolidation"
+      "const": "phase13_closed_deferred_registry_parity_expansion"
     },
     "current_phase": {
       "const": "phase13"
@@ -44,18 +44,23 @@
       "required": [
         "phase11",
         "phase12_5_opening",
-        "phase12_5"
+        "phase12_5",
+        "phase13"
       ]
     },
     "closure_snapshots": {
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "phase11"
+        "phase11",
+        "phase13"
       ],
       "properties": {
         "phase11": {
           "$ref": "#/$defs/phase11_closure_snapshot"
+        },
+        "phase13": {
+          "$ref": "#/$defs/phase13_closure_snapshot"
         }
       }
     },
@@ -668,6 +673,188 @@
             "type": "string",
             "pattern": "^[A-Za-z0-9_]+$"
           }
+        }
+      }
+    },
+    "phase13_closure_snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "closure_version",
+        "status",
+        "scope",
+        "opening_version",
+        "residual_version",
+        "closure_guard",
+        "ci_owner",
+        "closure_wording",
+        "non_claims",
+        "required_contracts",
+        "closure_assertions",
+        "forbidden_replays",
+        "opening_entry_count",
+        "disposition_counts",
+        "migrated_entry_ids",
+        "replaced_entry_ids",
+        "excluded_entry_ids",
+        "residual_entry_count",
+        "migrated_route_owner",
+        "default_oracle_owner",
+        "explicit_cranelift_fallback_policy",
+        "worker_request_boundary",
+        "artifact_owner",
+        "differential_owner",
+        "historical_owner",
+        "evidence_replay_policy",
+        "comparison_policy"
+      ],
+      "properties": {
+        "closure_version": {
+          "const": "phase13_closed_deferred_registry_parity_expansion"
+        },
+        "status": {
+          "const": "closed_declared_inventory_only"
+        },
+        "scope": {
+          "const": "declared_phase13_deferred_parity_expansion_inventory_only"
+        },
+        "opening_version": {
+          "const": "phase13_opening_inventory_v1"
+        },
+        "residual_version": {
+          "const": "phase13_deferred_residue_v1"
+        },
+        "closure_guard": {
+          "const": "guard-cranelift-phase13-close"
+        },
+        "ci_owner": {
+          "const": "PR_Fast_Level1_phase_closure"
+        },
+        "closure_wording": {
+          "type": "string",
+          "minLength": 1
+        },
+        "non_claims": {
+          "type": "array",
+          "minItems": 6,
+          "maxItems": 6,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required_contracts": {
+          "type": "array",
+          "minItems": 22,
+          "maxItems": 22,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "closure_assertions": {
+          "type": "array",
+          "minItems": 16,
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "forbidden_replays": {
+          "type": "array",
+          "minItems": 5,
+          "maxItems": 5,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "opening_entry_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "disposition_counts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "migrated",
+            "replaced",
+            "excluded"
+          ],
+          "properties": {
+            "migrated": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "replaced": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "excluded": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "migrated_entry_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "replaced_entry_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "excluded_entry_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "residual_entry_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "migrated_route_owner": {
+          "const": "generic_canonical_mir"
+        },
+        "default_oracle_owner": {
+          "const": "mir_to_c"
+        },
+        "explicit_cranelift_fallback_policy": {
+          "const": "forbidden"
+        },
+        "worker_request_boundary": {
+          "const": "request_data_and_canonical_mir_only"
+        },
+        "artifact_owner": {
+          "const": "phase9g_compiler_transactional_object_link_cleanup_and_publication"
+        },
+        "differential_owner": {
+          "const": "registry_derived_level2_families"
+        },
+        "historical_owner": {
+          "const": "scheduled_or_manual_cranelift_historical_full_level3"
+        },
+        "evidence_replay_policy": {
+          "const": "validate_ownership_and_wiring_without_replaying_level2_or_level3"
+        },
+        "comparison_policy": {
+          "const": "semantic_registry_fields_and_wiring_only_no_raw_hashes_or_matrix_correctness_totals"
         }
       }
     }

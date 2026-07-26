@@ -317,6 +317,85 @@ PHASE13_RESIDUAL_FAILURE_STAGES = {
     "canonical_mir_validation_before_driver_discovery",
     "source_or_type_failure_before_driver_discovery",
 }
+PHASE13_CLOSURE_SNAPSHOT_FIELDS = {
+    "closure_version", "status", "scope", "opening_version",
+    "residual_version", "closure_guard", "ci_owner", "closure_wording",
+    "non_claims", "required_contracts", "closure_assertions",
+    "forbidden_replays", "opening_entry_count", "disposition_counts",
+    "migrated_entry_ids", "replaced_entry_ids", "excluded_entry_ids",
+    "residual_entry_count", "migrated_route_owner",
+    "default_oracle_owner", "explicit_cranelift_fallback_policy",
+    "worker_request_boundary", "artifact_owner", "differential_owner",
+    "historical_owner", "evidence_replay_policy", "comparison_policy",
+}
+PHASE13_CLOSURE_VERSION = "phase13_closed_deferred_registry_parity_expansion"
+PHASE13_CLOSURE_STATUS = "closed_declared_inventory_only"
+PHASE13_CLOSURE_SCOPE = (
+    "declared_phase13_deferred_parity_expansion_inventory_only"
+)
+PHASE13_CLOSURE_WORDING = (
+    "The declared Phase 13 deferred-parity expansion inventory is complete. "
+    "Migrated rows use the generic canonical-MIR route with focused differential "
+    "evidence, while remaining unsupported capabilities are represented by "
+    "narrower, explicitly owned future-phase deferrals."
+)
+PHASE13_CLOSURE_NON_CLAIMS = (
+    "Cranelift_has_full_Gust_parity",
+    "all_Gust_types_are_supported",
+    "all_ABI_forms_are_supported",
+    "all_control_flow_forms_are_supported",
+    "resource_semantics_are_complete",
+    "the_experimental_backend_is_production_complete",
+)
+PHASE13_CLOSURE_REQUIRED_CONTRACTS = (
+    "phase13_opening_contract",
+    "canonical_registry_schema",
+    "registry_projection",
+    "phase11_semantic_closure_summary",
+    "phase13_capability_and_deferral_contract",
+    "phase13_parent_traceability_contract",
+    "phase13_deferred_residue_audit",
+    "registry_derived_ci_family_projection",
+    "semantic_route_architecture_contract",
+    "reduced_manifest_architecture_contract",
+    "three_level_test_mapping",
+    "pr_fast_workflow_ownership",
+    "heavy_guards_workflow_ownership",
+    "historical_full_workflow_ownership",
+    "phase13_generated_view_projection",
+    "phase13_registry_differential_wiring",
+    "separately_available_level3_historical_suite",
+    "phase9g_artifact_ownership_contract",
+    "mir_to_c_default_ownership",
+    "explicit_cranelift_no_fallback_policy",
+    "worker_request_isolation",
+    "early_deferral_and_output_preservation_contracts",
+)
+PHASE13_CLOSURE_ASSERTIONS = (
+    "every_phase13_opening_row_has_a_valid_final_disposition",
+    "every_migrated_row_uses_generic_canonical_mir_routing",
+    "every_remaining_deferral_is_concrete_and_owned",
+    "no_exact_source_recognizer_was_introduced",
+    "explicit_cranelift_cannot_fall_back_to_mir_to_c",
+    "unsupported_cases_stop_before_driver_and_artifact_access",
+    "mir_to_c_remains_the_default_oracle",
+    "default_and_explicit_mir_to_c_remain_equivalent",
+    "worker_receives_only_request_data_and_canonical_mir",
+    "phase9g_owns_object_link_cleanup_and_publication",
+    "active_totals_are_registry_derived",
+    "generated_views_are_current",
+    "ci_families_remain_registry_derived",
+    "no_raw_registry_or_markdown_hash_contract_exists",
+    "no_exact_matrix_total_is_backend_correctness",
+    "full_historical_suite_remains_separately_runnable",
+)
+PHASE13_CLOSURE_FORBIDDEN_REPLAYS = (
+    "every_phase13_differential_family",
+    "full_phase9_through_phase13_historical_suite",
+    "every_historical_native_fixture",
+    "complete_object_and_link_failure_matrices",
+    "release_or_packaging_matrices",
+)
 PHASE13_OPENING_VERSION = (
     "phase13_opening_inventory_rebased_on_phase12_5_framework"
 )
@@ -398,8 +477,9 @@ def legacy_records(path, prefix):
 def validate_phase11_snapshot_structure(registry):
     snapshots = registry["closure_snapshots"]
     require(
-        isinstance(snapshots, dict) and set(snapshots) == {"phase11"},
-        "closure_snapshots must contain exactly phase11",
+        isinstance(snapshots, dict)
+        and set(snapshots) == {"phase11", "phase13"},
+        "closure_snapshots must contain exactly phase11 and phase13",
     )
     snapshot = snapshots["phase11"]
     require(
@@ -670,6 +750,134 @@ def validate_phase13_residual_snapshot_structure(registry):
     return snapshot
 
 
+def validate_phase13_closure_snapshot_structure(registry):
+    snapshots = registry["closure_snapshots"]
+    require(
+        isinstance(snapshots, dict)
+        and set(snapshots) == {"phase11", "phase13"},
+        "closure_snapshots must contain exactly phase11 and phase13",
+    )
+    snapshot = snapshots["phase13"]
+    require(
+        isinstance(snapshot, dict)
+        and set(snapshot) == PHASE13_CLOSURE_SNAPSHOT_FIELDS,
+        "Phase 13 closure snapshot fields drifted",
+    )
+    require(
+        snapshot["closure_version"] == PHASE13_CLOSURE_VERSION
+        == registry["closed_phase_versions"]["phase13"],
+        "Phase 13 closure version differs from closed_phase_versions",
+    )
+    require(
+        snapshot["status"] == PHASE13_CLOSURE_STATUS,
+        "Phase 13 closure status drifted",
+    )
+    require(
+        snapshot["scope"] == PHASE13_CLOSURE_SCOPE,
+        "Phase 13 closure scope must remain limited to the declared inventory",
+    )
+    require(
+        snapshot["opening_version"] == PHASE13_INVENTORY_VERSION,
+        "Phase 13 closure opening version drifted",
+    )
+    require(
+        snapshot["residual_version"] == PHASE13_RESIDUAL_VERSION,
+        "Phase 13 closure residual version drifted",
+    )
+    require(
+        snapshot["closure_guard"] == "guard-cranelift-phase13-close",
+        "Phase 13 closure guard owner drifted",
+    )
+    require(
+        snapshot["ci_owner"] == "PR_Fast_Level1_phase_closure",
+        "Phase 13 closure CI owner drifted",
+    )
+    require(
+        snapshot["closure_wording"] == PHASE13_CLOSURE_WORDING,
+        "Phase 13 closure wording drifted",
+    )
+    require(
+        snapshot["non_claims"] == list(PHASE13_CLOSURE_NON_CLAIMS),
+        "Phase 13 closure non-claim set drifted",
+    )
+    require(
+        snapshot["required_contracts"]
+        == list(PHASE13_CLOSURE_REQUIRED_CONTRACTS),
+        "Phase 13 closure required-contract set drifted",
+    )
+    require(
+        snapshot["closure_assertions"]
+        == list(PHASE13_CLOSURE_ASSERTIONS),
+        "Phase 13 closure assertion set drifted",
+    )
+    require(
+        snapshot["forbidden_replays"]
+        == list(PHASE13_CLOSURE_FORBIDDEN_REPLAYS),
+        "Phase 13 closure replay ban set drifted",
+    )
+    require(
+        isinstance(snapshot["opening_entry_count"], int)
+        and snapshot["opening_entry_count"] > 0,
+        "Phase 13 closure opening-entry count must be positive",
+    )
+    disposition_counts = snapshot["disposition_counts"]
+    require(
+        isinstance(disposition_counts, dict)
+        and set(disposition_counts) == {"migrated", "replaced", "excluded"},
+        "Phase 13 closure disposition-count fields drifted",
+    )
+    for label, value in disposition_counts.items():
+        require(
+            isinstance(value, int) and value >= 0,
+            f"Phase 13 closure {label} total must be non-negative",
+        )
+    require(
+        sum(disposition_counts.values()) == snapshot["opening_entry_count"],
+        "Phase 13 closure disposition totals do not match opening-entry count",
+    )
+    for field, label in (
+        ("migrated_entry_ids", "migrated"),
+        ("replaced_entry_ids", "replaced"),
+        ("excluded_entry_ids", "excluded"),
+    ):
+        ids = unique_strings(snapshot[field], f"closure_snapshots.phase13.{field}")
+        require(
+            len(ids) == disposition_counts[label],
+            f"Phase 13 closure {field} count differs from {label} total",
+        )
+    require(
+        isinstance(snapshot["residual_entry_count"], int)
+        and snapshot["residual_entry_count"] > 0,
+        "Phase 13 closure residual-entry count must be positive",
+    )
+    fixed_values = {
+        "migrated_route_owner": "generic_canonical_mir",
+        "default_oracle_owner": "mir_to_c",
+        "explicit_cranelift_fallback_policy": "forbidden",
+        "worker_request_boundary": "request_data_and_canonical_mir_only",
+        "artifact_owner": (
+            "phase9g_compiler_transactional_object_link_cleanup_and_publication"
+        ),
+        "differential_owner": "registry_derived_level2_families",
+        "historical_owner": (
+            "scheduled_or_manual_cranelift_historical_full_level3"
+        ),
+        "evidence_replay_policy": (
+            "validate_ownership_and_wiring_without_replaying_level2_or_level3"
+        ),
+        "comparison_policy": (
+            "semantic_registry_fields_and_wiring_only_no_raw_hashes_or_"
+            "matrix_correctness_totals"
+        ),
+    }
+    for field, expected in fixed_values.items():
+        require(
+            snapshot[field] == expected,
+            f"Phase 13 closure {field} drifted",
+        )
+    return snapshot
+
+
 def validate():
     registry = read_json(REGISTRY)
     schema = read_json(SCHEMA)
@@ -734,14 +942,37 @@ def validate():
         == PHASE13_RESIDUAL_ROW_FIELDS,
         "schema Phase 13 residual row fields drifted",
     )
+    closed_versions_schema = schema.get("properties", {}).get(
+        "closed_phase_versions",
+        {},
+    )
+    require(
+        set(closed_versions_schema.get("required", []))
+        == {"phase11", "phase12_5_opening", "phase12_5", "phase13"},
+        "schema closed-phase version keys drifted",
+    )
+    closure_schema = schema.get("properties", {}).get("closure_snapshots", {})
+    require(
+        set(closure_schema.get("required", [])) == {"phase11", "phase13"},
+        "schema closure snapshot keys drifted",
+    )
+    phase13_closure_schema = definitions.get("phase13_closure_snapshot", {})
+    require(
+        set(phase13_closure_schema.get("required", []))
+        == PHASE13_CLOSURE_SNAPSHOT_FIELDS,
+        "schema Phase 13 closure snapshot fields drifted",
+    )
+    require(
+        phase13_closure_schema.get("additionalProperties") is False,
+        "schema Phase 13 closure snapshot must reject unknown fields",
+    )
 
     require(registry["schema"] == "scripts/cranelift_feature_registry.schema.json",
             "registry schema path is not canonical")
     require(registry["schema_version"] == 1, "schema_version must be 1")
-    require(registry["registry_version"] == 6, "registry_version must be 6")
+    require(registry["registry_version"] == 7, "registry_version must be 7")
     require(
-        registry["registry_status"]
-        == "phase12_5_closed_cranelift_verification_framework_consolidation",
+        registry["registry_status"] == PHASE13_CLOSURE_VERSION,
         "registry status is missing or stale",
     )
     require(registry["current_phase"] == "phase13", "current_phase must be phase13")
@@ -750,12 +981,14 @@ def validate():
             "phase11": "phase11_closed_registry_backed_feature_parity_migration",
             "phase12_5_opening": "phase12_5_opened_verification_framework_consolidation",
             "phase12_5": "phase12_5_closed_cranelift_verification_framework_consolidation",
+            "phase13": PHASE13_CLOSURE_VERSION,
         },
         "closed phase versions drifted",
     )
     validate_phase11_snapshot_structure(registry)
     validate_phase13_opening_snapshot_structure(registry)
     residual_snapshot = validate_phase13_residual_snapshot_structure(registry)
+    validate_phase13_closure_snapshot_structure(registry)
 
     categories = set(unique_strings(registry["planning_categories"], "planning_categories"))
     supported = registry["supported_values"]
@@ -2689,6 +2922,113 @@ def verify_phase13_deferred_residue_audit(registry):
     }
 
 
+def verify_phase13_closure(registry):
+    residue = verify_phase13_deferred_residue_audit(registry)
+    composition = verify_phase13_composition_differential_contract(registry)
+    snapshot = validate_phase13_closure_snapshot_structure(registry)
+    rows = phase_entries(registry, "phase13")
+    residual_rows = registry["residual_snapshots"]["phase13"]["rows"]
+
+    migrated_ids = [
+        entry["id"] for entry in rows if entry["status"] == "migrated"
+    ]
+    replaced_ids = [
+        entry["id"] for entry in rows if entry["status"] == "replaced"
+    ]
+    excluded_ids = [
+        entry["id"] for entry in rows if entry["status"] == "excluded"
+    ]
+    require(
+        registry["registry_status"] == PHASE13_CLOSURE_VERSION,
+        "Phase 13 closure registry status drifted",
+    )
+    require(
+        snapshot["opening_entry_count"] == len(rows)
+        == residue["phase13_row_count"],
+        "Phase 13 closure opening-row total drifted",
+    )
+    require(
+        snapshot["disposition_counts"] == {
+            "migrated": len(migrated_ids),
+            "replaced": len(replaced_ids),
+            "excluded": len(excluded_ids),
+        },
+        "Phase 13 closure disposition totals differ from live rows",
+    )
+    require(
+        snapshot["migrated_entry_ids"] == migrated_ids,
+        "Phase 13 closure migrated stable-ID inventory drifted",
+    )
+    require(
+        snapshot["replaced_entry_ids"] == replaced_ids,
+        "Phase 13 closure replaced stable-ID inventory drifted",
+    )
+    require(
+        snapshot["excluded_entry_ids"] == excluded_ids,
+        "Phase 13 closure excluded stable-ID inventory drifted",
+    )
+    require(
+        snapshot["residual_entry_count"] == len(residual_rows)
+        == residue["residual_row_count"],
+        "Phase 13 closure residual-row total drifted",
+    )
+    for entry in rows:
+        require(
+            entry["status"] in {"migrated", "replaced", "excluded"},
+            f"{entry['id']}: Phase 13 closure found an unresolved disposition",
+        )
+        if entry["status"] == "migrated":
+            require(
+                entry["route_owner"] == snapshot["migrated_route_owner"],
+                f"{entry['id']}: migrated closure row is not generic canonical MIR",
+            )
+            require(
+                entry["capability_decision"] == "supported",
+                f"{entry['id']}: migrated closure row lacks supported capability",
+            )
+        else:
+            require(
+                entry["route_owner"] in {"deferred", "excluded"},
+                f"{entry['id']}: non-migrated closure row has an active route",
+            )
+    for row in residual_rows:
+        for field in (
+            "capability_owner",
+            "diagnostic_owner",
+            "concrete_reason",
+            "destination_phase",
+            "prerequisite_capability",
+            "current_failure_stage",
+            "positive_future_fixture",
+            "negative_current_fixture",
+        ):
+            text(row[field], f"{row['id']}.{field}")
+    require(
+        composition["phase13_migrated_row_count"] == len(migrated_ids),
+        "Phase 13 closure migrated rows lack complete composition wiring",
+    )
+    serialized = json.dumps(registry, sort_keys=True)
+    for banned in ("SHA256", "SHA-256", "sha256sum"):
+        require(
+            banned not in serialized,
+            f"Phase 13 closure registry contains banned raw-hash token: {banned}",
+        )
+    return {
+        "closure_version": snapshot["closure_version"],
+        "status": snapshot["status"],
+        "scope": snapshot["scope"],
+        "opening_entry_count": len(rows),
+        "disposition_counts": snapshot["disposition_counts"],
+        "residual_entry_count": len(residual_rows),
+        "migrated_entry_count": len(migrated_ids),
+        "composition_case_count": composition["composition_case_count"],
+        "family_count": composition["family_count"],
+        "closure_guard": snapshot["closure_guard"],
+        "ci_owner": snapshot["ci_owner"],
+        "wording": snapshot["closure_wording"],
+    }
+
+
 def verify_phase13_parent_traceability(registry):
     phase11 = {
         entry["id"]: entry
@@ -2829,6 +3169,29 @@ def closure_summary_lines(registry):
     ]
 
 
+def phase13_closure_summary_lines(registry):
+    snapshot = verify_phase13_closure(registry)
+    counts = snapshot["disposition_counts"]
+    return [
+        "## Phase 13 scoped closure summary",
+        "",
+        f"- Closure version: `{snapshot['closure_version']}`",
+        f"- Closure scope: `{snapshot['scope']}`",
+        f"- Opening rows closed: `{snapshot['opening_entry_count']}`",
+        f"- Migrated: `{counts['migrated']}`",
+        f"- Replaced by narrower residuals: `{counts['replaced']}`",
+        f"- Excluded: `{counts['excluded']}`",
+        f"- Frozen residual capabilities: `{snapshot['residual_entry_count']}`",
+        f"- Level 1 closure guard: `{snapshot['closure_guard']}`",
+        f"- CI owner: `{snapshot['ci_owner']}`",
+        "",
+        snapshot["wording"],
+        "",
+        "This closure is scoped to the declared Phase 13 deferred-parity expansion inventory and is not a claim of complete Gust language parity.",
+        "",
+    ]
+
+
 def cell(value):
     return str(value).replace("|", r"\|").replace("\n", " ")
 
@@ -2864,6 +3227,7 @@ def render_phase13(registry):
     metadata_contract = verify_phase13_source_metadata_contract(registry)
     composition_contract = verify_phase13_composition_differential_contract(registry)
     residue_contract = verify_phase13_deferred_residue_audit(registry)
+    closure_contract = verify_phase13_closure(registry)
     rows = phase_entries(registry, "phase13")
     status_counts = totals["status_counts"]
     current_status_counts = Counter(entry["status"] for entry in rows)
@@ -2874,7 +3238,7 @@ def render_phase13(registry):
         "",
         "<!-- Generated by scripts/cranelift_registry.py; do not edit by hand. -->",
         "",
-        "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_VERSION: 10",
+        "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_VERSION: 11",
         "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_AUTHORITY: generated_review_view",
         "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_CANONICAL_SOURCE: scripts/cranelift_feature_registry.json",
         (
@@ -2887,6 +3251,10 @@ def render_phase13(registry):
         ),
         (
             "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_STATUS: "
+            f"{closure_contract['status']}"
+        ),
+        (
+            "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_OPENING_STATUS: "
             f"{snapshot['status']}"
         ),
         (
@@ -2998,7 +3366,27 @@ def render_phase13(registry):
             "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_RESIDUE_ROWS: "
             f"{residue_contract['residual_row_count']}"
         ),
-        "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_NEXT_MILESTONE: phase13_closure_gate",
+        (
+            "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_CLOSURE_STATUS: "
+            f"{closure_contract['status']}"
+        ),
+        (
+            "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_CLOSURE_VERSION: "
+            f"{closure_contract['closure_version']}"
+        ),
+        (
+            "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_CLOSURE_SCOPE: "
+            f"{closure_contract['scope']}"
+        ),
+        (
+            "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_CLOSURE_GUARD: "
+            f"{closure_contract['closure_guard']}"
+        ),
+        (
+            "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_CLOSURE_CI_OWNER: "
+            f"{closure_contract['ci_owner']}"
+        ),
+        "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_NEXT_MILESTONE: later_phase_residual_capabilities",
         "",
         "This review artifact is generated from the structured registry. Phase 12.5",
         "is closed under the recorded framework closure version. Stable Phase 13 IDs",
@@ -3236,6 +3624,30 @@ def render_phase13(registry):
             for row in registry["residual_snapshots"]["phase13"]["rows"]
         ],
         "",
+        "## Patch 13.13 scoped Phase 13 closure",
+        "",
+        f"- Closure version: `{closure_contract['closure_version']}`",
+        f"- Closure status: `{closure_contract['status']}`",
+        f"- Closure scope: `{closure_contract['scope']}`",
+        f"- Closed opening rows: `{closure_contract['opening_entry_count']}`",
+        f"- Migrated rows: `{closure_contract['migrated_entry_count']}`",
+        f"- Frozen residual capabilities: `{closure_contract['residual_entry_count']}`",
+        f"- Registry-owned composition cases: `{closure_contract['composition_case_count']}`",
+        f"- Registry-derived CI families: `{closure_contract['family_count']}`",
+        f"- Level 1 closure guard: `{closure_contract['closure_guard']}`",
+        f"- CI owner: `{closure_contract['ci_owner']}`",
+        "",
+        closure_contract["wording"],
+        "",
+        "The closure validates Level 2 and Level 3 ownership and wiring without replaying those suites.",
+        "",
+        "### Explicit non-claims",
+        "",
+        *[
+            f"- `{claim}`"
+            for claim in registry["closure_snapshots"]["phase13"]["non_claims"]
+        ],
+        "",
         "## Opening entries with final dispositions",
         "",
         *[phase13_record(entry) for entry in rows],
@@ -3258,9 +3670,15 @@ def render_phase13(registry):
         "- Broad rows are marked replaced and point to smaller residual capabilities in the frozen semantic snapshot.",
         "- Every residual capability has a stable owner, diagnostic owner, destination phase, prerequisite, failure stage, future-positive fixture, and current-negative fixture.",
         "- Every migrated row has individual evidence, a composition relationship, and a differential case owner.",
-        "- The existing seven registry-derived CI families own all composition cases without a patch-specific workflow matrix.",
+        "- The existing registry-derived CI families own all composition cases without a patch-specific workflow matrix.",
+        "- Patch 13.13 closes only the declared deferred-parity expansion inventory.",
+        "- The closure guard owns Level 1 summary and wiring validation without replaying Level 2 families or Level 3 history.",
+        "- MIR-to-C remains the default oracle and explicit Cranelift remains a no-fallback experimental route.",
+        "- Phase 9G retains object, link, cleanup, and atomic publication ownership.",
+        "- The separately scheduled or manually dispatched Cranelift Historical Full workflow remains the sole Level 3 owner.",
+        "- No complete Gust language, type, ABI, control-flow, resource-semantics, or production-readiness parity claim is made.",
         "",
-        "Patch 13.11 cross-feature composition and registry-derived differential evidence is active.",
+        closure_contract["wording"],
         "",
     ]
     rendered = "\n".join(lines)
@@ -3283,6 +3701,7 @@ def render(registry):
         f"- Registry status: `{registry['registry_status']}`",
         f"- Current phase: `{registry['current_phase']}`",
         f"- Phase 12.5 closure: `{registry['closed_phase_versions']['phase12_5']}`",
+        f"- Phase 13 closure: `{registry['closed_phase_versions']['phase13']}`",
         f"- Total rows: `{totals['total_rows']}`",
         "",
         "## Derived origin-phase totals", "",
@@ -3304,6 +3723,7 @@ def render(registry):
         *count_lines(totals["deferred_destination"]),
         "",
         *closure_summary_lines(registry),
+        *phase13_closure_summary_lines(registry),
         "## Registry entries", "",
         "| ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |",
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
@@ -3344,7 +3764,7 @@ def check_phase13_projection(registry):
     check_rendered_projection(
         phase13_summary_path(registry),
         render_phase13(registry),
-        "generated Phase 13 opening summary",
+        "generated Phase 13 final review",
     )
 
 
@@ -3385,6 +3805,7 @@ def main():
             "verify-phase13-source-metadata-contract",
             "verify-phase13-composition-differential-contract",
             "verify-phase13-deferred-residue-audit",
+            "verify-phase13-closure",
             "verify-phase13-opening-rebase",
             "verify-phase13-parent-traceability",
             "verify-phase13-opening-totals",
@@ -3424,6 +3845,8 @@ def main():
             verify_phase13_composition_differential_contract(registry)
         elif command == "verify-phase13-deferred-residue-audit":
             verify_phase13_deferred_residue_audit(registry)
+        elif command == "verify-phase13-closure":
+            verify_phase13_closure(registry)
         elif command == "verify-phase13-opening-rebase":
             verify_phase13_opening_rebase(registry)
         elif command == "verify-phase13-parent-traceability":
@@ -3460,6 +3883,7 @@ def main():
     metadata_contract = verify_phase13_source_metadata_contract(registry)
     composition_contract = verify_phase13_composition_differential_contract(registry)
     residue_contract = verify_phase13_deferred_residue_audit(registry)
+    closure_contract = verify_phase13_closure(registry)
     phase13_statuses = phase13_totals["status_counts"]
     phase13_parents = phase13_totals["parent_kinds"]
     messages = {
@@ -3569,9 +3993,17 @@ def main():
             f"{residue_contract['disposition_counts']['excluded']} excluded; "
             f"{residue_contract['residual_row_count']} concrete future capabilities are frozen."
         ),
+        "verify-phase13-closure": (
+            "✅ Phase 13 scoped closure passed: "
+            f"{closure_contract['opening_entry_count']} opening rows close as "
+            f"{closure_contract['disposition_counts']['migrated']} migrated, "
+            f"{closure_contract['disposition_counts']['replaced']} replaced, and "
+            f"{closure_contract['disposition_counts']['excluded']} excluded; "
+            f"{closure_contract['residual_entry_count']} concrete residual capabilities remain."
+        ),
         "verify-phase13-opening-rebase": (
             "✅ Phase 13 opening rebase passed: stable IDs and parent "
-            "relationships match the semantic snapshot; ready for Patch 13.1."
+            "relationships still match the semantic opening snapshot."
         ),
         "verify-phase13-parent-traceability": (
             "✅ Phase 13 parent traceability passed: "

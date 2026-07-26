@@ -1,13 +1,14 @@
 {
   "schema": "scripts/cranelift_feature_registry.schema.json",
   "schema_version": 1,
-  "registry_version": 6,
-  "registry_status": "phase12_5_closed_cranelift_verification_framework_consolidation",
+  "registry_version": 7,
+  "registry_status": "phase13_closed_deferred_registry_parity_expansion",
   "current_phase": "phase13",
   "closed_phase_versions": {
     "phase11": "phase11_closed_registry_backed_feature_parity_migration",
     "phase12_5_opening": "phase12_5_opened_verification_framework_consolidation",
-    "phase12_5": "phase12_5_closed_cranelift_verification_framework_consolidation"
+    "phase12_5": "phase12_5_closed_cranelift_verification_framework_consolidation",
+    "phase13": "phase13_closed_deferred_registry_parity_expansion"
   },
   "closure_snapshots": {
     "phase11": {
@@ -211,6 +212,114 @@
       ],
       "byte_provenance": "git_history",
       "comparison_policy": "semantic_fields_only_whitespace_prose_field_order_and_generated_layout_are_ignored"
+    },
+    "phase13": {
+      "closure_version": "phase13_closed_deferred_registry_parity_expansion",
+      "status": "closed_declared_inventory_only",
+      "scope": "declared_phase13_deferred_parity_expansion_inventory_only",
+      "opening_version": "phase13_opening_inventory_v1",
+      "residual_version": "phase13_deferred_residue_v1",
+      "closure_guard": "guard-cranelift-phase13-close",
+      "ci_owner": "PR_Fast_Level1_phase_closure",
+      "closure_wording": "The declared Phase 13 deferred-parity expansion inventory is complete. Migrated rows use the generic canonical-MIR route with focused differential evidence, while remaining unsupported capabilities are represented by narrower, explicitly owned future-phase deferrals.",
+      "non_claims": [
+        "Cranelift_has_full_Gust_parity",
+        "all_Gust_types_are_supported",
+        "all_ABI_forms_are_supported",
+        "all_control_flow_forms_are_supported",
+        "resource_semantics_are_complete",
+        "the_experimental_backend_is_production_complete"
+      ],
+      "required_contracts": [
+        "phase13_opening_contract",
+        "canonical_registry_schema",
+        "registry_projection",
+        "phase11_semantic_closure_summary",
+        "phase13_capability_and_deferral_contract",
+        "phase13_parent_traceability_contract",
+        "phase13_deferred_residue_audit",
+        "registry_derived_ci_family_projection",
+        "semantic_route_architecture_contract",
+        "reduced_manifest_architecture_contract",
+        "three_level_test_mapping",
+        "pr_fast_workflow_ownership",
+        "heavy_guards_workflow_ownership",
+        "historical_full_workflow_ownership",
+        "phase13_generated_view_projection",
+        "phase13_registry_differential_wiring",
+        "separately_available_level3_historical_suite",
+        "phase9g_artifact_ownership_contract",
+        "mir_to_c_default_ownership",
+        "explicit_cranelift_no_fallback_policy",
+        "worker_request_isolation",
+        "early_deferral_and_output_preservation_contracts"
+      ],
+      "closure_assertions": [
+        "every_phase13_opening_row_has_a_valid_final_disposition",
+        "every_migrated_row_uses_generic_canonical_mir_routing",
+        "every_remaining_deferral_is_concrete_and_owned",
+        "no_exact_source_recognizer_was_introduced",
+        "explicit_cranelift_cannot_fall_back_to_mir_to_c",
+        "unsupported_cases_stop_before_driver_and_artifact_access",
+        "mir_to_c_remains_the_default_oracle",
+        "default_and_explicit_mir_to_c_remain_equivalent",
+        "worker_receives_only_request_data_and_canonical_mir",
+        "phase9g_owns_object_link_cleanup_and_publication",
+        "active_totals_are_registry_derived",
+        "generated_views_are_current",
+        "ci_families_remain_registry_derived",
+        "no_raw_registry_or_markdown_hash_contract_exists",
+        "no_exact_matrix_total_is_backend_correctness",
+        "full_historical_suite_remains_separately_runnable"
+      ],
+      "forbidden_replays": [
+        "every_phase13_differential_family",
+        "full_phase9_through_phase13_historical_suite",
+        "every_historical_native_fixture",
+        "complete_object_and_link_failure_matrices",
+        "release_or_packaging_matrices"
+      ],
+      "opening_entry_count": 20,
+      "disposition_counts": {
+        "migrated": 9,
+        "replaced": 11,
+        "excluded": 0
+      },
+      "migrated_entry_ids": [
+        "p13_resource_metadata_source_route",
+        "p13_native_boundary_metadata_source_route",
+        "p13_scalar_multiply_i32",
+        "p13_two_local_update_branch_source_route",
+        "p13_nested_local_update_branch_source_route",
+        "p13_general_loop_backedge_source_route",
+        "p13_parameterized_local_call_branch_source_route",
+        "p13_multi_function_direct_call_graph_source_route",
+        "p13_imported_predicate_update_branch_source_route"
+      ],
+      "replaced_entry_ids": [
+        "p13_imported_call_return_source_route",
+        "p13_imported_arm_update_return_source_route",
+        "p13_imported_arm_update_branch_source_route",
+        "p13_imported_branch_joined_return_source_route",
+        "p13_dual_imported_joined_return_source_route",
+        "p13_recursive_direct_call_policy",
+        "p13_mutual_recursive_direct_call_policy",
+        "p13_indirect_direct_call_policy",
+        "p13_function_value_call_policy",
+        "p13_multi_module_bundle_composition",
+        "p13_unapproved_host_symbol_policy"
+      ],
+      "excluded_entry_ids": [],
+      "residual_entry_count": 19,
+      "migrated_route_owner": "generic_canonical_mir",
+      "default_oracle_owner": "mir_to_c",
+      "explicit_cranelift_fallback_policy": "forbidden",
+      "worker_request_boundary": "request_data_and_canonical_mir_only",
+      "artifact_owner": "phase9g_compiler_transactional_object_link_cleanup_and_publication",
+      "differential_owner": "registry_derived_level2_families",
+      "historical_owner": "scheduled_or_manual_cranelift_historical_full_level3",
+      "evidence_replay_policy": "validate_ownership_and_wiring_without_replaying_level2_or_level3",
+      "comparison_policy": "semantic_registry_fields_and_wiring_only_no_raw_hashes_or_matrix_correctness_totals"
     }
   },
   "opening_snapshots": {

@@ -154,6 +154,7 @@
     "guard-cranelift-phase12-5-opening-contract": 1,
     "guard-cranelift-phase13-broader-imported-runtime-calls-parity": 2,
     "guard-cranelift-phase13-capability-deferral-contract": 1,
+    "guard-cranelift-phase13-close": 1,
     "guard-cranelift-phase13-composition-differential": 2,
     "guard-cranelift-phase13-deferred-residue-audit": 1,
     "guard-cranelift-phase13-direct-call-graph-parity": 2,

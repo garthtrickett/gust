@@ -42,11 +42,8 @@ jobs:
       - name: Phase 12.5 consolidation closure
         run: just guard-cranelift-phase12-5-close
 
-      - name: Phase 13 capability and deferral contract
-        run: just guard-cranelift-phase13-capability-deferral-contract
-
-      - name: Phase 13 deferred residue audit
-        run: just guard-cranelift-phase13-deferred-residue-audit
+      - name: Phase 13 scoped closure
+        run: just guard-cranelift-phase13-close
 
       - name: Upload Gust build outputs
         uses: actions/upload-artifact@v4

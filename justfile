@@ -120,10 +120,8 @@ guard-pr-fast-ci-surface:
       'build and Level 1 contracts'
       'Phase 12.5 consolidation closure'
       'just guard-cranelift-phase12-5-close'
-      'Phase 13 capability and deferral contract'
-      'just guard-cranelift-phase13-capability-deferral-contract'
-      'Phase 13 deferred residue audit'
-      'just guard-cranelift-phase13-deferred-residue-audit'
+      'Phase 13 scoped closure'
+      'just guard-cranelift-phase13-close'
       'phase11-family:'
       'phase11_families:'
       'matrix.family'
@@ -13162,7 +13160,7 @@ guard-cranelift-phase13-deferred-residue-audit:
       rg -n -F $'guard-cranelift-phase13-deferred-residue-audit\t1\t' >/dev/null
 
     required_review_tokens=(
-      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_VERSION: 10'
+      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_VERSION: 11'
       'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_RESIDUE_STATUS: frozen_for_future_phases'
       'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_RESIDUE_VERSION: phase13_deferred_residue_v1'
       '## Patch 13.12 deferred residue audit'
@@ -13173,14 +13171,24 @@ guard-cranelift-phase13-deferred-residue-audit:
       rg -n -F "$token" "$review" >/dev/null
     done
 
-    if [ "$(rg -c -F 'just guard-cranelift-phase13-deferred-residue-audit' "$pr_workflow")" != "1" ]; then
-      echo "PR Fast must invoke the Phase 13 deferred residue audit exactly once."
+    if [ "$(rg -c -F 'just guard-cranelift-phase13-close' "$pr_workflow")" != "1" ] ||
+       rg -n -F 'just guard-cranelift-phase13-deferred-residue-audit' \
+         "$pr_workflow" >/dev/null
+    then
+      echo "PR Fast must delegate the Phase 13 residue audit to the closure owner."
       exit 1
     fi
+    close_body="$(
+      sed -n \
+        '/^guard-cranelift-phase13-close:/,/^guard-cranelift-phase11-registry-differential family:/p' \
+        justfile
+    )"
+    printf '%s\n' "$close_body" |
+      rg -n -F 'just guard-cranelift-phase13-deferred-residue-audit' >/dev/null
 
     guard_body="$(
       sed -n \
-        '/^guard-cranelift-phase13-deferred-residue-audit:/,/^guard-cranelift-phase11-registry-differential family:/p' \
+        '/^guard-cranelift-phase13-deferred-residue-audit:/,/^guard-cranelift-phase13-close:/p' \
         justfile
     )"
     if printf '%s\n' "$guard_body" |
@@ -13197,6 +13205,208 @@ guard-cranelift-phase13-deferred-residue-audit:
     fi
 
     echo "✅ Phase 13 deferred residue audit passed: every opening row is migrated, excluded, or replaced; inherited residue is narrowed and the future inventory is semantically frozen."
+
+guard-cranelift-phase13-close:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Closing the declared Phase 13 deferred-parity expansion inventory..."
+    closure_status="phase13_closed_deferred_registry_parity_expansion"
+    registry="scripts/cranelift_feature_registry.json"
+    schema="scripts/cranelift_feature_registry.schema.json"
+    validator="scripts/cranelift_registry.py"
+    canonical_summary="docs/CRANELIFT_FEATURE_REGISTRY.md"
+    review="compiler/CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY.md"
+    manifest="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
+    manifest_validator="scripts/cranelift_manifest.py"
+    route_source="compiler/mir_native_backend_source_route.gst"
+    request_source="compiler/mir_native_backend_request.gst"
+    compiler_entry="compiler/test_runner_entry.gst"
+    family_runner="scripts/cranelift_ci_family.py"
+    level_runner="scripts/cranelift_test_levels.py"
+    differential_harness="scripts/phase13_registry_differential.sh"
+    capability_evidence="scripts/phase13_capability_deferral.sh"
+    pr_workflow=".github/workflows/pr-fast.yml"
+    heavy_workflow=".github/workflows/heavy-guards.yml"
+    historical_workflow=".github/workflows/cranelift-historical-full.yml"
+
+    required_files=(
+      "$registry"
+      "$schema"
+      "$validator"
+      "$canonical_summary"
+      "$review"
+      "$manifest"
+      "$manifest_validator"
+      "$route_source"
+      "$request_source"
+      "$compiler_entry"
+      "$family_runner"
+      "$level_runner"
+      "$differential_harness"
+      "$capability_evidence"
+      "$pr_workflow"
+      "$heavy_workflow"
+      "$historical_workflow"
+    )
+    for required_file in "${required_files[@]}"; do
+      if [ ! -f "$required_file" ] || [ -L "$required_file" ]; then
+        echo "Missing regular Phase 13 closure input: $required_file"
+        exit 1
+      fi
+    done
+
+    just guard-cranelift-phase13-opening-contract
+    just guard-cranelift-registry-schema
+    just guard-cranelift-registry-projection
+    just guard-cranelift-phase11-closure-summary
+    just guard-cranelift-phase13-capability-deferral-contract
+    just guard-cranelift-phase13-parent-traceability
+    just guard-cranelift-phase13-deferred-residue-audit
+    just guard-cranelift-ci-family-projection
+    PHASE11_ROUTE_ARCHITECTURE_SKIP_DYNAMIC=1 \
+      just guard-cranelift-route-architecture-contract
+    just guard-cranelift-manifest-architecture-contract
+    python3 "$manifest_validator" verify-phase12-5-closure
+    python3 "$validator" verify-phase13-closure
+    python3 "$validator" check-phase13-projection
+    python3 "$family_runner" validate
+    python3 "$family_runner" check-pr-workflow "$pr_workflow"
+    python3 "$family_runner" check-heavy-workflow "$heavy_workflow"
+    python3 "$level_runner" validate
+    python3 "$level_runner" check-pr-workflow
+    python3 "$level_runner" check-heavy-workflow
+    python3 "$level_runner" check-historical-workflow
+    python3 "$level_runner" level guard-cranelift-phase13-close |
+      rg -n -F $'guard-cranelift-phase13-close\t1\t' >/dev/null
+    just guard-cranelift-phase9g-ci-surface
+
+    required_review_tokens=(
+      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_VERSION: 11'
+      "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_CLOSURE_STATUS: closed_declared_inventory_only"
+      "CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_CLOSURE_VERSION: $closure_status"
+      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_CLOSURE_SCOPE: declared_phase13_deferred_parity_expansion_inventory_only'
+      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_CLOSURE_GUARD: guard-cranelift-phase13-close'
+      'CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY_CLOSURE_CI_OWNER: PR_Fast_Level1_phase_closure'
+      '## Patch 13.13 scoped Phase 13 closure'
+      '### Explicit non-claims'
+    )
+    for token in "${required_review_tokens[@]}"; do
+      rg -n -F "$token" "$review" >/dev/null
+    done
+
+    rg -n -F "\"registry_status\": \"$closure_status\"" "$registry" >/dev/null
+    rg -n -F "\"phase13\": \"$closure_status\"" "$registry" >/dev/null
+    rg -n -F "$closure_status" "$canonical_summary" >/dev/null
+
+    closure_ci_count="$(
+      (rg -n -F 'just guard-cranelift-phase13-close' \
+        .github/workflows --glob '*.yml' || true) |
+        wc -l |
+        tr -d ' '
+    )"
+    if [ "$closure_ci_count" != "1" ]; then
+      echo "Phase 13 closure must be wired into CI exactly once, found $closure_ci_count occurrences."
+      exit 1
+    fi
+    rg -n -x -F '        run: just guard-cranelift-phase13-close' \
+      "$pr_workflow" >/dev/null
+    if rg -n \
+        -e 'just guard-cranelift-phase13-capability-deferral-contract' \
+        -e 'just guard-cranelift-phase13-deferred-residue-audit' \
+        "$pr_workflow" >/dev/null
+    then
+      echo "PR Fast must have one Phase 13 Level 1 owner: the scoped closure guard."
+      exit 1
+    fi
+
+    rg -n -F './gust "$source_fixture"' "$differential_harness" >/dev/null
+    rg -n -F './gust --backend mir-to-c "$source_fixture"' \
+      "$differential_harness" >/dev/null
+    rg -n -F 'cmp -s "$case_dir/default.c" "$case_dir/explicit.c"' \
+      "$differential_harness" >/dev/null
+    rg -n -F 'assert_preserved_output "$deferred_output" "$deferred_output.expected"' \
+      "$capability_evidence" >/dev/null
+    rg -n -F 'if [ -e "$output_path.phase10.request" ] ||' \
+      "$capability_evidence" >/dev/null
+    rg -n -F 'if [ -e "$deferred_marker" ]; then' \
+      "$capability_evidence" >/dev/null
+    rg -n -F 'os.LogStr("  mir-to-c   Emit C source to stdout (default).");' \
+      "$compiler_entry" >/dev/null
+
+    if rg -n \
+        -e '^[[:space:]]*(source_path|source_text|source_bytes|ast_program):' \
+        "$request_source" >/dev/null
+    then
+      echo "Phase 13 closure found a forbidden raw-source worker-request field."
+      exit 1
+    fi
+
+    rg -n -x -F \
+      'CRANELIFT_ARCHITECTURE_DEFAULT_BACKEND: mir-to-c' \
+      "$manifest" >/dev/null
+    rg -n -x -F \
+      'CRANELIFT_ARCHITECTURE_WORKER_BOUNDARY: canonical_MIR_request_path_only_no_raw_source_fields' \
+      "$manifest" >/dev/null
+    rg -n -x -F \
+      'CRANELIFT_ARCHITECTURE_NO_FALLBACK_POLICY: explicit_cranelift_success_deferral_or_failure_terminates_without_MIR-to-C_codegen' \
+      "$manifest" >/dev/null
+    rg -n -x -F \
+      'CRANELIFT_ARCHITECTURE_ARTIFACT_OWNERSHIP_BOUNDARY: compiler_owns_request_staging_linking_cleanup_and_atomic_executable_publication_worker_owns_requested_object_emission' \
+      "$manifest" >/dev/null
+    rg -n -x -F \
+      'CRANELIFT_ARCHITECTURE_HISTORICAL_EVIDENCE_OWNER: scheduled_or_manual_Cranelift_Historical_Full' \
+      "$manifest" >/dev/null
+    rg -n -x -F 'guard-cranelift-phase9g-close:' justfile >/dev/null
+    if [ "$(rg -c -F 'just guard-cranelift-historical-full' "$historical_workflow")" != "1" ]; then
+      echo "Cranelift Historical Full must remain separately runnable with one Level 3 owner."
+      exit 1
+    fi
+
+    rg -n -F 'def phase11_rows(registry):' "$family_runner" >/dev/null
+    rg -n -F 'matrix-json' "$family_runner" "$pr_workflow" >/dev/null
+    rg -n -F 'entry.get("route_owner") == "generic_canonical_mir"' \
+      "$family_runner" >/dev/null
+    if rg -n \
+        -e 'EXPECTED_(FAMILY|MATRIX|SHARD)_COUNT' \
+        -e '(family|matrix|shard)_count[[:space:]]*=[[:space:]]*[0-9]+' \
+        "$family_runner" "$pr_workflow" "$heavy_workflow" \
+        "$historical_workflow" >/dev/null
+    then
+      echo "An exact matrix total is being treated as backend correctness."
+      exit 1
+    fi
+
+    if rg -n -i \
+        -e 'sha-?256' \
+        -e 'sha256sum' \
+        "$registry" "$canonical_summary" "$review" >/dev/null
+    then
+      echo "Phase 13 closure found a forbidden raw registry or Markdown hash contract."
+      exit 1
+    fi
+
+    close_body="$(
+      sed -n \
+        '/^guard-cranelift-phase13-close:/,/^guard-cranelift-phase11-registry-differential family:/p' \
+        justfile
+    )"
+    if printf '%s\n' "$close_body" |
+       rg -n \
+         -e '^[[:space:]]+just guard-cranelift-phase13-composition-differential([[:space:]]|$)' \
+         -e '^[[:space:]]+just guard-cranelift-differential-family([[:space:]]|$)' \
+         -e '^[[:space:]]+just guard-cranelift-historical-full([[:space:]]|$)' \
+         -e '^[[:space:]]+just guard-cranelift-phase(9g|11)-close([[:space:]]|$)' \
+         -e '^[[:space:]]+bash scripts/phase13_registry_differential\.sh([[:space:]]|$)' \
+         -e '^[[:space:]]+\./gust([[:space:]]|$)' \
+         -e '^[[:space:]]+(cargo|cc|gcc|clang|make)([[:space:]]|$)' \
+         >/dev/null
+    then
+      echo "Phase 13 closure must validate ownership and wiring without replaying Level 2, Level 3, historical native, object/link, release, or packaging matrices."
+      exit 1
+    fi
+
+    echo "✅ Phase 13 closed only the declared deferred-parity expansion inventory: migrated rows use generic canonical MIR with registry-owned focused evidence, and unsupported capabilities remain narrower, owned future-phase deferrals."
+    echo "ℹ️ This closure does not claim complete Gust language parity or production completeness."
 
 guard-cranelift-phase11-registry-differential family:
     #!/usr/bin/env bash
@@ -13222,8 +13432,7 @@ guard-cranelift-contract-fast:
     set -euo pipefail
     echo "⚡ Running the current local Level 1 Cranelift contracts."
     just guard-cranelift-phase12-5-close
-    just guard-cranelift-phase13-capability-deferral-contract
-    just guard-cranelift-phase13-deferred-residue-audit
+    just guard-cranelift-phase13-close
 
 guard-cranelift-historical-full:
     #!/usr/bin/env bash
@@ -13556,10 +13765,20 @@ guard-cranelift-phase13-capability-deferral-contract:
     bash -n "$evidence_script"
     bash "$evidence_script"
 
-    if [ "$(rg -c -F 'just guard-cranelift-phase13-capability-deferral-contract' "$pr_workflow")" != "1" ]; then
-      echo "PR Fast must invoke the Phase 13 capability contract exactly once."
+    if [ "$(rg -c -F 'just guard-cranelift-phase13-close' "$pr_workflow")" != "1" ] ||
+       rg -n -F 'just guard-cranelift-phase13-capability-deferral-contract' \
+         "$pr_workflow" >/dev/null
+    then
+      echo "PR Fast must delegate the Phase 13 capability contract to the closure owner."
       exit 1
     fi
+    close_body="$(
+      sed -n \
+        '/^guard-cranelift-phase13-close:/,/^guard-cranelift-phase11-registry-differential family:/p' \
+        justfile
+    )"
+    printf '%s\n' "$close_body" |
+      rg -n -F 'just guard-cranelift-phase13-capability-deferral-contract' >/dev/null
 
     contract_body="$(
       sed -n \
@@ -14810,7 +15029,7 @@ guard-cranelift-registry-schema:
 
 
     authority_count="$(
-      rg -l -F '"registry_status": "phase12_5_closed_cranelift_verification_framework_consolidation"'         scripts docs compiler 2>/dev/null |
+      rg -l -F '"registry_status": "phase13_closed_deferred_registry_parity_expansion"'         scripts docs compiler 2>/dev/null |
         wc -l |
         tr -d ' '
     )"
@@ -14822,7 +15041,7 @@ guard-cranelift-registry-schema:
     python3 "$validator" validate
     python3 "$validator" verify-phase11-closure
 
-    echo "✅ Canonical Cranelift registry schema and semantic closures passed; Phase 12.5 is closed and totals are projector-derived."
+    echo "✅ Canonical Cranelift registry schema and semantic closures passed; the scoped Phase 13 closure is registry-owned and totals are projector-derived."
 
 guard-cranelift-ci-family-projection:
     #!/usr/bin/env bash
@@ -14875,7 +15094,7 @@ guard-cranelift-registry-projection:
     set -euo pipefail
     echo "🔒 Checking canonical registry and Phase 13 generated projections..."
     python3 scripts/cranelift_registry.py check-projection
-    echo "✅ Registry projections are current: totals, tables, closure summary, and the Phase 13 opening view are derived from JSON."
+    echo "✅ Registry projections are current: totals, tables, semantic closure summaries, and the Phase 13 final review are derived from JSON."
 
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
     #!/usr/bin/env bash
