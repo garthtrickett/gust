@@ -2106,6 +2106,26 @@ impl<'a> Phase10TextCursor<'a> {
         })
     }
 
+    fn take_i64_field(
+        &mut self,
+        field: &str,
+        stage: Phase10BackendRequestStage,
+        kind: Phase10BackendRequestFailureKind,
+    ) -> Result<i64, Box<dyn Error>> {
+        let value = self.take_field(field, false, stage, kind)?;
+        value.parse::<i64>().map_err(|_| {
+            phase10_backend_request_error(
+                stage,
+                kind,
+                format!("field {field} must be an integer"),
+            )
+        })
+    }
+
+    fn has_remaining(&self) -> bool {
+        !self.remaining.is_empty()
+    }
+
     fn take_exact_bytes(
         &mut self,
         byte_length: usize,
@@ -2142,12 +2162,731 @@ impl<'a> Phase10TextCursor<'a> {
     }
 }
 
+const PHASE14_LAYOUT_TABLE_FORMAT: &str = "gust.compiler_layout_table.v1";
+
+#[derive(Debug)]
+struct Phase14RequestTargetLayout {
+    target_id: String,
+    target_triple: String,
+    pointer_size: usize,
+    pointer_alignment: usize,
+    decisions_frozen: bool,
+}
+
+#[derive(Debug)]
+struct Phase14RequestFieldLayout {
+    field_id: String,
+    field_name: String,
+    type_id: String,
+    layout_id: String,
+    offset: usize,
+    size: usize,
+    alignment: usize,
+}
+
+#[derive(Debug)]
+struct Phase14RequestVariantLayout {
+    variant_id: String,
+    variant_name: String,
+    discriminant: i64,
+    payload_layout_id: String,
+    tag_offset: usize,
+    payload_offset: usize,
+}
+
+#[derive(Debug)]
+struct Phase14RequestTypeLayout {
+    layout_id: String,
+    type_id: String,
+    target_id: String,
+    representation_kind: String,
+    size: usize,
+    alignment: usize,
+    element_stride: usize,
+    fields: Vec<Phase14RequestFieldLayout>,
+    variants: Vec<Phase14RequestVariantLayout>,
+}
+
+#[derive(Debug)]
+struct Phase14RequestMemoryAccessLayout {
+    access_id: String,
+    type_id: String,
+    layout_id: String,
+    target_id: String,
+    byte_width: usize,
+    required_alignment: usize,
+    write_allowed: bool,
+    nullable: bool,
+}
+
+#[derive(Debug)]
+struct Phase14RequestLayoutTable {
+    format: String,
+    target: Phase14RequestTargetLayout,
+    layouts: Vec<Phase14RequestTypeLayout>,
+    memory_accesses: Vec<Phase14RequestMemoryAccessLayout>,
+}
+
+impl Phase14RequestLayoutTable {
+    fn legacy_unfrozen(target_triple: &str) -> Self {
+        Self {
+            format: PHASE14_LAYOUT_TABLE_FORMAT.to_string(),
+            target: Phase14RequestTargetLayout {
+                target_id: format!("phase14-target:unfrozen:{target_triple}"),
+                target_triple: target_triple.to_string(),
+                pointer_size: 0,
+                pointer_alignment: 0,
+                decisions_frozen: false,
+            },
+            layouts: Vec::new(),
+            memory_accesses: Vec::new(),
+        }
+    }
+}
+
+fn phase14_layout_identity(
+    type_id: &str,
+    target_id: &str,
+    representation_kind: &str,
+    size: usize,
+    alignment: usize,
+    element_stride: usize,
+) -> String {
+    format!(
+        "layout:v1:type={type_id}:target={target_id}:kind={representation_kind}:size={size}:align={alignment}:stride={element_stride}"
+    )
+}
+
+fn phase14_parse_bool_field(
+    cursor: &mut Phase10TextCursor<'_>,
+    field: &str,
+) -> Result<bool, Box<dyn Error>> {
+    let stage = Phase10BackendRequestStage::RequestParse;
+    let kind = Phase10BackendRequestFailureKind::InvalidRequest;
+    match cursor.take_usize_field(field, stage, kind)? {
+        0 => Ok(false),
+        1 => Ok(true),
+        value => Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::RequestValidation,
+            Phase10BackendRequestFailureKind::InvalidRequest,
+            format!("field {field} must be 0 or 1, got {value}"),
+        )),
+    }
+}
+
+fn parse_phase14_request_layout_table(
+    cursor: &mut Phase10TextCursor<'_>,
+    request_target_triple: &str,
+) -> Result<Phase14RequestLayoutTable, Box<dyn Error>> {
+    let parse_stage = Phase10BackendRequestStage::RequestParse;
+    let parse_kind = Phase10BackendRequestFailureKind::InvalidRequest;
+    let validation_stage = Phase10BackendRequestStage::RequestValidation;
+
+    let format_name = cursor
+        .take_field("layout_table_format", false, parse_stage, parse_kind)?
+        .to_string();
+    if format_name != PHASE14_LAYOUT_TABLE_FORMAT {
+        return Err(phase10_backend_request_error(
+            validation_stage,
+            Phase10BackendRequestFailureKind::ProtocolMismatch,
+            format!(
+                "layout table format expected {PHASE14_LAYOUT_TABLE_FORMAT}, got {format_name}"
+            ),
+        ));
+    }
+
+    let target_id = cursor
+        .take_field("layout_target_id", false, parse_stage, parse_kind)?
+        .to_string();
+    let target_triple = cursor
+        .take_field("layout_target_triple", false, parse_stage, parse_kind)?
+        .to_string();
+    let pointer_size = cursor.take_usize_field(
+        "layout_target_pointer_size",
+        parse_stage,
+        parse_kind,
+    )?;
+    let pointer_alignment = cursor.take_usize_field(
+        "layout_target_pointer_alignment",
+        parse_stage,
+        parse_kind,
+    )?;
+    let decisions_frozen = phase14_parse_bool_field(
+        cursor,
+        "layout_target_decisions_frozen",
+    )?;
+    let layout_count = cursor.take_usize_field(
+        "layout_count",
+        parse_stage,
+        parse_kind,
+    )?;
+
+    let mut layouts = Vec::with_capacity(layout_count);
+    for layout_index in 0..layout_count {
+        let prefix = format!("layout_{layout_index}");
+        let layout_id = cursor
+            .take_field(
+                &format!("{prefix}_id"),
+                false,
+                parse_stage,
+                parse_kind,
+            )?
+            .to_string();
+        let type_id = cursor
+            .take_field(
+                &format!("{prefix}_type_id"),
+                false,
+                parse_stage,
+                parse_kind,
+            )?
+            .to_string();
+        let layout_target_id = cursor
+            .take_field(
+                &format!("{prefix}_target_id"),
+                false,
+                parse_stage,
+                parse_kind,
+            )?
+            .to_string();
+        let representation_kind = cursor
+            .take_field(
+                &format!("{prefix}_kind"),
+                false,
+                parse_stage,
+                parse_kind,
+            )?
+            .to_string();
+        let size = cursor.take_usize_field(
+            &format!("{prefix}_size"),
+            parse_stage,
+            parse_kind,
+        )?;
+        let alignment = cursor.take_usize_field(
+            &format!("{prefix}_alignment"),
+            parse_stage,
+            parse_kind,
+        )?;
+        let element_stride = cursor.take_usize_field(
+            &format!("{prefix}_element_stride"),
+            parse_stage,
+            parse_kind,
+        )?;
+        let field_count = cursor.take_usize_field(
+            &format!("{prefix}_field_count"),
+            parse_stage,
+            parse_kind,
+        )?;
+        let mut fields = Vec::with_capacity(field_count);
+        for field_index in 0..field_count {
+            let field_prefix = format!("{prefix}_field_{field_index}");
+            fields.push(Phase14RequestFieldLayout {
+                field_id: cursor
+                    .take_field(
+                        &format!("{field_prefix}_id"),
+                        false,
+                        parse_stage,
+                        parse_kind,
+                    )?
+                    .to_string(),
+                field_name: cursor
+                    .take_field(
+                        &format!("{field_prefix}_name"),
+                        false,
+                        parse_stage,
+                        parse_kind,
+                    )?
+                    .to_string(),
+                type_id: cursor
+                    .take_field(
+                        &format!("{field_prefix}_type_id"),
+                        false,
+                        parse_stage,
+                        parse_kind,
+                    )?
+                    .to_string(),
+                layout_id: cursor
+                    .take_field(
+                        &format!("{field_prefix}_layout_id"),
+                        false,
+                        parse_stage,
+                        parse_kind,
+                    )?
+                    .to_string(),
+                offset: cursor.take_usize_field(
+                    &format!("{field_prefix}_offset"),
+                    parse_stage,
+                    parse_kind,
+                )?,
+                size: cursor.take_usize_field(
+                    &format!("{field_prefix}_size"),
+                    parse_stage,
+                    parse_kind,
+                )?,
+                alignment: cursor.take_usize_field(
+                    &format!("{field_prefix}_alignment"),
+                    parse_stage,
+                    parse_kind,
+                )?,
+            });
+        }
+
+        let variant_count = cursor.take_usize_field(
+            &format!("{prefix}_variant_count"),
+            parse_stage,
+            parse_kind,
+        )?;
+        let mut variants = Vec::with_capacity(variant_count);
+        for variant_index in 0..variant_count {
+            let variant_prefix =
+                format!("{prefix}_variant_{variant_index}");
+            variants.push(Phase14RequestVariantLayout {
+                variant_id: cursor
+                    .take_field(
+                        &format!("{variant_prefix}_id"),
+                        false,
+                        parse_stage,
+                        parse_kind,
+                    )?
+                    .to_string(),
+                variant_name: cursor
+                    .take_field(
+                        &format!("{variant_prefix}_name"),
+                        false,
+                        parse_stage,
+                        parse_kind,
+                    )?
+                    .to_string(),
+                discriminant: cursor.take_i64_field(
+                    &format!("{variant_prefix}_discriminant"),
+                    parse_stage,
+                    parse_kind,
+                )?,
+                payload_layout_id: cursor
+                    .take_field(
+                        &format!("{variant_prefix}_payload_layout_id"),
+                        true,
+                        parse_stage,
+                        parse_kind,
+                    )?
+                    .to_string(),
+                tag_offset: cursor.take_usize_field(
+                    &format!("{variant_prefix}_tag_offset"),
+                    parse_stage,
+                    parse_kind,
+                )?,
+                payload_offset: cursor.take_usize_field(
+                    &format!("{variant_prefix}_payload_offset"),
+                    parse_stage,
+                    parse_kind,
+                )?,
+            });
+        }
+
+        layouts.push(Phase14RequestTypeLayout {
+            layout_id,
+            type_id,
+            target_id: layout_target_id,
+            representation_kind,
+            size,
+            alignment,
+            element_stride,
+            fields,
+            variants,
+        });
+    }
+
+    let memory_access_count = cursor.take_usize_field(
+        "memory_access_count",
+        parse_stage,
+        parse_kind,
+    )?;
+    let mut memory_accesses = Vec::with_capacity(memory_access_count);
+    for access_index in 0..memory_access_count {
+        let prefix = format!("memory_access_{access_index}");
+        memory_accesses.push(Phase14RequestMemoryAccessLayout {
+            access_id: cursor
+                .take_field(
+                    &format!("{prefix}_id"),
+                    false,
+                    parse_stage,
+                    parse_kind,
+                )?
+                .to_string(),
+            type_id: cursor
+                .take_field(
+                    &format!("{prefix}_type_id"),
+                    false,
+                    parse_stage,
+                    parse_kind,
+                )?
+                .to_string(),
+            layout_id: cursor
+                .take_field(
+                    &format!("{prefix}_layout_id"),
+                    false,
+                    parse_stage,
+                    parse_kind,
+                )?
+                .to_string(),
+            target_id: cursor
+                .take_field(
+                    &format!("{prefix}_target_id"),
+                    false,
+                    parse_stage,
+                    parse_kind,
+                )?
+                .to_string(),
+            byte_width: cursor.take_usize_field(
+                &format!("{prefix}_byte_width"),
+                parse_stage,
+                parse_kind,
+            )?,
+            required_alignment: cursor.take_usize_field(
+                &format!("{prefix}_required_alignment"),
+                parse_stage,
+                parse_kind,
+            )?,
+            write_allowed: phase14_parse_bool_field(
+                cursor,
+                &format!("{prefix}_write_allowed"),
+            )?,
+            nullable: phase14_parse_bool_field(
+                cursor,
+                &format!("{prefix}_nullable"),
+            )?,
+        });
+    }
+
+    let table = Phase14RequestLayoutTable {
+        format: format_name,
+        target: Phase14RequestTargetLayout {
+            target_id,
+            target_triple,
+            pointer_size,
+            pointer_alignment,
+            decisions_frozen,
+        },
+        layouts,
+        memory_accesses,
+    };
+    validate_phase14_request_layout_table(&table, request_target_triple)?;
+    Ok(table)
+}
+
+fn validate_phase14_request_layout_table(
+    table: &Phase14RequestLayoutTable,
+    request_target_triple: &str,
+) -> Result<(), Box<dyn Error>> {
+    let stage = Phase10BackendRequestStage::RequestValidation;
+    let kind = Phase10BackendRequestFailureKind::InvalidRequest;
+
+    if table.format != PHASE14_LAYOUT_TABLE_FORMAT {
+        return Err(phase10_backend_request_error(
+            stage,
+            Phase10BackendRequestFailureKind::ProtocolMismatch,
+            "layout table format drifted after parsing",
+        ));
+    }
+    if table.target.target_triple != request_target_triple {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::TargetValidation,
+            Phase10BackendRequestFailureKind::TargetMismatch,
+            format!(
+                "layout table target expected {request_target_triple}, got {}",
+                table.target.target_triple
+            ),
+        ));
+    }
+    if table.target.target_id.is_empty() {
+        return Err(phase10_backend_request_error(
+            stage,
+            kind,
+            "layout target identity must not be empty",
+        ));
+    }
+
+    if !table.target.decisions_frozen {
+        if table.target.pointer_size != 0
+            || table.target.pointer_alignment != 0
+            || !table.layouts.is_empty()
+            || !table.memory_accesses.is_empty()
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "unfrozen layout tables must not carry target sizes, type layouts, or memory accesses",
+            ));
+        }
+        return Ok(());
+    }
+
+    if table.target.pointer_size == 0
+        || table.target.pointer_alignment == 0
+        || !table.target.pointer_alignment.is_power_of_two()
+    {
+        return Err(phase10_backend_request_error(
+            stage,
+            kind,
+            "frozen layout target has an impossible pointer size or alignment",
+        ));
+    }
+
+    let mut layout_ids = HashSet::new();
+    for layout in &table.layouts {
+        if layout.layout_id.is_empty()
+            || layout.type_id.is_empty()
+            || layout.target_id.is_empty()
+            || layout.representation_kind.is_empty()
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "layout identities and representation kind must not be empty",
+            ));
+        }
+        if layout.target_id != table.target.target_id {
+            return Err(phase10_backend_request_error(
+                Phase10BackendRequestStage::TargetValidation,
+                Phase10BackendRequestFailureKind::TargetMismatch,
+                format!(
+                    "layout {} belongs to target {}, expected {}",
+                    layout.layout_id, layout.target_id, table.target.target_id
+                ),
+            ));
+        }
+        if layout.alignment == 0 || !layout.alignment.is_power_of_two() {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                format!(
+                    "layout {} has impossible alignment {}",
+                    layout.layout_id, layout.alignment
+                ),
+            ));
+        }
+        if layout.element_stride != 0 && layout.element_stride < layout.size {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                format!(
+                    "layout {} has element stride {} smaller than size {}",
+                    layout.layout_id, layout.element_stride, layout.size
+                ),
+            ));
+        }
+        let expected_id = phase14_layout_identity(
+            &layout.type_id,
+            &layout.target_id,
+            &layout.representation_kind,
+            layout.size,
+            layout.alignment,
+            layout.element_stride,
+        );
+        if layout.layout_id != expected_id {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                format!(
+                    "layout identity {} does not match deterministic compiler identity {expected_id}",
+                    layout.layout_id
+                ),
+            ));
+        }
+        if !layout_ids.insert(layout.layout_id.as_str()) {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                format!(
+                    "duplicate conflicting layout ID: {}",
+                    layout.layout_id
+                ),
+            ));
+        }
+    }
+
+    for layout in &table.layouts {
+        let mut field_ids = HashSet::new();
+        let mut field_names = HashSet::new();
+        for field in &layout.fields {
+            if field.field_id.is_empty()
+                || field.field_name.is_empty()
+                || field.type_id.is_empty()
+                || field.layout_id.is_empty()
+            {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    format!("layout {} contains an incomplete field record", layout.layout_id),
+                ));
+            }
+            if field.alignment == 0
+                || !field.alignment.is_power_of_two()
+                || field.offset % field.alignment != 0
+            {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    format!(
+                        "layout {} field {} has an impossible offset or alignment",
+                        layout.layout_id, field.field_name
+                    ),
+                ));
+            }
+            let Some(field_end) = field.offset.checked_add(field.size) else {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    format!("layout {} field offset overflow", layout.layout_id),
+                ));
+            };
+            if field_end > layout.size {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    format!(
+                        "layout {} field {} exceeds parent size",
+                        layout.layout_id, field.field_name
+                    ),
+                ));
+            }
+            if !layout_ids.contains(field.layout_id.as_str()) {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    format!(
+                        "unknown layout ID {} referenced by field {}",
+                        field.layout_id, field.field_name
+                    ),
+                ));
+            }
+            if !field_ids.insert(field.field_id.as_str())
+                || !field_names.insert(field.field_name.as_str())
+            {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    format!("layout {} contains duplicate fields", layout.layout_id),
+                ));
+            }
+        }
+
+        let mut variant_ids = HashSet::new();
+        let mut variant_names = HashSet::new();
+        let mut discriminants = HashSet::new();
+        for variant in &layout.variants {
+            if variant.variant_id.is_empty() || variant.variant_name.is_empty() {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    format!("layout {} contains an incomplete variant record", layout.layout_id),
+                ));
+            }
+            if variant.tag_offset >= layout.size
+                || variant.payload_offset > layout.size
+            {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    format!(
+                        "layout {} variant {} has invalid tag or payload offsets",
+                        layout.layout_id, variant.variant_name
+                    ),
+                ));
+            }
+            if !variant.payload_layout_id.is_empty()
+                && !layout_ids.contains(variant.payload_layout_id.as_str())
+            {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    format!(
+                        "unknown layout ID {} referenced by variant {}",
+                        variant.payload_layout_id, variant.variant_name
+                    ),
+                ));
+            }
+            if !variant_ids.insert(variant.variant_id.as_str())
+                || !variant_names.insert(variant.variant_name.as_str())
+                || !discriminants.insert(variant.discriminant)
+            {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    format!("layout {} contains duplicate variant records", layout.layout_id),
+                ));
+            }
+        }
+    }
+
+    let mut access_ids = HashSet::new();
+    for access in &table.memory_accesses {
+        if access.access_id.is_empty()
+            || access.type_id.is_empty()
+            || access.layout_id.is_empty()
+            || access.target_id.is_empty()
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "memory-access layout contains an incomplete identity",
+            ));
+        }
+        if access.target_id != table.target.target_id {
+            return Err(phase10_backend_request_error(
+                Phase10BackendRequestStage::TargetValidation,
+                Phase10BackendRequestFailureKind::TargetMismatch,
+                format!(
+                    "memory-access layout {} belongs to target {}, expected {}",
+                    access.access_id, access.target_id, table.target.target_id
+                ),
+            ));
+        }
+        if access.byte_width == 0
+            || access.required_alignment == 0
+            || !access.required_alignment.is_power_of_two()
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                format!(
+                    "memory-access layout {} has impossible width or alignment",
+                    access.access_id
+                ),
+            ));
+        }
+        if !layout_ids.contains(access.layout_id.as_str()) {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                format!(
+                    "unknown layout ID {} referenced by memory access {}",
+                    access.layout_id, access.access_id
+                ),
+            ));
+        }
+        if !access_ids.insert(access.access_id.as_str()) {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                format!(
+                    "duplicate memory-access layout ID: {}",
+                    access.access_id
+                ),
+            ));
+        }
+        let _consumer_policy = (access.write_allowed, access.nullable);
+    }
+
+    Ok(())
+}
+
 #[derive(Debug)]
 struct Phase10BackendRequest {
     target_triple: String,
     object_format: String,
     output_path: PathBuf,
     program_mir_bundle_path: PathBuf,
+    layout_table: Phase14RequestLayoutTable,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -2244,6 +2983,11 @@ fn parse_phase10_backend_request(
             kind,
         )?,
     );
+    let layout_table = if cursor.has_remaining() {
+        parse_phase14_request_layout_table(&mut cursor, &target_triple)?
+    } else {
+        Phase14RequestLayoutTable::legacy_unfrozen(&target_triple)
+    };
     cursor.finish(stage, kind)?;
 
     if !output_path.is_absolute() {
@@ -2273,6 +3017,7 @@ fn parse_phase10_backend_request(
         object_format,
         output_path,
         program_mir_bundle_path,
+        layout_table,
     })
 }
 
@@ -3153,6 +3898,16 @@ fn validate_phase10_backend_request_path(
     println!("module_count: {}", bundle.module_count);
     println!("target_triple: {}", request.target_triple);
     println!("object_format: {}", request.object_format);
+    println!("layout_table_format: {}", request.layout_table.format);
+    println!(
+        "layout_target_id: {}",
+        request.layout_table.target.target_id
+    );
+    println!("layout_count: {}", request.layout_table.layouts.len());
+    println!(
+        "memory_access_count: {}",
+        request.layout_table.memory_accesses.len()
+    );
     println!("output_path: {}", request.output_path.display());
     Ok(())
 }

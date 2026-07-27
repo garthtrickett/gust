@@ -124,6 +124,8 @@ guard-pr-fast-ci-surface:
       'just guard-cranelift-phase13-close'
       'Phase 14 opening inventory'
       'just guard-cranelift-phase14-opening-contract'
+      'Phase 14 layout authority'
+      'just guard-cranelift-phase14-layout-authority-contract'
       'phase11-family:'
       'phase11_families:'
       'matrix.family'
@@ -13466,7 +13468,7 @@ guard-cranelift-phase14-opening-contract:
       rg -n -F "$token" "$review" >/dev/null
     done
 
-    rg -n -F '"registry_status": "phase14_opening_inventory_ready"' "$registry" >/dev/null
+    rg -n -F '"registry_status": "phase14_layout_authority_ready"' "$registry" >/dev/null
     rg -n -F '"current_phase": "phase14"' "$registry" >/dev/null
     rg -n -F '"phase14": {' "$registry" >/dev/null
     rg -n -F '"predecessor_closure_version": "phase13_closed_deferred_registry_parity_expansion"' "$registry" >/dev/null
@@ -13517,7 +13519,7 @@ guard-cranelift-phase14-opening-contract:
 
     guard_body="$(
       sed -n \
-        '/^guard-cranelift-phase14-opening-contract:/,/^guard-cranelift-differential-family family:/p' \
+        '/^guard-cranelift-phase14-opening-contract:/,/^guard-cranelift-phase14-layout-authority-contract:/p' \
         justfile
     )"
     if printf '%s\n' "$guard_body" |
@@ -13535,6 +13537,178 @@ guard-cranelift-phase14-opening-contract:
     fi
 
     echo "✅ Phase 14 opening inventory passed: stable rows, parent traceability, target applicability, fixture pairs, residual rebase, and planned CI families are registry-owned without behavior or workflow-matrix expansion."
+
+guard-cranelift-phase14-layout-authority-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking the Phase 14 compiler-owned layout authority and request transport..."
+    registry="scripts/cranelift_feature_registry.json"
+    schema="scripts/cranelift_feature_registry.schema.json"
+    validator="scripts/cranelift_registry.py"
+    review="compiler/CRANELIFT_PHASE14_LAYOUT_AUTHORITY.md"
+    authority="compiler/mir_layout.gst"
+    mir="compiler/mir.gst"
+    request="compiler/mir_native_backend_request.gst"
+    worker="compiler/experiments/cranelift/src/main.rs"
+    mir_to_c="compiler/mir_layout_mir_to_c.gst"
+    runtime_descriptor="compiler/mir_layout_runtime_descriptor.gst"
+    diagnostics="compiler/mir_layout_diagnostics.gst"
+    smoke="compiler/mir_layout_authority_smoke_test_entry.gst"
+    level_runner="scripts/cranelift_test_levels.py"
+    pr_workflow=".github/workflows/pr-fast.yml"
+
+    required_files=(
+      "$registry"
+      "$schema"
+      "$validator"
+      "$review"
+      "$authority"
+      "$mir"
+      "$request"
+      "$worker"
+      "$mir_to_c"
+      "$runtime_descriptor"
+      "$diagnostics"
+      "$smoke"
+      "$level_runner"
+      "$pr_workflow"
+    )
+    for required_file in "${required_files[@]}"; do
+      if [ ! -f "$required_file" ] || [ -L "$required_file" ]; then
+        echo "Missing regular Phase 14 layout-authority input: $required_file"
+        exit 1
+      fi
+    done
+
+    just guard-cranelift-phase14-opening-contract
+    python3 "$validator" verify-phase14-layout-authority
+    python3 "$validator" check-phase14-layout-authority-projection
+    python3 "$validator" check-projection
+    python3 "$level_runner" validate
+    python3 "$level_runner" check-pr-workflow
+    python3 "$level_runner" level guard-cranelift-phase14-layout-authority-contract |
+      rg -n -F $'guard-cranelift-phase14-layout-authority-contract\t1\t' >/dev/null
+
+    required_review_tokens=(
+      'CRANELIFT_PHASE14_LAYOUT_AUTHORITY_VIEW_VERSION: 1'
+      'CRANELIFT_PHASE14_LAYOUT_AUTHORITY_VERSION: phase14_compiler_owned_layout_authority_v1'
+      'CRANELIFT_PHASE14_LAYOUT_AUTHORITY_STATUS: ready_for_patch14_2'
+      'CRANELIFT_PHASE14_LAYOUT_AUTHORITY_OWNER: compiler/mir_layout.gst'
+      'CRANELIFT_PHASE14_LAYOUT_AUTHORITY_TABLE_FORMAT: gust.compiler_layout_table.v1'
+      '## Semantic layout records'
+      '## Compiler-owned queries'
+      '## Consumers'
+      '## Request rejection classes'
+      '## Hard bans'
+      '## Boundary'
+    )
+    for token in "${required_review_tokens[@]}"; do
+      rg -n -F "$token" "$review" >/dev/null
+    done
+
+    rg -n -F 'type MirTargetLayout[ctx] struct' "$authority" >/dev/null
+    rg -n -F 'type MirTypeLayout[ctx] struct' "$authority" >/dev/null
+    rg -n -F 'type MirFieldLayout[ctx] struct' "$authority" >/dev/null
+    rg -n -F 'type MirVariantLayout[ctx] struct' "$authority" >/dev/null
+    rg -n -F 'type MirElementStrideQuery struct' "$authority" >/dev/null
+    rg -n -F 'type MirMemoryAccessLayout[ctx] struct' "$authority" >/dev/null
+    for query in \
+      mir_layout_of \
+      mir_layout_field_layout \
+      mir_layout_variant_layout \
+      mir_layout_element_stride \
+      mir_layout_validate_memory_access
+    do
+      rg -n -F "func $query(" "$authority" >/dev/null
+    done
+
+    rg -n -F 'type_layout_references' "$mir" >/dev/null
+    rg -n -F 'layout_table: layout.MirLayoutTable[ctx]' "$request" >/dev/null
+    rg -n -F 'mir_serialize_layout_table_for_request' "$request" >/dev/null
+    rg -n -F 'struct Phase14RequestLayoutTable' "$worker" >/dev/null
+    rg -n -F 'fn parse_phase14_request_layout_table(' "$worker" >/dev/null
+    rg -n -F 'fn validate_phase14_request_layout_table(' "$worker" >/dev/null
+
+    for adapter in "$mir_to_c" "$runtime_descriptor" "$diagnostics"; do
+      rg -n -F 'import "mir_layout.gst" as layout;' "$adapter" >/dev/null
+      if rg -n \
+          -e '^type Mir(Target|Type|Field|Variant|MemoryAccess)Layout' \
+          -e '^func mir_layout_(of|field_layout|variant_layout|element_stride|validate_memory_access)\(' \
+          "$adapter" >/dev/null
+      then
+        echo "Phase 14 consumer redefines compiler-owned layout authority: $adapter"
+        exit 1
+      fi
+    done
+
+    layout_type_owners="$(
+      rg -l \
+        -e '^type MirTargetLayout\[ctx\] struct' \
+        -e '^type MirTypeLayout\[ctx\] struct' \
+        -e '^type MirFieldLayout\[ctx\] struct' \
+        -e '^type MirVariantLayout\[ctx\] struct' \
+        -e '^type MirMemoryAccessLayout\[ctx\] struct' \
+        compiler --glob '*.gst' | sort
+    )"
+    if [ "$layout_type_owners" != "$authority" ]; then
+      echo "Compiler-owned layout types must have one owner: $authority"
+      printf '%s\n' "$layout_type_owners"
+      exit 1
+    fi
+
+    if rg -n \
+        -e 'std::mem::(size_of|align_of)' \
+        -e 'offset_of!' \
+        -e 'Layout::(from_size_align|new|array)' \
+        -e '^fn (layout_of|field_layout|variant_layout|element_stride)\(' \
+        "$worker" >/dev/null
+    then
+      echo "The Cranelift worker must validate compiler-produced layouts without selecting its own layout."
+      exit 1
+    fi
+
+    if rg -n -i \
+        -e 'sha-?256' \
+        -e 'sha256sum' \
+        "$registry" "$review" "$authority" "$mir" "$request" >/dev/null
+    then
+      echo "Phase 14 layout identity must not depend on raw file, registry, or Markdown hashes."
+      exit 1
+    fi
+
+    layout_ci_count="$(
+      (rg -n -F 'just guard-cranelift-phase14-layout-authority-contract' \
+        .github/workflows --glob '*.yml' || true) |
+        wc -l |
+        tr -d ' '
+    )"
+    if [ "$layout_ci_count" != "1" ]; then
+      echo "Phase 14 layout authority guard must be wired into CI exactly once, found $layout_ci_count occurrences."
+      exit 1
+    fi
+    rg -n -x -F '        run: just guard-cranelift-phase14-layout-authority-contract' \
+      "$pr_workflow" >/dev/null
+
+    guard_body="$(
+      sed -n \
+        '/^guard-cranelift-phase14-layout-authority-contract:/,/^guard-cranelift-differential-family family:/p' \
+        justfile
+    )"
+    if printf '%s\n' "$guard_body" |
+       rg -n \
+         -e '^[[:space:]]+just guard-cranelift-differential-family([[:space:]]|$)' \
+         -e '^[[:space:]]+just guard-cranelift-historical-full([[:space:]]|$)' \
+         -e '^[[:space:]]+bash scripts/phase13_registry_differential\.sh([[:space:]]|$)' \
+         -e '^[[:space:]]+\./gust([[:space:]]|$)' \
+         -e '^[[:space:]]+(cargo|cc|gcc|clang|make)([[:space:]]|$)' \
+         >/dev/null
+    then
+      echo "Phase 14 layout authority guard must remain a Level 1 ownership and projection contract."
+      exit 1
+    fi
+
+    echo "✅ Phase 14 compiler-owned layout authority passed: canonical MIR references compiler layout IDs, requests carry the compiler-produced table, and consumers validate or query without selecting a competing layout."
+    echo "ℹ️ Patch 14.1 migrates no type or memory capability and activates no Phase 14 Level 2 family."
 
 guard-cranelift-differential-family family:
     #!/usr/bin/env bash
@@ -13556,6 +13730,7 @@ guard-cranelift-contract-fast:
     just guard-cranelift-phase12-5-close
     just guard-cranelift-phase13-close
     just guard-cranelift-phase14-opening-contract
+    just guard-cranelift-phase14-layout-authority-contract
 
 guard-cranelift-historical-full:
     #!/usr/bin/env bash

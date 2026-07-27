@@ -100,6 +100,24 @@ func main() {
     ) == 0 - 1 {
         fail("Backend request smoke: bundle path missing");
     }
+    if std.str_find(
+        serialized_a,
+        "layout_table_format: gust.compiler_layout_table.v1\n"
+    ) == 0 - 1 {
+        fail("Backend request smoke: compiler-owned layout table format missing");
+    }
+    if std.str_find(
+        serialized_a,
+        "layout_target_id: phase14-target:unfrozen:x86_64-unknown-linux-gnu\n"
+    ) == 0 - 1 {
+        fail("Backend request smoke: deterministic unfrozen target identity missing");
+    }
+    if std.str_find(
+        serialized_a,
+        "layout_target_decisions_frozen: 0\nlayout_count: 0\nmemory_access_count: 0\n"
+    ) == 0 - 1 {
+        fail("Backend request smoke: empty Phase 14 layout transport drifted");
+    }
 
     mut relative_output := request.mir_native_backend_make_request(
         "x86_64-unknown-linux-gnu",

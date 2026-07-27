@@ -13,6 +13,7 @@
     "closed_phase_versions",
     "closure_snapshots",
     "opening_snapshots",
+    "phase14_layout_authority",
     "residual_snapshots",
     "planning_categories",
     "supported_values",
@@ -27,10 +28,10 @@
       "const": 1
     },
     "registry_version": {
-      "const": 8
+      "const": 9
     },
     "registry_status": {
-      "const": "phase14_opening_inventory_ready"
+      "const": "phase14_layout_authority_ready"
     },
     "current_phase": {
       "const": "phase14"
@@ -203,6 +204,9 @@
       "items": {
         "$ref": "#/$defs/entry"
       }
+    },
+    "phase14_layout_authority": {
+      "$ref": "#/$defs/phase14_layout_authority"
     }
   },
   "$defs": {
@@ -1104,6 +1108,120 @@
         },
         "workflow_policy": {
           "const": "planning_projection_only_no_phase14_level2_workflow_rows_until_capability_migration"
+        }
+      }
+    },
+    "phase14_layout_authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "status",
+        "authority_owner",
+        "table_format",
+        "semantic_types",
+        "query_functions",
+        "consumers",
+        "identity_policy",
+        "request_transport_policy",
+        "rejection_classes",
+        "hard_bans",
+        "behavior_policy",
+        "next_patch"
+      ],
+      "properties": {
+        "version": {
+          "const": "phase14_compiler_owned_layout_authority_v1"
+        },
+        "status": {
+          "const": "ready_for_patch14_2"
+        },
+        "authority_owner": {
+          "const": "compiler/mir_layout.gst"
+        },
+        "table_format": {
+          "const": "gust.compiler_layout_table.v1"
+        },
+        "semantic_types": {
+          "type": "array",
+          "minItems": 6,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "query_functions": {
+          "type": "array",
+          "minItems": 5,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "consumers": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "canonical_mir",
+            "mir_to_c",
+            "cranelift_worker",
+            "runtime_descriptor",
+            "diagnostics"
+          ],
+          "properties": {
+            "canonical_mir": {
+              "type": "string",
+              "minLength": 1
+            },
+            "mir_to_c": {
+              "type": "string",
+              "minLength": 1
+            },
+            "cranelift_worker": {
+              "type": "string",
+              "minLength": 1
+            },
+            "runtime_descriptor": {
+              "type": "string",
+              "minLength": 1
+            },
+            "diagnostics": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "identity_policy": {
+          "const": "deterministic_semantic_components_only_no_raw_file_registry_or_markdown_hash"
+        },
+        "request_transport_policy": {
+          "const": "compiler_serializes_request_local_layout_table_worker_validates_without_selecting_layout"
+        },
+        "rejection_classes": {
+          "type": "array",
+          "minItems": 6,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "hard_bans": {
+          "type": "array",
+          "minItems": 4,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "behavior_policy": {
+          "const": "authority_and_transport_only_no_phase14_capability_migration_or_level2_level3_workflow_expansion"
+        },
+        "next_patch": {
+          "const": "14.2"
         }
       }
     }

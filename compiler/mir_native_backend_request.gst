@@ -1,4 +1,5 @@
 import "mir.gst" as mir;
+import "mir_layout.gst" as layout;
 
 // Phase 10 generic native-backend request protocol.
 //
@@ -11,7 +12,8 @@ type MirNativeBackendRequest[ctx] struct {
     object_format: str,
     output_path: str,
     program_mir_bundle_path: str,
-    program_bundle: mir.MirProgramBundle[ctx]
+    program_bundle: mir.MirProgramBundle[ctx],
+    layout_table: layout.MirLayoutTable[ctx]
 }
 
 func mir_native_backend_request_path_is_safe(path: str) int {
@@ -48,14 +50,31 @@ func mir_native_backend_request_path_is_absolute(path: str) int {
     return 0;
 }
 
-func mir_native_backend_make_request(target_triple: str, object_format: str, output_path: str, program_mir_bundle_path: str, program_bundle: mir.MirProgramBundle[ctx], ctx: &Arena) MirNativeBackendRequest[ctx] {
+func mir_native_backend_make_request_with_layout_table(target_triple: str, object_format: str, output_path: str, program_mir_bundle_path: str, program_bundle: mir.MirProgramBundle[ctx], layout_table: layout.MirLayoutTable[ctx], ctx: &Arena) MirNativeBackendRequest[ctx] {
     mut request: MirNativeBackendRequest[ctx];
     request.target_triple = std.Clone(ctx, target_triple);
     request.object_format = std.Clone(ctx, object_format);
     request.output_path = std.Clone(ctx, output_path);
     request.program_mir_bundle_path = std.Clone(ctx, program_mir_bundle_path);
     request.program_bundle = program_bundle;
+    request.layout_table = layout_table;
     return request;
+}
+
+func mir_native_backend_make_request(target_triple: str, object_format: str, output_path: str, program_mir_bundle_path: str, program_bundle: mir.MirProgramBundle[ctx], ctx: &Arena) MirNativeBackendRequest[ctx] {
+    mut layout_table := layout.mir_layout_make_unfrozen_table(
+        target_triple,
+        ctx
+    );
+    return mir_native_backend_make_request_with_layout_table(
+        target_triple,
+        object_format,
+        output_path,
+        program_mir_bundle_path,
+        program_bundle,
+        layout_table,
+        ctx
+    );
 }
 
 func mir_native_backend_request_is_valid(request: MirNativeBackendRequest[ctx], ctx: &Arena) int {
@@ -75,6 +94,15 @@ func mir_native_backend_request_is_valid(request: MirNativeBackendRequest[ctx], 
         return 0;
     }
     if mir.mir_program_bundle_is_valid(request.program_bundle, ctx) == 0 {
+        return 0;
+    }
+    if layout.mir_layout_table_is_valid(request.layout_table, ctx) == 0 {
+        return 0;
+    }
+    if std.str_eq(
+        request.layout_table.target.target_triple,
+        request.target_triple
+    ) == 0 {
         return 0;
     }
     return 1;
@@ -129,6 +157,13 @@ func mir_serialize_native_backend_request(request: MirNativeBackendRequest[ctx],
         "program_mir_bundle_path",
         request.program_mir_bundle_path,
         ctx
+    );
+    output = std.Concat(
+        output,
+        layout.mir_serialize_layout_table_for_request(
+            request.layout_table,
+            ctx
+        )
     );
     return std.Clone(ctx, output);
 }

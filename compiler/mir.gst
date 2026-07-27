@@ -18,12 +18,19 @@
 //   or production codegen dependencies in this file yet.
 
 import "token.gst" as token;
+import "mir_layout.gst" as layout;
+
+type MirTypeLayoutReference[ctx] struct {
+    type_id: str,
+    layout_id: str
+}
 
 type MirProgram[ctx] struct {
     functions: Index[std.Vector[MirFunction[ctx], ctx], ctx],
     resource_metadata: Index[std.Vector[MirResourceMetadata[ctx], ctx], ctx],
     provenance_metadata: Index[std.Vector[MirProvenanceMetadata[ctx], ctx], ctx],
-    native_boundary_metadata: Index[std.Vector[MirNativeBoundaryMetadata[ctx], ctx], ctx]
+    native_boundary_metadata: Index[std.Vector[MirNativeBoundaryMetadata[ctx], ctx], ctx],
+    type_layout_references: Index[std.Vector[MirTypeLayoutReference[ctx], ctx], ctx]
 }
 
 type MirFunction[ctx] struct {
@@ -280,6 +287,13 @@ func mir_empty_native_boundary_metadata_vector(ctx: &Arena) Index[std.Vector[Mir
     return metadata_idx;
 }
 
+func mir_empty_type_layout_reference_vector(ctx: &Arena) Index[std.Vector[MirTypeLayoutReference[ctx], ctx], ctx] {
+    mut references: std.Vector[MirTypeLayoutReference[ctx], ctx] := std.VectorNew(ctx);
+    mut references_idx: Index[std.Vector[MirTypeLayoutReference[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(references_idx, references);
+    return references_idx;
+}
+
 func mir_alloc_value(value: MirValue[ctx], ctx: &Arena) Index[MirValue[ctx], ctx] {
     mut value_idx: Index[MirValue[ctx], ctx] := os.ArenaAlloc(ctx);
     ctx.Set(value_idx, value);
@@ -298,7 +312,62 @@ func mir_make_program(ctx: &Arena) MirProgram[ctx] {
     program.resource_metadata = mir_empty_resource_metadata_vector(ctx);
     program.provenance_metadata = mir_empty_provenance_metadata_vector(ctx);
     program.native_boundary_metadata = mir_empty_native_boundary_metadata_vector(ctx);
+    program.type_layout_references = mir_empty_type_layout_reference_vector(ctx);
     return program;
+}
+
+func mir_make_type_layout_reference(type_id: str, layout_id: str, ctx: &Arena) MirTypeLayoutReference[ctx] {
+    mut reference: MirTypeLayoutReference[ctx];
+    reference.type_id = std.Clone(ctx, type_id);
+    reference.layout_id = std.Clone(ctx, layout_id);
+    return reference;
+}
+
+func mir_program_with_type_layout_reference(program: MirProgram[ctx], reference: MirTypeLayoutReference[ctx], ctx: &Arena) MirProgram[ctx] {
+    mut updated := program;
+    mut references: std.Vector[MirTypeLayoutReference[ctx], ctx] := ctx[updated.type_layout_references];
+    references.Push(reference);
+    ctx.Set(updated.type_layout_references, references);
+    return updated;
+}
+
+func mir_program_layout_reference_is_valid(program: MirProgram[ctx], table: layout.MirLayoutTable[ctx], ctx: &Arena) int {
+    if layout.mir_layout_table_is_valid(table, ctx) == 0 {
+        return 0;
+    }
+    mut references: std.Vector[MirTypeLayoutReference[ctx], ctx] := ctx[program.type_layout_references];
+    mut reference_index := 0;
+    while reference_index < len(references) {
+        mut reference := references[reference_index];
+        if layout.mir_layout_field_is_safe(reference.type_id, 0) == 0 ||
+           layout.mir_layout_field_is_safe(reference.layout_id, 0) == 0
+        {
+            return 0;
+        }
+        mut query := layout.mir_layout_of(
+            table,
+            reference.type_id,
+            table.target.target_id,
+            ctx
+        );
+        if query.found == 0 ||
+           std.str_eq(query.layout.layout_id, reference.layout_id) == 0
+        {
+            return 0;
+        }
+        mut prior_index := 0;
+        while prior_index < reference_index {
+            mut prior := references[prior_index];
+            if std.str_eq(prior.type_id, reference.type_id) == 1 &&
+               std.str_eq(prior.layout_id, reference.layout_id) == 1
+            {
+                return 0;
+            }
+            prior_index = prior_index + 1;
+        }
+        reference_index = reference_index + 1;
+    }
+    return 1;
 }
 
 func mir_make_resource_metadata(local_id: int, resource_kind: MirResourceKind, resource_state: MirResourceState, span: token.Span) MirResourceMetadata[ctx] {

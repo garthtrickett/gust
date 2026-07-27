@@ -48,6 +48,9 @@ jobs:
       - name: Phase 14 opening inventory
         run: just guard-cranelift-phase14-opening-contract
 
+      - name: Phase 14 layout authority
+        run: just guard-cranelift-phase14-layout-authority-contract
+
       - name: Upload Gust build outputs
         uses: actions/upload-artifact@v4
         with:
