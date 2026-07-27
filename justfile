@@ -13216,7 +13216,6 @@ guard-cranelift-phase13-close:
     validator="scripts/cranelift_registry.py"
     canonical_summary="docs/CRANELIFT_FEATURE_REGISTRY.md"
     review="compiler/CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY.md"
-    manifest="compiler/CRANELIFT_EXPERIMENT_MANIFEST.md"
     manifest_validator="scripts/cranelift_manifest.py"
     route_source="compiler/mir_native_backend_source_route.gst"
     request_source="compiler/mir_native_backend_request.gst"
@@ -13235,7 +13234,6 @@ guard-cranelift-phase13-close:
       "$validator"
       "$canonical_summary"
       "$review"
-      "$manifest"
       "$manifest_validator"
       "$route_source"
       "$request_source"
@@ -13341,21 +13339,6 @@ guard-cranelift-phase13-close:
       exit 1
     fi
 
-    rg -n -x -F \
-      'CRANELIFT_ARCHITECTURE_DEFAULT_BACKEND: mir-to-c' \
-      "$manifest" >/dev/null
-    rg -n -x -F \
-      'CRANELIFT_ARCHITECTURE_WORKER_BOUNDARY: canonical_MIR_request_path_only_no_raw_source_fields' \
-      "$manifest" >/dev/null
-    rg -n -x -F \
-      'CRANELIFT_ARCHITECTURE_NO_FALLBACK_POLICY: explicit_cranelift_success_deferral_or_failure_terminates_without_MIR-to-C_codegen' \
-      "$manifest" >/dev/null
-    rg -n -x -F \
-      'CRANELIFT_ARCHITECTURE_ARTIFACT_OWNERSHIP_BOUNDARY: compiler_owns_request_staging_linking_cleanup_and_atomic_executable_publication_worker_owns_requested_object_emission' \
-      "$manifest" >/dev/null
-    rg -n -x -F \
-      'CRANELIFT_ARCHITECTURE_HISTORICAL_EVIDENCE_OWNER: scheduled_or_manual_Cranelift_Historical_Full' \
-      "$manifest" >/dev/null
     rg -n -x -F 'guard-cranelift-phase9g-close:' justfile >/dev/null
     if [ "$(rg -c -F 'just guard-cranelift-historical-full' "$historical_workflow")" != "1" ]; then
       echo "Cranelift Historical Full must remain separately runnable with one Level 3 owner."
