@@ -13298,9 +13298,9 @@ guard-cranelift-phase13-close:
 
     rg -n -F "\"phase13\": \"$closure_status\"" "$registry" >/dev/null
     if ! rg -n -F "\"registry_status\": \"$closure_status\"" "$registry" >/dev/null &&
-       ! rg -n -F '"registry_status": "phase14_opening_inventory_ready"' "$registry" >/dev/null
+       ! rg -n -F '"current_phase": "phase14"' "$registry" >/dev/null
     then
-      echo "Phase 13 closure must remain the current status or the recorded predecessor of the Phase 14 opening."
+      echo "Phase 13 closure must remain the current status or the recorded predecessor of the active Phase 14 state."
       exit 1
     fi
     rg -n -F "$closure_status" "$canonical_summary" >/dev/null
@@ -15332,7 +15332,8 @@ guard-cranelift-registry-schema:
 
 
     authority_count="$(
-      rg -l -F '"registry_status": "phase14_opening_inventory_ready"'         scripts docs compiler 2>/dev/null |
+      (rg -l -F '"schema": "scripts/cranelift_feature_registry.schema.json"' \
+          scripts docs compiler 2>/dev/null || true) |
         wc -l |
         tr -d ' '
     )"
@@ -15344,7 +15345,7 @@ guard-cranelift-registry-schema:
     python3 "$validator" validate
     python3 "$validator" verify-phase11-closure
 
-    echo "✅ Canonical Cranelift registry schema passed: Phase 13 remains semantically closed and the Phase 14 opening is registry-owned with projector-derived totals."
+    echo "✅ Canonical Cranelift registry schema passed: Phase 13 remains semantically closed and the active Phase 14 state is registry-owned with projector-derived totals."
 
 guard-cranelift-ci-family-projection:
     #!/usr/bin/env bash
