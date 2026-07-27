@@ -156,6 +156,10 @@ def check_pr_workflow(policy: dict) -> None:
         "PR Fast must invoke guard-cranelift-phase13-close exactly once",
     )
     require(
+        text.count("just guard-cranelift-phase14-opening-contract") == 1,
+        "PR Fast must invoke guard-cranelift-phase14-opening-contract exactly once",
+    )
+    require(
         "just guard-cranelift-phase13-capability-deferral-contract" not in text
         and "just guard-cranelift-phase13-deferred-residue-audit" not in text,
         "PR Fast must delegate Phase 13 prerequisite contracts to the closure owner",

@@ -45,6 +45,9 @@ jobs:
       - name: Phase 13 scoped closure
         run: just guard-cranelift-phase13-close
 
+      - name: Phase 14 opening inventory
+        run: just guard-cranelift-phase14-opening-contract
+
       - name: Upload Gust build outputs
         uses: actions/upload-artifact@v4
         with:

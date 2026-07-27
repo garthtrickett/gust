@@ -1,9 +1,9 @@
 {
   "schema": "scripts/cranelift_feature_registry.schema.json",
   "schema_version": 1,
-  "registry_version": 7,
-  "registry_status": "phase13_closed_deferred_registry_parity_expansion",
-  "current_phase": "phase13",
+  "registry_version": 8,
+  "registry_status": "phase14_opening_inventory_ready",
+  "current_phase": "phase14",
   "closed_phase_versions": {
     "phase11": "phase11_closed_registry_backed_feature_parity_migration",
     "phase12_5_opening": "phase12_5_opened_verification_framework_consolidation",
@@ -417,6 +417,371 @@
       "comparison_policy": "semantic_ids_and_parent_relationships_only_generated_totals_and_markdown_are_derived",
       "behavior_policy": "registry_projection_and_guard_rebase_only_no_compiler_route_worker_MIR_request_object_link_package_CLI_or_workflow_change",
       "next_patch": "13.1"
+    },
+    "phase14": {
+      "opening_version": "phase14_opening_inventory_rebased_on_phase13_closure",
+      "inventory_version": "phase14_opening_inventory_v1",
+      "status": "ready_for_patch14_1",
+      "predecessor_closure_version": "phase13_closed_deferred_registry_parity_expansion",
+      "immutable_fields": [
+        "id",
+        "parent",
+        "feature_family",
+        "ci_family",
+        "capability_owner",
+        "diagnostic_owner",
+        "target_applicability"
+      ],
+      "entries": [
+        {
+          "id": "p14_primitive_scalar_layout",
+          "parent": "phase13_entry:p13_scalar_multiply_i32",
+          "feature_family": "primitive_layout",
+          "ci_family": "primitive-layout",
+          "capability_owner": "worker_primitive_layout_lowering",
+          "diagnostic_owner": "compiler_layout_verifier",
+          "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
+          "status": "candidate_deferred",
+          "current_failure_stage": "before_driver_discovery",
+          "positive_future_fixture": "compiler/future/p14_primitive_scalar_layout_source.gst",
+          "negative_current_fixture": "compiler/p14_primitive_scalar_layout_deferred_source.gst"
+        },
+        {
+          "id": "p14_pointer_sized_integer_layout",
+          "parent": "phase14_category:pointer_sized_integers",
+          "feature_family": "primitive_layout",
+          "ci_family": "primitive-layout",
+          "capability_owner": "worker_primitive_layout_lowering",
+          "diagnostic_owner": "compiler_layout_verifier",
+          "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
+          "status": "candidate_deferred",
+          "current_failure_stage": "before_driver_discovery",
+          "positive_future_fixture": "compiler/future/p14_pointer_sized_integer_layout_source.gst",
+          "negative_current_fixture": "compiler/p14_pointer_sized_integer_layout_deferred_source.gst"
+        },
+        {
+          "id": "p14_target_dependent_conversions",
+          "parent": "phase13_residual:p14_target_dependent_conversions",
+          "feature_family": "conversion",
+          "ci_family": "conversions",
+          "capability_owner": "worker_conversion_lowering",
+          "diagnostic_owner": "canonical_mir_conversion_verifier",
+          "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
+          "status": "candidate_deferred",
+          "current_failure_stage": "before_driver_discovery",
+          "positive_future_fixture": "compiler/future/p14_target_dependent_conversions_source.gst",
+          "negative_current_fixture": "compiler/p14_target_dependent_conversions_deferred_source.gst"
+        },
+        {
+          "id": "p14_pointer_nullability_model",
+          "parent": "phase14_category:pointers_and_nullability",
+          "feature_family": "pointer_memory",
+          "ci_family": "pointer-memory",
+          "capability_owner": "worker_pointer_memory_lowering",
+          "diagnostic_owner": "canonical_mir_memory_verifier",
+          "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
+          "status": "candidate_deferred",
+          "current_failure_stage": "before_driver_discovery",
+          "positive_future_fixture": "compiler/future/p14_pointer_nullability_model_source.gst",
+          "negative_current_fixture": "compiler/p14_pointer_nullability_model_deferred_source.gst"
+        },
+        {
+          "id": "p14_stack_slot_addressable_locals",
+          "parent": "phase13_residual:p14_aggregate_locals",
+          "feature_family": "pointer_memory",
+          "ci_family": "pointer-memory",
+          "capability_owner": "worker_pointer_memory_lowering",
+          "diagnostic_owner": "canonical_mir_memory_verifier",
+          "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
+          "status": "candidate_deferred",
+          "current_failure_stage": "before_driver_discovery",
+          "positive_future_fixture": "compiler/future/p14_stack_slot_addressable_locals_source.gst",
+          "negative_current_fixture": "compiler/p14_stack_slot_addressable_locals_deferred_source.gst"
+        },
+        {
+          "id": "p14_typed_load_store_memory_access",
+          "parent": "phase14_category:loads_and_stores",
+          "feature_family": "pointer_memory",
+          "ci_family": "pointer-memory",
+          "capability_owner": "worker_pointer_memory_lowering",
+          "diagnostic_owner": "canonical_mir_memory_verifier",
+          "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
+          "status": "candidate_deferred",
+          "current_failure_stage": "before_driver_discovery",
+          "positive_future_fixture": "compiler/future/p14_typed_load_store_memory_access_source.gst",
+          "negative_current_fixture": "compiler/p14_typed_load_store_memory_access_deferred_source.gst"
+        },
+        {
+          "id": "p14_string_and_string_view_layout",
+          "parent": "phase14_category:strings_and_string_views",
+          "feature_family": "string_view",
+          "ci_family": "strings-views",
+          "capability_owner": "worker_string_view_lowering",
+          "diagnostic_owner": "canonical_mir_string_view_verifier",
+          "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
+          "status": "candidate_deferred",
+          "current_failure_stage": "before_driver_discovery",
+          "positive_future_fixture": "compiler/future/p14_string_and_string_view_layout_source.gst",
+          "negative_current_fixture": "compiler/p14_string_and_string_view_layout_deferred_source.gst"
+        },
+        {
+          "id": "p14_array_and_slice_layout",
+          "parent": "phase14_category:arrays_and_slices",
+          "feature_family": "array_slice",
+          "ci_family": "arrays-slices",
+          "capability_owner": "worker_array_slice_lowering",
+          "diagnostic_owner": "canonical_mir_array_slice_verifier",
+          "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
+          "status": "candidate_deferred",
+          "current_failure_stage": "before_driver_discovery",
+          "positive_future_fixture": "compiler/future/p14_array_and_slice_layout_source.gst",
+          "negative_current_fixture": "compiler/p14_array_and_slice_layout_deferred_source.gst"
+        },
+        {
+          "id": "p14_struct_field_layout",
+          "parent": "phase14_category:structs",
+          "feature_family": "aggregate_layout",
+          "ci_family": "structs-enums",
+          "capability_owner": "worker_aggregate_layout_lowering",
+          "diagnostic_owner": "canonical_mir_aggregate_layout_verifier",
+          "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
+          "status": "candidate_deferred",
+          "current_failure_stage": "before_driver_discovery",
+          "positive_future_fixture": "compiler/future/p14_struct_field_layout_source.gst",
+          "negative_current_fixture": "compiler/p14_struct_field_layout_deferred_source.gst"
+        },
+        {
+          "id": "p14_enum_tagged_union_layout",
+          "parent": "phase14_category:enums_and_tagged_unions",
+          "feature_family": "aggregate_layout",
+          "ci_family": "structs-enums",
+          "capability_owner": "worker_aggregate_layout_lowering",
+          "diagnostic_owner": "canonical_mir_aggregate_layout_verifier",
+          "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
+          "status": "candidate_deferred",
+          "current_failure_stage": "before_driver_discovery",
+          "positive_future_fixture": "compiler/future/p14_enum_tagged_union_layout_source.gst",
+          "negative_current_fixture": "compiler/p14_enum_tagged_union_layout_deferred_source.gst"
+        },
+        {
+          "id": "p14_aggregate_basic_block_transport",
+          "parent": "phase13_entry:p13_general_loop_backedge_source_route",
+          "feature_family": "aggregate_layout",
+          "ci_family": "aggregate-flow",
+          "capability_owner": "worker_aggregate_layout_lowering",
+          "diagnostic_owner": "canonical_mir_aggregate_layout_verifier",
+          "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
+          "status": "candidate_deferred",
+          "current_failure_stage": "before_driver_discovery",
+          "positive_future_fixture": "compiler/future/p14_aggregate_basic_block_transport_source.gst",
+          "negative_current_fixture": "compiler/p14_aggregate_basic_block_transport_deferred_source.gst"
+        },
+        {
+          "id": "p14_target_layout_model",
+          "parent": "phase14_category:target_layout",
+          "feature_family": "target_layout",
+          "ci_family": "primitive-layout",
+          "capability_owner": "worker_target_layout_lowering",
+          "diagnostic_owner": "target_layout_registry_verifier",
+          "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
+          "status": "candidate_deferred",
+          "current_failure_stage": "before_driver_discovery",
+          "positive_future_fixture": "compiler/future/p14_target_layout_model_source.gst",
+          "negative_current_fixture": "compiler/p14_target_layout_model_deferred_source.gst"
+        },
+        {
+          "id": "p14_all_target_layout_evidence",
+          "parent": "phase14_category:all_target_evidence",
+          "feature_family": "target_layout",
+          "ci_family": "primitive-layout",
+          "capability_owner": "worker_target_layout_lowering",
+          "diagnostic_owner": "target_layout_registry_verifier",
+          "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
+          "status": "candidate_deferred",
+          "current_failure_stage": "before_driver_discovery",
+          "positive_future_fixture": "compiler/future/p14_all_target_layout_evidence_source.gst",
+          "negative_current_fixture": "compiler/p14_all_target_layout_evidence_deferred_source.gst"
+        }
+      ],
+      "residual_rebase": [
+        {
+          "source_residual_id": "p14_scalar_division_i32",
+          "phase14_disposition": "reassigned",
+          "selected_phase14_entry_ids": [],
+          "reassigned_destination_phase": "phase15",
+          "reassigned_capability": "signed_i32_division_and_trap_semantics",
+          "justification": "arithmetic_semantics_are_outside_the_phase14_layout_inventory"
+        },
+        {
+          "source_residual_id": "p14_target_dependent_conversions",
+          "phase14_disposition": "selected",
+          "selected_phase14_entry_ids": [
+            "p14_target_dependent_conversions"
+          ],
+          "reassigned_destination_phase": "none_selected",
+          "reassigned_capability": "none_selected",
+          "justification": "target_dependent_conversion_rules_are_owned_by_phase14"
+        },
+        {
+          "source_residual_id": "p14_aggregate_locals",
+          "phase14_disposition": "split",
+          "selected_phase14_entry_ids": [
+            "p14_stack_slot_addressable_locals",
+            "p14_aggregate_basic_block_transport"
+          ],
+          "reassigned_destination_phase": "phase16",
+          "reassigned_capability": "resource_bearing_aggregate_local_move_and_cleanup_semantics",
+          "justification": "phase14_owns_storage_and_non_resource_transport_while_resource_semantics_remain_later"
+        },
+        {
+          "source_residual_id": "p14_short_circuit_cfg",
+          "phase14_disposition": "reassigned",
+          "selected_phase14_entry_ids": [],
+          "reassigned_destination_phase": "phase15",
+          "reassigned_capability": "short_circuit_expression_cfg",
+          "justification": "control_flow_expansion_is_outside_the_phase14_layout_inventory"
+        },
+        {
+          "source_residual_id": "p14_irreducible_cfg",
+          "phase14_disposition": "reassigned",
+          "selected_phase14_entry_ids": [],
+          "reassigned_destination_phase": "phase15",
+          "reassigned_capability": "irreducible_cfg_regions",
+          "justification": "control_flow_expansion_is_outside_the_phase14_layout_inventory"
+        },
+        {
+          "source_residual_id": "p14_nested_loop_forms",
+          "phase14_disposition": "reassigned",
+          "selected_phase14_entry_ids": [],
+          "reassigned_destination_phase": "phase15",
+          "reassigned_capability": "nested_loop_forms",
+          "justification": "loop_expansion_is_outside_the_phase14_layout_inventory"
+        },
+        {
+          "source_residual_id": "p14_loop_body_control_flow",
+          "phase14_disposition": "reassigned",
+          "selected_phase14_entry_ids": [],
+          "reassigned_destination_phase": "phase15",
+          "reassigned_capability": "loop_body_branches_and_early_exits",
+          "justification": "loop_expansion_is_outside_the_phase14_layout_inventory"
+        },
+        {
+          "source_residual_id": "p14_aggregate_abi",
+          "phase14_disposition": "split",
+          "selected_phase14_entry_ids": [
+            "p14_struct_field_layout",
+            "p14_array_and_slice_layout",
+            "p14_enum_tagged_union_layout"
+          ],
+          "reassigned_destination_phase": "phase15",
+          "reassigned_capability": "aggregate_parameter_and_return_abi",
+          "justification": "phase14_owns_in_memory_aggregate_layout_but_not_call_abi_classification"
+        },
+        {
+          "source_residual_id": "p14_direct_recursion",
+          "phase14_disposition": "reassigned",
+          "selected_phase14_entry_ids": [],
+          "reassigned_destination_phase": "phase15",
+          "reassigned_capability": "direct_recursive_call_graphs",
+          "justification": "call_graph_policy_is_outside_the_phase14_layout_inventory"
+        },
+        {
+          "source_residual_id": "p14_mutual_recursion",
+          "phase14_disposition": "reassigned",
+          "selected_phase14_entry_ids": [],
+          "reassigned_destination_phase": "phase15",
+          "reassigned_capability": "mutually_recursive_call_graphs",
+          "justification": "call_graph_policy_is_outside_the_phase14_layout_inventory"
+        },
+        {
+          "source_residual_id": "p14_indirect_calls",
+          "phase14_disposition": "reassigned",
+          "selected_phase14_entry_ids": [],
+          "reassigned_destination_phase": "phase15",
+          "reassigned_capability": "typed_indirect_function_calls",
+          "justification": "function_value_and_indirect_call_semantics_are_outside_phase14"
+        },
+        {
+          "source_residual_id": "p15_closure_calls",
+          "phase14_disposition": "reassigned",
+          "selected_phase14_entry_ids": [],
+          "reassigned_destination_phase": "phase15",
+          "reassigned_capability": "capturing_closure_values_and_calls",
+          "justification": "closure_environment_and_call_semantics_remain_phase15"
+        },
+        {
+          "source_residual_id": "p14_two_source_module_bundle",
+          "phase14_disposition": "reassigned",
+          "selected_phase14_entry_ids": [],
+          "reassigned_destination_phase": "phase15",
+          "reassigned_capability": "two_source_module_dependency_bundle",
+          "justification": "module_bundle_and_linkage_work_is_outside_phase14"
+        },
+        {
+          "source_residual_id": "p14_imported_single_call_result_join",
+          "phase14_disposition": "reassigned",
+          "selected_phase14_entry_ids": [],
+          "reassigned_destination_phase": "phase15",
+          "reassigned_capability": "imported_call_result_cfg_join",
+          "justification": "import_resolution_and_imported_call_transport_are_outside_phase14"
+        },
+        {
+          "source_residual_id": "p14_imported_predicate_result_join",
+          "phase14_disposition": "reassigned",
+          "selected_phase14_entry_ids": [],
+          "reassigned_destination_phase": "phase15",
+          "reassigned_capability": "imported_predicate_and_branch_result_join",
+          "justification": "import_resolution_and_imported_call_transport_are_outside_phase14"
+        },
+        {
+          "source_residual_id": "p14_dual_imported_result_join",
+          "phase14_disposition": "reassigned",
+          "selected_phase14_entry_ids": [],
+          "reassigned_destination_phase": "phase15",
+          "reassigned_capability": "dual_imported_result_join",
+          "justification": "import_resolution_and_imported_call_transport_are_outside_phase14"
+        },
+        {
+          "source_residual_id": "p14_variadic_host_calls",
+          "phase14_disposition": "reassigned",
+          "selected_phase14_entry_ids": [],
+          "reassigned_destination_phase": "phase15",
+          "reassigned_capability": "approved_variadic_host_call_abi",
+          "justification": "variadic_abi_is_outside_the_phase14_in_memory_layout_inventory"
+        },
+        {
+          "source_residual_id": "p15_dynamic_symbol_loading",
+          "phase14_disposition": "reassigned",
+          "selected_phase14_entry_ids": [],
+          "reassigned_destination_phase": "phase15",
+          "reassigned_capability": "dynamic_symbol_loading_with_typed_signature_proof",
+          "justification": "dynamic_runtime_symbol_loading_remains_phase15"
+        },
+        {
+          "source_residual_id": "p14_resource_cleanup_semantics",
+          "phase14_disposition": "reassigned",
+          "selected_phase14_entry_ids": [],
+          "reassigned_destination_phase": "phase16",
+          "reassigned_capability": "linear_resource_move_cleanup_and_destructor_semantics",
+          "justification": "resource_cleanup_and_destruction_are_outside_phase14"
+        }
+      ],
+      "ci_family_projection": {
+        "derivation": "distinct_ci_family_values_from_phase14_opening_entries_in_first_occurrence_order",
+        "family_ids": [
+          "primitive-layout",
+          "conversions",
+          "pointer-memory",
+          "strings-views",
+          "arrays-slices",
+          "structs-enums",
+          "aggregate-flow"
+        ],
+        "workflow_policy": "planning_projection_only_no_phase14_level2_workflow_rows_until_capability_migration"
+      },
+      "comparison_policy": "semantic_opening_fields_parent_traceability_and_residual_rebase_only_generated_totals_and_markdown_are_derived",
+      "behavior_policy": "registry_projection_guard_and_fixture_inventory_only_no_compiler_backend_runtime_MIR_request_object_link_package_CLI_or_level2_level3_workflow_change",
+      "next_patch": "14.1"
     }
   },
   "residual_snapshots": {
@@ -823,7 +1188,20 @@
     "loops_and_backedges",
     "function_parameters_and_multiple_arguments",
     "multiple_modules_and_source_imports",
-    "broader_direct_and_imported_calls"
+    "broader_direct_and_imported_calls",
+    "primitive_scalar_layout",
+    "pointer_sized_integers",
+    "conversions",
+    "pointers_and_nullability",
+    "stack_slots",
+    "loads_and_stores",
+    "strings_and_string_views",
+    "arrays_and_slices",
+    "structs",
+    "enums_and_tagged_unions",
+    "aggregate_basic_block_transport",
+    "target_layout",
+    "all_target_evidence"
   ],
   "supported_values": {
     "statuses": [
@@ -836,7 +1214,8 @@
     ],
     "origin_phases": [
       "phase11",
-      "phase13"
+      "phase13",
+      "phase14"
     ],
     "feature_families": [
       "block_parameter",
@@ -845,7 +1224,14 @@
       "import_runtime",
       "local_state",
       "metadata",
-      "scalar"
+      "scalar",
+      "primitive_layout",
+      "conversion",
+      "pointer_memory",
+      "string_view",
+      "array_slice",
+      "aggregate_layout",
+      "target_layout"
     ],
     "route_owners": [
       "deferred",
@@ -859,7 +1245,14 @@
       "worker_metadata_lowering",
       "worker_module_import_lowering",
       "worker_scalar_expression_lowering",
-      "worker_structured_cfg_lowering"
+      "worker_structured_cfg_lowering",
+      "worker_primitive_layout_lowering",
+      "worker_conversion_lowering",
+      "worker_pointer_memory_lowering",
+      "worker_string_view_lowering",
+      "worker_array_slice_lowering",
+      "worker_aggregate_layout_lowering",
+      "worker_target_layout_lowering"
     ],
     "diagnostic_owners": [
       "approved_host_registry_verifier",
@@ -868,13 +1261,21 @@
       "canonical_mir_scalar_verifier",
       "generic_source_capability_classifier",
       "resolver_signature_and_canonical_mir_verifier",
-      "source_signature_and_call_graph_verifier"
+      "source_signature_and_call_graph_verifier",
+      "compiler_layout_verifier",
+      "canonical_mir_conversion_verifier",
+      "canonical_mir_memory_verifier",
+      "canonical_mir_string_view_verifier",
+      "canonical_mir_array_slice_verifier",
+      "canonical_mir_aggregate_layout_verifier",
+      "target_layout_registry_verifier"
     ]
   },
   "legacy_views": {
     "phase11": "compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md",
     "phase13": "compiler/CRANELIFT_PHASE13_DEFERRED_PARITY_REGISTRY.md",
-    "generated_summary": "docs/CRANELIFT_FEATURE_REGISTRY.md"
+    "generated_summary": "docs/CRANELIFT_FEATURE_REGISTRY.md",
+    "phase14": "compiler/CRANELIFT_PHASE14_TYPE_LAYOUT_MEMORY_REGISTRY.md"
   },
   "entries": [
     {
@@ -3100,6 +3501,370 @@
           "justification": "broad_or_inherited_deferred_record_replaced_by_smaller_actionable_capabilities"
         }
       }
+    },
+    {
+      "id": "p14_primitive_scalar_layout",
+      "origin_phase": "phase14",
+      "parent": "phase13_entry:p13_scalar_multiply_i32",
+      "feature_family": "primitive_layout",
+      "ci_family": "primitive-layout",
+      "status": "candidate_deferred",
+      "route_owner": "deferred",
+      "worker_capability_owner": "worker_primitive_layout_lowering",
+      "diagnostic_owner": "compiler_layout_verifier",
+      "source_fixture": "compiler/p14_primitive_scalar_layout_deferred_source.gst",
+      "canonical_mir_fixture": "none_rejected_before_canonical_MIR",
+      "differential_case_id": "phase14_opening:p14_primitive_scalar_layout",
+      "deferral_reason": "phase14_opening_p14_primitive_scalar_layout_awaits_compiler_owned_layout_authority",
+      "future_destination_phase": "phase14",
+      "closure_version": "phase14_opening_inventory_v1",
+      "evidence": {
+        "opening_record_kind": "phase14_candidate",
+        "declared_capability": "bool_i32_i64_memory_layout",
+        "planning_category": "primitive_scalar_layout",
+        "phase13_closure_dependency": "phase13_closed_deferred_registry_parity_expansion",
+        "behavior_policy": "inventory_only_no_compiler_backend_runtime_or_artifact_behavior_change"
+      },
+      "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
+      "current_failure_stage": "before_driver_discovery",
+      "positive_future_fixture": "compiler/future/p14_primitive_scalar_layout_source.gst",
+      "negative_current_fixture": "compiler/p14_primitive_scalar_layout_deferred_source.gst"
+    },
+    {
+      "id": "p14_pointer_sized_integer_layout",
+      "origin_phase": "phase14",
+      "parent": "phase14_category:pointer_sized_integers",
+      "feature_family": "primitive_layout",
+      "ci_family": "primitive-layout",
+      "status": "candidate_deferred",
+      "route_owner": "deferred",
+      "worker_capability_owner": "worker_primitive_layout_lowering",
+      "diagnostic_owner": "compiler_layout_verifier",
+      "source_fixture": "compiler/p14_pointer_sized_integer_layout_deferred_source.gst",
+      "canonical_mir_fixture": "none_rejected_before_canonical_MIR",
+      "differential_case_id": "phase14_opening:p14_pointer_sized_integer_layout",
+      "deferral_reason": "phase14_opening_p14_pointer_sized_integer_layout_awaits_compiler_owned_layout_authority",
+      "future_destination_phase": "phase14",
+      "closure_version": "phase14_opening_inventory_v1",
+      "evidence": {
+        "opening_record_kind": "phase14_candidate",
+        "declared_capability": "signed_and_unsigned_pointer_sized_integer_layout",
+        "planning_category": "pointer_sized_integers",
+        "phase13_closure_dependency": "phase13_closed_deferred_registry_parity_expansion",
+        "behavior_policy": "inventory_only_no_compiler_backend_runtime_or_artifact_behavior_change"
+      },
+      "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
+      "current_failure_stage": "before_driver_discovery",
+      "positive_future_fixture": "compiler/future/p14_pointer_sized_integer_layout_source.gst",
+      "negative_current_fixture": "compiler/p14_pointer_sized_integer_layout_deferred_source.gst"
+    },
+    {
+      "id": "p14_target_dependent_conversions",
+      "origin_phase": "phase14",
+      "parent": "phase13_residual:p14_target_dependent_conversions",
+      "feature_family": "conversion",
+      "ci_family": "conversions",
+      "status": "candidate_deferred",
+      "route_owner": "deferred",
+      "worker_capability_owner": "worker_conversion_lowering",
+      "diagnostic_owner": "canonical_mir_conversion_verifier",
+      "source_fixture": "compiler/p14_target_dependent_conversions_deferred_source.gst",
+      "canonical_mir_fixture": "none_rejected_before_canonical_MIR",
+      "differential_case_id": "phase14_opening:p14_target_dependent_conversions",
+      "deferral_reason": "phase14_opening_p14_target_dependent_conversions_awaits_compiler_owned_layout_authority",
+      "future_destination_phase": "phase14",
+      "closure_version": "phase14_opening_inventory_v1",
+      "evidence": {
+        "opening_record_kind": "phase14_candidate",
+        "declared_capability": "target_dependent_signed_unsigned_and_width_conversions",
+        "planning_category": "conversions",
+        "phase13_closure_dependency": "phase13_closed_deferred_registry_parity_expansion",
+        "behavior_policy": "inventory_only_no_compiler_backend_runtime_or_artifact_behavior_change"
+      },
+      "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
+      "current_failure_stage": "before_driver_discovery",
+      "positive_future_fixture": "compiler/future/p14_target_dependent_conversions_source.gst",
+      "negative_current_fixture": "compiler/p14_target_dependent_conversions_deferred_source.gst"
+    },
+    {
+      "id": "p14_pointer_nullability_model",
+      "origin_phase": "phase14",
+      "parent": "phase14_category:pointers_and_nullability",
+      "feature_family": "pointer_memory",
+      "ci_family": "pointer-memory",
+      "status": "candidate_deferred",
+      "route_owner": "deferred",
+      "worker_capability_owner": "worker_pointer_memory_lowering",
+      "diagnostic_owner": "canonical_mir_memory_verifier",
+      "source_fixture": "compiler/p14_pointer_nullability_model_deferred_source.gst",
+      "canonical_mir_fixture": "none_rejected_before_canonical_MIR",
+      "differential_case_id": "phase14_opening:p14_pointer_nullability_model",
+      "deferral_reason": "phase14_opening_p14_pointer_nullability_model_awaits_compiler_owned_layout_authority",
+      "future_destination_phase": "phase14",
+      "closure_version": "phase14_opening_inventory_v1",
+      "evidence": {
+        "opening_record_kind": "phase14_candidate",
+        "declared_capability": "typed_pointers_and_nullability_rules",
+        "planning_category": "pointers_and_nullability",
+        "phase13_closure_dependency": "phase13_closed_deferred_registry_parity_expansion",
+        "behavior_policy": "inventory_only_no_compiler_backend_runtime_or_artifact_behavior_change"
+      },
+      "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
+      "current_failure_stage": "before_driver_discovery",
+      "positive_future_fixture": "compiler/future/p14_pointer_nullability_model_source.gst",
+      "negative_current_fixture": "compiler/p14_pointer_nullability_model_deferred_source.gst"
+    },
+    {
+      "id": "p14_stack_slot_addressable_locals",
+      "origin_phase": "phase14",
+      "parent": "phase13_residual:p14_aggregate_locals",
+      "feature_family": "pointer_memory",
+      "ci_family": "pointer-memory",
+      "status": "candidate_deferred",
+      "route_owner": "deferred",
+      "worker_capability_owner": "worker_pointer_memory_lowering",
+      "diagnostic_owner": "canonical_mir_memory_verifier",
+      "source_fixture": "compiler/p14_stack_slot_addressable_locals_deferred_source.gst",
+      "canonical_mir_fixture": "none_rejected_before_canonical_MIR",
+      "differential_case_id": "phase14_opening:p14_stack_slot_addressable_locals",
+      "deferral_reason": "phase14_opening_p14_stack_slot_addressable_locals_awaits_compiler_owned_layout_authority",
+      "future_destination_phase": "phase14",
+      "closure_version": "phase14_opening_inventory_v1",
+      "evidence": {
+        "opening_record_kind": "phase14_candidate",
+        "declared_capability": "compiler_owned_stack_slots_and_addressable_locals",
+        "planning_category": "stack_slots",
+        "phase13_closure_dependency": "phase13_closed_deferred_registry_parity_expansion",
+        "behavior_policy": "inventory_only_no_compiler_backend_runtime_or_artifact_behavior_change"
+      },
+      "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
+      "current_failure_stage": "before_driver_discovery",
+      "positive_future_fixture": "compiler/future/p14_stack_slot_addressable_locals_source.gst",
+      "negative_current_fixture": "compiler/p14_stack_slot_addressable_locals_deferred_source.gst"
+    },
+    {
+      "id": "p14_typed_load_store_memory_access",
+      "origin_phase": "phase14",
+      "parent": "phase14_category:loads_and_stores",
+      "feature_family": "pointer_memory",
+      "ci_family": "pointer-memory",
+      "status": "candidate_deferred",
+      "route_owner": "deferred",
+      "worker_capability_owner": "worker_pointer_memory_lowering",
+      "diagnostic_owner": "canonical_mir_memory_verifier",
+      "source_fixture": "compiler/p14_typed_load_store_memory_access_deferred_source.gst",
+      "canonical_mir_fixture": "none_rejected_before_canonical_MIR",
+      "differential_case_id": "phase14_opening:p14_typed_load_store_memory_access",
+      "deferral_reason": "phase14_opening_p14_typed_load_store_memory_access_awaits_compiler_owned_layout_authority",
+      "future_destination_phase": "phase14",
+      "closure_version": "phase14_opening_inventory_v1",
+      "evidence": {
+        "opening_record_kind": "phase14_candidate",
+        "declared_capability": "typed_load_store_and_memory_access_validation",
+        "planning_category": "loads_and_stores",
+        "phase13_closure_dependency": "phase13_closed_deferred_registry_parity_expansion",
+        "behavior_policy": "inventory_only_no_compiler_backend_runtime_or_artifact_behavior_change"
+      },
+      "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
+      "current_failure_stage": "before_driver_discovery",
+      "positive_future_fixture": "compiler/future/p14_typed_load_store_memory_access_source.gst",
+      "negative_current_fixture": "compiler/p14_typed_load_store_memory_access_deferred_source.gst"
+    },
+    {
+      "id": "p14_string_and_string_view_layout",
+      "origin_phase": "phase14",
+      "parent": "phase14_category:strings_and_string_views",
+      "feature_family": "string_view",
+      "ci_family": "strings-views",
+      "status": "candidate_deferred",
+      "route_owner": "deferred",
+      "worker_capability_owner": "worker_string_view_lowering",
+      "diagnostic_owner": "canonical_mir_string_view_verifier",
+      "source_fixture": "compiler/p14_string_and_string_view_layout_deferred_source.gst",
+      "canonical_mir_fixture": "none_rejected_before_canonical_MIR",
+      "differential_case_id": "phase14_opening:p14_string_and_string_view_layout",
+      "deferral_reason": "phase14_opening_p14_string_and_string_view_layout_awaits_compiler_owned_layout_authority",
+      "future_destination_phase": "phase14",
+      "closure_version": "phase14_opening_inventory_v1",
+      "evidence": {
+        "opening_record_kind": "phase14_candidate",
+        "declared_capability": "string_literal_and_borrowed_string_view_layout",
+        "planning_category": "strings_and_string_views",
+        "phase13_closure_dependency": "phase13_closed_deferred_registry_parity_expansion",
+        "behavior_policy": "inventory_only_no_compiler_backend_runtime_or_artifact_behavior_change"
+      },
+      "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
+      "current_failure_stage": "before_driver_discovery",
+      "positive_future_fixture": "compiler/future/p14_string_and_string_view_layout_source.gst",
+      "negative_current_fixture": "compiler/p14_string_and_string_view_layout_deferred_source.gst"
+    },
+    {
+      "id": "p14_array_and_slice_layout",
+      "origin_phase": "phase14",
+      "parent": "phase14_category:arrays_and_slices",
+      "feature_family": "array_slice",
+      "ci_family": "arrays-slices",
+      "status": "candidate_deferred",
+      "route_owner": "deferred",
+      "worker_capability_owner": "worker_array_slice_lowering",
+      "diagnostic_owner": "canonical_mir_array_slice_verifier",
+      "source_fixture": "compiler/p14_array_and_slice_layout_deferred_source.gst",
+      "canonical_mir_fixture": "none_rejected_before_canonical_MIR",
+      "differential_case_id": "phase14_opening:p14_array_and_slice_layout",
+      "deferral_reason": "phase14_opening_p14_array_and_slice_layout_awaits_compiler_owned_layout_authority",
+      "future_destination_phase": "phase14",
+      "closure_version": "phase14_opening_inventory_v1",
+      "evidence": {
+        "opening_record_kind": "phase14_candidate",
+        "declared_capability": "fixed_array_and_slice_layout",
+        "planning_category": "arrays_and_slices",
+        "phase13_closure_dependency": "phase13_closed_deferred_registry_parity_expansion",
+        "behavior_policy": "inventory_only_no_compiler_backend_runtime_or_artifact_behavior_change"
+      },
+      "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
+      "current_failure_stage": "before_driver_discovery",
+      "positive_future_fixture": "compiler/future/p14_array_and_slice_layout_source.gst",
+      "negative_current_fixture": "compiler/p14_array_and_slice_layout_deferred_source.gst"
+    },
+    {
+      "id": "p14_struct_field_layout",
+      "origin_phase": "phase14",
+      "parent": "phase14_category:structs",
+      "feature_family": "aggregate_layout",
+      "ci_family": "structs-enums",
+      "status": "candidate_deferred",
+      "route_owner": "deferred",
+      "worker_capability_owner": "worker_aggregate_layout_lowering",
+      "diagnostic_owner": "canonical_mir_aggregate_layout_verifier",
+      "source_fixture": "compiler/p14_struct_field_layout_deferred_source.gst",
+      "canonical_mir_fixture": "none_rejected_before_canonical_MIR",
+      "differential_case_id": "phase14_opening:p14_struct_field_layout",
+      "deferral_reason": "phase14_opening_p14_struct_field_layout_awaits_compiler_owned_layout_authority",
+      "future_destination_phase": "phase14",
+      "closure_version": "phase14_opening_inventory_v1",
+      "evidence": {
+        "opening_record_kind": "phase14_candidate",
+        "declared_capability": "declared_order_struct_field_layout_alignment_and_padding",
+        "planning_category": "structs",
+        "phase13_closure_dependency": "phase13_closed_deferred_registry_parity_expansion",
+        "behavior_policy": "inventory_only_no_compiler_backend_runtime_or_artifact_behavior_change"
+      },
+      "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
+      "current_failure_stage": "before_driver_discovery",
+      "positive_future_fixture": "compiler/future/p14_struct_field_layout_source.gst",
+      "negative_current_fixture": "compiler/p14_struct_field_layout_deferred_source.gst"
+    },
+    {
+      "id": "p14_enum_tagged_union_layout",
+      "origin_phase": "phase14",
+      "parent": "phase14_category:enums_and_tagged_unions",
+      "feature_family": "aggregate_layout",
+      "ci_family": "structs-enums",
+      "status": "candidate_deferred",
+      "route_owner": "deferred",
+      "worker_capability_owner": "worker_aggregate_layout_lowering",
+      "diagnostic_owner": "canonical_mir_aggregate_layout_verifier",
+      "source_fixture": "compiler/p14_enum_tagged_union_layout_deferred_source.gst",
+      "canonical_mir_fixture": "none_rejected_before_canonical_MIR",
+      "differential_case_id": "phase14_opening:p14_enum_tagged_union_layout",
+      "deferral_reason": "phase14_opening_p14_enum_tagged_union_layout_awaits_compiler_owned_layout_authority",
+      "future_destination_phase": "phase14",
+      "closure_version": "phase14_opening_inventory_v1",
+      "evidence": {
+        "opening_record_kind": "phase14_candidate",
+        "declared_capability": "explicit_tag_enum_and_tagged_union_layout",
+        "planning_category": "enums_and_tagged_unions",
+        "phase13_closure_dependency": "phase13_closed_deferred_registry_parity_expansion",
+        "behavior_policy": "inventory_only_no_compiler_backend_runtime_or_artifact_behavior_change"
+      },
+      "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
+      "current_failure_stage": "before_driver_discovery",
+      "positive_future_fixture": "compiler/future/p14_enum_tagged_union_layout_source.gst",
+      "negative_current_fixture": "compiler/p14_enum_tagged_union_layout_deferred_source.gst"
+    },
+    {
+      "id": "p14_aggregate_basic_block_transport",
+      "origin_phase": "phase14",
+      "parent": "phase13_entry:p13_general_loop_backedge_source_route",
+      "feature_family": "aggregate_layout",
+      "ci_family": "aggregate-flow",
+      "status": "candidate_deferred",
+      "route_owner": "deferred",
+      "worker_capability_owner": "worker_aggregate_layout_lowering",
+      "diagnostic_owner": "canonical_mir_aggregate_layout_verifier",
+      "source_fixture": "compiler/p14_aggregate_basic_block_transport_deferred_source.gst",
+      "canonical_mir_fixture": "none_rejected_before_canonical_MIR",
+      "differential_case_id": "phase14_opening:p14_aggregate_basic_block_transport",
+      "deferral_reason": "phase14_opening_p14_aggregate_basic_block_transport_awaits_compiler_owned_layout_authority",
+      "future_destination_phase": "phase14",
+      "closure_version": "phase14_opening_inventory_v1",
+      "evidence": {
+        "opening_record_kind": "phase14_candidate",
+        "declared_capability": "non_resource_aggregate_values_across_basic_block_boundaries",
+        "planning_category": "aggregate_basic_block_transport",
+        "phase13_closure_dependency": "phase13_closed_deferred_registry_parity_expansion",
+        "behavior_policy": "inventory_only_no_compiler_backend_runtime_or_artifact_behavior_change"
+      },
+      "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
+      "current_failure_stage": "before_driver_discovery",
+      "positive_future_fixture": "compiler/future/p14_aggregate_basic_block_transport_source.gst",
+      "negative_current_fixture": "compiler/p14_aggregate_basic_block_transport_deferred_source.gst"
+    },
+    {
+      "id": "p14_target_layout_model",
+      "origin_phase": "phase14",
+      "parent": "phase14_category:target_layout",
+      "feature_family": "target_layout",
+      "ci_family": "primitive-layout",
+      "status": "candidate_deferred",
+      "route_owner": "deferred",
+      "worker_capability_owner": "worker_target_layout_lowering",
+      "diagnostic_owner": "target_layout_registry_verifier",
+      "source_fixture": "compiler/p14_target_layout_model_deferred_source.gst",
+      "canonical_mir_fixture": "none_rejected_before_canonical_MIR",
+      "differential_case_id": "phase14_opening:p14_target_layout_model",
+      "deferral_reason": "phase14_opening_p14_target_layout_model_awaits_compiler_owned_layout_authority",
+      "future_destination_phase": "phase14",
+      "closure_version": "phase14_opening_inventory_v1",
+      "evidence": {
+        "opening_record_kind": "phase14_candidate",
+        "declared_capability": "compiler_owned_target_size_alignment_and_endianness_model",
+        "planning_category": "target_layout",
+        "phase13_closure_dependency": "phase13_closed_deferred_registry_parity_expansion",
+        "behavior_policy": "inventory_only_no_compiler_backend_runtime_or_artifact_behavior_change"
+      },
+      "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
+      "current_failure_stage": "before_driver_discovery",
+      "positive_future_fixture": "compiler/future/p14_target_layout_model_source.gst",
+      "negative_current_fixture": "compiler/p14_target_layout_model_deferred_source.gst"
+    },
+    {
+      "id": "p14_all_target_layout_evidence",
+      "origin_phase": "phase14",
+      "parent": "phase14_category:all_target_evidence",
+      "feature_family": "target_layout",
+      "ci_family": "primitive-layout",
+      "status": "candidate_deferred",
+      "route_owner": "deferred",
+      "worker_capability_owner": "worker_target_layout_lowering",
+      "diagnostic_owner": "target_layout_registry_verifier",
+      "source_fixture": "compiler/p14_all_target_layout_evidence_deferred_source.gst",
+      "canonical_mir_fixture": "none_rejected_before_canonical_MIR",
+      "differential_case_id": "phase14_opening:p14_all_target_layout_evidence",
+      "deferral_reason": "phase14_opening_p14_all_target_layout_evidence_awaits_compiler_owned_layout_authority",
+      "future_destination_phase": "phase14",
+      "closure_version": "phase14_opening_inventory_v1",
+      "evidence": {
+        "opening_record_kind": "phase14_candidate",
+        "declared_capability": "registry_derived_all_declared_host_target_layout_evidence",
+        "planning_category": "all_target_evidence",
+        "phase13_closure_dependency": "phase13_closed_deferred_registry_parity_expansion",
+        "behavior_policy": "inventory_only_no_compiler_backend_runtime_or_artifact_behavior_change"
+      },
+      "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
+      "current_failure_stage": "before_driver_discovery",
+      "positive_future_fixture": "compiler/future/p14_all_target_layout_evidence_source.gst",
+      "negative_current_fixture": "compiler/p14_all_target_layout_evidence_deferred_source.gst"
     }
   ]
 }

@@ -122,6 +122,8 @@ guard-pr-fast-ci-surface:
       'just guard-cranelift-phase12-5-close'
       'Phase 13 scoped closure'
       'just guard-cranelift-phase13-close'
+      'Phase 14 opening inventory'
+      'just guard-cranelift-phase14-opening-contract'
       'phase11-family:'
       'phase11_families:'
       'matrix.family'
@@ -13292,8 +13294,13 @@ guard-cranelift-phase13-close:
       rg -n -F "$token" "$review" >/dev/null
     done
 
-    rg -n -F "\"registry_status\": \"$closure_status\"" "$registry" >/dev/null
     rg -n -F "\"phase13\": \"$closure_status\"" "$registry" >/dev/null
+    if ! rg -n -F "\"registry_status\": \"$closure_status\"" "$registry" >/dev/null &&
+       ! rg -n -F '"registry_status": "phase14_opening_inventory_ready"' "$registry" >/dev/null
+    then
+      echo "Phase 13 closure must remain the current status or the recorded predecessor of the Phase 14 opening."
+      exit 1
+    fi
     rg -n -F "$closure_status" "$canonical_summary" >/dev/null
 
     closure_ci_count="$(
@@ -13397,6 +13404,138 @@ guard-cranelift-phase11-registry-differential family:
     echo "guard-cranelift-phase11-registry-differential is a compatibility alias for Patch 13.11."
     just guard-cranelift-phase13-composition-differential "{{family}}"
 
+guard-cranelift-phase14-opening-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking the Phase 14 opening inventory and Phase 13 residual rebase..."
+    registry="scripts/cranelift_feature_registry.json"
+    schema="scripts/cranelift_feature_registry.schema.json"
+    validator="scripts/cranelift_registry.py"
+    review="compiler/CRANELIFT_PHASE14_TYPE_LAYOUT_MEMORY_REGISTRY.md"
+    canonical_summary="docs/CRANELIFT_FEATURE_REGISTRY.md"
+    level_runner="scripts/cranelift_test_levels.py"
+    family_runner="scripts/cranelift_ci_family.py"
+    pr_workflow=".github/workflows/pr-fast.yml"
+    heavy_workflow=".github/workflows/heavy-guards.yml"
+    historical_workflow=".github/workflows/cranelift-historical-full.yml"
+
+    required_files=(
+      "$registry"
+      "$schema"
+      "$validator"
+      "$review"
+      "$canonical_summary"
+      "$level_runner"
+      "$family_runner"
+      "$pr_workflow"
+      "$heavy_workflow"
+      "$historical_workflow"
+    )
+    for required_file in "${required_files[@]}"; do
+      if [ ! -f "$required_file" ] || [ -L "$required_file" ]; then
+        echo "Missing regular Phase 14 opening input: $required_file"
+        exit 1
+      fi
+    done
+
+    just guard-cranelift-registry-schema
+    just guard-cranelift-registry-projection
+    python3 "$validator" verify-phase13-closure
+    python3 "$validator" verify-phase14-opening-contract
+    python3 "$validator" check-phase14-projection
+    python3 "$family_runner" validate
+    python3 "$family_runner" check-pr-workflow "$pr_workflow"
+    python3 "$family_runner" check-heavy-workflow "$heavy_workflow"
+    python3 "$level_runner" validate
+    python3 "$level_runner" check-pr-workflow
+    python3 "$level_runner" check-heavy-workflow
+    python3 "$level_runner" check-historical-workflow
+    python3 "$level_runner" level guard-cranelift-phase14-opening-contract |
+      rg -n -F $'guard-cranelift-phase14-opening-contract\t1\t' >/dev/null
+
+    required_review_tokens=(
+      'CRANELIFT_PHASE14_TYPE_LAYOUT_MEMORY_REGISTRY_VERSION: 1'
+      'CRANELIFT_PHASE14_TYPE_LAYOUT_MEMORY_REGISTRY_STATUS: ready_for_patch14_1'
+      'CRANELIFT_PHASE14_TYPE_LAYOUT_MEMORY_REGISTRY_PREDECESSOR_VERSION: phase13_closed_deferred_registry_parity_expansion'
+      'CRANELIFT_PHASE14_TYPE_LAYOUT_MEMORY_REGISTRY_TARGET_APPLICABILITY: all_declared_host_targets_from_phase14_target_authority'
+      '## Patch 14.0 opening inventory and Phase 13 residual rebase'
+      '## Phase 13 residual rebase'
+      '## Opening invariants'
+    )
+    for token in "${required_review_tokens[@]}"; do
+      rg -n -F "$token" "$review" >/dev/null
+    done
+
+    rg -n -F '"registry_status": "phase14_opening_inventory_ready"' "$registry" >/dev/null
+    rg -n -F '"current_phase": "phase14"' "$registry" >/dev/null
+    rg -n -F '"phase14": {' "$registry" >/dev/null
+    rg -n -F '"predecessor_closure_version": "phase13_closed_deferred_registry_parity_expansion"' "$registry" >/dev/null
+    rg -n -F '"behavior_policy": "registry_projection_guard_and_fixture_inventory_only_no_compiler_backend_runtime_MIR_request_object_link_package_CLI_or_level2_level3_workflow_change"' "$registry" >/dev/null
+
+    opening_ci_count="$(
+      (rg -n -F 'just guard-cranelift-phase14-opening-contract' \
+        .github/workflows --glob '*.yml' || true) |
+        wc -l |
+        tr -d ' '
+    )"
+    if [ "$opening_ci_count" != "1" ]; then
+      echo "Phase 14 opening guard must be wired into CI exactly once, found $opening_ci_count occurrences."
+      exit 1
+    fi
+    rg -n -x -F '        run: just guard-cranelift-phase14-opening-contract' \
+      "$pr_workflow" >/dev/null
+
+    if rg -n \
+        -e 'phase14-family:' \
+        -e 'guard-cranelift-phase14-differential' \
+        -e 'matrix\.phase14' \
+        "$pr_workflow" "$heavy_workflow" "$historical_workflow" >/dev/null
+    then
+      echo "Patch 14.0 must not add Phase 14 Level 2 or Level 3 workflow rows."
+      exit 1
+    fi
+
+    if rg -n -i \
+        -e 'sha-?256' \
+        -e 'sha256sum' \
+        "$registry" "$review" "$canonical_summary" >/dev/null
+    then
+      echo "Phase 14 opening found a forbidden raw registry or Markdown hash contract."
+      exit 1
+    fi
+
+    if rg -n \
+        -e 'EXPECTED_TARGET_COUNT' \
+        -e 'declared_target_count[[:space:]]*[:=][[:space:]]*[0-9]+' \
+        -e 'target_total[[:space:]]*[:=][[:space:]]*[0-9]+' \
+        "$registry" "$validator" "$review" "$pr_workflow" \
+        "$heavy_workflow" "$historical_workflow" >/dev/null
+    then
+      echo "Phase 14 opening found a manually maintained target total."
+      exit 1
+    fi
+
+    guard_body="$(
+      sed -n \
+        '/^guard-cranelift-phase14-opening-contract:/,/^guard-cranelift-differential-family family:/p' \
+        justfile
+    )"
+    if printf '%s\n' "$guard_body" |
+       rg -n \
+         -e '^[[:space:]]+just guard-cranelift-phase13-close([[:space:]]|$)' \
+         -e '^[[:space:]]+just guard-cranelift-differential-family([[:space:]]|$)' \
+         -e '^[[:space:]]+just guard-cranelift-historical-full([[:space:]]|$)' \
+         -e '^[[:space:]]+bash scripts/phase13_registry_differential\.sh([[:space:]]|$)' \
+         -e '^[[:space:]]+\./gust([[:space:]]|$)' \
+         -e '^[[:space:]]+(cargo|cc|gcc|clang|make)([[:space:]]|$)' \
+         >/dev/null
+    then
+      echo "Phase 14 opening must consume semantic summaries without replaying compiler, Level 2, Level 3, native, or artifact evidence."
+      exit 1
+    fi
+
+    echo "✅ Phase 14 opening inventory passed: stable rows, parent traceability, target applicability, fixture pairs, residual rebase, and planned CI families are registry-owned without behavior or workflow-matrix expansion."
+
 guard-cranelift-differential-family family:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -13416,6 +13555,7 @@ guard-cranelift-contract-fast:
     echo "⚡ Running the current local Level 1 Cranelift contracts."
     just guard-cranelift-phase12-5-close
     just guard-cranelift-phase13-close
+    just guard-cranelift-phase14-opening-contract
 
 guard-cranelift-historical-full:
     #!/usr/bin/env bash
@@ -14700,7 +14840,12 @@ guard-cranelift-phase12-5-close:
       "$legacy_differential_harness" >/dev/null
 
     rg -n -F "$closure_status" "$registry_json" >/dev/null
-    rg -n -F '"current_phase": "phase13"' "$registry_json" >/dev/null
+    if ! rg -n -F '"current_phase": "phase13"' "$registry_json" >/dev/null &&
+       ! rg -n -F '"current_phase": "phase14"' "$registry_json" >/dev/null
+    then
+      echo "Phase 12.5 closure must remain available to Phase 13 or Phase 14."
+      exit 1
+    fi
     rg -n -x -F "CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_STATUS: $closure_status" "$inventory_doc" >/dev/null
     rg -n -x -F "phase12_5_closure_status: $closure_status" "$inventory_doc" >/dev/null
     rg -n -x -F 'phase12_5_next_patch: patch13_1_capability_and_deferral_contract' "$inventory_doc" >/dev/null
@@ -15012,7 +15157,7 @@ guard-cranelift-registry-schema:
 
 
     authority_count="$(
-      rg -l -F '"registry_status": "phase13_closed_deferred_registry_parity_expansion"'         scripts docs compiler 2>/dev/null |
+      rg -l -F '"registry_status": "phase14_opening_inventory_ready"'         scripts docs compiler 2>/dev/null |
         wc -l |
         tr -d ' '
     )"
@@ -15024,7 +15169,7 @@ guard-cranelift-registry-schema:
     python3 "$validator" validate
     python3 "$validator" verify-phase11-closure
 
-    echo "✅ Canonical Cranelift registry schema and semantic closures passed; the scoped Phase 13 closure is registry-owned and totals are projector-derived."
+    echo "✅ Canonical Cranelift registry schema passed: Phase 13 remains semantically closed and the Phase 14 opening is registry-owned with projector-derived totals."
 
 guard-cranelift-ci-family-projection:
     #!/usr/bin/env bash
@@ -15075,9 +15220,9 @@ guard-cranelift-ci-family-projection:
 guard-cranelift-registry-projection:
     #!/usr/bin/env bash
     set -euo pipefail
-    echo "🔒 Checking canonical registry and Phase 13 generated projections..."
+    echo "🔒 Checking canonical registry, Phase 13, and Phase 14 generated projections..."
     python3 scripts/cranelift_registry.py check-projection
-    echo "✅ Registry projections are current: totals, tables, semantic closure summaries, and the Phase 13 final review are derived from JSON."
+    echo "✅ Registry projections are current: totals, semantic closure summaries, the Phase 13 final review, and the Phase 14 opening review are derived from JSON."
 
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
     #!/usr/bin/env bash

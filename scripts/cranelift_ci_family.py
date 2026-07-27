@@ -11,9 +11,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 REGISTRY = ROOT / "scripts/cranelift_feature_registry.json"
 
-# This is the single runner mapping. The stable family set is derived from
-# Phase 11 rows; migrated Phase 13 rows join their existing family without
-# creating a new workflow matrix.
+# This is the single active runner mapping. The stable family set is derived
+# from Phase 11 rows; migrated Phase 13 rows join their existing family without
+# creating a new workflow matrix. Phase 14 opening families are planning-only
+# until a later capability patch migrates them and explicitly extends this map.
 RUNNERS = (
     (
         "scalars",
@@ -257,6 +258,14 @@ def validate_registry_projection(registry):
 
     for entry in registry["entries"]:
         family = entry.get("ci_family")
+        if entry.get("origin_phase") == "phase14":
+            require(
+                entry.get("status") == "candidate_deferred"
+                and entry.get("route_owner") == "deferred"
+                and family not in active,
+                f"{entry.get('id', '<unknown>')}: Phase 14 opening family must remain a planned inactive family",
+            )
+            continue
         require(
             family in active,
             f"{entry.get('id', '<unknown>')}: CI family {family!r} is not active in the stable family set",
