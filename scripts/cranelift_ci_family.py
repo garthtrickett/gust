@@ -14,54 +14,69 @@ REGISTRY = ROOT / "scripts/cranelift_feature_registry.json"
 # This is the single active runner mapping. The stable family set is derived
 # from Phase 11 rows plus newly migrated Phase 14 families. Migrated Phase 13
 # rows continue to join their inherited families without creating workflow rows.
+#
+# The optional post-focused guard belongs to the evidence route for that family.
+# Phase 11/13 families use the generic Phase 13 source differential after their
+# focused guard. Phase 14 primitive layout parity already owns its generated
+# request, worker, and MIR-to-C witnesses, so it must not be rerouted through
+# the Phase 13 generic source-to-MIR capability planner.
 RUNNERS = (
     (
         "scalars",
         "guard-cranelift-phase13-scalar-expression-parity",
         "PHASE13_SCALAR_EXPRESSION_SKIP_DYNAMIC",
+        "guard-cranelift-phase13-composition-differential",
     ),
     (
         "locals",
         "guard-cranelift-phase13-multiple-locals-assignments-parity",
         "PHASE13_MULTIPLE_LOCALS_SKIP_DYNAMIC",
+        "guard-cranelift-phase13-composition-differential",
     ),
     (
         "cfg",
         "guard-cranelift-phase13-nested-structured-cfg-parity",
         "PHASE13_NESTED_STRUCTURED_CFG_SKIP_DYNAMIC",
+        "guard-cranelift-phase13-composition-differential",
     ),
     (
         "block-params",
         "guard-cranelift-phase13-general-loop-parity",
         "PHASE13_GENERAL_LOOP_SKIP_DYNAMIC",
+        "guard-cranelift-phase13-composition-differential",
     ),
     (
         "direct-calls",
         "guard-cranelift-phase13-direct-call-graph-parity",
         "PHASE13_DIRECT_CALL_GRAPH_SKIP_DYNAMIC",
+        "guard-cranelift-phase13-composition-differential",
     ),
     (
         "imports",
         "guard-cranelift-phase13-broader-imported-runtime-calls-parity",
         "PHASE13_BROADER_IMPORTED_RUNTIME_CALLS_SKIP_DYNAMIC",
+        "guard-cranelift-phase13-composition-differential",
     ),
     (
         "metadata-diagnostics",
         "guard-cranelift-phase13-source-metadata-parity",
         "PHASE13_SOURCE_METADATA_SKIP_DYNAMIC",
+        "guard-cranelift-phase13-composition-differential",
     ),
     (
         "primitive-layout",
         "guard-cranelift-phase14-primitive-layout-parity",
         "PHASE14_PRIMITIVE_LAYOUT_SKIP_DYNAMIC",
+        None,
     ),
 )
 RUNNER_BY_FAMILY = {
     family: {
         "static_guard": static_guard,
         "skip_dynamic_env": skip_dynamic_env,
+        "post_focused_guard": post_focused_guard,
     }
-    for family, static_guard, skip_dynamic_env in RUNNERS
+    for family, static_guard, skip_dynamic_env, post_focused_guard in RUNNERS
 }
 
 
@@ -148,7 +163,7 @@ def ordered_active_families(registry):
         "Registry-derived CI family projection differs from the runner mapping: "
         f"registry_only={sorted(active - mapped)} mapping_only={sorted(mapped - active)}",
     )
-    return [family for family, _, _ in RUNNERS]
+    return [family for family, _, _, _ in RUNNERS]
 
 
 def selected_rows(registry, family, migrated_only=False):
@@ -541,17 +556,20 @@ def run_focused(registry, family):
 
 
 def run_family(registry, family):
+    runner = validate_family(registry, family)
     run_focused(registry, family)
-    completed = subprocess.run(
-        ["just", "guard-cranelift-phase13-composition-differential", family],
-        cwd=ROOT,
-        check=False,
-    )
-    if completed.returncode != 0:
-        raise Error(
-            f"Registry-derived CI family {family!r} differential cases failed "
-            f"with exit code {completed.returncode}"
+    post_focused_guard = runner["post_focused_guard"]
+    if post_focused_guard is not None:
+        completed = subprocess.run(
+            ["just", post_focused_guard, family],
+            cwd=ROOT,
+            check=False,
         )
+        if completed.returncode != 0:
+            raise Error(
+                f"Registry-derived CI family {family!r} post-focused evidence "
+                f"failed with exit code {completed.returncode}"
+            )
     print(f"✅ Cranelift CI family runner passed: {family}")
 
 
