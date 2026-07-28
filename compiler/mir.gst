@@ -139,7 +139,7 @@ type MirValue[ctx] enum {
     },
     IntegerConvert {
         operand: Index[MirValue[ctx], ctx],
-        conversion: MirIntegerConversionReference[ctx],
+        conversion: Index[MirIntegerConversionReference[ctx], ctx],
         value_type: str,
         span: token.Span
     }

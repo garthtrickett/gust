@@ -90,13 +90,18 @@ func verify_canonical_mir(conversion_table: conversion.MirIntegerConversionTable
         span,
         ctx
     );
-    if std.str_eq(mir.mir_debug_value_kind(converted), "MirValue.IntegerConvert") == 0 ||
-       std.str_eq(
-           mir.mir_debug_integer_conversion_kind(converted.IntegerConvert.conversion.conversion_kind),
-           "sign_extend"
-       ) == 0
-    {
+    if std.str_eq(mir.mir_debug_value_kind(converted), "MirValue.IntegerConvert") == 0 {
         fail("Integer conversion smoke: explicit MIR conversion operation drifted");
+    }
+    unsafe {
+        mut converted_reference: mir.MirIntegerConversionReference[ctx] := ctx[converted.IntegerConvert.conversion];
+        if std.str_eq(
+            mir.mir_debug_integer_conversion_kind(converted_reference.conversion_kind),
+            "sign_extend"
+        ) == 0
+        {
+            fail("Integer conversion smoke: explicit MIR conversion operation drifted");
+        }
     }
 }
 
