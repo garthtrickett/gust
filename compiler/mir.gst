@@ -1203,11 +1203,13 @@ func mir_make_value_call(callee: str, args: Index[std.Vector[MirValue[ctx], ctx]
 }
 
 func mir_make_value_integer_convert(operand: Index[MirValue[ctx], ctx], conversion_reference: MirIntegerConversionReference[ctx], value_type: str, span: token.Span, ctx: &Arena) MirValue[ctx] {
+    mut conversion_reference_idx: Index[MirIntegerConversionReference[ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(conversion_reference_idx, conversion_reference);
     mut value: MirValue[ctx];
     unsafe {
         value.tag = 5; // IntegerConvert
         value.IntegerConvert.operand = operand;
-        value.IntegerConvert.conversion = conversion_reference;
+        value.IntegerConvert.conversion = conversion_reference_idx;
         value.IntegerConvert.value_type = std.Clone(ctx, value_type);
         value.IntegerConvert.span = span;
     }
