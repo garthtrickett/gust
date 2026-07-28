@@ -1,0 +1,5 @@
+format: gust.compiler_integer_conversion_mir.v1
+target_triple:
+conversion_count: 1
+conversion_0_kind: implicit
+conversion_0_policy:

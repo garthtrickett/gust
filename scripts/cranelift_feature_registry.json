@@ -1,8 +1,8 @@
 {
   "schema": "scripts/cranelift_feature_registry.schema.json",
   "schema_version": 1,
-  "registry_version": 10,
-  "registry_status": "phase14_primitive_layout_ready",
+  "registry_version": 11,
+  "registry_status": "phase14_integer_conversion_ready",
   "current_phase": "phase14",
   "closed_phase_versions": {
     "phase11": "phase11_closed_registry_backed_feature_parity_migration",
@@ -786,7 +786,7 @@
   },
   "phase14_layout_authority": {
     "version": "phase14_compiler_owned_layout_authority_v1",
-    "status": "consumed_by_patch14_2",
+    "status": "consumed_by_patch14_3",
     "authority_owner": "compiler/mir_layout.gst",
     "table_format": "gust.compiler_layout_table.v2",
     "semantic_types": [
@@ -829,12 +829,12 @@
       "no_runtime_hard_coded_duplicate_offsets",
       "no_diagnostic_layout_recomputation"
     ],
-    "behavior_policy": "authority_transport_and_primitive_layout_consumption_no_conversion_pointer_or_memory_capability_migration",
-    "next_patch": "14.3"
+    "behavior_policy": "authority_transport_primitive_layout_and_integer_conversion_consumption_no_pointer_or_memory_capability_migration",
+    "next_patch": "14.4"
   },
   "phase14_primitive_layout": {
     "version": "phase14_declared_targets_and_primitive_layout_v1",
-    "status": "ready_for_patch14_3",
+    "status": "consumed_by_patch14_3",
     "authority_owner": "compiler/mir_primitive_layout.gst",
     "layout_table_format": "gust.compiler_layout_table.v2",
     "normalization_policy": "compiler_normalizes_declared_aliases_before_layout_selection_unknown_targets_reject_before_driver_discovery",
@@ -1005,8 +1005,325 @@
       "invalid_boolean_value",
       "request_target_layout_disagreement"
     ],
-    "boundary_policy": "primitive_representation_only_no_signed_unsigned_conversion_pointer_stack_slot_load_store_string_array_struct_enum_or_aggregate_flow_migration",
-    "next_patch": "14.3"
+    "boundary_policy": "primitive_representation_and_integer_conversion_active_no_pointer_stack_slot_load_store_string_array_struct_enum_or_aggregate_flow_migration",
+    "next_patch": "14.4"
+  },
+  "phase14_integer_conversions": {
+    "version": "phase14_signed_unsigned_width_conversion_rules_v1",
+    "status": "ready_for_patch14_4",
+    "authority_owner": "compiler/mir_integer_conversion.gst",
+    "conversion_table_format": "gust.compiler_integer_conversion_table.v1",
+    "source_conversion_forms": [
+      "explicit_checked_numeric_conversion",
+      "explicit_wrapping_numeric_conversion",
+      "explicit_truncate_low_bits",
+      "explicit_same_width_bit_reinterpretation",
+      "explicit_boolean_numeric_conversion",
+      "implicit_numeric_conversion_rejected"
+    ],
+    "conversion_kinds": [
+      "sign_extend",
+      "zero_extend",
+      "truncate",
+      "checked_numeric",
+      "wrapping_numeric",
+      "bit_reinterpret",
+      "bool_to_integer",
+      "integer_to_bool"
+    ],
+    "selected_rules": [
+      {
+        "rule_name": "sign_extend_i32_i64",
+        "conversion_kind": "sign_extend",
+        "source_type_id": "type:gust:i32",
+        "destination_type_id": "type:gust:i64",
+        "source_width_policy": "fixed_32",
+        "destination_width_policy": "fixed_64",
+        "source_signedness": "signed",
+        "destination_signedness": "signed",
+        "policy": "explicit_sign_extension",
+        "success_reason_code": "conversion_value_valid",
+        "failure_reason_code": "conversion_width_mismatch",
+        "target_applicability": "all_declared_targets"
+      },
+      {
+        "rule_name": "zero_extend_u32_u64",
+        "conversion_kind": "zero_extend",
+        "source_type_id": "type:gust:u32",
+        "destination_type_id": "type:gust:u64",
+        "source_width_policy": "fixed_32",
+        "destination_width_policy": "fixed_64",
+        "source_signedness": "unsigned",
+        "destination_signedness": "unsigned",
+        "policy": "explicit_zero_extension",
+        "success_reason_code": "conversion_value_valid",
+        "failure_reason_code": "conversion_width_mismatch",
+        "target_applicability": "all_declared_targets"
+      },
+      {
+        "rule_name": "truncate_i64_i32",
+        "conversion_kind": "truncate",
+        "source_type_id": "type:gust:i64",
+        "destination_type_id": "type:gust:i32",
+        "source_width_policy": "fixed_64",
+        "destination_width_policy": "fixed_32",
+        "source_signedness": "signed",
+        "destination_signedness": "signed",
+        "policy": "explicit_truncate_low_bits",
+        "success_reason_code": "conversion_value_valid",
+        "failure_reason_code": "conversion_narrowing_policy_required",
+        "target_applicability": "all_declared_targets"
+      },
+      {
+        "rule_name": "truncate_u64_u32",
+        "conversion_kind": "truncate",
+        "source_type_id": "type:gust:u64",
+        "destination_type_id": "type:gust:u32",
+        "source_width_policy": "fixed_64",
+        "destination_width_policy": "fixed_32",
+        "source_signedness": "unsigned",
+        "destination_signedness": "unsigned",
+        "policy": "explicit_truncate_low_bits",
+        "success_reason_code": "conversion_value_valid",
+        "failure_reason_code": "conversion_narrowing_policy_required",
+        "target_applicability": "all_declared_targets"
+      },
+      {
+        "rule_name": "checked_i64_i32",
+        "conversion_kind": "checked_numeric",
+        "source_type_id": "type:gust:i64",
+        "destination_type_id": "type:gust:i32",
+        "source_width_policy": "fixed_64",
+        "destination_width_policy": "fixed_32",
+        "source_signedness": "signed",
+        "destination_signedness": "signed",
+        "policy": "checked_destination_range",
+        "success_reason_code": "conversion_value_valid",
+        "failure_reason_code": "conversion_out_of_range",
+        "target_applicability": "all_declared_targets"
+      },
+      {
+        "rule_name": "checked_u64_u32",
+        "conversion_kind": "checked_numeric",
+        "source_type_id": "type:gust:u64",
+        "destination_type_id": "type:gust:u32",
+        "source_width_policy": "fixed_64",
+        "destination_width_policy": "fixed_32",
+        "source_signedness": "unsigned",
+        "destination_signedness": "unsigned",
+        "policy": "checked_destination_range",
+        "success_reason_code": "conversion_value_valid",
+        "failure_reason_code": "conversion_out_of_range",
+        "target_applicability": "all_declared_targets"
+      },
+      {
+        "rule_name": "checked_i32_u32",
+        "conversion_kind": "checked_numeric",
+        "source_type_id": "type:gust:i32",
+        "destination_type_id": "type:gust:u32",
+        "source_width_policy": "fixed_32",
+        "destination_width_policy": "fixed_32",
+        "source_signedness": "signed",
+        "destination_signedness": "unsigned",
+        "policy": "checked_destination_range",
+        "success_reason_code": "conversion_value_valid",
+        "failure_reason_code": "conversion_negative_to_unsigned",
+        "target_applicability": "all_declared_targets"
+      },
+      {
+        "rule_name": "checked_u32_i32",
+        "conversion_kind": "checked_numeric",
+        "source_type_id": "type:gust:u32",
+        "destination_type_id": "type:gust:i32",
+        "source_width_policy": "fixed_32",
+        "destination_width_policy": "fixed_32",
+        "source_signedness": "unsigned",
+        "destination_signedness": "signed",
+        "policy": "checked_destination_range",
+        "success_reason_code": "conversion_value_valid",
+        "failure_reason_code": "conversion_unsigned_to_signed_out_of_range",
+        "target_applicability": "all_declared_targets"
+      },
+      {
+        "rule_name": "wrapping_i32_u32",
+        "conversion_kind": "wrapping_numeric",
+        "source_type_id": "type:gust:i32",
+        "destination_type_id": "type:gust:u32",
+        "source_width_policy": "fixed_32",
+        "destination_width_policy": "fixed_32",
+        "source_signedness": "signed",
+        "destination_signedness": "unsigned",
+        "policy": "explicit_wrapping_modulo_destination_width",
+        "success_reason_code": "conversion_value_valid",
+        "failure_reason_code": "conversion_unsupported_width",
+        "target_applicability": "all_declared_targets"
+      },
+      {
+        "rule_name": "wrapping_u32_i32",
+        "conversion_kind": "wrapping_numeric",
+        "source_type_id": "type:gust:u32",
+        "destination_type_id": "type:gust:i32",
+        "source_width_policy": "fixed_32",
+        "destination_width_policy": "fixed_32",
+        "source_signedness": "unsigned",
+        "destination_signedness": "signed",
+        "policy": "explicit_wrapping_modulo_destination_width",
+        "success_reason_code": "conversion_value_valid",
+        "failure_reason_code": "conversion_unsupported_width",
+        "target_applicability": "all_declared_targets"
+      },
+      {
+        "rule_name": "reinterpret_i32_u32",
+        "conversion_kind": "bit_reinterpret",
+        "source_type_id": "type:gust:i32",
+        "destination_type_id": "type:gust:u32",
+        "source_width_policy": "fixed_32",
+        "destination_width_policy": "fixed_32",
+        "source_signedness": "signed",
+        "destination_signedness": "unsigned",
+        "policy": "explicit_same_width_bit_reinterpretation",
+        "success_reason_code": "conversion_value_valid",
+        "failure_reason_code": "conversion_width_mismatch",
+        "target_applicability": "all_declared_targets"
+      },
+      {
+        "rule_name": "reinterpret_u32_i32",
+        "conversion_kind": "bit_reinterpret",
+        "source_type_id": "type:gust:u32",
+        "destination_type_id": "type:gust:i32",
+        "source_width_policy": "fixed_32",
+        "destination_width_policy": "fixed_32",
+        "source_signedness": "unsigned",
+        "destination_signedness": "signed",
+        "policy": "explicit_same_width_bit_reinterpretation",
+        "success_reason_code": "conversion_value_valid",
+        "failure_reason_code": "conversion_width_mismatch",
+        "target_applicability": "all_declared_targets"
+      },
+      {
+        "rule_name": "bool_to_i32",
+        "conversion_kind": "bool_to_integer",
+        "source_type_id": "type:gust:bool",
+        "destination_type_id": "type:gust:i32",
+        "source_width_policy": "fixed_8",
+        "destination_width_policy": "fixed_32",
+        "source_signedness": "not_applicable",
+        "destination_signedness": "signed",
+        "policy": "canonical_bool_zero_or_one",
+        "success_reason_code": "conversion_value_valid",
+        "failure_reason_code": "conversion_invalid_boolean_value",
+        "target_applicability": "all_declared_targets"
+      },
+      {
+        "rule_name": "i32_to_bool",
+        "conversion_kind": "integer_to_bool",
+        "source_type_id": "type:gust:i32",
+        "destination_type_id": "type:gust:bool",
+        "source_width_policy": "fixed_32",
+        "destination_width_policy": "fixed_8",
+        "source_signedness": "signed",
+        "destination_signedness": "not_applicable",
+        "policy": "checked_canonical_bool_zero_or_one",
+        "success_reason_code": "conversion_value_valid",
+        "failure_reason_code": "conversion_invalid_boolean_value",
+        "target_applicability": "all_declared_targets"
+      },
+      {
+        "rule_name": "i32_to_isize",
+        "conversion_kind": "target_selected_sign_or_checked",
+        "source_type_id": "type:gust:i32",
+        "destination_type_id": "type:gust:isize",
+        "source_width_policy": "fixed_32",
+        "destination_width_policy": "target_pointer_width",
+        "source_signedness": "signed",
+        "destination_signedness": "signed",
+        "policy": "target_width_sign_or_checked",
+        "success_reason_code": "conversion_value_valid",
+        "failure_reason_code": "conversion_out_of_range",
+        "target_applicability": "all_declared_targets"
+      },
+      {
+        "rule_name": "u32_to_usize",
+        "conversion_kind": "target_selected_zero_or_checked",
+        "source_type_id": "type:gust:u32",
+        "destination_type_id": "type:gust:usize",
+        "source_width_policy": "fixed_32",
+        "destination_width_policy": "target_pointer_width",
+        "source_signedness": "unsigned",
+        "destination_signedness": "unsigned",
+        "policy": "target_width_zero_or_checked",
+        "success_reason_code": "conversion_value_valid",
+        "failure_reason_code": "conversion_out_of_range",
+        "target_applicability": "all_declared_targets"
+      },
+      {
+        "rule_name": "isize_to_i32",
+        "conversion_kind": "checked_numeric",
+        "source_type_id": "type:gust:isize",
+        "destination_type_id": "type:gust:i32",
+        "source_width_policy": "target_pointer_width",
+        "destination_width_policy": "fixed_32",
+        "source_signedness": "signed",
+        "destination_signedness": "signed",
+        "policy": "target_width_checked_narrowing",
+        "success_reason_code": "conversion_value_valid",
+        "failure_reason_code": "conversion_out_of_range",
+        "target_applicability": "all_declared_targets"
+      },
+      {
+        "rule_name": "usize_to_u32",
+        "conversion_kind": "checked_numeric",
+        "source_type_id": "type:gust:usize",
+        "destination_type_id": "type:gust:u32",
+        "source_width_policy": "target_pointer_width",
+        "destination_width_policy": "fixed_32",
+        "source_signedness": "unsigned",
+        "destination_signedness": "unsigned",
+        "policy": "target_width_checked_narrowing",
+        "success_reason_code": "conversion_value_valid",
+        "failure_reason_code": "conversion_out_of_range",
+        "target_applicability": "all_declared_targets"
+      }
+    ],
+    "constant_folding_policy": "compiler_evaluates_the_same_canonical_rule_and_reason_codes_used_by_runtime_lowering",
+    "runtime_policy": "both_backends_lower_only_from_serialized_canonical_conversion_kind_width_signedness_and_policy",
+    "out_of_range_policy": "checked_numeric_rejects_with_conversion_out_of_range_truncate_and_wrapping_require_explicit_policy",
+    "negative_to_unsigned_policy": "checked_conversion_rejects_with_conversion_negative_to_unsigned_wrapping_requires_explicit_policy",
+    "unsigned_to_signed_policy": "checked_conversion_rejects_out_of_range_with_conversion_unsigned_to_signed_out_of_range",
+    "pointer_sized_policy": "isize_and_usize_width_is_selected_from_the_declared_target_pointer_width_before_rule_selection",
+    "diagnostic_fields": [
+      "source_type",
+      "destination_type",
+      "target",
+      "source_width",
+      "destination_width",
+      "conversion_kind",
+      "policy",
+      "reason_code"
+    ],
+    "migrated_entry_ids": [
+      "p14_target_dependent_conversions"
+    ],
+    "focused_ci_family": "conversions",
+    "level1_guard": "guard-cranelift-phase14-integer-conversion-contract",
+    "level2_guard": "guard-cranelift-phase14-integer-conversion-parity",
+    "composition_contexts": [
+      "comparisons",
+      "locals",
+      "branches",
+      "aggregate_fields"
+    ],
+    "negative_classes": [
+      "unsupported_implicit_conversion",
+      "invalid_boolean_conversion",
+      "narrowing_without_allowed_policy",
+      "pointer_integer_conversion_deferred",
+      "target_dependent_conversion_without_declared_target",
+      "request_target_conversion_disagreement",
+      "conversion_width_mismatch"
+    ],
+    "boundary_policy": "pointer_integer_conversion_remains_deferred_to_pointer_policy_floating_point_conversion_outside_patch",
+    "next_patch": "14.4"
   },
   "residual_snapshots": {
     "phase13": {
@@ -3783,7 +4100,8 @@
         "differential_stderr_policy": "stable_bytes",
         "differential_side_effect_policy": "none",
         "composition_case_ids": [
-          "phase14_composition:declared_targets_primitive_layout"
+          "phase14_composition:declared_targets_primitive_layout",
+          "phase14_composition:integer_conversions_with_layout_and_control_flow"
         ],
         "differential_failure_fixture": "compiler/p14_target_dependent_conversions_deferred_source.gst",
         "composition_cases": [
@@ -3803,7 +4121,8 @@
               "p14_all_target_layout_evidence"
             ]
           }
-        ]
+        ],
+        "phase14_3_composition": "integer_conversions_consume_the_same_target_and_primitive_layout_identity"
       },
       "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
       "current_failure_stage": "none_supported",
@@ -3867,10 +4186,12 @@
         "differential_stderr_policy": "stable_bytes",
         "differential_side_effect_policy": "none",
         "composition_case_ids": [
-          "phase14_composition:declared_targets_primitive_layout"
+          "phase14_composition:declared_targets_primitive_layout",
+          "phase14_composition:integer_conversions_with_layout_and_control_flow"
         ],
         "differential_failure_fixture": "compiler/p14_target_dependent_conversions_deferred_source.gst",
-        "composition_cases": []
+        "composition_cases": [],
+        "phase14_3_composition": "integer_conversions_consume_the_same_target_and_primitive_layout_identity"
       },
       "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
       "current_failure_stage": "none_supported",
@@ -3883,27 +4204,105 @@
       "parent": "phase13_residual:p14_target_dependent_conversions",
       "feature_family": "conversion",
       "ci_family": "conversions",
-      "status": "candidate_deferred",
-      "route_owner": "deferred",
+      "status": "migrated",
+      "route_owner": "generic_canonical_mir",
       "worker_capability_owner": "worker_conversion_lowering",
       "diagnostic_owner": "canonical_mir_conversion_verifier",
-      "source_fixture": "compiler/p14_target_dependent_conversions_deferred_source.gst",
-      "canonical_mir_fixture": "none_rejected_before_canonical_MIR",
-      "differential_case_id": "phase14_opening:p14_target_dependent_conversions",
-      "deferral_reason": "phase14_authority_p14_target_dependent_conversions_awaits_bounded_capability_migration",
-      "future_destination_phase": "phase14",
-      "closure_version": "phase14_compiler_owned_layout_authority_v1",
+      "source_fixture": "compiler/phase14_integer_conversion_source.gst",
+      "canonical_mir_fixture": "compiler/fixtures/native_backend_phase14_integer_conversion_ingestion.mir",
+      "differential_case_id": "phase14_registry_differential:p14_target_dependent_conversions",
+      "deferral_reason": "none_migrated",
+      "future_destination_phase": "none_migrated",
+      "closure_version": "phase14_signed_unsigned_width_conversion_rules_v1",
       "evidence": {
         "opening_record_kind": "phase14_candidate",
         "declared_capability": "target_dependent_signed_unsigned_and_width_conversions",
         "planning_category": "conversions",
         "phase13_closure_dependency": "phase13_closed_deferred_registry_parity_expansion",
-        "behavior_policy": "primitive_layout_only_other_phase14_capabilities_remain_deferred",
+        "behavior_policy": "signed_unsigned_and_width_conversions_migrated_through_compiler_owned_conversion_table",
         "phase14_1_authority": "compiler_owned_layout_authority_and_request_transport_available",
-        "phase14_2_boundary": "not_selected_by_declared_target_and_primitive_layout_patch"
+        "phase14_2_contract": "phase14_declared_targets_and_primitive_layout_v1",
+        "phase14_3_contract": "phase14_signed_unsigned_width_conversion_rules_v1",
+        "selected_conversion_kinds": [
+          "sign_extend",
+          "zero_extend",
+          "truncate",
+          "checked_numeric",
+          "wrapping_numeric",
+          "bit_reinterpret",
+          "bool_to_integer",
+          "integer_to_bool"
+        ],
+        "selected_rule_names": [
+          "sign_extend_i32_i64",
+          "zero_extend_u32_u64",
+          "truncate_i64_i32",
+          "truncate_u64_u32",
+          "checked_i64_i32",
+          "checked_u64_u32",
+          "checked_i32_u32",
+          "checked_u32_i32",
+          "wrapping_i32_u32",
+          "wrapping_u32_i32",
+          "reinterpret_i32_u32",
+          "reinterpret_u32_i32",
+          "bool_to_i32",
+          "i32_to_bool",
+          "i32_to_isize",
+          "u32_to_usize",
+          "isize_to_i32",
+          "usize_to_u32"
+        ],
+        "diagnostic_fields": [
+          "source_type",
+          "destination_type",
+          "target",
+          "source_width",
+          "destination_width",
+          "conversion_kind",
+          "policy",
+          "reason_code"
+        ],
+        "focused_source_fixtures": [
+          "compiler/phase14_integer_conversion_source.gst"
+        ],
+        "negative_source_fixtures": [
+          "compiler/p14_unsupported_implicit_conversion_source.gst",
+          "compiler/p14_invalid_boolean_conversion_source.gst",
+          "compiler/p14_narrowing_without_policy_source.gst",
+          "compiler/p14_pointer_integer_conversion_deferred_source.gst",
+          "compiler/p14_conversion_missing_target_source.gst"
+        ],
+        "malformed_canonical_mir_fixture": "compiler/fixtures/native_backend_phase14_integer_conversion_malformed.mir",
+        "positive_expectation": "exit_47_phase14_integer_conversion",
+        "individual_evidence_guard": "guard-cranelift-phase14-integer-conversion-parity",
+        "differential_stderr_policy": "stable_bytes",
+        "differential_side_effect_policy": "none",
+        "composition_case_ids": [
+          "phase14_composition:integer_conversions_with_layout_and_control_flow"
+        ],
+        "differential_failure_fixture": "compiler/p14_unsupported_implicit_conversion_source.gst",
+        "composition_cases": [
+          {
+            "id": "phase14_composition:integer_conversions_with_layout_and_control_flow",
+            "owner_entry_id": "p14_target_dependent_conversions",
+            "ci_family": "conversions",
+            "source_fixture": "compiler/phase14_integer_conversion_composition_source.gst",
+            "positive_expectation": "exit_48_phase14_integer_conversion_composition",
+            "stderr_policy": "stable_bytes",
+            "side_effect_policy": "none",
+            "failure_fixture": "compiler/p14_narrowing_without_policy_source.gst",
+            "covers_entry_ids": [
+              "p14_target_dependent_conversions",
+              "p14_primitive_scalar_layout",
+              "p14_pointer_sized_integer_layout",
+              "p14_target_layout_model"
+            ]
+          }
+        ]
       },
       "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
-      "current_failure_stage": "before_driver_discovery",
+      "current_failure_stage": "none_supported",
       "positive_future_fixture": "compiler/future/p14_target_dependent_conversions_source.gst",
       "negative_current_fixture": "compiler/p14_target_dependent_conversions_deferred_source.gst"
     },
@@ -3928,9 +4327,9 @@
         "declared_capability": "typed_pointers_and_nullability_rules",
         "planning_category": "pointers_and_nullability",
         "phase13_closure_dependency": "phase13_closed_deferred_registry_parity_expansion",
-        "behavior_policy": "primitive_layout_only_other_phase14_capabilities_remain_deferred",
+        "behavior_policy": "primitive_layout_and_integer_conversion_only_other_phase14_capabilities_remain_deferred",
         "phase14_1_authority": "compiler_owned_layout_authority_and_request_transport_available",
-        "phase14_2_boundary": "not_selected_by_declared_target_and_primitive_layout_patch"
+        "phase14_3_boundary": "not_selected_by_signed_unsigned_width_conversion_patch"
       },
       "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
       "current_failure_stage": "before_driver_discovery",
@@ -3958,9 +4357,9 @@
         "declared_capability": "compiler_owned_stack_slots_and_addressable_locals",
         "planning_category": "stack_slots",
         "phase13_closure_dependency": "phase13_closed_deferred_registry_parity_expansion",
-        "behavior_policy": "primitive_layout_only_other_phase14_capabilities_remain_deferred",
+        "behavior_policy": "primitive_layout_and_integer_conversion_only_other_phase14_capabilities_remain_deferred",
         "phase14_1_authority": "compiler_owned_layout_authority_and_request_transport_available",
-        "phase14_2_boundary": "not_selected_by_declared_target_and_primitive_layout_patch"
+        "phase14_3_boundary": "not_selected_by_signed_unsigned_width_conversion_patch"
       },
       "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
       "current_failure_stage": "before_driver_discovery",
@@ -3988,9 +4387,9 @@
         "declared_capability": "typed_load_store_and_memory_access_validation",
         "planning_category": "loads_and_stores",
         "phase13_closure_dependency": "phase13_closed_deferred_registry_parity_expansion",
-        "behavior_policy": "primitive_layout_only_other_phase14_capabilities_remain_deferred",
+        "behavior_policy": "primitive_layout_and_integer_conversion_only_other_phase14_capabilities_remain_deferred",
         "phase14_1_authority": "compiler_owned_layout_authority_and_request_transport_available",
-        "phase14_2_boundary": "not_selected_by_declared_target_and_primitive_layout_patch"
+        "phase14_3_boundary": "not_selected_by_signed_unsigned_width_conversion_patch"
       },
       "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
       "current_failure_stage": "before_driver_discovery",
@@ -4018,9 +4417,9 @@
         "declared_capability": "string_literal_and_borrowed_string_view_layout",
         "planning_category": "strings_and_string_views",
         "phase13_closure_dependency": "phase13_closed_deferred_registry_parity_expansion",
-        "behavior_policy": "primitive_layout_only_other_phase14_capabilities_remain_deferred",
+        "behavior_policy": "primitive_layout_and_integer_conversion_only_other_phase14_capabilities_remain_deferred",
         "phase14_1_authority": "compiler_owned_layout_authority_and_request_transport_available",
-        "phase14_2_boundary": "not_selected_by_declared_target_and_primitive_layout_patch"
+        "phase14_3_boundary": "not_selected_by_signed_unsigned_width_conversion_patch"
       },
       "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
       "current_failure_stage": "before_driver_discovery",
@@ -4048,9 +4447,9 @@
         "declared_capability": "fixed_array_and_slice_layout",
         "planning_category": "arrays_and_slices",
         "phase13_closure_dependency": "phase13_closed_deferred_registry_parity_expansion",
-        "behavior_policy": "primitive_layout_only_other_phase14_capabilities_remain_deferred",
+        "behavior_policy": "primitive_layout_and_integer_conversion_only_other_phase14_capabilities_remain_deferred",
         "phase14_1_authority": "compiler_owned_layout_authority_and_request_transport_available",
-        "phase14_2_boundary": "not_selected_by_declared_target_and_primitive_layout_patch"
+        "phase14_3_boundary": "not_selected_by_signed_unsigned_width_conversion_patch"
       },
       "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
       "current_failure_stage": "before_driver_discovery",
@@ -4078,9 +4477,9 @@
         "declared_capability": "declared_order_struct_field_layout_alignment_and_padding",
         "planning_category": "structs",
         "phase13_closure_dependency": "phase13_closed_deferred_registry_parity_expansion",
-        "behavior_policy": "primitive_layout_only_other_phase14_capabilities_remain_deferred",
+        "behavior_policy": "primitive_layout_and_integer_conversion_only_other_phase14_capabilities_remain_deferred",
         "phase14_1_authority": "compiler_owned_layout_authority_and_request_transport_available",
-        "phase14_2_boundary": "not_selected_by_declared_target_and_primitive_layout_patch"
+        "phase14_3_boundary": "not_selected_by_signed_unsigned_width_conversion_patch"
       },
       "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
       "current_failure_stage": "before_driver_discovery",
@@ -4108,9 +4507,9 @@
         "declared_capability": "explicit_tag_enum_and_tagged_union_layout",
         "planning_category": "enums_and_tagged_unions",
         "phase13_closure_dependency": "phase13_closed_deferred_registry_parity_expansion",
-        "behavior_policy": "primitive_layout_only_other_phase14_capabilities_remain_deferred",
+        "behavior_policy": "primitive_layout_and_integer_conversion_only_other_phase14_capabilities_remain_deferred",
         "phase14_1_authority": "compiler_owned_layout_authority_and_request_transport_available",
-        "phase14_2_boundary": "not_selected_by_declared_target_and_primitive_layout_patch"
+        "phase14_3_boundary": "not_selected_by_signed_unsigned_width_conversion_patch"
       },
       "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
       "current_failure_stage": "before_driver_discovery",
@@ -4138,9 +4537,9 @@
         "declared_capability": "non_resource_aggregate_values_across_basic_block_boundaries",
         "planning_category": "aggregate_basic_block_transport",
         "phase13_closure_dependency": "phase13_closed_deferred_registry_parity_expansion",
-        "behavior_policy": "primitive_layout_only_other_phase14_capabilities_remain_deferred",
+        "behavior_policy": "primitive_layout_and_integer_conversion_only_other_phase14_capabilities_remain_deferred",
         "phase14_1_authority": "compiler_owned_layout_authority_and_request_transport_available",
-        "phase14_2_boundary": "not_selected_by_declared_target_and_primitive_layout_patch"
+        "phase14_3_boundary": "not_selected_by_signed_unsigned_width_conversion_patch"
       },
       "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
       "current_failure_stage": "before_driver_discovery",
@@ -4204,10 +4603,12 @@
         "differential_stderr_policy": "stable_bytes",
         "differential_side_effect_policy": "none",
         "composition_case_ids": [
-          "phase14_composition:declared_targets_primitive_layout"
+          "phase14_composition:declared_targets_primitive_layout",
+          "phase14_composition:integer_conversions_with_layout_and_control_flow"
         ],
         "differential_failure_fixture": "compiler/p14_target_dependent_conversions_deferred_source.gst",
-        "composition_cases": []
+        "composition_cases": [],
+        "phase14_3_composition": "integer_conversions_consume_the_same_target_and_primitive_layout_identity"
       },
       "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
       "current_failure_stage": "none_supported",

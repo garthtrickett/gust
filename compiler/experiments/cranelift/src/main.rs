@@ -3167,6 +3167,696 @@ fn validate_phase14_primitive_scalar_value(
     Ok(())
 }
 
+const PHASE14_INTEGER_CONVERSION_TABLE_FORMAT_V1: &str =
+    "gust.compiler_integer_conversion_table.v1";
+
+#[derive(Debug, Clone)]
+struct Phase14RequestIntegerConversionRule {
+    rule_id: String,
+    rule_name: String,
+    kind: String,
+    source_type_id: String,
+    source_layout_id: String,
+    destination_type_id: String,
+    destination_layout_id: String,
+    source_width: usize,
+    destination_width: usize,
+    source_signedness: String,
+    destination_signedness: String,
+    policy: String,
+    success_reason_code: String,
+    failure_reason_code: String,
+    target_required: bool,
+}
+
+#[derive(Debug, Clone)]
+struct Phase14RequestIntegerConversionSample {
+    sample_id: String,
+    rule_id: String,
+    rule_name: String,
+    context_kind: String,
+    input_value: i64,
+    expect_success: bool,
+    expected_value: i64,
+    expected_reason_code: String,
+}
+
+#[derive(Debug)]
+struct Phase14RequestIntegerConversionTable {
+    format: String,
+    target_id: String,
+    target_triple: String,
+    rules: Vec<Phase14RequestIntegerConversionRule>,
+    samples: Vec<Phase14RequestIntegerConversionSample>,
+}
+
+impl Phase14RequestIntegerConversionTable {
+    fn legacy_empty(target_triple: &str) -> Self {
+        Self {
+            format: String::new(),
+            target_id: String::new(),
+            target_triple: target_triple.to_string(),
+            rules: Vec::new(),
+            samples: Vec::new(),
+        }
+    }
+}
+
+fn phase14_integer_conversion_kind_is_valid(kind: &str) -> bool {
+    matches!(
+        kind,
+        "sign_extend"
+            | "zero_extend"
+            | "truncate"
+            | "checked_numeric"
+            | "wrapping_numeric"
+            | "bit_reinterpret"
+            | "bool_to_integer"
+            | "integer_to_bool"
+    )
+}
+
+fn phase14_integer_conversion_identity(
+    target_id: &str,
+    kind: &str,
+    source_type_id: &str,
+    destination_type_id: &str,
+    source_width: usize,
+    destination_width: usize,
+    policy: &str,
+) -> String {
+    format!(
+        "conversion:v1:target={target_id}:kind={kind}:source={source_type_id}:destination={destination_type_id}:source_width={source_width}:destination_width={destination_width}:policy={policy}"
+    )
+}
+
+fn parse_phase14_request_integer_conversion_table(
+    cursor: &mut Phase10TextCursor<'_>,
+    request_target_triple: &str,
+    layout_table: &Phase14RequestLayoutTable,
+) -> Result<Phase14RequestIntegerConversionTable, Box<dyn Error>> {
+    let stage = Phase10BackendRequestStage::RequestParse;
+    let kind = Phase10BackendRequestFailureKind::InvalidRequest;
+    let format_name = cursor
+        .take_field("conversion_table_format", false, stage, kind)?
+        .to_string();
+    if format_name != PHASE14_INTEGER_CONVERSION_TABLE_FORMAT_V1 {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::RequestValidation,
+            Phase10BackendRequestFailureKind::ProtocolMismatch,
+            format!(
+                "integer conversion table format expected {PHASE14_INTEGER_CONVERSION_TABLE_FORMAT_V1}, got {format_name}"
+            ),
+        ));
+    }
+    let target_id = cursor
+        .take_field("conversion_target_id", false, stage, kind)?
+        .to_string();
+    let target_triple = cursor
+        .take_field("conversion_target_triple", false, stage, kind)?
+        .to_string();
+    let rule_count = cursor.take_usize_field(
+        "conversion_rule_count",
+        stage,
+        kind,
+    )?;
+    let mut rules = Vec::with_capacity(rule_count);
+    for index in 0..rule_count {
+        let prefix = format!("conversion_rule_{index}");
+        rules.push(Phase14RequestIntegerConversionRule {
+            rule_id: cursor
+                .take_field(&format!("{prefix}_id"), false, stage, kind)?
+                .to_string(),
+            rule_name: cursor
+                .take_field(&format!("{prefix}_name"), false, stage, kind)?
+                .to_string(),
+            kind: cursor
+                .take_field(&format!("{prefix}_kind"), false, stage, kind)?
+                .to_string(),
+            source_type_id: cursor
+                .take_field(
+                    &format!("{prefix}_source_type_id"),
+                    false,
+                    stage,
+                    kind,
+                )?
+                .to_string(),
+            source_layout_id: cursor
+                .take_field(
+                    &format!("{prefix}_source_layout_id"),
+                    false,
+                    stage,
+                    kind,
+                )?
+                .to_string(),
+            destination_type_id: cursor
+                .take_field(
+                    &format!("{prefix}_destination_type_id"),
+                    false,
+                    stage,
+                    kind,
+                )?
+                .to_string(),
+            destination_layout_id: cursor
+                .take_field(
+                    &format!("{prefix}_destination_layout_id"),
+                    false,
+                    stage,
+                    kind,
+                )?
+                .to_string(),
+            source_width: cursor.take_usize_field(
+                &format!("{prefix}_source_width"),
+                stage,
+                kind,
+            )?,
+            destination_width: cursor.take_usize_field(
+                &format!("{prefix}_destination_width"),
+                stage,
+                kind,
+            )?,
+            source_signedness: cursor
+                .take_field(
+                    &format!("{prefix}_source_signedness"),
+                    false,
+                    stage,
+                    kind,
+                )?
+                .to_string(),
+            destination_signedness: cursor
+                .take_field(
+                    &format!("{prefix}_destination_signedness"),
+                    false,
+                    stage,
+                    kind,
+                )?
+                .to_string(),
+            policy: cursor
+                .take_field(&format!("{prefix}_policy"), false, stage, kind)?
+                .to_string(),
+            success_reason_code: cursor
+                .take_field(
+                    &format!("{prefix}_success_reason_code"),
+                    false,
+                    stage,
+                    kind,
+                )?
+                .to_string(),
+            failure_reason_code: cursor
+                .take_field(
+                    &format!("{prefix}_failure_reason_code"),
+                    false,
+                    stage,
+                    kind,
+                )?
+                .to_string(),
+            target_required: phase14_parse_bool_field(
+                cursor,
+                &format!("{prefix}_target_required"),
+            )?,
+        });
+    }
+    let sample_count = cursor.take_usize_field(
+        "conversion_sample_count",
+        stage,
+        kind,
+    )?;
+    let mut samples = Vec::with_capacity(sample_count);
+    for index in 0..sample_count {
+        let prefix = format!("conversion_sample_{index}");
+        samples.push(Phase14RequestIntegerConversionSample {
+            sample_id: cursor
+                .take_field(&format!("{prefix}_id"), false, stage, kind)?
+                .to_string(),
+            rule_id: cursor
+                .take_field(&format!("{prefix}_rule_id"), false, stage, kind)?
+                .to_string(),
+            rule_name: cursor
+                .take_field(&format!("{prefix}_rule_name"), false, stage, kind)?
+                .to_string(),
+            context_kind: cursor
+                .take_field(
+                    &format!("{prefix}_context_kind"),
+                    false,
+                    stage,
+                    kind,
+                )?
+                .to_string(),
+            input_value: cursor.take_i64_field(
+                &format!("{prefix}_input_value"),
+                stage,
+                kind,
+            )?,
+            expect_success: phase14_parse_bool_field(
+                cursor,
+                &format!("{prefix}_expect_success"),
+            )?,
+            expected_value: cursor.take_i64_field(
+                &format!("{prefix}_expected_value"),
+                stage,
+                kind,
+            )?,
+            expected_reason_code: cursor
+                .take_field(
+                    &format!("{prefix}_expected_reason_code"),
+                    false,
+                    stage,
+                    kind,
+                )?
+                .to_string(),
+        });
+    }
+    let table = Phase14RequestIntegerConversionTable {
+        format: format_name,
+        target_id,
+        target_triple,
+        rules,
+        samples,
+    };
+    validate_phase14_request_integer_conversion_table(
+        &table,
+        request_target_triple,
+        layout_table,
+    )?;
+    Ok(table)
+}
+
+#[derive(Debug)]
+struct Phase14IntegerConversionEvaluation {
+    success: bool,
+    value: i64,
+    reason_code: String,
+}
+
+fn phase14_integer_conversion_value_fits(
+    type_id: &str,
+    width: usize,
+    signedness: &str,
+    value: i64,
+) -> bool {
+    if type_id == "type:gust:bool" {
+        return matches!(value, 0 | 1);
+    }
+    if signedness == "unsigned" {
+        if value < 0 {
+            return false;
+        }
+        return width != 32 || value <= 4_294_967_295;
+    }
+    width != 32 || (-2_147_483_648..=2_147_483_647).contains(&value)
+}
+
+fn phase14_integer_conversion_wrap_u32(value: i64) -> i64 {
+    value.rem_euclid(4_294_967_296)
+}
+
+fn phase14_integer_conversion_wrap_i32(value: i64) -> i64 {
+    let value = phase14_integer_conversion_wrap_u32(value);
+    if value >= 2_147_483_648 {
+        value - 4_294_967_296
+    } else {
+        value
+    }
+}
+
+fn phase14_evaluate_integer_conversion(
+    rule: &Phase14RequestIntegerConversionRule,
+    input: i64,
+) -> Phase14IntegerConversionEvaluation {
+    let mut result = Phase14IntegerConversionEvaluation {
+        success: false,
+        value: 0,
+        reason_code: rule.failure_reason_code.clone(),
+    };
+    if !phase14_integer_conversion_value_fits(
+        &rule.source_type_id,
+        rule.source_width,
+        &rule.source_signedness,
+        input,
+    ) {
+        result.reason_code = if rule.source_type_id == "type:gust:bool" {
+            "conversion_invalid_boolean_value".to_string()
+        } else if rule.source_signedness == "unsigned" && input < 0 {
+            "conversion_negative_to_unsigned".to_string()
+        } else {
+            "conversion_source_out_of_range".to_string()
+        };
+        return result;
+    }
+    match rule.kind.as_str() {
+        "sign_extend" | "zero_extend" => {
+            result.success = true;
+            result.value = input;
+            result.reason_code = rule.success_reason_code.clone();
+        }
+        "truncate" | "wrapping_numeric" => {
+            if rule.destination_width != 32 {
+                result.reason_code = "conversion_unsupported_width".to_string();
+            } else {
+                result.success = true;
+                result.value = if rule.destination_signedness == "signed" {
+                    phase14_integer_conversion_wrap_i32(input)
+                } else {
+                    phase14_integer_conversion_wrap_u32(input)
+                };
+                result.reason_code = rule.success_reason_code.clone();
+            }
+        }
+        "checked_numeric" => {
+            if phase14_integer_conversion_value_fits(
+                &rule.destination_type_id,
+                rule.destination_width,
+                &rule.destination_signedness,
+                input,
+            ) {
+                result.success = true;
+                result.value = input;
+                result.reason_code = rule.success_reason_code.clone();
+            } else if rule.destination_signedness == "unsigned" && input < 0 {
+                result.reason_code = "conversion_negative_to_unsigned".to_string();
+            } else if rule.source_signedness == "unsigned"
+                && rule.destination_signedness == "signed"
+            {
+                result.reason_code =
+                    "conversion_unsigned_to_signed_out_of_range".to_string();
+            } else {
+                result.reason_code = "conversion_out_of_range".to_string();
+            }
+        }
+        "bit_reinterpret" => {
+            if rule.source_width != rule.destination_width || rule.source_width != 32 {
+                result.reason_code = "conversion_width_mismatch".to_string();
+            } else {
+                result.success = true;
+                result.value = if rule.destination_signedness == "signed" {
+                    phase14_integer_conversion_wrap_i32(input)
+                } else {
+                    phase14_integer_conversion_wrap_u32(input)
+                };
+                result.reason_code = rule.success_reason_code.clone();
+            }
+        }
+        "bool_to_integer" | "integer_to_bool" => {
+            if matches!(input, 0 | 1) {
+                result.success = true;
+                result.value = input;
+                result.reason_code = rule.success_reason_code.clone();
+            } else {
+                result.reason_code = "conversion_invalid_boolean_value".to_string();
+            }
+        }
+        _ => {
+            result.reason_code = "conversion_kind_not_supported".to_string();
+        }
+    }
+    result
+}
+
+fn phase14_cranelift_integer_conversion_op(
+    rule: &Phase14RequestIntegerConversionRule,
+) -> Result<&'static str, Box<dyn Error>> {
+    Ok(match rule.kind.as_str() {
+        "sign_extend" => "sextend",
+        "zero_extend" => "uextend",
+        "truncate" => "ireduce",
+        "checked_numeric" => "icmp_range_then_convert",
+        "wrapping_numeric" => "ireduce_or_identity",
+        "bit_reinterpret" => "bitcast_same_width",
+        "bool_to_integer" => "bint_canonical_bool",
+        "integer_to_bool" => "icmp_imm_zero_or_one",
+        kind => {
+            return Err(phase10_backend_request_error(
+                Phase10BackendRequestStage::CanonicalMirValidation,
+                Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                format!("unsupported canonical integer conversion kind: {kind}"),
+            ));
+        }
+    })
+}
+
+fn validate_phase14_request_integer_conversion_table(
+    table: &Phase14RequestIntegerConversionTable,
+    request_target_triple: &str,
+    layout_table: &Phase14RequestLayoutTable,
+) -> Result<(), Box<dyn Error>> {
+    let stage = Phase10BackendRequestStage::CanonicalMirValidation;
+    let kind = Phase10BackendRequestFailureKind::InvalidCanonicalMir;
+    if table.format != PHASE14_INTEGER_CONVERSION_TABLE_FORMAT_V1 {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::RequestValidation,
+            Phase10BackendRequestFailureKind::ProtocolMismatch,
+            "integer conversion table format mismatch",
+        ));
+    }
+    if table.target_triple != request_target_triple
+        || table.target_triple != layout_table.target.target_triple
+        || table.target_id != layout_table.target.target_id
+    {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::TargetValidation,
+            Phase10BackendRequestFailureKind::TargetMismatch,
+            "request target, layout target, and integer conversion target disagree",
+        ));
+    }
+    if table.rules.len() != 18 {
+        return Err(phase10_backend_request_error(
+            stage,
+            kind,
+            format!(
+                "integer conversion rule inventory expected 18 rules, got {}",
+                table.rules.len()
+            ),
+        ));
+    }
+    let mut rule_ids = HashSet::new();
+    let mut rule_names = HashSet::new();
+    for rule in &table.rules {
+        if !phase14_integer_conversion_kind_is_valid(&rule.kind)
+            || rule.rule_name.is_empty()
+            || rule.policy.is_empty()
+            || rule.source_width == 0
+            || rule.destination_width == 0
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                format!("invalid integer conversion rule: {}", rule.rule_name),
+            ));
+        }
+        let expected_id = phase14_integer_conversion_identity(
+            &table.target_id,
+            &rule.kind,
+            &rule.source_type_id,
+            &rule.destination_type_id,
+            rule.source_width,
+            rule.destination_width,
+            &rule.policy,
+        );
+        if rule.rule_id != expected_id {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                format!(
+                    "integer conversion rule identity mismatch: {}",
+                    rule.rule_name
+                ),
+            ));
+        }
+        if !rule_ids.insert(rule.rule_id.as_str())
+            || !rule_names.insert(rule.rule_name.as_str())
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "duplicate integer conversion rule identity",
+            ));
+        }
+        let source = layout_table
+            .layouts
+            .iter()
+            .find(|layout| layout.type_id == rule.source_type_id)
+            .ok_or_else(|| {
+                phase10_backend_request_error(
+                    stage,
+                    kind,
+                    format!(
+                        "integer conversion source layout not declared: {}",
+                        rule.source_type_id
+                    ),
+                )
+            })?;
+        let destination = layout_table
+            .layouts
+            .iter()
+            .find(|layout| layout.type_id == rule.destination_type_id)
+            .ok_or_else(|| {
+                phase10_backend_request_error(
+                    stage,
+                    kind,
+                    format!(
+                        "integer conversion destination layout not declared: {}",
+                        rule.destination_type_id
+                    ),
+                )
+            })?;
+        if source.layout_id != rule.source_layout_id
+            || destination.layout_id != rule.destination_layout_id
+            || source.bit_width != rule.source_width
+            || destination.bit_width != rule.destination_width
+            || source.signedness != rule.source_signedness
+            || destination.signedness != rule.destination_signedness
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                format!(
+                    "integer conversion width, signedness, or layout mismatch: {}",
+                    rule.rule_name
+                ),
+            ));
+        }
+        let _source_type = phase14_cranelift_scalar_type(source)?;
+        let _destination_type = phase14_cranelift_scalar_type(destination)?;
+        let _lowering = phase14_cranelift_integer_conversion_op(rule)?;
+        if rule.target_required
+            && !matches!(
+                rule.source_type_id.as_str(),
+                "type:gust:isize" | "type:gust:usize"
+            )
+            && !matches!(
+                rule.destination_type_id.as_str(),
+                "type:gust:isize" | "type:gust:usize"
+            )
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                format!(
+                    "target-required conversion lacks pointer-sized integer: {}",
+                    rule.rule_name
+                ),
+            ));
+        }
+    }
+    if table.samples.len() < 25 {
+        return Err(phase10_backend_request_error(
+            stage,
+            kind,
+            "integer conversion boundary sample inventory is incomplete",
+        ));
+    }
+    let mut sample_ids = HashSet::new();
+    for sample in &table.samples {
+        if !sample_ids.insert(sample.sample_id.as_str()) {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                format!("duplicate integer conversion sample: {}", sample.sample_id),
+            ));
+        }
+        if !matches!(
+            sample.context_kind.as_str(),
+            "comparison" | "local" | "branch" | "aggregate_field"
+        ) {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                format!(
+                    "unsupported integer conversion composition context: {}",
+                    sample.context_kind
+                ),
+            ));
+        }
+        let rule = table
+            .rules
+            .iter()
+            .find(|rule| {
+                rule.rule_id == sample.rule_id && rule.rule_name == sample.rule_name
+            })
+            .ok_or_else(|| {
+                phase10_backend_request_error(
+                    stage,
+                    kind,
+                    format!(
+                        "integer conversion sample references unknown rule: {}",
+                        sample.sample_id
+                    ),
+                )
+            })?;
+        let evaluation = phase14_evaluate_integer_conversion(rule, sample.input_value);
+        if evaluation.success != sample.expect_success
+            || evaluation.value != sample.expected_value
+            || evaluation.reason_code != sample.expected_reason_code
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                format!(
+                    "integer conversion sample expectation mismatch: {}",
+                    sample.sample_id
+                ),
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn phase14_integer_conversion_witness_text(
+    request: &Phase10BackendRequest,
+) -> Result<String, Box<dyn Error>> {
+    let table = &request.integer_conversion_table;
+    validate_phase14_request_integer_conversion_table(
+        table,
+        &request.target_triple,
+        &request.layout_table,
+    )?;
+    let mut output = String::new();
+    output.push_str("integer_conversion_status: valid\n");
+    output.push_str(&format!("target_id: {}\n", table.target_id));
+    output.push_str(&format!("target_triple: {}\n", table.target_triple));
+    output.push_str(&format!("rule_count: {}\n", table.rules.len()));
+    output.push_str(&format!("sample_count: {}\n", table.samples.len()));
+    for sample in &table.samples {
+        let rule = table
+            .rules
+            .iter()
+            .find(|rule| rule.rule_id == sample.rule_id)
+            .ok_or_else(|| {
+                phase10_backend_request_error(
+                    Phase10BackendRequestStage::CanonicalMirValidation,
+                    Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                    format!("missing integer conversion rule: {}", sample.rule_id),
+                )
+            })?;
+        let evaluation = phase14_evaluate_integer_conversion(rule, sample.input_value);
+        output.push_str(&format!(
+            "conversion: {} rule={} kind={} source={} destination={} source_width={} destination_width={} policy={} input={} status={} value={} reason={} context={}\n",
+            sample.sample_id,
+            rule.rule_name,
+            rule.kind,
+            rule.source_type_id,
+            rule.destination_type_id,
+            rule.source_width,
+            rule.destination_width,
+            rule.policy,
+            sample.input_value,
+            if evaluation.success { "success" } else { "failure" },
+            if evaluation.success { evaluation.value } else { 0 },
+            evaluation.reason_code,
+            sample.context_kind,
+        ));
+    }
+    Ok(output)
+}
+
+fn print_phase14_integer_conversion_witness(
+    request_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let request = phase14_load_primitive_layout_request(request_path)?;
+    print!("{}", phase14_integer_conversion_witness_text(&request)?);
+    Ok(())
+}
+
 #[derive(Debug)]
 struct Phase10BackendRequest {
     target_triple: String,
@@ -3174,6 +3864,7 @@ struct Phase10BackendRequest {
     output_path: PathBuf,
     program_mir_bundle_path: PathBuf,
     layout_table: Phase14RequestLayoutTable,
+    integer_conversion_table: Phase14RequestIntegerConversionTable,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -3275,6 +3966,15 @@ fn parse_phase10_backend_request(
     } else {
         Phase14RequestLayoutTable::legacy_unfrozen(&target_triple)
     };
+    let integer_conversion_table = if cursor.has_remaining() {
+        parse_phase14_request_integer_conversion_table(
+            &mut cursor,
+            &target_triple,
+            &layout_table,
+        )?
+    } else {
+        Phase14RequestIntegerConversionTable::legacy_empty(&target_triple)
+    };
     cursor.finish(stage, kind)?;
 
     if !output_path.is_absolute() {
@@ -3305,6 +4005,7 @@ fn parse_phase10_backend_request(
         output_path,
         program_mir_bundle_path,
         layout_table,
+        integer_conversion_table,
     })
 }
 
@@ -7520,6 +8221,15 @@ fn run() -> Result<(), Box<dyn Error>> {
                 value,
             )
         }
+        "phase14-integer-conversion-witness" => {
+            let Some(request_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            print_phase14_integer_conversion_witness(Path::new(&request_path))
+        }
         "phase10-backend-request-compile" => {
             let Some(request_path) = args.next() else {
                 return Err(usage_error().into());
@@ -8734,6 +9444,7 @@ fn usage_error() -> IoError {
             "usage:\n",
             "  gust-cranelift-experiment phase14-primitive-layout-witness <request.native>\n",
             "  gust-cranelift-experiment phase14-primitive-validate-value <request.native> <type_id> <value>\n",
+            "  gust-cranelift-experiment phase14-integer-conversion-witness <request.native>\n",
             "  gust-cranelift-experiment phase10-backend-request-compile <request.native>\n",
             "  gust-cranelift-experiment phase10-backend-request-validate <request.native>\n",
             "  gust-cranelift-experiment phase10-driver-handshake\n",

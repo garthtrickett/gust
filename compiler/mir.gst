@@ -19,6 +19,7 @@
 
 import "token.gst" as token;
 import "mir_layout.gst" as layout;
+import "mir_integer_conversion.gst" as conversion;
 
 type MirTypeLayoutReference[ctx] struct {
     type_id: str,
@@ -33,13 +34,41 @@ type MirPrimitiveScalarReference[ctx] struct {
     signedness: str
 }
 
+type MirIntegerConversionKind enum {
+    SignExtend,
+    ZeroExtend,
+    Truncate,
+    CheckedNumeric,
+    WrappingNumeric,
+    BitReinterpret,
+    BoolToInteger,
+    IntegerToBool
+}
+
+type MirIntegerConversionReference[ctx] struct {
+    rule_id: str,
+    rule_name: str,
+    target_id: str,
+    conversion_kind: MirIntegerConversionKind,
+    source_type_id: str,
+    source_layout_id: str,
+    destination_type_id: str,
+    destination_layout_id: str,
+    source_width: int,
+    destination_width: int,
+    source_signedness: str,
+    destination_signedness: str,
+    policy: str
+}
+
 type MirProgram[ctx] struct {
     functions: Index[std.Vector[MirFunction[ctx], ctx], ctx],
     resource_metadata: Index[std.Vector[MirResourceMetadata[ctx], ctx], ctx],
     provenance_metadata: Index[std.Vector[MirProvenanceMetadata[ctx], ctx], ctx],
     native_boundary_metadata: Index[std.Vector[MirNativeBoundaryMetadata[ctx], ctx], ctx],
     type_layout_references: Index[std.Vector[MirTypeLayoutReference[ctx], ctx], ctx],
-    primitive_scalar_references: Index[std.Vector[MirPrimitiveScalarReference[ctx], ctx], ctx]
+    primitive_scalar_references: Index[std.Vector[MirPrimitiveScalarReference[ctx], ctx], ctx],
+    integer_conversion_references: Index[std.Vector[MirIntegerConversionReference[ctx], ctx], ctx]
 }
 
 type MirFunction[ctx] struct {
@@ -105,6 +134,12 @@ type MirValue[ctx] enum {
     Call {
         callee: str,
         args: Index[std.Vector[MirValue[ctx], ctx], ctx],
+        value_type: str,
+        span: token.Span
+    },
+    IntegerConvert {
+        operand: Index[MirValue[ctx], ctx],
+        conversion: MirIntegerConversionReference[ctx],
         value_type: str,
         span: token.Span
     }
@@ -310,6 +345,13 @@ func mir_empty_primitive_scalar_reference_vector(ctx: &Arena) Index[std.Vector[M
     return references_idx;
 }
 
+func mir_empty_integer_conversion_reference_vector(ctx: &Arena) Index[std.Vector[MirIntegerConversionReference[ctx], ctx], ctx] {
+    mut references: std.Vector[MirIntegerConversionReference[ctx], ctx] := std.VectorNew(ctx);
+    mut references_idx: Index[std.Vector[MirIntegerConversionReference[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(references_idx, references);
+    return references_idx;
+}
+
 func mir_alloc_value(value: MirValue[ctx], ctx: &Arena) Index[MirValue[ctx], ctx] {
     mut value_idx: Index[MirValue[ctx], ctx] := os.ArenaAlloc(ctx);
     ctx.Set(value_idx, value);
@@ -330,6 +372,7 @@ func mir_make_program(ctx: &Arena) MirProgram[ctx] {
     program.native_boundary_metadata = mir_empty_native_boundary_metadata_vector(ctx);
     program.type_layout_references = mir_empty_type_layout_reference_vector(ctx);
     program.primitive_scalar_references = mir_empty_primitive_scalar_reference_vector(ctx);
+    program.integer_conversion_references = mir_empty_integer_conversion_reference_vector(ctx);
     return program;
 }
 
@@ -397,6 +440,104 @@ func mir_program_primitive_scalar_references_are_valid(program: MirProgram[ctx],
         mut prior_index := 0;
         while prior_index < reference_index {
             if std.str_eq(references[prior_index].type_id, reference.type_id) == 1 {
+                return 0;
+            }
+            prior_index = prior_index + 1;
+        }
+        reference_index = reference_index + 1;
+    }
+    return 1;
+}
+
+func mir_integer_conversion_kind_from_name(kind: str) MirIntegerConversionKind {
+    mut result: MirIntegerConversionKind;
+    unsafe {
+        result.tag = 0;
+        if std.str_eq(kind, "zero_extend") == 1 { result.tag = 1; }
+        if std.str_eq(kind, "truncate") == 1 { result.tag = 2; }
+        if std.str_eq(kind, "checked_numeric") == 1 { result.tag = 3; }
+        if std.str_eq(kind, "wrapping_numeric") == 1 { result.tag = 4; }
+        if std.str_eq(kind, "bit_reinterpret") == 1 { result.tag = 5; }
+        if std.str_eq(kind, "bool_to_integer") == 1 { result.tag = 6; }
+        if std.str_eq(kind, "integer_to_bool") == 1 { result.tag = 7; }
+    }
+    return result;
+}
+
+func mir_debug_integer_conversion_kind(kind: MirIntegerConversionKind) str {
+    if kind.tag == 0 { return "sign_extend"; }
+    if kind.tag == 1 { return "zero_extend"; }
+    if kind.tag == 2 { return "truncate"; }
+    if kind.tag == 3 { return "checked_numeric"; }
+    if kind.tag == 4 { return "wrapping_numeric"; }
+    if kind.tag == 5 { return "bit_reinterpret"; }
+    if kind.tag == 6 { return "bool_to_integer"; }
+    if kind.tag == 7 { return "integer_to_bool"; }
+    return "unknown_integer_conversion";
+}
+
+func mir_make_integer_conversion_reference(rule: conversion.MirIntegerConversionRule[ctx], ctx: &Arena) MirIntegerConversionReference[ctx] {
+    mut reference: MirIntegerConversionReference[ctx];
+    reference.rule_id = std.Clone(ctx, rule.rule_id);
+    reference.rule_name = std.Clone(ctx, rule.rule_name);
+    reference.target_id = std.Clone(ctx, rule.target_id);
+    reference.conversion_kind = mir_integer_conversion_kind_from_name(rule.kind);
+    reference.source_type_id = std.Clone(ctx, rule.source_type_id);
+    reference.source_layout_id = std.Clone(ctx, rule.source_layout_id);
+    reference.destination_type_id = std.Clone(ctx, rule.destination_type_id);
+    reference.destination_layout_id = std.Clone(ctx, rule.destination_layout_id);
+    reference.source_width = rule.source_width;
+    reference.destination_width = rule.destination_width;
+    reference.source_signedness = std.Clone(ctx, rule.source_signedness);
+    reference.destination_signedness = std.Clone(ctx, rule.destination_signedness);
+    reference.policy = std.Clone(ctx, rule.policy);
+    return reference;
+}
+
+func mir_program_with_integer_conversion_reference(program: MirProgram[ctx], reference: MirIntegerConversionReference[ctx], ctx: &Arena) MirProgram[ctx] {
+    mut updated := program;
+    mut references: std.Vector[MirIntegerConversionReference[ctx], ctx] := ctx[updated.integer_conversion_references];
+    references.Push(reference);
+    ctx.Set(updated.integer_conversion_references, references);
+    return updated;
+}
+
+func mir_program_integer_conversion_references_are_valid(program: MirProgram[ctx], conversion_table: conversion.MirIntegerConversionTable[ctx], layout_table: layout.MirLayoutTable[ctx], ctx: &Arena) int {
+    if conversion.mir_integer_conversion_table_is_valid(
+        conversion_table,
+        layout_table,
+        ctx
+    ) == 0 {
+        return 0;
+    }
+    mut references: std.Vector[MirIntegerConversionReference[ctx], ctx] := ctx[program.integer_conversion_references];
+    mut reference_index := 0;
+    while reference_index < len(references) {
+        mut reference := references[reference_index];
+        mut query := conversion.mir_integer_conversion_rule(
+            conversion_table,
+            reference.rule_name,
+            ctx
+        );
+        if query.found == 0 ||
+           std.str_eq(query.rule.rule_id, reference.rule_id) == 0 ||
+           std.str_eq(query.rule.target_id, reference.target_id) == 0 ||
+           std.str_eq(query.rule.kind, mir_debug_integer_conversion_kind(reference.conversion_kind)) == 0 ||
+           std.str_eq(query.rule.source_type_id, reference.source_type_id) == 0 ||
+           std.str_eq(query.rule.source_layout_id, reference.source_layout_id) == 0 ||
+           std.str_eq(query.rule.destination_type_id, reference.destination_type_id) == 0 ||
+           std.str_eq(query.rule.destination_layout_id, reference.destination_layout_id) == 0 ||
+           query.rule.source_width != reference.source_width ||
+           query.rule.destination_width != reference.destination_width ||
+           std.str_eq(query.rule.source_signedness, reference.source_signedness) == 0 ||
+           std.str_eq(query.rule.destination_signedness, reference.destination_signedness) == 0 ||
+           std.str_eq(query.rule.policy, reference.policy) == 0
+        {
+            return 0;
+        }
+        mut prior_index := 0;
+        while prior_index < reference_index {
+            if std.str_eq(references[prior_index].rule_id, reference.rule_id) == 1 {
                 return 0;
             }
             prior_index = prior_index + 1;
@@ -1061,6 +1202,18 @@ func mir_make_value_call(callee: str, args: Index[std.Vector[MirValue[ctx], ctx]
     return value;
 }
 
+func mir_make_value_integer_convert(operand: Index[MirValue[ctx], ctx], conversion_reference: MirIntegerConversionReference[ctx], value_type: str, span: token.Span, ctx: &Arena) MirValue[ctx] {
+    mut value: MirValue[ctx];
+    unsafe {
+        value.tag = 5; // IntegerConvert
+        value.IntegerConvert.operand = operand;
+        value.IntegerConvert.conversion = conversion_reference;
+        value.IntegerConvert.value_type = std.Clone(ctx, value_type);
+        value.IntegerConvert.span = span;
+    }
+    return value;
+}
+
 func mir_make_terminator_return_void(span: token.Span, ctx: &Arena) MirTerminator[ctx] {
     mut terminator: MirTerminator[ctx];
     unsafe {
@@ -1209,6 +1362,9 @@ func mir_debug_value_kind(value: MirValue[ctx]) str {
     }
     if value.tag == 4 {
         return "MirValue.Call";
+    }
+    if value.tag == 5 {
+        return "MirValue.IntegerConvert";
     }
     return "MirValue.<unknown>";
 }

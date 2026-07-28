@@ -4,13 +4,13 @@
 
 CRANELIFT_PHASE14_PRIMITIVE_LAYOUT_VIEW_VERSION: 1
 CRANELIFT_PHASE14_PRIMITIVE_LAYOUT_VERSION: phase14_declared_targets_and_primitive_layout_v1
-CRANELIFT_PHASE14_PRIMITIVE_LAYOUT_STATUS: ready_for_patch14_3
+CRANELIFT_PHASE14_PRIMITIVE_LAYOUT_STATUS: consumed_by_patch14_3
 CRANELIFT_PHASE14_PRIMITIVE_LAYOUT_OWNER: compiler/mir_primitive_layout.gst
 CRANELIFT_PHASE14_PRIMITIVE_LAYOUT_TABLE_FORMAT: gust.compiler_layout_table.v2
 CRANELIFT_PHASE14_PRIMITIVE_LAYOUT_PRIMARY_TARGET: x86_64-unknown-linux-gnu
 CRANELIFT_PHASE14_PRIMITIVE_LAYOUT_LEVEL1_GUARD: guard-cranelift-phase14-target-and-primitive-contract
 CRANELIFT_PHASE14_PRIMITIVE_LAYOUT_LEVEL2_GUARD: guard-cranelift-phase14-primitive-layout-parity
-CRANELIFT_PHASE14_PRIMITIVE_LAYOUT_NEXT_PATCH: 14.3
+CRANELIFT_PHASE14_PRIMITIVE_LAYOUT_NEXT_PATCH: 14.4
 
 ## Declared host targets
 
@@ -54,6 +54,6 @@ CRANELIFT_PHASE14_PRIMITIVE_LAYOUT_NEXT_PATCH: 14.3
 
 compiler_emits_one_semantic_witness_per_declared_target_mir_to_c_and_cranelift_consume_the_same_request_local_layout_table
 
-primitive_representation_only_no_signed_unsigned_conversion_pointer_stack_slot_load_store_string_array_struct_enum_or_aggregate_flow_migration
+primitive_representation_and_integer_conversion_active_no_pointer_stack_slot_load_store_string_array_struct_enum_or_aggregate_flow_migration
 
-Canonical boolean memory values are exactly `0` and `1`. Arithmetic conversion policy, pointer semantics, stack storage, loads/stores, strings, arrays, structs, enums, and aggregate flow remain deferred.
+Canonical boolean memory values are exactly `0` and `1`. Patch 14.3 now owns selected integer conversions; pointer semantics, stack storage, loads/stores, strings, arrays, structs, enums, and aggregate flow remain deferred.

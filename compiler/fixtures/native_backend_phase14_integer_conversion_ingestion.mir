@@ -1,0 +1,12 @@
+format: gust.compiler_integer_conversion_mir.v1
+target_triple: x86_64-unknown-linux-gnu
+conversion_count: 8
+conversion_0_kind: sign_extend
+conversion_1_kind: zero_extend
+conversion_2_kind: truncate
+conversion_3_kind: checked_numeric
+conversion_4_kind: wrapping_numeric
+conversion_5_kind: bit_reinterpret
+conversion_6_kind: bool_to_integer
+conversion_7_kind: integer_to_bool
+composition_contexts: comparisons,locals,branches,aggregate_fields

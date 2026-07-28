@@ -20,7 +20,8 @@ TOP_FIELDS = {
     "schema", "schema_version", "registry_version", "registry_status",
     "current_phase", "closed_phase_versions", "closure_snapshots",
     "opening_snapshots", "phase14_layout_authority",
-    "phase14_primitive_layout", "residual_snapshots",
+    "phase14_primitive_layout", "phase14_integer_conversions",
+    "residual_snapshots",
     "planning_categories", "supported_values", "legacy_views", "entries",
 }
 ENTRY_FIELDS = {
@@ -505,7 +506,7 @@ PHASE14_LAYOUT_CONSUMER_FIELDS = {
 PHASE14_LAYOUT_AUTHORITY_VERSION = (
     "phase14_compiler_owned_layout_authority_v1"
 )
-PHASE14_LAYOUT_AUTHORITY_STATUS = "consumed_by_patch14_2"
+PHASE14_LAYOUT_AUTHORITY_STATUS = "consumed_by_patch14_3"
 PHASE14_LAYOUT_TABLE_FORMAT = "gust.compiler_layout_table.v2"
 PHASE14_LAYOUT_TYPES = (
     "MirTargetLayout", "MirTypeLayout", "MirFieldLayout",
@@ -537,8 +538,8 @@ PHASE14_LAYOUT_REQUEST_POLICY = (
     "without_selecting_layout"
 )
 PHASE14_LAYOUT_BEHAVIOR_POLICY = (
-    "authority_transport_and_primitive_layout_consumption_no_conversion_"
-    "pointer_or_memory_capability_migration"
+    "authority_transport_primitive_layout_and_integer_conversion_"
+    "consumption_no_pointer_or_memory_capability_migration"
 )
 
 PHASE14_PRIMITIVE_FIELDS = {
@@ -558,7 +559,7 @@ PHASE14_PRIMITIVE_TYPE_FIELDS = {
     "alignment_policy", "bit_width_policy", "signedness", "validity_kind",
 }
 PHASE14_PRIMITIVE_VERSION = "phase14_declared_targets_and_primitive_layout_v1"
-PHASE14_PRIMITIVE_STATUS = "ready_for_patch14_3"
+PHASE14_PRIMITIVE_STATUS = "consumed_by_patch14_3"
 PHASE14_PRIMITIVE_MIGRATED_IDS = (
     "p14_primitive_scalar_layout",
     "p14_pointer_sized_integer_layout",
@@ -573,6 +574,76 @@ PHASE14_PRIMITIVE_NEGATIVE_CLASSES = (
     "unknown_target", "unsupported_target", "width_mismatch",
     "alignment_mismatch", "invalid_boolean_value",
     "request_target_layout_disagreement",
+)
+
+PHASE14_CONVERSION_FIELDS = {
+    "version", "status", "authority_owner", "conversion_table_format",
+    "source_conversion_forms", "conversion_kinds", "selected_rules",
+    "constant_folding_policy", "runtime_policy", "out_of_range_policy",
+    "negative_to_unsigned_policy", "unsigned_to_signed_policy",
+    "pointer_sized_policy", "diagnostic_fields", "migrated_entry_ids",
+    "focused_ci_family", "level1_guard", "level2_guard",
+    "composition_contexts", "negative_classes", "boundary_policy",
+    "next_patch",
+}
+PHASE14_CONVERSION_RULE_FIELDS = {
+    "rule_name", "conversion_kind", "source_type_id",
+    "destination_type_id", "source_width_policy",
+    "destination_width_policy", "source_signedness",
+    "destination_signedness", "policy", "success_reason_code",
+    "failure_reason_code", "target_applicability",
+}
+PHASE14_CONVERSION_VERSION = (
+    "phase14_signed_unsigned_width_conversion_rules_v1"
+)
+PHASE14_CONVERSION_STATUS = "ready_for_patch14_4"
+PHASE14_CONVERSION_TABLE_FORMAT = (
+    "gust.compiler_integer_conversion_table.v1"
+)
+PHASE14_CONVERSION_MIGRATED_IDS = (
+    "p14_target_dependent_conversions",
+)
+PHASE14_CONVERSION_SOURCE_FORMS = (
+    "explicit_checked_numeric_conversion",
+    "explicit_wrapping_numeric_conversion",
+    "explicit_truncate_low_bits",
+    "explicit_same_width_bit_reinterpretation",
+    "explicit_boolean_numeric_conversion",
+    "implicit_numeric_conversion_rejected",
+)
+PHASE14_CONVERSION_KINDS = (
+    "sign_extend", "zero_extend", "truncate", "checked_numeric",
+    "wrapping_numeric", "bit_reinterpret", "bool_to_integer",
+    "integer_to_bool",
+)
+PHASE14_CONVERSION_RULE_NAMES = (
+    "sign_extend_i32_i64", "zero_extend_u32_u64",
+    "truncate_i64_i32", "truncate_u64_u32",
+    "checked_i64_i32", "checked_u64_u32",
+    "checked_i32_u32", "checked_u32_i32",
+    "wrapping_i32_u32", "wrapping_u32_i32",
+    "reinterpret_i32_u32", "reinterpret_u32_i32",
+    "bool_to_i32", "i32_to_bool", "i32_to_isize",
+    "u32_to_usize", "isize_to_i32", "usize_to_u32",
+)
+PHASE14_CONVERSION_TARGET_SELECTED_KINDS = {
+    "target_selected_sign_or_checked",
+    "target_selected_zero_or_checked",
+}
+PHASE14_CONVERSION_DIAGNOSTIC_FIELDS = (
+    "source_type", "destination_type", "target", "source_width",
+    "destination_width", "conversion_kind", "policy", "reason_code",
+)
+PHASE14_CONVERSION_CONTEXTS = (
+    "comparisons", "locals", "branches", "aggregate_fields",
+)
+PHASE14_CONVERSION_NEGATIVE_CLASSES = (
+    "unsupported_implicit_conversion", "invalid_boolean_conversion",
+    "narrowing_without_allowed_policy",
+    "pointer_integer_conversion_deferred",
+    "target_dependent_conversion_without_declared_target",
+    "request_target_conversion_disagreement",
+    "conversion_width_mismatch",
 )
 
 
@@ -1030,7 +1101,7 @@ def validate_phase14_layout_authority_structure(registry):
     )
     require(
         authority["status"] == PHASE14_LAYOUT_AUTHORITY_STATUS,
-        "Phase 14 layout authority is not ready for Patch 14.2",
+        "Phase 14 layout authority consumption checkpoint drifted",
     )
     require(
         authority["authority_owner"] == "compiler/mir_layout.gst",
@@ -1078,8 +1149,8 @@ def validate_phase14_layout_authority_structure(registry):
         "Phase 14 layout authority behavior boundary drifted",
     )
     require(
-        authority["next_patch"] == "14.3",
-        "Phase 14 layout authority next patch must be 14.3",
+        authority["next_patch"] == "14.4",
+        "Phase 14 layout authority next patch must be 14.4",
     )
     return authority
 
@@ -1182,8 +1253,132 @@ def validate_phase14_primitive_layout_structure(registry):
             "Phase 14 primitive Level 2 guard drifted")
     require(contract["negative_classes"] == list(PHASE14_PRIMITIVE_NEGATIVE_CLASSES),
             "Phase 14 primitive negative inventory drifted")
-    require(contract["next_patch"] == "14.3",
-            "Phase 14 primitive next patch must be 14.3")
+    require(
+        contract["boundary_policy"]
+        == "primitive_representation_and_integer_conversion_active_no_pointer_stack_slot_load_store_string_array_struct_enum_or_aggregate_flow_migration",
+        "Phase 14 primitive boundary policy drifted",
+    )
+    require(contract["next_patch"] == "14.4",
+            "Phase 14 primitive next patch must be 14.4")
+    return contract
+
+
+def validate_phase14_integer_conversion_structure(registry):
+    contract = registry["phase14_integer_conversions"]
+    require(
+        isinstance(contract, dict) and set(contract) == PHASE14_CONVERSION_FIELDS,
+        "Phase 14 integer conversion fields drifted",
+    )
+    require(
+        contract["version"] == PHASE14_CONVERSION_VERSION
+        and contract["status"] == PHASE14_CONVERSION_STATUS,
+        "Phase 14 integer conversion checkpoint drifted",
+    )
+    require(
+        contract["authority_owner"] == "compiler/mir_integer_conversion.gst"
+        and contract["conversion_table_format"] == PHASE14_CONVERSION_TABLE_FORMAT,
+        "Phase 14 integer conversion authority or table format drifted",
+    )
+    require(
+        tuple(contract["source_conversion_forms"])
+        == PHASE14_CONVERSION_SOURCE_FORMS,
+        "Phase 14 source conversion form inventory drifted",
+    )
+    require(
+        tuple(contract["conversion_kinds"]) == PHASE14_CONVERSION_KINDS,
+        "Phase 14 canonical conversion kind inventory drifted",
+    )
+    rules = contract["selected_rules"]
+    require(
+        isinstance(rules, list) and len(rules) == len(PHASE14_CONVERSION_RULE_NAMES),
+        "Phase 14 selected conversion rule count drifted",
+    )
+    names = []
+    semantic_pairs = set()
+    for index, rule in enumerate(rules):
+        context = f"phase14_integer_conversions.selected_rules[{index}]"
+        require(
+            isinstance(rule, dict)
+            and set(rule) == PHASE14_CONVERSION_RULE_FIELDS,
+            f"{context} fields drifted",
+        )
+        name = text(rule["rule_name"], f"{context}.rule_name")
+        require(name not in names, f"{context}: duplicate rule name")
+        names.append(name)
+        source_type = text(rule["source_type_id"], f"{context}.source_type_id")
+        destination_type = text(
+            rule["destination_type_id"], f"{context}.destination_type_id"
+        )
+        require(
+            source_type in PHASE14_PRIMITIVE_TYPE_IDS
+            and destination_type in PHASE14_PRIMITIVE_TYPE_IDS,
+            f"{context}: conversion rule references an undeclared primitive type",
+        )
+        key = (name, source_type, destination_type)
+        require(key not in semantic_pairs, f"{context}: duplicate semantic rule")
+        semantic_pairs.add(key)
+        kind = text(rule["conversion_kind"], f"{context}.conversion_kind")
+        require(
+            kind in PHASE14_CONVERSION_KINDS
+            or kind in PHASE14_CONVERSION_TARGET_SELECTED_KINDS,
+            f"{context}: unsupported conversion kind {kind}",
+        )
+        require(
+            rule["source_signedness"] in {"signed", "unsigned", "not_applicable"}
+            and rule["destination_signedness"]
+            in {"signed", "unsigned", "not_applicable"},
+            f"{context}: invalid signedness",
+        )
+        for field in (
+            "source_width_policy", "destination_width_policy", "policy",
+            "success_reason_code", "failure_reason_code",
+            "target_applicability",
+        ):
+            text(rule[field], f"{context}.{field}")
+    require(
+        tuple(names) == PHASE14_CONVERSION_RULE_NAMES,
+        "Phase 14 selected conversion rule identity order drifted",
+    )
+    for field in (
+        "constant_folding_policy", "runtime_policy", "out_of_range_policy",
+        "negative_to_unsigned_policy", "unsigned_to_signed_policy",
+        "pointer_sized_policy", "boundary_policy",
+    ):
+        text(contract[field], f"phase14_integer_conversions.{field}")
+    require(
+        tuple(contract["diagnostic_fields"])
+        == PHASE14_CONVERSION_DIAGNOSTIC_FIELDS,
+        "Phase 14 integer conversion diagnostic fields drifted",
+    )
+    require(
+        tuple(contract["migrated_entry_ids"])
+        == PHASE14_CONVERSION_MIGRATED_IDS,
+        "Phase 14 integer conversion migrated-row inventory drifted",
+    )
+    require(
+        contract["focused_ci_family"] == "conversions"
+        and contract["level1_guard"]
+        == "guard-cranelift-phase14-integer-conversion-contract"
+        and contract["level2_guard"]
+        == "guard-cranelift-phase14-integer-conversion-parity",
+        "Phase 14 integer conversion CI ownership drifted",
+    )
+    require(
+        tuple(contract["composition_contexts"]) == PHASE14_CONVERSION_CONTEXTS,
+        "Phase 14 integer conversion composition context inventory drifted",
+    )
+    require(
+        tuple(contract["negative_classes"])
+        == PHASE14_CONVERSION_NEGATIVE_CLASSES,
+        "Phase 14 integer conversion negative inventory drifted",
+    )
+    require(
+        contract["boundary_policy"]
+        == "pointer_integer_conversion_remains_deferred_to_pointer_policy_floating_point_conversion_outside_patch",
+        "Phase 14 integer conversion boundary drifted",
+    )
+    require(contract["next_patch"] == "14.4",
+            "Phase 14 integer conversion next patch must be 14.4")
     return contract
 
 
@@ -1538,6 +1733,30 @@ def validate():
         == PHASE14_PRIMITIVE_TYPE_FIELDS,
         "schema Phase 14 primitive type fields drifted",
     )
+    phase14_conversion_schema = definitions.get(
+        "phase14_integer_conversions", {}
+    )
+    require(
+        set(phase14_conversion_schema.get("required", []))
+        == PHASE14_CONVERSION_FIELDS,
+        "schema Phase 14 integer conversion fields drifted",
+    )
+    require(
+        phase14_conversion_schema.get("additionalProperties") is False,
+        "schema Phase 14 integer conversions must reject unknown fields",
+    )
+    phase14_conversion_rule_schema = definitions.get(
+        "phase14_integer_conversion_rule", {}
+    )
+    require(
+        set(phase14_conversion_rule_schema.get("required", []))
+        == PHASE14_CONVERSION_RULE_FIELDS,
+        "schema Phase 14 integer conversion rule fields drifted",
+    )
+    require(
+        phase14_conversion_rule_schema.get("additionalProperties") is False,
+        "schema Phase 14 integer conversion rules must reject unknown fields",
+    )
     residual_schema = schema.get("properties", {}).get("residual_snapshots", {})
     require(
         set(residual_schema.get("required", [])) == {"phase13"},
@@ -1583,9 +1802,9 @@ def validate():
     require(registry["schema"] == "scripts/cranelift_feature_registry.schema.json",
             "registry schema path is not canonical")
     require(registry["schema_version"] == 1, "schema_version must be 1")
-    require(registry["registry_version"] == 10, "registry_version must be 10")
+    require(registry["registry_version"] == 11, "registry_version must be 11")
     require(
-        registry["registry_status"] == "phase14_primitive_layout_ready",
+        registry["registry_status"] == "phase14_integer_conversion_ready",
         "registry status is missing or stale",
     )
     require(registry["current_phase"] == "phase14", "current_phase must be phase14")
@@ -1605,6 +1824,7 @@ def validate():
     validate_phase14_opening_snapshot_structure(registry)
     validate_phase14_layout_authority_structure(registry)
     validate_phase14_primitive_layout_structure(registry)
+    validate_phase14_integer_conversion_structure(registry)
 
     categories = set(unique_strings(registry["planning_categories"], "planning_categories"))
     supported = registry["supported_values"]
@@ -1862,6 +2082,43 @@ def validate():
                     and evidence.get("canonical_boolean_values") == [0, 1],
                     f"{entry_id}: primitive layout evidence drifted",
                 )
+            elif entry_id in PHASE14_CONVERSION_MIGRATED_IDS:
+                require(
+                    closure == PHASE14_CONVERSION_VERSION,
+                    f"{entry_id}: integer conversion checkpoint version drifted",
+                )
+                require(
+                    status == "migrated"
+                    and entry["route_owner"] == "generic_canonical_mir",
+                    f"{entry_id}: selected conversion row must be migrated through canonical MIR",
+                )
+                require(reason == destination == "none_migrated",
+                        f"{entry_id}: migrated conversion row has stale deferral fields")
+                require(entry["current_failure_stage"] == "none_supported",
+                        f"{entry_id}: migrated conversion row has a failure stage")
+                fixture(entry["source_fixture"], f"{entry_id}.source_fixture")
+                fixture(entry["canonical_mir_fixture"],
+                        f"{entry_id}.canonical_mir_fixture")
+                require(
+                    entry["differential_case_id"]
+                    == f"phase14_registry_differential:{entry_id}",
+                    f"{entry_id}: conversion differential identity drifted",
+                )
+                require(
+                    evidence.get("behavior_policy")
+                    == "signed_unsigned_and_width_conversions_migrated_through_compiler_owned_conversion_table"
+                    and evidence.get("phase14_2_contract")
+                    == PHASE14_PRIMITIVE_VERSION
+                    and evidence.get("phase14_3_contract")
+                    == PHASE14_CONVERSION_VERSION
+                    and evidence.get("selected_conversion_kinds")
+                    == list(PHASE14_CONVERSION_KINDS)
+                    and evidence.get("selected_rule_names")
+                    == list(PHASE14_CONVERSION_RULE_NAMES)
+                    and evidence.get("diagnostic_fields")
+                    == list(PHASE14_CONVERSION_DIAGNOSTIC_FIELDS),
+                    f"{entry_id}: integer conversion evidence drifted",
+                )
             else:
                 require(
                     closure == PHASE14_LAYOUT_AUTHORITY_VERSION,
@@ -1889,10 +2146,10 @@ def validate():
                         f"{entry_id}: deferred differential identity drifted")
                 require(
                     evidence.get("behavior_policy")
-                    == "primitive_layout_only_other_phase14_capabilities_remain_deferred"
-                    and evidence.get("phase14_2_boundary")
-                    == "not_selected_by_declared_target_and_primitive_layout_patch",
-                    f"{entry_id}: Patch 14.2 boundary evidence drifted",
+                    == "primitive_layout_and_integer_conversion_only_other_phase14_capabilities_remain_deferred"
+                    and evidence.get("phase14_3_boundary")
+                    == "not_selected_by_signed_unsigned_width_conversion_patch",
+                    f"{entry_id}: Patch 14.3 boundary evidence drifted",
                 )
             phase14.append(entry)
         else:
@@ -2357,6 +2614,13 @@ def verify_phase14_layout_authority(registry):
                 and entry["closure_version"] == PHASE14_PRIMITIVE_VERSION,
                 f"{entry_id}: primitive migration no longer consumes the layout authority",
             )
+        elif entry_id in PHASE14_CONVERSION_MIGRATED_IDS:
+            require(
+                entry["status"] == "migrated"
+                and entry["route_owner"] == "generic_canonical_mir"
+                and entry["closure_version"] == PHASE14_CONVERSION_VERSION,
+                f"{entry_id}: conversion migration no longer consumes the layout authority",
+            )
         else:
             require(
                 entry["status"] == "candidate_deferred"
@@ -2465,8 +2729,8 @@ def verify_phase14_primitive_layout(registry):
     verify_phase14_layout_authority(registry)
     contract = validate_phase14_primitive_layout_structure(registry)
     require(
-        registry["registry_status"] == "phase14_primitive_layout_ready",
-        "Phase 14 registry is not at the primitive-layout checkpoint",
+        registry["registry_status"] == "phase14_integer_conversion_ready",
+        "Phase 14 registry is not at or beyond the primitive-layout checkpoint",
     )
     rows = {entry["id"]: entry for entry in phase_entries(registry, "phase14")}
     for entry_id in PHASE14_PRIMITIVE_MIGRATED_IDS:
@@ -2483,6 +2747,14 @@ def verify_phase14_primitive_layout(registry):
         )
     for entry_id, entry in rows.items():
         if entry_id in PHASE14_PRIMITIVE_MIGRATED_IDS:
+            continue
+        if entry_id in PHASE14_CONVERSION_MIGRATED_IDS:
+            require(
+                entry["status"] == "migrated"
+                and entry["route_owner"] == "generic_canonical_mir"
+                and entry["closure_version"] == PHASE14_CONVERSION_VERSION,
+                f"{entry_id}: later conversion checkpoint drifted",
+            )
             continue
         require(
             entry["status"] == "candidate_deferred"
@@ -2570,8 +2842,171 @@ def verify_phase14_primitive_layout(registry):
         "target_count": len(contract["declared_targets"]),
         "primitive_count": len(contract["primitive_types"]),
         "migrated_count": len(contract["migrated_entry_ids"]),
-        "deferred_count": len(rows) - len(contract["migrated_entry_ids"]),
+        "deferred_count": sum(
+            1 for entry in rows.values()
+            if entry["status"] == "candidate_deferred"
+        ),
         "primary_target": contract["primary_level2_target"],
+        "family": contract["focused_ci_family"],
+    }
+
+
+def verify_phase14_integer_conversions(registry):
+    verify_phase14_primitive_layout(registry)
+    contract = validate_phase14_integer_conversion_structure(registry)
+    require(
+        registry["registry_status"] == "phase14_integer_conversion_ready",
+        "Phase 14 registry is not at the integer-conversion checkpoint",
+    )
+    rows = {entry["id"]: entry for entry in phase_entries(registry, "phase14")}
+    for entry_id in PHASE14_CONVERSION_MIGRATED_IDS:
+        entry = rows[entry_id]
+        require(
+            entry["status"] == "migrated"
+            and entry["route_owner"] == "generic_canonical_mir"
+            and entry["closure_version"] == PHASE14_CONVERSION_VERSION,
+            f"{entry_id}: integer conversion row is not migrated",
+        )
+        require(
+            entry["ci_family"] == contract["focused_ci_family"],
+            f"{entry_id}: integer conversion CI ownership drifted",
+        )
+    for entry_id, entry in rows.items():
+        if entry_id in PHASE14_PRIMITIVE_MIGRATED_IDS + PHASE14_CONVERSION_MIGRATED_IDS:
+            continue
+        require(
+            entry["status"] == "candidate_deferred"
+            and entry["route_owner"] == "deferred"
+            and entry["current_failure_stage"] == "before_driver_discovery",
+            f"{entry_id}: Patch 14.3 migrated an out-of-scope capability",
+        )
+
+    sources = {
+        "authority": ROOT / "compiler/mir_integer_conversion.gst",
+        "mir": ROOT / "compiler/mir.gst",
+        "request": ROOT / "compiler/mir_native_backend_request.gst",
+        "mir_to_c": ROOT / "compiler/mir_integer_conversion_mir_to_c.gst",
+        "diagnostics": ROOT / "compiler/mir_integer_conversion_diagnostics.gst",
+        "worker": ROOT / "compiler/experiments/cranelift/src/main.rs",
+        "smoke": ROOT / "compiler/mir_integer_conversion_smoke_test_entry.gst",
+        "differential": ROOT / "scripts/phase14_integer_conversion_differential.sh",
+    }
+    for owner, path in sources.items():
+        require(
+            path.is_file() and not path.is_symlink(),
+            f"missing regular Phase 14 conversion {owner} source: {path.relative_to(ROOT)}",
+        )
+
+    authority_source = sources["authority"].read_text(encoding="utf-8")
+    for token in (
+        "type MirIntegerConversionRule",
+        "type MirIntegerConversionSample",
+        "type MirIntegerConversionTable",
+        "func mir_integer_conversion_table_for_layout(",
+        "func mir_integer_conversion_select(",
+        "func mir_integer_conversion_evaluate(",
+        "func mir_integer_conversion_table_is_valid(",
+        "func mir_serialize_integer_conversion_table_for_request(",
+        PHASE14_CONVERSION_TABLE_FORMAT,
+        "conversion:v1:target=",
+    ):
+        require(token in authority_source, f"conversion authority is missing: {token}")
+    for kind in PHASE14_CONVERSION_KINDS:
+        require(kind in authority_source,
+                f"conversion authority is missing canonical kind {kind}")
+    for rule_name in PHASE14_CONVERSION_RULE_NAMES:
+        require(rule_name in authority_source,
+                f"conversion authority is missing selected rule {rule_name}")
+
+    mir_source = sources["mir"].read_text(encoding="utf-8")
+    for token in (
+        "type MirIntegerConversionKind enum",
+        "type MirIntegerConversionReference",
+        "integer_conversion_references",
+        "IntegerConvert",
+        "func mir_make_value_integer_convert(",
+        "func mir_program_integer_conversion_references_are_valid(",
+    ):
+        require(token in mir_source, f"canonical MIR conversion model is missing: {token}")
+
+    request_source = sources["request"].read_text(encoding="utf-8")
+    require(
+        "integer_conversion_table: integer_conversion.MirIntegerConversionTable[ctx]"
+        in request_source
+        and "mir_serialize_integer_conversion_table_for_request" in request_source,
+        "native request does not carry the compiler-owned conversion table",
+    )
+
+    c_source = sources["mir_to_c"].read_text(encoding="utf-8")
+    for token in (
+        "mir_integer_conversion_c_source",
+        "gust_convert",
+        "gust_wrap_u32",
+        "gust_fits",
+    ):
+        require(token in c_source, f"MIR-to-C conversion lowering is missing: {token}")
+    require(
+        "(int32_t)" not in c_source and "(uint32_t)" not in c_source,
+        "MIR-to-C must not use host casts as conversion semantic authority",
+    )
+
+    diagnostic_source = sources["diagnostics"].read_text(encoding="utf-8")
+    for field in PHASE14_CONVERSION_DIAGNOSTIC_FIELDS:
+        require(f"{field}=" in diagnostic_source,
+                f"conversion diagnostics are missing field {field}")
+
+    worker_source = sources["worker"].read_text(encoding="utf-8")
+    for token in (
+        "struct Phase14RequestIntegerConversionTable",
+        "fn parse_phase14_request_integer_conversion_table(",
+        "fn validate_phase14_request_integer_conversion_table(",
+        "fn phase14_cranelift_integer_conversion_op(",
+        "phase14-integer-conversion-witness",
+        "sextend", "uextend", "ireduce",
+    ):
+        require(token in worker_source, f"Cranelift conversion consumption is missing: {token}")
+
+    smoke_source = sources["smoke"].read_text(encoding="utf-8")
+    context_tokens = {
+        "comparisons": '"comparison"',
+        "locals": '"local"',
+        "branches": '"branch"',
+        "aggregate_fields": '"aggregate_field"',
+    }
+    for context in PHASE14_CONVERSION_CONTEXTS:
+        require(context_tokens[context] in authority_source,
+                f"conversion authority is missing composition context {context}")
+    negative_tokens = {
+        "unsupported_implicit_conversion": "conversion_unsupported_implicit",
+        "invalid_boolean_conversion": "conversion_invalid_boolean_value",
+        "narrowing_without_allowed_policy": "conversion_narrowing_policy_required",
+        "pointer_integer_conversion_deferred": "conversion_pointer_integer_deferred",
+        "target_dependent_conversion_without_declared_target": "conversion_target_required",
+        "request_target_conversion_disagreement": "request target/conversion disagreement",
+        "conversion_width_mismatch": "conversion_width_mismatch",
+    }
+    differential_source = sources["differential"].read_text(encoding="utf-8")
+    for negative in PHASE14_CONVERSION_NEGATIVE_CLASSES:
+        token = negative_tokens[negative]
+        require(
+            token in smoke_source or token in authority_source
+            or token in differential_source or token in worker_source,
+            f"conversion negative evidence is missing: {negative}",
+        )
+
+    return {
+        "version": contract["version"],
+        "status": contract["status"],
+        "rule_count": len(contract["selected_rules"]),
+        "kind_count": len(contract["conversion_kinds"]),
+        "migrated_count": len(contract["migrated_entry_ids"]),
+        "deferred_count": sum(
+            1 for entry in rows.values()
+            if entry["status"] == "candidate_deferred"
+        ),
+        "target_count": len(
+            registry["phase14_primitive_layout"]["declared_targets"]
+        ),
         "family": contract["focused_ci_family"],
     }
 
@@ -4088,6 +4523,7 @@ def verify_phase13_closure(registry):
             "phase14_opening_inventory_ready",
             "phase14_layout_authority_ready",
             "phase14_primitive_layout_ready",
+            "phase14_integer_conversion_ready",
         },
         "Phase 13 closure registry status drifted",
     )
@@ -5056,7 +5492,7 @@ def render_phase14_layout_authority(registry):
         "",
         "The compiler owns target, type, field, variant, stride, and memory-access layout decisions. Canonical MIR carries layout references, the compiler serializes a request-local layout table, and the worker validates that table without selecting a competing layout.",
         "",
-        "Patch 14.2 consumes this authority for declared targets and primitive scalar layouts only. Conversion, pointer, memory, string, array, struct, enum, and aggregate-flow capabilities remain deferred for bounded later patches.",
+        "Patch 14.3 consumes this authority for declared targets, primitive scalar layouts, and compiler-owned integer conversions. Pointer, memory, string, array, struct, enum, and aggregate-flow capabilities remain deferred for bounded later patches.",
         "",
     ]
     rendered = "\n".join(lines)
@@ -5082,7 +5518,7 @@ def phase14_primitive_layout_summary_lines(registry):
         f"- Primary Level 2 target: `{contract['primary_target']}`",
         f"- Registry-derived focused family: `{contract['family']}`",
         "",
-        "Patch 14.2 freezes target-aware primitive representation. Signed and unsigned conversion semantics remain owned by Patch 14.3.",
+        "Patch 14.2 freezes target-aware primitive representation. Patch 14.3 consumes those layouts for explicit signed, unsigned, and width-conversion semantics.",
         "",
     ]
 
@@ -5160,13 +5596,113 @@ def render_phase14_primitive_layout(registry):
         "",
         contract["boundary_policy"],
         "",
-        "Canonical boolean memory values are exactly `0` and `1`. Arithmetic conversion policy, pointer semantics, stack storage, loads/stores, strings, arrays, structs, enums, and aggregate flow remain deferred.",
+        "Canonical boolean memory values are exactly `0` and `1`. Patch 14.3 now owns selected integer conversions; pointer semantics, stack storage, loads/stores, strings, arrays, structs, enums, and aggregate flow remain deferred.",
         "",
     ]
     rendered = "\n".join(lines)
     for banned in ("SHA256", "SHA-256", "sha256sum"):
         require(banned not in rendered,
                 f"Phase 14 primitive layout view contains banned raw-hash token: {banned}")
+    return rendered
+
+
+def phase14_integer_conversion_summary_lines(registry):
+    contract = verify_phase14_integer_conversions(registry)
+    return [
+        "## Phase 14 signed, unsigned, and width-conversion rules",
+        "",
+        f"- Contract version: `{contract['version']}`",
+        f"- Status: `{contract['status']}`",
+        f"- Declared target count: `{contract['target_count']}`",
+        f"- Canonical conversion kinds: `{contract['kind_count']}`",
+        f"- Selected conversion rules per target: `{contract['rule_count']}`",
+        f"- Migrated opening rows: `{contract['migrated_count']}`",
+        f"- Remaining deferred opening rows: `{contract['deferred_count']}`",
+        f"- Registry-derived focused family: `{contract['family']}`",
+        "",
+        "Patch 14.3 freezes explicit integer conversion operations for constant folding and runtime lowering. Pointer/integer conversion remains deferred to the pointer policy and floating-point conversion remains outside this patch.",
+        "",
+    ]
+
+
+def render_phase14_integer_conversions(registry):
+    summary = verify_phase14_integer_conversions(registry)
+    contract = registry["phase14_integer_conversions"]
+    lines = [
+        "# Cranelift Phase 14 Signed, Unsigned, and Width-Conversion Rules",
+        "",
+        "<!-- Generated by scripts/cranelift_registry.py; do not edit by hand. -->",
+        "",
+        "CRANELIFT_PHASE14_INTEGER_CONVERSION_VIEW_VERSION: 1",
+        f"CRANELIFT_PHASE14_INTEGER_CONVERSION_VERSION: {summary['version']}",
+        f"CRANELIFT_PHASE14_INTEGER_CONVERSION_STATUS: {summary['status']}",
+        f"CRANELIFT_PHASE14_INTEGER_CONVERSION_OWNER: {contract['authority_owner']}",
+        f"CRANELIFT_PHASE14_INTEGER_CONVERSION_TABLE_FORMAT: {contract['conversion_table_format']}",
+        f"CRANELIFT_PHASE14_INTEGER_CONVERSION_LEVEL1_GUARD: {contract['level1_guard']}",
+        f"CRANELIFT_PHASE14_INTEGER_CONVERSION_LEVEL2_GUARD: {contract['level2_guard']}",
+        f"CRANELIFT_PHASE14_INTEGER_CONVERSION_NEXT_PATCH: {contract['next_patch']}",
+        "",
+        "## Declared source forms",
+        "",
+        *[f"- `{name}`" for name in contract["source_conversion_forms"]],
+        "",
+        "## Canonical conversion kinds",
+        "",
+        *[f"- `{name}`" for name in contract["conversion_kinds"]],
+        "",
+        "## Selected target-aware rules",
+        "",
+        "| Rule | Kind | Source | Destination | Source width | Destination width | Policy | Failure reason | Target applicability |",
+        "|---|---|---|---|---|---|---|---|---|",
+    ]
+    for rule in contract["selected_rules"]:
+        lines.append(
+            "| " + " | ".join(
+                cell(rule[field])
+                for field in (
+                    "rule_name", "conversion_kind", "source_type_id",
+                    "destination_type_id", "source_width_policy",
+                    "destination_width_policy", "policy",
+                    "failure_reason_code", "target_applicability",
+                )
+            ) + " |"
+        )
+    lines += [
+        "",
+        "## Diagnostic fields",
+        "",
+        *[f"- `{field}`" for field in contract["diagnostic_fields"]],
+        "",
+        "## Composition contexts",
+        "",
+        *[f"- `{context}`" for context in contract["composition_contexts"]],
+        "",
+        "## Negative classes",
+        "",
+        *[f"- `{name}`" for name in contract["negative_classes"]],
+        "",
+        "## Semantic policies",
+        "",
+        f"- Constant folding: `{contract['constant_folding_policy']}`",
+        f"- Runtime lowering: `{contract['runtime_policy']}`",
+        f"- Out of range: `{contract['out_of_range_policy']}`",
+        f"- Negative to unsigned: `{contract['negative_to_unsigned_policy']}`",
+        f"- Unsigned to signed: `{contract['unsigned_to_signed_policy']}`",
+        f"- Pointer-sized widths: `{contract['pointer_sized_policy']}`",
+        "",
+        "## Boundary",
+        "",
+        contract["boundary_policy"],
+        "",
+        "MIR-to-C and Cranelift consume the same compiler-selected conversion kind, widths, signedness, policy, target identity, and stable reason codes. Neither backend is the semantic authority.",
+        "",
+    ]
+    rendered = "\n".join(lines)
+    for banned in ("SHA256", "SHA-256", "sha256sum"):
+        require(
+            banned not in rendered,
+            f"Phase 14 integer conversion view contains banned raw-hash token: {banned}",
+        )
     return rendered
 
 
@@ -5207,6 +5743,7 @@ def render(registry):
         *phase14_opening_summary_lines(registry),
         *phase14_layout_authority_summary_lines(registry),
         *phase14_primitive_layout_summary_lines(registry),
+        *phase14_integer_conversion_summary_lines(registry),
         "## Registry entries", "",
         "| ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |",
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
@@ -5225,7 +5762,8 @@ def render(registry):
         f"- Phase 13 historical view: `{registry['legacy_views']['phase13']}`",
         f"- Phase 14 opening review: `{registry['legacy_views']['phase14']}`",
         f"- Phase 14 layout authority review: `{phase14_layout_authority_summary_path(registry).relative_to(ROOT)}`",
-        f"- Phase 14 primitive layout review: `{phase14_primitive_layout_summary_path(registry).relative_to(ROOT)}`", "",
+        f"- Phase 14 primitive layout review: `{phase14_primitive_layout_summary_path(registry).relative_to(ROOT)}`",
+        f"- Phase 14 integer conversion review: `{phase14_integer_conversion_summary_path(registry).relative_to(ROOT)}`", "",
         "The JSON registry is authoritative. Generated Markdown is a review artifact, and the legacy Markdown documents remain historical views only.", "",
     ]
     return "\n".join(lines)
@@ -5278,6 +5816,14 @@ def check_phase14_primitive_layout_projection(registry):
     )
 
 
+def check_phase14_integer_conversion_projection(registry):
+    check_rendered_projection(
+        phase14_integer_conversion_summary_path(registry),
+        render_phase14_integer_conversions(registry),
+        "generated Phase 14 integer conversion review",
+    )
+
+
 def check_projection(registry):
     check_rendered_projection(
         summary_path(registry),
@@ -5288,6 +5834,7 @@ def check_projection(registry):
     check_phase14_projection(registry)
     check_phase14_layout_authority_projection(registry)
     check_phase14_primitive_layout_projection(registry)
+    check_phase14_integer_conversion_projection(registry)
 
 
 def summary_path(registry):
@@ -5308,6 +5855,10 @@ def phase14_layout_authority_summary_path(registry):
 
 def phase14_primitive_layout_summary_path(registry):
     return ROOT / "compiler/CRANELIFT_PHASE14_PRIMITIVE_LAYOUT.md"
+
+
+def phase14_integer_conversion_summary_path(registry):
+    return ROOT / "compiler/CRANELIFT_PHASE14_INTEGER_CONVERSIONS.md"
 
 
 def main():
@@ -5337,13 +5888,17 @@ def main():
             "verify-phase14-opening-contract",
             "verify-phase14-layout-authority",
             "verify-phase14-primitive-layout",
+            "verify-phase14-integer-conversions",
             "phase14-primitive-targets",
+            "phase14-conversion-targets",
             "phase14-primitive-primary-target",
+            "phase14-conversion-primary-target",
             "project",
             "check-phase13-projection",
             "check-phase14-projection",
             "check-phase14-layout-authority-projection",
             "check-phase14-primitive-layout-projection",
+            "check-phase14-integer-conversion-projection",
             "check-projection",
         ),
     )
@@ -5392,13 +5947,18 @@ def main():
             verify_phase14_layout_authority(registry)
         elif command == "verify-phase14-primitive-layout":
             verify_phase14_primitive_layout(registry)
-        elif command == "phase14-primitive-targets":
+        elif command == "verify-phase14-integer-conversions":
+            verify_phase14_integer_conversions(registry)
+        elif command in {"phase14-primitive-targets", "phase14-conversion-targets"}:
             contract = validate_phase14_primitive_layout_structure(registry)
             print("\n".join(
                 target["target_triple"] for target in contract["declared_targets"]
             ))
             return 0
-        elif command == "phase14-primitive-primary-target":
+        elif command in {
+            "phase14-primitive-primary-target",
+            "phase14-conversion-primary-target",
+        }:
             contract = validate_phase14_primitive_layout_structure(registry)
             print(contract["primary_level2_target"])
             return 0
@@ -5408,17 +5968,22 @@ def main():
             phase14_path = phase14_summary_path(registry)
             phase14_layout_path = phase14_layout_authority_summary_path(registry)
             phase14_primitive_path = phase14_primitive_layout_summary_path(registry)
+            phase14_conversion_path = phase14_integer_conversion_summary_path(registry)
             canonical_path.parent.mkdir(parents=True, exist_ok=True)
             phase13_path.parent.mkdir(parents=True, exist_ok=True)
             phase14_path.parent.mkdir(parents=True, exist_ok=True)
             phase14_layout_path.parent.mkdir(parents=True, exist_ok=True)
             phase14_primitive_path.parent.mkdir(parents=True, exist_ok=True)
+            phase14_conversion_path.parent.mkdir(parents=True, exist_ok=True)
             canonical_path.write_text(render(registry), encoding="utf-8")
             phase13_path.write_text(render_phase13(registry), encoding="utf-8")
             phase14_path.write_text(render_phase14(registry), encoding="utf-8")
             phase14_layout_path.write_text(render_phase14_layout_authority(registry), encoding="utf-8")
             phase14_primitive_path.write_text(
                 render_phase14_primitive_layout(registry), encoding="utf-8"
+            )
+            phase14_conversion_path.write_text(
+                render_phase14_integer_conversions(registry), encoding="utf-8"
             )
         elif command == "check-phase13-projection":
             check_phase13_projection(registry)
@@ -5428,6 +5993,8 @@ def main():
             check_phase14_layout_authority_projection(registry)
         elif command == "check-phase14-primitive-layout-projection":
             check_phase14_primitive_layout_projection(registry)
+        elif command == "check-phase14-integer-conversion-projection":
+            check_phase14_integer_conversion_projection(registry)
         elif command == "check-projection":
             check_projection(registry)
     except Error as exc:
@@ -5453,6 +6020,7 @@ def main():
     phase14_contract = verify_phase14_opening_contract(registry)
     phase14_layout_contract = verify_phase14_layout_authority(registry)
     phase14_primitive_contract = verify_phase14_primitive_layout(registry)
+    phase14_conversion_contract = verify_phase14_integer_conversions(registry)
     phase13_statuses = phase13_totals["status_counts"]
     phase13_parents = phase13_totals["parent_kinds"]
     messages = {
@@ -5600,6 +6168,13 @@ def main():
             f"{phase14_primitive_contract['migrated_count']} migrated rows, and "
             f"{phase14_primitive_contract['deferred_count']} deferred rows."
         ),
+        "verify-phase14-integer-conversions": (
+            "✅ Phase 14 integer conversion contract passed: "
+            f"{phase14_conversion_contract['kind_count']} canonical kinds, "
+            f"{phase14_conversion_contract['rule_count']} selected rules per target, "
+            f"{phase14_conversion_contract['target_count']} declared targets, and "
+            f"{phase14_conversion_contract['deferred_count']} rows remain deferred."
+        ),
         "verify-phase14-opening-contract": (
             "✅ Phase 14 opening contract passed: "
             f"{phase14_contract['row_count']} rows across "
@@ -5609,7 +6184,8 @@ def main():
         ),
         "project": (
             "✅ Canonical Cranelift registry, Phase 13 final review, Phase 14 "
-            "opening review, Phase 14 layout authority review, and Phase 14 primitive layout review generated."
+            "opening review, Phase 14 layout authority review, Phase 14 primitive layout review, "
+            "and Phase 14 integer conversion review generated."
         ),
         "check-phase13-projection": (
             "✅ Phase 13 generated final review matches the registry."
@@ -5623,9 +6199,13 @@ def main():
         "check-phase14-primitive-layout-projection": (
             "✅ Phase 14 generated primitive layout review matches the registry."
         ),
+        "check-phase14-integer-conversion-projection": (
+            "✅ Phase 14 generated integer conversion review matches the registry."
+        ),
         "check-projection": (
             "✅ Canonical Cranelift registry, Phase 13 final review, Phase 14 "
-            "opening review, Phase 14 layout authority review, and Phase 14 primitive layout review match their committed artifacts."
+            "opening review, Phase 14 layout authority review, Phase 14 primitive layout review, "
+            "and Phase 14 integer conversion review match their committed artifacts."
         ),
     }
     print(messages[command])

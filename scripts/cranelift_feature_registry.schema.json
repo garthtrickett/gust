@@ -15,6 +15,7 @@
     "opening_snapshots",
     "phase14_layout_authority",
     "phase14_primitive_layout",
+    "phase14_integer_conversions",
     "residual_snapshots",
     "planning_categories",
     "supported_values",
@@ -29,10 +30,10 @@
       "const": 1
     },
     "registry_version": {
-      "const": 10
+      "const": 11
     },
     "registry_status": {
-      "const": "phase14_primitive_layout_ready"
+      "const": "phase14_integer_conversion_ready"
     },
     "current_phase": {
       "const": "phase14"
@@ -211,6 +212,9 @@
     },
     "phase14_primitive_layout": {
       "$ref": "#/$defs/phase14_primitive_layout"
+    },
+    "phase14_integer_conversions": {
+      "$ref": "#/$defs/phase14_integer_conversions"
     }
   },
   "$defs": {
@@ -1139,7 +1143,7 @@
           "const": "phase14_compiler_owned_layout_authority_v1"
         },
         "status": {
-          "const": "consumed_by_patch14_2"
+          "const": "consumed_by_patch14_3"
         },
         "authority_owner": {
           "const": "compiler/mir_layout.gst"
@@ -1223,10 +1227,10 @@
           }
         },
         "behavior_policy": {
-          "const": "authority_transport_and_primitive_layout_consumption_no_conversion_pointer_or_memory_capability_migration"
+          "const": "authority_transport_primitive_layout_and_integer_conversion_consumption_no_pointer_or_memory_capability_migration"
         },
         "next_patch": {
-          "const": "14.3"
+          "const": "14.4"
         }
       }
     },
@@ -1413,7 +1417,7 @@
           "const": "phase14_declared_targets_and_primitive_layout_v1"
         },
         "status": {
-          "const": "ready_for_patch14_3"
+          "const": "consumed_by_patch14_3"
         },
         "authority_owner": {
           "const": "compiler/mir_primitive_layout.gst"
@@ -1490,10 +1494,227 @@
           }
         },
         "boundary_policy": {
-          "const": "primitive_representation_only_no_signed_unsigned_conversion_pointer_stack_slot_load_store_string_array_struct_enum_or_aggregate_flow_migration"
+          "const": "primitive_representation_and_integer_conversion_active_no_pointer_stack_slot_load_store_string_array_struct_enum_or_aggregate_flow_migration"
         },
         "next_patch": {
-          "const": "14.3"
+          "const": "14.4"
+        }
+      }
+    },
+    "phase14_integer_conversion_rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rule_name",
+        "conversion_kind",
+        "source_type_id",
+        "destination_type_id",
+        "source_width_policy",
+        "destination_width_policy",
+        "source_signedness",
+        "destination_signedness",
+        "policy",
+        "success_reason_code",
+        "failure_reason_code",
+        "target_applicability"
+      ],
+      "properties": {
+        "rule_name": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+$"
+        },
+        "conversion_kind": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_type_id": {
+          "type": "string",
+          "pattern": "^type:gust:[A-Za-z0-9_]+$"
+        },
+        "destination_type_id": {
+          "type": "string",
+          "pattern": "^type:gust:[A-Za-z0-9_]+$"
+        },
+        "source_width_policy": {
+          "type": "string",
+          "minLength": 1
+        },
+        "destination_width_policy": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_signedness": {
+          "enum": [
+            "not_applicable",
+            "signed",
+            "unsigned"
+          ]
+        },
+        "destination_signedness": {
+          "enum": [
+            "not_applicable",
+            "signed",
+            "unsigned"
+          ]
+        },
+        "policy": {
+          "type": "string",
+          "minLength": 1
+        },
+        "success_reason_code": {
+          "const": "conversion_value_valid"
+        },
+        "failure_reason_code": {
+          "type": "string",
+          "pattern": "^conversion_[a-z0-9_]+$"
+        },
+        "target_applicability": {
+          "const": "all_declared_targets"
+        }
+      }
+    },
+    "phase14_integer_conversions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "status",
+        "authority_owner",
+        "conversion_table_format",
+        "source_conversion_forms",
+        "conversion_kinds",
+        "selected_rules",
+        "constant_folding_policy",
+        "runtime_policy",
+        "out_of_range_policy",
+        "negative_to_unsigned_policy",
+        "unsigned_to_signed_policy",
+        "pointer_sized_policy",
+        "diagnostic_fields",
+        "migrated_entry_ids",
+        "focused_ci_family",
+        "level1_guard",
+        "level2_guard",
+        "composition_contexts",
+        "negative_classes",
+        "boundary_policy",
+        "next_patch"
+      ],
+      "properties": {
+        "version": {
+          "const": "phase14_signed_unsigned_width_conversion_rules_v1"
+        },
+        "status": {
+          "const": "ready_for_patch14_4"
+        },
+        "authority_owner": {
+          "const": "compiler/mir_integer_conversion.gst"
+        },
+        "conversion_table_format": {
+          "const": "gust.compiler_integer_conversion_table.v1"
+        },
+        "source_conversion_forms": {
+          "type": "array",
+          "minItems": 6,
+          "maxItems": 6,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "conversion_kinds": {
+          "type": "array",
+          "minItems": 8,
+          "maxItems": 8,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "sign_extend",
+              "zero_extend",
+              "truncate",
+              "checked_numeric",
+              "wrapping_numeric",
+              "bit_reinterpret",
+              "bool_to_integer",
+              "integer_to_bool"
+            ]
+          }
+        },
+        "selected_rules": {
+          "type": "array",
+          "minItems": 18,
+          "maxItems": 18,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/phase14_integer_conversion_rule"
+          }
+        },
+        "constant_folding_policy": {
+          "const": "compiler_evaluates_the_same_canonical_rule_and_reason_codes_used_by_runtime_lowering"
+        },
+        "runtime_policy": {
+          "const": "both_backends_lower_only_from_serialized_canonical_conversion_kind_width_signedness_and_policy"
+        },
+        "out_of_range_policy": {
+          "const": "checked_numeric_rejects_with_conversion_out_of_range_truncate_and_wrapping_require_explicit_policy"
+        },
+        "negative_to_unsigned_policy": {
+          "const": "checked_conversion_rejects_with_conversion_negative_to_unsigned_wrapping_requires_explicit_policy"
+        },
+        "unsigned_to_signed_policy": {
+          "const": "checked_conversion_rejects_out_of_range_with_conversion_unsigned_to_signed_out_of_range"
+        },
+        "pointer_sized_policy": {
+          "const": "isize_and_usize_width_is_selected_from_the_declared_target_pointer_width_before_rule_selection"
+        },
+        "diagnostic_fields": {
+          "type": "array",
+          "minItems": 8,
+          "maxItems": 8,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "migrated_entry_ids": {
+          "const": [
+            "p14_target_dependent_conversions"
+          ]
+        },
+        "focused_ci_family": {
+          "const": "conversions"
+        },
+        "level1_guard": {
+          "const": "guard-cranelift-phase14-integer-conversion-contract"
+        },
+        "level2_guard": {
+          "const": "guard-cranelift-phase14-integer-conversion-parity"
+        },
+        "composition_contexts": {
+          "const": [
+            "comparisons",
+            "locals",
+            "branches",
+            "aggregate_fields"
+          ]
+        },
+        "negative_classes": {
+          "type": "array",
+          "minItems": 7,
+          "maxItems": 7,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "boundary_policy": {
+          "const": "pointer_integer_conversion_remains_deferred_to_pointer_policy_floating_point_conversion_outside_patch"
+        },
+        "next_patch": {
+          "const": "14.4"
         }
       }
     }

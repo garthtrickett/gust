@@ -19,7 +19,8 @@ REGISTRY = ROOT / "scripts/cranelift_feature_registry.json"
 # Phase 11/13 families use the generic Phase 13 source differential after their
 # focused guard. Phase 14 primitive layout parity already owns its generated
 # request, worker, and MIR-to-C witnesses, so it must not be rerouted through
-# the Phase 13 generic source-to-MIR capability planner.
+# the Phase 13 generic source-to-MIR capability planner. Phase 14 integer
+# conversions likewise own a dedicated target-aware parity route.
 RUNNERS = (
     (
         "scalars",
@@ -67,6 +68,12 @@ RUNNERS = (
         "primitive-layout",
         "guard-cranelift-phase14-primitive-layout-parity",
         "PHASE14_PRIMITIVE_LAYOUT_SKIP_DYNAMIC",
+        None,
+    ),
+    (
+        "conversions",
+        "guard-cranelift-phase14-integer-conversion-parity",
+        "PHASE14_INTEGER_CONVERSION_SKIP_DYNAMIC",
         None,
     ),
 )

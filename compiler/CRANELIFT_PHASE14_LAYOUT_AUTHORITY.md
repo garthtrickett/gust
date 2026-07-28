@@ -4,13 +4,13 @@
 
 CRANELIFT_PHASE14_LAYOUT_AUTHORITY_VIEW_VERSION: 1
 CRANELIFT_PHASE14_LAYOUT_AUTHORITY_VERSION: phase14_compiler_owned_layout_authority_v1
-CRANELIFT_PHASE14_LAYOUT_AUTHORITY_STATUS: consumed_by_patch14_2
+CRANELIFT_PHASE14_LAYOUT_AUTHORITY_STATUS: consumed_by_patch14_3
 CRANELIFT_PHASE14_LAYOUT_AUTHORITY_OWNER: compiler/mir_layout.gst
 CRANELIFT_PHASE14_LAYOUT_AUTHORITY_TABLE_FORMAT: gust.compiler_layout_table.v2
 CRANELIFT_PHASE14_LAYOUT_AUTHORITY_IDENTITY_POLICY: deterministic_semantic_components_only_no_raw_file_registry_or_markdown_hash
 CRANELIFT_PHASE14_LAYOUT_AUTHORITY_REQUEST_POLICY: compiler_serializes_request_local_layout_table_worker_validates_without_selecting_layout
-CRANELIFT_PHASE14_LAYOUT_AUTHORITY_BEHAVIOR_POLICY: authority_transport_and_primitive_layout_consumption_no_conversion_pointer_or_memory_capability_migration
-CRANELIFT_PHASE14_LAYOUT_AUTHORITY_NEXT_PATCH: 14.3
+CRANELIFT_PHASE14_LAYOUT_AUTHORITY_BEHAVIOR_POLICY: authority_transport_primitive_layout_and_integer_conversion_consumption_no_pointer_or_memory_capability_migration
+CRANELIFT_PHASE14_LAYOUT_AUTHORITY_NEXT_PATCH: 14.4
 
 ## Semantic layout records
 
@@ -59,4 +59,4 @@ CRANELIFT_PHASE14_LAYOUT_AUTHORITY_NEXT_PATCH: 14.3
 
 The compiler owns target, type, field, variant, stride, and memory-access layout decisions. Canonical MIR carries layout references, the compiler serializes a request-local layout table, and the worker validates that table without selecting a competing layout.
 
-Patch 14.2 consumes this authority for declared targets and primitive scalar layouts only. Conversion, pointer, memory, string, array, struct, enum, and aggregate-flow capabilities remain deferred for bounded later patches.
+Patch 14.3 consumes this authority for declared targets, primitive scalar layouts, and compiler-owned integer conversions. Pointer, memory, string, array, struct, enum, and aggregate-flow capabilities remain deferred for bounded later patches.
