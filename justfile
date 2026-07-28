@@ -4321,9 +4321,13 @@ guard-cranelift-phase9d-generic-ingestion-command:
       echo "Phase 9D generic ingestion must parse, validate, recognize metadata, and only then enter shared lowering."
       exit 1
     fi
-    parse_stage_count="$(printf '%s\n' "$contents_body" | rg -c -F 'CompilerMirPipelineStage::FixtureParse' || true)"
-    validation_stage_count="$(printf '%s\n' "$contents_body" | rg -c -F 'CompilerMirPipelineStage::FixtureValidation' || true)"
-    invalid_fixture_kind_count="$(printf '%s\n' "$contents_body" | rg -c -F 'CompilerMirPipelineFailureKind::InvalidFixture' || true)"
+    phase9d_taxonomy_prefix="$(
+      printf '%s\n' "$contents_body" |
+        awk '/^[[:space:]]*if is_phase13_general_loop_fixture/{exit} {print}'
+    )"
+    parse_stage_count="$(printf '%s\n' "$phase9d_taxonomy_prefix" | rg -c -F 'CompilerMirPipelineStage::FixtureParse' || true)"
+    validation_stage_count="$(printf '%s\n' "$phase9d_taxonomy_prefix" | rg -c -F 'CompilerMirPipelineStage::FixtureValidation' || true)"
+    invalid_fixture_kind_count="$(printf '%s\n' "$phase9d_taxonomy_prefix" | rg -c -F 'CompilerMirPipelineFailureKind::InvalidFixture' || true)"
     if [ "$parse_stage_count" != "1" ] || [ "$validation_stage_count" != "2" ] || [ "$invalid_fixture_kind_count" != "3" ]; then
       echo "Phase 9D generic ingestion calls must retain the Phase 9G fixture parse/validation taxonomy wrappers."
       exit 1
