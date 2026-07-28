@@ -130,6 +130,8 @@ guard-pr-fast-ci-surface:
       'just guard-cranelift-phase14-target-and-primitive-contract'
       'Phase 14 signed unsigned and width conversions'
       'just guard-cranelift-phase14-integer-conversion-contract'
+      'Phase 14 bounded typed pointers and nullability'
+      'just guard-cranelift-phase14-pointer-contract'
       'phase11-family:'
       'phase11_families:'
       'matrix.family'
@@ -13596,7 +13598,7 @@ guard-cranelift-phase14-layout-authority-contract:
     required_review_tokens=(
       'CRANELIFT_PHASE14_LAYOUT_AUTHORITY_VIEW_VERSION: 1'
       'CRANELIFT_PHASE14_LAYOUT_AUTHORITY_VERSION: phase14_compiler_owned_layout_authority_v1'
-      'CRANELIFT_PHASE14_LAYOUT_AUTHORITY_STATUS: consumed_by_patch14_3'
+      'CRANELIFT_PHASE14_LAYOUT_AUTHORITY_STATUS: consumed_by_patch14_4'
       'CRANELIFT_PHASE14_LAYOUT_AUTHORITY_OWNER: compiler/mir_layout.gst'
       'CRANELIFT_PHASE14_LAYOUT_AUTHORITY_TABLE_FORMAT: gust.compiler_layout_table.v2'
       '## Semantic layout records'
@@ -13759,7 +13761,7 @@ guard-cranelift-phase14-target-and-primitive-contract:
     required_review_tokens=(
       'CRANELIFT_PHASE14_PRIMITIVE_LAYOUT_VIEW_VERSION: 1'
       'CRANELIFT_PHASE14_PRIMITIVE_LAYOUT_VERSION: phase14_declared_targets_and_primitive_layout_v1'
-      'CRANELIFT_PHASE14_PRIMITIVE_LAYOUT_STATUS: consumed_by_patch14_3'
+      'CRANELIFT_PHASE14_PRIMITIVE_LAYOUT_STATUS: consumed_by_patch14_4'
       'CRANELIFT_PHASE14_PRIMITIVE_LAYOUT_TABLE_FORMAT: gust.compiler_layout_table.v2'
       'CRANELIFT_PHASE14_PRIMITIVE_LAYOUT_PRIMARY_TARGET: x86_64-unknown-linux-gnu'
       '## Declared host targets'
@@ -13873,7 +13875,7 @@ guard-cranelift-phase14-integer-conversion-contract:
     required_review_tokens=(
       'CRANELIFT_PHASE14_INTEGER_CONVERSION_VIEW_VERSION: 1'
       'CRANELIFT_PHASE14_INTEGER_CONVERSION_VERSION: phase14_signed_unsigned_width_conversion_rules_v1'
-      'CRANELIFT_PHASE14_INTEGER_CONVERSION_STATUS: ready_for_patch14_4'
+      'CRANELIFT_PHASE14_INTEGER_CONVERSION_STATUS: consumed_by_patch14_4'
       'CRANELIFT_PHASE14_INTEGER_CONVERSION_OWNER: compiler/mir_integer_conversion.gst'
       'CRANELIFT_PHASE14_INTEGER_CONVERSION_TABLE_FORMAT: gust.compiler_integer_conversion_table.v1'
       '## Declared source forms'
@@ -13970,6 +13972,156 @@ guard-cranelift-phase14-integer-conversion-parity:
     fi
     bash scripts/phase14_integer_conversion_differential.sh
 
+
+guard-cranelift-phase14-pointer-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 14 bounded typed pointers and nullability..."
+    validator="scripts/cranelift_registry.py"
+    family_runner="scripts/cranelift_ci_family.py"
+    level_runner="scripts/cranelift_test_levels.py"
+    review="compiler/CRANELIFT_PHASE14_POINTERS.md"
+    authority="compiler/mir_pointer.gst"
+    mir="compiler/mir.gst"
+    request="compiler/mir_native_backend_request.gst"
+    mir_to_c="compiler/mir_pointer_mir_to_c.gst"
+    diagnostics="compiler/mir_pointer_diagnostics.gst"
+    worker="compiler/experiments/cranelift/src/main.rs"
+    smoke="compiler/mir_pointer_smoke_test_entry.gst"
+    differential="scripts/phase14_pointer_differential.sh"
+    pr_workflow=".github/workflows/pr-fast.yml"
+
+    for required_file in \
+      "$validator" "$family_runner" "$level_runner" "$review" "$authority" \
+      "$mir" "$request" "$mir_to_c" "$diagnostics" "$worker" "$smoke" \
+      "$differential" "$pr_workflow" \
+      compiler/phase14_pointer_nullability_source.gst \
+      compiler/phase14_pointer_composition_source.gst \
+      compiler/fixtures/native_backend_phase14_pointer_ingestion.mir \
+      compiler/fixtures/native_backend_phase14_pointer_malformed.mir
+    do
+      if [ ! -f "$required_file" ] || [ -L "$required_file" ]; then
+        echo "Missing regular Phase 14 pointer input: $required_file"
+        exit 1
+      fi
+    done
+
+    just guard-cranelift-phase14-integer-conversion-contract
+    python3 "$validator" verify-phase14-pointers
+    python3 "$validator" check-phase14-pointer-projection
+    python3 "$validator" check-projection
+    python3 "$family_runner" validate
+    python3 "$family_runner" check-pr-workflow "$pr_workflow"
+    python3 "$level_runner" validate
+    python3 "$level_runner" check-pr-workflow
+    python3 "$level_runner" level guard-cranelift-phase14-pointer-contract |
+      rg -n -F $'guard-cranelift-phase14-pointer-contract\t1\t' >/dev/null
+    bash -n "$differential"
+
+    required_review_tokens=(
+      'CRANELIFT_PHASE14_POINTER_VIEW_VERSION: 1'
+      'CRANELIFT_PHASE14_POINTER_VERSION: phase14_bounded_typed_pointers_and_nullability_v1'
+      'CRANELIFT_PHASE14_POINTER_STATUS: ready_for_patch14_5'
+      'CRANELIFT_PHASE14_POINTER_OWNER: compiler/mir_pointer.gst'
+      'CRANELIFT_PHASE14_POINTER_TABLE_FORMAT: gust.compiler_pointer_table.v1'
+      'CRANELIFT_PHASE14_POINTER_PRIMARY_TARGET: x86_64-unknown-linux-gnu'
+      '## Pointer type metadata'
+      '## Canonical pointer operations'
+      '## Provenance fields'
+      '## Composition contexts'
+      '## Negative classes'
+      '## Semantic policies'
+      '## Boundary'
+    )
+    for token in "${required_review_tokens[@]}"; do
+      rg -n -F "$token" "$review" >/dev/null
+    done
+
+    for token in \
+      'type MirPointerType[ctx] struct' \
+      'type MirPointerOperation[ctx] struct' \
+      'type MirPointerTable[ctx] struct' \
+      'func mir_pointer_table_for_layout(' \
+      'func mir_pointer_select_type(' \
+      'func mir_pointer_operation_request_is_supported(' \
+      'func mir_serialize_pointer_table_for_request('
+    do
+      rg -n -F "$token" "$authority" >/dev/null
+    done
+    for kind in \
+      address_of_local null_pointer pointer_equal pointer_not_equal \
+      pointer_null_test pointer_non_null_test non_null_to_nullable \
+      nullable_to_non_null_checked
+    do
+      rg -n -F "$kind" "$authority" "$worker" >/dev/null
+    done
+    rg -n -F 'type MirPointerOperationKind enum' "$mir" >/dev/null
+    rg -n -F 'type MirPointerTypeReference' "$mir" >/dev/null
+    rg -n -F 'type MirPointerOperationReference' "$mir" >/dev/null
+    rg -n -F 'PointerOperation' "$mir" >/dev/null
+    rg -n -F 'pointer_table: pointer.MirPointerTable[ctx]' "$request" >/dev/null
+    rg -n -F 'mir_serialize_pointer_table_for_request' "$request" >/dev/null
+    rg -n -F 'mir_pointer_c_source' "$mir_to_c" >/dev/null
+    rg -n -F 'gust_pointer_diagnostic:' "$diagnostics" >/dev/null
+    rg -n -F 'struct Phase14RequestPointerTable' "$worker" >/dev/null
+    rg -n -F 'fn phase14_cranelift_pointer_type(' "$worker" >/dev/null
+    rg -n -F 'phase14-pointer-witness' "$worker" >/dev/null
+    rg -n -F 'pointee_layout_id' "$worker" >/dev/null
+
+    pointer_ci_count="$(
+      (rg -n -F 'just guard-cranelift-phase14-pointer-contract' \
+        .github/workflows --glob '*.yml' || true) | wc -l | tr -d ' '
+    )"
+    if [ "$pointer_ci_count" != "1" ]; then
+      echo "Phase 14 pointer contract must be wired into CI exactly once, found $pointer_ci_count occurrences."
+      exit 1
+    fi
+    rg -n -x -F '        run: just guard-cranelift-phase14-pointer-contract' \
+      "$pr_workflow" >/dev/null
+
+    if rg -n \
+        -e 'std::mem::(size_of|align_of)' \
+        -e 'offset_of!' \
+        -e 'Layout::(from_size_align|new|array)' \
+        "$worker" >/dev/null
+    then
+      echo "The Cranelift worker must consume compiler-selected pointer and pointee layouts."
+      exit 1
+    fi
+
+    guard_body="$(
+      sed -n \
+        '/^guard-cranelift-phase14-pointer-contract:/,/^guard-cranelift-phase14-pointer-parity:/p' \
+        justfile
+    )"
+    if printf '%s\n' "$guard_body" |
+       rg -n \
+         -e '^[[:space:]]+bash scripts/phase14_pointer_differential\.sh([[:space:]]|$)' \
+         -e '^[[:space:]]+just guard-cranelift-differential-family([[:space:]]|$)' \
+         -e '^[[:space:]]+just guard-cranelift-historical-full([[:space:]]|$)' \
+         -e '^[[:space:]]+\./gust([[:space:]]|$)' \
+         -e '^[[:space:]]+(cargo|cc|gcc|clang|make)([[:space:]]|$)' >/dev/null
+    then
+      echo "Phase 14 pointer contract must remain a Level 1 ownership and projection guard."
+      exit 1
+    fi
+
+    echo "✅ Phase 14 pointer contract passed: target-aware pointer types, default address space, nullability, provenance, canonical operations, pre-worker rejections, backend consumers, composition, and CI ownership are frozen."
+
+guard-cranelift-phase14-pointer-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 14 bounded pointer parity on the primary declared target..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase14-pointer-parity |
+      rg -n -F $'guard-cranelift-phase14-pointer-parity\t2\t' >/dev/null
+    just guard-cranelift-phase14-pointer-contract
+    if [ "${PHASE14_POINTER_SKIP_DYNAMIC:-0}" = "1" ]; then
+      echo "✅ Phase 14 pointer parity static contract passed; dynamic evidence skipped by request."
+      exit 0
+    fi
+    bash scripts/phase14_pointer_differential.sh
+
 guard-cranelift-differential-family family:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -13993,6 +14145,7 @@ guard-cranelift-contract-fast:
     just guard-cranelift-phase14-layout-authority-contract
     just guard-cranelift-phase14-target-and-primitive-contract
     just guard-cranelift-phase14-integer-conversion-contract
+    just guard-cranelift-phase14-pointer-contract
 
 guard-cranelift-historical-full:
     #!/usr/bin/env bash
@@ -14046,6 +14199,9 @@ guard-cranelift-historical-full:
           just guard-cranelift-differential-family "$family"
       elif [ "$family" = "conversions" ]; then
         PHASE14_INTEGER_CONVERSION_ALL_TARGETS=1 \
+          just guard-cranelift-differential-family "$family"
+      elif [ "$family" = "pointer-memory" ]; then
+        PHASE14_POINTER_ALL_TARGETS=1 \
           just guard-cranelift-differential-family "$family"
       else
         just guard-cranelift-differential-family "$family"

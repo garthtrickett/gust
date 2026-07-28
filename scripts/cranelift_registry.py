@@ -21,7 +21,7 @@ TOP_FIELDS = {
     "current_phase", "closed_phase_versions", "closure_snapshots",
     "opening_snapshots", "phase14_layout_authority",
     "phase14_primitive_layout", "phase14_integer_conversions",
-    "residual_snapshots",
+    "phase14_pointers", "residual_snapshots",
     "planning_categories", "supported_values", "legacy_views", "entries",
 }
 ENTRY_FIELDS = {
@@ -506,7 +506,7 @@ PHASE14_LAYOUT_CONSUMER_FIELDS = {
 PHASE14_LAYOUT_AUTHORITY_VERSION = (
     "phase14_compiler_owned_layout_authority_v1"
 )
-PHASE14_LAYOUT_AUTHORITY_STATUS = "consumed_by_patch14_3"
+PHASE14_LAYOUT_AUTHORITY_STATUS = "consumed_by_patch14_4"
 PHASE14_LAYOUT_TABLE_FORMAT = "gust.compiler_layout_table.v2"
 PHASE14_LAYOUT_TYPES = (
     "MirTargetLayout", "MirTypeLayout", "MirFieldLayout",
@@ -538,8 +538,8 @@ PHASE14_LAYOUT_REQUEST_POLICY = (
     "without_selecting_layout"
 )
 PHASE14_LAYOUT_BEHAVIOR_POLICY = (
-    "authority_transport_primitive_layout_and_integer_conversion_"
-    "consumption_no_pointer_or_memory_capability_migration"
+    "authority_transport_primitive_layout_integer_conversion_and_bounded_"
+    "pointer_consumption_no_load_store_or_aggregate_abi_migration"
 )
 
 PHASE14_PRIMITIVE_FIELDS = {
@@ -559,7 +559,7 @@ PHASE14_PRIMITIVE_TYPE_FIELDS = {
     "alignment_policy", "bit_width_policy", "signedness", "validity_kind",
 }
 PHASE14_PRIMITIVE_VERSION = "phase14_declared_targets_and_primitive_layout_v1"
-PHASE14_PRIMITIVE_STATUS = "consumed_by_patch14_3"
+PHASE14_PRIMITIVE_STATUS = "consumed_by_patch14_4"
 PHASE14_PRIMITIVE_MIGRATED_IDS = (
     "p14_primitive_scalar_layout",
     "p14_pointer_sized_integer_layout",
@@ -596,7 +596,7 @@ PHASE14_CONVERSION_RULE_FIELDS = {
 PHASE14_CONVERSION_VERSION = (
     "phase14_signed_unsigned_width_conversion_rules_v1"
 )
-PHASE14_CONVERSION_STATUS = "ready_for_patch14_4"
+PHASE14_CONVERSION_STATUS = "consumed_by_patch14_4"
 PHASE14_CONVERSION_TABLE_FORMAT = (
     "gust.compiler_integer_conversion_table.v1"
 )
@@ -644,6 +644,42 @@ PHASE14_CONVERSION_NEGATIVE_CLASSES = (
     "target_dependent_conversion_without_declared_target",
     "request_target_conversion_disagreement",
     "conversion_width_mismatch",
+)
+
+PHASE14_POINTER_FIELDS = {
+    "version", "status", "authority_owner", "pointer_table_format",
+    "primary_level2_target", "default_address_space",
+    "selected_pointee_type_ids", "mutability_kinds", "nullability_kinds",
+    "pointer_type_count_per_target", "operation_kinds",
+    "operation_count_per_target", "provenance_fields",
+    "known_null_dereference_policy", "nullable_access_policy",
+    "worker_layout_policy", "migrated_entry_ids", "focused_ci_family",
+    "level1_guard", "level2_guard", "composition_contexts",
+    "negative_classes", "boundary_policy", "next_patch",
+}
+PHASE14_POINTER_VERSION = (
+    "phase14_bounded_typed_pointers_and_nullability_v1"
+)
+PHASE14_POINTER_STATUS = "ready_for_patch14_5"
+PHASE14_POINTER_TABLE_FORMAT = "gust.compiler_pointer_table.v1"
+PHASE14_POINTER_MIGRATED_IDS = ("p14_pointer_nullability_model",)
+PHASE14_POINTER_OPERATION_KINDS = (
+    "address_of_local", "null_pointer", "pointer_equal",
+    "pointer_not_equal", "pointer_null_test", "pointer_non_null_test",
+    "non_null_to_nullable", "nullable_to_non_null_checked",
+)
+PHASE14_POINTER_PROVENANCE_FIELDS = (
+    "origin_kind", "origin_local_id", "provenance_id",
+)
+PHASE14_POINTER_CONTEXTS = (
+    "locals", "comparisons", "nullable_branches", "aggregate_fields",
+)
+PHASE14_POINTER_NEGATIVE_CLASSES = (
+    "pointer_width_mismatch", "invalid_pointee_layout",
+    "invalid_nullability_conversion", "unsupported_address_space",
+    "unsupported_pointer_arithmetic", "unrestricted_integer_pointer_cast",
+    "unsized_or_unsupported_pointee",
+    "dereference_before_load_store_contract", "target_required",
 )
 
 
@@ -1149,8 +1185,8 @@ def validate_phase14_layout_authority_structure(registry):
         "Phase 14 layout authority behavior boundary drifted",
     )
     require(
-        authority["next_patch"] == "14.4",
-        "Phase 14 layout authority next patch must be 14.4",
+        authority["next_patch"] == "14.5",
+        "Phase 14 layout authority next patch must be 14.5",
     )
     return authority
 
@@ -1255,11 +1291,11 @@ def validate_phase14_primitive_layout_structure(registry):
             "Phase 14 primitive negative inventory drifted")
     require(
         contract["boundary_policy"]
-        == "primitive_representation_and_integer_conversion_active_no_pointer_stack_slot_load_store_string_array_struct_enum_or_aggregate_flow_migration",
+        == "primitive_representation_integer_conversion_and_bounded_pointer_metadata_active_no_load_store_string_array_struct_enum_or_aggregate_abi_migration",
         "Phase 14 primitive boundary policy drifted",
     )
-    require(contract["next_patch"] == "14.4",
-            "Phase 14 primitive next patch must be 14.4")
+    require(contract["next_patch"] == "14.5",
+            "Phase 14 primitive next patch must be 14.5")
     return contract
 
 
@@ -1374,11 +1410,76 @@ def validate_phase14_integer_conversion_structure(registry):
     )
     require(
         contract["boundary_policy"]
-        == "pointer_integer_conversion_remains_deferred_to_pointer_policy_floating_point_conversion_outside_patch",
+        == "bounded_pointer_policy_is_active_but_unrestricted_pointer_integer_conversion_and_floating_point_conversion_remain_outside_patch",
         "Phase 14 integer conversion boundary drifted",
     )
-    require(contract["next_patch"] == "14.4",
-            "Phase 14 integer conversion next patch must be 14.4")
+    require(contract["next_patch"] == "14.5",
+            "Phase 14 integer conversion next patch must be 14.5")
+    return contract
+
+
+def validate_phase14_pointer_structure(registry):
+    contract = registry["phase14_pointers"]
+    require(
+        isinstance(contract, dict) and set(contract) == PHASE14_POINTER_FIELDS,
+        "Phase 14 pointer contract fields drifted",
+    )
+    require(
+        contract["version"] == PHASE14_POINTER_VERSION
+        and contract["status"] == PHASE14_POINTER_STATUS,
+        "Phase 14 pointer checkpoint drifted",
+    )
+    require(
+        contract["authority_owner"] == "compiler/mir_pointer.gst"
+        and contract["pointer_table_format"] == PHASE14_POINTER_TABLE_FORMAT,
+        "Phase 14 pointer authority or table format drifted",
+    )
+    require(
+        contract["primary_level2_target"] == "x86_64-unknown-linux-gnu"
+        and contract["default_address_space"] == "default",
+        "Phase 14 pointer target or address-space policy drifted",
+    )
+    require(
+        contract["selected_pointee_type_ids"] == ["type:gust:i32"]
+        and contract["mutability_kinds"] == ["const", "mutable"]
+        and contract["nullability_kinds"] == ["non_null", "nullable"]
+        and contract["pointer_type_count_per_target"] == 4,
+        "Phase 14 pointer type inventory drifted",
+    )
+    require(
+        tuple(contract["operation_kinds"]) == PHASE14_POINTER_OPERATION_KINDS
+        and contract["operation_count_per_target"] == 11,
+        "Phase 14 pointer operation inventory drifted",
+    )
+    require(
+        tuple(contract["provenance_fields"]) == PHASE14_POINTER_PROVENANCE_FIELDS,
+        "Phase 14 pointer provenance fields drifted",
+    )
+    for field in (
+        "known_null_dereference_policy", "nullable_access_policy",
+        "worker_layout_policy", "boundary_policy",
+    ):
+        text(contract[field], f"phase14_pointers.{field}")
+    require(
+        tuple(contract["migrated_entry_ids"]) == PHASE14_POINTER_MIGRATED_IDS,
+        "Phase 14 pointer migrated-row inventory drifted",
+    )
+    require(
+        contract["focused_ci_family"] == "pointer-memory"
+        and contract["level1_guard"] == "guard-cranelift-phase14-pointer-contract"
+        and contract["level2_guard"] == "guard-cranelift-phase14-pointer-parity",
+        "Phase 14 pointer CI ownership drifted",
+    )
+    require(
+        tuple(contract["composition_contexts"]) == PHASE14_POINTER_CONTEXTS,
+        "Phase 14 pointer composition context inventory drifted",
+    )
+    require(
+        tuple(contract["negative_classes"]) == PHASE14_POINTER_NEGATIVE_CLASSES,
+        "Phase 14 pointer negative inventory drifted",
+    )
+    require(contract["next_patch"] == "14.5",
+            "Phase 14 pointer next patch must be 14.5")
     return contract
 
 
@@ -1757,6 +1858,16 @@ def validate():
         phase14_conversion_rule_schema.get("additionalProperties") is False,
         "schema Phase 14 integer conversion rules must reject unknown fields",
     )
+    phase14_pointer_schema = definitions.get("phase14_pointers", {})
+    require(
+        set(phase14_pointer_schema.get("required", []))
+        == PHASE14_POINTER_FIELDS,
+        "schema Phase 14 pointer fields drifted",
+    )
+    require(
+        phase14_pointer_schema.get("additionalProperties") is False,
+        "schema Phase 14 pointers must reject unknown fields",
+    )
     residual_schema = schema.get("properties", {}).get("residual_snapshots", {})
     require(
         set(residual_schema.get("required", [])) == {"phase13"},
@@ -1802,9 +1913,9 @@ def validate():
     require(registry["schema"] == "scripts/cranelift_feature_registry.schema.json",
             "registry schema path is not canonical")
     require(registry["schema_version"] == 1, "schema_version must be 1")
-    require(registry["registry_version"] == 11, "registry_version must be 11")
+    require(registry["registry_version"] == 12, "registry_version must be 12")
     require(
-        registry["registry_status"] == "phase14_integer_conversion_ready",
+        registry["registry_status"] == "phase14_pointer_ready",
         "registry status is missing or stale",
     )
     require(registry["current_phase"] == "phase14", "current_phase must be phase14")
@@ -1825,6 +1936,7 @@ def validate():
     validate_phase14_layout_authority_structure(registry)
     validate_phase14_primitive_layout_structure(registry)
     validate_phase14_integer_conversion_structure(registry)
+    validate_phase14_pointer_structure(registry)
 
     categories = set(unique_strings(registry["planning_categories"], "planning_categories"))
     supported = registry["supported_values"]
@@ -2118,6 +2230,42 @@ def validate():
                     and evidence.get("diagnostic_fields")
                     == list(PHASE14_CONVERSION_DIAGNOSTIC_FIELDS),
                     f"{entry_id}: integer conversion evidence drifted",
+                )
+            elif entry_id in PHASE14_POINTER_MIGRATED_IDS:
+                require(
+                    closure == PHASE14_POINTER_VERSION,
+                    f"{entry_id}: pointer checkpoint version drifted",
+                )
+                require(
+                    status == "migrated"
+                    and entry["route_owner"] == "generic_canonical_mir",
+                    f"{entry_id}: selected pointer row must be migrated through canonical MIR",
+                )
+                require(reason == destination == "none_migrated",
+                        f"{entry_id}: migrated pointer row has stale deferral fields")
+                require(entry["current_failure_stage"] == "none_supported",
+                        f"{entry_id}: migrated pointer row has a failure stage")
+                fixture(entry["source_fixture"], f"{entry_id}.source_fixture")
+                fixture(entry["canonical_mir_fixture"],
+                        f"{entry_id}.canonical_mir_fixture")
+                require(
+                    entry["differential_case_id"]
+                    == f"phase14_registry_differential:{entry_id}",
+                    f"{entry_id}: pointer differential identity drifted",
+                )
+                require(
+                    evidence.get("behavior_policy")
+                    == "bounded_typed_pointer_and_nullability_model_migrated_through_compiler_owned_pointer_table"
+                    and evidence.get("phase14_2_contract")
+                    == PHASE14_PRIMITIVE_VERSION
+                    and evidence.get("phase14_3_contract")
+                    == PHASE14_CONVERSION_VERSION
+                    and evidence.get("phase14_4_contract")
+                    == PHASE14_POINTER_VERSION
+                    and evidence.get("selected_pointer_operation_kinds")
+                    == list(PHASE14_POINTER_OPERATION_KINDS)
+                    and evidence.get("default_address_space") == "default",
+                    f"{entry_id}: pointer evidence drifted",
                 )
             else:
                 require(
@@ -2621,6 +2769,13 @@ def verify_phase14_layout_authority(registry):
                 and entry["closure_version"] == PHASE14_CONVERSION_VERSION,
                 f"{entry_id}: conversion migration no longer consumes the layout authority",
             )
+        elif entry_id in PHASE14_POINTER_MIGRATED_IDS:
+            require(
+                entry["status"] == "migrated"
+                and entry["route_owner"] == "generic_canonical_mir"
+                and entry["closure_version"] == PHASE14_POINTER_VERSION,
+                f"{entry_id}: pointer migration no longer consumes the layout authority",
+            )
         else:
             require(
                 entry["status"] == "candidate_deferred"
@@ -2729,7 +2884,7 @@ def verify_phase14_primitive_layout(registry):
     verify_phase14_layout_authority(registry)
     contract = validate_phase14_primitive_layout_structure(registry)
     require(
-        registry["registry_status"] == "phase14_integer_conversion_ready",
+        registry["registry_status"] == "phase14_pointer_ready",
         "Phase 14 registry is not at or beyond the primitive-layout checkpoint",
     )
     rows = {entry["id"]: entry for entry in phase_entries(registry, "phase14")}
@@ -2754,6 +2909,14 @@ def verify_phase14_primitive_layout(registry):
                 and entry["route_owner"] == "generic_canonical_mir"
                 and entry["closure_version"] == PHASE14_CONVERSION_VERSION,
                 f"{entry_id}: later conversion checkpoint drifted",
+            )
+            continue
+        if entry_id in PHASE14_POINTER_MIGRATED_IDS:
+            require(
+                entry["status"] == "migrated"
+                and entry["route_owner"] == "generic_canonical_mir"
+                and entry["closure_version"] == PHASE14_POINTER_VERSION,
+                f"{entry_id}: later pointer checkpoint drifted",
             )
             continue
         require(
@@ -2855,8 +3018,8 @@ def verify_phase14_integer_conversions(registry):
     verify_phase14_primitive_layout(registry)
     contract = validate_phase14_integer_conversion_structure(registry)
     require(
-        registry["registry_status"] == "phase14_integer_conversion_ready",
-        "Phase 14 registry is not at the integer-conversion checkpoint",
+        registry["registry_status"] == "phase14_pointer_ready",
+        "Phase 14 registry is not at or beyond the integer-conversion checkpoint",
     )
     rows = {entry["id"]: entry for entry in phase_entries(registry, "phase14")}
     for entry_id in PHASE14_CONVERSION_MIGRATED_IDS:
@@ -2873,6 +3036,14 @@ def verify_phase14_integer_conversions(registry):
         )
     for entry_id, entry in rows.items():
         if entry_id in PHASE14_PRIMITIVE_MIGRATED_IDS + PHASE14_CONVERSION_MIGRATED_IDS:
+            continue
+        if entry_id in PHASE14_POINTER_MIGRATED_IDS:
+            require(
+                entry["status"] == "migrated"
+                and entry["route_owner"] == "generic_canonical_mir"
+                and entry["closure_version"] == PHASE14_POINTER_VERSION,
+                f"{entry_id}: later pointer checkpoint drifted",
+            )
             continue
         require(
             entry["status"] == "candidate_deferred"
@@ -3010,6 +3181,216 @@ def verify_phase14_integer_conversions(registry):
         "target_count": len(
             registry["phase14_primitive_layout"]["declared_targets"]
         ),
+        "family": contract["focused_ci_family"],
+    }
+
+
+
+def verify_phase14_pointers(registry):
+    verify_phase14_integer_conversions(registry)
+    contract = validate_phase14_pointer_structure(registry)
+    require(
+        registry["registry_status"] == "phase14_pointer_ready",
+        "Phase 14 registry is not at the pointer/nullability checkpoint",
+    )
+    rows = {entry["id"]: entry for entry in phase_entries(registry, "phase14")}
+    for entry_id in PHASE14_POINTER_MIGRATED_IDS:
+        entry = rows[entry_id]
+        require(
+            entry["status"] == "migrated"
+            and entry["route_owner"] == "generic_canonical_mir"
+            and entry["closure_version"] == PHASE14_POINTER_VERSION,
+            f"{entry_id}: pointer/nullability row is not migrated",
+        )
+        require(
+            entry["ci_family"] == contract["focused_ci_family"],
+            f"{entry_id}: pointer CI ownership drifted",
+        )
+    selected_ids = (
+        PHASE14_PRIMITIVE_MIGRATED_IDS
+        + PHASE14_CONVERSION_MIGRATED_IDS
+        + PHASE14_POINTER_MIGRATED_IDS
+    )
+    for entry_id, entry in rows.items():
+        if entry_id in selected_ids:
+            continue
+        require(
+            entry["status"] == "candidate_deferred"
+            and entry["route_owner"] == "deferred"
+            and entry["current_failure_stage"] == "before_driver_discovery",
+            f"{entry_id}: Patch 14.4 migrated an out-of-scope capability",
+        )
+
+    sources = {
+        "authority": ROOT / "compiler/mir_pointer.gst",
+        "mir": ROOT / "compiler/mir.gst",
+        "request": ROOT / "compiler/mir_native_backend_request.gst",
+        "mir_to_c": ROOT / "compiler/mir_pointer_mir_to_c.gst",
+        "diagnostics": ROOT / "compiler/mir_pointer_diagnostics.gst",
+        "worker": ROOT / "compiler/experiments/cranelift/src/main.rs",
+        "smoke": ROOT / "compiler/mir_pointer_smoke_test_entry.gst",
+        "differential": ROOT / "scripts/phase14_pointer_differential.sh",
+        "positive": ROOT / "compiler/phase14_pointer_nullability_source.gst",
+        "composition": ROOT / "compiler/phase14_pointer_composition_source.gst",
+        "fixture": ROOT / "compiler/fixtures/native_backend_phase14_pointer_ingestion.mir",
+        "malformed": ROOT / "compiler/fixtures/native_backend_phase14_pointer_malformed.mir",
+    }
+    for owner, path in sources.items():
+        require(
+            path.is_file() and not path.is_symlink(),
+            f"missing regular Phase 14 pointer {owner} source: {path.relative_to(ROOT)}",
+        )
+
+    authority_source = sources["authority"].read_text(encoding="utf-8")
+    for token in (
+        "type MirPointerType[ctx] struct",
+        "type MirPointerOperation[ctx] struct",
+        "type MirPointerTable[ctx] struct",
+        "func mir_pointer_table_for_layout(",
+        "func mir_pointer_select_type(",
+        "func mir_pointer_operation_request_is_supported(",
+        "func mir_pointer_table_is_valid(",
+        "func mir_serialize_pointer_table_for_request(",
+        "func mir_pointer_witness(",
+        PHASE14_POINTER_TABLE_FORMAT,
+        "pointer:v1:target=",
+    ):
+        require(token in authority_source, f"pointer authority is missing: {token}")
+    for kind in PHASE14_POINTER_OPERATION_KINDS:
+        require(kind in authority_source,
+                f"pointer authority is missing canonical kind {kind}")
+    for field in PHASE14_POINTER_PROVENANCE_FIELDS:
+        require(field in authority_source,
+                f"pointer authority is missing provenance field {field}")
+    for token in (
+        "pointer_arithmetic_unsupported",
+        "pointer_integer_cast_unsupported",
+        "pointer_load_store_contract_deferred",
+        "pointer_pointee_unsized_or_unsupported",
+        "pointer_address_space_unsupported",
+        "pointer_target_required",
+    ):
+        require(token in authority_source,
+                f"pointer authority is missing rejection reason {token}")
+
+    mir_source = sources["mir"].read_text(encoding="utf-8")
+    for token in (
+        "type MirPointerOperationKind enum",
+        "type MirPointerTypeReference",
+        "type MirPointerOperationReference",
+        "pointer_type_references",
+        "pointer_operation_references",
+        "PointerOperation",
+        "func mir_make_value_pointer_operation(",
+        "func mir_program_pointer_references_are_valid(",
+    ):
+        require(token in mir_source, f"canonical MIR pointer model is missing: {token}")
+    require(
+        "operation: Index[MirPointerOperationReference[ctx], ctx]" in mir_source,
+        "canonical MIR pointer operation must arena-index its reference payload",
+    )
+
+    request_source = sources["request"].read_text(encoding="utf-8")
+    require(
+        "pointer_table: pointer.MirPointerTable[ctx]" in request_source
+        and "mir_serialize_pointer_table_for_request" in request_source
+        and "mir_pointer_table_for_layout" in request_source,
+        "native request does not carry the compiler-owned pointer table",
+    )
+
+    c_source = sources["mir_to_c"].read_text(encoding="utf-8")
+    for token in (
+        "mir_pointer_c_source",
+        "const int *nonnull = &local0",
+        "const int *nullable = NULL",
+        "struct GustPointerHolder",
+    ):
+        require(token in c_source, f"MIR-to-C pointer witness is missing: {token}")
+    for banned in (
+        "return *nonnull", "return *nullable", "pointer +", "pointer -",
+        "uintptr_t", "intptr_t",
+    ):
+        require(banned not in c_source,
+                f"MIR-to-C pointer witness opened unsupported behavior: {banned}")
+
+    diagnostic_source = sources["diagnostics"].read_text(encoding="utf-8")
+    for field in (
+        "pointer_type", "pointee_type", "pointee_layout", "mutability",
+        "nullability", "address_space", "pointer_width", "operation",
+        "reason_code",
+    ):
+        require(f"{field}=" in diagnostic_source,
+                f"pointer diagnostics are missing field {field}")
+
+    worker_source = sources["worker"].read_text(encoding="utf-8")
+    for token in (
+        "struct Phase14RequestPointerTable",
+        "fn parse_phase14_request_pointer_table(",
+        "fn validate_phase14_request_pointer_table(",
+        "fn phase14_cranelift_pointer_type(",
+        "phase14-pointer-witness",
+        "pointee_layout_id",
+    ):
+        require(token in worker_source, f"Cranelift pointer consumption is missing: {token}")
+    for banned in (
+        "size_of::<", "align_of::<", "Layout::", "offset_of!",
+    ):
+        require(banned not in worker_source,
+                f"worker must not infer pointer or pointee layout through {banned}")
+    require(
+        "pointer_type.pointee_layout_id" in worker_source
+        and "layout.layout_id == pointer_type.pointee_layout_id" in worker_source,
+        "worker must resolve the compiler-serialized pointee layout ID",
+    )
+
+    smoke_source = sources["smoke"].read_text(encoding="utf-8")
+    differential_source = sources["differential"].read_text(encoding="utf-8")
+    context_tokens = {
+        "locals": '"local"',
+        "comparisons": '"comparison"',
+        "nullable_branches": '"branch"',
+        "aggregate_fields": '"aggregate_field"',
+    }
+    for context in PHASE14_POINTER_CONTEXTS:
+        require(
+            context_tokens[context] in authority_source
+            or context_tokens[context] in smoke_source,
+            f"pointer authority is missing composition context {context}",
+        )
+    negative_tokens = {
+        "pointer_width_mismatch": "pointer width mismatch",
+        "invalid_pointee_layout": "pointee layout",
+        "invalid_nullability_conversion": "pointer_nullability_check_failed",
+        "unsupported_address_space": "pointer_address_space_unsupported",
+        "unsupported_pointer_arithmetic": "pointer_arithmetic_unsupported",
+        "unrestricted_integer_pointer_cast": "pointer_integer_cast_unsupported",
+        "unsized_or_unsupported_pointee": "pointer_pointee_unsized_or_unsupported",
+        "dereference_before_load_store_contract": "pointer_load_store_contract_deferred",
+        "target_required": "pointer_target_required",
+    }
+    for negative in PHASE14_POINTER_NEGATIVE_CLASSES:
+        token = negative_tokens[negative]
+        require(
+            token in authority_source or token in smoke_source
+            or token in differential_source or token in worker_source,
+            f"pointer negative evidence is missing: {negative}",
+        )
+
+    return {
+        "version": contract["version"],
+        "status": contract["status"],
+        "target_count": len(
+            registry["phase14_primitive_layout"]["declared_targets"]
+        ),
+        "pointer_type_count": contract["pointer_type_count_per_target"],
+        "operation_kind_count": len(contract["operation_kinds"]),
+        "operation_count": contract["operation_count_per_target"],
+        "migrated_count": len(contract["migrated_entry_ids"]),
+        "deferred_count": sum(
+            1 for entry in rows.values()
+            if entry["status"] == "candidate_deferred"
+        ),
+        "primary_target": contract["primary_level2_target"],
         "family": contract["focused_ci_family"],
     }
 
@@ -4527,6 +4908,7 @@ def verify_phase13_closure(registry):
             "phase14_layout_authority_ready",
             "phase14_primitive_layout_ready",
             "phase14_integer_conversion_ready",
+            "phase14_pointer_ready",
         },
         "Phase 13 closure registry status drifted",
     )
@@ -5599,7 +5981,7 @@ def render_phase14_primitive_layout(registry):
         "",
         contract["boundary_policy"],
         "",
-        "Canonical boolean memory values are exactly `0` and `1`. Patch 14.3 now owns selected integer conversions; pointer semantics, stack storage, loads/stores, strings, arrays, structs, enums, and aggregate flow remain deferred.",
+        "Canonical boolean memory values are exactly `0` and `1`. Patch 14.4 now owns bounded typed pointer identity and nullability; stack storage, loads/stores, strings, arrays, structs, enums, and unrestricted aggregate flow remain deferred.",
         "",
     ]
     rendered = "\n".join(lines)
@@ -5623,7 +6005,7 @@ def phase14_integer_conversion_summary_lines(registry):
         f"- Remaining deferred opening rows: `{contract['deferred_count']}`",
         f"- Registry-derived focused family: `{contract['family']}`",
         "",
-        "Patch 14.3 freezes explicit integer conversion operations for constant folding and runtime lowering. Pointer/integer conversion remains deferred to the pointer policy and floating-point conversion remains outside this patch.",
+        "Patch 14.3 freezes explicit integer conversion operations for constant folding and runtime lowering. Patch 14.4 consumes that authority for bounded typed pointers while unrestricted pointer/integer and floating-point conversions remain deferred.",
         "",
     ]
 
@@ -5709,6 +6091,94 @@ def render_phase14_integer_conversions(registry):
     return rendered
 
 
+
+def phase14_pointer_summary_lines(registry):
+    contract = verify_phase14_pointers(registry)
+    return [
+        "## Phase 14 bounded typed pointers and nullability",
+        "",
+        f"- Contract version: `{contract['version']}`",
+        f"- Status: `{contract['status']}`",
+        f"- Declared target count: `{contract['target_count']}`",
+        f"- Pointer types per target: `{contract['pointer_type_count']}`",
+        f"- Canonical pointer operation kinds: `{contract['operation_kind_count']}`",
+        f"- Selected pointer operations per target: `{contract['operation_count']}`",
+        f"- Migrated opening rows: `{contract['migrated_count']}`",
+        f"- Remaining deferred opening rows: `{contract['deferred_count']}`",
+        f"- Registry-derived focused family: `{contract['family']}`",
+        "",
+        "Patch 14.4 freezes bounded typed pointer identity, default-address-space metadata, provenance, nullability checks, comparisons, and safe aggregate storage. Dereference, loads/stores, pointer arithmetic, unrestricted integer/pointer casts, non-default address spaces, and unsupported pointees remain rejected or deferred before worker access.",
+        "",
+    ]
+
+
+def render_phase14_pointers(registry):
+    summary = verify_phase14_pointers(registry)
+    contract = registry["phase14_pointers"]
+    lines = [
+        "# Cranelift Phase 14 Bounded Typed Pointers and Nullability",
+        "",
+        "<!-- Generated by scripts/cranelift_registry.py; do not edit by hand. -->",
+        "",
+        "CRANELIFT_PHASE14_POINTER_VIEW_VERSION: 1",
+        f"CRANELIFT_PHASE14_POINTER_VERSION: {summary['version']}",
+        f"CRANELIFT_PHASE14_POINTER_STATUS: {summary['status']}",
+        f"CRANELIFT_PHASE14_POINTER_OWNER: {contract['authority_owner']}",
+        f"CRANELIFT_PHASE14_POINTER_TABLE_FORMAT: {contract['pointer_table_format']}",
+        f"CRANELIFT_PHASE14_POINTER_PRIMARY_TARGET: {summary['primary_target']}",
+        f"CRANELIFT_PHASE14_POINTER_LEVEL1_GUARD: {contract['level1_guard']}",
+        f"CRANELIFT_PHASE14_POINTER_LEVEL2_GUARD: {contract['level2_guard']}",
+        f"CRANELIFT_PHASE14_POINTER_NEXT_PATCH: {contract['next_patch']}",
+        "",
+        "## Pointer type metadata",
+        "",
+        f"- Default address space: `{contract['default_address_space']}`",
+        f"- Selected pointee type IDs: `{', '.join(contract['selected_pointee_type_ids'])}`",
+        f"- Mutability kinds: `{', '.join(contract['mutability_kinds'])}`",
+        f"- Nullability kinds: `{', '.join(contract['nullability_kinds'])}`",
+        f"- Pointer types per target: `{contract['pointer_type_count_per_target']}`",
+        "- Target pointer size and alignment are copied from the compiler-owned target layout table.",
+        "",
+        "## Canonical pointer operations",
+        "",
+        *[f"- `{kind}`" for kind in contract["operation_kinds"]],
+        "",
+        f"Selected operations per target: `{contract['operation_count_per_target']}`.",
+        "",
+        "## Provenance fields",
+        "",
+        *[f"- `{field}`" for field in contract["provenance_fields"]],
+        "",
+        "## Composition contexts",
+        "",
+        *[f"- `{context}`" for context in contract["composition_contexts"]],
+        "",
+        "## Negative classes",
+        "",
+        *[f"- `{name}`" for name in contract["negative_classes"]],
+        "",
+        "## Semantic policies",
+        "",
+        f"- Known-null dereference: `{contract['known_null_dereference_policy']}`",
+        f"- Nullable access: `{contract['nullable_access_policy']}`",
+        f"- Worker layout consumption: `{contract['worker_layout_policy']}`",
+        "",
+        "## Boundary",
+        "",
+        contract["boundary_policy"],
+        "",
+        "The worker consumes compiler-serialized pointer and pointee layout identities. It does not infer layout from source spelling, type names, host pointer APIs, or backend defaults.",
+        "",
+    ]
+    rendered = "\n".join(lines)
+    for banned in ("SHA256", "SHA-256", "sha256sum"):
+        require(
+            banned not in rendered,
+            f"Phase 14 pointer view contains banned raw-hash token: {banned}",
+        )
+    return rendered
+
+
 def render(registry):
     entries = registry["entries"]
     totals = derived_totals(registry)
@@ -5747,6 +6217,7 @@ def render(registry):
         *phase14_layout_authority_summary_lines(registry),
         *phase14_primitive_layout_summary_lines(registry),
         *phase14_integer_conversion_summary_lines(registry),
+        *phase14_pointer_summary_lines(registry),
         "## Registry entries", "",
         "| ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |",
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
@@ -5766,7 +6237,8 @@ def render(registry):
         f"- Phase 14 opening review: `{registry['legacy_views']['phase14']}`",
         f"- Phase 14 layout authority review: `{phase14_layout_authority_summary_path(registry).relative_to(ROOT)}`",
         f"- Phase 14 primitive layout review: `{phase14_primitive_layout_summary_path(registry).relative_to(ROOT)}`",
-        f"- Phase 14 integer conversion review: `{phase14_integer_conversion_summary_path(registry).relative_to(ROOT)}`", "",
+        f"- Phase 14 integer conversion review: `{phase14_integer_conversion_summary_path(registry).relative_to(ROOT)}`",
+        f"- Phase 14 pointer review: `{phase14_pointer_summary_path(registry).relative_to(ROOT)}`", "",
         "The JSON registry is authoritative. Generated Markdown is a review artifact, and the legacy Markdown documents remain historical views only.", "",
     ]
     return "\n".join(lines)
@@ -5827,6 +6299,14 @@ def check_phase14_integer_conversion_projection(registry):
     )
 
 
+def check_phase14_pointer_projection(registry):
+    check_rendered_projection(
+        phase14_pointer_summary_path(registry),
+        render_phase14_pointers(registry),
+        "generated Phase 14 pointer review",
+    )
+
+
 def check_projection(registry):
     check_rendered_projection(
         summary_path(registry),
@@ -5838,6 +6318,7 @@ def check_projection(registry):
     check_phase14_layout_authority_projection(registry)
     check_phase14_primitive_layout_projection(registry)
     check_phase14_integer_conversion_projection(registry)
+    check_phase14_pointer_projection(registry)
 
 
 def summary_path(registry):
@@ -5862,6 +6343,10 @@ def phase14_primitive_layout_summary_path(registry):
 
 def phase14_integer_conversion_summary_path(registry):
     return ROOT / "compiler/CRANELIFT_PHASE14_INTEGER_CONVERSIONS.md"
+
+
+def phase14_pointer_summary_path(registry):
+    return ROOT / "compiler/CRANELIFT_PHASE14_POINTERS.md"
 
 
 def main():
@@ -5892,16 +6377,20 @@ def main():
             "verify-phase14-layout-authority",
             "verify-phase14-primitive-layout",
             "verify-phase14-integer-conversions",
+            "verify-phase14-pointers",
             "phase14-primitive-targets",
             "phase14-conversion-targets",
+            "phase14-pointer-targets",
             "phase14-primitive-primary-target",
             "phase14-conversion-primary-target",
+            "phase14-pointer-primary-target",
             "project",
             "check-phase13-projection",
             "check-phase14-projection",
             "check-phase14-layout-authority-projection",
             "check-phase14-primitive-layout-projection",
             "check-phase14-integer-conversion-projection",
+            "check-phase14-pointer-projection",
             "check-projection",
         ),
     )
@@ -5952,7 +6441,13 @@ def main():
             verify_phase14_primitive_layout(registry)
         elif command == "verify-phase14-integer-conversions":
             verify_phase14_integer_conversions(registry)
-        elif command in {"phase14-primitive-targets", "phase14-conversion-targets"}:
+        elif command == "verify-phase14-pointers":
+            verify_phase14_pointers(registry)
+        elif command in {
+            "phase14-primitive-targets",
+            "phase14-conversion-targets",
+            "phase14-pointer-targets",
+        }:
             contract = validate_phase14_primitive_layout_structure(registry)
             print("\n".join(
                 target["target_triple"] for target in contract["declared_targets"]
@@ -5961,6 +6456,7 @@ def main():
         elif command in {
             "phase14-primitive-primary-target",
             "phase14-conversion-primary-target",
+            "phase14-pointer-primary-target",
         }:
             contract = validate_phase14_primitive_layout_structure(registry)
             print(contract["primary_level2_target"])
@@ -5972,12 +6468,14 @@ def main():
             phase14_layout_path = phase14_layout_authority_summary_path(registry)
             phase14_primitive_path = phase14_primitive_layout_summary_path(registry)
             phase14_conversion_path = phase14_integer_conversion_summary_path(registry)
+            phase14_pointer_path = phase14_pointer_summary_path(registry)
             canonical_path.parent.mkdir(parents=True, exist_ok=True)
             phase13_path.parent.mkdir(parents=True, exist_ok=True)
             phase14_path.parent.mkdir(parents=True, exist_ok=True)
             phase14_layout_path.parent.mkdir(parents=True, exist_ok=True)
             phase14_primitive_path.parent.mkdir(parents=True, exist_ok=True)
             phase14_conversion_path.parent.mkdir(parents=True, exist_ok=True)
+            phase14_pointer_path.parent.mkdir(parents=True, exist_ok=True)
             canonical_path.write_text(render(registry), encoding="utf-8")
             phase13_path.write_text(render_phase13(registry), encoding="utf-8")
             phase14_path.write_text(render_phase14(registry), encoding="utf-8")
@@ -5987,6 +6485,9 @@ def main():
             )
             phase14_conversion_path.write_text(
                 render_phase14_integer_conversions(registry), encoding="utf-8"
+            )
+            phase14_pointer_path.write_text(
+                render_phase14_pointers(registry), encoding="utf-8"
             )
         elif command == "check-phase13-projection":
             check_phase13_projection(registry)
@@ -5998,6 +6499,8 @@ def main():
             check_phase14_primitive_layout_projection(registry)
         elif command == "check-phase14-integer-conversion-projection":
             check_phase14_integer_conversion_projection(registry)
+        elif command == "check-phase14-pointer-projection":
+            check_phase14_pointer_projection(registry)
         elif command == "check-projection":
             check_projection(registry)
     except Error as exc:
@@ -6024,6 +6527,7 @@ def main():
     phase14_layout_contract = verify_phase14_layout_authority(registry)
     phase14_primitive_contract = verify_phase14_primitive_layout(registry)
     phase14_conversion_contract = verify_phase14_integer_conversions(registry)
+    phase14_pointer_contract = verify_phase14_pointers(registry)
     phase13_statuses = phase13_totals["status_counts"]
     phase13_parents = phase13_totals["parent_kinds"]
     messages = {
@@ -6178,6 +6682,13 @@ def main():
             f"{phase14_conversion_contract['target_count']} declared targets, and "
             f"{phase14_conversion_contract['deferred_count']} rows remain deferred."
         ),
+        "verify-phase14-pointers": (
+            "✅ Phase 14 bounded pointer and nullability contract passed: "
+            f"{phase14_pointer_contract['pointer_type_count']} pointer types and "
+            f"{phase14_pointer_contract['operation_count']} operations per target across "
+            f"{phase14_pointer_contract['target_count']} declared targets; "
+            f"{phase14_pointer_contract['deferred_count']} rows remain deferred."
+        ),
         "verify-phase14-opening-contract": (
             "✅ Phase 14 opening contract passed: "
             f"{phase14_contract['row_count']} rows across "
@@ -6188,7 +6699,7 @@ def main():
         "project": (
             "✅ Canonical Cranelift registry, Phase 13 final review, Phase 14 "
             "opening review, Phase 14 layout authority review, Phase 14 primitive layout review, "
-            "and Phase 14 integer conversion review generated."
+            "Phase 14 integer conversion review, and Phase 14 pointer review generated."
         ),
         "check-phase13-projection": (
             "✅ Phase 13 generated final review matches the registry."
@@ -6205,10 +6716,13 @@ def main():
         "check-phase14-integer-conversion-projection": (
             "✅ Phase 14 generated integer conversion review matches the registry."
         ),
+        "check-phase14-pointer-projection": (
+            "✅ Phase 14 generated pointer review matches the registry."
+        ),
         "check-projection": (
             "✅ Canonical Cranelift registry, Phase 13 final review, Phase 14 "
             "opening review, Phase 14 layout authority review, Phase 14 primitive layout review, "
-            "and Phase 14 integer conversion review match their committed artifacts."
+            "Phase 14 integer conversion review, and Phase 14 pointer review match their committed artifacts."
         ),
     }
     print(messages[command])

@@ -20,7 +20,8 @@ REGISTRY = ROOT / "scripts/cranelift_feature_registry.json"
 # focused guard. Phase 14 primitive layout parity already owns its generated
 # request, worker, and MIR-to-C witnesses, so it must not be rerouted through
 # the Phase 13 generic source-to-MIR capability planner. Phase 14 integer
-# conversions likewise own a dedicated target-aware parity route.
+# conversions likewise own a dedicated target-aware parity route. Phase 14
+# pointers own the bounded pointer/nullability request and witness route.
 RUNNERS = (
     (
         "scalars",
@@ -74,6 +75,12 @@ RUNNERS = (
         "conversions",
         "guard-cranelift-phase14-integer-conversion-parity",
         "PHASE14_INTEGER_CONVERSION_SKIP_DYNAMIC",
+        None,
+    ),
+    (
+        "pointer-memory",
+        "guard-cranelift-phase14-pointer-parity",
+        "PHASE14_POINTER_SKIP_DYNAMIC",
         None,
     ),
 )
@@ -308,9 +315,8 @@ def validate_registry_projection(registry):
             else:
                 require(
                     entry.get("status") == "candidate_deferred"
-                    and entry.get("route_owner") == "deferred"
-                    and family not in active,
-                    f"{entry.get('id', '<unknown>')}: deferred Phase 14 family must remain inactive",
+                    and entry.get("route_owner") == "deferred",
+                    f"{entry.get('id', '<unknown>')}: deferred Phase 14 row ownership drifted",
                 )
             continue
         require(

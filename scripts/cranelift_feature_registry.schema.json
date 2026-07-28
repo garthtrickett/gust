@@ -16,6 +16,7 @@
     "phase14_layout_authority",
     "phase14_primitive_layout",
     "phase14_integer_conversions",
+    "phase14_pointers",
     "residual_snapshots",
     "planning_categories",
     "supported_values",
@@ -30,10 +31,10 @@
       "const": 1
     },
     "registry_version": {
-      "const": 11
+      "const": 12
     },
     "registry_status": {
-      "const": "phase14_integer_conversion_ready"
+      "const": "phase14_pointer_ready"
     },
     "current_phase": {
       "const": "phase14"
@@ -215,6 +216,9 @@
     },
     "phase14_integer_conversions": {
       "$ref": "#/$defs/phase14_integer_conversions"
+    },
+    "phase14_pointers": {
+      "$ref": "#/$defs/phase14_pointers"
     }
   },
   "$defs": {
@@ -1143,7 +1147,7 @@
           "const": "phase14_compiler_owned_layout_authority_v1"
         },
         "status": {
-          "const": "consumed_by_patch14_3"
+          "const": "consumed_by_patch14_4"
         },
         "authority_owner": {
           "const": "compiler/mir_layout.gst"
@@ -1227,10 +1231,10 @@
           }
         },
         "behavior_policy": {
-          "const": "authority_transport_primitive_layout_and_integer_conversion_consumption_no_pointer_or_memory_capability_migration"
+          "const": "authority_transport_primitive_layout_integer_conversion_and_bounded_pointer_consumption_no_load_store_or_aggregate_abi_migration"
         },
         "next_patch": {
-          "const": "14.4"
+          "const": "14.5"
         }
       }
     },
@@ -1417,7 +1421,7 @@
           "const": "phase14_declared_targets_and_primitive_layout_v1"
         },
         "status": {
-          "const": "consumed_by_patch14_3"
+          "const": "consumed_by_patch14_4"
         },
         "authority_owner": {
           "const": "compiler/mir_primitive_layout.gst"
@@ -1494,10 +1498,10 @@
           }
         },
         "boundary_policy": {
-          "const": "primitive_representation_and_integer_conversion_active_no_pointer_stack_slot_load_store_string_array_struct_enum_or_aggregate_flow_migration"
+          "const": "primitive_representation_integer_conversion_and_bounded_pointer_metadata_active_no_load_store_string_array_struct_enum_or_aggregate_abi_migration"
         },
         "next_patch": {
-          "const": "14.4"
+          "const": "14.5"
         }
       }
     },
@@ -1605,7 +1609,7 @@
           "const": "phase14_signed_unsigned_width_conversion_rules_v1"
         },
         "status": {
-          "const": "ready_for_patch14_4"
+          "const": "consumed_by_patch14_4"
         },
         "authority_owner": {
           "const": "compiler/mir_integer_conversion.gst"
@@ -1711,10 +1715,149 @@
           }
         },
         "boundary_policy": {
-          "const": "pointer_integer_conversion_remains_deferred_to_pointer_policy_floating_point_conversion_outside_patch"
+          "const": "bounded_pointer_policy_is_active_but_unrestricted_pointer_integer_conversion_and_floating_point_conversion_remain_outside_patch"
         },
         "next_patch": {
-          "const": "14.4"
+          "const": "14.5"
+        }
+      }
+    },
+    "phase14_pointers": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "status",
+        "authority_owner",
+        "pointer_table_format",
+        "primary_level2_target",
+        "default_address_space",
+        "selected_pointee_type_ids",
+        "mutability_kinds",
+        "nullability_kinds",
+        "pointer_type_count_per_target",
+        "operation_kinds",
+        "operation_count_per_target",
+        "provenance_fields",
+        "known_null_dereference_policy",
+        "nullable_access_policy",
+        "worker_layout_policy",
+        "migrated_entry_ids",
+        "focused_ci_family",
+        "level1_guard",
+        "level2_guard",
+        "composition_contexts",
+        "negative_classes",
+        "boundary_policy",
+        "next_patch"
+      ],
+      "properties": {
+        "version": {
+          "const": "phase14_bounded_typed_pointers_and_nullability_v1"
+        },
+        "status": {
+          "const": "ready_for_patch14_5"
+        },
+        "authority_owner": {
+          "const": "compiler/mir_pointer.gst"
+        },
+        "pointer_table_format": {
+          "const": "gust.compiler_pointer_table.v1"
+        },
+        "primary_level2_target": {
+          "const": "x86_64-unknown-linux-gnu"
+        },
+        "default_address_space": {
+          "const": "default"
+        },
+        "selected_pointee_type_ids": {
+          "const": [
+            "type:gust:i32"
+          ]
+        },
+        "mutability_kinds": {
+          "const": [
+            "const",
+            "mutable"
+          ]
+        },
+        "nullability_kinds": {
+          "const": [
+            "non_null",
+            "nullable"
+          ]
+        },
+        "pointer_type_count_per_target": {
+          "const": 4
+        },
+        "operation_kinds": {
+          "const": [
+            "address_of_local",
+            "null_pointer",
+            "pointer_equal",
+            "pointer_not_equal",
+            "pointer_null_test",
+            "pointer_non_null_test",
+            "non_null_to_nullable",
+            "nullable_to_non_null_checked"
+          ]
+        },
+        "operation_count_per_target": {
+          "const": 11
+        },
+        "provenance_fields": {
+          "const": [
+            "origin_kind",
+            "origin_local_id",
+            "provenance_id"
+          ]
+        },
+        "known_null_dereference_policy": {
+          "const": "rejected_before_worker_because_dereference_is_deferred_to_the_load_store_contract"
+        },
+        "nullable_access_policy": {
+          "const": "nullable_values_require_a_null_test_or_checked_non_null_promotion_before_any_future_load_store"
+        },
+        "worker_layout_policy": {
+          "const": "worker_resolves_only_compiler_serialized_pointee_layout_ids_and_never_infers_layout_from_source_text_or_names"
+        },
+        "migrated_entry_ids": {
+          "const": [
+            "p14_pointer_nullability_model"
+          ]
+        },
+        "focused_ci_family": {
+          "const": "pointer-memory"
+        },
+        "level1_guard": {
+          "const": "guard-cranelift-phase14-pointer-contract"
+        },
+        "level2_guard": {
+          "const": "guard-cranelift-phase14-pointer-parity"
+        },
+        "composition_contexts": {
+          "const": [
+            "locals",
+            "comparisons",
+            "nullable_branches",
+            "aggregate_fields"
+          ]
+        },
+        "negative_classes": {
+          "type": "array",
+          "minItems": 9,
+          "maxItems": 9,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "boundary_policy": {
+          "const": "typed_pointer_identity_nullability_comparison_and_bounded_conversion_only_no_dereference_load_store_pointer_arithmetic_non_default_address_space_or_integer_pointer_cast"
+        },
+        "next_patch": {
+          "const": "14.5"
         }
       }
     }

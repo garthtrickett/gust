@@ -1,8 +1,8 @@
 {
   "schema": "scripts/cranelift_feature_registry.schema.json",
   "schema_version": 1,
-  "registry_version": 11,
-  "registry_status": "phase14_integer_conversion_ready",
+  "registry_version": 12,
+  "registry_status": "phase14_pointer_ready",
   "current_phase": "phase14",
   "closed_phase_versions": {
     "phase11": "phase11_closed_registry_backed_feature_parity_migration",
@@ -786,7 +786,7 @@
   },
   "phase14_layout_authority": {
     "version": "phase14_compiler_owned_layout_authority_v1",
-    "status": "consumed_by_patch14_3",
+    "status": "consumed_by_patch14_4",
     "authority_owner": "compiler/mir_layout.gst",
     "table_format": "gust.compiler_layout_table.v2",
     "semantic_types": [
@@ -829,12 +829,12 @@
       "no_runtime_hard_coded_duplicate_offsets",
       "no_diagnostic_layout_recomputation"
     ],
-    "behavior_policy": "authority_transport_primitive_layout_and_integer_conversion_consumption_no_pointer_or_memory_capability_migration",
-    "next_patch": "14.4"
+    "behavior_policy": "authority_transport_primitive_layout_integer_conversion_and_bounded_pointer_consumption_no_load_store_or_aggregate_abi_migration",
+    "next_patch": "14.5"
   },
   "phase14_primitive_layout": {
     "version": "phase14_declared_targets_and_primitive_layout_v1",
-    "status": "consumed_by_patch14_3",
+    "status": "consumed_by_patch14_4",
     "authority_owner": "compiler/mir_primitive_layout.gst",
     "layout_table_format": "gust.compiler_layout_table.v2",
     "normalization_policy": "compiler_normalizes_declared_aliases_before_layout_selection_unknown_targets_reject_before_driver_discovery",
@@ -1005,12 +1005,12 @@
       "invalid_boolean_value",
       "request_target_layout_disagreement"
     ],
-    "boundary_policy": "primitive_representation_and_integer_conversion_active_no_pointer_stack_slot_load_store_string_array_struct_enum_or_aggregate_flow_migration",
-    "next_patch": "14.4"
+    "boundary_policy": "primitive_representation_integer_conversion_and_bounded_pointer_metadata_active_no_load_store_string_array_struct_enum_or_aggregate_abi_migration",
+    "next_patch": "14.5"
   },
   "phase14_integer_conversions": {
     "version": "phase14_signed_unsigned_width_conversion_rules_v1",
-    "status": "ready_for_patch14_4",
+    "status": "consumed_by_patch14_4",
     "authority_owner": "compiler/mir_integer_conversion.gst",
     "conversion_table_format": "gust.compiler_integer_conversion_table.v1",
     "source_conversion_forms": [
@@ -1322,8 +1322,72 @@
       "request_target_conversion_disagreement",
       "conversion_width_mismatch"
     ],
-    "boundary_policy": "pointer_integer_conversion_remains_deferred_to_pointer_policy_floating_point_conversion_outside_patch",
-    "next_patch": "14.4"
+    "boundary_policy": "bounded_pointer_policy_is_active_but_unrestricted_pointer_integer_conversion_and_floating_point_conversion_remain_outside_patch",
+    "next_patch": "14.5"
+  },
+  "phase14_pointers": {
+    "version": "phase14_bounded_typed_pointers_and_nullability_v1",
+    "status": "ready_for_patch14_5",
+    "authority_owner": "compiler/mir_pointer.gst",
+    "pointer_table_format": "gust.compiler_pointer_table.v1",
+    "primary_level2_target": "x86_64-unknown-linux-gnu",
+    "default_address_space": "default",
+    "selected_pointee_type_ids": [
+      "type:gust:i32"
+    ],
+    "mutability_kinds": [
+      "const",
+      "mutable"
+    ],
+    "nullability_kinds": [
+      "non_null",
+      "nullable"
+    ],
+    "pointer_type_count_per_target": 4,
+    "operation_kinds": [
+      "address_of_local",
+      "null_pointer",
+      "pointer_equal",
+      "pointer_not_equal",
+      "pointer_null_test",
+      "pointer_non_null_test",
+      "non_null_to_nullable",
+      "nullable_to_non_null_checked"
+    ],
+    "operation_count_per_target": 11,
+    "provenance_fields": [
+      "origin_kind",
+      "origin_local_id",
+      "provenance_id"
+    ],
+    "known_null_dereference_policy": "rejected_before_worker_because_dereference_is_deferred_to_the_load_store_contract",
+    "nullable_access_policy": "nullable_values_require_a_null_test_or_checked_non_null_promotion_before_any_future_load_store",
+    "worker_layout_policy": "worker_resolves_only_compiler_serialized_pointee_layout_ids_and_never_infers_layout_from_source_text_or_names",
+    "migrated_entry_ids": [
+      "p14_pointer_nullability_model"
+    ],
+    "focused_ci_family": "pointer-memory",
+    "level1_guard": "guard-cranelift-phase14-pointer-contract",
+    "level2_guard": "guard-cranelift-phase14-pointer-parity",
+    "composition_contexts": [
+      "locals",
+      "comparisons",
+      "nullable_branches",
+      "aggregate_fields"
+    ],
+    "negative_classes": [
+      "pointer_width_mismatch",
+      "invalid_pointee_layout",
+      "invalid_nullability_conversion",
+      "unsupported_address_space",
+      "unsupported_pointer_arithmetic",
+      "unrestricted_integer_pointer_cast",
+      "unsized_or_unsupported_pointee",
+      "dereference_before_load_store_contract",
+      "target_required"
+    ],
+    "boundary_policy": "typed_pointer_identity_nullability_comparison_and_bounded_conversion_only_no_dereference_load_store_pointer_arithmetic_non_default_address_space_or_integer_pointer_cast",
+    "next_patch": "14.5"
   },
   "residual_snapshots": {
     "phase13": {
@@ -4101,7 +4165,8 @@
         "differential_side_effect_policy": "none",
         "composition_case_ids": [
           "phase14_composition:declared_targets_primitive_layout",
-          "phase14_composition:integer_conversions_with_layout_and_control_flow"
+          "phase14_composition:integer_conversions_with_layout_and_control_flow",
+          "phase14_composition:bounded_pointers_with_layout_conversion_and_control_flow"
         ],
         "differential_failure_fixture": "compiler/p14_target_dependent_conversions_deferred_source.gst",
         "composition_cases": [
@@ -4122,7 +4187,8 @@
             ]
           }
         ],
-        "phase14_3_composition": "integer_conversions_consume_the_same_target_and_primitive_layout_identity"
+        "phase14_3_composition": "integer_conversions_consume_the_same_target_and_primitive_layout_identity",
+        "phase14_4_composition": "bounded_pointers_consume_compiler_owned_target_pointee_layout_and_conversion_identity"
       },
       "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
       "current_failure_stage": "none_supported",
@@ -4187,11 +4253,13 @@
         "differential_side_effect_policy": "none",
         "composition_case_ids": [
           "phase14_composition:declared_targets_primitive_layout",
-          "phase14_composition:integer_conversions_with_layout_and_control_flow"
+          "phase14_composition:integer_conversions_with_layout_and_control_flow",
+          "phase14_composition:bounded_pointers_with_layout_conversion_and_control_flow"
         ],
         "differential_failure_fixture": "compiler/p14_target_dependent_conversions_deferred_source.gst",
         "composition_cases": [],
-        "phase14_3_composition": "integer_conversions_consume_the_same_target_and_primitive_layout_identity"
+        "phase14_3_composition": "integer_conversions_consume_the_same_target_and_primitive_layout_identity",
+        "phase14_4_composition": "bounded_pointers_consume_compiler_owned_target_pointee_layout_and_conversion_identity"
       },
       "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
       "current_failure_stage": "none_supported",
@@ -4279,7 +4347,8 @@
         "differential_stderr_policy": "stable_bytes",
         "differential_side_effect_policy": "none",
         "composition_case_ids": [
-          "phase14_composition:integer_conversions_with_layout_and_control_flow"
+          "phase14_composition:integer_conversions_with_layout_and_control_flow",
+          "phase14_composition:bounded_pointers_with_layout_conversion_and_control_flow"
         ],
         "differential_failure_fixture": "compiler/p14_unsupported_implicit_conversion_source.gst",
         "composition_cases": [
@@ -4299,7 +4368,8 @@
               "p14_target_layout_model"
             ]
           }
-        ]
+        ],
+        "phase14_4_composition": "bounded_pointers_consume_compiler_owned_target_pointee_layout_and_conversion_identity"
       },
       "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
       "current_failure_stage": "none_supported",
@@ -4312,27 +4382,87 @@
       "parent": "phase14_category:pointers_and_nullability",
       "feature_family": "pointer_memory",
       "ci_family": "pointer-memory",
-      "status": "candidate_deferred",
-      "route_owner": "deferred",
+      "status": "migrated",
+      "route_owner": "generic_canonical_mir",
       "worker_capability_owner": "worker_pointer_memory_lowering",
       "diagnostic_owner": "canonical_mir_memory_verifier",
-      "source_fixture": "compiler/p14_pointer_nullability_model_deferred_source.gst",
-      "canonical_mir_fixture": "none_rejected_before_canonical_MIR",
-      "differential_case_id": "phase14_opening:p14_pointer_nullability_model",
-      "deferral_reason": "phase14_authority_p14_pointer_nullability_model_awaits_bounded_capability_migration",
-      "future_destination_phase": "phase14",
-      "closure_version": "phase14_compiler_owned_layout_authority_v1",
+      "source_fixture": "compiler/phase14_pointer_nullability_source.gst",
+      "canonical_mir_fixture": "compiler/fixtures/native_backend_phase14_pointer_ingestion.mir",
+      "differential_case_id": "phase14_registry_differential:p14_pointer_nullability_model",
+      "deferral_reason": "none_migrated",
+      "future_destination_phase": "none_migrated",
+      "closure_version": "phase14_bounded_typed_pointers_and_nullability_v1",
       "evidence": {
         "opening_record_kind": "phase14_candidate",
         "declared_capability": "typed_pointers_and_nullability_rules",
         "planning_category": "pointers_and_nullability",
         "phase13_closure_dependency": "phase13_closed_deferred_registry_parity_expansion",
-        "behavior_policy": "primitive_layout_and_integer_conversion_only_other_phase14_capabilities_remain_deferred",
+        "behavior_policy": "bounded_typed_pointer_and_nullability_model_migrated_through_compiler_owned_pointer_table",
         "phase14_1_authority": "compiler_owned_layout_authority_and_request_transport_available",
-        "phase14_3_boundary": "not_selected_by_signed_unsigned_width_conversion_patch"
+        "phase14_2_contract": "phase14_declared_targets_and_primitive_layout_v1",
+        "phase14_3_contract": "phase14_signed_unsigned_width_conversion_rules_v1",
+        "phase14_4_contract": "phase14_bounded_typed_pointers_and_nullability_v1",
+        "selected_pointer_operation_kinds": [
+          "address_of_local",
+          "null_pointer",
+          "pointer_equal",
+          "pointer_not_equal",
+          "pointer_null_test",
+          "pointer_non_null_test",
+          "non_null_to_nullable",
+          "nullable_to_non_null_checked"
+        ],
+        "default_address_space": "default",
+        "selected_pointee_type_ids": [
+          "type:gust:i32"
+        ],
+        "known_null_dereference_policy": "rejected_before_worker_because_dereference_is_deferred_to_the_load_store_contract",
+        "nullable_access_policy": "nullable_values_require_a_null_test_or_checked_non_null_promotion_before_any_future_load_store",
+        "focused_source_fixtures": [
+          "compiler/phase14_pointer_nullability_source.gst"
+        ],
+        "negative_source_fixtures": [
+          "compiler/p14_pointer_width_mismatch_source.gst",
+          "compiler/p14_invalid_pointee_layout_source.gst",
+          "compiler/p14_invalid_nullability_conversion_source.gst",
+          "compiler/p14_unsupported_address_space_source.gst",
+          "compiler/p14_unsupported_pointer_arithmetic_source.gst",
+          "compiler/p14_pointer_integer_cast_unsupported_source.gst",
+          "compiler/p14_unsized_pointer_pointee_source.gst",
+          "compiler/p14_pointer_dereference_deferred_source.gst",
+          "compiler/p14_pointer_missing_target_source.gst"
+        ],
+        "malformed_canonical_mir_fixture": "compiler/fixtures/native_backend_phase14_pointer_malformed.mir",
+        "positive_expectation": "exit_49_phase14_pointer_nullability",
+        "individual_evidence_guard": "guard-cranelift-phase14-pointer-parity",
+        "differential_stderr_policy": "stable_bytes",
+        "differential_side_effect_policy": "none",
+        "composition_case_ids": [
+          "phase14_composition:bounded_pointers_with_layout_conversion_and_control_flow"
+        ],
+        "differential_failure_fixture": "compiler/p14_unsupported_pointer_arithmetic_source.gst",
+        "composition_cases": [
+          {
+            "id": "phase14_composition:bounded_pointers_with_layout_conversion_and_control_flow",
+            "owner_entry_id": "p14_pointer_nullability_model",
+            "ci_family": "pointer-memory",
+            "source_fixture": "compiler/phase14_pointer_composition_source.gst",
+            "positive_expectation": "exit_50_phase14_pointer_composition",
+            "stderr_policy": "stable_bytes",
+            "side_effect_policy": "none",
+            "failure_fixture": "compiler/p14_pointer_dereference_deferred_source.gst",
+            "covers_entry_ids": [
+              "p14_pointer_nullability_model",
+              "p14_primitive_scalar_layout",
+              "p14_pointer_sized_integer_layout",
+              "p14_target_layout_model",
+              "p14_target_dependent_conversions"
+            ]
+          }
+        ]
       },
       "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
-      "current_failure_stage": "before_driver_discovery",
+      "current_failure_stage": "none_supported",
       "positive_future_fixture": "compiler/future/p14_pointer_nullability_model_source.gst",
       "negative_current_fixture": "compiler/p14_pointer_nullability_model_deferred_source.gst"
     },
@@ -4604,11 +4734,13 @@
         "differential_side_effect_policy": "none",
         "composition_case_ids": [
           "phase14_composition:declared_targets_primitive_layout",
-          "phase14_composition:integer_conversions_with_layout_and_control_flow"
+          "phase14_composition:integer_conversions_with_layout_and_control_flow",
+          "phase14_composition:bounded_pointers_with_layout_conversion_and_control_flow"
         ],
         "differential_failure_fixture": "compiler/p14_target_dependent_conversions_deferred_source.gst",
         "composition_cases": [],
-        "phase14_3_composition": "integer_conversions_consume_the_same_target_and_primitive_layout_identity"
+        "phase14_3_composition": "integer_conversions_consume_the_same_target_and_primitive_layout_identity",
+        "phase14_4_composition": "bounded_pointers_consume_compiler_owned_target_pointee_layout_and_conversion_identity"
       },
       "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
       "current_failure_stage": "none_supported",

@@ -57,6 +57,9 @@ jobs:
       - name: Phase 14 signed unsigned and width conversions
         run: just guard-cranelift-phase14-integer-conversion-contract
 
+      - name: Phase 14 bounded typed pointers and nullability
+        run: just guard-cranelift-phase14-pointer-contract
+
       - name: Upload Gust build outputs
         uses: actions/upload-artifact@v4
         with:

@@ -20,6 +20,7 @@
 import "token.gst" as token;
 import "mir_layout.gst" as layout;
 import "mir_integer_conversion.gst" as conversion;
+import "mir_pointer.gst" as pointer;
 
 type MirTypeLayoutReference[ctx] struct {
     type_id: str,
@@ -61,6 +62,42 @@ type MirIntegerConversionReference[ctx] struct {
     policy: str
 }
 
+type MirPointerOperationKind enum {
+    AddressOfLocal,
+    NullPointer,
+    PointerEqual,
+    PointerNotEqual,
+    PointerNullTest,
+    PointerNonNullTest,
+    NonNullToNullable,
+    NullableToNonNullChecked
+}
+
+type MirPointerTypeReference[ctx] struct {
+    pointer_type_id: str,
+    target_id: str,
+    pointee_type_id: str,
+    pointee_layout_id: str,
+    mutability: str,
+    nullability: str,
+    address_space: str,
+    pointer_size: int,
+    pointer_alignment: int
+}
+
+type MirPointerOperationReference[ctx] struct {
+    operation_id: str,
+    operation_name: str,
+    target_id: str,
+    operation_kind: MirPointerOperationKind,
+    source_pointer_type_id: str,
+    destination_pointer_type_id: str,
+    result_type_id: str,
+    origin_kind: str,
+    origin_local_id: int,
+    provenance_id: str
+}
+
 type MirProgram[ctx] struct {
     functions: Index[std.Vector[MirFunction[ctx], ctx], ctx],
     resource_metadata: Index[std.Vector[MirResourceMetadata[ctx], ctx], ctx],
@@ -68,7 +105,9 @@ type MirProgram[ctx] struct {
     native_boundary_metadata: Index[std.Vector[MirNativeBoundaryMetadata[ctx], ctx], ctx],
     type_layout_references: Index[std.Vector[MirTypeLayoutReference[ctx], ctx], ctx],
     primitive_scalar_references: Index[std.Vector[MirPrimitiveScalarReference[ctx], ctx], ctx],
-    integer_conversion_references: Index[std.Vector[MirIntegerConversionReference[ctx], ctx], ctx]
+    integer_conversion_references: Index[std.Vector[MirIntegerConversionReference[ctx], ctx], ctx],
+    pointer_type_references: Index[std.Vector[MirPointerTypeReference[ctx], ctx], ctx],
+    pointer_operation_references: Index[std.Vector[MirPointerOperationReference[ctx], ctx], ctx]
 }
 
 type MirFunction[ctx] struct {
@@ -140,6 +179,12 @@ type MirValue[ctx] enum {
     IntegerConvert {
         operand: Index[MirValue[ctx], ctx],
         conversion: Index[MirIntegerConversionReference[ctx], ctx],
+        value_type: str,
+        span: token.Span
+    },
+    PointerOperation {
+        operands: Index[std.Vector[MirValue[ctx], ctx], ctx],
+        operation: Index[MirPointerOperationReference[ctx], ctx],
         value_type: str,
         span: token.Span
     }
@@ -352,6 +397,27 @@ func mir_empty_integer_conversion_reference_vector(ctx: &Arena) Index[std.Vector
     return references_idx;
 }
 
+func mir_empty_pointer_type_reference_vector(ctx: &Arena) Index[std.Vector[MirPointerTypeReference[ctx], ctx], ctx] {
+    mut references: std.Vector[MirPointerTypeReference[ctx], ctx] := std.VectorNew(ctx);
+    mut references_idx: Index[std.Vector[MirPointerTypeReference[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(references_idx, references);
+    return references_idx;
+}
+
+func mir_empty_pointer_operation_reference_vector(ctx: &Arena) Index[std.Vector[MirPointerOperationReference[ctx], ctx], ctx] {
+    mut references: std.Vector[MirPointerOperationReference[ctx], ctx] := std.VectorNew(ctx);
+    mut references_idx: Index[std.Vector[MirPointerOperationReference[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(references_idx, references);
+    return references_idx;
+}
+
+func mir_value_vector_with_value(values_idx: Index[std.Vector[MirValue[ctx], ctx], ctx], value: MirValue[ctx], ctx: &Arena) Index[std.Vector[MirValue[ctx], ctx], ctx] {
+    mut values: std.Vector[MirValue[ctx], ctx] := ctx[values_idx];
+    values.Push(value);
+    ctx.Set(values_idx, values);
+    return values_idx;
+}
+
 func mir_alloc_value(value: MirValue[ctx], ctx: &Arena) Index[MirValue[ctx], ctx] {
     mut value_idx: Index[MirValue[ctx], ctx] := os.ArenaAlloc(ctx);
     ctx.Set(value_idx, value);
@@ -373,6 +439,8 @@ func mir_make_program(ctx: &Arena) MirProgram[ctx] {
     program.type_layout_references = mir_empty_type_layout_reference_vector(ctx);
     program.primitive_scalar_references = mir_empty_primitive_scalar_reference_vector(ctx);
     program.integer_conversion_references = mir_empty_integer_conversion_reference_vector(ctx);
+    program.pointer_type_references = mir_empty_pointer_type_reference_vector(ctx);
+    program.pointer_operation_references = mir_empty_pointer_operation_reference_vector(ctx);
     return program;
 }
 
@@ -543,6 +611,125 @@ func mir_program_integer_conversion_references_are_valid(program: MirProgram[ctx
             prior_index = prior_index + 1;
         }
         reference_index = reference_index + 1;
+    }
+    return 1;
+}
+
+func mir_pointer_operation_kind_from_name(kind: str) MirPointerOperationKind {
+    mut result: MirPointerOperationKind;
+    unsafe {
+        result.tag = 0;
+        if std.str_eq(kind, "null_pointer") == 1 { result.tag = 1; }
+        if std.str_eq(kind, "pointer_equal") == 1 { result.tag = 2; }
+        if std.str_eq(kind, "pointer_not_equal") == 1 { result.tag = 3; }
+        if std.str_eq(kind, "pointer_null_test") == 1 { result.tag = 4; }
+        if std.str_eq(kind, "pointer_non_null_test") == 1 { result.tag = 5; }
+        if std.str_eq(kind, "non_null_to_nullable") == 1 { result.tag = 6; }
+        if std.str_eq(kind, "nullable_to_non_null_checked") == 1 { result.tag = 7; }
+    }
+    return result;
+}
+
+func mir_debug_pointer_operation_kind(kind: MirPointerOperationKind) str {
+    if kind.tag == 0 { return "address_of_local"; }
+    if kind.tag == 1 { return "null_pointer"; }
+    if kind.tag == 2 { return "pointer_equal"; }
+    if kind.tag == 3 { return "pointer_not_equal"; }
+    if kind.tag == 4 { return "pointer_null_test"; }
+    if kind.tag == 5 { return "pointer_non_null_test"; }
+    if kind.tag == 6 { return "non_null_to_nullable"; }
+    if kind.tag == 7 { return "nullable_to_non_null_checked"; }
+    return "unknown_pointer_operation";
+}
+
+func mir_make_pointer_type_reference(pointer_type: pointer.MirPointerType[ctx], ctx: &Arena) MirPointerTypeReference[ctx] {
+    mut reference: MirPointerTypeReference[ctx];
+    reference.pointer_type_id = std.Clone(ctx, pointer_type.pointer_type_id);
+    reference.target_id = std.Clone(ctx, pointer_type.target_id);
+    reference.pointee_type_id = std.Clone(ctx, pointer_type.pointee_type_id);
+    reference.pointee_layout_id = std.Clone(ctx, pointer_type.pointee_layout_id);
+    reference.mutability = std.Clone(ctx, pointer_type.mutability);
+    reference.nullability = std.Clone(ctx, pointer_type.nullability);
+    reference.address_space = std.Clone(ctx, pointer_type.address_space);
+    reference.pointer_size = pointer_type.pointer_size;
+    reference.pointer_alignment = pointer_type.pointer_alignment;
+    return reference;
+}
+
+func mir_make_pointer_operation_reference(operation: pointer.MirPointerOperation[ctx], ctx: &Arena) MirPointerOperationReference[ctx] {
+    mut reference: MirPointerOperationReference[ctx];
+    reference.operation_id = std.Clone(ctx, operation.operation_id);
+    reference.operation_name = std.Clone(ctx, operation.operation_name);
+    reference.target_id = std.Clone(ctx, operation.target_id);
+    reference.operation_kind = mir_pointer_operation_kind_from_name(operation.kind);
+    reference.source_pointer_type_id = std.Clone(ctx, operation.source_pointer_type_id);
+    reference.destination_pointer_type_id = std.Clone(ctx, operation.destination_pointer_type_id);
+    reference.result_type_id = std.Clone(ctx, operation.result_type_id);
+    reference.origin_kind = std.Clone(ctx, operation.origin_kind);
+    reference.origin_local_id = operation.origin_local_id;
+    reference.provenance_id = std.Clone(ctx, operation.provenance_id);
+    return reference;
+}
+
+func mir_program_with_pointer_type_reference(program: MirProgram[ctx], reference: MirPointerTypeReference[ctx], ctx: &Arena) MirProgram[ctx] {
+    mut updated := program;
+    mut references: std.Vector[MirPointerTypeReference[ctx], ctx] := ctx[updated.pointer_type_references];
+    references.Push(reference);
+    ctx.Set(updated.pointer_type_references, references);
+    return updated;
+}
+
+func mir_program_with_pointer_operation_reference(program: MirProgram[ctx], reference: MirPointerOperationReference[ctx], ctx: &Arena) MirProgram[ctx] {
+    mut updated := program;
+    mut references: std.Vector[MirPointerOperationReference[ctx], ctx] := ctx[updated.pointer_operation_references];
+    references.Push(reference);
+    ctx.Set(updated.pointer_operation_references, references);
+    return updated;
+}
+
+func mir_program_pointer_references_are_valid(program: MirProgram[ctx], pointer_table: pointer.MirPointerTable[ctx], layout_table: layout.MirLayoutTable[ctx], ctx: &Arena) int {
+    if pointer.mir_pointer_table_is_valid(pointer_table, layout_table, ctx) == 0 {
+        return 0;
+    }
+    mut type_references: std.Vector[MirPointerTypeReference[ctx], ctx] := ctx[program.pointer_type_references];
+    mut type_index := 0;
+    while type_index < len(type_references) {
+        mut reference := type_references[type_index];
+        mut query := pointer.mir_pointer_type(pointer_table, reference.pointer_type_id, ctx);
+        if query.found == 0 ||
+           std.str_eq(query.pointer_type.target_id, reference.target_id) == 0 ||
+           std.str_eq(query.pointer_type.pointee_type_id, reference.pointee_type_id) == 0 ||
+           std.str_eq(query.pointer_type.pointee_layout_id, reference.pointee_layout_id) == 0 ||
+           std.str_eq(query.pointer_type.mutability, reference.mutability) == 0 ||
+           std.str_eq(query.pointer_type.nullability, reference.nullability) == 0 ||
+           std.str_eq(query.pointer_type.address_space, reference.address_space) == 0 ||
+           query.pointer_type.pointer_size != reference.pointer_size ||
+           query.pointer_type.pointer_alignment != reference.pointer_alignment
+        {
+            return 0;
+        }
+        type_index = type_index + 1;
+    }
+
+    mut operation_references: std.Vector[MirPointerOperationReference[ctx], ctx] := ctx[program.pointer_operation_references];
+    mut operation_index := 0;
+    while operation_index < len(operation_references) {
+        mut reference := operation_references[operation_index];
+        mut query := pointer.mir_pointer_operation(pointer_table, reference.operation_name, ctx);
+        if query.found == 0 ||
+           std.str_eq(query.operation.operation_id, reference.operation_id) == 0 ||
+           std.str_eq(query.operation.target_id, reference.target_id) == 0 ||
+           std.str_eq(query.operation.kind, mir_debug_pointer_operation_kind(reference.operation_kind)) == 0 ||
+           std.str_eq(query.operation.source_pointer_type_id, reference.source_pointer_type_id) == 0 ||
+           std.str_eq(query.operation.destination_pointer_type_id, reference.destination_pointer_type_id) == 0 ||
+           std.str_eq(query.operation.result_type_id, reference.result_type_id) == 0 ||
+           std.str_eq(query.operation.origin_kind, reference.origin_kind) == 0 ||
+           query.operation.origin_local_id != reference.origin_local_id ||
+           std.str_eq(query.operation.provenance_id, reference.provenance_id) == 0
+        {
+            return 0;
+        }
+        operation_index = operation_index + 1;
     }
     return 1;
 }
@@ -1216,6 +1403,20 @@ func mir_make_value_integer_convert(operand: Index[MirValue[ctx], ctx], conversi
     return value;
 }
 
+func mir_make_value_pointer_operation(operands: Index[std.Vector[MirValue[ctx], ctx], ctx], operation_reference: MirPointerOperationReference[ctx], value_type: str, span: token.Span, ctx: &Arena) MirValue[ctx] {
+    mut operation_reference_idx: Index[MirPointerOperationReference[ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(operation_reference_idx, operation_reference);
+    mut value: MirValue[ctx];
+    unsafe {
+        value.tag = 6; // PointerOperation
+        value.PointerOperation.operands = operands;
+        value.PointerOperation.operation = operation_reference_idx;
+        value.PointerOperation.value_type = std.Clone(ctx, value_type);
+        value.PointerOperation.span = span;
+    }
+    return value;
+}
+
 func mir_make_terminator_return_void(span: token.Span, ctx: &Arena) MirTerminator[ctx] {
     mut terminator: MirTerminator[ctx];
     unsafe {
@@ -1367,6 +1568,9 @@ func mir_debug_value_kind(value: MirValue[ctx]) str {
     }
     if value.tag == 5 {
         return "MirValue.IntegerConvert";
+    }
+    if value.tag == 6 {
+        return "MirValue.PointerOperation";
     }
     return "MirValue.<unknown>";
 }

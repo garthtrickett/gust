@@ -4,12 +4,12 @@
 
 CRANELIFT_PHASE14_INTEGER_CONVERSION_VIEW_VERSION: 1
 CRANELIFT_PHASE14_INTEGER_CONVERSION_VERSION: phase14_signed_unsigned_width_conversion_rules_v1
-CRANELIFT_PHASE14_INTEGER_CONVERSION_STATUS: ready_for_patch14_4
+CRANELIFT_PHASE14_INTEGER_CONVERSION_STATUS: consumed_by_patch14_4
 CRANELIFT_PHASE14_INTEGER_CONVERSION_OWNER: compiler/mir_integer_conversion.gst
 CRANELIFT_PHASE14_INTEGER_CONVERSION_TABLE_FORMAT: gust.compiler_integer_conversion_table.v1
 CRANELIFT_PHASE14_INTEGER_CONVERSION_LEVEL1_GUARD: guard-cranelift-phase14-integer-conversion-contract
 CRANELIFT_PHASE14_INTEGER_CONVERSION_LEVEL2_GUARD: guard-cranelift-phase14-integer-conversion-parity
-CRANELIFT_PHASE14_INTEGER_CONVERSION_NEXT_PATCH: 14.4
+CRANELIFT_PHASE14_INTEGER_CONVERSION_NEXT_PATCH: 14.5
 
 ## Declared source forms
 
@@ -93,6 +93,6 @@ CRANELIFT_PHASE14_INTEGER_CONVERSION_NEXT_PATCH: 14.4
 
 ## Boundary
 
-pointer_integer_conversion_remains_deferred_to_pointer_policy_floating_point_conversion_outside_patch
+bounded_pointer_policy_is_active_but_unrestricted_pointer_integer_conversion_and_floating_point_conversion_remain_outside_patch
 
 MIR-to-C and Cranelift consume the same compiler-selected conversion kind, widths, signedness, policy, target identity, and stable reason codes. Neither backend is the semantic authority.

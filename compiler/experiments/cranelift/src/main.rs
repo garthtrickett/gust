@@ -3857,6 +3857,748 @@ fn print_phase14_integer_conversion_witness(
     Ok(())
 }
 
+
+const PHASE14_POINTER_TABLE_FORMAT_V1: &str =
+    "gust.compiler_pointer_table.v1";
+
+#[derive(Debug)]
+struct Phase14RequestPointerType {
+    pointer_type_id: String,
+    target_id: String,
+    pointee_type_id: String,
+    pointee_layout_id: String,
+    mutability: String,
+    nullability: String,
+    address_space: String,
+    pointer_size: usize,
+    pointer_alignment: usize,
+}
+
+#[derive(Debug)]
+struct Phase14RequestPointerOperation {
+    operation_id: String,
+    operation_name: String,
+    target_id: String,
+    kind: String,
+    source_pointer_type_id: String,
+    destination_pointer_type_id: String,
+    result_type_id: String,
+    operand_count: usize,
+    lhs_known_null: i64,
+    rhs_known_null: i64,
+    origin_kind: String,
+    origin_local_id: i64,
+    provenance_id: String,
+    context_kind: String,
+    expect_success: bool,
+    expected_value: i64,
+    expected_reason_code: String,
+}
+
+#[derive(Debug)]
+struct Phase14RequestPointerTable {
+    format: String,
+    target_id: String,
+    target_triple: String,
+    default_address_space: String,
+    pointer_types: Vec<Phase14RequestPointerType>,
+    operations: Vec<Phase14RequestPointerOperation>,
+}
+
+impl Phase14RequestPointerTable {
+    fn legacy_empty(target_triple: &str) -> Self {
+        Self {
+            format: String::new(),
+            target_id: String::new(),
+            target_triple: target_triple.to_string(),
+            default_address_space: String::new(),
+            pointer_types: Vec::new(),
+            operations: Vec::new(),
+        }
+    }
+}
+
+fn phase14_pointer_mutability_is_valid(value: &str) -> bool {
+    matches!(value, "const" | "mutable")
+}
+
+fn phase14_pointer_nullability_is_valid(value: &str) -> bool {
+    matches!(value, "non_null" | "nullable")
+}
+
+fn phase14_pointer_operation_kind_is_valid(value: &str) -> bool {
+    matches!(
+        value,
+        "address_of_local"
+            | "null_pointer"
+            | "pointer_equal"
+            | "pointer_not_equal"
+            | "pointer_null_test"
+            | "pointer_non_null_test"
+            | "non_null_to_nullable"
+            | "nullable_to_non_null_checked"
+    )
+}
+
+fn phase14_pointer_context_is_valid(value: &str) -> bool {
+    matches!(value, "local" | "comparison" | "branch" | "aggregate_field")
+}
+
+fn phase14_pointer_type_identity(pointer_type: &Phase14RequestPointerType) -> String {
+    format!(
+        "pointer:v1:target={}:pointee={}:layout={}:mutability={}:nullability={}:address_space={}:size={}:align={}",
+        pointer_type.target_id,
+        pointer_type.pointee_type_id,
+        pointer_type.pointee_layout_id,
+        pointer_type.mutability,
+        pointer_type.nullability,
+        pointer_type.address_space,
+        pointer_type.pointer_size,
+        pointer_type.pointer_alignment,
+    )
+}
+
+fn phase14_pointer_operation_identity(
+    operation: &Phase14RequestPointerOperation,
+) -> String {
+    format!(
+        "pointer_operation:v1:target={}:kind={}:name={}:source={}:destination={}:origin={}",
+        operation.target_id,
+        operation.kind,
+        operation.operation_name,
+        operation.source_pointer_type_id,
+        operation.destination_pointer_type_id,
+        operation.origin_kind,
+    )
+}
+
+fn parse_phase14_request_pointer_table(
+    cursor: &mut Phase10TextCursor<'_>,
+    request_target_triple: &str,
+    layout_table: &Phase14RequestLayoutTable,
+) -> Result<Phase14RequestPointerTable, Box<dyn Error>> {
+    let parse_stage = Phase10BackendRequestStage::RequestParse;
+    let parse_kind = Phase10BackendRequestFailureKind::InvalidRequest;
+
+    let format_name = cursor
+        .take_field(
+            "pointer_table_format",
+            false,
+            parse_stage,
+            parse_kind,
+        )?
+        .to_string();
+    if format_name != PHASE14_POINTER_TABLE_FORMAT_V1 {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::RequestValidation,
+            Phase10BackendRequestFailureKind::ProtocolMismatch,
+            format!(
+                "pointer table format expected {PHASE14_POINTER_TABLE_FORMAT_V1}, got {format_name}"
+            ),
+        ));
+    }
+    let target_id = cursor
+        .take_field(
+            "pointer_target_id",
+            false,
+            parse_stage,
+            parse_kind,
+        )?
+        .to_string();
+    let target_triple = cursor
+        .take_field(
+            "pointer_target_triple",
+            false,
+            parse_stage,
+            parse_kind,
+        )?
+        .to_string();
+    let default_address_space = cursor
+        .take_field(
+            "pointer_default_address_space",
+            false,
+            parse_stage,
+            parse_kind,
+        )?
+        .to_string();
+
+    let pointer_type_count = cursor.take_usize_field(
+        "pointer_type_count",
+        parse_stage,
+        parse_kind,
+    )?;
+    let mut pointer_types = Vec::with_capacity(pointer_type_count);
+    for index in 0..pointer_type_count {
+        let prefix = format!("pointer_type_{index}");
+        pointer_types.push(Phase14RequestPointerType {
+            pointer_type_id: cursor
+                .take_field(
+                    &format!("{prefix}_id"),
+                    false,
+                    parse_stage,
+                    parse_kind,
+                )?
+                .to_string(),
+            target_id: cursor
+                .take_field(
+                    &format!("{prefix}_target_id"),
+                    false,
+                    parse_stage,
+                    parse_kind,
+                )?
+                .to_string(),
+            pointee_type_id: cursor
+                .take_field(
+                    &format!("{prefix}_pointee_type_id"),
+                    false,
+                    parse_stage,
+                    parse_kind,
+                )?
+                .to_string(),
+            pointee_layout_id: cursor
+                .take_field(
+                    &format!("{prefix}_pointee_layout_id"),
+                    false,
+                    parse_stage,
+                    parse_kind,
+                )?
+                .to_string(),
+            mutability: cursor
+                .take_field(
+                    &format!("{prefix}_mutability"),
+                    false,
+                    parse_stage,
+                    parse_kind,
+                )?
+                .to_string(),
+            nullability: cursor
+                .take_field(
+                    &format!("{prefix}_nullability"),
+                    false,
+                    parse_stage,
+                    parse_kind,
+                )?
+                .to_string(),
+            address_space: cursor
+                .take_field(
+                    &format!("{prefix}_address_space"),
+                    false,
+                    parse_stage,
+                    parse_kind,
+                )?
+                .to_string(),
+            pointer_size: cursor.take_usize_field(
+                &format!("{prefix}_pointer_size"),
+                parse_stage,
+                parse_kind,
+            )?,
+            pointer_alignment: cursor.take_usize_field(
+                &format!("{prefix}_pointer_alignment"),
+                parse_stage,
+                parse_kind,
+            )?,
+        });
+    }
+
+    let operation_count = cursor.take_usize_field(
+        "pointer_operation_count",
+        parse_stage,
+        parse_kind,
+    )?;
+    let mut operations = Vec::with_capacity(operation_count);
+    for index in 0..operation_count {
+        let prefix = format!("pointer_operation_{index}");
+        operations.push(Phase14RequestPointerOperation {
+            operation_id: cursor
+                .take_field(
+                    &format!("{prefix}_id"),
+                    false,
+                    parse_stage,
+                    parse_kind,
+                )?
+                .to_string(),
+            operation_name: cursor
+                .take_field(
+                    &format!("{prefix}_name"),
+                    false,
+                    parse_stage,
+                    parse_kind,
+                )?
+                .to_string(),
+            target_id: cursor
+                .take_field(
+                    &format!("{prefix}_target_id"),
+                    false,
+                    parse_stage,
+                    parse_kind,
+                )?
+                .to_string(),
+            kind: cursor
+                .take_field(
+                    &format!("{prefix}_kind"),
+                    false,
+                    parse_stage,
+                    parse_kind,
+                )?
+                .to_string(),
+            source_pointer_type_id: cursor
+                .take_field(
+                    &format!("{prefix}_source_pointer_type_id"),
+                    true,
+                    parse_stage,
+                    parse_kind,
+                )?
+                .to_string(),
+            destination_pointer_type_id: cursor
+                .take_field(
+                    &format!("{prefix}_destination_pointer_type_id"),
+                    true,
+                    parse_stage,
+                    parse_kind,
+                )?
+                .to_string(),
+            result_type_id: cursor
+                .take_field(
+                    &format!("{prefix}_result_type_id"),
+                    true,
+                    parse_stage,
+                    parse_kind,
+                )?
+                .to_string(),
+            operand_count: cursor.take_usize_field(
+                &format!("{prefix}_operand_count"),
+                parse_stage,
+                parse_kind,
+            )?,
+            lhs_known_null: cursor.take_i64_field(
+                &format!("{prefix}_lhs_known_null"),
+                parse_stage,
+                parse_kind,
+            )?,
+            rhs_known_null: cursor.take_i64_field(
+                &format!("{prefix}_rhs_known_null"),
+                parse_stage,
+                parse_kind,
+            )?,
+            origin_kind: cursor
+                .take_field(
+                    &format!("{prefix}_origin_kind"),
+                    false,
+                    parse_stage,
+                    parse_kind,
+                )?
+                .to_string(),
+            origin_local_id: cursor.take_i64_field(
+                &format!("{prefix}_origin_local_id"),
+                parse_stage,
+                parse_kind,
+            )?,
+            provenance_id: cursor
+                .take_field(
+                    &format!("{prefix}_provenance_id"),
+                    false,
+                    parse_stage,
+                    parse_kind,
+                )?
+                .to_string(),
+            context_kind: cursor
+                .take_field(
+                    &format!("{prefix}_context_kind"),
+                    false,
+                    parse_stage,
+                    parse_kind,
+                )?
+                .to_string(),
+            expect_success: phase14_parse_bool_field(
+                cursor,
+                &format!("{prefix}_expect_success"),
+            )?,
+            expected_value: cursor.take_i64_field(
+                &format!("{prefix}_expected_value"),
+                parse_stage,
+                parse_kind,
+            )?,
+            expected_reason_code: cursor
+                .take_field(
+                    &format!("{prefix}_expected_reason_code"),
+                    false,
+                    parse_stage,
+                    parse_kind,
+                )?
+                .to_string(),
+        });
+    }
+
+    let table = Phase14RequestPointerTable {
+        format: format_name,
+        target_id,
+        target_triple,
+        default_address_space,
+        pointer_types,
+        operations,
+    };
+    validate_phase14_request_pointer_table(
+        &table,
+        request_target_triple,
+        layout_table,
+    )?;
+    Ok(table)
+}
+
+#[derive(Debug)]
+struct Phase14PointerEvaluation {
+    success: bool,
+    value: i64,
+    reason_code: String,
+}
+
+fn phase14_evaluate_pointer_operation(
+    operation: &Phase14RequestPointerOperation,
+) -> Phase14PointerEvaluation {
+    let mut result = Phase14PointerEvaluation {
+        success: false,
+        value: 0,
+        reason_code: "pointer_operation_not_supported".to_string(),
+    };
+    if !(0..=1).contains(&operation.lhs_known_null)
+        || !(0..=1).contains(&operation.rhs_known_null)
+    {
+        result.reason_code = "pointer_known_null_state_invalid".to_string();
+        return result;
+    }
+
+    match operation.kind.as_str() {
+        "address_of_local" => {
+            result.success = true;
+            result.value = 0;
+            result.reason_code = "pointer_value_valid".to_string();
+        }
+        "null_pointer" => {
+            result.success = true;
+            result.value = 1;
+            result.reason_code = "pointer_value_valid".to_string();
+        }
+        "pointer_equal" => {
+            result.success = true;
+            result.value = if operation.lhs_known_null
+                == operation.rhs_known_null
+            {
+                1
+            } else {
+                0
+            };
+            result.reason_code = "pointer_value_valid".to_string();
+        }
+        "pointer_not_equal" => {
+            result.success = true;
+            result.value = if operation.lhs_known_null
+                != operation.rhs_known_null
+            {
+                1
+            } else {
+                0
+            };
+            result.reason_code = "pointer_value_valid".to_string();
+        }
+        "pointer_null_test" => {
+            result.success = true;
+            result.value = operation.lhs_known_null;
+            result.reason_code = "pointer_value_valid".to_string();
+        }
+        "pointer_non_null_test" => {
+            result.success = true;
+            result.value = 1 - operation.lhs_known_null;
+            result.reason_code = "pointer_value_valid".to_string();
+        }
+        "non_null_to_nullable" => {
+            if operation.lhs_known_null == 1 {
+                result.reason_code =
+                    "pointer_non_null_source_required".to_string();
+            } else {
+                result.success = true;
+                result.value = 0;
+                result.reason_code = "pointer_value_valid".to_string();
+            }
+        }
+        "nullable_to_non_null_checked" => {
+            if operation.lhs_known_null == 1 {
+                result.reason_code =
+                    "pointer_nullability_check_failed".to_string();
+            } else {
+                result.success = true;
+                result.value = 0;
+                result.reason_code = "pointer_value_valid".to_string();
+            }
+        }
+        _ => {}
+    }
+    result
+}
+
+fn phase14_cranelift_pointer_type(
+    pointer_type: &Phase14RequestPointerType,
+    target: &Phase14RequestTargetLayout,
+) -> Result<Type, Box<dyn Error>> {
+    if pointer_type.pointer_size != target.pointer_size
+        || pointer_type.pointer_alignment != target.pointer_alignment
+    {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "compiler pointer width or alignment disagrees with target layout",
+        ));
+    }
+    match pointer_type.pointer_size {
+        4 => Ok(types::I32),
+        8 => Ok(types::I64),
+        width => Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            format!("unsupported compiler pointer size: {width}"),
+        )),
+    }
+}
+
+fn validate_phase14_request_pointer_table(
+    table: &Phase14RequestPointerTable,
+    request_target_triple: &str,
+    layout_table: &Phase14RequestLayoutTable,
+) -> Result<(), Box<dyn Error>> {
+    let stage = Phase10BackendRequestStage::CanonicalMirValidation;
+    let kind = Phase10BackendRequestFailureKind::InvalidCanonicalMir;
+
+    if table.format != PHASE14_POINTER_TABLE_FORMAT_V1 {
+        return Err(phase10_backend_request_error(
+            stage,
+            kind,
+            "pointer table format mismatch",
+        ));
+    }
+    if table.target_triple != request_target_triple
+        || table.target_triple != layout_table.target.target_triple
+        || table.target_id != layout_table.target.target_id
+    {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::TargetValidation,
+            Phase10BackendRequestFailureKind::TargetMismatch,
+            "request target, layout target, and pointer target disagree",
+        ));
+    }
+    if table.default_address_space != "default" {
+        return Err(phase10_backend_request_error(
+            stage,
+            kind,
+            "unsupported pointer address space",
+        ));
+    }
+    if table.pointer_types.len() != 4 {
+        return Err(phase10_backend_request_error(
+            stage,
+            kind,
+            format!(
+                "pointer type inventory expected 4 types, got {}",
+                table.pointer_types.len()
+            ),
+        ));
+    }
+
+    let mut pointer_type_ids = std::collections::HashSet::new();
+    for pointer_type in &table.pointer_types {
+        if pointer_type.pointer_type_id != phase14_pointer_type_identity(pointer_type)
+            || pointer_type.target_id != table.target_id
+            || pointer_type.pointee_type_id != "type:gust:i32"
+            || !phase14_pointer_mutability_is_valid(&pointer_type.mutability)
+            || !phase14_pointer_nullability_is_valid(&pointer_type.nullability)
+            || pointer_type.address_space != "default"
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                format!(
+                    "invalid compiler-owned pointer type: {}",
+                    pointer_type.pointer_type_id
+                ),
+            ));
+        }
+        if !pointer_type_ids.insert(pointer_type.pointer_type_id.clone()) {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "duplicate compiler-owned pointer type identity",
+            ));
+        }
+        let Some(pointee_layout) = layout_table
+            .layouts
+            .iter()
+            .find(|layout| layout.layout_id == pointer_type.pointee_layout_id)
+        else {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                format!(
+                    "pointer pointee layout is not declared: {}",
+                    pointer_type.pointee_layout_id
+                ),
+            ));
+        };
+        if pointee_layout.type_id != pointer_type.pointee_type_id
+            || pointee_layout.target_id != table.target_id
+            || pointee_layout.size == 0
+            || pointee_layout.alignment == 0
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                format!(
+                    "invalid or unsupported pointer pointee layout: {}",
+                    pointer_type.pointee_layout_id
+                ),
+            ));
+        }
+        let _backend_pointer_type =
+            phase14_cranelift_pointer_type(pointer_type, &layout_table.target)?;
+    }
+
+    if table.operations.len() != 11 {
+        return Err(phase10_backend_request_error(
+            stage,
+            kind,
+            format!(
+                "pointer operation inventory expected 11 operations, got {}",
+                table.operations.len()
+            ),
+        ));
+    }
+    let mut operation_ids = std::collections::HashSet::new();
+    for operation in &table.operations {
+        if operation.operation_id != phase14_pointer_operation_identity(operation)
+            || operation.target_id != table.target_id
+            || !phase14_pointer_operation_kind_is_valid(&operation.kind)
+            || !phase14_pointer_context_is_valid(&operation.context_kind)
+            || operation.operand_count > 2
+            || operation.provenance_id.is_empty()
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                format!(
+                    "invalid canonical pointer operation: {}",
+                    operation.operation_name
+                ),
+            ));
+        }
+        if !operation_ids.insert(operation.operation_id.clone()) {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "duplicate canonical pointer operation identity",
+            ));
+        }
+        for pointer_type_id in [
+            &operation.source_pointer_type_id,
+            &operation.destination_pointer_type_id,
+        ] {
+            if !pointer_type_id.is_empty()
+                && !pointer_type_ids.contains(pointer_type_id)
+            {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    format!(
+                        "pointer operation references unknown pointer type: {pointer_type_id}"
+                    ),
+                ));
+            }
+        }
+        let evaluation = phase14_evaluate_pointer_operation(operation);
+        if evaluation.success != operation.expect_success
+            || evaluation.value != operation.expected_value
+            || evaluation.reason_code != operation.expected_reason_code
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                format!(
+                    "pointer operation expectation mismatch: {}",
+                    operation.operation_name
+                ),
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn phase14_pointer_witness_text(
+    request: &Phase10BackendRequest,
+) -> Result<String, Box<dyn Error>> {
+    let table = &request.pointer_table;
+    validate_phase14_request_pointer_table(
+        table,
+        &request.target_triple,
+        &request.layout_table,
+    )?;
+
+    let mut output = String::new();
+    output.push_str("pointer_status: valid\n");
+    output.push_str(&format!("pointer_target: {}\n", table.target_triple));
+    output.push_str(&format!("pointer_target_id: {}\n", table.target_id));
+    output.push_str(&format!(
+        "pointer_default_address_space: {}\n",
+        table.default_address_space
+    ));
+    output.push_str(&format!(
+        "pointer_size: {}\n",
+        request.layout_table.target.pointer_size
+    ));
+    output.push_str(&format!(
+        "pointer_alignment: {}\n",
+        request.layout_table.target.pointer_alignment
+    ));
+    for pointer_type in &table.pointer_types {
+        let _backend_pointer_type = phase14_cranelift_pointer_type(
+            pointer_type,
+            &request.layout_table.target,
+        )?;
+        output.push_str(&format!(
+            "pointer_type: {} pointee={} layout={} mutability={} nullability={} address_space={} size={} alignment={}\n",
+            pointer_type.pointer_type_id,
+            pointer_type.pointee_type_id,
+            pointer_type.pointee_layout_id,
+            pointer_type.mutability,
+            pointer_type.nullability,
+            pointer_type.address_space,
+            pointer_type.pointer_size,
+            pointer_type.pointer_alignment,
+        ));
+    }
+    for operation in &table.operations {
+        let evaluation = phase14_evaluate_pointer_operation(operation);
+        output.push_str(&format!(
+            "pointer_operation: {} kind={} source={} destination={} result_type={} status={} value={} reason={} origin={} provenance={} context={}\n",
+            operation.operation_name,
+            operation.kind,
+            operation.source_pointer_type_id,
+            operation.destination_pointer_type_id,
+            operation.result_type_id,
+            if evaluation.success { "success" } else { "failure" },
+            evaluation.value,
+            evaluation.reason_code,
+            operation.origin_kind,
+            operation.provenance_id,
+            operation.context_kind,
+        ));
+    }
+    Ok(output)
+}
+
+fn print_phase14_pointer_witness(
+    request_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let request = phase14_load_primitive_layout_request(request_path)?;
+    print!("{}", phase14_pointer_witness_text(&request)?);
+    Ok(())
+}
+
 #[derive(Debug)]
 struct Phase10BackendRequest {
     target_triple: String,
@@ -3865,6 +4607,7 @@ struct Phase10BackendRequest {
     program_mir_bundle_path: PathBuf,
     layout_table: Phase14RequestLayoutTable,
     integer_conversion_table: Phase14RequestIntegerConversionTable,
+    pointer_table: Phase14RequestPointerTable,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -3975,6 +4718,15 @@ fn parse_phase10_backend_request(
     } else {
         Phase14RequestIntegerConversionTable::legacy_empty(&target_triple)
     };
+    let pointer_table = if cursor.has_remaining() {
+        parse_phase14_request_pointer_table(
+            &mut cursor,
+            &target_triple,
+            &layout_table,
+        )?
+    } else {
+        Phase14RequestPointerTable::legacy_empty(&target_triple)
+    };
     cursor.finish(stage, kind)?;
 
     if !output_path.is_absolute() {
@@ -4006,6 +4758,7 @@ fn parse_phase10_backend_request(
         program_mir_bundle_path,
         layout_table,
         integer_conversion_table,
+        pointer_table,
     })
 }
 
@@ -8230,6 +8983,15 @@ fn run() -> Result<(), Box<dyn Error>> {
             }
             print_phase14_integer_conversion_witness(Path::new(&request_path))
         }
+        "phase14-pointer-witness" => {
+            let Some(request_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            print_phase14_pointer_witness(Path::new(&request_path))
+        }
         "phase10-backend-request-compile" => {
             let Some(request_path) = args.next() else {
                 return Err(usage_error().into());
@@ -9445,6 +10207,7 @@ fn usage_error() -> IoError {
             "  gust-cranelift-experiment phase14-primitive-layout-witness <request.native>\n",
             "  gust-cranelift-experiment phase14-primitive-validate-value <request.native> <type_id> <value>\n",
             "  gust-cranelift-experiment phase14-integer-conversion-witness <request.native>\n",
+            "  gust-cranelift-experiment phase14-pointer-witness <request.native>\n",
             "  gust-cranelift-experiment phase10-backend-request-compile <request.native>\n",
             "  gust-cranelift-experiment phase10-backend-request-validate <request.native>\n",
             "  gust-cranelift-experiment phase10-driver-handshake\n",

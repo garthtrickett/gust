@@ -4,17 +4,17 @@
     "1": {
       "name": "contract-fast",
       "ci_owner": "PR Fast contract job",
-      "policy": "seconds; Phase 12.5 and Phase 13 semantic closure ownership, Phase 14 opening inventory, compiler-owned layout authority, declared-target and primitive-layout contracts, signed/unsigned/width-conversion contracts, schema, traceability, route/fallback boundaries, generated projections, and lightweight closure summaries"
+      "policy": "seconds; Phase 12.5 and Phase 13 semantic closure ownership, Phase 14 opening inventory, compiler-owned layout authority, declared-target and primitive-layout contracts, signed/unsigned/width-conversion contracts, bounded pointer/nullability contracts, schema, traceability, route/fallback boundaries, generated projections, and lightweight closure summaries"
     },
     "2": {
       "name": "differential-family",
-      "ci_owner": "PR Fast registry-derived nine-family matrix",
-      "policy": "focused MIR-to-C versus Cranelift execution, byte-identical MIR-to-C emission, registry-owned composition cases, stable side effects, migrated Phase 13 evidence, primary-host Phase 14 primitive-layout parity, and target-aware integer-conversion parity"
+      "ci_owner": "PR Fast registry-derived ten-family matrix",
+      "policy": "focused MIR-to-C versus Cranelift execution, byte-identical MIR-to-C emission, registry-owned composition cases, stable side effects, migrated Phase 13 evidence, primary-host Phase 14 primitive-layout parity, target-aware integer-conversion parity, and bounded pointer/nullability parity"
     },
     "3": {
       "name": "historical-full",
       "ci_owner": "Cranelift Historical Full scheduled/manual workflow",
-      "policy": "full Phase 9-14 history, native/object/link/reproducibility, packaging, platform evidence, all declared-target primitive-layout witnesses, and all declared-target integer-conversion witnesses"
+      "policy": "full Phase 9-14 history, native/object/link/reproducibility, packaging, platform evidence, all declared-target primitive-layout witnesses, all declared-target integer-conversion witnesses, and all declared-target pointer witnesses"
     }
   },
   "guards": {
@@ -173,6 +173,8 @@
     "guard-cranelift-phase14-integer-conversion-parity": 2,
     "guard-cranelift-phase14-layout-authority-contract": 1,
     "guard-cranelift-phase14-opening-contract": 1,
+    "guard-cranelift-phase14-pointer-contract": 1,
+    "guard-cranelift-phase14-pointer-parity": 2,
     "guard-cranelift-phase14-primitive-layout-parity": 2,
     "guard-cranelift-phase14-target-and-primitive-contract": 1,
     "guard-cranelift-phase9b-close": 3,
