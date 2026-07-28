@@ -1,5 +1,6 @@
 import "mir.gst" as mir;
 import "mir_layout.gst" as layout;
+import "mir_primitive_layout.gst" as primitive_layout;
 
 // Phase 10 generic native-backend request protocol.
 //
@@ -62,7 +63,7 @@ func mir_native_backend_make_request_with_layout_table(target_triple: str, objec
 }
 
 func mir_native_backend_make_request(target_triple: str, object_format: str, output_path: str, program_mir_bundle_path: str, program_bundle: mir.MirProgramBundle[ctx], ctx: &Arena) MirNativeBackendRequest[ctx] {
-    mut layout_table := layout.mir_layout_make_unfrozen_table(
+    mut layout_table := primitive_layout.mir_primitive_layout_table_for_target(
         target_triple,
         ctx
     );
@@ -97,6 +98,9 @@ func mir_native_backend_request_is_valid(request: MirNativeBackendRequest[ctx], 
         return 0;
     }
     if layout.mir_layout_table_is_valid(request.layout_table, ctx) == 0 {
+        return 0;
+    }
+    if request.layout_table.target.decisions_frozen == 0 {
         return 0;
     }
     if std.str_eq(

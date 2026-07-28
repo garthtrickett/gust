@@ -2162,14 +2162,19 @@ impl<'a> Phase10TextCursor<'a> {
     }
 }
 
-const PHASE14_LAYOUT_TABLE_FORMAT: &str = "gust.compiler_layout_table.v1";
+const PHASE14_LAYOUT_TABLE_FORMAT_V1: &str = "gust.compiler_layout_table.v1";
+const PHASE14_LAYOUT_TABLE_FORMAT_V2: &str = "gust.compiler_layout_table.v2";
 
 #[derive(Debug)]
 struct Phase14RequestTargetLayout {
     target_id: String,
     target_triple: String,
+    endianness: String,
     pointer_size: usize,
     pointer_alignment: usize,
+    i32_alignment: usize,
+    i64_alignment: usize,
+    max_aggregate_alignment: usize,
     decisions_frozen: bool,
 }
 
@@ -2203,6 +2208,9 @@ struct Phase14RequestTypeLayout {
     size: usize,
     alignment: usize,
     element_stride: usize,
+    bit_width: usize,
+    signedness: String,
+    validity_kind: String,
     fields: Vec<Phase14RequestFieldLayout>,
     variants: Vec<Phase14RequestVariantLayout>,
 }
@@ -2230,12 +2238,16 @@ struct Phase14RequestLayoutTable {
 impl Phase14RequestLayoutTable {
     fn legacy_unfrozen(target_triple: &str) -> Self {
         Self {
-            format: PHASE14_LAYOUT_TABLE_FORMAT.to_string(),
+            format: PHASE14_LAYOUT_TABLE_FORMAT_V1.to_string(),
             target: Phase14RequestTargetLayout {
                 target_id: format!("phase14-target:unfrozen:{target_triple}"),
                 target_triple: target_triple.to_string(),
+                endianness: String::new(),
                 pointer_size: 0,
                 pointer_alignment: 0,
+                i32_alignment: 0,
+                i64_alignment: 0,
+                max_aggregate_alignment: 0,
                 decisions_frozen: false,
             },
             layouts: Vec::new(),
@@ -2285,12 +2297,13 @@ fn parse_phase14_request_layout_table(
     let format_name = cursor
         .take_field("layout_table_format", false, parse_stage, parse_kind)?
         .to_string();
-    if format_name != PHASE14_LAYOUT_TABLE_FORMAT {
+    let is_v2 = format_name == PHASE14_LAYOUT_TABLE_FORMAT_V2;
+    if format_name != PHASE14_LAYOUT_TABLE_FORMAT_V1 && !is_v2 {
         return Err(phase10_backend_request_error(
             validation_stage,
             Phase10BackendRequestFailureKind::ProtocolMismatch,
             format!(
-                "layout table format expected {PHASE14_LAYOUT_TABLE_FORMAT}, got {format_name}"
+                "layout table format expected {PHASE14_LAYOUT_TABLE_FORMAT_V1} or {PHASE14_LAYOUT_TABLE_FORMAT_V2}, got {format_name}"
             ),
         ));
     }
@@ -2301,6 +2314,13 @@ fn parse_phase14_request_layout_table(
     let target_triple = cursor
         .take_field("layout_target_triple", false, parse_stage, parse_kind)?
         .to_string();
+    let endianness = if is_v2 {
+        cursor
+            .take_field("layout_target_endianness", false, parse_stage, parse_kind)?
+            .to_string()
+    } else {
+        String::new()
+    };
     let pointer_size = cursor.take_usize_field(
         "layout_target_pointer_size",
         parse_stage,
@@ -2311,6 +2331,33 @@ fn parse_phase14_request_layout_table(
         parse_stage,
         parse_kind,
     )?;
+    let i32_alignment = if is_v2 {
+        cursor.take_usize_field(
+            "layout_target_i32_alignment",
+            parse_stage,
+            parse_kind,
+        )?
+    } else {
+        0
+    };
+    let i64_alignment = if is_v2 {
+        cursor.take_usize_field(
+            "layout_target_i64_alignment",
+            parse_stage,
+            parse_kind,
+        )?
+    } else {
+        0
+    };
+    let max_aggregate_alignment = if is_v2 {
+        cursor.take_usize_field(
+            "layout_target_max_aggregate_alignment",
+            parse_stage,
+            parse_kind,
+        )?
+    } else {
+        0
+    };
     let decisions_frozen = phase14_parse_bool_field(
         cursor,
         "layout_target_decisions_frozen",
@@ -2371,6 +2418,39 @@ fn parse_phase14_request_layout_table(
             parse_stage,
             parse_kind,
         )?;
+        let bit_width = if is_v2 {
+            cursor.take_usize_field(
+                &format!("{prefix}_bit_width"),
+                parse_stage,
+                parse_kind,
+            )?
+        } else {
+            0
+        };
+        let signedness = if is_v2 {
+            cursor
+                .take_field(
+                    &format!("{prefix}_signedness"),
+                    false,
+                    parse_stage,
+                    parse_kind,
+                )?
+                .to_string()
+        } else {
+            "not_applicable".to_string()
+        };
+        let validity_kind = if is_v2 {
+            cursor
+                .take_field(
+                    &format!("{prefix}_validity_kind"),
+                    false,
+                    parse_stage,
+                    parse_kind,
+                )?
+                .to_string()
+        } else {
+            "unspecified".to_string()
+        };
         let field_count = cursor.take_usize_field(
             &format!("{prefix}_field_count"),
             parse_stage,
@@ -2490,6 +2570,9 @@ fn parse_phase14_request_layout_table(
             size,
             alignment,
             element_stride,
+            bit_width,
+            signedness,
+            validity_kind,
             fields,
             variants,
         });
@@ -2562,8 +2645,12 @@ fn parse_phase14_request_layout_table(
         target: Phase14RequestTargetLayout {
             target_id,
             target_triple,
+            endianness,
             pointer_size,
             pointer_alignment,
+            i32_alignment,
+            i64_alignment,
+            max_aggregate_alignment,
             decisions_frozen,
         },
         layouts,
@@ -2580,7 +2667,8 @@ fn validate_phase14_request_layout_table(
     let stage = Phase10BackendRequestStage::RequestValidation;
     let kind = Phase10BackendRequestFailureKind::InvalidRequest;
 
-    if table.format != PHASE14_LAYOUT_TABLE_FORMAT {
+    let is_v2 = table.format == PHASE14_LAYOUT_TABLE_FORMAT_V2;
+    if table.format != PHASE14_LAYOUT_TABLE_FORMAT_V1 && !is_v2 {
         return Err(phase10_backend_request_error(
             stage,
             Phase10BackendRequestFailureKind::ProtocolMismatch,
@@ -2608,6 +2696,10 @@ fn validate_phase14_request_layout_table(
     if !table.target.decisions_frozen {
         if table.target.pointer_size != 0
             || table.target.pointer_alignment != 0
+            || !table.target.endianness.is_empty()
+            || table.target.i32_alignment != 0
+            || table.target.i64_alignment != 0
+            || table.target.max_aggregate_alignment != 0
             || !table.layouts.is_empty()
             || !table.memory_accesses.is_empty()
         {
@@ -2630,8 +2722,38 @@ fn validate_phase14_request_layout_table(
             "frozen layout target has an impossible pointer size or alignment",
         ));
     }
+    if is_v2 {
+        if !matches!(table.target.endianness.as_str(), "little" | "big")
+            || table.target.i32_alignment == 0
+            || !table.target.i32_alignment.is_power_of_two()
+            || table.target.i64_alignment == 0
+            || !table.target.i64_alignment.is_power_of_two()
+            || table.target.max_aggregate_alignment == 0
+            || !table.target.max_aggregate_alignment.is_power_of_two()
+            || table.target.i32_alignment > table.target.max_aggregate_alignment
+            || table.target.i64_alignment > table.target.max_aggregate_alignment
+            || table.target.pointer_alignment > table.target.max_aggregate_alignment
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "frozen v2 layout target has invalid endianness or scalar alignment metadata",
+            ));
+        }
+    } else if !table.target.endianness.is_empty()
+        || table.target.i32_alignment != 0
+        || table.target.i64_alignment != 0
+        || table.target.max_aggregate_alignment != 0
+    {
+        return Err(phase10_backend_request_error(
+            stage,
+            kind,
+            "v1 layout target must not carry v2 scalar metadata",
+        ));
+    }
 
     let mut layout_ids = HashSet::new();
+    let mut type_ids = HashSet::new();
     for layout in &table.layouts {
         if layout.layout_id.is_empty()
             || layout.type_id.is_empty()
@@ -2674,6 +2796,48 @@ fn validate_phase14_request_layout_table(
                 ),
             ));
         }
+        if is_v2 {
+            if layout.bit_width == 0
+                || layout.bit_width != layout.size * 8
+                || !matches!(
+                    layout.signedness.as_str(),
+                    "signed" | "unsigned" | "not_applicable"
+                )
+                || !matches!(
+                    layout.validity_kind.as_str(),
+                    "any_bit_pattern" | "canonical_bool_0_or_1"
+                )
+            {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    format!(
+                        "layout {} has invalid primitive width, signedness, or validity metadata",
+                        layout.layout_id
+                    ),
+                ));
+            }
+            if layout.validity_kind == "canonical_bool_0_or_1"
+                && (layout.bit_width != 8
+                    || layout.size != 1
+                    || layout.signedness != "not_applicable")
+            {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    format!("layout {} has an invalid boolean representation", layout.layout_id),
+                ));
+            }
+        } else if layout.bit_width != 0
+            || layout.signedness != "not_applicable"
+            || layout.validity_kind != "unspecified"
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                format!("v1 layout {} carries v2 primitive metadata", layout.layout_id),
+            ));
+        }
         let expected_id = phase14_layout_identity(
             &layout.type_id,
             &layout.target_id,
@@ -2700,6 +2864,13 @@ fn validate_phase14_request_layout_table(
                     "duplicate conflicting layout ID: {}",
                     layout.layout_id
                 ),
+            ));
+        }
+        if !type_ids.insert(layout.type_id.as_str()) {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                format!("duplicate primitive type layout: {}", layout.type_id),
             ));
         }
     }
@@ -2877,6 +3048,122 @@ fn validate_phase14_request_layout_table(
         let _consumer_policy = (access.write_allowed, access.nullable);
     }
 
+    Ok(())
+}
+
+fn phase14_cranelift_scalar_type(
+    layout: &Phase14RequestTypeLayout,
+) -> Result<Type, Box<dyn Error>> {
+    let (ty, expected_size) = match layout.bit_width {
+        8 => (types::I8, 1usize),
+        32 => (types::I32, 4usize),
+        64 => (types::I64, 8usize),
+        width => {
+            return Err(phase10_backend_request_error(
+                Phase10BackendRequestStage::CanonicalMirValidation,
+                Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                format!("unsupported compiler primitive bit width: {width}"),
+            ));
+        }
+    };
+    if layout.size != expected_size {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            format!(
+                "compiler primitive {} size {} disagrees with bit width {}",
+                layout.type_id, layout.size, layout.bit_width
+            ),
+        ));
+    }
+    Ok(ty)
+}
+
+fn phase14_primitive_layout_witness_text(
+    table: &Phase14RequestLayoutTable,
+) -> Result<String, Box<dyn Error>> {
+    validate_phase14_request_layout_table(table, &table.target.target_triple)?;
+    if table.format != PHASE14_LAYOUT_TABLE_FORMAT_V2 {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::RequestValidation,
+            Phase10BackendRequestFailureKind::ProtocolMismatch,
+            "primitive layout witness requires a compiler layout table v2",
+        ));
+    }
+    let mut output = String::new();
+    output.push_str("primitive_layout_status: valid\n");
+    output.push_str(&format!("target_id: {}\n", table.target.target_id));
+    output.push_str(&format!("target_triple: {}\n", table.target.target_triple));
+    output.push_str(&format!("endianness: {}\n", table.target.endianness));
+    output.push_str(&format!("pointer_size: {}\n", table.target.pointer_size));
+    output.push_str(&format!("pointer_alignment: {}\n", table.target.pointer_alignment));
+    output.push_str(&format!("i32_alignment: {}\n", table.target.i32_alignment));
+    output.push_str(&format!("i64_alignment: {}\n", table.target.i64_alignment));
+    output.push_str(&format!(
+        "max_aggregate_alignment: {}\n",
+        table.target.max_aggregate_alignment
+    ));
+    for layout in &table.layouts {
+        let _backend_type = phase14_cranelift_scalar_type(layout)?;
+        output.push_str(&format!(
+            "primitive: {} size={} alignment={} bit_width={} signedness={} validity={}\n",
+            layout.type_id,
+            layout.size,
+            layout.alignment,
+            layout.bit_width,
+            layout.signedness,
+            layout.validity_kind
+        ));
+    }
+    Ok(output)
+}
+
+fn phase14_load_primitive_layout_request(
+    request_path: &Path,
+) -> Result<Phase10BackendRequest, Box<dyn Error>> {
+    let contents = fs::read_to_string(request_path).map_err(|error| {
+        phase10_backend_request_error(
+            Phase10BackendRequestStage::RequestParse,
+            Phase10BackendRequestFailureKind::InvalidRequest,
+            format!("failed to read primitive layout request {}: {error}", request_path.display()),
+        )
+    })?;
+    parse_phase10_backend_request(&contents)
+}
+
+fn print_phase14_primitive_layout_witness(
+    request_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let request = phase14_load_primitive_layout_request(request_path)?;
+    print!("{}", phase14_primitive_layout_witness_text(&request.layout_table)?);
+    Ok(())
+}
+
+fn validate_phase14_primitive_scalar_value(
+    request_path: &Path,
+    type_id: &str,
+    value: i64,
+) -> Result<(), Box<dyn Error>> {
+    let request = phase14_load_primitive_layout_request(request_path)?;
+    let table = &request.layout_table;
+    validate_phase14_request_layout_table(table, &request.target_triple)?;
+    let layout = table.layouts.iter().find(|layout| layout.type_id == type_id).ok_or_else(|| {
+        phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            format!("primitive layout not declared: {type_id}"),
+        )
+    })?;
+    if layout.validity_kind == "canonical_bool_0_or_1" && !matches!(value, 0 | 1) {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            format!("invalid boolean memory value: {value}"),
+        ));
+    }
+    println!("primitive_scalar_value_status: valid");
+    println!("type_id: {type_id}");
+    println!("value: {value}");
     Ok(())
 }
 
@@ -7204,6 +7491,35 @@ fn run() -> Result<(), Box<dyn Error>> {
     };
 
     match command.as_str() {
+        "phase14-primitive-layout-witness" => {
+            let Some(request_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            print_phase14_primitive_layout_witness(Path::new(&request_path))
+        }
+        "phase14-primitive-validate-value" => {
+            let Some(request_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            let Some(type_id) = args.next() else {
+                return Err(usage_error().into());
+            };
+            let Some(value) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            let value = value.parse::<i64>().map_err(|_| usage_error())?;
+            validate_phase14_primitive_scalar_value(
+                Path::new(&request_path),
+                &type_id,
+                value,
+            )
+        }
         "phase10-backend-request-compile" => {
             let Some(request_path) = args.next() else {
                 return Err(usage_error().into());
@@ -8416,6 +8732,8 @@ fn usage_error() -> IoError {
         ErrorKind::InvalidInput,
         concat!(
             "usage:\n",
+            "  gust-cranelift-experiment phase14-primitive-layout-witness <request.native>\n",
+            "  gust-cranelift-experiment phase14-primitive-validate-value <request.native> <type_id> <value>\n",
             "  gust-cranelift-experiment phase10-backend-request-compile <request.native>\n",
             "  gust-cranelift-experiment phase10-backend-request-validate <request.native>\n",
             "  gust-cranelift-experiment phase10-driver-handshake\n",

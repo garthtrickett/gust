@@ -102,21 +102,21 @@ func main() {
     }
     if std.str_find(
         serialized_a,
-        "layout_table_format: gust.compiler_layout_table.v1\n"
+        "layout_table_format: gust.compiler_layout_table.v2\n"
     ) == 0 - 1 {
         fail("Backend request smoke: compiler-owned layout table format missing");
     }
     if std.str_find(
         serialized_a,
-        "layout_target_id: phase14-target:unfrozen:x86_64-unknown-linux-gnu\n"
+        "layout_target_id: target:v1:triple=x86_64-unknown-linux-gnu:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8\n"
     ) == 0 - 1 {
         fail("Backend request smoke: deterministic unfrozen target identity missing");
     }
     if std.str_find(
         serialized_a,
-        "layout_target_decisions_frozen: 0\nlayout_count: 0\nmemory_access_count: 0\n"
+        "layout_target_endianness: little\nlayout_target_pointer_size: 8\nlayout_target_pointer_alignment: 8\nlayout_target_i32_alignment: 4\nlayout_target_i64_alignment: 8\nlayout_target_max_aggregate_alignment: 8\nlayout_target_decisions_frozen: 1\nlayout_count: 7\nmemory_access_count: 0\n"
     ) == 0 - 1 {
-        fail("Backend request smoke: empty Phase 14 layout transport drifted");
+        fail("Backend request smoke: declared primitive Phase 14 layout transport drifted");
     }
 
     mut relative_output := request.mir_native_backend_make_request(

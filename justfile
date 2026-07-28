@@ -126,6 +126,8 @@ guard-pr-fast-ci-surface:
       'just guard-cranelift-phase14-opening-contract'
       'Phase 14 layout authority'
       'just guard-cranelift-phase14-layout-authority-contract'
+      'Phase 14 declared targets and primitive layouts'
+      'just guard-cranelift-phase14-target-and-primitive-contract'
       'phase11-family:'
       'phase11_families:'
       'matrix.family'
@@ -13468,7 +13470,7 @@ guard-cranelift-phase14-opening-contract:
       rg -n -F "$token" "$review" >/dev/null
     done
 
-    rg -n -F '"registry_status": "phase14_layout_authority_ready"' "$registry" >/dev/null
+    rg -n -F '"current_phase": "phase14"' "$registry" >/dev/null
     rg -n -F '"current_phase": "phase14"' "$registry" >/dev/null
     rg -n -F '"phase14": {' "$registry" >/dev/null
     rg -n -F '"predecessor_closure_version": "phase13_closed_deferred_registry_parity_expansion"' "$registry" >/dev/null
@@ -13592,9 +13594,9 @@ guard-cranelift-phase14-layout-authority-contract:
     required_review_tokens=(
       'CRANELIFT_PHASE14_LAYOUT_AUTHORITY_VIEW_VERSION: 1'
       'CRANELIFT_PHASE14_LAYOUT_AUTHORITY_VERSION: phase14_compiler_owned_layout_authority_v1'
-      'CRANELIFT_PHASE14_LAYOUT_AUTHORITY_STATUS: ready_for_patch14_2'
+      'CRANELIFT_PHASE14_LAYOUT_AUTHORITY_STATUS: consumed_by_patch14_2'
       'CRANELIFT_PHASE14_LAYOUT_AUTHORITY_OWNER: compiler/mir_layout.gst'
-      'CRANELIFT_PHASE14_LAYOUT_AUTHORITY_TABLE_FORMAT: gust.compiler_layout_table.v1'
+      'CRANELIFT_PHASE14_LAYOUT_AUTHORITY_TABLE_FORMAT: gust.compiler_layout_table.v2'
       '## Semantic layout records'
       '## Compiler-owned queries'
       '## Consumers'
@@ -13617,7 +13619,8 @@ guard-cranelift-phase14-layout-authority-contract:
       mir_layout_field_layout \
       mir_layout_variant_layout \
       mir_layout_element_stride \
-      mir_layout_validate_memory_access
+      mir_layout_validate_memory_access \
+      mir_layout_validate_scalar_value
     do
       rg -n -F "func $query(" "$authority" >/dev/null
     done
@@ -13691,7 +13694,7 @@ guard-cranelift-phase14-layout-authority-contract:
 
     guard_body="$(
       sed -n \
-        '/^guard-cranelift-phase14-layout-authority-contract:/,/^guard-cranelift-differential-family family:/p' \
+        '/^guard-cranelift-phase14-layout-authority-contract:/,/^guard-cranelift-phase14-target-and-primitive-contract:/p' \
         justfile
     )"
     if printf '%s\n' "$guard_body" |
@@ -13708,7 +13711,121 @@ guard-cranelift-phase14-layout-authority-contract:
     fi
 
     echo "✅ Phase 14 compiler-owned layout authority passed: canonical MIR references compiler layout IDs, requests carry the compiler-produced table, and consumers validate or query without selecting a competing layout."
-    echo "ℹ️ Patch 14.1 migrates no type or memory capability and activates no Phase 14 Level 2 family."
+    echo "ℹ️ Patch 14.2 consumes this authority only for declared targets and primitive scalar layouts."
+
+guard-cranelift-phase14-target-and-primitive-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 14 declared targets and primitive scalar layouts..."
+    validator="scripts/cranelift_registry.py"
+    family_runner="scripts/cranelift_ci_family.py"
+    level_runner="scripts/cranelift_test_levels.py"
+    review="compiler/CRANELIFT_PHASE14_PRIMITIVE_LAYOUT.md"
+    primitive="compiler/mir_primitive_layout.gst"
+    layout="compiler/mir_layout.gst"
+    mir="compiler/mir.gst"
+    request="compiler/mir_native_backend_request.gst"
+    mir_to_c="compiler/mir_layout_mir_to_c.gst"
+    worker="compiler/experiments/cranelift/src/main.rs"
+    smoke="compiler/mir_primitive_layout_smoke_test_entry.gst"
+    differential="scripts/phase14_primitive_layout_differential.sh"
+    pr_workflow=".github/workflows/pr-fast.yml"
+
+    for required_file in \
+      "$validator" "$family_runner" "$level_runner" "$review" "$primitive" \
+      "$layout" "$mir" "$request" "$mir_to_c" "$worker" "$smoke" \
+      "$differential" "$pr_workflow"
+    do
+      if [ ! -f "$required_file" ] || [ -L "$required_file" ]; then
+        echo "Missing regular Phase 14 primitive-layout input: $required_file"
+        exit 1
+      fi
+    done
+
+    just guard-cranelift-phase14-layout-authority-contract
+    python3 "$validator" verify-phase14-primitive-layout
+    python3 "$validator" check-phase14-primitive-layout-projection
+    python3 "$validator" check-projection
+    python3 "$family_runner" validate
+    python3 "$family_runner" check-pr-workflow "$pr_workflow"
+    python3 "$level_runner" validate
+    python3 "$level_runner" check-pr-workflow
+    python3 "$level_runner" level guard-cranelift-phase14-target-and-primitive-contract |
+      rg -n -F $'guard-cranelift-phase14-target-and-primitive-contract\t1\t' >/dev/null
+    bash -n "$differential"
+
+    required_review_tokens=(
+      'CRANELIFT_PHASE14_PRIMITIVE_LAYOUT_VIEW_VERSION: 1'
+      'CRANELIFT_PHASE14_PRIMITIVE_LAYOUT_VERSION: phase14_declared_targets_and_primitive_layout_v1'
+      'CRANELIFT_PHASE14_PRIMITIVE_LAYOUT_STATUS: ready_for_patch14_3'
+      'CRANELIFT_PHASE14_PRIMITIVE_LAYOUT_TABLE_FORMAT: gust.compiler_layout_table.v2'
+      'CRANELIFT_PHASE14_PRIMITIVE_LAYOUT_PRIMARY_TARGET: x86_64-unknown-linux-gnu'
+      '## Declared host targets'
+      '## Primitive scalar inventory'
+      '## Migrated opening rows'
+      '## Negative classes'
+      '## Boundary'
+    )
+    for token in "${required_review_tokens[@]}"; do
+      rg -n -F "$token" "$review" >/dev/null
+    done
+
+    for token in \
+      'func mir_primitive_layout_normalize_target_triple(' \
+      'func mir_primitive_layout_table_for_target(' \
+      'func mir_primitive_layout_witness('
+    do
+      rg -n -F "$token" "$primitive" >/dev/null
+    done
+    rg -n -F 'type MirPrimitiveScalarReference' "$mir" >/dev/null
+    rg -n -F 'primitive_scalar_references' "$mir" >/dev/null
+    rg -n -F 'mir_primitive_layout_table_for_target' "$request" >/dev/null
+    rg -n -F 'mir_layout_primitive_witness_c_source' "$mir_to_c" >/dev/null
+    rg -n -F 'fn phase14_cranelift_scalar_type(' "$worker" >/dev/null
+
+    target_ci_count="$(
+      (rg -n -F 'just guard-cranelift-phase14-target-and-primitive-contract' \
+        .github/workflows --glob '*.yml' || true) | wc -l | tr -d ' '
+    )"
+    if [ "$target_ci_count" != "1" ]; then
+      echo "Phase 14 target/primitive contract must be wired into CI exactly once, found $target_ci_count occurrences."
+      exit 1
+    fi
+    rg -n -x -F '        run: just guard-cranelift-phase14-target-and-primitive-contract' \
+      "$pr_workflow" >/dev/null
+
+    guard_body="$(
+      sed -n \
+        '/^guard-cranelift-phase14-target-and-primitive-contract:/,/^guard-cranelift-phase14-primitive-layout-parity:/p' \
+        justfile
+    )"
+    if printf '%s\n' "$guard_body" |
+       rg -n \
+         -e '^[[:space:]]+bash scripts/phase14_primitive_layout_differential\.sh([[:space:]]|$)' \
+         -e '^[[:space:]]+just guard-cranelift-differential-family([[:space:]]|$)' \
+         -e '^[[:space:]]+just guard-cranelift-historical-full([[:space:]]|$)' \
+         -e '^[[:space:]]+\./gust([[:space:]]|$)' \
+         -e '^[[:space:]]+(cargo|cc|gcc|clang|make)([[:space:]]|$)' >/dev/null
+    then
+      echo "Phase 14 target/primitive contract must remain a Level 1 ownership and projection guard."
+      exit 1
+    fi
+
+    echo "✅ Phase 14 target and primitive contract passed: target normalization, target layouts, primitive identities, canonical booleans, shared request transport, and CI ownership are frozen."
+
+guard-cranelift-phase14-primitive-layout-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 14 primitive layout parity on the primary declared target..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase14-primitive-layout-parity |
+      rg -n -F $'guard-cranelift-phase14-primitive-layout-parity\t2\t' >/dev/null
+    just guard-cranelift-phase14-target-and-primitive-contract
+    if [ "${PHASE14_PRIMITIVE_LAYOUT_SKIP_DYNAMIC:-0}" = "1" ]; then
+      echo "✅ Phase 14 primitive layout parity static contract passed; dynamic evidence skipped by request."
+      exit 0
+    fi
+    bash scripts/phase14_primitive_layout_differential.sh
 
 guard-cranelift-differential-family family:
     #!/usr/bin/env bash
@@ -13731,6 +13848,7 @@ guard-cranelift-contract-fast:
     just guard-cranelift-phase13-close
     just guard-cranelift-phase14-opening-contract
     just guard-cranelift-phase14-layout-authority-contract
+    just guard-cranelift-phase14-target-and-primitive-contract
 
 guard-cranelift-historical-full:
     #!/usr/bin/env bash
@@ -13779,7 +13897,12 @@ guard-cranelift-historical-full:
     just guard-cranelift-phase10-close
 
     while IFS= read -r family; do
-      just guard-cranelift-differential-family "$family"
+      if [ "$family" = "primitive-layout" ]; then
+        PHASE14_PRIMITIVE_LAYOUT_ALL_TARGETS=1 \
+          just guard-cranelift-differential-family "$family"
+      else
+        just guard-cranelift-differential-family "$family"
+      fi
     done < <(python3 scripts/cranelift_ci_family.py families)
     just guard-cranelift-phase11-generic-canonical-mir-route
     just guard-cranelift-phase11-close
@@ -15350,7 +15473,7 @@ guard-cranelift-registry-schema:
 guard-cranelift-ci-family-projection:
     #!/usr/bin/env bash
     set -euo pipefail
-    echo "🔒 Validating registry-derived Phase 11 CI family projection..."
+    echo "🔒 Validating registry-derived Cranelift CI family projection..."
     registry_json="scripts/cranelift_feature_registry.json"
     family_runner="scripts/cranelift_ci_family.py"
     pr_workflow=".github/workflows/pr-fast.yml"
@@ -15370,7 +15493,7 @@ guard-cranelift-ci-family-projection:
       if rg -n -x -F "      cranelift-phase11-$family)" justfile >/dev/null ||
          rg -n -x -F "          - cranelift-phase11-$family" "$pr_workflow" >/dev/null
       then
-        echo "Phase 11 family is manually inventoried outside the registry projection: $family"
+        echo "Cranelift family is manually inventoried outside the registry projection: $family"
         exit 1
       fi
     done < <(python3 "$family_runner" families)
@@ -15387,18 +15510,18 @@ guard-cranelift-ci-family-projection:
       rm -f "$unknown_log"
       exit 1
     fi
-    rg -n -F "unknown or retired Phase 11 CI family 'retired-family'" \
+    rg -n -F "unknown or retired Cranelift CI family 'retired-family'" \
       "$unknown_log" >/dev/null
     rm -f "$unknown_log"
 
-    echo "✅ Phase 11 CI families are row-derived, workflow-projected, and owned by one runner mapping."
+    echo "✅ Cranelift CI families are row-derived, workflow-projected, and owned by one runner mapping."
 
 guard-cranelift-registry-projection:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking canonical registry, Phase 13, and Phase 14 generated projections..."
     python3 scripts/cranelift_registry.py check-projection
-    echo "✅ Registry projections are current: totals, semantic closure summaries, the Phase 13 final review, and the Phase 14 opening review are derived from JSON."
+    echo "✅ Registry projections are current: totals, semantic closure summaries, Phase 13 final review, Phase 14 opening, layout authority, and primitive layout reviews are derived from JSON."
 
 guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke:
     #!/usr/bin/env bash

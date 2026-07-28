@@ -12,9 +12,8 @@ ROOT = Path(__file__).resolve().parent.parent
 REGISTRY = ROOT / "scripts/cranelift_feature_registry.json"
 
 # This is the single active runner mapping. The stable family set is derived
-# from Phase 11 rows; migrated Phase 13 rows join their existing family without
-# creating a new workflow matrix. Phase 14 opening families are planning-only
-# until a later capability patch migrates them and explicitly extends this map.
+# from Phase 11 rows plus newly migrated Phase 14 families. Migrated Phase 13
+# rows continue to join their inherited families without creating workflow rows.
 RUNNERS = (
     (
         "scalars",
@@ -50,6 +49,11 @@ RUNNERS = (
         "metadata-diagnostics",
         "guard-cranelift-phase13-source-metadata-parity",
         "PHASE13_SOURCE_METADATA_SKIP_DYNAMIC",
+    ),
+    (
+        "primitive-layout",
+        "guard-cranelift-phase14-primitive-layout-parity",
+        "PHASE14_PRIMITIVE_LAYOUT_SKIP_DYNAMIC",
     ),
 )
 RUNNER_BY_FAMILY = {
@@ -106,17 +110,31 @@ def migrated_phase13_rows(registry):
     ]
 
 
+def migrated_phase14_rows(registry):
+    return [
+        entry
+        for entry in registry["entries"]
+        if entry.get("origin_phase") == "phase14"
+        and entry.get("status") == "migrated"
+        and entry.get("route_owner") == "generic_canonical_mir"
+    ]
+
+
 def differential_registry_rows(registry):
-    return phase11_rows(registry) + migrated_phase13_rows(registry)
+    return (
+        phase11_rows(registry)
+        + migrated_phase13_rows(registry)
+        + migrated_phase14_rows(registry)
+    )
 
 
 def active_family_set(registry):
     families = set()
-    for entry in phase11_rows(registry):
+    for entry in phase11_rows(registry) + migrated_phase14_rows(registry):
         family = entry.get("ci_family")
         require(
             isinstance(family, str) and family,
-            f"{entry.get('id', '<unknown>')}: Phase 11 ci_family is missing",
+            f"{entry.get('id', '<unknown>')}: active ci_family is missing",
         )
         families.add(family)
     return families
@@ -127,7 +145,7 @@ def ordered_active_families(registry):
     mapped = set(RUNNER_BY_FAMILY)
     require(
         active == mapped,
-        "Phase 11 CI family projection differs from the runner mapping: "
+        "Registry-derived CI family projection differs from the runner mapping: "
         f"registry_only={sorted(active - mapped)} mapping_only={sorted(mapped - active)}",
     )
     return [family for family, _, _ in RUNNERS]
@@ -259,12 +277,19 @@ def validate_registry_projection(registry):
     for entry in registry["entries"]:
         family = entry.get("ci_family")
         if entry.get("origin_phase") == "phase14":
-            require(
-                entry.get("status") == "candidate_deferred"
-                and entry.get("route_owner") == "deferred"
-                and family not in active,
-                f"{entry.get('id', '<unknown>')}: Phase 14 opening family must remain a planned inactive family",
-            )
+            if entry.get("status") == "migrated":
+                require(
+                    entry.get("route_owner") == "generic_canonical_mir"
+                    and family in active,
+                    f"{entry.get('id', '<unknown>')}: migrated Phase 14 family is not active",
+                )
+            else:
+                require(
+                    entry.get("status") == "candidate_deferred"
+                    and entry.get("route_owner") == "deferred"
+                    and family not in active,
+                    f"{entry.get('id', '<unknown>')}: deferred Phase 14 family must remain inactive",
+                )
             continue
         require(
             family in active,
@@ -281,7 +306,7 @@ def validate_registry_projection(registry):
         migrated = selected_rows(registry, family, migrated_only=True)
         require(
             migrated,
-            f"Phase 11 CI family {family!r} has no migrated differential rows",
+            f"Registry CI family {family!r} has no migrated differential rows",
         )
 
     composition_cases = composition_case_records(registry)
@@ -337,7 +362,7 @@ def validate_family(registry, family):
     families = ordered_active_families(registry)
     if family not in RUNNER_BY_FAMILY:
         raise Error(
-            f"unknown or retired Phase 11 CI family {family!r}; "
+            f"unknown or retired Cranelift CI family {family!r}; "
             f"active families: {', '.join(families)}"
         )
     return RUNNER_BY_FAMILY[family]

@@ -14,6 +14,7 @@
     "closure_snapshots",
     "opening_snapshots",
     "phase14_layout_authority",
+    "phase14_primitive_layout",
     "residual_snapshots",
     "planning_categories",
     "supported_values",
@@ -28,10 +29,10 @@
       "const": 1
     },
     "registry_version": {
-      "const": 9
+      "const": 10
     },
     "registry_status": {
-      "const": "phase14_layout_authority_ready"
+      "const": "phase14_primitive_layout_ready"
     },
     "current_phase": {
       "const": "phase14"
@@ -207,6 +208,9 @@
     },
     "phase14_layout_authority": {
       "$ref": "#/$defs/phase14_layout_authority"
+    },
+    "phase14_primitive_layout": {
+      "$ref": "#/$defs/phase14_primitive_layout"
     }
   },
   "$defs": {
@@ -573,7 +577,8 @@
           "enum": [
             "before_driver_discovery",
             "canonical_mir_validation_before_driver_discovery",
-            "source_or_type_failure_before_driver_discovery"
+            "source_or_type_failure_before_driver_discovery",
+            "none_supported"
           ]
         },
         "positive_future_fixture": {
@@ -1134,17 +1139,17 @@
           "const": "phase14_compiler_owned_layout_authority_v1"
         },
         "status": {
-          "const": "ready_for_patch14_2"
+          "const": "consumed_by_patch14_2"
         },
         "authority_owner": {
           "const": "compiler/mir_layout.gst"
         },
         "table_format": {
-          "const": "gust.compiler_layout_table.v1"
+          "const": "gust.compiler_layout_table.v2"
         },
         "semantic_types": {
           "type": "array",
-          "minItems": 6,
+          "minItems": 7,
           "uniqueItems": true,
           "items": {
             "type": "string",
@@ -1153,7 +1158,7 @@
         },
         "query_functions": {
           "type": "array",
-          "minItems": 5,
+          "minItems": 6,
           "uniqueItems": true,
           "items": {
             "type": "string",
@@ -1218,10 +1223,277 @@
           }
         },
         "behavior_policy": {
-          "const": "authority_and_transport_only_no_phase14_capability_migration_or_level2_level3_workflow_expansion"
+          "const": "authority_transport_and_primitive_layout_consumption_no_conversion_pointer_or_memory_capability_migration"
         },
         "next_patch": {
-          "const": "14.2"
+          "const": "14.3"
+        }
+      }
+    },
+    "phase14_declared_target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "target_id",
+        "target_triple",
+        "aliases",
+        "object_format",
+        "endianness",
+        "pointer_size",
+        "pointer_alignment",
+        "i32_alignment",
+        "i64_alignment",
+        "max_aggregate_alignment"
+      ],
+      "properties": {
+        "target_id": {
+          "type": "string",
+          "pattern": "^target:v1:triple=[A-Za-z0-9_.-]+:endian=(little|big):ptr_size=[0-9]+:ptr_align=[0-9]+:i32_align=[0-9]+:i64_align=[0-9]+:max_align=[0-9]+$"
+        },
+        "target_triple": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_.-]+$"
+        },
+        "aliases": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_.-]+$"
+          }
+        },
+        "object_format": {
+          "enum": [
+            "Elf",
+            "MachO"
+          ]
+        },
+        "endianness": {
+          "enum": [
+            "little",
+            "big"
+          ]
+        },
+        "pointer_size": {
+          "type": "integer",
+          "enum": [
+            4,
+            8
+          ]
+        },
+        "pointer_alignment": {
+          "type": "integer",
+          "enum": [
+            4,
+            8
+          ]
+        },
+        "i32_alignment": {
+          "type": "integer",
+          "enum": [
+            4
+          ]
+        },
+        "i64_alignment": {
+          "type": "integer",
+          "enum": [
+            4,
+            8
+          ]
+        },
+        "max_aggregate_alignment": {
+          "type": "integer",
+          "enum": [
+            4,
+            8
+          ]
+        }
+      }
+    },
+    "phase14_primitive_type": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type_id",
+        "source_name",
+        "representation_kind",
+        "size_policy",
+        "alignment_policy",
+        "bit_width_policy",
+        "signedness",
+        "validity_kind"
+      ],
+      "properties": {
+        "type_id": {
+          "type": "string",
+          "pattern": "^type:gust:(bool|i32|u32|i64|u64|isize|usize)$"
+        },
+        "source_name": {
+          "enum": [
+            "bool",
+            "i32",
+            "u32",
+            "i64",
+            "u64",
+            "isize",
+            "usize"
+          ]
+        },
+        "representation_kind": {
+          "enum": [
+            "scalar_bool",
+            "scalar_integer",
+            "scalar_pointer_sized_integer"
+          ]
+        },
+        "size_policy": {
+          "enum": [
+            "fixed_1_byte",
+            "fixed_4_bytes",
+            "fixed_8_bytes",
+            "target_pointer_size"
+          ]
+        },
+        "alignment_policy": {
+          "enum": [
+            "fixed_1_byte",
+            "target_i32_alignment",
+            "target_i64_alignment",
+            "target_pointer_alignment"
+          ]
+        },
+        "bit_width_policy": {
+          "enum": [
+            "fixed_8",
+            "fixed_32",
+            "fixed_64",
+            "target_pointer_width"
+          ]
+        },
+        "signedness": {
+          "enum": [
+            "not_applicable",
+            "signed",
+            "unsigned"
+          ]
+        },
+        "validity_kind": {
+          "enum": [
+            "canonical_bool_0_or_1",
+            "any_bit_pattern"
+          ]
+        }
+      }
+    },
+    "phase14_primitive_layout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "status",
+        "authority_owner",
+        "layout_table_format",
+        "normalization_policy",
+        "primary_level2_target",
+        "declared_targets",
+        "primitive_types",
+        "canonical_boolean_values",
+        "migrated_entry_ids",
+        "focused_ci_family",
+        "level1_guard",
+        "level2_guard",
+        "witness_policy",
+        "negative_classes",
+        "boundary_policy",
+        "next_patch"
+      ],
+      "properties": {
+        "version": {
+          "const": "phase14_declared_targets_and_primitive_layout_v1"
+        },
+        "status": {
+          "const": "ready_for_patch14_3"
+        },
+        "authority_owner": {
+          "const": "compiler/mir_primitive_layout.gst"
+        },
+        "layout_table_format": {
+          "const": "gust.compiler_layout_table.v2"
+        },
+        "normalization_policy": {
+          "const": "compiler_normalizes_declared_aliases_before_layout_selection_unknown_targets_reject_before_driver_discovery"
+        },
+        "primary_level2_target": {
+          "type": "string",
+          "minLength": 1
+        },
+        "declared_targets": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/phase14_declared_target"
+          }
+        },
+        "primitive_types": {
+          "type": "array",
+          "minItems": 7,
+          "maxItems": 7,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/phase14_primitive_type"
+          }
+        },
+        "canonical_boolean_values": {
+          "const": [
+            0,
+            1
+          ]
+        },
+        "migrated_entry_ids": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_]+$"
+          }
+        },
+        "focused_ci_family": {
+          "const": "primitive-layout"
+        },
+        "level1_guard": {
+          "const": "guard-cranelift-phase14-target-and-primitive-contract"
+        },
+        "level2_guard": {
+          "const": "guard-cranelift-phase14-primitive-layout-parity"
+        },
+        "witness_policy": {
+          "const": "compiler_emits_one_semantic_witness_per_declared_target_mir_to_c_and_cranelift_consume_the_same_request_local_layout_table"
+        },
+        "negative_classes": {
+          "type": "array",
+          "minItems": 6,
+          "maxItems": 6,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "unknown_target",
+              "unsupported_target",
+              "width_mismatch",
+              "alignment_mismatch",
+              "invalid_boolean_value",
+              "request_target_layout_disagreement"
+            ]
+          }
+        },
+        "boundary_policy": {
+          "const": "primitive_representation_only_no_signed_unsigned_conversion_pointer_stack_slot_load_store_string_array_struct_enum_or_aggregate_flow_migration"
+        },
+        "next_patch": {
+          "const": "14.3"
         }
       }
     }

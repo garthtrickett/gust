@@ -1,8 +1,8 @@
 {
   "schema": "scripts/cranelift_feature_registry.schema.json",
   "schema_version": 1,
-  "registry_version": 9,
-  "registry_status": "phase14_layout_authority_ready",
+  "registry_version": 10,
+  "registry_status": "phase14_primitive_layout_ready",
   "current_phase": "phase14",
   "closed_phase_versions": {
     "phase11": "phase11_closed_registry_backed_feature_parity_migration",
@@ -786,23 +786,25 @@
   },
   "phase14_layout_authority": {
     "version": "phase14_compiler_owned_layout_authority_v1",
-    "status": "ready_for_patch14_2",
+    "status": "consumed_by_patch14_2",
     "authority_owner": "compiler/mir_layout.gst",
-    "table_format": "gust.compiler_layout_table.v1",
+    "table_format": "gust.compiler_layout_table.v2",
     "semantic_types": [
       "MirTargetLayout",
       "MirTypeLayout",
       "MirFieldLayout",
       "MirVariantLayout",
       "MirElementStrideQuery",
-      "MirMemoryAccessLayout"
+      "MirMemoryAccessLayout",
+      "MirScalarValueValidation"
     ],
     "query_functions": [
       "mir_layout_of",
       "mir_layout_field_layout",
       "mir_layout_variant_layout",
       "mir_layout_element_stride",
-      "mir_layout_validate_memory_access"
+      "mir_layout_validate_memory_access",
+      "mir_layout_validate_scalar_value"
     ],
     "consumers": {
       "canonical_mir": "compiler/mir.gst:type_layout_references",
@@ -827,8 +829,184 @@
       "no_runtime_hard_coded_duplicate_offsets",
       "no_diagnostic_layout_recomputation"
     ],
-    "behavior_policy": "authority_and_transport_only_no_phase14_capability_migration_or_level2_level3_workflow_expansion",
-    "next_patch": "14.2"
+    "behavior_policy": "authority_transport_and_primitive_layout_consumption_no_conversion_pointer_or_memory_capability_migration",
+    "next_patch": "14.3"
+  },
+  "phase14_primitive_layout": {
+    "version": "phase14_declared_targets_and_primitive_layout_v1",
+    "status": "ready_for_patch14_3",
+    "authority_owner": "compiler/mir_primitive_layout.gst",
+    "layout_table_format": "gust.compiler_layout_table.v2",
+    "normalization_policy": "compiler_normalizes_declared_aliases_before_layout_selection_unknown_targets_reject_before_driver_discovery",
+    "primary_level2_target": "x86_64-unknown-linux-gnu",
+    "declared_targets": [
+      {
+        "target_id": "target:v1:triple=x86_64-unknown-linux-gnu:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8",
+        "target_triple": "x86_64-unknown-linux-gnu",
+        "aliases": [
+          "x86_64-linux"
+        ],
+        "object_format": "Elf",
+        "endianness": "little",
+        "pointer_size": 8,
+        "pointer_alignment": 8,
+        "i32_alignment": 4,
+        "i64_alignment": 8,
+        "max_aggregate_alignment": 8
+      },
+      {
+        "target_id": "target:v1:triple=aarch64-unknown-linux-gnu:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8",
+        "target_triple": "aarch64-unknown-linux-gnu",
+        "aliases": [
+          "aarch64-linux"
+        ],
+        "object_format": "Elf",
+        "endianness": "little",
+        "pointer_size": 8,
+        "pointer_alignment": 8,
+        "i32_alignment": 4,
+        "i64_alignment": 8,
+        "max_aggregate_alignment": 8
+      },
+      {
+        "target_id": "target:v1:triple=i686-unknown-linux-gnu:endian=little:ptr_size=4:ptr_align=4:i32_align=4:i64_align=4:max_align=4",
+        "target_triple": "i686-unknown-linux-gnu",
+        "aliases": [
+          "i686-linux"
+        ],
+        "object_format": "Elf",
+        "endianness": "little",
+        "pointer_size": 4,
+        "pointer_alignment": 4,
+        "i32_alignment": 4,
+        "i64_alignment": 4,
+        "max_aggregate_alignment": 4
+      },
+      {
+        "target_id": "target:v1:triple=x86_64-apple-darwin:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8",
+        "target_triple": "x86_64-apple-darwin",
+        "aliases": [
+          "x86_64-darwin"
+        ],
+        "object_format": "MachO",
+        "endianness": "little",
+        "pointer_size": 8,
+        "pointer_alignment": 8,
+        "i32_alignment": 4,
+        "i64_alignment": 8,
+        "max_aggregate_alignment": 8
+      },
+      {
+        "target_id": "target:v1:triple=aarch64-apple-darwin:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8",
+        "target_triple": "aarch64-apple-darwin",
+        "aliases": [
+          "aarch64-darwin"
+        ],
+        "object_format": "MachO",
+        "endianness": "little",
+        "pointer_size": 8,
+        "pointer_alignment": 8,
+        "i32_alignment": 4,
+        "i64_alignment": 8,
+        "max_aggregate_alignment": 8
+      }
+    ],
+    "primitive_types": [
+      {
+        "type_id": "type:gust:bool",
+        "source_name": "bool",
+        "representation_kind": "scalar_bool",
+        "size_policy": "fixed_1_byte",
+        "alignment_policy": "fixed_1_byte",
+        "bit_width_policy": "fixed_8",
+        "signedness": "not_applicable",
+        "validity_kind": "canonical_bool_0_or_1"
+      },
+      {
+        "type_id": "type:gust:i32",
+        "source_name": "i32",
+        "representation_kind": "scalar_integer",
+        "size_policy": "fixed_4_bytes",
+        "alignment_policy": "target_i32_alignment",
+        "bit_width_policy": "fixed_32",
+        "signedness": "signed",
+        "validity_kind": "any_bit_pattern"
+      },
+      {
+        "type_id": "type:gust:u32",
+        "source_name": "u32",
+        "representation_kind": "scalar_integer",
+        "size_policy": "fixed_4_bytes",
+        "alignment_policy": "target_i32_alignment",
+        "bit_width_policy": "fixed_32",
+        "signedness": "unsigned",
+        "validity_kind": "any_bit_pattern"
+      },
+      {
+        "type_id": "type:gust:i64",
+        "source_name": "i64",
+        "representation_kind": "scalar_integer",
+        "size_policy": "fixed_8_bytes",
+        "alignment_policy": "target_i64_alignment",
+        "bit_width_policy": "fixed_64",
+        "signedness": "signed",
+        "validity_kind": "any_bit_pattern"
+      },
+      {
+        "type_id": "type:gust:u64",
+        "source_name": "u64",
+        "representation_kind": "scalar_integer",
+        "size_policy": "fixed_8_bytes",
+        "alignment_policy": "target_i64_alignment",
+        "bit_width_policy": "fixed_64",
+        "signedness": "unsigned",
+        "validity_kind": "any_bit_pattern"
+      },
+      {
+        "type_id": "type:gust:isize",
+        "source_name": "isize",
+        "representation_kind": "scalar_pointer_sized_integer",
+        "size_policy": "target_pointer_size",
+        "alignment_policy": "target_pointer_alignment",
+        "bit_width_policy": "target_pointer_width",
+        "signedness": "signed",
+        "validity_kind": "any_bit_pattern"
+      },
+      {
+        "type_id": "type:gust:usize",
+        "source_name": "usize",
+        "representation_kind": "scalar_pointer_sized_integer",
+        "size_policy": "target_pointer_size",
+        "alignment_policy": "target_pointer_alignment",
+        "bit_width_policy": "target_pointer_width",
+        "signedness": "unsigned",
+        "validity_kind": "any_bit_pattern"
+      }
+    ],
+    "canonical_boolean_values": [
+      0,
+      1
+    ],
+    "migrated_entry_ids": [
+      "p14_primitive_scalar_layout",
+      "p14_pointer_sized_integer_layout",
+      "p14_target_layout_model",
+      "p14_all_target_layout_evidence"
+    ],
+    "focused_ci_family": "primitive-layout",
+    "level1_guard": "guard-cranelift-phase14-target-and-primitive-contract",
+    "level2_guard": "guard-cranelift-phase14-primitive-layout-parity",
+    "witness_policy": "compiler_emits_one_semantic_witness_per_declared_target_mir_to_c_and_cranelift_consume_the_same_request_local_layout_table",
+    "negative_classes": [
+      "unknown_target",
+      "unsupported_target",
+      "width_mismatch",
+      "alignment_mismatch",
+      "invalid_boolean_value",
+      "request_target_layout_disagreement"
+    ],
+    "boundary_policy": "primitive_representation_only_no_signed_unsigned_conversion_pointer_stack_slot_load_store_string_array_struct_enum_or_aggregate_flow_migration",
+    "next_patch": "14.3"
   },
   "residual_snapshots": {
     "phase13": {
@@ -3554,26 +3732,81 @@
       "parent": "phase13_entry:p13_scalar_multiply_i32",
       "feature_family": "primitive_layout",
       "ci_family": "primitive-layout",
-      "status": "candidate_deferred",
-      "route_owner": "deferred",
+      "status": "migrated",
+      "route_owner": "generic_canonical_mir",
       "worker_capability_owner": "worker_primitive_layout_lowering",
       "diagnostic_owner": "compiler_layout_verifier",
-      "source_fixture": "compiler/p14_primitive_scalar_layout_deferred_source.gst",
-      "canonical_mir_fixture": "none_rejected_before_canonical_MIR",
-      "differential_case_id": "phase14_opening:p14_primitive_scalar_layout",
-      "deferral_reason": "phase14_authority_p14_primitive_scalar_layout_awaits_bounded_capability_migration",
-      "future_destination_phase": "phase14",
-      "closure_version": "phase14_compiler_owned_layout_authority_v1",
+      "source_fixture": "compiler/phase14_primitive_scalar_layout_source.gst",
+      "canonical_mir_fixture": "compiler/fixtures/native_backend_phase14_primitive_layout_ingestion.mir",
+      "differential_case_id": "phase14_registry_differential:p14_primitive_scalar_layout",
+      "deferral_reason": "none_migrated",
+      "future_destination_phase": "none_migrated",
+      "closure_version": "phase14_declared_targets_and_primitive_layout_v1",
       "evidence": {
         "opening_record_kind": "phase14_candidate",
         "declared_capability": "bool_i32_i64_memory_layout",
         "planning_category": "primitive_scalar_layout",
         "phase13_closure_dependency": "phase13_closed_deferred_registry_parity_expansion",
-        "behavior_policy": "authority_and_transport_only_no_capability_migration",
-        "phase14_1_authority": "compiler_owned_layout_authority_and_request_transport_available"
+        "behavior_policy": "declared_target_and_primitive_layout_migrated_through_compiler_owned_v2_layout_table",
+        "phase14_1_authority": "compiler_owned_layout_authority_and_request_transport_available",
+        "phase14_2_contract": "phase14_declared_targets_and_primitive_layout_v1",
+        "selected_primitive_type_ids": [
+          "type:gust:bool",
+          "type:gust:i32",
+          "type:gust:u32",
+          "type:gust:i64",
+          "type:gust:u64",
+          "type:gust:isize",
+          "type:gust:usize"
+        ],
+        "declared_target_triples": [
+          "x86_64-unknown-linux-gnu",
+          "aarch64-unknown-linux-gnu",
+          "i686-unknown-linux-gnu",
+          "x86_64-apple-darwin",
+          "aarch64-apple-darwin"
+        ],
+        "canonical_boolean_values": [
+          0,
+          1
+        ],
+        "focused_source_fixtures": [
+          "compiler/phase14_primitive_scalar_layout_source.gst"
+        ],
+        "negative_source_fixtures": [
+          "compiler/p14_target_dependent_conversions_deferred_source.gst",
+          "compiler/p14_pointer_nullability_model_deferred_source.gst"
+        ],
+        "malformed_canonical_mir_fixture": "compiler/fixtures/native_backend_phase14_primitive_layout_malformed.mir",
+        "positive_expectation": "exit_42_phase14_primitive_scalar_layout",
+        "individual_evidence_guard": "guard-cranelift-phase14-primitive-layout-parity",
+        "differential_stderr_policy": "stable_bytes",
+        "differential_side_effect_policy": "none",
+        "composition_case_ids": [
+          "phase14_composition:declared_targets_primitive_layout"
+        ],
+        "differential_failure_fixture": "compiler/p14_target_dependent_conversions_deferred_source.gst",
+        "composition_cases": [
+          {
+            "id": "phase14_composition:declared_targets_primitive_layout",
+            "owner_entry_id": "p14_primitive_scalar_layout",
+            "ci_family": "primitive-layout",
+            "source_fixture": "compiler/phase14_primitive_layout_composition_source.gst",
+            "positive_expectation": "exit_46_phase14_declared_targets_primitive_layout",
+            "stderr_policy": "stable_bytes",
+            "side_effect_policy": "none",
+            "failure_fixture": "compiler/p14_target_dependent_conversions_deferred_source.gst",
+            "covers_entry_ids": [
+              "p14_primitive_scalar_layout",
+              "p14_pointer_sized_integer_layout",
+              "p14_target_layout_model",
+              "p14_all_target_layout_evidence"
+            ]
+          }
+        ]
       },
       "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
-      "current_failure_stage": "before_driver_discovery",
+      "current_failure_stage": "none_supported",
       "positive_future_fixture": "compiler/future/p14_primitive_scalar_layout_source.gst",
       "negative_current_fixture": "compiler/p14_primitive_scalar_layout_deferred_source.gst"
     },
@@ -3583,26 +3816,64 @@
       "parent": "phase14_category:pointer_sized_integers",
       "feature_family": "primitive_layout",
       "ci_family": "primitive-layout",
-      "status": "candidate_deferred",
-      "route_owner": "deferred",
+      "status": "migrated",
+      "route_owner": "generic_canonical_mir",
       "worker_capability_owner": "worker_primitive_layout_lowering",
       "diagnostic_owner": "compiler_layout_verifier",
-      "source_fixture": "compiler/p14_pointer_sized_integer_layout_deferred_source.gst",
-      "canonical_mir_fixture": "none_rejected_before_canonical_MIR",
-      "differential_case_id": "phase14_opening:p14_pointer_sized_integer_layout",
-      "deferral_reason": "phase14_authority_p14_pointer_sized_integer_layout_awaits_bounded_capability_migration",
-      "future_destination_phase": "phase14",
-      "closure_version": "phase14_compiler_owned_layout_authority_v1",
+      "source_fixture": "compiler/phase14_pointer_sized_integer_layout_source.gst",
+      "canonical_mir_fixture": "compiler/fixtures/native_backend_phase14_primitive_layout_ingestion.mir",
+      "differential_case_id": "phase14_registry_differential:p14_pointer_sized_integer_layout",
+      "deferral_reason": "none_migrated",
+      "future_destination_phase": "none_migrated",
+      "closure_version": "phase14_declared_targets_and_primitive_layout_v1",
       "evidence": {
         "opening_record_kind": "phase14_candidate",
         "declared_capability": "signed_and_unsigned_pointer_sized_integer_layout",
         "planning_category": "pointer_sized_integers",
         "phase13_closure_dependency": "phase13_closed_deferred_registry_parity_expansion",
-        "behavior_policy": "authority_and_transport_only_no_capability_migration",
-        "phase14_1_authority": "compiler_owned_layout_authority_and_request_transport_available"
+        "behavior_policy": "declared_target_and_primitive_layout_migrated_through_compiler_owned_v2_layout_table",
+        "phase14_1_authority": "compiler_owned_layout_authority_and_request_transport_available",
+        "phase14_2_contract": "phase14_declared_targets_and_primitive_layout_v1",
+        "selected_primitive_type_ids": [
+          "type:gust:bool",
+          "type:gust:i32",
+          "type:gust:u32",
+          "type:gust:i64",
+          "type:gust:u64",
+          "type:gust:isize",
+          "type:gust:usize"
+        ],
+        "declared_target_triples": [
+          "x86_64-unknown-linux-gnu",
+          "aarch64-unknown-linux-gnu",
+          "i686-unknown-linux-gnu",
+          "x86_64-apple-darwin",
+          "aarch64-apple-darwin"
+        ],
+        "canonical_boolean_values": [
+          0,
+          1
+        ],
+        "focused_source_fixtures": [
+          "compiler/phase14_pointer_sized_integer_layout_source.gst"
+        ],
+        "negative_source_fixtures": [
+          "compiler/p14_target_dependent_conversions_deferred_source.gst",
+          "compiler/p14_pointer_nullability_model_deferred_source.gst"
+        ],
+        "malformed_canonical_mir_fixture": "compiler/fixtures/native_backend_phase14_primitive_layout_malformed.mir",
+        "positive_expectation": "exit_43_phase14_pointer_sized_integer_layout",
+        "individual_evidence_guard": "guard-cranelift-phase14-primitive-layout-parity",
+        "differential_stderr_policy": "stable_bytes",
+        "differential_side_effect_policy": "none",
+        "composition_case_ids": [
+          "phase14_composition:declared_targets_primitive_layout"
+        ],
+        "differential_failure_fixture": "compiler/p14_target_dependent_conversions_deferred_source.gst",
+        "composition_cases": []
       },
       "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
-      "current_failure_stage": "before_driver_discovery",
+      "current_failure_stage": "none_supported",
       "positive_future_fixture": "compiler/future/p14_pointer_sized_integer_layout_source.gst",
       "negative_current_fixture": "compiler/p14_pointer_sized_integer_layout_deferred_source.gst"
     },
@@ -3627,8 +3898,9 @@
         "declared_capability": "target_dependent_signed_unsigned_and_width_conversions",
         "planning_category": "conversions",
         "phase13_closure_dependency": "phase13_closed_deferred_registry_parity_expansion",
-        "behavior_policy": "authority_and_transport_only_no_capability_migration",
-        "phase14_1_authority": "compiler_owned_layout_authority_and_request_transport_available"
+        "behavior_policy": "primitive_layout_only_other_phase14_capabilities_remain_deferred",
+        "phase14_1_authority": "compiler_owned_layout_authority_and_request_transport_available",
+        "phase14_2_boundary": "not_selected_by_declared_target_and_primitive_layout_patch"
       },
       "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
       "current_failure_stage": "before_driver_discovery",
@@ -3656,8 +3928,9 @@
         "declared_capability": "typed_pointers_and_nullability_rules",
         "planning_category": "pointers_and_nullability",
         "phase13_closure_dependency": "phase13_closed_deferred_registry_parity_expansion",
-        "behavior_policy": "authority_and_transport_only_no_capability_migration",
-        "phase14_1_authority": "compiler_owned_layout_authority_and_request_transport_available"
+        "behavior_policy": "primitive_layout_only_other_phase14_capabilities_remain_deferred",
+        "phase14_1_authority": "compiler_owned_layout_authority_and_request_transport_available",
+        "phase14_2_boundary": "not_selected_by_declared_target_and_primitive_layout_patch"
       },
       "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
       "current_failure_stage": "before_driver_discovery",
@@ -3685,8 +3958,9 @@
         "declared_capability": "compiler_owned_stack_slots_and_addressable_locals",
         "planning_category": "stack_slots",
         "phase13_closure_dependency": "phase13_closed_deferred_registry_parity_expansion",
-        "behavior_policy": "authority_and_transport_only_no_capability_migration",
-        "phase14_1_authority": "compiler_owned_layout_authority_and_request_transport_available"
+        "behavior_policy": "primitive_layout_only_other_phase14_capabilities_remain_deferred",
+        "phase14_1_authority": "compiler_owned_layout_authority_and_request_transport_available",
+        "phase14_2_boundary": "not_selected_by_declared_target_and_primitive_layout_patch"
       },
       "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
       "current_failure_stage": "before_driver_discovery",
@@ -3714,8 +3988,9 @@
         "declared_capability": "typed_load_store_and_memory_access_validation",
         "planning_category": "loads_and_stores",
         "phase13_closure_dependency": "phase13_closed_deferred_registry_parity_expansion",
-        "behavior_policy": "authority_and_transport_only_no_capability_migration",
-        "phase14_1_authority": "compiler_owned_layout_authority_and_request_transport_available"
+        "behavior_policy": "primitive_layout_only_other_phase14_capabilities_remain_deferred",
+        "phase14_1_authority": "compiler_owned_layout_authority_and_request_transport_available",
+        "phase14_2_boundary": "not_selected_by_declared_target_and_primitive_layout_patch"
       },
       "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
       "current_failure_stage": "before_driver_discovery",
@@ -3743,8 +4018,9 @@
         "declared_capability": "string_literal_and_borrowed_string_view_layout",
         "planning_category": "strings_and_string_views",
         "phase13_closure_dependency": "phase13_closed_deferred_registry_parity_expansion",
-        "behavior_policy": "authority_and_transport_only_no_capability_migration",
-        "phase14_1_authority": "compiler_owned_layout_authority_and_request_transport_available"
+        "behavior_policy": "primitive_layout_only_other_phase14_capabilities_remain_deferred",
+        "phase14_1_authority": "compiler_owned_layout_authority_and_request_transport_available",
+        "phase14_2_boundary": "not_selected_by_declared_target_and_primitive_layout_patch"
       },
       "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
       "current_failure_stage": "before_driver_discovery",
@@ -3772,8 +4048,9 @@
         "declared_capability": "fixed_array_and_slice_layout",
         "planning_category": "arrays_and_slices",
         "phase13_closure_dependency": "phase13_closed_deferred_registry_parity_expansion",
-        "behavior_policy": "authority_and_transport_only_no_capability_migration",
-        "phase14_1_authority": "compiler_owned_layout_authority_and_request_transport_available"
+        "behavior_policy": "primitive_layout_only_other_phase14_capabilities_remain_deferred",
+        "phase14_1_authority": "compiler_owned_layout_authority_and_request_transport_available",
+        "phase14_2_boundary": "not_selected_by_declared_target_and_primitive_layout_patch"
       },
       "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
       "current_failure_stage": "before_driver_discovery",
@@ -3801,8 +4078,9 @@
         "declared_capability": "declared_order_struct_field_layout_alignment_and_padding",
         "planning_category": "structs",
         "phase13_closure_dependency": "phase13_closed_deferred_registry_parity_expansion",
-        "behavior_policy": "authority_and_transport_only_no_capability_migration",
-        "phase14_1_authority": "compiler_owned_layout_authority_and_request_transport_available"
+        "behavior_policy": "primitive_layout_only_other_phase14_capabilities_remain_deferred",
+        "phase14_1_authority": "compiler_owned_layout_authority_and_request_transport_available",
+        "phase14_2_boundary": "not_selected_by_declared_target_and_primitive_layout_patch"
       },
       "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
       "current_failure_stage": "before_driver_discovery",
@@ -3830,8 +4108,9 @@
         "declared_capability": "explicit_tag_enum_and_tagged_union_layout",
         "planning_category": "enums_and_tagged_unions",
         "phase13_closure_dependency": "phase13_closed_deferred_registry_parity_expansion",
-        "behavior_policy": "authority_and_transport_only_no_capability_migration",
-        "phase14_1_authority": "compiler_owned_layout_authority_and_request_transport_available"
+        "behavior_policy": "primitive_layout_only_other_phase14_capabilities_remain_deferred",
+        "phase14_1_authority": "compiler_owned_layout_authority_and_request_transport_available",
+        "phase14_2_boundary": "not_selected_by_declared_target_and_primitive_layout_patch"
       },
       "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
       "current_failure_stage": "before_driver_discovery",
@@ -3859,8 +4138,9 @@
         "declared_capability": "non_resource_aggregate_values_across_basic_block_boundaries",
         "planning_category": "aggregate_basic_block_transport",
         "phase13_closure_dependency": "phase13_closed_deferred_registry_parity_expansion",
-        "behavior_policy": "authority_and_transport_only_no_capability_migration",
-        "phase14_1_authority": "compiler_owned_layout_authority_and_request_transport_available"
+        "behavior_policy": "primitive_layout_only_other_phase14_capabilities_remain_deferred",
+        "phase14_1_authority": "compiler_owned_layout_authority_and_request_transport_available",
+        "phase14_2_boundary": "not_selected_by_declared_target_and_primitive_layout_patch"
       },
       "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
       "current_failure_stage": "before_driver_discovery",
@@ -3873,26 +4153,64 @@
       "parent": "phase14_category:target_layout",
       "feature_family": "target_layout",
       "ci_family": "primitive-layout",
-      "status": "candidate_deferred",
-      "route_owner": "deferred",
+      "status": "migrated",
+      "route_owner": "generic_canonical_mir",
       "worker_capability_owner": "worker_target_layout_lowering",
       "diagnostic_owner": "target_layout_registry_verifier",
-      "source_fixture": "compiler/p14_target_layout_model_deferred_source.gst",
-      "canonical_mir_fixture": "none_rejected_before_canonical_MIR",
-      "differential_case_id": "phase14_opening:p14_target_layout_model",
-      "deferral_reason": "phase14_authority_p14_target_layout_model_awaits_bounded_capability_migration",
-      "future_destination_phase": "phase14",
-      "closure_version": "phase14_compiler_owned_layout_authority_v1",
+      "source_fixture": "compiler/phase14_target_layout_model_source.gst",
+      "canonical_mir_fixture": "compiler/fixtures/native_backend_phase14_primitive_layout_ingestion.mir",
+      "differential_case_id": "phase14_registry_differential:p14_target_layout_model",
+      "deferral_reason": "none_migrated",
+      "future_destination_phase": "none_migrated",
+      "closure_version": "phase14_declared_targets_and_primitive_layout_v1",
       "evidence": {
         "opening_record_kind": "phase14_candidate",
         "declared_capability": "compiler_owned_target_size_alignment_and_endianness_model",
         "planning_category": "target_layout",
         "phase13_closure_dependency": "phase13_closed_deferred_registry_parity_expansion",
-        "behavior_policy": "authority_and_transport_only_no_capability_migration",
-        "phase14_1_authority": "compiler_owned_layout_authority_and_request_transport_available"
+        "behavior_policy": "declared_target_and_primitive_layout_migrated_through_compiler_owned_v2_layout_table",
+        "phase14_1_authority": "compiler_owned_layout_authority_and_request_transport_available",
+        "phase14_2_contract": "phase14_declared_targets_and_primitive_layout_v1",
+        "selected_primitive_type_ids": [
+          "type:gust:bool",
+          "type:gust:i32",
+          "type:gust:u32",
+          "type:gust:i64",
+          "type:gust:u64",
+          "type:gust:isize",
+          "type:gust:usize"
+        ],
+        "declared_target_triples": [
+          "x86_64-unknown-linux-gnu",
+          "aarch64-unknown-linux-gnu",
+          "i686-unknown-linux-gnu",
+          "x86_64-apple-darwin",
+          "aarch64-apple-darwin"
+        ],
+        "canonical_boolean_values": [
+          0,
+          1
+        ],
+        "focused_source_fixtures": [
+          "compiler/phase14_target_layout_model_source.gst"
+        ],
+        "negative_source_fixtures": [
+          "compiler/p14_target_dependent_conversions_deferred_source.gst",
+          "compiler/p14_pointer_nullability_model_deferred_source.gst"
+        ],
+        "malformed_canonical_mir_fixture": "compiler/fixtures/native_backend_phase14_primitive_layout_malformed.mir",
+        "positive_expectation": "exit_44_phase14_target_layout_model",
+        "individual_evidence_guard": "guard-cranelift-phase14-primitive-layout-parity",
+        "differential_stderr_policy": "stable_bytes",
+        "differential_side_effect_policy": "none",
+        "composition_case_ids": [
+          "phase14_composition:declared_targets_primitive_layout"
+        ],
+        "differential_failure_fixture": "compiler/p14_target_dependent_conversions_deferred_source.gst",
+        "composition_cases": []
       },
       "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
-      "current_failure_stage": "before_driver_discovery",
+      "current_failure_stage": "none_supported",
       "positive_future_fixture": "compiler/future/p14_target_layout_model_source.gst",
       "negative_current_fixture": "compiler/p14_target_layout_model_deferred_source.gst"
     },
@@ -3902,26 +4220,64 @@
       "parent": "phase14_category:all_target_evidence",
       "feature_family": "target_layout",
       "ci_family": "primitive-layout",
-      "status": "candidate_deferred",
-      "route_owner": "deferred",
+      "status": "migrated",
+      "route_owner": "generic_canonical_mir",
       "worker_capability_owner": "worker_target_layout_lowering",
       "diagnostic_owner": "target_layout_registry_verifier",
-      "source_fixture": "compiler/p14_all_target_layout_evidence_deferred_source.gst",
-      "canonical_mir_fixture": "none_rejected_before_canonical_MIR",
-      "differential_case_id": "phase14_opening:p14_all_target_layout_evidence",
-      "deferral_reason": "phase14_authority_p14_all_target_layout_evidence_awaits_bounded_capability_migration",
-      "future_destination_phase": "phase14",
-      "closure_version": "phase14_compiler_owned_layout_authority_v1",
+      "source_fixture": "compiler/phase14_all_target_layout_evidence_source.gst",
+      "canonical_mir_fixture": "compiler/fixtures/native_backend_phase14_primitive_layout_ingestion.mir",
+      "differential_case_id": "phase14_registry_differential:p14_all_target_layout_evidence",
+      "deferral_reason": "none_migrated",
+      "future_destination_phase": "none_migrated",
+      "closure_version": "phase14_declared_targets_and_primitive_layout_v1",
       "evidence": {
         "opening_record_kind": "phase14_candidate",
         "declared_capability": "registry_derived_all_declared_host_target_layout_evidence",
         "planning_category": "all_target_evidence",
         "phase13_closure_dependency": "phase13_closed_deferred_registry_parity_expansion",
-        "behavior_policy": "authority_and_transport_only_no_capability_migration",
-        "phase14_1_authority": "compiler_owned_layout_authority_and_request_transport_available"
+        "behavior_policy": "declared_target_and_primitive_layout_migrated_through_compiler_owned_v2_layout_table",
+        "phase14_1_authority": "compiler_owned_layout_authority_and_request_transport_available",
+        "phase14_2_contract": "phase14_declared_targets_and_primitive_layout_v1",
+        "selected_primitive_type_ids": [
+          "type:gust:bool",
+          "type:gust:i32",
+          "type:gust:u32",
+          "type:gust:i64",
+          "type:gust:u64",
+          "type:gust:isize",
+          "type:gust:usize"
+        ],
+        "declared_target_triples": [
+          "x86_64-unknown-linux-gnu",
+          "aarch64-unknown-linux-gnu",
+          "i686-unknown-linux-gnu",
+          "x86_64-apple-darwin",
+          "aarch64-apple-darwin"
+        ],
+        "canonical_boolean_values": [
+          0,
+          1
+        ],
+        "focused_source_fixtures": [
+          "compiler/phase14_all_target_layout_evidence_source.gst"
+        ],
+        "negative_source_fixtures": [
+          "compiler/p14_target_dependent_conversions_deferred_source.gst",
+          "compiler/p14_pointer_nullability_model_deferred_source.gst"
+        ],
+        "malformed_canonical_mir_fixture": "compiler/fixtures/native_backend_phase14_primitive_layout_malformed.mir",
+        "positive_expectation": "exit_45_phase14_all_target_layout_evidence",
+        "individual_evidence_guard": "guard-cranelift-phase14-primitive-layout-parity",
+        "differential_stderr_policy": "stable_bytes",
+        "differential_side_effect_policy": "none",
+        "composition_case_ids": [
+          "phase14_composition:declared_targets_primitive_layout"
+        ],
+        "differential_failure_fixture": "compiler/p14_target_dependent_conversions_deferred_source.gst",
+        "composition_cases": []
       },
       "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
-      "current_failure_stage": "before_driver_discovery",
+      "current_failure_stage": "none_supported",
       "positive_future_fixture": "compiler/future/p14_all_target_layout_evidence_source.gst",
       "negative_current_fixture": "compiler/p14_all_target_layout_evidence_deferred_source.gst"
     }

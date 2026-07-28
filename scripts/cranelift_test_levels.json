@@ -4,17 +4,17 @@
     "1": {
       "name": "contract-fast",
       "ci_owner": "PR Fast contract job",
-      "policy": "seconds; Phase 12.5 and Phase 13 semantic closure ownership, Phase 14 opening inventory, compiler-owned layout authority and request transport, schema, traceability, route/fallback boundaries, generated projections, and lightweight closure summaries"
+      "policy": "seconds; Phase 12.5 and Phase 13 semantic closure ownership, Phase 14 opening inventory, compiler-owned layout authority, declared-target and primitive-layout contracts, schema, traceability, route/fallback boundaries, generated projections, and lightweight closure summaries"
     },
     "2": {
       "name": "differential-family",
-      "ci_owner": "PR Fast registry-derived seven-family matrix",
-      "policy": "focused MIR-to-C versus Cranelift execution, byte-identical MIR-to-C emission, registry-owned composition cases, stable side effects, and migrated Phase 13 evidence; Phase 14 planned families remain inactive until migration"
+      "ci_owner": "PR Fast registry-derived eight-family matrix",
+      "policy": "focused MIR-to-C versus Cranelift execution, byte-identical MIR-to-C emission, registry-owned composition cases, stable side effects, migrated Phase 13 evidence, and primary-host Phase 14 primitive-layout parity"
     },
     "3": {
       "name": "historical-full",
       "ci_owner": "Cranelift Historical Full scheduled/manual workflow",
-      "policy": "full Phase 9-13 history, native/object/link/reproducibility, packaging, and platform evidence; Phase 14 all-target ownership remains separately available for later activation"
+      "policy": "full Phase 9-14 history, native/object/link/reproducibility, packaging, platform evidence, and all declared-target primitive-layout witnesses"
     }
   },
   "guards": {
@@ -171,6 +171,8 @@
     "guard-cranelift-phase13-source-metadata-parity": 2,
     "guard-cranelift-phase14-layout-authority-contract": 1,
     "guard-cranelift-phase14-opening-contract": 1,
+    "guard-cranelift-phase14-primitive-layout-parity": 2,
+    "guard-cranelift-phase14-target-and-primitive-contract": 1,
     "guard-cranelift-phase9b-close": 3,
     "guard-cranelift-phase9c-close": 3,
     "guard-cranelift-phase9c-differential-ladder-native-shard": 3,

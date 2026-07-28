@@ -19,7 +19,8 @@ AMBIGUOUS = {"", "unknown", "tbd", "ownerless", "ambiguous"}
 TOP_FIELDS = {
     "schema", "schema_version", "registry_version", "registry_status",
     "current_phase", "closed_phase_versions", "closure_snapshots",
-    "opening_snapshots", "phase14_layout_authority", "residual_snapshots",
+    "opening_snapshots", "phase14_layout_authority",
+    "phase14_primitive_layout", "residual_snapshots",
     "planning_categories", "supported_values", "legacy_views", "entries",
 }
 ENTRY_FIELDS = {
@@ -485,6 +486,7 @@ PHASE14_OPENING_ENTRY_IDS = (
     "p14_all_target_layout_evidence",
 )
 PHASE14_FAILURE_STAGES = {
+    "none_supported",
     "before_driver_discovery",
     "canonical_mir_validation_before_driver_discovery",
     "source_or_type_failure_before_driver_discovery",
@@ -503,16 +505,17 @@ PHASE14_LAYOUT_CONSUMER_FIELDS = {
 PHASE14_LAYOUT_AUTHORITY_VERSION = (
     "phase14_compiler_owned_layout_authority_v1"
 )
-PHASE14_LAYOUT_AUTHORITY_STATUS = "ready_for_patch14_2"
-PHASE14_LAYOUT_TABLE_FORMAT = "gust.compiler_layout_table.v1"
+PHASE14_LAYOUT_AUTHORITY_STATUS = "consumed_by_patch14_2"
+PHASE14_LAYOUT_TABLE_FORMAT = "gust.compiler_layout_table.v2"
 PHASE14_LAYOUT_TYPES = (
     "MirTargetLayout", "MirTypeLayout", "MirFieldLayout",
     "MirVariantLayout", "MirElementStrideQuery", "MirMemoryAccessLayout",
+    "MirScalarValueValidation",
 )
 PHASE14_LAYOUT_QUERIES = (
     "mir_layout_of", "mir_layout_field_layout",
     "mir_layout_variant_layout", "mir_layout_element_stride",
-    "mir_layout_validate_memory_access",
+    "mir_layout_validate_memory_access", "mir_layout_validate_scalar_value",
 )
 PHASE14_LAYOUT_REJECTION_CLASSES = (
     "unknown_layout_id", "duplicate_conflicting_layout_id",
@@ -534,8 +537,42 @@ PHASE14_LAYOUT_REQUEST_POLICY = (
     "without_selecting_layout"
 )
 PHASE14_LAYOUT_BEHAVIOR_POLICY = (
-    "authority_and_transport_only_no_phase14_capability_migration_or_"
-    "level2_level3_workflow_expansion"
+    "authority_transport_and_primitive_layout_consumption_no_conversion_"
+    "pointer_or_memory_capability_migration"
+)
+
+PHASE14_PRIMITIVE_FIELDS = {
+    "version", "status", "authority_owner", "layout_table_format",
+    "normalization_policy", "primary_level2_target", "declared_targets",
+    "primitive_types", "canonical_boolean_values", "migrated_entry_ids",
+    "focused_ci_family", "level1_guard", "level2_guard",
+    "witness_policy", "negative_classes", "boundary_policy", "next_patch",
+}
+PHASE14_DECLARED_TARGET_FIELDS = {
+    "target_id", "target_triple", "aliases", "object_format",
+    "endianness", "pointer_size", "pointer_alignment", "i32_alignment",
+    "i64_alignment", "max_aggregate_alignment",
+}
+PHASE14_PRIMITIVE_TYPE_FIELDS = {
+    "type_id", "source_name", "representation_kind", "size_policy",
+    "alignment_policy", "bit_width_policy", "signedness", "validity_kind",
+}
+PHASE14_PRIMITIVE_VERSION = "phase14_declared_targets_and_primitive_layout_v1"
+PHASE14_PRIMITIVE_STATUS = "ready_for_patch14_3"
+PHASE14_PRIMITIVE_MIGRATED_IDS = (
+    "p14_primitive_scalar_layout",
+    "p14_pointer_sized_integer_layout",
+    "p14_target_layout_model",
+    "p14_all_target_layout_evidence",
+)
+PHASE14_PRIMITIVE_TYPE_IDS = (
+    "type:gust:bool", "type:gust:i32", "type:gust:u32",
+    "type:gust:i64", "type:gust:u64", "type:gust:isize", "type:gust:usize",
+)
+PHASE14_PRIMITIVE_NEGATIVE_CLASSES = (
+    "unknown_target", "unsupported_target", "width_mismatch",
+    "alignment_mismatch", "invalid_boolean_value",
+    "request_target_layout_disagreement",
 )
 
 
@@ -1041,10 +1078,113 @@ def validate_phase14_layout_authority_structure(registry):
         "Phase 14 layout authority behavior boundary drifted",
     )
     require(
-        authority["next_patch"] == "14.2",
-        "Phase 14 layout authority next patch must be 14.2",
+        authority["next_patch"] == "14.3",
+        "Phase 14 layout authority next patch must be 14.3",
     )
     return authority
+
+
+def validate_phase14_primitive_layout_structure(registry):
+    contract = registry["phase14_primitive_layout"]
+    require(
+        isinstance(contract, dict) and set(contract) == PHASE14_PRIMITIVE_FIELDS,
+        "Phase 14 primitive layout fields drifted",
+    )
+    require(
+        contract["version"] == PHASE14_PRIMITIVE_VERSION
+        and contract["status"] == PHASE14_PRIMITIVE_STATUS,
+        "Phase 14 primitive layout checkpoint drifted",
+    )
+    require(
+        contract["authority_owner"] == "compiler/mir_primitive_layout.gst"
+        and contract["layout_table_format"] == PHASE14_LAYOUT_TABLE_FORMAT,
+        "Phase 14 primitive layout authority or table format drifted",
+    )
+    require(
+        contract["normalization_policy"]
+        == "compiler_normalizes_declared_aliases_before_layout_selection_unknown_targets_reject_before_driver_discovery",
+        "Phase 14 target normalization policy drifted",
+    )
+    targets = contract["declared_targets"]
+    require(isinstance(targets, list) and targets, "declared targets must be non-empty")
+    triples = []
+    target_ids = []
+    aliases = set()
+    for index, target in enumerate(targets):
+        context = f"phase14_primitive_layout.declared_targets[{index}]"
+        require(
+            isinstance(target, dict) and set(target) == PHASE14_DECLARED_TARGET_FIELDS,
+            f"{context} fields drifted",
+        )
+        triple = text(target["target_triple"], f"{context}.target_triple")
+        target_id = text(target["target_id"], f"{context}.target_id")
+        require(triple not in triples and target_id not in target_ids,
+                f"{context}: duplicate target identity")
+        triples.append(triple)
+        target_ids.append(target_id)
+        target_aliases = unique_strings(target["aliases"], f"{context}.aliases")
+        require(not (set(target_aliases) & aliases), f"{context}: duplicate target alias")
+        aliases.update(target_aliases)
+        require(target["endianness"] in {"little", "big"}, f"{context}: invalid endianness")
+        for field in (
+            "pointer_size", "pointer_alignment", "i32_alignment",
+            "i64_alignment", "max_aggregate_alignment",
+        ):
+            value = target[field]
+            require(isinstance(value, int) and value > 0 and value & (value - 1) == 0,
+                    f"{context}.{field} must be a positive power of two")
+        require(target["object_format"] in {"Elf", "MachO"},
+                f"{context}: unsupported object format")
+        expected_id = (
+            f"target:v1:triple={triple}:endian={target['endianness']}:"
+            f"ptr_size={target['pointer_size']}:ptr_align={target['pointer_alignment']}:"
+            f"i32_align={target['i32_alignment']}:i64_align={target['i64_alignment']}:"
+            f"max_align={target['max_aggregate_alignment']}"
+        )
+        require(target_id == expected_id, f"{context}: target identity is not semantic")
+    require(contract["primary_level2_target"] in triples,
+            "primary Level 2 target is not declared")
+
+    primitive_types = contract["primitive_types"]
+    require(isinstance(primitive_types, list), "primitive type inventory must be an array")
+    require(len(primitive_types) == len(PHASE14_PRIMITIVE_TYPE_IDS),
+            "primitive type inventory count drifted")
+    type_ids = []
+    source_names = []
+    for index, primitive in enumerate(primitive_types):
+        context = f"phase14_primitive_layout.primitive_types[{index}]"
+        require(
+            isinstance(primitive, dict)
+            and set(primitive) == PHASE14_PRIMITIVE_TYPE_FIELDS,
+            f"{context} fields drifted",
+        )
+        type_id = text(primitive["type_id"], f"{context}.type_id")
+        source_name = text(primitive["source_name"], f"{context}.source_name")
+        require(type_id not in type_ids and source_name not in source_names,
+                f"{context}: duplicate primitive type")
+        type_ids.append(type_id)
+        source_names.append(source_name)
+        require(primitive["signedness"] in {"not_applicable", "signed", "unsigned"},
+                f"{context}: invalid signedness")
+        require(primitive["validity_kind"] in {"canonical_bool_0_or_1", "any_bit_pattern"},
+                f"{context}: invalid validity kind")
+    require(tuple(type_ids) == PHASE14_PRIMITIVE_TYPE_IDS,
+            "primitive type identity order drifted")
+    require(contract["canonical_boolean_values"] == [0, 1],
+            "canonical boolean values must be exactly 0 and 1")
+    require(tuple(contract["migrated_entry_ids"]) == PHASE14_PRIMITIVE_MIGRATED_IDS,
+            "Phase 14 primitive migrated row inventory drifted")
+    require(contract["focused_ci_family"] == "primitive-layout",
+            "Phase 14 primitive CI family drifted")
+    require(contract["level1_guard"] == "guard-cranelift-phase14-target-and-primitive-contract",
+            "Phase 14 primitive Level 1 guard drifted")
+    require(contract["level2_guard"] == "guard-cranelift-phase14-primitive-layout-parity",
+            "Phase 14 primitive Level 2 guard drifted")
+    require(contract["negative_classes"] == list(PHASE14_PRIMITIVE_NEGATIVE_CLASSES),
+            "Phase 14 primitive negative inventory drifted")
+    require(contract["next_patch"] == "14.3",
+            "Phase 14 primitive next patch must be 14.3")
+    return contract
 
 
 def validate_phase13_residual_snapshot_structure(registry):
@@ -1374,6 +1514,30 @@ def validate():
         phase14_authority_schema.get("additionalProperties") is False,
         "schema Phase 14 layout authority must reject unknown fields",
     )
+    phase14_primitive_schema = definitions.get(
+        "phase14_primitive_layout",
+        {},
+    )
+    require(
+        set(phase14_primitive_schema.get("required", []))
+        == PHASE14_PRIMITIVE_FIELDS,
+        "schema Phase 14 primitive layout fields drifted",
+    )
+    require(
+        phase14_primitive_schema.get("additionalProperties") is False,
+        "schema Phase 14 primitive layout must reject unknown fields",
+    )
+    target_schema = definitions.get("phase14_declared_target", {})
+    require(
+        set(target_schema.get("required", [])) == PHASE14_DECLARED_TARGET_FIELDS,
+        "schema Phase 14 declared target fields drifted",
+    )
+    primitive_type_schema = definitions.get("phase14_primitive_type", {})
+    require(
+        set(primitive_type_schema.get("required", []))
+        == PHASE14_PRIMITIVE_TYPE_FIELDS,
+        "schema Phase 14 primitive type fields drifted",
+    )
     residual_schema = schema.get("properties", {}).get("residual_snapshots", {})
     require(
         set(residual_schema.get("required", [])) == {"phase13"},
@@ -1419,9 +1583,9 @@ def validate():
     require(registry["schema"] == "scripts/cranelift_feature_registry.schema.json",
             "registry schema path is not canonical")
     require(registry["schema_version"] == 1, "schema_version must be 1")
-    require(registry["registry_version"] == 9, "registry_version must be 9")
+    require(registry["registry_version"] == 10, "registry_version must be 10")
     require(
-        registry["registry_status"] == "phase14_layout_authority_ready",
+        registry["registry_status"] == "phase14_primitive_layout_ready",
         "registry status is missing or stale",
     )
     require(registry["current_phase"] == "phase14", "current_phase must be phase14")
@@ -1440,6 +1604,7 @@ def validate():
     validate_phase13_closure_snapshot_structure(registry)
     validate_phase14_opening_snapshot_structure(registry)
     validate_phase14_layout_authority_structure(registry)
+    validate_phase14_primitive_layout_structure(registry)
 
     categories = set(unique_strings(registry["planning_categories"], "planning_categories"))
     supported = registry["supported_values"]
@@ -1635,51 +1800,18 @@ def validate():
             phase13.append(entry)
         elif entry["origin_phase"] == "phase14":
             require(
-                closure == PHASE14_LAYOUT_AUTHORITY_VERSION,
-                f"{entry_id}: Phase 14 layout authority version drifted",
-            )
-            require(
-                status == "candidate_deferred"
-                and entry["route_owner"] == "deferred",
-                f"{entry_id}: Phase 14 rows must remain candidate deferred",
-            )
-            require(
-                reason
-                == f"phase14_authority_{entry_id}_awaits_bounded_capability_migration",
-                f"{entry_id}: Phase 14 post-authority deferral reason drifted",
-            )
-            require(
-                destination == "phase14",
-                f"{entry_id}: Phase 14 opening destination must remain phase14",
-            )
-            require(
                 entry["target_applicability"] == PHASE14_TARGET_APPLICABILITY,
                 f"{entry_id}: Phase 14 target applicability drifted",
             )
             require(
-                entry["current_failure_stage"] in PHASE14_FAILURE_STAGES
-                and entry["current_failure_stage"] == "before_driver_discovery",
-                f"{entry_id}: Phase 14 opening must stop before driver discovery",
+                entry["current_failure_stage"] in PHASE14_FAILURE_STAGES,
+                f"{entry_id}: unsupported Phase 14 failure stage",
             )
             for field in ("positive_future_fixture", "negative_current_fixture"):
                 fixture(entry[field], f"{entry_id}.{field}")
             require(
-                entry["positive_future_fixture"]
-                != entry["negative_current_fixture"],
+                entry["positive_future_fixture"] != entry["negative_current_fixture"],
                 f"{entry_id}: Phase 14 fixture pair must differ",
-            )
-            require(
-                entry["source_fixture"] == entry["negative_current_fixture"],
-                f"{entry_id}: opening source fixture must be the current negative fixture",
-            )
-            require(
-                entry["canonical_mir_fixture"]
-                == "none_rejected_before_canonical_MIR",
-                f"{entry_id}: opening row must not claim canonical MIR",
-            )
-            require(
-                entry["differential_case_id"] == f"phase14_opening:{entry_id}",
-                f"{entry_id}: Phase 14 opening differential identity drifted",
             )
             evidence = entry["evidence"]
             require(
@@ -1687,10 +1819,8 @@ def validate():
                 and evidence.get("phase13_closure_dependency")
                 == PHASE13_CLOSURE_VERSION
                 and evidence.get("phase14_1_authority")
-                == "compiler_owned_layout_authority_and_request_transport_available"
-                and evidence.get("behavior_policy")
-                == "authority_and_transport_only_no_capability_migration",
-                f"{entry_id}: Phase 14 authority evidence drifted",
+                == "compiler_owned_layout_authority_and_request_transport_available",
+                f"{entry_id}: Phase 14 inherited authority evidence drifted",
             )
             text(evidence.get("declared_capability"),
                  f"{entry_id}.evidence.declared_capability")
@@ -1700,6 +1830,70 @@ def validate():
                 category in PHASE14_PLANNING_CATEGORIES,
                 f"{entry_id}: unknown Phase 14 planning category {category}",
             )
+            if entry_id in PHASE14_PRIMITIVE_MIGRATED_IDS:
+                require(
+                    closure == PHASE14_PRIMITIVE_VERSION,
+                    f"{entry_id}: primitive layout checkpoint version drifted",
+                )
+                require(
+                    status == "migrated"
+                    and entry["route_owner"] == "generic_canonical_mir",
+                    f"{entry_id}: selected primitive row must be migrated through canonical MIR",
+                )
+                require(reason == destination == "none_migrated",
+                        f"{entry_id}: migrated primitive row has stale deferral fields")
+                require(entry["current_failure_stage"] == "none_supported",
+                        f"{entry_id}: migrated primitive row has a failure stage")
+                fixture(entry["source_fixture"], f"{entry_id}.source_fixture")
+                fixture(entry["canonical_mir_fixture"],
+                        f"{entry_id}.canonical_mir_fixture")
+                require(
+                    entry["differential_case_id"]
+                    == f"phase14_registry_differential:{entry_id}",
+                    f"{entry_id}: primitive differential identity drifted",
+                )
+                require(
+                    evidence.get("behavior_policy")
+                    == "declared_target_and_primitive_layout_migrated_through_compiler_owned_v2_layout_table"
+                    and evidence.get("phase14_2_contract")
+                    == PHASE14_PRIMITIVE_VERSION
+                    and evidence.get("selected_primitive_type_ids")
+                    == list(PHASE14_PRIMITIVE_TYPE_IDS)
+                    and evidence.get("canonical_boolean_values") == [0, 1],
+                    f"{entry_id}: primitive layout evidence drifted",
+                )
+            else:
+                require(
+                    closure == PHASE14_LAYOUT_AUTHORITY_VERSION,
+                    f"{entry_id}: deferred Phase 14 authority version drifted",
+                )
+                require(
+                    status == "candidate_deferred"
+                    and entry["route_owner"] == "deferred",
+                    f"{entry_id}: unselected Phase 14 rows must remain deferred",
+                )
+                require(
+                    reason
+                    == f"phase14_authority_{entry_id}_awaits_bounded_capability_migration",
+                    f"{entry_id}: Phase 14 post-authority deferral reason drifted",
+                )
+                require(destination == "phase14",
+                        f"{entry_id}: deferred Phase 14 destination drifted")
+                require(entry["current_failure_stage"] == "before_driver_discovery",
+                        f"{entry_id}: deferred Phase 14 row must stop before discovery")
+                require(entry["source_fixture"] == entry["negative_current_fixture"],
+                        f"{entry_id}: deferred source fixture must be the negative fixture")
+                require(entry["canonical_mir_fixture"] == "none_rejected_before_canonical_MIR",
+                        f"{entry_id}: deferred row must not claim canonical MIR")
+                require(entry["differential_case_id"] == f"phase14_opening:{entry_id}",
+                        f"{entry_id}: deferred differential identity drifted")
+                require(
+                    evidence.get("behavior_policy")
+                    == "primitive_layout_only_other_phase14_capabilities_remain_deferred"
+                    and evidence.get("phase14_2_boundary")
+                    == "not_selected_by_declared_target_and_primitive_layout_patch",
+                    f"{entry_id}: Patch 14.2 boundary evidence drifted",
+                )
             phase14.append(entry)
         else:
             raise Error(f"{entry_id}: unsupported origin phase {entry['origin_phase']}")
@@ -2011,24 +2205,22 @@ def verify_phase14_opening_contract(registry):
     opening_fields = (
         "id", "parent", "feature_family", "ci_family",
         "worker_capability_owner", "diagnostic_owner",
-        "target_applicability", "status", "current_failure_stage",
-        "positive_future_fixture", "negative_current_fixture",
+        "target_applicability",
     )
-    snapshot_fields = (
-        "id", "parent", "feature_family", "ci_family",
-        "capability_owner", "diagnostic_owner",
-        "target_applicability", "status", "current_failure_stage",
-        "positive_future_fixture", "negative_current_fixture",
-    )
+    snapshot_fields = tuple(snapshot["immutable_fields"])
     projected_rows = []
     for entry in rows:
         projected = {}
         for live_field, frozen_field in zip(opening_fields, snapshot_fields):
             projected[frozen_field] = entry[live_field]
         projected_rows.append(projected)
+    frozen_rows = [
+        {field: row[field] for field in snapshot_fields}
+        for row in snapshot["entries"]
+    ]
     require(
-        projected_rows == snapshot["entries"],
-        "Phase 14 live rows differ from the semantic opening snapshot",
+        projected_rows == frozen_rows,
+        "Phase 14 immutable live fields differ from the semantic opening snapshot",
     )
 
     phase13_rows = {
@@ -2147,8 +2339,8 @@ def verify_phase14_layout_authority(registry):
     opening = verify_phase14_opening_contract(registry)
     authority = validate_phase14_layout_authority_structure(registry)
     require(
-        registry["registry_status"] == "phase14_layout_authority_ready",
-        "Phase 14 registry is not at the layout-authority checkpoint",
+        registry["current_phase"] == "phase14",
+        "Phase 14 registry is not active",
     )
 
     rows = phase_entries(registry, "phase14")
@@ -2158,20 +2350,28 @@ def verify_phase14_layout_authority(registry):
     )
     for entry in rows:
         entry_id = entry["id"]
-        require(
-            entry["status"] == "candidate_deferred"
-            and entry["route_owner"] == "deferred",
-            f"{entry_id}: Patch 14.1 must not migrate a capability",
-        )
-        require(
-            entry["closure_version"] == PHASE14_LAYOUT_AUTHORITY_VERSION,
-            f"{entry_id}: authority checkpoint version drifted",
-        )
-        require(
-            entry["deferral_reason"]
-            == f"phase14_authority_{entry_id}_awaits_bounded_capability_migration",
-            f"{entry_id}: post-authority deferral reason drifted",
-        )
+        if entry_id in PHASE14_PRIMITIVE_MIGRATED_IDS:
+            require(
+                entry["status"] == "migrated"
+                and entry["route_owner"] == "generic_canonical_mir"
+                and entry["closure_version"] == PHASE14_PRIMITIVE_VERSION,
+                f"{entry_id}: primitive migration no longer consumes the layout authority",
+            )
+        else:
+            require(
+                entry["status"] == "candidate_deferred"
+                and entry["route_owner"] == "deferred",
+                f"{entry_id}: unselected capability must remain deferred",
+            )
+            require(
+                entry["closure_version"] == PHASE14_LAYOUT_AUTHORITY_VERSION,
+                f"{entry_id}: authority checkpoint version drifted",
+            )
+            require(
+                entry["deferral_reason"]
+                == f"phase14_authority_{entry_id}_awaits_bounded_capability_migration",
+                f"{entry_id}: post-authority deferral reason drifted",
+            )
 
     source_paths = {
         "authority": ROOT / "compiler/mir_layout.gst",
@@ -2251,10 +2451,128 @@ def verify_phase14_layout_authority(registry):
         "version": authority["version"],
         "status": authority["status"],
         "opening_row_count": len(rows),
+        "deferred_row_count": sum(
+            1 for entry in rows if entry["status"] == "candidate_deferred"
+        ),
         "semantic_type_count": len(authority["semantic_types"]),
         "query_count": len(authority["query_functions"]),
         "rejection_count": len(authority["rejection_classes"]),
         "consumer_count": len(authority["consumers"]),
+    }
+
+
+def verify_phase14_primitive_layout(registry):
+    verify_phase14_layout_authority(registry)
+    contract = validate_phase14_primitive_layout_structure(registry)
+    require(
+        registry["registry_status"] == "phase14_primitive_layout_ready",
+        "Phase 14 registry is not at the primitive-layout checkpoint",
+    )
+    rows = {entry["id"]: entry for entry in phase_entries(registry, "phase14")}
+    for entry_id in PHASE14_PRIMITIVE_MIGRATED_IDS:
+        entry = rows[entry_id]
+        require(
+            entry["status"] == "migrated"
+            and entry["route_owner"] == "generic_canonical_mir"
+            and entry["closure_version"] == PHASE14_PRIMITIVE_VERSION,
+            f"{entry_id}: primitive layout row is not migrated",
+        )
+        require(
+            entry["ci_family"] == contract["focused_ci_family"],
+            f"{entry_id}: primitive layout CI ownership drifted",
+        )
+    for entry_id, entry in rows.items():
+        if entry_id in PHASE14_PRIMITIVE_MIGRATED_IDS:
+            continue
+        require(
+            entry["status"] == "candidate_deferred"
+            and entry["route_owner"] == "deferred"
+            and entry["current_failure_stage"] == "before_driver_discovery",
+            f"{entry_id}: Patch 14.2 migrated an out-of-scope capability",
+        )
+
+    sources = {
+        "primitive": ROOT / "compiler/mir_primitive_layout.gst",
+        "layout": ROOT / "compiler/mir_layout.gst",
+        "mir": ROOT / "compiler/mir.gst",
+        "request": ROOT / "compiler/mir_native_backend_request.gst",
+        "mir_to_c": ROOT / "compiler/mir_layout_mir_to_c.gst",
+        "worker": ROOT / "compiler/experiments/cranelift/src/main.rs",
+        "smoke": ROOT / "compiler/mir_primitive_layout_smoke_test_entry.gst",
+        "differential": ROOT / "scripts/phase14_primitive_layout_differential.sh",
+    }
+    for owner, path in sources.items():
+        require(path.is_file() and not path.is_symlink(),
+                f"missing regular Phase 14 primitive {owner} source: {path.relative_to(ROOT)}")
+
+    primitive_source = sources["primitive"].read_text(encoding="utf-8")
+    for target in contract["declared_targets"]:
+        triple = target["target_triple"]
+        require(triple in primitive_source,
+                f"declared target {triple} is missing from compiler authority")
+        for alias in target["aliases"]:
+            require(alias in primitive_source,
+                    f"declared target alias {alias} is missing from normalization")
+    for primitive in contract["primitive_types"]:
+        require(primitive["type_id"] in primitive_source,
+                f"primitive type {primitive['type_id']} is missing from compiler authority")
+    for token in (
+        "func mir_primitive_layout_normalize_target_triple(",
+        "func mir_primitive_layout_target(",
+        "func mir_primitive_layout_table_for_target(",
+        "func mir_primitive_layout_witness(",
+        "canonical_bool_0_or_1",
+    ):
+        require(token in primitive_source, f"primitive authority is missing: {token}")
+
+    layout_source = sources["layout"].read_text(encoding="utf-8")
+    for token in (
+        "gust.compiler_layout_table.v2",
+        "type MirScalarValueValidation",
+        "func mir_layout_make_target_v2(",
+        "func mir_layout_make_scalar_type_layout(",
+        "func mir_layout_validate_scalar_value(",
+        "invalid_boolean_memory_value",
+    ):
+        require(token in layout_source, f"layout authority is missing: {token}")
+
+    mir_source = sources["mir"].read_text(encoding="utf-8")
+    require(
+        "type MirPrimitiveScalarReference" in mir_source
+        and "primitive_scalar_references" in mir_source
+        and "mir_program_primitive_scalar_references_are_valid" in mir_source,
+        "canonical MIR does not preserve primitive width and signedness identity",
+    )
+    request_source = sources["request"].read_text(encoding="utf-8")
+    require(
+        'import "mir_primitive_layout.gst" as primitive_layout;' in request_source
+        and "mir_primitive_layout_table_for_target" in request_source,
+        "native requests do not serialize the compiler-selected primitive table",
+    )
+    mir_to_c_source = sources["mir_to_c"].read_text(encoding="utf-8")
+    require(
+        "mir_layout_primitive_witness_c_source" in mir_to_c_source
+        and "_Static_assert" not in mir_to_c_source,
+        "MIR-to-C primitive adapter must consume rather than select layout",
+    )
+    worker_source = sources["worker"].read_text(encoding="utf-8")
+    for token in (
+        "PHASE14_LAYOUT_TABLE_FORMAT_V2",
+        "fn phase14_cranelift_scalar_type(",
+        "phase14-primitive-layout-witness",
+        "phase14-primitive-validate-value",
+    ):
+        require(token in worker_source, f"Cranelift primitive consumption is missing: {token}")
+
+    return {
+        "version": contract["version"],
+        "status": contract["status"],
+        "target_count": len(contract["declared_targets"]),
+        "primitive_count": len(contract["primitive_types"]),
+        "migrated_count": len(contract["migrated_entry_ids"]),
+        "deferred_count": len(rows) - len(contract["migrated_entry_ids"]),
+        "primary_target": contract["primary_level2_target"],
+        "family": contract["focused_ci_family"],
     }
 
 
@@ -3478,6 +3796,7 @@ def verify_phase13_composition_differential_contract(registry):
         for entry in registry["entries"]
         if entry.get("status") == "migrated"
         and entry.get("route_owner") == "generic_canonical_mir"
+        and entry.get("origin_phase") in {"phase11", "phase13"}
     ]
     require(migrated, "Registry contains no migrated differential rows")
     migrated_by_id = {entry["id"]: entry for entry in migrated}
@@ -3495,8 +3814,7 @@ def verify_phase13_composition_differential_contract(registry):
     )
 
     active_families = {
-        entry["ci_family"]
-        for entry in phase_entries(registry, "phase11")
+        entry["ci_family"] for entry in phase_entries(registry, "phase11")
     }
     individual_case_ids = set()
     composition_cases = {}
@@ -3587,7 +3905,7 @@ def verify_phase13_composition_differential_contract(registry):
             )
             require(
                 entry["origin_phase"] == "phase13",
-                f"{case_id}: composition case owner must be a Phase 13 row",
+                f"{case_id}: composition case owner must be a migrated Phase 13 row",
             )
             family = text(case["ci_family"], f"{context}.ci_family")
             require(
@@ -3769,6 +4087,7 @@ def verify_phase13_closure(registry):
             PHASE13_CLOSURE_VERSION,
             "phase14_opening_inventory_ready",
             "phase14_layout_authority_ready",
+            "phase14_primitive_layout_ready",
         },
         "Phase 13 closure registry status drifted",
     )
@@ -4687,9 +5006,9 @@ def phase14_layout_authority_summary_lines(registry):
         f"- Compiler-owned queries: `{contract['query_count']}`",
         f"- Registered consumers: `{contract['consumer_count']}`",
         f"- Request rejection classes: `{contract['rejection_count']}`",
-        f"- Phase 14 opening rows still deferred: `{contract['opening_row_count']}`",
+        f"- Phase 14 opening rows still deferred: `{contract['deferred_row_count']}`",
         "",
-        "Patch 14.1 establishes authority and transport only. It does not migrate a Phase 14 capability or activate a Phase 14 Level 2 family.",
+        "Patch 14.1 established authority and transport. Patch 14.2 consumes that authority for the bounded declared-target and primitive-layout inventory.",
         "",
     ]
 
@@ -4737,7 +5056,7 @@ def render_phase14_layout_authority(registry):
         "",
         "The compiler owns target, type, field, variant, stride, and memory-access layout decisions. Canonical MIR carries layout references, the compiler serializes a request-local layout table, and the worker validates that table without selecting a competing layout.",
         "",
-        "Patch 14.1 does not migrate primitive, pointer, memory, string, array, struct, enum, or aggregate-flow capabilities. Those rows remain deferred for bounded later patches.",
+        "Patch 14.2 consumes this authority for declared targets and primitive scalar layouts only. Conversion, pointer, memory, string, array, struct, enum, and aggregate-flow capabilities remain deferred for bounded later patches.",
         "",
     ]
     rendered = "\n".join(lines)
@@ -4746,6 +5065,108 @@ def render_phase14_layout_authority(registry):
             banned not in rendered,
             f"Phase 14 layout authority view contains banned raw-hash token: {banned}",
         )
+    return rendered
+
+
+def phase14_primitive_layout_summary_lines(registry):
+    contract = verify_phase14_primitive_layout(registry)
+    return [
+        "## Phase 14 declared targets and primitive scalar layouts",
+        "",
+        f"- Contract version: `{contract['version']}`",
+        f"- Status: `{contract['status']}`",
+        f"- Declared host targets: `{contract['target_count']}`",
+        f"- Primitive scalar types: `{contract['primitive_count']}`",
+        f"- Migrated opening rows: `{contract['migrated_count']}`",
+        f"- Remaining deferred opening rows: `{contract['deferred_count']}`",
+        f"- Primary Level 2 target: `{contract['primary_target']}`",
+        f"- Registry-derived focused family: `{contract['family']}`",
+        "",
+        "Patch 14.2 freezes target-aware primitive representation. Signed and unsigned conversion semantics remain owned by Patch 14.3.",
+        "",
+    ]
+
+
+def render_phase14_primitive_layout(registry):
+    summary = verify_phase14_primitive_layout(registry)
+    contract = registry["phase14_primitive_layout"]
+    lines = [
+        "# Cranelift Phase 14 Declared Targets and Primitive Scalar Layouts",
+        "",
+        "<!-- Generated by scripts/cranelift_registry.py; do not edit by hand. -->",
+        "",
+        "CRANELIFT_PHASE14_PRIMITIVE_LAYOUT_VIEW_VERSION: 1",
+        f"CRANELIFT_PHASE14_PRIMITIVE_LAYOUT_VERSION: {summary['version']}",
+        f"CRANELIFT_PHASE14_PRIMITIVE_LAYOUT_STATUS: {summary['status']}",
+        f"CRANELIFT_PHASE14_PRIMITIVE_LAYOUT_OWNER: {contract['authority_owner']}",
+        f"CRANELIFT_PHASE14_PRIMITIVE_LAYOUT_TABLE_FORMAT: {contract['layout_table_format']}",
+        f"CRANELIFT_PHASE14_PRIMITIVE_LAYOUT_PRIMARY_TARGET: {summary['primary_target']}",
+        f"CRANELIFT_PHASE14_PRIMITIVE_LAYOUT_LEVEL1_GUARD: {contract['level1_guard']}",
+        f"CRANELIFT_PHASE14_PRIMITIVE_LAYOUT_LEVEL2_GUARD: {contract['level2_guard']}",
+        f"CRANELIFT_PHASE14_PRIMITIVE_LAYOUT_NEXT_PATCH: {contract['next_patch']}",
+        "",
+        "## Declared host targets",
+        "",
+        "| Target | Object format | Endian | Pointer size/alignment | i32 alignment | i64 alignment | Maximum aggregate alignment | Aliases |",
+        "|---|---|---|---|---|---|---|---|",
+    ]
+    for target in contract["declared_targets"]:
+        lines.append(
+            "| " + " | ".join(
+                cell(value)
+                for value in (
+                    target["target_triple"],
+                    target["object_format"],
+                    target["endianness"],
+                    f"{target['pointer_size']}/{target['pointer_alignment']}",
+                    target["i32_alignment"],
+                    target["i64_alignment"],
+                    target["max_aggregate_alignment"],
+                    ", ".join(target["aliases"]),
+                )
+            ) + " |"
+        )
+    lines += [
+        "",
+        "## Primitive scalar inventory",
+        "",
+        "| Type | Identity | Representation | Size | Alignment | Width | Signedness | Validity |",
+        "|---|---|---|---|---|---|---|---|",
+    ]
+    for primitive in contract["primitive_types"]:
+        lines.append(
+            "| " + " | ".join(
+                cell(primitive[field])
+                for field in (
+                    "source_name", "type_id", "representation_kind",
+                    "size_policy", "alignment_policy", "bit_width_policy",
+                    "signedness", "validity_kind",
+                )
+            ) + " |"
+        )
+    lines += [
+        "",
+        "## Migrated opening rows",
+        "",
+        *[f"- `{entry_id}`" for entry_id in contract["migrated_entry_ids"]],
+        "",
+        "## Negative classes",
+        "",
+        *[f"- `{name}`" for name in contract["negative_classes"]],
+        "",
+        "## Boundary",
+        "",
+        contract["witness_policy"],
+        "",
+        contract["boundary_policy"],
+        "",
+        "Canonical boolean memory values are exactly `0` and `1`. Arithmetic conversion policy, pointer semantics, stack storage, loads/stores, strings, arrays, structs, enums, and aggregate flow remain deferred.",
+        "",
+    ]
+    rendered = "\n".join(lines)
+    for banned in ("SHA256", "SHA-256", "sha256sum"):
+        require(banned not in rendered,
+                f"Phase 14 primitive layout view contains banned raw-hash token: {banned}")
     return rendered
 
 
@@ -4785,6 +5206,7 @@ def render(registry):
         *phase13_closure_summary_lines(registry),
         *phase14_opening_summary_lines(registry),
         *phase14_layout_authority_summary_lines(registry),
+        *phase14_primitive_layout_summary_lines(registry),
         "## Registry entries", "",
         "| ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |",
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
@@ -4802,7 +5224,8 @@ def render(registry):
         f"- Phase 11 historical view: `{registry['legacy_views']['phase11']}`",
         f"- Phase 13 historical view: `{registry['legacy_views']['phase13']}`",
         f"- Phase 14 opening review: `{registry['legacy_views']['phase14']}`",
-        f"- Phase 14 layout authority review: `{phase14_layout_authority_summary_path(registry).relative_to(ROOT)}`", "",
+        f"- Phase 14 layout authority review: `{phase14_layout_authority_summary_path(registry).relative_to(ROOT)}`",
+        f"- Phase 14 primitive layout review: `{phase14_primitive_layout_summary_path(registry).relative_to(ROOT)}`", "",
         "The JSON registry is authoritative. Generated Markdown is a review artifact, and the legacy Markdown documents remain historical views only.", "",
     ]
     return "\n".join(lines)
@@ -4847,6 +5270,14 @@ def check_phase14_layout_authority_projection(registry):
     )
 
 
+def check_phase14_primitive_layout_projection(registry):
+    check_rendered_projection(
+        phase14_primitive_layout_summary_path(registry),
+        render_phase14_primitive_layout(registry),
+        "generated Phase 14 primitive layout review",
+    )
+
+
 def check_projection(registry):
     check_rendered_projection(
         summary_path(registry),
@@ -4856,6 +5287,7 @@ def check_projection(registry):
     check_phase13_projection(registry)
     check_phase14_projection(registry)
     check_phase14_layout_authority_projection(registry)
+    check_phase14_primitive_layout_projection(registry)
 
 
 def summary_path(registry):
@@ -4872,6 +5304,10 @@ def phase14_summary_path(registry):
 
 def phase14_layout_authority_summary_path(registry):
     return ROOT / "compiler/CRANELIFT_PHASE14_LAYOUT_AUTHORITY.md"
+
+
+def phase14_primitive_layout_summary_path(registry):
+    return ROOT / "compiler/CRANELIFT_PHASE14_PRIMITIVE_LAYOUT.md"
 
 
 def main():
@@ -4900,10 +5336,14 @@ def main():
             "verify-phase13-opening-totals",
             "verify-phase14-opening-contract",
             "verify-phase14-layout-authority",
+            "verify-phase14-primitive-layout",
+            "phase14-primitive-targets",
+            "phase14-primitive-primary-target",
             "project",
             "check-phase13-projection",
             "check-phase14-projection",
             "check-phase14-layout-authority-projection",
+            "check-phase14-primitive-layout-projection",
             "check-projection",
         ),
     )
@@ -4950,25 +5390,44 @@ def main():
             verify_phase14_opening_contract(registry)
         elif command == "verify-phase14-layout-authority":
             verify_phase14_layout_authority(registry)
+        elif command == "verify-phase14-primitive-layout":
+            verify_phase14_primitive_layout(registry)
+        elif command == "phase14-primitive-targets":
+            contract = validate_phase14_primitive_layout_structure(registry)
+            print("\n".join(
+                target["target_triple"] for target in contract["declared_targets"]
+            ))
+            return 0
+        elif command == "phase14-primitive-primary-target":
+            contract = validate_phase14_primitive_layout_structure(registry)
+            print(contract["primary_level2_target"])
+            return 0
         elif command == "project":
             canonical_path = summary_path(registry)
             phase13_path = phase13_summary_path(registry)
             phase14_path = phase14_summary_path(registry)
             phase14_layout_path = phase14_layout_authority_summary_path(registry)
+            phase14_primitive_path = phase14_primitive_layout_summary_path(registry)
             canonical_path.parent.mkdir(parents=True, exist_ok=True)
             phase13_path.parent.mkdir(parents=True, exist_ok=True)
             phase14_path.parent.mkdir(parents=True, exist_ok=True)
             phase14_layout_path.parent.mkdir(parents=True, exist_ok=True)
+            phase14_primitive_path.parent.mkdir(parents=True, exist_ok=True)
             canonical_path.write_text(render(registry), encoding="utf-8")
             phase13_path.write_text(render_phase13(registry), encoding="utf-8")
             phase14_path.write_text(render_phase14(registry), encoding="utf-8")
             phase14_layout_path.write_text(render_phase14_layout_authority(registry), encoding="utf-8")
+            phase14_primitive_path.write_text(
+                render_phase14_primitive_layout(registry), encoding="utf-8"
+            )
         elif command == "check-phase13-projection":
             check_phase13_projection(registry)
         elif command == "check-phase14-projection":
             check_phase14_projection(registry)
         elif command == "check-phase14-layout-authority-projection":
             check_phase14_layout_authority_projection(registry)
+        elif command == "check-phase14-primitive-layout-projection":
+            check_phase14_primitive_layout_projection(registry)
         elif command == "check-projection":
             check_projection(registry)
     except Error as exc:
@@ -4993,6 +5452,7 @@ def main():
     closure_contract = verify_phase13_closure(registry)
     phase14_contract = verify_phase14_opening_contract(registry)
     phase14_layout_contract = verify_phase14_layout_authority(registry)
+    phase14_primitive_contract = verify_phase14_primitive_layout(registry)
     phase13_statuses = phase13_totals["status_counts"]
     phase13_parents = phase13_totals["parent_kinds"]
     messages = {
@@ -5131,7 +5591,14 @@ def main():
             f"{phase14_layout_contract['query_count']} queries, "
             f"{phase14_layout_contract['consumer_count']} consumers, and "
             f"{phase14_layout_contract['rejection_count']} request rejection classes; "
-            f"all {phase14_layout_contract['opening_row_count']} opening rows remain deferred."
+            f"{phase14_layout_contract['deferred_row_count']} opening rows remain deferred."
+        ),
+        "verify-phase14-primitive-layout": (
+            "✅ Phase 14 declared targets and primitive scalar layouts passed: "
+            f"{phase14_primitive_contract['target_count']} targets, "
+            f"{phase14_primitive_contract['primitive_count']} primitive types, "
+            f"{phase14_primitive_contract['migrated_count']} migrated rows, and "
+            f"{phase14_primitive_contract['deferred_count']} deferred rows."
         ),
         "verify-phase14-opening-contract": (
             "✅ Phase 14 opening contract passed: "
@@ -5142,7 +5609,7 @@ def main():
         ),
         "project": (
             "✅ Canonical Cranelift registry, Phase 13 final review, Phase 14 "
-            "opening review, and Phase 14 layout authority review generated."
+            "opening review, Phase 14 layout authority review, and Phase 14 primitive layout review generated."
         ),
         "check-phase13-projection": (
             "✅ Phase 13 generated final review matches the registry."
@@ -5153,9 +5620,12 @@ def main():
         "check-phase14-layout-authority-projection": (
             "✅ Phase 14 generated layout authority review matches the registry."
         ),
+        "check-phase14-primitive-layout-projection": (
+            "✅ Phase 14 generated primitive layout review matches the registry."
+        ),
         "check-projection": (
             "✅ Canonical Cranelift registry, Phase 13 final review, Phase 14 "
-            "opening review, and Phase 14 layout authority review match their committed artifacts."
+            "opening review, Phase 14 layout authority review, and Phase 14 primitive layout review match their committed artifacts."
         ),
     }
     print(messages[command])

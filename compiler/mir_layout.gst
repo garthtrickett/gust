@@ -5,15 +5,19 @@
 // diagnostics consume these records. They must not independently calculate or
 // guess sizes, alignments, offsets, strides, tags, or access widths.
 //
-// Patch 14.1 establishes authority and transport only. The production request
-// path carries an empty, unfrozen table until later Phase 14 patches select and
-// migrate concrete type and memory capabilities.
+// Patch 14.2 freezes the declared target and primitive scalar inventory. The
+// production request path now carries a compiler-produced v2 table for declared
+// targets while the worker remains a validating consumer of those decisions.
 
 type MirTargetLayout[ctx] struct {
     target_id: str,
     target_triple: str,
+    endianness: str,
     pointer_size: int,
     pointer_alignment: int,
+    i32_alignment: int,
+    i64_alignment: int,
+    max_aggregate_alignment: int,
     decisions_frozen: int
 }
 
@@ -44,6 +48,9 @@ type MirTypeLayout[ctx] struct {
     size: int,
     alignment: int,
     element_stride: int,
+    bit_width: int,
+    signedness: str,
+    validity_kind: str,
     fields: Index[std.Vector[MirFieldLayout[ctx], ctx], ctx],
     variants: Index[std.Vector[MirVariantLayout[ctx], ctx], ctx]
 }
@@ -87,6 +94,11 @@ type MirElementStrideQuery struct {
 }
 
 type MirMemoryAccessValidation[ctx] struct {
+    valid: int,
+    reason_code: str
+}
+
+type MirScalarValueValidation[ctx] struct {
     valid: int,
     reason_code: str
 }
@@ -151,9 +163,27 @@ func mir_layout_make_target(target_id: str, target_triple: str, pointer_size: in
     mut target: MirTargetLayout[ctx];
     target.target_id = std.Clone(ctx, target_id);
     target.target_triple = std.Clone(ctx, target_triple);
+    target.endianness = std.Clone(ctx, "");
     target.pointer_size = pointer_size;
     target.pointer_alignment = pointer_alignment;
+    target.i32_alignment = 0;
+    target.i64_alignment = 0;
+    target.max_aggregate_alignment = 0;
     target.decisions_frozen = decisions_frozen;
+    return target;
+}
+
+func mir_layout_make_target_v2(target_id: str, target_triple: str, endianness: str, pointer_size: int, pointer_alignment: int, i32_alignment: int, i64_alignment: int, max_aggregate_alignment: int, ctx: &Arena) MirTargetLayout[ctx] {
+    mut target: MirTargetLayout[ctx];
+    target.target_id = std.Clone(ctx, target_id);
+    target.target_triple = std.Clone(ctx, target_triple);
+    target.endianness = std.Clone(ctx, endianness);
+    target.pointer_size = pointer_size;
+    target.pointer_alignment = pointer_alignment;
+    target.i32_alignment = i32_alignment;
+    target.i64_alignment = i64_alignment;
+    target.max_aggregate_alignment = max_aggregate_alignment;
+    target.decisions_frozen = 1;
     return target;
 }
 
@@ -176,7 +206,11 @@ func mir_layout_make_unfrozen_table(target_triple: str, ctx: &Arena) MirLayoutTa
 
 func mir_layout_make_table(target: MirTargetLayout[ctx], ctx: &Arena) MirLayoutTable[ctx] {
     mut table: MirLayoutTable[ctx];
-    table.format = std.Clone(ctx, "gust.compiler_layout_table.v1");
+    if len(target.endianness) == 0 {
+        table.format = std.Clone(ctx, "gust.compiler_layout_table.v1");
+    } else {
+        table.format = std.Clone(ctx, "gust.compiler_layout_table.v2");
+    }
     table.target = target;
     table.layouts = mir_layout_empty_type_layout_vector(ctx);
     table.memory_accesses = mir_layout_empty_memory_access_vector(ctx);
@@ -216,8 +250,27 @@ func mir_layout_make_type_layout(type_id: str, target_id: str, representation_ki
     layout.size = size;
     layout.alignment = alignment;
     layout.element_stride = element_stride;
+    layout.bit_width = 0;
+    layout.signedness = std.Clone(ctx, "not_applicable");
+    layout.validity_kind = std.Clone(ctx, "unspecified");
     layout.fields = mir_layout_empty_field_vector(ctx);
     layout.variants = mir_layout_empty_variant_vector(ctx);
+    return layout;
+}
+
+func mir_layout_make_scalar_type_layout(type_id: str, target_id: str, representation_kind: str, size: int, alignment: int, bit_width: int, signedness: str, validity_kind: str, ctx: &Arena) MirTypeLayout[ctx] {
+    mut layout := mir_layout_make_type_layout(
+        type_id,
+        target_id,
+        representation_kind,
+        size,
+        alignment,
+        size,
+        ctx
+    );
+    layout.bit_width = bit_width;
+    layout.signedness = std.Clone(ctx, signedness);
+    layout.validity_kind = std.Clone(ctx, validity_kind);
     return layout;
 }
 
@@ -302,7 +355,9 @@ func mir_layout_table_has_layout_id(table: MirLayoutTable[ctx], layout_id: str, 
 }
 
 func mir_layout_table_is_valid(table: MirLayoutTable[ctx], ctx: &Arena) int {
-    if std.str_eq(table.format, "gust.compiler_layout_table.v1") == 0 {
+    mut is_v1 := std.str_eq(table.format, "gust.compiler_layout_table.v1");
+    mut is_v2 := std.str_eq(table.format, "gust.compiler_layout_table.v2");
+    if is_v1 == 0 && is_v2 == 0 {
         return 0;
     }
     if mir_layout_field_is_safe(table.target.target_id, 0) == 0 {
@@ -318,7 +373,10 @@ func mir_layout_table_is_valid(table: MirLayoutTable[ctx], ctx: &Arena) int {
     mut layouts: std.Vector[MirTypeLayout[ctx], ctx] := ctx[table.layouts];
     mut accesses: std.Vector[MirMemoryAccessLayout[ctx], ctx] := ctx[table.memory_accesses];
     if table.target.decisions_frozen == 0 {
-        if table.target.pointer_size != 0 || table.target.pointer_alignment != 0 {
+        if table.target.pointer_size != 0 || table.target.pointer_alignment != 0 ||
+           len(table.target.endianness) != 0 || table.target.i32_alignment != 0 ||
+           table.target.i64_alignment != 0 || table.target.max_aggregate_alignment != 0
+        {
             return 0;
         }
         if len(layouts) != 0 || len(accesses) != 0 {
@@ -332,6 +390,31 @@ func mir_layout_table_is_valid(table: MirLayoutTable[ctx], ctx: &Arena) int {
     }
     if mir_layout_alignment_is_valid(table.target.pointer_alignment) == 0 {
         return 0;
+    }
+    if is_v2 == 1 {
+        if std.str_eq(table.target.endianness, "little") == 0 &&
+           std.str_eq(table.target.endianness, "big") == 0
+        {
+            return 0;
+        }
+        if mir_layout_alignment_is_valid(table.target.i32_alignment) == 0 ||
+           mir_layout_alignment_is_valid(table.target.i64_alignment) == 0 ||
+           mir_layout_alignment_is_valid(table.target.max_aggregate_alignment) == 0
+        {
+            return 0;
+        }
+        if table.target.i32_alignment > table.target.max_aggregate_alignment ||
+           table.target.i64_alignment > table.target.max_aggregate_alignment ||
+           table.target.pointer_alignment > table.target.max_aggregate_alignment
+        {
+            return 0;
+        }
+    } else {
+        if len(table.target.endianness) != 0 || table.target.i32_alignment != 0 ||
+           table.target.i64_alignment != 0 || table.target.max_aggregate_alignment != 0
+        {
+            return 0;
+        }
     }
 
     mut layout_index := 0;
@@ -356,6 +439,36 @@ func mir_layout_table_is_valid(table: MirLayoutTable[ctx], ctx: &Arena) int {
         if layout.element_stride != 0 && layout.element_stride < layout.size {
             return 0;
         }
+        if is_v2 == 1 {
+            if layout.bit_width <= 0 || layout.bit_width != layout.size * 8 {
+                return 0;
+            }
+            if std.str_eq(layout.signedness, "signed") == 0 &&
+               std.str_eq(layout.signedness, "unsigned") == 0 &&
+               std.str_eq(layout.signedness, "not_applicable") == 0
+            {
+                return 0;
+            }
+            if std.str_eq(layout.validity_kind, "any_bit_pattern") == 0 &&
+               std.str_eq(layout.validity_kind, "canonical_bool_0_or_1") == 0
+            {
+                return 0;
+            }
+            if std.str_eq(layout.validity_kind, "canonical_bool_0_or_1") == 1 {
+                if layout.bit_width != 8 || layout.size != 1 ||
+                   std.str_eq(layout.signedness, "not_applicable") == 0
+                {
+                    return 0;
+                }
+            }
+        } else {
+            if layout.bit_width != 0 ||
+               std.str_eq(layout.signedness, "not_applicable") == 0 ||
+               std.str_eq(layout.validity_kind, "unspecified") == 0
+            {
+                return 0;
+            }
+        }
         mut expected_id := mir_layout_identity(
             layout.type_id,
             layout.target_id,
@@ -374,6 +487,9 @@ func mir_layout_table_is_valid(table: MirLayoutTable[ctx], ctx: &Arena) int {
             if std.str_eq(
                 layouts[prior_layout_index].layout_id,
                 layout.layout_id
+            ) == 1 || std.str_eq(
+                layouts[prior_layout_index].type_id,
+                layout.type_id
             ) == 1 {
                 return 0;
             }
@@ -601,6 +717,29 @@ func mir_layout_validate_memory_access(table: MirLayoutTable[ctx], type_id: str,
     return result;
 }
 
+func mir_layout_validate_scalar_value(table: MirLayoutTable[ctx], type_id: str, value: int, target_id: str, ctx: &Arena) MirScalarValueValidation[ctx] {
+    mut result: MirScalarValueValidation[ctx];
+    result.valid = 0;
+    result.reason_code = "primitive_layout_not_declared";
+    if mir_layout_table_is_valid(table, ctx) == 0 {
+        result.reason_code = "primitive_layout_table_invalid";
+        return result;
+    }
+    mut query := mir_layout_of(table, type_id, target_id, ctx);
+    if query.found == 0 {
+        return result;
+    }
+    if std.str_eq(query.layout.validity_kind, "canonical_bool_0_or_1") == 1 {
+        if value != 0 && value != 1 {
+            result.reason_code = "invalid_boolean_memory_value";
+            return result;
+        }
+    }
+    result.valid = 1;
+    result.reason_code = "primitive_scalar_value_valid";
+    return result;
+}
+
 func mir_layout_append_field(output: str, key: str, value: str, ctx: &Arena) str {
     mut updated := std.Concat(output, key);
     updated = std.Concat(updated, ": ");
@@ -618,8 +757,16 @@ func mir_serialize_layout_table_for_request(table: MirLayoutTable[ctx], ctx: &Ar
     output = mir_layout_append_field(output, "layout_table_format", table.format, ctx);
     output = mir_layout_append_field(output, "layout_target_id", table.target.target_id, ctx);
     output = mir_layout_append_field(output, "layout_target_triple", table.target.target_triple, ctx);
+    if std.str_eq(table.format, "gust.compiler_layout_table.v2") == 1 {
+        output = mir_layout_append_field(output, "layout_target_endianness", table.target.endianness, ctx);
+    }
     output = mir_layout_append_field(output, "layout_target_pointer_size", std.FormatInt(table.target.pointer_size), ctx);
     output = mir_layout_append_field(output, "layout_target_pointer_alignment", std.FormatInt(table.target.pointer_alignment), ctx);
+    if std.str_eq(table.format, "gust.compiler_layout_table.v2") == 1 {
+        output = mir_layout_append_field(output, "layout_target_i32_alignment", std.FormatInt(table.target.i32_alignment), ctx);
+        output = mir_layout_append_field(output, "layout_target_i64_alignment", std.FormatInt(table.target.i64_alignment), ctx);
+        output = mir_layout_append_field(output, "layout_target_max_aggregate_alignment", std.FormatInt(table.target.max_aggregate_alignment), ctx);
+    }
     output = mir_layout_append_field(output, "layout_target_decisions_frozen", std.FormatInt(table.target.decisions_frozen), ctx);
 
     mut layouts: std.Vector[MirTypeLayout[ctx], ctx] := ctx[table.layouts];
@@ -635,6 +782,11 @@ func mir_serialize_layout_table_for_request(table: MirLayoutTable[ctx], ctx: &Ar
         output = mir_layout_append_field(output, std.Concat(prefix, "_size"), std.FormatInt(layout.size), ctx);
         output = mir_layout_append_field(output, std.Concat(prefix, "_alignment"), std.FormatInt(layout.alignment), ctx);
         output = mir_layout_append_field(output, std.Concat(prefix, "_element_stride"), std.FormatInt(layout.element_stride), ctx);
+        if std.str_eq(table.format, "gust.compiler_layout_table.v2") == 1 {
+            output = mir_layout_append_field(output, std.Concat(prefix, "_bit_width"), std.FormatInt(layout.bit_width), ctx);
+            output = mir_layout_append_field(output, std.Concat(prefix, "_signedness"), layout.signedness, ctx);
+            output = mir_layout_append_field(output, std.Concat(prefix, "_validity_kind"), layout.validity_kind, ctx);
+        }
 
         mut fields: std.Vector[MirFieldLayout[ctx], ctx] := ctx[layout.fields];
         output = mir_layout_append_field(output, std.Concat(prefix, "_field_count"), std.FormatInt(len(fields)), ctx);
