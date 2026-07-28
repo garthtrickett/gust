@@ -335,7 +335,7 @@ func main() {
         verify_negatives(pointer_table, layout_table, ctx);
         write_target_artifacts(
             target_triple,
-            target.target.object_format,
+            target.object_format,
             layout_table,
             conversion_table,
             pointer_table,
