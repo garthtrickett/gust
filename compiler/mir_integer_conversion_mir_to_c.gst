@@ -106,7 +106,7 @@ func mir_integer_conversion_c_source(table: conversion.MirIntegerConversionTable
         output = std.Concat(output, "\", \"");
         output = std.Concat(output, rule.failure_reason_code);
         output = std.Concat(output, "\", ");
-        output = std.Concat(output, std.FormatInt(sample.input_value));
+        output = std.Concat(output, sample.input_value);
         output = std.Concat(output, "LL);\n");
 
         output = std.Concat(output, "    printf(\"conversion: ");
@@ -126,7 +126,7 @@ func mir_integer_conversion_c_source(table: conversion.MirIntegerConversionTable
         output = std.Concat(output, " policy=");
         output = std.Concat(output, mir_integer_conversion_c_escape(rule.policy, ctx));
         output = std.Concat(output, " input=");
-        output = std.Concat(output, std.FormatInt(sample.input_value));
+        output = std.Concat(output, sample.input_value);
         output = std.Concat(output, " status=%s value=%lld reason=%s context=");
         output = std.Concat(output, mir_integer_conversion_c_escape(sample.context_kind, ctx));
         output = std.Concat(output, "\\n\", ");

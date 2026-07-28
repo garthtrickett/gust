@@ -2901,6 +2901,9 @@ def verify_phase14_integer_conversions(registry):
     for token in (
         "type MirIntegerConversionRule",
         "type MirIntegerConversionSample",
+        "input_value: str",
+        "expected_value: str",
+        "func mir_integer_conversion_decimal_is_canonical(",
         "type MirIntegerConversionTable",
         "func mir_integer_conversion_table_for_layout(",
         "func mir_integer_conversion_select(",

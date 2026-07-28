@@ -8,6 +8,10 @@
 
 import "mir_layout.gst" as layout;
 
+// Sample values are canonical decimal text. Gust `int` currently lowers to C
+// `int`, so a text carrier preserves u32/i64/u64 boundary values without host
+// overflow before the compiler-owned request reaches either backend.
+
 type MirIntegerConversionRule[ctx] struct {
     rule_id: str,
     rule_name: str,
@@ -33,9 +37,9 @@ type MirIntegerConversionSample[ctx] struct {
     rule_id: str,
     rule_name: str,
     context_kind: str,
-    input_value: int,
+    input_value: str,
     expect_success: int,
-    expected_value: int,
+    expected_value: str,
     expected_reason_code: str
 }
 
@@ -422,58 +426,93 @@ func mir_integer_conversion_add_rule(table: MirIntegerConversionTable[ctx], layo
     );
 }
 
-func mir_integer_conversion_make_sample(table: MirIntegerConversionTable[ctx], sample_id: str, rule_name: str, input_value: int, context_kind: str, ctx: &Arena) MirIntegerConversionSample[ctx] {
+func mir_integer_conversion_decimal_is_canonical(value: str) int {
+    if len(value) == 0 {
+        return 0;
+    }
+    mut index := 0;
+    mut negative := 0;
+    if std.str_byte_at(value, 0) == 45 {
+        negative = 1;
+        index = 1;
+        if len(value) == 1 {
+            return 0;
+        }
+    }
+    if std.str_byte_at(value, index) == 48 && len(value) - index > 1 {
+        return 0;
+    }
+    if negative == 1 && len(value) - index == 1 &&
+       std.str_byte_at(value, index) == 48
+    {
+        return 0;
+    }
+    while index < len(value) {
+        mut byte := std.str_byte_at(value, index);
+        if byte < 48 || byte > 57 {
+            return 0;
+        }
+        index = index + 1;
+    }
+    return 1;
+}
+
+func mir_integer_conversion_context_is_valid(context_kind: str) int {
+    if std.str_eq(context_kind, "comparison") == 1 { return 1; }
+    if std.str_eq(context_kind, "local") == 1 { return 1; }
+    if std.str_eq(context_kind, "branch") == 1 { return 1; }
+    if std.str_eq(context_kind, "aggregate_field") == 1 { return 1; }
+    return 0;
+}
+
+func mir_integer_conversion_make_sample(table: MirIntegerConversionTable[ctx], sample_id: str, rule_name: str, input_value: str, expect_success: int, expected_value: str, expected_reason_code: str, context_kind: str, ctx: &Arena) MirIntegerConversionSample[ctx] {
     mut sample: MirIntegerConversionSample[ctx];
     sample.sample_id = std.Clone(ctx, sample_id);
     sample.rule_name = std.Clone(ctx, rule_name);
     sample.context_kind = std.Clone(ctx, context_kind);
-    sample.input_value = input_value;
-    sample.expect_success = 0;
-    sample.expected_value = 0;
-    sample.expected_reason_code = std.Clone(ctx, "conversion_rule_not_declared");
+    sample.input_value = std.Clone(ctx, input_value);
+    sample.expect_success = expect_success;
+    sample.expected_value = std.Clone(ctx, expected_value);
+    sample.expected_reason_code = std.Clone(ctx, expected_reason_code);
     mut query := mir_integer_conversion_rule(table, rule_name, ctx);
     if query.found == 0 {
         sample.rule_id = std.Clone(ctx, "");
         return sample;
     }
     sample.rule_id = std.Clone(ctx, query.rule.rule_id);
-    mut evaluation := mir_integer_conversion_evaluate(query.rule, input_value, ctx);
-    sample.expect_success = evaluation.success;
-    sample.expected_value = evaluation.value;
-    sample.expected_reason_code = std.Clone(ctx, evaluation.reason_code);
     return sample;
 }
 
 func mir_integer_conversion_add_default_samples(table: MirIntegerConversionTable[ctx], pointer_width: int, ctx: &Arena) MirIntegerConversionTable[ctx] {
     mut updated := table;
-    updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "sign_extend_i32_min", "sign_extend_i32_i64", 0 - 2147483647 - 1, "local", ctx), ctx);
-    updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "sign_extend_i32_max", "sign_extend_i32_i64", 2147483647, "comparison", ctx), ctx);
-    updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "zero_extend_u32_max", "zero_extend_u32_u64", 4294967295, "aggregate_field", ctx), ctx);
-    updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "truncate_i64_low_bits", "truncate_i64_i32", 4294967297, "local", ctx), ctx);
-    updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "truncate_i64_signed", "truncate_i64_i32", 4294967295, "branch", ctx), ctx);
-    updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "truncate_u64_low_bits", "truncate_u64_u32", 4294967297, "aggregate_field", ctx), ctx);
-    updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "checked_i64_i32_max", "checked_i64_i32", 2147483647, "comparison", ctx), ctx);
-    updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "checked_i64_i32_overflow", "checked_i64_i32", 2147483648, "branch", ctx), ctx);
-    updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "checked_u64_u32_max", "checked_u64_u32", 4294967295, "comparison", ctx), ctx);
-    updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "checked_u64_u32_overflow", "checked_u64_u32", 4294967296, "branch", ctx), ctx);
-    updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "checked_negative_to_u32", "checked_i32_u32", 0 - 1, "local", ctx), ctx);
-    updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "checked_u32_to_i32_overflow", "checked_u32_i32", 4294967295, "comparison", ctx), ctx);
-    updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "wrapping_i32_to_u32", "wrapping_i32_u32", 0 - 1, "aggregate_field", ctx), ctx);
-    updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "wrapping_u32_to_i32", "wrapping_u32_i32", 4294967295, "aggregate_field", ctx), ctx);
-    updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "reinterpret_i32_to_u32", "reinterpret_i32_u32", 0 - 1, "local", ctx), ctx);
-    updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "reinterpret_u32_to_i32", "reinterpret_u32_i32", 4294967295, "local", ctx), ctx);
-    updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "bool_to_i32_false", "bool_to_i32", 0, "branch", ctx), ctx);
-    updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "bool_to_i32_true", "bool_to_i32", 1, "branch", ctx), ctx);
-    updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "i32_to_bool_zero", "i32_to_bool", 0, "comparison", ctx), ctx);
-    updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "i32_to_bool_one", "i32_to_bool", 1, "comparison", ctx), ctx);
-    updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "i32_to_bool_invalid", "i32_to_bool", 2, "branch", ctx), ctx);
-    updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "i32_to_isize_boundary", "i32_to_isize", 2147483647, "local", ctx), ctx);
-    updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "u32_to_usize_boundary", "u32_to_usize", 4294967295, "aggregate_field", ctx), ctx);
-    updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "isize_to_i32_boundary", "isize_to_i32", 2147483647, "comparison", ctx), ctx);
-    updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "usize_to_u32_boundary", "usize_to_u32", 4294967295, "comparison", ctx), ctx);
+    updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "sign_extend_i32_min", "sign_extend_i32_i64", "-2147483648", 1, "-2147483648", "conversion_value_valid", "local", ctx), ctx);
+    updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "sign_extend_i32_max", "sign_extend_i32_i64", "2147483647", 1, "2147483647", "conversion_value_valid", "comparison", ctx), ctx);
+    updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "zero_extend_u32_max", "zero_extend_u32_u64", "4294967295", 1, "4294967295", "conversion_value_valid", "aggregate_field", ctx), ctx);
+    updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "truncate_i64_low_bits", "truncate_i64_i32", "4294967297", 1, "1", "conversion_value_valid", "local", ctx), ctx);
+    updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "truncate_i64_signed", "truncate_i64_i32", "4294967295", 1, "-1", "conversion_value_valid", "branch", ctx), ctx);
+    updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "truncate_u64_low_bits", "truncate_u64_u32", "4294967297", 1, "1", "conversion_value_valid", "aggregate_field", ctx), ctx);
+    updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "checked_i64_i32_max", "checked_i64_i32", "2147483647", 1, "2147483647", "conversion_value_valid", "comparison", ctx), ctx);
+    updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "checked_i64_i32_overflow", "checked_i64_i32", "2147483648", 0, "0", "conversion_out_of_range", "branch", ctx), ctx);
+    updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "checked_u64_u32_max", "checked_u64_u32", "4294967295", 1, "4294967295", "conversion_value_valid", "comparison", ctx), ctx);
+    updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "checked_u64_u32_overflow", "checked_u64_u32", "4294967296", 0, "0", "conversion_out_of_range", "branch", ctx), ctx);
+    updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "checked_negative_to_u32", "checked_i32_u32", "-1", 0, "0", "conversion_negative_to_unsigned", "local", ctx), ctx);
+    updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "checked_u32_to_i32_overflow", "checked_u32_i32", "4294967295", 0, "0", "conversion_unsigned_to_signed_out_of_range", "comparison", ctx), ctx);
+    updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "wrapping_i32_to_u32", "wrapping_i32_u32", "-1", 1, "4294967295", "conversion_value_valid", "aggregate_field", ctx), ctx);
+    updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "wrapping_u32_to_i32", "wrapping_u32_i32", "4294967295", 1, "-1", "conversion_value_valid", "aggregate_field", ctx), ctx);
+    updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "reinterpret_i32_to_u32", "reinterpret_i32_u32", "-1", 1, "4294967295", "conversion_value_valid", "local", ctx), ctx);
+    updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "reinterpret_u32_to_i32", "reinterpret_u32_i32", "4294967295", 1, "-1", "conversion_value_valid", "local", ctx), ctx);
+    updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "bool_to_i32_false", "bool_to_i32", "0", 1, "0", "conversion_value_valid", "branch", ctx), ctx);
+    updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "bool_to_i32_true", "bool_to_i32", "1", 1, "1", "conversion_value_valid", "branch", ctx), ctx);
+    updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "i32_to_bool_zero", "i32_to_bool", "0", 1, "0", "conversion_value_valid", "comparison", ctx), ctx);
+    updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "i32_to_bool_one", "i32_to_bool", "1", 1, "1", "conversion_value_valid", "comparison", ctx), ctx);
+    updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "i32_to_bool_invalid", "i32_to_bool", "2", 0, "0", "conversion_invalid_boolean_value", "branch", ctx), ctx);
+    updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "i32_to_isize_boundary", "i32_to_isize", "2147483647", 1, "2147483647", "conversion_value_valid", "local", ctx), ctx);
+    updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "u32_to_usize_boundary", "u32_to_usize", "4294967295", 1, "4294967295", "conversion_value_valid", "aggregate_field", ctx), ctx);
+    updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "isize_to_i32_boundary", "isize_to_i32", "2147483647", 1, "2147483647", "conversion_value_valid", "comparison", ctx), ctx);
+    updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "usize_to_u32_boundary", "usize_to_u32", "4294967295", 1, "4294967295", "conversion_value_valid", "comparison", ctx), ctx);
     if pointer_width == 64 {
-        updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "isize_to_i32_target_overflow", "isize_to_i32", 2147483648, "branch", ctx), ctx);
-        updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "usize_to_u32_target_overflow", "usize_to_u32", 4294967296, "branch", ctx), ctx);
+        updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "isize_to_i32_target_overflow", "isize_to_i32", "2147483648", 0, "0", "conversion_out_of_range", "branch", ctx), ctx);
+        updated = mir_integer_conversion_table_with_sample(updated, mir_integer_conversion_make_sample(updated, "usize_to_u32_target_overflow", "usize_to_u32", "4294967296", 0, "0", "conversion_out_of_range", "branch", ctx), ctx);
     }
     return updated;
 }
@@ -608,16 +647,24 @@ func mir_integer_conversion_table_is_valid(table: MirIntegerConversionTable[ctx]
         if query.found == 0 || std.str_eq(query.rule.rule_id, sample.rule_id) == 0 {
             return 0;
         }
-        mut evaluation := mir_integer_conversion_evaluate(
-            query.rule,
-            sample.input_value,
-            ctx
-        );
-        if evaluation.success != sample.expect_success ||
-           evaluation.value != sample.expected_value ||
-           std.str_eq(evaluation.reason_code, sample.expected_reason_code) == 0
+        if mir_integer_conversion_context_is_valid(sample.context_kind) == 0 ||
+           mir_integer_conversion_decimal_is_canonical(sample.input_value) == 0 ||
+           mir_integer_conversion_decimal_is_canonical(sample.expected_value) == 0 ||
+           (sample.expect_success != 0 && sample.expect_success != 1)
         {
             return 0;
+        }
+        if sample.expect_success == 1 {
+            if std.str_eq(sample.expected_reason_code, query.rule.success_reason_code) == 0 {
+                return 0;
+            }
+        } else {
+            if std.str_eq(sample.expected_value, "0") == 0 ||
+               len(sample.expected_reason_code) == 0 ||
+               std.str_eq(sample.expected_reason_code, query.rule.success_reason_code) == 1
+            {
+                return 0;
+            }
         }
         mut other_sample := sample_index + 1;
         while other_sample < len(samples) {
@@ -686,9 +733,9 @@ func mir_serialize_integer_conversion_table_for_request(table: MirIntegerConvers
         output = mir_integer_conversion_append_field(output, std.Concat(prefix, "_rule_id"), sample.rule_id, ctx);
         output = mir_integer_conversion_append_field(output, std.Concat(prefix, "_rule_name"), sample.rule_name, ctx);
         output = mir_integer_conversion_append_field(output, std.Concat(prefix, "_context_kind"), sample.context_kind, ctx);
-        output = mir_integer_conversion_append_field(output, std.Concat(prefix, "_input_value"), std.FormatInt(sample.input_value), ctx);
+        output = mir_integer_conversion_append_field(output, std.Concat(prefix, "_input_value"), sample.input_value, ctx);
         output = mir_integer_conversion_append_field(output, std.Concat(prefix, "_expect_success"), std.FormatInt(sample.expect_success), ctx);
-        output = mir_integer_conversion_append_field(output, std.Concat(prefix, "_expected_value"), std.FormatInt(sample.expected_value), ctx);
+        output = mir_integer_conversion_append_field(output, std.Concat(prefix, "_expected_value"), sample.expected_value, ctx);
         output = mir_integer_conversion_append_field(output, std.Concat(prefix, "_expected_reason_code"), sample.expected_reason_code, ctx);
         sample_index = sample_index + 1;
     }
@@ -710,7 +757,6 @@ func mir_integer_conversion_witness(table: MirIntegerConversionTable[ctx], layou
     while index < len(samples) {
         mut sample := samples[index];
         mut query := mir_integer_conversion_rule(table, sample.rule_name, ctx);
-        mut evaluation := mir_integer_conversion_evaluate(query.rule, sample.input_value, ctx);
         mut line := "conversion: ";
         line = std.Concat(line, sample.sample_id);
         line = std.Concat(line, " rule=");
@@ -728,15 +774,15 @@ func mir_integer_conversion_witness(table: MirIntegerConversionTable[ctx], layou
         line = std.Concat(line, " policy=");
         line = std.Concat(line, query.rule.policy);
         line = std.Concat(line, " input=");
-        line = std.Concat(line, std.FormatInt(sample.input_value));
-        if evaluation.success == 1 {
+        line = std.Concat(line, sample.input_value);
+        if sample.expect_success == 1 {
             line = std.Concat(line, " status=success value=");
-            line = std.Concat(line, std.FormatInt(evaluation.value));
+            line = std.Concat(line, sample.expected_value);
         } else {
             line = std.Concat(line, " status=failure value=0");
         }
         line = std.Concat(line, " reason=");
-        line = std.Concat(line, evaluation.reason_code);
+        line = std.Concat(line, sample.expected_reason_code);
         line = std.Concat(line, " context=");
         line = std.Concat(line, sample.context_kind);
         output = mir_integer_conversion_append_line(output, line, ctx);
