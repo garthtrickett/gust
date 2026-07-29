@@ -4017,7 +4017,7 @@ def verify_phase14_memory_accesses(registry):
         "wrong_alignment": "memory_access_alignment_mismatch",
         "wrong_pointee_type": "memory_access_pointee_type_mismatch",
         "immutable_store": "memory_access_store_immutable",
-        "invalid_layout_id": "memory_access_invalid_layout_id",
+        "invalid_layout_id": "memory_access_layout_id_mismatch",
         "out_of_lifetime": "memory_access_out_of_lifetime",
         "unsupported_overlap": "memory_access_overlap_unsupported",
         "known_null": "memory_access_known_null",
