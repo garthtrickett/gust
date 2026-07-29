@@ -4303,7 +4303,8 @@
           "phase14_composition:declared_targets_primitive_layout",
           "phase14_composition:integer_conversions_with_layout_and_control_flow",
           "phase14_composition:bounded_pointers_with_layout_conversion_and_control_flow",
-          "phase14_composition:stack_slots_with_branches_loops_and_aggregate_copy"
+          "phase14_composition:stack_slots_with_branches_loops_and_aggregate_copy",
+          "phase14_composition:typed_memory_with_stack_pointer_offset_and_copy"
         ],
         "differential_failure_fixture": "compiler/p14_target_dependent_conversions_deferred_source.gst",
         "composition_cases": [
@@ -4576,7 +4577,8 @@
         "differential_side_effect_policy": "none",
         "composition_case_ids": [
           "phase14_composition:bounded_pointers_with_layout_conversion_and_control_flow",
-          "phase14_composition:stack_slots_with_branches_loops_and_aggregate_copy"
+          "phase14_composition:stack_slots_with_branches_loops_and_aggregate_copy",
+          "phase14_composition:typed_memory_with_stack_pointer_offset_and_copy"
         ],
         "differential_failure_fixture": "compiler/p14_unsupported_pointer_arithmetic_source.gst",
         "composition_cases": [
@@ -4668,7 +4670,8 @@
         "differential_stderr_policy": "stable_bytes",
         "differential_side_effect_policy": "none",
         "composition_case_ids": [
-          "phase14_composition:stack_slots_with_branches_loops_and_aggregate_copy"
+          "phase14_composition:stack_slots_with_branches_loops_and_aggregate_copy",
+          "phase14_composition:typed_memory_with_stack_pointer_offset_and_copy"
         ],
         "differential_failure_fixture": "compiler/p14_stack_slot_uninitialized_read_source.gst",
         "composition_cases": [
@@ -4998,7 +5001,8 @@
           "phase14_composition:declared_targets_primitive_layout",
           "phase14_composition:integer_conversions_with_layout_and_control_flow",
           "phase14_composition:bounded_pointers_with_layout_conversion_and_control_flow",
-          "phase14_composition:stack_slots_with_branches_loops_and_aggregate_copy"
+          "phase14_composition:stack_slots_with_branches_loops_and_aggregate_copy",
+          "phase14_composition:typed_memory_with_stack_pointer_offset_and_copy"
         ],
         "differential_failure_fixture": "compiler/p14_target_dependent_conversions_deferred_source.gst",
         "composition_cases": [],
