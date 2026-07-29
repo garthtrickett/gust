@@ -3995,7 +3995,7 @@ def verify_phase14_memory_accesses(registry):
 
     authority_source = sources["authority"].read_text(encoding="utf-8")
     for token in (
-        "type MirMemoryAccess[ctx] struct",
+        "type MirMemoryAccessOperation[ctx] struct",
         "type MirMemoryAccessTable[ctx] struct",
         "func mir_memory_access_table_for_layout(",
         "func mir_memory_access_table_is_valid(",
