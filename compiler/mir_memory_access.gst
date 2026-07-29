@@ -492,12 +492,13 @@ func mir_memory_access_table_for_memory_tables(layout_table: layout.MirLayoutTab
     mut local0 := slots[0];
     mut local1 := slots[1];
     mut aggregate0 := slots[3];
-    mut mutable_pointer := pointer.mir_pointer_select(
+    mut mutable_pointer := pointer.mir_pointer_select_type(
         pointer_table,
         "type:gust:i32",
         "mutable",
         "non_null",
         "default",
+        table.target_id,
         ctx
     );
     if mutable_pointer.valid == 0 { return table; }
