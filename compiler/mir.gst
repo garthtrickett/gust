@@ -21,6 +21,7 @@ import "token.gst" as token;
 import "mir_layout.gst" as layout;
 import "mir_integer_conversion.gst" as conversion;
 import "mir_pointer.gst" as pointer;
+import "mir_stack_slot.gst" as stack_slot;
 
 type MirTypeLayoutReference[ctx] struct {
     type_id: str,
@@ -98,6 +99,44 @@ type MirPointerOperationReference[ctx] struct {
     provenance_id: str
 }
 
+type MirStackSlotOperationKind enum {
+    Declare,
+    AddressOf,
+    Initialize,
+    Assign,
+    Read,
+    BoundedAggregateCopy
+}
+
+type MirStackSlotReference[ctx] struct {
+    slot_id: str,
+    target_id: str,
+    storage_class: str,
+    local_id: int,
+    contained_type_id: str,
+    contained_layout_id: str,
+    size: int,
+    alignment: int,
+    initialization_state: str,
+    source_origin: str,
+    lifetime_region: str,
+    mutability: str,
+    address_escape_policy: str
+}
+
+type MirStackSlotOperationReference[ctx] struct {
+    operation_id: str,
+    operation_name: str,
+    target_id: str,
+    operation_kind: MirStackSlotOperationKind,
+    slot_id: str,
+    source_slot_id: str,
+    destination_slot_id: str,
+    contained_type_id: str,
+    contained_layout_id: str,
+    context_kind: str
+}
+
 type MirProgram[ctx] struct {
     functions: Index[std.Vector[MirFunction[ctx], ctx], ctx],
     resource_metadata: Index[std.Vector[MirResourceMetadata[ctx], ctx], ctx],
@@ -107,7 +146,9 @@ type MirProgram[ctx] struct {
     primitive_scalar_references: Index[std.Vector[MirPrimitiveScalarReference[ctx], ctx], ctx],
     integer_conversion_references: Index[std.Vector[MirIntegerConversionReference[ctx], ctx], ctx],
     pointer_type_references: Index[std.Vector[MirPointerTypeReference[ctx], ctx], ctx],
-    pointer_operation_references: Index[std.Vector[MirPointerOperationReference[ctx], ctx], ctx]
+    pointer_operation_references: Index[std.Vector[MirPointerOperationReference[ctx], ctx], ctx],
+    stack_slot_references: Index[std.Vector[MirStackSlotReference[ctx], ctx], ctx],
+    stack_slot_operation_references: Index[std.Vector[MirStackSlotOperationReference[ctx], ctx], ctx]
 }
 
 type MirFunction[ctx] struct {
@@ -144,6 +185,11 @@ type MirStmt[ctx] enum {
         span: token.Span
     },
     Expr {
+        value: Index[MirValue[ctx], ctx],
+        span: token.Span
+    },
+    StackSlotOperation {
+        operation: Index[MirStackSlotOperationReference[ctx], ctx],
         value: Index[MirValue[ctx], ctx],
         span: token.Span
     }
@@ -411,6 +457,20 @@ func mir_empty_pointer_operation_reference_vector(ctx: &Arena) Index[std.Vector[
     return references_idx;
 }
 
+func mir_empty_stack_slot_reference_vector(ctx: &Arena) Index[std.Vector[MirStackSlotReference[ctx], ctx], ctx] {
+    mut references: std.Vector[MirStackSlotReference[ctx], ctx] := std.VectorNew(ctx);
+    mut references_idx: Index[std.Vector[MirStackSlotReference[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(references_idx, references);
+    return references_idx;
+}
+
+func mir_empty_stack_slot_operation_reference_vector(ctx: &Arena) Index[std.Vector[MirStackSlotOperationReference[ctx], ctx], ctx] {
+    mut references: std.Vector[MirStackSlotOperationReference[ctx], ctx] := std.VectorNew(ctx);
+    mut references_idx: Index[std.Vector[MirStackSlotOperationReference[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(references_idx, references);
+    return references_idx;
+}
+
 func mir_value_vector_with_value(values_idx: Index[std.Vector[MirValue[ctx], ctx], ctx], value: MirValue[ctx], ctx: &Arena) Index[std.Vector[MirValue[ctx], ctx], ctx] {
     mut values: std.Vector[MirValue[ctx], ctx] := ctx[values_idx];
     values.Push(value);
@@ -441,6 +501,8 @@ func mir_make_program(ctx: &Arena) MirProgram[ctx] {
     program.integer_conversion_references = mir_empty_integer_conversion_reference_vector(ctx);
     program.pointer_type_references = mir_empty_pointer_type_reference_vector(ctx);
     program.pointer_operation_references = mir_empty_pointer_operation_reference_vector(ctx);
+    program.stack_slot_references = mir_empty_stack_slot_reference_vector(ctx);
+    program.stack_slot_operation_references = mir_empty_stack_slot_operation_reference_vector(ctx);
     return program;
 }
 
@@ -726,6 +788,127 @@ func mir_program_pointer_references_are_valid(program: MirProgram[ctx], pointer_
            std.str_eq(query.operation.origin_kind, reference.origin_kind) == 0 ||
            query.operation.origin_local_id != reference.origin_local_id ||
            std.str_eq(query.operation.provenance_id, reference.provenance_id) == 0
+        {
+            return 0;
+        }
+        operation_index = operation_index + 1;
+    }
+    return 1;
+}
+
+func mir_stack_slot_operation_kind_from_name(kind: str) MirStackSlotOperationKind {
+    mut result: MirStackSlotOperationKind;
+    unsafe {
+        result.tag = 0;
+        if std.str_eq(kind, "address_of") == 1 { result.tag = 1; }
+        if std.str_eq(kind, "initialize") == 1 { result.tag = 2; }
+        if std.str_eq(kind, "assign") == 1 { result.tag = 3; }
+        if std.str_eq(kind, "read") == 1 { result.tag = 4; }
+        if std.str_eq(kind, "bounded_aggregate_copy") == 1 { result.tag = 5; }
+    }
+    return result;
+}
+
+func mir_debug_stack_slot_operation_kind(kind: MirStackSlotOperationKind) str {
+    unsafe {
+        if kind.tag == 1 { return "address_of"; }
+        if kind.tag == 2 { return "initialize"; }
+        if kind.tag == 3 { return "assign"; }
+        if kind.tag == 4 { return "read"; }
+        if kind.tag == 5 { return "bounded_aggregate_copy"; }
+    }
+    return "declare";
+}
+
+func mir_make_stack_slot_reference(slot: stack_slot.MirStackSlot[ctx], ctx: &Arena) MirStackSlotReference[ctx] {
+    mut reference: MirStackSlotReference[ctx];
+    reference.slot_id = std.Clone(ctx, slot.slot_id);
+    reference.target_id = std.Clone(ctx, slot.target_id);
+    reference.storage_class = std.Clone(ctx, slot.storage_class);
+    reference.local_id = slot.local_id;
+    reference.contained_type_id = std.Clone(ctx, slot.contained_type_id);
+    reference.contained_layout_id = std.Clone(ctx, slot.contained_layout_id);
+    reference.size = slot.size;
+    reference.alignment = slot.alignment;
+    reference.initialization_state = std.Clone(ctx, slot.initialization_state);
+    reference.source_origin = std.Clone(ctx, slot.source_origin);
+    reference.lifetime_region = std.Clone(ctx, slot.lifetime_region);
+    reference.mutability = std.Clone(ctx, slot.mutability);
+    reference.address_escape_policy = std.Clone(ctx, slot.address_escape_policy);
+    return reference;
+}
+
+func mir_make_stack_slot_operation_reference(operation: stack_slot.MirStackSlotOperation[ctx], ctx: &Arena) MirStackSlotOperationReference[ctx] {
+    mut reference: MirStackSlotOperationReference[ctx];
+    reference.operation_id = std.Clone(ctx, operation.operation_id);
+    reference.operation_name = std.Clone(ctx, operation.operation_name);
+    reference.target_id = std.Clone(ctx, operation.target_id);
+    reference.operation_kind = mir_stack_slot_operation_kind_from_name(operation.kind);
+    reference.slot_id = std.Clone(ctx, operation.slot_id);
+    reference.source_slot_id = std.Clone(ctx, operation.source_slot_id);
+    reference.destination_slot_id = std.Clone(ctx, operation.destination_slot_id);
+    reference.contained_type_id = std.Clone(ctx, operation.contained_type_id);
+    reference.contained_layout_id = std.Clone(ctx, operation.contained_layout_id);
+    reference.context_kind = std.Clone(ctx, operation.context_kind);
+    return reference;
+}
+
+func mir_program_with_stack_slot_reference(program: MirProgram[ctx], reference: MirStackSlotReference[ctx], ctx: &Arena) MirProgram[ctx] {
+    mut updated := program;
+    mut references: std.Vector[MirStackSlotReference[ctx], ctx] := ctx[updated.stack_slot_references];
+    references.Push(reference);
+    ctx.Set(updated.stack_slot_references, references);
+    return updated;
+}
+
+func mir_program_with_stack_slot_operation_reference(program: MirProgram[ctx], reference: MirStackSlotOperationReference[ctx], ctx: &Arena) MirProgram[ctx] {
+    mut updated := program;
+    mut references: std.Vector[MirStackSlotOperationReference[ctx], ctx] := ctx[updated.stack_slot_operation_references];
+    references.Push(reference);
+    ctx.Set(updated.stack_slot_operation_references, references);
+    return updated;
+}
+
+func mir_program_stack_slot_references_are_valid(program: MirProgram[ctx], table: stack_slot.MirStackSlotTable[ctx], layout_table: layout.MirLayoutTable[ctx], ctx: &Arena) int {
+    if stack_slot.mir_stack_slot_table_is_valid(table, layout_table, ctx) == 0 { return 0; }
+    mut slot_references: std.Vector[MirStackSlotReference[ctx], ctx] := ctx[program.stack_slot_references];
+    mut slot_index := 0;
+    while slot_index < len(slot_references) {
+        mut reference := slot_references[slot_index];
+        mut query := stack_slot.mir_stack_slot(table, reference.slot_id, ctx);
+        if query.found == 0 ||
+           std.str_eq(query.slot.target_id, reference.target_id) == 0 ||
+           std.str_eq(query.slot.storage_class, reference.storage_class) == 0 ||
+           query.slot.local_id != reference.local_id ||
+           std.str_eq(query.slot.contained_type_id, reference.contained_type_id) == 0 ||
+           std.str_eq(query.slot.contained_layout_id, reference.contained_layout_id) == 0 ||
+           query.slot.size != reference.size ||
+           query.slot.alignment != reference.alignment ||
+           std.str_eq(query.slot.initialization_state, reference.initialization_state) == 0 ||
+           std.str_eq(query.slot.source_origin, reference.source_origin) == 0 ||
+           std.str_eq(query.slot.lifetime_region, reference.lifetime_region) == 0 ||
+           std.str_eq(query.slot.mutability, reference.mutability) == 0 ||
+           std.str_eq(query.slot.address_escape_policy, reference.address_escape_policy) == 0
+        {
+            return 0;
+        }
+        slot_index = slot_index + 1;
+    }
+    mut operation_references: std.Vector[MirStackSlotOperationReference[ctx], ctx] := ctx[program.stack_slot_operation_references];
+    mut operation_index := 0;
+    while operation_index < len(operation_references) {
+        mut reference := operation_references[operation_index];
+        mut query := stack_slot.mir_stack_slot_operation(table, reference.operation_name, ctx);
+        if query.found == 0 ||
+           std.str_eq(query.operation.operation_id, reference.operation_id) == 0 ||
+           std.str_eq(query.operation.target_id, reference.target_id) == 0 ||
+           std.str_eq(query.operation.kind, mir_debug_stack_slot_operation_kind(reference.operation_kind)) == 0 ||
+           std.str_eq(query.operation.slot_id, reference.slot_id) == 0 ||
+           std.str_eq(query.operation.source_slot_id, reference.source_slot_id) == 0 ||
+           std.str_eq(query.operation.destination_slot_id, reference.destination_slot_id) == 0 ||
+           std.str_eq(query.operation.contained_type_id, reference.contained_type_id) == 0 ||
+           std.str_eq(query.operation.contained_layout_id, reference.contained_layout_id) == 0 ||
+           std.str_eq(query.operation.context_kind, reference.context_kind) == 0
         {
             return 0;
         }
@@ -1333,6 +1516,19 @@ func mir_make_stmt_expr(value: Index[MirValue[ctx], ctx], span: token.Span) MirS
     return stmt;
 }
 
+func mir_make_stmt_stack_slot_operation(operation_reference: MirStackSlotOperationReference[ctx], value: Index[MirValue[ctx], ctx], span: token.Span, ctx: &Arena) MirStmt[ctx] {
+    mut operation_reference_idx: Index[MirStackSlotOperationReference[ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(operation_reference_idx, operation_reference);
+    mut stmt: MirStmt[ctx];
+    unsafe {
+        stmt.tag = 3; // StackSlotOperation
+        stmt.StackSlotOperation.operation = operation_reference_idx;
+        stmt.StackSlotOperation.value = value;
+        stmt.StackSlotOperation.span = span;
+    }
+    return stmt;
+}
+
 func mir_make_value_int_literal(val: int, value_type: str, span: token.Span, ctx: &Arena) MirValue[ctx] {
     mut value: MirValue[ctx];
     unsafe {
@@ -1546,6 +1742,9 @@ func mir_debug_stmt_kind(stmt: MirStmt[ctx]) str {
     }
     if stmt.tag == 2 {
         return "MirStmt.Expr";
+    }
+    if stmt.tag == 3 {
+        return "MirStmt.StackSlotOperation";
     }
     return "MirStmt.<unknown>";
 }

@@ -17,6 +17,7 @@
     "phase14_primitive_layout",
     "phase14_integer_conversions",
     "phase14_pointers",
+    "phase14_stack_slots",
     "residual_snapshots",
     "planning_categories",
     "supported_values",
@@ -31,10 +32,10 @@
       "const": 1
     },
     "registry_version": {
-      "const": 12
+      "const": 13
     },
     "registry_status": {
-      "const": "phase14_pointer_ready"
+      "const": "phase14_stack_slot_ready"
     },
     "current_phase": {
       "const": "phase14"
@@ -219,6 +220,9 @@
     },
     "phase14_pointers": {
       "$ref": "#/$defs/phase14_pointers"
+    },
+    "phase14_stack_slots": {
+      "$ref": "#/$defs/phase14_stack_slots"
     }
   },
   "$defs": {
@@ -1756,7 +1760,7 @@
           "const": "phase14_bounded_typed_pointers_and_nullability_v1"
         },
         "status": {
-          "const": "ready_for_patch14_5"
+          "const": "consumed_by_patch14_5"
         },
         "authority_owner": {
           "const": "compiler/mir_pointer.gst"
@@ -1857,7 +1861,134 @@
           "const": "typed_pointer_identity_nullability_comparison_and_bounded_conversion_only_no_dereference_load_store_pointer_arithmetic_non_default_address_space_or_integer_pointer_cast"
         },
         "next_patch": {
-          "const": "14.5"
+          "const": "14.6"
+        }
+      }
+    },
+    "phase14_stack_slots": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "status",
+        "authority_owner",
+        "stack_slot_table_format",
+        "primary_level2_target",
+        "storage_classes",
+        "selected_slot_count_per_target",
+        "operation_kinds",
+        "operation_count_per_target",
+        "metadata_fields",
+        "lifetime_policy",
+        "address_escape_policy",
+        "worker_layout_policy",
+        "migrated_entry_ids",
+        "focused_ci_family",
+        "level1_guard",
+        "level2_guard",
+        "composition_contexts",
+        "negative_classes",
+        "boundary_policy",
+        "next_patch"
+      ],
+      "properties": {
+        "version": {
+          "const": "phase14_deterministic_stack_slots_and_addressable_locals_v1"
+        },
+        "status": {
+          "const": "ready_for_patch14_6"
+        },
+        "authority_owner": {
+          "const": "compiler/mir_stack_slot.gst"
+        },
+        "stack_slot_table_format": {
+          "const": "gust.compiler_stack_slot_table.v1"
+        },
+        "primary_level2_target": {
+          "const": "x86_64-unknown-linux-gnu"
+        },
+        "storage_classes": {
+          "const": [
+            "ssa_only",
+            "addressable_local",
+            "compiler_temporary"
+          ]
+        },
+        "selected_slot_count_per_target": {
+          "const": 4
+        },
+        "operation_kinds": {
+          "const": [
+            "declare",
+            "address_of",
+            "initialize",
+            "assign",
+            "read",
+            "bounded_aggregate_copy"
+          ]
+        },
+        "operation_count_per_target": {
+          "const": 11
+        },
+        "metadata_fields": {
+          "const": [
+            "size",
+            "alignment",
+            "contained_type_id",
+            "contained_layout_id",
+            "initialization_state",
+            "source_origin",
+            "lifetime_region",
+            "mutability",
+            "address_escape_policy"
+          ]
+        },
+        "lifetime_policy": {
+          "const": "lexical_function_region"
+        },
+        "address_escape_policy": {
+          "const": "no_escape_outside_declared_lifetime"
+        },
+        "worker_layout_policy": {
+          "const": "worker_validates_only_compiler_serialized_slot_and_layout_ids_and_never_infers_layout_from_source_text_or_local_names"
+        },
+        "migrated_entry_ids": {
+          "const": [
+            "p14_stack_slot_addressable_locals"
+          ]
+        },
+        "focused_ci_family": {
+          "const": "pointer-memory"
+        },
+        "level1_guard": {
+          "const": "guard-cranelift-phase14-stack-slot-contract"
+        },
+        "level2_guard": {
+          "const": "guard-cranelift-phase14-stack-slot-parity"
+        },
+        "composition_contexts": {
+          "const": [
+            "addressable_scalars",
+            "initial_aggregates",
+            "branches",
+            "supported_loops"
+          ]
+        },
+        "negative_classes": {
+          "type": "array",
+          "minItems": 11,
+          "maxItems": 11,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "boundary_policy": {
+          "const": "fixed_size_compiler_owned_stack_slots_only_no_dynamic_allocation_variable_sized_storage_escape_resource_destructors_or_unrestricted_aliasing"
+        },
+        "next_patch": {
+          "const": "14.6"
         }
       }
     }

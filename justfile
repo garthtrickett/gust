@@ -132,6 +132,8 @@ guard-pr-fast-ci-surface:
       'just guard-cranelift-phase14-integer-conversion-contract'
       'Phase 14 bounded typed pointers and nullability'
       'just guard-cranelift-phase14-pointer-contract'
+      'Phase 14 deterministic stack slots and addressable locals'
+      'just guard-cranelift-phase14-stack-slot-contract'
       'phase11-family:'
       'phase11_families:'
       'matrix.family'
@@ -14025,7 +14027,7 @@ guard-cranelift-phase14-pointer-contract:
     required_review_tokens=(
       'CRANELIFT_PHASE14_POINTER_VIEW_VERSION: 1'
       'CRANELIFT_PHASE14_POINTER_VERSION: phase14_bounded_typed_pointers_and_nullability_v1'
-      'CRANELIFT_PHASE14_POINTER_STATUS: ready_for_patch14_5'
+      'CRANELIFT_PHASE14_POINTER_STATUS: consumed_by_patch14_5'
       'CRANELIFT_PHASE14_POINTER_OWNER: compiler/mir_pointer.gst'
       'CRANELIFT_PHASE14_POINTER_TABLE_FORMAT: gust.compiler_pointer_table.v1'
       'CRANELIFT_PHASE14_POINTER_PRIMARY_TARGET: x86_64-unknown-linux-gnu'
@@ -14126,6 +14128,168 @@ guard-cranelift-phase14-pointer-parity:
     fi
     bash scripts/phase14_pointer_differential.sh
 
+guard-cranelift-phase14-stack-slot-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 14 deterministic stack slots and addressable locals..."
+    validator="scripts/cranelift_registry.py"
+    family_runner="scripts/cranelift_ci_family.py"
+    level_runner="scripts/cranelift_test_levels.py"
+    review="compiler/CRANELIFT_PHASE14_STACK_SLOTS.md"
+    authority="compiler/mir_stack_slot.gst"
+    mir="compiler/mir.gst"
+    request="compiler/mir_native_backend_request.gst"
+    mir_to_c="compiler/mir_stack_slot_mir_to_c.gst"
+    diagnostics="compiler/mir_stack_slot_diagnostics.gst"
+    worker="compiler/experiments/cranelift/src/main.rs"
+    smoke="compiler/mir_stack_slot_smoke_test_entry.gst"
+    differential="scripts/phase14_stack_slot_differential.sh"
+    pr_workflow=".github/workflows/pr-fast.yml"
+
+    for required_file in \
+      "$validator" "$family_runner" "$level_runner" "$review" "$authority" \
+      "$mir" "$request" "$mir_to_c" "$diagnostics" "$worker" "$smoke" \
+      "$differential" "$pr_workflow" \
+      compiler/phase14_stack_slot_addressable_source.gst \
+      compiler/phase14_stack_slot_aggregate_source.gst \
+      compiler/phase14_stack_slot_composition_source.gst \
+      compiler/fixtures/native_backend_phase14_stack_slot_ingestion.mir \
+      compiler/fixtures/native_backend_phase14_stack_slot_malformed.mir
+    do
+      if [ ! -f "$required_file" ] || [ -L "$required_file" ]; then
+        echo "Missing regular Phase 14 stack-slot input: $required_file"
+        exit 1
+      fi
+    done
+
+    just guard-cranelift-phase14-pointer-contract
+    python3 "$validator" verify-phase14-stack-slots
+    python3 "$validator" check-phase14-stack-slot-projection
+    python3 "$validator" check-projection
+    python3 "$family_runner" validate
+    python3 "$family_runner" check-pr-workflow "$pr_workflow"
+    python3 "$level_runner" validate
+    python3 "$level_runner" check-pr-workflow
+    python3 "$level_runner" level guard-cranelift-phase14-stack-slot-contract |
+      rg -n -F $'guard-cranelift-phase14-stack-slot-contract\t1\t' >/dev/null
+    bash -n "$differential"
+
+    required_review_tokens=(
+      'CRANELIFT_PHASE14_STACK_SLOT_VIEW_VERSION: 1'
+      'CRANELIFT_PHASE14_STACK_SLOT_VERSION: phase14_deterministic_stack_slots_and_addressable_locals_v1'
+      'CRANELIFT_PHASE14_STACK_SLOT_STATUS: ready_for_patch14_6'
+      'CRANELIFT_PHASE14_STACK_SLOT_OWNER: compiler/mir_stack_slot.gst'
+      'CRANELIFT_PHASE14_STACK_SLOT_TABLE_FORMAT: gust.compiler_stack_slot_table.v1'
+      'CRANELIFT_PHASE14_STACK_SLOT_PRIMARY_TARGET: x86_64-unknown-linux-gnu'
+      '## Storage classes'
+      '## Canonical stack-slot operations'
+      '## Compiler-owned metadata'
+      '## Composition contexts'
+      '## Negative classes'
+      '## Semantic policies'
+      '## Boundary'
+    )
+    for token in "${required_review_tokens[@]}"; do
+      rg -n -F "$token" "$review" >/dev/null
+    done
+
+    for token in \
+      'type MirStackSlot[ctx] struct' \
+      'type MirStackSlotOperation[ctx] struct' \
+      'type MirStackSlotTable[ctx] struct' \
+      'func mir_stack_slot_table_for_layout(' \
+      'func mir_stack_slot_table_is_valid(' \
+      'func mir_serialize_stack_slot_table_for_request('
+    do
+      rg -n -F "$token" "$authority" >/dev/null
+    done
+    for kind in declare address_of initialize assign read bounded_aggregate_copy; do
+      rg -n -F "$kind" "$authority" "$worker" >/dev/null
+    done
+    rg -n -F 'type MirStackSlotOperationKind enum' "$mir" >/dev/null
+    rg -n -F 'type MirStackSlotReference' "$mir" >/dev/null
+    rg -n -F 'type MirStackSlotOperationReference' "$mir" >/dev/null
+    rg -n -F 'StackSlotOperation' "$mir" >/dev/null
+    rg -n -F 'operation: Index[MirStackSlotOperationReference[ctx], ctx]' "$mir" >/dev/null
+    rg -n -F 'stack_slot_table: stack_slot.MirStackSlotTable[ctx]' "$request" >/dev/null
+    rg -n -F 'mir_serialize_stack_slot_table_for_request' "$request" >/dev/null
+    rg -n -F 'mir_stack_slot_c_source' "$mir_to_c" >/dev/null
+    rg -n -F 'gust_stack_slot_diagnostic:' "$diagnostics" >/dev/null
+    rg -n -F 'struct Phase14RequestStackSlotTable' "$worker" >/dev/null
+    rg -n -F 'fn validate_phase14_request_stack_slot_table(' "$worker" >/dev/null
+    rg -n -F 'phase14-stack-slot-witness' "$worker" >/dev/null
+    rg -n -F 'contained_layout_id' "$worker" >/dev/null
+
+    stack_slot_ci_count="$(
+      (rg -n -F 'just guard-cranelift-phase14-stack-slot-contract' \
+        .github/workflows --glob '*.yml' || true) | wc -l | tr -d ' '
+    )"
+    if [ "$stack_slot_ci_count" != "1" ]; then
+      echo "Phase 14 stack-slot contract must be wired into CI exactly once, found $stack_slot_ci_count occurrences."
+      exit 1
+    fi
+    rg -n -x -F '        run: just guard-cranelift-phase14-stack-slot-contract' \
+      "$pr_workflow" >/dev/null
+
+    if rg -n \
+        -e 'std::mem::(size_of|align_of)' \
+        -e 'offset_of!' \
+        -e 'Layout::(from_size_align|new|array)' \
+        "$worker" >/dev/null
+    then
+      echo "The Cranelift worker must consume compiler-selected stack-slot and contained layouts."
+      exit 1
+    fi
+
+    guard_body="$(
+      sed -n \
+        '/^guard-cranelift-phase14-stack-slot-contract:/,/^guard-cranelift-phase14-stack-slot-parity:/p' \
+        justfile
+    )"
+    if printf '%s\n' "$guard_body" |
+       rg -n \
+         -e '^[[:space:]]+bash scripts/phase14_stack_slot_differential\.sh([[:space:]]|$)' \
+         -e '^[[:space:]]+just guard-cranelift-differential-family([[:space:]]|$)' \
+         -e '^[[:space:]]+just guard-cranelift-historical-full([[:space:]]|$)' \
+         -e '^[[:space:]]+\./gust([[:space:]]|$)' \
+         -e '^[[:space:]]+(cargo|cc|gcc|clang|make)([[:space:]]|$)' >/dev/null
+    then
+      echo "Phase 14 stack-slot contract must remain a Level 1 ownership and projection guard."
+      exit 1
+    fi
+
+    echo "✅ Phase 14 stack-slot contract passed: deterministic identities, compiler-owned layout, initialization, lifetime, address escape, canonical MIR, backend consumers, differential contexts, negatives, and CI ownership are frozen."
+
+guard-cranelift-phase14-stack-slot-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 14 deterministic stack-slot parity on the primary declared target..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase14-stack-slot-parity |
+      rg -n -F $'guard-cranelift-phase14-stack-slot-parity\t2\t' >/dev/null
+    just guard-cranelift-phase14-stack-slot-contract
+    if [ "${PHASE14_STACK_SLOT_SKIP_DYNAMIC:-0}" = "1" ]; then
+      echo "✅ Phase 14 stack-slot parity static contract passed; dynamic evidence skipped by request."
+      exit 0
+    fi
+    bash scripts/phase14_stack_slot_differential.sh
+
+guard-cranelift-phase14-pointer-memory-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 14 pointer-memory family parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase14-pointer-memory-parity |
+      rg -n -F $'guard-cranelift-phase14-pointer-memory-parity\t2\t' >/dev/null
+    if [ "${PHASE14_POINTER_MEMORY_SKIP_DYNAMIC:-0}" = "1" ]; then
+      PHASE14_POINTER_SKIP_DYNAMIC=1 just guard-cranelift-phase14-pointer-parity
+      PHASE14_STACK_SLOT_SKIP_DYNAMIC=1 just guard-cranelift-phase14-stack-slot-parity
+      echo "✅ Phase 14 pointer-memory family static contracts passed; dynamic evidence skipped by request."
+      exit 0
+    fi
+    just guard-cranelift-phase14-pointer-parity
+    just guard-cranelift-phase14-stack-slot-parity
+
 guard-cranelift-differential-family family:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -14150,6 +14314,7 @@ guard-cranelift-contract-fast:
     just guard-cranelift-phase14-target-and-primitive-contract
     just guard-cranelift-phase14-integer-conversion-contract
     just guard-cranelift-phase14-pointer-contract
+    just guard-cranelift-phase14-stack-slot-contract
 
 guard-cranelift-historical-full:
     #!/usr/bin/env bash
@@ -14205,7 +14370,7 @@ guard-cranelift-historical-full:
         PHASE14_INTEGER_CONVERSION_ALL_TARGETS=1 \
           just guard-cranelift-differential-family "$family"
       elif [ "$family" = "pointer-memory" ]; then
-        PHASE14_POINTER_ALL_TARGETS=1 \
+        PHASE14_POINTER_ALL_TARGETS=1 PHASE14_STACK_SLOT_ALL_TARGETS=1 \
           just guard-cranelift-differential-family "$family"
       else
         just guard-cranelift-differential-family "$family"

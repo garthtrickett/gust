@@ -127,6 +127,15 @@ func main() {
     {
         fail("Backend request smoke: compiler-owned pointer transport drifted");
     }
+    if std.str_find(
+        serialized_a,
+        "stack_slot_table_format: gust.compiler_stack_slot_table.v1\n"
+    ) == 0 - 1 ||
+       std.str_find(serialized_a, "stack_slot_count: 4\n") == 0 - 1 ||
+       std.str_find(serialized_a, "stack_slot_operation_count: 11\n") == 0 - 1
+    {
+        fail("Backend request smoke: compiler-owned stack-slot transport drifted");
+    }
 
     mut relative_output := request.mir_native_backend_make_request(
         "x86_64-unknown-linux-gnu",

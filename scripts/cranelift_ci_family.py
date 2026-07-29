@@ -79,8 +79,8 @@ RUNNERS = (
     ),
     (
         "pointer-memory",
-        "guard-cranelift-phase14-pointer-parity",
-        "PHASE14_POINTER_SKIP_DYNAMIC",
+        "guard-cranelift-phase14-pointer-memory-parity",
+        "PHASE14_POINTER_MEMORY_SKIP_DYNAMIC",
         None,
     ),
 )

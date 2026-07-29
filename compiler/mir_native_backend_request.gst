@@ -3,6 +3,7 @@ import "mir_layout.gst" as layout;
 import "mir_primitive_layout.gst" as primitive_layout;
 import "mir_integer_conversion.gst" as integer_conversion;
 import "mir_pointer.gst" as pointer;
+import "mir_stack_slot.gst" as stack_slot;
 
 // Phase 10 generic native-backend request protocol.
 //
@@ -18,7 +19,8 @@ type MirNativeBackendRequest[ctx] struct {
     program_bundle: mir.MirProgramBundle[ctx],
     layout_table: layout.MirLayoutTable[ctx],
     integer_conversion_table: integer_conversion.MirIntegerConversionTable[ctx],
-    pointer_table: pointer.MirPointerTable[ctx]
+    pointer_table: pointer.MirPointerTable[ctx],
+    stack_slot_table: stack_slot.MirStackSlotTable[ctx]
 }
 
 func mir_native_backend_request_path_is_safe(path: str) int {
@@ -55,7 +57,7 @@ func mir_native_backend_request_path_is_absolute(path: str) int {
     return 0;
 }
 
-func mir_native_backend_make_request_with_all_tables(target_triple: str, object_format: str, output_path: str, program_mir_bundle_path: str, program_bundle: mir.MirProgramBundle[ctx], layout_table: layout.MirLayoutTable[ctx], integer_conversion_table: integer_conversion.MirIntegerConversionTable[ctx], pointer_table: pointer.MirPointerTable[ctx], ctx: &Arena) MirNativeBackendRequest[ctx] {
+func mir_native_backend_make_request_with_memory_tables(target_triple: str, object_format: str, output_path: str, program_mir_bundle_path: str, program_bundle: mir.MirProgramBundle[ctx], layout_table: layout.MirLayoutTable[ctx], integer_conversion_table: integer_conversion.MirIntegerConversionTable[ctx], pointer_table: pointer.MirPointerTable[ctx], stack_slot_table: stack_slot.MirStackSlotTable[ctx], ctx: &Arena) MirNativeBackendRequest[ctx] {
     mut request: MirNativeBackendRequest[ctx];
     request.target_triple = std.Clone(ctx, target_triple);
     request.object_format = std.Clone(ctx, object_format);
@@ -65,7 +67,24 @@ func mir_native_backend_make_request_with_all_tables(target_triple: str, object_
     request.layout_table = layout_table;
     request.integer_conversion_table = integer_conversion_table;
     request.pointer_table = pointer_table;
+    request.stack_slot_table = stack_slot_table;
     return request;
+}
+
+func mir_native_backend_make_request_with_all_tables(target_triple: str, object_format: str, output_path: str, program_mir_bundle_path: str, program_bundle: mir.MirProgramBundle[ctx], layout_table: layout.MirLayoutTable[ctx], integer_conversion_table: integer_conversion.MirIntegerConversionTable[ctx], pointer_table: pointer.MirPointerTable[ctx], ctx: &Arena) MirNativeBackendRequest[ctx] {
+    mut stack_slot_table := stack_slot.mir_stack_slot_table_for_layout(layout_table, ctx);
+    return mir_native_backend_make_request_with_memory_tables(
+        target_triple,
+        object_format,
+        output_path,
+        program_mir_bundle_path,
+        program_bundle,
+        layout_table,
+        integer_conversion_table,
+        pointer_table,
+        stack_slot_table,
+        ctx
+    );
 }
 
 func mir_native_backend_make_request_with_layout_and_conversion_tables(target_triple: str, object_format: str, output_path: str, program_mir_bundle_path: str, program_bundle: mir.MirProgramBundle[ctx], layout_table: layout.MirLayoutTable[ctx], integer_conversion_table: integer_conversion.MirIntegerConversionTable[ctx], ctx: &Arena) MirNativeBackendRequest[ctx] {
@@ -161,6 +180,13 @@ func mir_native_backend_request_is_valid(request: MirNativeBackendRequest[ctx], 
     ) == 0 {
         return 0;
     }
+    if stack_slot.mir_stack_slot_table_is_valid(
+        request.stack_slot_table,
+        request.layout_table,
+        ctx
+    ) == 0 {
+        return 0;
+    }
     return 1;
 }
 
@@ -233,6 +259,14 @@ func mir_serialize_native_backend_request(request: MirNativeBackendRequest[ctx],
         output,
         pointer.mir_serialize_pointer_table_for_request(
             request.pointer_table,
+            request.layout_table,
+            ctx
+        )
+    );
+    output = std.Concat(
+        output,
+        stack_slot.mir_serialize_stack_slot_table_for_request(
+            request.stack_slot_table,
             request.layout_table,
             ctx
         )

@@ -60,6 +60,9 @@ jobs:
       - name: Phase 14 bounded typed pointers and nullability
         run: just guard-cranelift-phase14-pointer-contract
 
+      - name: Phase 14 deterministic stack slots and addressable locals
+        run: just guard-cranelift-phase14-stack-slot-contract
+
       - name: Upload Gust build outputs
         uses: actions/upload-artifact@v4
         with:

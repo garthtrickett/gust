@@ -4599,6 +4599,454 @@ fn print_phase14_pointer_witness(
     Ok(())
 }
 
+
+const PHASE14_STACK_SLOT_TABLE_FORMAT_V1: &str =
+    "gust.compiler_stack_slot_table.v1";
+
+#[derive(Debug)]
+struct Phase14RequestStackSlot {
+    slot_id: String,
+    target_id: String,
+    storage_class: String,
+    local_id: i64,
+    contained_type_id: String,
+    contained_layout_id: String,
+    size: usize,
+    alignment: usize,
+    initialization_state: String,
+    source_origin: String,
+    lifetime_region: String,
+    mutability: String,
+    address_escape_policy: String,
+    resource_kind: String,
+}
+
+#[derive(Debug)]
+struct Phase14RequestStackSlotOperation {
+    operation_id: String,
+    operation_name: String,
+    target_id: String,
+    kind: String,
+    slot_id: String,
+    source_slot_id: String,
+    destination_slot_id: String,
+    contained_type_id: String,
+    contained_layout_id: String,
+    context_kind: String,
+    input_value: i64,
+    expect_success: bool,
+    expected_value: i64,
+    expected_reason_code: String,
+}
+
+#[derive(Debug)]
+struct Phase14RequestStackSlotTable {
+    format: String,
+    target_id: String,
+    target_triple: String,
+    lifetime_policy: String,
+    address_escape_policy: String,
+    slots: Vec<Phase14RequestStackSlot>,
+    operations: Vec<Phase14RequestStackSlotOperation>,
+}
+
+impl Phase14RequestStackSlotTable {
+    fn legacy_empty(target_triple: &str) -> Self {
+        Self {
+            format: String::new(),
+            target_id: String::new(),
+            target_triple: target_triple.to_string(),
+            lifetime_policy: String::new(),
+            address_escape_policy: String::new(),
+            slots: Vec::new(),
+            operations: Vec::new(),
+        }
+    }
+}
+
+fn phase14_stack_slot_storage_class_is_valid(value: &str) -> bool {
+    matches!(value, "addressable_local" | "compiler_temporary")
+}
+
+fn phase14_stack_slot_initialization_state_is_valid(value: &str) -> bool {
+    matches!(value, "uninitialized" | "initialized")
+}
+
+fn phase14_stack_slot_mutability_is_valid(value: &str) -> bool {
+    matches!(value, "immutable" | "mutable")
+}
+
+fn phase14_stack_slot_context_is_valid(value: &str) -> bool {
+    matches!(value, "local" | "branch" | "loop" | "aggregate")
+}
+
+fn phase14_stack_slot_rejection_reason(value: &str) -> Option<&'static str> {
+    match value {
+        "uninitialized_read" => Some("stack_slot_uninitialized_read"),
+        "dynamic_stack_allocation" => Some("stack_slot_dynamic_allocation_unsupported"),
+        "variable_sized_slot" => Some("stack_slot_variable_size_unsupported"),
+        "resource_bearing_local" => Some("stack_slot_resource_destructor_deferred"),
+        "unsupported_aliasing" => Some("stack_slot_aliasing_unsupported"),
+        _ => None,
+    }
+}
+
+fn phase14_stack_slot_operation_kind_is_valid(value: &str) -> bool {
+    matches!(
+        value,
+        "declare"
+            | "address_of"
+            | "initialize"
+            | "assign"
+            | "read"
+            | "bounded_aggregate_copy"
+    )
+}
+
+fn phase14_stack_slot_identity(slot: &Phase14RequestStackSlot) -> String {
+    format!(
+        "stack_slot:v1:target={}:class={}:local={}:type={}:layout={}:size={}:align={}:origin={}:lifetime={}",
+        slot.target_id,
+        slot.storage_class,
+        slot.local_id,
+        slot.contained_type_id,
+        slot.contained_layout_id,
+        slot.size,
+        slot.alignment,
+        slot.source_origin,
+        slot.lifetime_region,
+    )
+}
+
+fn phase14_stack_slot_operation_identity(
+    operation: &Phase14RequestStackSlotOperation,
+) -> String {
+    format!(
+        "stack_slot_operation:v1:target={}:kind={}:name={}:slot={}:source={}:destination={}",
+        operation.target_id,
+        operation.kind,
+        operation.operation_name,
+        operation.slot_id,
+        operation.source_slot_id,
+        operation.destination_slot_id,
+    )
+}
+
+fn phase14_stack_aggregate_layout_id(
+    target_id: &str,
+    element_layout_id: &str,
+    size: usize,
+    alignment: usize,
+) -> String {
+    format!(
+        "stack_aggregate_layout:v1:target={target_id}:element={element_layout_id}:count=2:size={size}:align={alignment}"
+    )
+}
+
+#[derive(Debug)]
+struct Phase14StackSlotEvaluation {
+    success: bool,
+    value: i64,
+    reason_code: String,
+}
+
+fn phase14_evaluate_stack_slot_operation(
+    operation: &Phase14RequestStackSlotOperation,
+) -> Phase14StackSlotEvaluation {
+    if !phase14_stack_slot_operation_kind_is_valid(&operation.kind) {
+        return Phase14StackSlotEvaluation {
+            success: false,
+            value: 0,
+            reason_code: "stack_slot_operation_unsupported".to_string(),
+        };
+    }
+    Phase14StackSlotEvaluation {
+        success: true,
+        value: if matches!(operation.kind.as_str(), "declare" | "address_of") {
+            1
+        } else {
+            operation.input_value
+        },
+        reason_code: "stack_slot_operation_valid".to_string(),
+    }
+}
+
+fn parse_phase14_request_stack_slot_table(
+    cursor: &mut Phase10TextCursor<'_>,
+    request_target_triple: &str,
+    layout_table: &Phase14RequestLayoutTable,
+) -> Result<Phase14RequestStackSlotTable, Box<dyn Error>> {
+    let parse_stage = Phase10BackendRequestStage::RequestParse;
+    let parse_kind = Phase10BackendRequestFailureKind::InvalidRequest;
+    let format_name = cursor
+        .take_field("stack_slot_table_format", false, parse_stage, parse_kind)?
+        .to_string();
+    let target_id = cursor
+        .take_field("stack_slot_target_id", false, parse_stage, parse_kind)?
+        .to_string();
+    let target_triple = cursor
+        .take_field("stack_slot_target_triple", false, parse_stage, parse_kind)?
+        .to_string();
+    let lifetime_policy = cursor
+        .take_field("stack_slot_lifetime_policy", false, parse_stage, parse_kind)?
+        .to_string();
+    let address_escape_policy = cursor
+        .take_field(
+            "stack_slot_address_escape_policy",
+            false,
+            parse_stage,
+            parse_kind,
+        )?
+        .to_string();
+
+    let slot_count = cursor.take_usize_field("stack_slot_count", parse_stage, parse_kind)?;
+    let mut slots = Vec::with_capacity(slot_count);
+    for index in 0..slot_count {
+        let prefix = format!("stack_slot_{index}");
+        slots.push(Phase14RequestStackSlot {
+            slot_id: cursor.take_field(&format!("{prefix}_id"), false, parse_stage, parse_kind)?.to_string(),
+            target_id: cursor.take_field(&format!("{prefix}_target_id"), false, parse_stage, parse_kind)?.to_string(),
+            storage_class: cursor.take_field(&format!("{prefix}_storage_class"), false, parse_stage, parse_kind)?.to_string(),
+            local_id: cursor.take_i64_field(&format!("{prefix}_local_id"), parse_stage, parse_kind)?,
+            contained_type_id: cursor.take_field(&format!("{prefix}_contained_type_id"), false, parse_stage, parse_kind)?.to_string(),
+            contained_layout_id: cursor.take_field(&format!("{prefix}_contained_layout_id"), false, parse_stage, parse_kind)?.to_string(),
+            size: cursor.take_usize_field(&format!("{prefix}_size"), parse_stage, parse_kind)?,
+            alignment: cursor.take_usize_field(&format!("{prefix}_alignment"), parse_stage, parse_kind)?,
+            initialization_state: cursor.take_field(&format!("{prefix}_initialization_state"), false, parse_stage, parse_kind)?.to_string(),
+            source_origin: cursor.take_field(&format!("{prefix}_source_origin"), false, parse_stage, parse_kind)?.to_string(),
+            lifetime_region: cursor.take_field(&format!("{prefix}_lifetime_region"), false, parse_stage, parse_kind)?.to_string(),
+            mutability: cursor.take_field(&format!("{prefix}_mutability"), false, parse_stage, parse_kind)?.to_string(),
+            address_escape_policy: cursor.take_field(&format!("{prefix}_address_escape_policy"), false, parse_stage, parse_kind)?.to_string(),
+            resource_kind: cursor.take_field(&format!("{prefix}_resource_kind"), false, parse_stage, parse_kind)?.to_string(),
+        });
+    }
+
+    let operation_count = cursor.take_usize_field(
+        "stack_slot_operation_count",
+        parse_stage,
+        parse_kind,
+    )?;
+    let mut operations = Vec::with_capacity(operation_count);
+    for index in 0..operation_count {
+        let prefix = format!("stack_slot_operation_{index}");
+        operations.push(Phase14RequestStackSlotOperation {
+            operation_id: cursor.take_field(&format!("{prefix}_id"), false, parse_stage, parse_kind)?.to_string(),
+            operation_name: cursor.take_field(&format!("{prefix}_name"), false, parse_stage, parse_kind)?.to_string(),
+            target_id: cursor.take_field(&format!("{prefix}_target_id"), false, parse_stage, parse_kind)?.to_string(),
+            kind: cursor.take_field(&format!("{prefix}_kind"), false, parse_stage, parse_kind)?.to_string(),
+            slot_id: cursor.take_field(&format!("{prefix}_slot_id"), false, parse_stage, parse_kind)?.to_string(),
+            source_slot_id: cursor.take_field(&format!("{prefix}_source_slot_id"), true, parse_stage, parse_kind)?.to_string(),
+            destination_slot_id: cursor.take_field(&format!("{prefix}_destination_slot_id"), true, parse_stage, parse_kind)?.to_string(),
+            contained_type_id: cursor.take_field(&format!("{prefix}_contained_type_id"), false, parse_stage, parse_kind)?.to_string(),
+            contained_layout_id: cursor.take_field(&format!("{prefix}_contained_layout_id"), false, parse_stage, parse_kind)?.to_string(),
+            context_kind: cursor.take_field(&format!("{prefix}_context_kind"), false, parse_stage, parse_kind)?.to_string(),
+            input_value: cursor.take_i64_field(&format!("{prefix}_input_value"), parse_stage, parse_kind)?,
+            expect_success: phase14_parse_bool_field(cursor, &format!("{prefix}_expect_success"))?,
+            expected_value: cursor.take_i64_field(&format!("{prefix}_expected_value"), parse_stage, parse_kind)?,
+            expected_reason_code: cursor.take_field(&format!("{prefix}_expected_reason_code"), false, parse_stage, parse_kind)?.to_string(),
+        });
+    }
+
+    let table = Phase14RequestStackSlotTable {
+        format: format_name,
+        target_id,
+        target_triple,
+        lifetime_policy,
+        address_escape_policy,
+        slots,
+        operations,
+    };
+    validate_phase14_request_stack_slot_table(
+        &table,
+        request_target_triple,
+        layout_table,
+    )?;
+    Ok(table)
+}
+
+fn validate_phase14_request_stack_slot_table(
+    table: &Phase14RequestStackSlotTable,
+    request_target_triple: &str,
+    layout_table: &Phase14RequestLayoutTable,
+) -> Result<(), Box<dyn Error>> {
+    let stage = Phase10BackendRequestStage::CanonicalMirValidation;
+    let kind = Phase10BackendRequestFailureKind::InvalidCanonicalMir;
+    if table.format != PHASE14_STACK_SLOT_TABLE_FORMAT_V1 {
+        return Err(phase10_backend_request_error(stage, kind, "stack-slot table format mismatch"));
+    }
+    if table.target_triple != request_target_triple
+        || table.target_triple != layout_table.target.target_triple
+        || table.target_id != layout_table.target.target_id
+    {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::TargetValidation,
+            Phase10BackendRequestFailureKind::TargetMismatch,
+            "request target, layout target, and stack-slot target disagree",
+        ));
+    }
+    if table.lifetime_policy != "lexical_function_region"
+        || table.address_escape_policy != "no_escape_outside_declared_lifetime"
+    {
+        return Err(phase10_backend_request_error(stage, kind, "stack_slot_address_escape_unsupported"));
+    }
+    if table.slots.len() != 4 {
+        return Err(phase10_backend_request_error(stage, kind, format!("stack-slot inventory expected 4 slots, got {}", table.slots.len())));
+    }
+    let Some(i32_layout) = layout_table.layouts.iter().find(|layout| layout.type_id == "type:gust:i32") else {
+        return Err(phase10_backend_request_error(stage, kind, "stack-slot table requires compiler-owned i32 layout"));
+    };
+    let mut slot_ids = std::collections::HashSet::new();
+    for slot in &table.slots {
+        if slot.lifetime_region.is_empty() {
+            return Err(phase10_backend_request_error(stage, kind, "stack_slot_lifetime_invalid"));
+        }
+        if slot.alignment == 0
+            || !slot.alignment.is_power_of_two()
+            || slot.alignment > slot.size
+            || (slot.contained_type_id == "type:gust:i32" && slot.alignment != i32_layout.alignment)
+        {
+            return Err(phase10_backend_request_error(stage, kind, "stack_slot_under_aligned"));
+        }
+        if slot.slot_id != phase14_stack_slot_identity(slot)
+            || slot.target_id != table.target_id
+            || !phase14_stack_slot_storage_class_is_valid(&slot.storage_class)
+            || !phase14_stack_slot_initialization_state_is_valid(&slot.initialization_state)
+            || !phase14_stack_slot_mutability_is_valid(&slot.mutability)
+            || slot.address_escape_policy != table.address_escape_policy
+            || slot.resource_kind != "non_resource"
+            || slot.size == 0
+            || slot.alignment == 0
+            || !slot.alignment.is_power_of_two()
+            || slot.alignment > slot.size
+            || slot.source_origin.is_empty()
+            || slot.lifetime_region.is_empty()
+        {
+            return Err(phase10_backend_request_error(stage, kind, format!("invalid compiler-owned stack slot: {}", slot.slot_id)));
+        }
+        if !slot_ids.insert(slot.slot_id.clone()) {
+            return Err(phase10_backend_request_error(stage, kind, "stack_slot_duplicate_identity"));
+        }
+        if slot.contained_type_id == "type:gust:aggregate:i32x2" {
+            let expected_layout = phase14_stack_aggregate_layout_id(
+                &table.target_id,
+                &i32_layout.layout_id,
+                i32_layout.size * 2,
+                i32_layout.alignment,
+            );
+            if slot.contained_layout_id != expected_layout
+                || slot.size != i32_layout.size * 2
+                || slot.alignment != i32_layout.alignment
+            {
+                return Err(phase10_backend_request_error(stage, kind, "invalid compiler-owned aggregate stack-slot layout"));
+            }
+        } else {
+            let Some(contained_layout) = layout_table.layouts.iter().find(|layout| layout.layout_id == slot.contained_layout_id) else {
+                return Err(phase10_backend_request_error(stage, kind, "stack_slot_layout_id_mismatch"));
+            };
+            if contained_layout.type_id != slot.contained_type_id
+                || contained_layout.size != slot.size
+                || contained_layout.alignment != slot.alignment
+            {
+                return Err(phase10_backend_request_error(stage, kind, "stack_slot_type_mismatch"));
+            }
+        }
+    }
+    if table.operations.len() != 11 {
+        return Err(phase10_backend_request_error(stage, kind, format!("stack-slot operation inventory expected 11 operations, got {}", table.operations.len())));
+    }
+    let mut operation_ids = std::collections::HashSet::new();
+    for operation in &table.operations {
+        if let Some(reason_code) = phase14_stack_slot_rejection_reason(&operation.kind) {
+            return Err(phase10_backend_request_error(stage, kind, reason_code));
+        }
+        if operation.operation_id != phase14_stack_slot_operation_identity(operation)
+            || operation.target_id != table.target_id
+            || !phase14_stack_slot_operation_kind_is_valid(&operation.kind)
+            || !phase14_stack_slot_context_is_valid(&operation.context_kind)
+            || !slot_ids.contains(&operation.slot_id)
+        {
+            return Err(phase10_backend_request_error(stage, kind, format!("invalid canonical stack-slot operation: {}", operation.operation_name)));
+        }
+        if !operation_ids.insert(operation.operation_id.clone()) {
+            return Err(phase10_backend_request_error(stage, kind, "duplicate canonical stack-slot operation identity"));
+        }
+        for slot_id in [&operation.source_slot_id, &operation.destination_slot_id] {
+            if !slot_id.is_empty() && !slot_ids.contains(slot_id) {
+                return Err(phase10_backend_request_error(stage, kind, format!("stack-slot operation references unknown slot: {slot_id}")));
+            }
+        }
+        let Some(slot) = table.slots.iter().find(|slot| slot.slot_id == operation.slot_id) else {
+            return Err(phase10_backend_request_error(stage, kind, "stack-slot operation lost its selected slot"));
+        };
+        if operation.contained_type_id != slot.contained_type_id
+            || operation.contained_layout_id != slot.contained_layout_id
+        {
+            return Err(phase10_backend_request_error(stage, kind, "stack-slot operation type or layout ID mismatch"));
+        }
+        let evaluation = phase14_evaluate_stack_slot_operation(operation);
+        if evaluation.success != operation.expect_success
+            || evaluation.value != operation.expected_value
+            || evaluation.reason_code != operation.expected_reason_code
+        {
+            return Err(phase10_backend_request_error(stage, kind, format!("stack-slot operation expectation mismatch: {}", operation.operation_name)));
+        }
+    }
+    Ok(())
+}
+
+fn phase14_stack_slot_witness_text(
+    request: &Phase10BackendRequest,
+) -> Result<String, Box<dyn Error>> {
+    let table = &request.stack_slot_table;
+    validate_phase14_request_stack_slot_table(table, &request.target_triple, &request.layout_table)?;
+    let mut output = String::new();
+    output.push_str("stack_slot_status: valid\n");
+    output.push_str(&format!("stack_slot_target: {}\n", table.target_triple));
+    output.push_str(&format!("stack_slot_target_id: {}\n", table.target_id));
+    output.push_str(&format!("stack_slot_lifetime_policy: {}\n", table.lifetime_policy));
+    output.push_str(&format!("stack_slot_address_escape_policy: {}\n", table.address_escape_policy));
+    for slot in &table.slots {
+        output.push_str(&format!(
+            "stack_slot: {} class={} type={} layout={} size={} alignment={} initialization={} origin={} lifetime={} mutability={} escape={}\n",
+            slot.slot_id,
+            slot.storage_class,
+            slot.contained_type_id,
+            slot.contained_layout_id,
+            slot.size,
+            slot.alignment,
+            slot.initialization_state,
+            slot.source_origin,
+            slot.lifetime_region,
+            slot.mutability,
+            slot.address_escape_policy,
+        ));
+    }
+    for operation in &table.operations {
+        let evaluation = phase14_evaluate_stack_slot_operation(operation);
+        output.push_str(&format!(
+            "stack_slot_operation: {} kind={} slot={} source={} destination={} status={} value={} reason={} context={}\n",
+            operation.operation_name,
+            operation.kind,
+            operation.slot_id,
+            operation.source_slot_id,
+            operation.destination_slot_id,
+            if evaluation.success { "success" } else { "failure" },
+            evaluation.value,
+            evaluation.reason_code,
+            operation.context_kind,
+        ));
+    }
+    Ok(output)
+}
+
+fn print_phase14_stack_slot_witness(
+    request_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let request = phase14_load_primitive_layout_request(request_path)?;
+    print!("{}", phase14_stack_slot_witness_text(&request)?);
+    Ok(())
+}
+
 #[derive(Debug)]
 struct Phase10BackendRequest {
     target_triple: String,
@@ -4608,6 +5056,7 @@ struct Phase10BackendRequest {
     layout_table: Phase14RequestLayoutTable,
     integer_conversion_table: Phase14RequestIntegerConversionTable,
     pointer_table: Phase14RequestPointerTable,
+    stack_slot_table: Phase14RequestStackSlotTable,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -4727,6 +5176,15 @@ fn parse_phase10_backend_request(
     } else {
         Phase14RequestPointerTable::legacy_empty(&target_triple)
     };
+    let stack_slot_table = if cursor.has_remaining() {
+        parse_phase14_request_stack_slot_table(
+            &mut cursor,
+            &target_triple,
+            &layout_table,
+        )?
+    } else {
+        Phase14RequestStackSlotTable::legacy_empty(&target_triple)
+    };
     cursor.finish(stage, kind)?;
 
     if !output_path.is_absolute() {
@@ -4759,6 +5217,7 @@ fn parse_phase10_backend_request(
         layout_table,
         integer_conversion_table,
         pointer_table,
+        stack_slot_table,
     })
 }
 
@@ -8992,6 +9451,15 @@ fn run() -> Result<(), Box<dyn Error>> {
             }
             print_phase14_pointer_witness(Path::new(&request_path))
         }
+        "phase14-stack-slot-witness" => {
+            let Some(request_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            print_phase14_stack_slot_witness(Path::new(&request_path))
+        }
         "phase10-backend-request-compile" => {
             let Some(request_path) = args.next() else {
                 return Err(usage_error().into());
@@ -10208,6 +10676,7 @@ fn usage_error() -> IoError {
             "  gust-cranelift-experiment phase14-primitive-validate-value <request.native> <type_id> <value>\n",
             "  gust-cranelift-experiment phase14-integer-conversion-witness <request.native>\n",
             "  gust-cranelift-experiment phase14-pointer-witness <request.native>\n",
+            "  gust-cranelift-experiment phase14-stack-slot-witness <request.native>\n",
             "  gust-cranelift-experiment phase10-backend-request-compile <request.native>\n",
             "  gust-cranelift-experiment phase10-backend-request-validate <request.native>\n",
             "  gust-cranelift-experiment phase10-driver-handshake\n",

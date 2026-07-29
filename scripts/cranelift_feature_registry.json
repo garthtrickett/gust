@@ -1,8 +1,8 @@
 {
   "schema": "scripts/cranelift_feature_registry.schema.json",
   "schema_version": 1,
-  "registry_version": 12,
-  "registry_status": "phase14_pointer_ready",
+  "registry_version": 13,
+  "registry_status": "phase14_stack_slot_ready",
   "current_phase": "phase14",
   "closed_phase_versions": {
     "phase11": "phase11_closed_registry_backed_feature_parity_migration",
@@ -1327,7 +1327,7 @@
   },
   "phase14_pointers": {
     "version": "phase14_bounded_typed_pointers_and_nullability_v1",
-    "status": "ready_for_patch14_5",
+    "status": "consumed_by_patch14_5",
     "authority_owner": "compiler/mir_pointer.gst",
     "pointer_table_format": "gust.compiler_pointer_table.v1",
     "primary_level2_target": "x86_64-unknown-linux-gnu",
@@ -1387,7 +1387,70 @@
       "target_required"
     ],
     "boundary_policy": "typed_pointer_identity_nullability_comparison_and_bounded_conversion_only_no_dereference_load_store_pointer_arithmetic_non_default_address_space_or_integer_pointer_cast",
-    "next_patch": "14.5"
+    "next_patch": "14.6"
+  },
+  "phase14_stack_slots": {
+    "version": "phase14_deterministic_stack_slots_and_addressable_locals_v1",
+    "status": "ready_for_patch14_6",
+    "authority_owner": "compiler/mir_stack_slot.gst",
+    "stack_slot_table_format": "gust.compiler_stack_slot_table.v1",
+    "primary_level2_target": "x86_64-unknown-linux-gnu",
+    "storage_classes": [
+      "ssa_only",
+      "addressable_local",
+      "compiler_temporary"
+    ],
+    "selected_slot_count_per_target": 4,
+    "operation_kinds": [
+      "declare",
+      "address_of",
+      "initialize",
+      "assign",
+      "read",
+      "bounded_aggregate_copy"
+    ],
+    "operation_count_per_target": 11,
+    "metadata_fields": [
+      "size",
+      "alignment",
+      "contained_type_id",
+      "contained_layout_id",
+      "initialization_state",
+      "source_origin",
+      "lifetime_region",
+      "mutability",
+      "address_escape_policy"
+    ],
+    "lifetime_policy": "lexical_function_region",
+    "address_escape_policy": "no_escape_outside_declared_lifetime",
+    "worker_layout_policy": "worker_validates_only_compiler_serialized_slot_and_layout_ids_and_never_infers_layout_from_source_text_or_local_names",
+    "migrated_entry_ids": [
+      "p14_stack_slot_addressable_locals"
+    ],
+    "focused_ci_family": "pointer-memory",
+    "level1_guard": "guard-cranelift-phase14-stack-slot-contract",
+    "level2_guard": "guard-cranelift-phase14-stack-slot-parity",
+    "composition_contexts": [
+      "addressable_scalars",
+      "initial_aggregates",
+      "branches",
+      "supported_loops"
+    ],
+    "negative_classes": [
+      "uninitialized_read",
+      "duplicate_slot",
+      "wrong_slot_type",
+      "under_aligned_slot",
+      "invalid_lifetime",
+      "escaping_address",
+      "layout_id_mismatch",
+      "dynamic_stack_allocation",
+      "variable_sized_slot",
+      "resource_bearing_local",
+      "unsupported_aliasing"
+    ],
+    "boundary_policy": "fixed_size_compiler_owned_stack_slots_only_no_dynamic_allocation_variable_sized_storage_escape_resource_destructors_or_unrestricted_aliasing",
+    "next_patch": "14.6"
   },
   "residual_snapshots": {
     "phase13": {
@@ -4166,7 +4229,8 @@
         "composition_case_ids": [
           "phase14_composition:declared_targets_primitive_layout",
           "phase14_composition:integer_conversions_with_layout_and_control_flow",
-          "phase14_composition:bounded_pointers_with_layout_conversion_and_control_flow"
+          "phase14_composition:bounded_pointers_with_layout_conversion_and_control_flow",
+          "phase14_composition:stack_slots_with_branches_loops_and_aggregate_copy"
         ],
         "differential_failure_fixture": "compiler/p14_target_dependent_conversions_deferred_source.gst",
         "composition_cases": [
@@ -4438,7 +4502,8 @@
         "differential_stderr_policy": "stable_bytes",
         "differential_side_effect_policy": "none",
         "composition_case_ids": [
-          "phase14_composition:bounded_pointers_with_layout_conversion_and_control_flow"
+          "phase14_composition:bounded_pointers_with_layout_conversion_and_control_flow",
+          "phase14_composition:stack_slots_with_branches_loops_and_aggregate_copy"
         ],
         "differential_failure_fixture": "compiler/p14_unsupported_pointer_arithmetic_source.gst",
         "composition_cases": [
@@ -4472,29 +4537,90 @@
       "parent": "phase13_residual:p14_aggregate_locals",
       "feature_family": "pointer_memory",
       "ci_family": "pointer-memory",
-      "status": "candidate_deferred",
-      "route_owner": "deferred",
+      "status": "migrated",
+      "route_owner": "generic_canonical_mir",
       "worker_capability_owner": "worker_pointer_memory_lowering",
       "diagnostic_owner": "canonical_mir_memory_verifier",
-      "source_fixture": "compiler/p14_stack_slot_addressable_locals_deferred_source.gst",
-      "canonical_mir_fixture": "none_rejected_before_canonical_MIR",
-      "differential_case_id": "phase14_opening:p14_stack_slot_addressable_locals",
-      "deferral_reason": "phase14_authority_p14_stack_slot_addressable_locals_awaits_bounded_capability_migration",
-      "future_destination_phase": "phase14",
-      "closure_version": "phase14_compiler_owned_layout_authority_v1",
+      "source_fixture": "compiler/phase14_stack_slot_addressable_source.gst",
+      "canonical_mir_fixture": "compiler/fixtures/native_backend_phase14_stack_slot_ingestion.mir",
+      "differential_case_id": "phase14_registry_differential:p14_stack_slot_addressable_locals",
+      "deferral_reason": "none_migrated",
+      "future_destination_phase": "none_migrated",
+      "closure_version": "phase14_deterministic_stack_slots_and_addressable_locals_v1",
       "evidence": {
         "opening_record_kind": "phase14_candidate",
         "declared_capability": "compiler_owned_stack_slots_and_addressable_locals",
         "planning_category": "stack_slots",
         "phase13_closure_dependency": "phase13_closed_deferred_registry_parity_expansion",
-        "behavior_policy": "primitive_layout_and_integer_conversion_only_other_phase14_capabilities_remain_deferred",
+        "behavior_policy": "deterministic_compiler_owned_stack_slots_migrated_through_canonical_MIR_and_native_request_transport",
         "phase14_1_authority": "compiler_owned_layout_authority_and_request_transport_available",
-        "phase14_3_boundary": "not_selected_by_signed_unsigned_width_conversion_patch"
+        "phase14_2_contract": "phase14_declared_targets_and_primitive_layout_v1",
+        "phase14_4_contract": "phase14_bounded_typed_pointers_and_nullability_v1",
+        "phase14_5_contract": "phase14_deterministic_stack_slots_and_addressable_locals_v1",
+        "storage_classes": [
+          "ssa_only",
+          "addressable_local",
+          "compiler_temporary"
+        ],
+        "selected_operation_kinds": [
+          "declare",
+          "address_of",
+          "initialize",
+          "assign",
+          "read",
+          "bounded_aggregate_copy"
+        ],
+        "lifetime_policy": "lexical_function_region",
+        "address_escape_policy": "no_escape_outside_declared_lifetime",
+        "focused_source_fixtures": [
+          "compiler/phase14_stack_slot_addressable_source.gst",
+          "compiler/phase14_stack_slot_aggregate_source.gst"
+        ],
+        "negative_source_fixtures": [
+          "compiler/p14_stack_slot_uninitialized_read_source.gst",
+          "compiler/p14_stack_slot_duplicate_slot_source.gst",
+          "compiler/p14_stack_slot_wrong_slot_type_source.gst",
+          "compiler/p14_stack_slot_under_aligned_source.gst",
+          "compiler/p14_stack_slot_invalid_lifetime_source.gst",
+          "compiler/p14_stack_slot_escaping_address_source.gst",
+          "compiler/p14_stack_slot_layout_id_mismatch_source.gst",
+          "compiler/p14_stack_slot_dynamic_stack_allocation_source.gst",
+          "compiler/p14_stack_slot_variable_sized_slot_source.gst",
+          "compiler/p14_stack_slot_resource_bearing_local_source.gst",
+          "compiler/p14_stack_slot_unsupported_aliasing_source.gst"
+        ],
+        "malformed_canonical_mir_fixture": "compiler/fixtures/native_backend_phase14_stack_slot_malformed.mir",
+        "positive_expectation": "exit_52_phase14_stack_slot_addressable",
+        "individual_evidence_guard": "guard-cranelift-phase14-stack-slot-parity",
+        "differential_stderr_policy": "stable_bytes",
+        "differential_side_effect_policy": "none",
+        "composition_case_ids": [
+          "phase14_composition:stack_slots_with_branches_loops_and_aggregate_copy"
+        ],
+        "differential_failure_fixture": "compiler/p14_stack_slot_uninitialized_read_source.gst",
+        "composition_cases": [
+          {
+            "id": "phase14_composition:stack_slots_with_branches_loops_and_aggregate_copy",
+            "owner_entry_id": "p14_stack_slot_addressable_locals",
+            "ci_family": "pointer-memory",
+            "source_fixture": "compiler/phase14_stack_slot_composition_source.gst",
+            "positive_expectation": "exit_53_phase14_stack_slot_composition",
+            "stderr_policy": "stable_bytes",
+            "side_effect_policy": "none",
+            "failure_fixture": "compiler/p14_stack_slot_escaping_address_source.gst",
+            "covers_entry_ids": [
+              "p14_stack_slot_addressable_locals",
+              "p14_pointer_nullability_model",
+              "p14_primitive_scalar_layout",
+              "p14_target_layout_model"
+            ]
+          }
+        ]
       },
       "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
-      "current_failure_stage": "before_driver_discovery",
+      "current_failure_stage": "none_supported",
       "positive_future_fixture": "compiler/future/p14_stack_slot_addressable_locals_source.gst",
-      "negative_current_fixture": "compiler/p14_stack_slot_addressable_locals_deferred_source.gst"
+      "negative_current_fixture": "compiler/p14_stack_slot_uninitialized_read_source.gst"
     },
     {
       "id": "p14_typed_load_store_memory_access",
@@ -4735,7 +4861,8 @@
         "composition_case_ids": [
           "phase14_composition:declared_targets_primitive_layout",
           "phase14_composition:integer_conversions_with_layout_and_control_flow",
-          "phase14_composition:bounded_pointers_with_layout_conversion_and_control_flow"
+          "phase14_composition:bounded_pointers_with_layout_conversion_and_control_flow",
+          "phase14_composition:stack_slots_with_branches_loops_and_aggregate_copy"
         ],
         "differential_failure_fixture": "compiler/p14_target_dependent_conversions_deferred_source.gst",
         "composition_cases": [],

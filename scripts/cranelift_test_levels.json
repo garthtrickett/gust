@@ -4,17 +4,17 @@
     "1": {
       "name": "contract-fast",
       "ci_owner": "PR Fast contract job",
-      "policy": "seconds; Phase 12.5 and Phase 13 semantic closure ownership, Phase 14 opening inventory, compiler-owned layout authority, declared-target and primitive-layout contracts, signed/unsigned/width-conversion contracts, bounded pointer/nullability contracts, schema, traceability, route/fallback boundaries, generated projections, and lightweight closure summaries"
+      "policy": "seconds; Phase 12.5 and Phase 13 semantic closure ownership, Phase 14 opening inventory, compiler-owned layout authority, declared-target and primitive-layout contracts, signed/unsigned/width-conversion contracts, bounded pointer/nullability contracts, deterministic stack-slot/addressable-local contracts, schema, traceability, route/fallback boundaries, generated projections, and lightweight closure summaries"
     },
     "2": {
       "name": "differential-family",
       "ci_owner": "PR Fast registry-derived ten-family matrix",
-      "policy": "focused MIR-to-C versus Cranelift execution, byte-identical MIR-to-C emission, registry-owned composition cases, stable side effects, migrated Phase 13 evidence, primary-host Phase 14 primitive-layout parity, target-aware integer-conversion parity, and bounded pointer/nullability parity"
+      "policy": "focused MIR-to-C versus Cranelift execution, byte-identical MIR-to-C emission, registry-owned composition cases, stable side effects, migrated Phase 13 evidence, primary-host Phase 14 primitive-layout parity, target-aware integer-conversion parity, bounded pointer/nullability parity, and deterministic stack-slot/addressable-local parity"
     },
     "3": {
       "name": "historical-full",
       "ci_owner": "Cranelift Historical Full scheduled/manual workflow",
-      "policy": "full Phase 9-14 history, native/object/link/reproducibility, packaging, platform evidence, all declared-target primitive-layout witnesses, all declared-target integer-conversion witnesses, and all declared-target pointer witnesses"
+      "policy": "full Phase 9-14 history, native/object/link/reproducibility, packaging, platform evidence, all declared-target primitive-layout witnesses, all declared-target integer-conversion witnesses, all declared-target pointer witnesses, and all declared-target stack-slot witnesses"
     }
   },
   "guards": {
@@ -224,6 +224,9 @@
     "guard-cranelift-registry-projection": 1,
     "guard-cranelift-registry-schema": 1,
     "guard-cranelift-return-int-native-smoke": 3,
-    "guard-cranelift-route-architecture-contract": 1
+    "guard-cranelift-route-architecture-contract": 1,
+    "guard-cranelift-phase14-stack-slot-contract": 1,
+    "guard-cranelift-phase14-stack-slot-parity": 2,
+    "guard-cranelift-phase14-pointer-memory-parity": 2
   }
 }
