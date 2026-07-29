@@ -21,7 +21,8 @@ TOP_FIELDS = {
     "current_phase", "closed_phase_versions", "closure_snapshots",
     "opening_snapshots", "phase14_layout_authority",
     "phase14_primitive_layout", "phase14_integer_conversions",
-    "phase14_pointers", "phase14_stack_slots", "residual_snapshots",
+    "phase14_pointers", "phase14_stack_slots", "phase14_memory_accesses",
+    "residual_snapshots",
     "planning_categories", "supported_values", "legacy_views", "entries",
 }
 ENTRY_FIELDS = {
@@ -506,7 +507,7 @@ PHASE14_LAYOUT_CONSUMER_FIELDS = {
 PHASE14_LAYOUT_AUTHORITY_VERSION = (
     "phase14_compiler_owned_layout_authority_v1"
 )
-PHASE14_LAYOUT_AUTHORITY_STATUS = "consumed_by_patch14_4"
+PHASE14_LAYOUT_AUTHORITY_STATUS = "consumed_by_patch14_6"
 PHASE14_LAYOUT_TABLE_FORMAT = "gust.compiler_layout_table.v2"
 PHASE14_LAYOUT_TYPES = (
     "MirTargetLayout", "MirTypeLayout", "MirFieldLayout",
@@ -538,8 +539,9 @@ PHASE14_LAYOUT_REQUEST_POLICY = (
     "without_selecting_layout"
 )
 PHASE14_LAYOUT_BEHAVIOR_POLICY = (
-    "authority_transport_primitive_layout_integer_conversion_and_bounded_"
-    "pointer_consumption_no_load_store_or_aggregate_abi_migration"
+    "authority_transport_primitive_layout_integer_conversion_bounded_pointer_"
+    "stack_slot_and_typed_memory_access_consumption_no_string_array_struct_"
+    "enum_or_aggregate_abi_migration"
 )
 
 PHASE14_PRIMITIVE_FIELDS = {
@@ -660,7 +662,7 @@ PHASE14_POINTER_FIELDS = {
 PHASE14_POINTER_VERSION = (
     "phase14_bounded_typed_pointers_and_nullability_v1"
 )
-PHASE14_POINTER_STATUS = "consumed_by_patch14_5"
+PHASE14_POINTER_STATUS = "consumed_by_patch14_6"
 PHASE14_POINTER_TABLE_FORMAT = "gust.compiler_pointer_table.v1"
 PHASE14_POINTER_MIGRATED_IDS = ("p14_pointer_nullability_model",)
 PHASE14_POINTER_OPERATION_KINDS = (
@@ -695,7 +697,7 @@ PHASE14_STACK_SLOT_FIELDS = {
 PHASE14_STACK_SLOT_VERSION = (
     "phase14_deterministic_stack_slots_and_addressable_locals_v1"
 )
-PHASE14_STACK_SLOT_STATUS = "ready_for_patch14_6"
+PHASE14_STACK_SLOT_STATUS = "consumed_by_patch14_6"
 PHASE14_STACK_SLOT_TABLE_FORMAT = "gust.compiler_stack_slot_table.v1"
 PHASE14_STACK_SLOT_MIGRATED_IDS = ("p14_stack_slot_addressable_locals",)
 PHASE14_STACK_SLOT_STORAGE_CLASSES = (
@@ -720,6 +722,44 @@ PHASE14_STACK_SLOT_NEGATIVE_CLASSES = (
     "layout_id_mismatch", "dynamic_stack_allocation",
     "variable_sized_slot", "resource_bearing_local",
     "unsupported_aliasing",
+)
+
+PHASE14_MEMORY_ACCESS_FIELDS = {
+    "version", "status", "authority_owner", "memory_access_table_format",
+    "primary_level2_target", "selected_type_ids", "operation_kinds",
+    "operation_count_per_target", "metadata_fields",
+    "natural_alignment_policy", "unaligned_policy", "zero_sized_policy",
+    "known_null_policy", "initialization_policy", "overlap_policy",
+    "worker_lowering_policy", "migrated_entry_ids", "focused_ci_family",
+    "level1_guard", "level2_guard", "composition_contexts",
+    "negative_classes", "poisoned_driver_policy",
+    "output_preservation_policy", "boundary_policy", "next_patch",
+}
+PHASE14_MEMORY_ACCESS_VERSION = "phase14_typed_load_store_memory_access_v1"
+PHASE14_MEMORY_ACCESS_STATUS = "ready_for_patch14_7"
+PHASE14_MEMORY_ACCESS_TABLE_FORMAT = "gust.compiler_memory_access_table.v1"
+PHASE14_MEMORY_ACCESS_MIGRATED_IDS = ("p14_typed_load_store_memory_access",)
+PHASE14_MEMORY_ACCESS_TYPE_IDS = ("type:gust:i32",)
+PHASE14_MEMORY_ACCESS_OPERATION_KINDS = (
+    "load", "store", "aggregate_copy", "layout_offset",
+)
+PHASE14_MEMORY_ACCESS_METADATA_FIELDS = (
+    "accessed_type_id", "accessed_layout_id", "byte_width",
+    "required_alignment", "origin_kind", "origin_id", "origin_slot_id",
+    "origin_mutability", "origin_nullability", "lifetime_region",
+    "source_file", "source_line", "source_column", "offset_kind",
+    "offset_layout_id", "element_index", "source_offset",
+    "destination_offset",
+)
+PHASE14_MEMORY_ACCESS_CONTEXTS = (
+    "stack_slot_load_store", "non_null_pointer_load_store",
+    "compiler_element_offset", "bounded_nonoverlap_copy",
+)
+PHASE14_MEMORY_ACCESS_NEGATIVE_CLASSES = (
+    "wrong_width", "wrong_alignment", "wrong_pointee_type",
+    "immutable_store", "invalid_layout_id", "out_of_lifetime",
+    "unsupported_overlap", "known_null", "read_before_write",
+    "unaligned", "zero_sized",
 )
 
 
@@ -1225,8 +1265,8 @@ def validate_phase14_layout_authority_structure(registry):
         "Phase 14 layout authority behavior boundary drifted",
     )
     require(
-        authority["next_patch"] == "14.5",
-        "Phase 14 layout authority next patch must be 14.5",
+        authority["next_patch"] == "14.7",
+        "Phase 14 layout authority next patch must be 14.7",
     )
     return authority
 
@@ -1518,8 +1558,8 @@ def validate_phase14_pointer_structure(registry):
         tuple(contract["negative_classes"]) == PHASE14_POINTER_NEGATIVE_CLASSES,
         "Phase 14 pointer negative inventory drifted",
     )
-    require(contract["next_patch"] == "14.6",
-            "Phase 14 pointer next patch must be 14.6")
+    require(contract["next_patch"] == "14.7",
+            "Phase 14 pointer next patch must be 14.7")
     return contract
 
 
@@ -1577,8 +1617,75 @@ def validate_phase14_stack_slot_structure(registry):
         "Phase 14 stack-slot composition or negative inventory drifted",
     )
     text(contract["boundary_policy"], "phase14_stack_slots.boundary_policy")
-    require(contract["next_patch"] == "14.6",
-            "Phase 14 stack-slot next patch must be 14.6")
+    require(contract["next_patch"] == "14.7",
+            "Phase 14 stack-slot next patch must be 14.7")
+    return contract
+
+
+def validate_phase14_memory_access_structure(registry):
+    contract = registry["phase14_memory_accesses"]
+    require(
+        isinstance(contract, dict) and set(contract) == PHASE14_MEMORY_ACCESS_FIELDS,
+        "Phase 14 memory-access contract fields drifted",
+    )
+    require(
+        contract["version"] == PHASE14_MEMORY_ACCESS_VERSION
+        and contract["status"] == PHASE14_MEMORY_ACCESS_STATUS,
+        "Phase 14 memory-access checkpoint drifted",
+    )
+    require(
+        contract["authority_owner"] == "compiler/mir_memory_access.gst"
+        and contract["memory_access_table_format"]
+        == PHASE14_MEMORY_ACCESS_TABLE_FORMAT,
+        "Phase 14 memory-access authority or table format drifted",
+    )
+    require(
+        contract["primary_level2_target"] == "x86_64-unknown-linux-gnu"
+        and tuple(contract["selected_type_ids"])
+        == PHASE14_MEMORY_ACCESS_TYPE_IDS,
+        "Phase 14 memory-access target or type inventory drifted",
+    )
+    require(
+        tuple(contract["operation_kinds"])
+        == PHASE14_MEMORY_ACCESS_OPERATION_KINDS
+        and contract["operation_count_per_target"] == 6,
+        "Phase 14 memory-access operation inventory drifted",
+    )
+    require(
+        tuple(contract["metadata_fields"])
+        == PHASE14_MEMORY_ACCESS_METADATA_FIELDS,
+        "Phase 14 memory-access metadata inventory drifted",
+    )
+    for field in (
+        "natural_alignment_policy", "unaligned_policy",
+        "zero_sized_policy", "known_null_policy",
+        "initialization_policy", "overlap_policy",
+        "worker_lowering_policy", "poisoned_driver_policy",
+        "output_preservation_policy", "boundary_policy",
+    ):
+        text(contract[field], f"phase14_memory_accesses.{field}")
+    require(
+        tuple(contract["migrated_entry_ids"])
+        == PHASE14_MEMORY_ACCESS_MIGRATED_IDS,
+        "Phase 14 memory-access migrated-row inventory drifted",
+    )
+    require(
+        contract["focused_ci_family"] == "pointer-memory"
+        and contract["level1_guard"]
+        == "guard-cranelift-phase14-memory-access-contract"
+        and contract["level2_guard"]
+        == "guard-cranelift-phase14-memory-access-parity",
+        "Phase 14 memory-access CI ownership drifted",
+    )
+    require(
+        tuple(contract["composition_contexts"])
+        == PHASE14_MEMORY_ACCESS_CONTEXTS
+        and tuple(contract["negative_classes"])
+        == PHASE14_MEMORY_ACCESS_NEGATIVE_CLASSES,
+        "Phase 14 memory-access composition or negative inventory drifted",
+    )
+    require(contract["next_patch"] == "14.7",
+            "Phase 14 memory-access next patch must be 14.7")
     return contract
 
 
@@ -1977,6 +2084,18 @@ def validate():
         phase14_stack_slot_schema.get("additionalProperties") is False,
         "schema Phase 14 stack slots must reject unknown fields",
     )
+    phase14_memory_access_schema = definitions.get(
+        "phase14_memory_accesses", {}
+    )
+    require(
+        set(phase14_memory_access_schema.get("required", []))
+        == PHASE14_MEMORY_ACCESS_FIELDS,
+        "schema Phase 14 memory-access fields drifted",
+    )
+    require(
+        phase14_memory_access_schema.get("additionalProperties") is False,
+        "schema Phase 14 memory accesses must reject unknown fields",
+    )
     residual_schema = schema.get("properties", {}).get("residual_snapshots", {})
     require(
         set(residual_schema.get("required", [])) == {"phase13"},
@@ -2022,9 +2141,9 @@ def validate():
     require(registry["schema"] == "scripts/cranelift_feature_registry.schema.json",
             "registry schema path is not canonical")
     require(registry["schema_version"] == 1, "schema_version must be 1")
-    require(registry["registry_version"] == 13, "registry_version must be 13")
+    require(registry["registry_version"] == 14, "registry_version must be 14")
     require(
-        registry["registry_status"] == "phase14_stack_slot_ready",
+        registry["registry_status"] == "phase14_memory_access_ready",
         "registry status is missing or stale",
     )
     require(registry["current_phase"] == "phase14", "current_phase must be phase14")
@@ -2047,6 +2166,7 @@ def validate():
     validate_phase14_integer_conversion_structure(registry)
     validate_phase14_pointer_structure(registry)
     validate_phase14_stack_slot_structure(registry)
+    validate_phase14_memory_access_structure(registry)
 
     categories = set(unique_strings(registry["planning_categories"], "planning_categories"))
     supported = registry["supported_values"]
@@ -2411,6 +2531,43 @@ def validate():
                     and evidence.get("selected_operation_kinds")
                     == list(PHASE14_STACK_SLOT_OPERATION_KINDS),
                     f"{entry_id}: stack-slot evidence drifted",
+                )
+            elif entry_id in PHASE14_MEMORY_ACCESS_MIGRATED_IDS:
+                require(
+                    closure == PHASE14_MEMORY_ACCESS_VERSION,
+                    f"{entry_id}: memory-access checkpoint version drifted",
+                )
+                require(
+                    status == "migrated"
+                    and entry["route_owner"] == "generic_canonical_mir",
+                    f"{entry_id}: selected memory-access row must be migrated through canonical MIR",
+                )
+                require(reason == destination == "none_migrated",
+                        f"{entry_id}: migrated memory-access row has stale deferral fields")
+                require(entry["current_failure_stage"] == "none_supported",
+                        f"{entry_id}: migrated memory-access row has a failure stage")
+                fixture(entry["source_fixture"], f"{entry_id}.source_fixture")
+                fixture(entry["canonical_mir_fixture"],
+                        f"{entry_id}.canonical_mir_fixture")
+                require(
+                    entry["differential_case_id"]
+                    == f"phase14_registry_differential:{entry_id}",
+                    f"{entry_id}: memory-access differential identity drifted",
+                )
+                require(
+                    evidence.get("behavior_policy")
+                    == "typed_target_aware_layout_backed_memory_access_migrated_through_canonical_MIR_and_native_request_transport"
+                    and evidence.get("phase14_4_contract")
+                    == PHASE14_POINTER_VERSION
+                    and evidence.get("phase14_5_contract")
+                    == PHASE14_STACK_SLOT_VERSION
+                    and evidence.get("phase14_6_contract")
+                    == PHASE14_MEMORY_ACCESS_VERSION
+                    and evidence.get("selected_type_ids")
+                    == list(PHASE14_MEMORY_ACCESS_TYPE_IDS)
+                    and evidence.get("selected_operation_kinds")
+                    == list(PHASE14_MEMORY_ACCESS_OPERATION_KINDS),
+                    f"{entry_id}: memory-access evidence drifted",
                 )
             else:
                 require(
@@ -2928,6 +3085,13 @@ def verify_phase14_layout_authority(registry):
                 and entry["closure_version"] == PHASE14_STACK_SLOT_VERSION,
                 f"{entry_id}: stack-slot migration no longer consumes the layout authority",
             )
+        elif entry_id in PHASE14_MEMORY_ACCESS_MIGRATED_IDS:
+            require(
+                entry["status"] == "migrated"
+                and entry["route_owner"] == "generic_canonical_mir"
+                and entry["closure_version"] == PHASE14_MEMORY_ACCESS_VERSION,
+                f"{entry_id}: memory-access migration no longer consumes the layout authority",
+            )
         else:
             require(
                 entry["status"] == "candidate_deferred"
@@ -3036,7 +3200,7 @@ def verify_phase14_primitive_layout(registry):
     verify_phase14_layout_authority(registry)
     contract = validate_phase14_primitive_layout_structure(registry)
     require(
-        registry["registry_status"] == "phase14_stack_slot_ready",
+        registry["registry_status"] == "phase14_memory_access_ready",
         "Phase 14 registry is not at or beyond the primitive-layout checkpoint",
     )
     rows = {entry["id"]: entry for entry in phase_entries(registry, "phase14")}
@@ -3077,6 +3241,14 @@ def verify_phase14_primitive_layout(registry):
                 and entry["route_owner"] == "generic_canonical_mir"
                 and entry["closure_version"] == PHASE14_STACK_SLOT_VERSION,
                 f"{entry_id}: later stack-slot checkpoint drifted",
+            )
+            continue
+        if entry_id in PHASE14_MEMORY_ACCESS_MIGRATED_IDS:
+            require(
+                entry["status"] == "migrated"
+                and entry["route_owner"] == "generic_canonical_mir"
+                and entry["closure_version"] == PHASE14_MEMORY_ACCESS_VERSION,
+                f"{entry_id}: later memory-access checkpoint drifted",
             )
             continue
         require(
@@ -3178,7 +3350,7 @@ def verify_phase14_integer_conversions(registry):
     verify_phase14_primitive_layout(registry)
     contract = validate_phase14_integer_conversion_structure(registry)
     require(
-        registry["registry_status"] == "phase14_stack_slot_ready",
+        registry["registry_status"] == "phase14_memory_access_ready",
         "Phase 14 registry is not at or beyond the integer-conversion checkpoint",
     )
     rows = {entry["id"]: entry for entry in phase_entries(registry, "phase14")}
@@ -3211,6 +3383,14 @@ def verify_phase14_integer_conversions(registry):
                 and entry["route_owner"] == "generic_canonical_mir"
                 and entry["closure_version"] == PHASE14_STACK_SLOT_VERSION,
                 f"{entry_id}: later stack-slot checkpoint drifted",
+            )
+            continue
+        if entry_id in PHASE14_MEMORY_ACCESS_MIGRATED_IDS:
+            require(
+                entry["status"] == "migrated"
+                and entry["route_owner"] == "generic_canonical_mir"
+                and entry["closure_version"] == PHASE14_MEMORY_ACCESS_VERSION,
+                f"{entry_id}: later memory-access checkpoint drifted",
             )
             continue
         require(
@@ -3358,7 +3538,7 @@ def verify_phase14_pointers(registry):
     verify_phase14_integer_conversions(registry)
     contract = validate_phase14_pointer_structure(registry)
     require(
-        registry["registry_status"] == "phase14_stack_slot_ready",
+        registry["registry_status"] == "phase14_memory_access_ready",
         "Phase 14 registry is not at the pointer/nullability checkpoint",
     )
     rows = {entry["id"]: entry for entry in phase_entries(registry, "phase14")}
@@ -3379,6 +3559,7 @@ def verify_phase14_pointers(registry):
         + PHASE14_CONVERSION_MIGRATED_IDS
         + PHASE14_POINTER_MIGRATED_IDS
         + PHASE14_STACK_SLOT_MIGRATED_IDS
+        + PHASE14_MEMORY_ACCESS_MIGRATED_IDS
     )
     for entry_id, entry in rows.items():
         if entry_id in selected_ids:
@@ -3568,7 +3749,7 @@ def verify_phase14_stack_slots(registry):
     verify_phase14_pointers(registry)
     contract = validate_phase14_stack_slot_structure(registry)
     require(
-        registry["registry_status"] == "phase14_stack_slot_ready",
+        registry["registry_status"] == "phase14_memory_access_ready",
         "Phase 14 registry is not at the stack-slot checkpoint",
     )
     rows = {entry["id"]: entry for entry in phase_entries(registry, "phase14")}
@@ -3589,6 +3770,7 @@ def verify_phase14_stack_slots(registry):
         + PHASE14_CONVERSION_MIGRATED_IDS
         + PHASE14_POINTER_MIGRATED_IDS
         + PHASE14_STACK_SLOT_MIGRATED_IDS
+        + PHASE14_MEMORY_ACCESS_MIGRATED_IDS
     )
     for entry_id, entry in rows.items():
         if entry_id in selected_ids:
@@ -3753,6 +3935,170 @@ def verify_phase14_stack_slots(registry):
             registry["phase14_primitive_layout"]["declared_targets"]
         ),
         "slot_count": contract["selected_slot_count_per_target"],
+        "operation_kind_count": len(contract["operation_kinds"]),
+        "operation_count": contract["operation_count_per_target"],
+        "migrated_count": len(contract["migrated_entry_ids"]),
+        "deferred_count": sum(
+            1 for entry in rows.values()
+            if entry["status"] == "candidate_deferred"
+        ),
+        "primary_target": contract["primary_level2_target"],
+        "family": contract["focused_ci_family"],
+    }
+
+
+def verify_phase14_memory_accesses(registry):
+    verify_phase14_stack_slots(registry)
+    contract = validate_phase14_memory_access_structure(registry)
+    require(
+        registry["registry_status"] == "phase14_memory_access_ready",
+        "Phase 14 registry is not at the typed memory-access checkpoint",
+    )
+    rows = {entry["id"]: entry for entry in phase_entries(registry, "phase14")}
+    for entry_id in PHASE14_MEMORY_ACCESS_MIGRATED_IDS:
+        entry = rows[entry_id]
+        require(
+            entry["status"] == "migrated"
+            and entry["route_owner"] == "generic_canonical_mir"
+            and entry["closure_version"] == PHASE14_MEMORY_ACCESS_VERSION,
+            f"{entry_id}: memory-access row is not migrated",
+        )
+        require(
+            entry["ci_family"] == contract["focused_ci_family"],
+            f"{entry_id}: memory-access CI ownership drifted",
+        )
+
+    sources = {
+        "authority": ROOT / "compiler/mir_memory_access.gst",
+        "mir": ROOT / "compiler/mir.gst",
+        "request": ROOT / "compiler/mir_native_backend_request.gst",
+        "mir_to_c": ROOT / "compiler/mir_memory_access_mir_to_c.gst",
+        "diagnostics": ROOT / "compiler/mir_memory_access_diagnostics.gst",
+        "worker": ROOT / "compiler/experiments/cranelift/src/main.rs",
+        "smoke": ROOT / "compiler/mir_memory_access_smoke_test_entry.gst",
+        "differential": ROOT / "scripts/phase14_memory_access_differential.sh",
+        "positive": ROOT / "compiler/phase14_typed_memory_access_source.gst",
+        "composition": ROOT / "compiler/phase14_typed_memory_access_composition_source.gst",
+        "fixture": ROOT / "compiler/fixtures/native_backend_phase14_memory_access_ingestion.mir",
+        "malformed": ROOT / "compiler/fixtures/native_backend_phase14_memory_access_malformed.mir",
+        "review": ROOT / "compiler/CRANELIFT_PHASE14_MEMORY_ACCESS.md",
+    }
+    for negative in PHASE14_MEMORY_ACCESS_NEGATIVE_CLASSES:
+        sources[f"negative_{negative}"] = (
+            ROOT / f"compiler/p14_memory_access_{negative}_source.gst"
+        )
+    for owner, path in sources.items():
+        require(
+            path.is_file() and not path.is_symlink(),
+            f"missing regular Phase 14 memory-access {owner} source: {path.relative_to(ROOT)}",
+        )
+
+    authority_source = sources["authority"].read_text(encoding="utf-8")
+    for token in (
+        "type MirMemoryAccess[ctx] struct",
+        "type MirMemoryAccessTable[ctx] struct",
+        "func mir_memory_access_table_for_layout(",
+        "func mir_memory_access_table_is_valid(",
+        "func mir_memory_access_rejection(",
+        "func mir_serialize_memory_access_table_for_request(",
+        "func mir_memory_access_witness(",
+        PHASE14_MEMORY_ACCESS_TABLE_FORMAT,
+    ):
+        require(token in authority_source,
+                f"memory-access authority is missing: {token}")
+    for kind in PHASE14_MEMORY_ACCESS_OPERATION_KINDS:
+        require(kind in authority_source,
+                f"memory-access authority is missing canonical kind {kind}")
+    for field in PHASE14_MEMORY_ACCESS_METADATA_FIELDS:
+        require(field in authority_source,
+                f"memory-access authority is missing metadata field {field}")
+    negative_tokens = {
+        "wrong_width": "memory_access_width_mismatch",
+        "wrong_alignment": "memory_access_alignment_mismatch",
+        "wrong_pointee_type": "memory_access_pointee_type_mismatch",
+        "immutable_store": "memory_access_store_immutable",
+        "invalid_layout_id": "memory_access_invalid_layout_id",
+        "out_of_lifetime": "memory_access_out_of_lifetime",
+        "unsupported_overlap": "memory_access_overlap_unsupported",
+        "known_null": "memory_access_known_null",
+        "read_before_write": "memory_access_read_before_write",
+        "unaligned": "memory_access_unaligned_unsupported",
+        "zero_sized": "memory_access_zero_sized_unsupported",
+    }
+    for negative, token in negative_tokens.items():
+        require(token in authority_source or token in sources["worker"].read_text(encoding="utf-8"),
+                f"memory-access negative evidence is missing: {negative}")
+
+    mir_source = sources["mir"].read_text(encoding="utf-8")
+    for token in (
+        "type MirMemoryAccessOperationKind enum",
+        "type MirMemoryAccessReference",
+        "memory_access_references",
+        "MemoryAccess",
+        "func mir_make_stmt_memory_access(",
+        "func mir_program_memory_access_references_are_valid(",
+    ):
+        require(token in mir_source,
+                f"canonical MIR memory-access model is missing: {token}")
+
+    request_source = sources["request"].read_text(encoding="utf-8")
+    require(
+        "memory_access_table: memory_access.MirMemoryAccessTable[ctx]" in request_source
+        and "mir_serialize_memory_access_table_for_request" in request_source
+        and "mir_memory_access_table_for_layout" in request_source,
+        "native request does not carry the compiler-owned memory-access table",
+    )
+
+    c_source = sources["mir_to_c"].read_text(encoding="utf-8")
+    for token in (
+        "mir_memory_access_c_source",
+        "memcpy",
+        "int32_t",
+        "memory_access:v1",
+    ):
+        require(token in c_source,
+                f"MIR-to-C memory-access witness is missing: {token}")
+
+    diagnostic_source = sources["diagnostics"].read_text(encoding="utf-8")
+    for token in (
+        "gust_memory_access_diagnostic:",
+        "taxonomy=gust.memory_access.diagnostic.v1",
+        "reason_code=", "source=", "line=", "column=",
+    ):
+        require(token in diagnostic_source,
+                f"memory-access diagnostics are missing: {token}")
+
+    worker_source = sources["worker"].read_text(encoding="utf-8")
+    for token in (
+        "struct Phase14RequestMemoryAccessTable",
+        "fn parse_phase14_request_memory_access_table(",
+        "fn validate_phase14_request_memory_access_table(",
+        "fn phase14_cranelift_memory_access_type(",
+        "phase14-memory-access-witness",
+    ):
+        require(token in worker_source,
+                f"Cranelift memory-access consumption is missing: {token}")
+    for banned in (
+        "std::mem::size_of", "std::mem::align_of", "offset_of!",
+        "Layout::from_size_align",
+    ):
+        require(banned not in worker_source,
+                f"worker must consume compiler-selected memory layout: {banned}")
+
+    differential_source = sources["differential"].read_text(encoding="utf-8")
+    for token in (
+        "poisoned-driver", "sentinel", "phase14-memory-access-witness",
+        "Cranelift memory-access witness differs",
+        "MIR-to-C memory-access witness differs",
+    ):
+        require(token in differential_source,
+                f"memory-access differential evidence is missing: {token}")
+
+    return {
+        "version": contract["version"],
+        "status": contract["status"],
+        "target_count": len(registry["phase14_primitive_layout"]["declared_targets"]),
+        "type_count": len(contract["selected_type_ids"]),
         "operation_kind_count": len(contract["operation_kinds"]),
         "operation_count": contract["operation_count_per_target"],
         "migrated_count": len(contract["migrated_entry_ids"]),
@@ -5279,6 +5625,7 @@ def verify_phase13_closure(registry):
             "phase14_primitive_layout_ready",
             "phase14_integer_conversion_ready",
             "phase14_stack_slot_ready",
+            "phase14_memory_access_ready",
         },
         "Phase 13 closure registry status drifted",
     )
@@ -6199,7 +6546,7 @@ def phase14_layout_authority_summary_lines(registry):
         f"- Request rejection classes: `{contract['rejection_count']}`",
         f"- Phase 14 opening rows still deferred: `{contract['deferred_row_count']}`",
         "",
-        "Patch 14.1 established authority and transport. Patch 14.2 consumes that authority for the bounded declared-target and primitive-layout inventory.",
+        "Patch 14.1 established authority and transport. Patches 14.2 through 14.6 consume that authority for declared targets, primitives, conversions, pointers, stack slots, and bounded typed memory access.",
         "",
     ]
 
@@ -6247,7 +6594,7 @@ def render_phase14_layout_authority(registry):
         "",
         "The compiler owns target, type, field, variant, stride, and memory-access layout decisions. Canonical MIR carries layout references, the compiler serializes a request-local layout table, and the worker validates that table without selecting a competing layout.",
         "",
-        "Patch 14.3 consumes this authority for declared targets, primitive scalar layouts, and compiler-owned integer conversions. Pointer, memory, string, array, struct, enum, and aggregate-flow capabilities remain deferred for bounded later patches.",
+        "Patch 14.6 consumes this authority for bounded typed i32 loads, stores, compiler-derived element offsets, and non-overlapping copies. Strings, arrays, structs, enums, broader aggregates, and unsupported memory forms remain deferred for bounded later patches.",
         "",
     ]
     rendered = "\n".join(lines)
@@ -6351,7 +6698,7 @@ def render_phase14_primitive_layout(registry):
         "",
         contract["boundary_policy"],
         "",
-        "Canonical boolean memory values are exactly `0` and `1`. Patch 14.4 now owns bounded typed pointer identity and nullability; stack storage, loads/stores, strings, arrays, structs, enums, and unrestricted aggregate flow remain deferred.",
+        "Canonical boolean memory values are exactly `0` and `1`. Patch 14.6 now owns bounded typed i32 memory access over compiler-owned pointers and stack slots; strings, arrays, structs, enums, broader aggregates, and unsupported memory forms remain deferred.",
         "",
     ]
     rendered = "\n".join(lines)
@@ -6477,7 +6824,7 @@ def phase14_pointer_summary_lines(registry):
         f"- Remaining deferred opening rows: `{contract['deferred_count']}`",
         f"- Registry-derived focused family: `{contract['family']}`",
         "",
-        "Patch 14.4 freezes bounded typed pointer identity, default-address-space metadata, provenance, nullability checks, comparisons, and safe aggregate storage. Dereference, loads/stores, pointer arithmetic, unrestricted integer/pointer casts, non-default address spaces, and unsupported pointees remain rejected or deferred before worker access.",
+        "Patch 14.4 freezes bounded typed pointer identity, default-address-space metadata, provenance, nullability checks, comparisons, and safe aggregate storage. Patch 14.6 selects naturally aligned non-null i32 loads and stores; broader dereference, pointer arithmetic, unrestricted integer/pointer casts, non-default address spaces, and unsupported pointees remain rejected or deferred before worker access.",
         "",
     ]
 
@@ -6497,7 +6844,7 @@ def phase14_stack_slot_summary_lines(registry):
         f"- Remaining deferred opening rows: `{contract['deferred_count']}`",
         f"- Registry-derived focused family: `{contract['family']}`",
         "",
-        "Patch 14.5 freezes deterministic compiler-owned stack-slot identities, layout-derived size and alignment, initialization and lifetime validation, address acquisition, assignment, and bounded aggregate copies. Dynamic allocation, variable-sized slots, escaping addresses, destructor-bearing resources, and unsupported aliasing remain rejected or deferred before driver access.",
+        "Patch 14.5 freezes deterministic compiler-owned stack-slot identities, layout-derived size and alignment, initialization and lifetime validation, address acquisition, assignment, and bounded aggregate copies. Patch 14.6 consumes those slots for selected typed memory operations; dynamic allocation, variable-sized slots, escaping addresses, destructor-bearing resources, and unsupported aliasing remain rejected or deferred before driver access.",
         "",
     ]
 
@@ -6562,6 +6909,94 @@ def render_phase14_stack_slots(registry):
         require(
             banned not in rendered,
             f"Phase 14 stack-slot view contains banned raw-hash token: {banned}",
+        )
+    return rendered
+
+
+def phase14_memory_access_summary_lines(registry):
+    contract = verify_phase14_memory_accesses(registry)
+    return [
+        "## Phase 14 typed loads, stores, and memory-access validation",
+        "",
+        f"- Contract version: `{contract['version']}`",
+        f"- Status: `{contract['status']}`",
+        f"- Declared target count: `{contract['target_count']}`",
+        f"- Selected memory types: `{contract['type_count']}`",
+        f"- Canonical operation kinds: `{contract['operation_kind_count']}`",
+        f"- Selected operations per target: `{contract['operation_count']}`",
+        f"- Migrated opening rows: `{contract['migrated_count']}`",
+        f"- Remaining deferred opening rows: `{contract['deferred_count']}`",
+        f"- Registry-derived focused family: `{contract['family']}`",
+        "",
+        "Patch 14.6 freezes bounded naturally aligned i32 loads, stores, compiler-derived element offsets, and non-overlapping copies. Unaligned, zero-sized, known-null, overlapping, atomic, volatile, and unrestricted pointer accesses remain rejected or deferred.",
+        "",
+    ]
+
+
+def render_phase14_memory_accesses(registry):
+    summary = verify_phase14_memory_accesses(registry)
+    contract = registry["phase14_memory_accesses"]
+    lines = [
+        "# Cranelift Phase 14 Typed Loads, Stores, and Memory-Access Validation",
+        "",
+        "<!-- Generated by scripts/cranelift_registry.py; do not edit by hand. -->",
+        "",
+        "CRANELIFT_PHASE14_MEMORY_ACCESS_VIEW_VERSION: 1",
+        f"CRANELIFT_PHASE14_MEMORY_ACCESS_VERSION: {summary['version']}",
+        f"CRANELIFT_PHASE14_MEMORY_ACCESS_STATUS: {summary['status']}",
+        f"CRANELIFT_PHASE14_MEMORY_ACCESS_OWNER: {contract['authority_owner']}",
+        f"CRANELIFT_PHASE14_MEMORY_ACCESS_TABLE_FORMAT: {contract['memory_access_table_format']}",
+        f"CRANELIFT_PHASE14_MEMORY_ACCESS_PRIMARY_TARGET: {summary['primary_target']}",
+        f"CRANELIFT_PHASE14_MEMORY_ACCESS_LEVEL1_GUARD: {contract['level1_guard']}",
+        f"CRANELIFT_PHASE14_MEMORY_ACCESS_LEVEL2_GUARD: {contract['level2_guard']}",
+        f"CRANELIFT_PHASE14_MEMORY_ACCESS_NEXT_PATCH: {contract['next_patch']}",
+        "",
+        "## Selected types",
+        "",
+        *[f"- `{name}`" for name in contract["selected_type_ids"]],
+        "",
+        "## Canonical memory operations",
+        "",
+        *[f"- `{kind}`" for kind in contract["operation_kinds"]],
+        "",
+        f"Selected operations per target: `{contract['operation_count_per_target']}`.",
+        "",
+        "## Compiler-owned access metadata",
+        "",
+        *[f"- `{field}`" for field in contract["metadata_fields"]],
+        "",
+        "## Composition contexts",
+        "",
+        *[f"- `{context}`" for context in contract["composition_contexts"]],
+        "",
+        "## Negative classes",
+        "",
+        *[f"- `{name}`" for name in contract["negative_classes"]],
+        "",
+        "## Semantic policies",
+        "",
+        f"- Natural alignment: `{contract['natural_alignment_policy']}`",
+        f"- Unaligned access: `{contract['unaligned_policy']}`",
+        f"- Zero-sized values: `{contract['zero_sized_policy']}`",
+        f"- Known-null access: `{contract['known_null_policy']}`",
+        f"- Initialization: `{contract['initialization_policy']}`",
+        f"- Overlap: `{contract['overlap_policy']}`",
+        f"- Worker lowering: `{contract['worker_lowering_policy']}`",
+        f"- Poisoned driver: `{contract['poisoned_driver_policy']}`",
+        f"- Output preservation: `{contract['output_preservation_policy']}`",
+        "",
+        "## Boundary",
+        "",
+        contract["boundary_policy"],
+        "",
+        "MIR-to-C and Cranelift consume the same compiler-serialized type, layout, width, alignment, origin, lifetime, source location, and offset records. Invalid accesses are rejected before object or output publication.",
+        "",
+    ]
+    rendered = "\n".join(lines)
+    for banned in ("SHA256", "SHA-256", "sha256sum"):
+        require(
+            banned not in rendered,
+            f"Phase 14 memory-access view contains banned raw-hash token: {banned}",
         )
     return rendered
 
@@ -6673,6 +7108,7 @@ def render(registry):
         *phase14_integer_conversion_summary_lines(registry),
         *phase14_pointer_summary_lines(registry),
         *phase14_stack_slot_summary_lines(registry),
+        *phase14_memory_access_summary_lines(registry),
         "## Registry entries", "",
         "| ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |",
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
@@ -6694,7 +7130,8 @@ def render(registry):
         f"- Phase 14 primitive layout review: `{phase14_primitive_layout_summary_path(registry).relative_to(ROOT)}`",
         f"- Phase 14 integer conversion review: `{phase14_integer_conversion_summary_path(registry).relative_to(ROOT)}`",
         f"- Phase 14 pointer review: `{phase14_pointer_summary_path(registry).relative_to(ROOT)}`",
-        f"- Phase 14 stack-slot review: `{phase14_stack_slot_summary_path(registry).relative_to(ROOT)}`", "",
+        f"- Phase 14 stack-slot review: `{phase14_stack_slot_summary_path(registry).relative_to(ROOT)}`",
+        f"- Phase 14 memory-access review: `{phase14_memory_access_summary_path(registry).relative_to(ROOT)}`", "",
         "The JSON registry is authoritative. Generated Markdown is a review artifact, and the legacy Markdown documents remain historical views only.", "",
     ]
     return "\n".join(lines)
@@ -6771,6 +7208,14 @@ def check_phase14_stack_slot_projection(registry):
     )
 
 
+def check_phase14_memory_access_projection(registry):
+    check_rendered_projection(
+        phase14_memory_access_summary_path(registry),
+        render_phase14_memory_accesses(registry),
+        "generated Phase 14 memory-access review",
+    )
+
+
 def check_projection(registry):
     check_rendered_projection(
         summary_path(registry),
@@ -6784,6 +7229,7 @@ def check_projection(registry):
     check_phase14_integer_conversion_projection(registry)
     check_phase14_pointer_projection(registry)
     check_phase14_stack_slot_projection(registry)
+    check_phase14_memory_access_projection(registry)
 
 
 def summary_path(registry):
@@ -6818,6 +7264,10 @@ def phase14_stack_slot_summary_path(registry):
     return ROOT / "compiler/CRANELIFT_PHASE14_STACK_SLOTS.md"
 
 
+def phase14_memory_access_summary_path(registry):
+    return ROOT / "compiler/CRANELIFT_PHASE14_MEMORY_ACCESS.md"
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -6848,14 +7298,17 @@ def main():
             "verify-phase14-integer-conversions",
             "verify-phase14-pointers",
             "verify-phase14-stack-slots",
+            "verify-phase14-memory-accesses",
             "phase14-primitive-targets",
             "phase14-conversion-targets",
             "phase14-pointer-targets",
             "phase14-stack-slot-targets",
+            "phase14-memory-access-targets",
             "phase14-primitive-primary-target",
             "phase14-conversion-primary-target",
             "phase14-pointer-primary-target",
             "phase14-stack-slot-primary-target",
+            "phase14-memory-access-primary-target",
             "project",
             "check-phase13-projection",
             "check-phase14-projection",
@@ -6864,6 +7317,7 @@ def main():
             "check-phase14-integer-conversion-projection",
             "check-phase14-pointer-projection",
             "check-phase14-stack-slot-projection",
+            "check-phase14-memory-access-projection",
             "check-projection",
         ),
     )
@@ -6918,11 +7372,14 @@ def main():
             verify_phase14_pointers(registry)
         elif command == "verify-phase14-stack-slots":
             verify_phase14_stack_slots(registry)
+        elif command == "verify-phase14-memory-accesses":
+            verify_phase14_memory_accesses(registry)
         elif command in {
             "phase14-primitive-targets",
             "phase14-conversion-targets",
             "phase14-pointer-targets",
             "phase14-stack-slot-targets",
+            "phase14-memory-access-targets",
         }:
             contract = validate_phase14_primitive_layout_structure(registry)
             print("\n".join(
@@ -6934,6 +7391,7 @@ def main():
             "phase14-conversion-primary-target",
             "phase14-pointer-primary-target",
             "phase14-stack-slot-primary-target",
+            "phase14-memory-access-primary-target",
         }:
             contract = validate_phase14_primitive_layout_structure(registry)
             print(contract["primary_level2_target"])
@@ -6947,6 +7405,7 @@ def main():
             phase14_conversion_path = phase14_integer_conversion_summary_path(registry)
             phase14_pointer_path = phase14_pointer_summary_path(registry)
             phase14_stack_slot_path = phase14_stack_slot_summary_path(registry)
+            phase14_memory_access_path = phase14_memory_access_summary_path(registry)
             canonical_path.parent.mkdir(parents=True, exist_ok=True)
             phase13_path.parent.mkdir(parents=True, exist_ok=True)
             phase14_path.parent.mkdir(parents=True, exist_ok=True)
@@ -6955,6 +7414,7 @@ def main():
             phase14_conversion_path.parent.mkdir(parents=True, exist_ok=True)
             phase14_pointer_path.parent.mkdir(parents=True, exist_ok=True)
             phase14_stack_slot_path.parent.mkdir(parents=True, exist_ok=True)
+            phase14_memory_access_path.parent.mkdir(parents=True, exist_ok=True)
             canonical_path.write_text(render(registry), encoding="utf-8")
             phase13_path.write_text(render_phase13(registry), encoding="utf-8")
             phase14_path.write_text(render_phase14(registry), encoding="utf-8")
@@ -6971,6 +7431,9 @@ def main():
             phase14_stack_slot_path.write_text(
                 render_phase14_stack_slots(registry), encoding="utf-8"
             )
+            phase14_memory_access_path.write_text(
+                render_phase14_memory_accesses(registry), encoding="utf-8"
+            )
         elif command == "check-phase13-projection":
             check_phase13_projection(registry)
         elif command == "check-phase14-projection":
@@ -6985,6 +7448,8 @@ def main():
             check_phase14_pointer_projection(registry)
         elif command == "check-phase14-stack-slot-projection":
             check_phase14_stack_slot_projection(registry)
+        elif command == "check-phase14-memory-access-projection":
+            check_phase14_memory_access_projection(registry)
         elif command == "check-projection":
             check_projection(registry)
     except Error as exc:
@@ -7013,6 +7478,7 @@ def main():
     phase14_conversion_contract = verify_phase14_integer_conversions(registry)
     phase14_pointer_contract = verify_phase14_pointers(registry)
     phase14_stack_slot_contract = verify_phase14_stack_slots(registry)
+    phase14_memory_access_contract = verify_phase14_memory_accesses(registry)
     phase13_statuses = phase13_totals["status_counts"]
     phase13_parents = phase13_totals["parent_kinds"]
     messages = {
@@ -7181,6 +7647,13 @@ def main():
             f"{phase14_stack_slot_contract['target_count']} declared targets; "
             f"{phase14_stack_slot_contract['deferred_count']} rows remain deferred."
         ),
+        "verify-phase14-memory-accesses": (
+            "✅ Phase 14 typed memory-access contract passed: "
+            f"{phase14_memory_access_contract['type_count']} selected types and "
+            f"{phase14_memory_access_contract['operation_count']} operations per target across "
+            f"{phase14_memory_access_contract['target_count']} declared targets; "
+            f"{phase14_memory_access_contract['deferred_count']} rows remain deferred."
+        ),
         "verify-phase14-opening-contract": (
             "✅ Phase 14 opening contract passed: "
             f"{phase14_contract['row_count']} rows across "
@@ -7191,7 +7664,7 @@ def main():
         "project": (
             "✅ Canonical Cranelift registry, Phase 13 final review, Phase 14 "
             "opening review, Phase 14 layout authority review, Phase 14 primitive layout review, "
-            "Phase 14 integer conversion review, Phase 14 pointer review, and Phase 14 stack-slot review generated."
+            "Phase 14 integer conversion review, Phase 14 pointer review, Phase 14 stack-slot review, and Phase 14 memory-access review generated."
         ),
         "check-phase13-projection": (
             "✅ Phase 13 generated final review matches the registry."
@@ -7214,10 +7687,13 @@ def main():
         "check-phase14-stack-slot-projection": (
             "✅ Phase 14 generated stack-slot review matches the registry."
         ),
+        "check-phase14-memory-access-projection": (
+            "✅ Phase 14 generated memory-access review matches the registry."
+        ),
         "check-projection": (
             "✅ Canonical Cranelift registry, Phase 13 final review, Phase 14 "
             "opening review, Phase 14 layout authority review, Phase 14 primitive layout review, "
-            "Phase 14 integer conversion review, Phase 14 pointer review, and Phase 14 stack-slot review match their committed artifacts."
+            "Phase 14 integer conversion review, Phase 14 pointer review, Phase 14 stack-slot review, and Phase 14 memory-access review match their committed artifacts."
         ),
     }
     print(messages[command])

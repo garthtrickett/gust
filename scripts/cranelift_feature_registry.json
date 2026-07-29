@@ -1,8 +1,8 @@
 {
   "schema": "scripts/cranelift_feature_registry.schema.json",
   "schema_version": 1,
-  "registry_version": 13,
-  "registry_status": "phase14_stack_slot_ready",
+  "registry_version": 14,
+  "registry_status": "phase14_memory_access_ready",
   "current_phase": "phase14",
   "closed_phase_versions": {
     "phase11": "phase11_closed_registry_backed_feature_parity_migration",
@@ -786,7 +786,7 @@
   },
   "phase14_layout_authority": {
     "version": "phase14_compiler_owned_layout_authority_v1",
-    "status": "consumed_by_patch14_4",
+    "status": "consumed_by_patch14_6",
     "authority_owner": "compiler/mir_layout.gst",
     "table_format": "gust.compiler_layout_table.v2",
     "semantic_types": [
@@ -829,8 +829,8 @@
       "no_runtime_hard_coded_duplicate_offsets",
       "no_diagnostic_layout_recomputation"
     ],
-    "behavior_policy": "authority_transport_primitive_layout_integer_conversion_and_bounded_pointer_consumption_no_load_store_or_aggregate_abi_migration",
-    "next_patch": "14.5"
+    "behavior_policy": "authority_transport_primitive_layout_integer_conversion_bounded_pointer_stack_slot_and_typed_memory_access_consumption_no_string_array_struct_enum_or_aggregate_abi_migration",
+    "next_patch": "14.7"
   },
   "phase14_primitive_layout": {
     "version": "phase14_declared_targets_and_primitive_layout_v1",
@@ -1327,7 +1327,7 @@
   },
   "phase14_pointers": {
     "version": "phase14_bounded_typed_pointers_and_nullability_v1",
-    "status": "consumed_by_patch14_5",
+    "status": "consumed_by_patch14_6",
     "authority_owner": "compiler/mir_pointer.gst",
     "pointer_table_format": "gust.compiler_pointer_table.v1",
     "primary_level2_target": "x86_64-unknown-linux-gnu",
@@ -1360,8 +1360,8 @@
       "origin_local_id",
       "provenance_id"
     ],
-    "known_null_dereference_policy": "rejected_before_worker_because_dereference_is_deferred_to_the_load_store_contract",
-    "nullable_access_policy": "nullable_values_require_a_null_test_or_checked_non_null_promotion_before_any_future_load_store",
+    "known_null_dereference_policy": "rejected_by_the_phase14_6_memory_access_validator_before_codegen",
+    "nullable_access_policy": "nullable_values_require_a_null_test_or_checked_non_null_promotion_before_selected_phase14_6_load_store",
     "worker_layout_policy": "worker_resolves_only_compiler_serialized_pointee_layout_ids_and_never_infers_layout_from_source_text_or_names",
     "migrated_entry_ids": [
       "p14_pointer_nullability_model"
@@ -1386,12 +1386,12 @@
       "dereference_before_load_store_contract",
       "target_required"
     ],
-    "boundary_policy": "typed_pointer_identity_nullability_comparison_and_bounded_conversion_only_no_dereference_load_store_pointer_arithmetic_non_default_address_space_or_integer_pointer_cast",
-    "next_patch": "14.6"
+    "boundary_policy": "typed_pointer_identity_nullability_comparison_bounded_conversion_and_selected_i32_load_store_only_no_pointer_arithmetic_non_default_address_space_or_integer_pointer_cast",
+    "next_patch": "14.7"
   },
   "phase14_stack_slots": {
     "version": "phase14_deterministic_stack_slots_and_addressable_locals_v1",
-    "status": "ready_for_patch14_6",
+    "status": "consumed_by_patch14_6",
     "authority_owner": "compiler/mir_stack_slot.gst",
     "stack_slot_table_format": "gust.compiler_stack_slot_table.v1",
     "primary_level2_target": "x86_64-unknown-linux-gnu",
@@ -1449,8 +1449,81 @@
       "resource_bearing_local",
       "unsupported_aliasing"
     ],
-    "boundary_policy": "fixed_size_compiler_owned_stack_slots_only_no_dynamic_allocation_variable_sized_storage_escape_resource_destructors_or_unrestricted_aliasing",
-    "next_patch": "14.6"
+    "boundary_policy": "fixed_size_compiler_owned_stack_slots_with_selected_typed_i32_load_store_and_bounded_nonoverlap_copy_no_dynamic_allocation_variable_sized_storage_escape_resource_destructors_or_unrestricted_aliasing",
+    "next_patch": "14.7"
+  },
+  "phase14_memory_accesses": {
+    "version": "phase14_typed_load_store_memory_access_v1",
+    "status": "ready_for_patch14_7",
+    "authority_owner": "compiler/mir_memory_access.gst",
+    "memory_access_table_format": "gust.compiler_memory_access_table.v1",
+    "primary_level2_target": "x86_64-unknown-linux-gnu",
+    "selected_type_ids": [
+      "type:gust:i32"
+    ],
+    "operation_kinds": [
+      "load",
+      "store",
+      "aggregate_copy",
+      "layout_offset"
+    ],
+    "operation_count_per_target": 6,
+    "metadata_fields": [
+      "accessed_type_id",
+      "accessed_layout_id",
+      "byte_width",
+      "required_alignment",
+      "origin_kind",
+      "origin_id",
+      "origin_slot_id",
+      "origin_mutability",
+      "origin_nullability",
+      "lifetime_region",
+      "source_file",
+      "source_line",
+      "source_column",
+      "offset_kind",
+      "offset_layout_id",
+      "element_index",
+      "source_offset",
+      "destination_offset"
+    ],
+    "natural_alignment_policy": "required_exact_compiler_alignment",
+    "unaligned_policy": "rejected_not_selected",
+    "zero_sized_policy": "rejected_no_selected_zero_sized_type",
+    "known_null_policy": "rejected_before_codegen",
+    "initialization_policy": "loads_require_initialization_or_prior_store",
+    "overlap_policy": "bounded_copy_requires_non_overlapping_ranges",
+    "worker_lowering_policy": "worker_resolves_only_compiler_serialized_accessed_layout_width_alignment_origin_and_offset_and_uses_the_same_cranelift_scalar_type",
+    "migrated_entry_ids": [
+      "p14_typed_load_store_memory_access"
+    ],
+    "focused_ci_family": "pointer-memory",
+    "level1_guard": "guard-cranelift-phase14-memory-access-contract",
+    "level2_guard": "guard-cranelift-phase14-memory-access-parity",
+    "composition_contexts": [
+      "stack_slot_load_store",
+      "non_null_pointer_load_store",
+      "compiler_element_offset",
+      "bounded_nonoverlap_copy"
+    ],
+    "negative_classes": [
+      "wrong_width",
+      "wrong_alignment",
+      "wrong_pointee_type",
+      "immutable_store",
+      "invalid_layout_id",
+      "out_of_lifetime",
+      "unsupported_overlap",
+      "known_null",
+      "read_before_write",
+      "unaligned",
+      "zero_sized"
+    ],
+    "poisoned_driver_policy": "invalid_access_validation_must_not_discover_or_invoke_the_native_driver",
+    "output_preservation_policy": "invalid_access_preserves_existing_output_and_creates_no_object_bundle_or_temporary_artifact",
+    "boundary_policy": "selected_naturally_aligned_non_null_fixed_width_i32_load_store_element_offset_and_nonoverlap_copy_only_no_unaligned_zero_sized_nullable_overlapping_atomic_volatile_or_unrestricted_pointer_access",
+    "next_patch": "14.7"
   },
   "residual_snapshots": {
     "phase13": {
@@ -4628,29 +4701,92 @@
       "parent": "phase14_category:loads_and_stores",
       "feature_family": "pointer_memory",
       "ci_family": "pointer-memory",
-      "status": "candidate_deferred",
-      "route_owner": "deferred",
+      "status": "migrated",
+      "route_owner": "generic_canonical_mir",
       "worker_capability_owner": "worker_pointer_memory_lowering",
       "diagnostic_owner": "canonical_mir_memory_verifier",
-      "source_fixture": "compiler/p14_typed_load_store_memory_access_deferred_source.gst",
-      "canonical_mir_fixture": "none_rejected_before_canonical_MIR",
-      "differential_case_id": "phase14_opening:p14_typed_load_store_memory_access",
-      "deferral_reason": "phase14_authority_p14_typed_load_store_memory_access_awaits_bounded_capability_migration",
-      "future_destination_phase": "phase14",
-      "closure_version": "phase14_compiler_owned_layout_authority_v1",
+      "source_fixture": "compiler/phase14_typed_memory_access_source.gst",
+      "canonical_mir_fixture": "compiler/fixtures/native_backend_phase14_memory_access_ingestion.mir",
+      "differential_case_id": "phase14_registry_differential:p14_typed_load_store_memory_access",
+      "deferral_reason": "none_migrated",
+      "future_destination_phase": "none_migrated",
+      "closure_version": "phase14_typed_load_store_memory_access_v1",
       "evidence": {
         "opening_record_kind": "phase14_candidate",
         "declared_capability": "typed_load_store_and_memory_access_validation",
         "planning_category": "loads_and_stores",
         "phase13_closure_dependency": "phase13_closed_deferred_registry_parity_expansion",
-        "behavior_policy": "primitive_layout_and_integer_conversion_only_other_phase14_capabilities_remain_deferred",
+        "behavior_policy": "typed_target_aware_layout_backed_memory_access_migrated_through_canonical_MIR_and_native_request_transport",
         "phase14_1_authority": "compiler_owned_layout_authority_and_request_transport_available",
-        "phase14_3_boundary": "not_selected_by_signed_unsigned_width_conversion_patch"
+        "phase14_4_contract": "phase14_bounded_typed_pointers_and_nullability_v1",
+        "phase14_5_contract": "phase14_deterministic_stack_slots_and_addressable_locals_v1",
+        "phase14_6_contract": "phase14_typed_load_store_memory_access_v1",
+        "selected_type_ids": [
+          "type:gust:i32"
+        ],
+        "selected_operation_kinds": [
+          "load",
+          "store",
+          "aggregate_copy",
+          "layout_offset"
+        ],
+        "alignment_policy": "required_exact_compiler_alignment",
+        "unaligned_policy": "rejected_not_selected",
+        "zero_sized_policy": "rejected_no_selected_zero_sized_type",
+        "known_null_policy": "rejected_before_codegen",
+        "initialization_policy": "loads_require_initialization_or_prior_store",
+        "overlap_policy": "bounded_copy_requires_non_overlapping_ranges",
+        "focused_source_fixtures": [
+          "compiler/phase14_typed_memory_access_source.gst"
+        ],
+        "negative_source_fixtures": [
+          "compiler/p14_memory_access_wrong_width_source.gst",
+          "compiler/p14_memory_access_wrong_alignment_source.gst",
+          "compiler/p14_memory_access_wrong_pointee_type_source.gst",
+          "compiler/p14_memory_access_immutable_store_source.gst",
+          "compiler/p14_memory_access_invalid_layout_id_source.gst",
+          "compiler/p14_memory_access_out_of_lifetime_source.gst",
+          "compiler/p14_memory_access_unsupported_overlap_source.gst",
+          "compiler/p14_memory_access_known_null_source.gst",
+          "compiler/p14_memory_access_read_before_write_source.gst",
+          "compiler/p14_memory_access_unaligned_source.gst",
+          "compiler/p14_memory_access_zero_sized_source.gst"
+        ],
+        "malformed_canonical_mir_fixture": "compiler/fixtures/native_backend_phase14_memory_access_malformed.mir",
+        "positive_expectation": "exit_54_phase14_typed_memory_access",
+        "individual_evidence_guard": "guard-cranelift-phase14-memory-access-parity",
+        "differential_stderr_policy": "stable_bytes",
+        "differential_side_effect_policy": "none",
+        "composition_case_ids": [
+          "phase14_composition:typed_memory_with_stack_pointer_offset_and_copy"
+        ],
+        "differential_failure_fixture": "compiler/p14_memory_access_wrong_width_source.gst",
+        "composition_cases": [
+          {
+            "id": "phase14_composition:typed_memory_with_stack_pointer_offset_and_copy",
+            "owner_entry_id": "p14_typed_load_store_memory_access",
+            "ci_family": "pointer-memory",
+            "source_fixture": "compiler/phase14_typed_memory_access_composition_source.gst",
+            "positive_expectation": "exit_56_phase14_typed_memory_access_composition",
+            "stderr_policy": "stable_bytes",
+            "side_effect_policy": "none",
+            "failure_fixture": "compiler/p14_memory_access_unsupported_overlap_source.gst",
+            "covers_entry_ids": [
+              "p14_typed_load_store_memory_access",
+              "p14_stack_slot_addressable_locals",
+              "p14_pointer_nullability_model",
+              "p14_primitive_scalar_layout",
+              "p14_target_layout_model"
+            ]
+          }
+        ],
+        "poisoned_driver_evidence": "scripts/phase14_memory_access_differential.sh",
+        "sentinel_output_evidence": "scripts/phase14_memory_access_differential.sh"
       },
       "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
-      "current_failure_stage": "before_driver_discovery",
+      "current_failure_stage": "none_supported",
       "positive_future_fixture": "compiler/future/p14_typed_load_store_memory_access_source.gst",
-      "negative_current_fixture": "compiler/p14_typed_load_store_memory_access_deferred_source.gst"
+      "negative_current_fixture": "compiler/p14_memory_access_wrong_width_source.gst"
     },
     {
       "id": "p14_string_and_string_view_layout",

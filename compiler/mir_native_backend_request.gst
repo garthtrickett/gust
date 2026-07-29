@@ -4,6 +4,7 @@ import "mir_primitive_layout.gst" as primitive_layout;
 import "mir_integer_conversion.gst" as integer_conversion;
 import "mir_pointer.gst" as pointer;
 import "mir_stack_slot.gst" as stack_slot;
+import "mir_memory_access.gst" as memory_access;
 
 // Phase 10 generic native-backend request protocol.
 //
@@ -20,7 +21,8 @@ type MirNativeBackendRequest[ctx] struct {
     layout_table: layout.MirLayoutTable[ctx],
     integer_conversion_table: integer_conversion.MirIntegerConversionTable[ctx],
     pointer_table: pointer.MirPointerTable[ctx],
-    stack_slot_table: stack_slot.MirStackSlotTable[ctx]
+    stack_slot_table: stack_slot.MirStackSlotTable[ctx],
+    memory_access_table: memory_access.MirMemoryAccessTable[ctx]
 }
 
 func mir_native_backend_request_path_is_safe(path: str) int {
@@ -57,7 +59,7 @@ func mir_native_backend_request_path_is_absolute(path: str) int {
     return 0;
 }
 
-func mir_native_backend_make_request_with_memory_tables(target_triple: str, object_format: str, output_path: str, program_mir_bundle_path: str, program_bundle: mir.MirProgramBundle[ctx], layout_table: layout.MirLayoutTable[ctx], integer_conversion_table: integer_conversion.MirIntegerConversionTable[ctx], pointer_table: pointer.MirPointerTable[ctx], stack_slot_table: stack_slot.MirStackSlotTable[ctx], ctx: &Arena) MirNativeBackendRequest[ctx] {
+func mir_native_backend_make_request_with_typed_memory_tables(target_triple: str, object_format: str, output_path: str, program_mir_bundle_path: str, program_bundle: mir.MirProgramBundle[ctx], layout_table: layout.MirLayoutTable[ctx], integer_conversion_table: integer_conversion.MirIntegerConversionTable[ctx], pointer_table: pointer.MirPointerTable[ctx], stack_slot_table: stack_slot.MirStackSlotTable[ctx], memory_access_table: memory_access.MirMemoryAccessTable[ctx], ctx: &Arena) MirNativeBackendRequest[ctx] {
     mut request: MirNativeBackendRequest[ctx];
     request.target_triple = std.Clone(ctx, target_triple);
     request.object_format = std.Clone(ctx, object_format);
@@ -68,7 +70,28 @@ func mir_native_backend_make_request_with_memory_tables(target_triple: str, obje
     request.integer_conversion_table = integer_conversion_table;
     request.pointer_table = pointer_table;
     request.stack_slot_table = stack_slot_table;
+    request.memory_access_table = memory_access_table;
     return request;
+}
+
+func mir_native_backend_make_request_with_memory_tables(target_triple: str, object_format: str, output_path: str, program_mir_bundle_path: str, program_bundle: mir.MirProgramBundle[ctx], layout_table: layout.MirLayoutTable[ctx], integer_conversion_table: integer_conversion.MirIntegerConversionTable[ctx], pointer_table: pointer.MirPointerTable[ctx], stack_slot_table: stack_slot.MirStackSlotTable[ctx], ctx: &Arena) MirNativeBackendRequest[ctx] {
+    mut memory_access_table := memory_access.mir_memory_access_make_empty_table(
+        target_triple,
+        ctx
+    );
+    return mir_native_backend_make_request_with_typed_memory_tables(
+        target_triple,
+        object_format,
+        output_path,
+        program_mir_bundle_path,
+        program_bundle,
+        layout_table,
+        integer_conversion_table,
+        pointer_table,
+        stack_slot_table,
+        memory_access_table,
+        ctx
+    );
 }
 
 func mir_native_backend_make_request_with_all_tables(target_triple: str, object_format: str, output_path: str, program_mir_bundle_path: str, program_bundle: mir.MirProgramBundle[ctx], layout_table: layout.MirLayoutTable[ctx], integer_conversion_table: integer_conversion.MirIntegerConversionTable[ctx], pointer_table: pointer.MirPointerTable[ctx], ctx: &Arena) MirNativeBackendRequest[ctx] {
@@ -187,6 +210,18 @@ func mir_native_backend_request_is_valid(request: MirNativeBackendRequest[ctx], 
     ) == 0 {
         return 0;
     }
+    if memory_access.mir_memory_access_table_is_legacy_empty(
+        request.memory_access_table,
+        ctx
+    ) == 0 && memory_access.mir_memory_access_table_is_valid(
+        request.memory_access_table,
+        request.layout_table,
+        request.pointer_table,
+        request.stack_slot_table,
+        ctx
+    ) == 0 {
+        return 0;
+    }
     return 1;
 }
 
@@ -268,6 +303,16 @@ func mir_serialize_native_backend_request(request: MirNativeBackendRequest[ctx],
         stack_slot.mir_serialize_stack_slot_table_for_request(
             request.stack_slot_table,
             request.layout_table,
+            ctx
+        )
+    );
+    output = std.Concat(
+        output,
+        memory_access.mir_serialize_memory_access_table_for_request(
+            request.memory_access_table,
+            request.layout_table,
+            request.pointer_table,
+            request.stack_slot_table,
             ctx
         )
     );

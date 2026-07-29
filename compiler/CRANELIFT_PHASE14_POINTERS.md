@@ -4,13 +4,13 @@
 
 CRANELIFT_PHASE14_POINTER_VIEW_VERSION: 1
 CRANELIFT_PHASE14_POINTER_VERSION: phase14_bounded_typed_pointers_and_nullability_v1
-CRANELIFT_PHASE14_POINTER_STATUS: consumed_by_patch14_5
+CRANELIFT_PHASE14_POINTER_STATUS: consumed_by_patch14_6
 CRANELIFT_PHASE14_POINTER_OWNER: compiler/mir_pointer.gst
 CRANELIFT_PHASE14_POINTER_TABLE_FORMAT: gust.compiler_pointer_table.v1
 CRANELIFT_PHASE14_POINTER_PRIMARY_TARGET: x86_64-unknown-linux-gnu
 CRANELIFT_PHASE14_POINTER_LEVEL1_GUARD: guard-cranelift-phase14-pointer-contract
 CRANELIFT_PHASE14_POINTER_LEVEL2_GUARD: guard-cranelift-phase14-pointer-parity
-CRANELIFT_PHASE14_POINTER_NEXT_PATCH: 14.6
+CRANELIFT_PHASE14_POINTER_NEXT_PATCH: 14.7
 
 ## Pointer type metadata
 
@@ -61,12 +61,12 @@ Selected operations per target: `11`.
 
 ## Semantic policies
 
-- Known-null dereference: `rejected_before_worker_because_dereference_is_deferred_to_the_load_store_contract`
-- Nullable access: `nullable_values_require_a_null_test_or_checked_non_null_promotion_before_any_future_load_store`
+- Known-null dereference: `rejected_by_the_phase14_6_memory_access_validator_before_codegen`
+- Nullable access: `nullable_values_require_a_null_test_or_checked_non_null_promotion_before_selected_phase14_6_load_store`
 - Worker layout consumption: `worker_resolves_only_compiler_serialized_pointee_layout_ids_and_never_infers_layout_from_source_text_or_names`
 
 ## Boundary
 
-typed_pointer_identity_nullability_comparison_and_bounded_conversion_only_no_dereference_load_store_pointer_arithmetic_non_default_address_space_or_integer_pointer_cast
+typed_pointer_identity_nullability_comparison_bounded_conversion_and_selected_i32_load_store_only_no_pointer_arithmetic_non_default_address_space_or_integer_pointer_cast
 
 The worker consumes compiler-serialized pointer and pointee layout identities. It does not infer layout from source spelling, type names, host pointer APIs, or backend defaults.

@@ -4,13 +4,13 @@
 
 CRANELIFT_PHASE14_LAYOUT_AUTHORITY_VIEW_VERSION: 1
 CRANELIFT_PHASE14_LAYOUT_AUTHORITY_VERSION: phase14_compiler_owned_layout_authority_v1
-CRANELIFT_PHASE14_LAYOUT_AUTHORITY_STATUS: consumed_by_patch14_4
+CRANELIFT_PHASE14_LAYOUT_AUTHORITY_STATUS: consumed_by_patch14_6
 CRANELIFT_PHASE14_LAYOUT_AUTHORITY_OWNER: compiler/mir_layout.gst
 CRANELIFT_PHASE14_LAYOUT_AUTHORITY_TABLE_FORMAT: gust.compiler_layout_table.v2
 CRANELIFT_PHASE14_LAYOUT_AUTHORITY_IDENTITY_POLICY: deterministic_semantic_components_only_no_raw_file_registry_or_markdown_hash
 CRANELIFT_PHASE14_LAYOUT_AUTHORITY_REQUEST_POLICY: compiler_serializes_request_local_layout_table_worker_validates_without_selecting_layout
-CRANELIFT_PHASE14_LAYOUT_AUTHORITY_BEHAVIOR_POLICY: authority_transport_primitive_layout_integer_conversion_and_bounded_pointer_consumption_no_load_store_or_aggregate_abi_migration
-CRANELIFT_PHASE14_LAYOUT_AUTHORITY_NEXT_PATCH: 14.5
+CRANELIFT_PHASE14_LAYOUT_AUTHORITY_BEHAVIOR_POLICY: authority_transport_primitive_layout_integer_conversion_bounded_pointer_stack_slot_and_typed_memory_access_consumption_no_string_array_struct_enum_or_aggregate_abi_migration
+CRANELIFT_PHASE14_LAYOUT_AUTHORITY_NEXT_PATCH: 14.7
 
 ## Semantic layout records
 
@@ -59,4 +59,4 @@ CRANELIFT_PHASE14_LAYOUT_AUTHORITY_NEXT_PATCH: 14.5
 
 The compiler owns target, type, field, variant, stride, and memory-access layout decisions. Canonical MIR carries layout references, the compiler serializes a request-local layout table, and the worker validates that table without selecting a competing layout.
 
-Patch 14.3 consumes this authority for declared targets, primitive scalar layouts, and compiler-owned integer conversions. Pointer, memory, string, array, struct, enum, and aggregate-flow capabilities remain deferred for bounded later patches.
+Patch 14.6 consumes this authority for bounded typed i32 loads, stores, compiler-derived element offsets, and non-overlapping copies. Strings, arrays, structs, enums, broader aggregates, and unsupported memory forms remain deferred for bounded later patches.

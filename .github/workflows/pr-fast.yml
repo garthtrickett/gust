@@ -63,6 +63,9 @@ jobs:
       - name: Phase 14 deterministic stack slots and addressable locals
         run: just guard-cranelift-phase14-stack-slot-contract
 
+      - name: Phase 14 typed loads stores and memory access
+        run: just guard-cranelift-phase14-memory-access-contract
+
       - name: Upload Gust build outputs
         uses: actions/upload-artifact@v4
         with:

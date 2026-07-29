@@ -4,13 +4,13 @@
 
 CRANELIFT_PHASE14_STACK_SLOT_VIEW_VERSION: 1
 CRANELIFT_PHASE14_STACK_SLOT_VERSION: phase14_deterministic_stack_slots_and_addressable_locals_v1
-CRANELIFT_PHASE14_STACK_SLOT_STATUS: ready_for_patch14_6
+CRANELIFT_PHASE14_STACK_SLOT_STATUS: consumed_by_patch14_6
 CRANELIFT_PHASE14_STACK_SLOT_OWNER: compiler/mir_stack_slot.gst
 CRANELIFT_PHASE14_STACK_SLOT_TABLE_FORMAT: gust.compiler_stack_slot_table.v1
 CRANELIFT_PHASE14_STACK_SLOT_PRIMARY_TARGET: x86_64-unknown-linux-gnu
 CRANELIFT_PHASE14_STACK_SLOT_LEVEL1_GUARD: guard-cranelift-phase14-stack-slot-contract
 CRANELIFT_PHASE14_STACK_SLOT_LEVEL2_GUARD: guard-cranelift-phase14-stack-slot-parity
-CRANELIFT_PHASE14_STACK_SLOT_NEXT_PATCH: 14.6
+CRANELIFT_PHASE14_STACK_SLOT_NEXT_PATCH: 14.7
 
 ## Storage classes
 
@@ -72,6 +72,6 @@ Selected operations per target: `11`.
 
 ## Boundary
 
-fixed_size_compiler_owned_stack_slots_only_no_dynamic_allocation_variable_sized_storage_escape_resource_destructors_or_unrestricted_aliasing
+fixed_size_compiler_owned_stack_slots_with_selected_typed_i32_load_store_and_bounded_nonoverlap_copy_no_dynamic_allocation_variable_sized_storage_escape_resource_destructors_or_unrestricted_aliasing
 
 MIR-to-C and Cranelift consume identical deterministic slot IDs, compiler-owned layout IDs, initialization states, lifetime regions, and mutability. Neither backend may infer slot layout from source text or local names.

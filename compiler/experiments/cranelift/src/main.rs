@@ -5049,6 +5049,766 @@ fn print_phase14_stack_slot_witness(
     Ok(())
 }
 
+const PHASE14_MEMORY_ACCESS_TABLE_FORMAT_V1: &str =
+    "gust.compiler_memory_access_table.v1";
+
+#[derive(Debug)]
+struct Phase14RequestMemoryAccessOperation {
+    operation_id: String,
+    operation_name: String,
+    target_id: String,
+    kind: String,
+    accessed_type_id: String,
+    accessed_layout_id: String,
+    byte_width: usize,
+    required_alignment: usize,
+    origin_kind: String,
+    origin_id: String,
+    origin_slot_id: String,
+    origin_mutability: String,
+    origin_nullability: String,
+    lifetime_region: String,
+    source_file: String,
+    source_line: usize,
+    source_column: usize,
+    offset_kind: String,
+    offset_layout_id: String,
+    element_index: usize,
+    source_offset: usize,
+    destination_offset: usize,
+    input_value: i64,
+    expect_success: bool,
+    expected_value: i64,
+    expected_reason_code: String,
+}
+
+#[derive(Debug)]
+struct Phase14RequestMemoryAccessTable {
+    format: String,
+    target_id: String,
+    target_triple: String,
+    natural_alignment_policy: String,
+    unaligned_policy: String,
+    zero_sized_policy: String,
+    known_null_policy: String,
+    initialization_policy: String,
+    overlap_policy: String,
+    operations: Vec<Phase14RequestMemoryAccessOperation>,
+}
+
+impl Phase14RequestMemoryAccessTable {
+    fn legacy_empty(target_triple: &str) -> Self {
+        Self {
+            format: PHASE14_MEMORY_ACCESS_TABLE_FORMAT_V1.to_string(),
+            target_id: String::new(),
+            target_triple: target_triple.to_string(),
+            natural_alignment_policy:
+                "required_exact_compiler_alignment".to_string(),
+            unaligned_policy: "rejected_not_selected".to_string(),
+            zero_sized_policy:
+                "rejected_no_selected_zero_sized_type".to_string(),
+            known_null_policy: "rejected_before_codegen".to_string(),
+            initialization_policy:
+                "loads_require_initialization_or_prior_store".to_string(),
+            overlap_policy:
+                "bounded_copy_requires_non_overlapping_ranges".to_string(),
+            operations: Vec::new(),
+        }
+    }
+
+    fn is_legacy_empty(&self) -> bool {
+        self.format == PHASE14_MEMORY_ACCESS_TABLE_FORMAT_V1
+            && self.target_id.is_empty()
+            && self.operations.is_empty()
+    }
+}
+
+fn phase14_memory_access_kind_is_valid(value: &str) -> bool {
+    matches!(value, "load" | "store" | "aggregate_copy" | "layout_offset")
+}
+
+fn phase14_memory_access_origin_kind_is_valid(value: &str) -> bool {
+    matches!(value, "stack_slot" | "pointer")
+}
+
+fn phase14_memory_access_mutability_is_valid(value: &str) -> bool {
+    matches!(value, "immutable" | "mutable")
+}
+
+fn phase14_memory_access_nullability_is_valid(value: &str) -> bool {
+    matches!(value, "non_null" | "nullable" | "not_applicable")
+}
+
+fn phase14_memory_access_offset_kind_is_valid(value: &str) -> bool {
+    matches!(value, "none" | "element")
+}
+
+fn phase14_memory_access_identity(
+    operation: &Phase14RequestMemoryAccessOperation,
+) -> String {
+    format!(
+        "memory_access_operation:v1:target={}:kind={}:name={}:type={}:layout={}:origin={}:origin_id={}:source_offset={}:destination_offset={}",
+        operation.target_id,
+        operation.kind,
+        operation.operation_name,
+        operation.accessed_type_id,
+        operation.accessed_layout_id,
+        operation.origin_kind,
+        operation.origin_id,
+        operation.source_offset,
+        operation.destination_offset,
+    )
+}
+
+#[derive(Debug)]
+struct Phase14MemoryAccessEvaluation {
+    success: bool,
+    value: i64,
+    reason_code: String,
+}
+
+fn phase14_evaluate_memory_access_operation(
+    operation: &Phase14RequestMemoryAccessOperation,
+) -> Phase14MemoryAccessEvaluation {
+    if !phase14_memory_access_kind_is_valid(&operation.kind) {
+        return Phase14MemoryAccessEvaluation {
+            success: false,
+            value: 0,
+            reason_code: "memory_access_operation_unsupported".to_string(),
+        };
+    }
+    Phase14MemoryAccessEvaluation {
+        success: true,
+        value: if operation.kind == "layout_offset" {
+            operation.destination_offset as i64
+        } else {
+            operation.input_value
+        },
+        reason_code: "memory_access_operation_valid".to_string(),
+    }
+}
+
+fn phase14_memory_access_ranges_overlap(
+    source_offset: usize,
+    destination_offset: usize,
+    byte_width: usize,
+) -> bool {
+    source_offset < destination_offset.saturating_add(byte_width)
+        && destination_offset < source_offset.saturating_add(byte_width)
+}
+
+fn parse_phase14_request_memory_access_table(
+    cursor: &mut Phase10TextCursor<'_>,
+    request_target_triple: &str,
+    layout_table: &Phase14RequestLayoutTable,
+    pointer_table: &Phase14RequestPointerTable,
+    stack_slot_table: &Phase14RequestStackSlotTable,
+) -> Result<Phase14RequestMemoryAccessTable, Box<dyn Error>> {
+    let parse_stage = Phase10BackendRequestStage::RequestParse;
+    let parse_kind = Phase10BackendRequestFailureKind::InvalidRequest;
+    let format_name = cursor
+        .take_field(
+            "memory_access_table_format",
+            false,
+            parse_stage,
+            parse_kind,
+        )?
+        .to_string();
+    let target_id = cursor
+        .take_field(
+            "memory_access_target_id",
+            true,
+            parse_stage,
+            parse_kind,
+        )?
+        .to_string();
+    let target_triple = cursor
+        .take_field(
+            "memory_access_target_triple",
+            false,
+            parse_stage,
+            parse_kind,
+        )?
+        .to_string();
+    let natural_alignment_policy = cursor
+        .take_field(
+            "memory_access_natural_alignment_policy",
+            false,
+            parse_stage,
+            parse_kind,
+        )?
+        .to_string();
+    let unaligned_policy = cursor
+        .take_field(
+            "memory_access_unaligned_policy",
+            false,
+            parse_stage,
+            parse_kind,
+        )?
+        .to_string();
+    let zero_sized_policy = cursor
+        .take_field(
+            "memory_access_zero_sized_policy",
+            false,
+            parse_stage,
+            parse_kind,
+        )?
+        .to_string();
+    let known_null_policy = cursor
+        .take_field(
+            "memory_access_known_null_policy",
+            false,
+            parse_stage,
+            parse_kind,
+        )?
+        .to_string();
+    let initialization_policy = cursor
+        .take_field(
+            "memory_access_initialization_policy",
+            false,
+            parse_stage,
+            parse_kind,
+        )?
+        .to_string();
+    let overlap_policy = cursor
+        .take_field(
+            "memory_access_overlap_policy",
+            false,
+            parse_stage,
+            parse_kind,
+        )?
+        .to_string();
+    let operation_count = cursor.take_usize_field(
+        "memory_access_operation_count",
+        parse_stage,
+        parse_kind,
+    )?;
+    let mut operations = Vec::with_capacity(operation_count);
+    for index in 0..operation_count {
+        let prefix = format!("memory_access_operation_{index}");
+        operations.push(Phase14RequestMemoryAccessOperation {
+            operation_id: cursor.take_field(&format!("{prefix}_id"), false, parse_stage, parse_kind)?.to_string(),
+            operation_name: cursor.take_field(&format!("{prefix}_name"), false, parse_stage, parse_kind)?.to_string(),
+            target_id: cursor.take_field(&format!("{prefix}_target_id"), false, parse_stage, parse_kind)?.to_string(),
+            kind: cursor.take_field(&format!("{prefix}_kind"), false, parse_stage, parse_kind)?.to_string(),
+            accessed_type_id: cursor.take_field(&format!("{prefix}_accessed_type_id"), false, parse_stage, parse_kind)?.to_string(),
+            accessed_layout_id: cursor.take_field(&format!("{prefix}_accessed_layout_id"), false, parse_stage, parse_kind)?.to_string(),
+            byte_width: cursor.take_usize_field(&format!("{prefix}_byte_width"), parse_stage, parse_kind)?,
+            required_alignment: cursor.take_usize_field(&format!("{prefix}_required_alignment"), parse_stage, parse_kind)?,
+            origin_kind: cursor.take_field(&format!("{prefix}_origin_kind"), false, parse_stage, parse_kind)?.to_string(),
+            origin_id: cursor.take_field(&format!("{prefix}_origin_id"), false, parse_stage, parse_kind)?.to_string(),
+            origin_slot_id: cursor.take_field(&format!("{prefix}_origin_slot_id"), false, parse_stage, parse_kind)?.to_string(),
+            origin_mutability: cursor.take_field(&format!("{prefix}_origin_mutability"), false, parse_stage, parse_kind)?.to_string(),
+            origin_nullability: cursor.take_field(&format!("{prefix}_origin_nullability"), false, parse_stage, parse_kind)?.to_string(),
+            lifetime_region: cursor.take_field(&format!("{prefix}_lifetime_region"), true, parse_stage, parse_kind)?.to_string(),
+            source_file: cursor.take_field(&format!("{prefix}_source_file"), false, parse_stage, parse_kind)?.to_string(),
+            source_line: cursor.take_usize_field(&format!("{prefix}_source_line"), parse_stage, parse_kind)?,
+            source_column: cursor.take_usize_field(&format!("{prefix}_source_column"), parse_stage, parse_kind)?,
+            offset_kind: cursor.take_field(&format!("{prefix}_offset_kind"), false, parse_stage, parse_kind)?.to_string(),
+            offset_layout_id: cursor.take_field(&format!("{prefix}_offset_layout_id"), true, parse_stage, parse_kind)?.to_string(),
+            element_index: cursor.take_usize_field(&format!("{prefix}_element_index"), parse_stage, parse_kind)?,
+            source_offset: cursor.take_usize_field(&format!("{prefix}_source_offset"), parse_stage, parse_kind)?,
+            destination_offset: cursor.take_usize_field(&format!("{prefix}_destination_offset"), parse_stage, parse_kind)?,
+            input_value: cursor.take_i64_field(&format!("{prefix}_input_value"), parse_stage, parse_kind)?,
+            expect_success: phase14_parse_bool_field(cursor, &format!("{prefix}_expect_success"))?,
+            expected_value: cursor.take_i64_field(&format!("{prefix}_expected_value"), parse_stage, parse_kind)?,
+            expected_reason_code: cursor.take_field(&format!("{prefix}_expected_reason_code"), false, parse_stage, parse_kind)?.to_string(),
+        });
+    }
+    let table = Phase14RequestMemoryAccessTable {
+        format: format_name,
+        target_id,
+        target_triple,
+        natural_alignment_policy,
+        unaligned_policy,
+        zero_sized_policy,
+        known_null_policy,
+        initialization_policy,
+        overlap_policy,
+        operations,
+    };
+    validate_phase14_request_memory_access_table(
+        &table,
+        request_target_triple,
+        layout_table,
+        pointer_table,
+        stack_slot_table,
+    )?;
+    Ok(table)
+}
+
+fn validate_phase14_request_memory_access_table(
+    table: &Phase14RequestMemoryAccessTable,
+    request_target_triple: &str,
+    layout_table: &Phase14RequestLayoutTable,
+    pointer_table: &Phase14RequestPointerTable,
+    stack_slot_table: &Phase14RequestStackSlotTable,
+) -> Result<(), Box<dyn Error>> {
+    let stage = Phase10BackendRequestStage::CanonicalMirValidation;
+    let kind = Phase10BackendRequestFailureKind::InvalidCanonicalMir;
+    if table.is_legacy_empty() {
+        return Ok(());
+    }
+    if table.format != PHASE14_MEMORY_ACCESS_TABLE_FORMAT_V1 {
+        return Err(phase10_backend_request_error(
+            stage,
+            kind,
+            "memory-access table format mismatch",
+        ));
+    }
+    if table.target_triple != request_target_triple
+        || table.target_triple != layout_table.target.target_triple
+        || table.target_triple != pointer_table.target_triple
+        || table.target_triple != stack_slot_table.target_triple
+        || table.target_id != layout_table.target.target_id
+        || table.target_id != pointer_table.target_id
+        || table.target_id != stack_slot_table.target_id
+    {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::TargetValidation,
+            Phase10BackendRequestFailureKind::TargetMismatch,
+            "request, layout, pointer, stack-slot, and memory-access targets disagree",
+        ));
+    }
+    if table.natural_alignment_policy != "required_exact_compiler_alignment"
+        || table.unaligned_policy != "rejected_not_selected"
+        || table.zero_sized_policy
+            != "rejected_no_selected_zero_sized_type"
+        || table.known_null_policy != "rejected_before_codegen"
+        || table.initialization_policy
+            != "loads_require_initialization_or_prior_store"
+        || table.overlap_policy
+            != "bounded_copy_requires_non_overlapping_ranges"
+    {
+        return Err(phase10_backend_request_error(
+            stage,
+            kind,
+            "memory-access policy mismatch",
+        ));
+    }
+    if table.operations.len() != 6 {
+        return Err(phase10_backend_request_error(
+            stage,
+            kind,
+            format!(
+                "memory-access inventory expected 6 operations, got {}",
+                table.operations.len()
+            ),
+        ));
+    }
+    let mut operation_ids = HashSet::new();
+    let mut initialized_by_store = HashSet::new();
+    for operation in &table.operations {
+        if !phase14_memory_access_kind_is_valid(&operation.kind)
+            || !phase14_memory_access_origin_kind_is_valid(
+                &operation.origin_kind,
+            )
+            || !phase14_memory_access_mutability_is_valid(
+                &operation.origin_mutability,
+            )
+            || !phase14_memory_access_nullability_is_valid(
+                &operation.origin_nullability,
+            )
+            || !phase14_memory_access_offset_kind_is_valid(
+                &operation.offset_kind,
+            )
+            || operation.source_file.is_empty()
+            || operation.source_line == 0
+            || operation.source_column == 0
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                format!(
+                    "invalid canonical memory-access operation: {}",
+                    operation.operation_name
+                ),
+            ));
+        }
+        let Some(accessed_layout) = layout_table.layouts.iter().find(|layout| {
+            layout.type_id == operation.accessed_type_id
+        }) else {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "memory_access_pointee_type_mismatch",
+            ));
+        };
+        if accessed_layout.layout_id != operation.accessed_layout_id {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "memory_access_layout_id_mismatch",
+            ));
+        }
+        if operation.byte_width == 0 {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "memory_access_zero_sized_unsupported",
+            ));
+        }
+        if operation.byte_width != accessed_layout.size {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "memory_access_width_mismatch",
+            ));
+        }
+        if operation.required_alignment == 0
+            || !operation.required_alignment.is_power_of_two()
+            || operation.required_alignment != accessed_layout.alignment
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "memory_access_alignment_mismatch",
+            ));
+        }
+        let Some(access_layout) = layout_table.memory_accesses.iter().find(
+            |access| {
+                access.type_id == operation.accessed_type_id
+                    && access.layout_id == operation.accessed_layout_id
+                    && access.target_id == operation.target_id
+            },
+        ) else {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "memory_access_layout_not_declared",
+            ));
+        };
+        if access_layout.byte_width != operation.byte_width {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "memory_access_width_mismatch",
+            ));
+        }
+        if access_layout.required_alignment
+            != operation.required_alignment
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "memory_access_alignment_mismatch",
+            ));
+        }
+        let Some(slot) = stack_slot_table.slots.iter().find(|slot| {
+            slot.slot_id == operation.origin_slot_id
+        }) else {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "memory_access_origin_slot_unknown",
+            ));
+        };
+        if operation.lifetime_region.is_empty()
+            || operation.lifetime_region != slot.lifetime_region
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "memory_access_out_of_lifetime",
+            ));
+        }
+        if operation.origin_mutability != slot.mutability {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "memory_access_origin_mutability_mismatch",
+            ));
+        }
+        if operation.source_offset.saturating_add(operation.byte_width)
+            > slot.size
+            || operation
+                .destination_offset
+                .saturating_add(operation.byte_width)
+                > slot.size
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "memory_access_offset_out_of_bounds",
+            ));
+        }
+        if operation.source_offset % operation.required_alignment != 0
+            || operation.destination_offset
+                % operation.required_alignment
+                != 0
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "memory_access_unaligned_unsupported",
+            ));
+        }
+        if operation.kind == "store" && slot.mutability != "mutable" {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "memory_access_store_immutable",
+            ));
+        }
+        if operation.kind == "load"
+            && slot.initialization_state != "initialized"
+            && !initialized_by_store.contains(&operation.origin_slot_id)
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "memory_access_read_before_write",
+            ));
+        }
+        if operation.origin_kind == "pointer" {
+            let Some(pointer_type) = pointer_table.pointer_types.iter().find(
+                |pointer_type| {
+                    pointer_type.pointer_type_id == operation.origin_id
+                },
+            ) else {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    "memory_access_pointer_origin_unknown",
+                ));
+            };
+            if pointer_type.pointee_type_id
+                != operation.accessed_type_id
+                || pointer_type.pointee_layout_id
+                    != operation.accessed_layout_id
+            {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    "memory_access_pointee_type_mismatch",
+                ));
+            }
+            if pointer_type.nullability != "non_null"
+                || operation.origin_nullability != "non_null"
+            {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    "memory_access_known_null",
+                ));
+            }
+            if pointer_type.mutability != operation.origin_mutability {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    "memory_access_origin_mutability_mismatch",
+                ));
+            }
+        } else if operation.origin_id != operation.origin_slot_id
+            || operation.origin_nullability != "not_applicable"
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "memory_access_origin_invalid",
+            ));
+        }
+        if operation.offset_kind == "element" {
+            if operation.offset_layout_id
+                != operation.accessed_layout_id
+                || operation.destination_offset
+                    != accessed_layout
+                        .element_stride
+                        .saturating_mul(operation.element_index)
+            {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    "memory_access_layout_offset_mismatch",
+                ));
+            }
+        } else if !operation.offset_layout_id.is_empty()
+            || operation.element_index != 0
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "memory_access_layout_offset_mismatch",
+            ));
+        }
+        if operation.kind == "aggregate_copy"
+            && phase14_memory_access_ranges_overlap(
+                operation.source_offset,
+                operation.destination_offset,
+                operation.byte_width,
+            )
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "memory_access_overlap_unsupported",
+            ));
+        }
+        if operation.operation_id
+            != phase14_memory_access_identity(operation)
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "memory_access_operation_identity_mismatch",
+            ));
+        }
+        if operation.target_id != table.target_id {
+            return Err(phase10_backend_request_error(
+                Phase10BackendRequestStage::TargetValidation,
+                Phase10BackendRequestFailureKind::TargetMismatch,
+                "memory-access operation target mismatch",
+            ));
+        }
+        if !operation_ids.insert(operation.operation_id.clone()) {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "memory_access_duplicate_operation_identity",
+            ));
+        }
+        let _cranelift_type = phase14_cranelift_memory_access_type(
+            operation,
+            layout_table,
+        )?;
+        let evaluation = phase14_evaluate_memory_access_operation(operation);
+        if evaluation.success != operation.expect_success
+            || evaluation.value != operation.expected_value
+            || evaluation.reason_code != operation.expected_reason_code
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                format!(
+                    "memory-access expectation mismatch: {}",
+                    operation.operation_name
+                ),
+            ));
+        }
+        if operation.kind == "store" {
+            initialized_by_store.insert(operation.origin_slot_id.clone());
+        }
+    }
+    Ok(())
+}
+
+fn phase14_cranelift_memory_access_type(
+    operation: &Phase14RequestMemoryAccessOperation,
+    layout_table: &Phase14RequestLayoutTable,
+) -> Result<Type, Box<dyn Error>> {
+    let Some(layout) = layout_table.layouts.iter().find(|layout| {
+        layout.layout_id == operation.accessed_layout_id
+    }) else {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "memory_access_layout_id_mismatch",
+        ));
+    };
+    if layout.size != operation.byte_width {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "memory_access_width_mismatch",
+        ));
+    }
+    if layout.alignment != operation.required_alignment {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "memory_access_alignment_mismatch",
+        ));
+    }
+    phase14_cranelift_scalar_type(layout)
+}
+
+fn phase14_memory_access_witness_text(
+    request: &Phase10BackendRequest,
+) -> Result<String, Box<dyn Error>> {
+    let table = &request.memory_access_table;
+    validate_phase14_request_memory_access_table(
+        table,
+        &request.target_triple,
+        &request.layout_table,
+        &request.pointer_table,
+        &request.stack_slot_table,
+    )?;
+    let mut output = String::new();
+    output.push_str("memory_access_status: valid\n");
+    output.push_str(&format!(
+        "memory_access_target: {}\n",
+        table.target_triple
+    ));
+    output.push_str(&format!(
+        "memory_access_target_id: {}\n",
+        table.target_id
+    ));
+    output.push_str(&format!(
+        "memory_access_natural_alignment_policy: {}\n",
+        table.natural_alignment_policy
+    ));
+    output.push_str(&format!(
+        "memory_access_unaligned_policy: {}\n",
+        table.unaligned_policy
+    ));
+    output.push_str(&format!(
+        "memory_access_zero_sized_policy: {}\n",
+        table.zero_sized_policy
+    ));
+    output.push_str(&format!(
+        "memory_access_known_null_policy: {}\n",
+        table.known_null_policy
+    ));
+    output.push_str(&format!(
+        "memory_access_initialization_policy: {}\n",
+        table.initialization_policy
+    ));
+    output.push_str(&format!(
+        "memory_access_overlap_policy: {}\n",
+        table.overlap_policy
+    ));
+    for operation in &table.operations {
+        let _cranelift_type = phase14_cranelift_memory_access_type(
+            operation,
+            &request.layout_table,
+        )?;
+        let evaluation = phase14_evaluate_memory_access_operation(operation);
+        output.push_str(&format!(
+            "memory_access_operation: {} kind={} type={} layout={} width={} alignment={} origin={} origin_id={} slot={} mutability={} nullability={} lifetime={} source={}:{}:{} offset_kind={} source_offset={} destination_offset={} status={} value={} reason={}\n",
+            operation.operation_name,
+            operation.kind,
+            operation.accessed_type_id,
+            operation.accessed_layout_id,
+            operation.byte_width,
+            operation.required_alignment,
+            operation.origin_kind,
+            operation.origin_id,
+            operation.origin_slot_id,
+            operation.origin_mutability,
+            operation.origin_nullability,
+            operation.lifetime_region,
+            operation.source_file,
+            operation.source_line,
+            operation.source_column,
+            operation.offset_kind,
+            operation.source_offset,
+            operation.destination_offset,
+            if evaluation.success { "success" } else { "failure" },
+            evaluation.value,
+            evaluation.reason_code,
+        ));
+    }
+    Ok(output)
+}
+
+fn print_phase14_memory_access_witness(
+    request_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let request = phase14_load_primitive_layout_request(request_path)?;
+    print!("{}", phase14_memory_access_witness_text(&request)?);
+    Ok(())
+}
+
 #[derive(Debug)]
 struct Phase10BackendRequest {
     target_triple: String,
@@ -5059,6 +5819,7 @@ struct Phase10BackendRequest {
     integer_conversion_table: Phase14RequestIntegerConversionTable,
     pointer_table: Phase14RequestPointerTable,
     stack_slot_table: Phase14RequestStackSlotTable,
+    memory_access_table: Phase14RequestMemoryAccessTable,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -5187,6 +5948,17 @@ fn parse_phase10_backend_request(
     } else {
         Phase14RequestStackSlotTable::legacy_empty(&target_triple)
     };
+    let memory_access_table = if cursor.has_remaining() {
+        parse_phase14_request_memory_access_table(
+            &mut cursor,
+            &target_triple,
+            &layout_table,
+            &pointer_table,
+            &stack_slot_table,
+        )?
+    } else {
+        Phase14RequestMemoryAccessTable::legacy_empty(&target_triple)
+    };
     cursor.finish(stage, kind)?;
 
     if !output_path.is_absolute() {
@@ -5220,6 +5992,7 @@ fn parse_phase10_backend_request(
         integer_conversion_table,
         pointer_table,
         stack_slot_table,
+        memory_access_table,
     })
 }
 
@@ -9461,6 +10234,15 @@ fn run() -> Result<(), Box<dyn Error>> {
                 return Err(usage_error().into());
             }
             print_phase14_stack_slot_witness(Path::new(&request_path))
+        }
+        "phase14-memory-access-witness" => {
+            let Some(request_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            print_phase14_memory_access_witness(Path::new(&request_path))
         }
         "phase10-backend-request-compile" => {
             let Some(request_path) = args.next() else {

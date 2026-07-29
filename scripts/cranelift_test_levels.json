@@ -227,6 +227,8 @@
     "guard-cranelift-route-architecture-contract": 1,
     "guard-cranelift-phase14-stack-slot-contract": 1,
     "guard-cranelift-phase14-stack-slot-parity": 2,
+    "guard-cranelift-phase14-memory-access-contract": 1,
+    "guard-cranelift-phase14-memory-access-parity": 2,
     "guard-cranelift-phase14-pointer-memory-parity": 2
   }
 }

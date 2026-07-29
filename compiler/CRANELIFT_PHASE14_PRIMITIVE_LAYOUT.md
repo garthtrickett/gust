@@ -56,4 +56,4 @@ compiler_emits_one_semantic_witness_per_declared_target_mir_to_c_and_cranelift_c
 
 primitive_representation_integer_conversion_and_bounded_pointer_metadata_active_no_load_store_string_array_struct_enum_or_aggregate_abi_migration
 
-Canonical boolean memory values are exactly `0` and `1`. Patch 14.4 now owns bounded typed pointer identity and nullability; stack storage, loads/stores, strings, arrays, structs, enums, and unrestricted aggregate flow remain deferred.
+Canonical boolean memory values are exactly `0` and `1`. Patch 14.6 now owns bounded typed i32 memory access over compiler-owned pointers and stack slots; strings, arrays, structs, enums, broader aggregates, and unsupported memory forms remain deferred.

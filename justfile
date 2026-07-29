@@ -134,6 +134,8 @@ guard-pr-fast-ci-surface:
       'just guard-cranelift-phase14-pointer-contract'
       'Phase 14 deterministic stack slots and addressable locals'
       'just guard-cranelift-phase14-stack-slot-contract'
+      'Phase 14 typed loads stores and memory access'
+      'just guard-cranelift-phase14-memory-access-contract'
       'phase11-family:'
       'phase11_families:'
       'matrix.family'
@@ -14274,6 +14276,159 @@ guard-cranelift-phase14-stack-slot-parity:
     fi
     bash scripts/phase14_stack_slot_differential.sh
 
+guard-cranelift-phase14-memory-access-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 14 typed loads, stores, and memory-access validation..."
+    validator="scripts/cranelift_registry.py"
+    family_runner="scripts/cranelift_ci_family.py"
+    level_runner="scripts/cranelift_test_levels.py"
+    review="compiler/CRANELIFT_PHASE14_MEMORY_ACCESS.md"
+    authority="compiler/mir_memory_access.gst"
+    mir="compiler/mir.gst"
+    request="compiler/mir_native_backend_request.gst"
+    mir_to_c="compiler/mir_memory_access_mir_to_c.gst"
+    diagnostics="compiler/mir_memory_access_diagnostics.gst"
+    worker="compiler/experiments/cranelift/src/main.rs"
+    smoke="compiler/mir_memory_access_smoke_test_entry.gst"
+    differential="scripts/phase14_memory_access_differential.sh"
+    pr_workflow=".github/workflows/pr-fast.yml"
+
+    for required_file in \
+      "$validator" "$family_runner" "$level_runner" "$review" "$authority" \
+      "$mir" "$request" "$mir_to_c" "$diagnostics" "$worker" "$smoke" \
+      "$differential" "$pr_workflow" \
+      compiler/phase14_typed_memory_access_source.gst \
+      compiler/phase14_typed_memory_access_composition_source.gst \
+      compiler/fixtures/native_backend_phase14_memory_access_ingestion.mir \
+      compiler/fixtures/native_backend_phase14_memory_access_malformed.mir \
+      compiler/p14_memory_access_wrong_width_source.gst \
+      compiler/p14_memory_access_wrong_alignment_source.gst \
+      compiler/p14_memory_access_wrong_pointee_type_source.gst \
+      compiler/p14_memory_access_immutable_store_source.gst \
+      compiler/p14_memory_access_invalid_layout_id_source.gst \
+      compiler/p14_memory_access_out_of_lifetime_source.gst \
+      compiler/p14_memory_access_unsupported_overlap_source.gst \
+      compiler/p14_memory_access_known_null_source.gst \
+      compiler/p14_memory_access_read_before_write_source.gst \
+      compiler/p14_memory_access_unaligned_source.gst \
+      compiler/p14_memory_access_zero_sized_source.gst
+    do
+      if [ ! -f "$required_file" ] || [ -L "$required_file" ]; then
+        echo "Missing regular Phase 14 memory-access input: $required_file"
+        exit 1
+      fi
+    done
+
+    just guard-cranelift-phase14-stack-slot-contract
+    python3 "$validator" verify-phase14-memory-accesses
+    python3 "$validator" check-phase14-memory-access-projection
+    python3 "$validator" check-projection
+    python3 "$family_runner" validate
+    python3 "$family_runner" check-pr-workflow "$pr_workflow"
+    python3 "$level_runner" validate
+    python3 "$level_runner" check-pr-workflow
+    python3 "$level_runner" level guard-cranelift-phase14-memory-access-contract |
+      rg -n -F $'guard-cranelift-phase14-memory-access-contract\t1\t' >/dev/null
+    bash -n "$differential"
+
+    required_review_tokens=(
+      'CRANELIFT_PHASE14_MEMORY_ACCESS_VIEW_VERSION: 1'
+      'CRANELIFT_PHASE14_MEMORY_ACCESS_VERSION: phase14_typed_load_store_memory_access_v1'
+      'CRANELIFT_PHASE14_MEMORY_ACCESS_STATUS: ready_for_patch14_7'
+      'CRANELIFT_PHASE14_MEMORY_ACCESS_OWNER: compiler/mir_memory_access.gst'
+      'CRANELIFT_PHASE14_MEMORY_ACCESS_TABLE_FORMAT: gust.compiler_memory_access_table.v1'
+      'CRANELIFT_PHASE14_MEMORY_ACCESS_PRIMARY_TARGET: x86_64-unknown-linux-gnu'
+      '## Selected types'
+      '## Canonical memory operations'
+      '## Compiler-owned access metadata'
+      '## Composition contexts'
+      '## Negative classes'
+      '## Semantic policies'
+      '## Boundary'
+    )
+    for token in "${required_review_tokens[@]}"; do
+      rg -n -F "$token" "$review" >/dev/null
+    done
+
+    for token in \
+      'type MirMemoryAccessOperation[ctx] struct' \
+      'type MirMemoryAccessTable[ctx] struct' \
+      'func mir_memory_access_table_for_layout(' \
+      'func mir_memory_access_table_is_valid(' \
+      'func mir_memory_access_rejection(' \
+      'func mir_serialize_memory_access_table_for_request('
+    do
+      rg -n -F "$token" "$authority" >/dev/null
+    done
+    for kind in load store aggregate_copy layout_offset; do
+      rg -n -F "$kind" "$authority" "$mir" "$worker" >/dev/null
+    done
+    rg -n -F 'type MirMemoryAccessOperationKind enum' "$mir" >/dev/null
+    rg -n -F 'type MirMemoryAccessReference' "$mir" >/dev/null
+    rg -n -F 'memory_access_table: memory_access.MirMemoryAccessTable[ctx]' "$request" >/dev/null
+    rg -n -F 'mir_serialize_memory_access_table_for_request' "$request" >/dev/null
+    rg -n -F 'mir_memory_access_c_source' "$mir_to_c" >/dev/null
+    rg -n -F 'gust_memory_access_diagnostic:' "$diagnostics" >/dev/null
+    rg -n -F 'struct Phase14RequestMemoryAccessTable' "$worker" >/dev/null
+    rg -n -F 'fn validate_phase14_request_memory_access_table(' "$worker" >/dev/null
+    rg -n -F 'fn phase14_cranelift_memory_access_type(' "$worker" >/dev/null
+    rg -n -F 'phase14-memory-access-witness' "$worker" >/dev/null
+
+    memory_access_ci_count="$(
+      (rg -n -F 'just guard-cranelift-phase14-memory-access-contract' \
+        .github/workflows --glob '*.yml' || true) | wc -l | tr -d ' '
+    )"
+    if [ "$memory_access_ci_count" != "1" ]; then
+      echo "Phase 14 memory-access contract must be wired into CI exactly once, found $memory_access_ci_count occurrences."
+      exit 1
+    fi
+    rg -n -x -F '        run: just guard-cranelift-phase14-memory-access-contract' \
+      "$pr_workflow" >/dev/null
+
+    if rg -n \
+        -e 'std::mem::(size_of|align_of)' \
+        -e 'offset_of!' \
+        -e 'Layout::(from_size_align|new|array)' \
+        "$worker" >/dev/null
+    then
+      echo "The Cranelift worker must consume compiler-selected memory-access widths, alignments, and offsets."
+      exit 1
+    fi
+
+    guard_body="$(
+      sed -n \
+        '/^guard-cranelift-phase14-memory-access-contract:/,/^guard-cranelift-phase14-memory-access-parity:/p' \
+        justfile
+    )"
+    if printf '%s\n' "$guard_body" |
+       rg -n \
+         -e '^[[:space:]]+bash scripts/phase14_memory_access_differential\.sh([[:space:]]|$)' \
+         -e '^[[:space:]]+just guard-cranelift-differential-family([[:space:]]|$)' \
+         -e '^[[:space:]]+just guard-cranelift-historical-full([[:space:]]|$)' \
+         -e '^[[:space:]]+\./gust([[:space:]]|$)' \
+         -e '^[[:space:]]+(cargo|cc|gcc|clang|make)([[:space:]]|$)' >/dev/null
+    then
+      echo "Phase 14 memory-access contract must remain a Level 1 ownership and projection guard."
+      exit 1
+    fi
+
+    echo "✅ Phase 14 memory-access contract passed: typed layout-backed loads, stores, compiler offsets, non-overlapping copies, pre-worker validation, backend consumers, diagnostics, output preservation, and CI ownership are frozen."
+
+guard-cranelift-phase14-memory-access-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 14 typed memory-access parity on the primary declared target..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase14-memory-access-parity |
+      rg -n -F $'guard-cranelift-phase14-memory-access-parity\t2\t' >/dev/null
+    just guard-cranelift-phase14-memory-access-contract
+    if [ "${PHASE14_MEMORY_ACCESS_SKIP_DYNAMIC:-0}" = "1" ]; then
+      echo "✅ Phase 14 memory-access parity static contract passed; dynamic evidence skipped by request."
+      exit 0
+    fi
+    bash scripts/phase14_memory_access_differential.sh
+
 guard-cranelift-phase14-pointer-memory-parity:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -14284,11 +14439,13 @@ guard-cranelift-phase14-pointer-memory-parity:
     if [ "${PHASE14_POINTER_MEMORY_SKIP_DYNAMIC:-0}" = "1" ]; then
       PHASE14_POINTER_SKIP_DYNAMIC=1 just guard-cranelift-phase14-pointer-parity
       PHASE14_STACK_SLOT_SKIP_DYNAMIC=1 just guard-cranelift-phase14-stack-slot-parity
+      PHASE14_MEMORY_ACCESS_SKIP_DYNAMIC=1 just guard-cranelift-phase14-memory-access-parity
       echo "✅ Phase 14 pointer-memory family static contracts passed; dynamic evidence skipped by request."
       exit 0
     fi
     just guard-cranelift-phase14-pointer-parity
     just guard-cranelift-phase14-stack-slot-parity
+    just guard-cranelift-phase14-memory-access-parity
 
 guard-cranelift-differential-family family:
     #!/usr/bin/env bash
@@ -14371,6 +14528,7 @@ guard-cranelift-historical-full:
           just guard-cranelift-differential-family "$family"
       elif [ "$family" = "pointer-memory" ]; then
         PHASE14_POINTER_ALL_TARGETS=1 PHASE14_STACK_SLOT_ALL_TARGETS=1 \
+          PHASE14_MEMORY_ACCESS_ALL_TARGETS=1 \
           just guard-cranelift-differential-family "$family"
       else
         just guard-cranelift-differential-family "$family"

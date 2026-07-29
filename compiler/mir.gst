@@ -22,6 +22,7 @@ import "mir_layout.gst" as layout;
 import "mir_integer_conversion.gst" as conversion;
 import "mir_pointer.gst" as pointer;
 import "mir_stack_slot.gst" as stack_slot;
+import "mir_memory_access.gst" as memory_access;
 
 type MirTypeLayoutReference[ctx] struct {
     type_id: str,
@@ -137,6 +138,38 @@ type MirStackSlotOperationReference[ctx] struct {
     context_kind: str
 }
 
+type MirMemoryAccessOperationKind enum {
+    Load,
+    Store,
+    AggregateCopy,
+    LayoutOffset
+}
+
+type MirMemoryAccessReference[ctx] struct {
+    operation_id: str,
+    operation_name: str,
+    target_id: str,
+    operation_kind: MirMemoryAccessOperationKind,
+    accessed_type_id: str,
+    accessed_layout_id: str,
+    byte_width: int,
+    required_alignment: int,
+    origin_kind: str,
+    origin_id: str,
+    origin_slot_id: str,
+    origin_mutability: str,
+    origin_nullability: str,
+    lifetime_region: str,
+    source_file: str,
+    source_line: int,
+    source_column: int,
+    offset_kind: str,
+    offset_layout_id: str,
+    element_index: int,
+    source_offset: int,
+    destination_offset: int
+}
+
 type MirProgram[ctx] struct {
     functions: Index[std.Vector[MirFunction[ctx], ctx], ctx],
     resource_metadata: Index[std.Vector[MirResourceMetadata[ctx], ctx], ctx],
@@ -148,7 +181,8 @@ type MirProgram[ctx] struct {
     pointer_type_references: Index[std.Vector[MirPointerTypeReference[ctx], ctx], ctx],
     pointer_operation_references: Index[std.Vector[MirPointerOperationReference[ctx], ctx], ctx],
     stack_slot_references: Index[std.Vector[MirStackSlotReference[ctx], ctx], ctx],
-    stack_slot_operation_references: Index[std.Vector[MirStackSlotOperationReference[ctx], ctx], ctx]
+    stack_slot_operation_references: Index[std.Vector[MirStackSlotOperationReference[ctx], ctx], ctx],
+    memory_access_references: Index[std.Vector[MirMemoryAccessReference[ctx], ctx], ctx]
 }
 
 type MirFunction[ctx] struct {
@@ -192,6 +226,11 @@ type MirStmt[ctx] enum {
         operation: Index[MirStackSlotOperationReference[ctx], ctx],
         value: Index[MirValue[ctx], ctx],
         span: token.Span
+    },
+    MemoryAccess {
+        operation: Index[MirMemoryAccessReference[ctx], ctx],
+        value: Index[MirValue[ctx], ctx],
+        span: token.Span
     }
 }
 
@@ -231,6 +270,12 @@ type MirValue[ctx] enum {
     PointerOperation {
         operands: Index[std.Vector[MirValue[ctx], ctx], ctx],
         operation: Index[MirPointerOperationReference[ctx], ctx],
+        value_type: str,
+        span: token.Span
+    },
+    MemoryAccess {
+        operands: Index[std.Vector[MirValue[ctx], ctx], ctx],
+        operation: Index[MirMemoryAccessReference[ctx], ctx],
         value_type: str,
         span: token.Span
     }
@@ -471,6 +516,13 @@ func mir_empty_stack_slot_operation_reference_vector(ctx: &Arena) Index[std.Vect
     return references_idx;
 }
 
+func mir_empty_memory_access_reference_vector(ctx: &Arena) Index[std.Vector[MirMemoryAccessReference[ctx], ctx], ctx] {
+    mut references: std.Vector[MirMemoryAccessReference[ctx], ctx] := std.VectorNew(ctx);
+    mut references_idx: Index[std.Vector[MirMemoryAccessReference[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(references_idx, references);
+    return references_idx;
+}
+
 func mir_value_vector_with_value(values_idx: Index[std.Vector[MirValue[ctx], ctx], ctx], value: MirValue[ctx], ctx: &Arena) Index[std.Vector[MirValue[ctx], ctx], ctx] {
     mut values: std.Vector[MirValue[ctx], ctx] := ctx[values_idx];
     values.Push(value);
@@ -503,6 +555,7 @@ func mir_make_program(ctx: &Arena) MirProgram[ctx] {
     program.pointer_operation_references = mir_empty_pointer_operation_reference_vector(ctx);
     program.stack_slot_references = mir_empty_stack_slot_reference_vector(ctx);
     program.stack_slot_operation_references = mir_empty_stack_slot_operation_reference_vector(ctx);
+    program.memory_access_references = mir_empty_memory_access_reference_vector(ctx);
     return program;
 }
 
@@ -913,6 +966,111 @@ func mir_program_stack_slot_references_are_valid(program: MirProgram[ctx], table
             return 0;
         }
         operation_index = operation_index + 1;
+    }
+    return 1;
+}
+
+func mir_memory_access_operation_kind_from_name(kind: str) MirMemoryAccessOperationKind {
+    mut result: MirMemoryAccessOperationKind;
+    unsafe {
+        result.tag = 0;
+        if std.str_eq(kind, "store") == 1 { result.tag = 1; }
+        if std.str_eq(kind, "aggregate_copy") == 1 { result.tag = 2; }
+        if std.str_eq(kind, "layout_offset") == 1 { result.tag = 3; }
+    }
+    return result;
+}
+
+func mir_debug_memory_access_operation_kind(kind: MirMemoryAccessOperationKind) str {
+    unsafe {
+        if kind.tag == 1 { return "store"; }
+        if kind.tag == 2 { return "aggregate_copy"; }
+        if kind.tag == 3 { return "layout_offset"; }
+    }
+    return "load";
+}
+
+func mir_make_memory_access_reference(operation: memory_access.MirMemoryAccessOperation[ctx], ctx: &Arena) MirMemoryAccessReference[ctx] {
+    mut reference: MirMemoryAccessReference[ctx];
+    reference.operation_id = std.Clone(ctx, operation.operation_id);
+    reference.operation_name = std.Clone(ctx, operation.operation_name);
+    reference.target_id = std.Clone(ctx, operation.target_id);
+    reference.operation_kind = mir_memory_access_operation_kind_from_name(operation.kind);
+    reference.accessed_type_id = std.Clone(ctx, operation.accessed_type_id);
+    reference.accessed_layout_id = std.Clone(ctx, operation.accessed_layout_id);
+    reference.byte_width = operation.byte_width;
+    reference.required_alignment = operation.required_alignment;
+    reference.origin_kind = std.Clone(ctx, operation.origin_kind);
+    reference.origin_id = std.Clone(ctx, operation.origin_id);
+    reference.origin_slot_id = std.Clone(ctx, operation.origin_slot_id);
+    reference.origin_mutability = std.Clone(ctx, operation.origin_mutability);
+    reference.origin_nullability = std.Clone(ctx, operation.origin_nullability);
+    reference.lifetime_region = std.Clone(ctx, operation.lifetime_region);
+    reference.source_file = std.Clone(ctx, operation.source_file);
+    reference.source_line = operation.source_line;
+    reference.source_column = operation.source_column;
+    reference.offset_kind = std.Clone(ctx, operation.offset_kind);
+    reference.offset_layout_id = std.Clone(ctx, operation.offset_layout_id);
+    reference.element_index = operation.element_index;
+    reference.source_offset = operation.source_offset;
+    reference.destination_offset = operation.destination_offset;
+    return reference;
+}
+
+func mir_program_with_memory_access_reference(program: MirProgram[ctx], reference: MirMemoryAccessReference[ctx], ctx: &Arena) MirProgram[ctx] {
+    mut updated := program;
+    mut references: std.Vector[MirMemoryAccessReference[ctx], ctx] := ctx[updated.memory_access_references];
+    references.Push(reference);
+    ctx.Set(updated.memory_access_references, references);
+    return updated;
+}
+
+func mir_program_memory_access_references_are_valid(program: MirProgram[ctx], table: memory_access.MirMemoryAccessTable[ctx], layout_table: layout.MirLayoutTable[ctx], pointer_table: pointer.MirPointerTable[ctx], stack_slot_table: stack_slot.MirStackSlotTable[ctx], ctx: &Arena) int {
+    if memory_access.mir_memory_access_table_is_valid(
+        table,
+        layout_table,
+        pointer_table,
+        stack_slot_table,
+        ctx
+    ) == 0
+    {
+        return 0;
+    }
+    mut references: std.Vector[MirMemoryAccessReference[ctx], ctx] := ctx[program.memory_access_references];
+    mut reference_index := 0;
+    while reference_index < len(references) {
+        mut reference := references[reference_index];
+        mut query := memory_access.mir_memory_access_operation(
+            table,
+            reference.operation_name,
+            ctx
+        );
+        if query.found == 0 ||
+           std.str_eq(query.operation.operation_id, reference.operation_id) == 0 ||
+           std.str_eq(query.operation.target_id, reference.target_id) == 0 ||
+           std.str_eq(query.operation.kind, mir_debug_memory_access_operation_kind(reference.operation_kind)) == 0 ||
+           std.str_eq(query.operation.accessed_type_id, reference.accessed_type_id) == 0 ||
+           std.str_eq(query.operation.accessed_layout_id, reference.accessed_layout_id) == 0 ||
+           query.operation.byte_width != reference.byte_width ||
+           query.operation.required_alignment != reference.required_alignment ||
+           std.str_eq(query.operation.origin_kind, reference.origin_kind) == 0 ||
+           std.str_eq(query.operation.origin_id, reference.origin_id) == 0 ||
+           std.str_eq(query.operation.origin_slot_id, reference.origin_slot_id) == 0 ||
+           std.str_eq(query.operation.origin_mutability, reference.origin_mutability) == 0 ||
+           std.str_eq(query.operation.origin_nullability, reference.origin_nullability) == 0 ||
+           std.str_eq(query.operation.lifetime_region, reference.lifetime_region) == 0 ||
+           std.str_eq(query.operation.source_file, reference.source_file) == 0 ||
+           query.operation.source_line != reference.source_line ||
+           query.operation.source_column != reference.source_column ||
+           std.str_eq(query.operation.offset_kind, reference.offset_kind) == 0 ||
+           std.str_eq(query.operation.offset_layout_id, reference.offset_layout_id) == 0 ||
+           query.operation.element_index != reference.element_index ||
+           query.operation.source_offset != reference.source_offset ||
+           query.operation.destination_offset != reference.destination_offset
+        {
+            return 0;
+        }
+        reference_index = reference_index + 1;
     }
     return 1;
 }
@@ -1529,6 +1687,19 @@ func mir_make_stmt_stack_slot_operation(operation_reference: MirStackSlotOperati
     return stmt;
 }
 
+func mir_make_stmt_memory_access(operation_reference: MirMemoryAccessReference[ctx], value: Index[MirValue[ctx], ctx], span: token.Span, ctx: &Arena) MirStmt[ctx] {
+    mut operation_reference_idx: Index[MirMemoryAccessReference[ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(operation_reference_idx, operation_reference);
+    mut stmt: MirStmt[ctx];
+    unsafe {
+        stmt.tag = 4; // MemoryAccess
+        stmt.MemoryAccess.operation = operation_reference_idx;
+        stmt.MemoryAccess.value = value;
+        stmt.MemoryAccess.span = span;
+    }
+    return stmt;
+}
+
 func mir_make_value_int_literal(val: int, value_type: str, span: token.Span, ctx: &Arena) MirValue[ctx] {
     mut value: MirValue[ctx];
     unsafe {
@@ -1609,6 +1780,20 @@ func mir_make_value_pointer_operation(operands: Index[std.Vector[MirValue[ctx], 
         value.PointerOperation.operation = operation_reference_idx;
         value.PointerOperation.value_type = std.Clone(ctx, value_type);
         value.PointerOperation.span = span;
+    }
+    return value;
+}
+
+func mir_make_value_memory_access(operands: Index[std.Vector[MirValue[ctx], ctx], ctx], operation_reference: MirMemoryAccessReference[ctx], value_type: str, span: token.Span, ctx: &Arena) MirValue[ctx] {
+    mut operation_reference_idx: Index[MirMemoryAccessReference[ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(operation_reference_idx, operation_reference);
+    mut value: MirValue[ctx];
+    unsafe {
+        value.tag = 7; // MemoryAccess
+        value.MemoryAccess.operands = operands;
+        value.MemoryAccess.operation = operation_reference_idx;
+        value.MemoryAccess.value_type = std.Clone(ctx, value_type);
+        value.MemoryAccess.span = span;
     }
     return value;
 }
@@ -1746,6 +1931,9 @@ func mir_debug_stmt_kind(stmt: MirStmt[ctx]) str {
     if stmt.tag == 3 {
         return "MirStmt.StackSlotOperation";
     }
+    if stmt.tag == 4 {
+        return "MirStmt.MemoryAccess";
+    }
     return "MirStmt.<unknown>";
 }
 
@@ -1770,6 +1958,9 @@ func mir_debug_value_kind(value: MirValue[ctx]) str {
     }
     if value.tag == 6 {
         return "MirValue.PointerOperation";
+    }
+    if value.tag == 7 {
+        return "MirValue.MemoryAccess";
     }
     return "MirValue.<unknown>";
 }
