@@ -4814,7 +4814,7 @@ fn parse_phase14_request_stack_slot_table(
             alignment: cursor.take_usize_field(&format!("{prefix}_alignment"), parse_stage, parse_kind)?,
             initialization_state: cursor.take_field(&format!("{prefix}_initialization_state"), false, parse_stage, parse_kind)?.to_string(),
             source_origin: cursor.take_field(&format!("{prefix}_source_origin"), false, parse_stage, parse_kind)?.to_string(),
-            lifetime_region: cursor.take_field(&format!("{prefix}_lifetime_region"), false, parse_stage, parse_kind)?.to_string(),
+            lifetime_region: cursor.take_field(&format!("{prefix}_lifetime_region"), true, parse_stage, parse_kind)?.to_string(),
             mutability: cursor.take_field(&format!("{prefix}_mutability"), false, parse_stage, parse_kind)?.to_string(),
             address_escape_policy: cursor.take_field(&format!("{prefix}_address_escape_policy"), false, parse_stage, parse_kind)?.to_string(),
             resource_kind: cursor.take_field(&format!("{prefix}_resource_kind"), false, parse_stage, parse_kind)?.to_string(),
