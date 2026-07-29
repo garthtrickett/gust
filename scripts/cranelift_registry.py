@@ -3997,7 +3997,7 @@ def verify_phase14_memory_accesses(registry):
     for token in (
         "type MirMemoryAccessOperation[ctx] struct",
         "type MirMemoryAccessTable[ctx] struct",
-        "func mir_memory_access_table_for_layout(",
+        "func mir_memory_access_table_for_memory_tables(",
         "func mir_memory_access_table_is_valid(",
         "func mir_memory_access_rejection(",
         "func mir_serialize_memory_access_table_for_request(",
@@ -4045,7 +4045,7 @@ def verify_phase14_memory_accesses(registry):
     require(
         "memory_access_table: memory_access.MirMemoryAccessTable[ctx]" in request_source
         and "mir_serialize_memory_access_table_for_request" in request_source
-        and "mir_memory_access_table_for_layout" in request_source,
+        and "mir_memory_access_table_for_memory_tables" in request_source,
         "native request does not carry the compiler-owned memory-access table",
     )
 

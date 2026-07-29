@@ -14354,7 +14354,7 @@ guard-cranelift-phase14-memory-access-contract:
     for token in \
       'type MirMemoryAccessOperation[ctx] struct' \
       'type MirMemoryAccessTable[ctx] struct' \
-      'func mir_memory_access_table_for_layout(' \
+      'func mir_memory_access_table_for_memory_tables(' \
       'func mir_memory_access_table_is_valid(' \
       'func mir_memory_access_rejection(' \
       'func mir_serialize_memory_access_table_for_request('
