@@ -4907,6 +4907,35 @@ fn validate_phase14_request_stack_slot_table(
         {
             return Err(phase10_backend_request_error(stage, kind, "stack_slot_under_aligned"));
         }
+        if !slot_ids.insert(slot.slot_id.clone()) {
+            return Err(phase10_backend_request_error(stage, kind, "stack_slot_duplicate_identity"));
+        }
+        if slot.contained_type_id == "type:gust:aggregate:i32x2" {
+            let expected_layout = phase14_stack_aggregate_layout_id(
+                &table.target_id,
+                &i32_layout.layout_id,
+                i32_layout.size * 2,
+                i32_layout.alignment,
+            );
+            if slot.contained_layout_id != expected_layout {
+                return Err(phase10_backend_request_error(stage, kind, "stack_slot_layout_id_mismatch"));
+            }
+            if slot.size != i32_layout.size * 2
+                || slot.alignment != i32_layout.alignment
+            {
+                return Err(phase10_backend_request_error(stage, kind, "stack_slot_type_mismatch"));
+            }
+        } else {
+            let Some(contained_layout) = layout_table.layouts.iter().find(|layout| layout.layout_id == slot.contained_layout_id) else {
+                return Err(phase10_backend_request_error(stage, kind, "stack_slot_layout_id_mismatch"));
+            };
+            if contained_layout.type_id != slot.contained_type_id
+                || contained_layout.size != slot.size
+                || contained_layout.alignment != slot.alignment
+            {
+                return Err(phase10_backend_request_error(stage, kind, "stack_slot_type_mismatch"));
+            }
+        }
         if slot.slot_id != phase14_stack_slot_identity(slot)
             || slot.target_id != table.target_id
             || !phase14_stack_slot_storage_class_is_valid(&slot.storage_class)
@@ -4922,33 +4951,6 @@ fn validate_phase14_request_stack_slot_table(
             || slot.lifetime_region.is_empty()
         {
             return Err(phase10_backend_request_error(stage, kind, format!("invalid compiler-owned stack slot: {}", slot.slot_id)));
-        }
-        if !slot_ids.insert(slot.slot_id.clone()) {
-            return Err(phase10_backend_request_error(stage, kind, "stack_slot_duplicate_identity"));
-        }
-        if slot.contained_type_id == "type:gust:aggregate:i32x2" {
-            let expected_layout = phase14_stack_aggregate_layout_id(
-                &table.target_id,
-                &i32_layout.layout_id,
-                i32_layout.size * 2,
-                i32_layout.alignment,
-            );
-            if slot.contained_layout_id != expected_layout
-                || slot.size != i32_layout.size * 2
-                || slot.alignment != i32_layout.alignment
-            {
-                return Err(phase10_backend_request_error(stage, kind, "invalid compiler-owned aggregate stack-slot layout"));
-            }
-        } else {
-            let Some(contained_layout) = layout_table.layouts.iter().find(|layout| layout.layout_id == slot.contained_layout_id) else {
-                return Err(phase10_backend_request_error(stage, kind, "stack_slot_layout_id_mismatch"));
-            };
-            if contained_layout.type_id != slot.contained_type_id
-                || contained_layout.size != slot.size
-                || contained_layout.alignment != slot.alignment
-            {
-                return Err(phase10_backend_request_error(stage, kind, "stack_slot_type_mismatch"));
-            }
         }
     }
     if table.operations.len() != 11 {
