@@ -4055,7 +4055,7 @@ def verify_phase14_memory_accesses(registry):
         "mir_memory_access_c_source",
         "memcpy",
         "int32_t",
-        "memory_access:v1",
+        "mir_memory_access_witness",
     ):
         require(token in c_source,
                 f"MIR-to-C memory-access witness is missing: {token}")
