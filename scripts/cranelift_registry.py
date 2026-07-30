@@ -4044,8 +4044,9 @@ def verify_phase14_memory_accesses(registry):
     request_source = sources["request"].read_text(encoding="utf-8")
     require(
         "memory_access_table: memory_access.MirMemoryAccessTable[ctx]" in request_source
-        and "mir_serialize_memory_access_table_for_request" in request_source
-        and "mir_memory_access_table_for_memory_tables" in request_source,
+        and "func mir_native_backend_make_request_with_typed_memory_tables(" in request_source
+        and "request.memory_access_table = memory_access_table;" in request_source
+        and "mir_serialize_memory_access_table_for_request" in request_source,
         "native request does not carry the compiler-owned memory-access table",
     )
 
