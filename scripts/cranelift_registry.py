@@ -4088,7 +4088,8 @@ def verify_phase14_memory_accesses(registry):
 
     differential_source = sources["differential"].read_text(encoding="utf-8")
     for token in (
-        "poisoned-driver", "sentinel", "phase14-memory-access-witness",
+        "GUST_PHASE14_MEMORY_ACCESS_POISON_MARKER", "sentinel",
+        "phase14-memory-access-witness",
         "Cranelift memory-access witness differs",
         "MIR-to-C memory-access witness differs",
     ):
