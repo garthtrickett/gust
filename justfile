@@ -13606,7 +13606,7 @@ guard-cranelift-phase14-layout-authority-contract:
     required_review_tokens=(
       'CRANELIFT_PHASE14_LAYOUT_AUTHORITY_VIEW_VERSION: 1'
       'CRANELIFT_PHASE14_LAYOUT_AUTHORITY_VERSION: phase14_compiler_owned_layout_authority_v1'
-      'CRANELIFT_PHASE14_LAYOUT_AUTHORITY_STATUS: consumed_by_patch14_4'
+      'CRANELIFT_PHASE14_LAYOUT_AUTHORITY_STATUS: consumed_by_patch14_6'
       'CRANELIFT_PHASE14_LAYOUT_AUTHORITY_OWNER: compiler/mir_layout.gst'
       'CRANELIFT_PHASE14_LAYOUT_AUTHORITY_TABLE_FORMAT: gust.compiler_layout_table.v2'
       '## Semantic layout records'
