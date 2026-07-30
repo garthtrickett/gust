@@ -14029,7 +14029,7 @@ guard-cranelift-phase14-pointer-contract:
     required_review_tokens=(
       'CRANELIFT_PHASE14_POINTER_VIEW_VERSION: 1'
       'CRANELIFT_PHASE14_POINTER_VERSION: phase14_bounded_typed_pointers_and_nullability_v1'
-      'CRANELIFT_PHASE14_POINTER_STATUS: consumed_by_patch14_5'
+      'CRANELIFT_PHASE14_POINTER_STATUS: consumed_by_patch14_6'
       'CRANELIFT_PHASE14_POINTER_OWNER: compiler/mir_pointer.gst'
       'CRANELIFT_PHASE14_POINTER_TABLE_FORMAT: gust.compiler_pointer_table.v1'
       'CRANELIFT_PHASE14_POINTER_PRIMARY_TARGET: x86_64-unknown-linux-gnu'
