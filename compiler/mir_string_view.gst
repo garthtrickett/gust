@@ -715,16 +715,16 @@ func mir_string_view_table_for_layout(layout_table: layout.MirLayoutTable[ctx], 
     table.target_id = std.Clone(ctx, layout_table.target.target_id);
     table.view_layout = mir_string_view_make_layout(layout_table, ctx);
 
-    mut empty := mir_string_view_make_literal("gust_string_literal_empty", "", ctx);
+    mut empty_literal := mir_string_view_make_literal("gust_string_literal_empty", "", ctx);
     mut gust := mir_string_view_make_literal("gust_string_literal_gust", "67757374", ctx);
     mut embedded := mir_string_view_make_literal("gust_string_literal_embedded_nul", "610062", ctx);
     mut rust := mir_string_view_make_literal("gust_string_literal_rust", "72757374", ctx);
-    table = mir_string_view_table_with_literal(table, empty, ctx);
+    table = mir_string_view_table_with_literal(table, empty_literal, ctx);
     table = mir_string_view_table_with_literal(table, gust, ctx);
     table = mir_string_view_table_with_literal(table, embedded, ctx);
     table = mir_string_view_table_with_literal(table, rust, ctx);
 
-    mut empty_view := mir_string_view_make_view(empty, 0, 0, ctx);
+    mut empty_view := mir_string_view_make_view(empty_literal, 0, 0, ctx);
     mut gust_view := mir_string_view_make_view(gust, 0, 4, ctx);
     mut embedded_view := mir_string_view_make_view(embedded, 0, 3, ctx);
     mut rust_view := mir_string_view_make_view(rust, 0, 4, ctx);
@@ -734,7 +734,7 @@ func mir_string_view_table_for_layout(layout_table: layout.MirLayoutTable[ctx], 
     table = mir_string_view_table_with_view(table, rust_view, ctx);
 
     table = mir_string_view_table_with_operation(table, mir_string_view_make_operation(
-        table, "literal_create_empty", "literal_create", empty.literal_id, "", "", 0, 0, 0,
+        table, "literal_create_empty", "literal_create", empty_literal.literal_id, "", "", 0, 0, 0,
         1, 0, 0, 0, "string_view_valid", ctx
     ), ctx);
     table = mir_string_view_table_with_operation(table, mir_string_view_make_operation(
