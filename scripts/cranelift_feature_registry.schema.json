@@ -19,6 +19,7 @@
     "phase14_pointers",
     "phase14_stack_slots",
     "phase14_memory_accesses",
+    "phase14_string_views",
     "residual_snapshots",
     "planning_categories",
     "supported_values",
@@ -36,7 +37,7 @@
       "const": 14
     },
     "registry_status": {
-      "const": "phase14_memory_access_ready"
+      "const": "phase14_string_views_ready"
     },
     "current_phase": {
       "const": "phase14"
@@ -227,6 +228,9 @@
     },
     "phase14_memory_accesses": {
       "$ref": "#/$defs/phase14_memory_accesses"
+    },
+    "phase14_string_views": {
+      "$ref": "#/$defs/phase14_string_views"
     }
   },
   "$defs": {
@@ -1155,7 +1159,7 @@
           "const": "phase14_compiler_owned_layout_authority_v1"
         },
         "status": {
-          "const": "consumed_by_patch14_6"
+          "const": "consumed_by_patch14_7"
         },
         "authority_owner": {
           "const": "compiler/mir_layout.gst"
@@ -1242,7 +1246,7 @@
           "const": "authority_transport_primitive_layout_integer_conversion_bounded_pointer_stack_slot_and_typed_memory_access_consumption_no_string_array_struct_enum_or_aggregate_abi_migration"
         },
         "next_patch": {
-          "const": "14.7"
+          "const": "14.8"
         }
       }
     },
@@ -1764,7 +1768,7 @@
           "const": "phase14_bounded_typed_pointers_and_nullability_v1"
         },
         "status": {
-          "const": "consumed_by_patch14_6"
+          "const": "consumed_by_patch14_7"
         },
         "authority_owner": {
           "const": "compiler/mir_pointer.gst"
@@ -1865,7 +1869,7 @@
           "const": "typed_pointer_identity_nullability_comparison_bounded_conversion_and_selected_i32_load_store_only_no_pointer_arithmetic_non_default_address_space_or_integer_pointer_cast"
         },
         "next_patch": {
-          "const": "14.7"
+          "const": "14.8"
         }
       }
     },
@@ -1900,7 +1904,7 @@
           "const": "phase14_deterministic_stack_slots_and_addressable_locals_v1"
         },
         "status": {
-          "const": "consumed_by_patch14_6"
+          "const": "consumed_by_patch14_7"
         },
         "authority_owner": {
           "const": "compiler/mir_stack_slot.gst"
@@ -1992,7 +1996,7 @@
           "const": "fixed_size_compiler_owned_stack_slots_with_selected_typed_i32_load_store_and_bounded_nonoverlap_copy_no_dynamic_allocation_variable_sized_storage_escape_resource_destructors_or_unrestricted_aliasing"
         },
         "next_patch": {
-          "const": "14.7"
+          "const": "14.8"
         }
       }
     },
@@ -2032,7 +2036,7 @@
           "const": "phase14_typed_load_store_memory_access_v1"
         },
         "status": {
-          "const": "ready_for_patch14_7"
+          "const": "consumed_by_patch14_7"
         },
         "authority_owner": {
           "const": "compiler/mir_memory_access.gst"
@@ -2144,7 +2148,241 @@
           "const": "selected_naturally_aligned_non_null_fixed_width_i32_load_store_element_offset_and_nonoverlap_copy_only_no_unaligned_zero_sized_nullable_overlapping_atomic_volatile_or_unrestricted_pointer_access"
         },
         "next_patch": {
-          "const": "14.7"
+          "const": "14.8"
+        }
+      }
+    },
+    "phase14_string_views": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "status",
+        "authority_owner",
+        "string_view_table_format",
+        "primary_level2_target",
+        "source_encoding",
+        "literal_encoding",
+        "embedded_nul_policy",
+        "empty_string_policy",
+        "semantic_length_authority",
+        "owning_string_policy",
+        "view_representation",
+        "view_layout_fields",
+        "lifetime_policy",
+        "mutation_policy",
+        "concatenation_policy",
+        "allocation_policy",
+        "literal_count_per_target",
+        "view_count_per_target",
+        "operation_kinds",
+        "operation_count_per_target",
+        "migrated_entry_ids",
+        "focused_ci_family",
+        "level1_guard",
+        "level2_guard",
+        "composition_contexts",
+        "negative_classes",
+        "poisoned_driver_policy",
+        "output_preservation_policy",
+        "boundary_policy",
+        "next_patch"
+      ],
+      "properties": {
+        "version": {
+          "const": "phase14_string_literals_and_borrowed_views_v1"
+        },
+        "status": {
+          "const": "ready_for_patch14_8"
+        },
+        "authority_owner": {
+          "const": "compiler/mir_string_view.gst"
+        },
+        "string_view_table_format": {
+          "const": "gust.compiler_string_view_table.v1"
+        },
+        "primary_level2_target": {
+          "const": "x86_64-unknown-linux-gnu"
+        },
+        "source_encoding": {
+          "const": "utf8"
+        },
+        "literal_encoding": {
+          "const": "utf8"
+        },
+        "embedded_nul_policy": {
+          "const": "valid_data_byte_not_terminator"
+        },
+        "empty_string_policy": {
+          "const": "non_null_static_empty_storage_with_zero_length"
+        },
+        "semantic_length_authority": {
+          "const": "explicit_byte_length_not_nul_termination"
+        },
+        "owning_string_policy": {
+          "const": "deferred_no_heap_allocation_authority"
+        },
+        "view_representation": {
+          "const": "data_pointer_and_usize_length"
+        },
+        "view_layout_fields": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "uniqueItems": true,
+          "prefixItems": [
+            {
+              "const": "data_pointer"
+            },
+            {
+              "const": "byte_length"
+            }
+          ],
+          "items": false
+        },
+        "lifetime_policy": {
+          "const": "literal_static_storage_views_must_not_outlive_source"
+        },
+        "mutation_policy": {
+          "const": "deferred_immutable_literal_backed_views"
+        },
+        "concatenation_policy": {
+          "const": "deferred_requires_owning_allocation"
+        },
+        "allocation_policy": {
+          "const": "deferred_no_runtime_heap_authority"
+        },
+        "literal_count_per_target": {
+          "const": 4
+        },
+        "view_count_per_target": {
+          "const": 4
+        },
+        "operation_kinds": {
+          "type": "array",
+          "minItems": 7,
+          "maxItems": 7,
+          "uniqueItems": true,
+          "prefixItems": [
+            {
+              "const": "literal_create"
+            },
+            {
+              "const": "view_create"
+            },
+            {
+              "const": "length"
+            },
+            {
+              "const": "is_empty"
+            },
+            {
+              "const": "byte_at"
+            },
+            {
+              "const": "slice"
+            },
+            {
+              "const": "byte_equal"
+            }
+          ],
+          "items": false
+        },
+        "operation_count_per_target": {
+          "const": 13
+        },
+        "migrated_entry_ids": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "uniqueItems": true,
+          "prefixItems": [
+            {
+              "const": "p14_string_and_string_view_layout"
+            }
+          ],
+          "items": false
+        },
+        "focused_ci_family": {
+          "const": "strings-views"
+        },
+        "level1_guard": {
+          "const": "guard-cranelift-phase14-string-view-contract"
+        },
+        "level2_guard": {
+          "const": "guard-cranelift-phase14-string-view-parity"
+        },
+        "composition_contexts": {
+          "type": "array",
+          "minItems": 5,
+          "maxItems": 5,
+          "uniqueItems": true,
+          "prefixItems": [
+            {
+              "const": "static_literal_identity"
+            },
+            {
+              "const": "pointer_sized_view_layout"
+            },
+            {
+              "const": "embedded_nul_length"
+            },
+            {
+              "const": "bounded_slice"
+            },
+            {
+              "const": "byte_comparison"
+            }
+          ],
+          "items": false
+        },
+        "negative_classes": {
+          "type": "array",
+          "minItems": 9,
+          "maxItems": 9,
+          "uniqueItems": true,
+          "prefixItems": [
+            {
+              "const": "invalid_pointer_length_pair"
+            },
+            {
+              "const": "lifetime_escape"
+            },
+            {
+              "const": "unsupported_mutation"
+            },
+            {
+              "const": "unsupported_allocation"
+            },
+            {
+              "const": "unsupported_concatenation"
+            },
+            {
+              "const": "invalid_encoding"
+            },
+            {
+              "const": "out_of_bounds_view"
+            },
+            {
+              "const": "null_empty_view"
+            },
+            {
+              "const": "literal_identity_mismatch"
+            }
+          ],
+          "items": false
+        },
+        "poisoned_driver_policy": {
+          "const": "invalid_string_view_validation_must_not_discover_or_invoke_the_native_driver"
+        },
+        "output_preservation_policy": {
+          "const": "invalid_string_view_preserves_existing_output_and_creates_no_object_bundle_or_temporary_artifact"
+        },
+        "boundary_policy": {
+          "const": "immutable_utf8_literal_backed_strings_and_borrowed_data_pointer_plus_explicit_byte_length_views_only_embedded_nul_is_data_no_nul_termination_authority_no_dynamic_owning_allocation_mutation_or_concatenation"
+        },
+        "next_patch": {
+          "const": "14.8"
         }
       }
     }

@@ -22,7 +22,7 @@ TOP_FIELDS = {
     "opening_snapshots", "phase14_layout_authority",
     "phase14_primitive_layout", "phase14_integer_conversions",
     "phase14_pointers", "phase14_stack_slots", "phase14_memory_accesses",
-    "residual_snapshots",
+    "phase14_string_views", "residual_snapshots",
     "planning_categories", "supported_values", "legacy_views", "entries",
 }
 ENTRY_FIELDS = {
@@ -507,7 +507,7 @@ PHASE14_LAYOUT_CONSUMER_FIELDS = {
 PHASE14_LAYOUT_AUTHORITY_VERSION = (
     "phase14_compiler_owned_layout_authority_v1"
 )
-PHASE14_LAYOUT_AUTHORITY_STATUS = "consumed_by_patch14_6"
+PHASE14_LAYOUT_AUTHORITY_STATUS = "consumed_by_patch14_7"
 PHASE14_LAYOUT_TABLE_FORMAT = "gust.compiler_layout_table.v2"
 PHASE14_LAYOUT_TYPES = (
     "MirTargetLayout", "MirTypeLayout", "MirFieldLayout",
@@ -540,8 +540,8 @@ PHASE14_LAYOUT_REQUEST_POLICY = (
 )
 PHASE14_LAYOUT_BEHAVIOR_POLICY = (
     "authority_transport_primitive_layout_integer_conversion_bounded_pointer_"
-    "stack_slot_and_typed_memory_access_consumption_no_string_array_struct_"
-    "enum_or_aggregate_abi_migration"
+    "stack_slot_typed_memory_access_and_literal_backed_string_view_consumption_"
+    "no_dynamic_owning_string_array_struct_enum_or_aggregate_abi_migration"
 )
 
 PHASE14_PRIMITIVE_FIELDS = {
@@ -662,7 +662,7 @@ PHASE14_POINTER_FIELDS = {
 PHASE14_POINTER_VERSION = (
     "phase14_bounded_typed_pointers_and_nullability_v1"
 )
-PHASE14_POINTER_STATUS = "consumed_by_patch14_6"
+PHASE14_POINTER_STATUS = "consumed_by_patch14_7"
 PHASE14_POINTER_TABLE_FORMAT = "gust.compiler_pointer_table.v1"
 PHASE14_POINTER_MIGRATED_IDS = ("p14_pointer_nullability_model",)
 PHASE14_POINTER_OPERATION_KINDS = (
@@ -697,7 +697,7 @@ PHASE14_STACK_SLOT_FIELDS = {
 PHASE14_STACK_SLOT_VERSION = (
     "phase14_deterministic_stack_slots_and_addressable_locals_v1"
 )
-PHASE14_STACK_SLOT_STATUS = "consumed_by_patch14_6"
+PHASE14_STACK_SLOT_STATUS = "consumed_by_patch14_7"
 PHASE14_STACK_SLOT_TABLE_FORMAT = "gust.compiler_stack_slot_table.v1"
 PHASE14_STACK_SLOT_MIGRATED_IDS = ("p14_stack_slot_addressable_locals",)
 PHASE14_STACK_SLOT_STORAGE_CLASSES = (
@@ -736,7 +736,7 @@ PHASE14_MEMORY_ACCESS_FIELDS = {
     "output_preservation_policy", "boundary_policy", "next_patch",
 }
 PHASE14_MEMORY_ACCESS_VERSION = "phase14_typed_load_store_memory_access_v1"
-PHASE14_MEMORY_ACCESS_STATUS = "ready_for_patch14_7"
+PHASE14_MEMORY_ACCESS_STATUS = "consumed_by_patch14_7"
 PHASE14_MEMORY_ACCESS_TABLE_FORMAT = "gust.compiler_memory_access_table.v1"
 PHASE14_MEMORY_ACCESS_MIGRATED_IDS = ("p14_typed_load_store_memory_access",)
 PHASE14_MEMORY_ACCESS_TYPE_IDS = ("type:gust:i32",)
@@ -760,6 +760,39 @@ PHASE14_MEMORY_ACCESS_NEGATIVE_CLASSES = (
     "immutable_store", "invalid_layout_id", "out_of_lifetime",
     "unsupported_overlap", "known_null", "read_before_write",
     "unaligned", "zero_sized",
+)
+
+PHASE14_STRING_VIEW_FIELDS = {
+    "version", "status", "authority_owner", "string_view_table_format",
+    "primary_level2_target", "source_encoding", "literal_encoding",
+    "embedded_nul_policy", "empty_string_policy",
+    "semantic_length_authority", "owning_string_policy",
+    "view_representation", "view_layout_fields", "lifetime_policy",
+    "mutation_policy", "concatenation_policy", "allocation_policy",
+    "literal_count_per_target", "view_count_per_target",
+    "operation_kinds", "operation_count_per_target", "migrated_entry_ids",
+    "focused_ci_family", "level1_guard", "level2_guard",
+    "composition_contexts", "negative_classes", "poisoned_driver_policy",
+    "output_preservation_policy", "boundary_policy", "next_patch",
+}
+PHASE14_STRING_VIEW_VERSION = "phase14_string_literals_and_borrowed_views_v1"
+PHASE14_STRING_VIEW_STATUS = "ready_for_patch14_8"
+PHASE14_STRING_VIEW_TABLE_FORMAT = "gust.compiler_string_view_table.v1"
+PHASE14_STRING_VIEW_MIGRATED_IDS = ("p14_string_and_string_view_layout",)
+PHASE14_STRING_VIEW_LAYOUT_FIELDS = ("data_pointer", "byte_length")
+PHASE14_STRING_VIEW_OPERATION_KINDS = (
+    "literal_create", "view_create", "length", "is_empty", "byte_at",
+    "slice", "byte_equal",
+)
+PHASE14_STRING_VIEW_CONTEXTS = (
+    "static_literal_identity", "pointer_sized_view_layout",
+    "embedded_nul_length", "bounded_slice", "byte_comparison",
+)
+PHASE14_STRING_VIEW_NEGATIVE_CLASSES = (
+    "invalid_pointer_length_pair", "lifetime_escape",
+    "unsupported_mutation", "unsupported_allocation",
+    "unsupported_concatenation", "invalid_encoding",
+    "out_of_bounds_view", "null_empty_view", "literal_identity_mismatch",
 )
 
 
@@ -1265,8 +1298,8 @@ def validate_phase14_layout_authority_structure(registry):
         "Phase 14 layout authority behavior boundary drifted",
     )
     require(
-        authority["next_patch"] == "14.7",
-        "Phase 14 layout authority next patch must be 14.7",
+        authority["next_patch"] == "14.8",
+        "Phase 14 layout authority next patch must be 14.8",
     )
     return authority
 
@@ -1558,8 +1591,8 @@ def validate_phase14_pointer_structure(registry):
         tuple(contract["negative_classes"]) == PHASE14_POINTER_NEGATIVE_CLASSES,
         "Phase 14 pointer negative inventory drifted",
     )
-    require(contract["next_patch"] == "14.7",
-            "Phase 14 pointer next patch must be 14.7")
+    require(contract["next_patch"] == "14.8",
+            "Phase 14 pointer next patch must be 14.8")
     return contract
 
 
@@ -1617,8 +1650,8 @@ def validate_phase14_stack_slot_structure(registry):
         "Phase 14 stack-slot composition or negative inventory drifted",
     )
     text(contract["boundary_policy"], "phase14_stack_slots.boundary_policy")
-    require(contract["next_patch"] == "14.7",
-            "Phase 14 stack-slot next patch must be 14.7")
+    require(contract["next_patch"] == "14.8",
+            "Phase 14 stack-slot next patch must be 14.8")
     return contract
 
 
@@ -1684,8 +1717,87 @@ def validate_phase14_memory_access_structure(registry):
         == PHASE14_MEMORY_ACCESS_NEGATIVE_CLASSES,
         "Phase 14 memory-access composition or negative inventory drifted",
     )
-    require(contract["next_patch"] == "14.7",
-            "Phase 14 memory-access next patch must be 14.7")
+    require(contract["next_patch"] == "14.8",
+            "Phase 14 memory-access next patch must be 14.8")
+    return contract
+
+
+def validate_phase14_string_view_structure(registry):
+    contract = registry["phase14_string_views"]
+    require(
+        isinstance(contract, dict) and set(contract) == PHASE14_STRING_VIEW_FIELDS,
+        "Phase 14 string-view contract fields drifted",
+    )
+    require(
+        contract["version"] == PHASE14_STRING_VIEW_VERSION
+        and contract["status"] == PHASE14_STRING_VIEW_STATUS,
+        "Phase 14 string-view checkpoint drifted",
+    )
+    require(
+        contract["authority_owner"] == "compiler/mir_string_view.gst"
+        and contract["string_view_table_format"]
+        == PHASE14_STRING_VIEW_TABLE_FORMAT,
+        "Phase 14 string-view authority or table format drifted",
+    )
+    require(
+        contract["primary_level2_target"] == "x86_64-unknown-linux-gnu"
+        and contract["source_encoding"] == "utf8"
+        and contract["literal_encoding"] == "utf8",
+        "Phase 14 string encoding or primary target drifted",
+    )
+    require(
+        contract["embedded_nul_policy"] == "valid_data_byte_not_terminator"
+        and contract["empty_string_policy"]
+        == "non_null_static_empty_storage_with_zero_length"
+        and contract["semantic_length_authority"]
+        == "explicit_byte_length_not_nul_termination",
+        "Phase 14 string length or embedded-NUL policy drifted",
+    )
+    require(
+        contract["owning_string_policy"]
+        == "deferred_no_heap_allocation_authority"
+        and contract["view_representation"]
+        == "data_pointer_and_usize_length"
+        and tuple(contract["view_layout_fields"])
+        == PHASE14_STRING_VIEW_LAYOUT_FIELDS,
+        "Phase 14 string owning/view representation drifted",
+    )
+    for field in (
+        "lifetime_policy", "mutation_policy", "concatenation_policy",
+        "allocation_policy", "poisoned_driver_policy",
+        "output_preservation_policy", "boundary_policy",
+    ):
+        text(contract[field], f"phase14_string_views.{field}")
+    require(
+        contract["literal_count_per_target"] == 4
+        and contract["view_count_per_target"] == 4
+        and tuple(contract["operation_kinds"])
+        == PHASE14_STRING_VIEW_OPERATION_KINDS
+        and contract["operation_count_per_target"] == 13,
+        "Phase 14 string-view selected inventory drifted",
+    )
+    require(
+        tuple(contract["migrated_entry_ids"])
+        == PHASE14_STRING_VIEW_MIGRATED_IDS,
+        "Phase 14 string-view migrated-row inventory drifted",
+    )
+    require(
+        contract["focused_ci_family"] == "strings-views"
+        and contract["level1_guard"]
+        == "guard-cranelift-phase14-string-view-contract"
+        and contract["level2_guard"]
+        == "guard-cranelift-phase14-string-view-parity",
+        "Phase 14 string-view CI ownership drifted",
+    )
+    require(
+        tuple(contract["composition_contexts"])
+        == PHASE14_STRING_VIEW_CONTEXTS
+        and tuple(contract["negative_classes"])
+        == PHASE14_STRING_VIEW_NEGATIVE_CLASSES,
+        "Phase 14 string-view composition or negative inventory drifted",
+    )
+    require(contract["next_patch"] == "14.8",
+            "Phase 14 string-view next patch must be 14.8")
     return contract
 
 
@@ -2096,6 +2208,16 @@ def validate():
         phase14_memory_access_schema.get("additionalProperties") is False,
         "schema Phase 14 memory accesses must reject unknown fields",
     )
+    phase14_string_view_schema = definitions.get("phase14_string_views", {})
+    require(
+        set(phase14_string_view_schema.get("required", []))
+        == PHASE14_STRING_VIEW_FIELDS,
+        "schema Phase 14 string-view fields drifted",
+    )
+    require(
+        phase14_string_view_schema.get("additionalProperties") is False,
+        "schema Phase 14 string views must reject unknown fields",
+    )
     residual_schema = schema.get("properties", {}).get("residual_snapshots", {})
     require(
         set(residual_schema.get("required", [])) == {"phase13"},
@@ -2143,7 +2265,7 @@ def validate():
     require(registry["schema_version"] == 1, "schema_version must be 1")
     require(registry["registry_version"] == 14, "registry_version must be 14")
     require(
-        registry["registry_status"] == "phase14_memory_access_ready",
+        registry["registry_status"] == "phase14_string_views_ready",
         "registry status is missing or stale",
     )
     require(registry["current_phase"] == "phase14", "current_phase must be phase14")
@@ -2167,6 +2289,7 @@ def validate():
     validate_phase14_pointer_structure(registry)
     validate_phase14_stack_slot_structure(registry)
     validate_phase14_memory_access_structure(registry)
+    validate_phase14_string_view_structure(registry)
 
     categories = set(unique_strings(registry["planning_categories"], "planning_categories"))
     supported = registry["supported_values"]
@@ -2568,6 +2691,39 @@ def validate():
                     and evidence.get("selected_operation_kinds")
                     == list(PHASE14_MEMORY_ACCESS_OPERATION_KINDS),
                     f"{entry_id}: memory-access evidence drifted",
+                )
+            elif entry_id in PHASE14_STRING_VIEW_MIGRATED_IDS:
+                require(
+                    closure == PHASE14_STRING_VIEW_VERSION,
+                    f"{entry_id}: string-view checkpoint version drifted",
+                )
+                require(
+                    status == "migrated"
+                    and entry["route_owner"] == "generic_canonical_mir",
+                    f"{entry_id}: selected string-view row must be migrated through canonical MIR",
+                )
+                require(reason == destination == "none_migrated",
+                        f"{entry_id}: migrated string-view row has stale deferral fields")
+                require(entry["current_failure_stage"] == "none_supported",
+                        f"{entry_id}: migrated string-view row has a failure stage")
+                fixture(entry["source_fixture"], f"{entry_id}.source_fixture")
+                fixture(entry["canonical_mir_fixture"],
+                        f"{entry_id}.canonical_mir_fixture")
+                require(
+                    entry["differential_case_id"]
+                    == f"phase14_registry_differential:{entry_id}",
+                    f"{entry_id}: string-view differential identity drifted",
+                )
+                require(
+                    evidence.get("behavior_policy")
+                    == "immutable_utf8_literal_storage_and_borrowed_explicit_length_views_migrated_through_compiler_owned_string_view_table"
+                    and evidence.get("phase14_7_contract")
+                    == PHASE14_STRING_VIEW_VERSION
+                    and evidence.get("selected_source_encoding") == "utf8"
+                    and evidence.get("selected_literal_encoding") == "utf8"
+                    and evidence.get("selected_operation_kinds")
+                    == list(PHASE14_STRING_VIEW_OPERATION_KINDS),
+                    f"{entry_id}: string-view evidence drifted",
                 )
             else:
                 require(
@@ -3092,6 +3248,13 @@ def verify_phase14_layout_authority(registry):
                 and entry["closure_version"] == PHASE14_MEMORY_ACCESS_VERSION,
                 f"{entry_id}: memory-access migration no longer consumes the layout authority",
             )
+        elif entry_id in PHASE14_STRING_VIEW_MIGRATED_IDS:
+            require(
+                entry["status"] == "migrated"
+                and entry["route_owner"] == "generic_canonical_mir"
+                and entry["closure_version"] == PHASE14_STRING_VIEW_VERSION,
+                f"{entry_id}: string-view migration no longer consumes the layout authority",
+            )
         else:
             require(
                 entry["status"] == "candidate_deferred"
@@ -3200,7 +3363,7 @@ def verify_phase14_primitive_layout(registry):
     verify_phase14_layout_authority(registry)
     contract = validate_phase14_primitive_layout_structure(registry)
     require(
-        registry["registry_status"] == "phase14_memory_access_ready",
+        registry["registry_status"] == "phase14_string_views_ready",
         "Phase 14 registry is not at or beyond the primitive-layout checkpoint",
     )
     rows = {entry["id"]: entry for entry in phase_entries(registry, "phase14")}
@@ -3249,6 +3412,14 @@ def verify_phase14_primitive_layout(registry):
                 and entry["route_owner"] == "generic_canonical_mir"
                 and entry["closure_version"] == PHASE14_MEMORY_ACCESS_VERSION,
                 f"{entry_id}: later memory-access checkpoint drifted",
+            )
+            continue
+        if entry_id in PHASE14_STRING_VIEW_MIGRATED_IDS:
+            require(
+                entry["status"] == "migrated"
+                and entry["route_owner"] == "generic_canonical_mir"
+                and entry["closure_version"] == PHASE14_STRING_VIEW_VERSION,
+                f"{entry_id}: later string-view checkpoint drifted",
             )
             continue
         require(
@@ -3350,7 +3521,7 @@ def verify_phase14_integer_conversions(registry):
     verify_phase14_primitive_layout(registry)
     contract = validate_phase14_integer_conversion_structure(registry)
     require(
-        registry["registry_status"] == "phase14_memory_access_ready",
+        registry["registry_status"] == "phase14_string_views_ready",
         "Phase 14 registry is not at or beyond the integer-conversion checkpoint",
     )
     rows = {entry["id"]: entry for entry in phase_entries(registry, "phase14")}
@@ -3391,6 +3562,14 @@ def verify_phase14_integer_conversions(registry):
                 and entry["route_owner"] == "generic_canonical_mir"
                 and entry["closure_version"] == PHASE14_MEMORY_ACCESS_VERSION,
                 f"{entry_id}: later memory-access checkpoint drifted",
+            )
+            continue
+        if entry_id in PHASE14_STRING_VIEW_MIGRATED_IDS:
+            require(
+                entry["status"] == "migrated"
+                and entry["route_owner"] == "generic_canonical_mir"
+                and entry["closure_version"] == PHASE14_STRING_VIEW_VERSION,
+                f"{entry_id}: later string-view checkpoint drifted",
             )
             continue
         require(
@@ -3538,7 +3717,7 @@ def verify_phase14_pointers(registry):
     verify_phase14_integer_conversions(registry)
     contract = validate_phase14_pointer_structure(registry)
     require(
-        registry["registry_status"] == "phase14_memory_access_ready",
+        registry["registry_status"] == "phase14_string_views_ready",
         "Phase 14 registry is not at the pointer/nullability checkpoint",
     )
     rows = {entry["id"]: entry for entry in phase_entries(registry, "phase14")}
@@ -3560,6 +3739,7 @@ def verify_phase14_pointers(registry):
         + PHASE14_POINTER_MIGRATED_IDS
         + PHASE14_STACK_SLOT_MIGRATED_IDS
         + PHASE14_MEMORY_ACCESS_MIGRATED_IDS
+        + PHASE14_STRING_VIEW_MIGRATED_IDS
     )
     for entry_id, entry in rows.items():
         if entry_id in selected_ids:
@@ -3749,7 +3929,7 @@ def verify_phase14_stack_slots(registry):
     verify_phase14_pointers(registry)
     contract = validate_phase14_stack_slot_structure(registry)
     require(
-        registry["registry_status"] == "phase14_memory_access_ready",
+        registry["registry_status"] == "phase14_string_views_ready",
         "Phase 14 registry is not at the stack-slot checkpoint",
     )
     rows = {entry["id"]: entry for entry in phase_entries(registry, "phase14")}
@@ -3771,6 +3951,7 @@ def verify_phase14_stack_slots(registry):
         + PHASE14_POINTER_MIGRATED_IDS
         + PHASE14_STACK_SLOT_MIGRATED_IDS
         + PHASE14_MEMORY_ACCESS_MIGRATED_IDS
+        + PHASE14_STRING_VIEW_MIGRATED_IDS
     )
     for entry_id, entry in rows.items():
         if entry_id in selected_ids:
@@ -3951,7 +4132,7 @@ def verify_phase14_memory_accesses(registry):
     verify_phase14_stack_slots(registry)
     contract = validate_phase14_memory_access_structure(registry)
     require(
-        registry["registry_status"] == "phase14_memory_access_ready",
+        registry["registry_status"] == "phase14_string_views_ready",
         "Phase 14 registry is not at the typed memory-access checkpoint",
     )
     rows = {entry["id"]: entry for entry in phase_entries(registry, "phase14")}
@@ -4112,6 +4293,173 @@ def verify_phase14_memory_accesses(registry):
         "family": contract["focused_ci_family"],
     }
 
+
+
+def verify_phase14_string_views(registry):
+    verify_phase14_memory_accesses(registry)
+    contract = validate_phase14_string_view_structure(registry)
+    require(
+        registry["registry_status"] == "phase14_string_views_ready",
+        "Phase 14 registry is not at the string-view checkpoint",
+    )
+    rows = {entry["id"]: entry for entry in phase_entries(registry, "phase14")}
+    for entry_id in PHASE14_STRING_VIEW_MIGRATED_IDS:
+        entry = rows[entry_id]
+        require(
+            entry["status"] == "migrated"
+            and entry["route_owner"] == "generic_canonical_mir"
+            and entry["closure_version"] == PHASE14_STRING_VIEW_VERSION,
+            f"{entry_id}: string-view row is not migrated",
+        )
+        require(entry["ci_family"] == contract["focused_ci_family"],
+                f"{entry_id}: string-view CI ownership drifted")
+
+    sources = {
+        "authority": ROOT / "compiler/mir_string_view.gst",
+        "mir": ROOT / "compiler/mir.gst",
+        "request": ROOT / "compiler/mir_native_backend_request.gst",
+        "mir_to_c": ROOT / "compiler/mir_string_view_mir_to_c.gst",
+        "diagnostics": ROOT / "compiler/mir_string_view_diagnostics.gst",
+        "worker": ROOT / "compiler/experiments/cranelift/src/main.rs",
+        "smoke": ROOT / "compiler/mir_string_view_smoke_test_entry.gst",
+        "differential": ROOT / "scripts/phase14_string_view_differential.sh",
+        "positive": ROOT / "compiler/phase14_string_view_source.gst",
+        "composition": ROOT / "compiler/phase14_string_view_composition_source.gst",
+        "fixture": ROOT / "compiler/fixtures/native_backend_phase14_string_view_ingestion.mir",
+        "malformed": ROOT / "compiler/fixtures/native_backend_phase14_string_view_malformed.mir",
+        "review": ROOT / "compiler/CRANELIFT_PHASE14_STRING_VIEWS.md",
+    }
+    negative_paths = {
+        "invalid_pointer_length_pair": "p14_string_view_invalid_pointer_length_source.gst",
+        "lifetime_escape": "p14_string_view_lifetime_escape_source.gst",
+        "unsupported_mutation": "p14_string_mutation_unsupported_source.gst",
+        "unsupported_allocation": "p14_string_allocation_unsupported_source.gst",
+        "unsupported_concatenation": "p14_string_concatenation_unsupported_source.gst",
+        "invalid_encoding": "p14_string_invalid_encoding_source.gst",
+        "out_of_bounds_view": "p14_string_view_out_of_bounds_source.gst",
+        "null_empty_view": "p14_string_view_null_empty_source.gst",
+        "literal_identity_mismatch": "p14_string_literal_identity_mismatch_source.gst",
+    }
+    for name, filename in negative_paths.items():
+        sources[f"negative_{name}"] = ROOT / "compiler" / filename
+    for owner, path in sources.items():
+        require(path.is_file() and not path.is_symlink(),
+                f"missing regular Phase 14 string-view {owner} source: {path.relative_to(ROOT)}")
+
+    authority_source = sources["authority"].read_text(encoding="utf-8")
+    for token in (
+        "type MirStringLiteralStorage[ctx] struct",
+        "type MirStringViewLayout[ctx] struct",
+        "type MirStringView[ctx] struct",
+        "type MirStringViewOperation[ctx] struct",
+        "type MirStringViewTable[ctx] struct",
+        "func mir_string_view_table_for_layout(",
+        "func mir_string_view_table_is_valid(",
+        "func mir_string_view_rejection(",
+        "func mir_serialize_string_view_table_for_request(",
+        "func mir_string_view_witness(",
+        PHASE14_STRING_VIEW_TABLE_FORMAT,
+        "explicit_byte_length_not_nul_termination",
+        "valid_data_byte_not_terminator",
+    ):
+        require(token in authority_source,
+                f"string-view authority is missing: {token}")
+    for kind in PHASE14_STRING_VIEW_OPERATION_KINDS:
+        require(kind in authority_source,
+                f"string-view authority is missing canonical kind {kind}")
+    negative_tokens = {
+        "invalid_pointer_length_pair": "string_view_null_nonempty",
+        "lifetime_escape": "string_view_lifetime_escape",
+        "unsupported_mutation": "string_mutation_unsupported",
+        "unsupported_allocation": "string_allocation_unsupported",
+        "unsupported_concatenation": "string_concatenation_unsupported",
+        "invalid_encoding": "string_encoding_invalid",
+        "out_of_bounds_view": "string_view_out_of_bounds",
+        "null_empty_view": "string_view_empty_pointer_must_be_non_null",
+        "literal_identity_mismatch": "string_literal_identity_mismatch",
+    }
+    worker_source = sources["worker"].read_text(encoding="utf-8")
+    for negative, token in negative_tokens.items():
+        require(token in authority_source or token in worker_source,
+                f"string-view negative evidence is missing: {negative}")
+
+    mir_source = sources["mir"].read_text(encoding="utf-8")
+    for token in (
+        "type MirStringViewOperationKind enum",
+        "type MirStringLiteralReference",
+        "type MirStringViewReference",
+        "type MirStringViewOperationReference",
+        "string_literal_references", "string_view_references",
+        "StringViewOperation",
+        "func mir_program_string_view_references_are_valid(",
+    ):
+        require(token in mir_source,
+                f"canonical MIR string-view model is missing: {token}")
+
+    request_source = sources["request"].read_text(encoding="utf-8")
+    require(
+        "string_view_table: string_view.MirStringViewTable[ctx]" in request_source
+        and "func mir_native_backend_make_request_with_string_view_table(" in request_source
+        and "request.string_view_table = string_view_table;" in request_source
+        and "mir_serialize_string_view_table_for_request" in request_source,
+        "native request does not carry the compiler-owned string-view table",
+    )
+
+    c_source = sources["mir_to_c"].read_text(encoding="utf-8")
+    for token in (
+        "mir_string_view_c_source", "GustStringView", "size_t length",
+        "memcmp", "mir_string_view_table_is_valid",
+    ):
+        require(token in c_source,
+                f"MIR-to-C string-view witness is missing: {token}")
+
+    diagnostic_source = sources["diagnostics"].read_text(encoding="utf-8")
+    for token in (
+        "gust_string_view_diagnostic:",
+        "taxonomy=gust.string_view.diagnostic.v1",
+        "reason_code=", "source=", "line=", "column=",
+    ):
+        require(token in diagnostic_source,
+                f"string-view diagnostics are missing: {token}")
+
+    for token in (
+        "struct Phase14RequestStringViewTable",
+        "fn parse_phase14_request_string_view_table(",
+        "fn validate_phase14_request_string_view_table(",
+        "fn phase14_string_view_witness_text(",
+        "phase14-string-view-witness",
+    ):
+        require(token in worker_source,
+                f"Cranelift string-view consumption is missing: {token}")
+    for banned in ("CStr", "CString", "strlen("):
+        require(banned not in worker_source,
+                f"worker must not use accidental C-string authority: {banned}")
+
+    differential_source = sources["differential"].read_text(encoding="utf-8")
+    for token in (
+        "GUST_PHASE14_STRING_VIEW_POISON_MARKER", "sentinel",
+        "phase14-string-view-witness",
+        "Cranelift string-view witness differs",
+        "MIR-to-C string-view witness differs",
+        "610062",
+    ):
+        require(token in differential_source,
+                f"string-view differential evidence is missing: {token}")
+
+    return {
+        "version": contract["version"],
+        "status": contract["status"],
+        "target_count": len(registry["phase14_primitive_layout"]["declared_targets"]),
+        "literal_count": contract["literal_count_per_target"],
+        "view_count": contract["view_count_per_target"],
+        "operation_kind_count": len(contract["operation_kinds"]),
+        "operation_count": contract["operation_count_per_target"],
+        "migrated_count": len(contract["migrated_entry_ids"]),
+        "deferred_count": sum(1 for entry in rows.values()
+                              if entry["status"] == "candidate_deferred"),
+        "primary_target": contract["primary_level2_target"],
+        "family": contract["focused_ci_family"],
+    }
 
 def verify_phase13_opening_rebase(registry):
     snapshot = validate_phase13_opening_snapshot_structure(registry)
@@ -5627,7 +5975,7 @@ def verify_phase13_closure(registry):
             "phase14_primitive_layout_ready",
             "phase14_integer_conversion_ready",
             "phase14_stack_slot_ready",
-            "phase14_memory_access_ready",
+            "phase14_string_views_ready",
         },
         "Phase 13 closure registry status drifted",
     )
@@ -7003,6 +7351,73 @@ def render_phase14_memory_accesses(registry):
     return rendered
 
 
+
+def phase14_string_view_summary_lines(registry):
+    contract = verify_phase14_string_views(registry)
+    return [
+        "## Phase 14 string literals and borrowed views", "",
+        f"- Contract version: `{contract['version']}`",
+        f"- Status: `{contract['status']}`",
+        f"- Declared target count: `{contract['target_count']}`",
+        f"- Literal records per target: `{contract['literal_count']}`",
+        f"- Borrowed views per target: `{contract['view_count']}`",
+        f"- Canonical operation kinds: `{contract['operation_kind_count']}`",
+        f"- Selected operations per target: `{contract['operation_count']}`",
+        f"- Migrated opening rows: `{contract['migrated_count']}`",
+        f"- Remaining deferred opening rows: `{contract['deferred_count']}`",
+        f"- Registry-derived focused family: `{contract['family']}`", "",
+        "Patch 14.7 selects immutable UTF-8 literal storage and borrowed explicit-byte-length views, including embedded NUL data. Dynamic owning allocation, mutation, and concatenation remain narrowly deferred.", "",
+    ]
+
+
+def render_phase14_string_views(registry):
+    summary = verify_phase14_string_views(registry)
+    contract = registry["phase14_string_views"]
+    lines = [
+        "# Cranelift Phase 14 Strings and String Views", "",
+        "<!-- Generated by scripts/cranelift_registry.py; do not edit by hand. -->", "",
+        "CRANELIFT_PHASE14_STRING_VIEW_VIEW_VERSION: 1",
+        f"CRANELIFT_PHASE14_STRING_VIEW_VERSION: {summary['version']}",
+        f"CRANELIFT_PHASE14_STRING_VIEW_STATUS: {summary['status']}",
+        f"CRANELIFT_PHASE14_STRING_VIEW_OWNER: {contract['authority_owner']}",
+        f"CRANELIFT_PHASE14_STRING_VIEW_TABLE_FORMAT: {contract['string_view_table_format']}",
+        f"CRANELIFT_PHASE14_STRING_VIEW_PRIMARY_TARGET: {summary['primary_target']}",
+        f"CRANELIFT_PHASE14_STRING_VIEW_LEVEL1_GUARD: {contract['level1_guard']}",
+        f"CRANELIFT_PHASE14_STRING_VIEW_LEVEL2_GUARD: {contract['level2_guard']}",
+        f"CRANELIFT_PHASE14_STRING_VIEW_NEXT_PATCH: {contract['next_patch']}", "",
+        "## Frozen inventory", "",
+        f"- Source encoding: `{contract['source_encoding']}`",
+        f"- Literal encoding: `{contract['literal_encoding']}`",
+        f"- Embedded NUL: `{contract['embedded_nul_policy']}`",
+        f"- Empty string: `{contract['empty_string_policy']}`",
+        f"- Semantic length: `{contract['semantic_length_authority']}`",
+        f"- Owning strings: `{contract['owning_string_policy']}`", "",
+        "## Borrowed view representation", "",
+        f"- Representation: `{contract['view_representation']}`",
+        *[f"- Field: `{field}`" for field in contract["view_layout_fields"]], "",
+        "## Canonical operations", "",
+        *[f"- `{kind}`" for kind in contract["operation_kinds"]], "",
+        f"Selected operations per target: `{contract['operation_count_per_target']}`.", "",
+        "## Composition contexts", "",
+        *[f"- `{context}`" for context in contract["composition_contexts"]], "",
+        "## Negative classes", "",
+        *[f"- `{name}`" for name in contract["negative_classes"]], "",
+        "## Semantic policies", "",
+        f"- Lifetime: `{contract['lifetime_policy']}`",
+        f"- Mutation: `{contract['mutation_policy']}`",
+        f"- Concatenation: `{contract['concatenation_policy']}`",
+        f"- Allocation: `{contract['allocation_policy']}`",
+        f"- Poisoned driver: `{contract['poisoned_driver_policy']}`",
+        f"- Output preservation: `{contract['output_preservation_policy']}`", "",
+        "## Boundary", "", contract["boundary_policy"], "",
+        "MIR-to-C and Cranelift consume the same compiler-serialized literal bytes, static identities, pointer-sized view layout, explicit byte lengths, lifetimes, bounds, and operation records. NUL termination is never the semantic length authority.", "",
+    ]
+    rendered = "\n".join(lines)
+    for banned in ("SHA256", "SHA-256", "sha256sum"):
+        require(banned not in rendered,
+                f"Phase 14 string-view view contains banned raw-hash token: {banned}")
+    return rendered
+
 def render_phase14_pointers(registry):
     summary = verify_phase14_pointers(registry)
     contract = registry["phase14_pointers"]
@@ -7111,6 +7526,7 @@ def render(registry):
         *phase14_pointer_summary_lines(registry),
         *phase14_stack_slot_summary_lines(registry),
         *phase14_memory_access_summary_lines(registry),
+        *phase14_string_view_summary_lines(registry),
         "## Registry entries", "",
         "| ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |",
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
@@ -7133,7 +7549,8 @@ def render(registry):
         f"- Phase 14 integer conversion review: `{phase14_integer_conversion_summary_path(registry).relative_to(ROOT)}`",
         f"- Phase 14 pointer review: `{phase14_pointer_summary_path(registry).relative_to(ROOT)}`",
         f"- Phase 14 stack-slot review: `{phase14_stack_slot_summary_path(registry).relative_to(ROOT)}`",
-        f"- Phase 14 memory-access review: `{phase14_memory_access_summary_path(registry).relative_to(ROOT)}`", "",
+        f"- Phase 14 memory-access review: `{phase14_memory_access_summary_path(registry).relative_to(ROOT)}`",
+        f"- Phase 14 string-view review: `{phase14_string_view_summary_path(registry).relative_to(ROOT)}`", "",
         "The JSON registry is authoritative. Generated Markdown is a review artifact, and the legacy Markdown documents remain historical views only.", "",
     ]
     return "\n".join(lines)
@@ -7218,6 +7635,14 @@ def check_phase14_memory_access_projection(registry):
     )
 
 
+def check_phase14_string_view_projection(registry):
+    check_rendered_projection(
+        phase14_string_view_summary_path(registry),
+        render_phase14_string_views(registry),
+        "generated Phase 14 string-view review",
+    )
+
+
 def check_projection(registry):
     check_rendered_projection(
         summary_path(registry),
@@ -7232,6 +7657,7 @@ def check_projection(registry):
     check_phase14_pointer_projection(registry)
     check_phase14_stack_slot_projection(registry)
     check_phase14_memory_access_projection(registry)
+    check_phase14_string_view_projection(registry)
 
 
 def summary_path(registry):
@@ -7270,6 +7696,10 @@ def phase14_memory_access_summary_path(registry):
     return ROOT / "compiler/CRANELIFT_PHASE14_MEMORY_ACCESS.md"
 
 
+def phase14_string_view_summary_path(registry):
+    return ROOT / "compiler/CRANELIFT_PHASE14_STRING_VIEWS.md"
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -7301,16 +7731,19 @@ def main():
             "verify-phase14-pointers",
             "verify-phase14-stack-slots",
             "verify-phase14-memory-accesses",
+            "verify-phase14-string-views",
             "phase14-primitive-targets",
             "phase14-conversion-targets",
             "phase14-pointer-targets",
             "phase14-stack-slot-targets",
             "phase14-memory-access-targets",
+            "phase14-string-view-targets",
             "phase14-primitive-primary-target",
             "phase14-conversion-primary-target",
             "phase14-pointer-primary-target",
             "phase14-stack-slot-primary-target",
             "phase14-memory-access-primary-target",
+            "phase14-string-view-primary-target",
             "project",
             "check-phase13-projection",
             "check-phase14-projection",
@@ -7320,6 +7753,7 @@ def main():
             "check-phase14-pointer-projection",
             "check-phase14-stack-slot-projection",
             "check-phase14-memory-access-projection",
+            "check-phase14-string-view-projection",
             "check-projection",
         ),
     )
@@ -7376,12 +7810,15 @@ def main():
             verify_phase14_stack_slots(registry)
         elif command == "verify-phase14-memory-accesses":
             verify_phase14_memory_accesses(registry)
+        elif command == "verify-phase14-string-views":
+            verify_phase14_string_views(registry)
         elif command in {
             "phase14-primitive-targets",
             "phase14-conversion-targets",
             "phase14-pointer-targets",
             "phase14-stack-slot-targets",
             "phase14-memory-access-targets",
+            "phase14-string-view-targets",
         }:
             contract = validate_phase14_primitive_layout_structure(registry)
             print("\n".join(
@@ -7394,6 +7831,7 @@ def main():
             "phase14-pointer-primary-target",
             "phase14-stack-slot-primary-target",
             "phase14-memory-access-primary-target",
+            "phase14-string-view-primary-target",
         }:
             contract = validate_phase14_primitive_layout_structure(registry)
             print(contract["primary_level2_target"])
@@ -7408,6 +7846,7 @@ def main():
             phase14_pointer_path = phase14_pointer_summary_path(registry)
             phase14_stack_slot_path = phase14_stack_slot_summary_path(registry)
             phase14_memory_access_path = phase14_memory_access_summary_path(registry)
+            phase14_string_view_path = phase14_string_view_summary_path(registry)
             canonical_path.parent.mkdir(parents=True, exist_ok=True)
             phase13_path.parent.mkdir(parents=True, exist_ok=True)
             phase14_path.parent.mkdir(parents=True, exist_ok=True)
@@ -7417,6 +7856,7 @@ def main():
             phase14_pointer_path.parent.mkdir(parents=True, exist_ok=True)
             phase14_stack_slot_path.parent.mkdir(parents=True, exist_ok=True)
             phase14_memory_access_path.parent.mkdir(parents=True, exist_ok=True)
+            phase14_string_view_path.parent.mkdir(parents=True, exist_ok=True)
             canonical_path.write_text(render(registry), encoding="utf-8")
             phase13_path.write_text(render_phase13(registry), encoding="utf-8")
             phase14_path.write_text(render_phase14(registry), encoding="utf-8")
@@ -7436,6 +7876,9 @@ def main():
             phase14_memory_access_path.write_text(
                 render_phase14_memory_accesses(registry), encoding="utf-8"
             )
+            phase14_string_view_path.write_text(
+                render_phase14_string_views(registry), encoding="utf-8"
+            )
         elif command == "check-phase13-projection":
             check_phase13_projection(registry)
         elif command == "check-phase14-projection":
@@ -7452,6 +7895,8 @@ def main():
             check_phase14_stack_slot_projection(registry)
         elif command == "check-phase14-memory-access-projection":
             check_phase14_memory_access_projection(registry)
+        elif command == "check-phase14-string-view-projection":
+            check_phase14_string_view_projection(registry)
         elif command == "check-projection":
             check_projection(registry)
     except Error as exc:
@@ -7481,6 +7926,7 @@ def main():
     phase14_pointer_contract = verify_phase14_pointers(registry)
     phase14_stack_slot_contract = verify_phase14_stack_slots(registry)
     phase14_memory_access_contract = verify_phase14_memory_accesses(registry)
+    phase14_string_view_contract = verify_phase14_string_views(registry)
     phase13_statuses = phase13_totals["status_counts"]
     phase13_parents = phase13_totals["parent_kinds"]
     messages = {
@@ -7656,6 +8102,14 @@ def main():
             f"{phase14_memory_access_contract['target_count']} declared targets; "
             f"{phase14_memory_access_contract['deferred_count']} rows remain deferred."
         ),
+        "verify-phase14-string-views": (
+            "✅ Phase 14 string literal and borrowed-view contract passed: "
+            f"{phase14_string_view_contract['literal_count']} literals, "
+            f"{phase14_string_view_contract['view_count']} views, and "
+            f"{phase14_string_view_contract['operation_count']} operations per target across "
+            f"{phase14_string_view_contract['target_count']} declared targets; "
+            f"{phase14_string_view_contract['deferred_count']} rows remain deferred."
+        ),
         "verify-phase14-opening-contract": (
             "✅ Phase 14 opening contract passed: "
             f"{phase14_contract['row_count']} rows across "
@@ -7666,7 +8120,7 @@ def main():
         "project": (
             "✅ Canonical Cranelift registry, Phase 13 final review, Phase 14 "
             "opening review, Phase 14 layout authority review, Phase 14 primitive layout review, "
-            "Phase 14 integer conversion review, Phase 14 pointer review, Phase 14 stack-slot review, and Phase 14 memory-access review generated."
+            "Phase 14 integer conversion review, Phase 14 pointer review, Phase 14 stack-slot review, Phase 14 memory-access review, and Phase 14 string-view review generated."
         ),
         "check-phase13-projection": (
             "✅ Phase 13 generated final review matches the registry."
@@ -7692,10 +8146,13 @@ def main():
         "check-phase14-memory-access-projection": (
             "✅ Phase 14 generated memory-access review matches the registry."
         ),
+        "check-phase14-string-view-projection": (
+            "✅ Phase 14 generated string-view review matches the registry."
+        ),
         "check-projection": (
             "✅ Canonical Cranelift registry, Phase 13 final review, Phase 14 "
             "opening review, Phase 14 layout authority review, Phase 14 primitive layout review, "
-            "Phase 14 integer conversion review, Phase 14 pointer review, Phase 14 stack-slot review, and Phase 14 memory-access review match their committed artifacts."
+            "Phase 14 integer conversion review, Phase 14 pointer review, Phase 14 stack-slot review, Phase 14 memory-access review, and Phase 14 string-view review match their committed artifacts."
         ),
     }
     print(messages[command])

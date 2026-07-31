@@ -23,6 +23,7 @@ import "mir_integer_conversion.gst" as conversion;
 import "mir_pointer.gst" as pointer;
 import "mir_stack_slot.gst" as stack_slot;
 import "mir_memory_access.gst" as memory_access;
+import "mir_string_view.gst" as string_view;
 
 type MirTypeLayoutReference[ctx] struct {
     type_id: str,
@@ -170,6 +171,47 @@ type MirMemoryAccessReference[ctx] struct {
     destination_offset: int
 }
 
+type MirStringViewOperationKind enum {
+    LiteralCreate,
+    ViewCreate,
+    Length,
+    IsEmpty,
+    ByteAt,
+    Slice,
+    ByteEqual
+}
+
+type MirStringLiteralReference[ctx] struct {
+    literal_id: str,
+    symbol_name: str,
+    encoding: str,
+    byte_length: int,
+    storage_kind: str,
+    lifetime_region: str
+}
+
+type MirStringViewReference[ctx] struct {
+    view_id: str,
+    source_literal_id: str,
+    start: int,
+    length: int,
+    data_known_null: int,
+    lifetime_region: str
+}
+
+type MirStringViewOperationReference[ctx] struct {
+    operation_id: str,
+    operation_name: str,
+    target_id: str,
+    operation_kind: MirStringViewOperationKind,
+    literal_id: str,
+    view_id: str,
+    rhs_view_id: str,
+    index: int,
+    start: int,
+    length: int
+}
+
 type MirProgram[ctx] struct {
     functions: Index[std.Vector[MirFunction[ctx], ctx], ctx],
     resource_metadata: Index[std.Vector[MirResourceMetadata[ctx], ctx], ctx],
@@ -182,7 +224,10 @@ type MirProgram[ctx] struct {
     pointer_operation_references: Index[std.Vector[MirPointerOperationReference[ctx], ctx], ctx],
     stack_slot_references: Index[std.Vector[MirStackSlotReference[ctx], ctx], ctx],
     stack_slot_operation_references: Index[std.Vector[MirStackSlotOperationReference[ctx], ctx], ctx],
-    memory_access_references: Index[std.Vector[MirMemoryAccessReference[ctx], ctx], ctx]
+    memory_access_references: Index[std.Vector[MirMemoryAccessReference[ctx], ctx], ctx],
+    string_literal_references: Index[std.Vector[MirStringLiteralReference[ctx], ctx], ctx],
+    string_view_references: Index[std.Vector[MirStringViewReference[ctx], ctx], ctx],
+    string_view_operation_references: Index[std.Vector[MirStringViewOperationReference[ctx], ctx], ctx]
 }
 
 type MirFunction[ctx] struct {
@@ -276,6 +321,12 @@ type MirValue[ctx] enum {
     MemoryAccess {
         operands: Index[std.Vector[MirValue[ctx], ctx], ctx],
         operation: Index[MirMemoryAccessReference[ctx], ctx],
+        value_type: str,
+        span: token.Span
+    },
+    StringViewOperation {
+        operands: Index[std.Vector[MirValue[ctx], ctx], ctx],
+        operation: Index[MirStringViewOperationReference[ctx], ctx],
         value_type: str,
         span: token.Span
     }
@@ -523,6 +574,27 @@ func mir_empty_memory_access_reference_vector(ctx: &Arena) Index[std.Vector[MirM
     return references_idx;
 }
 
+func mir_empty_string_literal_reference_vector(ctx: &Arena) Index[std.Vector[MirStringLiteralReference[ctx], ctx], ctx] {
+    mut references: std.Vector[MirStringLiteralReference[ctx], ctx] := std.VectorNew(ctx);
+    mut references_idx: Index[std.Vector[MirStringLiteralReference[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(references_idx, references);
+    return references_idx;
+}
+
+func mir_empty_string_view_reference_vector(ctx: &Arena) Index[std.Vector[MirStringViewReference[ctx], ctx], ctx] {
+    mut references: std.Vector[MirStringViewReference[ctx], ctx] := std.VectorNew(ctx);
+    mut references_idx: Index[std.Vector[MirStringViewReference[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(references_idx, references);
+    return references_idx;
+}
+
+func mir_empty_string_view_operation_reference_vector(ctx: &Arena) Index[std.Vector[MirStringViewOperationReference[ctx], ctx], ctx] {
+    mut references: std.Vector[MirStringViewOperationReference[ctx], ctx] := std.VectorNew(ctx);
+    mut references_idx: Index[std.Vector[MirStringViewOperationReference[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(references_idx, references);
+    return references_idx;
+}
+
 func mir_value_vector_with_value(values_idx: Index[std.Vector[MirValue[ctx], ctx], ctx], value: MirValue[ctx], ctx: &Arena) Index[std.Vector[MirValue[ctx], ctx], ctx] {
     mut values: std.Vector[MirValue[ctx], ctx] := ctx[values_idx];
     values.Push(value);
@@ -556,6 +628,9 @@ func mir_make_program(ctx: &Arena) MirProgram[ctx] {
     program.stack_slot_references = mir_empty_stack_slot_reference_vector(ctx);
     program.stack_slot_operation_references = mir_empty_stack_slot_operation_reference_vector(ctx);
     program.memory_access_references = mir_empty_memory_access_reference_vector(ctx);
+    program.string_literal_references = mir_empty_string_literal_reference_vector(ctx);
+    program.string_view_references = mir_empty_string_view_reference_vector(ctx);
+    program.string_view_operation_references = mir_empty_string_view_operation_reference_vector(ctx);
     return program;
 }
 
@@ -962,6 +1037,156 @@ func mir_program_stack_slot_references_are_valid(program: MirProgram[ctx], table
            std.str_eq(query.operation.contained_type_id, reference.contained_type_id) == 0 ||
            std.str_eq(query.operation.contained_layout_id, reference.contained_layout_id) == 0 ||
            std.str_eq(query.operation.context_kind, reference.context_kind) == 0
+        {
+            return 0;
+        }
+        operation_index = operation_index + 1;
+    }
+    return 1;
+}
+
+func mir_string_view_operation_kind_from_name(kind: str) MirStringViewOperationKind {
+    mut result: MirStringViewOperationKind;
+    unsafe {
+        result.tag = 0;
+        if std.str_eq(kind, "view_create") == 1 { result.tag = 1; }
+        if std.str_eq(kind, "length") == 1 { result.tag = 2; }
+        if std.str_eq(kind, "is_empty") == 1 { result.tag = 3; }
+        if std.str_eq(kind, "byte_at") == 1 { result.tag = 4; }
+        if std.str_eq(kind, "slice") == 1 { result.tag = 5; }
+        if std.str_eq(kind, "byte_equal") == 1 { result.tag = 6; }
+    }
+    return result;
+}
+
+func mir_debug_string_view_operation_kind(kind: MirStringViewOperationKind) str {
+    unsafe {
+        if kind.tag == 1 { return "view_create"; }
+        if kind.tag == 2 { return "length"; }
+        if kind.tag == 3 { return "is_empty"; }
+        if kind.tag == 4 { return "byte_at"; }
+        if kind.tag == 5 { return "slice"; }
+        if kind.tag == 6 { return "byte_equal"; }
+    }
+    return "literal_create";
+}
+
+func mir_make_string_literal_reference(literal: string_view.MirStringLiteralStorage[ctx], ctx: &Arena) MirStringLiteralReference[ctx] {
+    mut reference: MirStringLiteralReference[ctx];
+    reference.literal_id = std.Clone(ctx, literal.literal_id);
+    reference.symbol_name = std.Clone(ctx, literal.symbol_name);
+    reference.encoding = std.Clone(ctx, literal.encoding);
+    reference.byte_length = literal.byte_length;
+    reference.storage_kind = std.Clone(ctx, literal.storage_kind);
+    reference.lifetime_region = std.Clone(ctx, literal.lifetime_region);
+    return reference;
+}
+
+func mir_make_string_view_reference(view: string_view.MirStringView[ctx], ctx: &Arena) MirStringViewReference[ctx] {
+    mut reference: MirStringViewReference[ctx];
+    reference.view_id = std.Clone(ctx, view.view_id);
+    reference.source_literal_id = std.Clone(ctx, view.source_literal_id);
+    reference.start = view.start;
+    reference.length = view.length;
+    reference.data_known_null = view.data_known_null;
+    reference.lifetime_region = std.Clone(ctx, view.lifetime_region);
+    return reference;
+}
+
+func mir_make_string_view_operation_reference(operation: string_view.MirStringViewOperation[ctx], ctx: &Arena) MirStringViewOperationReference[ctx] {
+    mut reference: MirStringViewOperationReference[ctx];
+    reference.operation_id = std.Clone(ctx, operation.operation_id);
+    reference.operation_name = std.Clone(ctx, operation.operation_name);
+    reference.target_id = std.Clone(ctx, operation.target_id);
+    reference.operation_kind = mir_string_view_operation_kind_from_name(operation.kind);
+    reference.literal_id = std.Clone(ctx, operation.literal_id);
+    reference.view_id = std.Clone(ctx, operation.view_id);
+    reference.rhs_view_id = std.Clone(ctx, operation.rhs_view_id);
+    reference.index = operation.index;
+    reference.start = operation.start;
+    reference.length = operation.length;
+    return reference;
+}
+
+func mir_program_with_string_literal_reference(program: MirProgram[ctx], reference: MirStringLiteralReference[ctx], ctx: &Arena) MirProgram[ctx] {
+    mut updated := program;
+    mut references: std.Vector[MirStringLiteralReference[ctx], ctx] := ctx[updated.string_literal_references];
+    references.Push(reference);
+    ctx.Set(updated.string_literal_references, references);
+    return updated;
+}
+
+func mir_program_with_string_view_reference(program: MirProgram[ctx], reference: MirStringViewReference[ctx], ctx: &Arena) MirProgram[ctx] {
+    mut updated := program;
+    mut references: std.Vector[MirStringViewReference[ctx], ctx] := ctx[updated.string_view_references];
+    references.Push(reference);
+    ctx.Set(updated.string_view_references, references);
+    return updated;
+}
+
+func mir_program_with_string_view_operation_reference(program: MirProgram[ctx], reference: MirStringViewOperationReference[ctx], ctx: &Arena) MirProgram[ctx] {
+    mut updated := program;
+    mut references: std.Vector[MirStringViewOperationReference[ctx], ctx] := ctx[updated.string_view_operation_references];
+    references.Push(reference);
+    ctx.Set(updated.string_view_operation_references, references);
+    return updated;
+}
+
+func mir_program_string_view_references_are_valid(program: MirProgram[ctx], table: string_view.MirStringViewTable[ctx], layout_table: layout.MirLayoutTable[ctx], ctx: &Arena) int {
+    if string_view.mir_string_view_table_is_valid(table, layout_table, ctx) == 0 ||
+       string_view.mir_string_view_table_is_legacy_empty(table, ctx) == 1
+    {
+        return 0;
+    }
+    mut literal_references: std.Vector[MirStringLiteralReference[ctx], ctx] := ctx[program.string_literal_references];
+    mut literal_index := 0;
+    while literal_index < len(literal_references) {
+        mut reference := literal_references[literal_index];
+        mut query := string_view.mir_string_view_literal(table, reference.literal_id, ctx);
+        if query.found == 0 ||
+           std.str_eq(query.literal.symbol_name, reference.symbol_name) == 0 ||
+           std.str_eq(query.literal.encoding, reference.encoding) == 0 ||
+           query.literal.byte_length != reference.byte_length ||
+           std.str_eq(query.literal.storage_kind, reference.storage_kind) == 0 ||
+           std.str_eq(query.literal.lifetime_region, reference.lifetime_region) == 0
+        {
+            return 0;
+        }
+        literal_index = literal_index + 1;
+    }
+
+    mut view_references: std.Vector[MirStringViewReference[ctx], ctx] := ctx[program.string_view_references];
+    mut view_index := 0;
+    while view_index < len(view_references) {
+        mut reference := view_references[view_index];
+        mut query := string_view.mir_string_view_view(table, reference.view_id, ctx);
+        if query.found == 0 ||
+           std.str_eq(query.view.source_literal_id, reference.source_literal_id) == 0 ||
+           query.view.start != reference.start ||
+           query.view.length != reference.length ||
+           query.view.data_known_null != reference.data_known_null ||
+           std.str_eq(query.view.lifetime_region, reference.lifetime_region) == 0
+        {
+            return 0;
+        }
+        view_index = view_index + 1;
+    }
+
+    mut operation_references: std.Vector[MirStringViewOperationReference[ctx], ctx] := ctx[program.string_view_operation_references];
+    mut operation_index := 0;
+    while operation_index < len(operation_references) {
+        mut reference := operation_references[operation_index];
+        mut query := string_view.mir_string_view_operation(table, reference.operation_name, ctx);
+        if query.found == 0 ||
+           std.str_eq(query.operation.operation_id, reference.operation_id) == 0 ||
+           std.str_eq(query.operation.target_id, reference.target_id) == 0 ||
+           std.str_eq(query.operation.kind, mir_debug_string_view_operation_kind(reference.operation_kind)) == 0 ||
+           std.str_eq(query.operation.literal_id, reference.literal_id) == 0 ||
+           std.str_eq(query.operation.view_id, reference.view_id) == 0 ||
+           std.str_eq(query.operation.rhs_view_id, reference.rhs_view_id) == 0 ||
+           query.operation.index != reference.index ||
+           query.operation.start != reference.start ||
+           query.operation.length != reference.length
         {
             return 0;
         }
@@ -1798,6 +2023,20 @@ func mir_make_value_memory_access(operands: Index[std.Vector[MirValue[ctx], ctx]
     return value;
 }
 
+func mir_make_value_string_view_operation(operands: Index[std.Vector[MirValue[ctx], ctx], ctx], operation_reference: MirStringViewOperationReference[ctx], value_type: str, span: token.Span, ctx: &Arena) MirValue[ctx] {
+    mut operation_reference_idx: Index[MirStringViewOperationReference[ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(operation_reference_idx, operation_reference);
+    mut value: MirValue[ctx];
+    unsafe {
+        value.tag = 8; // StringViewOperation
+        value.StringViewOperation.operands = operands;
+        value.StringViewOperation.operation = operation_reference_idx;
+        value.StringViewOperation.value_type = std.Clone(ctx, value_type);
+        value.StringViewOperation.span = span;
+    }
+    return value;
+}
+
 func mir_make_terminator_return_void(span: token.Span, ctx: &Arena) MirTerminator[ctx] {
     mut terminator: MirTerminator[ctx];
     unsafe {
@@ -1961,6 +2200,9 @@ func mir_debug_value_kind(value: MirValue[ctx]) str {
     }
     if value.tag == 7 {
         return "MirValue.MemoryAccess";
+    }
+    if value.tag == 8 {
+        return "MirValue.StringViewOperation";
     }
     return "MirValue.<unknown>";
 }

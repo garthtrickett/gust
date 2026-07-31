@@ -66,6 +66,9 @@ jobs:
       - name: Phase 14 typed loads stores and memory access
         run: just guard-cranelift-phase14-memory-access-contract
 
+      - name: Phase 14 strings and string views
+        run: just guard-cranelift-phase14-string-view-contract
+
       - name: Upload Gust build outputs
         uses: actions/upload-artifact@v4
         with:

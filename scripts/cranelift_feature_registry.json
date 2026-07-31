@@ -2,7 +2,7 @@
   "schema": "scripts/cranelift_feature_registry.schema.json",
   "schema_version": 1,
   "registry_version": 14,
-  "registry_status": "phase14_memory_access_ready",
+  "registry_status": "phase14_string_views_ready",
   "current_phase": "phase14",
   "closed_phase_versions": {
     "phase11": "phase11_closed_registry_backed_feature_parity_migration",
@@ -786,7 +786,7 @@
   },
   "phase14_layout_authority": {
     "version": "phase14_compiler_owned_layout_authority_v1",
-    "status": "consumed_by_patch14_6",
+    "status": "consumed_by_patch14_7",
     "authority_owner": "compiler/mir_layout.gst",
     "table_format": "gust.compiler_layout_table.v2",
     "semantic_types": [
@@ -829,8 +829,8 @@
       "no_runtime_hard_coded_duplicate_offsets",
       "no_diagnostic_layout_recomputation"
     ],
-    "behavior_policy": "authority_transport_primitive_layout_integer_conversion_bounded_pointer_stack_slot_and_typed_memory_access_consumption_no_string_array_struct_enum_or_aggregate_abi_migration",
-    "next_patch": "14.7"
+    "behavior_policy": "authority_transport_primitive_layout_integer_conversion_bounded_pointer_stack_slot_typed_memory_access_and_literal_backed_string_view_consumption_no_dynamic_owning_string_array_struct_enum_or_aggregate_abi_migration",
+    "next_patch": "14.8"
   },
   "phase14_primitive_layout": {
     "version": "phase14_declared_targets_and_primitive_layout_v1",
@@ -1327,7 +1327,7 @@
   },
   "phase14_pointers": {
     "version": "phase14_bounded_typed_pointers_and_nullability_v1",
-    "status": "consumed_by_patch14_6",
+    "status": "consumed_by_patch14_7",
     "authority_owner": "compiler/mir_pointer.gst",
     "pointer_table_format": "gust.compiler_pointer_table.v1",
     "primary_level2_target": "x86_64-unknown-linux-gnu",
@@ -1387,11 +1387,11 @@
       "target_required"
     ],
     "boundary_policy": "typed_pointer_identity_nullability_comparison_bounded_conversion_and_selected_i32_load_store_only_no_pointer_arithmetic_non_default_address_space_or_integer_pointer_cast",
-    "next_patch": "14.7"
+    "next_patch": "14.8"
   },
   "phase14_stack_slots": {
     "version": "phase14_deterministic_stack_slots_and_addressable_locals_v1",
-    "status": "consumed_by_patch14_6",
+    "status": "consumed_by_patch14_7",
     "authority_owner": "compiler/mir_stack_slot.gst",
     "stack_slot_table_format": "gust.compiler_stack_slot_table.v1",
     "primary_level2_target": "x86_64-unknown-linux-gnu",
@@ -1450,11 +1450,11 @@
       "unsupported_aliasing"
     ],
     "boundary_policy": "fixed_size_compiler_owned_stack_slots_with_selected_typed_i32_load_store_and_bounded_nonoverlap_copy_no_dynamic_allocation_variable_sized_storage_escape_resource_destructors_or_unrestricted_aliasing",
-    "next_patch": "14.7"
+    "next_patch": "14.8"
   },
   "phase14_memory_accesses": {
     "version": "phase14_typed_load_store_memory_access_v1",
-    "status": "ready_for_patch14_7",
+    "status": "consumed_by_patch14_7",
     "authority_owner": "compiler/mir_memory_access.gst",
     "memory_access_table_format": "gust.compiler_memory_access_table.v1",
     "primary_level2_target": "x86_64-unknown-linux-gnu",
@@ -1523,7 +1523,69 @@
     "poisoned_driver_policy": "invalid_access_validation_must_not_discover_or_invoke_the_native_driver",
     "output_preservation_policy": "invalid_access_preserves_existing_output_and_creates_no_object_bundle_or_temporary_artifact",
     "boundary_policy": "selected_naturally_aligned_non_null_fixed_width_i32_load_store_element_offset_and_nonoverlap_copy_only_no_unaligned_zero_sized_nullable_overlapping_atomic_volatile_or_unrestricted_pointer_access",
-    "next_patch": "14.7"
+    "next_patch": "14.8"
+  },
+  "phase14_string_views": {
+    "version": "phase14_string_literals_and_borrowed_views_v1",
+    "status": "ready_for_patch14_8",
+    "authority_owner": "compiler/mir_string_view.gst",
+    "string_view_table_format": "gust.compiler_string_view_table.v1",
+    "primary_level2_target": "x86_64-unknown-linux-gnu",
+    "source_encoding": "utf8",
+    "literal_encoding": "utf8",
+    "embedded_nul_policy": "valid_data_byte_not_terminator",
+    "empty_string_policy": "non_null_static_empty_storage_with_zero_length",
+    "semantic_length_authority": "explicit_byte_length_not_nul_termination",
+    "owning_string_policy": "deferred_no_heap_allocation_authority",
+    "view_representation": "data_pointer_and_usize_length",
+    "view_layout_fields": [
+      "data_pointer",
+      "byte_length"
+    ],
+    "lifetime_policy": "literal_static_storage_views_must_not_outlive_source",
+    "mutation_policy": "deferred_immutable_literal_backed_views",
+    "concatenation_policy": "deferred_requires_owning_allocation",
+    "allocation_policy": "deferred_no_runtime_heap_authority",
+    "literal_count_per_target": 4,
+    "view_count_per_target": 4,
+    "operation_kinds": [
+      "literal_create",
+      "view_create",
+      "length",
+      "is_empty",
+      "byte_at",
+      "slice",
+      "byte_equal"
+    ],
+    "operation_count_per_target": 13,
+    "migrated_entry_ids": [
+      "p14_string_and_string_view_layout"
+    ],
+    "focused_ci_family": "strings-views",
+    "level1_guard": "guard-cranelift-phase14-string-view-contract",
+    "level2_guard": "guard-cranelift-phase14-string-view-parity",
+    "composition_contexts": [
+      "static_literal_identity",
+      "pointer_sized_view_layout",
+      "embedded_nul_length",
+      "bounded_slice",
+      "byte_comparison"
+    ],
+    "negative_classes": [
+      "invalid_pointer_length_pair",
+      "lifetime_escape",
+      "unsupported_mutation",
+      "unsupported_allocation",
+      "unsupported_concatenation",
+      "invalid_encoding",
+      "out_of_bounds_view",
+      "null_empty_view",
+      "literal_identity_mismatch"
+    ],
+    "poisoned_driver_policy": "invalid_string_view_validation_must_not_discover_or_invoke_the_native_driver",
+    "output_preservation_policy": "invalid_string_view_preserves_existing_output_and_creates_no_object_bundle_or_temporary_artifact",
+    "boundary_policy": "immutable_utf8_literal_backed_strings_and_borrowed_data_pointer_plus_explicit_byte_length_views_only_embedded_nul_is_data_no_nul_termination_authority_no_dynamic_owning_allocation_mutation_or_concatenation",
+    "next_patch": "14.8"
   },
   "residual_snapshots": {
     "phase13": {
@@ -4392,7 +4454,8 @@
         "composition_case_ids": [
           "phase14_composition:declared_targets_primitive_layout",
           "phase14_composition:integer_conversions_with_layout_and_control_flow",
-          "phase14_composition:bounded_pointers_with_layout_conversion_and_control_flow"
+          "phase14_composition:bounded_pointers_with_layout_conversion_and_control_flow",
+          "phase14_composition:string_views_with_static_literals_pointer_layout_and_slices"
         ],
         "differential_failure_fixture": "compiler/p14_target_dependent_conversions_deferred_source.gst",
         "composition_cases": [],
@@ -4797,29 +4860,87 @@
       "parent": "phase14_category:strings_and_string_views",
       "feature_family": "string_view",
       "ci_family": "strings-views",
-      "status": "candidate_deferred",
-      "route_owner": "deferred",
+      "status": "migrated",
+      "route_owner": "generic_canonical_mir",
       "worker_capability_owner": "worker_string_view_lowering",
       "diagnostic_owner": "canonical_mir_string_view_verifier",
-      "source_fixture": "compiler/p14_string_and_string_view_layout_deferred_source.gst",
-      "canonical_mir_fixture": "none_rejected_before_canonical_MIR",
-      "differential_case_id": "phase14_opening:p14_string_and_string_view_layout",
-      "deferral_reason": "phase14_authority_p14_string_and_string_view_layout_awaits_bounded_capability_migration",
-      "future_destination_phase": "phase14",
-      "closure_version": "phase14_compiler_owned_layout_authority_v1",
+      "source_fixture": "compiler/phase14_string_view_source.gst",
+      "canonical_mir_fixture": "compiler/fixtures/native_backend_phase14_string_view_ingestion.mir",
+      "differential_case_id": "phase14_registry_differential:p14_string_and_string_view_layout",
+      "deferral_reason": "none_migrated",
+      "future_destination_phase": "none_migrated",
+      "closure_version": "phase14_string_literals_and_borrowed_views_v1",
       "evidence": {
         "opening_record_kind": "phase14_candidate",
         "declared_capability": "string_literal_and_borrowed_string_view_layout",
         "planning_category": "strings_and_string_views",
         "phase13_closure_dependency": "phase13_closed_deferred_registry_parity_expansion",
-        "behavior_policy": "primitive_layout_and_integer_conversion_only_other_phase14_capabilities_remain_deferred",
+        "behavior_policy": "immutable_utf8_literal_storage_and_borrowed_explicit_length_views_migrated_through_compiler_owned_string_view_table",
         "phase14_1_authority": "compiler_owned_layout_authority_and_request_transport_available",
-        "phase14_3_boundary": "not_selected_by_signed_unsigned_width_conversion_patch"
+        "phase14_3_boundary": "not_selected_by_signed_unsigned_width_conversion_patch",
+        "phase14_7_contract": "phase14_string_literals_and_borrowed_views_v1",
+        "selected_source_encoding": "utf8",
+        "selected_literal_encoding": "utf8",
+        "embedded_nul_policy": "valid_data_byte_not_terminator",
+        "empty_string_policy": "non_null_static_empty_storage_with_zero_length",
+        "semantic_length_authority": "explicit_byte_length_not_nul_termination",
+        "owning_string_policy": "deferred_no_heap_allocation_authority",
+        "selected_operation_kinds": [
+          "literal_create",
+          "view_create",
+          "length",
+          "is_empty",
+          "byte_at",
+          "slice",
+          "byte_equal"
+        ],
+        "focused_source_fixtures": [
+          "compiler/phase14_string_view_source.gst"
+        ],
+        "negative_source_fixtures": [
+          "compiler/p14_string_view_invalid_pointer_length_source.gst",
+          "compiler/p14_string_view_lifetime_escape_source.gst",
+          "compiler/p14_string_mutation_unsupported_source.gst",
+          "compiler/p14_string_allocation_unsupported_source.gst",
+          "compiler/p14_string_concatenation_unsupported_source.gst",
+          "compiler/p14_string_invalid_encoding_source.gst",
+          "compiler/p14_string_view_out_of_bounds_source.gst",
+          "compiler/p14_string_view_null_empty_source.gst",
+          "compiler/p14_string_literal_identity_mismatch_source.gst"
+        ],
+        "malformed_canonical_mir_fixture": "compiler/fixtures/native_backend_phase14_string_view_malformed.mir",
+        "positive_expectation": "exit_57_phase14_string_view",
+        "individual_evidence_guard": "guard-cranelift-phase14-string-view-parity",
+        "differential_stderr_policy": "stable_bytes",
+        "differential_side_effect_policy": "none",
+        "composition_case_ids": [
+          "phase14_composition:string_views_with_static_literals_pointer_layout_and_slices"
+        ],
+        "differential_failure_fixture": "compiler/p14_string_view_invalid_pointer_length_source.gst",
+        "composition_cases": [
+          {
+            "id": "phase14_composition:string_views_with_static_literals_pointer_layout_and_slices",
+            "owner_entry_id": "p14_string_and_string_view_layout",
+            "ci_family": "strings-views",
+            "source_fixture": "compiler/phase14_string_view_composition_source.gst",
+            "positive_expectation": "exit_58_phase14_string_view_composition",
+            "stderr_policy": "stable_bytes",
+            "side_effect_policy": "none",
+            "failure_fixture": "compiler/p14_string_view_out_of_bounds_source.gst",
+            "covers_entry_ids": [
+              "p14_string_and_string_view_layout",
+              "p14_pointer_sized_integer_layout",
+              "p14_target_layout_model"
+            ]
+          }
+        ],
+        "poisoned_driver_evidence": "scripts/phase14_string_view_differential.sh",
+        "sentinel_output_evidence": "scripts/phase14_string_view_differential.sh"
       },
       "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
-      "current_failure_stage": "before_driver_discovery",
+      "current_failure_stage": "none_supported",
       "positive_future_fixture": "compiler/future/p14_string_and_string_view_layout_source.gst",
-      "negative_current_fixture": "compiler/p14_string_and_string_view_layout_deferred_source.gst"
+      "negative_current_fixture": "compiler/p14_string_view_invalid_pointer_length_source.gst"
     },
     {
       "id": "p14_array_and_slice_layout",
@@ -5002,7 +5123,8 @@
           "phase14_composition:integer_conversions_with_layout_and_control_flow",
           "phase14_composition:bounded_pointers_with_layout_conversion_and_control_flow",
           "phase14_composition:stack_slots_with_branches_loops_and_aggregate_copy",
-          "phase14_composition:typed_memory_with_stack_pointer_offset_and_copy"
+          "phase14_composition:typed_memory_with_stack_pointer_offset_and_copy",
+          "phase14_composition:string_views_with_static_literals_pointer_layout_and_slices"
         ],
         "differential_failure_fixture": "compiler/p14_target_dependent_conversions_deferred_source.gst",
         "composition_cases": [],

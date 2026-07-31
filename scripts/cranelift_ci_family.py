@@ -21,7 +21,8 @@ REGISTRY = ROOT / "scripts/cranelift_feature_registry.json"
 # request, worker, and MIR-to-C witnesses, so it must not be rerouted through
 # the Phase 13 generic source-to-MIR capability planner. Phase 14 integer
 # conversions likewise own a dedicated target-aware parity route. Phase 14
-# pointers own the bounded pointer/nullability request and witness route.
+# pointers own the bounded pointer/nullability request and witness route. Patch
+# 14.7 strings/views own literal-byte, explicit-length, and lifetime parity.
 RUNNERS = (
     (
         "scalars",
@@ -81,6 +82,12 @@ RUNNERS = (
         "pointer-memory",
         "guard-cranelift-phase14-pointer-memory-parity",
         "PHASE14_POINTER_MEMORY_SKIP_DYNAMIC",
+        None,
+    ),
+    (
+        "strings-views",
+        "guard-cranelift-phase14-string-view-parity",
+        "PHASE14_STRING_VIEW_SKIP_DYNAMIC",
         None,
     ),
 )

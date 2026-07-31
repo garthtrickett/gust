@@ -5809,6 +5809,1124 @@ fn print_phase14_memory_access_witness(
     Ok(())
 }
 
+const PHASE14_STRING_VIEW_TABLE_FORMAT_V1: &str =
+    "gust.compiler_string_view_table.v1";
+
+#[derive(Debug, Clone)]
+struct Phase14RequestStringLiteral {
+    literal_id: String,
+    symbol_name: String,
+    encoding: String,
+    bytes_hex: String,
+    byte_length: usize,
+    storage_kind: String,
+    lifetime_region: String,
+}
+
+#[derive(Debug, Clone)]
+struct Phase14RequestStringView {
+    view_id: String,
+    source_literal_id: String,
+    start: usize,
+    length: usize,
+    data_known_null: bool,
+    lifetime_region: String,
+    source_lifetime_region: String,
+}
+
+#[derive(Debug, Clone)]
+struct Phase14RequestStringViewOperation {
+    operation_id: String,
+    operation_name: String,
+    target_id: String,
+    kind: String,
+    literal_id: String,
+    view_id: String,
+    rhs_view_id: String,
+    index: usize,
+    start: usize,
+    length: usize,
+    expect_success: bool,
+    expected_value: i64,
+    expected_result_start: usize,
+    expected_result_length: usize,
+    expected_reason_code: String,
+}
+
+#[derive(Debug)]
+struct Phase14RequestStringViewLayout {
+    view_type_id: String,
+    layout_id: String,
+    target_id: String,
+    pointer_size: usize,
+    pointer_alignment: usize,
+    size: usize,
+    alignment: usize,
+    data_pointer_offset: usize,
+    length_offset: usize,
+    length_type_id: String,
+    representation_kind: String,
+}
+
+#[derive(Debug)]
+struct Phase14RequestStringViewTable {
+    format: String,
+    target_id: String,
+    target_triple: String,
+    source_encoding: String,
+    literal_encoding: String,
+    embedded_nul_policy: String,
+    empty_string_policy: String,
+    semantic_length_authority: String,
+    owning_string_policy: String,
+    mutation_policy: String,
+    concatenation_policy: String,
+    allocation_policy: String,
+    view_layout: Option<Phase14RequestStringViewLayout>,
+    literals: Vec<Phase14RequestStringLiteral>,
+    views: Vec<Phase14RequestStringView>,
+    operations: Vec<Phase14RequestStringViewOperation>,
+}
+
+impl Phase14RequestStringViewTable {
+    fn legacy_empty(target_triple: &str) -> Self {
+        Self {
+            format: PHASE14_STRING_VIEW_TABLE_FORMAT_V1.to_string(),
+            target_id: String::new(),
+            target_triple: target_triple.to_string(),
+            source_encoding: "utf8".to_string(),
+            literal_encoding: "utf8".to_string(),
+            embedded_nul_policy:
+                "valid_data_byte_not_terminator".to_string(),
+            empty_string_policy:
+                "non_null_static_empty_storage_with_zero_length".to_string(),
+            semantic_length_authority:
+                "explicit_byte_length_not_nul_termination".to_string(),
+            owning_string_policy:
+                "deferred_no_heap_allocation_authority".to_string(),
+            mutation_policy:
+                "deferred_immutable_literal_backed_views".to_string(),
+            concatenation_policy:
+                "deferred_requires_owning_allocation".to_string(),
+            allocation_policy:
+                "deferred_no_runtime_heap_authority".to_string(),
+            view_layout: None,
+            literals: Vec::new(),
+            views: Vec::new(),
+            operations: Vec::new(),
+        }
+    }
+
+    fn is_legacy_empty(&self) -> bool {
+        self.format == PHASE14_STRING_VIEW_TABLE_FORMAT_V1
+            && self.target_id.is_empty()
+            && self.view_layout.is_none()
+            && self.literals.is_empty()
+            && self.views.is_empty()
+            && self.operations.is_empty()
+    }
+}
+
+#[derive(Debug)]
+struct Phase14StringViewEvaluation {
+    success: bool,
+    value: i64,
+    result_start: usize,
+    result_length: usize,
+    reason_code: String,
+}
+
+fn phase14_string_literal_identity(encoding: &str, bytes_hex: &str) -> String {
+    format!("string_literal:v1:encoding={encoding}:bytes={bytes_hex}")
+}
+
+fn phase14_string_view_layout_identity(
+    target_id: &str,
+    pointer_size: usize,
+    pointer_alignment: usize,
+) -> String {
+    format!(
+        "string_view_layout:v1:target={target_id}:pointer_size={pointer_size}:pointer_align={pointer_alignment}:data_offset=0:length_offset={pointer_size}:size={}",
+        pointer_size * 2
+    )
+}
+
+fn phase14_string_view_identity(
+    source_literal_id: &str,
+    start: usize,
+    length: usize,
+    lifetime_region: &str,
+) -> String {
+    format!(
+        "string_view:v1:literal={source_literal_id}:start={start}:length={length}:lifetime={lifetime_region}"
+    )
+}
+
+fn phase14_string_view_operation_identity(
+    target_id: &str,
+    operation_name: &str,
+    kind: &str,
+) -> String {
+    format!(
+        "string_view_operation:v1:target={target_id}:name={operation_name}:kind={kind}"
+    )
+}
+
+fn phase14_string_view_kind_is_valid(value: &str) -> bool {
+    matches!(
+        value,
+        "literal_create"
+            | "view_create"
+            | "length"
+            | "is_empty"
+            | "byte_at"
+            | "slice"
+            | "byte_equal"
+    )
+}
+
+fn phase14_string_view_unsupported_reason(kind: &str) -> &'static str {
+    match kind {
+        "mutation" => "string_mutation_unsupported",
+        "allocation" | "owning_string_create" => {
+            "string_allocation_unsupported"
+        }
+        "concatenation" => "string_concatenation_unsupported",
+        _ => "string_operation_unsupported",
+    }
+}
+
+fn phase14_hex_bytes(value: &str) -> Result<Vec<u8>, Box<dyn Error>> {
+    if value.len() % 2 != 0 || !value.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "string_encoding_invalid",
+        ));
+    }
+    let mut bytes = Vec::with_capacity(value.len() / 2);
+    let raw = value.as_bytes();
+    for index in (0..raw.len()).step_by(2) {
+        let pair = std::str::from_utf8(&raw[index..index + 2])?;
+        bytes.push(u8::from_str_radix(pair, 16).map_err(|_| {
+            phase10_backend_request_error(
+                Phase10BackendRequestStage::CanonicalMirValidation,
+                Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                "string_encoding_invalid",
+            )
+        })?);
+    }
+    Ok(bytes)
+}
+
+fn parse_phase14_request_string_view_table(
+    cursor: &mut Phase10TextCursor<'_>,
+    request_target_triple: &str,
+    layout_table: &Phase14RequestLayoutTable,
+) -> Result<Phase14RequestStringViewTable, Box<dyn Error>> {
+    let stage = Phase10BackendRequestStage::RequestParse;
+    let kind = Phase10BackendRequestFailureKind::InvalidRequest;
+    let format = cursor
+        .take_field("string_view_table_format", false, stage, kind)?
+        .to_string();
+    let target_id = cursor
+        .take_field("string_view_target_id", true, stage, kind)?
+        .to_string();
+    let target_triple = cursor
+        .take_field("string_view_target_triple", false, stage, kind)?
+        .to_string();
+
+    if target_id.is_empty() && target_triple == "legacy-empty" {
+        let literal_count = cursor.take_usize_field(
+            "string_view_literal_count",
+            stage,
+            kind,
+        )?;
+        let view_count = cursor.take_usize_field(
+            "string_view_view_count",
+            stage,
+            kind,
+        )?;
+        let operation_count = cursor.take_usize_field(
+            "string_view_operation_count",
+            stage,
+            kind,
+        )?;
+        if format != PHASE14_STRING_VIEW_TABLE_FORMAT_V1
+            || literal_count != 0
+            || view_count != 0
+            || operation_count != 0
+        {
+            return Err(phase10_backend_request_error(
+                Phase10BackendRequestStage::RequestValidation,
+                Phase10BackendRequestFailureKind::InvalidRequest,
+                "string_view_legacy_empty_invalid",
+            ));
+        }
+        return Ok(Phase14RequestStringViewTable::legacy_empty(
+            request_target_triple,
+        ));
+    }
+
+    let source_encoding = cursor
+        .take_field("string_view_source_encoding", false, stage, kind)?
+        .to_string();
+    let literal_encoding = cursor
+        .take_field("string_view_literal_encoding", false, stage, kind)?
+        .to_string();
+    let embedded_nul_policy = cursor
+        .take_field("string_view_embedded_nul_policy", false, stage, kind)?
+        .to_string();
+    let empty_string_policy = cursor
+        .take_field("string_view_empty_string_policy", false, stage, kind)?
+        .to_string();
+    let semantic_length_authority = cursor
+        .take_field(
+            "string_view_semantic_length_authority",
+            false,
+            stage,
+            kind,
+        )?
+        .to_string();
+    let owning_string_policy = cursor
+        .take_field("string_view_owning_string_policy", false, stage, kind)?
+        .to_string();
+    let mutation_policy = cursor
+        .take_field("string_view_mutation_policy", false, stage, kind)?
+        .to_string();
+    let concatenation_policy = cursor
+        .take_field(
+            "string_view_concatenation_policy",
+            false,
+            stage,
+            kind,
+        )?
+        .to_string();
+    let allocation_policy = cursor
+        .take_field("string_view_allocation_policy", false, stage, kind)?
+        .to_string();
+
+    let view_layout = Phase14RequestStringViewLayout {
+        view_type_id: cursor
+            .take_field("string_view_layout_type_id", false, stage, kind)?
+            .to_string(),
+        layout_id: cursor
+            .take_field("string_view_layout_id", false, stage, kind)?
+            .to_string(),
+        target_id: cursor
+            .take_field("string_view_layout_target_id", false, stage, kind)?
+            .to_string(),
+        pointer_size: cursor.take_usize_field(
+            "string_view_layout_pointer_size",
+            stage,
+            kind,
+        )?,
+        pointer_alignment: cursor.take_usize_field(
+            "string_view_layout_pointer_alignment",
+            stage,
+            kind,
+        )?,
+        size: cursor.take_usize_field(
+            "string_view_layout_size",
+            stage,
+            kind,
+        )?,
+        alignment: cursor.take_usize_field(
+            "string_view_layout_alignment",
+            stage,
+            kind,
+        )?,
+        data_pointer_offset: cursor.take_usize_field(
+            "string_view_layout_data_pointer_offset",
+            stage,
+            kind,
+        )?,
+        length_offset: cursor.take_usize_field(
+            "string_view_layout_length_offset",
+            stage,
+            kind,
+        )?,
+        length_type_id: cursor
+            .take_field(
+                "string_view_layout_length_type_id",
+                false,
+                stage,
+                kind,
+            )?
+            .to_string(),
+        representation_kind: cursor
+            .take_field(
+                "string_view_layout_representation_kind",
+                false,
+                stage,
+                kind,
+            )?
+            .to_string(),
+    };
+
+    let literal_count = cursor.take_usize_field(
+        "string_view_literal_count",
+        stage,
+        kind,
+    )?;
+    let mut literals = Vec::with_capacity(literal_count);
+    for index in 0..literal_count {
+        let prefix = format!("string_view_literal_{index}");
+        literals.push(Phase14RequestStringLiteral {
+            literal_id: cursor
+                .take_field(&format!("{prefix}_id"), false, stage, kind)?
+                .to_string(),
+            symbol_name: cursor
+                .take_field(
+                    &format!("{prefix}_symbol_name"),
+                    false,
+                    stage,
+                    kind,
+                )?
+                .to_string(),
+            encoding: cursor
+                .take_field(
+                    &format!("{prefix}_encoding"),
+                    false,
+                    stage,
+                    kind,
+                )?
+                .to_string(),
+            bytes_hex: cursor
+                .take_field(
+                    &format!("{prefix}_bytes_hex"),
+                    true,
+                    stage,
+                    kind,
+                )?
+                .to_string(),
+            byte_length: cursor.take_usize_field(
+                &format!("{prefix}_byte_length"),
+                stage,
+                kind,
+            )?,
+            storage_kind: cursor
+                .take_field(
+                    &format!("{prefix}_storage_kind"),
+                    false,
+                    stage,
+                    kind,
+                )?
+                .to_string(),
+            lifetime_region: cursor
+                .take_field(
+                    &format!("{prefix}_lifetime_region"),
+                    false,
+                    stage,
+                    kind,
+                )?
+                .to_string(),
+        });
+    }
+
+    let view_count = cursor.take_usize_field(
+        "string_view_view_count",
+        stage,
+        kind,
+    )?;
+    let mut views = Vec::with_capacity(view_count);
+    for index in 0..view_count {
+        let prefix = format!("string_view_view_{index}");
+        let data_known_null = cursor.take_usize_field(
+            &format!("{prefix}_data_known_null"),
+            stage,
+            kind,
+        )?;
+        if data_known_null > 1 {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "string_view_data_known_null_must_be_boolean",
+            ));
+        }
+        views.push(Phase14RequestStringView {
+            view_id: cursor
+                .take_field(&format!("{prefix}_id"), false, stage, kind)?
+                .to_string(),
+            source_literal_id: cursor
+                .take_field(
+                    &format!("{prefix}_source_literal_id"),
+                    false,
+                    stage,
+                    kind,
+                )?
+                .to_string(),
+            start: cursor.take_usize_field(
+                &format!("{prefix}_start"),
+                stage,
+                kind,
+            )?,
+            length: cursor.take_usize_field(
+                &format!("{prefix}_length"),
+                stage,
+                kind,
+            )?,
+            data_known_null: data_known_null == 1,
+            lifetime_region: cursor
+                .take_field(
+                    &format!("{prefix}_lifetime_region"),
+                    false,
+                    stage,
+                    kind,
+                )?
+                .to_string(),
+            source_lifetime_region: cursor
+                .take_field(
+                    &format!("{prefix}_source_lifetime_region"),
+                    false,
+                    stage,
+                    kind,
+                )?
+                .to_string(),
+        });
+    }
+
+    let operation_count = cursor.take_usize_field(
+        "string_view_operation_count",
+        stage,
+        kind,
+    )?;
+    let mut operations = Vec::with_capacity(operation_count);
+    for index in 0..operation_count {
+        let prefix = format!("string_view_operation_{index}");
+        let expect_success = cursor.take_usize_field(
+            &format!("{prefix}_expect_success"),
+            stage,
+            kind,
+        )?;
+        if expect_success > 1 {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "string_view_expect_success_must_be_boolean",
+            ));
+        }
+        operations.push(Phase14RequestStringViewOperation {
+            operation_id: cursor
+                .take_field(&format!("{prefix}_id"), false, stage, kind)?
+                .to_string(),
+            operation_name: cursor
+                .take_field(&format!("{prefix}_name"), false, stage, kind)?
+                .to_string(),
+            target_id: cursor
+                .take_field(
+                    &format!("{prefix}_target_id"),
+                    false,
+                    stage,
+                    kind,
+                )?
+                .to_string(),
+            kind: cursor
+                .take_field(&format!("{prefix}_kind"), false, stage, kind)?
+                .to_string(),
+            literal_id: cursor
+                .take_field(
+                    &format!("{prefix}_literal_id"),
+                    true,
+                    stage,
+                    kind,
+                )?
+                .to_string(),
+            view_id: cursor
+                .take_field(
+                    &format!("{prefix}_view_id"),
+                    true,
+                    stage,
+                    kind,
+                )?
+                .to_string(),
+            rhs_view_id: cursor
+                .take_field(
+                    &format!("{prefix}_rhs_view_id"),
+                    true,
+                    stage,
+                    kind,
+                )?
+                .to_string(),
+            index: cursor.take_usize_field(
+                &format!("{prefix}_index"),
+                stage,
+                kind,
+            )?,
+            start: cursor.take_usize_field(
+                &format!("{prefix}_start"),
+                stage,
+                kind,
+            )?,
+            length: cursor.take_usize_field(
+                &format!("{prefix}_length"),
+                stage,
+                kind,
+            )?,
+            expect_success: expect_success == 1,
+            expected_value: cursor.take_i64_field(
+                &format!("{prefix}_expected_value"),
+                stage,
+                kind,
+            )?,
+            expected_result_start: cursor.take_usize_field(
+                &format!("{prefix}_expected_result_start"),
+                stage,
+                kind,
+            )?,
+            expected_result_length: cursor.take_usize_field(
+                &format!("{prefix}_expected_result_length"),
+                stage,
+                kind,
+            )?,
+            expected_reason_code: cursor
+                .take_field(
+                    &format!("{prefix}_expected_reason_code"),
+                    false,
+                    stage,
+                    kind,
+                )?
+                .to_string(),
+        });
+    }
+
+    let table = Phase14RequestStringViewTable {
+        format,
+        target_id,
+        target_triple,
+        source_encoding,
+        literal_encoding,
+        embedded_nul_policy,
+        empty_string_policy,
+        semantic_length_authority,
+        owning_string_policy,
+        mutation_policy,
+        concatenation_policy,
+        allocation_policy,
+        view_layout: Some(view_layout),
+        literals,
+        views,
+        operations,
+    };
+    validate_phase14_request_string_view_table(
+        &table,
+        request_target_triple,
+        layout_table,
+    )?;
+    Ok(table)
+}
+
+fn phase14_evaluate_string_view_operation(
+    table: &Phase14RequestStringViewTable,
+    operation: &Phase14RequestStringViewOperation,
+) -> Result<Phase14StringViewEvaluation, Box<dyn Error>> {
+    let literal = |literal_id: &str| {
+        table
+            .literals
+            .iter()
+            .find(|literal| literal.literal_id == literal_id)
+    };
+    let view = |view_id: &str| {
+        table.views.iter().find(|view| view.view_id == view_id)
+    };
+    let valid = |value: i64, result_start: usize, result_length: usize| {
+        Ok(Phase14StringViewEvaluation {
+            success: true,
+            value,
+            result_start,
+            result_length,
+            reason_code: "string_view_valid".to_string(),
+        })
+    };
+
+    match operation.kind.as_str() {
+        "literal_create" => {
+            let Some(literal) = literal(&operation.literal_id) else {
+                return Err(phase10_backend_request_error(
+                    Phase10BackendRequestStage::CanonicalMirValidation,
+                    Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                    "string_literal_identity_mismatch",
+                ));
+            };
+            valid(
+                literal.byte_length as i64,
+                0,
+                literal.byte_length,
+            )
+        }
+        "view_create" => valid(
+            operation.length as i64,
+            operation.start,
+            operation.length,
+        ),
+        "length" => {
+            let Some(view) = view(&operation.view_id) else {
+                return Err(phase10_backend_request_error(
+                    Phase10BackendRequestStage::CanonicalMirValidation,
+                    Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                    "string_view_identity_mismatch",
+                ));
+            };
+            valid(view.length as i64, view.start, view.length)
+        }
+        "is_empty" => {
+            let Some(view) = view(&operation.view_id) else {
+                return Err(phase10_backend_request_error(
+                    Phase10BackendRequestStage::CanonicalMirValidation,
+                    Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                    "string_view_identity_mismatch",
+                ));
+            };
+            valid(i64::from(view.length == 0), view.start, view.length)
+        }
+        "byte_at" => {
+            let Some(view) = view(&operation.view_id) else {
+                return Err(phase10_backend_request_error(
+                    Phase10BackendRequestStage::CanonicalMirValidation,
+                    Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                    "string_view_identity_mismatch",
+                ));
+            };
+            if operation.index >= view.length {
+                return Err(phase10_backend_request_error(
+                    Phase10BackendRequestStage::CanonicalMirValidation,
+                    Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                    "string_view_out_of_bounds",
+                ));
+            }
+            let source = literal(&view.source_literal_id).ok_or_else(|| {
+                phase10_backend_request_error(
+                    Phase10BackendRequestStage::CanonicalMirValidation,
+                    Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                    "string_literal_identity_mismatch",
+                )
+            })?;
+            let bytes = phase14_hex_bytes(&source.bytes_hex)?;
+            valid(
+                bytes[view.start + operation.index] as i64,
+                view.start,
+                view.length,
+            )
+        }
+        "slice" => {
+            let Some(view) = view(&operation.view_id) else {
+                return Err(phase10_backend_request_error(
+                    Phase10BackendRequestStage::CanonicalMirValidation,
+                    Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                    "string_view_identity_mismatch",
+                ));
+            };
+            if operation.start.saturating_add(operation.length) > view.length {
+                return Err(phase10_backend_request_error(
+                    Phase10BackendRequestStage::CanonicalMirValidation,
+                    Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                    "string_view_out_of_bounds",
+                ));
+            }
+            valid(
+                operation.length as i64,
+                view.start + operation.start,
+                operation.length,
+            )
+        }
+        "byte_equal" => {
+            let lhs = view(&operation.view_id).ok_or_else(|| {
+                phase10_backend_request_error(
+                    Phase10BackendRequestStage::CanonicalMirValidation,
+                    Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                    "string_view_identity_mismatch",
+                )
+            })?;
+            let rhs = view(&operation.rhs_view_id).ok_or_else(|| {
+                phase10_backend_request_error(
+                    Phase10BackendRequestStage::CanonicalMirValidation,
+                    Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                    "string_view_identity_mismatch",
+                )
+            })?;
+            let lhs_literal = literal(&lhs.source_literal_id).ok_or_else(|| {
+                phase10_backend_request_error(
+                    Phase10BackendRequestStage::CanonicalMirValidation,
+                    Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                    "string_literal_identity_mismatch",
+                )
+            })?;
+            let rhs_literal = literal(&rhs.source_literal_id).ok_or_else(|| {
+                phase10_backend_request_error(
+                    Phase10BackendRequestStage::CanonicalMirValidation,
+                    Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                    "string_literal_identity_mismatch",
+                )
+            })?;
+            let lhs_bytes = phase14_hex_bytes(&lhs_literal.bytes_hex)?;
+            let rhs_bytes = phase14_hex_bytes(&rhs_literal.bytes_hex)?;
+            let equal = lhs.length == rhs.length
+                && lhs_bytes[lhs.start..lhs.start + lhs.length]
+                    == rhs_bytes[rhs.start..rhs.start + rhs.length];
+            valid(i64::from(equal), lhs.start, lhs.length)
+        }
+        other => Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            phase14_string_view_unsupported_reason(other),
+        )),
+    }
+}
+
+fn validate_phase14_request_string_view_table(
+    table: &Phase14RequestStringViewTable,
+    request_target_triple: &str,
+    layout_table: &Phase14RequestLayoutTable,
+) -> Result<(), Box<dyn Error>> {
+    if table.is_legacy_empty() {
+        return Ok(());
+    }
+    let stage = Phase10BackendRequestStage::CanonicalMirValidation;
+    let kind = Phase10BackendRequestFailureKind::InvalidCanonicalMir;
+    if table.format != PHASE14_STRING_VIEW_TABLE_FORMAT_V1 {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::RequestValidation,
+            Phase10BackendRequestFailureKind::ProtocolMismatch,
+            "string_view_table_format_mismatch",
+        ));
+    }
+    if table.target_triple != request_target_triple
+        || table.target_triple != layout_table.target.target_triple
+        || table.target_id != layout_table.target.target_id
+    {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::TargetValidation,
+            Phase10BackendRequestFailureKind::TargetMismatch,
+            "string_view_target_mismatch",
+        ));
+    }
+    if table.source_encoding != "utf8"
+        || table.literal_encoding != "utf8"
+    {
+        return Err(phase10_backend_request_error(
+            stage,
+            kind,
+            "string_encoding_invalid",
+        ));
+    }
+    if table.embedded_nul_policy != "valid_data_byte_not_terminator"
+        || table.empty_string_policy
+            != "non_null_static_empty_storage_with_zero_length"
+        || table.semantic_length_authority
+            != "explicit_byte_length_not_nul_termination"
+        || table.owning_string_policy
+            != "deferred_no_heap_allocation_authority"
+        || table.mutation_policy
+            != "deferred_immutable_literal_backed_views"
+        || table.concatenation_policy
+            != "deferred_requires_owning_allocation"
+        || table.allocation_policy
+            != "deferred_no_runtime_heap_authority"
+    {
+        return Err(phase10_backend_request_error(
+            stage,
+            kind,
+            "string_view_policy_mismatch",
+        ));
+    }
+    let view_layout = table.view_layout.as_ref().ok_or_else(|| {
+        phase10_backend_request_error(
+            stage,
+            kind,
+            "string_view_layout_missing",
+        )
+    })?;
+    if view_layout.view_type_id != "type:gust:str_view"
+        || view_layout.target_id != table.target_id
+        || view_layout.pointer_size != layout_table.target.pointer_size
+        || view_layout.pointer_alignment
+            != layout_table.target.pointer_alignment
+        || view_layout.size != view_layout.pointer_size * 2
+        || view_layout.alignment != view_layout.pointer_alignment
+        || view_layout.data_pointer_offset != 0
+        || view_layout.length_offset != view_layout.pointer_size
+        || view_layout.length_type_id != "type:gust:usize"
+        || view_layout.representation_kind != "data_pointer_and_usize_length"
+        || view_layout.layout_id
+            != phase14_string_view_layout_identity(
+                &view_layout.target_id,
+                view_layout.pointer_size,
+                view_layout.pointer_alignment,
+            )
+    {
+        return Err(phase10_backend_request_error(
+            stage,
+            kind,
+            "string_view_layout_mismatch",
+        ));
+    }
+    if table.literals.len() != 4
+        || table.views.len() != 4
+        || table.operations.len() != 13
+    {
+        return Err(phase10_backend_request_error(
+            stage,
+            kind,
+            "string_view_inventory_mismatch",
+        ));
+    }
+
+    let mut literal_ids = HashSet::new();
+    let mut literal_symbols = HashSet::new();
+    for literal in &table.literals {
+        if literal.encoding != "utf8" {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "string_encoding_invalid",
+            ));
+        }
+        let bytes = phase14_hex_bytes(&literal.bytes_hex)?;
+        if literal.byte_length != bytes.len()
+            || literal.storage_kind != "static_read_only_literal"
+            || literal.lifetime_region != "static_program"
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "string_literal_storage_invalid",
+            ));
+        }
+        if literal.literal_id
+            != phase14_string_literal_identity(
+                &literal.encoding,
+                &literal.bytes_hex,
+            )
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "string_literal_identity_mismatch",
+            ));
+        }
+        if !literal_ids.insert(literal.literal_id.clone())
+            || !literal_symbols.insert(literal.symbol_name.clone())
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "string_literal_duplicate_identity",
+            ));
+        }
+    }
+
+    let mut view_ids = HashSet::new();
+    for view in &table.views {
+        let source = table
+            .literals
+            .iter()
+            .find(|literal| literal.literal_id == view.source_literal_id)
+            .ok_or_else(|| {
+                phase10_backend_request_error(
+                    stage,
+                    kind,
+                    "string_literal_identity_mismatch",
+                )
+            })?;
+        if view.start.saturating_add(view.length) > source.byte_length {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "string_view_out_of_bounds",
+            ));
+        }
+        if view.data_known_null {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                if view.length == 0 {
+                    "string_view_empty_pointer_must_be_non_null"
+                } else {
+                    "string_view_null_nonempty"
+                },
+            ));
+        }
+        if view.lifetime_region != source.lifetime_region
+            || view.source_lifetime_region != source.lifetime_region
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "string_view_lifetime_escape",
+            ));
+        }
+        if view.view_id
+            != phase14_string_view_identity(
+                &view.source_literal_id,
+                view.start,
+                view.length,
+                &view.lifetime_region,
+            )
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "string_view_identity_mismatch",
+            ));
+        }
+        if !view_ids.insert(view.view_id.clone()) {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "string_view_duplicate_identity",
+            ));
+        }
+    }
+
+    let mut operation_ids = HashSet::new();
+    let mut operation_names = HashSet::new();
+    for operation in &table.operations {
+        if !phase14_string_view_kind_is_valid(&operation.kind) {
+            return Err(phase10_backend_request_error(
+                stage,
+                Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                phase14_string_view_unsupported_reason(&operation.kind),
+            ));
+        }
+        if operation.target_id != table.target_id {
+            return Err(phase10_backend_request_error(
+                Phase10BackendRequestStage::TargetValidation,
+                Phase10BackendRequestFailureKind::TargetMismatch,
+                "string_view_operation_target_mismatch",
+            ));
+        }
+        if operation.operation_id
+            != phase14_string_view_operation_identity(
+                &operation.target_id,
+                &operation.operation_name,
+                &operation.kind,
+            )
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "string_view_operation_identity_mismatch",
+            ));
+        }
+        if !operation_ids.insert(operation.operation_id.clone())
+            || !operation_names.insert(operation.operation_name.clone())
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "string_view_duplicate_operation_identity",
+            ));
+        }
+        let evaluation =
+            phase14_evaluate_string_view_operation(table, operation)?;
+        if evaluation.success != operation.expect_success
+            || evaluation.value != operation.expected_value
+            || evaluation.result_start != operation.expected_result_start
+            || evaluation.result_length != operation.expected_result_length
+            || evaluation.reason_code != operation.expected_reason_code
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                format!(
+                    "string-view expectation mismatch: {}",
+                    operation.operation_name
+                ),
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn phase14_string_view_witness_text(
+    request: &Phase10BackendRequest,
+) -> Result<String, Box<dyn Error>> {
+    let table = &request.string_view_table;
+    validate_phase14_request_string_view_table(
+        table,
+        &request.target_triple,
+        &request.layout_table,
+    )?;
+    if table.is_legacy_empty() {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "string_view_table_is_legacy_empty",
+        ));
+    }
+    let view_layout = table.view_layout.as_ref().expect("validated layout");
+    let mut output = String::new();
+    output.push_str("string_view_status: valid\n");
+    output.push_str(&format!("string_view_target: {}\n", table.target_triple));
+    output.push_str(&format!("string_view_target_id: {}\n", table.target_id));
+    output.push_str(&format!("string_view_source_encoding: {}\n", table.source_encoding));
+    output.push_str(&format!("string_view_literal_encoding: {}\n", table.literal_encoding));
+    output.push_str(&format!("string_view_embedded_nul_policy: {}\n", table.embedded_nul_policy));
+    output.push_str(&format!("string_view_empty_string_policy: {}\n", table.empty_string_policy));
+    output.push_str(&format!("string_view_semantic_length_authority: {}\n", table.semantic_length_authority));
+    output.push_str(&format!("string_view_owning_string_policy: {}\n", table.owning_string_policy));
+    output.push_str(&format!("string_view_mutation_policy: {}\n", table.mutation_policy));
+    output.push_str(&format!("string_view_concatenation_policy: {}\n", table.concatenation_policy));
+    output.push_str(&format!("string_view_allocation_policy: {}\n", table.allocation_policy));
+    output.push_str(&format!(
+        "string_view_layout: {} type={} size={} alignment={} data_offset={} length_offset={} pointer_size={}\n",
+        view_layout.layout_id,
+        view_layout.view_type_id,
+        view_layout.size,
+        view_layout.alignment,
+        view_layout.data_pointer_offset,
+        view_layout.length_offset,
+        view_layout.pointer_size,
+    ));
+    for literal in &table.literals {
+        output.push_str(&format!(
+            "string_literal: {} symbol={} encoding={} length={} bytes={} storage={} lifetime={}\n",
+            literal.literal_id,
+            literal.symbol_name,
+            literal.encoding,
+            literal.byte_length,
+            literal.bytes_hex,
+            literal.storage_kind,
+            literal.lifetime_region,
+        ));
+    }
+    for view in &table.views {
+        output.push_str(&format!(
+            "string_view: {} source={} start={} length={} known_null={} lifetime={}\n",
+            view.view_id,
+            view.source_literal_id,
+            view.start,
+            view.length,
+            if view.data_known_null { 1 } else { 0 },
+            view.lifetime_region,
+        ));
+    }
+    for operation in &table.operations {
+        let evaluation =
+            phase14_evaluate_string_view_operation(table, operation)?;
+        output.push_str(&format!(
+            "string_operation: {} kind={} status={} value={} result_start={} result_length={} reason={}\n",
+            operation.operation_name,
+            operation.kind,
+            if evaluation.success { "success" } else { "failure" },
+            evaluation.value,
+            evaluation.result_start,
+            evaluation.result_length,
+            evaluation.reason_code,
+        ));
+    }
+    Ok(output)
+}
+
+fn print_phase14_string_view_witness(
+    request_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let request = phase14_load_primitive_layout_request(request_path)?;
+    print!("{}", phase14_string_view_witness_text(&request)?);
+    Ok(())
+}
+
+
 #[derive(Debug)]
 struct Phase10BackendRequest {
     target_triple: String,
@@ -5820,6 +6938,7 @@ struct Phase10BackendRequest {
     pointer_table: Phase14RequestPointerTable,
     stack_slot_table: Phase14RequestStackSlotTable,
     memory_access_table: Phase14RequestMemoryAccessTable,
+    string_view_table: Phase14RequestStringViewTable,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -5959,6 +7078,15 @@ fn parse_phase10_backend_request(
     } else {
         Phase14RequestMemoryAccessTable::legacy_empty(&target_triple)
     };
+    let string_view_table = if cursor.has_remaining() {
+        parse_phase14_request_string_view_table(
+            &mut cursor,
+            &target_triple,
+            &layout_table,
+        )?
+    } else {
+        Phase14RequestStringViewTable::legacy_empty(&target_triple)
+    };
     cursor.finish(stage, kind)?;
 
     if !output_path.is_absolute() {
@@ -5993,6 +7121,7 @@ fn parse_phase10_backend_request(
         pointer_table,
         stack_slot_table,
         memory_access_table,
+        string_view_table,
     })
 }
 
@@ -10243,6 +11372,15 @@ fn run() -> Result<(), Box<dyn Error>> {
                 return Err(usage_error().into());
             }
             print_phase14_memory_access_witness(Path::new(&request_path))
+        }
+        "phase14-string-view-witness" => {
+            let Some(request_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            print_phase14_string_view_witness(Path::new(&request_path))
         }
         "phase10-backend-request-compile" => {
             let Some(request_path) = args.next() else {
