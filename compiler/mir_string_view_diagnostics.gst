@@ -42,14 +42,16 @@ func mir_string_view_diagnostic_text(diagnostic: MirStringViewDiagnostic[ctx], c
 
 func mir_string_view_diagnostic_for_rejection(kind: str, source: str, line: int, column: int, ctx: &Arena) str {
     mut rejection := string_view.mir_string_view_rejection(kind, ctx);
-    mut diagnostic := mir_string_view_make_diagnostic(
-        rejection.reason_code,
-        source,
-        line,
-        column,
-        kind,
-        "compiler-owned string literal or borrowed-view validation failed",
-        ctx
-    );
-    return mir_string_view_diagnostic_text(diagnostic, ctx);
+    mut output := "gust_string_view_diagnostic: taxonomy=gust.string_view.diagnostic.v1 reason_code=";
+    output = std.Concat(output, rejection.reason_code);
+    output = std.Concat(output, " source=");
+    output = std.Concat(output, source);
+    output = std.Concat(output, " line=");
+    output = std.Concat(output, std.FormatInt(line));
+    output = std.Concat(output, " column=");
+    output = std.Concat(output, std.FormatInt(column));
+    output = std.Concat(output, " operation=");
+    output = std.Concat(output, kind);
+    output = std.Concat(output, " detail=compiler-owned string literal or borrowed-view validation failed");
+    return std.Clone(ctx, output);
 }
