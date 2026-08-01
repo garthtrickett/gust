@@ -6298,6 +6298,62 @@ fn parse_phase14_request_string_view_table(
     let mut operations = Vec::with_capacity(operation_count);
     for index in 0..operation_count {
         let prefix = format!("string_view_operation_{index}");
+        let operation_id = cursor
+            .take_field(&format!("{prefix}_id"), false, stage, kind)?
+            .to_string();
+        let operation_name = cursor
+            .take_field(&format!("{prefix}_name"), false, stage, kind)?
+            .to_string();
+        let target_id = cursor
+            .take_field(
+                &format!("{prefix}_target_id"),
+                false,
+                stage,
+                kind,
+            )?
+            .to_string();
+        let operation_kind = cursor
+            .take_field(&format!("{prefix}_kind"), false, stage, kind)?
+            .to_string();
+        let literal_id = cursor
+            .take_field(
+                &format!("{prefix}_literal_id"),
+                true,
+                stage,
+                kind,
+            )?
+            .to_string();
+        let view_id = cursor
+            .take_field(
+                &format!("{prefix}_view_id"),
+                true,
+                stage,
+                kind,
+            )?
+            .to_string();
+        let rhs_view_id = cursor
+            .take_field(
+                &format!("{prefix}_rhs_view_id"),
+                true,
+                stage,
+                kind,
+            )?
+            .to_string();
+        let operation_index = cursor.take_usize_field(
+            &format!("{prefix}_index"),
+            stage,
+            kind,
+        )?;
+        let start = cursor.take_usize_field(
+            &format!("{prefix}_start"),
+            stage,
+            kind,
+        )?;
+        let length = cursor.take_usize_field(
+            &format!("{prefix}_length"),
+            stage,
+            kind,
+        )?;
         let expect_success = cursor.take_usize_field(
             &format!("{prefix}_expect_success"),
             stage,
@@ -6311,62 +6367,16 @@ fn parse_phase14_request_string_view_table(
             ));
         }
         operations.push(Phase14RequestStringViewOperation {
-            operation_id: cursor
-                .take_field(&format!("{prefix}_id"), false, stage, kind)?
-                .to_string(),
-            operation_name: cursor
-                .take_field(&format!("{prefix}_name"), false, stage, kind)?
-                .to_string(),
-            target_id: cursor
-                .take_field(
-                    &format!("{prefix}_target_id"),
-                    false,
-                    stage,
-                    kind,
-                )?
-                .to_string(),
-            kind: cursor
-                .take_field(&format!("{prefix}_kind"), false, stage, kind)?
-                .to_string(),
-            literal_id: cursor
-                .take_field(
-                    &format!("{prefix}_literal_id"),
-                    true,
-                    stage,
-                    kind,
-                )?
-                .to_string(),
-            view_id: cursor
-                .take_field(
-                    &format!("{prefix}_view_id"),
-                    true,
-                    stage,
-                    kind,
-                )?
-                .to_string(),
-            rhs_view_id: cursor
-                .take_field(
-                    &format!("{prefix}_rhs_view_id"),
-                    true,
-                    stage,
-                    kind,
-                )?
-                .to_string(),
-            index: cursor.take_usize_field(
-                &format!("{prefix}_index"),
-                stage,
-                kind,
-            )?,
-            start: cursor.take_usize_field(
-                &format!("{prefix}_start"),
-                stage,
-                kind,
-            )?,
-            length: cursor.take_usize_field(
-                &format!("{prefix}_length"),
-                stage,
-                kind,
-            )?,
+            operation_id,
+            operation_name,
+            target_id,
+            kind: operation_kind,
+            literal_id,
+            view_id,
+            rhs_view_id,
+            index: operation_index,
+            start,
+            length,
             expect_success: expect_success == 1,
             expected_value: cursor.take_i64_field(
                 &format!("{prefix}_expected_value"),
