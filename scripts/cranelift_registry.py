@@ -779,6 +779,12 @@ PHASE14_STRING_VIEW_VERSION = "phase14_string_literals_and_borrowed_views_v1"
 PHASE14_STRING_VIEW_STATUS = "ready_for_patch14_8"
 PHASE14_STRING_VIEW_TABLE_FORMAT = "gust.compiler_string_view_table.v1"
 PHASE14_STRING_VIEW_MIGRATED_IDS = ("p14_string_and_string_view_layout",)
+PHASE14_ARRAY_SLICE_VERSION = "phase14_fixed_arrays_and_bounded_slices_v1"
+PHASE14_ARRAY_SLICE_MIGRATED_IDS = ("p14_array_and_slice_layout",)
+PHASE14_ARRAY_SLICE_OPERATION_KINDS = (
+    "array_init", "element_address", "element_load", "element_store",
+    "array_to_slice", "slice_length", "bounded_index", "subslice",
+)
 PHASE14_STRING_VIEW_LAYOUT_FIELDS = ("data_pointer", "byte_length")
 PHASE14_STRING_VIEW_OPERATION_KINDS = (
     "literal_create", "view_create", "length", "is_empty", "byte_at",
@@ -2725,6 +2731,37 @@ def validate():
                     == list(PHASE14_STRING_VIEW_OPERATION_KINDS),
                     f"{entry_id}: string-view evidence drifted",
                 )
+            elif entry_id in PHASE14_ARRAY_SLICE_MIGRATED_IDS:
+                require(
+                    closure == PHASE14_ARRAY_SLICE_VERSION,
+                    f"{entry_id}: array/slice checkpoint version drifted",
+                )
+                require(
+                    status == "migrated"
+                    and entry["route_owner"] == "generic_canonical_mir",
+                    f"{entry_id}: selected array/slice row must be migrated through canonical MIR",
+                )
+                require(reason == destination == "none_migrated",
+                        f"{entry_id}: migrated array/slice row has stale deferral fields")
+                require(entry["current_failure_stage"] == "none_supported",
+                        f"{entry_id}: migrated array/slice row has a failure stage")
+                fixture(entry["source_fixture"], f"{entry_id}.source_fixture")
+                fixture(entry["canonical_mir_fixture"],
+                        f"{entry_id}.canonical_mir_fixture")
+                require(
+                    entry["differential_case_id"]
+                    == f"phase14_registry_differential:{entry_id}",
+                    f"{entry_id}: array/slice differential identity drifted",
+                )
+                require(
+                    evidence.get("behavior_policy")
+                    == "fixed_arrays_and_bounded_slices_migrated_through_compiler_owned_count_stride_size_alignment_bounds_and_lifetime_rules"
+                    and evidence.get("phase14_8_contract")
+                    == PHASE14_ARRAY_SLICE_VERSION
+                    and evidence.get("selected_operation_kinds")
+                    == list(PHASE14_ARRAY_SLICE_OPERATION_KINDS),
+                    f"{entry_id}: array/slice evidence drifted",
+                )
             else:
                 require(
                     closure == PHASE14_LAYOUT_AUTHORITY_VERSION,
@@ -3255,6 +3292,13 @@ def verify_phase14_layout_authority(registry):
                 and entry["closure_version"] == PHASE14_STRING_VIEW_VERSION,
                 f"{entry_id}: string-view migration no longer consumes the layout authority",
             )
+        elif entry_id in PHASE14_ARRAY_SLICE_MIGRATED_IDS:
+            require(
+                entry["status"] == "migrated"
+                and entry["route_owner"] == "generic_canonical_mir"
+                and entry["closure_version"] == PHASE14_ARRAY_SLICE_VERSION,
+                f"{entry_id}: array/slice migration no longer consumes the layout authority",
+            )
         else:
             require(
                 entry["status"] == "candidate_deferred"
@@ -3422,6 +3466,14 @@ def verify_phase14_primitive_layout(registry):
                 f"{entry_id}: later string-view checkpoint drifted",
             )
             continue
+        if entry_id in PHASE14_ARRAY_SLICE_MIGRATED_IDS:
+            require(
+                entry["status"] == "migrated"
+                and entry["route_owner"] == "generic_canonical_mir"
+                and entry["closure_version"] == PHASE14_ARRAY_SLICE_VERSION,
+                f"{entry_id}: later array/slice checkpoint drifted",
+            )
+            continue
         require(
             entry["status"] == "candidate_deferred"
             and entry["route_owner"] == "deferred"
@@ -3570,6 +3622,14 @@ def verify_phase14_integer_conversions(registry):
                 and entry["route_owner"] == "generic_canonical_mir"
                 and entry["closure_version"] == PHASE14_STRING_VIEW_VERSION,
                 f"{entry_id}: later string-view checkpoint drifted",
+            )
+            continue
+        if entry_id in PHASE14_ARRAY_SLICE_MIGRATED_IDS:
+            require(
+                entry["status"] == "migrated"
+                and entry["route_owner"] == "generic_canonical_mir"
+                and entry["closure_version"] == PHASE14_ARRAY_SLICE_VERSION,
+                f"{entry_id}: later array/slice checkpoint drifted",
             )
             continue
         require(
@@ -3740,6 +3800,7 @@ def verify_phase14_pointers(registry):
         + PHASE14_STACK_SLOT_MIGRATED_IDS
         + PHASE14_MEMORY_ACCESS_MIGRATED_IDS
         + PHASE14_STRING_VIEW_MIGRATED_IDS
+        + PHASE14_ARRAY_SLICE_MIGRATED_IDS
     )
     for entry_id, entry in rows.items():
         if entry_id in selected_ids:
@@ -3952,6 +4013,7 @@ def verify_phase14_stack_slots(registry):
         + PHASE14_STACK_SLOT_MIGRATED_IDS
         + PHASE14_MEMORY_ACCESS_MIGRATED_IDS
         + PHASE14_STRING_VIEW_MIGRATED_IDS
+        + PHASE14_ARRAY_SLICE_MIGRATED_IDS
     )
     for entry_id, entry in rows.items():
         if entry_id in selected_ids:

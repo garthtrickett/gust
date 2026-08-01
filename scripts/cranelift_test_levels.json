@@ -8,8 +8,8 @@
     },
     "2": {
       "name": "differential-family",
-      "ci_owner": "PR Fast registry-derived ten-family matrix",
-      "policy": "focused MIR-to-C versus Cranelift execution, byte-identical MIR-to-C emission, registry-owned composition cases, stable side effects, migrated Phase 13 evidence, primary-host Phase 14 primitive-layout parity, target-aware integer-conversion parity, bounded pointer/nullability parity, and deterministic stack-slot/addressable-local parity"
+      "ci_owner": "PR Fast registry-derived eleven-family matrix",
+      "policy": "focused MIR-to-C versus Cranelift execution, byte-identical MIR-to-C emission, registry-owned composition cases, stable side effects, migrated Phase 13 evidence, primary-host Phase 14 primitive-layout parity, target-aware integer-conversion parity, bounded pointer/nullability parity, and deterministic stack-slot/addressable-local parity, compiler-owned fixed-array/slice stride and bounds parity"
     },
     "3": {
       "name": "historical-full",
@@ -231,6 +231,8 @@
     "guard-cranelift-phase14-memory-access-parity": 2,
     "guard-cranelift-phase14-pointer-memory-parity": 2,
     "guard-cranelift-phase14-string-view-contract": 1,
-    "guard-cranelift-phase14-string-view-parity": 2
+    "guard-cranelift-phase14-string-view-parity": 2,
+    "guard-cranelift-phase14-array-slice-contract": 1,
+    "guard-cranelift-phase14-array-slice-parity": 2
   }
 }

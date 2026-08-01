@@ -138,6 +138,8 @@ guard-pr-fast-ci-surface:
       'just guard-cranelift-phase14-memory-access-contract'
       'Phase 14 strings and string views'
       'just guard-cranelift-phase14-string-view-contract'
+      'Phase 14 arrays and slices'
+      'just guard-cranelift-phase14-array-slice-contract'
       'phase11-family:'
       'phase11_families:'
       'matrix.family'
@@ -14588,6 +14590,97 @@ guard-cranelift-phase14-string-view-parity:
     fi
     bash scripts/phase14_string_view_differential.sh
 
+guard-cranelift-phase14-array-slice-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 14 compiler-owned fixed arrays and bounded slices..."
+    authority="compiler/mir_array_slice.gst"
+    mir="compiler/mir.gst"
+    request="compiler/mir_native_backend_request.gst"
+    mir_to_c="compiler/mir_array_slice_mir_to_c.gst"
+    diagnostics="compiler/mir_array_slice_diagnostics.gst"
+    worker="compiler/experiments/cranelift/src/main.rs"
+    smoke="compiler/mir_array_slice_smoke_test_entry.gst"
+    differential="scripts/phase14_array_slice_differential.sh"
+    review="compiler/CRANELIFT_PHASE14_ARRAYS_SLICES.md"
+    registry="scripts/cranelift_feature_registry.json"
+    pr_workflow=".github/workflows/pr-fast.yml"
+
+    required_files=(
+      "$authority" "$mir" "$request" "$mir_to_c" "$diagnostics"
+      "$worker" "$smoke" "$differential" "$review" "$registry"
+      compiler/phase14_array_slice_source.gst
+      compiler/phase14_array_slice_composition_source.gst
+      compiler/fixtures/native_backend_phase14_array_slice_ingestion.mir
+      compiler/fixtures/native_backend_phase14_array_slice_malformed.mir
+      compiler/p14_array_count_overflow_source.gst
+      compiler/p14_array_total_size_overflow_source.gst
+      compiler/p14_array_invalid_stride_source.gst
+      compiler/p14_array_slice_out_of_bounds_source.gst
+      compiler/p14_array_slice_wrong_element_type_source.gst
+      compiler/p14_slice_invalid_pointer_length_source.gst
+      compiler/p14_slice_lifetime_escape_source.gst
+    )
+    for required_file in "${required_files[@]}"; do
+      test -f "$required_file"
+      test ! -L "$required_file"
+    done
+
+    just guard-cranelift-phase14-string-view-contract
+    python3 scripts/cranelift_ci_family.py validate
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase14-array-slice-contract |
+      rg -n -F $'guard-cranelift-phase14-array-slice-contract	1	' >/dev/null
+    bash -n "$differential"
+
+    for token in       'type MirArrayLayout[ctx] struct'       'type MirSliceLayout[ctx] struct'       'type MirArraySliceOperation[ctx] struct'       'type MirArraySliceTable[ctx] struct'       'func mir_array_slice_table_for_layout('       'func mir_array_slice_table_is_valid('       'func mir_serialize_array_slice_table_for_request('       'func mir_array_slice_witness('
+    do
+      rg -n -F "$token" "$authority" >/dev/null
+    done
+    for kind in array_init element_address element_load element_store array_to_slice slice_length bounded_index subslice; do
+      rg -n -F "$kind" "$authority" "$mir" "$worker" >/dev/null
+    done
+    for reason in array_count_overflow array_total_size_overflow array_stride_mismatch array_slice_index_out_of_bounds array_slice_element_type_mismatch slice_null_nonempty slice_lifetime_escape; do
+      rg -n -F "$reason" "$authority" "$worker" "$differential" >/dev/null
+    done
+    rg -n -F 'compiler_owned_element_stride_no_backend_inference' "$authority" "$worker" >/dev/null
+    rg -n -F 'null_pointer_with_zero_length' "$authority" "$worker" >/dev/null
+    rg -n -F 'array_slice_table: array_slice.MirArraySliceTable[ctx]' "$request" >/dev/null
+    rg -n -F 'mir_serialize_array_slice_table_for_request' "$request" >/dev/null
+    rg -n -F 'phase14-array-slice-witness' "$worker" "$differential" >/dev/null
+    rg -n -F 'gust_array_slice_diagnostic:' "$diagnostics" >/dev/null
+    rg -n -F '"id": "p14_array_and_slice_layout"' "$registry" >/dev/null
+    rg -n -F '"status": "migrated"' "$registry" >/dev/null
+
+    array_slice_ci_count="$(
+      (rg -n -F 'just guard-cranelift-phase14-array-slice-contract'         .github/workflows --glob '*.yml' || true) | wc -l | tr -d ' '
+    )"
+    if [ "$array_slice_ci_count" != "1" ]; then
+      echo "Phase 14 array/slice contract must be wired into CI exactly once, found $array_slice_ci_count occurrences."
+      exit 1
+    fi
+    rg -n -x -F '        run: just guard-cranelift-phase14-array-slice-contract' "$pr_workflow" >/dev/null
+
+    if rg -n -e 'std::mem::(size_of|align_of)' -e 'Layout::array' "$worker" >/dev/null; then
+      echo "The Cranelift worker must consume compiler-owned array stride and slice layout."
+      exit 1
+    fi
+    echo "✅ Phase 14 arrays and slices contract passed."
+
+guard-cranelift-phase14-array-slice-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 14 fixed-array and bounded-slice parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase14-array-slice-parity |
+      rg -n -F $'guard-cranelift-phase14-array-slice-parity	2	' >/dev/null
+    just guard-cranelift-phase14-array-slice-contract
+    if [ "${PHASE14_ARRAY_SLICE_SKIP_DYNAMIC:-0}" = "1" ]; then
+      echo "✅ Phase 14 array/slice static contract passed; dynamic evidence skipped by request."
+      exit 0
+    fi
+    bash scripts/phase14_array_slice_differential.sh
+
 guard-cranelift-phase14-pointer-memory-parity:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -14633,6 +14726,7 @@ guard-cranelift-contract-fast:
     just guard-cranelift-phase14-stack-slot-contract
     just guard-cranelift-phase14-memory-access-contract
     just guard-cranelift-phase14-string-view-contract
+    just guard-cranelift-phase14-array-slice-contract
 
 guard-cranelift-historical-full:
     #!/usr/bin/env bash

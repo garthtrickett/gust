@@ -6949,6 +6949,1394 @@ fn print_phase14_string_view_witness(
 }
 
 
+const PHASE14_ARRAY_SLICE_TABLE_FORMAT_V1: &str =
+    "gust.compiler_array_slice_table.v1";
+const PHASE14_ARRAY_COUNT_LIMIT: usize = 1_048_576;
+const PHASE14_ARRAY_TOTAL_SIZE_LIMIT: usize = 1_073_741_824;
+
+#[derive(Debug, Clone)]
+struct Phase14RequestArrayLayout {
+    layout_id: String,
+    array_type_id: String,
+    target_id: String,
+    element_type_id: String,
+    element_layout_id: String,
+    element_count: usize,
+    element_stride: usize,
+    total_size: usize,
+    alignment: usize,
+    nesting_depth: usize,
+    representation_kind: String,
+}
+
+#[derive(Debug, Clone)]
+struct Phase14RequestArrayValue {
+    array_id: String,
+    array_layout_id: String,
+    element_type_id: String,
+    elements: Vec<i64>,
+    lifetime_region: String,
+}
+
+#[derive(Debug, Clone)]
+struct Phase14RequestSliceLayout {
+    layout_id: String,
+    slice_type_id: String,
+    target_id: String,
+    element_type_id: String,
+    element_layout_id: String,
+    pointer_size: usize,
+    pointer_alignment: usize,
+    size: usize,
+    alignment: usize,
+    data_pointer_offset: usize,
+    length_offset: usize,
+    length_type_id: String,
+    representation_kind: String,
+    empty_representation: String,
+    nullability_policy: String,
+    lifetime_policy: String,
+}
+
+#[derive(Debug, Clone)]
+struct Phase14RequestSliceValue {
+    slice_id: String,
+    source_array_id: String,
+    slice_layout_id: String,
+    element_type_id: String,
+    start: usize,
+    length: usize,
+    data_known_null: bool,
+    lifetime_region: String,
+    source_lifetime_region: String,
+    flow_origin: String,
+}
+
+#[derive(Debug, Clone)]
+struct Phase14RequestArraySliceOperation {
+    operation_id: String,
+    operation_name: String,
+    target_id: String,
+    kind: String,
+    array_id: String,
+    slice_id: String,
+    result_slice_id: String,
+    element_type_id: String,
+    index: usize,
+    start: usize,
+    length: usize,
+    stored_value: i64,
+    expect_success: bool,
+    expected_value: i64,
+    expected_address_offset: usize,
+    expected_result_start: usize,
+    expected_result_length: usize,
+    expected_reason_code: String,
+}
+
+#[derive(Debug)]
+struct Phase14RequestArraySliceTable {
+    format: String,
+    target_id: String,
+    target_triple: String,
+    bounds_policy: String,
+    empty_slice_policy: String,
+    stride_authority: String,
+    lifetime_policy: String,
+    variable_length_array_policy: String,
+    unsized_storage_policy: String,
+    array_layouts: Vec<Phase14RequestArrayLayout>,
+    arrays: Vec<Phase14RequestArrayValue>,
+    slice_layouts: Vec<Phase14RequestSliceLayout>,
+    slices: Vec<Phase14RequestSliceValue>,
+    operations: Vec<Phase14RequestArraySliceOperation>,
+}
+
+impl Phase14RequestArraySliceTable {
+    fn legacy_empty(target_triple: &str) -> Self {
+        Self {
+            format: PHASE14_ARRAY_SLICE_TABLE_FORMAT_V1.to_string(),
+            target_id: String::new(),
+            target_triple: target_triple.to_string(),
+            bounds_policy: "checked_before_address_calculation".to_string(),
+            empty_slice_policy: "null_pointer_with_zero_length".to_string(),
+            stride_authority:
+                "compiler_owned_element_stride_no_backend_inference".to_string(),
+            lifetime_policy:
+                "borrowed_slice_must_not_outlive_source_array".to_string(),
+            variable_length_array_policy:
+                "deferred_variable_length_stack_arrays".to_string(),
+            unsized_storage_policy:
+                "deferred_unsized_aggregate_storage".to_string(),
+            array_layouts: Vec::new(),
+            arrays: Vec::new(),
+            slice_layouts: Vec::new(),
+            slices: Vec::new(),
+            operations: Vec::new(),
+        }
+    }
+
+    fn is_legacy_empty(&self) -> bool {
+        self.format == PHASE14_ARRAY_SLICE_TABLE_FORMAT_V1
+            && self.target_id.is_empty()
+            && self.array_layouts.is_empty()
+            && self.arrays.is_empty()
+            && self.slice_layouts.is_empty()
+            && self.slices.is_empty()
+            && self.operations.is_empty()
+    }
+}
+
+#[derive(Debug)]
+struct Phase14ArraySliceEvaluation {
+    success: bool,
+    value: i64,
+    address_offset: usize,
+    result_start: usize,
+    result_length: usize,
+    reason_code: String,
+}
+
+fn phase14_array_slice_align_up(value: usize, alignment: usize) -> Option<usize> {
+    if alignment == 0 {
+        return None;
+    }
+    let addend = alignment - 1;
+    value.checked_add(addend).map(|rounded| rounded / alignment * alignment)
+}
+
+fn phase14_array_layout_identity(layout: &Phase14RequestArrayLayout) -> String {
+    format!(
+        "array_layout:v1:target={}:type={}:element_layout={}:count={}:stride={}:size={}:align={}",
+        layout.target_id,
+        layout.array_type_id,
+        layout.element_layout_id,
+        layout.element_count,
+        layout.element_stride,
+        layout.total_size,
+        layout.alignment,
+    )
+}
+
+fn phase14_slice_layout_identity(layout: &Phase14RequestSliceLayout) -> String {
+    format!(
+        "slice_layout:v1:target={}:type={}:element_layout={}:pointer_size={}:pointer_align={}",
+        layout.target_id,
+        layout.slice_type_id,
+        layout.element_layout_id,
+        layout.pointer_size,
+        layout.pointer_alignment,
+    )
+}
+
+fn phase14_slice_identity(value: &Phase14RequestSliceValue) -> String {
+    format!(
+        "slice:v1:array={}:layout={}:start={}:length={}:known_null={}:lifetime={}:flow={}",
+        value.source_array_id,
+        value.slice_layout_id,
+        value.start,
+        value.length,
+        if value.data_known_null { 1 } else { 0 },
+        value.lifetime_region,
+        value.flow_origin,
+    )
+}
+
+fn phase14_array_slice_operation_identity(
+    target_id: &str,
+    operation_name: &str,
+    kind: &str,
+) -> String {
+    format!(
+        "array_slice_operation:v1:target={target_id}:name={operation_name}:kind={kind}"
+    )
+}
+
+fn phase14_array_slice_kind_is_valid(kind: &str) -> bool {
+    matches!(
+        kind,
+        "array_init"
+            | "element_address"
+            | "element_load"
+            | "element_store"
+            | "array_to_slice"
+            | "slice_length"
+            | "bounded_index"
+            | "subslice"
+    )
+}
+
+fn parse_phase14_request_array_slice_table(
+    cursor: &mut Phase10TextCursor<'_>,
+    request_target_triple: &str,
+    layout_table: &Phase14RequestLayoutTable,
+) -> Result<Phase14RequestArraySliceTable, Box<dyn Error>> {
+    let stage = Phase10BackendRequestStage::RequestParse;
+    let kind = Phase10BackendRequestFailureKind::InvalidRequest;
+    let format = cursor
+        .take_field("array_slice_table_format", false, stage, kind)?
+        .to_string();
+    let target_id = cursor
+        .take_field("array_slice_target_id", true, stage, kind)?
+        .to_string();
+    let target_triple = cursor
+        .take_field("array_slice_target_triple", false, stage, kind)?
+        .to_string();
+
+    if target_id.is_empty() && target_triple == "legacy-empty" {
+        let array_layout_count = cursor.take_usize_field(
+            "array_slice_array_layout_count",
+            stage,
+            kind,
+        )?;
+        let array_count = cursor.take_usize_field(
+            "array_slice_array_count",
+            stage,
+            kind,
+        )?;
+        let slice_layout_count = cursor.take_usize_field(
+            "array_slice_slice_layout_count",
+            stage,
+            kind,
+        )?;
+        let slice_count = cursor.take_usize_field(
+            "array_slice_slice_count",
+            stage,
+            kind,
+        )?;
+        let operation_count = cursor.take_usize_field(
+            "array_slice_operation_count",
+            stage,
+            kind,
+        )?;
+        if format != PHASE14_ARRAY_SLICE_TABLE_FORMAT_V1
+            || array_layout_count != 0
+            || array_count != 0
+            || slice_layout_count != 0
+            || slice_count != 0
+            || operation_count != 0
+        {
+            return Err(phase10_backend_request_error(
+                Phase10BackendRequestStage::RequestValidation,
+                kind,
+                "array_slice_legacy_empty_invalid",
+            ));
+        }
+        return Ok(Phase14RequestArraySliceTable::legacy_empty(
+            request_target_triple,
+        ));
+    }
+
+    let bounds_policy = cursor
+        .take_field("array_slice_bounds_policy", false, stage, kind)?
+        .to_string();
+    let empty_slice_policy = cursor
+        .take_field("array_slice_empty_slice_policy", false, stage, kind)?
+        .to_string();
+    let stride_authority = cursor
+        .take_field("array_slice_stride_authority", false, stage, kind)?
+        .to_string();
+    let lifetime_policy = cursor
+        .take_field("array_slice_lifetime_policy", false, stage, kind)?
+        .to_string();
+    let variable_length_array_policy = cursor
+        .take_field(
+            "array_slice_variable_length_array_policy",
+            false,
+            stage,
+            kind,
+        )?
+        .to_string();
+    let unsized_storage_policy = cursor
+        .take_field(
+            "array_slice_unsized_storage_policy",
+            false,
+            stage,
+            kind,
+        )?
+        .to_string();
+
+    let array_layout_count = cursor.take_usize_field(
+        "array_slice_array_layout_count",
+        stage,
+        kind,
+    )?;
+    let mut array_layouts = Vec::with_capacity(array_layout_count);
+    for index in 0..array_layout_count {
+        let prefix = format!("array_layout_{index}");
+        array_layouts.push(Phase14RequestArrayLayout {
+            layout_id: cursor
+                .take_field(&format!("{prefix}_id"), false, stage, kind)?
+                .to_string(),
+            array_type_id: cursor
+                .take_field(&format!("{prefix}_type_id"), false, stage, kind)?
+                .to_string(),
+            target_id: cursor
+                .take_field(&format!("{prefix}_target_id"), false, stage, kind)?
+                .to_string(),
+            element_type_id: cursor
+                .take_field(
+                    &format!("{prefix}_element_type_id"),
+                    false,
+                    stage,
+                    kind,
+                )?
+                .to_string(),
+            element_layout_id: cursor
+                .take_field(
+                    &format!("{prefix}_element_layout_id"),
+                    false,
+                    stage,
+                    kind,
+                )?
+                .to_string(),
+            element_count: cursor.take_usize_field(
+                &format!("{prefix}_element_count"),
+                stage,
+                kind,
+            )?,
+            element_stride: cursor.take_usize_field(
+                &format!("{prefix}_element_stride"),
+                stage,
+                kind,
+            )?,
+            total_size: cursor.take_usize_field(
+                &format!("{prefix}_total_size"),
+                stage,
+                kind,
+            )?,
+            alignment: cursor.take_usize_field(
+                &format!("{prefix}_alignment"),
+                stage,
+                kind,
+            )?,
+            nesting_depth: cursor.take_usize_field(
+                &format!("{prefix}_nesting_depth"),
+                stage,
+                kind,
+            )?,
+            representation_kind: cursor
+                .take_field(
+                    &format!("{prefix}_representation_kind"),
+                    false,
+                    stage,
+                    kind,
+                )?
+                .to_string(),
+        });
+    }
+
+    let array_count = cursor.take_usize_field(
+        "array_slice_array_count",
+        stage,
+        kind,
+    )?;
+    let mut arrays = Vec::with_capacity(array_count);
+    for index in 0..array_count {
+        let prefix = format!("array_{index}");
+        let array_id = cursor
+            .take_field(&format!("{prefix}_id"), false, stage, kind)?
+            .to_string();
+        let array_layout_id = cursor
+            .take_field(&format!("{prefix}_layout_id"), false, stage, kind)?
+            .to_string();
+        let element_type_id = cursor
+            .take_field(
+                &format!("{prefix}_element_type_id"),
+                false,
+                stage,
+                kind,
+            )?
+            .to_string();
+        let element_count = cursor.take_usize_field(
+            &format!("{prefix}_element_count"),
+            stage,
+            kind,
+        )?;
+        let mut elements = Vec::with_capacity(element_count);
+        for element_index in 0..element_count {
+            elements.push(cursor.take_i64_field(
+                &format!("{prefix}_element_{element_index}_value"),
+                stage,
+                kind,
+            )?);
+        }
+        let lifetime_region = cursor
+            .take_field(
+                &format!("{prefix}_lifetime_region"),
+                false,
+                stage,
+                kind,
+            )?
+            .to_string();
+        arrays.push(Phase14RequestArrayValue {
+            array_id,
+            array_layout_id,
+            element_type_id,
+            elements,
+            lifetime_region,
+        });
+    }
+
+    let slice_layout_count = cursor.take_usize_field(
+        "array_slice_slice_layout_count",
+        stage,
+        kind,
+    )?;
+    let mut slice_layouts = Vec::with_capacity(slice_layout_count);
+    for index in 0..slice_layout_count {
+        let prefix = format!("slice_layout_{index}");
+        slice_layouts.push(Phase14RequestSliceLayout {
+            layout_id: cursor
+                .take_field(&format!("{prefix}_id"), false, stage, kind)?
+                .to_string(),
+            slice_type_id: cursor
+                .take_field(&format!("{prefix}_type_id"), false, stage, kind)?
+                .to_string(),
+            target_id: cursor
+                .take_field(&format!("{prefix}_target_id"), false, stage, kind)?
+                .to_string(),
+            element_type_id: cursor
+                .take_field(
+                    &format!("{prefix}_element_type_id"),
+                    false,
+                    stage,
+                    kind,
+                )?
+                .to_string(),
+            element_layout_id: cursor
+                .take_field(
+                    &format!("{prefix}_element_layout_id"),
+                    false,
+                    stage,
+                    kind,
+                )?
+                .to_string(),
+            pointer_size: cursor.take_usize_field(
+                &format!("{prefix}_pointer_size"),
+                stage,
+                kind,
+            )?,
+            pointer_alignment: cursor.take_usize_field(
+                &format!("{prefix}_pointer_alignment"),
+                stage,
+                kind,
+            )?,
+            size: cursor.take_usize_field(
+                &format!("{prefix}_size"),
+                stage,
+                kind,
+            )?,
+            alignment: cursor.take_usize_field(
+                &format!("{prefix}_alignment"),
+                stage,
+                kind,
+            )?,
+            data_pointer_offset: cursor.take_usize_field(
+                &format!("{prefix}_data_pointer_offset"),
+                stage,
+                kind,
+            )?,
+            length_offset: cursor.take_usize_field(
+                &format!("{prefix}_length_offset"),
+                stage,
+                kind,
+            )?,
+            length_type_id: cursor
+                .take_field(
+                    &format!("{prefix}_length_type_id"),
+                    false,
+                    stage,
+                    kind,
+                )?
+                .to_string(),
+            representation_kind: cursor
+                .take_field(
+                    &format!("{prefix}_representation_kind"),
+                    false,
+                    stage,
+                    kind,
+                )?
+                .to_string(),
+            empty_representation: cursor
+                .take_field(
+                    &format!("{prefix}_empty_representation"),
+                    false,
+                    stage,
+                    kind,
+                )?
+                .to_string(),
+            nullability_policy: cursor
+                .take_field(
+                    &format!("{prefix}_nullability_policy"),
+                    false,
+                    stage,
+                    kind,
+                )?
+                .to_string(),
+            lifetime_policy: cursor
+                .take_field(
+                    &format!("{prefix}_lifetime_policy"),
+                    false,
+                    stage,
+                    kind,
+                )?
+                .to_string(),
+        });
+    }
+
+    let slice_count = cursor.take_usize_field(
+        "array_slice_slice_count",
+        stage,
+        kind,
+    )?;
+    let mut slices = Vec::with_capacity(slice_count);
+    for index in 0..slice_count {
+        let prefix = format!("slice_{index}");
+        let slice_id = cursor
+            .take_field(&format!("{prefix}_id"), false, stage, kind)?
+            .to_string();
+        let source_array_id = cursor
+            .take_field(
+                &format!("{prefix}_source_array_id"),
+                false,
+                stage,
+                kind,
+            )?
+            .to_string();
+        let slice_layout_id = cursor
+            .take_field(&format!("{prefix}_layout_id"), false, stage, kind)?
+            .to_string();
+        let element_type_id = cursor
+            .take_field(
+                &format!("{prefix}_element_type_id"),
+                false,
+                stage,
+                kind,
+            )?
+            .to_string();
+        let start = cursor.take_usize_field(
+            &format!("{prefix}_start"),
+            stage,
+            kind,
+        )?;
+        let length = cursor.take_usize_field(
+            &format!("{prefix}_length"),
+            stage,
+            kind,
+        )?;
+        let data_known_null = cursor.take_usize_field(
+            &format!("{prefix}_data_known_null"),
+            stage,
+            kind,
+        )?;
+        if data_known_null > 1 {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "slice_data_known_null_must_be_boolean",
+            ));
+        }
+        let lifetime_region = cursor
+            .take_field(
+                &format!("{prefix}_lifetime_region"),
+                false,
+                stage,
+                kind,
+            )?
+            .to_string();
+        let source_lifetime_region = cursor
+            .take_field(
+                &format!("{prefix}_source_lifetime_region"),
+                false,
+                stage,
+                kind,
+            )?
+            .to_string();
+        let flow_origin = cursor
+            .take_field(
+                &format!("{prefix}_flow_origin"),
+                false,
+                stage,
+                kind,
+            )?
+            .to_string();
+        slices.push(Phase14RequestSliceValue {
+            slice_id,
+            source_array_id,
+            slice_layout_id,
+            element_type_id,
+            start,
+            length,
+            data_known_null: data_known_null == 1,
+            lifetime_region,
+            source_lifetime_region,
+            flow_origin,
+        });
+    }
+
+    let operation_count = cursor.take_usize_field(
+        "array_slice_operation_count",
+        stage,
+        kind,
+    )?;
+    let mut operations = Vec::with_capacity(operation_count);
+    for index in 0..operation_count {
+        let prefix = format!("array_slice_operation_{index}");
+        let operation_id = cursor
+            .take_field(&format!("{prefix}_id"), false, stage, kind)?
+            .to_string();
+        let operation_name = cursor
+            .take_field(&format!("{prefix}_name"), false, stage, kind)?
+            .to_string();
+        let target_id = cursor
+            .take_field(&format!("{prefix}_target_id"), false, stage, kind)?
+            .to_string();
+        let operation_kind = cursor
+            .take_field(&format!("{prefix}_kind"), false, stage, kind)?
+            .to_string();
+        let array_id = cursor
+            .take_field(&format!("{prefix}_array_id"), true, stage, kind)?
+            .to_string();
+        let slice_id = cursor
+            .take_field(&format!("{prefix}_slice_id"), true, stage, kind)?
+            .to_string();
+        let result_slice_id = cursor
+            .take_field(
+                &format!("{prefix}_result_slice_id"),
+                true,
+                stage,
+                kind,
+            )?
+            .to_string();
+        let element_type_id = cursor
+            .take_field(
+                &format!("{prefix}_element_type_id"),
+                false,
+                stage,
+                kind,
+            )?
+            .to_string();
+        let operation_index = cursor.take_usize_field(
+            &format!("{prefix}_index"),
+            stage,
+            kind,
+        )?;
+        let start = cursor.take_usize_field(
+            &format!("{prefix}_start"),
+            stage,
+            kind,
+        )?;
+        let length = cursor.take_usize_field(
+            &format!("{prefix}_length"),
+            stage,
+            kind,
+        )?;
+        let stored_value = cursor.take_i64_field(
+            &format!("{prefix}_stored_value"),
+            stage,
+            kind,
+        )?;
+        let expect_success = cursor.take_usize_field(
+            &format!("{prefix}_expect_success"),
+            stage,
+            kind,
+        )?;
+        if expect_success > 1 {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "array_slice_expect_success_must_be_boolean",
+            ));
+        }
+        operations.push(Phase14RequestArraySliceOperation {
+            operation_id,
+            operation_name,
+            target_id,
+            kind: operation_kind,
+            array_id,
+            slice_id,
+            result_slice_id,
+            element_type_id,
+            index: operation_index,
+            start,
+            length,
+            stored_value,
+            expect_success: expect_success == 1,
+            expected_value: cursor.take_i64_field(
+                &format!("{prefix}_expected_value"),
+                stage,
+                kind,
+            )?,
+            expected_address_offset: cursor.take_usize_field(
+                &format!("{prefix}_expected_address_offset"),
+                stage,
+                kind,
+            )?,
+            expected_result_start: cursor.take_usize_field(
+                &format!("{prefix}_expected_result_start"),
+                stage,
+                kind,
+            )?,
+            expected_result_length: cursor.take_usize_field(
+                &format!("{prefix}_expected_result_length"),
+                stage,
+                kind,
+            )?,
+            expected_reason_code: cursor
+                .take_field(
+                    &format!("{prefix}_expected_reason_code"),
+                    false,
+                    stage,
+                    kind,
+                )?
+                .to_string(),
+        });
+    }
+
+    let table = Phase14RequestArraySliceTable {
+        format,
+        target_id,
+        target_triple,
+        bounds_policy,
+        empty_slice_policy,
+        stride_authority,
+        lifetime_policy,
+        variable_length_array_policy,
+        unsized_storage_policy,
+        array_layouts,
+        arrays,
+        slice_layouts,
+        slices,
+        operations,
+    };
+    validate_phase14_request_array_slice_table(
+        &table,
+        request_target_triple,
+        layout_table,
+    )?;
+    Ok(table)
+}
+
+fn phase14_array_slice_element_layout(
+    table: &Phase14RequestArraySliceTable,
+    layout_table: &Phase14RequestLayoutTable,
+    type_id: &str,
+    layout_id: &str,
+) -> Option<(usize, usize)> {
+    if let Some(layout) = layout_table.layouts.iter().find(|layout| {
+        layout.type_id == type_id && layout.layout_id == layout_id
+    }) {
+        return Some((layout.size, layout.alignment));
+    }
+    table.array_layouts.iter().find_map(|layout| {
+        (layout.array_type_id == type_id && layout.layout_id == layout_id)
+            .then_some((layout.total_size, layout.alignment))
+    })
+}
+
+fn phase14_array_slice_evaluate(
+    table: &Phase14RequestArraySliceTable,
+    operation: &Phase14RequestArraySliceOperation,
+) -> Result<Phase14ArraySliceEvaluation, Box<dyn Error>> {
+    let valid = |value, address_offset, result_start, result_length| {
+        Ok(Phase14ArraySliceEvaluation {
+            success: true,
+            value,
+            address_offset,
+            result_start,
+            result_length,
+            reason_code: "array_slice_valid".to_string(),
+        })
+    };
+    let invalid = |reason: &'static str| {
+        Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            reason,
+        ))
+    };
+
+    match operation.kind.as_str() {
+        "array_init" => {
+            let array = table
+                .arrays
+                .iter()
+                .find(|array| array.array_id == operation.array_id)
+                .ok_or_else(|| {
+                    phase10_backend_request_error(
+                        Phase10BackendRequestStage::CanonicalMirValidation,
+                        Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                        "array_identity_mismatch",
+                    )
+                })?;
+            valid(array.elements.len() as i64, 0, 0, array.elements.len())
+        }
+        "element_address" | "element_load" | "element_store"
+        | "array_to_slice" => {
+            let array = table
+                .arrays
+                .iter()
+                .find(|array| array.array_id == operation.array_id)
+                .ok_or_else(|| {
+                    phase10_backend_request_error(
+                        Phase10BackendRequestStage::CanonicalMirValidation,
+                        Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                        "array_identity_mismatch",
+                    )
+                })?;
+            let layout = table
+                .array_layouts
+                .iter()
+                .find(|layout| layout.layout_id == array.array_layout_id)
+                .ok_or_else(|| {
+                    phase10_backend_request_error(
+                        Phase10BackendRequestStage::CanonicalMirValidation,
+                        Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                        "array_layout_identity_mismatch",
+                    )
+                })?;
+            if operation.element_type_id != layout.element_type_id {
+                return invalid("array_slice_element_type_mismatch");
+            }
+            if operation.kind == "array_to_slice" {
+                return valid(layout.element_count as i64, 0, 0, layout.element_count);
+            }
+            if operation.index >= layout.element_count {
+                return invalid("array_slice_index_out_of_bounds");
+            }
+            let offset = operation
+                .index
+                .checked_mul(layout.element_stride)
+                .ok_or_else(|| {
+                    phase10_backend_request_error(
+                        Phase10BackendRequestStage::CanonicalMirValidation,
+                        Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                        "array_total_size_overflow",
+                    )
+                })?;
+            if operation.kind == "element_address" {
+                return valid(offset as i64, offset, 0, 0);
+            }
+            if operation.kind == "element_store" {
+                return valid(operation.stored_value, offset, 0, 0);
+            }
+            valid(array.elements[operation.index], offset, 0, 0)
+        }
+        "slice_length" | "bounded_index" | "subslice" => {
+            let slice = table
+                .slices
+                .iter()
+                .find(|slice| slice.slice_id == operation.slice_id)
+                .ok_or_else(|| {
+                    phase10_backend_request_error(
+                        Phase10BackendRequestStage::CanonicalMirValidation,
+                        Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                        "slice_identity_mismatch",
+                    )
+                })?;
+            if operation.element_type_id != slice.element_type_id {
+                return invalid("array_slice_element_type_mismatch");
+            }
+            if operation.kind == "slice_length" {
+                return valid(slice.length as i64, 0, slice.start, slice.length);
+            }
+            if operation.kind == "subslice" {
+                let end = operation.start.checked_add(operation.length).ok_or_else(|| {
+                    phase10_backend_request_error(
+                        Phase10BackendRequestStage::CanonicalMirValidation,
+                        Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                        "array_slice_index_out_of_bounds",
+                    )
+                })?;
+                if end > slice.length {
+                    return invalid("array_slice_index_out_of_bounds");
+                }
+                return valid(
+                    operation.length as i64,
+                    0,
+                    slice.start + operation.start,
+                    operation.length,
+                );
+            }
+            if operation.index >= slice.length {
+                return invalid("array_slice_index_out_of_bounds");
+            }
+            let array = table
+                .arrays
+                .iter()
+                .find(|array| array.array_id == slice.source_array_id)
+                .ok_or_else(|| {
+                    phase10_backend_request_error(
+                        Phase10BackendRequestStage::CanonicalMirValidation,
+                        Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                        "array_identity_mismatch",
+                    )
+                })?;
+            let layout = table
+                .array_layouts
+                .iter()
+                .find(|layout| layout.layout_id == array.array_layout_id)
+                .ok_or_else(|| {
+                    phase10_backend_request_error(
+                        Phase10BackendRequestStage::CanonicalMirValidation,
+                        Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                        "array_layout_identity_mismatch",
+                    )
+                })?;
+            let absolute_index = slice.start + operation.index;
+            let offset = absolute_index
+                .checked_mul(layout.element_stride)
+                .ok_or_else(|| {
+                    phase10_backend_request_error(
+                        Phase10BackendRequestStage::CanonicalMirValidation,
+                        Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                        "array_total_size_overflow",
+                    )
+                })?;
+            valid(
+                array.elements[absolute_index],
+                offset,
+                slice.start,
+                slice.length,
+            )
+        }
+        _ => invalid("array_slice_operation_unsupported"),
+    }
+}
+
+fn validate_phase14_request_array_slice_table(
+    table: &Phase14RequestArraySliceTable,
+    request_target_triple: &str,
+    layout_table: &Phase14RequestLayoutTable,
+) -> Result<(), Box<dyn Error>> {
+    let stage = Phase10BackendRequestStage::CanonicalMirValidation;
+    let kind = Phase10BackendRequestFailureKind::InvalidCanonicalMir;
+    if table.is_legacy_empty() {
+        return Ok(());
+    }
+    if table.format != PHASE14_ARRAY_SLICE_TABLE_FORMAT_V1 {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::RequestValidation,
+            Phase10BackendRequestFailureKind::ProtocolMismatch,
+            "array_slice_table_format_mismatch",
+        ));
+    }
+    if table.target_triple != request_target_triple
+        || table.target_triple != layout_table.target.target_triple
+        || table.target_id != layout_table.target.target_id
+    {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::TargetValidation,
+            Phase10BackendRequestFailureKind::TargetMismatch,
+            "array_slice_target_mismatch",
+        ));
+    }
+    if table.bounds_policy != "checked_before_address_calculation"
+        || table.empty_slice_policy != "null_pointer_with_zero_length"
+        || table.stride_authority
+            != "compiler_owned_element_stride_no_backend_inference"
+        || table.lifetime_policy
+            != "borrowed_slice_must_not_outlive_source_array"
+        || table.variable_length_array_policy
+            != "deferred_variable_length_stack_arrays"
+        || table.unsized_storage_policy
+            != "deferred_unsized_aggregate_storage"
+    {
+        return Err(phase10_backend_request_error(
+            stage,
+            kind,
+            "array_slice_policy_mismatch",
+        ));
+    }
+
+    let mut layout_ids = HashSet::new();
+    let mut type_ids = HashSet::new();
+    for array_layout in &table.array_layouts {
+        if array_layout.element_count > PHASE14_ARRAY_COUNT_LIMIT {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "array_count_overflow",
+            ));
+        }
+        if array_layout.element_count == 0 {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "array_zero_count_deferred",
+            ));
+        }
+        let Some((element_size, element_alignment)) =
+            phase14_array_slice_element_layout(
+                table,
+                layout_table,
+                &array_layout.element_type_id,
+                &array_layout.element_layout_id,
+            )
+        else {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "array_element_layout_not_declared",
+            ));
+        };
+        let expected_stride = phase14_array_slice_align_up(
+            element_size,
+            element_alignment,
+        )
+        .ok_or_else(|| phase10_backend_request_error(
+            stage,
+            kind,
+            "array_stride_mismatch",
+        ))?;
+        if array_layout.element_stride != expected_stride {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "array_stride_mismatch",
+            ));
+        }
+        let expected_total = array_layout
+            .element_count
+            .checked_mul(array_layout.element_stride)
+            .ok_or_else(|| phase10_backend_request_error(
+                stage,
+                kind,
+                "array_total_size_overflow",
+            ))?;
+        if expected_total > PHASE14_ARRAY_TOTAL_SIZE_LIMIT
+            || array_layout.total_size > PHASE14_ARRAY_TOTAL_SIZE_LIMIT
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "array_total_size_overflow",
+            ));
+        }
+        if array_layout.total_size != expected_total
+            || array_layout.alignment != element_alignment
+            || array_layout.target_id != table.target_id
+            || array_layout.representation_kind
+                != "fixed_contiguous_compiler_stride"
+            || array_layout.layout_id != phase14_array_layout_identity(array_layout)
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "array_layout_identity_mismatch",
+            ));
+        }
+        if !layout_ids.insert(array_layout.layout_id.clone())
+            || !type_ids.insert(array_layout.array_type_id.clone())
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "array_layout_duplicate_identity",
+            ));
+        }
+    }
+
+    let mut array_ids = HashSet::new();
+    for array in &table.arrays {
+        let layout = table
+            .array_layouts
+            .iter()
+            .find(|layout| layout.layout_id == array.array_layout_id)
+            .ok_or_else(|| phase10_backend_request_error(
+                stage,
+                kind,
+                "array_layout_identity_mismatch",
+            ))?;
+        if array.element_type_id != layout.element_type_id
+            || array.elements.len() != layout.element_count
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "array_slice_element_type_mismatch",
+            ));
+        }
+        if array.lifetime_region != "function:main"
+            || !array_ids.insert(array.array_id.clone())
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "array_identity_mismatch",
+            ));
+        }
+    }
+
+    let mut slice_layout_ids = HashSet::new();
+    for slice_layout in &table.slice_layouts {
+        if phase14_array_slice_element_layout(
+            table,
+            layout_table,
+            &slice_layout.element_type_id,
+            &slice_layout.element_layout_id,
+        )
+        .is_none()
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "slice_element_layout_not_declared",
+            ));
+        }
+        if slice_layout.target_id != table.target_id
+            || slice_layout.pointer_size != layout_table.target.pointer_size
+            || slice_layout.pointer_alignment
+                != layout_table.target.pointer_alignment
+            || slice_layout.size != slice_layout.pointer_size * 2
+            || slice_layout.alignment != slice_layout.pointer_alignment
+            || slice_layout.data_pointer_offset != 0
+            || slice_layout.length_offset != slice_layout.pointer_size
+            || slice_layout.length_type_id != "type:gust:usize"
+            || slice_layout.representation_kind
+                != "data_pointer_and_usize_length"
+            || slice_layout.empty_representation
+                != "null_pointer_with_zero_length"
+            || slice_layout.nullability_policy
+                != "null_pointer_permitted_only_when_length_zero"
+            || slice_layout.lifetime_policy != table.lifetime_policy
+            || slice_layout.layout_id != phase14_slice_layout_identity(slice_layout)
+            || !slice_layout_ids.insert(slice_layout.layout_id.clone())
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "slice_layout_identity_mismatch",
+            ));
+        }
+    }
+
+    let mut slice_ids = HashSet::new();
+    for slice in &table.slices {
+        let source = table
+            .arrays
+            .iter()
+            .find(|array| array.array_id == slice.source_array_id)
+            .ok_or_else(|| phase10_backend_request_error(
+                stage,
+                kind,
+                "array_identity_mismatch",
+            ))?;
+        let slice_layout = table
+            .slice_layouts
+            .iter()
+            .find(|layout| layout.layout_id == slice.slice_layout_id)
+            .ok_or_else(|| phase10_backend_request_error(
+                stage,
+                kind,
+                "slice_layout_identity_mismatch",
+            ))?;
+        if slice.element_type_id != source.element_type_id
+            || slice.element_type_id != slice_layout.element_type_id
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "array_slice_element_type_mismatch",
+            ));
+        }
+        let end = slice.start.checked_add(slice.length).ok_or_else(|| {
+            phase10_backend_request_error(
+                stage,
+                kind,
+                "array_slice_index_out_of_bounds",
+            )
+        })?;
+        if end > source.elements.len() {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "array_slice_index_out_of_bounds",
+            ));
+        }
+        if slice.data_known_null && slice.length != 0 {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "slice_null_nonempty",
+            ));
+        }
+        if slice.length == 0 && !slice.data_known_null {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "slice_empty_must_be_canonical_null",
+            ));
+        }
+        if slice.length > 0 && slice.data_known_null {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "slice_null_nonempty",
+            ));
+        }
+        if slice.lifetime_region != source.lifetime_region
+            || slice.source_lifetime_region != source.lifetime_region
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "slice_lifetime_escape",
+            ));
+        }
+        if slice.slice_id != phase14_slice_identity(slice)
+            || !slice_ids.insert(slice.slice_id.clone())
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "slice_identity_mismatch",
+            ));
+        }
+    }
+
+    let mut operation_ids = HashSet::new();
+    let mut operation_names = HashSet::new();
+    for operation in &table.operations {
+        if !phase14_array_slice_kind_is_valid(&operation.kind) {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "array_slice_operation_unsupported",
+            ));
+        }
+        if operation.target_id != table.target_id {
+            return Err(phase10_backend_request_error(
+                Phase10BackendRequestStage::TargetValidation,
+                Phase10BackendRequestFailureKind::TargetMismatch,
+                "array_slice_operation_target_mismatch",
+            ));
+        }
+        if operation.operation_id
+            != phase14_array_slice_operation_identity(
+                &operation.target_id,
+                &operation.operation_name,
+                &operation.kind,
+            )
+            || !operation_ids.insert(operation.operation_id.clone())
+            || !operation_names.insert(operation.operation_name.clone())
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "array_slice_operation_identity_mismatch",
+            ));
+        }
+        let evaluation = phase14_array_slice_evaluate(table, operation)?;
+        if evaluation.success != operation.expect_success
+            || evaluation.value != operation.expected_value
+            || evaluation.address_offset != operation.expected_address_offset
+            || evaluation.result_start != operation.expected_result_start
+            || evaluation.result_length != operation.expected_result_length
+            || evaluation.reason_code != operation.expected_reason_code
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                format!(
+                    "array/slice expectation mismatch: {}",
+                    operation.operation_name
+                ),
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn phase14_array_slice_witness_text(
+    request: &Phase10BackendRequest,
+) -> Result<String, Box<dyn Error>> {
+    let table = &request.array_slice_table;
+    validate_phase14_request_array_slice_table(
+        table,
+        &request.target_triple,
+        &request.layout_table,
+    )?;
+    if table.is_legacy_empty() {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "array_slice_table_is_legacy_empty",
+        ));
+    }
+    let mut output = String::new();
+    output.push_str("array_slice_status: valid\n");
+    output.push_str(&format!("array_slice_target: {}\n", table.target_triple));
+    output.push_str(&format!("array_slice_target_id: {}\n", table.target_id));
+    output.push_str(&format!("array_slice_bounds_policy: {}\n", table.bounds_policy));
+    output.push_str(&format!("array_slice_empty_slice_policy: {}\n", table.empty_slice_policy));
+    output.push_str(&format!("array_slice_stride_authority: {}\n", table.stride_authority));
+    output.push_str(&format!("array_slice_lifetime_policy: {}\n", table.lifetime_policy));
+    for layout in &table.array_layouts {
+        output.push_str(&format!(
+            "array_layout: {} type={} element_type={} element_layout={} count={} stride={} size={} alignment={} nesting={}\n",
+            layout.layout_id,
+            layout.array_type_id,
+            layout.element_type_id,
+            layout.element_layout_id,
+            layout.element_count,
+            layout.element_stride,
+            layout.total_size,
+            layout.alignment,
+            layout.nesting_depth,
+        ));
+    }
+    for layout in &table.slice_layouts {
+        output.push_str(&format!(
+            "slice_layout: {} type={} element_type={} size={} alignment={} data_offset={} length_offset={}\n",
+            layout.layout_id,
+            layout.slice_type_id,
+            layout.element_type_id,
+            layout.size,
+            layout.alignment,
+            layout.data_pointer_offset,
+            layout.length_offset,
+        ));
+    }
+    for slice in &table.slices {
+        output.push_str(&format!(
+            "slice: {} source={} start={} length={} known_null={} lifetime={} flow={}\n",
+            slice.slice_id,
+            slice.source_array_id,
+            slice.start,
+            slice.length,
+            if slice.data_known_null { 1 } else { 0 },
+            slice.lifetime_region,
+            slice.flow_origin,
+        ));
+    }
+    for operation in &table.operations {
+        let evaluation = phase14_array_slice_evaluate(table, operation)?;
+        output.push_str(&format!(
+            "array_slice_operation: {} kind={} status={} value={} address_offset={} result_start={} result_length={} reason={}\n",
+            operation.operation_name,
+            operation.kind,
+            if evaluation.success { "success" } else { "failure" },
+            evaluation.value,
+            evaluation.address_offset,
+            evaluation.result_start,
+            evaluation.result_length,
+            evaluation.reason_code,
+        ));
+    }
+    Ok(output)
+}
+
+fn print_phase14_array_slice_witness(
+    request_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let request = phase14_load_primitive_layout_request(request_path)?;
+    print!("{}", phase14_array_slice_witness_text(&request)?);
+    Ok(())
+}
+
+
 #[derive(Debug)]
 struct Phase10BackendRequest {
     target_triple: String,
@@ -6961,6 +8349,7 @@ struct Phase10BackendRequest {
     stack_slot_table: Phase14RequestStackSlotTable,
     memory_access_table: Phase14RequestMemoryAccessTable,
     string_view_table: Phase14RequestStringViewTable,
+    array_slice_table: Phase14RequestArraySliceTable,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -7109,6 +8498,15 @@ fn parse_phase10_backend_request(
     } else {
         Phase14RequestStringViewTable::legacy_empty(&target_triple)
     };
+    let array_slice_table = if cursor.has_remaining() {
+        parse_phase14_request_array_slice_table(
+            &mut cursor,
+            &target_triple,
+            &layout_table,
+        )?
+    } else {
+        Phase14RequestArraySliceTable::legacy_empty(&target_triple)
+    };
     cursor.finish(stage, kind)?;
 
     if !output_path.is_absolute() {
@@ -7144,6 +8542,7 @@ fn parse_phase10_backend_request(
         stack_slot_table,
         memory_access_table,
         string_view_table,
+        array_slice_table,
     })
 }
 
@@ -11403,6 +12802,15 @@ fn run() -> Result<(), Box<dyn Error>> {
                 return Err(usage_error().into());
             }
             print_phase14_string_view_witness(Path::new(&request_path))
+        }
+        "phase14-array-slice-witness" => {
+            let Some(request_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            print_phase14_array_slice_witness(Path::new(&request_path))
         }
         "phase10-backend-request-compile" => {
             let Some(request_path) = args.next() else {

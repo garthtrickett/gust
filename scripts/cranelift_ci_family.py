@@ -90,6 +90,12 @@ RUNNERS = (
         "PHASE14_STRING_VIEW_SKIP_DYNAMIC",
         None,
     ),
+    (
+        "arrays-slices",
+        "guard-cranelift-phase14-array-slice-parity",
+        "PHASE14_ARRAY_SLICE_SKIP_DYNAMIC",
+        None,
+    ),
 )
 RUNNER_BY_FAMILY = {
     family: {

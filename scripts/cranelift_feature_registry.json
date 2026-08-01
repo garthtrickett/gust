@@ -4366,7 +4366,8 @@
           "phase14_composition:integer_conversions_with_layout_and_control_flow",
           "phase14_composition:bounded_pointers_with_layout_conversion_and_control_flow",
           "phase14_composition:stack_slots_with_branches_loops_and_aggregate_copy",
-          "phase14_composition:typed_memory_with_stack_pointer_offset_and_copy"
+          "phase14_composition:typed_memory_with_stack_pointer_offset_and_copy",
+          "phase14_composition:arrays_slices_with_layout_pointer_memory_and_branch_join"
         ],
         "differential_failure_fixture": "compiler/p14_target_dependent_conversions_deferred_source.gst",
         "composition_cases": [
@@ -4948,29 +4949,95 @@
       "parent": "phase14_category:arrays_and_slices",
       "feature_family": "array_slice",
       "ci_family": "arrays-slices",
-      "status": "candidate_deferred",
-      "route_owner": "deferred",
+      "status": "migrated",
+      "route_owner": "generic_canonical_mir",
       "worker_capability_owner": "worker_array_slice_lowering",
       "diagnostic_owner": "canonical_mir_array_slice_verifier",
-      "source_fixture": "compiler/p14_array_and_slice_layout_deferred_source.gst",
-      "canonical_mir_fixture": "none_rejected_before_canonical_MIR",
-      "differential_case_id": "phase14_opening:p14_array_and_slice_layout",
-      "deferral_reason": "phase14_authority_p14_array_and_slice_layout_awaits_bounded_capability_migration",
-      "future_destination_phase": "phase14",
-      "closure_version": "phase14_compiler_owned_layout_authority_v1",
+      "source_fixture": "compiler/phase14_array_slice_source.gst",
+      "canonical_mir_fixture": "compiler/fixtures/native_backend_phase14_array_slice_ingestion.mir",
+      "differential_case_id": "phase14_registry_differential:p14_array_and_slice_layout",
+      "deferral_reason": "none_migrated",
+      "future_destination_phase": "none_migrated",
+      "closure_version": "phase14_fixed_arrays_and_bounded_slices_v1",
       "evidence": {
         "opening_record_kind": "phase14_candidate",
         "declared_capability": "fixed_array_and_slice_layout",
         "planning_category": "arrays_and_slices",
         "phase13_closure_dependency": "phase13_closed_deferred_registry_parity_expansion",
-        "behavior_policy": "primitive_layout_and_integer_conversion_only_other_phase14_capabilities_remain_deferred",
+        "behavior_policy": "fixed_arrays_and_bounded_slices_migrated_through_compiler_owned_count_stride_size_alignment_bounds_and_lifetime_rules",
         "phase14_1_authority": "compiler_owned_layout_authority_and_request_transport_available",
-        "phase14_3_boundary": "not_selected_by_signed_unsigned_width_conversion_patch"
+        "phase14_8_contract": "phase14_fixed_arrays_and_bounded_slices_v1",
+        "selected_array_type_ids": [
+          "type:gust:array:i32:4",
+          "type:gust:array:u8:3",
+          "type:gust:array:i32:2",
+          "type:gust:array:array_i32_2:2"
+        ],
+        "selected_slice_type_ids": [
+          "type:gust:slice:i32",
+          "type:gust:slice:u8"
+        ],
+        "selected_operation_kinds": [
+          "array_init",
+          "element_address",
+          "element_load",
+          "element_store",
+          "array_to_slice",
+          "slice_length",
+          "bounded_index",
+          "subslice"
+        ],
+        "stride_authority": "compiler_owned_element_stride_no_backend_inference",
+        "empty_slice_policy": "null_pointer_with_zero_length",
+        "bounds_policy": "checked_before_address_calculation",
+        "lifetime_policy": "borrowed_slice_must_not_outlive_source_array",
+        "variable_length_array_policy": "deferred_variable_length_stack_arrays",
+        "unsized_storage_policy": "deferred_unsized_aggregate_storage",
+        "focused_source_fixtures": [
+          "compiler/phase14_array_slice_source.gst"
+        ],
+        "negative_source_fixtures": [
+          "compiler/p14_array_count_overflow_source.gst",
+          "compiler/p14_array_total_size_overflow_source.gst",
+          "compiler/p14_array_invalid_stride_source.gst",
+          "compiler/p14_array_slice_out_of_bounds_source.gst",
+          "compiler/p14_array_slice_wrong_element_type_source.gst",
+          "compiler/p14_slice_invalid_pointer_length_source.gst",
+          "compiler/p14_slice_lifetime_escape_source.gst"
+        ],
+        "malformed_canonical_mir_fixture": "compiler/fixtures/native_backend_phase14_array_slice_malformed.mir",
+        "positive_expectation": "exit_61_phase14_array_slice",
+        "individual_evidence_guard": "guard-cranelift-phase14-array-slice-parity",
+        "differential_stderr_policy": "stable_bytes",
+        "differential_side_effect_policy": "none",
+        "composition_case_ids": [
+          "phase14_composition:arrays_slices_with_layout_pointer_memory_and_branch_join"
+        ],
+        "differential_failure_fixture": "compiler/p14_array_slice_out_of_bounds_source.gst",
+        "composition_cases": [
+          {
+            "id": "phase14_composition:arrays_slices_with_layout_pointer_memory_and_branch_join",
+            "owner_entry_id": "p14_array_and_slice_layout",
+            "ci_family": "arrays-slices",
+            "source_fixture": "compiler/phase14_array_slice_composition_source.gst",
+            "positive_expectation": "exit_62_phase14_array_slice_composition",
+            "stderr_policy": "stable_bytes",
+            "side_effect_policy": "none",
+            "failure_fixture": "compiler/p14_slice_lifetime_escape_source.gst",
+            "covers_entry_ids": [
+              "p14_array_and_slice_layout",
+              "p14_primitive_scalar_layout",
+              "p14_target_layout_model"
+            ]
+          }
+        ],
+        "poisoned_driver_evidence": "scripts/phase14_array_slice_differential.sh",
+        "sentinel_output_evidence": "scripts/phase14_array_slice_differential.sh"
       },
       "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
-      "current_failure_stage": "before_driver_discovery",
+      "current_failure_stage": "none_supported",
       "positive_future_fixture": "compiler/future/p14_array_and_slice_layout_source.gst",
-      "negative_current_fixture": "compiler/p14_array_and_slice_layout_deferred_source.gst"
+      "negative_current_fixture": "compiler/p14_array_slice_out_of_bounds_source.gst"
     },
     {
       "id": "p14_struct_field_layout",
@@ -5124,7 +5191,8 @@
           "phase14_composition:bounded_pointers_with_layout_conversion_and_control_flow",
           "phase14_composition:stack_slots_with_branches_loops_and_aggregate_copy",
           "phase14_composition:typed_memory_with_stack_pointer_offset_and_copy",
-          "phase14_composition:string_views_with_static_literals_pointer_layout_and_slices"
+          "phase14_composition:string_views_with_static_literals_pointer_layout_and_slices",
+          "phase14_composition:arrays_slices_with_layout_pointer_memory_and_branch_join"
         ],
         "differential_failure_fixture": "compiler/p14_target_dependent_conversions_deferred_source.gst",
         "composition_cases": [],

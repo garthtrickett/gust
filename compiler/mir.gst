@@ -24,6 +24,7 @@ import "mir_pointer.gst" as pointer;
 import "mir_stack_slot.gst" as stack_slot;
 import "mir_memory_access.gst" as memory_access;
 import "mir_string_view.gst" as string_view;
+import "mir_array_slice.gst" as array_slice;
 
 type MirTypeLayoutReference[ctx] struct {
     type_id: str,
@@ -212,6 +213,64 @@ type MirStringViewOperationReference[ctx] struct {
     length: int
 }
 
+type MirArraySliceOperationKind enum {
+    ArrayInit,
+    ElementAddress,
+    ElementLoad,
+    ElementStore,
+    ArrayToSlice,
+    SliceLength,
+    BoundedIndex,
+    Subslice
+}
+
+type MirArrayLayoutReference[ctx] struct {
+    layout_id: str,
+    array_type_id: str,
+    target_id: str,
+    element_type_id: str,
+    element_layout_id: str,
+    element_count: int,
+    element_stride: int,
+    total_size: int,
+    alignment: int,
+    nesting_depth: int
+}
+
+type MirArrayValueReference[ctx] struct {
+    array_id: str,
+    array_layout_id: str,
+    element_type_id: str,
+    element_count: int,
+    lifetime_region: str
+}
+
+type MirSliceReference[ctx] struct {
+    slice_id: str,
+    source_array_id: str,
+    slice_layout_id: str,
+    element_type_id: str,
+    start: int,
+    length: int,
+    data_known_null: int,
+    lifetime_region: str,
+    flow_origin: str
+}
+
+type MirArraySliceOperationReference[ctx] struct {
+    operation_id: str,
+    operation_name: str,
+    target_id: str,
+    operation_kind: MirArraySliceOperationKind,
+    array_id: str,
+    slice_id: str,
+    result_slice_id: str,
+    element_type_id: str,
+    index: int,
+    start: int,
+    length: int
+}
+
 type MirProgram[ctx] struct {
     functions: Index[std.Vector[MirFunction[ctx], ctx], ctx],
     resource_metadata: Index[std.Vector[MirResourceMetadata[ctx], ctx], ctx],
@@ -227,7 +286,11 @@ type MirProgram[ctx] struct {
     memory_access_references: Index[std.Vector[MirMemoryAccessReference[ctx], ctx], ctx],
     string_literal_references: Index[std.Vector[MirStringLiteralReference[ctx], ctx], ctx],
     string_view_references: Index[std.Vector[MirStringViewReference[ctx], ctx], ctx],
-    string_view_operation_references: Index[std.Vector[MirStringViewOperationReference[ctx], ctx], ctx]
+    string_view_operation_references: Index[std.Vector[MirStringViewOperationReference[ctx], ctx], ctx],
+    array_layout_references: Index[std.Vector[MirArrayLayoutReference[ctx], ctx], ctx],
+    array_value_references: Index[std.Vector[MirArrayValueReference[ctx], ctx], ctx],
+    slice_references: Index[std.Vector[MirSliceReference[ctx], ctx], ctx],
+    array_slice_operation_references: Index[std.Vector[MirArraySliceOperationReference[ctx], ctx], ctx]
 }
 
 type MirFunction[ctx] struct {
@@ -274,6 +337,11 @@ type MirStmt[ctx] enum {
     },
     MemoryAccess {
         operation: Index[MirMemoryAccessReference[ctx], ctx],
+        value: Index[MirValue[ctx], ctx],
+        span: token.Span
+    },
+    ArraySliceOperation {
+        operation: Index[MirArraySliceOperationReference[ctx], ctx],
         value: Index[MirValue[ctx], ctx],
         span: token.Span
     }
@@ -327,6 +395,12 @@ type MirValue[ctx] enum {
     StringViewOperation {
         operands: Index[std.Vector[MirValue[ctx], ctx], ctx],
         operation: Index[MirStringViewOperationReference[ctx], ctx],
+        value_type: str,
+        span: token.Span
+    },
+    ArraySliceOperation {
+        operands: Index[std.Vector[MirValue[ctx], ctx], ctx],
+        operation: Index[MirArraySliceOperationReference[ctx], ctx],
         value_type: str,
         span: token.Span
     }
@@ -595,6 +669,35 @@ func mir_empty_string_view_operation_reference_vector(ctx: &Arena) Index[std.Vec
     return references_idx;
 }
 
+
+func mir_empty_array_layout_reference_vector(ctx: &Arena) Index[std.Vector[MirArrayLayoutReference[ctx], ctx], ctx] {
+    mut references: std.Vector[MirArrayLayoutReference[ctx], ctx] := std.VectorNew(ctx);
+    mut references_idx: Index[std.Vector[MirArrayLayoutReference[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(references_idx, references);
+    return references_idx;
+}
+
+func mir_empty_array_value_reference_vector(ctx: &Arena) Index[std.Vector[MirArrayValueReference[ctx], ctx], ctx] {
+    mut references: std.Vector[MirArrayValueReference[ctx], ctx] := std.VectorNew(ctx);
+    mut references_idx: Index[std.Vector[MirArrayValueReference[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(references_idx, references);
+    return references_idx;
+}
+
+func mir_empty_slice_reference_vector(ctx: &Arena) Index[std.Vector[MirSliceReference[ctx], ctx], ctx] {
+    mut references: std.Vector[MirSliceReference[ctx], ctx] := std.VectorNew(ctx);
+    mut references_idx: Index[std.Vector[MirSliceReference[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(references_idx, references);
+    return references_idx;
+}
+
+func mir_empty_array_slice_operation_reference_vector(ctx: &Arena) Index[std.Vector[MirArraySliceOperationReference[ctx], ctx], ctx] {
+    mut references: std.Vector[MirArraySliceOperationReference[ctx], ctx] := std.VectorNew(ctx);
+    mut references_idx: Index[std.Vector[MirArraySliceOperationReference[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(references_idx, references);
+    return references_idx;
+}
+
 func mir_value_vector_with_value(values_idx: Index[std.Vector[MirValue[ctx], ctx], ctx], value: MirValue[ctx], ctx: &Arena) Index[std.Vector[MirValue[ctx], ctx], ctx] {
     mut values: std.Vector[MirValue[ctx], ctx] := ctx[values_idx];
     values.Push(value);
@@ -631,6 +734,10 @@ func mir_make_program(ctx: &Arena) MirProgram[ctx] {
     program.string_literal_references = mir_empty_string_literal_reference_vector(ctx);
     program.string_view_references = mir_empty_string_view_reference_vector(ctx);
     program.string_view_operation_references = mir_empty_string_view_operation_reference_vector(ctx);
+    program.array_layout_references = mir_empty_array_layout_reference_vector(ctx);
+    program.array_value_references = mir_empty_array_value_reference_vector(ctx);
+    program.slice_references = mir_empty_slice_reference_vector(ctx);
+    program.array_slice_operation_references = mir_empty_array_slice_operation_reference_vector(ctx);
     return program;
 }
 
@@ -1184,6 +1291,214 @@ func mir_program_string_view_references_are_valid(program: MirProgram[ctx], tabl
            std.str_eq(query.operation.literal_id, reference.literal_id) == 0 ||
            std.str_eq(query.operation.view_id, reference.view_id) == 0 ||
            std.str_eq(query.operation.rhs_view_id, reference.rhs_view_id) == 0 ||
+           query.operation.index != reference.index ||
+           query.operation.start != reference.start ||
+           query.operation.length != reference.length
+        {
+            return 0;
+        }
+        operation_index = operation_index + 1;
+    }
+    return 1;
+}
+
+
+func mir_array_slice_operation_kind_from_name(kind: str) MirArraySliceOperationKind {
+    mut result: MirArraySliceOperationKind;
+    unsafe {
+        result.tag = 0;
+        if std.str_eq(kind, "element_address") == 1 { result.tag = 1; }
+        if std.str_eq(kind, "element_load") == 1 { result.tag = 2; }
+        if std.str_eq(kind, "element_store") == 1 { result.tag = 3; }
+        if std.str_eq(kind, "array_to_slice") == 1 { result.tag = 4; }
+        if std.str_eq(kind, "slice_length") == 1 { result.tag = 5; }
+        if std.str_eq(kind, "bounded_index") == 1 { result.tag = 6; }
+        if std.str_eq(kind, "subslice") == 1 { result.tag = 7; }
+    }
+    return result;
+}
+
+func mir_debug_array_slice_operation_kind(kind: MirArraySliceOperationKind) str {
+    unsafe {
+        if kind.tag == 0 { return "array_init"; }
+        if kind.tag == 1 { return "element_address"; }
+        if kind.tag == 2 { return "element_load"; }
+        if kind.tag == 3 { return "element_store"; }
+        if kind.tag == 4 { return "array_to_slice"; }
+        if kind.tag == 5 { return "slice_length"; }
+        if kind.tag == 6 { return "bounded_index"; }
+        if kind.tag == 7 { return "subslice"; }
+    }
+    return "array_slice_unknown";
+}
+
+func mir_make_array_layout_reference(value: array_slice.MirArrayLayout[ctx], ctx: &Arena) MirArrayLayoutReference[ctx] {
+    mut reference: MirArrayLayoutReference[ctx];
+    reference.layout_id = std.Clone(ctx, value.layout_id);
+    reference.array_type_id = std.Clone(ctx, value.array_type_id);
+    reference.target_id = std.Clone(ctx, value.target_id);
+    reference.element_type_id = std.Clone(ctx, value.element_type_id);
+    reference.element_layout_id = std.Clone(ctx, value.element_layout_id);
+    reference.element_count = value.element_count;
+    reference.element_stride = value.element_stride;
+    reference.total_size = value.total_size;
+    reference.alignment = value.alignment;
+    reference.nesting_depth = value.nesting_depth;
+    return reference;
+}
+
+func mir_make_array_value_reference(value: array_slice.MirArrayValue[ctx], ctx: &Arena) MirArrayValueReference[ctx] {
+    mut reference: MirArrayValueReference[ctx];
+    reference.array_id = std.Clone(ctx, value.array_id);
+    reference.array_layout_id = std.Clone(ctx, value.array_layout_id);
+    reference.element_type_id = std.Clone(ctx, value.element_type_id);
+    mut elements: std.Vector[int, ctx] := ctx[value.elements];
+    reference.element_count = len(elements);
+    reference.lifetime_region = std.Clone(ctx, value.lifetime_region);
+    return reference;
+}
+
+func mir_make_slice_reference(value: array_slice.MirSliceValue[ctx], ctx: &Arena) MirSliceReference[ctx] {
+    mut reference: MirSliceReference[ctx];
+    reference.slice_id = std.Clone(ctx, value.slice_id);
+    reference.source_array_id = std.Clone(ctx, value.source_array_id);
+    reference.slice_layout_id = std.Clone(ctx, value.slice_layout_id);
+    reference.element_type_id = std.Clone(ctx, value.element_type_id);
+    reference.start = value.start;
+    reference.length = value.length;
+    reference.data_known_null = value.data_known_null;
+    reference.lifetime_region = std.Clone(ctx, value.lifetime_region);
+    reference.flow_origin = std.Clone(ctx, value.flow_origin);
+    return reference;
+}
+
+func mir_make_array_slice_operation_reference(value: array_slice.MirArraySliceOperation[ctx], ctx: &Arena) MirArraySliceOperationReference[ctx] {
+    mut reference: MirArraySliceOperationReference[ctx];
+    reference.operation_id = std.Clone(ctx, value.operation_id);
+    reference.operation_name = std.Clone(ctx, value.operation_name);
+    reference.target_id = std.Clone(ctx, value.target_id);
+    reference.operation_kind = mir_array_slice_operation_kind_from_name(value.kind);
+    reference.array_id = std.Clone(ctx, value.array_id);
+    reference.slice_id = std.Clone(ctx, value.slice_id);
+    reference.result_slice_id = std.Clone(ctx, value.result_slice_id);
+    reference.element_type_id = std.Clone(ctx, value.element_type_id);
+    reference.index = value.index;
+    reference.start = value.start;
+    reference.length = value.length;
+    return reference;
+}
+
+func mir_program_with_array_layout_reference(program: MirProgram[ctx], reference: MirArrayLayoutReference[ctx], ctx: &Arena) MirProgram[ctx] {
+    mut updated := program;
+    mut references: std.Vector[MirArrayLayoutReference[ctx], ctx] := ctx[updated.array_layout_references];
+    references.Push(reference);
+    ctx.Set(updated.array_layout_references, references);
+    return updated;
+}
+
+func mir_program_with_array_value_reference(program: MirProgram[ctx], reference: MirArrayValueReference[ctx], ctx: &Arena) MirProgram[ctx] {
+    mut updated := program;
+    mut references: std.Vector[MirArrayValueReference[ctx], ctx] := ctx[updated.array_value_references];
+    references.Push(reference);
+    ctx.Set(updated.array_value_references, references);
+    return updated;
+}
+
+func mir_program_with_slice_reference(program: MirProgram[ctx], reference: MirSliceReference[ctx], ctx: &Arena) MirProgram[ctx] {
+    mut updated := program;
+    mut references: std.Vector[MirSliceReference[ctx], ctx] := ctx[updated.slice_references];
+    references.Push(reference);
+    ctx.Set(updated.slice_references, references);
+    return updated;
+}
+
+func mir_program_with_array_slice_operation_reference(program: MirProgram[ctx], reference: MirArraySliceOperationReference[ctx], ctx: &Arena) MirProgram[ctx] {
+    mut updated := program;
+    mut references: std.Vector[MirArraySliceOperationReference[ctx], ctx] := ctx[updated.array_slice_operation_references];
+    references.Push(reference);
+    ctx.Set(updated.array_slice_operation_references, references);
+    return updated;
+}
+
+func mir_program_array_slice_references_are_valid(program: MirProgram[ctx], table: array_slice.MirArraySliceTable[ctx], layout_table: layout.MirLayoutTable[ctx], ctx: &Arena) int {
+    if array_slice.mir_array_slice_table_is_valid(table, layout_table, ctx) == 0 ||
+       array_slice.mir_array_slice_table_is_legacy_empty(table, ctx) == 1
+    {
+        return 0;
+    }
+    mut array_layout_references: std.Vector[MirArrayLayoutReference[ctx], ctx] := ctx[program.array_layout_references];
+    mut array_layout_index := 0;
+    while array_layout_index < len(array_layout_references) {
+        mut reference := array_layout_references[array_layout_index];
+        mut query := array_slice.mir_array_slice_array_layout(table, reference.layout_id, ctx);
+        if query.found == 0 ||
+           std.str_eq(query.array_layout.array_type_id, reference.array_type_id) == 0 ||
+           std.str_eq(query.array_layout.target_id, reference.target_id) == 0 ||
+           std.str_eq(query.array_layout.element_type_id, reference.element_type_id) == 0 ||
+           std.str_eq(query.array_layout.element_layout_id, reference.element_layout_id) == 0 ||
+           query.array_layout.element_count != reference.element_count ||
+           query.array_layout.element_stride != reference.element_stride ||
+           query.array_layout.total_size != reference.total_size ||
+           query.array_layout.alignment != reference.alignment ||
+           query.array_layout.nesting_depth != reference.nesting_depth
+        {
+            return 0;
+        }
+        array_layout_index = array_layout_index + 1;
+    }
+
+    mut array_references: std.Vector[MirArrayValueReference[ctx], ctx] := ctx[program.array_value_references];
+    mut array_index := 0;
+    while array_index < len(array_references) {
+        mut reference := array_references[array_index];
+        mut query := array_slice.mir_array_slice_array(table, reference.array_id, ctx);
+        if query.found == 0 {
+            return 0;
+        }
+        mut elements: std.Vector[int, ctx] := ctx[query.array_value.elements];
+        if std.str_eq(query.array_value.array_layout_id, reference.array_layout_id) == 0 ||
+           std.str_eq(query.array_value.element_type_id, reference.element_type_id) == 0 ||
+           len(elements) != reference.element_count ||
+           std.str_eq(query.array_value.lifetime_region, reference.lifetime_region) == 0
+        {
+            return 0;
+        }
+        array_index = array_index + 1;
+    }
+
+    mut slice_references: std.Vector[MirSliceReference[ctx], ctx] := ctx[program.slice_references];
+    mut slice_index := 0;
+    while slice_index < len(slice_references) {
+        mut reference := slice_references[slice_index];
+        mut query := array_slice.mir_array_slice_slice(table, reference.slice_id, ctx);
+        if query.found == 0 ||
+           std.str_eq(query.slice_value.source_array_id, reference.source_array_id) == 0 ||
+           std.str_eq(query.slice_value.slice_layout_id, reference.slice_layout_id) == 0 ||
+           std.str_eq(query.slice_value.element_type_id, reference.element_type_id) == 0 ||
+           query.slice_value.start != reference.start ||
+           query.slice_value.length != reference.length ||
+           query.slice_value.data_known_null != reference.data_known_null ||
+           std.str_eq(query.slice_value.lifetime_region, reference.lifetime_region) == 0 ||
+           std.str_eq(query.slice_value.flow_origin, reference.flow_origin) == 0
+        {
+            return 0;
+        }
+        slice_index = slice_index + 1;
+    }
+
+    mut operation_references: std.Vector[MirArraySliceOperationReference[ctx], ctx] := ctx[program.array_slice_operation_references];
+    mut operation_index := 0;
+    while operation_index < len(operation_references) {
+        mut reference := operation_references[operation_index];
+        mut query := array_slice.mir_array_slice_operation(table, reference.operation_name, ctx);
+        if query.found == 0 ||
+           std.str_eq(query.operation.operation_id, reference.operation_id) == 0 ||
+           std.str_eq(query.operation.target_id, reference.target_id) == 0 ||
+           std.str_eq(query.operation.kind, mir_debug_array_slice_operation_kind(reference.operation_kind)) == 0 ||
+           std.str_eq(query.operation.array_id, reference.array_id) == 0 ||
+           std.str_eq(query.operation.slice_id, reference.slice_id) == 0 ||
+           std.str_eq(query.operation.result_slice_id, reference.result_slice_id) == 0 ||
+           std.str_eq(query.operation.element_type_id, reference.element_type_id) == 0 ||
            query.operation.index != reference.index ||
            query.operation.start != reference.start ||
            query.operation.length != reference.length
@@ -2037,6 +2352,21 @@ func mir_make_value_string_view_operation(operands: Index[std.Vector[MirValue[ct
     return value;
 }
 
+
+func mir_make_value_array_slice_operation(operands: Index[std.Vector[MirValue[ctx], ctx], ctx], operation_reference: MirArraySliceOperationReference[ctx], value_type: str, span: token.Span, ctx: &Arena) MirValue[ctx] {
+    mut operation_reference_idx: Index[MirArraySliceOperationReference[ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(operation_reference_idx, operation_reference);
+    mut value: MirValue[ctx];
+    unsafe {
+        value.tag = 9; // ArraySliceOperation
+        value.ArraySliceOperation.operands = operands;
+        value.ArraySliceOperation.operation = operation_reference_idx;
+        value.ArraySliceOperation.value_type = std.Clone(ctx, value_type);
+        value.ArraySliceOperation.span = span;
+    }
+    return value;
+}
+
 func mir_make_terminator_return_void(span: token.Span, ctx: &Arena) MirTerminator[ctx] {
     mut terminator: MirTerminator[ctx];
     unsafe {
@@ -2173,6 +2503,9 @@ func mir_debug_stmt_kind(stmt: MirStmt[ctx]) str {
     if stmt.tag == 4 {
         return "MirStmt.MemoryAccess";
     }
+    if stmt.tag == 5 {
+        return "MirStmt.ArraySliceOperation";
+    }
     return "MirStmt.<unknown>";
 }
 
@@ -2203,6 +2536,9 @@ func mir_debug_value_kind(value: MirValue[ctx]) str {
     }
     if value.tag == 8 {
         return "MirValue.StringViewOperation";
+    }
+    if value.tag == 9 {
+        return "MirValue.ArraySliceOperation";
     }
     return "MirValue.<unknown>";
 }

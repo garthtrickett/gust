@@ -68,6 +68,8 @@ jobs:
 
       - name: Phase 14 strings and string views
         run: just guard-cranelift-phase14-string-view-contract
+      - name: Phase 14 arrays and slices
+        run: just guard-cranelift-phase14-array-slice-contract
 
       - name: Upload Gust build outputs
         uses: actions/upload-artifact@v4
