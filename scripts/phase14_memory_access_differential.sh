@@ -172,21 +172,15 @@ PY
   python3 - "$request_path" "$case_dir/wrong-pointee.request" <<'PY'
 from pathlib import Path
 import sys
-s=Path(sys.argv[1]).read_text()
-lines=s.splitlines()
-u32_layout=None
-for index,line in enumerate(lines):
-    if line.endswith('_type_id: type:gust:u32'):
-        prefix=line.split('_type_id:',1)[0]
-        wanted=prefix+'_id: '
-        u32_layout=next(x.split(': ',1)[1] for x in lines if x.startswith(wanted))
-        break
-if not u32_layout:
-    raise SystemExit('missing u32 layout')
-s=s.replace('memory_access_operation_2_accessed_type_id: type:gust:i32\n','memory_access_operation_2_accessed_type_id: type:gust:u32\n',1)
-old=next(x for x in s.splitlines() if x.startswith('memory_access_operation_2_accessed_layout_id: '))+'\n'
-s=s.replace(old,f'memory_access_operation_2_accessed_layout_id: {u32_layout}\n',1)
-Path(sys.argv[2]).write_text(s)
+source = Path(sys.argv[1]).read_text()
+mutated = source.replace(
+    'memory_access_operation_2_accessed_type_id: type:gust:i32\n',
+    'memory_access_operation_2_accessed_type_id: type:gust:wrong_pointee\n',
+    1,
+)
+if mutated == source:
+    raise SystemExit('missing pointer-origin i32 memory-access operation')
+Path(sys.argv[2]).write_text(mutated)
 PY
   expect_worker_failure "$case_dir/wrong-pointee.request" "$target wrong pointee type" "$case_dir/negative-wrong-pointee" "memory_access_pointee_type_mismatch"
 

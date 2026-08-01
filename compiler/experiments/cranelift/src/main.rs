@@ -6232,6 +6232,27 @@ fn parse_phase14_request_string_view_table(
     let mut views = Vec::with_capacity(view_count);
     for index in 0..view_count {
         let prefix = format!("string_view_view_{index}");
+        let view_id = cursor
+            .take_field(&format!("{prefix}_id"), false, stage, kind)?
+            .to_string();
+        let source_literal_id = cursor
+            .take_field(
+                &format!("{prefix}_source_literal_id"),
+                false,
+                stage,
+                kind,
+            )?
+            .to_string();
+        let start = cursor.take_usize_field(
+            &format!("{prefix}_start"),
+            stage,
+            kind,
+        )?;
+        let length = cursor.take_usize_field(
+            &format!("{prefix}_length"),
+            stage,
+            kind,
+        )?;
         let data_known_null = cursor.take_usize_field(
             &format!("{prefix}_data_known_null"),
             stage,
@@ -6245,27 +6266,10 @@ fn parse_phase14_request_string_view_table(
             ));
         }
         views.push(Phase14RequestStringView {
-            view_id: cursor
-                .take_field(&format!("{prefix}_id"), false, stage, kind)?
-                .to_string(),
-            source_literal_id: cursor
-                .take_field(
-                    &format!("{prefix}_source_literal_id"),
-                    false,
-                    stage,
-                    kind,
-                )?
-                .to_string(),
-            start: cursor.take_usize_field(
-                &format!("{prefix}_start"),
-                stage,
-                kind,
-            )?,
-            length: cursor.take_usize_field(
-                &format!("{prefix}_length"),
-                stage,
-                kind,
-            )?,
+            view_id,
+            source_literal_id,
+            start,
+            length,
             data_known_null: data_known_null == 1,
             lifetime_region: cursor
                 .take_field(
