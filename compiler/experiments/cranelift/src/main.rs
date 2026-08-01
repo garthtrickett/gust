@@ -6477,7 +6477,11 @@ fn phase14_evaluate_string_view_operation(
                     "string_view_identity_mismatch",
                 ));
             };
-            valid(i64::from(view.length == 0), view.start, view.length)
+            valid(
+                if view.length == 0 { 1 } else { 0 },
+                view.start,
+                view.length,
+            )
         }
         "byte_at" => {
             let Some(view) = view(&operation.view_id) else {
@@ -6563,7 +6567,11 @@ fn phase14_evaluate_string_view_operation(
             let equal = lhs.length == rhs.length
                 && lhs_bytes[lhs.start..lhs.start + lhs.length]
                     == rhs_bytes[rhs.start..rhs.start + rhs.length];
-            valid(i64::from(equal), lhs.start, lhs.length)
+            valid(
+                if equal { 1 } else { 0 },
+                lhs.start,
+                lhs.length,
+            )
         }
         other => Err(phase10_backend_request_error(
             Phase10BackendRequestStage::CanonicalMirValidation,

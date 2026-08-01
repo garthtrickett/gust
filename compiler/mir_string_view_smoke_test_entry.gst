@@ -119,13 +119,8 @@ func verify_negatives(ctx: &Arena) {
         if result.success != 0 || std.str_find(result.reason_code, "string_") != 0 {
             fail("String-view smoke: invalid view escaped compiler rejection");
         }
-        mut diagnostic := diagnostics.mir_string_view_diagnostic(
-            result.reason_code,
+        mut diagnostic := diagnostics.mir_string_view_diagnostic_for_rejection(
             classes[class_index],
-            "literal:test",
-            "view:test",
-            0,
-            1,
             "compiler/phase14_string_view_source.gst",
             1,
             1,
