@@ -77,18 +77,16 @@ func mir_array_slice_c_source(table: array_slice.MirArraySliceTable[ctx], layout
     output = std.Concat(output, std.FormatInt(primary_slice_layout.length_offset));
     output = std.Concat(output, ", \"compiler-selected slice length offset mismatch\");\n\n");
 
-    output = std.Concat(output,
-        "static int64_t gust_load(const unsigned char *base, size_t index, size_t count, size_t stride, size_t width) {\n"
-        "    int64_t value = 0;\n"
-        "    if (index >= count) exit(80);\n"
-        "    memcpy(&value, base + index * stride, width);\n"
-        "    return value;\n"
-        "}\n"
-        "static void gust_store(unsigned char *base, size_t index, size_t count, size_t stride, size_t width, int64_t value) {\n"
-        "    if (index >= count) exit(81);\n"
-        "    memcpy(base + index * stride, &value, width);\n"
-        "}\n\n"
-    );
+    output = std.Concat(output, "static int64_t gust_load(const unsigned char *base, size_t index, size_t count, size_t stride, size_t width) {\n");
+    output = std.Concat(output, "    int64_t value = 0;\n");
+    output = std.Concat(output, "    if (index >= count) exit(80);\n");
+    output = std.Concat(output, "    memcpy(&value, base + index * stride, width);\n");
+    output = std.Concat(output, "    return value;\n");
+    output = std.Concat(output, "}\n");
+    output = std.Concat(output, "static void gust_store(unsigned char *base, size_t index, size_t count, size_t stride, size_t width, int64_t value) {\n");
+    output = std.Concat(output, "    if (index >= count) exit(81);\n");
+    output = std.Concat(output, "    memcpy(base + index * stride, &value, width);\n");
+    output = std.Concat(output, "}\n\n");
 
     mut arrays: std.Vector[array_slice.MirArrayValue[ctx], ctx] := ctx[table.arrays];
     mut array_index := 0;

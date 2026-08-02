@@ -204,6 +204,37 @@ func mir_array_slice_make_empty_table(target_triple: str, ctx: &Arena) MirArrayS
     return table;
 }
 
+func mir_array_slice_layout_table(layout_table: layout.MirLayoutTable[ctx], ctx: &Arena) layout.MirLayoutTable[ctx] {
+    mut updated := layout_table;
+    if layout.mir_layout_table_is_valid(layout_table, ctx) == 0 ||
+       layout_table.target.decisions_frozen == 0
+    {
+        return updated;
+    }
+    mut existing := layout.mir_layout_of(
+        layout_table,
+        "type:gust:u8",
+        layout_table.target.target_id,
+        ctx
+    );
+    if existing.found == 1 { return updated; }
+    return layout.mir_layout_table_with_layout(
+        updated,
+        layout.mir_layout_make_scalar_type_layout(
+            "type:gust:u8",
+            layout_table.target.target_id,
+            "scalar_integer",
+            1,
+            1,
+            8,
+            "unsigned",
+            "any_bit_pattern",
+            ctx
+        ),
+        ctx
+    );
+}
+
 func mir_array_slice_table_is_legacy_empty(table: MirArraySliceTable[ctx], ctx: &Arena) int {
     mut array_layouts: std.Vector[MirArrayLayout[ctx], ctx] := ctx[table.array_layouts];
     mut arrays: std.Vector[MirArrayValue[ctx], ctx] := ctx[table.arrays];
