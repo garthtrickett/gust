@@ -785,6 +785,26 @@ PHASE14_ARRAY_SLICE_OPERATION_KINDS = (
     "array_init", "element_address", "element_load", "element_store",
     "array_to_slice", "slice_length", "bounded_index", "subslice",
 )
+PHASE14_STRUCT_VERSION = "phase14_declaration_order_struct_layout_v1"
+PHASE14_STRUCT_MIGRATED_IDS = ("p14_struct_field_layout",)
+PHASE14_STRUCT_OPERATION_KINDS = (
+    "construct", "field_address", "field_load", "field_store",
+)
+PHASE14_STRUCT_NEGATIVE_CLASSES = (
+    "duplicate_field", "misaligned_field", "overlapping_fields",
+    "wrong_field_type", "size_alignment_mismatch", "unknown_field_path",
+)
+PHASE14_ENUM_VERSION = "phase14_enums_and_tagged_unions_v1"
+PHASE14_ENUM_MIGRATED_IDS = ("p14_enum_tagged_union_layout",)
+PHASE14_ENUM_OPERATION_KINDS = (
+    "variant_construct", "tag_read", "variant_test", "payload_project",
+    "match_branch",
+)
+PHASE14_ENUM_NEGATIVE_CLASSES = (
+    "duplicate_discriminant", "discriminant_out_of_range", "invalid_tag_value",
+    "wrong_payload_type", "invalid_payload_projection",
+    "inconsistent_variant_layout",
+)
 PHASE14_STRING_VIEW_LAYOUT_FIELDS = ("data_pointer", "byte_length")
 PHASE14_STRING_VIEW_OPERATION_KINDS = (
     "literal_create", "view_create", "length", "is_empty", "byte_at",
@@ -2762,6 +2782,84 @@ def validate():
                     == list(PHASE14_ARRAY_SLICE_OPERATION_KINDS),
                     f"{entry_id}: array/slice evidence drifted",
                 )
+            elif entry_id in PHASE14_STRUCT_MIGRATED_IDS:
+                require(
+                    closure == PHASE14_STRUCT_VERSION,
+                    f"{entry_id}: struct checkpoint version drifted",
+                )
+                require(
+                    status == "migrated"
+                    and entry["route_owner"] == "generic_canonical_mir",
+                    f"{entry_id}: selected struct row must be migrated through canonical MIR",
+                )
+                require(reason == destination == "none_migrated",
+                        f"{entry_id}: migrated struct row has stale deferral fields")
+                require(entry["current_failure_stage"] == "none_supported",
+                        f"{entry_id}: migrated struct row has a failure stage")
+                fixture(entry["source_fixture"], f"{entry_id}.source_fixture")
+                fixture(entry["canonical_mir_fixture"],
+                        f"{entry_id}.canonical_mir_fixture")
+                require(
+                    entry["differential_case_id"]
+                    == f"phase14_registry_differential:{entry_id}",
+                    f"{entry_id}: struct differential identity drifted",
+                )
+                require(
+                    evidence.get("behavior_policy")
+                    == "declaration_order_structs_migrated_through_compiler_owned_field_offset_padding_size_and_alignment_rules"
+                    and evidence.get("phase14_9_contract") == PHASE14_STRUCT_VERSION
+                    and evidence.get("selected_operation_kinds")
+                    == list(PHASE14_STRUCT_OPERATION_KINDS)
+                    and evidence.get("selected_negative_classes")
+                    == list(PHASE14_STRUCT_NEGATIVE_CLASSES)
+                    and evidence.get("field_order_policy")
+                    == "declaration_order_preserved"
+                    and evidence.get("offset_authority")
+                    == "compiler_owned_offsets_no_backend_relayout"
+                    and evidence.get("padding_policy")
+                    == "natural_alignment_with_tail_padding"
+                    and evidence.get("aggregate_abi_policy")
+                    == "deferred_aggregate_parameter_and_return_abi"
+                    and evidence.get("packed_struct_policy")
+                    == "deferred_packed_structs_and_bitfields",
+                    f"{entry_id}: struct evidence drifted",
+                )
+            elif entry_id in PHASE14_ENUM_MIGRATED_IDS:
+                require(
+                    closure == PHASE14_ENUM_VERSION,
+                    f"{entry_id}: enum checkpoint version drifted",
+                )
+                require(
+                    status == "migrated"
+                    and entry["route_owner"] == "generic_canonical_mir",
+                    f"{entry_id}: selected enum row must be migrated through canonical MIR",
+                )
+                require(reason == destination == "none_migrated",
+                        f"{entry_id}: migrated enum row has stale deferral fields")
+                require(entry["current_failure_stage"] == "none_supported",
+                        f"{entry_id}: migrated enum row has a failure stage")
+                fixture(entry["source_fixture"], f"{entry_id}.source_fixture")
+                fixture(entry["canonical_mir_fixture"],
+                        f"{entry_id}.canonical_mir_fixture")
+                require(
+                    entry["differential_case_id"]
+                    == f"phase14_registry_differential:{entry_id}",
+                    f"{entry_id}: enum differential identity drifted",
+                )
+                require(
+                    evidence.get("behavior_policy")
+                    == "enums_and_tagged_unions_migrated_through_compiler_owned_tag_selection_discriminant_payload_offset_size_and_alignment_rules"
+                    and evidence.get("phase14_10_contract") == PHASE14_ENUM_VERSION
+                    and evidence.get("selected_operation_kinds")
+                    == list(PHASE14_ENUM_OPERATION_KINDS)
+                    and evidence.get("selected_negative_classes")
+                    == list(PHASE14_ENUM_NEGATIVE_CLASSES)
+                    and evidence.get("niche_optimization_policy")
+                    == "deferred_niche_optimization"
+                    and evidence.get("struct_payload_policy")
+                    == "deferred_struct_payloads_not_selected_by_patch14_10",
+                    f"{entry_id}: enum evidence drifted",
+                )
             else:
                 require(
                     closure == PHASE14_LAYOUT_AUTHORITY_VERSION,
@@ -3299,6 +3397,20 @@ def verify_phase14_layout_authority(registry):
                 and entry["closure_version"] == PHASE14_ARRAY_SLICE_VERSION,
                 f"{entry_id}: array/slice migration no longer consumes the layout authority",
             )
+        elif entry_id in PHASE14_STRUCT_MIGRATED_IDS:
+            require(
+                entry["status"] == "migrated"
+                and entry["route_owner"] == "generic_canonical_mir"
+                and entry["closure_version"] == PHASE14_STRUCT_VERSION,
+                f"{entry_id}: struct migration no longer consumes the layout authority",
+            )
+        elif entry_id in PHASE14_ENUM_MIGRATED_IDS:
+            require(
+                entry["status"] == "migrated"
+                and entry["route_owner"] == "generic_canonical_mir"
+                and entry["closure_version"] == PHASE14_ENUM_VERSION,
+                f"{entry_id}: enum migration no longer consumes the layout authority",
+            )
         else:
             require(
                 entry["status"] == "candidate_deferred"
@@ -3474,6 +3586,22 @@ def verify_phase14_primitive_layout(registry):
                 f"{entry_id}: later array/slice checkpoint drifted",
             )
             continue
+        if entry_id in PHASE14_STRUCT_MIGRATED_IDS:
+            require(
+                entry["status"] == "migrated"
+                and entry["route_owner"] == "generic_canonical_mir"
+                and entry["closure_version"] == PHASE14_STRUCT_VERSION,
+                f"{entry_id}: later struct checkpoint drifted",
+            )
+            continue
+        if entry_id in PHASE14_ENUM_MIGRATED_IDS:
+            require(
+                entry["status"] == "migrated"
+                and entry["route_owner"] == "generic_canonical_mir"
+                and entry["closure_version"] == PHASE14_ENUM_VERSION,
+                f"{entry_id}: later enum checkpoint drifted",
+            )
+            continue
         require(
             entry["status"] == "candidate_deferred"
             and entry["route_owner"] == "deferred"
@@ -3630,6 +3758,22 @@ def verify_phase14_integer_conversions(registry):
                 and entry["route_owner"] == "generic_canonical_mir"
                 and entry["closure_version"] == PHASE14_ARRAY_SLICE_VERSION,
                 f"{entry_id}: later array/slice checkpoint drifted",
+            )
+            continue
+        if entry_id in PHASE14_STRUCT_MIGRATED_IDS:
+            require(
+                entry["status"] == "migrated"
+                and entry["route_owner"] == "generic_canonical_mir"
+                and entry["closure_version"] == PHASE14_STRUCT_VERSION,
+                f"{entry_id}: later struct checkpoint drifted",
+            )
+            continue
+        if entry_id in PHASE14_ENUM_MIGRATED_IDS:
+            require(
+                entry["status"] == "migrated"
+                and entry["route_owner"] == "generic_canonical_mir"
+                and entry["closure_version"] == PHASE14_ENUM_VERSION,
+                f"{entry_id}: later enum checkpoint drifted",
             )
             continue
         require(
@@ -3801,6 +3945,8 @@ def verify_phase14_pointers(registry):
         + PHASE14_MEMORY_ACCESS_MIGRATED_IDS
         + PHASE14_STRING_VIEW_MIGRATED_IDS
         + PHASE14_ARRAY_SLICE_MIGRATED_IDS
+        + PHASE14_STRUCT_MIGRATED_IDS
+        + PHASE14_ENUM_MIGRATED_IDS
     )
     for entry_id, entry in rows.items():
         if entry_id in selected_ids:
@@ -4014,6 +4160,8 @@ def verify_phase14_stack_slots(registry):
         + PHASE14_MEMORY_ACCESS_MIGRATED_IDS
         + PHASE14_STRING_VIEW_MIGRATED_IDS
         + PHASE14_ARRAY_SLICE_MIGRATED_IDS
+        + PHASE14_STRUCT_MIGRATED_IDS
+        + PHASE14_ENUM_MIGRATED_IDS
     )
     for entry_id, entry in rows.items():
         if entry_id in selected_ids:
@@ -7801,6 +7949,8 @@ def main():
             "phase14-memory-access-targets",
             "phase14-string-view-targets",
             "phase14-array-slice-targets",
+            "phase14-enum-targets",
+            "phase14-struct-targets",
             "phase14-primitive-primary-target",
             "phase14-conversion-primary-target",
             "phase14-pointer-primary-target",
@@ -7808,6 +7958,8 @@ def main():
             "phase14-memory-access-primary-target",
             "phase14-string-view-primary-target",
             "phase14-array-slice-primary-target",
+            "phase14-enum-primary-target",
+            "phase14-struct-primary-target",
             "project",
             "check-phase13-projection",
             "check-phase14-projection",
@@ -7884,6 +8036,8 @@ def main():
             "phase14-memory-access-targets",
             "phase14-string-view-targets",
             "phase14-array-slice-targets",
+            "phase14-enum-targets",
+            "phase14-struct-targets",
         }:
             contract = validate_phase14_primitive_layout_structure(registry)
             print("\n".join(
@@ -7898,6 +8052,8 @@ def main():
             "phase14-memory-access-primary-target",
             "phase14-string-view-primary-target",
             "phase14-array-slice-primary-target",
+            "phase14-enum-primary-target",
+            "phase14-struct-primary-target",
         }:
             contract = validate_phase14_primitive_layout_structure(registry)
             print(contract["primary_level2_target"])

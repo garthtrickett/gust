@@ -233,6 +233,11 @@
     "guard-cranelift-phase14-string-view-contract": 1,
     "guard-cranelift-phase14-string-view-parity": 2,
     "guard-cranelift-phase14-array-slice-contract": 1,
-    "guard-cranelift-phase14-array-slice-parity": 2
+    "guard-cranelift-phase14-array-slice-parity": 2,
+    "guard-cranelift-phase14-enum-contract": 1,
+    "guard-cranelift-phase14-enum-parity": 2,
+    "guard-cranelift-phase14-struct-contract": 1,
+    "guard-cranelift-phase14-struct-parity": 2,
+    "guard-cranelift-phase14-structs-enums-parity": 2
   }
 }

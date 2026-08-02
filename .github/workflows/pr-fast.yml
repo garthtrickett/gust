@@ -77,6 +77,10 @@ jobs:
         run: just guard-cranelift-phase14-string-view-contract
       - name: Phase 14 arrays and slices
         run: just guard-cranelift-phase14-array-slice-contract
+      - name: Phase 14 declaration-order structs
+        run: just guard-cranelift-phase14-struct-contract
+      - name: Phase 14 enums and tagged unions
+        run: just guard-cranelift-phase14-enum-contract
 
       - name: Upload Gust build outputs
         uses: actions/upload-artifact@v4

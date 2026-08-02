@@ -14681,6 +14681,210 @@ guard-cranelift-phase14-array-slice-parity:
     fi
     bash scripts/phase14_array_slice_differential.sh
 
+guard-cranelift-phase14-struct-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 14 compiler-owned declaration-order struct layout..."
+    authority="compiler/mir_struct_layout.gst"
+    mir="compiler/mir.gst"
+    request="compiler/mir_native_backend_request.gst"
+    mir_to_c="compiler/mir_struct_layout_mir_to_c.gst"
+    diagnostics="compiler/mir_struct_layout_diagnostics.gst"
+    worker="compiler/experiments/cranelift/src/main.rs"
+    smoke="compiler/mir_struct_layout_smoke_test_entry.gst"
+    differential="scripts/phase14_struct_differential.sh"
+    review="compiler/CRANELIFT_PHASE14_STRUCTS.md"
+    registry="scripts/cranelift_feature_registry.json"
+    pr_workflow=".github/workflows/pr-fast.yml"
+
+    required_files=(
+      "$authority" "$mir" "$request" "$mir_to_c" "$diagnostics"
+      "$worker" "$smoke" "$differential" "$review" "$registry"
+      compiler/phase14_struct_source.gst
+      compiler/phase14_struct_composition_source.gst
+      compiler/fixtures/native_backend_phase14_struct_ingestion.mir
+      compiler/fixtures/native_backend_phase14_struct_malformed.mir
+      compiler/p14_struct_duplicate_field_source.gst
+      compiler/p14_struct_field_misaligned_source.gst
+      compiler/p14_struct_field_overlap_source.gst
+      compiler/p14_struct_field_type_mismatch_source.gst
+      compiler/p14_struct_size_alignment_mismatch_source.gst
+      compiler/p14_struct_field_unknown_source.gst
+    )
+    for required_file in "${required_files[@]}"; do
+      test -f "$required_file"
+      test ! -L "$required_file"
+    done
+
+    just guard-cranelift-phase14-array-slice-contract
+    python3 scripts/cranelift_ci_family.py validate
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase14-struct-contract |
+      rg -n -F $'guard-cranelift-phase14-struct-contract\t1\t' >/dev/null
+    bash -n "$differential"
+
+    for token in 'type MirStructField[ctx] struct' 'type MirStructLeaf[ctx] struct' 'type MirStructLayout[ctx] struct' 'type MirStructValue[ctx] struct' 'type MirStructOperation[ctx] struct' 'type MirStructTable[ctx] struct' 'func mir_struct_layout_declared_fields(' 'func mir_struct_leaves(' 'func mir_struct_table_for_layout(' 'func mir_struct_table_is_valid(' 'func mir_serialize_struct_table_for_request(' 'func mir_struct_witness('
+    do
+      rg -n -F "$token" "$authority" >/dev/null
+    done
+    for kind in construct field_address field_load field_store; do
+      rg -n -F "$kind" "$authority" "$mir" "$worker" >/dev/null
+    done
+    for reason in struct_duplicate_field struct_field_misaligned struct_field_overlap struct_field_type_mismatch struct_size_alignment_mismatch struct_field_unknown; do
+      rg -n -F "$reason" "$authority" "$worker" "$differential" >/dev/null
+    done
+    rg -n -F 'declaration_order_preserved' "$authority" "$worker" >/dev/null
+    rg -n -F 'compiler_owned_offsets_no_backend_relayout' "$authority" "$worker" >/dev/null
+    rg -n -F 'natural_alignment_with_tail_padding' "$authority" "$worker" >/dev/null
+    rg -n -F 'deferred_aggregate_parameter_and_return_abi' "$authority" "$worker" "$registry" >/dev/null
+    rg -n -F 'deferred_packed_structs_and_bitfields' "$authority" "$worker" "$registry" >/dev/null
+    rg -n -F 'struct_table: structs.MirStructTable[ctx]' "$request" >/dev/null
+    rg -n -F 'mir_serialize_struct_table_for_request' "$request" >/dev/null
+    rg -n -F 'phase14-struct-witness' "$worker" "$differential" >/dev/null
+    rg -n -F 'gust_struct_diagnostic:' "$diagnostics" >/dev/null
+    rg -n -F 'func mir_program_struct_references_are_valid(' "$mir" >/dev/null
+    rg -n -F 'offsetof(' "$mir_to_c" >/dev/null
+    rg -n -F '"id": "p14_struct_field_layout"' "$registry" >/dev/null
+    rg -n -F '"phase14_9_contract": "phase14_declaration_order_struct_layout_v1"' "$registry" >/dev/null
+
+    struct_ci_count="$(
+      (rg -n -F 'just guard-cranelift-phase14-struct-contract'         .github/workflows --glob '*.yml' || true) | wc -l | tr -d ' '
+    )"
+    if [ "$struct_ci_count" != "1" ]; then
+      echo "Phase 14 struct contract must be wired into CI exactly once, found $struct_ci_count occurrences."
+      exit 1
+    fi
+    rg -n -x -F '        run: just guard-cranelift-phase14-struct-contract' "$pr_workflow" >/dev/null
+
+    if rg -n -e 'std::mem::(size_of|align_of)' -e 'Layout::array' "$worker" >/dev/null; then
+      echo "The Cranelift worker must consume compiler-owned field offsets and padding."
+      exit 1
+    fi
+    echo "✅ Phase 14 declaration-order struct layout contract passed."
+
+guard-cranelift-phase14-struct-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 14 declaration-order struct layout parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase14-struct-parity |
+      rg -n -F $'guard-cranelift-phase14-struct-parity\t2\t' >/dev/null
+    just guard-cranelift-phase14-struct-contract
+    if [ "${PHASE14_STRUCT_SKIP_DYNAMIC:-0}" = "1" ]; then
+      echo "✅ Phase 14 struct static contract passed; dynamic evidence skipped by request."
+      exit 0
+    fi
+    bash scripts/phase14_struct_differential.sh
+
+guard-cranelift-phase14-structs-enums-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 14 structs-enums family parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase14-structs-enums-parity |
+      rg -n -F $'guard-cranelift-phase14-structs-enums-parity\t2\t' >/dev/null
+    if [ "${PHASE14_STRUCTS_ENUMS_SKIP_DYNAMIC:-0}" = "1" ]; then
+      PHASE14_STRUCT_SKIP_DYNAMIC=1 just guard-cranelift-phase14-struct-parity
+      PHASE14_ENUM_SKIP_DYNAMIC=1 just guard-cranelift-phase14-enum-parity
+      echo "✅ Phase 14 structs-enums family static contracts passed; dynamic evidence skipped by request."
+      exit 0
+    fi
+    just guard-cranelift-phase14-struct-parity
+    just guard-cranelift-phase14-enum-parity
+
+guard-cranelift-phase14-enum-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 14 compiler-owned enums and tagged unions..."
+    authority="compiler/mir_enum.gst"
+    mir="compiler/mir.gst"
+    request="compiler/mir_native_backend_request.gst"
+    mir_to_c="compiler/mir_enum_mir_to_c.gst"
+    diagnostics="compiler/mir_enum_diagnostics.gst"
+    worker="compiler/experiments/cranelift/src/main.rs"
+    smoke="compiler/mir_enum_smoke_test_entry.gst"
+    differential="scripts/phase14_enum_differential.sh"
+    review="compiler/CRANELIFT_PHASE14_ENUMS_TAGGED_UNIONS.md"
+    registry="scripts/cranelift_feature_registry.json"
+    pr_workflow=".github/workflows/pr-fast.yml"
+
+    required_files=(
+      "$authority" "$mir" "$request" "$mir_to_c" "$diagnostics"
+      "$worker" "$smoke" "$differential" "$review" "$registry"
+      compiler/phase14_enum_source.gst
+      compiler/phase14_enum_composition_source.gst
+      compiler/fixtures/native_backend_phase14_enum_ingestion.mir
+      compiler/fixtures/native_backend_phase14_enum_malformed.mir
+      compiler/p14_enum_duplicate_discriminant_source.gst
+      compiler/p14_enum_discriminant_out_of_range_source.gst
+      compiler/p14_enum_invalid_tag_value_source.gst
+      compiler/p14_enum_wrong_payload_type_source.gst
+      compiler/p14_enum_invalid_payload_projection_source.gst
+      compiler/p14_enum_inconsistent_variant_layout_source.gst
+    )
+    for required_file in "${required_files[@]}"; do
+      test -f "$required_file"
+      test ! -L "$required_file"
+    done
+
+    just guard-cranelift-phase14-struct-contract
+    python3 scripts/cranelift_ci_family.py validate
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase14-enum-contract |
+      rg -n -F $'guard-cranelift-phase14-enum-contract\t1\t' >/dev/null
+    bash -n "$differential"
+
+    for token in 'type MirEnumVariant[ctx] struct' 'type MirEnumLayout[ctx] struct' 'type MirEnumValue[ctx] struct' 'type MirEnumOperation[ctx] struct' 'type MirEnumTable[ctx] struct' 'func mir_enum_layout_declared_variants(' 'func mir_enum_table_for_layout(' 'func mir_enum_table_is_valid(' 'func mir_serialize_enum_table_for_request(' 'func mir_enum_witness('
+    do
+      rg -n -F "$token" "$authority" >/dev/null
+    done
+    for kind in variant_construct tag_read variant_test payload_project match_branch; do
+      rg -n -F "$kind" "$authority" "$mir" "$worker" >/dev/null
+    done
+    for reason in enum_duplicate_discriminant enum_discriminant_out_of_range enum_invalid_tag_value enum_payload_type_mismatch enum_invalid_payload_projection enum_inconsistent_variant_layout; do
+      rg -n -F "$reason" "$authority" "$worker" "$differential" >/dev/null
+    done
+    rg -n -F 'compiler_owned_tag_selection_no_backend_inference' "$authority" "$worker" >/dev/null
+    rg -n -F 'explicit_tag_with_shared_payload_offset' "$authority" "$worker" >/dev/null
+    rg -n -F 'deferred_niche_optimization' "$authority" "$worker" "$registry" >/dev/null
+    rg -n -F 'deferred_struct_payloads_not_selected_by_patch14_10' "$authority" "$worker" "$registry" >/dev/null
+    rg -n -F 'enum_table: enums.MirEnumTable[ctx]' "$request" >/dev/null
+    rg -n -F 'mir_serialize_enum_table_for_request' "$request" >/dev/null
+    rg -n -F 'phase14-enum-witness' "$worker" "$differential" >/dev/null
+    rg -n -F 'gust_enum_diagnostic:' "$diagnostics" >/dev/null
+    rg -n -F 'func mir_program_enum_references_are_valid(' "$mir" >/dev/null
+    rg -n -F '"id": "p14_enum_tagged_union_layout"' "$registry" >/dev/null
+    rg -n -F '"phase14_10_contract": "phase14_enums_and_tagged_unions_v1"' "$registry" >/dev/null
+
+    enum_ci_count="$(
+      (rg -n -F 'just guard-cranelift-phase14-enum-contract'         .github/workflows --glob '*.yml' || true) | wc -l | tr -d ' '
+    )"
+    if [ "$enum_ci_count" != "1" ]; then
+      echo "Phase 14 enum contract must be wired into CI exactly once, found $enum_ci_count occurrences."
+      exit 1
+    fi
+    rg -n -x -F '        run: just guard-cranelift-phase14-enum-contract' "$pr_workflow" >/dev/null
+
+    if rg -n -e 'std::mem::(size_of|align_of)' -e 'Layout::array' "$worker" >/dev/null; then
+      echo "The Cranelift worker must consume compiler-owned tag and payload layout."
+      exit 1
+    fi
+    echo "✅ Phase 14 enums and tagged unions contract passed."
+
+guard-cranelift-phase14-enum-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 14 enum and tagged-union parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase14-enum-parity |
+      rg -n -F $'guard-cranelift-phase14-enum-parity\t2\t' >/dev/null
+    just guard-cranelift-phase14-enum-contract
+    if [ "${PHASE14_ENUM_SKIP_DYNAMIC:-0}" = "1" ]; then
+      echo "✅ Phase 14 enum static contract passed; dynamic evidence skipped by request."
+      exit 0
+    fi
+    bash scripts/phase14_enum_differential.sh
+
 guard-cranelift-phase14-pointer-memory-parity:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -14727,6 +14931,8 @@ guard-cranelift-contract-fast:
     just guard-cranelift-phase14-memory-access-contract
     just guard-cranelift-phase14-string-view-contract
     just guard-cranelift-phase14-array-slice-contract
+    just guard-cranelift-phase14-struct-contract
+    just guard-cranelift-phase14-enum-contract
 
 guard-cranelift-historical-full:
     #!/usr/bin/env bash
