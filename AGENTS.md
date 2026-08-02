@@ -12,9 +12,12 @@ coherent, bootstrap-safe change that satisfies the selected patch.
 - Base work on `main`.
 - Publish agent work only through an upstream branch under `codex/`.
 - Never push directly to `main`.
-- Open or update a draft pull request for review.
-- Do not approve or merge pull requests.
-- Do not change repository rules, Actions variables, secrets, or permissions.
+- Open or update a draft pull request, then mark it ready after required checks
+  pass.
+- Do not self-approve. Merge only the agent's own upstream `codex/**` pull
+  request after required checks pass and all review conversations are resolved.
+- Do not change repository rules, Actions variables, secrets, or permissions
+  unless the repository owner explicitly requests that configuration change.
 
 ## Repository rules
 

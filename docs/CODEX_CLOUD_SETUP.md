@@ -44,21 +44,21 @@ is missing or does not match.
 Create a branch ruleset for `main` that:
 
 - requires a pull request;
-- requires one human approval;
+- requires no independent approval for an agent-owned `codex/**` pull request;
 - requires conversation resolution;
 - blocks direct and force pushes;
 - blocks branch deletion;
 - does not allow Codex to bypass the ruleset;
 - requires the stable checks produced by a trusted Codex push.
 
-After the first trusted run, select at least:
+After the first trusted run, require `Codex / Trusted actor`. Add PR Fast or
+Heavy Guards checks only after each selected check has completed successfully
+and the repository intends every agent-owned roadmap pull request to wait for
+it.
 
-- `Codex / Trusted actor`;
-- the required PR Fast checks;
-- any Heavy Guards check that is mandatory for the affected roadmap area.
-
-Codex may create or update a draft pull request. It may not approve or merge
-the pull request.
+Codex may create or update a draft pull request, mark it ready after required
+checks pass, and merge its own upstream `codex/**` pull request through the
+protected branch. It may not push directly to `main` or bypass the ruleset.
 
 ## 4. Verify that a public fork cannot consume runners
 
@@ -99,7 +99,7 @@ If those pass, run make test. Run make bootstrap only when required by the
 affected self-hosting path.
 
 Do not weaken tests, modify unrelated code, commit generated output, push to
-main, approve, or merge.
+main, or merge before the required checks pass and conversations are resolved.
 
 Publish the result through an upstream codex/** branch and a draft pull
 request. Include the root cause, exact commands, results, and remaining
@@ -112,7 +112,7 @@ For the first 20 to 30 tasks:
 
 - use one Codex attempt at a time;
 - use one roadmap patch per branch;
-- keep merge approval human-controlled;
+- keep merges automated only through protected `codex/**` pull requests;
 - record Codex usage, Actions minutes, retries, and accepted patches;
 - do not build an automatic CI-to-Codex retry loop yet.
 

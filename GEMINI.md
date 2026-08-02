@@ -231,11 +231,13 @@ checked-out Gust repository.
 - Repository-local builds, focused guards, and tests are permitted.
 - Read-only Git inspection is permitted.
 - Publishing changes through an upstream `codex/**` branch and draft pull
-  request is permitted.
+  request is permitted. The agent may mark its own pull request ready and merge
+  it after required checks pass and all review conversations are resolved.
 - Pushing directly to protected branches is prohibited.
-- Approving or merging pull requests is prohibited.
+- Self-approval is not required and must not be used as a substitute for the
+  protected merge requirements.
 - Changing repository rules, Actions variables, secrets, or permissions is
-  prohibited.
+  prohibited unless the repository owner explicitly requests the change.
 - Accessing production systems or external secrets is prohibited.
 - Tests and guards may not be weakened, removed, skipped, or bypassed to
   obtain a pass.
