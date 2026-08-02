@@ -5123,6 +5123,28 @@ func typechecker_starts_with(s: str, prefix: str) int {
     return 0;
 }
 
+func typechecker_matches_template_prefix(name: str, template_name: str) int {
+    mut prefix_len := len(template_name) + 1;
+    if len(name) < prefix_len {
+        return 0;
+    }
+    mut i := 0;
+    while i < len(template_name) {
+        mut expected := std.str_byte_at(template_name, i);
+        if expected == 46 { // '.'
+            expected = 95; // '_'
+        }
+        if std.str_byte_at(name, i) != expected {
+            return 0;
+        }
+        i = i + 1;
+    }
+    if std.str_byte_at(name, len(template_name)) != 95 { // '_'
+        return 0;
+    }
+    return 1;
+}
+
 func typechecker_extract_brand_from_suffix(suffix: str, ctx: &Arena) str {
     mut brands: std.Vector[str, ctx] := std.VectorNew(ctx);
     brands.Push("ctx");
@@ -8196,29 +8218,13 @@ func env_resolve_type(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena)
                 mut k_idx := 0;
                 while k_idx < len(s_keys) && matched == 0 {
                     mut tmpl_name := s_keys[k_idx];
-                    mut prefix := "";
-                    mut j := 0;
-                    while j < len(tmpl_name) {
-                        mut b := std.str_byte_at(tmpl_name, j);
-                        if b == 46 { // '.'
-                            prefix = std.Concat(prefix, "_");
-                        } else {
-                            prefix = std.Concat(prefix, std.str_slice(tmpl_name, j, j + 1));
-                        }
-                        j = j + 1;
-                    }
-                    prefix = std.Concat(prefix, "_");
-
-                    if len(clean_namespaced_name) >= len(prefix) {
-                        mut pfx_part := std.str_slice(clean_namespaced_name, 0, len(prefix));
-                        if std.str_eq(pfx_part, prefix) {
-                            mut suffix := std.str_slice(clean_namespaced_name, len(prefix), len(clean_namespaced_name));
-                            mut parsed_args := parse_types_from_suffix(env, suffix, ctx);
-                            mut mono_res := monomorphize(env, tmpl_name, parsed_args, ctx);
-                            if mono_res.tag == 0 { // Ok
-                                matched_val = mono_res.Ok.val;
-                                matched = 1;
-                            }
+                    if typechecker_matches_template_prefix(clean_namespaced_name, tmpl_name) == 1 {
+                        mut suffix := std.str_slice(clean_namespaced_name, len(tmpl_name) + 1, len(clean_namespaced_name));
+                        mut parsed_args := parse_types_from_suffix(env, suffix, ctx);
+                        mut mono_res := monomorphize(env, tmpl_name, parsed_args, ctx);
+                        if mono_res.tag == 0 { // Ok
+                            matched_val = mono_res.Ok.val;
+                            matched = 1;
                         }
                     }
                     k_idx = k_idx + 1;
@@ -8228,28 +8234,14 @@ func env_resolve_type(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena)
                     mut e_keys := typechecker_get_sorted_keys_enum_template(&(*env).enum_templates, ctx);
                     mut ek_idx := 0;
                     while ek_idx < len(e_keys) && matched == 0 {
-                        mut tmpl_name := e_keys[ek_idx];                        mut prefix := "";
-                        mut j := 0;
-                        while j < len(tmpl_name) {
-                            mut b := std.str_byte_at(tmpl_name, j);
-                            if b == 46 { // '.'
-                                prefix = std.Concat(prefix, "_");
-                            } else {
-                                prefix = std.Concat(prefix, std.str_slice(tmpl_name, j, j + 1));
-                            }
-                            j = j + 1;
-                        }
-                        prefix = std.Concat(prefix, "_");
-
-                        if len(clean_namespaced_name) >= len(prefix) {
-                            if std.str_eq(std.str_slice(clean_namespaced_name, 0, len(prefix)), prefix) {
-                                mut suffix := std.str_slice(clean_namespaced_name, len(prefix), len(clean_namespaced_name));
-                                mut parsed_args := parse_types_from_suffix(env, suffix, ctx);
-                                mut mono_res := monomorphize(env, tmpl_name, parsed_args, ctx);
-                                if mono_res.tag == 0 { // Ok
-                                    matched_val = mono_res.Ok.val;
-                                    matched = 1;
-                                }
+                        mut tmpl_name := e_keys[ek_idx];
+                        if typechecker_matches_template_prefix(clean_namespaced_name, tmpl_name) == 1 {
+                            mut suffix := std.str_slice(clean_namespaced_name, len(tmpl_name) + 1, len(clean_namespaced_name));
+                            mut parsed_args := parse_types_from_suffix(env, suffix, ctx);
+                            mut mono_res := monomorphize(env, tmpl_name, parsed_args, ctx);
+                            if mono_res.tag == 0 { // Ok
+                                matched_val = mono_res.Ok.val;
+                                matched = 1;
                             }
                         }
                         ek_idx = ek_idx + 1;

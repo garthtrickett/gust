@@ -1832,11 +1832,6 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
             mut alloc_t := codegen_get_expression_type(alloc_idx, env, ctx);
             mut idx_t := codegen_get_expression_type(index_idx, env, ctx);
 
-            mut log_idx_access := std.Concat("// 🔬 IndexAccess codegen: allocator type is ", ast.serialize_type(alloc_t, ctx));
-            log_idx_access = std.Concat(log_idx_access, ", index type is ");
-            log_idx_access = std.Concat(log_idx_access, ast.serialize_type(idx_t, ctx));
-            os.LogStr(log_idx_access);
-
             mut is_arena := 0;
             if alloc_t.tag == 4 { // Arena
                 is_arena = 1;
@@ -3909,7 +3904,7 @@ func codegen_generate_block_statement(block_idx: Index[ast.BlockStatement[ctx], 
         }
         mut block_val_codegen_block := ctx[block_idx];
         mut body_statements_codegen_block: std.Vector[ast.Statement[ctx], ctx] := ctx[block_val_codegen_block.statements];
-        mut res := "";
+        mut chunks: std.Vector[str, ctx] := std.VectorNew(ctx);
         mut defer_stack: std.Vector[str, ctx] := std.VectorNew(ctx);
         mut j := 0;
         while j < len(body_statements_codegen_block) {
@@ -3925,17 +3920,18 @@ func codegen_generate_block_statement(block_idx: Index[ast.BlockStatement[ctx], 
                 defer_stack.Push(std.Clone(ctx, formatted));
             } else {
                 mut child_c := codegen_generate_statement(child_stmt_idx, env, ctx);
-                res = std.Concat(res, child_c);
+                chunks.Push(child_c);
             }
             j = j + 1;
         }
         mut k := len(defer_stack) - 1;
         while k >= 0 {
             mut defer_str := defer_stack[k];
-            res = std.Concat(res, defer_str);
+            chunks.Push(defer_str);
             k = k - 1;
         }
-        return std.Clone(ctx, res);
+        mut generated := codegen_join_chunks(chunks, ctx);
+        return std.Clone(ctx, generated);
     }
 }
 
@@ -4222,13 +4218,27 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
                 mut rhs_type := codegen_get_expression_type(value, env, ctx);
                 mut wrapper_c_type := codegen_get_c_type(rhs_type, env, ctx);
 
+                // Derive the bound value type from this guard's wrapper. The
+                // environment's variable map is keyed only by identifier, so
+                // an unrelated binding with the same name can overwrite it
+                // before code generation starts.
                 mut var_c_type := "unknown";
-                mut lookup := (*env).variable_types.get_opt(name);
-                match lookup {
-                    Some { val } => {
-                        var_c_type = codegen_get_c_type(*val, env, ctx);
-                    }
-                    None => {
+                mut resolved_rhs_type := typechecker.env_resolve_type(env, rhs_type, ctx);
+                if resolved_rhs_type.tag == 8 { // Struct
+                    mut layout_lookup := (*env).struct_registry.get_opt(resolved_rhs_type.Struct.struct_name);
+                    match layout_lookup {
+                        Some { val } => {
+                            mut val_type_lookup := (*val).fields.get_opt("Val");
+                            match val_type_lookup {
+                                Some { val } => {
+                                    var_c_type = codegen_get_c_type(*val, env, ctx);
+                                }
+                                None => {
+                                }
+                            }
+                        }
+                        None => {
+                        }
                     }
                 }
 
