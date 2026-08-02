@@ -18,9 +18,9 @@
 
 ## Derived status totals
 
-- `candidate_deferred`: `4`
+- `candidate_deferred`: `3`
 - `deferred`: `7`
-- `migrated`: `30`
+- `migrated`: `31`
 - `replaced`: `11`
 
 ## Derived feature-family totals
@@ -59,13 +59,13 @@
 
 ## Derived route-owner totals
 
-- `deferred`: `22`
-- `generic_canonical_mir`: `30`
+- `deferred`: `21`
+- `generic_canonical_mir`: `31`
 
 ## Derived deferred-destination totals
 
 - `phase13`: `7`
-- `phase14`: `4`
+- `phase14`: `3`
 
 ## Phase 11 semantic closure summary
 
@@ -125,7 +125,7 @@ The frozen Patch 14.0 opening snapshot is inventory-only. Patch 14.1 adds the co
 - Compiler-owned queries: `6`
 - Registered consumers: `5`
 - Request rejection classes: `6`
-- Phase 14 opening rows still deferred: `4`
+- Phase 14 opening rows still deferred: `3`
 
 Patch 14.1 established authority and transport. Patches 14.2 through 14.6 consume that authority for declared targets, primitives, conversions, pointers, stack slots, and bounded typed memory access.
 
@@ -136,7 +136,7 @@ Patch 14.1 established authority and transport. Patches 14.2 through 14.6 consum
 - Declared host targets: `5`
 - Primitive scalar types: `7`
 - Migrated opening rows: `4`
-- Remaining deferred opening rows: `4`
+- Remaining deferred opening rows: `3`
 - Primary Level 2 target: `x86_64-unknown-linux-gnu`
 - Registry-derived focused family: `primitive-layout`
 
@@ -150,7 +150,7 @@ Patch 14.2 freezes target-aware primitive representation. Patch 14.3 consumes th
 - Canonical conversion kinds: `8`
 - Selected conversion rules per target: `18`
 - Migrated opening rows: `1`
-- Remaining deferred opening rows: `4`
+- Remaining deferred opening rows: `3`
 - Registry-derived focused family: `conversions`
 
 Patch 14.3 freezes explicit integer conversion operations for constant folding and runtime lowering. Patch 14.4 consumes that authority for bounded typed pointers while unrestricted pointer/integer and floating-point conversions remain deferred.
@@ -164,7 +164,7 @@ Patch 14.3 freezes explicit integer conversion operations for constant folding a
 - Canonical pointer operation kinds: `8`
 - Selected pointer operations per target: `11`
 - Migrated opening rows: `1`
-- Remaining deferred opening rows: `4`
+- Remaining deferred opening rows: `3`
 - Registry-derived focused family: `pointer-memory`
 
 Patch 14.4 freezes bounded typed pointer identity, default-address-space metadata, provenance, nullability checks, comparisons, and safe aggregate storage. Patch 14.6 selects naturally aligned non-null i32 loads and stores; broader dereference, pointer arithmetic, unrestricted integer/pointer casts, non-default address spaces, and unsupported pointees remain rejected or deferred before worker access.
@@ -178,7 +178,7 @@ Patch 14.4 freezes bounded typed pointer identity, default-address-space metadat
 - Canonical operation kinds: `6`
 - Selected operations per target: `11`
 - Migrated opening rows: `1`
-- Remaining deferred opening rows: `4`
+- Remaining deferred opening rows: `3`
 - Registry-derived focused family: `pointer-memory`
 
 Patch 14.5 freezes deterministic compiler-owned stack-slot identities, layout-derived size and alignment, initialization and lifetime validation, address acquisition, assignment, and bounded aggregate copies. Patch 14.6 consumes those slots for selected typed memory operations; dynamic allocation, variable-sized slots, escaping addresses, destructor-bearing resources, and unsupported aliasing remain rejected or deferred before driver access.
@@ -192,7 +192,7 @@ Patch 14.5 freezes deterministic compiler-owned stack-slot identities, layout-de
 - Canonical operation kinds: `4`
 - Selected operations per target: `6`
 - Migrated opening rows: `1`
-- Remaining deferred opening rows: `4`
+- Remaining deferred opening rows: `3`
 - Registry-derived focused family: `pointer-memory`
 
 Patch 14.6 freezes bounded naturally aligned i32 loads, stores, compiler-derived element offsets, and non-overlapping copies. Unaligned, zero-sized, known-null, overlapping, atomic, volatile, and unrestricted pointer accesses remain rejected or deferred.
@@ -207,7 +207,7 @@ Patch 14.6 freezes bounded naturally aligned i32 loads, stores, compiler-derived
 - Canonical operation kinds: `7`
 - Selected operations per target: `13`
 - Migrated opening rows: `1`
-- Remaining deferred opening rows: `4`
+- Remaining deferred opening rows: `3`
 - Registry-derived focused family: `strings-views`
 
 Patch 14.7 selects immutable UTF-8 literal storage and borrowed explicit-byte-length views, including embedded NUL data. Dynamic owning allocation, mutation, and concatenation remain narrowly deferred.
@@ -262,7 +262,7 @@ Patch 14.7 selects immutable UTF-8 literal storage and borrowed explicit-byte-le
 | p14_stack_slot_addressable_locals | phase14 | phase13_residual:p14_aggregate_locals | pointer_memory | pointer-memory | migrated | generic_canonical_mir | worker_pointer_memory_lowering | canonical_mir_memory_verifier | compiler/phase14_stack_slot_addressable_source.gst | compiler/fixtures/native_backend_phase14_stack_slot_ingestion.mir | phase14_registry_differential:p14_stack_slot_addressable_locals | none_migrated | none_migrated | phase14_deterministic_stack_slots_and_addressable_locals_v1 |
 | p14_typed_load_store_memory_access | phase14 | phase14_category:loads_and_stores | pointer_memory | pointer-memory | migrated | generic_canonical_mir | worker_pointer_memory_lowering | canonical_mir_memory_verifier | compiler/phase14_typed_memory_access_source.gst | compiler/fixtures/native_backend_phase14_memory_access_ingestion.mir | phase14_registry_differential:p14_typed_load_store_memory_access | none_migrated | none_migrated | phase14_typed_load_store_memory_access_v1 |
 | p14_string_and_string_view_layout | phase14 | phase14_category:strings_and_string_views | string_view | strings-views | migrated | generic_canonical_mir | worker_string_view_lowering | canonical_mir_string_view_verifier | compiler/phase14_string_view_source.gst | compiler/fixtures/native_backend_phase14_string_view_ingestion.mir | phase14_registry_differential:p14_string_and_string_view_layout | none_migrated | none_migrated | phase14_string_literals_and_borrowed_views_v1 |
-| p14_array_and_slice_layout | phase14 | phase14_category:arrays_and_slices | array_slice | arrays-slices | candidate_deferred | deferred | worker_array_slice_lowering | canonical_mir_array_slice_verifier | compiler/p14_array_and_slice_layout_deferred_source.gst | none_rejected_before_canonical_MIR | phase14_opening:p14_array_and_slice_layout | phase14 | phase14_authority_p14_array_and_slice_layout_awaits_bounded_capability_migration | phase14_compiler_owned_layout_authority_v1 |
+| p14_array_and_slice_layout | phase14 | phase14_category:arrays_and_slices | array_slice | arrays-slices | migrated | generic_canonical_mir | worker_array_slice_lowering | canonical_mir_array_slice_verifier | compiler/phase14_array_slice_source.gst | compiler/fixtures/native_backend_phase14_array_slice_ingestion.mir | phase14_registry_differential:p14_array_and_slice_layout | none_migrated | none_migrated | phase14_fixed_arrays_and_bounded_slices_v1 |
 | p14_struct_field_layout | phase14 | phase14_category:structs | aggregate_layout | structs-enums | candidate_deferred | deferred | worker_aggregate_layout_lowering | canonical_mir_aggregate_layout_verifier | compiler/p14_struct_field_layout_deferred_source.gst | none_rejected_before_canonical_MIR | phase14_opening:p14_struct_field_layout | phase14 | phase14_authority_p14_struct_field_layout_awaits_bounded_capability_migration | phase14_compiler_owned_layout_authority_v1 |
 | p14_enum_tagged_union_layout | phase14 | phase14_category:enums_and_tagged_unions | aggregate_layout | structs-enums | candidate_deferred | deferred | worker_aggregate_layout_lowering | canonical_mir_aggregate_layout_verifier | compiler/p14_enum_tagged_union_layout_deferred_source.gst | none_rejected_before_canonical_MIR | phase14_opening:p14_enum_tagged_union_layout | phase14 | phase14_authority_p14_enum_tagged_union_layout_awaits_bounded_capability_migration | phase14_compiler_owned_layout_authority_v1 |
 | p14_aggregate_basic_block_transport | phase14 | phase13_entry:p13_general_loop_backedge_source_route | aggregate_layout | aggregate-flow | candidate_deferred | deferred | worker_aggregate_layout_lowering | canonical_mir_aggregate_layout_verifier | compiler/p14_aggregate_basic_block_transport_deferred_source.gst | none_rejected_before_canonical_MIR | phase14_opening:p14_aggregate_basic_block_transport | phase14 | phase14_authority_p14_aggregate_basic_block_transport_awaits_bounded_capability_migration | phase14_compiler_owned_layout_authority_v1 |
