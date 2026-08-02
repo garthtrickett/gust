@@ -117,3 +117,14 @@ For the first 20 to 30 tasks:
 - do not build an automatic CI-to-Codex retry loop yet.
 
 GitHub Actions is authoritative. Codex Cloud's sandbox checks are advisory.
+
+## 7. Autonomous loop smoke test
+
+Before the first compiler patch, use one documentation-only task to verify the
+self-service loop end to end. The task must use a fresh upstream `codex/**`
+branch, pass the trusted-actor check, open as a draft pull request, become ready
+after required checks pass, resolve any review conversations, and merge through
+the protected `main` ruleset without a direct push or bypass.
+
+The smoke task must not change compiler behavior, generated artifacts, roadmap
+rows, registry rows, dependencies, or test policy.
