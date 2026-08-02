@@ -25,6 +25,8 @@ import "mir_stack_slot.gst" as stack_slot;
 import "mir_memory_access.gst" as memory_access;
 import "mir_string_view.gst" as string_view;
 import "mir_array_slice.gst" as array_slice;
+import "mir_struct_layout.gst" as structs;
+import "mir_enum.gst" as enums;
 
 type MirTypeLayoutReference[ctx] struct {
     type_id: str,
@@ -271,6 +273,87 @@ type MirArraySliceOperationReference[ctx] struct {
     length: int
 }
 
+type MirStructOperationKind enum {
+    Construct,
+    FieldAddress,
+    FieldLoad,
+    FieldStore
+}
+
+type MirStructLayoutReference[ctx] struct {
+    layout_id: str,
+    struct_type_id: str,
+    target_id: str,
+    size: int,
+    alignment: int,
+    field_count: int,
+    nesting_depth: int
+}
+
+type MirStructValueReference[ctx] struct {
+    value_id: str,
+    layout_id: str,
+    scalar_count: int,
+    storage_region: str,
+    flow_origin: str
+}
+
+type MirStructOperationReference[ctx] struct {
+    operation_id: str,
+    operation_name: str,
+    target_id: str,
+    operation_kind: MirStructOperationKind,
+    value_id: str,
+    field_path: str
+}
+
+type MirEnumOperationKind enum {
+    VariantConstruct,
+    TagRead,
+    VariantTest,
+    PayloadProject,
+    MatchBranch
+}
+
+type MirEnumLayoutReference[ctx] struct {
+    layout_id: str,
+    enum_type_id: str,
+    target_id: str,
+    tag_type_id: str,
+    tag_layout_id: str,
+    tag_width: int,
+    tag_alignment: int,
+    tag_offset: int,
+    discriminant_assignment: str,
+    variant_count: int,
+    payload_offset: int,
+    max_payload_size: int,
+    max_payload_alignment: int,
+    size: int,
+    alignment: int
+}
+
+type MirEnumValueReference[ctx] struct {
+    value_id: str,
+    enum_layout_id: str,
+    enum_type_id: str,
+    variant_name: str,
+    discriminant: int,
+    payload_value_count: int,
+    storage_region: str,
+    flow_origin: str
+}
+
+type MirEnumOperationReference[ctx] struct {
+    operation_id: str,
+    operation_name: str,
+    target_id: str,
+    operation_kind: MirEnumOperationKind,
+    value_id: str,
+    variant_name: str,
+    payload_index: int
+}
+
 type MirProgram[ctx] struct {
     functions: Index[std.Vector[MirFunction[ctx], ctx], ctx],
     resource_metadata: Index[std.Vector[MirResourceMetadata[ctx], ctx], ctx],
@@ -290,7 +373,13 @@ type MirProgram[ctx] struct {
     array_layout_references: Index[std.Vector[MirArrayLayoutReference[ctx], ctx], ctx],
     array_value_references: Index[std.Vector[MirArrayValueReference[ctx], ctx], ctx],
     slice_references: Index[std.Vector[MirSliceReference[ctx], ctx], ctx],
-    array_slice_operation_references: Index[std.Vector[MirArraySliceOperationReference[ctx], ctx], ctx]
+    array_slice_operation_references: Index[std.Vector[MirArraySliceOperationReference[ctx], ctx], ctx],
+    struct_layout_references: Index[std.Vector[MirStructLayoutReference[ctx], ctx], ctx],
+    struct_value_references: Index[std.Vector[MirStructValueReference[ctx], ctx], ctx],
+    struct_operation_references: Index[std.Vector[MirStructOperationReference[ctx], ctx], ctx],
+    enum_layout_references: Index[std.Vector[MirEnumLayoutReference[ctx], ctx], ctx],
+    enum_value_references: Index[std.Vector[MirEnumValueReference[ctx], ctx], ctx],
+    enum_operation_references: Index[std.Vector[MirEnumOperationReference[ctx], ctx], ctx]
 }
 
 type MirFunction[ctx] struct {
@@ -698,6 +787,48 @@ func mir_empty_array_slice_operation_reference_vector(ctx: &Arena) Index[std.Vec
     return references_idx;
 }
 
+func mir_empty_struct_layout_reference_vector(ctx: &Arena) Index[std.Vector[MirStructLayoutReference[ctx], ctx], ctx] {
+    mut references: std.Vector[MirStructLayoutReference[ctx], ctx] := std.VectorNew(ctx);
+    mut references_idx: Index[std.Vector[MirStructLayoutReference[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(references_idx, references);
+    return references_idx;
+}
+
+func mir_empty_struct_value_reference_vector(ctx: &Arena) Index[std.Vector[MirStructValueReference[ctx], ctx], ctx] {
+    mut references: std.Vector[MirStructValueReference[ctx], ctx] := std.VectorNew(ctx);
+    mut references_idx: Index[std.Vector[MirStructValueReference[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(references_idx, references);
+    return references_idx;
+}
+
+func mir_empty_struct_operation_reference_vector(ctx: &Arena) Index[std.Vector[MirStructOperationReference[ctx], ctx], ctx] {
+    mut references: std.Vector[MirStructOperationReference[ctx], ctx] := std.VectorNew(ctx);
+    mut references_idx: Index[std.Vector[MirStructOperationReference[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(references_idx, references);
+    return references_idx;
+}
+
+func mir_empty_enum_layout_reference_vector(ctx: &Arena) Index[std.Vector[MirEnumLayoutReference[ctx], ctx], ctx] {
+    mut references: std.Vector[MirEnumLayoutReference[ctx], ctx] := std.VectorNew(ctx);
+    mut references_idx: Index[std.Vector[MirEnumLayoutReference[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(references_idx, references);
+    return references_idx;
+}
+
+func mir_empty_enum_value_reference_vector(ctx: &Arena) Index[std.Vector[MirEnumValueReference[ctx], ctx], ctx] {
+    mut references: std.Vector[MirEnumValueReference[ctx], ctx] := std.VectorNew(ctx);
+    mut references_idx: Index[std.Vector[MirEnumValueReference[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(references_idx, references);
+    return references_idx;
+}
+
+func mir_empty_enum_operation_reference_vector(ctx: &Arena) Index[std.Vector[MirEnumOperationReference[ctx], ctx], ctx] {
+    mut references: std.Vector[MirEnumOperationReference[ctx], ctx] := std.VectorNew(ctx);
+    mut references_idx: Index[std.Vector[MirEnumOperationReference[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(references_idx, references);
+    return references_idx;
+}
+
 func mir_value_vector_with_value(values_idx: Index[std.Vector[MirValue[ctx], ctx], ctx], value: MirValue[ctx], ctx: &Arena) Index[std.Vector[MirValue[ctx], ctx], ctx] {
     mut values: std.Vector[MirValue[ctx], ctx] := ctx[values_idx];
     values.Push(value);
@@ -738,6 +869,12 @@ func mir_make_program(ctx: &Arena) MirProgram[ctx] {
     program.array_value_references = mir_empty_array_value_reference_vector(ctx);
     program.slice_references = mir_empty_slice_reference_vector(ctx);
     program.array_slice_operation_references = mir_empty_array_slice_operation_reference_vector(ctx);
+    program.struct_layout_references = mir_empty_struct_layout_reference_vector(ctx);
+    program.struct_value_references = mir_empty_struct_value_reference_vector(ctx);
+    program.struct_operation_references = mir_empty_struct_operation_reference_vector(ctx);
+    program.enum_layout_references = mir_empty_enum_layout_reference_vector(ctx);
+    program.enum_value_references = mir_empty_enum_value_reference_vector(ctx);
+    program.enum_operation_references = mir_empty_enum_operation_reference_vector(ctx);
     return program;
 }
 
@@ -1502,6 +1639,316 @@ func mir_program_array_slice_references_are_valid(program: MirProgram[ctx], tabl
            query.operation.index != reference.index ||
            query.operation.start != reference.start ||
            query.operation.length != reference.length
+        {
+            return 0;
+        }
+        operation_index = operation_index + 1;
+    }
+    return 1;
+}
+
+func mir_struct_operation_kind_from_name(kind: str) MirStructOperationKind {
+    mut result: MirStructOperationKind;
+    unsafe {
+        result.tag = 0;
+        if std.str_eq(kind, "field_address") == 1 { result.tag = 1; }
+        if std.str_eq(kind, "field_load") == 1 { result.tag = 2; }
+        if std.str_eq(kind, "field_store") == 1 { result.tag = 3; }
+    }
+    return result;
+}
+
+func mir_debug_struct_operation_kind(kind: MirStructOperationKind) str {
+    unsafe {
+        if kind.tag == 0 { return "construct"; }
+        if kind.tag == 1 { return "field_address"; }
+        if kind.tag == 2 { return "field_load"; }
+        if kind.tag == 3 { return "field_store"; }
+    }
+    return "struct_unknown";
+}
+
+func mir_make_struct_layout_reference(value: structs.MirStructLayout[ctx], ctx: &Arena) MirStructLayoutReference[ctx] {
+    mut reference: MirStructLayoutReference[ctx];
+    reference.layout_id = std.Clone(ctx, value.layout_id);
+    reference.struct_type_id = std.Clone(ctx, value.struct_type_id);
+    reference.target_id = std.Clone(ctx, value.target_id);
+    reference.size = value.size;
+    reference.alignment = value.alignment;
+    reference.field_count = value.field_count;
+    reference.nesting_depth = value.nesting_depth;
+    return reference;
+}
+
+func mir_make_struct_value_reference(value: structs.MirStructValue[ctx], ctx: &Arena) MirStructValueReference[ctx] {
+    mut reference: MirStructValueReference[ctx];
+    reference.value_id = std.Clone(ctx, value.value_id);
+    reference.layout_id = std.Clone(ctx, value.layout_id);
+    mut scalars: std.Vector[int, ctx] := ctx[value.scalar_values];
+    reference.scalar_count = len(scalars);
+    reference.storage_region = std.Clone(ctx, value.storage_region);
+    reference.flow_origin = std.Clone(ctx, value.flow_origin);
+    return reference;
+}
+
+func mir_make_struct_operation_reference(value: structs.MirStructOperation[ctx], ctx: &Arena) MirStructOperationReference[ctx] {
+    mut reference: MirStructOperationReference[ctx];
+    reference.operation_id = std.Clone(ctx, value.operation_id);
+    reference.operation_name = std.Clone(ctx, value.operation_name);
+    reference.target_id = std.Clone(ctx, value.target_id);
+    reference.operation_kind = mir_struct_operation_kind_from_name(value.kind);
+    reference.value_id = std.Clone(ctx, value.value_id);
+    reference.field_path = std.Clone(ctx, value.field_path);
+    return reference;
+}
+
+func mir_program_with_struct_layout_reference(program: MirProgram[ctx], reference: MirStructLayoutReference[ctx], ctx: &Arena) MirProgram[ctx] {
+    mut updated := program;
+    mut references: std.Vector[MirStructLayoutReference[ctx], ctx] := ctx[updated.struct_layout_references];
+    references.Push(reference);
+    ctx.Set(updated.struct_layout_references, references);
+    return updated;
+}
+
+func mir_program_with_struct_value_reference(program: MirProgram[ctx], reference: MirStructValueReference[ctx], ctx: &Arena) MirProgram[ctx] {
+    mut updated := program;
+    mut references: std.Vector[MirStructValueReference[ctx], ctx] := ctx[updated.struct_value_references];
+    references.Push(reference);
+    ctx.Set(updated.struct_value_references, references);
+    return updated;
+}
+
+func mir_program_with_struct_operation_reference(program: MirProgram[ctx], reference: MirStructOperationReference[ctx], ctx: &Arena) MirProgram[ctx] {
+    mut updated := program;
+    mut references: std.Vector[MirStructOperationReference[ctx], ctx] := ctx[updated.struct_operation_references];
+    references.Push(reference);
+    ctx.Set(updated.struct_operation_references, references);
+    return updated;
+}
+
+func mir_program_struct_references_are_valid(program: MirProgram[ctx], table: structs.MirStructTable[ctx], layout_table: layout.MirLayoutTable[ctx], ctx: &Arena) int {
+    if structs.mir_struct_table_is_valid(table, layout_table, ctx) == 0 ||
+       structs.mir_struct_table_is_legacy_empty(table, ctx) == 1
+    {
+        return 0;
+    }
+
+    mut layout_references: std.Vector[MirStructLayoutReference[ctx], ctx] := ctx[program.struct_layout_references];
+    mut layout_index := 0;
+    while layout_index < len(layout_references) {
+        mut reference := layout_references[layout_index];
+        mut query := structs.mir_struct_layout(table, reference.layout_id, ctx);
+        if query.found == 0 ||
+           std.str_eq(query.value.struct_type_id, reference.struct_type_id) == 0 ||
+           std.str_eq(query.value.target_id, reference.target_id) == 0 ||
+           query.value.size != reference.size ||
+           query.value.alignment != reference.alignment ||
+           query.value.field_count != reference.field_count ||
+           query.value.nesting_depth != reference.nesting_depth
+        {
+            return 0;
+        }
+        layout_index = layout_index + 1;
+    }
+
+    mut value_references: std.Vector[MirStructValueReference[ctx], ctx] := ctx[program.struct_value_references];
+    mut value_index := 0;
+    while value_index < len(value_references) {
+        mut reference := value_references[value_index];
+        mut query := structs.mir_struct_value(table, reference.value_id, ctx);
+        if query.found == 0 {
+            return 0;
+        }
+        mut scalars: std.Vector[int, ctx] := ctx[query.value.scalar_values];
+        if std.str_eq(query.value.layout_id, reference.layout_id) == 0 ||
+           len(scalars) != reference.scalar_count ||
+           std.str_eq(query.value.storage_region, reference.storage_region) == 0 ||
+           std.str_eq(query.value.flow_origin, reference.flow_origin) == 0
+        {
+            return 0;
+        }
+        value_index = value_index + 1;
+    }
+
+    mut operation_references: std.Vector[MirStructOperationReference[ctx], ctx] := ctx[program.struct_operation_references];
+    mut operation_index := 0;
+    while operation_index < len(operation_references) {
+        mut reference := operation_references[operation_index];
+        mut query := structs.mir_struct_operation(table, reference.operation_name, ctx);
+        if query.found == 0 ||
+           std.str_eq(query.value.operation_id, reference.operation_id) == 0 ||
+           std.str_eq(query.value.target_id, reference.target_id) == 0 ||
+           std.str_eq(query.value.kind, mir_debug_struct_operation_kind(reference.operation_kind)) == 0 ||
+           std.str_eq(query.value.value_id, reference.value_id) == 0 ||
+           std.str_eq(query.value.field_path, reference.field_path) == 0
+        {
+            return 0;
+        }
+        operation_index = operation_index + 1;
+    }
+    return 1;
+}
+
+func mir_enum_operation_kind_from_name(kind: str) MirEnumOperationKind {
+    mut result: MirEnumOperationKind;
+    unsafe {
+        result.tag = 0;
+        if std.str_eq(kind, "tag_read") == 1 { result.tag = 1; }
+        if std.str_eq(kind, "variant_test") == 1 { result.tag = 2; }
+        if std.str_eq(kind, "payload_project") == 1 { result.tag = 3; }
+        if std.str_eq(kind, "match_branch") == 1 { result.tag = 4; }
+    }
+    return result;
+}
+
+func mir_debug_enum_operation_kind(kind: MirEnumOperationKind) str {
+    unsafe {
+        if kind.tag == 0 { return "variant_construct"; }
+        if kind.tag == 1 { return "tag_read"; }
+        if kind.tag == 2 { return "variant_test"; }
+        if kind.tag == 3 { return "payload_project"; }
+        if kind.tag == 4 { return "match_branch"; }
+    }
+    return "enum_unknown";
+}
+
+func mir_make_enum_layout_reference(value: enums.MirEnumLayout[ctx], ctx: &Arena) MirEnumLayoutReference[ctx] {
+    mut reference: MirEnumLayoutReference[ctx];
+    reference.layout_id = std.Clone(ctx, value.layout_id);
+    reference.enum_type_id = std.Clone(ctx, value.enum_type_id);
+    reference.target_id = std.Clone(ctx, value.target_id);
+    reference.tag_type_id = std.Clone(ctx, value.tag_type_id);
+    reference.tag_layout_id = std.Clone(ctx, value.tag_layout_id);
+    reference.tag_width = value.tag_width;
+    reference.tag_alignment = value.tag_alignment;
+    reference.tag_offset = value.tag_offset;
+    reference.discriminant_assignment = std.Clone(ctx, value.discriminant_assignment);
+    reference.variant_count = value.variant_count;
+    reference.payload_offset = value.payload_offset;
+    reference.max_payload_size = value.max_payload_size;
+    reference.max_payload_alignment = value.max_payload_alignment;
+    reference.size = value.size;
+    reference.alignment = value.alignment;
+    return reference;
+}
+
+func mir_make_enum_value_reference(value: enums.MirEnumValue[ctx], ctx: &Arena) MirEnumValueReference[ctx] {
+    mut reference: MirEnumValueReference[ctx];
+    reference.value_id = std.Clone(ctx, value.value_id);
+    reference.enum_layout_id = std.Clone(ctx, value.enum_layout_id);
+    reference.enum_type_id = std.Clone(ctx, value.enum_type_id);
+    reference.variant_name = std.Clone(ctx, value.variant_name);
+    reference.discriminant = value.discriminant;
+    mut payload_values: std.Vector[int, ctx] := ctx[value.payload_values];
+    reference.payload_value_count = len(payload_values);
+    reference.storage_region = std.Clone(ctx, value.storage_region);
+    reference.flow_origin = std.Clone(ctx, value.flow_origin);
+    return reference;
+}
+
+func mir_make_enum_operation_reference(value: enums.MirEnumOperation[ctx], ctx: &Arena) MirEnumOperationReference[ctx] {
+    mut reference: MirEnumOperationReference[ctx];
+    reference.operation_id = std.Clone(ctx, value.operation_id);
+    reference.operation_name = std.Clone(ctx, value.operation_name);
+    reference.target_id = std.Clone(ctx, value.target_id);
+    reference.operation_kind = mir_enum_operation_kind_from_name(value.kind);
+    reference.value_id = std.Clone(ctx, value.value_id);
+    reference.variant_name = std.Clone(ctx, value.variant_name);
+    reference.payload_index = value.payload_index;
+    return reference;
+}
+
+func mir_program_with_enum_layout_reference(program: MirProgram[ctx], reference: MirEnumLayoutReference[ctx], ctx: &Arena) MirProgram[ctx] {
+    mut updated := program;
+    mut references: std.Vector[MirEnumLayoutReference[ctx], ctx] := ctx[updated.enum_layout_references];
+    references.Push(reference);
+    ctx.Set(updated.enum_layout_references, references);
+    return updated;
+}
+
+func mir_program_with_enum_value_reference(program: MirProgram[ctx], reference: MirEnumValueReference[ctx], ctx: &Arena) MirProgram[ctx] {
+    mut updated := program;
+    mut references: std.Vector[MirEnumValueReference[ctx], ctx] := ctx[updated.enum_value_references];
+    references.Push(reference);
+    ctx.Set(updated.enum_value_references, references);
+    return updated;
+}
+
+func mir_program_with_enum_operation_reference(program: MirProgram[ctx], reference: MirEnumOperationReference[ctx], ctx: &Arena) MirProgram[ctx] {
+    mut updated := program;
+    mut references: std.Vector[MirEnumOperationReference[ctx], ctx] := ctx[updated.enum_operation_references];
+    references.Push(reference);
+    ctx.Set(updated.enum_operation_references, references);
+    return updated;
+}
+
+func mir_program_enum_references_are_valid(program: MirProgram[ctx], table: enums.MirEnumTable[ctx], layout_table: layout.MirLayoutTable[ctx], ctx: &Arena) int {
+    if enums.mir_enum_table_is_valid(table, layout_table, ctx) == 0 ||
+       enums.mir_enum_table_is_legacy_empty(table, ctx) == 1
+    {
+        return 0;
+    }
+
+    mut layout_references: std.Vector[MirEnumLayoutReference[ctx], ctx] := ctx[program.enum_layout_references];
+    mut layout_index := 0;
+    while layout_index < len(layout_references) {
+        mut reference := layout_references[layout_index];
+        mut query := enums.mir_enum_layout_of(table, reference.layout_id, ctx);
+        if query.found == 0 ||
+           std.str_eq(query.enum_layout.enum_type_id, reference.enum_type_id) == 0 ||
+           std.str_eq(query.enum_layout.target_id, reference.target_id) == 0 ||
+           std.str_eq(query.enum_layout.tag_type_id, reference.tag_type_id) == 0 ||
+           std.str_eq(query.enum_layout.tag_layout_id, reference.tag_layout_id) == 0 ||
+           std.str_eq(query.enum_layout.discriminant_assignment, reference.discriminant_assignment) == 0 ||
+           query.enum_layout.tag_width != reference.tag_width ||
+           query.enum_layout.tag_alignment != reference.tag_alignment ||
+           query.enum_layout.tag_offset != reference.tag_offset ||
+           query.enum_layout.variant_count != reference.variant_count ||
+           query.enum_layout.payload_offset != reference.payload_offset ||
+           query.enum_layout.max_payload_size != reference.max_payload_size ||
+           query.enum_layout.max_payload_alignment != reference.max_payload_alignment ||
+           query.enum_layout.size != reference.size ||
+           query.enum_layout.alignment != reference.alignment
+        {
+            return 0;
+        }
+        layout_index = layout_index + 1;
+    }
+
+    mut value_references: std.Vector[MirEnumValueReference[ctx], ctx] := ctx[program.enum_value_references];
+    mut value_index := 0;
+    while value_index < len(value_references) {
+        mut reference := value_references[value_index];
+        mut query := enums.mir_enum_value_of(table, reference.value_id, ctx);
+        if query.found == 0 {
+            return 0;
+        }
+        mut payload_values: std.Vector[int, ctx] := ctx[query.enum_value.payload_values];
+        if std.str_eq(query.enum_value.enum_layout_id, reference.enum_layout_id) == 0 ||
+           std.str_eq(query.enum_value.enum_type_id, reference.enum_type_id) == 0 ||
+           std.str_eq(query.enum_value.variant_name, reference.variant_name) == 0 ||
+           query.enum_value.discriminant != reference.discriminant ||
+           len(payload_values) != reference.payload_value_count ||
+           std.str_eq(query.enum_value.storage_region, reference.storage_region) == 0 ||
+           std.str_eq(query.enum_value.flow_origin, reference.flow_origin) == 0
+        {
+            return 0;
+        }
+        value_index = value_index + 1;
+    }
+
+    mut operation_references: std.Vector[MirEnumOperationReference[ctx], ctx] := ctx[program.enum_operation_references];
+    mut operation_index := 0;
+    while operation_index < len(operation_references) {
+        mut reference := operation_references[operation_index];
+        mut query := enums.mir_enum_operation_of(table, reference.operation_name, ctx);
+        if query.found == 0 ||
+           std.str_eq(query.operation.operation_id, reference.operation_id) == 0 ||
+           std.str_eq(query.operation.target_id, reference.target_id) == 0 ||
+           std.str_eq(query.operation.kind, mir_debug_enum_operation_kind(reference.operation_kind)) == 0 ||
+           std.str_eq(query.operation.value_id, reference.value_id) == 0 ||
+           std.str_eq(query.operation.variant_name, reference.variant_name) == 0 ||
+           query.operation.payload_index != reference.payload_index
         {
             return 0;
         }

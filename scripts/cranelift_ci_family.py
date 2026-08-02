@@ -96,6 +96,12 @@ RUNNERS = (
         "PHASE14_ARRAY_SLICE_SKIP_DYNAMIC",
         None,
     ),
+    (
+        "structs-enums",
+        "guard-cranelift-phase14-structs-enums-parity",
+        "PHASE14_STRUCTS_ENUMS_SKIP_DYNAMIC",
+        None,
+    ),
 )
 RUNNER_BY_FAMILY = {
     family: {

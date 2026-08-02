@@ -8337,6 +8337,2312 @@ fn print_phase14_array_slice_witness(
 }
 
 
+const PHASE14_STRUCT_TABLE_FORMAT_V1: &str =
+    "gust.compiler_struct_layout_table.v1";
+
+#[derive(Debug, Clone)]
+struct Phase14RequestStructField {
+    field_id: String,
+    field_name: String,
+    type_id: String,
+    layout_id: String,
+    declaration_index: usize,
+    offset: usize,
+    size: usize,
+    alignment: usize,
+    is_aggregate: bool,
+}
+
+#[derive(Debug, Clone)]
+struct Phase14RequestStructLeaf {
+    path: String,
+    type_id: String,
+    offset: usize,
+    size: usize,
+    alignment: usize,
+}
+
+#[derive(Debug, Clone)]
+struct Phase14RequestStructLayout {
+    layout_id: String,
+    struct_type_id: String,
+    target_id: String,
+    size: usize,
+    alignment: usize,
+    nesting_depth: usize,
+    representation_kind: String,
+    fields: Vec<Phase14RequestStructField>,
+    leaves: Vec<Phase14RequestStructLeaf>,
+}
+
+#[derive(Debug, Clone)]
+struct Phase14RequestStructValue {
+    value_id: String,
+    layout_id: String,
+    scalar_values: Vec<i64>,
+    storage_region: String,
+    flow_origin: String,
+}
+
+#[derive(Debug, Clone)]
+struct Phase14RequestStructOperation {
+    operation_id: String,
+    operation_name: String,
+    target_id: String,
+    kind: String,
+    value_id: String,
+    field_path: String,
+    stored_value: i64,
+    expect_success: bool,
+    expected_value: i64,
+    expected_offset: usize,
+    expected_reason_code: String,
+}
+
+#[derive(Debug)]
+struct Phase14RequestStructTable {
+    format: String,
+    target_id: String,
+    target_triple: String,
+    field_order_policy: String,
+    offset_authority: String,
+    padding_policy: String,
+    aggregate_abi_policy: String,
+    packed_struct_policy: String,
+    layouts: Vec<Phase14RequestStructLayout>,
+    values: Vec<Phase14RequestStructValue>,
+    operations: Vec<Phase14RequestStructOperation>,
+}
+
+impl Phase14RequestStructTable {
+    fn legacy_empty(target_triple: &str) -> Self {
+        Self {
+            format: PHASE14_STRUCT_TABLE_FORMAT_V1.to_string(),
+            target_id: String::new(),
+            target_triple: target_triple.to_string(),
+            field_order_policy: "declaration_order_preserved".to_string(),
+            offset_authority:
+                "compiler_owned_offsets_no_backend_relayout".to_string(),
+            padding_policy: "natural_alignment_with_tail_padding".to_string(),
+            aggregate_abi_policy:
+                "deferred_aggregate_parameter_and_return_abi".to_string(),
+            packed_struct_policy:
+                "deferred_packed_structs_and_bitfields".to_string(),
+            layouts: Vec::new(),
+            values: Vec::new(),
+            operations: Vec::new(),
+        }
+    }
+
+    fn is_legacy_empty(&self) -> bool {
+        self.format == PHASE14_STRUCT_TABLE_FORMAT_V1
+            && self.target_id.is_empty()
+            && self.layouts.is_empty()
+            && self.values.is_empty()
+            && self.operations.is_empty()
+    }
+}
+
+#[derive(Debug)]
+struct Phase14StructEvaluation {
+    success: bool,
+    value: i64,
+    offset: usize,
+    reason_code: String,
+}
+
+fn phase14_struct_align_up(value: usize, alignment: usize) -> Option<usize> {
+    if alignment == 0 {
+        return None;
+    }
+    let addend = alignment - 1;
+    value.checked_add(addend).map(|rounded| rounded / alignment * alignment)
+}
+
+fn phase14_struct_field_identity(
+    struct_type_id: &str,
+    field_name: &str,
+    declaration_index: usize,
+) -> String {
+    format!(
+        "struct_field:v1:type={struct_type_id}:name={field_name}:index={declaration_index}"
+    )
+}
+
+fn phase14_struct_layout_identity(
+    layout: &Phase14RequestStructLayout,
+) -> String {
+    format!(
+        "struct_layout:v1:target={}:type={}:size={}:align={}:fields={}",
+        layout.target_id,
+        layout.struct_type_id,
+        layout.size,
+        layout.alignment,
+        layout.fields.len(),
+    )
+}
+
+fn phase14_struct_operation_identity(
+    target_id: &str,
+    operation_name: &str,
+    kind: &str,
+) -> String {
+    format!("struct_operation:v1:target={target_id}:name={operation_name}:kind={kind}")
+}
+
+fn phase14_struct_kind_is_valid(kind: &str) -> bool {
+    matches!(kind, "construct" | "field_address" | "field_load" | "field_store")
+}
+
+fn phase14_struct_layout_by_id<'a>(
+    table: &'a Phase14RequestStructTable,
+    layout_id: &str,
+) -> Option<&'a Phase14RequestStructLayout> {
+    table.layouts.iter().find(|layout| layout.layout_id == layout_id)
+}
+
+fn phase14_struct_value_by_id<'a>(
+    table: &'a Phase14RequestStructTable,
+    value_id: &str,
+) -> Option<&'a Phase14RequestStructValue> {
+    table.values.iter().find(|value| value.value_id == value_id)
+}
+
+fn phase14_struct_field_by_name<'a>(
+    layout: &'a Phase14RequestStructLayout,
+    field_name: &str,
+) -> Option<&'a Phase14RequestStructField> {
+    layout.fields.iter().find(|field| field.field_name == field_name)
+}
+
+/// Field storage identity comes from the layout authority for scalars and from
+/// this table for a selected nested struct.
+fn phase14_struct_field_layout(
+    table: &Phase14RequestStructTable,
+    layout_table: &Phase14RequestLayoutTable,
+    type_id: &str,
+    layout_id: &str,
+) -> Option<(usize, usize, bool)> {
+    if let Some(entry) = layout_table.layouts.iter().find(|entry| {
+        entry.type_id == type_id && entry.layout_id == layout_id
+    }) {
+        return Some((entry.size, entry.alignment, false));
+    }
+    phase14_struct_layout_by_id(table, layout_id).and_then(|nested| {
+        (nested.struct_type_id == type_id)
+            .then_some((nested.size, nested.alignment, true))
+    })
+}
+
+/// Compiler-derived scalar leaves in offset order, recomputed so the worker
+/// never trusts a serialized leaf map it did not verify.
+fn phase14_struct_derive_leaves(
+    table: &Phase14RequestStructTable,
+    layout: &Phase14RequestStructLayout,
+) -> Vec<Phase14RequestStructLeaf> {
+    let mut leaves = Vec::new();
+    for field in &layout.fields {
+        if !field.is_aggregate {
+            leaves.push(Phase14RequestStructLeaf {
+                path: field.field_name.clone(),
+                type_id: field.type_id.clone(),
+                offset: field.offset,
+                size: field.size,
+                alignment: field.alignment,
+            });
+            continue;
+        }
+        let Some(inner) = phase14_struct_layout_by_id(table, &field.layout_id)
+        else {
+            continue;
+        };
+        for nested in &inner.fields {
+            if nested.is_aggregate {
+                continue;
+            }
+            leaves.push(Phase14RequestStructLeaf {
+                path: format!("{}.{}", field.field_name, nested.field_name),
+                type_id: nested.type_id.clone(),
+                offset: field.offset + nested.offset,
+                size: nested.size,
+                alignment: nested.alignment,
+            });
+        }
+    }
+    leaves
+}
+
+fn phase14_struct_resolve_field_path(
+    table: &Phase14RequestStructTable,
+    layout: &Phase14RequestStructLayout,
+    field_path: &str,
+) -> Option<Phase14RequestStructField> {
+    if let Some(direct) = phase14_struct_field_by_name(layout, field_path) {
+        return Some(direct.clone());
+    }
+    let (outer_name, inner_name) = field_path.split_once('.')?;
+    // Patch 14.9 selects one bounded nested selection.
+    if inner_name.contains('.') {
+        return None;
+    }
+    let outer = phase14_struct_field_by_name(layout, outer_name)?;
+    if !outer.is_aggregate {
+        return None;
+    }
+    let inner_layout = phase14_struct_layout_by_id(table, &outer.layout_id)?;
+    let inner = phase14_struct_field_by_name(inner_layout, inner_name)?;
+    let mut resolved = inner.clone();
+    resolved.offset = outer.offset + inner.offset;
+    Some(resolved)
+}
+
+fn parse_phase14_request_struct_table(
+    cursor: &mut Phase10TextCursor<'_>,
+    request_target_triple: &str,
+) -> Result<Phase14RequestStructTable, Box<dyn Error>> {
+    let stage = Phase10BackendRequestStage::RequestParse;
+    let kind = Phase10BackendRequestFailureKind::InvalidRequest;
+    let format = cursor
+        .take_field("struct_table_format", false, stage, kind)?
+        .to_string();
+    let target_id = cursor
+        .take_field("struct_target_id", true, stage, kind)?
+        .to_string();
+    let target_triple = cursor
+        .take_field("struct_target_triple", false, stage, kind)?
+        .to_string();
+
+    if target_id.is_empty() && target_triple == "legacy-empty" {
+        let layout_count =
+            cursor.take_usize_field("struct_layout_count", stage, kind)?;
+        let value_count =
+            cursor.take_usize_field("struct_value_count", stage, kind)?;
+        let operation_count =
+            cursor.take_usize_field("struct_operation_count", stage, kind)?;
+        if format != PHASE14_STRUCT_TABLE_FORMAT_V1
+            || layout_count != 0
+            || value_count != 0
+            || operation_count != 0
+        {
+            return Err(phase10_backend_request_error(
+                Phase10BackendRequestStage::RequestValidation,
+                kind,
+                "struct_legacy_empty_invalid",
+            ));
+        }
+        return Ok(Phase14RequestStructTable::legacy_empty(
+            request_target_triple,
+        ));
+    }
+
+    let field_order_policy = cursor
+        .take_field("struct_field_order_policy", false, stage, kind)?
+        .to_string();
+    let offset_authority = cursor
+        .take_field("struct_offset_authority", false, stage, kind)?
+        .to_string();
+    let padding_policy = cursor
+        .take_field("struct_padding_policy", false, stage, kind)?
+        .to_string();
+    let aggregate_abi_policy = cursor
+        .take_field("struct_aggregate_abi_policy", false, stage, kind)?
+        .to_string();
+    let packed_struct_policy = cursor
+        .take_field("struct_packed_struct_policy", false, stage, kind)?
+        .to_string();
+
+    let layout_count =
+        cursor.take_usize_field("struct_layout_count", stage, kind)?;
+    let mut layouts = Vec::with_capacity(layout_count);
+    for index in 0..layout_count {
+        let prefix = format!("struct_layout_{index}");
+        let layout_id = cursor
+            .take_field(&format!("{prefix}_id"), false, stage, kind)?
+            .to_string();
+        let struct_type_id = cursor
+            .take_field(&format!("{prefix}_type_id"), false, stage, kind)?
+            .to_string();
+        let target = cursor
+            .take_field(&format!("{prefix}_target_id"), false, stage, kind)?
+            .to_string();
+        let size =
+            cursor.take_usize_field(&format!("{prefix}_size"), stage, kind)?;
+        let alignment = cursor.take_usize_field(
+            &format!("{prefix}_alignment"),
+            stage,
+            kind,
+        )?;
+        let nesting_depth = cursor.take_usize_field(
+            &format!("{prefix}_nesting_depth"),
+            stage,
+            kind,
+        )?;
+        let representation_kind = cursor
+            .take_field(
+                &format!("{prefix}_representation_kind"),
+                false,
+                stage,
+                kind,
+            )?
+            .to_string();
+        let field_count = cursor.take_usize_field(
+            &format!("{prefix}_field_count"),
+            stage,
+            kind,
+        )?;
+        let mut fields = Vec::with_capacity(field_count);
+        for field_index in 0..field_count {
+            let field_prefix = format!("{prefix}_field_{field_index}");
+            fields.push(Phase14RequestStructField {
+                field_id: cursor
+                    .take_field(
+                        &format!("{field_prefix}_id"),
+                        false,
+                        stage,
+                        kind,
+                    )?
+                    .to_string(),
+                field_name: cursor
+                    .take_field(
+                        &format!("{field_prefix}_name"),
+                        false,
+                        stage,
+                        kind,
+                    )?
+                    .to_string(),
+                type_id: cursor
+                    .take_field(
+                        &format!("{field_prefix}_type_id"),
+                        false,
+                        stage,
+                        kind,
+                    )?
+                    .to_string(),
+                layout_id: cursor
+                    .take_field(
+                        &format!("{field_prefix}_layout_id"),
+                        false,
+                        stage,
+                        kind,
+                    )?
+                    .to_string(),
+                declaration_index: cursor.take_usize_field(
+                    &format!("{field_prefix}_declaration_index"),
+                    stage,
+                    kind,
+                )?,
+                offset: cursor.take_usize_field(
+                    &format!("{field_prefix}_offset"),
+                    stage,
+                    kind,
+                )?,
+                size: cursor.take_usize_field(
+                    &format!("{field_prefix}_size"),
+                    stage,
+                    kind,
+                )?,
+                alignment: cursor.take_usize_field(
+                    &format!("{field_prefix}_alignment"),
+                    stage,
+                    kind,
+                )?,
+                is_aggregate: cursor.take_usize_field(
+                    &format!("{field_prefix}_is_aggregate"),
+                    stage,
+                    kind,
+                )? == 1,
+            });
+        }
+        let leaf_count = cursor.take_usize_field(
+            &format!("{prefix}_leaf_count"),
+            stage,
+            kind,
+        )?;
+        let mut leaves = Vec::with_capacity(leaf_count);
+        for leaf_index in 0..leaf_count {
+            let leaf_prefix = format!("{prefix}_leaf_{leaf_index}");
+            leaves.push(Phase14RequestStructLeaf {
+                path: cursor
+                    .take_field(
+                        &format!("{leaf_prefix}_path"),
+                        false,
+                        stage,
+                        kind,
+                    )?
+                    .to_string(),
+                type_id: cursor
+                    .take_field(
+                        &format!("{leaf_prefix}_type_id"),
+                        false,
+                        stage,
+                        kind,
+                    )?
+                    .to_string(),
+                offset: cursor.take_usize_field(
+                    &format!("{leaf_prefix}_offset"),
+                    stage,
+                    kind,
+                )?,
+                size: cursor.take_usize_field(
+                    &format!("{leaf_prefix}_size"),
+                    stage,
+                    kind,
+                )?,
+                alignment: cursor.take_usize_field(
+                    &format!("{leaf_prefix}_alignment"),
+                    stage,
+                    kind,
+                )?,
+            });
+        }
+        layouts.push(Phase14RequestStructLayout {
+            layout_id,
+            struct_type_id,
+            target_id: target,
+            size,
+            alignment,
+            nesting_depth,
+            representation_kind,
+            fields,
+            leaves,
+        });
+    }
+
+    let value_count =
+        cursor.take_usize_field("struct_value_count", stage, kind)?;
+    let mut values = Vec::with_capacity(value_count);
+    for index in 0..value_count {
+        let prefix = format!("struct_value_{index}");
+        let value_id = cursor
+            .take_field(&format!("{prefix}_id"), false, stage, kind)?
+            .to_string();
+        let layout_id = cursor
+            .take_field(&format!("{prefix}_layout_id"), false, stage, kind)?
+            .to_string();
+        let scalar_count = cursor.take_usize_field(
+            &format!("{prefix}_scalar_count"),
+            stage,
+            kind,
+        )?;
+        let mut scalar_values = Vec::with_capacity(scalar_count);
+        for scalar_index in 0..scalar_count {
+            scalar_values.push(cursor.take_i64_field(
+                &format!("{prefix}_scalar_{scalar_index}"),
+                stage,
+                kind,
+            )?);
+        }
+        values.push(Phase14RequestStructValue {
+            value_id,
+            layout_id,
+            scalar_values,
+            storage_region: cursor
+                .take_field(
+                    &format!("{prefix}_storage_region"),
+                    false,
+                    stage,
+                    kind,
+                )?
+                .to_string(),
+            flow_origin: cursor
+                .take_field(&format!("{prefix}_flow_origin"), false, stage, kind)?
+                .to_string(),
+        });
+    }
+
+    let operation_count =
+        cursor.take_usize_field("struct_operation_count", stage, kind)?;
+    let mut operations = Vec::with_capacity(operation_count);
+    for index in 0..operation_count {
+        let prefix = format!("struct_operation_{index}");
+        let operation_id = cursor
+            .take_field(&format!("{prefix}_id"), false, stage, kind)?
+            .to_string();
+        let operation_name = cursor
+            .take_field(&format!("{prefix}_name"), false, stage, kind)?
+            .to_string();
+        let target = cursor
+            .take_field(&format!("{prefix}_target_id"), false, stage, kind)?
+            .to_string();
+        let operation_kind = cursor
+            .take_field(&format!("{prefix}_kind"), false, stage, kind)?
+            .to_string();
+        let value_id = cursor
+            .take_field(&format!("{prefix}_value_id"), false, stage, kind)?
+            .to_string();
+        let field_path = cursor
+            .take_field(&format!("{prefix}_field_path"), true, stage, kind)?
+            .to_string();
+        let stored_value = cursor.take_i64_field(
+            &format!("{prefix}_stored_value"),
+            stage,
+            kind,
+        )?;
+        let expect_success_raw = cursor.take_usize_field(
+            &format!("{prefix}_expect_success"),
+            stage,
+            kind,
+        )?;
+        if expect_success_raw > 1 {
+            return Err(phase10_backend_request_error(
+                Phase10BackendRequestStage::RequestValidation,
+                kind,
+                "struct_expect_success_must_be_boolean",
+            ));
+        }
+        operations.push(Phase14RequestStructOperation {
+            operation_id,
+            operation_name,
+            target_id: target,
+            kind: operation_kind,
+            value_id,
+            field_path,
+            stored_value,
+            expect_success: expect_success_raw == 1,
+            expected_value: cursor.take_i64_field(
+                &format!("{prefix}_expected_value"),
+                stage,
+                kind,
+            )?,
+            expected_offset: cursor.take_usize_field(
+                &format!("{prefix}_expected_offset"),
+                stage,
+                kind,
+            )?,
+            expected_reason_code: cursor
+                .take_field(
+                    &format!("{prefix}_expected_reason_code"),
+                    false,
+                    stage,
+                    kind,
+                )?
+                .to_string(),
+        });
+    }
+
+    Ok(Phase14RequestStructTable {
+        format,
+        target_id,
+        target_triple,
+        field_order_policy,
+        offset_authority,
+        padding_policy,
+        aggregate_abi_policy,
+        packed_struct_policy,
+        layouts,
+        values,
+        operations,
+    })
+}
+
+fn phase14_struct_evaluate(
+    table: &Phase14RequestStructTable,
+    operation: &Phase14RequestStructOperation,
+) -> Result<Phase14StructEvaluation, Box<dyn Error>> {
+    let valid = |value, offset| {
+        Ok(Phase14StructEvaluation {
+            success: true,
+            value,
+            offset,
+            reason_code: "struct_operation_valid".to_string(),
+        })
+    };
+    let invalid = |reason: &str| {
+        Ok(Phase14StructEvaluation {
+            success: false,
+            value: 0,
+            offset: 0,
+            reason_code: reason.to_string(),
+        })
+    };
+
+    let Some(value) = phase14_struct_value_by_id(table, &operation.value_id)
+    else {
+        return invalid("struct_field_unknown");
+    };
+    let Some(layout) = phase14_struct_layout_by_id(table, &value.layout_id)
+    else {
+        return invalid("struct_size_alignment_mismatch");
+    };
+
+    if operation.kind == "construct" {
+        return valid(layout.fields.len() as i64, 0);
+    }
+
+    let Some(field) =
+        phase14_struct_resolve_field_path(table, layout, &operation.field_path)
+    else {
+        return invalid("struct_field_unknown");
+    };
+    let offset = field.offset;
+
+    if operation.kind == "field_address" {
+        return valid(offset as i64, offset);
+    }
+
+    // Loads and stores address a real stored scalar, so a nested field path is
+    // resolved through the compiler-owned leaf map rather than trusted.
+    if field.is_aggregate {
+        return invalid("struct_field_type_mismatch");
+    }
+    let leaves = phase14_struct_derive_leaves(table, layout);
+    let Some(leaf_index) =
+        leaves.iter().position(|leaf| leaf.offset == offset)
+    else {
+        return invalid("struct_field_unknown");
+    };
+    if leaves[leaf_index].type_id != field.type_id {
+        return invalid("struct_field_type_mismatch");
+    }
+    if leaf_index >= value.scalar_values.len() {
+        return invalid("struct_field_type_mismatch");
+    }
+
+    match operation.kind.as_str() {
+        "field_store" => valid(operation.stored_value, offset),
+        "field_load" => valid(value.scalar_values[leaf_index], offset),
+        _ => invalid("struct_operation_unsupported"),
+    }
+}
+
+fn validate_phase14_request_struct_table(
+    table: &Phase14RequestStructTable,
+    request_target_triple: &str,
+    layout_table: &Phase14RequestLayoutTable,
+) -> Result<(), Box<dyn Error>> {
+    let stage = Phase10BackendRequestStage::CanonicalMirValidation;
+    let kind = Phase10BackendRequestFailureKind::InvalidCanonicalMir;
+    if table.is_legacy_empty() {
+        return Ok(());
+    }
+    if table.format != PHASE14_STRUCT_TABLE_FORMAT_V1 {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::RequestValidation,
+            Phase10BackendRequestFailureKind::ProtocolMismatch,
+            "struct_table_format_mismatch",
+        ));
+    }
+    if table.target_triple != request_target_triple
+        || table.target_triple != layout_table.target.target_triple
+        || table.target_id != layout_table.target.target_id
+    {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::TargetValidation,
+            Phase10BackendRequestFailureKind::TargetMismatch,
+            "struct_target_mismatch",
+        ));
+    }
+    if table.field_order_policy != "declaration_order_preserved"
+        || table.offset_authority
+            != "compiler_owned_offsets_no_backend_relayout"
+        || table.padding_policy != "natural_alignment_with_tail_padding"
+        || table.aggregate_abi_policy
+            != "deferred_aggregate_parameter_and_return_abi"
+        || table.packed_struct_policy
+            != "deferred_packed_structs_and_bitfields"
+    {
+        return Err(phase10_backend_request_error(
+            stage,
+            kind,
+            "struct_policy_mismatch",
+        ));
+    }
+
+    let mut layout_ids = HashSet::new();
+    let mut struct_type_ids = HashSet::new();
+    for layout in &table.layouts {
+        if !layout_ids.insert(layout.layout_id.clone())
+            || !struct_type_ids.insert(layout.struct_type_id.clone())
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "struct_duplicate_layout",
+            ));
+        }
+        if layout.target_id != table.target_id
+            || layout.representation_kind != "declaration_order_struct"
+            || layout.fields.is_empty()
+            || layout.size == 0
+            || layout.alignment == 0
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "struct_size_alignment_mismatch",
+            ));
+        }
+
+        // Duplicate field names are rejected before any placement or identity
+        // check so the reported cause is the real one.
+        let mut field_names = HashSet::new();
+        for field in &layout.fields {
+            if !field_names.insert(field.field_name.clone()) {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    "struct_duplicate_field",
+                ));
+            }
+        }
+
+        let mut running_offset = 0usize;
+        let mut previous_end = 0usize;
+        let mut expected_alignment = 1usize;
+        for (index, field) in layout.fields.iter().enumerate() {
+            if field.declaration_index != index
+                || field.size == 0
+                || field.alignment == 0
+                || field.alignment > layout.alignment
+            {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    "struct_size_alignment_mismatch",
+                ));
+            }
+            // Field storage must be exactly what the layout authority owns.
+            let Some((size, alignment, is_aggregate)) =
+                phase14_struct_field_layout(
+                    table,
+                    layout_table,
+                    &field.type_id,
+                    &field.layout_id,
+                )
+            else {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    "struct_field_type_mismatch",
+                ));
+            };
+            if size != field.size
+                || alignment != field.alignment
+                || is_aggregate != field.is_aggregate
+            {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    "struct_field_type_mismatch",
+                ));
+            }
+            if phase14_struct_align_up(field.offset, field.alignment)
+                != Some(field.offset)
+            {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    "struct_field_misaligned",
+                ));
+            }
+            if field.offset < previous_end {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    "struct_field_overlap",
+                ));
+            }
+            if Some(field.offset)
+                != phase14_struct_align_up(running_offset, field.alignment)
+            {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    "struct_field_misaligned",
+                ));
+            }
+            let Some(field_end) = field.offset.checked_add(field.size) else {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    "struct_size_alignment_mismatch",
+                ));
+            };
+            if field_end > layout.size {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    "struct_field_overlap",
+                ));
+            }
+            if field.field_id
+                != phase14_struct_field_identity(
+                    &layout.struct_type_id,
+                    &field.field_name,
+                    index,
+                )
+            {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    "struct_field_identity_mismatch",
+                ));
+            }
+            if field.alignment > expected_alignment {
+                expected_alignment = field.alignment;
+            }
+            previous_end = field_end;
+            running_offset = field_end;
+        }
+
+        if layout.alignment != expected_alignment
+            || Some(layout.size)
+                != phase14_struct_align_up(previous_end, expected_alignment)
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "struct_size_alignment_mismatch",
+            ));
+        }
+        if layout.layout_id != phase14_struct_layout_identity(layout) {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "struct_layout_identity_mismatch",
+            ));
+        }
+
+        // The serialized leaf map must match what this layout actually implies.
+        let derived = phase14_struct_derive_leaves(table, layout);
+        if derived.len() != layout.leaves.len() {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "struct_leaf_map_mismatch",
+            ));
+        }
+        for (expected, actual) in derived.iter().zip(layout.leaves.iter()) {
+            if expected.path != actual.path
+                || expected.type_id != actual.type_id
+                || expected.offset != actual.offset
+                || expected.size != actual.size
+                || expected.alignment != actual.alignment
+            {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    "struct_leaf_map_mismatch",
+                ));
+            }
+        }
+    }
+
+    let mut value_ids = HashSet::new();
+    for value in &table.values {
+        if !value_ids.insert(value.value_id.clone()) {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "struct_duplicate_value",
+            ));
+        }
+        let Some(layout) = phase14_struct_layout_by_id(table, &value.layout_id)
+        else {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "struct_size_alignment_mismatch",
+            ));
+        };
+        if value.scalar_values.len() != layout.leaves.len()
+            || layout.leaves.is_empty()
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "struct_field_type_mismatch",
+            ));
+        }
+        if value.storage_region != "function:main" {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "struct_size_alignment_mismatch",
+            ));
+        }
+    }
+
+    let mut operation_ids = HashSet::new();
+    for operation in &table.operations {
+        if !phase14_struct_kind_is_valid(&operation.kind) {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "struct_operation_unsupported",
+            ));
+        }
+        if operation.target_id != table.target_id {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "struct_operation_target_mismatch",
+            ));
+        }
+        if operation.operation_id
+            != phase14_struct_operation_identity(
+                &operation.target_id,
+                &operation.operation_name,
+                &operation.kind,
+            )
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "struct_operation_identity_mismatch",
+            ));
+        }
+        if !operation_ids.insert(operation.operation_id.clone()) {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "struct_duplicate_operation",
+            ));
+        }
+        let evaluation = phase14_struct_evaluate(table, operation)?;
+        if !evaluation.success {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                &evaluation.reason_code,
+            ));
+        }
+        if evaluation.success != operation.expect_success
+            || evaluation.value != operation.expected_value
+            || evaluation.offset != operation.expected_offset
+            || evaluation.reason_code != operation.expected_reason_code
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "struct_operation_expectation_mismatch",
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn phase14_struct_witness_text(
+    request: &Phase10BackendRequest,
+) -> Result<String, Box<dyn Error>> {
+    let table = &request.struct_table;
+    validate_phase14_request_struct_table(
+        table,
+        &request.target_triple,
+        &request.layout_table,
+    )?;
+    if table.is_legacy_empty() {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "struct_table_is_legacy_empty",
+        ));
+    }
+    let mut output = String::new();
+    output.push_str("struct_layout_status: valid\n");
+    output.push_str(&format!("struct_target: {}\n", table.target_triple));
+    output.push_str(&format!("struct_target_id: {}\n", table.target_id));
+    output.push_str(&format!(
+        "struct_field_order_policy: {}\n",
+        table.field_order_policy
+    ));
+    output.push_str(&format!(
+        "struct_offset_authority: {}\n",
+        table.offset_authority
+    ));
+    output.push_str(&format!("struct_padding_policy: {}\n", table.padding_policy));
+    for layout in &table.layouts {
+        output.push_str(&format!(
+            "struct_layout: {} type={} size={} alignment={} nesting={}\n",
+            layout.layout_id,
+            layout.struct_type_id,
+            layout.size,
+            layout.alignment,
+            layout.nesting_depth,
+        ));
+        for field in &layout.fields {
+            output.push_str(&format!(
+                "struct_field: {}.{} declaration_index={} type={} offset={} size={} alignment={} aggregate={}\n",
+                layout.struct_type_id,
+                field.field_name,
+                field.declaration_index,
+                field.type_id,
+                field.offset,
+                field.size,
+                field.alignment,
+                if field.is_aggregate { 1 } else { 0 },
+            ));
+        }
+        for leaf in &layout.leaves {
+            output.push_str(&format!(
+                "struct_leaf: {}.{} type={} offset={} size={}\n",
+                layout.struct_type_id, leaf.path, leaf.type_id, leaf.offset,
+                leaf.size,
+            ));
+        }
+    }
+    for value in &table.values {
+        output.push_str(&format!(
+            "struct_value: {} layout={} storage={} flow={}\n",
+            value.value_id,
+            value.layout_id,
+            value.storage_region,
+            value.flow_origin,
+        ));
+    }
+    for operation in &table.operations {
+        let evaluation = phase14_struct_evaluate(table, operation)?;
+        output.push_str(&format!(
+            "struct_operation: {} kind={} status={} value={} offset={} reason={}\n",
+            operation.operation_name,
+            operation.kind,
+            if evaluation.success { "success" } else { "failure" },
+            evaluation.value,
+            evaluation.offset,
+            evaluation.reason_code,
+        ));
+    }
+    Ok(output)
+}
+
+fn print_phase14_struct_witness(
+    request_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let request = phase14_load_primitive_layout_request(request_path)?;
+    print!("{}", phase14_struct_witness_text(&request)?);
+    Ok(())
+}
+
+
+const PHASE14_ENUM_TABLE_FORMAT_V1: &str = "gust.compiler_enum_table.v1";
+const PHASE14_ENUM_U8_TAG_CAPACITY: i64 = 255;
+const PHASE14_ENUM_I32_TAG_CAPACITY: i64 = 2_147_483_647;
+
+#[derive(Debug, Clone)]
+struct Phase14RequestEnumVariant {
+    variant_id: String,
+    variant_name: String,
+    declaration_index: usize,
+    discriminant: i64,
+    has_payload: bool,
+    payload_type_id: String,
+    payload_layout_id: String,
+    payload_element_type_id: String,
+    payload_element_count: usize,
+    payload_element_stride: usize,
+    payload_size: usize,
+    payload_alignment: usize,
+}
+
+#[derive(Debug, Clone)]
+struct Phase14RequestEnumLayout {
+    layout_id: String,
+    enum_type_id: String,
+    target_id: String,
+    tag_type_id: String,
+    tag_layout_id: String,
+    tag_width: usize,
+    tag_alignment: usize,
+    tag_offset: usize,
+    discriminant_assignment: String,
+    payload_offset: usize,
+    max_payload_size: usize,
+    max_payload_alignment: usize,
+    size: usize,
+    alignment: usize,
+    representation_kind: String,
+    variants: Vec<Phase14RequestEnumVariant>,
+}
+
+#[derive(Debug, Clone)]
+struct Phase14RequestEnumValue {
+    value_id: String,
+    enum_layout_id: String,
+    enum_type_id: String,
+    variant_name: String,
+    discriminant: i64,
+    payload_values: Vec<i64>,
+    storage_region: String,
+    flow_origin: String,
+}
+
+#[derive(Debug, Clone)]
+struct Phase14RequestEnumOperation {
+    operation_id: String,
+    operation_name: String,
+    target_id: String,
+    kind: String,
+    value_id: String,
+    variant_name: String,
+    payload_index: usize,
+    expect_success: bool,
+    expected_value: i64,
+    expected_offset: usize,
+    expected_tag: i64,
+    expected_arm_index: usize,
+    expected_reason_code: String,
+}
+
+#[derive(Debug)]
+struct Phase14RequestEnumTable {
+    format: String,
+    target_id: String,
+    target_triple: String,
+    tag_authority: String,
+    discriminant_policy: String,
+    payload_policy: String,
+    niche_policy: String,
+    match_policy: String,
+    struct_payload_policy: String,
+    layouts: Vec<Phase14RequestEnumLayout>,
+    values: Vec<Phase14RequestEnumValue>,
+    operations: Vec<Phase14RequestEnumOperation>,
+}
+
+impl Phase14RequestEnumTable {
+    fn legacy_empty(target_triple: &str) -> Self {
+        Self {
+            format: PHASE14_ENUM_TABLE_FORMAT_V1.to_string(),
+            target_id: String::new(),
+            target_triple: target_triple.to_string(),
+            tag_authority:
+                "compiler_owned_tag_selection_no_backend_inference".to_string(),
+            discriminant_policy:
+                "explicit_or_compiler_assigned_unique_discriminants".to_string(),
+            payload_policy:
+                "explicit_tag_with_shared_payload_offset".to_string(),
+            niche_policy: "deferred_niche_optimization".to_string(),
+            match_policy:
+                "checked_tag_dispatch_over_declared_variants".to_string(),
+            struct_payload_policy:
+                "deferred_struct_payloads_not_selected_by_patch14_10"
+                    .to_string(),
+            layouts: Vec::new(),
+            values: Vec::new(),
+            operations: Vec::new(),
+        }
+    }
+
+    fn is_legacy_empty(&self) -> bool {
+        self.format == PHASE14_ENUM_TABLE_FORMAT_V1
+            && self.target_id.is_empty()
+            && self.layouts.is_empty()
+            && self.values.is_empty()
+            && self.operations.is_empty()
+    }
+}
+
+#[derive(Debug)]
+struct Phase14EnumEvaluation {
+    success: bool,
+    value: i64,
+    offset: usize,
+    tag: i64,
+    arm_index: usize,
+    reason_code: String,
+}
+
+fn phase14_enum_align_up(value: usize, alignment: usize) -> Option<usize> {
+    if alignment == 0 {
+        return None;
+    }
+    let addend = alignment - 1;
+    value.checked_add(addend).map(|rounded| rounded / alignment * alignment)
+}
+
+fn phase14_enum_variant_identity(
+    enum_type_id: &str,
+    variant: &Phase14RequestEnumVariant,
+) -> String {
+    format!(
+        "enum_variant:v1:type={}:name={}:index={}:discriminant={}",
+        enum_type_id,
+        variant.variant_name,
+        variant.declaration_index,
+        variant.discriminant,
+    )
+}
+
+fn phase14_enum_layout_identity(layout: &Phase14RequestEnumLayout) -> String {
+    format!(
+        "enum_layout:v1:target={}:type={}:tag={}:tag_width={}:payload_offset={}:size={}:align={}:variants={}",
+        layout.target_id,
+        layout.enum_type_id,
+        layout.tag_type_id,
+        layout.tag_width,
+        layout.payload_offset,
+        layout.size,
+        layout.alignment,
+        layout.variants.len(),
+    )
+}
+
+fn phase14_enum_operation_identity(
+    target_id: &str,
+    operation_name: &str,
+    kind: &str,
+) -> String {
+    format!("enum_operation:v1:target={target_id}:name={operation_name}:kind={kind}")
+}
+
+fn phase14_enum_kind_is_valid(kind: &str) -> bool {
+    matches!(
+        kind,
+        "variant_construct"
+            | "tag_read"
+            | "variant_test"
+            | "payload_project"
+            | "match_branch"
+    )
+}
+
+/// The tag type the compiler must have selected for a discriminant set. The
+/// worker recomputes this only to confirm the compiler's decision; it never
+/// substitutes its own.
+fn phase14_enum_selected_tag_type(max_discriminant: i64) -> &'static str {
+    if max_discriminant <= PHASE14_ENUM_U8_TAG_CAPACITY {
+        "type:gust:u8"
+    } else {
+        "type:gust:i32"
+    }
+}
+
+fn phase14_enum_tag_capacity(tag_type_id: &str) -> i64 {
+    if tag_type_id == "type:gust:u8" {
+        PHASE14_ENUM_U8_TAG_CAPACITY
+    } else {
+        PHASE14_ENUM_I32_TAG_CAPACITY
+    }
+}
+
+fn phase14_enum_layout_by_id<'a>(
+    table: &'a Phase14RequestEnumTable,
+    layout_id: &str,
+) -> Option<&'a Phase14RequestEnumLayout> {
+    table.layouts.iter().find(|layout| layout.layout_id == layout_id)
+}
+
+fn phase14_enum_variant_by_name<'a>(
+    layout: &'a Phase14RequestEnumLayout,
+    variant_name: &str,
+) -> Option<&'a Phase14RequestEnumVariant> {
+    layout
+        .variants
+        .iter()
+        .find(|variant| variant.variant_name == variant_name)
+}
+
+fn phase14_enum_value_by_id<'a>(
+    table: &'a Phase14RequestEnumTable,
+    value_id: &str,
+) -> Option<&'a Phase14RequestEnumValue> {
+    table.values.iter().find(|value| value.value_id == value_id)
+}
+
+fn parse_phase14_request_enum_table(
+    cursor: &mut Phase10TextCursor<'_>,
+    request_target_triple: &str,
+) -> Result<Phase14RequestEnumTable, Box<dyn Error>> {
+    let stage = Phase10BackendRequestStage::RequestParse;
+    let kind = Phase10BackendRequestFailureKind::InvalidRequest;
+    let format = cursor
+        .take_field("enum_table_format", false, stage, kind)?
+        .to_string();
+    let target_id = cursor
+        .take_field("enum_target_id", true, stage, kind)?
+        .to_string();
+    let target_triple = cursor
+        .take_field("enum_target_triple", false, stage, kind)?
+        .to_string();
+
+    if target_id.is_empty() && target_triple == "legacy-empty" {
+        let layout_count =
+            cursor.take_usize_field("enum_layout_count", stage, kind)?;
+        let value_count =
+            cursor.take_usize_field("enum_value_count", stage, kind)?;
+        let operation_count =
+            cursor.take_usize_field("enum_operation_count", stage, kind)?;
+        if format != PHASE14_ENUM_TABLE_FORMAT_V1
+            || layout_count != 0
+            || value_count != 0
+            || operation_count != 0
+        {
+            return Err(phase10_backend_request_error(
+                Phase10BackendRequestStage::RequestValidation,
+                kind,
+                "enum_legacy_empty_invalid",
+            ));
+        }
+        return Ok(Phase14RequestEnumTable::legacy_empty(
+            request_target_triple,
+        ));
+    }
+
+    let tag_authority = cursor
+        .take_field("enum_tag_authority", false, stage, kind)?
+        .to_string();
+    let discriminant_policy = cursor
+        .take_field("enum_discriminant_policy", false, stage, kind)?
+        .to_string();
+    let payload_policy = cursor
+        .take_field("enum_payload_policy", false, stage, kind)?
+        .to_string();
+    let niche_policy = cursor
+        .take_field("enum_niche_policy", false, stage, kind)?
+        .to_string();
+    let match_policy = cursor
+        .take_field("enum_match_policy", false, stage, kind)?
+        .to_string();
+    let struct_payload_policy = cursor
+        .take_field("enum_struct_payload_policy", false, stage, kind)?
+        .to_string();
+
+    let layout_count =
+        cursor.take_usize_field("enum_layout_count", stage, kind)?;
+    let mut layouts = Vec::with_capacity(layout_count);
+    for index in 0..layout_count {
+        let prefix = format!("enum_layout_{index}");
+        let layout_id = cursor
+            .take_field(&format!("{prefix}_id"), false, stage, kind)?
+            .to_string();
+        let enum_type_id = cursor
+            .take_field(&format!("{prefix}_type_id"), false, stage, kind)?
+            .to_string();
+        let target = cursor
+            .take_field(&format!("{prefix}_target_id"), false, stage, kind)?
+            .to_string();
+        let tag_type_id = cursor
+            .take_field(&format!("{prefix}_tag_type_id"), false, stage, kind)?
+            .to_string();
+        let tag_layout_id = cursor
+            .take_field(&format!("{prefix}_tag_layout_id"), false, stage, kind)?
+            .to_string();
+        let tag_width =
+            cursor.take_usize_field(&format!("{prefix}_tag_width"), stage, kind)?;
+        let tag_alignment = cursor.take_usize_field(
+            &format!("{prefix}_tag_alignment"),
+            stage,
+            kind,
+        )?;
+        let tag_offset = cursor.take_usize_field(
+            &format!("{prefix}_tag_offset"),
+            stage,
+            kind,
+        )?;
+        let discriminant_assignment = cursor
+            .take_field(
+                &format!("{prefix}_discriminant_assignment"),
+                false,
+                stage,
+                kind,
+            )?
+            .to_string();
+        let payload_offset = cursor.take_usize_field(
+            &format!("{prefix}_payload_offset"),
+            stage,
+            kind,
+        )?;
+        let max_payload_size = cursor.take_usize_field(
+            &format!("{prefix}_max_payload_size"),
+            stage,
+            kind,
+        )?;
+        let max_payload_alignment = cursor.take_usize_field(
+            &format!("{prefix}_max_payload_alignment"),
+            stage,
+            kind,
+        )?;
+        let size =
+            cursor.take_usize_field(&format!("{prefix}_size"), stage, kind)?;
+        let alignment = cursor.take_usize_field(
+            &format!("{prefix}_alignment"),
+            stage,
+            kind,
+        )?;
+        let representation_kind = cursor
+            .take_field(
+                &format!("{prefix}_representation_kind"),
+                false,
+                stage,
+                kind,
+            )?
+            .to_string();
+        let variant_count = cursor.take_usize_field(
+            &format!("{prefix}_variant_count"),
+            stage,
+            kind,
+        )?;
+        let mut variants = Vec::with_capacity(variant_count);
+        for variant_index in 0..variant_count {
+            let variant_prefix = format!("{prefix}_variant_{variant_index}");
+            variants.push(Phase14RequestEnumVariant {
+                variant_id: cursor
+                    .take_field(
+                        &format!("{variant_prefix}_id"),
+                        false,
+                        stage,
+                        kind,
+                    )?
+                    .to_string(),
+                variant_name: cursor
+                    .take_field(
+                        &format!("{variant_prefix}_name"),
+                        false,
+                        stage,
+                        kind,
+                    )?
+                    .to_string(),
+                declaration_index: cursor.take_usize_field(
+                    &format!("{variant_prefix}_declaration_index"),
+                    stage,
+                    kind,
+                )?,
+                discriminant: cursor.take_i64_field(
+                    &format!("{variant_prefix}_discriminant"),
+                    stage,
+                    kind,
+                )?,
+                has_payload: cursor.take_usize_field(
+                    &format!("{variant_prefix}_has_payload"),
+                    stage,
+                    kind,
+                )? == 1,
+                payload_type_id: cursor
+                    .take_field(
+                        &format!("{variant_prefix}_payload_type_id"),
+                        false,
+                        stage,
+                        kind,
+                    )?
+                    .to_string(),
+                payload_layout_id: cursor
+                    .take_field(
+                        &format!("{variant_prefix}_payload_layout_id"),
+                        false,
+                        stage,
+                        kind,
+                    )?
+                    .to_string(),
+                payload_element_type_id: cursor
+                    .take_field(
+                        &format!("{variant_prefix}_payload_element_type_id"),
+                        false,
+                        stage,
+                        kind,
+                    )?
+                    .to_string(),
+                payload_element_count: cursor.take_usize_field(
+                    &format!("{variant_prefix}_payload_element_count"),
+                    stage,
+                    kind,
+                )?,
+                payload_element_stride: cursor.take_usize_field(
+                    &format!("{variant_prefix}_payload_element_stride"),
+                    stage,
+                    kind,
+                )?,
+                payload_size: cursor.take_usize_field(
+                    &format!("{variant_prefix}_payload_size"),
+                    stage,
+                    kind,
+                )?,
+                payload_alignment: cursor.take_usize_field(
+                    &format!("{variant_prefix}_payload_alignment"),
+                    stage,
+                    kind,
+                )?,
+            });
+        }
+        layouts.push(Phase14RequestEnumLayout {
+            layout_id,
+            enum_type_id,
+            target_id: target,
+            tag_type_id,
+            tag_layout_id,
+            tag_width,
+            tag_alignment,
+            tag_offset,
+            discriminant_assignment,
+            payload_offset,
+            max_payload_size,
+            max_payload_alignment,
+            size,
+            alignment,
+            representation_kind,
+            variants,
+        });
+    }
+
+    let value_count = cursor.take_usize_field("enum_value_count", stage, kind)?;
+    let mut values = Vec::with_capacity(value_count);
+    for index in 0..value_count {
+        let prefix = format!("enum_value_{index}");
+        let value_id = cursor
+            .take_field(&format!("{prefix}_id"), false, stage, kind)?
+            .to_string();
+        let enum_layout_id = cursor
+            .take_field(&format!("{prefix}_layout_id"), false, stage, kind)?
+            .to_string();
+        let enum_type_id = cursor
+            .take_field(&format!("{prefix}_type_id"), false, stage, kind)?
+            .to_string();
+        let variant_name = cursor
+            .take_field(&format!("{prefix}_variant_name"), false, stage, kind)?
+            .to_string();
+        let discriminant = cursor.take_i64_field(
+            &format!("{prefix}_discriminant"),
+            stage,
+            kind,
+        )?;
+        let payload_value_count = cursor.take_usize_field(
+            &format!("{prefix}_payload_value_count"),
+            stage,
+            kind,
+        )?;
+        let mut payload_values = Vec::with_capacity(payload_value_count);
+        for payload_index in 0..payload_value_count {
+            payload_values.push(cursor.take_i64_field(
+                &format!("{prefix}_payload_{payload_index}_value"),
+                stage,
+                kind,
+            )?);
+        }
+        values.push(Phase14RequestEnumValue {
+            value_id,
+            enum_layout_id,
+            enum_type_id,
+            variant_name,
+            discriminant,
+            payload_values,
+            storage_region: cursor
+                .take_field(
+                    &format!("{prefix}_storage_region"),
+                    false,
+                    stage,
+                    kind,
+                )?
+                .to_string(),
+            flow_origin: cursor
+                .take_field(&format!("{prefix}_flow_origin"), false, stage, kind)?
+                .to_string(),
+        });
+    }
+
+    let operation_count =
+        cursor.take_usize_field("enum_operation_count", stage, kind)?;
+    let mut operations = Vec::with_capacity(operation_count);
+    for index in 0..operation_count {
+        let prefix = format!("enum_operation_{index}");
+        let expect_success_raw = |cursor: &mut Phase10TextCursor<'_>| {
+            cursor.take_usize_field(
+                &format!("{prefix}_expect_success"),
+                stage,
+                kind,
+            )
+        };
+        operations.push(Phase14RequestEnumOperation {
+            operation_id: cursor
+                .take_field(&format!("{prefix}_id"), false, stage, kind)?
+                .to_string(),
+            operation_name: cursor
+                .take_field(&format!("{prefix}_name"), false, stage, kind)?
+                .to_string(),
+            target_id: cursor
+                .take_field(&format!("{prefix}_target_id"), false, stage, kind)?
+                .to_string(),
+            kind: cursor
+                .take_field(&format!("{prefix}_kind"), false, stage, kind)?
+                .to_string(),
+            value_id: cursor
+                .take_field(&format!("{prefix}_value_id"), false, stage, kind)?
+                .to_string(),
+            variant_name: cursor
+                .take_field(
+                    &format!("{prefix}_variant_name"),
+                    true,
+                    stage,
+                    kind,
+                )?
+                .to_string(),
+            payload_index: cursor.take_usize_field(
+                &format!("{prefix}_payload_index"),
+                stage,
+                kind,
+            )?,
+            expect_success: {
+                let raw = expect_success_raw(cursor)?;
+                if raw > 1 {
+                    return Err(phase10_backend_request_error(
+                        Phase10BackendRequestStage::RequestValidation,
+                        kind,
+                        "enum_expect_success_must_be_boolean",
+                    ));
+                }
+                raw == 1
+            },
+            expected_value: cursor.take_i64_field(
+                &format!("{prefix}_expected_value"),
+                stage,
+                kind,
+            )?,
+            expected_offset: cursor.take_usize_field(
+                &format!("{prefix}_expected_offset"),
+                stage,
+                kind,
+            )?,
+            expected_tag: cursor.take_i64_field(
+                &format!("{prefix}_expected_tag"),
+                stage,
+                kind,
+            )?,
+            expected_arm_index: cursor.take_usize_field(
+                &format!("{prefix}_expected_arm_index"),
+                stage,
+                kind,
+            )?,
+            expected_reason_code: cursor
+                .take_field(
+                    &format!("{prefix}_expected_reason_code"),
+                    false,
+                    stage,
+                    kind,
+                )?
+                .to_string(),
+        });
+    }
+
+    Ok(Phase14RequestEnumTable {
+        format,
+        target_id,
+        target_triple,
+        tag_authority,
+        discriminant_policy,
+        payload_policy,
+        niche_policy,
+        match_policy,
+        struct_payload_policy,
+        layouts,
+        values,
+        operations,
+    })
+}
+
+fn phase14_enum_evaluate(
+    table: &Phase14RequestEnumTable,
+    operation: &Phase14RequestEnumOperation,
+) -> Result<Phase14EnumEvaluation, Box<dyn Error>> {
+    let valid = |value, offset, tag, arm_index| {
+        Ok(Phase14EnumEvaluation {
+            success: true,
+            value,
+            offset,
+            tag,
+            arm_index,
+            reason_code: "enum_valid".to_string(),
+        })
+    };
+    let invalid = |reason: &str| {
+        Ok(Phase14EnumEvaluation {
+            success: false,
+            value: 0,
+            offset: 0,
+            tag: 0,
+            arm_index: 0,
+            reason_code: reason.to_string(),
+        })
+    };
+
+    let Some(value) = phase14_enum_value_by_id(table, &operation.value_id)
+    else {
+        return invalid("enum_invalid_tag_value");
+    };
+    let Some(layout) = phase14_enum_layout_by_id(table, &value.enum_layout_id)
+    else {
+        return invalid("enum_inconsistent_variant_layout");
+    };
+    let Some(active) = phase14_enum_variant_by_name(layout, &value.variant_name)
+    else {
+        return invalid("enum_invalid_tag_value");
+    };
+    if active.discriminant != value.discriminant {
+        return invalid("enum_invalid_tag_value");
+    }
+
+    match operation.kind.as_str() {
+        "variant_construct" => {
+            if !operation.variant_name.is_empty()
+                && operation.variant_name != active.variant_name
+            {
+                return invalid("enum_payload_type_mismatch");
+            }
+            valid(
+                active.discriminant,
+                layout.tag_offset,
+                active.discriminant,
+                active.declaration_index,
+            )
+        }
+        "tag_read" => valid(
+            active.discriminant,
+            layout.tag_offset,
+            active.discriminant,
+            active.declaration_index,
+        ),
+        "variant_test" => {
+            let Some(tested) =
+                phase14_enum_variant_by_name(layout, &operation.variant_name)
+            else {
+                return invalid("enum_invalid_tag_value");
+            };
+            let matches =
+                i64::from(tested.variant_name == active.variant_name);
+            valid(
+                matches,
+                layout.tag_offset,
+                active.discriminant,
+                active.declaration_index,
+            )
+        }
+        "match_branch" => valid(
+            active.declaration_index as i64,
+            layout.tag_offset,
+            active.discriminant,
+            active.declaration_index,
+        ),
+        "payload_project" => {
+            if !operation.variant_name.is_empty()
+                && operation.variant_name != active.variant_name
+            {
+                return invalid("enum_invalid_payload_projection");
+            }
+            if !active.has_payload {
+                return invalid("enum_invalid_payload_projection");
+            }
+            if operation.payload_index >= active.payload_element_count {
+                return invalid("enum_invalid_payload_projection");
+            }
+            if value.payload_values.len() != active.payload_element_count {
+                return invalid("enum_payload_type_mismatch");
+            }
+            let Some(scaled) = operation
+                .payload_index
+                .checked_mul(active.payload_element_stride)
+            else {
+                return invalid("enum_invalid_payload_projection");
+            };
+            let Some(offset) = layout.payload_offset.checked_add(scaled) else {
+                return invalid("enum_invalid_payload_projection");
+            };
+            let Some(end) = offset.checked_add(active.payload_element_stride)
+            else {
+                return invalid("enum_invalid_payload_projection");
+            };
+            if end > layout.size {
+                return invalid("enum_invalid_payload_projection");
+            }
+            valid(
+                value.payload_values[operation.payload_index],
+                offset,
+                active.discriminant,
+                active.declaration_index,
+            )
+        }
+        _ => invalid("enum_operation_unsupported"),
+    }
+}
+
+fn validate_phase14_request_enum_table(
+    table: &Phase14RequestEnumTable,
+    request_target_triple: &str,
+    layout_table: &Phase14RequestLayoutTable,
+) -> Result<(), Box<dyn Error>> {
+    let stage = Phase10BackendRequestStage::CanonicalMirValidation;
+    let kind = Phase10BackendRequestFailureKind::InvalidCanonicalMir;
+    if table.is_legacy_empty() {
+        return Ok(());
+    }
+    if table.format != PHASE14_ENUM_TABLE_FORMAT_V1 {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::RequestValidation,
+            Phase10BackendRequestFailureKind::ProtocolMismatch,
+            "enum_table_format_mismatch",
+        ));
+    }
+    if table.target_triple != request_target_triple
+        || table.target_triple != layout_table.target.target_triple
+        || table.target_id != layout_table.target.target_id
+    {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::TargetValidation,
+            Phase10BackendRequestFailureKind::TargetMismatch,
+            "enum_target_mismatch",
+        ));
+    }
+    if table.tag_authority
+        != "compiler_owned_tag_selection_no_backend_inference"
+        || table.discriminant_policy
+            != "explicit_or_compiler_assigned_unique_discriminants"
+        || table.payload_policy != "explicit_tag_with_shared_payload_offset"
+        || table.niche_policy != "deferred_niche_optimization"
+        || table.match_policy
+            != "checked_tag_dispatch_over_declared_variants"
+        || table.struct_payload_policy
+            != "deferred_struct_payloads_not_selected_by_patch14_10"
+    {
+        return Err(phase10_backend_request_error(
+            stage,
+            kind,
+            "enum_policy_mismatch",
+        ));
+    }
+
+    let mut layout_ids = HashSet::new();
+    let mut enum_type_ids = HashSet::new();
+    for layout in &table.layouts {
+        if !layout_ids.insert(layout.layout_id.clone())
+            || !enum_type_ids.insert(layout.enum_type_id.clone())
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "enum_duplicate_layout",
+            ));
+        }
+        if layout.target_id != table.target_id
+            || layout.representation_kind != "explicit_tag_and_payload"
+            || layout.tag_offset != 0
+            || layout.variants.is_empty()
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "enum_inconsistent_variant_layout",
+            ));
+        }
+        if layout.discriminant_assignment != "explicit"
+            && layout.discriminant_assignment != "compiler_assigned"
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "enum_inconsistent_variant_layout",
+            ));
+        }
+
+        // The tag must be a declared scalar owned by the layout authority.
+        let Some(tag_layout) = layout_table.layouts.iter().find(|entry| {
+            entry.type_id == layout.tag_type_id
+                && entry.layout_id == layout.tag_layout_id
+        }) else {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "enum_invalid_tag_value",
+            ));
+        };
+        if layout.tag_width != tag_layout.size
+            || layout.tag_alignment != tag_layout.alignment
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "enum_invalid_tag_value",
+            ));
+        }
+
+        // Duplicate discriminants and duplicate variant names are rejected
+        // before any identity or placement check so the reported cause is the
+        // real one.
+        let mut discriminants = HashSet::new();
+        let mut variant_names = HashSet::new();
+        for variant in &layout.variants {
+            if !discriminants.insert(variant.discriminant) {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    "enum_duplicate_discriminant",
+                ));
+            }
+            if !variant_names.insert(variant.variant_name.clone()) {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    "enum_duplicate_discriminant",
+                ));
+            }
+        }
+
+        let tag_capacity = phase14_enum_tag_capacity(&layout.tag_type_id);
+        let mut max_discriminant = 0i64;
+        let mut max_payload_size = 0usize;
+        let mut max_payload_alignment = 1usize;
+        for (index, variant) in layout.variants.iter().enumerate() {
+            if variant.discriminant < 0 || variant.discriminant > tag_capacity {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    "enum_discriminant_out_of_range",
+                ));
+            }
+            if variant.declaration_index != index
+                || variant.payload_alignment == 0
+            {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    "enum_inconsistent_variant_layout",
+                ));
+            }
+            if variant.variant_id
+                != phase14_enum_variant_identity(&layout.enum_type_id, variant)
+            {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    "enum_variant_identity_mismatch",
+                ));
+            }
+            if variant.has_payload {
+                if variant.payload_element_count == 0
+                    || variant.payload_element_stride == 0
+                {
+                    return Err(phase10_backend_request_error(
+                        stage,
+                        kind,
+                        "enum_inconsistent_variant_layout",
+                    ));
+                }
+                let Some(expected_payload_size) = variant
+                    .payload_element_count
+                    .checked_mul(variant.payload_element_stride)
+                else {
+                    return Err(phase10_backend_request_error(
+                        stage,
+                        kind,
+                        "enum_inconsistent_variant_layout",
+                    ));
+                };
+                if variant.payload_size != expected_payload_size {
+                    return Err(phase10_backend_request_error(
+                        stage,
+                        kind,
+                        "enum_inconsistent_variant_layout",
+                    ));
+                }
+                // The payload element type must be a declared scalar whose
+                // compiler-owned size and alignment produce exactly the
+                // serialized stride.
+                let Some(element_layout) =
+                    layout_table.layouts.iter().find(|entry| {
+                        entry.type_id == variant.payload_element_type_id
+                    })
+                else {
+                    return Err(phase10_backend_request_error(
+                        stage,
+                        kind,
+                        "enum_payload_type_mismatch",
+                    ));
+                };
+                let expected_stride = phase14_enum_align_up(
+                    element_layout.size,
+                    element_layout.alignment,
+                );
+                if expected_stride != Some(variant.payload_element_stride)
+                    || variant.payload_alignment != element_layout.alignment
+                {
+                    return Err(phase10_backend_request_error(
+                        stage,
+                        kind,
+                        "enum_payload_type_mismatch",
+                    ));
+                }
+            } else if variant.payload_element_count != 0
+                || variant.payload_element_stride != 0
+                || variant.payload_size != 0
+                || variant.payload_alignment != 1
+            {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    "enum_inconsistent_variant_layout",
+                ));
+            }
+            if variant.discriminant > max_discriminant {
+                max_discriminant = variant.discriminant;
+            }
+            if variant.payload_size > max_payload_size {
+                max_payload_size = variant.payload_size;
+            }
+            if variant.payload_alignment > max_payload_alignment {
+                max_payload_alignment = variant.payload_alignment;
+            }
+        }
+
+        // Confirm the compiler-owned tag selection and payload placement.
+        if layout.tag_type_id
+            != phase14_enum_selected_tag_type(max_discriminant)
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "enum_tag_selection_mismatch",
+            ));
+        }
+        if layout.max_payload_size != max_payload_size
+            || layout.max_payload_alignment != max_payload_alignment
+            || Some(layout.payload_offset)
+                != phase14_enum_align_up(layout.tag_width, max_payload_alignment)
+            || layout.payload_offset < layout.tag_width
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "enum_inconsistent_variant_layout",
+            ));
+        }
+        let expected_alignment = layout.tag_alignment.max(max_payload_alignment);
+        let Some(payload_end) =
+            layout.payload_offset.checked_add(max_payload_size)
+        else {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "enum_inconsistent_variant_layout",
+            ));
+        };
+        if layout.alignment != expected_alignment
+            || Some(layout.size)
+                != phase14_enum_align_up(payload_end, expected_alignment)
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "enum_layout_size_mismatch",
+            ));
+        }
+        if layout.layout_id != phase14_enum_layout_identity(layout) {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "enum_layout_identity_mismatch",
+            ));
+        }
+    }
+
+    let mut value_ids = HashSet::new();
+    for value in &table.values {
+        if !value_ids.insert(value.value_id.clone()) {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "enum_duplicate_value",
+            ));
+        }
+        let Some(layout) =
+            phase14_enum_layout_by_id(table, &value.enum_layout_id)
+        else {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "enum_inconsistent_variant_layout",
+            ));
+        };
+        if value.enum_type_id != layout.enum_type_id {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "enum_inconsistent_variant_layout",
+            ));
+        }
+        // A stored tag that names no declared variant, or that disagrees with
+        // the named variant, is an invalid tag.
+        let Some(variant) =
+            phase14_enum_variant_by_name(layout, &value.variant_name)
+        else {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "enum_invalid_tag_value",
+            ));
+        };
+        if variant.discriminant != value.discriminant {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "enum_invalid_tag_value",
+            ));
+        }
+        if value.payload_values.len() != variant.payload_element_count {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "enum_payload_type_mismatch",
+            ));
+        }
+        if value.storage_region != "function:main" {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "enum_inconsistent_variant_layout",
+            ));
+        }
+    }
+
+    let mut operation_ids = HashSet::new();
+    for operation in &table.operations {
+        if !phase14_enum_kind_is_valid(&operation.kind) {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "enum_operation_unsupported",
+            ));
+        }
+        if operation.target_id != table.target_id {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "enum_operation_target_mismatch",
+            ));
+        }
+        if operation.operation_id
+            != phase14_enum_operation_identity(
+                &operation.target_id,
+                &operation.operation_name,
+                &operation.kind,
+            )
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "enum_operation_identity_mismatch",
+            ));
+        }
+        if !operation_ids.insert(operation.operation_id.clone()) {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "enum_duplicate_operation",
+            ));
+        }
+        let evaluation = phase14_enum_evaluate(table, operation)?;
+        if !evaluation.success {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                &evaluation.reason_code,
+            ));
+        }
+        if evaluation.success != operation.expect_success
+            || evaluation.value != operation.expected_value
+            || evaluation.offset != operation.expected_offset
+            || evaluation.tag != operation.expected_tag
+            || evaluation.arm_index != operation.expected_arm_index
+            || evaluation.reason_code != operation.expected_reason_code
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "enum_operation_expectation_mismatch",
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn phase14_enum_witness_text(
+    request: &Phase10BackendRequest,
+) -> Result<String, Box<dyn Error>> {
+    let table = &request.enum_table;
+    validate_phase14_request_enum_table(
+        table,
+        &request.target_triple,
+        &request.layout_table,
+    )?;
+    if table.is_legacy_empty() {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "enum_table_is_legacy_empty",
+        ));
+    }
+    let mut output = String::new();
+    output.push_str("enum_status: valid\n");
+    output.push_str(&format!("enum_target: {}\n", table.target_triple));
+    output.push_str(&format!("enum_target_id: {}\n", table.target_id));
+    output.push_str(&format!("enum_tag_authority: {}\n", table.tag_authority));
+    output.push_str(&format!(
+        "enum_discriminant_policy: {}\n",
+        table.discriminant_policy
+    ));
+    output.push_str(&format!("enum_payload_policy: {}\n", table.payload_policy));
+    output.push_str(&format!("enum_niche_policy: {}\n", table.niche_policy));
+    output.push_str(&format!("enum_match_policy: {}\n", table.match_policy));
+    for layout in &table.layouts {
+        output.push_str(&format!(
+            "enum_layout: {} type={} tag_type={} tag_width={} tag_offset={} assignment={} payload_offset={} max_payload_size={} max_payload_alignment={} size={} alignment={}\n",
+            layout.layout_id,
+            layout.enum_type_id,
+            layout.tag_type_id,
+            layout.tag_width,
+            layout.tag_offset,
+            layout.discriminant_assignment,
+            layout.payload_offset,
+            layout.max_payload_size,
+            layout.max_payload_alignment,
+            layout.size,
+            layout.alignment,
+        ));
+        for variant in &layout.variants {
+            output.push_str(&format!(
+                "enum_variant: {}.{} declaration_index={} discriminant={} has_payload={} payload_type={} payload_size={} payload_alignment={}\n",
+                layout.enum_type_id,
+                variant.variant_name,
+                variant.declaration_index,
+                variant.discriminant,
+                if variant.has_payload { 1 } else { 0 },
+                variant.payload_type_id,
+                variant.payload_size,
+                variant.payload_alignment,
+            ));
+        }
+    }
+    for value in &table.values {
+        output.push_str(&format!(
+            "enum_value: {} type={} variant={} discriminant={} storage={} flow={}\n",
+            value.value_id,
+            value.enum_type_id,
+            value.variant_name,
+            value.discriminant,
+            value.storage_region,
+            value.flow_origin,
+        ));
+    }
+    for operation in &table.operations {
+        let evaluation = phase14_enum_evaluate(table, operation)?;
+        output.push_str(&format!(
+            "enum_operation: {} kind={} status={} value={} offset={} tag={} arm_index={} reason={}\n",
+            operation.operation_name,
+            operation.kind,
+            if evaluation.success { "success" } else { "failure" },
+            evaluation.value,
+            evaluation.offset,
+            evaluation.tag,
+            evaluation.arm_index,
+            evaluation.reason_code,
+        ));
+    }
+    Ok(output)
+}
+
+fn print_phase14_enum_witness(
+    request_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let request = phase14_load_primitive_layout_request(request_path)?;
+    print!("{}", phase14_enum_witness_text(&request)?);
+    Ok(())
+}
+
+
 #[derive(Debug)]
 struct Phase10BackendRequest {
     target_triple: String,
@@ -8350,6 +10656,8 @@ struct Phase10BackendRequest {
     memory_access_table: Phase14RequestMemoryAccessTable,
     string_view_table: Phase14RequestStringViewTable,
     array_slice_table: Phase14RequestArraySliceTable,
+    struct_table: Phase14RequestStructTable,
+    enum_table: Phase14RequestEnumTable,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -8507,6 +10815,16 @@ fn parse_phase10_backend_request(
     } else {
         Phase14RequestArraySliceTable::legacy_empty(&target_triple)
     };
+    let struct_table = if cursor.has_remaining() {
+        parse_phase14_request_struct_table(&mut cursor, &target_triple)?
+    } else {
+        Phase14RequestStructTable::legacy_empty(&target_triple)
+    };
+    let enum_table = if cursor.has_remaining() {
+        parse_phase14_request_enum_table(&mut cursor, &target_triple)?
+    } else {
+        Phase14RequestEnumTable::legacy_empty(&target_triple)
+    };
     cursor.finish(stage, kind)?;
 
     if !output_path.is_absolute() {
@@ -8543,6 +10861,8 @@ fn parse_phase10_backend_request(
         memory_access_table,
         string_view_table,
         array_slice_table,
+        struct_table,
+        enum_table,
     })
 }
 
@@ -12811,6 +15131,24 @@ fn run() -> Result<(), Box<dyn Error>> {
                 return Err(usage_error().into());
             }
             print_phase14_array_slice_witness(Path::new(&request_path))
+        }
+        "phase14-struct-witness" => {
+            let Some(request_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            print_phase14_struct_witness(Path::new(&request_path))
+        }
+        "phase14-enum-witness" => {
+            let Some(request_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            print_phase14_enum_witness(Path::new(&request_path))
         }
         "phase10-backend-request-compile" => {
             let Some(request_path) = args.next() else {
