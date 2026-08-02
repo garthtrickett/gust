@@ -229,7 +229,8 @@ func mir_array_slice_field_is_safe(value: str, allow_empty: int) int {
 
 func mir_array_slice_align_up(value: int, alignment: int) int {
     if alignment <= 0 { return 0; }
-    mut remainder := value % alignment;
+    mut quotient := value / alignment;
+    mut remainder := value - quotient * alignment;
     if remainder == 0 { return value; }
     return value + alignment - remainder;
 }
