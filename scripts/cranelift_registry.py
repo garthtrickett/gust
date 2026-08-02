@@ -7800,12 +7800,14 @@ def main():
             "phase14-stack-slot-targets",
             "phase14-memory-access-targets",
             "phase14-string-view-targets",
+            "phase14-array-slice-targets",
             "phase14-primitive-primary-target",
             "phase14-conversion-primary-target",
             "phase14-pointer-primary-target",
             "phase14-stack-slot-primary-target",
             "phase14-memory-access-primary-target",
             "phase14-string-view-primary-target",
+            "phase14-array-slice-primary-target",
             "project",
             "check-phase13-projection",
             "check-phase14-projection",
@@ -7881,6 +7883,7 @@ def main():
             "phase14-stack-slot-targets",
             "phase14-memory-access-targets",
             "phase14-string-view-targets",
+            "phase14-array-slice-targets",
         }:
             contract = validate_phase14_primitive_layout_structure(registry)
             print("\n".join(
@@ -7894,6 +7897,7 @@ def main():
             "phase14-stack-slot-primary-target",
             "phase14-memory-access-primary-target",
             "phase14-string-view-primary-target",
+            "phase14-array-slice-primary-target",
         }:
             contract = validate_phase14_primitive_layout_structure(registry)
             print(contract["primary_level2_target"])

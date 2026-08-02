@@ -188,6 +188,7 @@ func main() {
         mut target := primitive.mir_primitive_layout_target(target_triple, ctx);
         mut primitive_layout_table := primitive.mir_primitive_layout_table_for_target(target_triple, ctx);
         mut layout_table := memory_access.mir_memory_access_layout_table(primitive_layout_table, ctx);
+        layout_table = array_slice.mir_array_slice_layout_table(layout_table, ctx);
         mut conversion_table := conversion.mir_integer_conversion_table_for_layout(layout_table, ctx);
         mut pointer_table := pointer.mir_pointer_table_for_layout(layout_table, ctx);
         mut stack_slot_table := stack_slot.mir_stack_slot_table_for_layout(layout_table, ctx);
