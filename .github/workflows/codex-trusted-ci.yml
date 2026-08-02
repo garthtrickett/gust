@@ -1,0 +1,48 @@
+name: Codex Trusted Gate
+
+on:
+  push:
+    branches:
+      - "codex/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: codex-trusted-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  trusted-actor:
+    name: Codex / Trusted actor
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify Codex actor and branch
+        env:
+          EXPECTED_ACTOR: ${{ vars.CODEX_GITHUB_ACTOR }}
+          ACTUAL_ACTOR: ${{ github.actor }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "$EXPECTED_ACTOR" ]]; then
+            echo "Repository variable CODEX_GITHUB_ACTOR is not configured."
+            exit 1
+          fi
+
+          case "$REF_NAME" in
+            codex/*)
+              ;;
+            *)
+              echo "Ref is outside the trusted codex/** namespace: $REF_NAME"
+              exit 1
+              ;;
+          esac
+
+          if [[ "$ACTUAL_ACTOR" != "$EXPECTED_ACTOR" ]]; then
+            echo "Untrusted actor: $ACTUAL_ACTOR"
+            echo "Expected Codex actor: $EXPECTED_ACTOR"
+            exit 1
+          fi
+
+          echo "Trusted Codex push from $ACTUAL_ACTOR on $REF_NAME"

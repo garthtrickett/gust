@@ -10,6 +10,11 @@ permissions:
 
 jobs:
   historical-full:
+    if: >-
+      github.event_name == 'schedule' ||
+      (github.event_name == 'workflow_dispatch' &&
+       vars.CODEX_GITHUB_ACTOR != '' &&
+       github.actor == vars.CODEX_GITHUB_ACTOR)
     name: Level 3 full history
     runs-on: ubuntu-latest
     steps:

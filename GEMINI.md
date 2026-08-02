@@ -210,10 +210,36 @@ git diff --check
 * **Reusable Focused Runner:** Shared self-hosted Gust compile/build/run plumbing belongs in `scripts/run-gust-file.sh`. Shell helpers and `justfile` aliases should call that script instead of copy-pasting the three-phase compile-C-run sequence. Regex/textual guard implementations that do not produce artifacts should live in `justfile` / imported `justfile-*` modules and be invoked from Make only as aggregate-test wrappers.
 * **Nix Role:** The dev shell should install command-runner tools such as `just` alongside Rust, C, Python, tree-sitter, and formatting tools. It should not become a large task runner full of duplicated guard scripts.
 
-## TOOL USE CONSTRAINTS & DISCIPLINE
-- **Prohibition of Execution Tools**: You are strictly prohibited from calling any command execution, bash shell, terminal, or system-running tools (such as `vm_shell:execute_bash` or any equivalent system command triggers).
-- **Allowed Tool Scope**: You must only use information-retrieval and text-generation tools (such as `google:search` and `browsing:browse` to gather context, and text responses to supply code patches). 
-- **User-Led Verification**: All compilation, tests, and command execution must be left entirely to the user. Do not attempt to run tests or compile code yourself.
+## AGENT EXECUTION MODES
+
+### Chat patch mode
+
+This mode applies when an assistant does not have a checked-out repository.
+
+- Do not claim to execute commands.
+- Use information-retrieval and text-generation tools only.
+- Return repository-compatible transactional JSON patches.
+- Leave compilation, tests, and command execution to the user.
+
+### Codex Cloud mode
+
+This mode applies when Codex operates in an isolated environment containing a
+checked-out Gust repository.
+
+- Read `AGENTS.md` before modifying the repository.
+- Direct source editing and repository-local command execution are permitted.
+- Repository-local builds, focused guards, and tests are permitted.
+- Read-only Git inspection is permitted.
+- Publishing changes through an upstream `codex/**` branch and draft pull
+  request is permitted.
+- Pushing directly to protected branches is prohibited.
+- Approving or merging pull requests is prohibited.
+- Changing repository rules, Actions variables, secrets, or permissions is
+  prohibited.
+- Accessing production systems or external secrets is prohibited.
+- Tests and guards may not be weakened, removed, skipped, or bypassed to
+  obtain a pass.
+- GitHub Actions remains the authoritative validation environment.
 
 # GEMINI.md: Code Patching & Diff Guidelines
 
