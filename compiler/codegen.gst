@@ -352,10 +352,6 @@ func codegen_is_ptr_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx
 
 func codegen_is_vector_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) int { 
     unsafe { 
-        mut serialized_t := ast.serialize_type(t, ctx);
-        mut log_init := std.Concat("// 🕵️ Checking if type is Vector: ", serialized_t);
-        os.LogStr(log_init);
-
         mut curr := t;
         while curr.tag == 9 || curr.tag == 11 { // RawPointer or Reference
             if curr.tag == 9 {
@@ -370,35 +366,20 @@ func codegen_is_vector_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[
             
             mut idx_vector := std.str_find(erased_name, "Vector_");
             mut idx_std_vector := std.str_find(erased_name, "std_Vector_");
-            
-            mut log_struct := std.Concat("//   -> Struct name: ", name);
-            log_struct = std.Concat(log_struct, ", Erased name: ");
-            log_struct = std.Concat(log_struct, erased_name);
-            log_struct = std.Concat(log_struct, ", Vector_ find: ");
-            log_struct = std.Concat(log_struct, std.FormatInt(idx_vector));
-            log_struct = std.Concat(log_struct, ", std_Vector_ find: ");
-            log_struct = std.Concat(log_struct, std.FormatInt(idx_std_vector));
-            os.LogStr(log_struct);
 
             if idx_vector == 0 {
-                os.LogStr("//   -> MATCHED Vector_ at 0!");
                 return 1;
             }
             if idx_std_vector == 0 {
-                os.LogStr("//   -> MATCHED std_Vector_ at 0!");
                 return 1;
             }
         }
         if curr.tag == 10 { // Generic
             mut name := curr.Generic.name;
-            mut log_generic := std.Concat("//   -> Generic name: ", name);
-            os.LogStr(log_generic);
             if std.str_eq(name, "Vector") == 1 || std.str_eq(name, "std.Vector") == 1 || std.str_eq(name, "std_Vector") == 1 { 
-                os.LogStr("//   -> MATCHED Generic Vector!");
                 return 1;
             }
         }
-        os.LogStr("//   -> NOT A VECTOR TYPE!");
     }
     return 0;
 }
