@@ -3,6 +3,8 @@ name: Heavy Guards
 on:
   pull_request:
   push:
+    branches:
+      - "codex/**"
   workflow_dispatch:
 
 permissions:
@@ -10,6 +12,11 @@ permissions:
 
 jobs:
   build:
+    if: >-
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      startsWith(github.ref_name, 'codex/') &&
+      vars.CODEX_GITHUB_ACTOR != '' &&
+      github.actor == vars.CODEX_GITHUB_ACTOR
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -161,4 +168,3 @@ jobs:
         run: |
           just guard-cloud-heavy-ci-surface
           just guard-cranelift-phase9g-ci-surface
-
