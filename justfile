@@ -15055,6 +15055,13 @@ guard-cranelift-phase14-composition-contract:
     bash -n "$differential"
     bash -n "$target_selector"
 
+    if rg -n -F 'phase13_registry_differential.sh' "$differential" >/dev/null; then
+      echo "Phase 14 composition must not reuse the Phase 13 source-route differential harness."
+      exit 1
+    fi
+    rg -n -F 'if [ "$case_kind" != "composition" ]; then' "$differential" >/dev/null
+    rg -n -F 'python3 "$family_runner" differential-cases "$family"' "$differential" >/dev/null
+
     for token in \
       'CRANELIFT_PHASE14_COMPOSITION_VERSION: phase14_cross_feature_all_target_layout_differential_v1' \
       'CRANELIFT_PHASE14_COMPOSITION_STATUS: phase14_closed' \

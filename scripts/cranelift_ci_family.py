@@ -17,15 +17,12 @@ REGISTRY = ROOT / "scripts/cranelift_feature_registry.json"
 #
 # The optional post-focused guard belongs to the evidence route for that family.
 # Phase 11/13 families use the generic Phase 13 source differential after their
-# focused guard. Phase 14 primitive layout parity already owns its generated
-# request, worker, and MIR-to-C witnesses, so it must not be rerouted through
-# the Phase 13 generic source-to-MIR capability planner. Phase 14 integer
-# conversions likewise own a dedicated target-aware parity route. Phase 14
-# pointers own the bounded pointer/nullability request and witness route. Patch
-# 14.7 strings/views own literal-byte, explicit-length, and lifetime parity.
-# Patch 14.12 adds a registry-owned route-level composition differential after
-# every focused Phase 14 family while preserving the focused semantic witness
-# as the family authority.
+# focused guard. Phase 14 families own dedicated request/witness differentials
+# for individual positive and negative semantic evidence and must not be
+# rerouted through the Phase 13 generic source-to-MIR registry harness. Patch
+# 14.12 adds a composition-only route-sentinel differential after each focused
+# Phase 14 family while preserving the focused semantic witness as the layout
+# and behavior authority.
 RUNNERS = (
     (
         "scalars",

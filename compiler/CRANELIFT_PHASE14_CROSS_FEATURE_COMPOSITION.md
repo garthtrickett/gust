@@ -88,10 +88,16 @@ Level 3 target matrix.
 ### Level 2
 
 Each registry-derived Phase 14 family first runs its focused semantic witness
-guard on the primary target. It then runs
-`guard-cranelift-phase14-composition-differential`, which executes the
-registry-owned individual and composition source cases through default
-MIR-to-C, explicit MIR-to-C, and explicit Cranelift.
+guard on the primary target. That focused guard owns the individual positive,
+negative, layout, and request-validation evidence. It then runs
+`guard-cranelift-phase14-composition-differential`, which executes only the
+registry-owned composition route sentinels through default MIR-to-C, explicit
+MIR-to-C, and explicit Cranelift.
+
+The composition route harness does not reuse the Phase 13 registry differential
+and does not reinterpret Phase 14 negative ownership markers as source-level
+pre-driver failures. Those negative semantics remain owned by the dedicated
+Phase 14 request/witness differentials.
 
 ### Level 3
 
