@@ -15070,7 +15070,7 @@ guard-cranelift-phase14-composition-contract:
     rg -n -F 'phase14_composition:all_features_nested_aggregate_layout_and_flow' "$registry" >/dev/null
     rg -n -F 'phase14_12_composition_cases' "$family_runner" "$projector" >/dev/null
     rg -n -F 'target-matrix-json' "$projector" "$historical_workflow" >/dev/null
-    rg -n -F 'PHASE14_TARGET="${{ matrix.target }}"' "$historical_workflow" >/dev/null
+    rg -n -F 'PHASE14_TARGET="${{{{ matrix.target }}"' "$historical_workflow" >/dev/null
 
     close_ci_count="$(
       (rg -n -F 'just guard-cranelift-phase14-close' \
