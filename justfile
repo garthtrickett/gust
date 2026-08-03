@@ -14681,6 +14681,105 @@ guard-cranelift-phase14-array-slice-parity:
     fi
     bash scripts/phase14_array_slice_differential.sh
 
+guard-cranelift-phase14-aggregate-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 14 compiler-owned aggregate transport across blocks..."
+    authority="compiler/mir_aggregate_transport.gst"
+    mir="compiler/mir.gst"
+    request="compiler/mir_native_backend_request.gst"
+    mir_to_c="compiler/mir_aggregate_transport_mir_to_c.gst"
+    diagnostics="compiler/mir_aggregate_transport_diagnostics.gst"
+    worker="compiler/experiments/cranelift/src/main.rs"
+    smoke="compiler/mir_aggregate_transport_smoke_test_entry.gst"
+    differential="scripts/phase14_aggregate_differential.sh"
+    review="compiler/CRANELIFT_PHASE14_AGGREGATE_TRANSPORT.md"
+    registry="scripts/cranelift_feature_registry.json"
+    pr_workflow=".github/workflows/pr-fast.yml"
+
+    required_files=(
+      "$authority" "$mir" "$request" "$mir_to_c" "$diagnostics"
+      "$worker" "$smoke" "$differential" "$review" "$registry"
+      compiler/phase14_aggregate_transport_source.gst
+      compiler/phase14_aggregate_transport_composition_source.gst
+      compiler/fixtures/native_backend_phase14_aggregate_ingestion.mir
+      compiler/fixtures/native_backend_phase14_aggregate_malformed.mir
+      compiler/p14_aggregate_join_layout_mismatch_source.gst
+      compiler/p14_aggregate_field_count_mismatch_source.gst
+      compiler/p14_aggregate_variant_mismatch_source.gst
+      compiler/p14_aggregate_invalid_lifetime_source.gst
+      compiler/p14_aggregate_use_after_move_source.gst
+      compiler/p14_aggregate_resource_bearing_copy_source.gst
+    )
+    for required_file in "${required_files[@]}"; do
+      test -f "$required_file"
+      test ! -L "$required_file"
+    done
+
+    just guard-cranelift-phase14-enum-contract
+    python3 scripts/cranelift_ci_family.py validate
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase14-aggregate-contract |
+      rg -n -F $'guard-cranelift-phase14-aggregate-contract\t1\t' >/dev/null
+    bash -n "$differential"
+
+    for token in 'type MirAggregateComponent[ctx] struct' 'type MirAggregateClassPolicy[ctx] struct' 'type MirAggregateValue[ctx] struct' 'type MirAggregateBlockParam[ctx] struct' 'type MirAggregateBlock[ctx] struct' 'type MirAggregateEdge[ctx] struct' 'type MirAggregateTransportTable[ctx] struct' 'func mir_aggregate_arity_for_policy(' 'func mir_aggregate_table_for_layout(' 'func mir_aggregate_table_is_valid(' 'func mir_serialize_aggregate_table_for_request(' 'func mir_aggregate_witness('
+    do
+      rg -n -F "$token" "$authority" >/dev/null
+    done
+    for class in string_view slice fixed_array struct enum nested; do
+      rg -n -F "$class" "$authority" "$worker" >/dev/null
+    done
+    for kind in block_param_declare edge_argument_pass join_observe loop_carry early_return; do
+      rg -n -F "$kind" "$authority" "$mir" "$worker" >/dev/null
+    done
+    for reason in aggregate_join_layout_mismatch aggregate_field_count_mismatch aggregate_variant_mismatch aggregate_invalid_lifetime aggregate_use_after_move aggregate_resource_copy_rejected; do
+      rg -n -F "$reason" "$authority" "$worker" "$differential" >/dev/null
+    done
+    # Exactly one transport policy per class, chosen by the compiler.
+    rg -n -F 'compiler_owned_transport_plan_no_backend_flattening' "$authority" "$worker" >/dev/null
+    rg -n -F 'fieldwise_canonical_values' "$authority" "$worker" "$mir_to_c" >/dev/null
+    rg -n -F 'layout_backed_stack_copy' "$authority" "$worker" "$mir_to_c" >/dev/null
+    rg -n -F 'explicit_non_resource_copy_only' "$authority" "$worker" "$registry" >/dev/null
+    rg -n -F 'deferred_resource_bearing_aggregate_movement_and_destruction' "$authority" "$worker" "$registry" >/dev/null
+    rg -n -F 'deferred_aggregate_parameter_and_return_abi' "$authority" "$worker" "$registry" >/dev/null
+    rg -n -F 'aggregate_table: aggregate.MirAggregateTransportTable[ctx]' "$request" >/dev/null
+    rg -n -F 'mir_serialize_aggregate_table_for_request' "$request" >/dev/null
+    rg -n -F 'phase14-aggregate-witness' "$worker" "$differential" >/dev/null
+    rg -n -F 'gust_aggregate_diagnostic:' "$diagnostics" >/dev/null
+    rg -n -F 'func mir_program_aggregate_references_are_valid(' "$mir" >/dev/null
+    rg -n -F '"id": "p14_aggregate_basic_block_transport"' "$registry" >/dev/null
+    rg -n -F '"phase14_11_contract": "phase14_aggregate_basic_block_transport_v1"' "$registry" >/dev/null
+
+    aggregate_ci_count="$(
+      (rg -n -F 'just guard-cranelift-phase14-aggregate-contract'         .github/workflows --glob '*.yml' || true) | wc -l | tr -d ' '
+    )"
+    if [ "$aggregate_ci_count" != "1" ]; then
+      echo "Phase 14 aggregate contract must be wired into CI exactly once, found $aggregate_ci_count occurrences."
+      exit 1
+    fi
+    rg -n -x -F '        run: just guard-cranelift-phase14-aggregate-contract' "$pr_workflow" >/dev/null
+
+    if rg -n -e 'std::mem::(size_of|align_of)' -e 'Layout::array' "$worker" >/dev/null; then
+      echo "The Cranelift worker must consume the compiler-owned transport plan."
+      exit 1
+    fi
+    echo "✅ Phase 14 aggregate transport contract passed."
+
+guard-cranelift-phase14-aggregate-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 14 aggregate transport parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase14-aggregate-parity |
+      rg -n -F $'guard-cranelift-phase14-aggregate-parity\t2\t' >/dev/null
+    just guard-cranelift-phase14-aggregate-contract
+    if [ "${PHASE14_AGGREGATE_SKIP_DYNAMIC:-0}" = "1" ]; then
+      echo "✅ Phase 14 aggregate static contract passed; dynamic evidence skipped by request."
+      exit 0
+    fi
+    bash scripts/phase14_aggregate_differential.sh
+
 guard-cranelift-phase14-struct-contract:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -14933,6 +15032,7 @@ guard-cranelift-contract-fast:
     just guard-cranelift-phase14-array-slice-contract
     just guard-cranelift-phase14-struct-contract
     just guard-cranelift-phase14-enum-contract
+    just guard-cranelift-phase14-aggregate-contract
 
 guard-cranelift-historical-full:
     #!/usr/bin/env bash

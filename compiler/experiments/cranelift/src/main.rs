@@ -8337,6 +8337,1269 @@ fn print_phase14_array_slice_witness(
 }
 
 
+const PHASE14_AGGREGATE_TABLE_FORMAT_V1: &str =
+    "gust.compiler_aggregate_transport_table.v1";
+
+#[derive(Debug, Clone)]
+struct Phase14RequestAggregateComponent {
+    name: String,
+    type_id: String,
+    offset: usize,
+    size: usize,
+    value: i64,
+}
+
+#[derive(Debug, Clone)]
+struct Phase14RequestAggregateClassPolicy {
+    class_name: String,
+    transport_policy: String,
+    arity_rule: String,
+}
+
+#[derive(Debug, Clone)]
+struct Phase14RequestAggregateValue {
+    value_id: String,
+    class_name: String,
+    type_id: String,
+    layout_id: String,
+    transport_policy: String,
+    size: usize,
+    alignment: usize,
+    variant_name: String,
+    movement_kind: String,
+    is_resource: bool,
+    initialized: bool,
+    lifetime_region: String,
+    components: Vec<Phase14RequestAggregateComponent>,
+}
+
+#[derive(Debug, Clone)]
+struct Phase14RequestAggregateBlockParam {
+    param_name: String,
+    class_name: String,
+    type_id: String,
+    layout_id: String,
+    transport_policy: String,
+    block_argument_count: usize,
+}
+
+#[derive(Debug, Clone)]
+struct Phase14RequestAggregateBlock {
+    block_id: String,
+    label: String,
+    is_join: bool,
+    is_loop_header: bool,
+    total_block_argument_count: usize,
+    params: Vec<Phase14RequestAggregateBlockParam>,
+}
+
+#[derive(Debug, Clone)]
+struct Phase14RequestAggregateEdge {
+    edge_id: String,
+    from_label: String,
+    to_label: String,
+    edge_kind: String,
+    argument_value_ids: Vec<String>,
+}
+
+#[derive(Debug, Clone)]
+struct Phase14RequestAggregateOperation {
+    operation_id: String,
+    operation_name: String,
+    target_id: String,
+    kind: String,
+    block_label: String,
+    edge_id: String,
+    value_id: String,
+    component_index: usize,
+    expect_success: bool,
+    expected_value: i64,
+    expected_offset: usize,
+    expected_arity: usize,
+    expected_reason_code: String,
+}
+
+#[derive(Debug)]
+struct Phase14RequestAggregateTable {
+    format: String,
+    target_id: String,
+    target_triple: String,
+    transport_authority: String,
+    copy_policy: String,
+    resource_policy: String,
+    abi_policy: String,
+    join_policy: String,
+    loop_policy: String,
+    class_policies: Vec<Phase14RequestAggregateClassPolicy>,
+    values: Vec<Phase14RequestAggregateValue>,
+    blocks: Vec<Phase14RequestAggregateBlock>,
+    edges: Vec<Phase14RequestAggregateEdge>,
+    operations: Vec<Phase14RequestAggregateOperation>,
+}
+
+impl Phase14RequestAggregateTable {
+    fn legacy_empty(target_triple: &str) -> Self {
+        Self {
+            format: PHASE14_AGGREGATE_TABLE_FORMAT_V1.to_string(),
+            target_id: String::new(),
+            target_triple: target_triple.to_string(),
+            transport_authority:
+                "compiler_owned_transport_plan_no_backend_flattening".to_string(),
+            copy_policy: "explicit_non_resource_copy_only".to_string(),
+            resource_policy:
+                "deferred_resource_bearing_aggregate_movement_and_destruction"
+                    .to_string(),
+            abi_policy:
+                "deferred_aggregate_parameter_and_return_abi".to_string(),
+            join_policy:
+                "all_incoming_edges_agree_on_type_layout_arity_and_variant"
+                    .to_string(),
+            loop_policy:
+                "selected_loop_carried_state_through_declared_backedge"
+                    .to_string(),
+            class_policies: Vec::new(),
+            values: Vec::new(),
+            blocks: Vec::new(),
+            edges: Vec::new(),
+            operations: Vec::new(),
+        }
+    }
+
+    fn is_legacy_empty(&self) -> bool {
+        self.format == PHASE14_AGGREGATE_TABLE_FORMAT_V1
+            && self.target_id.is_empty()
+            && self.class_policies.is_empty()
+            && self.values.is_empty()
+            && self.blocks.is_empty()
+            && self.edges.is_empty()
+            && self.operations.is_empty()
+    }
+}
+
+#[derive(Debug)]
+struct Phase14AggregateEvaluation {
+    success: bool,
+    value: i64,
+    offset: usize,
+    arity: usize,
+    reason_code: String,
+}
+
+fn phase14_aggregate_class_is_valid(class_name: &str) -> bool {
+    matches!(
+        class_name,
+        "string_view" | "slice" | "fixed_array" | "struct" | "enum" | "nested"
+    )
+}
+
+fn phase14_aggregate_kind_is_valid(kind: &str) -> bool {
+    matches!(
+        kind,
+        "block_param_declare"
+            | "edge_argument_pass"
+            | "join_observe"
+            | "loop_carry"
+            | "early_return"
+    )
+}
+
+fn phase14_aggregate_edge_kind_is_valid(kind: &str) -> bool {
+    matches!(kind, "branch_true" | "branch_false" | "fallthrough" | "backedge")
+}
+
+/// The block-argument arity the compiler's transport policy implies. The worker
+/// recomputes this only to confirm the compiler's plan; it never substitutes a
+/// flattening of its own.
+fn phase14_aggregate_arity_for_policy(
+    transport_policy: &str,
+    component_count: usize,
+) -> Option<usize> {
+    match transport_policy {
+        "fieldwise_canonical_values" => Some(component_count),
+        "layout_backed_stack_copy" => Some(1),
+        _ => None,
+    }
+}
+
+fn phase14_aggregate_value_by_id<'a>(
+    table: &'a Phase14RequestAggregateTable,
+    value_id: &str,
+) -> Option<&'a Phase14RequestAggregateValue> {
+    table.values.iter().find(|value| value.value_id == value_id)
+}
+
+fn phase14_aggregate_block_by_label<'a>(
+    table: &'a Phase14RequestAggregateTable,
+    label: &str,
+) -> Option<&'a Phase14RequestAggregateBlock> {
+    table.blocks.iter().find(|block| block.label == label)
+}
+
+fn phase14_aggregate_edge_by_id<'a>(
+    table: &'a Phase14RequestAggregateTable,
+    edge_id: &str,
+) -> Option<&'a Phase14RequestAggregateEdge> {
+    table.edges.iter().find(|edge| edge.edge_id == edge_id)
+}
+
+fn phase14_aggregate_class_policy<'a>(
+    table: &'a Phase14RequestAggregateTable,
+    class_name: &str,
+) -> Option<&'a Phase14RequestAggregateClassPolicy> {
+    table
+        .class_policies
+        .iter()
+        .find(|policy| policy.class_name == class_name)
+}
+
+fn parse_phase14_request_aggregate_table(
+    cursor: &mut Phase10TextCursor<'_>,
+    request_target_triple: &str,
+) -> Result<Phase14RequestAggregateTable, Box<dyn Error>> {
+    let stage = Phase10BackendRequestStage::RequestParse;
+    let kind = Phase10BackendRequestFailureKind::InvalidRequest;
+    let format = cursor
+        .take_field("aggregate_table_format", false, stage, kind)?
+        .to_string();
+    let target_id = cursor
+        .take_field("aggregate_target_id", true, stage, kind)?
+        .to_string();
+    let target_triple = cursor
+        .take_field("aggregate_target_triple", false, stage, kind)?
+        .to_string();
+
+    if target_id.is_empty() && target_triple == "legacy-empty" {
+        let class_count =
+            cursor.take_usize_field("aggregate_class_count", stage, kind)?;
+        let value_count =
+            cursor.take_usize_field("aggregate_value_count", stage, kind)?;
+        let block_count =
+            cursor.take_usize_field("aggregate_block_count", stage, kind)?;
+        let edge_count =
+            cursor.take_usize_field("aggregate_edge_count", stage, kind)?;
+        let operation_count =
+            cursor.take_usize_field("aggregate_operation_count", stage, kind)?;
+        if format != PHASE14_AGGREGATE_TABLE_FORMAT_V1
+            || class_count != 0
+            || value_count != 0
+            || block_count != 0
+            || edge_count != 0
+            || operation_count != 0
+        {
+            return Err(phase10_backend_request_error(
+                Phase10BackendRequestStage::RequestValidation,
+                kind,
+                "aggregate_legacy_empty_invalid",
+            ));
+        }
+        return Ok(Phase14RequestAggregateTable::legacy_empty(
+            request_target_triple,
+        ));
+    }
+
+    let transport_authority = cursor
+        .take_field("aggregate_transport_authority", false, stage, kind)?
+        .to_string();
+    let copy_policy = cursor
+        .take_field("aggregate_copy_policy", false, stage, kind)?
+        .to_string();
+    let resource_policy = cursor
+        .take_field("aggregate_resource_policy", false, stage, kind)?
+        .to_string();
+    let abi_policy = cursor
+        .take_field("aggregate_abi_policy", false, stage, kind)?
+        .to_string();
+    let join_policy = cursor
+        .take_field("aggregate_join_policy", false, stage, kind)?
+        .to_string();
+    let loop_policy = cursor
+        .take_field("aggregate_loop_policy", false, stage, kind)?
+        .to_string();
+
+    let class_count =
+        cursor.take_usize_field("aggregate_class_count", stage, kind)?;
+    let mut class_policies = Vec::with_capacity(class_count);
+    for index in 0..class_count {
+        let prefix = format!("aggregate_class_{index}");
+        class_policies.push(Phase14RequestAggregateClassPolicy {
+            class_name: cursor
+                .take_field(&format!("{prefix}_name"), false, stage, kind)?
+                .to_string(),
+            transport_policy: cursor
+                .take_field(
+                    &format!("{prefix}_transport_policy"),
+                    false,
+                    stage,
+                    kind,
+                )?
+                .to_string(),
+            arity_rule: cursor
+                .take_field(&format!("{prefix}_arity_rule"), false, stage, kind)?
+                .to_string(),
+        });
+    }
+
+    let value_count =
+        cursor.take_usize_field("aggregate_value_count", stage, kind)?;
+    let mut values = Vec::with_capacity(value_count);
+    for index in 0..value_count {
+        let prefix = format!("aggregate_value_{index}");
+        let value_id = cursor
+            .take_field(&format!("{prefix}_id"), false, stage, kind)?
+            .to_string();
+        let class_name = cursor
+            .take_field(&format!("{prefix}_class"), false, stage, kind)?
+            .to_string();
+        let type_id = cursor
+            .take_field(&format!("{prefix}_type_id"), false, stage, kind)?
+            .to_string();
+        let layout_id = cursor
+            .take_field(&format!("{prefix}_layout_id"), false, stage, kind)?
+            .to_string();
+        let transport_policy = cursor
+            .take_field(&format!("{prefix}_transport_policy"), false, stage, kind)?
+            .to_string();
+        let size = cursor.take_usize_field(&format!("{prefix}_size"), stage, kind)?;
+        let alignment =
+            cursor.take_usize_field(&format!("{prefix}_alignment"), stage, kind)?;
+        let variant_name = cursor
+            .take_field(&format!("{prefix}_variant_name"), true, stage, kind)?
+            .to_string();
+        let movement_kind = cursor
+            .take_field(&format!("{prefix}_movement_kind"), false, stage, kind)?
+            .to_string();
+        let is_resource = cursor.take_usize_field(
+            &format!("{prefix}_is_resource"),
+            stage,
+            kind,
+        )? == 1;
+        let initialized = cursor.take_usize_field(
+            &format!("{prefix}_initialized"),
+            stage,
+            kind,
+        )? == 1;
+        let lifetime_region = cursor
+            .take_field(&format!("{prefix}_lifetime_region"), false, stage, kind)?
+            .to_string();
+        let component_count = cursor.take_usize_field(
+            &format!("{prefix}_component_count"),
+            stage,
+            kind,
+        )?;
+        let mut components = Vec::with_capacity(component_count);
+        for component_index in 0..component_count {
+            let component_prefix = format!("{prefix}_component_{component_index}");
+            components.push(Phase14RequestAggregateComponent {
+                name: cursor
+                    .take_field(
+                        &format!("{component_prefix}_name"),
+                        false,
+                        stage,
+                        kind,
+                    )?
+                    .to_string(),
+                type_id: cursor
+                    .take_field(
+                        &format!("{component_prefix}_type_id"),
+                        false,
+                        stage,
+                        kind,
+                    )?
+                    .to_string(),
+                offset: cursor.take_usize_field(
+                    &format!("{component_prefix}_offset"),
+                    stage,
+                    kind,
+                )?,
+                size: cursor.take_usize_field(
+                    &format!("{component_prefix}_size"),
+                    stage,
+                    kind,
+                )?,
+                value: cursor.take_i64_field(
+                    &format!("{component_prefix}_value"),
+                    stage,
+                    kind,
+                )?,
+            });
+        }
+        values.push(Phase14RequestAggregateValue {
+            value_id,
+            class_name,
+            type_id,
+            layout_id,
+            transport_policy,
+            size,
+            alignment,
+            variant_name,
+            movement_kind,
+            is_resource,
+            initialized,
+            lifetime_region,
+            components,
+        });
+    }
+
+    let block_count =
+        cursor.take_usize_field("aggregate_block_count", stage, kind)?;
+    let mut blocks = Vec::with_capacity(block_count);
+    for index in 0..block_count {
+        let prefix = format!("aggregate_block_{index}");
+        let block_id = cursor
+            .take_field(&format!("{prefix}_id"), false, stage, kind)?
+            .to_string();
+        let label = cursor
+            .take_field(&format!("{prefix}_label"), false, stage, kind)?
+            .to_string();
+        let is_join =
+            cursor.take_usize_field(&format!("{prefix}_is_join"), stage, kind)? == 1;
+        let is_loop_header = cursor.take_usize_field(
+            &format!("{prefix}_is_loop_header"),
+            stage,
+            kind,
+        )? == 1;
+        let total_block_argument_count = cursor.take_usize_field(
+            &format!("{prefix}_total_block_argument_count"),
+            stage,
+            kind,
+        )?;
+        let param_count =
+            cursor.take_usize_field(&format!("{prefix}_param_count"), stage, kind)?;
+        let mut params = Vec::with_capacity(param_count);
+        for param_index in 0..param_count {
+            let param_prefix = format!("{prefix}_param_{param_index}");
+            params.push(Phase14RequestAggregateBlockParam {
+                param_name: cursor
+                    .take_field(
+                        &format!("{param_prefix}_name"),
+                        false,
+                        stage,
+                        kind,
+                    )?
+                    .to_string(),
+                class_name: cursor
+                    .take_field(
+                        &format!("{param_prefix}_class"),
+                        false,
+                        stage,
+                        kind,
+                    )?
+                    .to_string(),
+                type_id: cursor
+                    .take_field(
+                        &format!("{param_prefix}_type_id"),
+                        false,
+                        stage,
+                        kind,
+                    )?
+                    .to_string(),
+                layout_id: cursor
+                    .take_field(
+                        &format!("{param_prefix}_layout_id"),
+                        false,
+                        stage,
+                        kind,
+                    )?
+                    .to_string(),
+                transport_policy: cursor
+                    .take_field(
+                        &format!("{param_prefix}_transport_policy"),
+                        false,
+                        stage,
+                        kind,
+                    )?
+                    .to_string(),
+                block_argument_count: cursor.take_usize_field(
+                    &format!("{param_prefix}_block_argument_count"),
+                    stage,
+                    kind,
+                )?,
+            });
+        }
+        blocks.push(Phase14RequestAggregateBlock {
+            block_id,
+            label,
+            is_join,
+            is_loop_header,
+            total_block_argument_count,
+            params,
+        });
+    }
+
+    let edge_count =
+        cursor.take_usize_field("aggregate_edge_count", stage, kind)?;
+    let mut edges = Vec::with_capacity(edge_count);
+    for index in 0..edge_count {
+        let prefix = format!("aggregate_edge_{index}");
+        let edge_id = cursor
+            .take_field(&format!("{prefix}_id"), false, stage, kind)?
+            .to_string();
+        let from_label = cursor
+            .take_field(&format!("{prefix}_from"), false, stage, kind)?
+            .to_string();
+        let to_label = cursor
+            .take_field(&format!("{prefix}_to"), false, stage, kind)?
+            .to_string();
+        let edge_kind = cursor
+            .take_field(&format!("{prefix}_kind"), false, stage, kind)?
+            .to_string();
+        let argument_count = cursor.take_usize_field(
+            &format!("{prefix}_argument_count"),
+            stage,
+            kind,
+        )?;
+        let mut argument_value_ids = Vec::with_capacity(argument_count);
+        for argument_index in 0..argument_count {
+            argument_value_ids.push(
+                cursor
+                    .take_field(
+                        &format!("{prefix}_argument_{argument_index}"),
+                        false,
+                        stage,
+                        kind,
+                    )?
+                    .to_string(),
+            );
+        }
+        edges.push(Phase14RequestAggregateEdge {
+            edge_id,
+            from_label,
+            to_label,
+            edge_kind,
+            argument_value_ids,
+        });
+    }
+
+    let operation_count =
+        cursor.take_usize_field("aggregate_operation_count", stage, kind)?;
+    let mut operations = Vec::with_capacity(operation_count);
+    for index in 0..operation_count {
+        let prefix = format!("aggregate_operation_{index}");
+        let operation_id = cursor
+            .take_field(&format!("{prefix}_id"), false, stage, kind)?
+            .to_string();
+        let operation_name = cursor
+            .take_field(&format!("{prefix}_name"), false, stage, kind)?
+            .to_string();
+        let target = cursor
+            .take_field(&format!("{prefix}_target_id"), false, stage, kind)?
+            .to_string();
+        let operation_kind = cursor
+            .take_field(&format!("{prefix}_kind"), false, stage, kind)?
+            .to_string();
+        let block_label = cursor
+            .take_field(&format!("{prefix}_block_label"), true, stage, kind)?
+            .to_string();
+        let edge_id = cursor
+            .take_field(&format!("{prefix}_edge_id"), true, stage, kind)?
+            .to_string();
+        let value_id = cursor
+            .take_field(&format!("{prefix}_value_id"), true, stage, kind)?
+            .to_string();
+        let component_index = cursor.take_usize_field(
+            &format!("{prefix}_component_index"),
+            stage,
+            kind,
+        )?;
+        let expect_success_raw = cursor.take_usize_field(
+            &format!("{prefix}_expect_success"),
+            stage,
+            kind,
+        )?;
+        if expect_success_raw > 1 {
+            return Err(phase10_backend_request_error(
+                Phase10BackendRequestStage::RequestValidation,
+                kind,
+                "aggregate_expect_success_must_be_boolean",
+            ));
+        }
+        operations.push(Phase14RequestAggregateOperation {
+            operation_id,
+            operation_name,
+            target_id: target,
+            kind: operation_kind,
+            block_label,
+            edge_id,
+            value_id,
+            component_index,
+            expect_success: expect_success_raw == 1,
+            expected_value: cursor.take_i64_field(
+                &format!("{prefix}_expected_value"),
+                stage,
+                kind,
+            )?,
+            expected_offset: cursor.take_usize_field(
+                &format!("{prefix}_expected_offset"),
+                stage,
+                kind,
+            )?,
+            expected_arity: cursor.take_usize_field(
+                &format!("{prefix}_expected_arity"),
+                stage,
+                kind,
+            )?,
+            expected_reason_code: cursor
+                .take_field(
+                    &format!("{prefix}_expected_reason_code"),
+                    false,
+                    stage,
+                    kind,
+                )?
+                .to_string(),
+        });
+    }
+
+    Ok(Phase14RequestAggregateTable {
+        format,
+        target_id,
+        target_triple,
+        transport_authority,
+        copy_policy,
+        resource_policy,
+        abi_policy,
+        join_policy,
+        loop_policy,
+        class_policies,
+        values,
+        blocks,
+        edges,
+        operations,
+    })
+}
+
+fn phase14_aggregate_evaluate(
+    table: &Phase14RequestAggregateTable,
+    operation: &Phase14RequestAggregateOperation,
+) -> Result<Phase14AggregateEvaluation, Box<dyn Error>> {
+    let valid = |value, offset, arity| {
+        Ok(Phase14AggregateEvaluation {
+            success: true,
+            value,
+            offset,
+            arity,
+            reason_code: "aggregate_transport_valid".to_string(),
+        })
+    };
+    let invalid = |reason: &str| {
+        Ok(Phase14AggregateEvaluation {
+            success: false,
+            value: 0,
+            offset: 0,
+            arity: 0,
+            reason_code: reason.to_string(),
+        })
+    };
+
+    match operation.kind.as_str() {
+        "block_param_declare" => {
+            let Some(block) =
+                phase14_aggregate_block_by_label(table, &operation.block_label)
+            else {
+                return invalid("aggregate_join_layout_mismatch");
+            };
+            if operation.component_index >= block.params.len() {
+                return invalid("aggregate_field_count_mismatch");
+            }
+            valid(
+                block.params[operation.component_index].block_argument_count as i64,
+                0,
+                block.total_block_argument_count,
+            )
+        }
+        "edge_argument_pass" | "loop_carry" => {
+            let Some(edge) = phase14_aggregate_edge_by_id(table, &operation.edge_id)
+            else {
+                return invalid("aggregate_join_layout_mismatch");
+            };
+            let Some(target) =
+                phase14_aggregate_block_by_label(table, &edge.to_label)
+            else {
+                return invalid("aggregate_join_layout_mismatch");
+            };
+            if edge.argument_value_ids.len() != target.params.len() {
+                return invalid("aggregate_field_count_mismatch");
+            }
+            if operation.kind == "loop_carry" && edge.edge_kind != "backedge" {
+                return invalid("aggregate_join_layout_mismatch");
+            }
+            valid(
+                edge.argument_value_ids.len() as i64,
+                0,
+                target.total_block_argument_count,
+            )
+        }
+        "join_observe" => {
+            let Some(value) =
+                phase14_aggregate_value_by_id(table, &operation.value_id)
+            else {
+                return invalid("aggregate_join_layout_mismatch");
+            };
+            if operation.component_index >= value.components.len() {
+                return invalid("aggregate_field_count_mismatch");
+            }
+            let component = &value.components[operation.component_index];
+            let Some(arity) = phase14_aggregate_arity_for_policy(
+                &value.transport_policy,
+                value.components.len(),
+            ) else {
+                return invalid("aggregate_join_layout_mismatch");
+            };
+            valid(component.value, component.offset, arity)
+        }
+        // Early returns are supported only while the return ABI stays scalar.
+        "early_return" => valid(operation.expected_value, 0, 0),
+        _ => invalid("aggregate_transport_operation_unsupported"),
+    }
+}
+
+fn validate_phase14_request_aggregate_table(
+    table: &Phase14RequestAggregateTable,
+    request_target_triple: &str,
+    layout_table: &Phase14RequestLayoutTable,
+) -> Result<(), Box<dyn Error>> {
+    let stage = Phase10BackendRequestStage::CanonicalMirValidation;
+    let kind = Phase10BackendRequestFailureKind::InvalidCanonicalMir;
+    if table.is_legacy_empty() {
+        return Ok(());
+    }
+    if table.format != PHASE14_AGGREGATE_TABLE_FORMAT_V1 {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::RequestValidation,
+            Phase10BackendRequestFailureKind::ProtocolMismatch,
+            "aggregate_table_format_mismatch",
+        ));
+    }
+    if table.target_triple != request_target_triple
+        || table.target_triple != layout_table.target.target_triple
+        || table.target_id != layout_table.target.target_id
+    {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::TargetValidation,
+            Phase10BackendRequestFailureKind::TargetMismatch,
+            "aggregate_target_mismatch",
+        ));
+    }
+    if table.transport_authority
+        != "compiler_owned_transport_plan_no_backend_flattening"
+        || table.copy_policy != "explicit_non_resource_copy_only"
+        || table.resource_policy
+            != "deferred_resource_bearing_aggregate_movement_and_destruction"
+        || table.abi_policy != "deferred_aggregate_parameter_and_return_abi"
+        || table.join_policy
+            != "all_incoming_edges_agree_on_type_layout_arity_and_variant"
+        || table.loop_policy
+            != "selected_loop_carried_state_through_declared_backedge"
+    {
+        return Err(phase10_backend_request_error(
+            stage,
+            kind,
+            "aggregate_policy_mismatch",
+        ));
+    }
+
+    let mut class_names = HashSet::new();
+    for policy in &table.class_policies {
+        if !phase14_aggregate_class_is_valid(&policy.class_name)
+            || !class_names.insert(policy.class_name.clone())
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "aggregate_class_policy_invalid",
+            ));
+        }
+        if phase14_aggregate_arity_for_policy(&policy.transport_policy, 1).is_none()
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "aggregate_class_policy_invalid",
+            ));
+        }
+    }
+
+    let mut value_ids = HashSet::new();
+    for value in &table.values {
+        if !value_ids.insert(value.value_id.clone())
+            || !phase14_aggregate_class_is_valid(&value.class_name)
+            || value.size == 0
+            || value.alignment == 0
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "aggregate_join_layout_mismatch",
+            ));
+        }
+        // Phase 14 copies are limited to explicit non-resource copy semantics.
+        if value.is_resource {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "aggregate_resource_copy_rejected",
+            ));
+        }
+        if !value.initialized {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "aggregate_uninitialized_value",
+            ));
+        }
+        if value.lifetime_region != "function:main" {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "aggregate_invalid_lifetime",
+            ));
+        }
+        if value.movement_kind != "copy" && value.movement_kind != "move" {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "aggregate_invalid_movement_kind",
+            ));
+        }
+        let Some(policy) =
+            phase14_aggregate_class_policy(table, &value.class_name)
+        else {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "aggregate_class_policy_invalid",
+            ));
+        };
+        if policy.transport_policy != value.transport_policy {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "aggregate_transport_policy_mismatch",
+            ));
+        }
+        if value.components.is_empty() {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "aggregate_field_count_mismatch",
+            ));
+        }
+        let mut previous_offset: i64 = -1;
+        for component in &value.components {
+            let Some(end) = component.offset.checked_add(component.size) else {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    "aggregate_join_layout_mismatch",
+                ));
+            };
+            if component.size == 0
+                || end > value.size
+                || (component.offset as i64) <= previous_offset
+            {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    "aggregate_join_layout_mismatch",
+                ));
+            }
+            previous_offset = component.offset as i64;
+        }
+        if value.class_name == "enum" && value.variant_name.is_empty() {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "aggregate_variant_mismatch",
+            ));
+        }
+    }
+
+    for block in &table.blocks {
+        let mut total = 0usize;
+        for param in &block.params {
+            if param.block_argument_count == 0
+                || !phase14_aggregate_class_is_valid(&param.class_name)
+            {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    "aggregate_field_count_mismatch",
+                ));
+            }
+            let Some(policy) =
+                phase14_aggregate_class_policy(table, &param.class_name)
+            else {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    "aggregate_class_policy_invalid",
+                ));
+            };
+            if policy.transport_policy != param.transport_policy {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    "aggregate_transport_policy_mismatch",
+                ));
+            }
+            total += param.block_argument_count;
+        }
+        // The declared block-argument count must equal what the params imply.
+        if total != block.total_block_argument_count {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "aggregate_field_count_mismatch",
+            ));
+        }
+        let expected_id = format!(
+            "aggregate_block:v1:target={}:label={}:arity={}",
+            table.target_id, block.label, block.total_block_argument_count
+        );
+        if block.block_id != expected_id {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "aggregate_block_identity_mismatch",
+            ));
+        }
+    }
+
+    for edge in &table.edges {
+        if !phase14_aggregate_edge_kind_is_valid(&edge.edge_kind) {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "aggregate_edge_kind_invalid",
+            ));
+        }
+        if phase14_aggregate_block_by_label(table, &edge.from_label).is_none() {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "aggregate_join_layout_mismatch",
+            ));
+        }
+        let Some(target) = phase14_aggregate_block_by_label(table, &edge.to_label)
+        else {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "aggregate_join_layout_mismatch",
+            ));
+        };
+        let expected_id = format!(
+            "aggregate_edge:v1:from={}:to={}:kind={}",
+            edge.from_label, edge.to_label, edge.edge_kind
+        );
+        if edge.edge_id != expected_id {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "aggregate_edge_identity_mismatch",
+            ));
+        }
+        // Block-argument count must match the target block exactly.
+        if edge.argument_value_ids.len() != target.params.len() {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "aggregate_field_count_mismatch",
+            ));
+        }
+        let mut scalar_arity = 0usize;
+        for (position, argument) in edge.argument_value_ids.iter().enumerate() {
+            let Some(value) = phase14_aggregate_value_by_id(table, argument) else {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    "aggregate_join_layout_mismatch",
+                ));
+            };
+            let param = &target.params[position];
+            // Aggregate type identity, layout identity, and argument type.
+            if value.type_id != param.type_id
+                || value.layout_id != param.layout_id
+                || value.class_name != param.class_name
+                || value.transport_policy != param.transport_policy
+            {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    "aggregate_join_layout_mismatch",
+                ));
+            }
+            if phase14_aggregate_arity_for_policy(
+                &value.transport_policy,
+                value.components.len(),
+            ) != Some(param.block_argument_count)
+            {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    "aggregate_field_count_mismatch",
+                ));
+            }
+            scalar_arity += param.block_argument_count;
+        }
+        if scalar_arity != target.total_block_argument_count {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "aggregate_field_count_mismatch",
+            ));
+        }
+        if edge.edge_kind == "backedge" && !target.is_loop_header {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "aggregate_backedge_target_not_loop_header",
+            ));
+        }
+    }
+
+    // Join consistency: every incoming edge to a join must agree.
+    for block in &table.blocks {
+        if !block.is_join {
+            continue;
+        }
+        let incoming: Vec<&Phase14RequestAggregateEdge> = table
+            .edges
+            .iter()
+            .filter(|edge| edge.to_label == block.label)
+            .collect();
+        for window in incoming.windows(2) {
+            let (left_edge, right_edge) = (window[0], window[1]);
+            if left_edge.argument_value_ids.len()
+                != right_edge.argument_value_ids.len()
+            {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    "aggregate_field_count_mismatch",
+                ));
+            }
+            for position in 0..left_edge.argument_value_ids.len() {
+                let left =
+                    phase14_aggregate_value_by_id(table, &left_edge.argument_value_ids[position]);
+                let right =
+                    phase14_aggregate_value_by_id(table, &right_edge.argument_value_ids[position]);
+                let (Some(left), Some(right)) = (left, right) else {
+                    return Err(phase10_backend_request_error(
+                        stage,
+                        kind,
+                        "aggregate_join_layout_mismatch",
+                    ));
+                };
+                if left.variant_name != right.variant_name {
+                    return Err(phase10_backend_request_error(
+                        stage,
+                        kind,
+                        "aggregate_variant_mismatch",
+                    ));
+                }
+                if left.type_id != right.type_id
+                    || left.layout_id != right.layout_id
+                    || left.transport_policy != right.transport_policy
+                    || left.size != right.size
+                    || left.alignment != right.alignment
+                    || left.components.len() != right.components.len()
+                {
+                    return Err(phase10_backend_request_error(
+                        stage,
+                        kind,
+                        "aggregate_join_layout_mismatch",
+                    ));
+                }
+            }
+        }
+    }
+
+    // A moved value may not be passed along more than one edge.
+    for value in &table.values {
+        if value.movement_kind != "move" {
+            continue;
+        }
+        let uses = table
+            .edges
+            .iter()
+            .flat_map(|edge| edge.argument_value_ids.iter())
+            .filter(|argument| *argument == &value.value_id)
+            .count();
+        if uses > 1 {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "aggregate_use_after_move",
+            ));
+        }
+    }
+
+    let mut operation_ids = HashSet::new();
+    for operation in &table.operations {
+        if !phase14_aggregate_kind_is_valid(&operation.kind) {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "aggregate_transport_operation_unsupported",
+            ));
+        }
+        if operation.target_id != table.target_id {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "aggregate_operation_target_mismatch",
+            ));
+        }
+        let expected_id = format!(
+            "aggregate_operation:v1:target={}:name={}:kind={}",
+            operation.target_id, operation.operation_name, operation.kind
+        );
+        if operation.operation_id != expected_id
+            || !operation_ids.insert(operation.operation_id.clone())
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "aggregate_operation_identity_mismatch",
+            ));
+        }
+        let evaluation = phase14_aggregate_evaluate(table, operation)?;
+        if !evaluation.success {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                &evaluation.reason_code,
+            ));
+        }
+        if evaluation.success != operation.expect_success
+            || evaluation.value != operation.expected_value
+            || evaluation.offset != operation.expected_offset
+            || evaluation.arity != operation.expected_arity
+            || evaluation.reason_code != operation.expected_reason_code
+        {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "aggregate_operation_expectation_mismatch",
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn phase14_aggregate_witness_text(
+    request: &Phase10BackendRequest,
+) -> Result<String, Box<dyn Error>> {
+    let table = &request.aggregate_table;
+    validate_phase14_request_aggregate_table(
+        table,
+        &request.target_triple,
+        &request.layout_table,
+    )?;
+    if table.is_legacy_empty() {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::CanonicalMirValidation,
+            Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+            "aggregate_table_is_legacy_empty",
+        ));
+    }
+    let mut output = String::new();
+    output.push_str("aggregate_transport_status: valid\n");
+    output.push_str(&format!("aggregate_target: {}\n", table.target_triple));
+    output.push_str(&format!("aggregate_target_id: {}\n", table.target_id));
+    output.push_str(&format!(
+        "aggregate_transport_authority: {}\n",
+        table.transport_authority
+    ));
+    output.push_str(&format!("aggregate_copy_policy: {}\n", table.copy_policy));
+    output.push_str(&format!(
+        "aggregate_resource_policy: {}\n",
+        table.resource_policy
+    ));
+    output.push_str(&format!("aggregate_abi_policy: {}\n", table.abi_policy));
+    output.push_str(&format!("aggregate_join_policy: {}\n", table.join_policy));
+    output.push_str(&format!("aggregate_loop_policy: {}\n", table.loop_policy));
+    for policy in &table.class_policies {
+        output.push_str(&format!(
+            "aggregate_class: {} transport={} arity_rule={}\n",
+            policy.class_name, policy.transport_policy, policy.arity_rule,
+        ));
+    }
+    for value in &table.values {
+        let arity = phase14_aggregate_arity_for_policy(
+            &value.transport_policy,
+            value.components.len(),
+        )
+        .unwrap_or(0);
+        output.push_str(&format!(
+            "aggregate_value: {} class={} type={} transport={} size={} alignment={} variant={} movement={} components={} arity={}\n",
+            value.value_id,
+            value.class_name,
+            value.type_id,
+            value.transport_policy,
+            value.size,
+            value.alignment,
+            value.variant_name,
+            value.movement_kind,
+            value.components.len(),
+            arity,
+        ));
+        for component in &value.components {
+            output.push_str(&format!(
+                "aggregate_component: {}.{} type={} offset={} size={} value={}\n",
+                value.value_id,
+                component.name,
+                component.type_id,
+                component.offset,
+                component.size,
+                component.value,
+            ));
+        }
+    }
+    for block in &table.blocks {
+        output.push_str(&format!(
+            "aggregate_block: {} join={} loop_header={} params={} block_arguments={}\n",
+            block.label,
+            if block.is_join { 1 } else { 0 },
+            if block.is_loop_header { 1 } else { 0 },
+            block.params.len(),
+            block.total_block_argument_count,
+        ));
+    }
+    for edge in &table.edges {
+        output.push_str(&format!(
+            "aggregate_edge: {}->{} kind={} arguments={}\n",
+            edge.from_label,
+            edge.to_label,
+            edge.edge_kind,
+            edge.argument_value_ids.len(),
+        ));
+    }
+    for operation in &table.operations {
+        let evaluation = phase14_aggregate_evaluate(table, operation)?;
+        output.push_str(&format!(
+            "aggregate_operation: {} kind={} status={} value={} offset={} arity={} reason={}\n",
+            operation.operation_name,
+            operation.kind,
+            if evaluation.success { "success" } else { "failure" },
+            evaluation.value,
+            evaluation.offset,
+            evaluation.arity,
+            evaluation.reason_code,
+        ));
+    }
+    Ok(output)
+}
+
+fn print_phase14_aggregate_witness(
+    request_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let request = phase14_load_primitive_layout_request(request_path)?;
+    print!("{}", phase14_aggregate_witness_text(&request)?);
+    Ok(())
+}
+
+
 const PHASE14_STRUCT_TABLE_FORMAT_V1: &str =
     "gust.compiler_struct_layout_table.v1";
 
@@ -10658,6 +11921,7 @@ struct Phase10BackendRequest {
     array_slice_table: Phase14RequestArraySliceTable,
     struct_table: Phase14RequestStructTable,
     enum_table: Phase14RequestEnumTable,
+    aggregate_table: Phase14RequestAggregateTable,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -10825,6 +12089,11 @@ fn parse_phase10_backend_request(
     } else {
         Phase14RequestEnumTable::legacy_empty(&target_triple)
     };
+    let aggregate_table = if cursor.has_remaining() {
+        parse_phase14_request_aggregate_table(&mut cursor, &target_triple)?
+    } else {
+        Phase14RequestAggregateTable::legacy_empty(&target_triple)
+    };
     cursor.finish(stage, kind)?;
 
     if !output_path.is_absolute() {
@@ -10863,6 +12132,7 @@ fn parse_phase10_backend_request(
         array_slice_table,
         struct_table,
         enum_table,
+        aggregate_table,
     })
 }
 
@@ -15131,6 +16401,15 @@ fn run() -> Result<(), Box<dyn Error>> {
                 return Err(usage_error().into());
             }
             print_phase14_array_slice_witness(Path::new(&request_path))
+        }
+        "phase14-aggregate-witness" => {
+            let Some(request_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            print_phase14_aggregate_witness(Path::new(&request_path))
         }
         "phase14-struct-witness" => {
             let Some(request_path) = args.next() else {

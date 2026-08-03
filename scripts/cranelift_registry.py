@@ -785,6 +785,19 @@ PHASE14_ARRAY_SLICE_OPERATION_KINDS = (
     "array_init", "element_address", "element_load", "element_store",
     "array_to_slice", "slice_length", "bounded_index", "subslice",
 )
+PHASE14_AGGREGATE_VERSION = "phase14_aggregate_basic_block_transport_v1"
+PHASE14_AGGREGATE_MIGRATED_IDS = ("p14_aggregate_basic_block_transport",)
+PHASE14_AGGREGATE_CLASSES = (
+    "string_view", "slice", "fixed_array", "struct", "enum", "nested",
+)
+PHASE14_AGGREGATE_OPERATION_KINDS = (
+    "block_param_declare", "edge_argument_pass", "join_observe", "loop_carry",
+    "early_return",
+)
+PHASE14_AGGREGATE_NEGATIVE_CLASSES = (
+    "join_layout_mismatch", "field_count_mismatch", "variant_mismatch",
+    "invalid_lifetime", "use_after_move", "resource_bearing_copy",
+)
 PHASE14_STRUCT_VERSION = "phase14_declaration_order_struct_layout_v1"
 PHASE14_STRUCT_MIGRATED_IDS = ("p14_struct_field_layout",)
 PHASE14_STRUCT_OPERATION_KINDS = (
@@ -2782,6 +2795,48 @@ def validate():
                     == list(PHASE14_ARRAY_SLICE_OPERATION_KINDS),
                     f"{entry_id}: array/slice evidence drifted",
                 )
+            elif entry_id in PHASE14_AGGREGATE_MIGRATED_IDS:
+                require(
+                    closure == PHASE14_AGGREGATE_VERSION,
+                    f"{entry_id}: aggregate transport checkpoint version drifted",
+                )
+                require(
+                    status == "migrated"
+                    and entry["route_owner"] == "generic_canonical_mir",
+                    f"{entry_id}: selected aggregate row must be migrated through canonical MIR",
+                )
+                require(reason == destination == "none_migrated",
+                        f"{entry_id}: migrated aggregate row has stale deferral fields")
+                require(entry["current_failure_stage"] == "none_supported",
+                        f"{entry_id}: migrated aggregate row has a failure stage")
+                fixture(entry["source_fixture"], f"{entry_id}.source_fixture")
+                fixture(entry["canonical_mir_fixture"],
+                        f"{entry_id}.canonical_mir_fixture")
+                require(
+                    entry["differential_case_id"]
+                    == f"phase14_registry_differential:{entry_id}",
+                    f"{entry_id}: aggregate differential identity drifted",
+                )
+                require(
+                    evidence.get("behavior_policy")
+                    == "non_resource_aggregates_cross_basic_block_boundaries_through_one_compiler_owned_transport_plan_per_class"
+                    and evidence.get("phase14_11_contract") == PHASE14_AGGREGATE_VERSION
+                    and evidence.get("selected_aggregate_classes")
+                    == list(PHASE14_AGGREGATE_CLASSES)
+                    and evidence.get("selected_operation_kinds")
+                    == list(PHASE14_AGGREGATE_OPERATION_KINDS)
+                    and evidence.get("selected_negative_classes")
+                    == list(PHASE14_AGGREGATE_NEGATIVE_CLASSES)
+                    and evidence.get("transport_authority")
+                    == "compiler_owned_transport_plan_no_backend_flattening"
+                    and evidence.get("copy_policy")
+                    == "explicit_non_resource_copy_only"
+                    and evidence.get("resource_policy")
+                    == "deferred_resource_bearing_aggregate_movement_and_destruction"
+                    and evidence.get("abi_policy")
+                    == "deferred_aggregate_parameter_and_return_abi",
+                    f"{entry_id}: aggregate transport evidence drifted",
+                )
             elif entry_id in PHASE14_STRUCT_MIGRATED_IDS:
                 require(
                     closure == PHASE14_STRUCT_VERSION,
@@ -3397,6 +3452,13 @@ def verify_phase14_layout_authority(registry):
                 and entry["closure_version"] == PHASE14_ARRAY_SLICE_VERSION,
                 f"{entry_id}: array/slice migration no longer consumes the layout authority",
             )
+        elif entry_id in PHASE14_AGGREGATE_MIGRATED_IDS:
+            require(
+                entry["status"] == "migrated"
+                and entry["route_owner"] == "generic_canonical_mir"
+                and entry["closure_version"] == PHASE14_AGGREGATE_VERSION,
+                f"{entry_id}: aggregate migration no longer consumes the layout authority",
+            )
         elif entry_id in PHASE14_STRUCT_MIGRATED_IDS:
             require(
                 entry["status"] == "migrated"
@@ -3586,6 +3648,14 @@ def verify_phase14_primitive_layout(registry):
                 f"{entry_id}: later array/slice checkpoint drifted",
             )
             continue
+        if entry_id in PHASE14_AGGREGATE_MIGRATED_IDS:
+            require(
+                entry["status"] == "migrated"
+                and entry["route_owner"] == "generic_canonical_mir"
+                and entry["closure_version"] == PHASE14_AGGREGATE_VERSION,
+                f"{entry_id}: later aggregate checkpoint drifted",
+            )
+            continue
         if entry_id in PHASE14_STRUCT_MIGRATED_IDS:
             require(
                 entry["status"] == "migrated"
@@ -3758,6 +3828,14 @@ def verify_phase14_integer_conversions(registry):
                 and entry["route_owner"] == "generic_canonical_mir"
                 and entry["closure_version"] == PHASE14_ARRAY_SLICE_VERSION,
                 f"{entry_id}: later array/slice checkpoint drifted",
+            )
+            continue
+        if entry_id in PHASE14_AGGREGATE_MIGRATED_IDS:
+            require(
+                entry["status"] == "migrated"
+                and entry["route_owner"] == "generic_canonical_mir"
+                and entry["closure_version"] == PHASE14_AGGREGATE_VERSION,
+                f"{entry_id}: later aggregate checkpoint drifted",
             )
             continue
         if entry_id in PHASE14_STRUCT_MIGRATED_IDS:
@@ -3947,6 +4025,7 @@ def verify_phase14_pointers(registry):
         + PHASE14_ARRAY_SLICE_MIGRATED_IDS
         + PHASE14_STRUCT_MIGRATED_IDS
         + PHASE14_ENUM_MIGRATED_IDS
+        + PHASE14_AGGREGATE_MIGRATED_IDS
     )
     for entry_id, entry in rows.items():
         if entry_id in selected_ids:
@@ -4162,6 +4241,7 @@ def verify_phase14_stack_slots(registry):
         + PHASE14_ARRAY_SLICE_MIGRATED_IDS
         + PHASE14_STRUCT_MIGRATED_IDS
         + PHASE14_ENUM_MIGRATED_IDS
+        + PHASE14_AGGREGATE_MIGRATED_IDS
     )
     for entry_id, entry in rows.items():
         if entry_id in selected_ids:
@@ -7951,6 +8031,7 @@ def main():
             "phase14-array-slice-targets",
             "phase14-enum-targets",
             "phase14-struct-targets",
+            "phase14-aggregate-targets",
             "phase14-primitive-primary-target",
             "phase14-conversion-primary-target",
             "phase14-pointer-primary-target",
@@ -7960,6 +8041,7 @@ def main():
             "phase14-array-slice-primary-target",
             "phase14-enum-primary-target",
             "phase14-struct-primary-target",
+            "phase14-aggregate-primary-target",
             "project",
             "check-phase13-projection",
             "check-phase14-projection",
@@ -8038,6 +8120,7 @@ def main():
             "phase14-array-slice-targets",
             "phase14-enum-targets",
             "phase14-struct-targets",
+            "phase14-aggregate-targets",
         }:
             contract = validate_phase14_primitive_layout_structure(registry)
             print("\n".join(
@@ -8054,6 +8137,7 @@ def main():
             "phase14-array-slice-primary-target",
             "phase14-enum-primary-target",
             "phase14-struct-primary-target",
+            "phase14-aggregate-primary-target",
         }:
             contract = validate_phase14_primitive_layout_structure(registry)
             print(contract["primary_level2_target"])

@@ -238,6 +238,8 @@
     "guard-cranelift-phase14-enum-parity": 2,
     "guard-cranelift-phase14-struct-contract": 1,
     "guard-cranelift-phase14-struct-parity": 2,
-    "guard-cranelift-phase14-structs-enums-parity": 2
+    "guard-cranelift-phase14-structs-enums-parity": 2,
+    "guard-cranelift-phase14-aggregate-contract": 1,
+    "guard-cranelift-phase14-aggregate-parity": 2
   }
 }

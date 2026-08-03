@@ -9,6 +9,7 @@ import "mir_string_view.gst" as string_view;
 import "mir_array_slice.gst" as array_slice;
 import "mir_struct_layout.gst" as structs;
 import "mir_enum.gst" as enums;
+import "mir_aggregate_transport.gst" as aggregate;
 
 // Phase 10 generic native-backend request protocol.
 //
@@ -30,7 +31,8 @@ type MirNativeBackendRequest[ctx] struct {
     string_view_table: string_view.MirStringViewTable[ctx],
     array_slice_table: array_slice.MirArraySliceTable[ctx],
     struct_table: structs.MirStructTable[ctx],
-    enum_table: enums.MirEnumTable[ctx]
+    enum_table: enums.MirEnumTable[ctx],
+    aggregate_table: aggregate.MirAggregateTransportTable[ctx]
 }
 
 func mir_native_backend_request_path_is_safe(path: str) int {
@@ -67,8 +69,9 @@ func mir_native_backend_request_path_is_absolute(path: str) int {
     return 0;
 }
 
-func mir_native_backend_make_request_with_enum_table(target_triple: str, object_format: str, output_path: str, program_mir_bundle_path: str, program_bundle: mir.MirProgramBundle[ctx], layout_table: layout.MirLayoutTable[ctx], integer_conversion_table: integer_conversion.MirIntegerConversionTable[ctx], pointer_table: pointer.MirPointerTable[ctx], stack_slot_table: stack_slot.MirStackSlotTable[ctx], memory_access_table: memory_access.MirMemoryAccessTable[ctx], string_view_table: string_view.MirStringViewTable[ctx], array_slice_table: array_slice.MirArraySliceTable[ctx], struct_table: structs.MirStructTable[ctx], enum_table: enums.MirEnumTable[ctx], ctx: &Arena) MirNativeBackendRequest[ctx] {
+func mir_native_backend_make_request_with_aggregate_table(target_triple: str, object_format: str, output_path: str, program_mir_bundle_path: str, program_bundle: mir.MirProgramBundle[ctx], layout_table: layout.MirLayoutTable[ctx], integer_conversion_table: integer_conversion.MirIntegerConversionTable[ctx], pointer_table: pointer.MirPointerTable[ctx], stack_slot_table: stack_slot.MirStackSlotTable[ctx], memory_access_table: memory_access.MirMemoryAccessTable[ctx], string_view_table: string_view.MirStringViewTable[ctx], array_slice_table: array_slice.MirArraySliceTable[ctx], struct_table: structs.MirStructTable[ctx], enum_table: enums.MirEnumTable[ctx], aggregate_table: aggregate.MirAggregateTransportTable[ctx], ctx: &Arena) MirNativeBackendRequest[ctx] {
     mut request: MirNativeBackendRequest[ctx];
+    request.aggregate_table = aggregate_table;
     request.target_triple = std.Clone(ctx, target_triple);
     request.object_format = std.Clone(ctx, object_format);
     request.output_path = std.Clone(ctx, output_path);
@@ -86,8 +89,30 @@ func mir_native_backend_make_request_with_enum_table(target_triple: str, object_
     return request;
 }
 
+func mir_native_backend_make_request_with_enum_table(target_triple: str, object_format: str, output_path: str, program_mir_bundle_path: str, program_bundle: mir.MirProgramBundle[ctx], layout_table: layout.MirLayoutTable[ctx], integer_conversion_table: integer_conversion.MirIntegerConversionTable[ctx], pointer_table: pointer.MirPointerTable[ctx], stack_slot_table: stack_slot.MirStackSlotTable[ctx], memory_access_table: memory_access.MirMemoryAccessTable[ctx], string_view_table: string_view.MirStringViewTable[ctx], array_slice_table: array_slice.MirArraySliceTable[ctx], struct_table: structs.MirStructTable[ctx], enum_table: enums.MirEnumTable[ctx], ctx: &Arena) MirNativeBackendRequest[ctx] {
+    return mir_native_backend_make_request_with_aggregate_table(
+        target_triple,
+        object_format,
+        output_path,
+        program_mir_bundle_path,
+        program_bundle,
+        layout_table,
+        integer_conversion_table,
+        pointer_table,
+        stack_slot_table,
+        memory_access_table,
+        string_view_table,
+        array_slice_table,
+        struct_table,
+        enum_table,
+        aggregate.mir_aggregate_make_empty_table(target_triple, ctx),
+        ctx
+    );
+}
+
 func mir_native_backend_make_request_with_array_slice_table(target_triple: str, object_format: str, output_path: str, program_mir_bundle_path: str, program_bundle: mir.MirProgramBundle[ctx], layout_table: layout.MirLayoutTable[ctx], integer_conversion_table: integer_conversion.MirIntegerConversionTable[ctx], pointer_table: pointer.MirPointerTable[ctx], stack_slot_table: stack_slot.MirStackSlotTable[ctx], memory_access_table: memory_access.MirMemoryAccessTable[ctx], string_view_table: string_view.MirStringViewTable[ctx], array_slice_table: array_slice.MirArraySliceTable[ctx], ctx: &Arena) MirNativeBackendRequest[ctx] {
     mut request: MirNativeBackendRequest[ctx];
+    request.aggregate_table = aggregate.mir_aggregate_make_empty_table(target_triple, ctx);
     request.struct_table = structs.mir_struct_make_empty_table(target_triple, ctx);
     request.enum_table = enums.mir_enum_make_empty_table(target_triple, ctx);
     request.target_triple = std.Clone(ctx, target_triple);
@@ -333,6 +358,16 @@ func mir_native_backend_request_is_valid(request: MirNativeBackendRequest[ctx], 
     ) == 0 {
         return 0;
     }
+    if aggregate.mir_aggregate_table_is_legacy_empty(
+        request.aggregate_table,
+        ctx
+    ) == 0 && aggregate.mir_aggregate_table_is_valid(
+        request.aggregate_table,
+        request.layout_table,
+        ctx
+    ) == 0 {
+        return 0;
+    }
     return 1;
 }
 
@@ -455,6 +490,14 @@ func mir_serialize_native_backend_request(request: MirNativeBackendRequest[ctx],
         output,
         enums.mir_serialize_enum_table_for_request(
             request.enum_table,
+            request.layout_table,
+            ctx
+        )
+    );
+    output = std.Concat(
+        output,
+        aggregate.mir_serialize_aggregate_table_for_request(
+            request.aggregate_table,
             request.layout_table,
             ctx
         )

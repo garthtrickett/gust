@@ -27,6 +27,7 @@ import "mir_string_view.gst" as string_view;
 import "mir_array_slice.gst" as array_slice;
 import "mir_struct_layout.gst" as structs;
 import "mir_enum.gst" as enums;
+import "mir_aggregate_transport.gst" as aggregate;
 
 type MirTypeLayoutReference[ctx] struct {
     type_id: str,
@@ -273,6 +274,48 @@ type MirArraySliceOperationReference[ctx] struct {
     length: int
 }
 
+type MirAggregateTransportOperationKind enum {
+    BlockParamDeclare,
+    EdgeArgumentPass,
+    JoinObserve,
+    LoopCarry,
+    EarlyReturn
+}
+
+type MirAggregateValueReference[ctx] struct {
+    value_id: str,
+    class_name: str,
+    type_id: str,
+    layout_id: str,
+    transport_policy: str,
+    size: int,
+    alignment: int,
+    variant_name: str,
+    movement_kind: str,
+    component_count: int,
+    block_argument_count: int
+}
+
+type MirAggregateBlockReference[ctx] struct {
+    block_id: str,
+    label: str,
+    is_join: int,
+    is_loop_header: int,
+    param_count: int,
+    total_block_argument_count: int
+}
+
+type MirAggregateTransportOperationReference[ctx] struct {
+    operation_id: str,
+    operation_name: str,
+    target_id: str,
+    operation_kind: MirAggregateTransportOperationKind,
+    block_label: str,
+    edge_id: str,
+    value_id: str,
+    component_index: int
+}
+
 type MirStructOperationKind enum {
     Construct,
     FieldAddress,
@@ -374,6 +417,9 @@ type MirProgram[ctx] struct {
     array_value_references: Index[std.Vector[MirArrayValueReference[ctx], ctx], ctx],
     slice_references: Index[std.Vector[MirSliceReference[ctx], ctx], ctx],
     array_slice_operation_references: Index[std.Vector[MirArraySliceOperationReference[ctx], ctx], ctx],
+    aggregate_value_references: Index[std.Vector[MirAggregateValueReference[ctx], ctx], ctx],
+    aggregate_block_references: Index[std.Vector[MirAggregateBlockReference[ctx], ctx], ctx],
+    aggregate_operation_references: Index[std.Vector[MirAggregateTransportOperationReference[ctx], ctx], ctx],
     struct_layout_references: Index[std.Vector[MirStructLayoutReference[ctx], ctx], ctx],
     struct_value_references: Index[std.Vector[MirStructValueReference[ctx], ctx], ctx],
     struct_operation_references: Index[std.Vector[MirStructOperationReference[ctx], ctx], ctx],
@@ -787,6 +833,27 @@ func mir_empty_array_slice_operation_reference_vector(ctx: &Arena) Index[std.Vec
     return references_idx;
 }
 
+func mir_empty_aggregate_value_reference_vector(ctx: &Arena) Index[std.Vector[MirAggregateValueReference[ctx], ctx], ctx] {
+    mut references: std.Vector[MirAggregateValueReference[ctx], ctx] := std.VectorNew(ctx);
+    mut references_idx: Index[std.Vector[MirAggregateValueReference[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(references_idx, references);
+    return references_idx;
+}
+
+func mir_empty_aggregate_block_reference_vector(ctx: &Arena) Index[std.Vector[MirAggregateBlockReference[ctx], ctx], ctx] {
+    mut references: std.Vector[MirAggregateBlockReference[ctx], ctx] := std.VectorNew(ctx);
+    mut references_idx: Index[std.Vector[MirAggregateBlockReference[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(references_idx, references);
+    return references_idx;
+}
+
+func mir_empty_aggregate_operation_reference_vector(ctx: &Arena) Index[std.Vector[MirAggregateTransportOperationReference[ctx], ctx], ctx] {
+    mut references: std.Vector[MirAggregateTransportOperationReference[ctx], ctx] := std.VectorNew(ctx);
+    mut references_idx: Index[std.Vector[MirAggregateTransportOperationReference[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(references_idx, references);
+    return references_idx;
+}
+
 func mir_empty_struct_layout_reference_vector(ctx: &Arena) Index[std.Vector[MirStructLayoutReference[ctx], ctx], ctx] {
     mut references: std.Vector[MirStructLayoutReference[ctx], ctx] := std.VectorNew(ctx);
     mut references_idx: Index[std.Vector[MirStructLayoutReference[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
@@ -869,6 +936,9 @@ func mir_make_program(ctx: &Arena) MirProgram[ctx] {
     program.array_value_references = mir_empty_array_value_reference_vector(ctx);
     program.slice_references = mir_empty_slice_reference_vector(ctx);
     program.array_slice_operation_references = mir_empty_array_slice_operation_reference_vector(ctx);
+    program.aggregate_value_references = mir_empty_aggregate_value_reference_vector(ctx);
+    program.aggregate_block_references = mir_empty_aggregate_block_reference_vector(ctx);
+    program.aggregate_operation_references = mir_empty_aggregate_operation_reference_vector(ctx);
     program.struct_layout_references = mir_empty_struct_layout_reference_vector(ctx);
     program.struct_value_references = mir_empty_struct_value_reference_vector(ctx);
     program.struct_operation_references = mir_empty_struct_operation_reference_vector(ctx);
@@ -1639,6 +1709,164 @@ func mir_program_array_slice_references_are_valid(program: MirProgram[ctx], tabl
            query.operation.index != reference.index ||
            query.operation.start != reference.start ||
            query.operation.length != reference.length
+        {
+            return 0;
+        }
+        operation_index = operation_index + 1;
+    }
+    return 1;
+}
+
+func mir_aggregate_transport_operation_kind_from_name(kind: str) MirAggregateTransportOperationKind {
+    mut result: MirAggregateTransportOperationKind;
+    unsafe {
+        result.tag = 0;
+        if std.str_eq(kind, "edge_argument_pass") == 1 { result.tag = 1; }
+        if std.str_eq(kind, "join_observe") == 1 { result.tag = 2; }
+        if std.str_eq(kind, "loop_carry") == 1 { result.tag = 3; }
+        if std.str_eq(kind, "early_return") == 1 { result.tag = 4; }
+    }
+    return result;
+}
+
+func mir_debug_aggregate_transport_operation_kind(kind: MirAggregateTransportOperationKind) str {
+    unsafe {
+        if kind.tag == 0 { return "block_param_declare"; }
+        if kind.tag == 1 { return "edge_argument_pass"; }
+        if kind.tag == 2 { return "join_observe"; }
+        if kind.tag == 3 { return "loop_carry"; }
+        if kind.tag == 4 { return "early_return"; }
+    }
+    return "aggregate_transport_unknown";
+}
+
+func mir_make_aggregate_value_reference(value: aggregate.MirAggregateValue[ctx], ctx: &Arena) MirAggregateValueReference[ctx] {
+    mut reference: MirAggregateValueReference[ctx];
+    reference.value_id = std.Clone(ctx, value.value_id);
+    reference.class_name = std.Clone(ctx, value.class_name);
+    reference.type_id = std.Clone(ctx, value.type_id);
+    reference.layout_id = std.Clone(ctx, value.layout_id);
+    reference.transport_policy = std.Clone(ctx, value.transport_policy);
+    reference.size = value.size;
+    reference.alignment = value.alignment;
+    reference.variant_name = std.Clone(ctx, value.variant_name);
+    reference.movement_kind = std.Clone(ctx, value.movement_kind);
+    mut components: std.Vector[aggregate.MirAggregateComponent[ctx], ctx] := ctx[value.components];
+    reference.component_count = len(components);
+    reference.block_argument_count = aggregate.mir_aggregate_arity_for_policy(value.transport_policy, len(components));
+    return reference;
+}
+
+func mir_make_aggregate_block_reference(value: aggregate.MirAggregateBlock[ctx], ctx: &Arena) MirAggregateBlockReference[ctx] {
+    mut reference: MirAggregateBlockReference[ctx];
+    reference.block_id = std.Clone(ctx, value.block_id);
+    reference.label = std.Clone(ctx, value.label);
+    reference.is_join = value.is_join;
+    reference.is_loop_header = value.is_loop_header;
+    mut params: std.Vector[aggregate.MirAggregateBlockParam[ctx], ctx] := ctx[value.params];
+    reference.param_count = len(params);
+    reference.total_block_argument_count = value.total_block_argument_count;
+    return reference;
+}
+
+func mir_make_aggregate_transport_operation_reference(value: aggregate.MirAggregateOperation[ctx], ctx: &Arena) MirAggregateTransportOperationReference[ctx] {
+    mut reference: MirAggregateTransportOperationReference[ctx];
+    reference.operation_id = std.Clone(ctx, value.operation_id);
+    reference.operation_name = std.Clone(ctx, value.operation_name);
+    reference.target_id = std.Clone(ctx, value.target_id);
+    reference.operation_kind = mir_aggregate_transport_operation_kind_from_name(value.kind);
+    reference.block_label = std.Clone(ctx, value.block_label);
+    reference.edge_id = std.Clone(ctx, value.edge_id);
+    reference.value_id = std.Clone(ctx, value.value_id);
+    reference.component_index = value.component_index;
+    return reference;
+}
+
+func mir_program_with_aggregate_value_reference(program: MirProgram[ctx], reference: MirAggregateValueReference[ctx], ctx: &Arena) MirProgram[ctx] {
+    mut updated := program;
+    mut references: std.Vector[MirAggregateValueReference[ctx], ctx] := ctx[updated.aggregate_value_references];
+    references.Push(reference);
+    ctx.Set(updated.aggregate_value_references, references);
+    return updated;
+}
+
+func mir_program_with_aggregate_block_reference(program: MirProgram[ctx], reference: MirAggregateBlockReference[ctx], ctx: &Arena) MirProgram[ctx] {
+    mut updated := program;
+    mut references: std.Vector[MirAggregateBlockReference[ctx], ctx] := ctx[updated.aggregate_block_references];
+    references.Push(reference);
+    ctx.Set(updated.aggregate_block_references, references);
+    return updated;
+}
+
+func mir_program_with_aggregate_transport_operation_reference(program: MirProgram[ctx], reference: MirAggregateTransportOperationReference[ctx], ctx: &Arena) MirProgram[ctx] {
+    mut updated := program;
+    mut references: std.Vector[MirAggregateTransportOperationReference[ctx], ctx] := ctx[updated.aggregate_operation_references];
+    references.Push(reference);
+    ctx.Set(updated.aggregate_operation_references, references);
+    return updated;
+}
+
+func mir_program_aggregate_references_are_valid(program: MirProgram[ctx], table: aggregate.MirAggregateTransportTable[ctx], layout_table: layout.MirLayoutTable[ctx], ctx: &Arena) int {
+    if aggregate.mir_aggregate_table_is_valid(table, layout_table, ctx) == 0 ||
+       aggregate.mir_aggregate_table_is_legacy_empty(table, ctx) == 1
+    {
+        return 0;
+    }
+
+    mut value_references: std.Vector[MirAggregateValueReference[ctx], ctx] := ctx[program.aggregate_value_references];
+    mut value_index := 0;
+    while value_index < len(value_references) {
+        mut reference := value_references[value_index];
+        mut query := aggregate.mir_aggregate_value(table, reference.value_id, ctx);
+        if query.found == 0 { return 0; }
+        mut components: std.Vector[aggregate.MirAggregateComponent[ctx], ctx] := ctx[query.value.components];
+        if std.str_eq(query.value.class_name, reference.class_name) == 0 ||
+           std.str_eq(query.value.type_id, reference.type_id) == 0 ||
+           std.str_eq(query.value.layout_id, reference.layout_id) == 0 ||
+           std.str_eq(query.value.transport_policy, reference.transport_policy) == 0 ||
+           std.str_eq(query.value.variant_name, reference.variant_name) == 0 ||
+           std.str_eq(query.value.movement_kind, reference.movement_kind) == 0 ||
+           query.value.size != reference.size ||
+           query.value.alignment != reference.alignment ||
+           len(components) != reference.component_count ||
+           aggregate.mir_aggregate_arity_for_policy(query.value.transport_policy, len(components)) != reference.block_argument_count
+        {
+            return 0;
+        }
+        value_index = value_index + 1;
+    }
+
+    mut block_references: std.Vector[MirAggregateBlockReference[ctx], ctx] := ctx[program.aggregate_block_references];
+    mut block_index := 0;
+    while block_index < len(block_references) {
+        mut reference := block_references[block_index];
+        mut query := aggregate.mir_aggregate_block(table, reference.label, ctx);
+        if query.found == 0 { return 0; }
+        mut params: std.Vector[aggregate.MirAggregateBlockParam[ctx], ctx] := ctx[query.value.params];
+        if std.str_eq(query.value.block_id, reference.block_id) == 0 ||
+           query.value.is_join != reference.is_join ||
+           query.value.is_loop_header != reference.is_loop_header ||
+           len(params) != reference.param_count ||
+           query.value.total_block_argument_count != reference.total_block_argument_count
+        {
+            return 0;
+        }
+        block_index = block_index + 1;
+    }
+
+    mut operation_references: std.Vector[MirAggregateTransportOperationReference[ctx], ctx] := ctx[program.aggregate_operation_references];
+    mut operation_index := 0;
+    while operation_index < len(operation_references) {
+        mut reference := operation_references[operation_index];
+        mut query := aggregate.mir_aggregate_operation(table, reference.operation_name, ctx);
+        if query.found == 0 ||
+           std.str_eq(query.value.operation_id, reference.operation_id) == 0 ||
+           std.str_eq(query.value.target_id, reference.target_id) == 0 ||
+           std.str_eq(query.value.kind, mir_debug_aggregate_transport_operation_kind(reference.operation_kind)) == 0 ||
+           std.str_eq(query.value.block_label, reference.block_label) == 0 ||
+           std.str_eq(query.value.edge_id, reference.edge_id) == 0 ||
+           std.str_eq(query.value.value_id, reference.value_id) == 0 ||
+           query.value.component_index != reference.component_index
         {
             return 0;
         }
