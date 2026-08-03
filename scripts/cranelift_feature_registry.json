@@ -4369,7 +4369,8 @@
           "phase14_composition:typed_memory_with_stack_pointer_offset_and_copy",
           "phase14_composition:arrays_slices_with_layout_pointer_memory_and_branch_join",
           "phase14_composition:enums_with_layout_array_payload_locals_and_branch_join",
-          "phase14_composition:structs_with_layout_padding_nesting_and_branch_join"
+          "phase14_composition:structs_with_layout_padding_nesting_and_branch_join",
+          "phase14_composition:aggregates_across_joins_loops_and_early_return"
         ],
         "differential_failure_fixture": "compiler/p14_target_dependent_conversions_deferred_source.gst",
         "composition_cases": [
@@ -4917,7 +4918,8 @@
         "differential_stderr_policy": "stable_bytes",
         "differential_side_effect_policy": "none",
         "composition_case_ids": [
-          "phase14_composition:string_views_with_static_literals_pointer_layout_and_slices"
+          "phase14_composition:string_views_with_static_literals_pointer_layout_and_slices",
+          "phase14_composition:aggregates_across_joins_loops_and_early_return"
         ],
         "differential_failure_fixture": "compiler/p14_string_view_invalid_pointer_length_source.gst",
         "composition_cases": [
@@ -5014,7 +5016,8 @@
         "differential_side_effect_policy": "none",
         "composition_case_ids": [
           "phase14_composition:arrays_slices_with_layout_pointer_memory_and_branch_join",
-          "phase14_composition:enums_with_layout_array_payload_locals_and_branch_join"
+          "phase14_composition:enums_with_layout_array_payload_locals_and_branch_join",
+          "phase14_composition:aggregates_across_joins_loops_and_early_return"
         ],
         "differential_failure_fixture": "compiler/p14_array_slice_out_of_bounds_source.gst",
         "composition_cases": [
@@ -5110,7 +5113,8 @@
         "differential_stderr_policy": "stable_bytes",
         "differential_side_effect_policy": "none",
         "composition_case_ids": [
-          "phase14_composition:structs_with_layout_padding_nesting_and_branch_join"
+          "phase14_composition:structs_with_layout_padding_nesting_and_branch_join",
+          "phase14_composition:aggregates_across_joins_loops_and_early_return"
         ],
         "differential_failure_fixture": "compiler/p14_struct_field_overlap_source.gst",
         "composition_cases": [
@@ -5212,7 +5216,8 @@
         "differential_stderr_policy": "stable_bytes",
         "differential_side_effect_policy": "none",
         "composition_case_ids": [
-          "phase14_composition:enums_with_layout_array_payload_locals_and_branch_join"
+          "phase14_composition:enums_with_layout_array_payload_locals_and_branch_join",
+          "phase14_composition:aggregates_across_joins_loops_and_early_return"
         ],
         "differential_failure_fixture": "compiler/p14_enum_invalid_tag_value_source.gst",
         "composition_cases": [
@@ -5247,29 +5252,115 @@
       "parent": "phase13_entry:p13_general_loop_backedge_source_route",
       "feature_family": "aggregate_layout",
       "ci_family": "aggregate-flow",
-      "status": "candidate_deferred",
-      "route_owner": "deferred",
+      "status": "migrated",
+      "route_owner": "generic_canonical_mir",
       "worker_capability_owner": "worker_aggregate_layout_lowering",
       "diagnostic_owner": "canonical_mir_aggregate_layout_verifier",
-      "source_fixture": "compiler/p14_aggregate_basic_block_transport_deferred_source.gst",
-      "canonical_mir_fixture": "none_rejected_before_canonical_MIR",
-      "differential_case_id": "phase14_opening:p14_aggregate_basic_block_transport",
-      "deferral_reason": "phase14_authority_p14_aggregate_basic_block_transport_awaits_bounded_capability_migration",
-      "future_destination_phase": "phase14",
-      "closure_version": "phase14_compiler_owned_layout_authority_v1",
+      "source_fixture": "compiler/phase14_aggregate_transport_source.gst",
+      "canonical_mir_fixture": "compiler/fixtures/native_backend_phase14_aggregate_ingestion.mir",
+      "differential_case_id": "phase14_registry_differential:p14_aggregate_basic_block_transport",
+      "deferral_reason": "none_migrated",
+      "future_destination_phase": "none_migrated",
+      "closure_version": "phase14_aggregate_basic_block_transport_v1",
       "evidence": {
         "opening_record_kind": "phase14_candidate",
         "declared_capability": "non_resource_aggregate_values_across_basic_block_boundaries",
         "planning_category": "aggregate_basic_block_transport",
         "phase13_closure_dependency": "phase13_closed_deferred_registry_parity_expansion",
-        "behavior_policy": "primitive_layout_and_integer_conversion_only_other_phase14_capabilities_remain_deferred",
+        "behavior_policy": "non_resource_aggregates_cross_basic_block_boundaries_through_one_compiler_owned_transport_plan_per_class",
         "phase14_1_authority": "compiler_owned_layout_authority_and_request_transport_available",
-        "phase14_3_boundary": "not_selected_by_signed_unsigned_width_conversion_patch"
+        "phase14_11_contract": "phase14_aggregate_basic_block_transport_v1",
+        "selected_aggregate_classes": [
+          "string_view",
+          "slice",
+          "fixed_array",
+          "struct",
+          "enum",
+          "nested"
+        ],
+        "class_transport_policies": {
+          "string_view": "fieldwise_canonical_values",
+          "slice": "fieldwise_canonical_values",
+          "struct": "fieldwise_canonical_values",
+          "enum": "fieldwise_canonical_values",
+          "fixed_array": "layout_backed_stack_copy",
+          "nested": "layout_backed_stack_copy"
+        },
+        "selected_operation_kinds": [
+          "block_param_declare",
+          "edge_argument_pass",
+          "join_observe",
+          "loop_carry",
+          "early_return"
+        ],
+        "selected_negative_classes": [
+          "join_layout_mismatch",
+          "field_count_mismatch",
+          "variant_mismatch",
+          "invalid_lifetime",
+          "use_after_move",
+          "resource_bearing_copy"
+        ],
+        "transport_authority": "compiler_owned_transport_plan_no_backend_flattening",
+        "copy_policy": "explicit_non_resource_copy_only",
+        "resource_policy": "deferred_resource_bearing_aggregate_movement_and_destruction",
+        "abi_policy": "deferred_aggregate_parameter_and_return_abi",
+        "join_policy": "all_incoming_edges_agree_on_type_layout_arity_and_variant",
+        "loop_policy": "selected_loop_carried_state_through_declared_backedge",
+        "consumed_authorities": [
+          "phase14_string_literals_and_borrowed_views_v1",
+          "phase14_fixed_arrays_and_bounded_slices_v1",
+          "phase14_declaration_order_struct_layout_v1",
+          "phase14_enums_and_tagged_unions_v1"
+        ],
+        "focused_source_fixtures": [
+          "compiler/phase14_aggregate_transport_source.gst"
+        ],
+        "negative_source_fixtures": [
+          "compiler/p14_aggregate_join_layout_mismatch_source.gst",
+          "compiler/p14_aggregate_field_count_mismatch_source.gst",
+          "compiler/p14_aggregate_variant_mismatch_source.gst",
+          "compiler/p14_aggregate_invalid_lifetime_source.gst",
+          "compiler/p14_aggregate_use_after_move_source.gst",
+          "compiler/p14_aggregate_resource_bearing_copy_source.gst"
+        ],
+        "malformed_canonical_mir_fixture": "compiler/fixtures/native_backend_phase14_aggregate_malformed.mir",
+        "positive_expectation": "exit_65_phase14_aggregate_transport",
+        "individual_evidence_guard": "guard-cranelift-phase14-aggregate-parity",
+        "differential_stderr_policy": "stable_bytes",
+        "differential_side_effect_policy": "none",
+        "composition_case_ids": [
+          "phase14_composition:aggregates_across_joins_loops_and_early_return"
+        ],
+        "differential_failure_fixture": "compiler/p14_aggregate_join_layout_mismatch_source.gst",
+        "composition_cases": [
+          {
+            "id": "phase14_composition:aggregates_across_joins_loops_and_early_return",
+            "owner_entry_id": "p14_aggregate_basic_block_transport",
+            "ci_family": "aggregate-flow",
+            "source_fixture": "compiler/phase14_aggregate_transport_composition_source.gst",
+            "positive_expectation": "exit_66_phase14_aggregate_composition",
+            "stderr_policy": "stable_bytes",
+            "side_effect_policy": "none",
+            "failure_fixture": "compiler/p14_aggregate_variant_mismatch_source.gst",
+            "covers_entry_ids": [
+              "p14_aggregate_basic_block_transport",
+              "p14_string_and_string_view_layout",
+              "p14_array_and_slice_layout",
+              "p14_struct_field_layout",
+              "p14_enum_tagged_union_layout",
+              "p14_primitive_scalar_layout",
+              "p14_target_layout_model"
+            ]
+          }
+        ],
+        "poisoned_driver_evidence": "scripts/phase14_aggregate_differential.sh",
+        "sentinel_output_evidence": "scripts/phase14_aggregate_differential.sh"
       },
       "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
-      "current_failure_stage": "before_driver_discovery",
+      "current_failure_stage": "none_supported",
       "positive_future_fixture": "compiler/future/p14_aggregate_basic_block_transport_source.gst",
-      "negative_current_fixture": "compiler/p14_aggregate_basic_block_transport_deferred_source.gst"
+      "negative_current_fixture": "compiler/p14_aggregate_join_layout_mismatch_source.gst"
     },
     {
       "id": "p14_target_layout_model",
@@ -5336,7 +5427,8 @@
           "phase14_composition:string_views_with_static_literals_pointer_layout_and_slices",
           "phase14_composition:arrays_slices_with_layout_pointer_memory_and_branch_join",
           "phase14_composition:enums_with_layout_array_payload_locals_and_branch_join",
-          "phase14_composition:structs_with_layout_padding_nesting_and_branch_join"
+          "phase14_composition:structs_with_layout_padding_nesting_and_branch_join",
+          "phase14_composition:aggregates_across_joins_loops_and_early_return"
         ],
         "differential_failure_fixture": "compiler/p14_target_dependent_conversions_deferred_source.gst",
         "composition_cases": [],
