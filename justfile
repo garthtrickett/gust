@@ -6481,7 +6481,7 @@ guard-cranelift-phase9g-object-artifact-contract:
 
     just cranelift-phase9g-write-canonical-return-int-fixture "$function_fixture"
 
-
+    # allowed_cranelift_phase9g_object_artifact_validation_order: fixture_parse_validation_metadata_and_lowering_complete_before_parent_directory_or_temp_file_creation
     rg -n -F 'struct CompilerMirObjectArtifactReport {' "$source_file" >/dev/null
     rg -n -F 'final_path: PathBuf,' "$source_file" >/dev/null
     rg -n -F 'byte_size: usize,' "$source_file" >/dev/null
