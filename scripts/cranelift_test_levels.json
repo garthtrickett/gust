@@ -4,17 +4,17 @@
     "1": {
       "name": "contract-fast",
       "ci_owner": "PR Fast contract job",
-      "policy": "seconds; Phase 12.5 and Phase 13 semantic closure ownership, Phase 14 opening inventory, compiler-owned layout authority, declared-target and primitive-layout contracts, signed/unsigned/width-conversion contracts, bounded pointer/nullability contracts, deterministic stack-slot/addressable-local contracts, schema, traceability, route/fallback boundaries, generated projections, and lightweight closure summaries"
+      "policy": "seconds; Phase 12.5 and Phase 13 semantic closure ownership, Phase 14 opening inventory, compiler-owned layout authority, per-feature contracts through aggregate transport, registry-derived cross-feature composition ownership, schema, traceability, route/fallback boundaries, generated projections, and a static lightweight Phase 14 closure summary"
     },
     "2": {
       "name": "differential-family",
-      "ci_owner": "PR Fast registry-derived eleven-family matrix",
-      "policy": "focused MIR-to-C versus Cranelift execution, byte-identical MIR-to-C emission, registry-owned composition cases, stable side effects, migrated Phase 13 evidence, primary-host Phase 14 primitive-layout parity, target-aware integer-conversion parity, bounded pointer/nullability parity, and deterministic stack-slot/addressable-local parity, compiler-owned fixed-array/slice stride and bounds parity"
+      "ci_owner": "PR Fast registry-derived fourteen-family matrix",
+      "policy": "focused MIR-to-C versus Cranelift execution, byte-identical default and explicit MIR-to-C emission, registry-owned composition cases, stable side effects, migrated Phase 13 evidence, and primary-host Phase 14 parity for primitives, conversions, pointers, stack slots, typed memory, strings/views, arrays/slices, structs, enums, aggregate flow, and the Patch 14.12 cross-feature composition case"
     },
     "3": {
       "name": "historical-full",
       "ci_owner": "Cranelift Historical Full scheduled/manual workflow",
-      "policy": "full Phase 9-14 history, native/object/link/reproducibility, packaging, platform evidence, all declared-target primitive-layout witnesses, all declared-target integer-conversion witnesses, all declared-target pointer witnesses, and all declared-target stack-slot witnesses"
+      "policy": "full Phase 9-14 history, native/object/link/reproducibility, packaging, platform evidence, and a registry-derived declared-target matrix covering representative Phase 14 values, layouts, memory witnesses, nested aggregates, joins, and loop-carried composition evidence"
     }
   },
   "guards": {
@@ -240,6 +240,10 @@
     "guard-cranelift-phase14-struct-parity": 2,
     "guard-cranelift-phase14-structs-enums-parity": 2,
     "guard-cranelift-phase14-aggregate-contract": 1,
-    "guard-cranelift-phase14-aggregate-parity": 2
+    "guard-cranelift-phase14-aggregate-parity": 2,
+    "guard-cranelift-phase14-composition-contract": 1,
+    "guard-cranelift-phase14-close": 1,
+    "guard-cranelift-phase14-composition-differential": 2,
+    "guard-cranelift-phase14-all-target-composition": 3
   }
 }

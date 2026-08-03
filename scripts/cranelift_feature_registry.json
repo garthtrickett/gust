@@ -5354,6 +5354,67 @@
             ]
           }
         ],
+        "phase14_12_composition_cases": [
+          {
+            "id": "phase14_composition:all_features_nested_aggregate_layout_and_flow",
+            "owner_entry_id": "p14_aggregate_basic_block_transport",
+            "ci_family": "aggregate-flow",
+            "source_fixture": "compiler/phase14_cross_feature_composition_source.gst",
+            "positive_expectation": "exit_67_phase14_cross_feature_composition",
+            "stderr_policy": "stable_bytes",
+            "side_effect_policy": "none",
+            "failure_fixture": "compiler/p14_aggregate_join_layout_mismatch_source.gst",
+            "covers_entry_ids": [
+              "p14_primitive_scalar_layout",
+              "p14_pointer_sized_integer_layout",
+              "p14_target_dependent_conversions",
+              "p14_pointer_nullability_model",
+              "p14_stack_slot_addressable_locals",
+              "p14_typed_load_store_memory_access",
+              "p14_string_and_string_view_layout",
+              "p14_array_and_slice_layout",
+              "p14_struct_field_layout",
+              "p14_enum_tagged_union_layout",
+              "p14_aggregate_basic_block_transport",
+              "p14_target_layout_model",
+              "p14_all_target_layout_evidence"
+            ],
+            "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
+            "closure_version": "phase14_cross_feature_all_target_layout_differential_v1",
+            "composition_tags": [
+              "aggregate_joins_and_loop_carried_values",
+              "aggregate_values_updated_through_branches",
+              "array_of_structs",
+              "arrays_and_slices",
+              "bounded_pointers",
+              "declaration_order_structs",
+              "deterministic_stack_slots",
+              "enum_with_struct_or_string_view_payload",
+              "enums_and_tagged_unions",
+              "nullable_pointer_in_tagged_union",
+              "primitive_and_pointer_sized_integers",
+              "signed_and_unsigned_conversions",
+              "slice_of_structs",
+              "strings_and_views",
+              "struct_with_array_and_slice_fields",
+              "typed_loads_and_stores"
+            ],
+            "comparison_contract": [
+              "array_stride",
+              "default_explicit_mir_to_c_byte_identity",
+              "enum_tag_payload_layout",
+              "exit_status",
+              "field_offsets",
+              "ignore_uninitialized_padding",
+              "initialized_memory_bytes",
+              "runtime_values",
+              "semantic_layout_witnesses",
+              "slice_view_field_layout",
+              "stdout_stderr_when_stable",
+              "type_size_alignment"
+            ]
+          }
+        ],
         "poisoned_driver_evidence": "scripts/phase14_aggregate_differential.sh",
         "sentinel_output_evidence": "scripts/phase14_aggregate_differential.sh"
       },

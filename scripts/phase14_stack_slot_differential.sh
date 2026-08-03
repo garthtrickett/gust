@@ -5,7 +5,7 @@ validator="scripts/cranelift_registry.py"
 rust_manifest="compiler/experiments/cranelift/Cargo.toml"
 build_root="build/guards/phase14_stack_slot"
 cargo_target="$build_root/cargo-target"
-all_targets="${PHASE14_STACK_SLOT_ALL_TARGETS:-0}"
+all_targets="${PHASE14_STACK_SLOT_ALL_TARGETS:-${PHASE14_ALL_TARGETS:-0}}"
 
 for required_file in \
   "$validator" "$rust_manifest" \
@@ -42,12 +42,12 @@ if [ ! -x "$driver" ]; then
   exit 1
 fi
 
-primary_target="$(python3 "$validator" phase14-stack-slot-primary-target)"
-if [ "$all_targets" = "1" ]; then
-  mapfile -t targets < <(python3 "$validator" phase14-stack-slot-targets)
-else
-  targets=("$primary_target")
-fi
+source scripts/phase14_target_selection.sh
+phase14_select_targets \
+  "$validator" \
+  "phase14-stack-slot-targets" \
+  "phase14-stack-slot-primary-target" \
+  "$all_targets"
 
 expect_worker_failure() {
   local request_path="$1"

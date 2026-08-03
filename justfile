@@ -140,6 +140,14 @@ guard-pr-fast-ci-surface:
       'just guard-cranelift-phase14-string-view-contract'
       'Phase 14 arrays and slices'
       'just guard-cranelift-phase14-array-slice-contract'
+      'Phase 14 declaration-order structs'
+      'just guard-cranelift-phase14-struct-contract'
+      'Phase 14 enums and tagged unions'
+      'just guard-cranelift-phase14-enum-contract'
+      'Phase 14 aggregate transport across blocks'
+      'just guard-cranelift-phase14-aggregate-contract'
+      'Phase 14 cross-feature composition and closure'
+      'just guard-cranelift-phase14-close'
       'phase11-family:'
       'phase11_families:'
       'matrix.family'
@@ -14702,6 +14710,7 @@ guard-cranelift-phase14-aggregate-contract:
       "$worker" "$smoke" "$differential" "$review" "$registry"
       compiler/phase14_aggregate_transport_source.gst
       compiler/phase14_aggregate_transport_composition_source.gst
+      compiler/phase14_cross_feature_composition_source.gst
       compiler/fixtures/native_backend_phase14_aggregate_ingestion.mir
       compiler/fixtures/native_backend_phase14_aggregate_malformed.mir
       compiler/p14_aggregate_join_layout_mismatch_source.gst
@@ -14750,6 +14759,8 @@ guard-cranelift-phase14-aggregate-contract:
     rg -n -F 'func mir_program_aggregate_references_are_valid(' "$mir" >/dev/null
     rg -n -F '"id": "p14_aggregate_basic_block_transport"' "$registry" >/dev/null
     rg -n -F '"phase14_11_contract": "phase14_aggregate_basic_block_transport_v1"' "$registry" >/dev/null
+    rg -n -F '"phase14_12_composition_cases": [' "$registry" >/dev/null
+    rg -n -F 'phase14_composition:all_features_nested_aggregate_layout_and_flow' "$registry" >/dev/null
 
     aggregate_ci_count="$(
       (rg -n -F 'just guard-cranelift-phase14-aggregate-contract'         .github/workflows --glob '*.yml' || true) | wc -l | tr -d ' '
@@ -15002,6 +15013,139 @@ guard-cranelift-phase14-pointer-memory-parity:
     just guard-cranelift-phase14-stack-slot-parity
     just guard-cranelift-phase14-memory-access-parity
 
+guard-cranelift-phase14-composition-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Patch 14.12 registry-derived cross-feature composition ownership..."
+    registry="scripts/cranelift_feature_registry.json"
+    projector="scripts/phase14_composition.py"
+    differential="scripts/phase14_composition_differential.sh"
+    target_selector="scripts/phase14_target_selection.sh"
+    family_runner="scripts/cranelift_ci_family.py"
+    level_runner="scripts/cranelift_test_levels.py"
+    review="compiler/CRANELIFT_PHASE14_CROSS_FEATURE_COMPOSITION.md"
+    source_fixture="compiler/phase14_cross_feature_composition_source.gst"
+    historical_workflow=".github/workflows/cranelift-historical-full.yml"
+    pr_workflow=".github/workflows/pr-fast.yml"
+
+    for required_file in \
+      "$registry" "$projector" "$differential" "$target_selector" \
+      "$family_runner" "$level_runner" "$review" "$source_fixture" \
+      "$historical_workflow" "$pr_workflow"
+    do
+      if [ ! -f "$required_file" ] || [ -L "$required_file" ]; then
+        echo "Missing regular Patch 14.12 composition input: $required_file"
+        exit 1
+      fi
+    done
+
+    python3 "$projector" validate
+    python3 "$projector" check-historical-workflow "$historical_workflow"
+    python3 "$family_runner" validate
+    python3 "$family_runner" check-pr-workflow "$pr_workflow"
+    python3 "$level_runner" validate
+    python3 "$level_runner" check-pr-workflow
+    python3 "$level_runner" check-historical-workflow
+    python3 "$level_runner" level guard-cranelift-phase14-composition-contract |
+      rg -n -F $'guard-cranelift-phase14-composition-contract\t1\t' >/dev/null
+    python3 "$level_runner" level guard-cranelift-phase14-composition-differential |
+      rg -n -F $'guard-cranelift-phase14-composition-differential\t2\t' >/dev/null
+    python3 "$level_runner" level guard-cranelift-phase14-all-target-composition |
+      rg -n -F $'guard-cranelift-phase14-all-target-composition\t3\t' >/dev/null
+    bash -n "$differential"
+    bash -n "$target_selector"
+
+    for token in \
+      'CRANELIFT_PHASE14_COMPOSITION_VERSION: phase14_cross_feature_all_target_layout_differential_v1' \
+      'CRANELIFT_PHASE14_COMPOSITION_STATUS: phase14_closed' \
+      'CRANELIFT_PHASE14_COMPOSITION_INVENTORY_OWNER: scripts/cranelift_feature_registry.json' \
+      'CRANELIFT_PHASE14_COMPOSITION_LEVEL2_GUARD: guard-cranelift-phase14-composition-differential' \
+      'CRANELIFT_PHASE14_COMPOSITION_LEVEL3_GUARD: guard-cranelift-phase14-all-target-composition' \
+      'CRANELIFT_PHASE14_CLOSURE_GUARD: guard-cranelift-phase14-close'
+    do
+      rg -n -F "$token" "$review" >/dev/null
+    done
+
+    rg -n -F '"phase14_12_composition_cases": [' "$registry" >/dev/null
+    rg -n -F 'phase14_composition:all_features_nested_aggregate_layout_and_flow' "$registry" >/dev/null
+    rg -n -F 'phase14_12_composition_cases' "$family_runner" "$projector" >/dev/null
+    rg -n -F 'target-matrix-json' "$projector" "$historical_workflow" >/dev/null
+    rg -n -F 'PHASE14_TARGET="${{ matrix.target }}"' "$historical_workflow" >/dev/null
+
+    close_ci_count="$(
+      (rg -n -F 'just guard-cranelift-phase14-close' \
+        .github/workflows --glob '*.yml' || true) | wc -l | tr -d ' '
+    )"
+    if [ "$close_ci_count" != "1" ]; then
+      echo "Phase 14 closure guard must be wired into CI exactly once, found $close_ci_count occurrences."
+      exit 1
+    fi
+    rg -n -x -F '        run: just guard-cranelift-phase14-close' "$pr_workflow" >/dev/null
+
+    echo "✅ Patch 14.12 composition ownership passed: migrated rows, active families, cross-feature case, and declared-target matrix are registry-derived."
+
+guard-cranelift-phase14-close:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking the static lightweight Phase 14 closure..."
+    just guard-cranelift-phase14-composition-contract
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase14-close |
+      rg -n -F $'guard-cranelift-phase14-close\t1\t' >/dev/null
+
+    close_body="$(
+      sed -n \
+        '/^guard-cranelift-phase14-close:/,/^guard-cranelift-phase14-composition-differential family:/p' \
+        justfile
+    )"
+    if printf '%s\n' "$close_body" |
+       rg -n \
+         -e '^[[:space:]]+just guard-cranelift-differential-family([[:space:]]|$)' \
+         -e '^[[:space:]]+just guard-cranelift-historical-full([[:space:]]|$)' \
+         -e '^[[:space:]]+just guard-cranelift-phase14-all-target-composition([[:space:]]|$)' \
+         -e '^[[:space:]]+bash scripts/phase14_composition_differential\.sh([[:space:]]|$)' \
+         -e '^[[:space:]]+\./gust([[:space:]]|$)' \
+         -e '^[[:space:]]+(cargo|cc|gcc|clang|make)([[:space:]]|$)' >/dev/null
+    then
+      echo "Phase 14 closure must remain static and must not replay Level 2 or Level 3 evidence."
+      exit 1
+    fi
+
+    echo "✅ Phase 14 closed: every migrated row has individual and composed evidence, and declared-target execution remains owned by Level 3."
+
+guard-cranelift-phase14-composition-differential family:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase14-composition-differential |
+      rg -n -F $'guard-cranelift-phase14-composition-differential\t2\t' >/dev/null
+    bash scripts/phase14_composition_differential.sh "{{family}}"
+
+guard-cranelift-phase14-all-target-composition:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🌐 Running Phase 14 representative composition on declared targets..."
+    projector="scripts/phase14_composition.py"
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase14-all-target-composition |
+      rg -n -F $'guard-cranelift-phase14-all-target-composition\t3\t' >/dev/null
+    python3 "$projector" validate
+
+    if [ -n "${PHASE14_TARGET:-}" ]; then
+      python3 "$projector" validate-target "$PHASE14_TARGET"
+    fi
+
+    while IFS= read -r family; do
+      [ -n "$family" ] || continue
+      PHASE14_ALL_TARGETS=1 just guard-cranelift-differential-family "$family"
+    done < <(python3 "$projector" families)
+
+    if [ -n "${PHASE14_TARGET:-}" ]; then
+      echo "✅ Phase 14 declared-target composition passed: target=$PHASE14_TARGET"
+    else
+      target_count="$(python3 "$projector" targets | wc -l | tr -d ' ')"
+      echo "✅ Phase 14 all-target composition passed: targets=$target_count"
+    fi
+
 guard-cranelift-differential-family family:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -15033,6 +15177,7 @@ guard-cranelift-contract-fast:
     just guard-cranelift-phase14-struct-contract
     just guard-cranelift-phase14-enum-contract
     just guard-cranelift-phase14-aggregate-contract
+    just guard-cranelift-phase14-close
 
 guard-cranelift-historical-full:
     #!/usr/bin/env bash
@@ -15081,23 +15226,19 @@ guard-cranelift-historical-full:
     just guard-cranelift-phase10-close
 
     while IFS= read -r family; do
-      if [ "$family" = "primitive-layout" ]; then
-        PHASE14_PRIMITIVE_LAYOUT_ALL_TARGETS=1 \
-          just guard-cranelift-differential-family "$family"
-      elif [ "$family" = "conversions" ]; then
-        PHASE14_INTEGER_CONVERSION_ALL_TARGETS=1 \
-          just guard-cranelift-differential-family "$family"
-      elif [ "$family" = "pointer-memory" ]; then
-        PHASE14_POINTER_ALL_TARGETS=1 PHASE14_STACK_SLOT_ALL_TARGETS=1 \
-          PHASE14_MEMORY_ACCESS_ALL_TARGETS=1 \
-          just guard-cranelift-differential-family "$family"
-      elif [ "$family" = "strings-views" ]; then
-        PHASE14_STRING_VIEW_ALL_TARGETS=1 \
-          just guard-cranelift-differential-family "$family"
-      else
-        just guard-cranelift-differential-family "$family"
+      [ -n "$family" ] || continue
+      if python3 scripts/phase14_composition.py validate-family "$family" \
+          >/dev/null 2>&1
+      then
+        continue
       fi
+      just guard-cranelift-differential-family "$family"
     done < <(python3 scripts/cranelift_ci_family.py families)
+
+    if [ "${PHASE14_HISTORICAL_EXTERNAL_MATRIX:-0}" != "1" ]; then
+      PHASE14_ALL_TARGETS=1 just guard-cranelift-phase14-all-target-composition
+    fi
+
     just guard-cranelift-phase11-generic-canonical-mir-route
     just guard-cranelift-phase11-close
 

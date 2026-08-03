@@ -45,6 +45,9 @@
             gdb
             just
 
+            # Cloud tooling
+            hcloud
+
             # Formatting Toolchain (Phase 4A infrastructure only)
             treefmt
             topiary

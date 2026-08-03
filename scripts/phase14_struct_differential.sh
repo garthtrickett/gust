@@ -5,7 +5,7 @@ validator="scripts/cranelift_registry.py"
 rust_manifest="compiler/experiments/cranelift/Cargo.toml"
 build_root="build/guards/phase14_struct"
 cargo_target="$build_root/cargo-target"
-all_targets="${PHASE14_STRUCT_ALL_TARGETS:-0}"
+all_targets="${PHASE14_STRUCT_ALL_TARGETS:-${PHASE14_ALL_TARGETS:-0}}"
 
 for required_file in \
   "$validator" "$rust_manifest" \
@@ -42,12 +42,12 @@ if [ ! -x "$driver" ]; then
   exit 1
 fi
 
-primary_target="$(python3 "$validator" phase14-struct-primary-target)"
-if [ "$all_targets" = "1" ]; then
-  mapfile -t targets < <(python3 "$validator" phase14-struct-targets)
-else
-  targets=("$primary_target")
-fi
+source scripts/phase14_target_selection.sh
+phase14_select_targets \
+  "$validator" \
+  "phase14-struct-targets" \
+  "phase14-struct-primary-target" \
+  "$all_targets"
 
 poison_marker="$build_root/poison-driver-invoked"
 poison_driver="$build_root/poison-driver"

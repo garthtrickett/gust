@@ -4,13 +4,14 @@
 
 CRANELIFT_PHASE14_AGGREGATE_VIEW_VERSION: 1
 CRANELIFT_PHASE14_AGGREGATE_VERSION: phase14_aggregate_basic_block_transport_v1
-CRANELIFT_PHASE14_AGGREGATE_STATUS: closes_phase14_opening_inventory
+CRANELIFT_PHASE14_AGGREGATE_STATUS: ready_for_patch14_12
 CRANELIFT_PHASE14_AGGREGATE_OWNER: compiler/mir_aggregate_transport.gst
 CRANELIFT_PHASE14_AGGREGATE_TABLE_FORMAT: gust.compiler_aggregate_transport_table.v1
 CRANELIFT_PHASE14_AGGREGATE_PRIMARY_TARGET: x86_64-unknown-linux-gnu
 CRANELIFT_PHASE14_AGGREGATE_LEVEL1_GUARD: guard-cranelift-phase14-aggregate-contract
 CRANELIFT_PHASE14_AGGREGATE_LEVEL2_GUARD: guard-cranelift-phase14-aggregate-parity
 CRANELIFT_PHASE14_AGGREGATE_CI_FAMILY: aggregate-flow
+CRANELIFT_PHASE14_AGGREGATE_NEXT_PATCH: 14.12
 
 ## Selected classes and their transport policy
 

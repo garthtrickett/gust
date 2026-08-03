@@ -160,6 +160,10 @@ def check_pr_workflow(policy: dict) -> None:
         "PR Fast must invoke guard-cranelift-phase14-opening-contract exactly once",
     )
     require(
+        text.count("just guard-cranelift-phase14-close") == 1,
+        "PR Fast must invoke guard-cranelift-phase14-close exactly once",
+    )
+    require(
         "just guard-cranelift-phase13-capability-deferral-contract" not in text
         and "just guard-cranelift-phase13-deferred-residue-audit" not in text,
         "PR Fast must delegate Phase 13 prerequisite contracts to the closure owner",
@@ -216,6 +220,14 @@ def check_historical_workflow(policy: dict) -> None:
     require(
         text.count("just guard-cranelift-historical-full") == 1,
         "historical workflow must invoke guard-cranelift-historical-full exactly once",
+    )
+    require(
+        text.count("just guard-cranelift-phase14-all-target-composition") == 1,
+        "historical workflow must invoke the Phase 14 declared-target guard exactly once",
+    )
+    require(
+        "target: ${{ fromJSON(needs.inventory.outputs.phase14_targets) }}" in text,
+        "historical workflow Phase 14 target matrix must consume projected targets",
     )
     require_direct_levels(policy, text, {3}, "Cranelift Historical Full")
 

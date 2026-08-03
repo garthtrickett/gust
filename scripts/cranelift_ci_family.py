@@ -23,6 +23,9 @@ REGISTRY = ROOT / "scripts/cranelift_feature_registry.json"
 # conversions likewise own a dedicated target-aware parity route. Phase 14
 # pointers own the bounded pointer/nullability request and witness route. Patch
 # 14.7 strings/views own literal-byte, explicit-length, and lifetime parity.
+# Patch 14.12 adds a registry-owned route-level composition differential after
+# every focused Phase 14 family while preserving the focused semantic witness
+# as the family authority.
 RUNNERS = (
     (
         "scalars",
@@ -70,43 +73,43 @@ RUNNERS = (
         "primitive-layout",
         "guard-cranelift-phase14-primitive-layout-parity",
         "PHASE14_PRIMITIVE_LAYOUT_SKIP_DYNAMIC",
-        None,
+        "guard-cranelift-phase14-composition-differential",
     ),
     (
         "conversions",
         "guard-cranelift-phase14-integer-conversion-parity",
         "PHASE14_INTEGER_CONVERSION_SKIP_DYNAMIC",
-        None,
+        "guard-cranelift-phase14-composition-differential",
     ),
     (
         "pointer-memory",
         "guard-cranelift-phase14-pointer-memory-parity",
         "PHASE14_POINTER_MEMORY_SKIP_DYNAMIC",
-        None,
+        "guard-cranelift-phase14-composition-differential",
     ),
     (
         "strings-views",
         "guard-cranelift-phase14-string-view-parity",
         "PHASE14_STRING_VIEW_SKIP_DYNAMIC",
-        None,
+        "guard-cranelift-phase14-composition-differential",
     ),
     (
         "arrays-slices",
         "guard-cranelift-phase14-array-slice-parity",
         "PHASE14_ARRAY_SLICE_SKIP_DYNAMIC",
-        None,
+        "guard-cranelift-phase14-composition-differential",
     ),
     (
         "structs-enums",
         "guard-cranelift-phase14-structs-enums-parity",
         "PHASE14_STRUCTS_ENUMS_SKIP_DYNAMIC",
-        None,
+        "guard-cranelift-phase14-composition-differential",
     ),
     (
         "aggregate-flow",
         "guard-cranelift-phase14-aggregate-parity",
         "PHASE14_AGGREGATE_SKIP_DYNAMIC",
-        None,
+        "guard-cranelift-phase14-composition-differential",
     ),
 )
 RUNNER_BY_FAMILY = {
@@ -321,6 +324,57 @@ def composition_case_records(registry):
             referrers == set(case["covers_entry_ids"]),
             f"{case_id}: composition references differ from covers_entry_ids",
         )
+
+    phase14_ids = {entry["id"] for entry in migrated_phase14_rows(registry)}
+    for entry in migrated_phase14_rows(registry):
+        evidence = entry.get("evidence")
+        require(isinstance(evidence, dict), f"{entry['id']}.evidence must be an object")
+        cross_cases = evidence.get("phase14_12_composition_cases", [])
+        require(
+            isinstance(cross_cases, list),
+            f"{entry['id']}.evidence.phase14_12_composition_cases must be an array",
+        )
+        for case in cross_cases:
+            require(isinstance(case, dict), f"{entry['id']}: invalid Patch 14.12 case")
+            case_id = case.get("id")
+            require(
+                isinstance(case_id, str) and case_id and case_id not in case_by_id,
+                f"{entry['id']}: duplicate or missing Patch 14.12 case ID",
+            )
+            require(
+                case.get("owner_entry_id") == entry["id"],
+                f"{case_id}: Patch 14.12 composition owner mismatch",
+            )
+            covers = case.get("covers_entry_ids")
+            require(
+                isinstance(covers, list)
+                and len(covers) == len(set(covers))
+                and set(covers) == phase14_ids,
+                f"{case_id}: Patch 14.12 coverage must equal migrated Phase 14 rows",
+            )
+            for fixture_field in ("source_fixture", "failure_fixture"):
+                fixture_path = case.get(fixture_field)
+                require(
+                    isinstance(fixture_path, str)
+                    and fixture_path
+                    and (ROOT / fixture_path).is_file(),
+                    f"{case_id}: missing {fixture_field}",
+                )
+            require(
+                isinstance(case.get("positive_expectation"), str)
+                and case["positive_expectation"].startswith("exit_"),
+                f"{case_id}: positive expectation must declare an exit status",
+            )
+            require(
+                case.get("stderr_policy") in {"stable_bytes", "ignored"},
+                f"{case_id}: invalid stderr policy",
+            )
+            require(
+                case.get("side_effect_policy") in {"none", "compare_tree"},
+                f"{case_id}: invalid side-effect policy",
+            )
+            case_by_id[case_id] = case
+            cases.append(case)
     return cases
 
 

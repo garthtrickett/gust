@@ -6,7 +6,7 @@ validator="scripts/cranelift_registry.py"
 rust_manifest="compiler/experiments/cranelift/Cargo.toml"
 build_root="build/guards/phase14_primitive_layout"
 cargo_target="$build_root/cargo-target"
-all_targets="${PHASE14_PRIMITIVE_LAYOUT_ALL_TARGETS:-0}"
+all_targets="${PHASE14_PRIMITIVE_LAYOUT_ALL_TARGETS:-${PHASE14_ALL_TARGETS:-0}}"
 
 for required_file in \
   "$registry" "$validator" "$rust_manifest" \
@@ -44,12 +44,12 @@ if [ ! -x "$driver" ]; then
   exit 1
 fi
 
-primary_target="$(python3 "$validator" phase14-primitive-primary-target)"
-if [ "$all_targets" = "1" ]; then
-  mapfile -t targets < <(python3 "$validator" phase14-primitive-targets)
-else
-  targets=("$primary_target")
-fi
+source scripts/phase14_target_selection.sh
+phase14_select_targets \
+  "$validator" \
+  "phase14-primitive-targets" \
+  "phase14-primitive-primary-target" \
+  "$all_targets"
 if [ "${#targets[@]}" = "0" ]; then
   echo "Phase 14 primitive layout differential selected no declared targets." >&2
   exit 1
