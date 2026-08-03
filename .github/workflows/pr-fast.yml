@@ -4,6 +4,7 @@ on:
   pull_request:
   push:
     branches:
+      - "main"
       - "codex/**"
   workflow_dispatch:
 
@@ -13,10 +14,11 @@ permissions:
 jobs:
   build:
     if: >-
-      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      (github.event_name == 'push' && github.ref_name == 'main') ||
+      ((github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
       startsWith(github.ref_name, 'codex/') &&
       vars.CODEX_GITHUB_ACTOR != '' &&
-      github.actor == vars.CODEX_GITHUB_ACTOR
+      github.actor == vars.CODEX_GITHUB_ACTOR)
     name: build and Level 1 contracts
     runs-on: ubuntu-latest
     outputs:
