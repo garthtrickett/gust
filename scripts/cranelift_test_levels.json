@@ -4,7 +4,7 @@
     "1": {
       "name": "contract-fast",
       "ci_owner": "PR Fast contract job",
-      "policy": "seconds; Phase 12.5 and Phase 13 semantic closure ownership, Phase 14 opening inventory, compiler-owned layout authority, per-feature contracts through aggregate transport, registry-derived cross-feature composition ownership, schema, traceability, route/fallback boundaries, generated projections, and a static lightweight Phase 14 closure summary"
+      "policy": "seconds; Phase 12.5 and Phase 13 semantic closure ownership, the scoped Phase 14 type-layout-memory closure, compiler-owned layout authority, per-feature contracts, registry and generated-view projections, route and fallback boundaries, deferred-residue ownership, and workflow wiring without replaying Level 2 or Level 3 evidence"
     },
     "2": {
       "name": "differential-family",
@@ -173,6 +173,7 @@
     "guard-cranelift-phase14-integer-conversion-parity": 2,
     "guard-cranelift-phase14-layout-authority-contract": 1,
     "guard-cranelift-phase14-opening-contract": 1,
+    "guard-cranelift-phase14-parent-traceability": 1,
     "guard-cranelift-phase14-pointer-contract": 1,
     "guard-cranelift-phase14-pointer-parity": 2,
     "guard-cranelift-phase14-primitive-layout-parity": 2,
@@ -242,6 +243,7 @@
     "guard-cranelift-phase14-aggregate-contract": 1,
     "guard-cranelift-phase14-aggregate-parity": 2,
     "guard-cranelift-phase14-composition-contract": 1,
+    "guard-cranelift-phase14-deferred-residue-audit": 1,
     "guard-cranelift-phase14-close": 1,
     "guard-cranelift-phase14-composition-differential": 2,
     "guard-cranelift-phase14-all-target-composition": 3

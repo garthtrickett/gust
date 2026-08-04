@@ -4,10 +4,11 @@
 
 - Schema version: `1`
 - Registry version: `14`
-- Registry status: `phase14_string_views_ready`
+- Registry status: `phase14_closed_type_layout_and_memory_model`
 - Current phase: `phase14`
 - Phase 12.5 closure: `phase12_5_closed_cranelift_verification_framework_consolidation`
 - Phase 13 closure: `phase13_closed_deferred_registry_parity_expansion`
+- Phase 14 closure: `phase14_closed_type_layout_and_memory_model`
 - Total rows: `52`
 
 ## Derived origin-phase totals
@@ -279,5 +280,6 @@ Patch 14.7 selects immutable UTF-8 literal storage and borrowed explicit-byte-le
 - Phase 14 stack-slot review: `compiler/CRANELIFT_PHASE14_STACK_SLOTS.md`
 - Phase 14 memory-access review: `compiler/CRANELIFT_PHASE14_MEMORY_ACCESS.md`
 - Phase 14 string-view review: `compiler/CRANELIFT_PHASE14_STRING_VIEWS.md`
+- Phase 14 closure review: `compiler/CRANELIFT_PHASE14_CLOSURE.md`
 
 The JSON registry is authoritative. Generated Markdown is a review artifact, and the legacy Markdown documents remain historical views only.

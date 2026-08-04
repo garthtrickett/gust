@@ -37,7 +37,7 @@
       "const": 14
     },
     "registry_status": {
-      "const": "phase14_string_views_ready"
+      "const": "phase14_closed_type_layout_and_memory_model"
     },
     "current_phase": {
       "const": "phase14"
@@ -52,7 +52,8 @@
         "phase11",
         "phase12_5_opening",
         "phase12_5",
-        "phase13"
+        "phase13",
+        "phase14"
       ]
     },
     "closure_snapshots": {
@@ -60,7 +61,8 @@
       "additionalProperties": false,
       "required": [
         "phase11",
-        "phase13"
+        "phase13",
+        "phase14"
       ],
       "properties": {
         "phase11": {
@@ -68,6 +70,9 @@
         },
         "phase13": {
           "$ref": "#/$defs/phase13_closure_snapshot"
+        },
+        "phase14": {
+          "$ref": "#/$defs/phase14_closure_snapshot"
         }
       }
     },
@@ -91,11 +96,15 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "phase13"
+        "phase13",
+        "phase14"
       ],
       "properties": {
         "phase13": {
           "$ref": "#/$defs/phase13_residual_snapshot"
+        },
+        "phase14": {
+          "$ref": "#/$defs/phase14_residual_snapshot"
         }
       }
     },
@@ -2385,6 +2394,552 @@
           "const": "14.8"
         }
       }
+    },
+    "phase14_residual_snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "status",
+        "source_opening_version",
+        "final_review_view",
+        "immutable_fields",
+        "broad_description_bans",
+        "resolution_policy",
+        "freeze_policy",
+        "opening_dispositions",
+        "inherited_residual_dispositions",
+        "target_dispositions",
+        "rows"
+      ],
+      "properties": {
+        "version": {
+          "const": "phase14_deferred_residue_v1"
+        },
+        "status": {
+          "const": "frozen_for_future_phases"
+        },
+        "source_opening_version": {
+          "const": "phase14_opening_inventory_v1"
+        },
+        "final_review_view": {
+          "const": "compiler/CRANELIFT_PHASE14_FINAL_REVIEW.md"
+        },
+        "immutable_fields": {
+          "type": "array",
+          "minItems": 15,
+          "maxItems": 15,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "broad_description_bans": {
+          "type": "array",
+          "minItems": 8,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "resolution_policy": {
+          "type": "string",
+          "minLength": 1
+        },
+        "freeze_policy": {
+          "type": "string",
+          "minLength": 1
+        },
+        "opening_dispositions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/phase14_opening_disposition"
+          }
+        },
+        "inherited_residual_dispositions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/phase14_inherited_residual_disposition"
+          }
+        },
+        "target_dispositions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/phase14_target_disposition"
+          }
+        },
+        "rows": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/phase14_residual_row"
+          }
+        }
+      }
+    },
+    "phase14_opening_disposition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_phase14_row_id",
+        "final_disposition",
+        "replacement_residual_ids",
+        "justification"
+      ],
+      "properties": {
+        "source_phase14_row_id": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_]+$"
+        },
+        "final_disposition": {
+          "type": "string",
+          "enum": [
+            "migrated",
+            "excluded",
+            "replaced"
+          ]
+        },
+        "replacement_residual_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^p[0-9]+_[A-Za-z0-9_]+$"
+          }
+        },
+        "justification": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "phase14_inherited_residual_disposition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_phase13_residual_id",
+        "final_disposition",
+        "selected_phase14_row_ids",
+        "replacement_residual_ids",
+        "destination_phase",
+        "justification"
+      ],
+      "properties": {
+        "source_phase13_residual_id": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^p14_[A-Za-z0-9_]+$"
+        },
+        "final_disposition": {
+          "type": "string",
+          "enum": [
+            "migrated",
+            "excluded",
+            "replaced"
+          ]
+        },
+        "selected_phase14_row_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^p14_[A-Za-z0-9_]+$"
+          }
+        },
+        "replacement_residual_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^p[0-9]+_[A-Za-z0-9_]+$"
+          }
+        },
+        "destination_phase": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^phase[0-9]+$"
+        },
+        "justification": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "phase14_target_disposition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "target_id",
+        "target_triple",
+        "final_disposition",
+        "replacement_residual_ids",
+        "justification"
+      ],
+      "properties": {
+        "target_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target_triple": {
+          "type": "string",
+          "minLength": 1
+        },
+        "final_disposition": {
+          "type": "string",
+          "enum": [
+            "supported",
+            "excluded",
+            "replaced"
+          ]
+        },
+        "replacement_residual_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^p[0-9]+_[A-Za-z0-9_]+$"
+          }
+        },
+        "justification": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "phase14_residual_row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "feature_family",
+        "capability_owner",
+        "diagnostic_owner",
+        "capability",
+        "concrete_reason",
+        "destination_phase",
+        "prerequisite_capability",
+        "current_failure_stage",
+        "target_applicability",
+        "positive_future_fixture",
+        "negative_current_fixture",
+        "diagnostic_reason_code",
+        "source_phase14_row_ids",
+        "source_phase13_residual_ids"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^p[0-9]+_[A-Za-z0-9_]+$"
+        },
+        "feature_family": {
+          "type": "string",
+          "minLength": 1
+        },
+        "capability_owner": {
+          "type": "string",
+          "minLength": 1
+        },
+        "diagnostic_owner": {
+          "type": "string",
+          "minLength": 1
+        },
+        "capability": {
+          "type": "string",
+          "minLength": 1
+        },
+        "concrete_reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "destination_phase": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^phase[0-9]+$"
+        },
+        "prerequisite_capability": {
+          "type": "string",
+          "minLength": 1
+        },
+        "current_failure_stage": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target_applicability": {
+          "type": "string",
+          "minLength": 1
+        },
+        "positive_future_fixture": {
+          "type": "string",
+          "minLength": 1
+        },
+        "negative_current_fixture": {
+          "type": "string",
+          "minLength": 1
+        },
+        "diagnostic_reason_code": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^deferred_p[0-9]+_[A-Za-z0-9_]+$"
+        },
+        "source_phase14_row_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^p14_[A-Za-z0-9_]+$"
+          }
+        },
+        "source_phase13_residual_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^p14_[A-Za-z0-9_]+$"
+          }
+        }
+      }
+    },
+    "phase14_closure_snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "closure_version",
+        "status",
+        "scope",
+        "opening_version",
+        "residual_version",
+        "composition_version",
+        "closure_review_view",
+        "closure_guard",
+        "ci_owner",
+        "closure_wording",
+        "non_claims",
+        "required_contracts",
+        "closure_assertions",
+        "forbidden_replays",
+        "opening_entry_count",
+        "disposition_counts",
+        "migrated_entry_ids",
+        "replaced_entry_ids",
+        "excluded_entry_ids",
+        "residual_entry_count",
+        "declared_target_count",
+        "target_disposition_counts",
+        "migrated_route_owner",
+        "layout_authority_owner",
+        "layout_table_format",
+        "default_oracle_owner",
+        "explicit_cranelift_fallback_policy",
+        "worker_request_boundary",
+        "artifact_owner",
+        "differential_owner",
+        "historical_owner",
+        "all_target_owner",
+        "evidence_replay_policy",
+        "comparison_policy"
+      ],
+      "properties": {
+        "closure_version": {
+          "const": "phase14_closed_type_layout_and_memory_model"
+        },
+        "status": {
+          "const": "closed_declared_inventory_only"
+        },
+        "scope": {
+          "const": "declared_phase14_type_layout_and_memory_model_inventory_only"
+        },
+        "opening_version": {
+          "const": "phase14_opening_inventory_v1"
+        },
+        "residual_version": {
+          "const": "phase14_deferred_residue_v1"
+        },
+        "composition_version": {
+          "const": "phase14_cross_feature_all_target_layout_differential_v1"
+        },
+        "closure_review_view": {
+          "const": "compiler/CRANELIFT_PHASE14_CLOSURE.md"
+        },
+        "closure_guard": {
+          "const": "guard-cranelift-phase14-close"
+        },
+        "ci_owner": {
+          "const": "PR_Fast_Level1_phase_closure"
+        },
+        "closure_wording": {
+          "type": "string",
+          "minLength": 1
+        },
+        "non_claims": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required_contracts": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "closure_assertions": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "forbidden_replays": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "opening_entry_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "disposition_counts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "migrated",
+            "replaced",
+            "excluded"
+          ],
+          "properties": {
+            "migrated": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "replaced": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "excluded": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "migrated_entry_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "replaced_entry_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "excluded_entry_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "residual_entry_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "declared_target_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "target_disposition_counts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "supported",
+            "replaced",
+            "excluded"
+          ],
+          "properties": {
+            "supported": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "replaced": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "excluded": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "migrated_route_owner": {
+          "const": "generic_canonical_mir"
+        },
+        "layout_authority_owner": {
+          "const": "compiler/mir_layout.gst"
+        },
+        "layout_table_format": {
+          "const": "gust.compiler_layout_table.v2"
+        },
+        "default_oracle_owner": {
+          "const": "mir_to_c"
+        },
+        "explicit_cranelift_fallback_policy": {
+          "const": "forbidden"
+        },
+        "worker_request_boundary": {
+          "const": "request_data_canonical_mir_and_compiler_produced_layout_only"
+        },
+        "artifact_owner": {
+          "const": "phase9g_compiler_transactional_object_link_cleanup_and_publication"
+        },
+        "differential_owner": {
+          "const": "registry_derived_level2_families"
+        },
+        "historical_owner": {
+          "const": "scheduled_or_manual_cranelift_historical_full_level3"
+        },
+        "all_target_owner": {
+          "const": "registry_derived_phase14_declared_target_matrix"
+        },
+        "evidence_replay_policy": {
+          "const": "validate_ownership_and_wiring_without_replaying_level2_or_level3"
+        },
+        "comparison_policy": {
+          "const": "semantic_registry_layout_and_wiring_only_no_raw_hashes_or_matrix_correctness_totals"
+        }
+      }
     }
   }
 }
+

@@ -146,7 +146,7 @@ guard-pr-fast-ci-surface:
       'just guard-cranelift-phase14-enum-contract'
       'Phase 14 aggregate transport across blocks'
       'just guard-cranelift-phase14-aggregate-contract'
-      'Phase 14 cross-feature composition and closure'
+      'Phase 14 type layout and memory model closure'
       'just guard-cranelift-phase14-close'
       'phase11-family:'
       'phase11_families:'
@@ -13432,6 +13432,13 @@ guard-cranelift-phase11-registry-differential family:
     echo "guard-cranelift-phase11-registry-differential is a compatibility alias for Patch 13.11."
     just guard-cranelift-phase13-composition-differential "{{family}}"
 
+guard-cranelift-phase14-parent-traceability:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking semantic Phase 14 parent traceability..."
+    python3 scripts/cranelift_registry.py verify-phase14-parent-traceability
+    echo "✅ Phase 14 parent traceability passed: every opening row has one valid Phase 13 entry, Phase 13 residual, or Phase 14 category parent."
+
 guard-cranelift-phase14-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -15091,13 +15098,207 @@ guard-cranelift-phase14-composition-contract:
 
     echo "✅ Patch 14.12 composition ownership passed: migrated rows, active families, cross-feature case, and declared-target matrix are registry-derived."
 
+guard-cranelift-phase14-deferred-residue-audit:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Auditing Patch 14.13 deferred residue and declared-target coverage..."
+    registry="scripts/cranelift_feature_registry.json"
+    schema="scripts/cranelift_feature_registry.schema.json"
+    auditor="scripts/phase14_deferred_residue.py"
+    review="compiler/CRANELIFT_PHASE14_FINAL_REVIEW.md"
+    level_runner="scripts/cranelift_test_levels.py"
+    pr_workflow=".github/workflows/pr-fast.yml"
+
+    for required_file in \
+      "$registry" "$schema" "$auditor" "$review" "$level_runner" "$pr_workflow"
+    do
+      if [ ! -f "$required_file" ] || [ -L "$required_file" ]; then
+        echo "Missing regular Patch 14.13 audit input: $required_file"
+        exit 1
+      fi
+    done
+
+    python3 scripts/cranelift_registry.py validate
+    python3 "$auditor" validate
+    python3 "$auditor" check-review
+    python3 "$level_runner" validate
+    python3 "$level_runner" level guard-cranelift-phase14-deferred-residue-audit |
+      rg -n -F $'guard-cranelift-phase14-deferred-residue-audit\t1\t' >/dev/null
+
+    for token in \
+      'CRANELIFT_PHASE14_DEFERRED_RESIDUE_VERSION: phase14_deferred_residue_v1' \
+      'CRANELIFT_PHASE14_DEFERRED_RESIDUE_STATUS: frozen_for_future_phases' \
+      'CRANELIFT_PHASE14_DEFERRED_RESIDUE_AUTHORITY: scripts/cranelift_feature_registry.json' \
+      'CRANELIFT_PHASE14_DEFERRED_RESIDUE_GUARD: guard-cranelift-phase14-deferred-residue-audit' \
+      'CRANELIFT_PHASE14_FINAL_CLOSURE_GUARD: guard-cranelift-phase14-close'
+    do
+      rg -n -F "$token" "$review" >/dev/null
+    done
+
+    close_body="$(
+      sed -n \
+        '/^guard-cranelift-phase14-close:/,/^guard-cranelift-phase14-composition-differential family:/p' \
+        justfile
+    )"
+    if [ "$(printf '%s\n' "$close_body" |
+          rg -c -F 'just guard-cranelift-phase14-deferred-residue-audit')" != "1" ]; then
+      echo "Phase 14 closure must delegate to the Patch 14.13 residue audit exactly once."
+      exit 1
+    fi
+
+    guard_body="$(
+      sed -n \
+        '/^guard-cranelift-phase14-deferred-residue-audit:/,/^guard-cranelift-phase14-close:/p' \
+        justfile
+    )"
+    if printf '%s\n' "$guard_body" |
+       rg -n \
+         -e '^[[:space:]]+just guard-cranelift-differential-family([[:space:]]|$)' \
+         -e '^[[:space:]]+just guard-cranelift-historical-full([[:space:]]|$)' \
+         -e '^[[:space:]]+just guard-cranelift-phase14-all-target-composition([[:space:]]|$)' \
+         -e '^[[:space:]]+bash scripts/phase14_.*differential\.sh([[:space:]]|$)' \
+         -e '^[[:space:]]+\./gust([[:space:]]|$)' \
+         -e '^[[:space:]]+(cargo|cc|gcc|clang|make)([[:space:]]|$)' >/dev/null
+    then
+      echo "Patch 14.13 audit must remain static and Level 1."
+      exit 1
+    fi
+
+    rg -n -F 'Phase 14 type layout and memory model closure' "$pr_workflow" >/dev/null
+    rg -n -x -F '        run: just guard-cranelift-phase14-close' "$pr_workflow" >/dev/null
+
+    echo "✅ Patch 14.13 audit passed: opening dispositions, inherited residue, actionable future rows, final totals, and declared-target coverage are registry-owned."
+
 guard-cranelift-phase14-close:
     #!/usr/bin/env bash
     set -euo pipefail
-    echo "🔒 Checking the static lightweight Phase 14 closure..."
+    echo "🔒 Closing only the declared Phase 14 type, layout, and memory-model inventory..."
+    closure_status="phase14_closed_type_layout_and_memory_model"
+    registry="scripts/cranelift_feature_registry.json"
+    schema="scripts/cranelift_feature_registry.schema.json"
+    validator="scripts/cranelift_registry.py"
+    closure_validator="scripts/phase14_closure.py"
+    residue_auditor="scripts/phase14_deferred_residue.py"
+    composition_projector="scripts/phase14_composition.py"
+    family_runner="scripts/cranelift_ci_family.py"
+    level_runner="scripts/cranelift_test_levels.py"
+    manifest_validator="scripts/cranelift_manifest.py"
+    canonical_summary="docs/CRANELIFT_FEATURE_REGISTRY.md"
+    closure_review="compiler/CRANELIFT_PHASE14_CLOSURE.md"
+    pr_workflow=".github/workflows/pr-fast.yml"
+    heavy_workflow=".github/workflows/heavy-guards.yml"
+    historical_workflow=".github/workflows/cranelift-historical-full.yml"
+
+    for required_file in \
+      "$registry" "$schema" "$validator" "$closure_validator" \
+      "$residue_auditor" "$composition_projector" "$family_runner" \
+      "$level_runner" "$manifest_validator" "$canonical_summary" \
+      "$closure_review" "$pr_workflow" "$heavy_workflow" "$historical_workflow"
+    do
+      if [ ! -f "$required_file" ] || [ -L "$required_file" ]; then
+        echo "Missing regular Phase 14 closure input: $required_file"
+        exit 1
+      fi
+    done
+
+    # Semantic predecessor, registry, parent, layout, and feature contracts.
+    python3 "$validator" verify-phase13-closure
+    python3 "$validator" check-phase13-projection
+    just guard-cranelift-phase14-opening-contract
+    just guard-cranelift-registry-schema
+    just guard-cranelift-registry-projection
+    just guard-cranelift-phase14-parent-traceability
+    just guard-cranelift-phase14-layout-authority-contract
+    just guard-cranelift-phase14-target-and-primitive-contract
+    just guard-cranelift-phase14-integer-conversion-contract
+    just guard-cranelift-phase14-pointer-contract
+    just guard-cranelift-phase14-stack-slot-contract
+    just guard-cranelift-phase14-memory-access-contract
+    just guard-cranelift-phase14-string-view-contract
+    just guard-cranelift-phase14-array-slice-contract
+    just guard-cranelift-phase14-struct-contract
+    just guard-cranelift-phase14-enum-contract
+    just guard-cranelift-phase14-aggregate-contract
     just guard-cranelift-phase14-composition-contract
-    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase14-close |
+    just guard-cranelift-phase14-deferred-residue-audit
+    just guard-cranelift-ci-family-projection
+
+    # Route, manifest, test-level, generated-view, differential, and Level 3 ownership.
+    PHASE11_ROUTE_ARCHITECTURE_SKIP_DYNAMIC=1 \
+      just guard-cranelift-route-architecture-contract
+    just guard-cranelift-manifest-architecture-contract
+    python3 "$manifest_validator" verify-phase12-5-closure
+    python3 "$validator" check-projection
+    python3 "$residue_auditor" validate
+    python3 "$residue_auditor" check-review
+    python3 "$composition_projector" validate
+    python3 "$composition_projector" check-historical-workflow "$historical_workflow"
+    python3 "$family_runner" validate
+    python3 "$family_runner" check-pr-workflow "$pr_workflow"
+    python3 "$family_runner" check-heavy-workflow "$heavy_workflow"
+    python3 "$level_runner" validate
+    python3 "$level_runner" check-pr-workflow
+    python3 "$level_runner" check-heavy-workflow
+    python3 "$level_runner" check-historical-workflow
+    python3 "$level_runner" level guard-cranelift-phase14-close |
       rg -n -F $'guard-cranelift-phase14-close\t1\t' >/dev/null
+    python3 "$closure_validator" validate
+    python3 "$closure_validator" check-review
+
+    # Phase 9G remains the sole artifact, link, cleanup, and publication owner.
+    just guard-cranelift-phase9g-ci-surface
+    rg -n -x -F 'guard-cranelift-phase9g-close:' justfile >/dev/null
+    rg -n -F 'allowed_cranelift_phase9g_object_artifact_validation_order: fixture_parse_validation_metadata_and_lowering_complete_before_parent_directory_or_temp_file_creation' justfile >/dev/null
+    rg -n -F 'fs::rename(&temp_path, output_path)?;' compiler/experiments/cranelift/src/main.rs >/dev/null
+
+    for token in \
+      'CRANELIFT_PHASE14_CLOSURE_VIEW_VERSION: 1' \
+      "CRANELIFT_PHASE14_CLOSURE_VERSION: $closure_status" \
+      'CRANELIFT_PHASE14_CLOSURE_STATUS: closed_declared_inventory_only' \
+      'CRANELIFT_PHASE14_CLOSURE_SCOPE: declared_phase14_type_layout_and_memory_model_inventory_only' \
+      'CRANELIFT_PHASE14_CLOSURE_GUARD: guard-cranelift-phase14-close' \
+      'CRANELIFT_PHASE14_CLOSURE_CI_OWNER: PR_Fast_Level1_phase_closure' \
+      '## Explicit non-claims' \
+      '## Final exit gate'
+    do
+      rg -n -F "$token" "$closure_review" >/dev/null
+    done
+
+    rg -n -F "\"phase14\": \"$closure_status\"" "$registry" >/dev/null
+    rg -n -F "\"registry_status\": \"$closure_status\"" "$registry" >/dev/null
+    rg -n -F "$closure_status" "$canonical_summary" >/dev/null
+
+    closure_ci_count="$(
+      (rg -n -F 'just guard-cranelift-phase14-close' \
+        .github/workflows --glob '*.yml' || true) |
+        wc -l |
+        tr -d ' '
+    )"
+    if [ "$closure_ci_count" != "1" ]; then
+      echo "Phase 14 closure must be wired into CI exactly once, found $closure_ci_count occurrences."
+      exit 1
+    fi
+    rg -n -x -F '        run: just guard-cranelift-phase14-close' \
+      "$pr_workflow" >/dev/null
+    if rg -n -F 'just guard-cranelift-phase14-deferred-residue-audit' \
+        "$pr_workflow" >/dev/null
+    then
+      echo "PR Fast must delegate the preceding Phase 14 Level 1 owner to the closure guard."
+      exit 1
+    fi
+
+    if [ "$(rg -c -F 'just guard-cranelift-historical-full' "$historical_workflow")" != "1" ] ||
+       [ "$(rg -c -F 'just guard-cranelift-phase14-all-target-composition' "$historical_workflow")" != "1" ]
+    then
+      echo "Cranelift Historical Full must remain the separately runnable Level 3 historical and all-target owner."
+      exit 1
+    fi
+    if rg -n -F 'guard-cranelift-historical-full' \
+        "$pr_workflow" "$heavy_workflow" >/dev/null
+    then
+      echo "PR Fast and Heavy Guards must not own the full historical replay."
+      exit 1
+    fi
 
     close_body="$(
       sed -n \
@@ -15107,17 +15308,19 @@ guard-cranelift-phase14-close:
     if printf '%s\n' "$close_body" |
        rg -n \
          -e '^[[:space:]]+just guard-cranelift-differential-family([[:space:]]|$)' \
-         -e '^[[:space:]]+just guard-cranelift-historical-full([[:space:]]|$)' \
+         -e '^[[:space:]]+just guard-cranelift-phase14-composition-differential([[:space:]]|$)' \
          -e '^[[:space:]]+just guard-cranelift-phase14-all-target-composition([[:space:]]|$)' \
-         -e '^[[:space:]]+bash scripts/phase14_composition_differential\.sh([[:space:]]|$)' \
+         -e '^[[:space:]]+just guard-cranelift-historical-full([[:space:]]|$)' \
+         -e '^[[:space:]]+bash scripts/phase14_.*differential\.sh([[:space:]]|$)' \
          -e '^[[:space:]]+\./gust([[:space:]]|$)' \
          -e '^[[:space:]]+(cargo|cc|gcc|clang|make)([[:space:]]|$)' >/dev/null
     then
-      echo "Phase 14 closure must remain static and must not replay Level 2 or Level 3 evidence."
+      echo "Phase 14 closure must validate ownership and wiring without replaying Level 2, Level 3, historical native, object/link, release, or packaging matrices."
       exit 1
     fi
 
-    echo "✅ Phase 14 closed: every migrated row has individual and composed evidence, and declared-target execution remains owned by Level 3."
+    echo "✅ Phase 14 closed only the declared type, layout, and memory-model inventory: migrated rows use compiler-owned layouts through generic canonical MIR, MIR-to-C, and Cranelift; remaining capabilities are narrower owned deferrals."
+    echo "ℹ️ This closure does not claim complete Gust type parity, complete memory safety, complete ABI support, or production readiness."
 
 guard-cranelift-phase14-composition-differential family:
     #!/usr/bin/env bash

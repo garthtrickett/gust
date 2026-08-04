@@ -399,6 +399,21 @@ PHASE13_CLOSURE_FORBIDDEN_REPLAYS = (
     "complete_object_and_link_failure_matrices",
     "release_or_packaging_matrices",
 )
+PHASE14_CLOSURE_VERSION = "phase14_closed_type_layout_and_memory_model"
+PHASE14_CLOSURE_SNAPSHOT_FIELDS = {
+    "closure_version", "status", "scope", "opening_version",
+    "residual_version", "composition_version", "closure_review_view",
+    "closure_guard", "ci_owner", "closure_wording", "non_claims",
+    "required_contracts", "closure_assertions", "forbidden_replays",
+    "opening_entry_count", "disposition_counts", "migrated_entry_ids",
+    "replaced_entry_ids", "excluded_entry_ids", "residual_entry_count",
+    "declared_target_count", "target_disposition_counts",
+    "migrated_route_owner", "layout_authority_owner",
+    "layout_table_format", "default_oracle_owner",
+    "explicit_cranelift_fallback_policy", "worker_request_boundary",
+    "artifact_owner", "differential_owner", "historical_owner",
+    "all_target_owner", "evidence_replay_policy", "comparison_policy",
+}
 PHASE13_OPENING_VERSION = (
     "phase13_opening_inventory_rebased_on_phase12_5_framework"
 )
@@ -903,8 +918,8 @@ def validate_phase11_snapshot_structure(registry):
     snapshots = registry["closure_snapshots"]
     require(
         isinstance(snapshots, dict)
-        and set(snapshots) == {"phase11", "phase13"},
-        "closure_snapshots must contain exactly phase11 and phase13",
+        and set(snapshots) == {"phase11", "phase13", "phase14"},
+        "closure_snapshots must contain exactly phase11, phase13, and phase14",
     )
     snapshot = snapshots["phase11"]
     require(
@@ -1843,8 +1858,9 @@ def validate_phase14_string_view_structure(registry):
 def validate_phase13_residual_snapshot_structure(registry):
     snapshots = registry["residual_snapshots"]
     require(
-        isinstance(snapshots, dict) and set(snapshots) == {"phase13"},
-        "residual_snapshots must contain exactly phase13",
+        isinstance(snapshots, dict)
+        and set(snapshots) == {"phase13", "phase14"},
+        "residual_snapshots must contain exactly phase13 and phase14",
     )
     snapshot = snapshots["phase13"]
     require(
@@ -1948,8 +1964,8 @@ def validate_phase13_closure_snapshot_structure(registry):
     snapshots = registry["closure_snapshots"]
     require(
         isinstance(snapshots, dict)
-        and set(snapshots) == {"phase11", "phase13"},
-        "closure_snapshots must contain exactly phase11 and phase13",
+        and set(snapshots) == {"phase11", "phase13", "phase14"},
+        "closure_snapshots must contain exactly phase11, phase13, and phase14",
     )
     snapshot = snapshots["phase13"]
     require(
@@ -2069,6 +2085,44 @@ def validate_phase13_closure_snapshot_structure(registry):
             snapshot[field] == expected,
             f"Phase 13 closure {field} drifted",
         )
+    return snapshot
+
+
+def validate_phase14_closure_snapshot_structure(registry):
+    snapshots = registry["closure_snapshots"]
+    require(
+        isinstance(snapshots, dict)
+        and set(snapshots) == {"phase11", "phase13", "phase14"},
+        "closure_snapshots must contain exactly phase11, phase13, and phase14",
+    )
+    snapshot = snapshots["phase14"]
+    require(
+        isinstance(snapshot, dict)
+        and set(snapshot) == PHASE14_CLOSURE_SNAPSHOT_FIELDS,
+        "Phase 14 closure snapshot fields drifted",
+    )
+    require(
+        snapshot["closure_version"] == PHASE14_CLOSURE_VERSION
+        == registry["closed_phase_versions"]["phase14"],
+        "Phase 14 closure version differs from closed_phase_versions",
+    )
+    require(
+        snapshot["status"] == "closed_declared_inventory_only",
+        "Phase 14 closure status drifted",
+    )
+    require(
+        snapshot["scope"]
+        == "declared_phase14_type_layout_and_memory_model_inventory_only",
+        "Phase 14 closure scope drifted",
+    )
+    require(
+        snapshot["closure_guard"] == "guard-cranelift-phase14-close",
+        "Phase 14 closure guard owner drifted",
+    )
+    require(
+        snapshot["ci_owner"] == "PR_Fast_Level1_phase_closure",
+        "Phase 14 closure CI owner drifted",
+    )
     return snapshot
 
 
@@ -2259,7 +2313,7 @@ def validate():
     )
     residual_schema = schema.get("properties", {}).get("residual_snapshots", {})
     require(
-        set(residual_schema.get("required", [])) == {"phase13"},
+        set(residual_schema.get("required", [])) == {"phase13", "phase14"},
         "schema residual snapshot keys drifted",
     )
     phase13_residual_schema = definitions.get("phase13_residual_snapshot", {})
@@ -2280,12 +2334,15 @@ def validate():
     )
     require(
         set(closed_versions_schema.get("required", []))
-        == {"phase11", "phase12_5_opening", "phase12_5", "phase13"},
+        == {
+            "phase11", "phase12_5_opening", "phase12_5", "phase13", "phase14"
+        },
         "schema closed-phase version keys drifted",
     )
     closure_schema = schema.get("properties", {}).get("closure_snapshots", {})
     require(
-        set(closure_schema.get("required", [])) == {"phase11", "phase13"},
+        set(closure_schema.get("required", []))
+        == {"phase11", "phase13", "phase14"},
         "schema closure snapshot keys drifted",
     )
     phase13_closure_schema = definitions.get("phase13_closure_snapshot", {})
@@ -2298,13 +2355,23 @@ def validate():
         phase13_closure_schema.get("additionalProperties") is False,
         "schema Phase 13 closure snapshot must reject unknown fields",
     )
+    phase14_closure_schema = definitions.get("phase14_closure_snapshot", {})
+    require(
+        set(phase14_closure_schema.get("required", []))
+        == PHASE14_CLOSURE_SNAPSHOT_FIELDS,
+        "schema Phase 14 closure snapshot fields drifted",
+    )
+    require(
+        phase14_closure_schema.get("additionalProperties") is False,
+        "schema Phase 14 closure snapshot must reject unknown fields",
+    )
 
     require(registry["schema"] == "scripts/cranelift_feature_registry.schema.json",
             "registry schema path is not canonical")
     require(registry["schema_version"] == 1, "schema_version must be 1")
     require(registry["registry_version"] == 14, "registry_version must be 14")
     require(
-        registry["registry_status"] == "phase14_string_views_ready",
+        registry["registry_status"] == PHASE14_CLOSURE_VERSION,
         "registry status is missing or stale",
     )
     require(registry["current_phase"] == "phase14", "current_phase must be phase14")
@@ -2314,6 +2381,7 @@ def validate():
             "phase12_5_opening": "phase12_5_opened_verification_framework_consolidation",
             "phase12_5": "phase12_5_closed_cranelift_verification_framework_consolidation",
             "phase13": PHASE13_CLOSURE_VERSION,
+            "phase14": PHASE14_CLOSURE_VERSION,
         },
         "closed phase versions drifted",
     )
@@ -2321,6 +2389,7 @@ def validate():
     validate_phase13_opening_snapshot_structure(registry)
     residual_snapshot = validate_phase13_residual_snapshot_structure(registry)
     validate_phase13_closure_snapshot_structure(registry)
+    validate_phase14_closure_snapshot_structure(registry)
     validate_phase14_opening_snapshot_structure(registry)
     validate_phase14_layout_authority_structure(registry)
     validate_phase14_primitive_layout_structure(registry)
@@ -3388,6 +3457,20 @@ def verify_phase14_opening_contract(registry):
     }
 
 
+def verify_phase14_parent_traceability(registry):
+    opening = verify_phase14_opening_contract(registry)
+    require(
+        sum(opening["parent_counts"].values()) == opening["row_count"],
+        "Phase 14 parent traceability does not cover every opening row",
+    )
+    require(
+        set(opening["parent_counts"])
+        <= {"phase13_entry", "phase13_residual", "phase14_category"},
+        "Phase 14 parent traceability contains an unknown parent kind",
+    )
+    return opening["parent_counts"]
+
+
 def verify_phase14_layout_authority(registry):
     opening = verify_phase14_opening_contract(registry)
     authority = validate_phase14_layout_authority_structure(registry)
@@ -3581,7 +3664,7 @@ def verify_phase14_primitive_layout(registry):
     verify_phase14_layout_authority(registry)
     contract = validate_phase14_primitive_layout_structure(registry)
     require(
-        registry["registry_status"] == "phase14_string_views_ready",
+        registry["registry_status"] == PHASE14_CLOSURE_VERSION,
         "Phase 14 registry is not at or beyond the primitive-layout checkpoint",
     )
     rows = {entry["id"]: entry for entry in phase_entries(registry, "phase14")}
@@ -3771,7 +3854,7 @@ def verify_phase14_integer_conversions(registry):
     verify_phase14_primitive_layout(registry)
     contract = validate_phase14_integer_conversion_structure(registry)
     require(
-        registry["registry_status"] == "phase14_string_views_ready",
+        registry["registry_status"] == PHASE14_CLOSURE_VERSION,
         "Phase 14 registry is not at or beyond the integer-conversion checkpoint",
     )
     rows = {entry["id"]: entry for entry in phase_entries(registry, "phase14")}
@@ -3999,7 +4082,7 @@ def verify_phase14_pointers(registry):
     verify_phase14_integer_conversions(registry)
     contract = validate_phase14_pointer_structure(registry)
     require(
-        registry["registry_status"] == "phase14_string_views_ready",
+        registry["registry_status"] == PHASE14_CLOSURE_VERSION,
         "Phase 14 registry is not at the pointer/nullability checkpoint",
     )
     rows = {entry["id"]: entry for entry in phase_entries(registry, "phase14")}
@@ -4215,7 +4298,7 @@ def verify_phase14_stack_slots(registry):
     verify_phase14_pointers(registry)
     contract = validate_phase14_stack_slot_structure(registry)
     require(
-        registry["registry_status"] == "phase14_string_views_ready",
+        registry["registry_status"] == PHASE14_CLOSURE_VERSION,
         "Phase 14 registry is not at the stack-slot checkpoint",
     )
     rows = {entry["id"]: entry for entry in phase_entries(registry, "phase14")}
@@ -4422,7 +4505,7 @@ def verify_phase14_memory_accesses(registry):
     verify_phase14_stack_slots(registry)
     contract = validate_phase14_memory_access_structure(registry)
     require(
-        registry["registry_status"] == "phase14_string_views_ready",
+        registry["registry_status"] == PHASE14_CLOSURE_VERSION,
         "Phase 14 registry is not at the typed memory-access checkpoint",
     )
     rows = {entry["id"]: entry for entry in phase_entries(registry, "phase14")}
@@ -4589,7 +4672,7 @@ def verify_phase14_string_views(registry):
     verify_phase14_memory_accesses(registry)
     contract = validate_phase14_string_view_structure(registry)
     require(
-        registry["registry_status"] == "phase14_string_views_ready",
+        registry["registry_status"] == PHASE14_CLOSURE_VERSION,
         "Phase 14 registry is not at the string-view checkpoint",
     )
     rows = {entry["id"]: entry for entry in phase_entries(registry, "phase14")}
@@ -6266,6 +6349,7 @@ def verify_phase13_closure(registry):
             "phase14_integer_conversion_ready",
             "phase14_stack_slot_ready",
             "phase14_string_views_ready",
+            PHASE14_CLOSURE_VERSION,
         },
         "Phase 13 closure registry status drifted",
     )
@@ -7787,6 +7871,7 @@ def render(registry):
         f"- Current phase: `{registry['current_phase']}`",
         f"- Phase 12.5 closure: `{registry['closed_phase_versions']['phase12_5']}`",
         f"- Phase 13 closure: `{registry['closed_phase_versions']['phase13']}`",
+        f"- Phase 14 closure: `{registry['closed_phase_versions']['phase14']}`",
         f"- Total rows: `{totals['total_rows']}`",
         "",
         "## Derived origin-phase totals", "",
@@ -7840,7 +7925,8 @@ def render(registry):
         f"- Phase 14 pointer review: `{phase14_pointer_summary_path(registry).relative_to(ROOT)}`",
         f"- Phase 14 stack-slot review: `{phase14_stack_slot_summary_path(registry).relative_to(ROOT)}`",
         f"- Phase 14 memory-access review: `{phase14_memory_access_summary_path(registry).relative_to(ROOT)}`",
-        f"- Phase 14 string-view review: `{phase14_string_view_summary_path(registry).relative_to(ROOT)}`", "",
+        f"- Phase 14 string-view review: `{phase14_string_view_summary_path(registry).relative_to(ROOT)}`",
+        "- Phase 14 closure review: `compiler/CRANELIFT_PHASE14_CLOSURE.md`", "",
         "The JSON registry is authoritative. Generated Markdown is a review artifact, and the legacy Markdown documents remain historical views only.", "",
     ]
     return "\n".join(lines)
@@ -8015,6 +8101,7 @@ def main():
             "verify-phase13-parent-traceability",
             "verify-phase13-opening-totals",
             "verify-phase14-opening-contract",
+            "verify-phase14-parent-traceability",
             "verify-phase14-layout-authority",
             "verify-phase14-primitive-layout",
             "verify-phase14-integer-conversions",
@@ -8096,6 +8183,8 @@ def main():
             verify_phase13_opening_totals(registry)
         elif command == "verify-phase14-opening-contract":
             verify_phase14_opening_contract(registry)
+        elif command == "verify-phase14-parent-traceability":
+            verify_phase14_parent_traceability(registry)
         elif command == "verify-phase14-layout-authority":
             verify_phase14_layout_authority(registry)
         elif command == "verify-phase14-primitive-layout":
@@ -8422,6 +8511,10 @@ def main():
             f"{len(phase14_contract['ci_counts'])} registry-derived planned "
             "CI families; every frozen Phase 13 residual is selected, split, "
             "or explicitly reassigned."
+        ),
+        "verify-phase14-parent-traceability": (
+            "✅ Phase 14 parent traceability passed: every opening row and inherited "
+            "Phase 13 residual has an explicit registry-owned final disposition."
         ),
         "project": (
             "✅ Canonical Cranelift registry, Phase 13 final review, Phase 14 "

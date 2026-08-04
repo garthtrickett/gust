@@ -115,6 +115,11 @@ operating system runner.
 ## Closure boundary
 
 Phase 14 closes only the migrated type, layout, memory, aggregate, and
-composition inventory. Packed structs, bitfields, niche optimization,
-resource-bearing aggregate copies, unrestricted aggregate ABI, unsupported
-aliasing, and other explicitly deferred forms remain outside this closure.
+composition inventory. Patch 14.13 owns the final deferred-residue and
+declared-target audit through `guard-cranelift-phase14-deferred-residue-audit`
+and `compiler/CRANELIFT_PHASE14_FINAL_REVIEW.md`.
+
+Packed structs, bitfields, niche optimization, resource-bearing aggregate
+copies, unrestricted aggregate ABI, unsupported aliasing, and every other
+future form must appear as a smaller, actionable row in the frozen Phase 14
+residual snapshot.

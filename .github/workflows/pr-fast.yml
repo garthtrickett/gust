@@ -86,7 +86,7 @@ jobs:
       - name: Phase 14 aggregate transport across blocks
         run: just guard-cranelift-phase14-aggregate-contract
 
-      - name: Phase 14 cross-feature composition and closure
+      - name: Phase 14 type layout and memory model closure
         run: just guard-cranelift-phase14-close
 
       - name: Upload Gust build outputs
