@@ -15141,7 +15141,7 @@ guard-cranelift-phase14-deferred-residue-audit:
         justfile
     )"
     if [ "$(printf '%s\n' "$close_body" |
-          rg -c -F 'just guard-cranelift-phase14-deferred-residue-audit')" != "1" ]; then
+          rg -c '^[[:space:]]+just guard-cranelift-phase14-deferred-residue-audit([[:space:]]|$)')" != "1" ]; then
       echo "Phase 14 closure must delegate to the Patch 14.13 residue audit exactly once."
       exit 1
     fi
