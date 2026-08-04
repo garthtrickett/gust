@@ -89,6 +89,9 @@ jobs:
       - name: Phase 14 type layout and memory model closure
         run: just guard-cranelift-phase14-close
 
+      - name: Phase 15 resource and lifetime opening
+        run: just guard-cranelift-phase15-opening-contract
+
       - name: Upload Gust build outputs
         uses: actions/upload-artifact@v4
         with:

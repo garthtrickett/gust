@@ -395,6 +395,13 @@ def validate_registry_projection(registry):
                     f"{entry.get('id', '<unknown>')}: deferred Phase 14 row ownership drifted",
                 )
             continue
+        if entry.get("origin_phase") == "phase15":
+            require(
+                entry.get("status") == "candidate_deferred"
+                and entry.get("route_owner") == "deferred",
+                f"{entry.get('id', '<unknown>')}: Phase 15 opening row must remain planning-only",
+            )
+            continue
         require(
             family in active,
             f"{entry.get('id', '<unknown>')}: CI family {family!r} is not active in the stable family set",

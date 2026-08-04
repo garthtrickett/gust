@@ -527,13 +527,16 @@ def validate() -> dict:
     schema = read_json(SCHEMA)
     validate_schema(schema)
 
-    require(
-        registry.get("registry_status") == VERSION,
-        "registry status does not record the Phase 14 closure",
+    current_phase = registry.get("current_phase")
+    current_phase_match = (
+        re.fullmatch(r"phase([0-9]+)", current_phase)
+        if isinstance(current_phase, str)
+        else None
     )
     require(
-        registry.get("current_phase") == "phase14",
-        "Phase 14 closure changed the active phase identity",
+        current_phase_match is not None
+        and int(current_phase_match.group(1)) >= 14,
+        "Phase 14 closure requires Phase 14 or a later active phase",
     )
     require(
         registry.get("closed_phase_versions", {}).get("phase14") == VERSION,
