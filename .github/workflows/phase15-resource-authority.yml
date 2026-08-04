@@ -1,0 +1,34 @@
+name: Cranelift Phase 15 Resource Authority
+
+on:
+  pull_request:
+    paths:
+      - 'compiler/mir_resource_authority.gst'
+      - 'compiler/mir_native_backend_resource_request.gst'
+      - 'compiler/mir_to_c.gst'
+      - 'compiler/experiments/cranelift/src/main.rs'
+      - 'compiler/**/*diagnostic*'
+      - 'runtime/**'
+      - 'scripts/phase15_resource_authority.py'
+      - 'scripts/guard-cranelift-phase15-resource-authority-contract.sh'
+      - 'tests/cranelift/phase15_resource_authority_contract.tsv'
+      - 'tests/cranelift/phase15_resource_authority_review.txt'
+      - '.github/workflows/phase15-resource-authority.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'compiler/mir_resource_authority.gst'
+      - 'compiler/mir_native_backend_resource_request.gst'
+      - 'scripts/phase15_resource_authority.py'
+      - 'tests/cranelift/phase15_resource_authority_contract.tsv'
+      - 'tests/cranelift/phase15_resource_authority_review.txt'
+
+jobs:
+  guard-cranelift-phase15-resource-authority-contract:
+    name: Phase 15.1 resource authority contract (Level 1)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: guard-cranelift-phase15-resource-authority-contract
+        run: python3 scripts/phase15_resource_authority.py --check
