@@ -111,7 +111,7 @@ mutate "$request" "$build_dir/missing-resource-id.request" missing-resource-id
 expect_failure "$build_dir/missing-resource-id.request" resource_mir_value_metadata_missing missing-resource-id
 
 mutate "$request" "$build_dir/copy-operation.request" copy-operation
-expect_failure "$build_dir/copy-operation.request" resource_mir_copy_forbidden copy-operation
+expect_failure "$build_dir/copy-operation.request" resource_copy_of_move_only copy-operation
 
 mutate "$request" "$build_dir/duplicate-resource-id.request" duplicate-resource-id
 expect_failure "$build_dir/duplicate-resource-id.request" resource_mir_duplicate_resource_identity duplicate-resource-id

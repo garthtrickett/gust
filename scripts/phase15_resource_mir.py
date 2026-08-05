@@ -325,7 +325,7 @@ def check_tests_and_wiring(root: Path) -> None:
             fail(f"resource MIR smoke is missing: {token}")
     for token in (
         "phase15-resource-mir-witness",
-        "resource_mir_copy_forbidden",
+        "resource_copy_of_move_only",
         "resource_mir_duplicate_resource_identity",
         "resource_mir_state_missing_at_control_flow_edge",
         "resource_mir_type_layout_identity_mismatch",
