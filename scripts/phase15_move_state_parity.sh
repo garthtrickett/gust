@@ -132,7 +132,10 @@ elif mode == "move-from-uninitialized":
     set_field(operation_field(operation_id, "prior_state"), "uninitialized")
     set_field(operation_field(operation_id, "resulting_state"), "moved")
 elif mode == "copy-after-initialize":
-    set_field(operation_field("operation:move:a:local", "kind"), "copy")
+    copy_operation = "operation:move:a:local"
+    set_field(operation_field(copy_operation, "kind"), "copy")
+    set_field(operation_field(copy_operation, "destination_carrier_id"), "")
+    set_field(operation_field(copy_operation, "resulting_state"), "live")
 elif mode == "inconsistent-join":
     edge_prefix = None
     for line in lines:
