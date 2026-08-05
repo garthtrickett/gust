@@ -187,6 +187,7 @@ struct ResourceEdge {
 struct AuthorityResource {
     value_id: String,
     resource_type_id: String,
+    resource_kind: String,
     layout_id: String,
     destructor_id: String,
     close_capability_id: String,
@@ -216,6 +217,7 @@ struct AuthorityTables {
     states: HashMap<(String, String), String>,
     transitions: HashMap<(String, String, String), AuthorityTransition>,
     cleanup_ids: HashSet<String>,
+    cleanup_resources: HashMap<String, String>,
     destructors: HashMap<String, AuthorityDestructor>,
     close_capabilities: HashMap<String, AuthorityCloseCapability>,
 }
@@ -323,7 +325,7 @@ fn parse_fields(contents: &str) -> Result<HashMap<String, String>, ResourceMirEr
         let Some((key, value)) = line.split_once(": ") else {
             continue;
         };
-        if key.starts_with("resource_mir_")
+        if (key.starts_with("resource_mir_") || key.starts_with("resource_reassignment_"))
             && fields.insert(key.to_string(), value.to_string()).is_some()
         {
             return Err(ResourceMirError::new(
@@ -377,6 +379,7 @@ fn parse_authority_tables(contents: &str) -> Result<AuthorityTables, ResourceMir
             let resource = AuthorityResource {
                 value_id: required_part(&parts, "value")?.to_string(),
                 resource_type_id: required_part(&parts, "type")?.to_string(),
+                resource_kind: required_part(&parts, "kind")?.to_string(),
                 layout_id: required_part(&parts, "layout")?.to_string(),
                 destructor_id: parts.get("destructor").copied().unwrap_or_default().to_string(),
                 close_capability_id: parts.get("close").copied().unwrap_or_default().to_string(),
@@ -446,12 +449,17 @@ fn parse_authority_tables(contents: &str) -> Result<AuthorityTables, ResourceMir
         if let Some(payload) = line.strip_prefix("cleanup_record: ") {
             let parts = parse_record(payload)?;
             let cleanup_id = required_part(&parts, "id")?;
+            let cleanup_resource_id = required_part(&parts, "resource")?;
             if !tables.cleanup_ids.insert(cleanup_id.to_string()) {
                 return Err(ResourceMirError::new(
                     "resource_mir_cleanup_metadata_missing",
                     format!("duplicate cleanup id {cleanup_id}"),
                 ));
             }
+            tables.cleanup_resources.insert(
+                cleanup_id.to_string(),
+                cleanup_resource_id.to_string(),
+            );
             continue;
         }
         if let Some(payload) = line.strip_prefix("destructor_record: ") {
@@ -1698,11 +1706,483 @@ fn witness(table: &ResourceMirTable, actions: &[CraneliftResourceAction]) -> Str
     output
 }
 
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct ResourceReassignment {
+    reassignment_id: String,
+    form: String,
+    resolution_policy: String,
+    storage_id: String,
+    old_resource_id: String,
+    old_value_id: String,
+    old_carrier_id: String,
+    replacement_resource_id: String,
+    replacement_value_id: String,
+    replacement_carrier_id: String,
+    predecessor_moved_resource_id: String,
+    transfer_destination_carrier_id: String,
+    cleanup_obligation_id: String,
+    destructor_id: String,
+    source_location: String,
+    control_flow_region: String,
+    destruction_order: usize,
+    mutable_storage: bool,
+    old_prior_state: String,
+    old_resulting_state: String,
+    replacement_prior_state: String,
+    replacement_resulting_state: String,
+    replacement_source_kind: String,
+    observable_effect: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct CraneliftResourceReassignmentAction {
+    reassignment_id: String,
+    action_name: &'static str,
+    old_resource_id: String,
+    replacement_resource_id: String,
+    storage_id: String,
+    cleanup_obligation_id: String,
+    runtime_symbol: String,
+    destruction_order: usize,
+    old_resulting_state: String,
+    replacement_resulting_state: String,
+    observable_effect: String,
+}
+
+fn reassignment_error(reason_code: &'static str, entry: &ResourceReassignment) -> ResourceMirError {
+    ResourceMirError::new(
+        reason_code,
+        format!(
+            "resource_reassignment_diagnostic: reassignment={} old={} replacement={} storage={} source={} policy={} order={}",
+            entry.reassignment_id,
+            entry.old_resource_id,
+            entry.replacement_resource_id,
+            entry.storage_id,
+            entry.source_location,
+            entry.resolution_policy,
+            entry.destruction_order,
+        ),
+    )
+}
+
+fn has_moved_then_fresh_history(
+    table: &ResourceMirTable,
+    carriers_by_id: &HashMap<&str, &ResourceCarrier>,
+    storage_id: &str,
+    predecessor_resource_id: &str,
+    fresh_resource_id: &str,
+) -> bool {
+    let mut predecessor_moved = false;
+    for operation in &table.operations {
+        if operation.kind == ResourceOperationKind::Move
+            && operation.resource_id == predecessor_resource_id
+            && carriers_by_id
+                .get(operation.source_carrier_id.as_str())
+                .map(|carrier| carrier.storage_id.as_str())
+                == Some(storage_id)
+        {
+            predecessor_moved = true;
+        }
+        if predecessor_moved
+            && operation.kind == ResourceOperationKind::Initialize
+            && operation.resource_id == fresh_resource_id
+            && carriers_by_id
+                .get(operation.destination_carrier_id.as_str())
+                .map(|carrier| carrier.storage_id.as_str())
+                == Some(storage_id)
+        {
+            return true;
+        }
+    }
+    false
+}
+
+fn replacement_source_exists(
+    table: &ResourceMirTable,
+    resource_id: &str,
+    carrier_id: &str,
+    source_kind: &str,
+) -> bool {
+    table.operations.iter().any(|operation| {
+        operation.resource_id == resource_id
+            && operation.destination_carrier_id == carrier_id
+            && matches!(
+                (source_kind, operation.kind),
+                ("fresh_initialize", ResourceOperationKind::Initialize)
+                    | ("move", ResourceOperationKind::Move)
+            )
+    })
+}
+
+fn old_resolution_exists(table: &ResourceMirTable, entry: &ResourceReassignment) -> bool {
+    table.operations.iter().any(|operation| {
+        if operation.resource_id != entry.old_resource_id {
+            return false;
+        }
+        match entry.resolution_policy.as_str() {
+            "immediate_destroy" => {
+                operation.kind == ResourceOperationKind::InvokeDestructor
+                    && operation.cleanup_id == entry.cleanup_obligation_id
+                    && operation.resulting_state == "destroyed"
+            }
+            "scheduled_cleanup" => {
+                operation.kind == ResourceOperationKind::ScheduleCleanup
+                    && operation.cleanup_id == entry.cleanup_obligation_id
+                    && operation.resulting_state == "cleanup_scheduled"
+            }
+            "transfer_before_replacement" => {
+                operation.kind == ResourceOperationKind::Move
+                    && operation.source_carrier_id == entry.old_carrier_id
+                    && operation.destination_carrier_id == entry.transfer_destination_carrier_id
+            }
+            _ => false,
+        }
+    })
+}
+
+fn parse_resource_reassignments(
+    contents: &str,
+    table: &ResourceMirTable,
+    authority: &AuthorityTables,
+) -> Result<Vec<ResourceReassignment>, ResourceMirError> {
+    let fields = parse_fields(contents)?;
+    if !fields.contains_key("resource_reassignment_format") {
+        return Ok(Vec::new());
+    }
+    if required_field(&fields, "resource_reassignment_format")?
+        != "gust.compiler_resource_reassignment.v1"
+        || required_field(&fields, "resource_reassignment_semantic_authority")?
+            != "compiler_owned_replacement_transaction"
+        || required_field(&fields, "resource_reassignment_order_policy")?
+            != "explicit_monotonic_destruction_order"
+    {
+        return Err(ResourceMirError::new(
+            "resource_reassignment_unknown_format",
+            "resource reassignment format or policy mismatch",
+        ));
+    }
+    let count = parse_count(&fields, "resource_reassignment_count")?;
+    let values_by_id: HashMap<&str, &ResourceValue> = table
+        .values
+        .iter()
+        .map(|value| (value.value_id.as_str(), value))
+        .collect();
+    let carriers_by_id: HashMap<&str, &ResourceCarrier> = table
+        .carriers
+        .iter()
+        .map(|carrier| (carrier.carrier_id.as_str(), carrier))
+        .collect();
+    let mut entries = Vec::with_capacity(count);
+    let mut seen_ids = HashSet::new();
+    let mut seen_old = HashSet::new();
+    let mut seen_replacements = HashSet::new();
+    let mut seen_cleanups = HashSet::new();
+    let mut previous_order = 0usize;
+    for index in 0..count {
+        let prefix = format!("resource_reassignment_{index}");
+        let entry = ResourceReassignment {
+            reassignment_id: required_field(&fields, &format!("{prefix}_id"))?.to_string(),
+            form: required_field(&fields, &format!("{prefix}_form"))?.to_string(),
+            resolution_policy: required_field(&fields, &format!("{prefix}_resolution_policy"))?.to_string(),
+            storage_id: required_field(&fields, &format!("{prefix}_storage_id"))?.to_string(),
+            old_resource_id: required_field(&fields, &format!("{prefix}_old_resource_id"))?.to_string(),
+            old_value_id: required_field(&fields, &format!("{prefix}_old_value_id"))?.to_string(),
+            old_carrier_id: required_field(&fields, &format!("{prefix}_old_carrier_id"))?.to_string(),
+            replacement_resource_id: required_field(&fields, &format!("{prefix}_replacement_resource_id"))?.to_string(),
+            replacement_value_id: required_field(&fields, &format!("{prefix}_replacement_value_id"))?.to_string(),
+            replacement_carrier_id: required_field(&fields, &format!("{prefix}_replacement_carrier_id"))?.to_string(),
+            predecessor_moved_resource_id: optional_field(&fields, &format!("{prefix}_predecessor_moved_resource_id"))?.to_string(),
+            transfer_destination_carrier_id: optional_field(&fields, &format!("{prefix}_transfer_destination_carrier_id"))?.to_string(),
+            cleanup_obligation_id: required_field(&fields, &format!("{prefix}_cleanup_obligation_id"))?.to_string(),
+            destructor_id: optional_field(&fields, &format!("{prefix}_destructor_id"))?.to_string(),
+            source_location: required_field(&fields, &format!("{prefix}_source_location"))?.to_string(),
+            control_flow_region: optional_field(&fields, &format!("{prefix}_control_flow_region"))?.to_string(),
+            destruction_order: required_field(&fields, &format!("{prefix}_destruction_order"))?
+                .parse::<usize>()
+                .map_err(|_| ResourceMirError::new("resource_reassignment_destruction_order_invalid", format!("invalid order at {index}")))?,
+            mutable_storage: required_field(&fields, &format!("{prefix}_mutable_storage"))? == "1",
+            old_prior_state: required_field(&fields, &format!("{prefix}_old_prior_state"))?.to_string(),
+            old_resulting_state: required_field(&fields, &format!("{prefix}_old_resulting_state"))?.to_string(),
+            replacement_prior_state: required_field(&fields, &format!("{prefix}_replacement_prior_state"))?.to_string(),
+            replacement_resulting_state: required_field(&fields, &format!("{prefix}_replacement_resulting_state"))?.to_string(),
+            replacement_source_kind: required_field(&fields, &format!("{prefix}_replacement_source_kind"))?.to_string(),
+            observable_effect: required_field(&fields, &format!("{prefix}_observable_effect"))?.to_string(),
+        };
+        if !matches!(
+            entry.form.as_str(),
+            "live_local" | "reinitialized_moved_local" | "aggregate_field" | "conditional" | "selected_loop"
+        ) {
+            return Err(reassignment_error("resource_reassignment_form_unsupported", &entry));
+        }
+        if !matches!(
+            entry.resolution_policy.as_str(),
+            "immediate_destroy" | "scheduled_cleanup" | "transfer_before_replacement"
+        ) {
+            return Err(reassignment_error("resource_reassignment_old_live_unresolved", &entry));
+        }
+        if !entry.mutable_storage {
+            return Err(reassignment_error("resource_reassignment_immutable_storage", &entry));
+        }
+        if entry.old_resource_id == entry.replacement_resource_id {
+            return Err(reassignment_error("resource_reassignment_duplicate_live_identity", &entry));
+        }
+        if entry.old_prior_state == "destroyed" {
+            return Err(reassignment_error("resource_reassignment_after_destroy_without_reinitialization", &entry));
+        }
+        if entry.old_prior_state != "live" {
+            return Err(reassignment_error("resource_reassignment_old_not_live", &entry));
+        }
+        if entry.replacement_prior_state != "uninitialized"
+            || entry.replacement_resulting_state != "live"
+        {
+            return Err(reassignment_error("resource_reassignment_replacement_state_invalid", &entry));
+        }
+        if entry.replacement_source_kind == "copy" {
+            return Err(reassignment_error("resource_reassignment_copy_move_only", &entry));
+        }
+        if !matches!(entry.replacement_source_kind.as_str(), "fresh_initialize" | "move") {
+            return Err(reassignment_error("resource_reassignment_replacement_source_invalid", &entry));
+        }
+        if !seen_ids.insert(entry.reassignment_id.clone()) {
+            return Err(reassignment_error("resource_reassignment_duplicate_id", &entry));
+        }
+        if !seen_cleanups.insert(entry.cleanup_obligation_id.clone()) {
+            return Err(reassignment_error("resource_reassignment_duplicate_old_cleanup", &entry));
+        }
+        if !seen_old.insert(entry.old_resource_id.clone()) {
+            return Err(reassignment_error("resource_reassignment_old_resolved_more_than_once", &entry));
+        }
+        if !seen_replacements.insert(entry.replacement_resource_id.clone()) {
+            return Err(reassignment_error("resource_reassignment_duplicate_replacement_identity", &entry));
+        }
+        if authority
+            .cleanup_resources
+            .get(&entry.cleanup_obligation_id)
+            .map(String::as_str)
+            != Some(entry.old_resource_id.as_str())
+        {
+            return Err(reassignment_error("resource_reassignment_cleanup_obligation_missing", &entry));
+        }
+        let old_authority = authority.resources.get(&entry.old_resource_id)
+            .ok_or_else(|| reassignment_error("resource_reassignment_identity_missing", &entry))?;
+        let replacement_authority = authority.resources.get(&entry.replacement_resource_id)
+            .ok_or_else(|| reassignment_error("resource_reassignment_identity_missing", &entry))?;
+        if old_authority.resource_type_id != replacement_authority.resource_type_id
+            || old_authority.resource_kind != replacement_authority.resource_kind
+            || old_authority.layout_id != replacement_authority.layout_id
+        {
+            return Err(reassignment_error("resource_reassignment_layout_or_kind_mismatch", &entry));
+        }
+        let old_value = values_by_id.get(entry.old_value_id.as_str())
+            .ok_or_else(|| reassignment_error("resource_reassignment_value_identity_mismatch", &entry))?;
+        let replacement_value = values_by_id.get(entry.replacement_value_id.as_str())
+            .ok_or_else(|| reassignment_error("resource_reassignment_value_identity_mismatch", &entry))?;
+        if old_value.resource_id != entry.old_resource_id
+            || replacement_value.resource_id != entry.replacement_resource_id
+        {
+            return Err(reassignment_error("resource_reassignment_value_identity_mismatch", &entry));
+        }
+        let old_carrier = carriers_by_id.get(entry.old_carrier_id.as_str())
+            .ok_or_else(|| reassignment_error("resource_reassignment_storage_identity_mismatch", &entry))?;
+        let replacement_carrier = carriers_by_id.get(entry.replacement_carrier_id.as_str())
+            .ok_or_else(|| reassignment_error("resource_reassignment_storage_identity_mismatch", &entry))?;
+        if old_carrier.resource_id != entry.old_resource_id
+            || replacement_carrier.resource_id != entry.replacement_resource_id
+            || old_carrier.storage_id != entry.storage_id
+            || replacement_carrier.storage_id != entry.storage_id
+        {
+            return Err(reassignment_error("resource_reassignment_storage_identity_mismatch", &entry));
+        }
+        if !replacement_source_exists(
+            table,
+            entry.replacement_resource_id.as_str(),
+            entry.replacement_carrier_id.as_str(),
+            entry.replacement_source_kind.as_str(),
+        ) {
+            return Err(reassignment_error("resource_reassignment_replacement_source_invalid", &entry));
+        }
+        if entry.form == "aggregate_field"
+            && (old_carrier.kind != "aggregate_field" || replacement_carrier.kind != "aggregate_field")
+        {
+            return Err(reassignment_error("resource_reassignment_aggregate_field_not_selected", &entry));
+        }
+        if entry.form == "conditional"
+            && (entry.control_flow_region.is_empty()
+                || !table.edges.iter().any(|edge| {
+                    edge.edge_id == entry.control_flow_region
+                        && edge.resource_id == entry.replacement_resource_id
+                        && edge.state == "live"
+                        && !edge.is_loop_backedge
+                }))
+        {
+            return Err(reassignment_error("resource_reassignment_control_flow_region_missing", &entry));
+        }
+        if entry.form == "selected_loop"
+            && (entry.control_flow_region.is_empty()
+                || !table.edges.iter().any(|edge| {
+                    edge.edge_id == entry.control_flow_region
+                        && edge.resource_id == entry.replacement_resource_id
+                        && edge.state == "live"
+                        && edge.is_loop_backedge
+                }))
+        {
+            return Err(reassignment_error("resource_reassignment_control_flow_region_missing", &entry));
+        }
+        if entry.form == "reinitialized_moved_local"
+            && (entry.predecessor_moved_resource_id.is_empty()
+                || entry.predecessor_moved_resource_id == entry.old_resource_id
+                || !authority.resources.contains_key(&entry.predecessor_moved_resource_id)
+                || !has_moved_then_fresh_history(
+                    table,
+                    &carriers_by_id,
+                    entry.storage_id.as_str(),
+                    entry.predecessor_moved_resource_id.as_str(),
+                    entry.old_resource_id.as_str(),
+                ))
+        {
+            return Err(reassignment_error("resource_reassignment_reinitialization_history_missing", &entry));
+        }
+        match entry.resolution_policy.as_str() {
+            "immediate_destroy" => {
+                if entry.destructor_id.is_empty()
+                    || entry.destructor_id != old_authority.destructor_id
+                    || entry.old_resulting_state != "destroyed"
+                {
+                    return Err(reassignment_error("resource_reassignment_old_destroy_resolution_invalid", &entry));
+                }
+                if entry.destruction_order <= previous_order {
+                    return Err(reassignment_error("resource_reassignment_destruction_order_invalid", &entry));
+                }
+                previous_order = entry.destruction_order;
+            }
+            "scheduled_cleanup" => {
+                if entry.destructor_id.is_empty()
+                    || entry.destructor_id != old_authority.destructor_id
+                    || entry.old_resulting_state != "cleanup_scheduled"
+                {
+                    return Err(reassignment_error("resource_reassignment_old_schedule_resolution_invalid", &entry));
+                }
+                if entry.destruction_order <= previous_order {
+                    return Err(reassignment_error("resource_reassignment_destruction_order_invalid", &entry));
+                }
+                previous_order = entry.destruction_order;
+            }
+            "transfer_before_replacement" => {
+                let transfer_destination = carriers_by_id
+                    .get(entry.transfer_destination_carrier_id.as_str());
+                if transfer_destination
+                    .map(|carrier| carrier.resource_id.as_str())
+                    != Some(entry.old_resource_id.as_str())
+                    || entry.old_resulting_state != "moved"
+                    || entry.destruction_order != 0
+                {
+                    return Err(reassignment_error("resource_reassignment_transfer_resolution_invalid", &entry));
+                }
+            }
+            _ => unreachable!(),
+        }
+        if !old_resolution_exists(table, &entry) {
+            return Err(reassignment_error("resource_reassignment_old_resolution_not_in_canonical_mir", &entry));
+        }
+        entries.push(entry);
+    }
+    Ok(entries)
+}
+
+fn lower_resource_reassignments(
+    entries: &[ResourceReassignment],
+    authority: &AuthorityTables,
+) -> Result<Vec<CraneliftResourceReassignmentAction>, ResourceMirError> {
+    let mut actions = Vec::with_capacity(entries.len());
+    for entry in entries {
+        let (action_name, runtime_symbol) = match entry.resolution_policy.as_str() {
+            "immediate_destroy" => {
+                let old_authority = authority.resources.get(&entry.old_resource_id)
+                    .ok_or_else(|| reassignment_error("resource_reassignment_identity_missing", entry))?;
+                let destructor = authority.destructors.get(&old_authority.destructor_id)
+                    .ok_or_else(|| reassignment_error("resource_reassignment_old_destroy_resolution_invalid", entry))?;
+                ("destroy_then_replace", destructor.runtime_symbol.clone())
+            }
+            "scheduled_cleanup" => (
+                "schedule_then_replace",
+                "gust_resource_schedule_cleanup".to_string(),
+            ),
+            "transfer_before_replacement" => ("transfer_then_replace", String::new()),
+            _ => return Err(reassignment_error("resource_reassignment_old_live_unresolved", entry)),
+        };
+        actions.push(CraneliftResourceReassignmentAction {
+            reassignment_id: entry.reassignment_id.clone(),
+            action_name,
+            old_resource_id: entry.old_resource_id.clone(),
+            replacement_resource_id: entry.replacement_resource_id.clone(),
+            storage_id: entry.storage_id.clone(),
+            cleanup_obligation_id: entry.cleanup_obligation_id.clone(),
+            runtime_symbol,
+            destruction_order: entry.destruction_order,
+            old_resulting_state: entry.old_resulting_state.clone(),
+            replacement_resulting_state: entry.replacement_resulting_state.clone(),
+            observable_effect: entry.observable_effect.clone(),
+        });
+    }
+    Ok(actions)
+}
+
+fn reassignment_witness(entries: &[ResourceReassignment]) -> String {
+    let mut output = String::from("resource_reassignment_witness: accepted\n");
+    for entry in entries {
+        output.push_str(&format!(
+            "resource_reassignment: id={} form={} policy={} old={} replacement={} storage={} cleanup={} destructor={} order={} old_result={} replacement_state={} effect={}\n",
+            entry.reassignment_id,
+            entry.form,
+            entry.resolution_policy,
+            entry.old_resource_id,
+            entry.replacement_resource_id,
+            entry.storage_id,
+            entry.cleanup_obligation_id,
+            entry.destructor_id,
+            entry.destruction_order,
+            entry.old_resulting_state,
+            entry.replacement_resulting_state,
+            entry.observable_effect,
+        ));
+    }
+    output
+}
+
+fn reassignment_lowering_witness(actions: &[CraneliftResourceReassignmentAction]) -> String {
+    let mut output = String::from("resource_reassignment_lowering_witness: accepted\n");
+    for action in actions {
+        output.push_str(&format!(
+            "resource_reassignment_lowering: id={} action={} old={} replacement={} storage={} cleanup={} runtime_symbol={} order={} old_result={} replacement_state={} effect={}\n",
+            action.reassignment_id,
+            action.action_name,
+            action.old_resource_id,
+            action.replacement_resource_id,
+            action.storage_id,
+            action.cleanup_obligation_id,
+            action.runtime_symbol,
+            action.destruction_order,
+            action.old_resulting_state,
+            action.replacement_resulting_state,
+            action.observable_effect,
+        ));
+    }
+    output
+}
+
 pub fn lower_resource_mir_witness_path(path: &Path) -> Result<String, Box<dyn Error>> {
     let contents = fs::read_to_string(path)?;
     let (table, authority) = parse_resource_mir(&contents)?;
     let actions = lower_for_cranelift(&table, &authority)?;
-    Ok(witness(&table, &actions))
+    let reassignments = parse_resource_reassignments(&contents, &table, &authority)?;
+    let reassignment_actions = lower_resource_reassignments(&reassignments, &authority)?;
+    let mut output = witness(&table, &actions);
+    if !reassignments.is_empty() {
+        output.push_str(&reassignment_witness(&reassignments));
+        output.push_str(&reassignment_lowering_witness(&reassignment_actions));
+    }
+    Ok(output)
 }
 
 #[cfg(test)]

@@ -1,0 +1,31 @@
+Phase 15.4 — Resource Reassignment Semantics
+guard: guard-cranelift-phase15-resource-reassignment-contract
+parity_guard: guard-cranelift-phase15-resource-reassignment-parity
+rows: 41
+test_levels: contract=Level 1 parity=Level 2
+
+Inventory
+- form: 5
+- resolution: 3
+- metadata: 7
+- rejection: 8
+- comparison: 4
+- composition: 2
+- positive: 5
+- consumer: 2
+- boundary: 3
+- test: 2
+
+Replacement authority
+- each transaction names old and replacement resource identities and one shared mutable storage
+- the old value is destroyed, scheduled, or transferred exactly once before replacement publication
+- immediate and scheduled destruction use explicit monotonically ordered destructor slots
+
+Rejection
+- unresolved old ownership, duplicate cleanup, immutable storage, destroyed old values, mismatched layout/kind, and move-only copies reject
+- validation runs before driver discovery and request publication
+
+Parity
+- MIR-to-C and Cranelift emit the same reassignment witness
+- destructor count, order, resulting state, and observable effect are compared
+- branch, selected-loop, aggregate-field, moved-storage reinitialization, scheduling, and transfer forms are exercised

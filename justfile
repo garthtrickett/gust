@@ -15414,6 +15414,25 @@ guard-cranelift-phase15-move-state-parity:
     just guard-cranelift-phase15-move-state-contract
     bash scripts/phase15_move_state_parity.sh
 
+guard-cranelift-phase15-resource-reassignment-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 15.4 resource reassignment semantics..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase15-resource-reassignment-contract |
+      grep -F $'guard-cranelift-phase15-resource-reassignment-contract\t1\t' >/dev/null
+    python3 scripts/phase15_resource_reassignment.py --check
+
+guard-cranelift-phase15-resource-reassignment-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 15.4 resource reassignment parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase15-resource-reassignment-parity |
+      grep -F $'guard-cranelift-phase15-resource-reassignment-parity\t2\t' >/dev/null
+    just guard-cranelift-phase15-resource-reassignment-contract
+    bash scripts/phase15_resource_reassignment_parity.sh
+
 guard-cranelift-phase15-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail

@@ -495,6 +495,108 @@ func mir_resource_move_failure(table: MirResourceMirTable[ctx], authority_table:
     return mir_resource_move_validation(0, "", diagnostic, ctx);
 }
 
+func mir_resource_storage_has_moved_then_fresh_identity(table: MirResourceMirTable[ctx], storage_id: str, predecessor_resource_id: str, fresh_resource_id: str, ctx: &Arena) int {
+    mut operations: std.Vector[MirResourceOperation[ctx], ctx] := ctx[table.operations];
+    mut predecessor_moved := 0;
+    mut operation_index := 0;
+    while operation_index < len(operations) {
+        mut history_operation := operations[operation_index];
+        unsafe {
+            if history_operation.operation_kind.tag == 3 &&
+               std.str_eq(history_operation.resource_id, predecessor_resource_id) == 1
+            {
+                mut history_source := mir_resource_carrier_by_id(table, history_operation.source_carrier_id, ctx);
+                if history_source.found == 1 && std.str_eq(history_source.value.storage_id, storage_id) == 1 {
+                    predecessor_moved = 1;
+                }
+            }
+            if predecessor_moved == 1 && history_operation.operation_kind.tag == 1 &&
+               std.str_eq(history_operation.resource_id, fresh_resource_id) == 1
+            {
+                mut history_destination := mir_resource_carrier_by_id(table, history_operation.destination_carrier_id, ctx);
+                if history_destination.found == 1 && std.str_eq(history_destination.value.storage_id, storage_id) == 1 {
+                    return 1;
+                }
+            }
+        }
+        operation_index = operation_index + 1;
+    }
+    return 0;
+}
+
+func mir_resource_reassignment_replacement_source_exists(table: MirResourceMirTable[ctx], resource_id: str, carrier_id: str, source_kind: str, ctx: &Arena) int {
+    mut operations: std.Vector[MirResourceOperation[ctx], ctx] := ctx[table.operations];
+    mut source_index := 0;
+    while source_index < len(operations) {
+        mut source_operation := operations[source_index];
+        unsafe {
+            if std.str_eq(source_operation.resource_id, resource_id) == 1 &&
+               std.str_eq(source_operation.destination_carrier_id, carrier_id) == 1
+            {
+                if std.str_eq(source_kind, "fresh_initialize") == 1 && source_operation.operation_kind.tag == 1 {
+                    return 1;
+                }
+                if std.str_eq(source_kind, "move") == 1 && source_operation.operation_kind.tag == 3 {
+                    return 1;
+                }
+            }
+        }
+        source_index = source_index + 1;
+    }
+    return 0;
+}
+
+func mir_resource_reassignment_old_resolution_exists(table: MirResourceMirTable[ctx], resource_id: str, old_carrier_id: str, cleanup_id: str, resolution_policy: str, transfer_destination_carrier_id: str, ctx: &Arena) int {
+    mut operations: std.Vector[MirResourceOperation[ctx], ctx] := ctx[table.operations];
+    mut resolution_index := 0;
+    while resolution_index < len(operations) {
+        mut resolution_operation := operations[resolution_index];
+        unsafe {
+            if std.str_eq(resolution_operation.resource_id, resource_id) == 1 {
+                if std.str_eq(resolution_policy, "immediate_destroy") == 1 &&
+                   resolution_operation.operation_kind.tag == 6 &&
+                   std.str_eq(resolution_operation.cleanup_id, cleanup_id) == 1 &&
+                   std.str_eq(resolution_operation.resulting_state, "destroyed") == 1
+                {
+                    return 1;
+                }
+                if std.str_eq(resolution_policy, "scheduled_cleanup") == 1 &&
+                   resolution_operation.operation_kind.tag == 5 &&
+                   std.str_eq(resolution_operation.cleanup_id, cleanup_id) == 1 &&
+                   std.str_eq(resolution_operation.resulting_state, "cleanup_scheduled") == 1
+                {
+                    return 1;
+                }
+                if std.str_eq(resolution_policy, "transfer_before_replacement") == 1 &&
+                   resolution_operation.operation_kind.tag == 3 &&
+                   std.str_eq(resolution_operation.source_carrier_id, old_carrier_id) == 1 &&
+                   std.str_eq(resolution_operation.destination_carrier_id, transfer_destination_carrier_id) == 1
+                {
+                    return 1;
+                }
+            }
+        }
+        resolution_index = resolution_index + 1;
+    }
+    return 0;
+}
+
+func mir_resource_reassignment_control_flow_region_exists(table: MirResourceMirTable[ctx], edge_id: str, replacement_resource_id: str, require_loop_backedge: int, ctx: &Arena) int {
+    mut edges: std.Vector[MirResourceFlowEdge[ctx], ctx] := ctx[table.flow_edges];
+    mut edge_index := 0;
+    while edge_index < len(edges) {
+        if std.str_eq(edges[edge_index].edge_id, edge_id) == 1 &&
+           std.str_eq(edges[edge_index].resource_id, replacement_resource_id) == 1 &&
+           std.str_eq(edges[edge_index].state, "live") == 1 &&
+           edges[edge_index].is_loop_backedge == require_loop_backedge
+        {
+            return 1;
+        }
+        edge_index = edge_index + 1;
+    }
+    return 0;
+}
+
 func mir_resource_carrier_has_operation(table: MirResourceMirTable[ctx], carrier_id: str, ctx: &Arena) int {
     mut operations: std.Vector[MirResourceOperation[ctx], ctx] := ctx[table.operations];
     mut index := 0;

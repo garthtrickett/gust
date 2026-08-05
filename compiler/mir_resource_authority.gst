@@ -705,6 +705,20 @@ func mir_resource_has_cleanup_id(table: MirResourceAuthorityTable[ctx], cleanup_
     return 0;
 }
 
+func mir_resource_cleanup_matches_resource(table: MirResourceAuthorityTable[ctx], cleanup_id: str, resource_id: str, ctx: &Arena) int {
+    mut cleanups: std.Vector[MirCleanupObligation[ctx], ctx] := ctx[table.cleanups];
+    mut index := 0;
+    while index < len(cleanups) {
+        if std.str_eq(cleanups[index].cleanup_id, cleanup_id) == 1 &&
+           std.str_eq(cleanups[index].resource_id, resource_id) == 1
+        {
+            return 1;
+        }
+        index = index + 1;
+    }
+    return 0;
+}
+
 func mir_resource_cleanup_has_terminal_transition(table: MirResourceAuthorityTable[ctx], cleanup_id: str, resource_id: str, ctx: &Arena) int {
     mut transitions: std.Vector[MirResourceTransition[ctx], ctx] := ctx[table.transitions];
     mut index := 0;
@@ -998,6 +1012,8 @@ func mir_serialize_resource_authority_table_for_request(table: MirResourceAuthor
         resource_row = std.Concat(resource_row, resources[index].value_id);
         resource_row = std.Concat(resource_row, ";type=");
         resource_row = std.Concat(resource_row, resources[index].resource_type_id);
+        resource_row = std.Concat(resource_row, ";kind=");
+        resource_row = std.Concat(resource_row, resources[index].resource_kind);
         resource_row = std.Concat(resource_row, ";destructor=");
         resource_row = std.Concat(resource_row, resources[index].destructor_id);
         resource_row = std.Concat(resource_row, ";close=");
