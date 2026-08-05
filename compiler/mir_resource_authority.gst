@@ -617,6 +617,22 @@ func mir_resource_has_cleanup_id(table: MirResourceAuthorityTable[ctx], cleanup_
     return 0;
 }
 
+func mir_resource_cleanup_has_terminal_transition(table: MirResourceAuthorityTable[ctx], cleanup_id: str, resource_id: str, ctx: &Arena) int {
+    mut transitions: std.Vector[MirResourceTransition[ctx], ctx] := ctx[table.transitions];
+    mut index := 0;
+    while index < len(transitions) {
+        if std.str_eq(transitions[index].cleanup_id, cleanup_id) == 1 &&
+           std.str_eq(transitions[index].resource_id, resource_id) == 1 &&
+           std.str_eq(transitions[index].operation, "invoke_destructor") == 1 &&
+           std.str_eq(transitions[index].resulting_state, "destroyed") == 1
+        {
+            return 1;
+        }
+        index = index + 1;
+    }
+    return 0;
+}
+
 func mir_resource_has_mir_resource_reference(table: MirResourceAuthorityTable[ctx], resource_id: str, ctx: &Arena) int {
     mut references: std.Vector[MirResourceMirReference[ctx], ctx] := ctx[table.mir_references];
     mut index := 0;
@@ -698,12 +714,12 @@ func mir_resource_authority_table_validate(table: MirResourceAuthorityTable[ctx]
         if mir_resource_has_mir_resource_reference(table, resource.resource_id, ctx) == 0 {
             return mir_resource_table_validation(0, "resource_metadata_inconsistent_with_canonical_mir", ctx);
         }
-        mut duplicate := index + 1;
-        while duplicate < len(resources) {
-            if std.str_eq(resources[duplicate].resource_id, resource.resource_id) == 1 {
+        mut resource_duplicate := index + 1;
+        while resource_duplicate < len(resources) {
+            if std.str_eq(resources[resource_duplicate].resource_id, resource.resource_id) == 1 {
                 return mir_resource_table_validation(0, "resource_duplicate_conflicting_record", ctx);
             }
-            duplicate = duplicate + 1;
+            resource_duplicate = resource_duplicate + 1;
         }
         index = index + 1;
     }
@@ -717,12 +733,12 @@ func mir_resource_authority_table_validate(table: MirResourceAuthorityTable[ctx]
         {
             return mir_resource_table_validation(0, "resource_unknown_destructor_id", ctx);
         }
-        mut duplicate := index + 1;
-        while duplicate < len(destructors) {
-            if std.str_eq(destructors[duplicate].destructor_id, destructors[index].destructor_id) == 1 {
+        mut destructor_duplicate := index + 1;
+        while destructor_duplicate < len(destructors) {
+            if std.str_eq(destructors[destructor_duplicate].destructor_id, destructors[index].destructor_id) == 1 {
                 return mir_resource_table_validation(0, "resource_duplicate_destructor_id", ctx);
             }
-            duplicate = duplicate + 1;
+            destructor_duplicate = destructor_duplicate + 1;
         }
         index = index + 1;
     }
@@ -793,17 +809,21 @@ func mir_resource_authority_table_validate(table: MirResourceAuthorityTable[ctx]
             return mir_resource_table_validation(0, "resource_metadata_inconsistent_with_canonical_mir", ctx);
         }
         mut latest := mir_resource_latest_state(table, cleanup.resource_id, ctx);
+        if latest.found == 1 && std.str_eq(latest.value.state, "moved") == 1 {
+            return mir_resource_table_validation(0, "resource_cleanup_for_moved_or_destroyed_value", ctx);
+        }
         if latest.found == 1 &&
-           (std.str_eq(latest.value.state, "moved") == 1 || std.str_eq(latest.value.state, "destroyed") == 1)
+           std.str_eq(latest.value.state, "destroyed") == 1 &&
+           mir_resource_cleanup_has_terminal_transition(table, cleanup.cleanup_id, cleanup.resource_id, ctx) == 0
         {
             return mir_resource_table_validation(0, "resource_cleanup_for_moved_or_destroyed_value", ctx);
         }
-        mut duplicate := index + 1;
-        while duplicate < len(cleanups) {
-            if std.str_eq(cleanups[duplicate].cleanup_id, cleanup.cleanup_id) == 1 {
+        mut cleanup_duplicate := index + 1;
+        while cleanup_duplicate < len(cleanups) {
+            if std.str_eq(cleanups[cleanup_duplicate].cleanup_id, cleanup.cleanup_id) == 1 {
                 return mir_resource_table_validation(0, "resource_duplicate_cleanup_id", ctx);
             }
-            duplicate = duplicate + 1;
+            cleanup_duplicate = cleanup_duplicate + 1;
         }
         index = index + 1;
     }
@@ -884,51 +904,89 @@ func mir_serialize_resource_authority_table_for_request(table: MirResourceAuthor
 
     mut index := 0;
     while index < len(resources) {
-        mut row := "resource_record: id=";
-        row = std.Concat(row, resources[index].resource_id);
-        row = std.Concat(row, ";value=");
-        row = std.Concat(row, resources[index].value_id);
-        row = std.Concat(row, ";type=");
-        row = std.Concat(row, resources[index].resource_type_id);
-        row = std.Concat(row, ";destructor=");
-        row = std.Concat(row, resources[index].destructor_id);
-        row = std.Concat(row, ";layout=");
-        row = std.Concat(row, resources[index].layout_id);
-        output = std.Concat(output, row);
+        mut resource_row := "resource_record: id=";
+        resource_row = std.Concat(resource_row, resources[index].resource_id);
+        resource_row = std.Concat(resource_row, ";value=");
+        resource_row = std.Concat(resource_row, resources[index].value_id);
+        resource_row = std.Concat(resource_row, ";type=");
+        resource_row = std.Concat(resource_row, resources[index].resource_type_id);
+        resource_row = std.Concat(resource_row, ";destructor=");
+        resource_row = std.Concat(resource_row, resources[index].destructor_id);
+        resource_row = std.Concat(resource_row, ";close=");
+        resource_row = std.Concat(resource_row, resources[index].close_capability_id);
+        resource_row = std.Concat(resource_row, ";layout=");
+        resource_row = std.Concat(resource_row, resources[index].layout_id);
+        output = std.Concat(output, resource_row);
+        output = std.Concat(output, "\n");
+        index = index + 1;
+    }
+    index = 0;
+    while index < len(states) {
+        mut state_row := "resource_state: resource=";
+        state_row = std.Concat(state_row, states[index].resource_id);
+        state_row = std.Concat(state_row, ";point=");
+        state_row = std.Concat(state_row, states[index].program_point);
+        state_row = std.Concat(state_row, ";state=");
+        state_row = std.Concat(state_row, states[index].state);
+        output = std.Concat(output, state_row);
         output = std.Concat(output, "\n");
         index = index + 1;
     }
     index = 0;
     while index < len(transitions) {
-        mut row := "resource_transition: id=";
-        row = std.Concat(row, transitions[index].transition_id);
-        row = std.Concat(row, ";resource=");
-        row = std.Concat(row, transitions[index].resource_id);
-        row = std.Concat(row, ";prior=");
-        row = std.Concat(row, transitions[index].prior_state);
-        row = std.Concat(row, ";operation=");
-        row = std.Concat(row, transitions[index].operation);
-        row = std.Concat(row, ";result=");
-        row = std.Concat(row, transitions[index].resulting_state);
-        row = std.Concat(row, ";point=");
-        row = std.Concat(row, transitions[index].program_point);
-        output = std.Concat(output, row);
+        mut transition_row := "resource_transition: id=";
+        transition_row = std.Concat(transition_row, transitions[index].transition_id);
+        transition_row = std.Concat(transition_row, ";resource=");
+        transition_row = std.Concat(transition_row, transitions[index].resource_id);
+        transition_row = std.Concat(transition_row, ";prior=");
+        transition_row = std.Concat(transition_row, transitions[index].prior_state);
+        transition_row = std.Concat(transition_row, ";operation=");
+        transition_row = std.Concat(transition_row, transitions[index].operation);
+        transition_row = std.Concat(transition_row, ";result=");
+        transition_row = std.Concat(transition_row, transitions[index].resulting_state);
+        transition_row = std.Concat(transition_row, ";point=");
+        transition_row = std.Concat(transition_row, transitions[index].program_point);
+        output = std.Concat(output, transition_row);
         output = std.Concat(output, "\n");
         index = index + 1;
     }
     index = 0;
     while index < len(cleanups) {
-        mut row := "cleanup_record: id=";
-        row = std.Concat(row, cleanups[index].cleanup_id);
-        row = std.Concat(row, ";resource=");
-        row = std.Concat(row, cleanups[index].resource_id);
-        row = std.Concat(row, ";destructor=");
-        row = std.Concat(row, cleanups[index].destructor_id);
-        row = std.Concat(row, ";scope_exit=");
-        row = std.Concat(row, cleanups[index].scope_exit_id);
-        row = std.Concat(row, ";order=");
-        row = std.Concat(row, std.FormatInt(cleanups[index].execution_order));
-        output = std.Concat(output, row);
+        mut cleanup_row := "cleanup_record: id=";
+        cleanup_row = std.Concat(cleanup_row, cleanups[index].cleanup_id);
+        cleanup_row = std.Concat(cleanup_row, ";resource=");
+        cleanup_row = std.Concat(cleanup_row, cleanups[index].resource_id);
+        cleanup_row = std.Concat(cleanup_row, ";destructor=");
+        cleanup_row = std.Concat(cleanup_row, cleanups[index].destructor_id);
+        cleanup_row = std.Concat(cleanup_row, ";scope_exit=");
+        cleanup_row = std.Concat(cleanup_row, cleanups[index].scope_exit_id);
+        cleanup_row = std.Concat(cleanup_row, ";order=");
+        cleanup_row = std.Concat(cleanup_row, std.FormatInt(cleanups[index].execution_order));
+        output = std.Concat(output, cleanup_row);
+        output = std.Concat(output, "\n");
+        index = index + 1;
+    }
+    index = 0;
+    while index < len(destructors) {
+        mut destructor_row := "destructor_record: id=";
+        destructor_row = std.Concat(destructor_row, destructors[index].destructor_id);
+        destructor_row = std.Concat(destructor_row, ";type=");
+        destructor_row = std.Concat(destructor_row, destructors[index].resource_type_id);
+        destructor_row = std.Concat(destructor_row, ";runtime_symbol=");
+        destructor_row = std.Concat(destructor_row, destructors[index].runtime_symbol);
+        output = std.Concat(output, destructor_row);
+        output = std.Concat(output, "\n");
+        index = index + 1;
+    }
+    index = 0;
+    while index < len(closes) {
+        mut close_row := "close_capability_record: id=";
+        close_row = std.Concat(close_row, closes[index].close_capability_id);
+        close_row = std.Concat(close_row, ";type=");
+        close_row = std.Concat(close_row, closes[index].resource_type_id);
+        close_row = std.Concat(close_row, ";runtime_symbol=");
+        close_row = std.Concat(close_row, closes[index].runtime_symbol);
+        output = std.Concat(output, close_row);
         output = std.Concat(output, "\n");
         index = index + 1;
     }

@@ -28,6 +28,7 @@ import "mir_array_slice.gst" as array_slice;
 import "mir_struct_layout.gst" as structs;
 import "mir_enum.gst" as enums;
 import "mir_aggregate_transport.gst" as aggregate;
+import "mir_resource_value.gst" as resource_mir;
 
 type MirTypeLayoutReference[ctx] struct {
     type_id: str,
@@ -425,7 +426,11 @@ type MirProgram[ctx] struct {
     struct_operation_references: Index[std.Vector[MirStructOperationReference[ctx], ctx], ctx],
     enum_layout_references: Index[std.Vector[MirEnumLayoutReference[ctx], ctx], ctx],
     enum_value_references: Index[std.Vector[MirEnumValueReference[ctx], ctx], ctx],
-    enum_operation_references: Index[std.Vector[MirEnumOperationReference[ctx], ctx], ctx]
+    enum_operation_references: Index[std.Vector[MirEnumOperationReference[ctx], ctx], ctx],
+    resource_value_references: Index[std.Vector[resource_mir.MirResourceValue[ctx], ctx], ctx],
+    resource_carrier_references: Index[std.Vector[resource_mir.MirResourceCarrier[ctx], ctx], ctx],
+    resource_operation_references: Index[std.Vector[resource_mir.MirResourceOperation[ctx], ctx], ctx],
+    resource_flow_edge_references: Index[std.Vector[resource_mir.MirResourceFlowEdge[ctx], ctx], ctx]
 }
 
 type MirFunction[ctx] struct {
@@ -478,6 +483,10 @@ type MirStmt[ctx] enum {
     ArraySliceOperation {
         operation: Index[MirArraySliceOperationReference[ctx], ctx],
         value: Index[MirValue[ctx], ctx],
+        span: token.Span
+    },
+    ResourceOperation {
+        operation: Index[resource_mir.MirResourceOperation[ctx], ctx],
         span: token.Span
     }
 }
@@ -537,6 +546,11 @@ type MirValue[ctx] enum {
         operands: Index[std.Vector[MirValue[ctx], ctx], ctx],
         operation: Index[MirArraySliceOperationReference[ctx], ctx],
         value_type: str,
+        span: token.Span
+    },
+    ResourceRead {
+        value: Index[resource_mir.MirResourceValue[ctx], ctx],
+        carrier_id: str,
         span: token.Span
     }
 }
@@ -896,6 +910,34 @@ func mir_empty_enum_operation_reference_vector(ctx: &Arena) Index[std.Vector[Mir
     return references_idx;
 }
 
+func mir_empty_resource_value_reference_vector(ctx: &Arena) Index[std.Vector[resource_mir.MirResourceValue[ctx], ctx], ctx] {
+    mut references: std.Vector[resource_mir.MirResourceValue[ctx], ctx] := std.VectorNew(ctx);
+    mut references_idx: Index[std.Vector[resource_mir.MirResourceValue[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(references_idx, references);
+    return references_idx;
+}
+
+func mir_empty_resource_carrier_reference_vector(ctx: &Arena) Index[std.Vector[resource_mir.MirResourceCarrier[ctx], ctx], ctx] {
+    mut references: std.Vector[resource_mir.MirResourceCarrier[ctx], ctx] := std.VectorNew(ctx);
+    mut references_idx: Index[std.Vector[resource_mir.MirResourceCarrier[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(references_idx, references);
+    return references_idx;
+}
+
+func mir_empty_resource_operation_reference_vector(ctx: &Arena) Index[std.Vector[resource_mir.MirResourceOperation[ctx], ctx], ctx] {
+    mut references: std.Vector[resource_mir.MirResourceOperation[ctx], ctx] := std.VectorNew(ctx);
+    mut references_idx: Index[std.Vector[resource_mir.MirResourceOperation[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(references_idx, references);
+    return references_idx;
+}
+
+func mir_empty_resource_flow_edge_reference_vector(ctx: &Arena) Index[std.Vector[resource_mir.MirResourceFlowEdge[ctx], ctx], ctx] {
+    mut references: std.Vector[resource_mir.MirResourceFlowEdge[ctx], ctx] := std.VectorNew(ctx);
+    mut references_idx: Index[std.Vector[resource_mir.MirResourceFlowEdge[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(references_idx, references);
+    return references_idx;
+}
+
 func mir_value_vector_with_value(values_idx: Index[std.Vector[MirValue[ctx], ctx], ctx], value: MirValue[ctx], ctx: &Arena) Index[std.Vector[MirValue[ctx], ctx], ctx] {
     mut values: std.Vector[MirValue[ctx], ctx] := ctx[values_idx];
     values.Push(value);
@@ -945,6 +987,10 @@ func mir_make_program(ctx: &Arena) MirProgram[ctx] {
     program.enum_layout_references = mir_empty_enum_layout_reference_vector(ctx);
     program.enum_value_references = mir_empty_enum_value_reference_vector(ctx);
     program.enum_operation_references = mir_empty_enum_operation_reference_vector(ctx);
+    program.resource_value_references = mir_empty_resource_value_reference_vector(ctx);
+    program.resource_carrier_references = mir_empty_resource_carrier_reference_vector(ctx);
+    program.resource_operation_references = mir_empty_resource_operation_reference_vector(ctx);
+    program.resource_flow_edge_references = mir_empty_resource_flow_edge_reference_vector(ctx);
     return program;
 }
 
@@ -2915,6 +2961,18 @@ func mir_make_stmt_memory_access(operation_reference: MirMemoryAccessReference[c
     return stmt;
 }
 
+func mir_make_stmt_resource_operation(operation_reference: resource_mir.MirResourceOperation[ctx], span: token.Span, ctx: &Arena) MirStmt[ctx] {
+    mut operation_reference_idx: Index[resource_mir.MirResourceOperation[ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(operation_reference_idx, operation_reference);
+    mut stmt: MirStmt[ctx];
+    unsafe {
+        stmt.tag = 6; // ResourceOperation
+        stmt.ResourceOperation.operation = operation_reference_idx;
+        stmt.ResourceOperation.span = span;
+    }
+    return stmt;
+}
+
 func mir_make_value_int_literal(val: int, value_type: str, span: token.Span, ctx: &Arena) MirValue[ctx] {
     mut value: MirValue[ctx];
     unsafe {
@@ -3038,6 +3096,19 @@ func mir_make_value_array_slice_operation(operands: Index[std.Vector[MirValue[ct
         value.ArraySliceOperation.operation = operation_reference_idx;
         value.ArraySliceOperation.value_type = std.Clone(ctx, value_type);
         value.ArraySliceOperation.span = span;
+    }
+    return value;
+}
+
+func mir_make_value_resource_read(resource_value: resource_mir.MirResourceValue[ctx], carrier_id: str, span: token.Span, ctx: &Arena) MirValue[ctx] {
+    mut resource_value_idx: Index[resource_mir.MirResourceValue[ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(resource_value_idx, resource_value);
+    mut value: MirValue[ctx];
+    unsafe {
+        value.tag = 10; // ResourceRead
+        value.ResourceRead.value = resource_value_idx;
+        value.ResourceRead.carrier_id = std.Clone(ctx, carrier_id);
+        value.ResourceRead.span = span;
     }
     return value;
 }
@@ -3181,6 +3252,9 @@ func mir_debug_stmt_kind(stmt: MirStmt[ctx]) str {
     if stmt.tag == 5 {
         return "MirStmt.ArraySliceOperation";
     }
+    if stmt.tag == 6 {
+        return "MirStmt.ResourceOperation";
+    }
     return "MirStmt.<unknown>";
 }
 
@@ -3215,6 +3289,9 @@ func mir_debug_value_kind(value: MirValue[ctx]) str {
     if value.tag == 9 {
         return "MirValue.ArraySliceOperation";
     }
+    if value.tag == 10 {
+        return "MirValue.ResourceRead";
+    }
     return "MirValue.<unknown>";
 }
 
@@ -3232,6 +3309,15 @@ func mir_debug_terminator_kind(terminator: MirTerminator[ctx]) str {
         return "MirTerminator.Branch";
     }
     return "MirTerminator.<unknown>";
+}
+
+func mir_program_resource_mir_table(program: MirProgram[ctx], target_id: str, target_triple: str, ctx: &Arena) resource_mir.MirResourceMirTable[ctx] {
+    mut table := resource_mir.mir_resource_mir_make_empty_table(target_id, target_triple, ctx);
+    table.values = program.resource_value_references;
+    table.carriers = program.resource_carrier_references;
+    table.operations = program.resource_operation_references;
+    table.flow_edges = program.resource_flow_edge_references;
+    return table;
 }
 
 func mir_debug_print_program(program: MirProgram[ctx]) {

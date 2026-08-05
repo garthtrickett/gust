@@ -15376,6 +15376,25 @@ guard-cranelift-phase11-ci-family family:
     just guard-cranelift-differential-family "{{family}}"
 
 
+guard-cranelift-phase15-resource-mir-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 15.2 canonical resource MIR..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase15-resource-mir-contract |
+      rg -n -F $'guard-cranelift-phase15-resource-mir-contract\t1\t' >/dev/null
+    python3 scripts/phase15_resource_mir.py --check
+
+guard-cranelift-phase15-resource-mir-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 15.2 resource-value MIR parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase15-resource-mir-parity |
+      rg -n -F $'guard-cranelift-phase15-resource-mir-parity\t2\t' >/dev/null
+    just guard-cranelift-phase15-resource-mir-contract
+    bash scripts/phase15_resource_mir_parity.sh
+
 guard-cranelift-phase15-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail
