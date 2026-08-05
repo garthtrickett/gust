@@ -336,7 +336,7 @@ func main() {
     }
 
     mut request_reassign := resource_mir.mir_serialize_resource_mir_for_request(resource_table_reassign, authority_table_reassign, layout_table_reassign, ctx);
-    request_reassign = std.Concat(request_reassign, reassignment.mir_serialize_resource_reassignment_for_request(reassignment_table_reassign, resource_table_reassign, authority_table_reassign, ctx));
+    request_reassign = reassignment.mir_resource_reassignment_append_to_request(request_reassign, reassignment_table_reassign, resource_table_reassign, authority_table_reassign, ctx);
     request_reassign = std.Concat(request_reassign, authority.mir_serialize_resource_authority_table_for_request(authority_table_reassign, layout_table_reassign, ctx));
     mut witness_reassign := mir_to_c.mir_resource_mir_to_c_witness(resource_table_reassign, authority_table_reassign, layout_table_reassign, ctx);
     witness_reassign = std.Concat(witness_reassign, reassignment.mir_resource_reassignment_witness(reassignment_table_reassign, resource_table_reassign, authority_table_reassign, ctx));

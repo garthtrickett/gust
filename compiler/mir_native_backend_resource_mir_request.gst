@@ -6,13 +6,11 @@
 
 import "mir_native_backend_resource_request.gst" as resource_request;
 import "mir_resource_value.gst" as resource_mir;
-import "mir_resource_reassignment.gst" as reassignment;
 
 type MirNativeBackendResourceMirRequest[ctx] struct {
     format: str,
     base_request: resource_request.MirNativeBackendResourceRequest[ctx],
-    resource_mir_table: resource_mir.MirResourceMirTable[ctx],
-    resource_reassignment_table: reassignment.MirResourceReassignmentTable[ctx]
+    resource_mir_table: resource_mir.MirResourceMirTable[ctx]
 }
 
 type MirNativeBackendResourceMirRequestValidation[ctx] struct {
@@ -32,14 +30,7 @@ func mir_native_backend_make_resource_mir_request(base_request: resource_request
     request.format = std.Clone(ctx, "gust.native_backend.resource_mir_request.v1");
     request.base_request = base_request;
     request.resource_mir_table = resource_mir_table;
-    request.resource_reassignment_table = reassignment.mir_resource_reassignment_make_empty_table(ctx);
     return request;
-}
-
-func mir_native_backend_resource_mir_request_with_reassignment(request: MirNativeBackendResourceMirRequest[ctx], resource_reassignment_table: reassignment.MirResourceReassignmentTable[ctx], ctx: &Arena) MirNativeBackendResourceMirRequest[ctx] {
-    mut updated := request;
-    updated.resource_reassignment_table = resource_reassignment_table;
-    return updated;
 }
 
 func mir_native_backend_resource_mir_request_is_valid(request: MirNativeBackendResourceMirRequest[ctx], ctx: &Arena) MirNativeBackendResourceMirRequestValidation[ctx] {
@@ -72,17 +63,6 @@ func mir_native_backend_resource_mir_request_is_valid(request: MirNativeBackendR
     if resource_validation.valid == 0 {
         return mir_native_backend_resource_mir_request_validation(0, resource_validation.reason_code, ctx);
     }
-    // Phase 15.4 validates the complete replacement transaction before any
-    // driver discovery, worker invocation, artifact creation, or output access.
-    mut reassignment_validation := reassignment.mir_resource_reassignment_validate(
-        request.resource_reassignment_table,
-        request.resource_mir_table,
-        request.base_request.resource_authority_table,
-        ctx
-    );
-    if reassignment_validation.valid == 0 {
-        return mir_native_backend_resource_mir_request_validation(0, reassignment_validation.reason_code, ctx);
-    }
     return mir_native_backend_resource_mir_request_validation(1, "resource_mir_request_valid", ctx);
 }
 
@@ -101,15 +81,6 @@ func mir_serialize_native_backend_resource_mir_request(request: MirNativeBackend
             request.resource_mir_table,
             request.base_request.resource_authority_table,
             request.base_request.base_request.layout_table,
-            ctx
-        )
-    );
-    output = std.Concat(
-        output,
-        reassignment.mir_serialize_resource_reassignment_for_request(
-            request.resource_reassignment_table,
-            request.resource_mir_table,
-            request.base_request.resource_authority_table,
             ctx
         )
     );
@@ -146,11 +117,3 @@ func mir_native_backend_resource_move_diagnostic(request: MirNativeBackendResour
     return resource_mir.mir_resource_move_diagnostic_text(validation, ctx);
 }
 
-func mir_native_backend_resource_reassignment_witness(request: MirNativeBackendResourceMirRequest[ctx], ctx: &Arena) str {
-    return reassignment.mir_resource_reassignment_witness(
-        request.resource_reassignment_table,
-        request.resource_mir_table,
-        request.base_request.resource_authority_table,
-        ctx
-    );
-}

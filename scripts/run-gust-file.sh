@@ -19,16 +19,16 @@ if [ -f compiler/test_runner_entry.gst ]; then
   touch compiler/test_runner_entry.gst
 fi
 
-make gust >/dev/null 2>&1
-if [ $? -ne 0 ]; then
-  echo "❌ Error: 'make gust' failed. Aborting."
+mkdir -p build
+BUILD_LOG="build/gust-build.log"
+if ! make gust >"$BUILD_LOG" 2>&1; then
+  cat "$BUILD_LOG" >&2
+  echo "❌ Error: 'make gust' failed. Aborting. Full diagnostics: $BUILD_LOG" >&2
   exit 1
 fi
 
 TEST_STEM="$(basename "$TEST_PATH" .gst)"
 TEMP_OUTPUT="build/temp_output.log"
-
-mkdir -p build
 
 echo "=== [1/3] COMPILING GUST TO C ===" > to.log
 

@@ -123,6 +123,7 @@ def check_model(root: Path) -> None:
         "func mir_resource_reassignment_entry_at(",
         "func mir_resource_reassignment_validate(",
         "func mir_serialize_resource_reassignment_for_request(",
+        "func mir_resource_reassignment_append_to_request(",
         "func mir_resource_reassignment_witness(",
         'row = std.Concat(row, " old_result=")',
         'row = std.Concat(row, " replacement_state=")',
@@ -136,19 +137,38 @@ def check_model(root: Path) -> None:
 def check_request(root: Path) -> None:
     source = read(root, REQUEST)
     require(source, (
+        "resource_mir_table: resource_mir.MirResourceMirTable[ctx]",
+        "Phase 15.3 move-state validation is compiler-owned",
+        "resource_mir.mir_resource_move_state_validate(",
+        "func mir_serialize_native_backend_resource_mir_request(",
+    ), REQUEST)
+    forbidden = (
         'import "mir_resource_reassignment.gst" as reassignment;',
         "resource_reassignment_table: reassignment.MirResourceReassignmentTable[ctx]",
         "mir_native_backend_resource_mir_request_with_reassignment(",
-        "Phase 15.4 validates the complete replacement transaction before any",
-        "driver discovery, worker invocation, artifact creation, or output access",
-        "reassignment.mir_resource_reassignment_validate(",
-        "reassignment.mir_serialize_resource_reassignment_for_request(",
+        "request.resource_reassignment_table",
         "mir_native_backend_resource_reassignment_witness(",
-    ), REQUEST)
-    validate_pos = source.find("reassignment.mir_resource_reassignment_validate(")
-    serialize_pos = source.find("func mir_serialize_native_backend_resource_mir_request(")
+    )
+    for token in forbidden:
+        if token in source:
+            fail(f"shared resource-MIR request must not embed the reassignment sidecar: {token}")
+
+    model = read(root, MODEL)
+    fixture = read(root, FIXTURE)
+    require(model, (
+        "Reassignment remains a request-local sidecar owned by this defining module.",
+        "func mir_resource_reassignment_append_to_request(",
+        "mir_resource_reassignment_validate(table, resource_table, authority_table, ctx)",
+        "mir_serialize_resource_reassignment_for_request(table, resource_table, authority_table, ctx)",
+    ), MODEL)
+    require(fixture, (
+        "reassignment.mir_resource_reassignment_append_to_request(",
+        "authority.mir_serialize_resource_authority_table_for_request(",
+    ), FIXTURE)
+    validate_pos = model.find("func mir_resource_reassignment_append_to_request(")
+    serialize_pos = model.find("mir_serialize_resource_reassignment_for_request(table, resource_table, authority_table, ctx)", validate_pos)
     if validate_pos < 0 or serialize_pos < 0 or validate_pos > serialize_pos:
-        fail("reassignment validation must precede driver-facing serialization")
+        fail("reassignment sidecar validation must precede sidecar serialization")
 
 
 def check_consumers(root: Path) -> None:
@@ -172,7 +192,7 @@ def check_consumers(root: Path) -> None:
         "make_flow_edge(",
         '"/tmp/gust-phase15-resource-reassignment.request"',
         '"/tmp/gust-phase15-resource-reassignment.mir-to-c.witness"',
-        "reassignment.mir_serialize_resource_reassignment_for_request(",
+        "reassignment.mir_resource_reassignment_append_to_request(",
         "reassignment.mir_resource_reassignment_witness(",
         "reassignment_mir_to_c.mir_resource_reassignment_to_c_source(",
         "reassignment_mir_to_c.mir_resource_reassignment_mir_to_c_witness(",

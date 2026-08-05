@@ -414,6 +414,24 @@ func mir_resource_reassignment_append_field(output: str, key: str, value: str, c
     return std.Clone(ctx, updated);
 }
 
+// Reassignment remains a request-local sidecar owned by this defining module.
+// Do not embed MirResourceReassignmentTable in the shared resource-MIR request:
+// stage one gives module-qualified generic containers distinct identities.
+func mir_resource_reassignment_append_to_request(serialized_resource_mir: str, table: MirResourceReassignmentTable[ctx], resource_table: resource_mir.MirResourceMirTable[ctx], authority_table: authority.MirResourceAuthorityTable[ctx], ctx: &Arena) str {
+    mut validation := mir_resource_reassignment_validate(table, resource_table, authority_table, ctx);
+    if validation.valid == 0 {
+        mut invalid := "resource_reassignment_format: invalid\nresource_reassignment_reason: ";
+        invalid = std.Concat(invalid, validation.reason_code);
+        invalid = std.Concat(invalid, "\n");
+        return std.Clone(ctx, invalid);
+    }
+    mut output := std.Concat(
+        serialized_resource_mir,
+        mir_serialize_resource_reassignment_for_request(table, resource_table, authority_table, ctx)
+    );
+    return std.Clone(ctx, output);
+}
+
 func mir_serialize_resource_reassignment_for_request(table: MirResourceReassignmentTable[ctx], resource_table: resource_mir.MirResourceMirTable[ctx], authority_table: authority.MirResourceAuthorityTable[ctx], ctx: &Arena) str {
     mut validation := mir_resource_reassignment_validate(table, resource_table, authority_table, ctx);
     if validation.valid == 0 {
