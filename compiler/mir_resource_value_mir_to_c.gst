@@ -193,6 +193,19 @@ func mir_resource_operation_lowering_witness(operation: resource_mir.MirResource
     row = std.Concat(row, operation.source_carrier_id);
     row = std.Concat(row, " destination=");
     row = std.Concat(row, operation.destination_carrier_id);
+    row = std.Concat(row, " move_form=");
+    unsafe {
+        if operation.operation_kind.tag == 3 {
+            mut source_query := resource_mir.mir_resource_carrier_by_id(table, operation.source_carrier_id, ctx);
+            mut destination_query := resource_mir.mir_resource_carrier_by_id(table, operation.destination_carrier_id, ctx);
+            if source_query.found == 1 && destination_query.found == 1 {
+                row = std.Concat(row, resource_mir.mir_resource_move_form_name(
+                    source_query.value.carrier_kind,
+                    destination_query.value.carrier_kind
+                ));
+            }
+        }
+    }
     row = std.Concat(row, " runtime_symbol=");
     row = std.Concat(row, mir_resource_operation_runtime_symbol(operation, table, authority_table, ctx));
     row = std.Concat(row, " cleanup=");

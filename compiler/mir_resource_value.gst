@@ -98,6 +98,7 @@ type MirResourceMirTable[ctx] struct {
     identity_policy: str,
     copy_policy: str,
     edge_state_policy: str,
+    move_state_policy: str,
     values: Index[std.Vector[MirResourceValue[ctx], ctx], ctx],
     carriers: Index[std.Vector[MirResourceCarrier[ctx], ctx], ctx],
     operations: Index[std.Vector[MirResourceOperation[ctx], ctx], ctx],
@@ -111,6 +112,30 @@ type MirResourceOperationQuery[ctx] struct { found: int, value: MirResourceOpera
 type MirResourceMirValidation[ctx] struct {
     valid: int,
     reason_code: str
+}
+
+type MirResourceMoveDiagnostic[ctx] struct {
+    resource_id: str,
+    resource_declaration: str,
+    move_site: str,
+    invalid_use_site: str,
+    prior_state: str,
+    attempted_operation: str,
+    reason_code: str
+}
+
+type MirResourceMoveValidation[ctx] struct {
+    valid: int,
+    resulting_state: str,
+    reason_code: str,
+    diagnostic: MirResourceMoveDiagnostic[ctx]
+}
+
+type MirResourceStorageState[ctx] struct {
+    found: int,
+    state: str,
+    resource_id: str,
+    move_site: str
 }
 
 func mir_resource_mir_empty_value_vector(ctx: &Arena) Index[std.Vector[MirResourceValue[ctx], ctx], ctx] {
@@ -196,6 +221,7 @@ func mir_resource_mir_make_empty_table(target_id: str, target_triple: str, ctx: 
     table.identity_policy = std.Clone(ctx, "explicit_resource_id_only_no_backend_derivation");
     table.copy_policy = std.Clone(ctx, "non_copy_resources_move_only");
     table.edge_state_policy = std.Clone(ctx, "explicit_state_on_every_selected_resource_edge");
+    table.move_state_policy = std.Clone(ctx, "carrier_state_transitions_before_driver_discovery");
     table.values = mir_resource_mir_empty_value_vector(ctx);
     table.carriers = mir_resource_mir_empty_carrier_vector(ctx);
     table.operations = mir_resource_mir_empty_operation_vector(ctx);
@@ -306,6 +332,368 @@ func mir_resource_mir_validation(valid: int, reason_code: str, ctx: &Arena) MirR
     return result;
 }
 
+func mir_resource_move_diagnostic(resource_id: str, resource_declaration: str, move_site: str, invalid_use_site: str, prior_state: str, attempted_operation: str, reason_code: str, ctx: &Arena) MirResourceMoveDiagnostic[ctx] {
+    mut diagnostic: MirResourceMoveDiagnostic[ctx];
+    diagnostic.resource_id = std.Clone(ctx, resource_id);
+    diagnostic.resource_declaration = std.Clone(ctx, resource_declaration);
+    diagnostic.move_site = std.Clone(ctx, move_site);
+    diagnostic.invalid_use_site = std.Clone(ctx, invalid_use_site);
+    diagnostic.prior_state = std.Clone(ctx, prior_state);
+    diagnostic.attempted_operation = std.Clone(ctx, attempted_operation);
+    diagnostic.reason_code = std.Clone(ctx, reason_code);
+    return diagnostic;
+}
+
+func mir_resource_move_validation(valid: int, resulting_state: str, diagnostic: MirResourceMoveDiagnostic[ctx], ctx: &Arena) MirResourceMoveValidation[ctx] {
+    mut result: MirResourceMoveValidation[ctx];
+    result.valid = valid;
+    result.resulting_state = std.Clone(ctx, resulting_state);
+    result.reason_code = std.Clone(ctx, diagnostic.reason_code);
+    result.diagnostic = diagnostic;
+    return result;
+}
+
+func mir_resource_move_empty_diagnostic(ctx: &Arena) MirResourceMoveDiagnostic[ctx] {
+    return mir_resource_move_diagnostic("", "", "", "", "", "", "resource_move_state_valid", ctx);
+}
+
+func mir_resource_move_form_name(source: MirResourceCarrierKind, destination: MirResourceCarrierKind) str {
+    unsafe {
+        if source.tag == 0 && destination.tag == 0 { return "local_to_local"; }
+        if source.tag == 0 && destination.tag == 4 { return "local_to_aggregate_field"; }
+        if source.tag == 4 && destination.tag == 0 { return "aggregate_field_to_local"; }
+        if source.tag == 0 && destination.tag == 1 { return "stack_slot_transport"; }
+        if source.tag == 1 && destination.tag == 0 { return "stack_slot_transport"; }
+        if source.tag == 2 || destination.tag == 2 { return "branch_edge_move"; }
+        if source.tag == 3 || destination.tag == 3 { return "selected_loop_carried_move"; }
+    }
+    return "unsupported_move_form";
+}
+
+func mir_resource_move_form_is_supported(source: MirResourceCarrierKind, destination: MirResourceCarrierKind) int {
+    if std.str_eq(mir_resource_move_form_name(source, destination), "unsupported_move_form") == 1 {
+        return 0;
+    }
+    return 1;
+}
+
+func mir_resource_carrier_state_before_operation(table: MirResourceMirTable[ctx], carrier_id: str, operation_limit: int, ctx: &Arena) str {
+    mut operations: std.Vector[MirResourceOperation[ctx], ctx] := ctx[table.operations];
+    mut state := "uninitialized";
+    mut index := 0;
+    while index < operation_limit && index < len(operations) {
+        mut operation := operations[index];
+        unsafe {
+            if std.str_eq(operation.destination_carrier_id, carrier_id) == 1 {
+                if operation.operation_kind.tag == 0 { state = "uninitialized"; }
+                if operation.operation_kind.tag == 1 { state = operation.resulting_state; }
+                if operation.operation_kind.tag == 3 { state = "live"; }
+            }
+            if std.str_eq(operation.source_carrier_id, carrier_id) == 1 {
+                if operation.operation_kind.tag == 3 { state = "moved"; }
+                else if operation.operation_kind.tag != 2 { state = operation.resulting_state; }
+            }
+        }
+        index = index + 1;
+    }
+    return std.Clone(ctx, state);
+}
+
+func mir_resource_storage_state_before_operation(table: MirResourceMirTable[ctx], storage_id: str, operation_limit: int, ctx: &Arena) MirResourceStorageState[ctx] {
+    mut result: MirResourceStorageState[ctx];
+    result.found = 0;
+    result.state = std.Clone(ctx, "uninitialized");
+    result.resource_id = std.Clone(ctx, "");
+    result.move_site = std.Clone(ctx, "");
+    mut operations: std.Vector[MirResourceOperation[ctx], ctx] := ctx[table.operations];
+    mut index := 0;
+    while index < operation_limit && index < len(operations) {
+        mut operation := operations[index];
+        mut destination := mir_resource_carrier_by_id(table, operation.destination_carrier_id, ctx);
+        if destination.found == 1 && std.str_eq(destination.value.storage_id, storage_id) == 1 {
+            unsafe {
+                if operation.operation_kind.tag == 0 {
+                    result.found = 1;
+                    result.state = std.Clone(ctx, "uninitialized");
+                    result.resource_id = std.Clone(ctx, operation.resource_id);
+                    result.move_site = std.Clone(ctx, "");
+                }
+                if operation.operation_kind.tag == 1 {
+                    result.found = 1;
+                    result.state = std.Clone(ctx, operation.resulting_state);
+                    result.resource_id = std.Clone(ctx, operation.resource_id);
+                    result.move_site = std.Clone(ctx, "");
+                }
+                if operation.operation_kind.tag == 3 {
+                    result.found = 1;
+                    result.state = std.Clone(ctx, "live");
+                    result.resource_id = std.Clone(ctx, operation.resource_id);
+                    result.move_site = std.Clone(ctx, "");
+                }
+            }
+        }
+        mut source := mir_resource_carrier_by_id(table, operation.source_carrier_id, ctx);
+        if source.found == 1 && std.str_eq(source.value.storage_id, storage_id) == 1 {
+            result.found = 1;
+            result.resource_id = std.Clone(ctx, operation.resource_id);
+            unsafe {
+                if operation.operation_kind.tag == 3 {
+                    result.state = std.Clone(ctx, "moved");
+                    result.move_site = std.Clone(ctx, operation.source_location);
+                } else if operation.operation_kind.tag != 2 {
+                    result.state = std.Clone(ctx, operation.resulting_state);
+                }
+            }
+        }
+        index = index + 1;
+    }
+    return result;
+}
+
+func mir_resource_move_site_before_operation(table: MirResourceMirTable[ctx], carrier_id: str, operation_limit: int, ctx: &Arena) str {
+    mut operations: std.Vector[MirResourceOperation[ctx], ctx] := ctx[table.operations];
+    mut move_site := "";
+    mut index := 0;
+    while index < operation_limit && index < len(operations) {
+        unsafe {
+            if operations[index].operation_kind.tag == 3 &&
+               std.str_eq(operations[index].source_carrier_id, carrier_id) == 1
+            {
+                move_site = operations[index].source_location;
+            }
+            if operations[index].operation_kind.tag == 1 &&
+               std.str_eq(operations[index].destination_carrier_id, carrier_id) == 1
+            {
+                move_site = "";
+            }
+        }
+        index = index + 1;
+    }
+    return std.Clone(ctx, move_site);
+}
+
+func mir_resource_move_failure(table: MirResourceMirTable[ctx], authority_table: authority.MirResourceAuthorityTable[ctx], operation: MirResourceOperation[ctx], operation_index: int, prior_state: str, attempted_operation: str, reason_code: str, ctx: &Arena) MirResourceMoveValidation[ctx] {
+    mut declaration := authority.mir_resource_by_id(authority_table, operation.resource_id, ctx);
+    mut declaration_location := "";
+    if declaration.found == 1 { declaration_location = declaration.value.source_location; }
+    mut move_site := mir_resource_move_site_before_operation(
+        table,
+        operation.source_carrier_id,
+        operation_index,
+        ctx
+    );
+    mut diagnostic := mir_resource_move_diagnostic(
+        operation.resource_id,
+        declaration_location,
+        move_site,
+        operation.source_location,
+        prior_state,
+        attempted_operation,
+        reason_code,
+        ctx
+    );
+    return mir_resource_move_validation(0, "", diagnostic, ctx);
+}
+
+func mir_resource_carrier_has_operation(table: MirResourceMirTable[ctx], carrier_id: str, ctx: &Arena) int {
+    mut operations: std.Vector[MirResourceOperation[ctx], ctx] := ctx[table.operations];
+    mut index := 0;
+    while index < len(operations) {
+        if std.str_eq(operations[index].source_carrier_id, carrier_id) == 1 ||
+           std.str_eq(operations[index].destination_carrier_id, carrier_id) == 1
+        {
+            return 1;
+        }
+        index = index + 1;
+    }
+    return 0;
+}
+
+func mir_resource_move_state_validate(table: MirResourceMirTable[ctx], authority_table: authority.MirResourceAuthorityTable[ctx], ctx: &Arena) MirResourceMoveValidation[ctx] {
+    mut operations: std.Vector[MirResourceOperation[ctx], ctx] := ctx[table.operations];
+    mut index := 0;
+    while index < len(operations) {
+        mut operation := operations[index];
+        mut attempted := mir_resource_operation_authority_name(operation.operation_kind);
+        unsafe {
+            if operation.operation_kind.tag == 0 {
+                mut destination_state := mir_resource_carrier_state_before_operation(
+                    table,
+                    operation.destination_carrier_id,
+                    index,
+                    ctx
+                );
+                if std.str_eq(destination_state, "uninitialized") == 0 {
+                    return mir_resource_move_failure(table, authority_table, operation, index, destination_state, "declare", "resource_declaration_overwrites_initialized_storage", ctx);
+                }
+            } else if operation.operation_kind.tag == 1 {
+                mut destination_initialize := mir_resource_carrier_by_id(
+                    table,
+                    operation.destination_carrier_id,
+                    ctx
+                );
+                if destination_initialize.found == 0 {
+                    return mir_resource_move_failure(table, authority_table, operation, index, "uninitialized", "initialize", "resource_move_carrier_missing", ctx);
+                }
+                mut destination_state_initialize := mir_resource_carrier_state_before_operation(
+                    table,
+                    operation.destination_carrier_id,
+                    index,
+                    ctx
+                );
+                if std.str_eq(destination_state_initialize, operation.prior_state) == 0 {
+                    return mir_resource_move_failure(table, authority_table, operation, index, destination_state_initialize, "initialize", "resource_reinitialization_state_mismatch", ctx);
+                }
+                mut initialize_transition := authority.mir_validate_resource_transition_from_state(
+                    operation.resource_id,
+                    destination_state_initialize,
+                    "initialize",
+                    ctx
+                );
+                if initialize_transition.valid == 0 {
+                    return mir_resource_move_failure(table, authority_table, operation, index, destination_state_initialize, "initialize", initialize_transition.reason_code, ctx);
+                }
+                mut storage_state := mir_resource_storage_state_before_operation(
+                    table,
+                    destination_initialize.value.storage_id,
+                    index,
+                    ctx
+                );
+                if storage_state.found == 1 &&
+                   std.str_eq(storage_state.state, "moved") == 1
+                {
+                    mut reinitialization := authority.mir_validate_resource_reinitialization(
+                        storage_state.resource_id,
+                        operation.resource_id,
+                        storage_state.state,
+                        ctx
+                    );
+                    if reinitialization.valid == 0 {
+                        mut reinit_diagnostic := mir_resource_move_diagnostic(
+                            operation.resource_id,
+                            operation.source_location,
+                            storage_state.move_site,
+                            operation.source_location,
+                            storage_state.state,
+                            "initialize",
+                            reinitialization.reason_code,
+                            ctx
+                        );
+                        return mir_resource_move_validation(0, "", reinit_diagnostic, ctx);
+                    }
+                } else if storage_state.found == 1 &&
+                          std.str_eq(storage_state.resource_id, operation.resource_id) == 0 &&
+                          std.str_eq(storage_state.state, "uninitialized") == 0 &&
+                          std.str_eq(storage_state.state, "destroyed") == 0
+                {
+                    return mir_resource_move_failure(table, authority_table, operation, index, storage_state.state, "initialize", "resource_reinitialize_storage_not_moved", ctx);
+                }
+            } else {
+                mut source_state := mir_resource_carrier_state_before_operation(
+                    table,
+                    operation.source_carrier_id,
+                    index,
+                    ctx
+                );
+                if std.str_eq(source_state, operation.prior_state) == 0 {
+                    mut mismatch_transition := authority.mir_validate_resource_transition_from_state(
+                        operation.resource_id,
+                        source_state,
+                        attempted,
+                        ctx
+                    );
+                    mut mismatch_reason := "resource_move_state_trace_disagreement";
+                    if mismatch_transition.valid == 0 { mismatch_reason = mismatch_transition.reason_code; }
+                    return mir_resource_move_failure(table, authority_table, operation, index, source_state, attempted, mismatch_reason, ctx);
+                }
+                mut source_transition := authority.mir_validate_resource_transition_from_state(
+                    operation.resource_id,
+                    source_state,
+                    attempted,
+                    ctx
+                );
+                if source_transition.valid == 0 {
+                    return mir_resource_move_failure(table, authority_table, operation, index, source_state, attempted, source_transition.reason_code, ctx);
+                }
+                if operation.operation_kind.tag == 3 {
+                    mut source_move := mir_resource_carrier_by_id(table, operation.source_carrier_id, ctx);
+                    mut destination_move := mir_resource_carrier_by_id(table, operation.destination_carrier_id, ctx);
+                    if source_move.found == 0 || destination_move.found == 0 {
+                        return mir_resource_move_failure(table, authority_table, operation, index, source_state, "move", "resource_move_carrier_missing", ctx);
+                    }
+                    if mir_resource_move_form_is_supported(source_move.value.carrier_kind, destination_move.value.carrier_kind) == 0 {
+                        return mir_resource_move_failure(table, authority_table, operation, index, source_state, "move", "resource_move_form_unsupported", ctx);
+                    }
+                    mut destination_state_move := mir_resource_carrier_state_before_operation(
+                        table,
+                        operation.destination_carrier_id,
+                        index,
+                        ctx
+                    );
+                    if std.str_eq(destination_state_move, "uninitialized") == 0 &&
+                       std.str_eq(destination_state_move, "moved") == 0 &&
+                       std.str_eq(destination_state_move, "destroyed") == 0
+                    {
+                        return mir_resource_move_failure(table, authority_table, operation, index, destination_state_move, "move", "resource_move_destination_not_empty", ctx);
+                    }
+                }
+            }
+        }
+        index = index + 1;
+    }
+
+    mut edges: std.Vector[MirResourceFlowEdge[ctx], ctx] := ctx[table.flow_edges];
+    mut left := 0;
+    while left < len(edges) {
+        mut right := left + 1;
+        while right < len(edges) {
+            if std.str_eq(edges[left].to_block, edges[right].to_block) == 1 &&
+               std.str_eq(edges[left].resource_id, edges[right].resource_id) == 1 &&
+               std.str_eq(edges[left].state, edges[right].state) == 0
+            {
+                mut join_operation: MirResourceOperation[ctx];
+                unsafe { join_operation.operation_kind.tag = 3; }
+                join_operation.operation_id = std.Clone(ctx, edges[right].edge_id);
+                join_operation.resource_id = std.Clone(ctx, edges[right].resource_id);
+                join_operation.value_id = std.Clone(ctx, edges[right].value_id);
+                join_operation.source_carrier_id = "";
+                join_operation.destination_carrier_id = "";
+                join_operation.program_point = std.Clone(ctx, edges[right].program_point);
+                join_operation.prior_state = std.Clone(ctx, edges[right].state);
+                join_operation.resulting_state = "";
+                join_operation.cleanup_id = "";
+                join_operation.destructor_id = "";
+                join_operation.close_capability_id = "";
+                join_operation.source_location = std.Clone(ctx, edges[right].program_point);
+                return mir_resource_move_failure(table, authority_table, join_operation, len(operations), edges[right].state, "join_states", "resource_move_join_state_inconsistent", ctx);
+            }
+            right = right + 1;
+        }
+        left = left + 1;
+    }
+
+    return mir_resource_move_validation(1, "live", mir_resource_move_empty_diagnostic(ctx), ctx);
+}
+
+func mir_resource_move_diagnostic_text(validation: MirResourceMoveValidation[ctx], ctx: &Arena) str {
+    mut output := "resource_move_diagnostic: reason=";
+    output = std.Concat(output, validation.reason_code);
+    output = std.Concat(output, " resource=");
+    output = std.Concat(output, validation.diagnostic.resource_id);
+    output = std.Concat(output, " declaration=");
+    output = std.Concat(output, validation.diagnostic.resource_declaration);
+    output = std.Concat(output, " move_site=");
+    output = std.Concat(output, validation.diagnostic.move_site);
+    output = std.Concat(output, " invalid_use_site=");
+    output = std.Concat(output, validation.diagnostic.invalid_use_site);
+    output = std.Concat(output, " prior_state=");
+    output = std.Concat(output, validation.diagnostic.prior_state);
+    output = std.Concat(output, " attempted_operation=");
+    output = std.Concat(output, validation.diagnostic.attempted_operation);
+    output = std.Concat(output, "\n");
+    return std.Clone(ctx, output);
+}
+
 func mir_resource_operation_requires_source(kind: MirResourceOperationKind) int {
     unsafe {
         if kind.tag == 2 || kind.tag == 3 || kind.tag == 4 || kind.tag == 5 || kind.tag == 6 || kind.tag == 7 {
@@ -381,7 +769,8 @@ func mir_resource_mir_table_validate(table: MirResourceMirTable[ctx], authority_
        std.str_eq(table.semantic_authority, "compiler_owned_resource_identity_and_state") == 0 ||
        std.str_eq(table.identity_policy, "explicit_resource_id_only_no_backend_derivation") == 0 ||
        std.str_eq(table.copy_policy, "non_copy_resources_move_only") == 0 ||
-       std.str_eq(table.edge_state_policy, "explicit_state_on_every_selected_resource_edge") == 0
+       std.str_eq(table.edge_state_policy, "explicit_state_on_every_selected_resource_edge") == 0 ||
+       std.str_eq(table.move_state_policy, "carrier_state_transitions_before_driver_discovery") == 0
     {
         return mir_resource_mir_validation(0, "resource_mir_unknown_format_or_policy", ctx);
     }
@@ -405,6 +794,10 @@ func mir_resource_mir_table_validate(table: MirResourceMirTable[ctx], authority_
     mut carriers: std.Vector[MirResourceCarrier[ctx], ctx] := ctx[table.carriers];
     mut operations: std.Vector[MirResourceOperation[ctx], ctx] := ctx[table.operations];
     mut edges: std.Vector[MirResourceFlowEdge[ctx], ctx] := ctx[table.flow_edges];
+    mut move_validation := mir_resource_move_state_validate(table, authority_table, ctx);
+    if move_validation.valid == 0 {
+        return mir_resource_mir_validation(0, move_validation.reason_code, ctx);
+    }
     mut index := 0;
     while index < len(values) {
         mut value := values[index];
@@ -580,6 +973,22 @@ func mir_resource_mir_table_validate(table: MirResourceMirTable[ctx], authority_
     }
 
     index = 0;
+    while index < len(carriers) {
+        mut carrier_final_state := mir_resource_carrier_state_before_operation(
+            table,
+            carriers[index].carrier_id,
+            len(operations),
+            ctx
+        );
+        if mir_resource_carrier_has_operation(table, carriers[index].carrier_id, ctx) == 1 &&
+           std.str_eq(carrier_final_state, carriers[index].current_state) == 0
+        {
+            return mir_resource_mir_validation(0, "resource_move_carrier_final_state_mismatch", ctx);
+        }
+        index = index + 1;
+    }
+
+    index = 0;
     while index < len(values) {
         mut final_state := "";
         mut operation_index := 0;
@@ -664,6 +1073,7 @@ func mir_serialize_resource_mir_for_request(table: MirResourceMirTable[ctx], aut
     output = mir_resource_mir_append_field(output, "resource_mir_identity_policy", table.identity_policy, ctx);
     output = mir_resource_mir_append_field(output, "resource_mir_copy_policy", table.copy_policy, ctx);
     output = mir_resource_mir_append_field(output, "resource_mir_edge_state_policy", table.edge_state_policy, ctx);
+    output = mir_resource_mir_append_field(output, "resource_mir_move_state_policy", table.move_state_policy, ctx);
     output = mir_resource_mir_append_field(output, "resource_mir_value_count", std.FormatInt(len(values)), ctx);
     output = mir_resource_mir_append_field(output, "resource_mir_carrier_count", std.FormatInt(len(carriers)), ctx);
     output = mir_resource_mir_append_field(output, "resource_mir_operation_count", std.FormatInt(len(operations)), ctx);

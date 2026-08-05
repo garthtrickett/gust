@@ -253,8 +253,6 @@ def check_consumers(root: Path) -> None:
             fail(f"MIR-to-C does not consume canonical operation tag {tag}")
     for token in (
         "enum ResourceOperationKind",
-        '"copy" => Err(ResourceMirError::new(',
-        '"resource_mir_copy_forbidden"',
         "enum CraneliftResourceAction",
         "fn parse_authority_tables(",
         "fn validate_operation_transition(",
@@ -267,6 +265,19 @@ def check_consumers(root: Path) -> None:
     ):
         if token not in worker:
             fail(f"Cranelift canonical consumer is missing: {token}")
+
+    copy_rejects_at_parse = (
+        '"copy" => Err(ResourceMirError::new(' in worker
+        and '"resource_mir_copy_forbidden"' in worker
+    )
+    copy_rejects_in_move_state = (
+        '"copy" => Ok(Self::Copy)' in worker
+        and '"resource_copy_of_move_only"' in worker
+        and "fn validate_move_state(" in worker
+    )
+    if not copy_rejects_at_parse and not copy_rejects_in_move_state:
+        fail("Cranelift canonical consumer must reject copy before lowering")
+
     if "mod resource_mir;" not in main or '"phase15-resource-mir-witness"' not in main:
         fail("Cranelift CLI does not expose the canonical resource MIR witness")
 

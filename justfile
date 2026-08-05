@@ -15395,6 +15395,25 @@ guard-cranelift-phase15-resource-mir-parity:
     just guard-cranelift-phase15-resource-mir-contract
     bash scripts/phase15_resource_mir_parity.sh
 
+guard-cranelift-phase15-move-state-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 15.3 move-state transitions..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase15-move-state-contract |
+      grep -F $'guard-cranelift-phase15-move-state-contract\t1\t' >/dev/null
+    python3 scripts/phase15_move_state.py --check
+
+guard-cranelift-phase15-move-state-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 15.3 move-state parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase15-move-state-parity |
+      grep -F $'guard-cranelift-phase15-move-state-parity\t2\t' >/dev/null
+    just guard-cranelift-phase15-move-state-contract
+    bash scripts/phase15_move_state_parity.sh
+
 guard-cranelift-phase15-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail

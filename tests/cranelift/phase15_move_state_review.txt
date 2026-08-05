@@ -1,0 +1,34 @@
+Phase 15.3 — Move-State Transitions and Use-After-Move Enforcement
+guard: guard-cranelift-phase15-move-state-contract
+parity_guard: guard-cranelift-phase15-move-state-parity
+rows: 40
+test_levels: contract=Level 1 parity=Level 2
+
+Inventory
+- move_form: 5
+- transition: 6
+- rejection: 8
+- diagnostic: 7
+- positive: 5
+- boundary: 5
+- consumer: 2
+- test: 2
+
+Authority
+- resource state transitions are compiler-owned
+- moves preserve resource identity across selected carriers
+- moved storage may be reinitialized only with a fresh resource identity
+- source and destination carrier states are explicit and deterministic
+
+Early rejection
+- use after move, close after move, second move, and cleanup/destructor scheduling after move reject
+- move from uninitialized storage, copy of move-only values, and inconsistent joins reject
+- validation runs before driver discovery, request publication, artifact creation, and output access
+
+Diagnostics
+- resource declaration, move site, invalid use site, prior state, attempted operation, and stable reason code
+
+Parity
+- MIR-to-C and Cranelift consume the same canonical move operations and move-form names
+- Level 2 mutations cover every frozen invalid transition
+- poisoned-driver and sentinel-output checks prove invalid source use does not reach native execution

@@ -44,6 +44,16 @@ func mir_native_backend_resource_mir_request_is_valid(request: MirNativeBackendR
     if base_validation.valid == 0 {
         return mir_native_backend_resource_mir_request_validation(0, base_validation.reason_code, ctx);
     }
+    // Phase 15.3 move-state validation is compiler-owned and runs before any
+    // driver discovery, request publication, object creation, or output access.
+    mut move_validation := resource_mir.mir_resource_move_state_validate(
+        request.resource_mir_table,
+        request.base_request.resource_authority_table,
+        ctx
+    );
+    if move_validation.valid == 0 {
+        return mir_native_backend_resource_mir_request_validation(0, move_validation.reason_code, ctx);
+    }
     mut resource_validation := resource_mir.mir_resource_mir_table_validate(
         request.resource_mir_table,
         request.base_request.resource_authority_table,
@@ -96,4 +106,13 @@ func mir_native_backend_resource_carrier_of(request: MirNativeBackendResourceMir
 
 func mir_native_backend_resource_operation_of(request: MirNativeBackendResourceMirRequest[ctx], operation_id: str, ctx: &Arena) resource_mir.MirResourceOperationQuery[ctx] {
     return resource_mir.mir_resource_operation_by_id(request.resource_mir_table, operation_id, ctx);
+}
+
+func mir_native_backend_resource_move_diagnostic(request: MirNativeBackendResourceMirRequest[ctx], ctx: &Arena) str {
+    mut validation := resource_mir.mir_resource_move_state_validate(
+        request.resource_mir_table,
+        request.base_request.resource_authority_table,
+        ctx
+    );
+    return resource_mir.mir_resource_move_diagnostic_text(validation, ctx);
 }

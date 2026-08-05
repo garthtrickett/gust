@@ -9,6 +9,7 @@ const SEMANTIC_AUTHORITY: &str = "compiler_owned_resource_identity_and_state";
 const IDENTITY_POLICY: &str = "explicit_resource_id_only_no_backend_derivation";
 const COPY_POLICY: &str = "non_copy_resources_move_only";
 const EDGE_STATE_POLICY: &str = "explicit_state_on_every_selected_resource_edge";
+const MOVE_STATE_POLICY: &str = "carrier_state_transitions_before_driver_discovery";
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ResourceMirError {
@@ -43,6 +44,7 @@ enum ResourceOperationKind {
     Initialize,
     Read,
     Move,
+    Copy,
     ExplicitClose,
     ScheduleCleanup,
     InvokeDestructor,
@@ -56,14 +58,11 @@ impl ResourceOperationKind {
             "initialize" => Ok(Self::Initialize),
             "read" => Ok(Self::Read),
             "move" => Ok(Self::Move),
+            "copy" => Ok(Self::Copy),
             "explicit_close" => Ok(Self::ExplicitClose),
             "schedule_cleanup" => Ok(Self::ScheduleCleanup),
             "invoke_destructor" => Ok(Self::InvokeDestructor),
             "mark_destroyed" => Ok(Self::MarkDestroyed),
-            "copy" => Err(ResourceMirError::new(
-                "resource_mir_copy_forbidden",
-                "non-copy resources have no canonical copy operation",
-            )),
             _ => Err(ResourceMirError::new(
                 "resource_mir_unknown_operation",
                 format!("unknown canonical resource operation {value}"),
@@ -77,6 +76,7 @@ impl ResourceOperationKind {
             Self::Initialize => "initialize",
             Self::Read => "read",
             Self::Move => "move",
+            Self::Copy => "copy",
             Self::ExplicitClose => "explicit_close",
             Self::ScheduleCleanup => "schedule_cleanup",
             Self::InvokeDestructor => "invoke_destructor",
@@ -90,6 +90,7 @@ impl ResourceOperationKind {
             Self::Initialize => Some("initialize"),
             Self::Read => Some("use"),
             Self::Move => Some("move"),
+            Self::Copy => Some("copy"),
             Self::ExplicitClose => Some("manual_close"),
             Self::ScheduleCleanup => Some("schedule_cleanup"),
             Self::InvokeDestructor => Some("invoke_destructor"),
@@ -102,6 +103,7 @@ impl ResourceOperationKind {
             self,
             Self::Read
                 | Self::Move
+                | Self::Copy
                 | Self::ExplicitClose
                 | Self::ScheduleCleanup
                 | Self::InvokeDestructor
@@ -159,6 +161,14 @@ struct ResourceOperation {
     destructor_id: String,
     close_capability_id: String,
     source_location: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct ResourceStorageState {
+    found: bool,
+    state: String,
+    resource_id: String,
+    move_site: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -593,6 +603,442 @@ fn validate_operation_transition(
     Ok(())
 }
 
+fn transition_from_state(
+    prior: &str,
+    operation: &str,
+) -> Result<&'static str, &'static str> {
+    match operation {
+        "copy" => Err("resource_copy_of_move_only"),
+        "initialize" => match prior {
+            "uninitialized" => Ok("live"),
+            "moved" => Err("resource_reinitialize_requires_fresh_identity"),
+            "live" => Err("resource_reinitialize_live"),
+            _ => Err("resource_reinitialize_terminal"),
+        },
+        "use" => match prior {
+            "live" => Ok("live"),
+            "moved" => Err("resource_use_after_move"),
+            "uninitialized" => Err("resource_use_before_initialization"),
+            _ => Err("resource_use_after_terminal_state"),
+        },
+        "move" => match prior {
+            "live" => Ok("moved"),
+            "moved" => Err("resource_second_move"),
+            "uninitialized" => Err("resource_move_from_uninitialized"),
+            _ => Err("resource_move_after_terminal_state"),
+        },
+        "manual_close" => match prior {
+            "live" => Ok("manually_closed"),
+            "moved" => Err("resource_close_after_move"),
+            "uninitialized" => Err("resource_close_before_initialization"),
+            _ => Err("resource_close_after_terminal_state"),
+        },
+        "schedule_cleanup" => match prior {
+            "live" => Ok("cleanup_scheduled"),
+            "moved" => Err("resource_cleanup_after_move"),
+            _ => Err("resource_cleanup_after_terminal_state"),
+        },
+        "invoke_destructor" => match prior {
+            "cleanup_scheduled" => Ok("destroyed"),
+            "moved" => Err("resource_destructor_after_move"),
+            _ => Err("resource_destructor_without_scheduled_cleanup"),
+        },
+        "mark_destroyed" => match prior {
+            "cleanup_scheduled" | "manually_closed" => Ok("destroyed"),
+            _ => Err("resource_destroy_without_close_or_cleanup"),
+        },
+        _ => Err("resource_impossible_state_transition"),
+    }
+}
+
+fn carrier_state_before(
+    operations: &[ResourceOperation],
+    carrier_id: &str,
+    operation_limit: usize,
+) -> String {
+    let mut state = "uninitialized".to_string();
+    for operation in operations.iter().take(operation_limit) {
+        if operation.destination_carrier_id == carrier_id {
+            match operation.kind {
+                ResourceOperationKind::Declare => state = "uninitialized".to_string(),
+                ResourceOperationKind::Initialize => state = operation.resulting_state.clone(),
+                ResourceOperationKind::Move => state = "live".to_string(),
+                _ => {}
+            }
+        }
+        if operation.source_carrier_id == carrier_id {
+            match operation.kind {
+                ResourceOperationKind::Move => state = "moved".to_string(),
+                ResourceOperationKind::Read => {}
+                _ => state = operation.resulting_state.clone(),
+            }
+        }
+    }
+    state
+}
+
+fn storage_state_before(
+    operations: &[ResourceOperation],
+    carriers_by_id: &HashMap<&str, &ResourceCarrier>,
+    storage_id: &str,
+    operation_limit: usize,
+) -> ResourceStorageState {
+    let mut result = ResourceStorageState {
+        found: false,
+        state: "uninitialized".to_string(),
+        resource_id: String::new(),
+        move_site: String::new(),
+    };
+    for operation in operations.iter().take(operation_limit) {
+        if let Some(destination) = carriers_by_id.get(operation.destination_carrier_id.as_str()) {
+            if destination.storage_id == storage_id {
+                match operation.kind {
+                    ResourceOperationKind::Declare => {
+                        result.found = true;
+                        result.state = "uninitialized".to_string();
+                        result.resource_id = operation.resource_id.clone();
+                        result.move_site.clear();
+                    }
+                    ResourceOperationKind::Initialize => {
+                        result.found = true;
+                        result.state = operation.resulting_state.clone();
+                        result.resource_id = operation.resource_id.clone();
+                        result.move_site.clear();
+                    }
+                    ResourceOperationKind::Move => {
+                        result.found = true;
+                        result.state = "live".to_string();
+                        result.resource_id = operation.resource_id.clone();
+                        result.move_site.clear();
+                    }
+                    _ => {}
+                }
+            }
+        }
+        if let Some(source) = carriers_by_id.get(operation.source_carrier_id.as_str()) {
+            if source.storage_id == storage_id {
+                result.found = true;
+                result.resource_id = operation.resource_id.clone();
+                match operation.kind {
+                    ResourceOperationKind::Move => {
+                        result.state = "moved".to_string();
+                        result.move_site = operation.source_location.clone();
+                    }
+                    ResourceOperationKind::Read => {}
+                    _ => result.state = operation.resulting_state.clone(),
+                }
+            }
+        }
+    }
+    result
+}
+
+fn validate_reinitialization(
+    previous_resource_id: &str,
+    new_resource_id: &str,
+    prior_storage_state: &str,
+) -> Result<&'static str, &'static str> {
+    if previous_resource_id.is_empty() || new_resource_id.is_empty() {
+        return Err("resource_reinitialize_identity_missing");
+    }
+    if prior_storage_state != "moved" {
+        return Err("resource_reinitialize_storage_not_moved");
+    }
+    if previous_resource_id == new_resource_id {
+        return Err("resource_reinitialize_requires_fresh_identity");
+    }
+    Ok("live")
+}
+
+fn last_move_site(
+    operations: &[ResourceOperation],
+    carrier_id: &str,
+    operation_limit: usize,
+) -> String {
+    let mut site = String::new();
+    for operation in operations.iter().take(operation_limit) {
+        if operation.kind == ResourceOperationKind::Move
+            && operation.source_carrier_id == carrier_id
+        {
+            site = operation.source_location.clone();
+        }
+        if operation.kind == ResourceOperationKind::Initialize
+            && operation.destination_carrier_id == carrier_id
+        {
+            site.clear();
+        }
+    }
+    site
+}
+
+fn move_form_name(source: &str, destination: &str) -> &'static str {
+    match (source, destination) {
+        ("local", "local") => "local_to_local",
+        ("local", "aggregate_field") => "local_to_aggregate_field",
+        ("aggregate_field", "local") => "aggregate_field_to_local",
+        ("local", "stack_slot") | ("stack_slot", "local") => "stack_slot_transport",
+        _ if source == "branch_argument" || destination == "branch_argument" => {
+            "branch_edge_move"
+        }
+        _ if source == "loop_carry" || destination == "loop_carry" => {
+            "selected_loop_carried_move"
+        }
+        _ => "unsupported_move_form",
+    }
+}
+
+fn move_form_is_supported(source: &str, destination: &str) -> bool {
+    move_form_name(source, destination) != "unsupported_move_form"
+}
+
+fn move_state_error(
+    reason_code: &'static str,
+    operation: &ResourceOperation,
+    operations: &[ResourceOperation],
+    operation_index: usize,
+    values_by_id: &HashMap<&str, &ResourceValue>,
+    prior_state: &str,
+    attempted_operation: &str,
+) -> ResourceMirError {
+    let declaration = values_by_id
+        .get(operation.value_id.as_str())
+        .map(|value| value.source_location.as_str())
+        .unwrap_or_default();
+    let move_site = last_move_site(
+        operations,
+        operation.source_carrier_id.as_str(),
+        operation_index,
+    );
+    ResourceMirError::new(
+        reason_code,
+        format!(
+            "resource_move_diagnostic: resource={} declaration={} move_site={} invalid_use_site={} prior_state={} attempted_operation={}",
+            operation.resource_id,
+            declaration,
+            move_site,
+            operation.source_location,
+            prior_state,
+            attempted_operation,
+        ),
+    )
+}
+
+fn validate_move_state(
+    operations: &[ResourceOperation],
+    carriers_by_id: &HashMap<&str, &ResourceCarrier>,
+    values_by_id: &HashMap<&str, &ResourceValue>,
+) -> Result<(), ResourceMirError> {
+    for (index, operation) in operations.iter().enumerate() {
+        match operation.kind {
+            ResourceOperationKind::Declare => {
+                let destination_state = carrier_state_before(
+                    operations,
+                    operation.destination_carrier_id.as_str(),
+                    index,
+                );
+                if destination_state != "uninitialized" {
+                    return Err(move_state_error(
+                        "resource_declaration_overwrites_initialized_storage",
+                        operation,
+                        operations,
+                        index,
+                        values_by_id,
+                        &destination_state,
+                        "declare",
+                    ));
+                }
+            }
+            ResourceOperationKind::Initialize => {
+                let destination = carriers_by_id
+                    .get(operation.destination_carrier_id.as_str())
+                    .ok_or_else(|| {
+                        move_state_error(
+                            "resource_move_carrier_missing",
+                            operation,
+                            operations,
+                            index,
+                            values_by_id,
+                            "uninitialized",
+                            "initialize",
+                        )
+                    })?;
+                let destination_state = carrier_state_before(
+                    operations,
+                    operation.destination_carrier_id.as_str(),
+                    index,
+                );
+                if destination_state != operation.prior_state {
+                    return Err(move_state_error(
+                        "resource_reinitialization_state_mismatch",
+                        operation,
+                        operations,
+                        index,
+                        values_by_id,
+                        &destination_state,
+                        "initialize",
+                    ));
+                }
+                if let Err(reason) = transition_from_state(&destination_state, "initialize") {
+                    return Err(move_state_error(
+                        reason,
+                        operation,
+                        operations,
+                        index,
+                        values_by_id,
+                        &destination_state,
+                        "initialize",
+                    ));
+                }
+                let storage_state = storage_state_before(
+                    operations,
+                    carriers_by_id,
+                    destination.storage_id.as_str(),
+                    index,
+                );
+                if storage_state.found && storage_state.state == "moved" {
+                    if let Err(reason) = validate_reinitialization(
+                        storage_state.resource_id.as_str(),
+                        operation.resource_id.as_str(),
+                        storage_state.state.as_str(),
+                    ) {
+                        let declaration = values_by_id
+                            .get(operation.value_id.as_str())
+                            .map(|value| value.source_location.as_str())
+                            .unwrap_or_default();
+                        return Err(ResourceMirError::new(
+                            reason,
+                            format!(
+                                "resource_move_diagnostic: resource={} declaration={} move_site={} invalid_use_site={} prior_state={} attempted_operation=initialize",
+                                operation.resource_id,
+                                declaration,
+                                storage_state.move_site,
+                                operation.source_location,
+                                storage_state.state,
+                            ),
+                        ));
+                    }
+                } else if storage_state.found
+                    && storage_state.resource_id != operation.resource_id
+                    && !matches!(storage_state.state.as_str(), "uninitialized" | "destroyed")
+                {
+                    return Err(move_state_error(
+                        "resource_reinitialize_storage_not_moved",
+                        operation,
+                        operations,
+                        index,
+                        values_by_id,
+                        &storage_state.state,
+                        "initialize",
+                    ));
+                }
+            }
+            _ => {
+                let source_state = carrier_state_before(
+                    operations,
+                    operation.source_carrier_id.as_str(),
+                    index,
+                );
+                let attempted = operation.kind.authority_operation().unwrap_or("unknown");
+                if source_state != operation.prior_state {
+                    let reason = transition_from_state(&source_state, attempted)
+                        .err()
+                        .unwrap_or("resource_move_state_trace_disagreement");
+                    return Err(move_state_error(
+                        reason,
+                        operation,
+                        operations,
+                        index,
+                        values_by_id,
+                        &source_state,
+                        attempted,
+                    ));
+                }
+                match transition_from_state(&source_state, attempted) {
+                    Ok(result) if result == operation.resulting_state => {}
+                    Ok(_) => {
+                        return Err(move_state_error(
+                            "resource_move_state_trace_disagreement",
+                            operation,
+                            operations,
+                            index,
+                            values_by_id,
+                            &source_state,
+                            attempted,
+                        ));
+                    }
+                    Err(reason) => {
+                        return Err(move_state_error(
+                            reason,
+                            operation,
+                            operations,
+                            index,
+                            values_by_id,
+                            &source_state,
+                            attempted,
+                        ));
+                    }
+                }
+                if operation.kind == ResourceOperationKind::Move {
+                    let source = carriers_by_id
+                        .get(operation.source_carrier_id.as_str())
+                        .ok_or_else(|| {
+                            move_state_error(
+                                "resource_move_carrier_missing",
+                                operation,
+                                operations,
+                                index,
+                                values_by_id,
+                                &source_state,
+                                "move",
+                            )
+                        })?;
+                    let destination = carriers_by_id
+                        .get(operation.destination_carrier_id.as_str())
+                        .ok_or_else(|| {
+                            move_state_error(
+                                "resource_move_carrier_missing",
+                                operation,
+                                operations,
+                                index,
+                                values_by_id,
+                                &source_state,
+                                "move",
+                            )
+                        })?;
+                    if !move_form_is_supported(&source.kind, &destination.kind) {
+                        return Err(move_state_error(
+                            "resource_move_form_unsupported",
+                            operation,
+                            operations,
+                            index,
+                            values_by_id,
+                            &source_state,
+                            "move",
+                        ));
+                    }
+                    let destination_state = carrier_state_before(
+                        operations,
+                        operation.destination_carrier_id.as_str(),
+                        index,
+                    );
+                    if !matches!(destination_state.as_str(), "uninitialized" | "moved" | "destroyed") {
+                        return Err(move_state_error(
+                            "resource_move_destination_not_empty",
+                            operation,
+                            operations,
+                            index,
+                            values_by_id,
+                            &destination_state,
+                            "move",
+                        ));
+                    }
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
 fn parse_resource_mir(
     contents: &str,
 ) -> Result<(ResourceMirTable, AuthorityTables), ResourceMirError> {
@@ -602,6 +1048,7 @@ fn parse_resource_mir(
         || required_field(&fields, "resource_mir_identity_policy")? != IDENTITY_POLICY
         || required_field(&fields, "resource_mir_copy_policy")? != COPY_POLICY
         || required_field(&fields, "resource_mir_edge_state_policy")? != EDGE_STATE_POLICY
+        || required_field(&fields, "resource_mir_move_state_policy")? != MOVE_STATE_POLICY
     {
         return Err(ResourceMirError::new(
             "resource_mir_unknown_format_or_policy",
@@ -885,8 +1332,12 @@ fn parse_resource_mir(
                 format!("operation {} has no matching destructor", operation.operation_id),
             ));
         }
-        validate_operation_transition(&operation, &authority)?;
         operations.push(operation);
+    }
+
+    validate_move_state(&operations, &carriers_by_id, &values_by_id)?;
+    for operation in &operations {
+        validate_operation_transition(operation, &authority)?;
     }
 
     let mut final_states: HashMap<&str, &str> = HashMap::new();
@@ -979,6 +1430,30 @@ fn parse_resource_mir(
         edges.push(edge);
     }
 
+    for (left_index, left) in edges.iter().enumerate() {
+        for right in edges.iter().skip(left_index + 1) {
+            if left.to_block == right.to_block
+                && left.resource_id == right.resource_id
+                && left.state != right.state
+            {
+                return Err(ResourceMirError::new(
+                    "resource_move_join_state_inconsistent",
+                    format!(
+                        "resource_move_diagnostic: resource={} declaration={} move_site={} invalid_use_site={} prior_state={} attempted_operation=join_states",
+                        right.resource_id,
+                        values_by_id
+                            .get(right.value_id.as_str())
+                            .map(|value| value.source_location.as_str())
+                            .unwrap_or_default(),
+                        "",
+                        right.program_point,
+                        right.state,
+                    ),
+                ));
+            }
+        }
+    }
+
     Ok((
         ResourceMirTable {
             values,
@@ -1014,6 +1489,12 @@ fn lower_for_cranelift(
                 source_carrier_id: operation.source_carrier_id.clone(),
                 destination_carrier_id: operation.destination_carrier_id.clone(),
             },
+            ResourceOperationKind::Copy => {
+                return Err(ResourceMirError::new(
+                    "resource_copy_of_move_only",
+                    format!("copy operation {} reached Cranelift lowering", operation.operation_id),
+                ));
+            }
             ResourceOperationKind::ExplicitClose => {
                 let close = authority
                     .close_capabilities
@@ -1185,13 +1666,31 @@ fn witness(table: &ResourceMirTable, actions: &[CraneliftResourceAction]) -> Str
                     "",
                 ),
             };
+        let move_form = if operation.kind == ResourceOperationKind::Move {
+            let source_kind = table
+                .carriers
+                .iter()
+                .find(|carrier| carrier.carrier_id == operation.source_carrier_id)
+                .map(|carrier| carrier.kind.as_str())
+                .unwrap_or_default();
+            let destination_kind = table
+                .carriers
+                .iter()
+                .find(|carrier| carrier.carrier_id == operation.destination_carrier_id)
+                .map(|carrier| carrier.kind.as_str())
+                .unwrap_or_default();
+            move_form_name(source_kind, destination_kind)
+        } else {
+            ""
+        };
         output.push_str(&format!(
-            "resource_lowering: id={} action={} resource={} source={} destination={} runtime_symbol={} cleanup={}\n",
+            "resource_lowering: id={} action={} resource={} source={} destination={} move_form={} runtime_symbol={} cleanup={}\n",
             operation.operation_id,
             action_name,
             resource_id,
             source,
             destination,
+            move_form,
             runtime_symbol,
             cleanup_id,
         ));
@@ -1212,8 +1711,10 @@ mod tests {
 
     #[test]
     fn copy_operation_is_rejected() {
-        let error = ResourceOperationKind::parse("copy").unwrap_err();
-        assert_eq!(error.reason_code, "resource_mir_copy_forbidden");
+        assert_eq!(
+            transition_from_state("live", ResourceOperationKind::parse("copy").unwrap().authority_operation().unwrap()),
+            Err("resource_copy_of_move_only")
+        );
     }
 
     #[test]

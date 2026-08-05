@@ -235,6 +235,7 @@ func mir_resource_state_name_is_valid(state: str) int {
 func mir_resource_operation_is_valid(operation: str) int {
     if std.str_eq(operation, "initialize") == 1 { return 1; }
     if std.str_eq(operation, "move") == 1 { return 1; }
+    if std.str_eq(operation, "copy") == 1 { return 1; }
     if std.str_eq(operation, "use") == 1 { return 1; }
     if std.str_eq(operation, "assign_replacement") == 1 { return 1; }
     if std.str_eq(operation, "schedule_cleanup") == 1 { return 1; }
@@ -458,46 +459,95 @@ func mir_resource_transition_validation(valid: int, resulting_state: str, reason
     return result;
 }
 
-// validate_resource_transition(resource, operation, point)
-func mir_validate_resource_transition(table: MirResourceAuthorityTable[ctx], resource_id: str, operation: str, program_point: str, ctx: &Arena) MirResourceTransitionValidation[ctx] {
-    if mir_resource_by_id(table, resource_id, ctx).found == 0 {
+// Phase 15.3 pure move-state policy. This helper is compiler-owned and does
+// not inspect source spelling, generated locals, backend storage, or workers.
+func mir_validate_resource_transition_from_state(resource_id: str, prior: str, operation: str, ctx: &Arena) MirResourceTransitionValidation[ctx] {
+    if mir_resource_field_is_safe(resource_id, 0) == 0 {
         return mir_resource_transition_validation(0, "", "resource_unknown_id", ctx);
+    }
+    if mir_resource_state_name_is_valid(prior) == 0 {
+        return mir_resource_transition_validation(0, "", "resource_state_unknown", ctx);
     }
     if mir_resource_operation_is_valid(operation) == 0 {
         return mir_resource_transition_validation(0, "", "resource_operation_unknown", ctx);
     }
-    mut state_query := mir_resource_state_at(table, resource_id, program_point, ctx);
-    if state_query.found == 0 {
-        return mir_resource_transition_validation(0, "", "resource_state_missing_at_program_point", ctx);
+    if std.str_eq(operation, "copy") == 1 {
+        return mir_resource_transition_validation(0, "", "resource_copy_of_move_only", ctx);
     }
-    mut prior := state_query.value.state;
-    if std.str_eq(operation, "initialize") == 1 &&
-       (std.str_eq(prior, "uninitialized") == 1 || std.str_eq(prior, "moved") == 1 || std.str_eq(prior, "destroyed") == 1)
-    {
-        return mir_resource_transition_validation(1, "live", "resource_transition_valid", ctx);
+    if std.str_eq(operation, "initialize") == 1 {
+        if std.str_eq(prior, "uninitialized") == 1 {
+            return mir_resource_transition_validation(1, "live", "resource_transition_valid", ctx);
+        }
+        if std.str_eq(prior, "moved") == 1 {
+            return mir_resource_transition_validation(0, "", "resource_reinitialize_requires_fresh_identity", ctx);
+        }
+        if std.str_eq(prior, "live") == 1 {
+            return mir_resource_transition_validation(0, "", "resource_reinitialize_live", ctx);
+        }
+        return mir_resource_transition_validation(0, "", "resource_reinitialize_terminal", ctx);
     }
-    if std.str_eq(operation, "use") == 1 && std.str_eq(prior, "live") == 1 {
-        return mir_resource_transition_validation(1, "live", "resource_transition_valid", ctx);
+    if std.str_eq(operation, "use") == 1 {
+        if std.str_eq(prior, "live") == 1 {
+            return mir_resource_transition_validation(1, "live", "resource_transition_valid", ctx);
+        }
+        if std.str_eq(prior, "moved") == 1 {
+            return mir_resource_transition_validation(0, "", "resource_use_after_move", ctx);
+        }
+        if std.str_eq(prior, "uninitialized") == 1 {
+            return mir_resource_transition_validation(0, "", "resource_use_before_initialization", ctx);
+        }
+        return mir_resource_transition_validation(0, "", "resource_use_after_terminal_state", ctx);
     }
-    if std.str_eq(operation, "move") == 1 && std.str_eq(prior, "live") == 1 {
-        return mir_resource_transition_validation(1, "moved", "resource_transition_valid", ctx);
+    if std.str_eq(operation, "move") == 1 {
+        if std.str_eq(prior, "live") == 1 {
+            return mir_resource_transition_validation(1, "moved", "resource_transition_valid", ctx);
+        }
+        if std.str_eq(prior, "moved") == 1 {
+            return mir_resource_transition_validation(0, "", "resource_second_move", ctx);
+        }
+        if std.str_eq(prior, "uninitialized") == 1 {
+            return mir_resource_transition_validation(0, "", "resource_move_from_uninitialized", ctx);
+        }
+        return mir_resource_transition_validation(0, "", "resource_move_after_terminal_state", ctx);
     }
-    if std.str_eq(operation, "schedule_cleanup") == 1 && std.str_eq(prior, "live") == 1 {
-        return mir_resource_transition_validation(1, "cleanup_scheduled", "resource_transition_valid", ctx);
+    if std.str_eq(operation, "manual_close") == 1 {
+        if std.str_eq(prior, "live") == 1 {
+            return mir_resource_transition_validation(1, "manually_closed", "resource_transition_valid", ctx);
+        }
+        if std.str_eq(prior, "moved") == 1 {
+            return mir_resource_transition_validation(0, "", "resource_close_after_move", ctx);
+        }
+        if std.str_eq(prior, "uninitialized") == 1 {
+            return mir_resource_transition_validation(0, "", "resource_close_before_initialization", ctx);
+        }
+        return mir_resource_transition_validation(0, "", "resource_close_after_terminal_state", ctx);
     }
-    if std.str_eq(operation, "manual_close") == 1 && std.str_eq(prior, "live") == 1 {
-        return mir_resource_transition_validation(1, "manually_closed", "resource_transition_valid", ctx);
+    if std.str_eq(operation, "schedule_cleanup") == 1 {
+        if std.str_eq(prior, "live") == 1 {
+            return mir_resource_transition_validation(1, "cleanup_scheduled", "resource_transition_valid", ctx);
+        }
+        if std.str_eq(prior, "moved") == 1 {
+            return mir_resource_transition_validation(0, "", "resource_cleanup_after_move", ctx);
+        }
+        return mir_resource_transition_validation(0, "", "resource_cleanup_after_terminal_state", ctx);
     }
     if std.str_eq(operation, "cancel_cleanup_after_manual_close") == 1 && std.str_eq(prior, "manually_closed") == 1 {
         return mir_resource_transition_validation(1, "manually_closed", "resource_transition_valid", ctx);
     }
-    if std.str_eq(operation, "invoke_destructor") == 1 && std.str_eq(prior, "cleanup_scheduled") == 1 {
-        return mir_resource_transition_validation(1, "destroyed", "resource_transition_valid", ctx);
+    if std.str_eq(operation, "invoke_destructor") == 1 {
+        if std.str_eq(prior, "cleanup_scheduled") == 1 {
+            return mir_resource_transition_validation(1, "destroyed", "resource_transition_valid", ctx);
+        }
+        if std.str_eq(prior, "moved") == 1 {
+            return mir_resource_transition_validation(0, "", "resource_destructor_after_move", ctx);
+        }
+        return mir_resource_transition_validation(0, "", "resource_destructor_without_scheduled_cleanup", ctx);
     }
-    if std.str_eq(operation, "mark_destroyed") == 1 &&
-       (std.str_eq(prior, "cleanup_scheduled") == 1 || std.str_eq(prior, "manually_closed") == 1)
-    {
-        return mir_resource_transition_validation(1, "destroyed", "resource_transition_valid", ctx);
+    if std.str_eq(operation, "mark_destroyed") == 1 {
+        if std.str_eq(prior, "cleanup_scheduled") == 1 || std.str_eq(prior, "manually_closed") == 1 {
+            return mir_resource_transition_validation(1, "destroyed", "resource_transition_valid", ctx);
+        }
+        return mir_resource_transition_validation(0, "", "resource_destroy_without_close_or_cleanup", ctx);
     }
     if std.str_eq(operation, "assign_replacement") == 1 && std.str_eq(prior, "live") == 1 {
         return mir_resource_transition_validation(1, "cleanup_scheduled", "resource_transition_valid", ctx);
@@ -506,6 +556,40 @@ func mir_validate_resource_transition(table: MirResourceAuthorityTable[ctx], res
         return mir_resource_transition_validation(1, prior, "resource_transition_valid", ctx);
     }
     return mir_resource_transition_validation(0, "", "resource_impossible_state_transition", ctx);
+}
+
+// Reinitializing storage after a move creates a fresh compiler-owned resource
+// identity. Reusing the moved identity would duplicate ownership.
+func mir_validate_resource_reinitialization(previous_resource_id: str, new_resource_id: str, prior_storage_state: str, ctx: &Arena) MirResourceTransitionValidation[ctx] {
+    if mir_resource_field_is_safe(previous_resource_id, 0) == 0 ||
+       mir_resource_field_is_safe(new_resource_id, 0) == 0
+    {
+        return mir_resource_transition_validation(0, "", "resource_reinitialize_identity_missing", ctx);
+    }
+    if std.str_eq(prior_storage_state, "moved") == 0 {
+        return mir_resource_transition_validation(0, "", "resource_reinitialize_storage_not_moved", ctx);
+    }
+    if std.str_eq(previous_resource_id, new_resource_id) == 1 {
+        return mir_resource_transition_validation(0, "", "resource_reinitialize_requires_fresh_identity", ctx);
+    }
+    return mir_resource_transition_validation(1, "live", "resource_reinitialization_valid", ctx);
+}
+
+// validate_resource_transition(resource, operation, point)
+func mir_validate_resource_transition(table: MirResourceAuthorityTable[ctx], resource_id: str, operation: str, program_point: str, ctx: &Arena) MirResourceTransitionValidation[ctx] {
+    if mir_resource_by_id(table, resource_id, ctx).found == 0 {
+        return mir_resource_transition_validation(0, "", "resource_unknown_id", ctx);
+    }
+    mut state_query := mir_resource_state_at(table, resource_id, program_point, ctx);
+    if state_query.found == 0 {
+        return mir_resource_transition_validation(0, "", "resource_state_missing_at_program_point", ctx);
+    }
+    return mir_validate_resource_transition_from_state(
+        resource_id,
+        state_query.value.state,
+        operation,
+        ctx
+    );
 }
 
 // cleanup_obligations(scope_exit)
@@ -579,7 +663,11 @@ func mir_join_resource_states(incoming_states: Index[std.Vector[str, ctx], ctx],
         if std.str_eq(states[index], first) == 0 {
             result.valid = 0;
             result.resulting_state = std.Clone(ctx, "");
-            result.reason_code = std.Clone(ctx, "resource_join_state_disagreement");
+            if std.str_eq(first, "moved") == 1 || std.str_eq(states[index], "moved") == 1 {
+                result.reason_code = std.Clone(ctx, "resource_move_join_state_inconsistent");
+            } else {
+                result.reason_code = std.Clone(ctx, "resource_join_state_disagreement");
+            }
             return result;
         }
         index = index + 1;
