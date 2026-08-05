@@ -30,6 +30,12 @@ import "mir_enum.gst" as enums;
 import "mir_aggregate_transport.gst" as aggregate;
 import "mir_resource_value.gst" as resource_mir;
 
+// Canonical resource operation and read nodes reference the compiler-owned
+// resource MIR vocabulary directly. The complete resource MIR table remains a
+// request-local sidecar owned by mir_resource_value.gst; do not embed vectors
+// of imported branded resource types in MirProgram because that creates a
+// second module-qualified generic identity during stage-one self-hosting.
+
 type MirTypeLayoutReference[ctx] struct {
     type_id: str,
     layout_id: str
@@ -426,11 +432,7 @@ type MirProgram[ctx] struct {
     struct_operation_references: Index[std.Vector[MirStructOperationReference[ctx], ctx], ctx],
     enum_layout_references: Index[std.Vector[MirEnumLayoutReference[ctx], ctx], ctx],
     enum_value_references: Index[std.Vector[MirEnumValueReference[ctx], ctx], ctx],
-    enum_operation_references: Index[std.Vector[MirEnumOperationReference[ctx], ctx], ctx],
-    resource_value_references: Index[std.Vector[resource_mir.MirResourceValue[ctx], ctx], ctx],
-    resource_carrier_references: Index[std.Vector[resource_mir.MirResourceCarrier[ctx], ctx], ctx],
-    resource_operation_references: Index[std.Vector[resource_mir.MirResourceOperation[ctx], ctx], ctx],
-    resource_flow_edge_references: Index[std.Vector[resource_mir.MirResourceFlowEdge[ctx], ctx], ctx]
+    enum_operation_references: Index[std.Vector[MirEnumOperationReference[ctx], ctx], ctx]
 }
 
 type MirFunction[ctx] struct {
@@ -910,33 +912,6 @@ func mir_empty_enum_operation_reference_vector(ctx: &Arena) Index[std.Vector[Mir
     return references_idx;
 }
 
-func mir_empty_resource_value_reference_vector(ctx: &Arena) Index[std.Vector[resource_mir.MirResourceValue[ctx], ctx], ctx] {
-    mut references: std.Vector[resource_mir.MirResourceValue[ctx], ctx] := std.VectorNew(ctx);
-    mut references_idx: Index[std.Vector[resource_mir.MirResourceValue[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
-    ctx.Set(references_idx, references);
-    return references_idx;
-}
-
-func mir_empty_resource_carrier_reference_vector(ctx: &Arena) Index[std.Vector[resource_mir.MirResourceCarrier[ctx], ctx], ctx] {
-    mut references: std.Vector[resource_mir.MirResourceCarrier[ctx], ctx] := std.VectorNew(ctx);
-    mut references_idx: Index[std.Vector[resource_mir.MirResourceCarrier[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
-    ctx.Set(references_idx, references);
-    return references_idx;
-}
-
-func mir_empty_resource_operation_reference_vector(ctx: &Arena) Index[std.Vector[resource_mir.MirResourceOperation[ctx], ctx], ctx] {
-    mut references: std.Vector[resource_mir.MirResourceOperation[ctx], ctx] := std.VectorNew(ctx);
-    mut references_idx: Index[std.Vector[resource_mir.MirResourceOperation[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
-    ctx.Set(references_idx, references);
-    return references_idx;
-}
-
-func mir_empty_resource_flow_edge_reference_vector(ctx: &Arena) Index[std.Vector[resource_mir.MirResourceFlowEdge[ctx], ctx], ctx] {
-    mut references: std.Vector[resource_mir.MirResourceFlowEdge[ctx], ctx] := std.VectorNew(ctx);
-    mut references_idx: Index[std.Vector[resource_mir.MirResourceFlowEdge[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
-    ctx.Set(references_idx, references);
-    return references_idx;
-}
 
 func mir_value_vector_with_value(values_idx: Index[std.Vector[MirValue[ctx], ctx], ctx], value: MirValue[ctx], ctx: &Arena) Index[std.Vector[MirValue[ctx], ctx], ctx] {
     mut values: std.Vector[MirValue[ctx], ctx] := ctx[values_idx];
@@ -987,10 +962,6 @@ func mir_make_program(ctx: &Arena) MirProgram[ctx] {
     program.enum_layout_references = mir_empty_enum_layout_reference_vector(ctx);
     program.enum_value_references = mir_empty_enum_value_reference_vector(ctx);
     program.enum_operation_references = mir_empty_enum_operation_reference_vector(ctx);
-    program.resource_value_references = mir_empty_resource_value_reference_vector(ctx);
-    program.resource_carrier_references = mir_empty_resource_carrier_reference_vector(ctx);
-    program.resource_operation_references = mir_empty_resource_operation_reference_vector(ctx);
-    program.resource_flow_edge_references = mir_empty_resource_flow_edge_reference_vector(ctx);
     return program;
 }
 
@@ -3311,14 +3282,6 @@ func mir_debug_terminator_kind(terminator: MirTerminator[ctx]) str {
     return "MirTerminator.<unknown>";
 }
 
-func mir_program_resource_mir_table(program: MirProgram[ctx], target_id: str, target_triple: str, ctx: &Arena) resource_mir.MirResourceMirTable[ctx] {
-    mut table := resource_mir.mir_resource_mir_make_empty_table(target_id, target_triple, ctx);
-    table.values = program.resource_value_references;
-    table.carriers = program.resource_carrier_references;
-    table.operations = program.resource_operation_references;
-    table.flow_edges = program.resource_flow_edge_references;
-    return table;
-}
 
 func mir_debug_print_program(program: MirProgram[ctx]) {
     os.LogStr("mir.program");

@@ -185,18 +185,35 @@ def check_mir_integration(root: Path) -> None:
     source = read_text(root, MIR)
     for token in (
         'import "mir_resource_value.gst" as resource_mir;',
+        "The complete resource MIR table remains a",
+        "request-local sidecar owned by mir_resource_value.gst",
+        "ResourceOperation {",
+        "operation: Index[resource_mir.MirResourceOperation[ctx], ctx]",
+        "ResourceRead {",
+        "value: Index[resource_mir.MirResourceValue[ctx], ctx]",
+        "func mir_make_stmt_resource_operation(",
+        "func mir_make_value_resource_read(",
+    ):
+        if token not in source:
+            fail(f"canonical MIR integration is missing: {token}")
+
+    forbidden_program_table_tokens = (
         "resource_value_references:",
         "resource_carrier_references:",
         "resource_operation_references:",
         "resource_flow_edge_references:",
-        "ResourceOperation {",
-        "ResourceRead {",
-        "func mir_make_stmt_resource_operation(",
-        "func mir_make_value_resource_read(",
+        "func mir_empty_resource_value_reference_vector(",
+        "func mir_empty_resource_carrier_reference_vector(",
+        "func mir_empty_resource_operation_reference_vector(",
+        "func mir_empty_resource_flow_edge_reference_vector(",
         "func mir_program_resource_mir_table(",
-    ):
-        if token not in source:
-            fail(f"canonical MIR integration is missing: {token}")
+    )
+    for token in forbidden_program_table_tokens:
+        if token in source:
+            fail(
+                "MirProgram must not embed module-qualified resource table vectors: "
+                + token
+            )
 
 
 def check_request(root: Path) -> None:
@@ -313,9 +330,13 @@ def check_tests_and_wiring(root: Path) -> None:
         PARITY_GUARD_ID + ":",
         "python3 scripts/phase15_resource_mir.py --check",
         "bash scripts/phase15_resource_mir_parity.sh",
+        "grep -F $'guard-cranelift-phase15-resource-mir-contract",
+        "grep -F $'guard-cranelift-phase15-resource-mir-parity",
     ):
         if token not in justfile:
             fail(f"justfile wiring is missing: {token}")
+    if "rg -n -F $'guard-cranelift-phase15-resource-mir-" in justfile:
+        fail("Phase 15.2 level checks must not require ripgrep in the Level 1 job")
     if f'"{GUARD_ID}": 1' not in levels or f'"{PARITY_GUARD_ID}": 2' not in levels:
         fail("resource MIR guards are missing from the canonical test-level registry")
     for token in (

@@ -15382,7 +15382,7 @@ guard-cranelift-phase15-resource-mir-contract:
     echo "🔒 Checking Phase 15.2 canonical resource MIR..."
     python3 scripts/cranelift_test_levels.py validate
     python3 scripts/cranelift_test_levels.py level guard-cranelift-phase15-resource-mir-contract |
-      rg -n -F $'guard-cranelift-phase15-resource-mir-contract\t1\t' >/dev/null
+      grep -F $'guard-cranelift-phase15-resource-mir-contract\t1\t' >/dev/null
     python3 scripts/phase15_resource_mir.py --check
 
 guard-cranelift-phase15-resource-mir-parity:
@@ -15391,7 +15391,7 @@ guard-cranelift-phase15-resource-mir-parity:
     echo "🧪 Running Phase 15.2 resource-value MIR parity..."
     python3 scripts/cranelift_test_levels.py validate
     python3 scripts/cranelift_test_levels.py level guard-cranelift-phase15-resource-mir-parity |
-      rg -n -F $'guard-cranelift-phase15-resource-mir-parity\t2\t' >/dev/null
+      grep -F $'guard-cranelift-phase15-resource-mir-parity\t2\t' >/dev/null
     just guard-cranelift-phase15-resource-mir-contract
     bash scripts/phase15_resource_mir_parity.sh
 
