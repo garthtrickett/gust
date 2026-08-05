@@ -28,7 +28,7 @@ if ! make gust >"$BUILD_LOG" 2>&1; then
 fi
 
 TEST_STEM="$(basename "$TEST_PATH" .gst)"
-TEMP_OUTPUT="build/temp_output.log"
+TEMP_OUTPUT="build/${TEST_STEM}.compile.log"
 
 echo "=== [1/3] COMPILING GUST TO C ===" > to.log
 
@@ -38,7 +38,7 @@ cat "$TEMP_OUTPUT" >> to.log
 
 if [[ "$TEST_PATH" == *"rejected"* || "$TEST_PATH" == *"violation"* ]]; then
   if [ "$COMP_STATUS" -ne 0 ]; then
-    echo "✅ Negative test caught compilation failure successfully! See to.log for error."
+    echo "✅ Negative test caught compilation failure successfully! Full diagnostics: $TEMP_OUTPUT"
     exit 0
   fi
 
@@ -47,7 +47,8 @@ if [[ "$TEST_PATH" == *"rejected"* || "$TEST_PATH" == *"violation"* ]]; then
 fi
 
 if [ "$COMP_STATUS" -ne 0 ]; then
-  echo "❌ Gust compilation failed! See to.log for diagnostic errors."
+  cat "$TEMP_OUTPUT" >&2
+  echo "❌ Gust compilation failed. Full diagnostics: $TEMP_OUTPUT and to.log" >&2
   exit "$COMP_STATUS"
 fi
 
