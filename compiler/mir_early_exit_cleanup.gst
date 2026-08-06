@@ -296,7 +296,7 @@ func mir_early_exit_cleanup_witness(plan: MirEarlyExitCleanupPlan[ctx], ctx: &Ar
     mut entry_index := 0;
     while entry_index < mir_early_exit_cleanup_entry_count(plan, ctx) {
         mut entry := mir_early_exit_cleanup_entry_at(plan, entry_index, ctx);
-        output = std.Concat(output, std.Concat("early_return_cleanup: edge=", std.Concat(entry.edge_id, std.Concat(" scope=", std.Concat(entry.scope_id, std.Concat(" resource=", std.Concat(entry.resource_id, std.Concat(" order=", std.Concat(std.FormatInt(entry.execution_order), std.Concat(" destructor=", std.Concat(entry.destructor_id, std.Concat(" source=", std.Concat(entry.source_location, std.Concat(" effect=", std.Concat(entry.observable_effect, "\n"))))))))))))));
+        output = std.Concat(output, std.Concat("early_return_cleanup: edge=", std.Concat(entry.edge_id, std.Concat(" scope=", std.Concat(entry.scope_id, std.Concat(" resource=", std.Concat(entry.resource_id, std.Concat(" order=", std.Concat(std.FormatInt(entry.execution_order), std.Concat(" destructor=", std.Concat(entry.destructor_id, std.Concat(" source=", std.Concat(entry.source_location, std.Concat(" effect=", std.Concat(entry.observable_effect, "\n")))))))))))))));
         entry_index = entry_index + 1;
     }
     return output;
