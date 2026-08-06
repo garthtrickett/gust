@@ -163,7 +163,6 @@ func main() {
         target_query_reassign.target.pointer_size,
         target_query_reassign.target.pointer_alignment,
         target_query_reassign.target.pointer_size,
-        0,
         ctx
     );
     layout_table_reassign = layout.mir_layout_table_with_layout(layout_table_reassign, resource_layout_reassign, ctx);
