@@ -393,8 +393,8 @@ func mir_scope_exit_cleanup_scope_table_validate(table: MirResourceScopeTable[ct
 
 func mir_scope_exit_cleanup_build_entry(scope_value: MirResourceScope[ctx], binding_value: MirResourceScopeBinding[ctx], cleanup_value: authority.MirCleanupObligation[ctx], execution_order: int, ctx: &Arena) MirScopeExitCleanup[ctx] {
     mut entry_build: MirScopeExitCleanup[ctx];
-    entry_build.schedule_operation_id = std.Concat("operation:scope-exit:schedule:", cleanup_value.cleanup_id);
-    entry_build.cleanup_operation_id = std.Concat("operation:scope-exit:destroy:", cleanup_value.cleanup_id);
+    entry_build.schedule_operation_id = std.Clone(ctx, std.Concat("operation:scope-exit:schedule:", cleanup_value.cleanup_id));
+    entry_build.cleanup_operation_id = std.Clone(ctx, std.Concat("operation:scope-exit:destroy:", cleanup_value.cleanup_id));
     entry_build.scope_id = std.Clone(ctx, scope_value.scope_id);
     entry_build.parent_scope_id = std.Clone(ctx, scope_value.parent_scope_id);
     entry_build.resource_id = std.Clone(ctx, binding_value.resource_id);
@@ -410,7 +410,7 @@ func mir_scope_exit_cleanup_build_entry(scope_value: MirResourceScope[ctx], bind
     entry_build.execution_order = execution_order;
     entry_build.prior_state = std.Clone(ctx, "live");
     entry_build.resulting_state = std.Clone(ctx, "destroyed");
-    entry_build.observable_effect = std.Concat("destroy:", binding_value.declaration_id);
+    entry_build.observable_effect = std.Clone(ctx, std.Concat("destroy:", binding_value.declaration_id));
     return entry_build;
 }
 
