@@ -1,0 +1,19 @@
+Phase 15.5 — Cleanup Insertion at Normal Scope Exits
+guard: guard-cranelift-phase15-scope-exit-cleanup-contract
+parity_guard: guard-cranelift-phase15-scope-exit-cleanup-parity
+rows: 45
+test_levels: contract=Level 1 parity=Level 2
+order_policy: selected scope exit sequence then reverse declaration order
+exit_gate: every selected live resource has exactly one compiler-produced cleanup
+
+inventory:
+- backend: 2
+- binding: 3
+- ci: 3
+- exclusion: 3
+- insertion: 6
+- metadata: 6
+- parity: 2
+- planning: 4
+- reject: 9
+- scope: 7

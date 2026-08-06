@@ -253,6 +253,8 @@
     "guard-cranelift-phase15-move-state-contract": 1,
     "guard-cranelift-phase15-move-state-parity": 2,
     "guard-cranelift-phase15-resource-reassignment-contract": 1,
-    "guard-cranelift-phase15-resource-reassignment-parity": 2
+    "guard-cranelift-phase15-resource-reassignment-parity": 2,
+    "guard-cranelift-phase15-scope-exit-cleanup-contract": 1,
+    "guard-cranelift-phase15-scope-exit-cleanup-parity": 2
   }
 }

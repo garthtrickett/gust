@@ -1,0 +1,75 @@
+name: Cranelift Phase 15 Scope Exit Cleanup
+
+on:
+  pull_request:
+    paths:
+      - 'compiler/mir_resource_authority.gst'
+      - 'compiler/mir_resource_value.gst'
+      - 'compiler/mir_scope_exit_cleanup.gst'
+      - 'compiler/mir_scope_exit_cleanup_mir_to_c.gst'
+      - 'compiler/mir_scope_exit_cleanup_state_smoke_test_entry.gst'
+      - 'compiler/mir_scope_exit_cleanup_parity_smoke_test_entry.gst'
+      - 'compiler/experiments/cranelift/src/main.rs'
+      - 'compiler/experiments/cranelift/src/scope_exit_cleanup.rs'
+      - 'scripts/phase15_scope_exit_cleanup.py'
+      - 'scripts/phase15_scope_exit_cleanup_parity.sh'
+      - 'scripts/run-gust-file.sh'
+      - 'scripts/guard-cranelift-phase15-scope-exit-cleanup-contract.sh'
+      - 'scripts/cranelift_test_levels.json'
+      - 'tests/cranelift/phase15_scope_exit_cleanup_contract.tsv'
+      - 'tests/cranelift/phase15_scope_exit_cleanup_review.txt'
+      - 'justfile'
+      - '.github/workflows/phase15-scope-exit-cleanup.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'compiler/mir_resource_authority.gst'
+      - 'compiler/mir_resource_value.gst'
+      - 'compiler/mir_scope_exit_cleanup.gst'
+      - 'compiler/mir_scope_exit_cleanup_mir_to_c.gst'
+      - 'compiler/mir_scope_exit_cleanup_state_smoke_test_entry.gst'
+      - 'compiler/mir_scope_exit_cleanup_parity_smoke_test_entry.gst'
+      - 'compiler/experiments/cranelift/src/main.rs'
+      - 'compiler/experiments/cranelift/src/scope_exit_cleanup.rs'
+      - 'scripts/phase15_scope_exit_cleanup.py'
+      - 'scripts/phase15_scope_exit_cleanup_parity.sh'
+      - 'scripts/run-gust-file.sh'
+      - 'scripts/guard-cranelift-phase15-scope-exit-cleanup-contract.sh'
+      - 'scripts/cranelift_test_levels.json'
+      - 'tests/cranelift/phase15_scope_exit_cleanup_contract.tsv'
+      - 'tests/cranelift/phase15_scope_exit_cleanup_review.txt'
+      - 'justfile'
+      - '.github/workflows/phase15-scope-exit-cleanup.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scope-exit-cleanup-contract:
+    name: Phase 15.5 scope-exit cleanup contract (Level 1)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pinned just
+        run: |
+          bash scripts/install-just-ci.sh "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: guard-cranelift-phase15-scope-exit-cleanup-contract
+        run: just guard-cranelift-phase15-scope-exit-cleanup-contract
+
+  scope-exit-cleanup-parity:
+    name: Phase 15.5 scope-exit cleanup parity (Level 2)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install native dependencies
+        run: sudo apt-get update && sudo apt-get install -y build-essential curl ripgrep
+      - name: Install pinned just
+        run: |
+          bash scripts/install-just-ci.sh "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: guard-cranelift-phase15-scope-exit-cleanup-parity
+        run: just guard-cranelift-phase15-scope-exit-cleanup-parity

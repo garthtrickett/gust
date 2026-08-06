@@ -127,6 +127,7 @@ type MirResourceIdentityQuery[ctx] struct { found: int, value: MirResourceIdenti
 type MirResourceStateQuery[ctx] struct { found: int, value: MirResourceState[ctx] }
 type MirDestructorIdentityQuery[ctx] struct { found: int, value: MirDestructorIdentity[ctx] }
 type MirCloseCapabilityQuery[ctx] struct { found: int, value: MirCloseCapability[ctx] }
+type MirCleanupObligationQuery[ctx] struct { found: int, value: MirCleanupObligation[ctx] }
 
 type MirResourceTransitionValidation[ctx] struct {
     valid: int,
@@ -609,6 +610,24 @@ func mir_cleanup_obligations(table: MirResourceAuthorityTable[ctx], scope_exit_i
 }
 
 // destructor_for(resource_type)
+func mir_cleanup_obligation_for_resource_scope(table: MirResourceAuthorityTable[ctx], resource_id: str, scope_exit_id: str, ctx: &Arena) MirCleanupObligationQuery[ctx] {
+    mut result_cleanup_query: MirCleanupObligationQuery[ctx];
+    result_cleanup_query.found = 0;
+    mut cleanups_query: std.Vector[MirCleanupObligation[ctx], ctx] := ctx[table.cleanups];
+    mut cleanup_query_index := 0;
+    while cleanup_query_index < len(cleanups_query) {
+        if std.str_eq(cleanups_query[cleanup_query_index].resource_id, resource_id) == 1 &&
+           std.str_eq(cleanups_query[cleanup_query_index].scope_exit_id, scope_exit_id) == 1
+        {
+            result_cleanup_query.found = 1;
+            result_cleanup_query.value = cleanups_query[cleanup_query_index];
+            return result_cleanup_query;
+        }
+        cleanup_query_index = cleanup_query_index + 1;
+    }
+    return result_cleanup_query;
+}
+
 func mir_destructor_for(table: MirResourceAuthorityTable[ctx], resource_type_id: str, ctx: &Arena) MirDestructorIdentityQuery[ctx] {
     mut result: MirDestructorIdentityQuery[ctx];
     result.found = 0;

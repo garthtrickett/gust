@@ -261,6 +261,26 @@ func mir_resource_mir_table_with_flow_edge(table: MirResourceMirTable[ctx], valu
     return updated;
 }
 
+func mir_resource_value_count(table: MirResourceMirTable[ctx], ctx: &Arena) int {
+    mut values_count_helper: std.Vector[MirResourceValue[ctx], ctx] := ctx[table.values];
+    return len(values_count_helper);
+}
+
+func mir_resource_value_at(table: MirResourceMirTable[ctx], value_index: int, ctx: &Arena) MirResourceValue[ctx] {
+    mut values_at_helper: std.Vector[MirResourceValue[ctx], ctx] := ctx[table.values];
+    return values_at_helper[value_index];
+}
+
+func mir_resource_operation_count(table: MirResourceMirTable[ctx], ctx: &Arena) int {
+    mut operations_count_helper: std.Vector[MirResourceOperation[ctx], ctx] := ctx[table.operations];
+    return len(operations_count_helper);
+}
+
+func mir_resource_operation_at(table: MirResourceMirTable[ctx], operation_index: int, ctx: &Arena) MirResourceOperation[ctx] {
+    mut operations_at_helper: std.Vector[MirResourceOperation[ctx], ctx] := ctx[table.operations];
+    return operations_at_helper[operation_index];
+}
+
 func mir_resource_value_by_id(table: MirResourceMirTable[ctx], value_id: str, ctx: &Arena) MirResourceValueQuery[ctx] {
     mut result: MirResourceValueQuery[ctx];
     result.found = 0;
@@ -1145,6 +1165,53 @@ func mir_resource_mir_table_validate(table: MirResourceMirTable[ctx], authority_
     }
 
     return mir_resource_mir_validation(1, "resource_mir_table_valid", ctx);
+}
+
+func mir_resource_cleanup_invoke_count(table: MirResourceMirTable[ctx], resource_id: str, cleanup_id: str, ctx: &Arena) int {
+    mut operations_cleanup_count: std.Vector[MirResourceOperation[ctx], ctx] := ctx[table.operations];
+    mut cleanup_invoke_count := 0;
+    mut cleanup_count_index := 0;
+    while cleanup_count_index < len(operations_cleanup_count) {
+        unsafe {
+            if operations_cleanup_count[cleanup_count_index].operation_kind.tag == 6 &&
+               std.str_eq(operations_cleanup_count[cleanup_count_index].resource_id, resource_id) == 1 &&
+               std.str_eq(operations_cleanup_count[cleanup_count_index].cleanup_id, cleanup_id) == 1
+            {
+                cleanup_invoke_count = cleanup_invoke_count + 1;
+            }
+        }
+        cleanup_count_index = cleanup_count_index + 1;
+    }
+    return cleanup_invoke_count;
+}
+
+func mir_resource_mir_apply_scope_exit_cleanup(table: MirResourceMirTable[ctx], schedule_operation: MirResourceOperation[ctx], cleanup_operation: MirResourceOperation[ctx], ctx: &Arena) MirResourceMirTable[ctx] {
+    mut updated_scope_cleanup_table := table;
+    mut values_scope_cleanup: std.Vector[MirResourceValue[ctx], ctx] := ctx[updated_scope_cleanup_table.values];
+    mut value_scope_cleanup_index := 0;
+    while value_scope_cleanup_index < len(values_scope_cleanup) {
+        if std.str_eq(values_scope_cleanup[value_scope_cleanup_index].resource_id, cleanup_operation.resource_id) == 1 {
+            values_scope_cleanup[value_scope_cleanup_index].current_state = std.Clone(ctx, "destroyed");
+        }
+        value_scope_cleanup_index = value_scope_cleanup_index + 1;
+    }
+    ctx.Set(updated_scope_cleanup_table.values, values_scope_cleanup);
+
+    mut carriers_scope_cleanup: std.Vector[MirResourceCarrier[ctx], ctx] := ctx[updated_scope_cleanup_table.carriers];
+    mut carrier_scope_cleanup_index := 0;
+    while carrier_scope_cleanup_index < len(carriers_scope_cleanup) {
+        if std.str_eq(carriers_scope_cleanup[carrier_scope_cleanup_index].carrier_id, cleanup_operation.source_carrier_id) == 1 {
+            carriers_scope_cleanup[carrier_scope_cleanup_index].current_state = std.Clone(ctx, "destroyed");
+        }
+        carrier_scope_cleanup_index = carrier_scope_cleanup_index + 1;
+    }
+    ctx.Set(updated_scope_cleanup_table.carriers, carriers_scope_cleanup);
+
+    mut operations_scope_cleanup: std.Vector[MirResourceOperation[ctx], ctx] := ctx[updated_scope_cleanup_table.operations];
+    operations_scope_cleanup.Push(schedule_operation);
+    operations_scope_cleanup.Push(cleanup_operation);
+    ctx.Set(updated_scope_cleanup_table.operations, operations_scope_cleanup);
+    return updated_scope_cleanup_table;
 }
 
 func mir_resource_mir_append_field(output: str, key: str, value: str, ctx: &Arena) str {

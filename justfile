@@ -15433,6 +15433,25 @@ guard-cranelift-phase15-resource-reassignment-parity:
     just guard-cranelift-phase15-resource-reassignment-contract
     bash scripts/phase15_resource_reassignment_parity.sh
 
+guard-cranelift-phase15-scope-exit-cleanup-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 15.5 normal scope-exit cleanup insertion..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase15-scope-exit-cleanup-contract |
+      grep -F $'guard-cranelift-phase15-scope-exit-cleanup-contract\t1\t' >/dev/null
+    python3 scripts/phase15_scope_exit_cleanup.py --check
+
+guard-cranelift-phase15-scope-exit-cleanup-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 15.5 normal scope-exit cleanup parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase15-scope-exit-cleanup-parity |
+      grep -F $'guard-cranelift-phase15-scope-exit-cleanup-parity\t2\t' >/dev/null
+    just guard-cranelift-phase15-scope-exit-cleanup-contract
+    bash scripts/phase15_scope_exit_cleanup_parity.sh
+
 guard-cranelift-phase15-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail
