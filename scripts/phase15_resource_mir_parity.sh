@@ -11,17 +11,80 @@ worker_manifest="compiler/experiments/cranelift/Cargo.toml"
 worker="compiler/experiments/cranelift/target/debug/gust-cranelift-experiment"
 mkdir -p "$build_dir"
 
+phase15_resource_mir_stage="initialization"
+
+phase15_resource_mir_dump_file() {
+  local path="$1"
+  if [ ! -f "$path" ]; then
+    return
+  fi
+  echo "::group::Phase 15.2 diagnostic: $path" >&2
+  echo "lines=$(wc -l < "$path" 2>/dev/null || printf 'unknown')" >&2
+  if [ "$(wc -l < "$path" 2>/dev/null || printf '0')" -le 320 ]; then
+    cat "$path" >&2
+  else
+    echo "--- first 80 lines ---" >&2
+    head -n 80 "$path" >&2
+    echo "--- last 240 lines ---" >&2
+    tail -n 240 "$path" >&2
+  fi
+  echo "::endgroup::" >&2
+}
+
+phase15_resource_mir_on_error() {
+  local status="$1"
+  local line="$2"
+  local command="$3"
+  set +e
+  echo "❌ Phase 15.2 resource MIR parity failed." >&2
+  echo "stage=$phase15_resource_mir_stage" >&2
+  echo "status=$status line=$line command=$command" >&2
+  if [ -f "$request" ]; then
+    cp -f "$request" "$build_dir/request.txt"
+  fi
+  if [ -f "$mir_to_c_witness" ]; then
+    cp -f "$mir_to_c_witness" "$build_dir/mir-to-c.witness"
+  fi
+  for path in \
+    to.log \
+    build/gust-build.log \
+    build/mir_resource_value_smoke_test_entry.compile.log \
+    "$build_dir/cargo-build.log" \
+    "$build_dir/worker.stderr" \
+    "$mir_to_c_witness" \
+    "$build_dir/cranelift.witness"
+  do
+    phase15_resource_mir_dump_file "$path"
+  done
+  exit "$status"
+}
+
+trap 'phase15_resource_mir_on_error "$?" "$LINENO" "$BASH_COMMAND"' ERR
+
+phase15_resource_mir_stage="compile and execute the Phase 15.2 Gust fixture"
 bash scripts/run-gust-file.sh compiler/mir_resource_value_smoke_test_entry.gst
+
+phase15_resource_mir_stage="verify the fixture success marker"
 rg -n -F 'SUCCESS: Phase 15.2 canonical resource MIR smoke passed' to.log >/dev/null
+
+phase15_resource_mir_stage="verify fixture request and MIR-to-C witness artifacts"
 for artifact in "$request" "$mir_to_c_witness"; do
   if [ ! -s "$artifact" ]; then
     echo "Phase 15.2 resource MIR smoke did not produce $artifact" >&2
-    exit 1
+    false
   fi
 done
 
-cargo build --quiet --manifest-path "$worker_manifest"
-"$worker" phase15-resource-mir-witness "$request" > "$build_dir/cranelift.witness"
+phase15_resource_mir_stage="build the Cranelift parity worker"
+cargo build --manifest-path "$worker_manifest" \
+  > "$build_dir/cargo-build.log" 2>&1
+
+phase15_resource_mir_stage="generate the Cranelift resource MIR witness"
+"$worker" phase15-resource-mir-witness "$request" \
+  > "$build_dir/cranelift.witness" \
+  2> "$build_dir/worker.stderr"
+
+phase15_resource_mir_stage="compare MIR-to-C and Cranelift resource witnesses"
 cmp -s "$mir_to_c_witness" "$build_dir/cranelift.witness" || {
   diff -u "$mir_to_c_witness" "$build_dir/cranelift.witness" >&2 || true
   echo "Phase 15.2 MIR-to-C and Cranelift resource witnesses differ." >&2
@@ -52,7 +115,11 @@ for token in \
   'resource_lowering: id=operation:destroy:a action=invoke_destructor' \
   'runtime_symbol=gust_phase15_selected_resource_destroy'
 do
-  rg -n -F "$token" "$mir_to_c_witness" >/dev/null
+  phase15_resource_mir_stage="verify MIR-to-C witness token: $token"
+  if ! rg -n -F "$token" "$mir_to_c_witness" >/dev/null; then
+    echo "Phase 15.2 MIR-to-C witness is missing required token: $token" >&2
+    false
+  fi
 done
 
 mutate() {
@@ -90,13 +157,19 @@ expect_failure() {
   local request_path="$1"
   local reason="$2"
   local label="$3"
+  phase15_resource_mir_stage="verify negative mutation rejection: $label"
   if "$worker" phase15-resource-mir-witness "$request_path" \
       > "$build_dir/$label.stdout" 2> "$build_dir/$label.stderr"
   then
     echo "Expected Phase 15.2 worker rejection for $label" >&2
-    exit 1
+    phase15_resource_mir_dump_file "$build_dir/$label.stdout"
+    false
   fi
-  rg -n -F "reason=$reason" "$build_dir/$label.stderr" >/dev/null
+  if ! rg -n -F "reason=$reason" "$build_dir/$label.stderr" >/dev/null; then
+    echo "Phase 15.2 worker rejected $label with the wrong reason; expected reason=$reason" >&2
+    phase15_resource_mir_dump_file "$build_dir/$label.stderr"
+    false
+  fi
 }
 
 
