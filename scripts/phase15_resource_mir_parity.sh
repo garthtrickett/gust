@@ -134,7 +134,23 @@ text = source.read_text()
 if mode.name == "missing-resource-id":
     text = text.replace("resource_mir_value_0_resource_id: ", "resource_mir_value_0_resource_id_removed: ", 1)
 elif mode.name == "copy-operation":
-    text = text.replace("resource_mir_operation_3_kind: move", "resource_mir_operation_3_kind: copy", 1)
+    text = text.replace(
+        "resource_mir_operation_3_kind: move",
+        "resource_mir_operation_3_kind: copy",
+        1,
+    )
+    destination_line = next(
+        line
+        for line in text.splitlines()
+        if line.startswith(
+            "resource_mir_operation_3_destination_carrier_id: "
+        )
+    )
+    text = text.replace(
+        destination_line,
+        "resource_mir_operation_3_destination_carrier_id: ",
+        1,
+    )
 elif mode.name == "duplicate-resource-id":
     first = next(line.split(": ", 1)[1] for line in text.splitlines() if line.startswith("resource_mir_value_0_resource_id: "))
     second_line = next(line for line in text.splitlines() if line.startswith("resource_mir_value_1_resource_id: "))
