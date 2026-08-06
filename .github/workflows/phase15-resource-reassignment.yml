@@ -13,6 +13,7 @@ on:
       - 'compiler/experiments/cranelift/src/resource_mir.rs'
       - 'scripts/phase15_resource_reassignment.py'
       - 'scripts/phase15_resource_reassignment_parity.sh'
+      - 'scripts/run-gust-file.sh'
       - 'scripts/guard-cranelift-phase15-resource-reassignment-contract.sh'
       - 'scripts/cranelift_test_levels.json'
       - 'tests/cranelift/phase15_resource_reassignment_contract.tsv'
@@ -32,12 +33,14 @@ on:
       - 'compiler/experiments/cranelift/src/resource_mir.rs'
       - 'scripts/phase15_resource_reassignment.py'
       - 'scripts/phase15_resource_reassignment_parity.sh'
+      - 'scripts/run-gust-file.sh'
       - 'scripts/guard-cranelift-phase15-resource-reassignment-contract.sh'
       - 'scripts/cranelift_test_levels.json'
       - 'tests/cranelift/phase15_resource_reassignment_contract.tsv'
       - 'tests/cranelift/phase15_resource_reassignment_review.txt'
       - 'justfile'
       - '.github/workflows/phase15-resource-reassignment.yml'
+  workflow_dispatch:
 
 jobs:
   reassignment-contract:

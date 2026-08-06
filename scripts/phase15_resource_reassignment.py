@@ -316,11 +316,15 @@ def check_wiring(root: Path) -> None:
         "compiler/mir_resource_value.gst",
         "compiler/mir_resource_reassignment_mir_to_c.gst",
         "compiler/mir_resource_reassignment_parity_smoke_test_entry.gst",
+        "scripts/run-gust-file.sh",
+        "workflow_dispatch:",
         "Phase 15.4 resource reassignment contract (Level 1)",
         "Phase 15.4 resource reassignment parity (Level 2)",
         f"run: just {GUARD_ID}",
         f"run: just {PARITY_GUARD_ID}",
     ), WORKFLOW)
+    if workflow.count("scripts/run-gust-file.sh") != 2:
+        fail("workflow must include the shared Gust runner in both pull_request and push path filters")
     if "python3 scripts/phase15_resource_reassignment.py --check" not in read(root, GUARD):
         fail("guard shell does not invoke checker")
 
