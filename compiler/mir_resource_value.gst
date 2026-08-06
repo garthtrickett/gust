@@ -1191,7 +1191,9 @@ func mir_resource_mir_apply_scope_exit_cleanup(table: MirResourceMirTable[ctx], 
     mut value_scope_cleanup_index := 0;
     while value_scope_cleanup_index < len(values_scope_cleanup) {
         if std.str_eq(values_scope_cleanup[value_scope_cleanup_index].resource_id, cleanup_operation.resource_id) == 1 {
-            values_scope_cleanup[value_scope_cleanup_index].current_state = std.Clone(ctx, "destroyed");
+            unsafe {
+                values_scope_cleanup[value_scope_cleanup_index].current_state = std.Clone(ctx, "destroyed");
+            }
         }
         value_scope_cleanup_index = value_scope_cleanup_index + 1;
     }
@@ -1201,7 +1203,9 @@ func mir_resource_mir_apply_scope_exit_cleanup(table: MirResourceMirTable[ctx], 
     mut carrier_scope_cleanup_index := 0;
     while carrier_scope_cleanup_index < len(carriers_scope_cleanup) {
         if std.str_eq(carriers_scope_cleanup[carrier_scope_cleanup_index].carrier_id, cleanup_operation.source_carrier_id) == 1 {
-            carriers_scope_cleanup[carrier_scope_cleanup_index].current_state = std.Clone(ctx, "destroyed");
+            unsafe {
+                carriers_scope_cleanup[carrier_scope_cleanup_index].current_state = std.Clone(ctx, "destroyed");
+            }
         }
         carrier_scope_cleanup_index = carrier_scope_cleanup_index + 1;
     }
