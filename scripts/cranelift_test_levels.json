@@ -255,6 +255,8 @@
     "guard-cranelift-phase15-resource-reassignment-contract": 1,
     "guard-cranelift-phase15-resource-reassignment-parity": 2,
     "guard-cranelift-phase15-scope-exit-cleanup-contract": 1,
-    "guard-cranelift-phase15-scope-exit-cleanup-parity": 2
+    "guard-cranelift-phase15-scope-exit-cleanup-parity": 2,
+    "guard-cranelift-phase15-early-return-cleanup-contract": 1,
+    "guard-cranelift-phase15-early-return-cleanup-parity": 2
   }
 }

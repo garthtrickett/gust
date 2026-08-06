@@ -1,0 +1,54 @@
+name: Cranelift Phase 15 Early Return Cleanup
+
+on:
+  pull_request:
+    paths:
+      - 'compiler/mir_early_exit_cleanup.gst'
+      - 'compiler/mir_early_exit_cleanup_state_smoke_test_entry.gst'
+      - 'compiler/mir_early_exit_cleanup_parity_smoke_test_entry.gst'
+      - 'compiler/experiments/cranelift/src/early_return_cleanup.rs'
+      - 'compiler/experiments/cranelift/src/main.rs'
+      - 'scripts/phase15_early_return_cleanup.py'
+      - 'scripts/phase15_early_return_cleanup_parity.sh'
+      - 'scripts/run-gust-file.sh'
+      - 'scripts/cranelift_test_levels.json'
+      - 'tests/cranelift/phase15_early_return_cleanup_contract.tsv'
+      - 'tests/cranelift/phase15_early_return_cleanup_review.txt'
+      - 'justfile'
+      - '.github/workflows/phase15-early-return-cleanup.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'compiler/mir_early_exit_cleanup.gst'
+      - 'compiler/mir_early_exit_cleanup_state_smoke_test_entry.gst'
+      - 'compiler/mir_early_exit_cleanup_parity_smoke_test_entry.gst'
+      - 'compiler/experiments/cranelift/src/early_return_cleanup.rs'
+      - 'compiler/experiments/cranelift/src/main.rs'
+      - 'scripts/phase15_early_return_cleanup.py'
+      - 'scripts/phase15_early_return_cleanup_parity.sh'
+      - 'scripts/run-gust-file.sh'
+      - 'scripts/cranelift_test_levels.json'
+      - 'tests/cranelift/phase15_early_return_cleanup_contract.tsv'
+      - 'tests/cranelift/phase15_early_return_cleanup_review.txt'
+      - 'justfile'
+      - '.github/workflows/phase15-early-return-cleanup.yml'
+  workflow_dispatch:
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin"
+      - name: Phase 15.6 early-return cleanup contract (Level 1)
+        run: just guard-cranelift-phase15-early-return-cleanup-contract
+  parity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin"
+      - name: Build Gust
+        run: make gust
+      - name: Phase 15.6 early-return cleanup parity (Level 2)
+        run: just guard-cranelift-phase15-early-return-cleanup-parity

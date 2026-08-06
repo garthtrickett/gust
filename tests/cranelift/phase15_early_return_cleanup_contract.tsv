@@ -1,0 +1,41 @@
+kind	requirement	evidence	level
+inventory	direct return selected	model and fixture	1
+inventory	nested conditional return selected	model and fixture	1
+inventory	selected loop return selected	model and fixture	1
+inventory	selected break selected	model and fixture	1
+inventory	selected continue selected	model and fixture	1
+scope	explicit source scope	edge metadata	1
+scope	explicit destination scope	edge metadata	1
+scope	exited scope chain	edge metadata	1
+scope	inner before outer order	validation	1
+scope	reverse declaration order	validation	1
+return	return value identity	edge metadata	1
+return	return evaluation before cleanup	validation and witness	1
+return	cleanup before terminator	validation and witness	1
+return	scalar return ABI preserved	witness	1
+return	void structured exit preserved	fixture	1
+return	aggregate return deferred to Phase 16	policy and rejection	1
+state	live resource cleanup	entries	1
+state	moved resource excluded	exclusion fixture	1
+state	manually closed resource excluded	exclusion fixture	1
+state	return path state agreement	validation	1
+positive	one resource direct return	fixture	1
+positive	nested resources	fixture	1
+positive	branch local resources	fixture	1
+positive	loop body resources	fixture	1
+positive	moved resource before return	fixture	1
+positive	manual close before return	fixture	1
+negative	missing cleanup rejected	parity mutation	1
+negative	cleanup after terminator rejected	parity mutation	1
+negative	duplicate cleanup shared edges rejected	parity mutation	1
+negative	resource outside exited scope rejected	parity mutation	1
+negative	return path state disagreement rejected	parity mutation	1
+negative	inner outer order rejected	parity mutation	1
+negative	aggregate return rejected	parity mutation	1
+backend	canonical witness	Gust fixture	1
+backend	Cranelift witness	Rust worker	1
+backend	witness equality	parity script	1
+backend	observable effect order	witness	1
+evidence	output preservation evidence	witness	1
+test	Level 1 contract	guard	1
+test	Level 2 parity	guard	1

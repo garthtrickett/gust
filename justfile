@@ -20275,3 +20275,23 @@ check-step52:
     just run-step52-negative-batch
     make test
     git diff --check
+
+
+guard-cranelift-phase15-early-return-cleanup-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 15.6 early-return cleanup..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase15-early-return-cleanup-contract |
+      grep -F $'guard-cranelift-phase15-early-return-cleanup-contract\t1\t' >/dev/null
+    python3 scripts/phase15_early_return_cleanup.py --check
+
+guard-cranelift-phase15-early-return-cleanup-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 15.6 early-return cleanup parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase15-early-return-cleanup-parity |
+      grep -F $'guard-cranelift-phase15-early-return-cleanup-parity\t2\t' >/dev/null
+    just guard-cranelift-phase15-early-return-cleanup-contract
+    bash scripts/phase15_early_return_cleanup_parity.sh
