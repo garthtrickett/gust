@@ -8,19 +8,20 @@
 - Current phase: `phase14`
 - Phase 12.5 closure: `phase12_5_closed_cranelift_verification_framework_consolidation`
 - Phase 13 closure: `phase13_closed_deferred_registry_parity_expansion`
-- Total rows: `52`
+- Total rows: `53`
 
 ## Derived origin-phase totals
 
 - `phase11`: `19`
 - `phase13`: `20`
 - `phase14`: `13`
+- `phase15`: `1`
 
 ## Derived status totals
 
 - `candidate_deferred`: `3`
 - `deferred`: `7`
-- `migrated`: `31`
+- `migrated`: `32`
 - `replaced`: `11`
 
 ## Derived feature-family totals
@@ -30,6 +31,7 @@
 - `block_parameter`: `3`
 - `cfg`: `5`
 - `conversion`: `1`
+- `destructor_scheduling`: `1`
 - `direct_call`: `7`
 - `import_runtime`: `14`
 - `local_state`: `1`
@@ -47,6 +49,7 @@
 - `block-params`: `3`
 - `cfg`: `4`
 - `conversions`: `1`
+- `destructor-scheduling`: `1`
 - `direct-calls`: `7`
 - `imports`: `14`
 - `locals`: `2`
@@ -60,7 +63,7 @@
 ## Derived route-owner totals
 
 - `deferred`: `21`
-- `generic_canonical_mir`: `31`
+- `generic_canonical_mir`: `32`
 
 ## Derived deferred-destination totals
 
@@ -268,6 +271,7 @@ Patch 14.7 selects immutable UTF-8 literal storage and borrowed explicit-byte-le
 | p14_aggregate_basic_block_transport | phase14 | phase13_entry:p13_general_loop_backedge_source_route | aggregate_layout | aggregate-flow | candidate_deferred | deferred | worker_aggregate_layout_lowering | canonical_mir_aggregate_layout_verifier | compiler/p14_aggregate_basic_block_transport_deferred_source.gst | none_rejected_before_canonical_MIR | phase14_opening:p14_aggregate_basic_block_transport | phase14 | phase14_authority_p14_aggregate_basic_block_transport_awaits_bounded_capability_migration | phase14_compiler_owned_layout_authority_v1 |
 | p14_target_layout_model | phase14 | phase14_category:target_layout | target_layout | primitive-layout | migrated | generic_canonical_mir | worker_target_layout_lowering | target_layout_registry_verifier | compiler/phase14_target_layout_model_source.gst | compiler/fixtures/native_backend_phase14_primitive_layout_ingestion.mir | phase14_registry_differential:p14_target_layout_model | none_migrated | none_migrated | phase14_declared_targets_and_primitive_layout_v1 |
 | p14_all_target_layout_evidence | phase14 | phase14_category:all_target_evidence | target_layout | primitive-layout | migrated | generic_canonical_mir | worker_target_layout_lowering | target_layout_registry_verifier | compiler/phase14_all_target_layout_evidence_source.gst | compiler/fixtures/native_backend_phase14_primitive_layout_ingestion.mir | phase14_registry_differential:p14_all_target_layout_evidence | none_migrated | none_migrated | phase14_declared_targets_and_primitive_layout_v1 |
+| p15_destructor_scheduling | phase15 | phase15_category:destructor_scheduling | destructor_scheduling | destructor-scheduling | migrated | generic_canonical_mir | worker_destructor_scheduling_lowering | canonical_mir_destructor_scheduling_verifier | compiler/phase15_destructor_scheduling_source.gst | compiler/fixtures/native_backend_phase15_destructor_scheduling_ingestion.mir | phase15_registry_differential:p15_destructor_scheduling | none_migrated | none_migrated | phase15_destructor_scheduling_and_exactly_once_destruction_v1 |
 
 ## Legacy views
 

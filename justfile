@@ -140,6 +140,8 @@ guard-pr-fast-ci-surface:
       'just guard-cranelift-phase14-string-view-contract'
       'Phase 14 arrays and slices'
       'just guard-cranelift-phase14-array-slice-contract'
+      'Phase 15 destructor scheduling and exactly-once destruction'
+      'just guard-cranelift-phase15-destructor-scheduling-contract'
       'phase11-family:'
       'phase11_families:'
       'matrix.family'
@@ -14681,6 +14683,101 @@ guard-cranelift-phase14-array-slice-parity:
     fi
     bash scripts/phase14_array_slice_differential.sh
 
+guard-cranelift-phase15-destructor-scheduling-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 15 compiler-owned destructor scheduling and exactly-once destruction..."
+    authority="compiler/mir_destructor_scheduling.gst"
+    mir="compiler/mir.gst"
+    request="compiler/mir_native_backend_request.gst"
+    mir_to_c="compiler/mir_destructor_scheduling_mir_to_c.gst"
+    diagnostics="compiler/mir_destructor_scheduling_diagnostics.gst"
+    worker="compiler/experiments/cranelift/src/main.rs"
+    smoke="compiler/mir_destructor_scheduling_smoke_test_entry.gst"
+    differential="scripts/phase15_destructor_scheduling_differential.sh"
+    review="compiler/CRANELIFT_PHASE15_DESTRUCTOR_SCHEDULING.md"
+    registry="scripts/cranelift_feature_registry.json"
+    pr_workflow=".github/workflows/pr-fast.yml"
+
+    required_files=(
+      "$authority" "$mir" "$request" "$mir_to_c" "$diagnostics"
+      "$worker" "$smoke" "$differential" "$review" "$registry"
+      compiler/phase15_destructor_scheduling_source.gst
+      compiler/phase15_destructor_scheduling_composition_source.gst
+      compiler/fixtures/native_backend_phase15_destructor_scheduling_ingestion.mir
+      compiler/fixtures/native_backend_phase15_destructor_scheduling_malformed.mir
+      compiler/p15_duplicate_schedule_source.gst
+      compiler/p15_execute_without_schedule_source.gst
+      compiler/p15_schedule_after_destruction_source.gst
+      compiler/p15_destructor_mismatch_source.gst
+      compiler/p15_skipped_destruction_source.gst
+      compiler/p15_destruction_after_move_source.gst
+      compiler/p15_destruction_order_drift_source.gst
+    )
+    for required_file in "${required_files[@]}"; do
+      test -f "$required_file"
+      test ! -L "$required_file"
+    done
+
+    just guard-cranelift-phase14-array-slice-contract
+    python3 scripts/cranelift_ci_family.py validate
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase15-destructor-scheduling-contract |
+      rg -n -F $'guard-cranelift-phase15-destructor-scheduling-contract	1	' >/dev/null
+    bash -n "$differential"
+
+    for token in       'type MirScheduledResource[ctx] struct'       'type MirDestructorSchedulingOperation[ctx] struct'       'type MirDestructorSchedulingTable[ctx] struct'       'func mir_destructor_scheduling_table_for_layout('       'func mir_destructor_scheduling_table_is_valid('       'func mir_serialize_destructor_scheduling_table_for_request('       'func mir_destructor_scheduling_witness('
+    do
+      rg -n -F "$token" "$authority" >/dev/null
+    done
+    for kind in schedule_destructor cancel_schedule execute_destructor mark_destroyed; do
+      rg -n -F "$kind" "$authority" "$mir" "$worker" >/dev/null
+    done
+    for reason in duplicate_schedule execute_without_schedule schedule_after_destruction destructor_mismatch skipped_destruction destruction_after_move destruction_order_drift; do
+      rg -n -F "$reason" "$authority" "$worker" "$differential" >/dev/null
+    done
+    rg -n -F 'compiler_owned_destructor_scheduling_no_backend_decision' "$authority" "$worker" >/dev/null
+    rg -n -F 'reject_two_live_schedules_for_one_resource' "$authority" "$worker" >/dev/null
+    rg -n -F 'execute_only_with_compiler_schedule' "$authority" "$worker" >/dev/null
+    rg -n -F 'cancel_obsolete_schedule_after_ownership_transfer' "$authority" "$worker" >/dev/null
+    rg -n -F 'compiler_owned_destruction_order' "$authority" "$worker" >/dev/null
+    rg -n -F 'destructor_scheduling_table: destructor_scheduling.MirDestructorSchedulingTable[ctx]' "$request" >/dev/null
+    rg -n -F 'mir_serialize_destructor_scheduling_table_for_request' "$request" >/dev/null
+    rg -n -F 'phase15-destructor-scheduling-witness' "$worker" "$differential" >/dev/null
+    rg -n -F 'gust_destructor_scheduling_diagnostic:' "$diagnostics" >/dev/null
+    rg -n -F 'destructor_exactly_once' "$authority" "$worker" "$mir_to_c" >/dev/null
+    rg -n -F '"id": "p15_destructor_scheduling"' "$registry" >/dev/null
+    rg -n -F '"status": "migrated"' "$registry" >/dev/null
+
+    destructor_scheduling_ci_count="$(
+      (rg -n -F 'just guard-cranelift-phase15-destructor-scheduling-contract'         .github/workflows --glob '*.yml' || true) | wc -l | tr -d ' '
+    )"
+    if [ "$destructor_scheduling_ci_count" != "1" ]; then
+      echo "Phase 15 destructor-scheduling contract must be wired into CI exactly once, found $destructor_scheduling_ci_count occurrences."
+      exit 1
+    fi
+    rg -n -x -F '        run: just guard-cranelift-phase15-destructor-scheduling-contract' "$pr_workflow" >/dev/null
+
+    if rg -n -e 'implied_destructor' -e 'infer_destructor' -e 'auto_schedule' "$worker" >/dev/null; then
+      echo "The Cranelift worker must consume the compiler-owned destructor schedule."
+      exit 1
+    fi
+    echo "✅ Phase 15 destructor scheduling contract passed."
+
+guard-cranelift-phase15-destructor-scheduling-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 15 destructor-scheduling and exactly-once parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase15-destructor-scheduling-parity |
+      rg -n -F $'guard-cranelift-phase15-destructor-scheduling-parity	2	' >/dev/null
+    just guard-cranelift-phase15-destructor-scheduling-contract
+    if [ "${PHASE15_DESTRUCTOR_SCHEDULING_SKIP_DYNAMIC:-0}" = "1" ]; then
+      echo "✅ Phase 15 destructor-scheduling static contract passed; dynamic evidence skipped by request."
+      exit 0
+    fi
+    bash scripts/phase15_destructor_scheduling_differential.sh
+
 guard-cranelift-phase14-pointer-memory-parity:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -14727,6 +14824,7 @@ guard-cranelift-contract-fast:
     just guard-cranelift-phase14-memory-access-contract
     just guard-cranelift-phase14-string-view-contract
     just guard-cranelift-phase14-array-slice-contract
+    just guard-cranelift-phase15-destructor-scheduling-contract
 
 guard-cranelift-historical-full:
     #!/usr/bin/env bash

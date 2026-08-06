@@ -480,26 +480,46 @@
           }
         },
         {
-          "if": {
-            "properties": {
-              "origin_phase": {
-                "const": "phase14"
-              }
-            },
-            "required": [
-              "origin_phase"
-            ]
+         "if": {
+          "properties": {
+           "origin_phase": {
+            "const": "phase14"
+           }
           },
-          "then": {
-            "required": [
-              "target_applicability",
-              "current_failure_stage",
-              "positive_future_fixture",
-              "negative_current_fixture"
-            ]
-          }
+          "required": [
+           "origin_phase"
+          ]
+         },
+         "then": {
+          "required": [
+           "target_applicability",
+           "current_failure_stage",
+           "positive_future_fixture",
+           "negative_current_fixture"
+          ]
+         }
+        },
+        {
+         "if": {
+          "properties": {
+           "origin_phase": {
+            "const": "phase15"
+           }
+          },
+          "required": [
+           "origin_phase"
+          ]
+         },
+         "then": {
+          "required": [
+           "target_applicability",
+           "current_failure_stage",
+           "positive_future_fixture",
+           "negative_current_fixture"
+          ]
+         }
         }
-      ],
+        ],
       "properties": {
         "id": {
           "type": "string",
@@ -510,8 +530,8 @@
           "minLength": 1
         },
         "parent": {
-          "type": "string",
-          "pattern": "^(phase11_(root|entry|category)|phase13_(entry|residual)|phase14_category):[A-Za-z0-9_]+$"
+         "type": "string",
+         "pattern": "^(phase11_(root|entry|category)|phase13_(entry|residual)|phase14_category|phase15_category):[A-Za-z0-9_]+$"
         },
         "feature_family": {
           "type": "string",

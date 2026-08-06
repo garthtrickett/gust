@@ -8336,6 +8336,818 @@ fn print_phase14_array_slice_witness(
     Ok(())
 }
 
+const PHASE15_DESTRUCTOR_SCHEDULING_TABLE_FORMAT_V1: &str =
+    "gust.compiler_destructor_scheduling_table.v1";
+
+#[derive(Debug, Clone)]
+struct Phase15RequestScheduledResource {
+    resource_id: String,
+    resource_type_id: String,
+    destructor_id: String,
+    cleanup_reason: String,
+    execution_point: String,
+    destruction_order: usize,
+    lifetime_region: String,
+}
+
+#[derive(Debug, Clone)]
+struct Phase15RequestDestructorSchedulingOperation {
+    operation_id: String,
+    operation_name: String,
+    target_id: String,
+    kind: String,
+    resource_id: String,
+    destructor_id: String,
+    cleanup_reason: String,
+    execution_point: String,
+    expect_success: bool,
+    expected_state: String,
+    expected_schedule_count: usize,
+    expected_execution_count: usize,
+    expected_order: usize,
+    expected_reason_code: String,
+}
+
+#[derive(Debug)]
+struct Phase15RequestDestructorSchedulingTable {
+    format: String,
+    target_id: String,
+    target_triple: String,
+    schedule_authority: String,
+    duplicate_policy: String,
+    execution_policy: String,
+    move_policy: String,
+    order_policy: String,
+    async_destruction_policy: String,
+    finalizer_policy: String,
+    gc_policy: String,
+    cancellation_policy: String,
+    resources: Vec<Phase15RequestScheduledResource>,
+    operations: Vec<Phase15RequestDestructorSchedulingOperation>,
+}
+
+impl Phase15RequestDestructorSchedulingTable {
+    fn legacy_empty(target_triple: &str) -> Self {
+        Self {
+            format: PHASE15_DESTRUCTOR_SCHEDULING_TABLE_FORMAT_V1.to_string(),
+            target_id: String::new(),
+            target_triple: target_triple.to_string(),
+            schedule_authority:
+                "compiler_owned_destructor_scheduling_no_backend_decision".to_string(),
+            duplicate_policy:
+                "reject_two_live_schedules_for_one_resource".to_string(),
+            execution_policy:
+                "execute_only_with_compiler_schedule".to_string(),
+            move_policy:
+                "cancel_obsolete_schedule_after_ownership_transfer".to_string(),
+            order_policy: "compiler_owned_destruction_order".to_string(),
+            async_destruction_policy: "deferred_asynchronous_destruction".to_string(),
+            finalizer_policy: "deferred_finalizers".to_string(),
+            gc_policy: "deferred_garbage_collection".to_string(),
+            cancellation_policy: "deferred_concurrent_cancellation".to_string(),
+            resources: Vec::new(),
+            operations: Vec::new(),
+        }
+    }
+
+    fn is_legacy_empty(&self) -> bool {
+        self.format == PHASE15_DESTRUCTOR_SCHEDULING_TABLE_FORMAT_V1
+            && self.target_id.is_empty()
+            && self.resources.is_empty()
+            && self.operations.is_empty()
+    }
+}
+
+#[derive(Debug, Clone)]
+struct Phase15DestructorSchedulingState {
+    resource_id: String,
+    state: usize,
+    schedule_count: usize,
+    execution_count: usize,
+    destruction_order: usize,
+}
+
+#[derive(Debug)]
+struct Phase15DestructorSchedulingEvaluation {
+    success: bool,
+    state: usize,
+    schedule_count: usize,
+    execution_count: usize,
+    destruction_order: usize,
+    reason_code: String,
+}
+
+fn phase15_destructor_scheduling_state_name(state: usize) -> &'static str {
+    match state {
+        0 => "unscheduled",
+        1 => "scheduled",
+        2 => "cancelled",
+        3 => "executed",
+        4 => "destroyed",
+        _ => "invalid",
+    }
+}
+
+fn phase15_destructor_scheduling_state_code(state: &str) -> Option<usize> {
+    match state {
+        "unscheduled" => Some(0),
+        "scheduled" => Some(1),
+        "cancelled" => Some(2),
+        "executed" => Some(3),
+        "destroyed" => Some(4),
+        _ => None,
+    }
+}
+
+fn phase15_destructor_scheduling_kind_is_valid(kind: &str) -> bool {
+    matches!(
+        kind,
+        "schedule_destructor" | "cancel_schedule" | "execute_destructor" | "mark_destroyed"
+    )
+}
+
+fn phase15_destructor_scheduling_operation_identity(
+    target_id: &str,
+    operation_name: &str,
+    kind: &str,
+) -> String {
+    format!(
+        "destructor_scheduling_operation:v1:target={target_id}:name={operation_name}:kind={kind}"
+    )
+}
+
+fn phase15_destructor_scheduling_invalid(reason: &str) -> Box<dyn Error> {
+    phase10_backend_request_error(
+        Phase10BackendRequestStage::CanonicalMirValidation,
+        Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+        reason,
+    )
+}
+
+fn phase15_destructor_scheduling_evaluate(
+    table: &Phase15RequestDestructorSchedulingTable,
+    operation: &Phase15RequestDestructorSchedulingOperation,
+    current: &Phase15DestructorSchedulingState,
+    next_order: usize,
+) -> Result<Phase15DestructorSchedulingEvaluation, Box<dyn Error>> {
+    let valid = |state, schedule_count, execution_count, destruction_order| {
+        Ok(Phase15DestructorSchedulingEvaluation {
+            success: true,
+            state,
+            schedule_count,
+            execution_count,
+            destruction_order,
+            reason_code: "destructor_scheduling_valid".to_string(),
+        })
+    };
+    match operation.kind.as_str() {
+        "schedule_destructor" => {
+            if current.state == 0 || current.state == 2 {
+                return valid(1, current.schedule_count + 1, current.execution_count, 0);
+            }
+            if current.state == 1 {
+                return Err(phase15_destructor_scheduling_invalid(
+                    "duplicate_schedule",
+                ));
+            }
+            Err(phase15_destructor_scheduling_invalid(
+                "schedule_after_destruction",
+            ))
+        }
+        "cancel_schedule" => {
+            if current.state == 1 {
+                let cancelled_count = current.schedule_count.saturating_sub(1);
+                return valid(2, cancelled_count, current.execution_count, 0);
+            }
+            Err(phase15_destructor_scheduling_invalid(
+                "cancel_without_schedule",
+            ))
+        }
+        "execute_destructor" => {
+            if current.state == 2 {
+                return Err(phase15_destructor_scheduling_invalid(
+                    "destruction_after_move",
+                ));
+            }
+            if current.state != 1 {
+                return Err(phase15_destructor_scheduling_invalid(
+                    "execute_without_schedule",
+                ));
+            }
+            let resource = table
+                .resources
+                .iter()
+                .find(|resource| resource.resource_id == operation.resource_id)
+                .ok_or_else(|| {
+                    phase15_destructor_scheduling_invalid(
+                        "destructor_scheduling_resource_identity_mismatch",
+                    )
+                })?;
+            if operation.destructor_id != resource.destructor_id {
+                return Err(phase15_destructor_scheduling_invalid(
+                    "destructor_mismatch",
+                ));
+            }
+            valid(3, current.schedule_count, current.execution_count + 1, next_order)
+        }
+        "mark_destroyed" => {
+            if current.state == 2 {
+                return Err(phase15_destructor_scheduling_invalid(
+                    "destruction_after_move",
+                ));
+            }
+            if current.state == 3 {
+                return valid(
+                    4,
+                    current.schedule_count,
+                    current.execution_count,
+                    current.destruction_order,
+                );
+            }
+            if current.state == 4 {
+                return Err(phase15_destructor_scheduling_invalid(
+                    "destructor_scheduling_request_invalid",
+                ));
+            }
+            Err(phase15_destructor_scheduling_invalid(
+                "skipped_destruction",
+            ))
+        }
+        _ => Err(phase15_destructor_scheduling_invalid(
+            "destructor_scheduling_operation_unsupported",
+        )),
+    }
+}
+
+fn phase15_destructor_scheduling_states_for_table(
+    table: &Phase15RequestDestructorSchedulingTable,
+) -> Vec<Phase15DestructorSchedulingState> {
+    table
+        .resources
+        .iter()
+        .map(|resource| Phase15DestructorSchedulingState {
+            resource_id: resource.resource_id.clone(),
+            state: 0,
+            schedule_count: 0,
+            execution_count: 0,
+            destruction_order: 0,
+        })
+        .collect()
+}
+
+fn phase15_destructor_scheduling_state_index(
+    states: &[Phase15DestructorSchedulingState],
+    resource_id: &str,
+) -> Option<usize> {
+    states
+        .iter()
+        .position(|state| state.resource_id == resource_id)
+}
+
+fn phase15_destructor_scheduling_exactly_once_is_satisfied(
+    table: &Phase15RequestDestructorSchedulingTable,
+    states: &[Phase15DestructorSchedulingState],
+) -> bool {
+    if states.len() != table.resources.len() {
+        return false;
+    }
+    table
+        .resources
+        .iter()
+        .zip(states.iter())
+        .all(|(resource, state)| {
+            state.state == 4
+                && state.schedule_count == 1
+                && state.execution_count == 1
+                && state.destruction_order == resource.destruction_order
+        })
+}
+
+fn parse_phase15_request_destructor_scheduling_table(
+    cursor: &mut Phase10TextCursor<'_>,
+    request_target_triple: &str,
+) -> Result<Phase15RequestDestructorSchedulingTable, Box<dyn Error>> {
+    let stage = Phase10BackendRequestStage::RequestParse;
+    let kind = Phase10BackendRequestFailureKind::InvalidRequest;
+    let format = cursor
+        .take_field("destructor_scheduling_table_format", false, stage, kind)?
+        .to_string();
+    let target_id = cursor
+        .take_field("destructor_scheduling_target_id", true, stage, kind)?
+        .to_string();
+    let target_triple = cursor
+        .take_field("destructor_scheduling_target_triple", false, stage, kind)?
+        .to_string();
+
+    if target_id.is_empty() && target_triple == "legacy-empty" {
+        let resource_count = cursor.take_usize_field(
+            "destructor_scheduling_resource_count",
+            stage,
+            kind,
+        )?;
+        let operation_count = cursor.take_usize_field(
+            "destructor_scheduling_operation_count",
+            stage,
+            kind,
+        )?;
+        if format != PHASE15_DESTRUCTOR_SCHEDULING_TABLE_FORMAT_V1
+            || resource_count != 0
+            || operation_count != 0
+        {
+            return Err(phase10_backend_request_error(
+                Phase10BackendRequestStage::RequestValidation,
+                kind,
+                "destructor_scheduling_legacy_empty_invalid",
+            ));
+        }
+        return Ok(Phase15RequestDestructorSchedulingTable::legacy_empty(
+            request_target_triple,
+        ));
+    }
+
+    let schedule_authority = cursor
+        .take_field(
+            "destructor_scheduling_schedule_authority",
+            false,
+            stage,
+            kind,
+        )?
+        .to_string();
+    let duplicate_policy = cursor
+        .take_field("destructor_scheduling_duplicate_policy", false, stage, kind)?
+        .to_string();
+    let execution_policy = cursor
+        .take_field("destructor_scheduling_execution_policy", false, stage, kind)?
+        .to_string();
+    let move_policy = cursor
+        .take_field("destructor_scheduling_move_policy", false, stage, kind)?
+        .to_string();
+    let order_policy = cursor
+        .take_field("destructor_scheduling_order_policy", false, stage, kind)?
+        .to_string();
+    let async_destruction_policy = cursor
+        .take_field(
+            "destructor_scheduling_async_policy",
+            false,
+            stage,
+            kind,
+        )?
+        .to_string();
+    let finalizer_policy = cursor
+        .take_field(
+            "destructor_scheduling_finalizer_policy",
+            false,
+            stage,
+            kind,
+        )?
+        .to_string();
+    let gc_policy = cursor
+        .take_field("destructor_scheduling_gc_policy", false, stage, kind)?
+        .to_string();
+    let cancellation_policy = cursor
+        .take_field(
+            "destructor_scheduling_cancellation_policy",
+            false,
+            stage,
+            kind,
+        )?
+        .to_string();
+
+    let resource_count = cursor.take_usize_field(
+        "destructor_scheduling_resource_count",
+        stage,
+        kind,
+    )?;
+    let mut resources = Vec::with_capacity(resource_count);
+    for index in 0..resource_count {
+        let prefix = format!("destructor_resource_{index}");
+        resources.push(Phase15RequestScheduledResource {
+            resource_id: cursor
+                .take_field(&format!("{prefix}_id"), false, stage, kind)?
+                .to_string(),
+            resource_type_id: cursor
+                .take_field(&format!("{prefix}_type_id"), false, stage, kind)?
+                .to_string(),
+            destructor_id: cursor
+                .take_field(&format!("{prefix}_destructor_id"), false, stage, kind)?
+                .to_string(),
+            cleanup_reason: cursor
+                .take_field(&format!("{prefix}_cleanup_reason"), false, stage, kind)?
+                .to_string(),
+            execution_point: cursor
+                .take_field(&format!("{prefix}_execution_point"), false, stage, kind)?
+                .to_string(),
+            destruction_order: cursor.take_usize_field(
+                &format!("{prefix}_destruction_order"),
+                stage,
+                kind,
+            )?,
+            lifetime_region: cursor
+                .take_field(&format!("{prefix}_lifetime_region"), false, stage, kind)?
+                .to_string(),
+        });
+    }
+
+    let operation_count = cursor.take_usize_field(
+        "destructor_scheduling_operation_count",
+        stage,
+        kind,
+    )?;
+    let mut operations = Vec::with_capacity(operation_count);
+    for index in 0..operation_count {
+        let prefix = format!("destructor_operation_{index}");
+        let operation_id = cursor
+            .take_field(&format!("{prefix}_id"), false, stage, kind)?
+            .to_string();
+        let operation_name = cursor
+            .take_field(&format!("{prefix}_name"), false, stage, kind)?
+            .to_string();
+        let operation_target_id = cursor
+            .take_field(&format!("{prefix}_target_id"), false, stage, kind)?
+            .to_string();
+        let operation_kind = cursor
+            .take_field(&format!("{prefix}_kind"), false, stage, kind)?
+            .to_string();
+        let resource_id = cursor
+            .take_field(&format!("{prefix}_resource_id"), false, stage, kind)?
+            .to_string();
+        let destructor_id = cursor
+            .take_field(&format!("{prefix}_destructor_id"), false, stage, kind)?
+            .to_string();
+        let cleanup_reason = cursor
+            .take_field(&format!("{prefix}_cleanup_reason"), false, stage, kind)?
+            .to_string();
+        let execution_point = cursor
+            .take_field(&format!("{prefix}_execution_point"), false, stage, kind)?
+            .to_string();
+        let expect_success = cursor.take_usize_field(
+            &format!("{prefix}_expect_success"),
+            stage,
+            kind,
+        )?;
+        if expect_success > 1 {
+            return Err(phase10_backend_request_error(
+                stage,
+                kind,
+                "destructor_scheduling_expect_success_must_be_boolean",
+            ));
+        }
+        let expected_state = cursor
+            .take_field(&format!("{prefix}_expected_state"), false, stage, kind)?
+            .to_string();
+        operations.push(Phase15RequestDestructorSchedulingOperation {
+            operation_id,
+            operation_name,
+            target_id: operation_target_id,
+            kind: operation_kind,
+            resource_id,
+            destructor_id,
+            cleanup_reason,
+            execution_point,
+            expect_success: expect_success == 1,
+            expected_state,
+            expected_schedule_count: cursor.take_usize_field(
+                &format!("{prefix}_expected_schedule_count"),
+                stage,
+                kind,
+            )?,
+            expected_execution_count: cursor.take_usize_field(
+                &format!("{prefix}_expected_execution_count"),
+                stage,
+                kind,
+            )?,
+            expected_order: cursor.take_usize_field(
+                &format!("{prefix}_expected_order"),
+                stage,
+                kind,
+            )?,
+            expected_reason_code: cursor
+                .take_field(
+                    &format!("{prefix}_expected_reason_code"),
+                    false,
+                    stage,
+                    kind,
+                )?
+                .to_string(),
+        });
+    }
+
+    let table = Phase15RequestDestructorSchedulingTable {
+        format,
+        target_id,
+        target_triple,
+        schedule_authority,
+        duplicate_policy,
+        execution_policy,
+        move_policy,
+        order_policy,
+        async_destruction_policy,
+        finalizer_policy,
+        gc_policy,
+        cancellation_policy,
+        resources,
+        operations,
+    };
+    validate_phase15_request_destructor_scheduling_table(
+        &table,
+        request_target_triple,
+    )?;
+    Ok(table)
+}
+
+fn validate_phase15_request_destructor_scheduling_table(
+    table: &Phase15RequestDestructorSchedulingTable,
+    request_target_triple: &str,
+) -> Result<(), Box<dyn Error>> {
+    if table.is_legacy_empty() {
+        return Ok(());
+    }
+    if table.format != PHASE15_DESTRUCTOR_SCHEDULING_TABLE_FORMAT_V1 {
+        return Err(phase15_destructor_scheduling_invalid(
+            "destructor_scheduling_table_format_mismatch",
+        ));
+    }
+    if table.target_triple != request_target_triple {
+        return Err(phase15_destructor_scheduling_invalid(
+            "destructor_scheduling_target_mismatch",
+        ));
+    }
+    if table.schedule_authority != "compiler_owned_destructor_scheduling_no_backend_decision"
+        || table.duplicate_policy != "reject_two_live_schedules_for_one_resource"
+        || table.execution_policy != "execute_only_with_compiler_schedule"
+        || table.move_policy != "cancel_obsolete_schedule_after_ownership_transfer"
+        || table.order_policy != "compiler_owned_destruction_order"
+        || table.async_destruction_policy != "deferred_asynchronous_destruction"
+        || table.finalizer_policy != "deferred_finalizers"
+        || table.gc_policy != "deferred_garbage_collection"
+        || table.cancellation_policy != "deferred_concurrent_cancellation"
+    {
+        return Err(phase15_destructor_scheduling_invalid(
+            "destructor_scheduling_policy_mismatch",
+        ));
+    }
+    if table.resources.len() != 4 || table.operations.len() != 14 {
+        return Err(phase15_destructor_scheduling_invalid(
+            "destructor_scheduling_inventory_mismatch",
+        ));
+    }
+
+    let mut resource_ids = HashSet::new();
+    for resource in &table.resources {
+        if resource.resource_id.is_empty()
+            || resource.resource_type_id.is_empty()
+            || resource.destructor_id.is_empty()
+            || resource.cleanup_reason.is_empty()
+            || resource.execution_point.is_empty()
+            || resource.lifetime_region.is_empty()
+            || resource.destruction_order < 1
+            || resource.destruction_order > 4
+            || !resource_ids.insert(resource.resource_id.clone())
+        {
+            return Err(phase15_destructor_scheduling_invalid(
+                "destructor_scheduling_resource_identity_mismatch",
+            ));
+        }
+    }
+
+    let mut states = phase15_destructor_scheduling_states_for_table(table);
+    let mut next_order = 1;
+    let mut operation_ids = HashSet::new();
+    let mut operation_names = HashSet::new();
+    for operation in &table.operations {
+        if !phase15_destructor_scheduling_kind_is_valid(&operation.kind) {
+            return Err(phase15_destructor_scheduling_invalid(
+                "destructor_scheduling_operation_unsupported",
+            ));
+        }
+        if operation.target_id != table.target_id {
+            return Err(phase15_destructor_scheduling_invalid(
+                "destructor_scheduling_operation_target_mismatch",
+            ));
+        }
+        if operation.operation_id
+            != phase15_destructor_scheduling_operation_identity(
+                &operation.target_id,
+                &operation.operation_name,
+                &operation.kind,
+            )
+            || !operation_ids.insert(operation.operation_id.clone())
+            || !operation_names.insert(operation.operation_name.clone())
+        {
+            return Err(phase15_destructor_scheduling_invalid(
+                "destructor_scheduling_operation_identity_mismatch",
+            ));
+        }
+        if phase15_destructor_scheduling_state_code(&operation.expected_state).is_none()
+            || operation.expected_reason_code != "destructor_scheduling_valid"
+        {
+            return Err(phase15_destructor_scheduling_invalid(
+                "destructor_scheduling_operation_expectation_invalid",
+            ));
+        }
+        let _resource = table
+            .resources
+            .iter()
+            .find(|resource| resource.resource_id == operation.resource_id)
+            .ok_or_else(|| {
+                phase15_destructor_scheduling_invalid(
+                    "destructor_scheduling_resource_identity_mismatch",
+                )
+            })?;
+        let state_position = phase15_destructor_scheduling_state_index(
+            &states,
+            &operation.resource_id,
+        )
+        .ok_or_else(|| {
+            phase15_destructor_scheduling_invalid(
+                "destructor_scheduling_resource_identity_mismatch",
+            )
+        })?;
+        let evaluation = phase15_destructor_scheduling_evaluate(
+            table,
+            operation,
+            &states[state_position],
+            next_order,
+        )?;
+        let expected_state = phase15_destructor_scheduling_state_code(
+            &operation.expected_state,
+        )
+        .expect("validated above");
+        if evaluation.success != operation.expect_success
+            || evaluation.state != expected_state
+            || evaluation.schedule_count != operation.expected_schedule_count
+            || evaluation.execution_count != operation.expected_execution_count
+            || evaluation.destruction_order != operation.expected_order
+            || evaluation.reason_code != operation.expected_reason_code
+        {
+            if evaluation.destruction_order != operation.expected_order {
+                return Err(phase15_destructor_scheduling_invalid(
+                    "destruction_order_drift",
+                ));
+            }
+            if evaluation.state != expected_state {
+                return Err(phase15_destructor_scheduling_invalid(
+                    "destructor_scheduling_state_mismatch",
+                ));
+            }
+            if evaluation.schedule_count != operation.expected_schedule_count {
+                return Err(phase15_destructor_scheduling_invalid(
+                    "destructor_scheduling_schedule_count_mismatch",
+                ));
+            }
+            if evaluation.execution_count != operation.expected_execution_count {
+                return Err(phase15_destructor_scheduling_invalid(
+                    "destructor_scheduling_execution_count_mismatch",
+                ));
+            }
+            return Err(phase15_destructor_scheduling_invalid(
+                "destructor_scheduling_reason_mismatch",
+            ));
+        }
+        if operation.kind == "execute_destructor" {
+            next_order = next_order + 1;
+        }
+        states[state_position].state = evaluation.state;
+        states[state_position].schedule_count = evaluation.schedule_count;
+        states[state_position].execution_count = evaluation.execution_count;
+        states[state_position].destruction_order = evaluation.destruction_order;
+    }
+
+    // Every scheduled destructor must resolve to one resource ID, one
+    // destructor ID, one cleanup reason, one execution point, and one declared
+    // order; the worker must never substitute its own destructor identity.
+    for operation in &table.operations {
+        let resource = table
+            .resources
+            .iter()
+            .find(|resource| resource.resource_id == operation.resource_id)
+            .ok_or_else(|| {
+                phase15_destructor_scheduling_invalid(
+                    "destructor_scheduling_resource_identity_mismatch",
+                )
+            })?;
+        if operation.destructor_id != resource.destructor_id
+            || operation.cleanup_reason != resource.cleanup_reason
+            || operation.execution_point != resource.execution_point
+        {
+            return Err(phase15_destructor_scheduling_invalid(
+                "destructor_mismatch",
+            ));
+        }
+        if operation.kind == "execute_destructor"
+            || operation.kind == "mark_destroyed"
+        {
+            if operation.expected_order != resource.destruction_order {
+                return Err(phase15_destructor_scheduling_invalid(
+                    "destruction_order_drift",
+                ));
+            }
+        } else if operation.expected_order != 0 {
+            return Err(phase15_destructor_scheduling_invalid(
+                "destruction_order_drift",
+            ));
+        }
+    }
+
+    if !phase15_destructor_scheduling_exactly_once_is_satisfied(table, &states) {
+        return Err(phase15_destructor_scheduling_invalid(
+            "skipped_destruction",
+        ));
+    }
+    Ok(())
+}
+
+fn phase15_destructor_scheduling_witness_text(
+    request: &Phase10BackendRequest,
+) -> Result<String, Box<dyn Error>> {
+    let table = &request.destructor_scheduling_table;
+    validate_phase15_request_destructor_scheduling_table(
+        table,
+        &request.target_triple,
+    )?;
+    if table.is_legacy_empty() {
+        return Err(phase15_destructor_scheduling_invalid(
+            "destructor_scheduling_table_is_legacy_empty",
+        ));
+    }
+    let mut output = String::new();
+    output.push_str("destructor_scheduling_status: valid\n");
+    output.push_str(&format!("destructor_scheduling_target: {}\n", table.target_triple));
+    output.push_str(&format!("destructor_scheduling_target_id: {}\n", table.target_id));
+    output.push_str(&format!("destructor_scheduling_schedule_authority: {}\n", table.schedule_authority));
+    output.push_str(&format!("destructor_scheduling_duplicate_policy: {}\n", table.duplicate_policy));
+    output.push_str(&format!("destructor_scheduling_execution_policy: {}\n", table.execution_policy));
+    output.push_str(&format!("destructor_scheduling_move_policy: {}\n", table.move_policy));
+    output.push_str(&format!("destructor_scheduling_order_policy: {}\n", table.order_policy));
+    for resource in &table.resources {
+        output.push_str(&format!(
+            "destructor_resource: {} type={} destructor={} reason={} point={} order={}\n",
+            resource.resource_id,
+            resource.resource_type_id,
+            resource.destructor_id,
+            resource.cleanup_reason,
+            resource.execution_point,
+            resource.destruction_order,
+        ));
+    }
+    let mut states = phase15_destructor_scheduling_states_for_table(table);
+    let mut next_order = 1;
+    for operation in &table.operations {
+        let state_position = phase15_destructor_scheduling_state_index(
+            &states,
+            &operation.resource_id,
+        )
+        .ok_or_else(|| {
+            phase15_destructor_scheduling_invalid(
+                "destructor_scheduling_resource_identity_mismatch",
+            )
+        })?;
+        let evaluation = phase15_destructor_scheduling_evaluate(
+            table,
+            operation,
+            &states[state_position],
+            next_order,
+        )?;
+        output.push_str(&format!(
+            "destructor_operation: {} kind={} status={} resource={} state={} schedule_count={} execution_count={} order={} reason={}\n",
+            operation.operation_name,
+            operation.kind,
+            if evaluation.success { "success" } else { "failure" },
+            operation.resource_id,
+            phase15_destructor_scheduling_state_name(evaluation.state),
+            evaluation.schedule_count,
+            evaluation.execution_count,
+            evaluation.destruction_order,
+            evaluation.reason_code,
+        ));
+        if operation.kind == "execute_destructor" {
+            next_order = next_order + 1;
+        }
+        states[state_position].state = evaluation.state;
+        states[state_position].schedule_count = evaluation.schedule_count;
+        states[state_position].execution_count = evaluation.execution_count;
+        states[state_position].destruction_order = evaluation.destruction_order;
+    }
+    for state in &states {
+        output.push_str(&format!(
+            "destructor_exactly_once: {} status=exactly_once schedule_count={} execution_count={} order={}\n",
+            state.resource_id,
+            state.schedule_count,
+            state.execution_count,
+            state.destruction_order,
+        ));
+    }
+    Ok(output)
+}
+
+fn print_phase15_destructor_scheduling_witness(
+    request_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let request = phase14_load_primitive_layout_request(request_path)?;
+    print!("{}", phase15_destructor_scheduling_witness_text(&request)?);
+    Ok(())
+}
+
 
 #[derive(Debug)]
 struct Phase10BackendRequest {
@@ -8350,6 +9162,7 @@ struct Phase10BackendRequest {
     memory_access_table: Phase14RequestMemoryAccessTable,
     string_view_table: Phase14RequestStringViewTable,
     array_slice_table: Phase14RequestArraySliceTable,
+    destructor_scheduling_table: Phase15RequestDestructorSchedulingTable,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -8507,6 +9320,14 @@ fn parse_phase10_backend_request(
     } else {
         Phase14RequestArraySliceTable::legacy_empty(&target_triple)
     };
+    let destructor_scheduling_table = if cursor.has_remaining() {
+        parse_phase15_request_destructor_scheduling_table(
+            &mut cursor,
+            &target_triple,
+        )?
+    } else {
+        Phase15RequestDestructorSchedulingTable::legacy_empty(&target_triple)
+    };
     cursor.finish(stage, kind)?;
 
     if !output_path.is_absolute() {
@@ -8543,6 +9364,7 @@ fn parse_phase10_backend_request(
         memory_access_table,
         string_view_table,
         array_slice_table,
+        destructor_scheduling_table,
     })
 }
 
@@ -12811,6 +13633,15 @@ fn run() -> Result<(), Box<dyn Error>> {
                 return Err(usage_error().into());
             }
             print_phase14_array_slice_witness(Path::new(&request_path))
+        }
+        "phase15-destructor-scheduling-witness" => {
+            let Some(request_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            print_phase15_destructor_scheduling_witness(Path::new(&request_path))
         }
         "phase10-backend-request-compile" => {
             let Some(request_path) = args.next() else {

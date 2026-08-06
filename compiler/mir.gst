@@ -25,6 +25,7 @@ import "mir_stack_slot.gst" as stack_slot;
 import "mir_memory_access.gst" as memory_access;
 import "mir_string_view.gst" as string_view;
 import "mir_array_slice.gst" as array_slice;
+import "mir_destructor_scheduling.gst" as destructor_scheduling;
 
 type MirTypeLayoutReference[ctx] struct {
     type_id: str,
@@ -271,6 +272,38 @@ type MirArraySliceOperationReference[ctx] struct {
     length: int
 }
 
+type MirDestructorSchedulingOperationKind enum {
+    ScheduleDestructor,
+    CancelSchedule,
+    ExecuteDestructor,
+    MarkDestroyed
+}
+
+type MirScheduledResourceReference[ctx] struct {
+    resource_id: str,
+    resource_type_id: str,
+    destructor_id: str,
+    cleanup_reason: str,
+    execution_point: str,
+    destruction_order: int,
+    lifetime_region: str
+}
+
+type MirDestructorSchedulingOperationReference[ctx] struct {
+    operation_id: str,
+    operation_name: str,
+    target_id: str,
+    operation_kind: MirDestructorSchedulingOperationKind,
+    resource_id: str,
+    destructor_id: str,
+    cleanup_reason: str,
+    execution_point: str,
+    expected_state: str,
+    expected_schedule_count: int,
+    expected_execution_count: int,
+    expected_order: int
+}
+
 type MirProgram[ctx] struct {
     functions: Index[std.Vector[MirFunction[ctx], ctx], ctx],
     resource_metadata: Index[std.Vector[MirResourceMetadata[ctx], ctx], ctx],
@@ -290,7 +323,9 @@ type MirProgram[ctx] struct {
     array_layout_references: Index[std.Vector[MirArrayLayoutReference[ctx], ctx], ctx],
     array_value_references: Index[std.Vector[MirArrayValueReference[ctx], ctx], ctx],
     slice_references: Index[std.Vector[MirSliceReference[ctx], ctx], ctx],
-    array_slice_operation_references: Index[std.Vector[MirArraySliceOperationReference[ctx], ctx], ctx]
+    array_slice_operation_references: Index[std.Vector[MirArraySliceOperationReference[ctx], ctx], ctx],
+    destructor_scheduling_resource_references: Index[std.Vector[MirScheduledResourceReference[ctx], ctx], ctx],
+    destructor_scheduling_operation_references: Index[std.Vector[MirDestructorSchedulingOperationReference[ctx], ctx], ctx]
 }
 
 type MirFunction[ctx] struct {
@@ -342,6 +377,11 @@ type MirStmt[ctx] enum {
     },
     ArraySliceOperation {
         operation: Index[MirArraySliceOperationReference[ctx], ctx],
+        value: Index[MirValue[ctx], ctx],
+        span: token.Span
+    },
+    DestructorSchedulingOperation {
+        operation: Index[MirDestructorSchedulingOperationReference[ctx], ctx],
         value: Index[MirValue[ctx], ctx],
         span: token.Span
     }
@@ -401,6 +441,12 @@ type MirValue[ctx] enum {
     ArraySliceOperation {
         operands: Index[std.Vector[MirValue[ctx], ctx], ctx],
         operation: Index[MirArraySliceOperationReference[ctx], ctx],
+        value_type: str,
+        span: token.Span
+    },
+    DestructorSchedulingOperation {
+        operands: Index[std.Vector[MirValue[ctx], ctx], ctx],
+        operation: Index[MirDestructorSchedulingOperationReference[ctx], ctx],
         value_type: str,
         span: token.Span
     }
@@ -698,6 +744,20 @@ func mir_empty_array_slice_operation_reference_vector(ctx: &Arena) Index[std.Vec
     return references_idx;
 }
 
+func mir_empty_destructor_scheduling_resource_reference_vector(ctx: &Arena) Index[std.Vector[MirScheduledResourceReference[ctx], ctx], ctx] {
+    mut references: std.Vector[MirScheduledResourceReference[ctx], ctx] := std.VectorNew(ctx);
+    mut references_idx: Index[std.Vector[MirScheduledResourceReference[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(references_idx, references);
+    return references_idx;
+}
+
+func mir_empty_destructor_scheduling_operation_reference_vector(ctx: &Arena) Index[std.Vector[MirDestructorSchedulingOperationReference[ctx], ctx], ctx] {
+    mut references: std.Vector[MirDestructorSchedulingOperationReference[ctx], ctx] := std.VectorNew(ctx);
+    mut references_idx: Index[std.Vector[MirDestructorSchedulingOperationReference[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(references_idx, references);
+    return references_idx;
+}
+
 func mir_value_vector_with_value(values_idx: Index[std.Vector[MirValue[ctx], ctx], ctx], value: MirValue[ctx], ctx: &Arena) Index[std.Vector[MirValue[ctx], ctx], ctx] {
     mut values: std.Vector[MirValue[ctx], ctx] := ctx[values_idx];
     values.Push(value);
@@ -738,6 +798,8 @@ func mir_make_program(ctx: &Arena) MirProgram[ctx] {
     program.array_value_references = mir_empty_array_value_reference_vector(ctx);
     program.slice_references = mir_empty_slice_reference_vector(ctx);
     program.array_slice_operation_references = mir_empty_array_slice_operation_reference_vector(ctx);
+    program.destructor_scheduling_resource_references = mir_empty_destructor_scheduling_resource_reference_vector(ctx);
+    program.destructor_scheduling_operation_references = mir_empty_destructor_scheduling_operation_reference_vector(ctx);
     return program;
 }
 
@@ -1502,6 +1564,121 @@ func mir_program_array_slice_references_are_valid(program: MirProgram[ctx], tabl
            query.operation.index != reference.index ||
            query.operation.start != reference.start ||
            query.operation.length != reference.length
+        {
+            return 0;
+        }
+        operation_index = operation_index + 1;
+    }
+    return 1;
+}
+
+func mir_destructor_scheduling_operation_kind_from_name(kind: str) MirDestructorSchedulingOperationKind {
+    mut result: MirDestructorSchedulingOperationKind;
+    unsafe {
+        result.tag = 0;
+        if std.str_eq(kind, "cancel_schedule") == 1 { result.tag = 1; }
+        if std.str_eq(kind, "execute_destructor") == 1 { result.tag = 2; }
+        if std.str_eq(kind, "mark_destroyed") == 1 { result.tag = 3; }
+    }
+    return result;
+}
+
+func mir_debug_destructor_scheduling_operation_kind(kind: MirDestructorSchedulingOperationKind) str {
+    unsafe {
+        if kind.tag == 0 { return "schedule_destructor"; }
+        if kind.tag == 1 { return "cancel_schedule"; }
+        if kind.tag == 2 { return "execute_destructor"; }
+        if kind.tag == 3 { return "mark_destroyed"; }
+    }
+    return "destructor_scheduling_unknown";
+}
+
+func mir_make_destructor_scheduling_resource_reference(value: destructor_scheduling.MirScheduledResource[ctx], ctx: &Arena) MirScheduledResourceReference[ctx] {
+    mut reference: MirScheduledResourceReference[ctx];
+    reference.resource_id = std.Clone(ctx, value.resource_id);
+    reference.resource_type_id = std.Clone(ctx, value.resource_type_id);
+    reference.destructor_id = std.Clone(ctx, value.destructor_id);
+    reference.cleanup_reason = std.Clone(ctx, value.cleanup_reason);
+    reference.execution_point = std.Clone(ctx, value.execution_point);
+    reference.destruction_order = value.destruction_order;
+    reference.lifetime_region = std.Clone(ctx, value.lifetime_region);
+    return reference;
+}
+
+func mir_make_destructor_scheduling_operation_reference(value: destructor_scheduling.MirDestructorSchedulingOperation[ctx], ctx: &Arena) MirDestructorSchedulingOperationReference[ctx] {
+    mut reference: MirDestructorSchedulingOperationReference[ctx];
+    reference.operation_id = std.Clone(ctx, value.operation_id);
+    reference.operation_name = std.Clone(ctx, value.operation_name);
+    reference.target_id = std.Clone(ctx, value.target_id);
+    reference.operation_kind = mir_destructor_scheduling_operation_kind_from_name(value.kind);
+    reference.resource_id = std.Clone(ctx, value.resource_id);
+    reference.destructor_id = std.Clone(ctx, value.destructor_id);
+    reference.cleanup_reason = std.Clone(ctx, value.cleanup_reason);
+    reference.execution_point = std.Clone(ctx, value.execution_point);
+    reference.expected_state = std.Clone(ctx, value.expected_state);
+    reference.expected_schedule_count = value.expected_schedule_count;
+    reference.expected_execution_count = value.expected_execution_count;
+    reference.expected_order = value.expected_order;
+    return reference;
+}
+
+func mir_program_with_destructor_scheduling_resource_reference(program: MirProgram[ctx], reference: MirScheduledResourceReference[ctx], ctx: &Arena) MirProgram[ctx] {
+    mut updated := program;
+    mut references: std.Vector[MirScheduledResourceReference[ctx], ctx] := ctx[updated.destructor_scheduling_resource_references];
+    references.Push(reference);
+    ctx.Set(updated.destructor_scheduling_resource_references, references);
+    return updated;
+}
+
+func mir_program_with_destructor_scheduling_operation_reference(program: MirProgram[ctx], reference: MirDestructorSchedulingOperationReference[ctx], ctx: &Arena) MirProgram[ctx] {
+    mut updated := program;
+    mut references: std.Vector[MirDestructorSchedulingOperationReference[ctx], ctx] := ctx[updated.destructor_scheduling_operation_references];
+    references.Push(reference);
+    ctx.Set(updated.destructor_scheduling_operation_references, references);
+    return updated;
+}
+
+func mir_program_destructor_scheduling_references_are_valid(program: MirProgram[ctx], table: destructor_scheduling.MirDestructorSchedulingTable[ctx], layout_table: layout.MirLayoutTable[ctx], ctx: &Arena) int {
+    if destructor_scheduling.mir_destructor_scheduling_table_is_valid(table, layout_table, ctx) == 0 ||
+       destructor_scheduling.mir_destructor_scheduling_table_is_legacy_empty(table, ctx) == 1
+    {
+        return 0;
+    }
+    mut resource_references: std.Vector[MirScheduledResourceReference[ctx], ctx] := ctx[program.destructor_scheduling_resource_references];
+    mut resource_index := 0;
+    while resource_index < len(resource_references) {
+        mut reference := resource_references[resource_index];
+        mut query := destructor_scheduling.mir_destructor_scheduling_resource(table, reference.resource_id, ctx);
+        if query.found == 0 ||
+           std.str_eq(query.resource.resource_type_id, reference.resource_type_id) == 0 ||
+           std.str_eq(query.resource.destructor_id, reference.destructor_id) == 0 ||
+           std.str_eq(query.resource.cleanup_reason, reference.cleanup_reason) == 0 ||
+           std.str_eq(query.resource.execution_point, reference.execution_point) == 0 ||
+           query.resource.destruction_order != reference.destruction_order ||
+           std.str_eq(query.resource.lifetime_region, reference.lifetime_region) == 0
+        {
+            return 0;
+        }
+        resource_index = resource_index + 1;
+    }
+
+    mut operation_references: std.Vector[MirDestructorSchedulingOperationReference[ctx], ctx] := ctx[program.destructor_scheduling_operation_references];
+    mut operation_index := 0;
+    while operation_index < len(operation_references) {
+        mut reference := operation_references[operation_index];
+        mut query := destructor_scheduling.mir_destructor_scheduling_operation(table, reference.operation_name, ctx);
+        if query.found == 0 ||
+           std.str_eq(query.operation.operation_id, reference.operation_id) == 0 ||
+           std.str_eq(query.operation.target_id, reference.target_id) == 0 ||
+           std.str_eq(query.operation.kind, mir_debug_destructor_scheduling_operation_kind(reference.operation_kind)) == 0 ||
+           std.str_eq(query.operation.resource_id, reference.resource_id) == 0 ||
+           std.str_eq(query.operation.destructor_id, reference.destructor_id) == 0 ||
+           std.str_eq(query.operation.cleanup_reason, reference.cleanup_reason) == 0 ||
+           std.str_eq(query.operation.execution_point, reference.execution_point) == 0 ||
+           std.str_eq(query.operation.expected_state, reference.expected_state) == 0 ||
+           query.operation.expected_schedule_count != reference.expected_schedule_count ||
+           query.operation.expected_execution_count != reference.expected_execution_count ||
+           query.operation.expected_order != reference.expected_order
         {
             return 0;
         }
@@ -2363,6 +2540,20 @@ func mir_make_value_array_slice_operation(operands: Index[std.Vector[MirValue[ct
         value.ArraySliceOperation.operation = operation_reference_idx;
         value.ArraySliceOperation.value_type = std.Clone(ctx, value_type);
         value.ArraySliceOperation.span = span;
+    }
+    return value;
+}
+
+func mir_make_value_destructor_scheduling_operation(operands: Index[std.Vector[MirValue[ctx], ctx], ctx], operation_reference: MirDestructorSchedulingOperationReference[ctx], value_type: str, span: token.Span, ctx: &Arena) MirValue[ctx] {
+    mut operation_reference_idx: Index[MirDestructorSchedulingOperationReference[ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(operation_reference_idx, operation_reference);
+    mut value: MirValue[ctx];
+    unsafe {
+        value.tag = 10; // DestructorSchedulingOperation
+        value.DestructorSchedulingOperation.operands = operands;
+        value.DestructorSchedulingOperation.operation = operation_reference_idx;
+        value.DestructorSchedulingOperation.value_type = std.Clone(ctx, value_type);
+        value.DestructorSchedulingOperation.span = span;
     }
     return value;
 }

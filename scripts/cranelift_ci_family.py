@@ -96,6 +96,12 @@ RUNNERS = (
         "PHASE14_ARRAY_SLICE_SKIP_DYNAMIC",
         None,
     ),
+    (
+        "destructor-scheduling",
+        "guard-cranelift-phase15-destructor-scheduling-parity",
+        "PHASE15_DESTRUCTOR_SCHEDULING_SKIP_DYNAMIC",
+        None,
+    ),
 )
 RUNNER_BY_FAMILY = {
     family: {
@@ -162,17 +168,32 @@ def migrated_phase14_rows(registry):
     ]
 
 
+def migrated_phase15_rows(registry):
+    return [
+        entry
+        for entry in registry["entries"]
+        if entry.get("origin_phase") == "phase15"
+        and entry.get("status") == "migrated"
+        and entry.get("route_owner") == "generic_canonical_mir"
+    ]
+
+
 def differential_registry_rows(registry):
     return (
         phase11_rows(registry)
         + migrated_phase13_rows(registry)
         + migrated_phase14_rows(registry)
+        + migrated_phase15_rows(registry)
     )
 
 
 def active_family_set(registry):
     families = set()
-    for entry in phase11_rows(registry) + migrated_phase14_rows(registry):
+    for entry in (
+        phase11_rows(registry)
+        + migrated_phase14_rows(registry)
+        + migrated_phase15_rows(registry)
+    ):
         family = entry.get("ci_family")
         require(
             isinstance(family, str) and family,

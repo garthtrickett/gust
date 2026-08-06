@@ -785,6 +785,26 @@ PHASE14_ARRAY_SLICE_OPERATION_KINDS = (
     "array_init", "element_address", "element_load", "element_store",
     "array_to_slice", "slice_length", "bounded_index", "subslice",
 )
+PHASE15_DESTRUCTOR_SCHEDULING_VERSION = (
+    "phase15_destructor_scheduling_and_exactly_once_destruction_v1"
+)
+PHASE15_DESTRUCTOR_SCHEDULING_STATUS = "ready_for_patch15_8"
+PHASE15_DESTRUCTOR_SCHEDULING_TABLE_FORMAT = (
+    "gust.compiler_destructor_scheduling_table.v1"
+)
+PHASE15_DESTRUCTOR_SCHEDULING_MIGRATED_IDS = ("p15_destructor_scheduling",)
+PHASE15_DESTRUCTOR_SCHEDULING_PLANNING_CATEGORY = "destructor_scheduling"
+PHASE15_DESTRUCTOR_SCHEDULING_CI_FAMILY = "destructor-scheduling"
+PHASE15_DESTRUCTOR_SCHEDULING_OPERATION_KINDS = (
+    "schedule_destructor", "cancel_schedule", "execute_destructor",
+    "mark_destroyed",
+)
+PHASE15_DESTRUCTOR_SCHEDULING_NEGATIVE_CLASSES = (
+    "duplicate_schedule", "execute_without_schedule",
+    "schedule_after_destruction", "destructor_mismatch",
+    "skipped_destruction", "destruction_after_move",
+    "destruction_order_drift",
+)
 PHASE14_STRING_VIEW_LAYOUT_FIELDS = ("data_pointer", "byte_length")
 PHASE14_STRING_VIEW_OPERATION_KINDS = (
     "literal_create", "view_create", "length", "is_empty", "byte_at",
@@ -2321,6 +2341,7 @@ def validate():
     phase11 = []
     phase13 = []
     phase14 = []
+    phase15 = []
     for index, entry in enumerate(entries):
         context = f"entries[{index}]"
         require(isinstance(entry, dict), f"{context} must be an object")
@@ -2328,6 +2349,8 @@ def validate():
         if entry.get("origin_phase") == "phase13":
             expected_fields.update(PHASE13_CAPABILITY_FIELDS)
         elif entry.get("origin_phase") == "phase14":
+            expected_fields.update(PHASE14_ENTRY_FIELDS)
+        elif entry.get("origin_phase") == "phase15":
             expected_fields.update(PHASE14_ENTRY_FIELDS)
         require(set(entry) == expected_fields, f"{context} fields drifted")
         entry_id = text(entry["id"], f"{context}.id")
@@ -2795,6 +2818,44 @@ def validate():
                     f"{entry_id}: Patch 14.3 boundary evidence drifted",
                 )
             phase14.append(entry)
+        elif entry["origin_phase"] == "phase15":
+            evidence = entry["evidence"]
+            require(
+                closure == PHASE15_DESTRUCTOR_SCHEDULING_VERSION,
+                f"{entry_id}: destructor-scheduling checkpoint version drifted",
+            )
+            require(
+                status == "migrated"
+                and entry["route_owner"] == "generic_canonical_mir",
+                f"{entry_id}: selected destructor-scheduling row must be migrated through canonical MIR",
+            )
+            require(reason == destination == "none_migrated",
+                    f"{entry_id}: migrated destructor-scheduling row has stale deferral fields")
+            require(entry["current_failure_stage"] == "none_supported",
+                    f"{entry_id}: migrated destructor-scheduling row has a failure stage")
+            fixture(entry["source_fixture"], f"{entry_id}.source_fixture")
+            fixture(entry["canonical_mir_fixture"],
+                    f"{entry_id}.canonical_mir_fixture")
+            require(
+                entry["differential_case_id"]
+                == f"phase15_registry_differential:{entry_id}",
+                f"{entry_id}: destructor-scheduling differential identity drifted",
+            )
+            require(
+                evidence.get("behavior_policy")
+                == "compiler_owned_destructor_scheduling_and_exactly_once_destruction_migrated_through_canonical_MIR_and_native_request_transport"
+                and evidence.get("phase15_7_contract")
+                == PHASE15_DESTRUCTOR_SCHEDULING_VERSION
+                and evidence.get("selected_operation_kinds")
+                == list(PHASE15_DESTRUCTOR_SCHEDULING_OPERATION_KINDS),
+                f"{entry_id}: destructor-scheduling evidence drifted",
+            )
+            require(
+                entry["target_applicability"]
+                == "all_declared_host_targets_from_phase14_target_authority",
+                f"{entry_id}: destructor-scheduling target applicability drifted",
+            )
+            phase15.append(entry)
         else:
             raise Error(f"{entry_id}: unsupported origin phase {entry['origin_phase']}")
 
@@ -2865,9 +2926,28 @@ def validate():
         else:
             raise Error(f"{entry['id']}: invalid Phase 14 parent {parent}")
 
+    phase15_parent_ids = set()
+    for entry in phase15:
+        parent = entry["parent"]
+        if parent.startswith("phase15_category:"):
+            category = parent.split(":", 1)[1]
+            require(
+                category in planning_categories
+                and category == PHASE15_DESTRUCTOR_SCHEDULING_PLANNING_CATEGORY,
+                f"{entry['id']}: unknown Phase 15 category {category}",
+            )
+            phase15_parent_ids.add(category)
+        else:
+            raise Error(f"{entry['id']}: invalid Phase 15 parent {parent}")
+    require(
+        phase15_parent_ids == {PHASE15_DESTRUCTOR_SCHEDULING_PLANNING_CATEGORY},
+        "Phase 15 opening categories drifted",
+    )
+
     require(phase11, "registry must contain Phase 11 rows")
     require(phase13, "registry must contain Phase 13 rows")
     require(phase14, "registry must contain Phase 14 rows")
+    require(phase15, "registry must contain Phase 15 rows")
     active_ci_families = {entry["ci_family"] for entry in phase11}
     require(active_ci_families, "Phase 11 rows must define active CI families")
     for entry in phase13:
@@ -2883,6 +2963,14 @@ def validate():
     require(
         phase14_families == list(PHASE14_CI_FAMILIES),
         "Phase 14 opening CI-family projection drifted",
+    )
+    phase15_families = []
+    for entry in phase15:
+        if entry["ci_family"] not in phase15_families:
+            phase15_families.append(entry["ci_family"])
+    require(
+        phase15_families == [PHASE15_DESTRUCTOR_SCHEDULING_CI_FAMILY],
+        "Phase 15 opening CI-family projection drifted",
     )
 
     phase13_by_id = {entry["id"]: entry for entry in phase13}
@@ -4521,6 +4609,147 @@ def verify_phase14_string_views(registry):
                               if entry["status"] == "candidate_deferred"),
         "primary_target": contract["primary_level2_target"],
         "family": contract["focused_ci_family"],
+    }
+
+def verify_phase15_destructor_scheduling(registry):
+    rows = {entry["id"]: entry for entry in phase_entries(registry, "phase15")}
+    for entry_id in PHASE15_DESTRUCTOR_SCHEDULING_MIGRATED_IDS:
+        entry = rows[entry_id]
+        require(
+            entry["status"] == "migrated"
+            and entry["route_owner"] == "generic_canonical_mir"
+            and entry["closure_version"] == PHASE15_DESTRUCTOR_SCHEDULING_VERSION,
+            f"{entry_id}: destructor-scheduling row is not migrated",
+        )
+        require(
+            entry["ci_family"] == PHASE15_DESTRUCTOR_SCHEDULING_CI_FAMILY,
+            f"{entry_id}: destructor-scheduling CI ownership drifted",
+        )
+
+    sources = {
+        "authority": ROOT / "compiler/mir_destructor_scheduling.gst",
+        "mir": ROOT / "compiler/mir.gst",
+        "request": ROOT / "compiler/mir_native_backend_request.gst",
+        "mir_to_c": ROOT / "compiler/mir_destructor_scheduling_mir_to_c.gst",
+        "diagnostics": ROOT / "compiler/mir_destructor_scheduling_diagnostics.gst",
+        "worker": ROOT / "compiler/experiments/cranelift/src/main.rs",
+        "smoke": ROOT / "compiler/mir_destructor_scheduling_smoke_test_entry.gst",
+        "differential": ROOT / "scripts/phase15_destructor_scheduling_differential.sh",
+        "positive": ROOT / "compiler/phase15_destructor_scheduling_source.gst",
+        "composition": ROOT / "compiler/phase15_destructor_scheduling_composition_source.gst",
+        "fixture": ROOT / "compiler/fixtures/native_backend_phase15_destructor_scheduling_ingestion.mir",
+        "malformed": ROOT / "compiler/fixtures/native_backend_phase15_destructor_scheduling_malformed.mir",
+        "review": ROOT / "compiler/CRANELIFT_PHASE15_DESTRUCTOR_SCHEDULING.md",
+    }
+    negative_paths = {
+        "duplicate_schedule": "p15_duplicate_schedule_source.gst",
+        "execute_without_schedule": "p15_execute_without_schedule_source.gst",
+        "schedule_after_destruction": "p15_schedule_after_destruction_source.gst",
+        "destructor_mismatch": "p15_destructor_mismatch_source.gst",
+        "skipped_destruction": "p15_skipped_destruction_source.gst",
+        "destruction_after_move": "p15_destruction_after_move_source.gst",
+        "destruction_order_drift": "p15_destruction_order_drift_source.gst",
+    }
+    for name, filename in negative_paths.items():
+        sources[f"negative_{name}"] = ROOT / "compiler" / filename
+    for owner, path in sources.items():
+        require(path.is_file() and not path.is_symlink(),
+                f"missing regular Phase 15 destructor-scheduling {owner} source: {path.relative_to(ROOT)}")
+
+    authority_source = sources["authority"].read_text(encoding="utf-8")
+    for token in (
+        "type MirScheduledResource[ctx] struct",
+        "type MirDestructorSchedulingOperation[ctx] struct",
+        "type MirDestructorSchedulingTable[ctx] struct",
+        "func mir_destructor_scheduling_table_for_layout(",
+        "func mir_destructor_scheduling_table_is_valid(",
+        "func mir_serialize_destructor_scheduling_table_for_request(",
+        "func mir_destructor_scheduling_witness(",
+        "compiler_owned_destructor_scheduling_no_backend_decision",
+    ):
+        require(token in authority_source,
+                f"destructor-scheduling authority is missing: {token}")
+    for kind in PHASE15_DESTRUCTOR_SCHEDULING_OPERATION_KINDS:
+        require(kind in authority_source,
+                f"destructor-scheduling authority is missing operation kind {kind}")
+    for reason in PHASE15_DESTRUCTOR_SCHEDULING_NEGATIVE_CLASSES:
+        require(reason in authority_source,
+                f"destructor-scheduling authority is missing rejection {reason}")
+
+    mir_source = sources["mir"].read_text(encoding="utf-8")
+    require(
+        "type MirDestructorSchedulingOperationReference" in mir_source
+        and "destructor_scheduling_operation_references" in mir_source
+        and "mir_program_destructor_scheduling_references_are_valid" in mir_source,
+        "canonical MIR does not preserve destructor scheduling identity",
+    )
+    request_source = sources["request"].read_text(encoding="utf-8")
+    require(
+        'import "mir_destructor_scheduling.gst" as destructor_scheduling;' in request_source
+        and "destructor_scheduling_table: destructor_scheduling.MirDestructorSchedulingTable[ctx]" in request_source
+        and "mir_serialize_destructor_scheduling_table_for_request" in request_source,
+        "native requests do not serialize the compiler-selected destructor scheduling table",
+    )
+    mir_to_c_source = sources["mir_to_c"].read_text(encoding="utf-8")
+    for token in (
+        "mir_destructor_scheduling_c_source",
+        "operation_failure_reason",
+        "apply_operation",
+        "declared_orders",
+    ):
+        require(token in mir_to_c_source,
+                f"MIR-to-C destructor-scheduling witness is missing: {token}")
+
+    diagnostic_source = sources["diagnostics"].read_text(encoding="utf-8")
+    for token in (
+        "gust_destructor_scheduling_diagnostic:",
+        "taxonomy=gust.destructor_scheduling.diagnostic.v1",
+        "reason_code=", "source=", "line=", "column=",
+    ):
+        require(token in diagnostic_source,
+                f"destructor-scheduling diagnostics are missing: {token}")
+
+    worker_source = sources["worker"].read_text(encoding="utf-8")
+    for token in (
+        "struct Phase15RequestDestructorSchedulingTable",
+        "fn parse_phase15_request_destructor_scheduling_table(",
+        "fn validate_phase15_request_destructor_scheduling_table(",
+        "fn phase15_destructor_scheduling_witness_text(",
+        "phase15-destructor-scheduling-witness",
+    ):
+        require(token in worker_source,
+                f"Cranelift destructor-scheduling consumption is missing: {token}")
+    require(
+        "compiler_owned_destructor_scheduling_no_backend_decision" in worker_source,
+        "Cranelift worker must consume the compiler-owned scheduling authority",
+    )
+    require(
+        "destructor_scheduling_exactly_once" in worker_source
+        and "destructor_scheduling_status" in worker_source,
+        "Cranelift worker must replay the exactly-once semantic witness",
+    )
+
+    differential_source = sources["differential"].read_text(encoding="utf-8")
+    for token in (
+        "GUST_PHASE15_DESTRUCTOR_SCHEDULING_POISON_MARKER", "sentinel",
+        "phase15-destructor-scheduling-witness",
+        "Cranelift destructor scheduling witness differs",
+        "MIR-to-C destructor scheduling witness differs",
+    ):
+        require(token in differential_source,
+                f"destructor-scheduling differential evidence is missing: {token}")
+
+    return {
+        "version": PHASE15_DESTRUCTOR_SCHEDULING_VERSION,
+        "status": PHASE15_DESTRUCTOR_SCHEDULING_STATUS,
+        "target_count": len(registry["phase14_primitive_layout"]["declared_targets"]),
+        "resource_count": 4,
+        "operation_count": 14,
+        "operation_kind_count": len(PHASE15_DESTRUCTOR_SCHEDULING_OPERATION_KINDS),
+        "negative_class_count": len(PHASE15_DESTRUCTOR_SCHEDULING_NEGATIVE_CLASSES),
+        "migrated_count": len(PHASE15_DESTRUCTOR_SCHEDULING_MIGRATED_IDS),
+        "primary_target": registry["phase14_primitive_layout"]["primary_level2_target"],
+        "family": PHASE15_DESTRUCTOR_SCHEDULING_CI_FAMILY,
     }
 
 def verify_phase13_opening_rebase(registry):
@@ -7794,6 +8023,7 @@ def main():
             "verify-phase14-stack-slots",
             "verify-phase14-memory-accesses",
             "verify-phase14-string-views",
+            "verify-phase15-destructor-scheduling",
             "phase14-primitive-targets",
             "phase14-conversion-targets",
             "phase14-pointer-targets",
@@ -7801,6 +8031,7 @@ def main():
             "phase14-memory-access-targets",
             "phase14-string-view-targets",
             "phase14-array-slice-targets",
+            "phase15-destructor-scheduling-targets",
             "phase14-primitive-primary-target",
             "phase14-conversion-primary-target",
             "phase14-pointer-primary-target",
@@ -7808,6 +8039,7 @@ def main():
             "phase14-memory-access-primary-target",
             "phase14-string-view-primary-target",
             "phase14-array-slice-primary-target",
+            "phase15-destructor-scheduling-primary-target",
             "project",
             "check-phase13-projection",
             "check-phase14-projection",
@@ -7876,6 +8108,8 @@ def main():
             verify_phase14_memory_accesses(registry)
         elif command == "verify-phase14-string-views":
             verify_phase14_string_views(registry)
+        elif command == "verify-phase15-destructor-scheduling":
+            verify_phase15_destructor_scheduling(registry)
         elif command in {
             "phase14-primitive-targets",
             "phase14-conversion-targets",
@@ -7884,6 +8118,7 @@ def main():
             "phase14-memory-access-targets",
             "phase14-string-view-targets",
             "phase14-array-slice-targets",
+            "phase15-destructor-scheduling-targets",
         }:
             contract = validate_phase14_primitive_layout_structure(registry)
             print("\n".join(
@@ -7898,6 +8133,7 @@ def main():
             "phase14-memory-access-primary-target",
             "phase14-string-view-primary-target",
             "phase14-array-slice-primary-target",
+            "phase15-destructor-scheduling-primary-target",
         }:
             contract = validate_phase14_primitive_layout_structure(registry)
             print(contract["primary_level2_target"])
@@ -7993,6 +8229,9 @@ def main():
     phase14_stack_slot_contract = verify_phase14_stack_slots(registry)
     phase14_memory_access_contract = verify_phase14_memory_accesses(registry)
     phase14_string_view_contract = verify_phase14_string_views(registry)
+    phase15_destructor_scheduling_contract = (
+        verify_phase15_destructor_scheduling(registry)
+    )
     phase13_statuses = phase13_totals["status_counts"]
     phase13_parents = phase13_totals["parent_kinds"]
     messages = {
@@ -8175,6 +8414,15 @@ def main():
             f"{phase14_string_view_contract['operation_count']} operations per target across "
             f"{phase14_string_view_contract['target_count']} declared targets; "
             f"{phase14_string_view_contract['deferred_count']} rows remain deferred."
+        ),
+        "verify-phase15-destructor-scheduling": (
+            "✅ Phase 15 destructor scheduling and exactly-once destruction "
+            "contract passed: "
+            f"{phase15_destructor_scheduling_contract['migrated_count']} migrated row, "
+            f"{phase15_destructor_scheduling_contract['resource_count']} resources and "
+            f"{phase15_destructor_scheduling_contract['operation_count']} operations per target across "
+            f"{phase15_destructor_scheduling_contract['target_count']} declared targets, "
+            f"{phase15_destructor_scheduling_contract['negative_class_count']} negative classes."
         ),
         "verify-phase14-opening-contract": (
             "✅ Phase 14 opening contract passed: "
