@@ -384,8 +384,8 @@ func mir_resource_move_form_name(source: MirResourceCarrierKind, destination: Mi
         if source.tag == 4 && destination.tag == 0 { return "aggregate_field_to_local"; }
         if source.tag == 0 && destination.tag == 1 { return "stack_slot_transport"; }
         if source.tag == 1 && destination.tag == 0 { return "stack_slot_transport"; }
-        if source.tag == 2 || destination.tag == 2 { return "branch_edge_move"; }
         if source.tag == 3 || destination.tag == 3 { return "selected_loop_carried_move"; }
+        if source.tag == 2 || destination.tag == 2 { return "branch_edge_move"; }
     }
     return "unsupported_move_form";
 }

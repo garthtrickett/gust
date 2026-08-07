@@ -785,11 +785,11 @@ fn move_form_name(source: &str, destination: &str) -> &'static str {
         ("local", "aggregate_field") => "local_to_aggregate_field",
         ("aggregate_field", "local") => "aggregate_field_to_local",
         ("local", "stack_slot") | ("stack_slot", "local") => "stack_slot_transport",
-        _ if source == "branch_argument" || destination == "branch_argument" => {
-            "branch_edge_move"
-        }
         _ if source == "loop_carry" || destination == "loop_carry" => {
             "selected_loop_carried_move"
+        }
+        _ if source == "branch_argument" || destination == "branch_argument" => {
+            "branch_edge_move"
         }
         _ => "unsupported_move_form",
     }
