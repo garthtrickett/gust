@@ -285,17 +285,19 @@ printf 'phase15-move-state-output-sentinel\n' >"$protected_output"
 cp "$protected_output" "$protected_output.expected"
 rm -f "$poison_marker" "$protected_output.phase10.bundle" "$protected_output.phase10.request"
 phase15_move_state_stage="verify source-level use-after-move rejection before backend driver discovery"
-set +e
-GUST_TEST_MIR_TO_C_UNAVAILABLE=1 \
-GUST_PHASE15_MOVE_POISON_MARKER="$poison_marker" \
-GUST_NATIVE_BACKEND_DRIVER="$poison_driver_abs" \
-  ./gust --backend cranelift \
-    -o "$protected_output" \
-    tests/test_handoff_use_after_move_rejected.gst \
-    >"$build_dir/compiler.stdout" \
-    2>"$build_dir/compiler.stderr"
-compiler_status="$?"
-set -e
+if GUST_TEST_MIR_TO_C_UNAVAILABLE=1 \
+   GUST_PHASE15_MOVE_POISON_MARKER="$poison_marker" \
+   GUST_NATIVE_BACKEND_DRIVER="$poison_driver_abs" \
+     ./gust --backend cranelift \
+       -o "$protected_output" \
+       tests/test_handoff_use_after_move_rejected.gst \
+       >"$build_dir/compiler.stdout" \
+       2>"$build_dir/compiler.stderr"
+then
+  compiler_status=0
+else
+  compiler_status="$?"
+fi
 if [ "$compiler_status" = "0" ]; then
   echo "Phase 15.3 source use-after-move unexpectedly compiled." >&2
   exit 1
