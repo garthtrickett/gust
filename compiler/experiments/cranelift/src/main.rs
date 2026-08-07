@@ -1,3 +1,4 @@
+mod destructor_scheduling;
 mod early_return_cleanup;
 mod resource_mir;
 mod scope_exit_cleanup;
@@ -16323,6 +16324,19 @@ fn run() -> Result<(), Box<dyn Error>> {
     };
 
     match command.as_str() {
+        "phase15-destructor-scheduling-witness" => {
+            let Some(request_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            let witness = destructor_scheduling::lower_destructor_scheduling_witness_path(
+                Path::new(&request_path),
+            )?;
+            print!("{witness}");
+            Ok(())
+        }
         "phase15-early-return-cleanup-witness" => {
             let Some(request_path) = args.next() else {
                 return Err(usage_error().into());
@@ -17684,6 +17698,7 @@ fn usage_error() -> IoError {
         ErrorKind::InvalidInput,
         concat!(
             "usage:\n",
+            "  gust-cranelift-experiment phase15-destructor-scheduling-witness <request.native>\n",
             "  gust-cranelift-experiment phase15-early-return-cleanup-witness <request.native>\n",
             "  gust-cranelift-experiment phase15-scope-exit-cleanup-witness <request.native>\n",
             "  gust-cranelift-experiment phase15-resource-mir-witness <request.native>\n",

@@ -1,0 +1,44 @@
+Patch 15.7 — Destructor Scheduling and Exactly-Once Destruction
+
+authority	compiler-owned destructor identity	compiler_owned_destructor_identity_and_schedule	Level 1
+operation	schedule destructor	schedule_destructor	Level 1
+operation	cancel obsolete schedule after ownership transfer	cancel_obsolete_schedule	Level 1
+operation	execute destructor	execute_destructor	Level 1
+operation	mark resource destroyed	mark_resource_destroyed	Level 1
+resolution	scheduled destructor resolves one resource ID	resource_id	Level 1
+resolution	scheduled destructor resolves one destructor ID	destructor_id	Level 1
+resolution	scheduled destructor resolves one cleanup reason	cleanup_reason	Level 1
+resolution	scheduled destructor resolves one execution point	execution_point	Level 1
+policy	one live schedule	one_live_schedule_one_execution_deterministic_order	Level 1
+policy	exactly once witness	destructor_scheduling_exactly_once_witness	Level 1
+reject	duplicate live schedule	destructor_duplicate_live_schedule	Level 1
+reject	execution without schedule	destructor_execution_without_schedule	Level 1
+reject	schedule after destruction	destructor_schedule_after_destroy	Level 1
+reject	destructor mismatch	destructor_identity_mismatch	Level 1
+reject	skipped live destruction	destructor_live_resource_skipped	Level 1
+reject	destruction of moved ownership	destructor_moved_ownership_destroyed	Level 1
+reject	destruction order drift	destructor_order_drift	Level 1
+reject	missing transfer cancellation	destructor_transfer_schedule_not_canceled	Level 1
+state	mark destroyed required	destructor_mark_destroyed_missing	Level 1
+state	execution after schedule	destructor_execution_order_invalid	Level 1
+state	ownership state selected	ownership_state	Level 1
+identity	owning declaration retained	owning_declaration	Level 1
+identity	source location retained	source_location	Level 1
+count	schedule count compared	schedule_count=	Level 1
+count	execution count compared	execution_count=	Level 1
+count	cancel count compared	cancel_count=	Level 1
+order	execution order compared	order_preserved=1	Level 1
+effect	observable effects compared	observable_effects_preserved=1	Level 1
+positive	inner scope resource	resource:scope:inner	Level 1
+positive	outer scope resource	resource:scope:outer	Level 1
+positive	early return resource	resource:early:return	Level 1
+positive	ownership transfer cancellation	resource:transferred	Level 1
+backend	MIR-to-C witness	mir-to-c.witness	Level 1
+backend	Cranelift witness command	phase15-destructor-scheduling-witness	Level 1
+test	state smoke	mir_destructor_scheduling_state_smoke_test_entry.gst	Level 1
+test	parity smoke	mir_destructor_scheduling_parity_smoke_test_entry.gst	Level 1
+test	Level 1 guard	guard-cranelift-phase15-destructor-scheduling-contract	Level 1
+test	Level 2 guard	guard-cranelift-phase15-destructor-scheduling-parity	Level 1
+defer	asynchronous destruction deferred	async_destruction	Level 1
+defer	finalizers and GC deferred	finalizers,gc	Level 1
+defer	concurrent cancellation deferred	concurrent_cancellation	Level 1

@@ -1,0 +1,54 @@
+name: Cranelift Phase 15 Destructor Scheduling
+
+on:
+  pull_request:
+    paths:
+      - 'compiler/mir_destructor_scheduling.gst'
+      - 'compiler/mir_destructor_scheduling_state_smoke_test_entry.gst'
+      - 'compiler/mir_destructor_scheduling_parity_smoke_test_entry.gst'
+      - 'compiler/experiments/cranelift/src/destructor_scheduling.rs'
+      - 'compiler/experiments/cranelift/src/main.rs'
+      - 'scripts/phase15_destructor_scheduling.py'
+      - 'scripts/phase15_destructor_scheduling_parity.sh'
+      - 'scripts/run-gust-file.sh'
+      - 'scripts/cranelift_test_levels.json'
+      - 'tests/cranelift/phase15_destructor_scheduling_contract.tsv'
+      - 'tests/cranelift/phase15_destructor_scheduling_review.txt'
+      - 'justfile'
+      - '.github/workflows/phase15-destructor-scheduling.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'compiler/mir_destructor_scheduling.gst'
+      - 'compiler/mir_destructor_scheduling_state_smoke_test_entry.gst'
+      - 'compiler/mir_destructor_scheduling_parity_smoke_test_entry.gst'
+      - 'compiler/experiments/cranelift/src/destructor_scheduling.rs'
+      - 'compiler/experiments/cranelift/src/main.rs'
+      - 'scripts/phase15_destructor_scheduling.py'
+      - 'scripts/phase15_destructor_scheduling_parity.sh'
+      - 'scripts/run-gust-file.sh'
+      - 'scripts/cranelift_test_levels.json'
+      - 'tests/cranelift/phase15_destructor_scheduling_contract.tsv'
+      - 'tests/cranelift/phase15_destructor_scheduling_review.txt'
+      - 'justfile'
+      - '.github/workflows/phase15-destructor-scheduling.yml'
+  workflow_dispatch:
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin"
+      - name: Phase 15.7 destructor scheduling contract (Level 1)
+        run: just guard-cranelift-phase15-destructor-scheduling-contract
+  parity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin"
+      - name: Build Gust
+        run: make gust
+      - name: Phase 15.7 destructor scheduling parity (Level 2)
+        run: just guard-cranelift-phase15-destructor-scheduling-parity
