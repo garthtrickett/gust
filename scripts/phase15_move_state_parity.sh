@@ -9,11 +9,61 @@ request="/tmp/gust-phase15-move-state.request"
 mir_to_c_witness="/tmp/gust-phase15-move-state.mir-to-c.witness"
 worker_manifest="compiler/experiments/cranelift/Cargo.toml"
 worker="compiler/experiments/cranelift/target/debug/gust-cranelift-experiment"
+rm -rf "$build_dir"
+rm -f "$request" "$mir_to_c_witness"
 mkdir -p "$build_dir"
 
+phase15_move_state_stage="initialization"
+
+phase15_move_state_dump_file() {
+  local path="$1"
+  if [ ! -f "$path" ]; then
+    return
+  fi
+  echo "::group::Phase 15.3 diagnostic: $path" >&2
+  if [ "$(wc -l < "$path" 2>/dev/null || printf '0')" -le 320 ]; then
+    cat "$path" >&2
+  else
+    echo "--- first 80 lines ---" >&2
+    head -n 80 "$path" >&2
+    echo "--- last 240 lines ---" >&2
+    tail -n 240 "$path" >&2
+  fi
+  echo "::endgroup::" >&2
+}
+
+phase15_move_state_on_error() {
+  local status="$1"
+  local line="$2"
+  local command="$3"
+  set +e
+  echo "❌ Phase 15.3 move-state parity failed." >&2
+  echo "stage=$phase15_move_state_stage" >&2
+  echo "status=$status line=$line command=$command" >&2
+  for path in \
+    to.log \
+    build/gust-build.log \
+    build/mir_resource_move_state_smoke_test_entry.compile.log \
+    build/mir_resource_move_parity_smoke_test_entry.compile.log \
+    "$build_dir/cargo-build.log" \
+    "$build_dir/worker.stderr" \
+    "$mir_to_c_witness" \
+    "$build_dir/cranelift.witness"
+  do
+    phase15_move_state_dump_file "$path"
+  done
+  exit "$status"
+}
+
+trap 'phase15_move_state_on_error "$?" "$LINENO" "$BASH_COMMAND"' ERR
+
+phase15_move_state_stage="compile and execute the Phase 15.3 transition smoke"
 bash scripts/run-gust-file.sh compiler/mir_resource_move_state_smoke_test_entry.gst
+phase15_move_state_stage="verify the Phase 15.3 transition smoke success marker"
 grep -F 'SUCCESS: Phase 15.3 move-state transitions and diagnostics passed' to.log >/dev/null
+phase15_move_state_stage="compile and execute the Phase 15.3 parity smoke"
 bash scripts/run-gust-file.sh compiler/mir_resource_move_parity_smoke_test_entry.gst
+phase15_move_state_stage="verify the Phase 15.3 parity smoke success marker"
 grep -F 'SUCCESS: Phase 15.3 move-state parity smoke passed' to.log >/dev/null
 
 for artifact in "$request" "$mir_to_c_witness"; do
@@ -23,8 +73,11 @@ for artifact in "$request" "$mir_to_c_witness"; do
   fi
 done
 
-cargo build --quiet --manifest-path "$worker_manifest"
-"$worker" phase15-resource-mir-witness "$request" >"$build_dir/cranelift.witness"
+phase15_move_state_stage="build the Phase 15.3 Cranelift parity worker"
+cargo build --manifest-path "$worker_manifest" >"$build_dir/cargo-build.log" 2>&1
+phase15_move_state_stage="generate the Phase 15.3 Cranelift witness"
+"$worker" phase15-resource-mir-witness "$request" >"$build_dir/cranelift.witness" 2>"$build_dir/worker.stderr"
+phase15_move_state_stage="compare Phase 15.3 MIR-to-C and Cranelift witnesses"
 cmp -s "$mir_to_c_witness" "$build_dir/cranelift.witness" || {
   diff -u "$mir_to_c_witness" "$build_dir/cranelift.witness" >&2 || true
   echo "Phase 15.3 MIR-to-C and Cranelift move-state witnesses differ." >&2
@@ -164,6 +217,7 @@ expect_move_failure() {
   local reason="$2"
   local attempted="$3"
   local label="$4"
+  phase15_move_state_stage="verify Phase 15.3 negative mutation: $label"
   if "$worker" phase15-resource-mir-witness "$request_path" \
       >"$build_dir/$label.stdout" 2>"$build_dir/$label.stderr"
   then
@@ -230,6 +284,7 @@ protected_output="$build_dir/protected-output"
 printf 'phase15-move-state-output-sentinel\n' >"$protected_output"
 cp "$protected_output" "$protected_output.expected"
 rm -f "$poison_marker" "$protected_output.phase10.bundle" "$protected_output.phase10.request"
+phase15_move_state_stage="verify source-level use-after-move rejection before backend driver discovery"
 set +e
 GUST_TEST_MIR_TO_C_UNAVAILABLE=1 \
 GUST_PHASE15_MOVE_POISON_MARKER="$poison_marker" \
