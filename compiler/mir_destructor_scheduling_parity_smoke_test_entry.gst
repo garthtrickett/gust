@@ -36,7 +36,8 @@ func make_entry(resource_id: str, destructor_id: str, cleanup_reason: str, decla
 }
 
 func main() {
-    mut ctx: Arena;
+    mut ctx := os.Arena.New();
+    defer ctx.Free();
     mut plan := scheduling.mir_destructor_scheduling_make_plan(&ctx);
     plan = scheduling.mir_destructor_scheduling_with_entry(plan, make_entry("resource:scope:inner", "destructor:file", "scope_exit", "decl:inner", "compiler/destructor.gst:10:5", "operation:schedule:inner", "", "operation:execute:inner", "operation:mark:inner", "point:scope:inner:schedule", "", "point:scope:inner:execute", "point:scope:inner:mark", 10, 0, 20, 21, 1, 0, 1, 1, "live", 0, "destroy:scope:inner", &ctx), &ctx);
     plan = scheduling.mir_destructor_scheduling_with_entry(plan, make_entry("resource:scope:outer", "destructor:file", "scope_exit", "decl:outer", "compiler/destructor.gst:5:5", "operation:schedule:outer", "", "operation:execute:outer", "operation:mark:outer", "point:scope:outer:schedule", "", "point:scope:outer:execute", "point:scope:outer:mark", 11, 0, 30, 31, 1, 0, 1, 2, "live", 0, "destroy:scope:outer", &ctx), &ctx);
