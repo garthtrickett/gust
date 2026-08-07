@@ -196,7 +196,7 @@ func mir_destructor_scheduling_append_to_request(base: str, plan: MirDestructorS
         output = mir_destructor_scheduling_append_field(output, std.Concat(prefix, "_observable_effect"), entry.observable_effect, ctx);
         entry_index = entry_index + 1;
     }
-    return output;
+    return std.Clone(ctx, output);
 }
 
 func mir_destructor_scheduling_witness_line(entry: MirDestructorScheduleEntry[ctx], ctx: &Arena) str {
