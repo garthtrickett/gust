@@ -3,6 +3,7 @@ import "mir_destructor_scheduling.gst" as scheduling;
 func main() {
     mut ctx := os.Arena.New();
     defer ctx.Free();
+    os.SetThreadScratch(ctx);
     mut plan := scheduling.mir_destructor_scheduling_make_plan(&ctx);
     if std.str_eq(plan.semantic_authority, "compiler_owned_destructor_identity_and_schedule") == 0 ||
        std.str_eq(plan.exactly_once_policy, "one_live_schedule_one_execution_deterministic_order") == 0 ||
