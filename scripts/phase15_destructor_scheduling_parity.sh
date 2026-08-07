@@ -30,7 +30,20 @@ m={"duplicate-live-schedule":("destructor_scheduling_entry_0_schedule_count","2"
 replace(*m[mode]); output.write_text(source)
 PYM
 }
-expect_failure() { local mode="$1" reason="$2" path="$build_dir/$mode.request"; mutate "$mode" "$path"; if "$worker" phase15-destructor-scheduling-witness "$path" >"$build_dir/$mode.stdout" 2>"$build_dir/$mode.stderr"; then echo "Phase 15.7 mutation unexpectedly passed: $mode" >&2; exit 1; fi; grep -F "reason=$reason" "$build_dir/$mode.stderr" >/dev/null || { cat "$build_dir/$mode.stderr" >&2; exit 1; }; }
+expect_failure() {
+  local mode="$1"
+  local reason="$2"
+  local path="$build_dir/$mode.request"
+  mutate "$mode" "$path"
+  if "$worker" phase15-destructor-scheduling-witness "$path" >"$build_dir/$mode.stdout" 2>"$build_dir/$mode.stderr"; then
+    echo "Phase 15.7 mutation unexpectedly passed: $mode" >&2
+    exit 1
+  fi
+  grep -F "reason=$reason" "$build_dir/$mode.stderr" >/dev/null || {
+    cat "$build_dir/$mode.stderr" >&2
+    exit 1
+  }
+}
 expect_failure duplicate-live-schedule destructor_duplicate_live_schedule
 expect_failure execute-without-schedule destructor_execution_without_schedule
 expect_failure schedule-after-destroy destructor_schedule_after_destroy
