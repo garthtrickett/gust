@@ -1,5 +1,6 @@
 mod destructor_scheduling;
 mod early_return_cleanup;
+mod manual_close;
 mod resource_mir;
 mod scope_exit_cleanup;
 
@@ -16371,6 +16372,19 @@ fn run() -> Result<(), Box<dyn Error>> {
                 return Err(usage_error().into());
             }
             let witness = resource_mir::lower_resource_mir_witness_path(
+                Path::new(&request_path),
+            )?;
+            print!("{witness}");
+            Ok(())
+        }
+        "phase15-manual-close-witness" => {
+            let Some(request_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            let witness = manual_close::lower_manual_close_witness_path(
                 Path::new(&request_path),
             )?;
             print!("{witness}");

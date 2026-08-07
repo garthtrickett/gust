@@ -20314,3 +20314,22 @@ guard-cranelift-phase15-destructor-scheduling-parity:
       grep -F $'guard-cranelift-phase15-destructor-scheduling-parity\t2\t' >/dev/null
     just guard-cranelift-phase15-destructor-scheduling-contract
     bash scripts/phase15_destructor_scheduling_parity.sh
+
+guard-cranelift-phase15-manual-close-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 15.8 manual close versus deferred cleanup..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase15-manual-close-contract |
+      grep -F $'guard-cranelift-phase15-manual-close-contract\t1\t' >/dev/null
+    python3 scripts/phase15_manual_close.py --check
+
+guard-cranelift-phase15-manual-close-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 15.8 manual close versus deferred cleanup parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase15-manual-close-parity |
+      grep -F $'guard-cranelift-phase15-manual-close-parity\t2\t' >/dev/null
+    just guard-cranelift-phase15-manual-close-contract
+    bash scripts/phase15_manual_close_parity.sh

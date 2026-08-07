@@ -1,0 +1,40 @@
+kind	requirement	evidence	level
+authority	compiler-owned manual close and deferred cleanup state machine	compiler_owned_manual_close_and_deferred_cleanup_state_machine	1
+inventory	selected close-capable kinds frozen	Phase15SelectedResource,os_Dir_ctx	1
+semantics	close succeeds and suppresses later destructor work	manual_close_succeeds_and_suppresses_deferred_cleanup	1
+semantics	close transitions resource to manually_closed	close_transitions_to_manually_closed	1
+semantics	repeated close rejected or stable no-op	repeated_close_policy=reject	1
+semantics	close after move rejected	LinearResourceCloseAfterMove	1
+semantics	use after close rejected	LinearResourceUseAfterClose	1
+operation	canonical MIR close carries resource ID	resource_id	1
+operation	canonical MIR close carries close capability ID	close_capability_id	1
+operation	canonical MIR close carries source location	source_location	1
+operation	canonical MIR close carries resulting state	resulting_state	1
+operation	canonical MIR close carries cleanup-cancellation record	cleanup_cancellation_id	1
+interaction	scope-exit cleanup does not double close already closed resource	scope_exit_does_not_double_close=1	1
+interaction	final destructor only if explicitly required	final_destructor_only_if_explicitly_required=1	1
+positive	manual close before scope exit	manual_close_before_scope_exit	1
+positive	manual close before early return	manual_close_before_early_return	1
+positive	close in one branch with valid join handling	close_in_one_branch_with_valid_join_handling	1
+positive	close followed by reinitialization where selected	close_followed_by_reinitialization_where_selected	1
+negative	double close rejected	LinearResourceDoubleClose	1
+negative	close after move rejected	LinearResourceCloseAfterMove	1
+negative	use after close rejected	LinearResourceUseAfterClose	1
+negative	close of non-closeable resource rejected	resource_close_of_non_closeable_resource	1
+negative	cleanup still scheduled after close rejected	resource_cleanup_still_scheduled_after_close	1
+witness	close and destructor counts compared	close_count=	1
+witness	destructor counts compared	destructor_count=suppressed_if_closed	1
+witness	filesystem effects compared	filesystem_effects_compared=1	1
+witness	compiler-owned state machine prevents duplicate	close_or_destruction	1
+policy	selected inventory deterministic	selected_close_kinds	1
+policy	exactly-once close per resource	LinearResourceDoubleClose	1
+policy	cleanup cancellation record required	cleanup_cancellation	1
+backend	MIR-to-C consumes compiler close decisions	mir_manual_close_mir_to_c_lower	1
+backend	Cranelift consumes same close decisions	phase15-manual-close-witness	1
+test	state smoke	mir_manual_close_state_smoke_test_entry.gst	1
+test	parity smoke	mir_manual_close_parity_smoke_test_entry.gst	1
+test	Level 1 guard	guard-cranelift-phase15-manual-close-contract	1
+test	Level 2 guard	guard-cranelift-phase15-manual-close-parity	1
+defer	async destruction deferred	async_destruction	1
+defer	finalizers and GC deferred	finalizers,gc	1
+defer	concurrent cancellation deferred	concurrent_cancellation	1
