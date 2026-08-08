@@ -2,7 +2,7 @@
 
 ## Workflow Policy
 
-When a CI guard fails (e.g. `Early Return Cleanup parity` abort `exit 134`) do **not** prompt for permission. Fix forward on the relevant `compiler/*.gst` or `scripts/*` and keep polling until the `f34b6237`/`HEAD` SHA is green, then proceed to the next patch. This applies generally, not to the specific `mir_early_exit_cleanup` issue only.
+When any local (`just`/`make`/`cargo`/`scripts/*`) or GitHub Actions runner fails, do **not** prompt for permission. Fix forward autonomously based on what you see best — inspect logs, reproduce locally, patch `compiler/*.gst`, `runtime/*`, `scripts/*` or workflow config as needed, verify locally, push, and keep polling until `HEAD` is green, then proceed to the next patch. Applies generally to all Phase 15 work.
 
 ## Status
 
