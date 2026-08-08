@@ -2,7 +2,7 @@
 
 ## Workflow Policy
 
-When any local (`just`/`make`/`cargo`/`scripts/*`) or GitHub Actions runner fails, do **not** prompt for permission. Fix forward autonomously based on what you see best — inspect logs, reproduce locally, patch `compiler/*.gst`, `runtime/*`, `scripts/*` or workflow config as needed, verify locally, push, and keep polling until `HEAD` is green, then proceed to the next patch. Applies generally to all Phase 15 work.
+When any local (`just`/`make`/`cargo`/`scripts/*`) or GitHub Actions runner fails, do **not** prompt for permission. Fix forward autonomously based on what you see best — inspect logs, **run the single failing guard locally** (`just guard-cranelift-phase15-early-return-cleanup-parity` / `just guard-cranelift-phase15-early-return-cleanup-contract` or `bash scripts/phase15_early_return_cleanup_parity.sh` for `Early Return`) and systematically debug locally (reproduce with `to.log`, `scripts/run-gust-file.sh`, `build/*_bin` traces) before pushing, then verify locally, push, and keep polling until `HEAD` is green. Applies generally to all Phase 15 work.
 
 ## Monitoring Policy
 
