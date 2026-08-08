@@ -11,6 +11,10 @@ When monitoring GitHub Actions (e.g. `codex/phase15-9-resource-cfg` `HEAD` `b033
 - Report each poll with `SHA | workflow | event | status | conclusion` and highlight `Early Return Cleanup failure` vs `all success`.
 - Keep cron `c2eab010` visible; on poll completion say `Monitoring continues` or `All green — proceeding`. Never silently poll.
 
+## Merge Policy
+
+Once all PR GitHub runners for `HEAD` are green (`completed success` for every `pull_request` workflow, `Early Return Cleanup` included), autonomously merge the PR (`gh pr merge` / push to `main`) without prompting and immediately start the next patch (e.g. 15.10). Do not wait for manual approval.
+
 ## Status
 
 - [x] Patch 15.0 — Opening Inventory and Phase 14 Residual Rebase — DONE
