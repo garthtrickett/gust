@@ -1313,6 +1313,40 @@
       "next_patch": "15.1"
     }
   },
+  "phase15_specialized_resource_authority": {
+    "version": "phase15_specialized_resource_authority_v1",
+    "status": "patch15_11_directory_migrated",
+    "authority_owner": "compiler/mir_specialized_resource.gst",
+    "generic_resource_authority": "compiler/mir_resource_authority.gst",
+    "selected_kinds": [
+      {
+        "id": "directory",
+        "opening_entry_id": "p15_directory_resources",
+        "resource_type_id": "os_Dir_ctx",
+        "constructor_id": "os.OpenDir",
+        "destructor_id": "destructor:os.CloseDir",
+        "close_capability_id": "close:os.CloseDir",
+        "copy_policy": "prohibited",
+        "move_policy": "immovable_while_open",
+        "close_policy": "manual_or_scope_exit_exactly_once",
+        "cleanup_effect": "close_directory_handle",
+        "constructor_runtime_symbol": "os_OpenDir",
+        "close_runtime_symbol": "os_CloseDir",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
+        "layout_id": "layout:os_dir",
+        "source_fixture": "compiler/future/p15_directory_resources_source.gst",
+        "canonical_mir_fixture": "compiler/mir_specialized_resource_parity_smoke_test_entry.gst",
+        "status": "migrated"
+      }
+    ],
+    "excluded_views": [
+      {
+        "id": "os_DirEntry_ctx",
+        "reason": "borrowed_directory_observation_not_resource_identity"
+      }
+    ],
+    "backend_policy": "no_specialized_backend_state_machine"
+  },
   "phase14_layout_authority": {
     "version": "phase14_compiler_owned_layout_authority_v1",
     "status": "consumed_by_patch14_7",

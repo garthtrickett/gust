@@ -1,0 +1,62 @@
+name: Cranelift Phase 15 Specialized Resources
+
+on:
+  pull_request:
+    paths:
+      - 'compiler/mir_specialized_resource.gst'
+      - 'compiler/mir_specialized_resource_mir_to_c.gst'
+      - 'compiler/mir_specialized_resource_state_smoke_test_entry.gst'
+      - 'compiler/mir_specialized_resource_parity_smoke_test_entry.gst'
+      - 'compiler/future/p15_directory_resources_source.gst'
+      - 'compiler/experiments/cranelift/src/specialized_resource.rs'
+      - 'compiler/experiments/cranelift/src/main.rs'
+      - 'scripts/phase15_specialized_resource.py'
+      - 'scripts/phase15_specialized_resource_parity.sh'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/cranelift_registry.py'
+      - 'scripts/cranelift_test_levels.json'
+      - 'tests/cranelift/phase15_specialized_resource_contract.tsv'
+      - 'tests/cranelift/phase15_specialized_resource_review.txt'
+      - 'justfile'
+      - '.github/workflows/phase15-specialized-resource.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'compiler/mir_specialized_resource.gst'
+      - 'compiler/mir_specialized_resource_mir_to_c.gst'
+      - 'compiler/mir_specialized_resource_state_smoke_test_entry.gst'
+      - 'compiler/mir_specialized_resource_parity_smoke_test_entry.gst'
+      - 'compiler/future/p15_directory_resources_source.gst'
+      - 'compiler/experiments/cranelift/src/specialized_resource.rs'
+      - 'compiler/experiments/cranelift/src/main.rs'
+      - 'scripts/phase15_specialized_resource.py'
+      - 'scripts/phase15_specialized_resource_parity.sh'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/cranelift_registry.py'
+      - 'scripts/cranelift_test_levels.json'
+      - 'tests/cranelift/phase15_specialized_resource_contract.tsv'
+      - 'tests/cranelift/phase15_specialized_resource_review.txt'
+      - 'justfile'
+      - '.github/workflows/phase15-specialized-resource.yml'
+  workflow_dispatch:
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin"
+      - name: Phase 15.11 specialized resource contract (Level 1)
+        run: just guard-cranelift-phase15-specialized-resource-contract
+  parity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin"
+      - name: Build Gust
+        run: make gust
+      - name: Phase 15.11 specialized resource parity (Level 2)
+        run: just guard-cranelift-phase15-specialized-resource-parity

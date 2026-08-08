@@ -4,6 +4,7 @@ mod manual_close;
 mod resource_cfg;
 mod resource_mir;
 mod scope_exit_cleanup;
+mod specialized_resource;
 
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::env;
@@ -16404,6 +16405,19 @@ fn run() -> Result<(), Box<dyn Error>> {
             print!("{witness}");
             Ok(())
         }
+        "phase15-specialized-resource-witness" => {
+            let Some(request_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            let witness = specialized_resource::lower_specialized_resource_witness_path(
+                Path::new(&request_path),
+            )?;
+            print!("{witness}");
+            Ok(())
+        }
         "phase14-primitive-layout-witness" => {
             let Some(request_path) = args.next() else {
                 return Err(usage_error().into());
@@ -17732,6 +17746,7 @@ fn usage_error() -> IoError {
             "  gust-cranelift-experiment phase15-resource-mir-witness <request.native>\n",
             "  gust-cranelift-experiment phase15-manual-close-witness <request.native>\n",
             "  gust-cranelift-experiment phase15-resource-cfg-witness <request.native>\n",
+            "  gust-cranelift-experiment phase15-specialized-resource-witness <request.native>\n",
             "  gust-cranelift-experiment phase14-primitive-layout-witness <request.native>\n",
             "  gust-cranelift-experiment phase14-primitive-validate-value <request.native> <type_id> <value>\n",
             "  gust-cranelift-experiment phase14-integer-conversion-witness <request.native>\n",

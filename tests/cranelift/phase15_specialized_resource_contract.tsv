@@ -1,0 +1,45 @@
+kind	requirement	evidence	level
+authority	generic compiler resource authority owns specialized state	compiler_owned_generic_resource_and_lifetime_authority	1
+authority	no backend-local specialized state machine	no_specialized_backend_state_machine	1
+registry	structured specialized resource authority exists	phase15_specialized_resource_authority_v1	1
+registry	directory opening row mapped	p15_directory_resources	1
+inventory	exactly one selected specialized kind	os_Dir_ctx	1
+inventory	directory entry is a non-resource view	os_DirEntry_ctx	1
+kind	directory kind identity frozen	directory	1
+kind	resource type identity frozen	os_Dir_ctx	1
+kind	constructor identity frozen	os.OpenDir	1
+kind	destructor identity frozen	destructor:os.CloseDir	1
+kind	close capability frozen	close:os.CloseDir	1
+policy	copy prohibited	prohibited	1
+policy	move prohibited while open	immovable_while_open	1
+policy	manual or scope-exit close exactly once	manual_or_scope_exit_exactly_once	1
+cleanup	cleanup closes directory handle	close_directory_handle	1
+runtime	constructor runtime symbol frozen	os_OpenDir	1
+runtime	close runtime symbol frozen	os_CloseDir	1
+target	target applicability derived from Phase 14	all_declared_host_targets_from_phase14_target_authority	1
+layout	layout identity compiler-owned	layout:os_dir	1
+mapping	resource identity queried generically	mir_resource_by_id	1
+mapping	resource state queried generically	mir_resource_latest_state	1
+mapping	destructor queried generically	mir_destructor_for	1
+mapping	close capability queried generically	mir_close_capability_for	1
+source	real directory source fixture	p15_directory_resources_source.gst	1
+source	directory open operation	os.OpenDir	1
+source	directory read operation	os.ReadDir	1
+source	directory close operation	os.CloseDir	1
+effect	directory entry observed	directory_entry_observed	1
+effect	exactly one close	close_count=1	1
+effect	manual close suppresses destructor	destructor_count=0	1
+witness	filesystem effects compared	filesystem_effects_compared=1	1
+witness	generic authority witnessed	generic_authority=1	1
+witness	backend-local state absent	backend_local_state_machine=0	1
+backend	MIR-to-C consumes compiler plan	mir_specialized_resource_mir_to_c_lower	1
+backend	Cranelift consumes same request	phase15-specialized-resource-witness	1
+test	state policy smoke	mir_specialized_resource_state_smoke_test_entry.gst	1
+test	parity smoke	mir_specialized_resource_parity_smoke_test_entry.gst	1
+test	Level 1 contract guard	guard-cranelift-phase15-specialized-resource-contract	1
+test	Level 2 parity guard	guard-cranelift-phase15-specialized-resource-parity	1
+boundary	unknown resource rejected	specialized_resource_unknown_resource_id	1
+boundary	kind metadata mismatch rejected	specialized_resource_generic_metadata_mismatch	1
+boundary	state mismatch rejected	specialized_resource_state_mismatch	1
+boundary	effect mismatch rejected	specialized_resource_effect_mismatch	1
+defer	other specialized kinds remain unselected	selected_kinds=os_Dir_ctx	1
