@@ -4,6 +4,13 @@
 
 When any local (`just`/`make`/`cargo`/`scripts/*`) or GitHub Actions runner fails, do **not** prompt for permission. Fix forward autonomously based on what you see best — inspect logs, reproduce locally, patch `compiler/*.gst`, `runtime/*`, `scripts/*` or workflow config as needed, verify locally, push, and keep polling until `HEAD` is green, then proceed to the next patch. Applies generally to all Phase 15 work.
 
+## Monitoring Policy
+
+When monitoring GitHub Actions (e.g. `codex/phase15-9-resource-cfg` `HEAD` `b0332b2c`/`f34b6237`):
+- State it explicitly in chat: `Monitoring <branch> <SHA> via c2eab010 every 3m` with `gh run list --branch <branch> --limit 20` and `gh api ... --jq '.workflow_runs[] | select(.head_sha | startswith("<sha>"))'`.
+- Report each poll with `SHA | workflow | event | status | conclusion` and highlight `Early Return Cleanup failure` vs `all success`.
+- Keep cron `c2eab010` visible; on poll completion say `Monitoring continues` or `All green — proceeding`. Never silently poll.
+
 ## Status
 
 - [x] Patch 15.0 — Opening Inventory and Phase 14 Residual Rebase — DONE
