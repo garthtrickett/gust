@@ -17,19 +17,22 @@ Once all PR GitHub runners for `HEAD` are green (`completed success` for every `
 
 ## Runner Policy
 
-Before triggering new pushes on `codex/phase15-9-resource-cfg`, check for superseded GitHub runs and cancel them to free concurrency:
+Before triggering new pushes on `codex/phase15-9-resource-cfg`, cancel any superseded GitHub runs to free concurrency:
 
 ```bash
+HEAD=$(git rev-parse HEAD)
 gh run list --branch codex/phase15-9-resource-cfg --limit 30 --json databaseId,headSha,status,name | python3 -c "
-import json,sys,subprocess
+import json,sys,subprocess,os
+head=os.environ['HEAD']
 data=json.load(sys.stdin)
 for r in data:
-    if r['headSha'].startswith(('f34b623','0ccae0','b2d031','b0332b')) and r['status']!='completed':
-        subprocess.run(['gh','run','cancel',str(r['databaseId'])])
+    if r['headSha'] != head and r['status'] != 'completed':
+        print(f\"cancel {r['databaseId']} {r['headSha'][:7]} {r['name']}\")
+        subprocess.run(['gh','run','cancel',str(r['databaseId']), '--repo','garthtrickett/gust'])
 "
 ```
 
-Use the current prior SHAs (oldest `f34b6237`/`0ccae095` plus intermediate `b2d03141`/`b0332b2c`) and `06386b04`. Cancel `queued`/`in_progress` `PR Fast`/`Heavy Guards` etc. before `git push` so `HEAD` jobs start immediately (observed 40-60m queue without cancel).
+Cancels any `queued`/`in_progress` runs on the branch whose `headSha` is not `HEAD` (superseded commits, e.g. prior `f34b6237`/`0ccae095` or intermediate pushes). Run before every `git push` so `HEAD` jobs start immediately (observed 40-60m queue without cancel).
 
 ## Status
 
