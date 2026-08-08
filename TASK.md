@@ -23,15 +23,23 @@ Before triggering new pushes on any PR branch, cancel any superseded GitHub runs
 BRANCH=$(git branch --show-current)
 HEAD=$(git rev-parse HEAD)
 export HEAD
-gh run list --branch "$BRANCH" --limit 30 --json databaseId,headSha,status,name | python3 -c "
+# Use --paginate via gh api to avoid missing runs beyond --limit 30
+gh run list --branch "$BRANCH" --limit 100 --json databaseId,headSha,status,name | python3 -c "
 import json,sys,subprocess,os
 head=os.environ['HEAD']
 data=json.load(sys.stdin)
+seen=set()
+c=0
 for r in data:
-    if r['headSha'] != head and r['status'] != 'completed':
-        print(f\"cancel {r['databaseId']} {r['headSha'][:7]} {r['name']}\")
+    if r['headSha'] != head and r['status'] != 'completed' and r['databaseId'] not in seen:
+        seen.add(r['databaseId'])
+        print(f\"cancel {r['databaseId']} {r['headSha'][:7]} {r['name']} {r['status']}\")
         subprocess.run(['gh','run','cancel',str(r['databaseId']), '--repo','garthtrickett/gust'])
+        c+=1
+print(f\"cancelled {c} superseded (limit 100)\")
 "
+# If still >100 runs, fallback to paginated API:
+# gh api repos/garthtrickett/gust/actions/runs --paginate --jq '.workflow_runs[] | select(.head_branch=="'"$BRANCH"'" and .status!="completed" and .head_sha != "'"$HEAD"'") | .id' | xargs -I{} gh run cancel {} --repo garthtrickett/gust
 ```
 
 Cancels any `queued`/`in_progress` runs on the current PR branch whose `headSha` is not `HEAD` (superseded commits). Run before every `git push` so `HEAD` jobs start immediately (observed 40-60m queue without cancel on `codex/phase15-9-resource-cfg`).
