@@ -22,6 +22,7 @@ Before triggering new pushes on any PR branch, cancel any superseded GitHub runs
 ```bash
 BRANCH=$(git branch --show-current)
 HEAD=$(git rev-parse HEAD)
+export HEAD
 gh run list --branch "$BRANCH" --limit 30 --json databaseId,headSha,status,name | python3 -c "
 import json,sys,subprocess,os
 head=os.environ['HEAD']
