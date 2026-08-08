@@ -17,11 +17,12 @@ Once all PR GitHub runners for `HEAD` are green (`completed success` for every `
 
 ## Runner Policy
 
-Before triggering new pushes on `codex/phase15-9-resource-cfg`, cancel any superseded GitHub runs to free concurrency:
+Before triggering new pushes on any PR branch, cancel any superseded GitHub runs to free concurrency:
 
 ```bash
+BRANCH=$(git branch --show-current)
 HEAD=$(git rev-parse HEAD)
-gh run list --branch codex/phase15-9-resource-cfg --limit 30 --json databaseId,headSha,status,name | python3 -c "
+gh run list --branch "$BRANCH" --limit 30 --json databaseId,headSha,status,name | python3 -c "
 import json,sys,subprocess,os
 head=os.environ['HEAD']
 data=json.load(sys.stdin)
@@ -32,7 +33,7 @@ for r in data:
 "
 ```
 
-Cancels any `queued`/`in_progress` runs on the branch whose `headSha` is not `HEAD` (superseded commits, e.g. prior `f34b6237`/`0ccae095` or intermediate pushes). Run before every `git push` so `HEAD` jobs start immediately (observed 40-60m queue without cancel).
+Cancels any `queued`/`in_progress` runs on the current PR branch whose `headSha` is not `HEAD` (superseded commits). Run before every `git push` so `HEAD` jobs start immediately (observed 40-60m queue without cancel on `codex/phase15-9-resource-cfg`).
 
 ## Status
 
