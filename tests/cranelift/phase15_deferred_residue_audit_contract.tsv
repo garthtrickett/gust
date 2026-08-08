@@ -1,0 +1,25 @@
+kind	requirement	evidence	level
+coverage	every opening row has a disposition	opening_dispositions matches opening snapshot	1
+coverage	all thirteen selected rows are migrated	13 migrated dispositions	1
+coverage	no ownerless row remains	evidence_guard required	1
+coverage	no ambiguous disposition remains	disposition enum	1
+residue	broad residues are rejected	reject_broad_or_ambiguous_phase15_residue	1
+residue	failure cleanup is split into narrower rows	three child rows of p15_selected_failure_cleanup	1
+deferred	async unwind has stable ID	p17_async_unwind_resource_cleanup	1
+deferred	foreign exception has stable ID	p17_foreign_exception_resource_cleanup	1
+deferred	cancellation has stable ID	p19_cancellation_resource_cleanup	1
+deferred	each row names an owner	owner field	1
+deferred	each row names a reason	reason field	1
+deferred	each row names a destination phase	destination_phase field	1
+deferred	each row names a prerequisite	prerequisite field	1
+deferred	each row stops before driver discovery	failure_stage before_driver_discovery	1
+deferred	each row derives target applicability	all_declared_host_targets_from_phase14_target_authority	1
+deferred	each row has a positive future fixture	positive_future_fixture	1
+deferred	each row has a negative current fixture	negative_current_fixture	1
+deferred	each row has a stable diagnostic code	diagnostic_code	1
+exclusion	directory entry view is explicitly excluded	os_DirEntry_ctx	1
+exclusion	exclusion retains owner	phase15_specialized_resource_authority	1
+traceability	deferred rows retain failure cleanup parent	p15_selected_failure_cleanup	1
+policy	audit is registry-owned	phase15_deferred_residue_audit_v1	1
+policy	coverage policy is explicit	every_phase15_opening_row_migrated_excluded_or_replaced_by_narrow_actionable_rows	1
+ci	audit guard is Level 1	guard-cranelift-phase15-deferred-residue-audit	1
