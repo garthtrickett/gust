@@ -1,0 +1,36 @@
+kind	requirement	evidence	level
+inventory	migrated inventory is registry-derived	phase15_resource_composition_authority.migrated_entries	1
+inventory	all twelve migrated rows have individual evidence	individual_guard per migrated entry	1
+inventory	one complete composition case covers all rows	covered_entry_count 12	1
+composition	initialization composes	operation init	1
+composition	moves compose	operation move	1
+composition	reassignment composes	operation reassign	1
+composition	scope-exit cleanup composes	operation scope_exit	1
+composition	early-return cleanup composes	operation early_return	1
+composition	destructor scheduling composes	operation destructor	1
+composition	manual close composes	operation manual_close	1
+composition	branch joins compose	operation branch_join	1
+composition	loop-carried state composes	operation loop_carried	1
+composition	directory resources compose	operation directory	1
+composition	failure cleanup composes	operation failure_return	1
+authority	compiler owns composition plan	compiler_owned_generic_resource_composition	1
+authority	generic resource table is required	resource_composition_generic_authority_missing	1
+authority	backends own no resource planner	backend_resource_planner=0	1
+authority	backends own no cleanup planner	backend_cleanup_planner=0	1
+validation	coverage drift is rejected	resource_composition_coverage_mismatch	1
+validation	comparison drift is rejected	resource_composition_contract_mismatch	1
+validation	witness count drift is rejected	resource_composition_witness_count_mismatch	1
+differential	default and explicit MIR-to-C are byte-identical	default_explicit_mir_to_c_byte_identity	1
+differential	MIR-to-C and Cranelift witnesses agree	mir_to_c_cranelift_witness_identity=1	1
+differential	runtime values are compared	runtime_values	1
+differential	stdout and stderr are compared	stdout stderr	1
+differential	exit status is compared	exit_status	1
+differential	destructor and close counts are compared	destructor_count close_count	1
+differential	cleanup order is compared	cleanup_order	1
+differential	filesystem effects are compared	filesystem_effects	1
+differential	output preservation is compared	output_preservation	1
+targets	targets derive from Phase 14 authority	all_declared_host_targets_from_phase14_target_authority	1
+ci	composition contract is Level 1	guard-cranelift-phase15-resource-composition-contract	1
+ci	focused differential is Level 2	guard-cranelift-phase15-resource-composition-differential	1
+ci	complete evidence is Level 3	guard-cranelift-phase15-complete-resource-evidence	1
+ci	Level 3 owner is historical full	complete_registry_derived_phase15_inventory_owned_only_by_cranelift_historical_full	1

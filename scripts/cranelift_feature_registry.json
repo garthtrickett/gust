@@ -1434,6 +1434,38 @@
     "canonical_mir_fixture": "compiler/mir_failure_cleanup_parity_smoke_test_entry.gst",
     "backend_policy": "shared_canonical_mir_failure_edges_no_backend_cleanup_planner"
   },
+  "phase15_resource_composition_authority": {
+    "version": "phase15_resource_composition_authority_v1",
+    "status": "patch15_13_complete_composition_migrated",
+    "authority_owner": "compiler/mir_resource_composition.gst",
+    "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
+    "migrated_entries": [
+      {"id": "p15_resource_value_representation", "ci_family": "resource-values", "individual_guard": "guard-cranelift-phase15-resource-mir-parity", "canonical_mir_fixture": "compiler/mir_resource_value_smoke_test_entry.gst"},
+      {"id": "p15_move_state_transitions", "ci_family": "move-state", "individual_guard": "guard-cranelift-phase15-move-state-parity", "canonical_mir_fixture": "compiler/mir_resource_move_parity_smoke_test_entry.gst"},
+      {"id": "p15_use_after_move_enforcement", "ci_family": "move-state", "individual_guard": "guard-cranelift-phase15-move-state-parity", "canonical_mir_fixture": "compiler/mir_resource_move_state_smoke_test_entry.gst"},
+      {"id": "p15_reassignment_cleanup", "ci_family": "reassignment-cleanup", "individual_guard": "guard-cranelift-phase15-resource-reassignment-parity", "canonical_mir_fixture": "compiler/mir_resource_reassignment_parity_smoke_test_entry.gst"},
+      {"id": "p15_scope_exit_cleanup", "ci_family": "scope-exit-cleanup", "individual_guard": "guard-cranelift-phase15-scope-exit-cleanup-parity", "canonical_mir_fixture": "compiler/mir_scope_exit_cleanup_parity_smoke_test_entry.gst"},
+      {"id": "p15_early_return_cleanup", "ci_family": "early-return-cleanup", "individual_guard": "guard-cranelift-phase15-early-return-cleanup-parity", "canonical_mir_fixture": "compiler/mir_early_exit_cleanup_parity_smoke_test_entry.gst"},
+      {"id": "p15_destructor_scheduling", "ci_family": "scope-exit-cleanup", "individual_guard": "guard-cranelift-phase15-destructor-scheduling-parity", "canonical_mir_fixture": "compiler/mir_destructor_scheduling_parity_smoke_test_entry.gst"},
+      {"id": "p15_manual_close_interaction", "ci_family": "manual-close", "individual_guard": "guard-cranelift-phase15-manual-close-parity", "canonical_mir_fixture": "compiler/mir_manual_close_parity_smoke_test_entry.gst"},
+      {"id": "p15_conditional_loop_resource_state", "ci_family": "resource-cfg", "individual_guard": "guard-cranelift-phase15-resource-cfg-parity", "canonical_mir_fixture": "compiler/mir_resource_cfg_parity_smoke_test_entry.gst"},
+      {"id": "p15_resource_metadata_validation", "ci_family": "resource-values", "individual_guard": "guard-cranelift-phase15-resource-metadata-contract", "canonical_mir_fixture": "compiler/mir_lower_resource_metadata_smoke_test_entry.gst"},
+      {"id": "p15_directory_resources", "ci_family": "specialized-resources", "individual_guard": "guard-cranelift-phase15-specialized-resource-parity", "canonical_mir_fixture": "compiler/mir_specialized_resource_parity_smoke_test_entry.gst"},
+      {"id": "p15_selected_failure_cleanup", "ci_family": "failure-cleanup", "individual_guard": "guard-cranelift-phase15-failure-cleanup-parity", "canonical_mir_fixture": "compiler/mir_failure_cleanup_parity_smoke_test_entry.gst"}
+    ],
+    "composition_case": {
+      "id": "phase15:complete_resource_composition",
+      "owner_entry_id": "p15_complete_resource_differential",
+      "source_fixture": "compiler/future/p15_complete_resource_differential_source.gst",
+      "canonical_mir_fixture": "compiler/mir_resource_composition_parity_smoke_test_entry.gst",
+      "covered_entry_count": 12,
+      "operations": ["init", "move", "reassign", "scope_exit", "early_return", "destructor", "manual_close", "branch_join", "loop_carried", "directory", "failure_return"],
+      "comparison_contract": ["default_explicit_mir_to_c_byte_identity", "runtime_values", "stdout", "stderr", "exit_status", "resource_witness", "cleanup_witness", "destructor_count", "close_count", "cleanup_order", "filesystem_effects", "output_preservation"],
+      "status": "migrated"
+    },
+    "level3_policy": "complete_registry_derived_phase15_inventory_owned_only_by_cranelift_historical_full",
+    "backend_policy": "shared_compiler_plan_no_backend_resource_or_cleanup_planner"
+  },
   "phase14_layout_authority": {
     "version": "phase14_compiler_owned_layout_authority_v1",
     "status": "consumed_by_patch14_7",

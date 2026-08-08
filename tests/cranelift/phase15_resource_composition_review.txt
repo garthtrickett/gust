@@ -1,0 +1,37 @@
+Patch 15.13 — Cross-Feature Resource Composition and Complete Differential
+
+inventory	migrated inventory is registry-derived	phase15_resource_composition_authority.migrated_entries	Level 1
+inventory	all twelve migrated rows have individual evidence	individual_guard per migrated entry	Level 1
+inventory	one complete composition case covers all rows	covered_entry_count 12	Level 1
+composition	initialization composes	operation init	Level 1
+composition	moves compose	operation move	Level 1
+composition	reassignment composes	operation reassign	Level 1
+composition	scope-exit cleanup composes	operation scope_exit	Level 1
+composition	early-return cleanup composes	operation early_return	Level 1
+composition	destructor scheduling composes	operation destructor	Level 1
+composition	manual close composes	operation manual_close	Level 1
+composition	branch joins compose	operation branch_join	Level 1
+composition	loop-carried state composes	operation loop_carried	Level 1
+composition	directory resources compose	operation directory	Level 1
+composition	failure cleanup composes	operation failure_return	Level 1
+authority	compiler owns composition plan	compiler_owned_generic_resource_composition	Level 1
+authority	generic resource table is required	resource_composition_generic_authority_missing	Level 1
+authority	backends own no resource planner	backend_resource_planner=0	Level 1
+authority	backends own no cleanup planner	backend_cleanup_planner=0	Level 1
+validation	coverage drift is rejected	resource_composition_coverage_mismatch	Level 1
+validation	comparison drift is rejected	resource_composition_contract_mismatch	Level 1
+validation	witness count drift is rejected	resource_composition_witness_count_mismatch	Level 1
+differential	default and explicit MIR-to-C are byte-identical	default_explicit_mir_to_c_byte_identity	Level 1
+differential	MIR-to-C and Cranelift witnesses agree	mir_to_c_cranelift_witness_identity=1	Level 1
+differential	runtime values are compared	runtime_values	Level 1
+differential	stdout and stderr are compared	stdout stderr	Level 1
+differential	exit status is compared	exit_status	Level 1
+differential	destructor and close counts are compared	destructor_count close_count	Level 1
+differential	cleanup order is compared	cleanup_order	Level 1
+differential	filesystem effects are compared	filesystem_effects	Level 1
+differential	output preservation is compared	output_preservation	Level 1
+targets	targets derive from Phase 14 authority	all_declared_host_targets_from_phase14_target_authority	Level 1
+ci	composition contract is Level 1	guard-cranelift-phase15-resource-composition-contract	Level 1
+ci	focused differential is Level 2	guard-cranelift-phase15-resource-composition-differential	Level 1
+ci	complete evidence is Level 3	guard-cranelift-phase15-complete-resource-evidence	Level 1
+ci	Level 3 owner is historical full	complete_registry_derived_phase15_inventory_owned_only_by_cranelift_historical_full	Level 1
