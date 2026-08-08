@@ -2,7 +2,9 @@
 
 ## Workflow Policy
 
-When any local (`just`/`make`/`cargo`/`scripts/*`) or GitHub Actions runner fails, do **not** prompt for permission. Fix forward autonomously based on what you see best — inspect logs, **run the single failing guard locally** (`just guard-cranelift-phase15-early-return-cleanup-parity` / `just guard-cranelift-phase15-early-return-cleanup-contract` or `bash scripts/phase15_early_return_cleanup_parity.sh` for `Early Return`) and systematically debug locally (reproduce with `to.log`, `scripts/run-gust-file.sh`, `build/*_bin` traces) before pushing, then verify locally, push, and keep polling until `HEAD` is green. Applies generally to all Phase 15 work.
+Flow: start new patch → run related `just`/`make`/`cargo`/`scripts/*` locally → once local passes, push/PR to trigger GitHub runners. If any GitHub runner fails, cancel other running ones on that branch and focus on fixing the broken guard locally (single failing guard: `just guard-...` / `bash scripts/...` with `to.log`/`build/*_bin` traces). Once local passes, push again (cancelling superseded runs) and poll until green. If any test is failing locally, do **not** poll GitHub — fix locally first, cancelling in-flight GitHub runs if needed.
+
+When any local or GitHub runner fails, do **not** prompt for permission. Fix forward autonomously based on what you see best — inspect logs, run the single failing guard locally and systematically debug before pushing, then verify locally, push, and keep polling until `HEAD` is green. Applies to all work (Phase 15, 16, 17, 18, … — not just Phase 15). When a local fix is in progress, keep working autonomously in the background without asking — the whole loop is autonomous; only notify when you would otherwise need to ask, and keep `c2eab010` polling visible when polling.
 
 ## Monitoring Policy
 
@@ -17,7 +19,7 @@ Once all PR GitHub runners for `HEAD` are green (`completed success` for every `
 
 ## Runner Policy
 
-Before triggering new pushes on any PR branch, cancel any superseded GitHub runs to free concurrency:
+If any GitHub runner fails, cancel other `queued`/`in_progress` runs on that branch immediately (they are superseded by the fix) before focusing on the local reproduction. Before triggering new pushes on any PR branch, also cancel any superseded GitHub runs to free concurrency:
 
 ```bash
 BRANCH=$(git branch --show-current)

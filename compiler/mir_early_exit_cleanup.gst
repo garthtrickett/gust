@@ -290,14 +290,26 @@ func mir_early_exit_cleanup_witness(plan: MirEarlyExitCleanupPlan[ctx], ctx: &Ar
     mut edge_index := 0;
     while edge_index < mir_early_exit_cleanup_edge_count(plan, ctx) {
         mut edge := mir_early_exit_cleanup_edge_at(plan, edge_index, ctx);
-        mut edge_line := std.Concat("early_return_cleanup_edge: id=", std.Concat(edge.edge_id, std.Concat(" kind=", std.Concat(edge.exit_kind, std.Concat(" exited_scopes=", std.Concat(edge.exited_scope_chain, std.Concat(" return_value=", std.Concat(edge.return_value_id, std.Concat(" return_abi=", std.Concat(edge.return_abi, "\n"))))))))));
+        mut edge_line := std.Concat("early_return_cleanup_edge: id=", edge.edge_id);
+        edge_line = std.Concat(edge_line, std.Concat(" kind=", edge.exit_kind));
+        edge_line = std.Concat(edge_line, std.Concat(" exited_scopes=", edge.exited_scope_chain));
+        edge_line = std.Concat(edge_line, std.Concat(" return_value=", edge.return_value_id));
+        edge_line = std.Concat(edge_line, std.Concat(" return_abi=", edge.return_abi));
+        edge_line = std.Concat(edge_line, "\n");
         output = std.Clone(ctx, std.Concat(output, edge_line));
         edge_index = edge_index + 1;
     }
     mut entry_index := 0;
     while entry_index < mir_early_exit_cleanup_entry_count(plan, ctx) {
         mut entry := mir_early_exit_cleanup_entry_at(plan, entry_index, ctx);
-        mut entry_line := std.Concat("early_return_cleanup: edge=", std.Concat(entry.edge_id, std.Concat(" scope=", std.Concat(entry.scope_id, std.Concat(" resource=", std.Concat(entry.resource_id, std.Concat(" order=", std.Concat(std.FormatInt(entry.execution_order), std.Concat(" destructor=", std.Concat(entry.destructor_id, std.Concat(" source=", std.Concat(entry.source_location, std.Concat(" effect=", std.Concat(entry.observable_effect, "\n")))))))))))))));
+        mut entry_line := std.Concat("early_return_cleanup: edge=", entry.edge_id);
+        entry_line = std.Concat(entry_line, std.Concat(" scope=", entry.scope_id));
+        entry_line = std.Concat(entry_line, std.Concat(" resource=", entry.resource_id));
+        entry_line = std.Concat(entry_line, std.Concat(" order=", std.FormatInt(entry.execution_order)));
+        entry_line = std.Concat(entry_line, std.Concat(" destructor=", entry.destructor_id));
+        entry_line = std.Concat(entry_line, std.Concat(" source=", entry.source_location));
+        entry_line = std.Concat(entry_line, std.Concat(" effect=", entry.observable_effect));
+        entry_line = std.Concat(entry_line, "\n");
         output = std.Clone(ctx, std.Concat(output, entry_line));
         entry_index = entry_index + 1;
     }

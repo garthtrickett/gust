@@ -49,7 +49,9 @@ func make_exclusion(edge_id: str, scope_id: str, resource_id: str, state: str, r
 }
 
 func main() {
-    mut ctx: Arena;
+    mut ctx := os.Arena.New();
+    defer ctx.Free();
+    os.SetThreadScratch(&ctx);
     mut plan := early.mir_early_exit_cleanup_make_plan(&ctx);
 
     plan = early.mir_early_exit_cleanup_with_edge(plan, make_edge("edge:early:direct", "direct_return", "scope:function", "", "value:return:direct", "scalar", 1, 2, 4, "compiler/early_return.gst:10:5", "scope:function", &ctx), &ctx);
