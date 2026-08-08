@@ -63,8 +63,8 @@ Cancels any `queued`/`in_progress` runs on the current PR branch whose `headSha`
 - [x] Patch 15.6 — Cleanup at Early Returns and Structured Exits — DONE
 - [x] Patch 15.7 — Destructor Scheduling and Exactly-Once Destruction — DONE
 - [x] Patch 15.8 — Manual Close Versus Deferred Cleanup — DONE
-- [ ] Patch 15.9 — Conditional and Loop-Carried Resource States — IN PROGRESS
-- [ ] Patch 15.10 — Resource Metadata and Request Validation
+- [x] Patch 15.9 — Conditional and Loop-Carried Resource States — DONE
+- [ ] Patch 15.10 — Resource Metadata and Request Validation — IN PROGRESS
 - [ ] Patch 15.11 — Directory and Selected Specialized Resource Kinds
 - [ ] Patch 15.12 — Panic and Failure Cleanup Policy
 - [ ] Patch 15.13 — Cross-Feature Resource Composition and Complete Differential
@@ -242,7 +242,7 @@ Purpose: Freeze scheduling preventing duplicated/skipped destruction. Steps: Def
 ### Patch 15.8 — Manual Close Versus Deferred Cleanup — DONE
 Purpose: Define how explicit close interacts with deferred cleanup. Steps: Freeze close-capable kinds, close suppresses destructor, transitions to closed, rejects double close/close-after-move/use-after-close. Cleanup does not double-close. Guards: manual-close contract/parity. Exit: One state machine prevents duplicate close/destruction.
 
-### Patch 15.9 — Conditional and Loop-Carried Resource States — IN PROGRESS
+### Patch 15.9 — Conditional and Loop-Carried Resource States — DONE
 Purpose: Allow selected resource states to cross branches, joins, and supported loops without backend-specific state reconstruction. Steps: Freeze supported joins (valid: live/live, moved/moved, closed/closed, reinitialized/reinitialized; invalid: live/moved, live/closed, destroyed/live, incompatible identities). Add canonical MIR block parameters / join records. Define loop-carried policies: live across iterations, move exactly once before exit, replace each iteration with prior cleanup, closed on all exiting paths. Reject path-dependent liveness without policy, cleanup mismatch, backedge mismatch, use-after-conditionally-moved, destructor disagreement. Add positives/negatives for nested branches/loops, compare witnesses after joins/exits. Guards: `guard-cranelift-phase15-resource-cfg-contract` (L1) and `guard-cranelift-phase15-resource-cfg-parity` (L2). Boundary: Irreducible CFG, exception edges, unrestricted merging deferred. Exit: Selected states cross branches/loops through one compiler-owned join policy with equivalent cleanup via MIR-to-C and Cranelift.
 
 ### Patch 15.10 — Resource Metadata and Request Validation
