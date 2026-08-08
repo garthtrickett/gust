@@ -15562,9 +15562,28 @@ guard-cranelift-phase15-opening-contract:
         -e 'phase15-family:' \
         -e 'guard-cranelift-phase15-.*(parity|differential|complete-resource)' \
         -e 'matrix\.phase15' \
-        "$pr_workflow" "$heavy_workflow" "$historical_workflow" >/dev/null
+        "$pr_workflow" "$heavy_workflow" >/dev/null
     then
-      echo "Patch 15.0 must not add Phase 15 Level 2 or Level 3 workflow rows."
+      echo "Phase 15 opening must not place Phase 15 Level 2 or Level 3 rows in PR Fast or Heavy Guards."
+      exit 1
+    fi
+    historical_phase15_rows="$(
+      (rg -n \
+          -e 'phase15-family:' \
+          -e 'guard-cranelift-phase15-.*(parity|differential|complete-resource)' \
+          -e 'matrix\.phase15' \
+          "$historical_workflow" || true) |
+        rg -v -F 'just guard-cranelift-phase15-complete-resource-evidence' || true
+    )"
+    if [ -n "$historical_phase15_rows" ]; then
+      echo "Cranelift Historical Full contains an unowned Phase 15 workflow row."
+      printf '%s\n' "$historical_phase15_rows"
+      exit 1
+    fi
+    expected_complete_resource_rows="$(python3 -c 'import json; r=json.load(open("scripts/cranelift_feature_registry.json")); print(1 if "phase15_resource_composition_authority" in r else 0)')"
+    actual_complete_resource_rows="$(rg -n -F 'just guard-cranelift-phase15-complete-resource-evidence' "$historical_workflow" | wc -l | tr -d ' ')"
+    if [ "$actual_complete_resource_rows" != "$expected_complete_resource_rows" ]; then
+      echo "Phase 15 complete resource evidence Level 3 ownership drifted."
       exit 1
     fi
 
@@ -20399,3 +20418,36 @@ guard-cranelift-phase15-failure-cleanup-parity:
       grep -F $'guard-cranelift-phase15-failure-cleanup-parity\t2\t' >/dev/null
     just guard-cranelift-phase15-failure-cleanup-contract
     bash scripts/phase15_failure_cleanup_parity.sh
+
+guard-cranelift-phase15-resource-composition-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 15.13 registry-derived resource composition..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase15-resource-composition-contract |
+      grep -F $'guard-cranelift-phase15-resource-composition-contract\t1\t' >/dev/null
+    python3 scripts/phase15_resource_composition.py --check
+
+guard-cranelift-phase15-resource-composition-differential:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 15.13 focused resource composition differential..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase15-resource-composition-differential |
+      grep -F $'guard-cranelift-phase15-resource-composition-differential\t2\t' >/dev/null
+    just guard-cranelift-phase15-resource-composition-contract
+    bash scripts/phase15_resource_composition_parity.sh
+
+guard-cranelift-phase15-complete-resource-evidence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🕰️ Running Phase 15.13 complete registry-derived resource evidence..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase15-complete-resource-evidence |
+      grep -F $'guard-cranelift-phase15-complete-resource-evidence\t3\t' >/dev/null
+    while IFS= read -r guard; do
+      [ -n "$guard" ] || continue
+      just "$guard"
+    done < <(python3 scripts/phase15_resource_composition.py individual-guards)
+    just guard-cranelift-phase15-resource-composition-differential
+    echo "guard-cranelift-phase15-complete-resource-evidence: ok (Level 3)"

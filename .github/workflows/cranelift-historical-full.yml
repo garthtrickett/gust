@@ -49,7 +49,9 @@ jobs:
         run: make gust
 
       - name: Run full history outside the external Phase 14 target matrix
-        run: PHASE14_HISTORICAL_EXTERNAL_MATRIX=1 just guard-cranelift-historical-full
+        run: |
+          PHASE14_HISTORICAL_EXTERNAL_MATRIX=1 just guard-cranelift-historical-full
+          just guard-cranelift-phase15-complete-resource-evidence
 
   phase14-target:
     name: Phase 14 target / ${{ matrix.target }}

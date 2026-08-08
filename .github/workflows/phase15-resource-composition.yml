@@ -1,0 +1,61 @@
+name: Cranelift Phase 15 Resource Composition
+
+on:
+  pull_request:
+    paths:
+      - 'compiler/mir_resource_composition.gst'
+      - 'compiler/mir_resource_composition_mir_to_c.gst'
+      - 'compiler/mir_resource_composition_state_smoke_test_entry.gst'
+      - 'compiler/mir_resource_composition_parity_smoke_test_entry.gst'
+      - 'compiler/future/p15_complete_resource_differential_source.gst'
+      - 'compiler/experiments/cranelift/src/resource_composition.rs'
+      - 'compiler/experiments/cranelift/src/main.rs'
+      - 'scripts/phase15_resource_composition.py'
+      - 'scripts/phase15_resource_composition_parity.sh'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/cranelift_registry.py'
+      - 'scripts/cranelift_test_levels.json'
+      - 'tests/cranelift/phase15_resource_composition_contract.tsv'
+      - 'tests/cranelift/phase15_resource_composition_review.txt'
+      - 'justfile'
+      - '.github/workflows/phase15-resource-composition.yml'
+      - '.github/workflows/cranelift-historical-full.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'compiler/mir_resource_composition.gst'
+      - 'compiler/mir_resource_composition_mir_to_c.gst'
+      - 'compiler/mir_resource_composition_state_smoke_test_entry.gst'
+      - 'compiler/mir_resource_composition_parity_smoke_test_entry.gst'
+      - 'compiler/future/p15_complete_resource_differential_source.gst'
+      - 'compiler/experiments/cranelift/src/resource_composition.rs'
+      - 'compiler/experiments/cranelift/src/main.rs'
+      - 'scripts/phase15_resource_composition.py'
+      - 'scripts/phase15_resource_composition_parity.sh'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/cranelift_registry.py'
+      - 'scripts/cranelift_test_levels.json'
+      - 'tests/cranelift/phase15_resource_composition_contract.tsv'
+      - 'tests/cranelift/phase15_resource_composition_review.txt'
+      - 'justfile'
+      - '.github/workflows/phase15-resource-composition.yml'
+      - '.github/workflows/cranelift-historical-full.yml'
+  workflow_dispatch:
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin"
+      - run: just guard-cranelift-phase15-resource-composition-contract
+  differential:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin"
+      - run: make gust
+      - run: just guard-cranelift-phase15-resource-composition-differential
