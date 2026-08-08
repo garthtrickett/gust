@@ -272,6 +272,8 @@
     "guard-cranelift-phase15-resource-composition-contract": 1,
     "guard-cranelift-phase15-resource-composition-differential": 2,
     "guard-cranelift-phase15-complete-resource-evidence": 3,
-    "guard-cranelift-phase15-deferred-residue-audit": 1
+    "guard-cranelift-phase15-deferred-residue-audit": 1,
+    "guard-cranelift-phase15-resource-authority-contract": 1,
+    "guard-cranelift-phase15-close": 1
   }
 }

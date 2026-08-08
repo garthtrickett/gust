@@ -23,6 +23,7 @@ TOP_FIELDS = {
     "phase15_failure_cleanup_authority",
     "phase15_resource_composition_authority",
     "phase15_deferred_residue_audit",
+    "phase15_closure",
     "phase14_layout_authority",
     "phase14_primitive_layout", "phase14_integer_conversions",
     "phase14_pointers", "phase14_stack_slots", "phase14_memory_accesses",

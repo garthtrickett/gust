@@ -1,0 +1,39 @@
+kind	requirement	evidence	level
+parent	Phase 14 semantic closure remains intact	guard-cranelift-phase14-close	1
+opening	Phase 15 opening contract remains intact	guard-cranelift-phase15-opening-contract	1
+registry	canonical schema remains valid	guard-cranelift-registry-schema	1
+registry	all projections remain current	guard-cranelift-registry-projection	1
+authority	generic resource authority exists	compiler/mir_resource_authority.gst	1
+authority	specialized resource authority is closed	phase15_specialized_resource_authority	1
+authority	failure cleanup authority is closed	phase15_failure_cleanup_authority	1
+authority	composition authority is closed	phase15_resource_composition_authority	1
+authority	residue audit authority is closed	phase15_deferred_residue_audit	1
+coverage	all thirteen opening rows are migrated	migrated_entry_count 13	1
+coverage	one explicit exclusion is recorded	excluded_item_count 1	1
+coverage	three narrow deferrals remain	narrow_deferred_row_count 3	1
+roadmap	patches 15.0 through 15.15 are DONE	TASK.md status checklist	1
+mir	resource MIR contract remains Level 1	guard-cranelift-phase15-resource-mir-contract	1
+state	move-state contract remains Level 1	guard-cranelift-phase15-move-state-contract	1
+cleanup	reassignment contract remains Level 1	guard-cranelift-phase15-resource-reassignment-contract	1
+cleanup	scope-exit contract remains Level 1	guard-cranelift-phase15-scope-exit-cleanup-contract	1
+cleanup	early-return contract remains Level 1	guard-cranelift-phase15-early-return-cleanup-contract	1
+cleanup	destructor scheduling remains Level 1	guard-cranelift-phase15-destructor-scheduling-contract	1
+cleanup	manual close remains Level 1	guard-cranelift-phase15-manual-close-contract	1
+cfg	resource CFG remains Level 1	guard-cranelift-phase15-resource-cfg-contract	1
+request	resource metadata remains Level 1	guard-cranelift-phase15-resource-metadata-contract	1
+specialized	specialized resource contract remains Level 1	guard-cranelift-phase15-specialized-resource-contract	1
+failure	failure cleanup remains Level 1	guard-cranelift-phase15-failure-cleanup-contract	1
+composition	composition contract remains Level 1	guard-cranelift-phase15-resource-composition-contract	1
+residue	residue audit remains Level 1	guard-cranelift-phase15-deferred-residue-audit	1
+levels	focused differential remains Level 2	Level 2 mapping	1
+levels	complete evidence remains Level 3	guard-cranelift-phase15-complete-resource-evidence	1
+levels	Historical Full solely owns Level 3	cranelift-historical-full.yml	1
+oracle	MIR-to-C remains default differential oracle	CRANELIFT_PHASE15_OPENING.md	1
+fallback	explicit Cranelift remains no-fallback	CRANELIFT_EXPERIMENT_MANIFEST.md	1
+artifact	Phase 9G retains artifact ownership	guard-cranelift-phase9g-close	1
+worker	worker isolation remains explicit	isolated worker policy	1
+failure	deferral stops before driver and artifacts	failure policy	1
+preservation	existing output survives invalid/deferred paths	output preserved policy	1
+route	route and manifest architecture remain guarded	guard-cranelift-route-architecture-contract	1
+closure	semantic status is closed	phase15_closed_resource_and_lifetime_semantics	1
+closure	close guard is Level 1	guard-cranelift-phase15-close	1
