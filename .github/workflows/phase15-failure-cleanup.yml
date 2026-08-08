@@ -1,0 +1,62 @@
+name: Cranelift Phase 15 Failure Cleanup
+
+on:
+  pull_request:
+    paths:
+      - 'compiler/mir_failure_cleanup.gst'
+      - 'compiler/mir_failure_cleanup_mir_to_c.gst'
+      - 'compiler/mir_failure_cleanup_state_smoke_test_entry.gst'
+      - 'compiler/mir_failure_cleanup_parity_smoke_test_entry.gst'
+      - 'compiler/future/p15_selected_failure_cleanup_source.gst'
+      - 'compiler/experiments/cranelift/src/failure_cleanup.rs'
+      - 'compiler/experiments/cranelift/src/main.rs'
+      - 'scripts/phase15_failure_cleanup.py'
+      - 'scripts/phase15_failure_cleanup_parity.sh'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/cranelift_registry.py'
+      - 'scripts/cranelift_test_levels.json'
+      - 'tests/cranelift/phase15_failure_cleanup_contract.tsv'
+      - 'tests/cranelift/phase15_failure_cleanup_review.txt'
+      - 'justfile'
+      - '.github/workflows/phase15-failure-cleanup.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'compiler/mir_failure_cleanup.gst'
+      - 'compiler/mir_failure_cleanup_mir_to_c.gst'
+      - 'compiler/mir_failure_cleanup_state_smoke_test_entry.gst'
+      - 'compiler/mir_failure_cleanup_parity_smoke_test_entry.gst'
+      - 'compiler/future/p15_selected_failure_cleanup_source.gst'
+      - 'compiler/experiments/cranelift/src/failure_cleanup.rs'
+      - 'compiler/experiments/cranelift/src/main.rs'
+      - 'scripts/phase15_failure_cleanup.py'
+      - 'scripts/phase15_failure_cleanup_parity.sh'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/cranelift_registry.py'
+      - 'scripts/cranelift_test_levels.json'
+      - 'tests/cranelift/phase15_failure_cleanup_contract.tsv'
+      - 'tests/cranelift/phase15_failure_cleanup_review.txt'
+      - 'justfile'
+      - '.github/workflows/phase15-failure-cleanup.yml'
+  workflow_dispatch:
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin"
+      - name: Phase 15.12 failure cleanup contract (Level 1)
+        run: just guard-cranelift-phase15-failure-cleanup-contract
+  parity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin"
+      - name: Build Gust
+        run: make gust
+      - name: Phase 15.12 failure cleanup parity (Level 2)
+        run: just guard-cranelift-phase15-failure-cleanup-parity
