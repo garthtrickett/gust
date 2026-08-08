@@ -15,6 +15,22 @@ When monitoring GitHub Actions (e.g. `codex/phase15-9-resource-cfg` `HEAD` `b033
 
 Once all PR GitHub runners for `HEAD` are green (`completed success` for every `pull_request` workflow, `Early Return Cleanup` included), autonomously merge the PR (`gh pr merge` / push to `main`) without prompting and immediately start the next patch (e.g. 15.10). Do not wait for manual approval.
 
+## Runner Policy
+
+Before triggering new pushes on `codex/phase15-9-resource-cfg`, check for superseded GitHub runs and cancel them to free concurrency:
+
+```bash
+gh run list --branch codex/phase15-9-resource-cfg --limit 30 --json databaseId,headSha,status,name | python3 -c "
+import json,sys,subprocess
+data=json.load(sys.stdin)
+for r in data:
+    if r['headSha'].startswith(('f34b623','0ccae0','b2d031','b0332b')) and r['status']!='completed':
+        subprocess.run(['gh','run','cancel',str(r['databaseId'])])
+"
+```
+
+Use the current prior SHAs (oldest `f34b6237`/`0ccae095` plus intermediate `b2d03141`/`b0332b2c`) and `06386b04`. Cancel `queued`/`in_progress` `PR Fast`/`Heavy Guards` etc. before `git push` so `HEAD` jobs start immediately (observed 40-60m queue without cancel).
+
 ## Status
 
 - [x] Patch 15.0 — Opening Inventory and Phase 14 Residual Rebase — DONE
