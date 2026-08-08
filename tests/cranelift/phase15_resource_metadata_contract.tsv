@@ -1,0 +1,39 @@
+kind	requirement	evidence	level
+authority	compiler-owned resource metadata contract	freeze_resource_metadata_schema	1
+schema	freeze resource metadata schema	freeze_resource_metadata_schema	1
+schema	require identity record	MirResourceIdentity	1
+schema	require resource_id field	resource_id:	1
+schema	require value_id field	value_id:	1
+schema	require resource_type field	resource_type_id:	1
+schema	require declaration identity field	source_declaration_id:	1
+schema	require source location field	source_location:	1
+schema	require owning scope field	owning_scope:	1
+schema	require resource kind field	resource_kind:	1
+schema	require layout identity field	layout_id:	1
+schema	require destructor identity field	MirDestructorIdentity	1
+schema	require destructor_id field	destructor_id:	1
+schema	require close capability field	MirCloseCapability	1
+schema	require cleanup obligation field	MirCleanupObligation	1
+schema	require join record field	MirResourceStateJoin	1
+schema	require state record field	MirResourceState	1
+ordering	deterministic ordering guarantee	deterministic_ordering	1
+ordering	resource ordering deterministic	deterministic_resource_ordering	1
+ordering	cleanup ordering deterministic	deterministic_cleanup_ordering	1
+ordering	join ordering deterministic	deterministic_join_ordering	1
+validation	reject malformed identity before worker	malformed_requests_rejected_before_worker	1
+validation	reject malformed kind before worker	malformed_requests_rejected_before_worker	1
+validation	reject malformed declaration before worker	malformed_requests_rejected_before_worker	1
+validation	reject malformed location before worker	malformed_requests_rejected_before_worker	1
+validation	reject malformed scope before worker	malformed_requests_rejected_before_worker	1
+validation	reject malformed type before worker	malformed_requests_rejected_before_worker	1
+validation	reject malformed layout before worker	malformed_requests_rejected_before_worker	1
+validation	reject malformed state before worker	malformed_requests_rejected_before_worker	1
+validation	reject malformed destructor before worker	malformed_requests_rejected_before_worker	1
+validation	reject malformed close before worker	malformed_requests_rejected_before_worker	1
+validation	reject malformed cleanup before worker	malformed_requests_rejected_before_worker	1
+validation	reject malformed join before worker	malformed_requests_rejected_before_worker	1
+transport	worker receives validated contract	worker_receives_validated_contract	1
+transport	malformed stops before driver	before_driver_discovery	1
+transport	deterministic ordering validated	resource_table_deterministic_ordering_valid	1
+wiring	contract guard exists	guard-cranelift-phase15-resource-metadata-contract	1
+wiring	ordering witness exists	phase15-resource-metadata-witness	1

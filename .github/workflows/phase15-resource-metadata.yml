@@ -1,0 +1,40 @@
+name: Cranelift Phase 15 Resource Metadata
+
+on:
+  pull_request:
+    paths:
+      - 'compiler/mir_resource_authority.gst'
+      - 'compiler/mir_native_backend_resource_request.gst'
+      - 'compiler/mir_native_backend_resource_mir_request.gst'
+      - 'compiler/experiments/cranelift/src/main.rs'
+      - 'scripts/phase15_resource_metadata.py'
+      - 'scripts/run-gust-file.sh'
+      - 'scripts/cranelift_test_levels.json'
+      - 'tests/cranelift/phase15_resource_metadata_contract.tsv'
+      - 'tests/cranelift/phase15_resource_metadata_review.txt'
+      - 'justfile'
+      - '.github/workflows/phase15-resource-metadata.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'compiler/mir_resource_authority.gst'
+      - 'compiler/mir_native_backend_resource_request.gst'
+      - 'compiler/mir_native_backend_resource_mir_request.gst'
+      - 'compiler/experiments/cranelift/src/main.rs'
+      - 'scripts/phase15_resource_metadata.py'
+      - 'scripts/run-gust-file.sh'
+      - 'scripts/cranelift_test_levels.json'
+      - 'tests/cranelift/phase15_resource_metadata_contract.tsv'
+      - 'tests/cranelift/phase15_resource_metadata_review.txt'
+      - 'justfile'
+      - '.github/workflows/phase15-resource-metadata.yml'
+  workflow_dispatch:
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin"
+      - name: Phase 15.10 resource metadata contract (Level 1)
+        run: just guard-cranelift-phase15-resource-metadata-contract

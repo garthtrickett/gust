@@ -20352,3 +20352,12 @@ guard-cranelift-phase15-resource-cfg-parity:
       grep -F $'guard-cranelift-phase15-resource-cfg-parity\t2\t' >/dev/null
     just guard-cranelift-phase15-resource-cfg-contract
     bash scripts/phase15_resource_cfg_parity.sh
+
+guard-cranelift-phase15-resource-metadata-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 15.10 resource metadata and request validation..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase15-resource-metadata-contract |
+      grep -F $'guard-cranelift-phase15-resource-metadata-contract\t1\t' >/dev/null
+    python3 scripts/phase15_resource_metadata.py --check

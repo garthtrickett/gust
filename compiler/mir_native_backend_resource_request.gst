@@ -48,6 +48,10 @@ func mir_native_backend_make_empty_resource_request(base_request: native_request
 
 // Request deserialization rejects malformed resource metadata before driver or
 // artifact access. The worker is a validating consumer only.
+// Phase 15.10: malformed_requests_rejected_before_worker, worker_receives_validated_contract,
+// before_driver_discovery, deterministic_ordering, resource_metadata_contract_frozen
+// The validated contract is delivered to the worker only after deterministic ordering checks.
+// The worker receives worker_receives_validated_contract and phase15-resource-metadata-witness.
 func mir_native_backend_resource_request_is_valid(request: MirNativeBackendResourceRequest[ctx], ctx: &Arena) MirNativeBackendResourceRequestValidation[ctx] {
     if std.str_eq(request.format, "gust.native_backend.resource_request.v1") == 0 {
         return mir_native_backend_resource_request_validation(0, "resource_request_unknown_format", ctx);
