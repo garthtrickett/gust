@@ -126,6 +126,9 @@ fn validate(edges: &[Edge], entries: &[Entry]) -> Result<(), IoError> {
             if entry.prior_state != "live" {
                 return Err(err("early_return_cleanup_non_live_resource", &entry.resource_id));
             }
+            if entry.order >= edge.terminator {
+                return Err(err("early_return_cleanup_after_terminator", &edge.id));
+            }
             if entry.order != index as i64 + 1 {
                 return Err(err("early_return_cleanup_order_invalid", &edge.id));
             }
@@ -134,9 +137,6 @@ fn validate(edges: &[Edge], entries: &[Entry]) -> Result<(), IoError> {
             }
             if entry.depth == previous_depth && entry.declaration >= previous_declaration {
                 return Err(err("early_return_cleanup_order_invalid", &edge.id));
-            }
-            if entry.order >= edge.terminator {
-                return Err(err("early_return_cleanup_after_terminator", &edge.id));
             }
             if !edge.exited_scopes.split('>').any(|scope| scope == entry.scope_id) {
                 return Err(err("early_return_cleanup_resource_not_in_exited_scope", &entry.resource_id));

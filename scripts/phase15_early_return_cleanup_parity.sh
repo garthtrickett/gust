@@ -60,7 +60,7 @@ def replace(key, new):
     source = source.replace(f"{key}: {value(key)}", f"{key}: {new}", 1)
 
 if mode == "missing-cleanup":
-    replace("early_exit_cleanup_entry_count", "8")
+    replace("early_exit_cleanup_entry_count", "7")
 elif mode == "after-terminator":
     replace("early_exit_cleanup_entry_0_execution_order", "4")
 elif mode == "duplicate-shared-edge":
