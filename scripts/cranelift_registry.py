@@ -19,7 +19,8 @@ AMBIGUOUS = {"", "unknown", "tbd", "ownerless", "ambiguous"}
 TOP_FIELDS = {
     "schema", "schema_version", "registry_version", "registry_status",
     "current_phase", "closed_phase_versions", "closure_snapshots",
-    "opening_snapshots", "phase14_layout_authority",
+    "opening_snapshots", "phase15_specialized_resource_authority",
+    "phase14_layout_authority",
     "phase14_primitive_layout", "phase14_integer_conversions",
     "phase14_pointers", "phase14_stack_slots", "phase14_memory_accesses",
     "phase14_string_views", "residual_snapshots",

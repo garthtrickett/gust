@@ -264,6 +264,8 @@
     "guard-cranelift-phase15-manual-close-parity": 2,
     "guard-cranelift-phase15-resource-cfg-contract": 1,
     "guard-cranelift-phase15-resource-cfg-parity": 2,
-    "guard-cranelift-phase15-resource-metadata-contract": 1
+    "guard-cranelift-phase15-resource-metadata-contract": 1,
+    "guard-cranelift-phase15-specialized-resource-contract": 1,
+    "guard-cranelift-phase15-specialized-resource-parity": 2
   }
 }

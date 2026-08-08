@@ -1,0 +1,46 @@
+Patch 15.11 — Directory and Selected Specialized Resource Kinds
+
+authority	generic compiler resource authority owns specialized state	compiler_owned_generic_resource_and_lifetime_authority	Level 1
+authority	no backend-local specialized state machine	no_specialized_backend_state_machine	Level 1
+registry	structured specialized resource authority exists	phase15_specialized_resource_authority_v1	Level 1
+registry	directory opening row mapped	p15_directory_resources	Level 1
+inventory	exactly one selected specialized kind	os_Dir_ctx	Level 1
+inventory	directory entry is a non-resource view	os_DirEntry_ctx	Level 1
+kind	directory kind identity frozen	directory	Level 1
+kind	resource type identity frozen	os_Dir_ctx	Level 1
+kind	constructor identity frozen	os.OpenDir	Level 1
+kind	destructor identity frozen	destructor:os.CloseDir	Level 1
+kind	close capability frozen	close:os.CloseDir	Level 1
+policy	copy prohibited	prohibited	Level 1
+policy	move prohibited while open	immovable_while_open	Level 1
+policy	manual or scope-exit close exactly once	manual_or_scope_exit_exactly_once	Level 1
+cleanup	cleanup closes directory handle	close_directory_handle	Level 1
+runtime	constructor runtime symbol frozen	os_OpenDir	Level 1
+runtime	close runtime symbol frozen	os_CloseDir	Level 1
+target	target applicability derived from Phase 14	all_declared_host_targets_from_phase14_target_authority	Level 1
+layout	layout identity compiler-owned	layout:os_dir	Level 1
+mapping	resource identity queried generically	mir_resource_by_id	Level 1
+mapping	resource state queried generically	mir_resource_latest_state	Level 1
+mapping	destructor queried generically	mir_destructor_for	Level 1
+mapping	close capability queried generically	mir_close_capability_for	Level 1
+source	real directory source fixture	p15_directory_resources_source.gst	Level 1
+source	directory open operation	os.OpenDir	Level 1
+source	directory read operation	os.ReadDir	Level 1
+source	directory close operation	os.CloseDir	Level 1
+effect	directory entry observed	directory_entry_observed	Level 1
+effect	exactly one close	close_count=1	Level 1
+effect	manual close suppresses destructor	destructor_count=0	Level 1
+witness	filesystem effects compared	filesystem_effects_compared=1	Level 1
+witness	generic authority witnessed	generic_authority=1	Level 1
+witness	backend-local state absent	backend_local_state_machine=0	Level 1
+backend	MIR-to-C consumes compiler plan	mir_specialized_resource_mir_to_c_lower	Level 1
+backend	Cranelift consumes same request	phase15-specialized-resource-witness	Level 1
+test	state policy smoke	mir_specialized_resource_state_smoke_test_entry.gst	Level 1
+test	parity smoke	mir_specialized_resource_parity_smoke_test_entry.gst	Level 1
+test	Level 1 contract guard	guard-cranelift-phase15-specialized-resource-contract	Level 1
+test	Level 2 parity guard	guard-cranelift-phase15-specialized-resource-parity	Level 1
+boundary	unknown resource rejected	specialized_resource_unknown_resource_id	Level 1
+boundary	kind metadata mismatch rejected	specialized_resource_generic_metadata_mismatch	Level 1
+boundary	state mismatch rejected	specialized_resource_state_mismatch	Level 1
+boundary	effect mismatch rejected	specialized_resource_effect_mismatch	Level 1
+defer	other specialized kinds remain unselected	selected_kinds=os_Dir_ctx	Level 1
