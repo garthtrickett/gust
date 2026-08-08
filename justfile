@@ -20380,3 +20380,22 @@ guard-cranelift-phase15-specialized-resource-parity:
       grep -F $'guard-cranelift-phase15-specialized-resource-parity\t2\t' >/dev/null
     just guard-cranelift-phase15-specialized-resource-contract
     bash scripts/phase15_specialized_resource_parity.sh
+
+guard-cranelift-phase15-failure-cleanup-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 15.12 panic and failure cleanup policy..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase15-failure-cleanup-contract |
+      grep -F $'guard-cranelift-phase15-failure-cleanup-contract\t1\t' >/dev/null
+    python3 scripts/phase15_failure_cleanup.py --check
+
+guard-cranelift-phase15-failure-cleanup-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 15.12 panic and failure cleanup parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase15-failure-cleanup-parity |
+      grep -F $'guard-cranelift-phase15-failure-cleanup-parity\t2\t' >/dev/null
+    just guard-cranelift-phase15-failure-cleanup-contract
+    bash scripts/phase15_failure_cleanup_parity.sh

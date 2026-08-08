@@ -1,0 +1,41 @@
+Patch 15.12 — Panic and Failure Cleanup Policy
+
+inventory	four selected failure forms are frozen	registry phase15_failure_cleanup_authority.selected_forms	Level 1
+inventory	trap before execution is selected	trap_before_exec policy row	Level 1
+inventory	runtime failure return is selected	runtime_failure_return policy row	Level 1
+inventory	selected panic has stable authority	selected_panic gust.compiler_panic.v1 row	Level 1
+inventory	native operation failure edge is selected	native_op_failure_edge policy row	Level 1
+boundary	async unwind remains deferred	deferred_forms async_unwind row	Level 1
+boundary	foreign exception remains deferred	deferred_forms foreign_exception row	Level 1
+boundary	cancellation remains deferred	deferred_forms cancellation row	Level 1
+authority	compiler owns failure cleanup policy	compiler_owned_failure_cleanup_policy	Level 1
+authority	generic resource authority supplies cleanup obligations	mir_cleanup_obligation_for_resource_scope	Level 1
+authority	backends have no cleanup planner	shared_canonical_mir_failure_edges_no_backend_cleanup_planner	Level 1
+mir	failure forms are canonical MIR records	MirFailureCleanupForm	Level 1
+mir	failure plan is serialized in native request	mir_failure_cleanup_append_to_request	Level 1
+mir	MIR-to-C consumes compiler plan	mir_failure_cleanup_mir_to_c_lower	Level 1
+mir	Cranelift consumes the same serialized plan	phase15-failure-cleanup-witness	Level 1
+trap	pre-execution trap stops before driver discovery	before_driver_discovery	Level 1
+trap	pre-execution trap cleans no uninitialized resource	no_cleanup_resource_not_initialized	Level 1
+runtime	runtime failure cleans live resources then returns	cleanup_live_resources_then_terminate	Level 1
+panic	selected panic cleans before terminal trap	trap_after_cleanup	Level 1
+native	native failure cleans before status propagation	propagate_native_status	Level 1
+order	cleanup order is deterministic	reverse_declaration_inner_before_outer	Level 1
+order	cleanup obligation executes exactly once	exactly_once=1	Level 1
+state	selected cleanup reaches destroyed state	final_state=destroyed	Level 1
+validation	unknown format is rejected	failure_cleanup_unknown_format	Level 1
+validation	unfrozen inventory is rejected	failure_cleanup_inventory_unfrozen	Level 1
+validation	deferred boundary drift is rejected	failure_cleanup_deferred_boundary_mismatch	Level 1
+validation	backend authority drift is rejected	failure_cleanup_authority_mismatch	Level 1
+validation	duplicate forms are rejected	failure_cleanup_duplicate_form	Level 1
+validation	missing generic resource is rejected	failure_cleanup_unknown_resource	Level 1
+validation	missing cleanup obligation is rejected	failure_cleanup_obligation_missing	Level 1
+validation	mismatched cleanup obligation is rejected	failure_cleanup_obligation_mismatch	Level 1
+validation	terminal state mismatch is rejected	failure_cleanup_terminal_state_mismatch	Level 1
+preservation	sentinel output survives selected failure	output_preserved=1	Level 1
+targets	targets derive from Phase 14 authority	all_declared_host_targets_from_phase14_target_authority	Level 1
+source	real source exercises failure return cleanup	p15_selected_failure_cleanup_source.gst	Level 1
+parity	default and explicit MIR-to-C share witness	mir_failure_cleanup_mir_to_c_lower	Level 1
+parity	MIR-to-C and Cranelift witnesses are byte identical	phase15_failure_cleanup_parity.sh	Level 1
+ci	contract guard is Level 1	guard-cranelift-phase15-failure-cleanup-contract	Level 1
+ci	focused parity guard is Level 2	guard-cranelift-phase15-failure-cleanup-parity	Level 1

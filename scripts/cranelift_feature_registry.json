@@ -1347,6 +1347,93 @@
     ],
     "backend_policy": "no_specialized_backend_state_machine"
   },
+  "phase15_failure_cleanup_authority": {
+    "version": "phase15_failure_cleanup_authority_v1",
+    "status": "patch15_12_selected_failure_forms_migrated",
+    "authority_owner": "compiler/mir_failure_cleanup.gst",
+    "generic_resource_authority": "compiler/mir_resource_authority.gst",
+    "opening_entry_id": "p15_selected_failure_cleanup",
+    "order_policy": "reverse_declaration_inner_before_outer",
+    "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
+    "selected_forms": [
+      {
+        "id": "trap_before_exec",
+        "failure_stage": "before_driver_discovery",
+        "terminal_kind": "compiler_rejection",
+        "stable_authority": "compiler_resource_cleanup_verifier",
+        "cleanup_policy": "no_cleanup_resource_not_initialized",
+        "cleanup_count": 0,
+        "destructor_count": 0,
+        "exit_status": 65,
+        "order_policy": "reverse_declaration_inner_before_outer",
+        "exactly_once": true,
+        "output_preserved": true,
+        "status": "migrated"
+      },
+      {
+        "id": "runtime_failure_return",
+        "failure_stage": "runtime_failure_status_edge",
+        "terminal_kind": "failure_return",
+        "stable_authority": "canonical_mir_failure_return.v1",
+        "cleanup_policy": "cleanup_live_resources_then_terminate",
+        "cleanup_count": 1,
+        "destructor_count": 1,
+        "exit_status": 82,
+        "order_policy": "reverse_declaration_inner_before_outer",
+        "exactly_once": true,
+        "output_preserved": true,
+        "status": "migrated"
+      },
+      {
+        "id": "selected_panic",
+        "failure_stage": "compiler_selected_panic_edge",
+        "terminal_kind": "trap_after_cleanup",
+        "stable_authority": "gust.compiler_panic.v1",
+        "cleanup_policy": "cleanup_live_resources_then_terminate",
+        "cleanup_count": 1,
+        "destructor_count": 1,
+        "exit_status": 101,
+        "order_policy": "reverse_declaration_inner_before_outer",
+        "exactly_once": true,
+        "output_preserved": true,
+        "status": "migrated"
+      },
+      {
+        "id": "native_op_failure_edge",
+        "failure_stage": "canonical_mir_native_failure_edge",
+        "terminal_kind": "propagate_native_status",
+        "stable_authority": "gust.compiler_native_failure.v1",
+        "cleanup_policy": "cleanup_live_resources_then_terminate",
+        "cleanup_count": 1,
+        "destructor_count": 1,
+        "exit_status": 74,
+        "order_policy": "reverse_declaration_inner_before_outer",
+        "exactly_once": true,
+        "output_preserved": true,
+        "status": "migrated"
+      }
+    ],
+    "deferred_forms": [
+      {
+        "id": "async_unwind",
+        "reason": "requires_async_runtime_and_unwind_authority",
+        "destination_phase": "phase17"
+      },
+      {
+        "id": "foreign_exception",
+        "reason": "requires_foreign_exception_ABI_and_unwind_authority",
+        "destination_phase": "phase17"
+      },
+      {
+        "id": "cancellation",
+        "reason": "requires_concurrency_cancellation_and_runtime_authority",
+        "destination_phase": "phase19"
+      }
+    ],
+    "source_fixture": "compiler/future/p15_selected_failure_cleanup_source.gst",
+    "canonical_mir_fixture": "compiler/mir_failure_cleanup_parity_smoke_test_entry.gst",
+    "backend_policy": "shared_canonical_mir_failure_edges_no_backend_cleanup_planner"
+  },
   "phase14_layout_authority": {
     "version": "phase14_compiler_owned_layout_authority_v1",
     "status": "consumed_by_patch14_7",

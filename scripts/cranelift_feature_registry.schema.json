@@ -14,6 +14,7 @@
     "closure_snapshots",
     "opening_snapshots",
     "phase15_specialized_resource_authority",
+    "phase15_failure_cleanup_authority",
     "phase14_layout_authority",
     "phase14_primitive_layout",
     "phase14_integer_conversions",
@@ -227,6 +228,9 @@
     },
     "phase15_specialized_resource_authority": {
       "$ref": "#/$defs/phase15_specialized_resource_authority"
+    },
+    "phase15_failure_cleanup_authority": {
+      "$ref": "#/$defs/phase15_failure_cleanup_authority"
     },
     "phase14_layout_authority": {
       "$ref": "#/$defs/phase14_layout_authority"
@@ -1265,6 +1269,90 @@
         "source_fixture": {"const": "compiler/future/p15_directory_resources_source.gst"},
         "canonical_mir_fixture": {"const": "compiler/mir_specialized_resource_parity_smoke_test_entry.gst"},
         "status": {"const": "migrated"}
+      }
+    },
+    "phase15_failure_cleanup_authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "status",
+        "authority_owner",
+        "generic_resource_authority",
+        "opening_entry_id",
+        "order_policy",
+        "target_applicability",
+        "selected_forms",
+        "deferred_forms",
+        "source_fixture",
+        "canonical_mir_fixture",
+        "backend_policy"
+      ],
+      "properties": {
+        "version": {"const": "phase15_failure_cleanup_authority_v1"},
+        "status": {"const": "patch15_12_selected_failure_forms_migrated"},
+        "authority_owner": {"const": "compiler/mir_failure_cleanup.gst"},
+        "generic_resource_authority": {"const": "compiler/mir_resource_authority.gst"},
+        "opening_entry_id": {"const": "p15_selected_failure_cleanup"},
+        "order_policy": {"const": "reverse_declaration_inner_before_outer"},
+        "target_applicability": {"const": "all_declared_host_targets_from_phase14_target_authority"},
+        "selected_forms": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": {"$ref": "#/$defs/phase15_failure_cleanup_form"}
+        },
+        "deferred_forms": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {"$ref": "#/$defs/phase15_failure_cleanup_deferred_form"}
+        },
+        "source_fixture": {"const": "compiler/future/p15_selected_failure_cleanup_source.gst"},
+        "canonical_mir_fixture": {"const": "compiler/mir_failure_cleanup_parity_smoke_test_entry.gst"},
+        "backend_policy": {"const": "shared_canonical_mir_failure_edges_no_backend_cleanup_planner"}
+      }
+    },
+    "phase15_failure_cleanup_form": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "failure_stage",
+        "terminal_kind",
+        "stable_authority",
+        "cleanup_policy",
+        "cleanup_count",
+        "destructor_count",
+        "exit_status",
+        "order_policy",
+        "exactly_once",
+        "output_preserved",
+        "status"
+      ],
+      "properties": {
+        "id": {"enum": ["trap_before_exec", "runtime_failure_return", "selected_panic", "native_op_failure_edge"]},
+        "failure_stage": {"enum": ["before_driver_discovery", "runtime_failure_status_edge", "compiler_selected_panic_edge", "canonical_mir_native_failure_edge"]},
+        "terminal_kind": {"enum": ["compiler_rejection", "failure_return", "trap_after_cleanup", "propagate_native_status"]},
+        "stable_authority": {"enum": ["compiler_resource_cleanup_verifier", "canonical_mir_failure_return.v1", "gust.compiler_panic.v1", "gust.compiler_native_failure.v1"]},
+        "cleanup_policy": {"enum": ["no_cleanup_resource_not_initialized", "cleanup_live_resources_then_terminate"]},
+        "cleanup_count": {"type": "integer", "minimum": 0, "maximum": 1},
+        "destructor_count": {"type": "integer", "minimum": 0, "maximum": 1},
+        "exit_status": {"enum": [65, 74, 82, 101]},
+        "order_policy": {"const": "reverse_declaration_inner_before_outer"},
+        "exactly_once": {"const": true},
+        "output_preserved": {"const": true},
+        "status": {"const": "migrated"}
+      }
+    },
+    "phase15_failure_cleanup_deferred_form": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "reason", "destination_phase"],
+      "properties": {
+        "id": {"enum": ["async_unwind", "foreign_exception", "cancellation"]},
+        "reason": {"type": "string", "minLength": 1},
+        "destination_phase": {"enum": ["phase17", "phase19"]}
       }
     },
     "phase14_layout_authority": {
