@@ -20333,3 +20333,22 @@ guard-cranelift-phase15-manual-close-parity:
       grep -F $'guard-cranelift-phase15-manual-close-parity\t2\t' >/dev/null
     just guard-cranelift-phase15-manual-close-contract
     bash scripts/phase15_manual_close_parity.sh
+
+guard-cranelift-phase15-resource-cfg-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 15.9 conditional and loop-carried resource states..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase15-resource-cfg-contract |
+      grep -F $'guard-cranelift-phase15-resource-cfg-contract\t1\t' >/dev/null
+    python3 scripts/phase15_resource_cfg.py --check
+
+guard-cranelift-phase15-resource-cfg-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 15.9 conditional and loop-carried resource state parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase15-resource-cfg-parity |
+      grep -F $'guard-cranelift-phase15-resource-cfg-parity\t2\t' >/dev/null
+    just guard-cranelift-phase15-resource-cfg-contract
+    bash scripts/phase15_resource_cfg_parity.sh

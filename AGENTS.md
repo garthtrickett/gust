@@ -18,6 +18,7 @@ coherent, bootstrap-safe change that satisfies the selected patch.
   request after required checks pass and all review conversations are resolved.
 - Do not change repository rules, Actions variables, secrets, or permissions
   unless the repository owner explicitly requests that configuration change.
+- Per `TASK.md` Workflow Policy Git authorization, publication to `codex/**` (commit/push/PR create+update/merge and superseded-run cancel) is pre-authorized — `TASK.md` is the explicit ask. General rule: if Workflow / Monitoring / Merge / Runner Policy defines the next step, do not ask the operator — continue the automated loop (includes but not limited to "say push" gating). Only ask when no policy defines the next step.
 
 ## Repository rules
 
@@ -46,6 +47,13 @@ Use `scripts/agent-verify.sh` where it covers the requested validation.
 Codex Cloud validation is advisory. GitHub Actions is the authoritative
 validation environment. A task is not complete until the required checks for
 the published commit pass.
+
+After local partial validation (relevant Level 1/Level 2 guards, not the full
+historical suite), publish via a `codex/**` branch + PR, then immediately
+check GitHub Actions runners with `gh run list` / `gh run view --log`.
+If any required check fails, reproduce the failure locally with the exact
+log excerpt, fix minimally, rerun the focused local guard, and push again.
+Do not consider a patch done until the PR's required checks are green.
 
 ## Failure handling
 

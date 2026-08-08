@@ -236,53 +236,53 @@ func mir_early_exit_cleanup_validate(plan: MirEarlyExitCleanupPlan[ctx], ctx: &A
     return result;
 }
 
-func mir_early_exit_cleanup_append_field(output: str, key: str, value: str) str {
-    return std.Concat(output, std.Concat(key, std.Concat(": ", std.Concat(value, "\n"))));
+func mir_early_exit_cleanup_append_field(output: str, key: str, value: str, ctx: &Arena) str {
+    return std.Clone(ctx, std.Concat(output, std.Concat(key, std.Concat(": ", std.Concat(value, "\n")))));
 }
 
 func mir_early_exit_cleanup_append_to_request(request: str, plan: MirEarlyExitCleanupPlan[ctx], ctx: &Arena) str {
     mut output := request;
-    output = mir_early_exit_cleanup_append_field(output, "early_exit_cleanup_format", plan.format);
-    output = mir_early_exit_cleanup_append_field(output, "early_exit_cleanup_order_policy", plan.order_policy);
-    output = mir_early_exit_cleanup_append_field(output, "early_exit_cleanup_aggregate_return_policy", plan.aggregate_return_policy);
-    output = mir_early_exit_cleanup_append_field(output, "early_exit_cleanup_edge_count", std.FormatInt(mir_early_exit_cleanup_edge_count(plan, ctx)));
+    output = mir_early_exit_cleanup_append_field(output, "early_exit_cleanup_format", plan.format, ctx);
+    output = mir_early_exit_cleanup_append_field(output, "early_exit_cleanup_order_policy", plan.order_policy, ctx);
+    output = mir_early_exit_cleanup_append_field(output, "early_exit_cleanup_aggregate_return_policy", plan.aggregate_return_policy, ctx);
+    output = mir_early_exit_cleanup_append_field(output, "early_exit_cleanup_edge_count", std.FormatInt(mir_early_exit_cleanup_edge_count(plan, ctx)), ctx);
     mut edge_index := 0;
     while edge_index < mir_early_exit_cleanup_edge_count(plan, ctx) {
         mut edge := mir_early_exit_cleanup_edge_at(plan, edge_index, ctx);
         mut prefix := std.Concat("early_exit_cleanup_edge_", std.FormatInt(edge_index));
-        output = mir_early_exit_cleanup_append_field(output, std.Concat(prefix, "_id"), edge.edge_id);
-        output = mir_early_exit_cleanup_append_field(output, std.Concat(prefix, "_kind"), edge.exit_kind);
-        output = mir_early_exit_cleanup_append_field(output, std.Concat(prefix, "_source_scope_id"), edge.source_scope_id);
-        output = mir_early_exit_cleanup_append_field(output, std.Concat(prefix, "_destination_scope_id"), edge.destination_scope_id);
-        output = mir_early_exit_cleanup_append_field(output, std.Concat(prefix, "_return_value_id"), edge.return_value_id);
-        output = mir_early_exit_cleanup_append_field(output, std.Concat(prefix, "_return_abi"), edge.return_abi);
-        output = mir_early_exit_cleanup_append_field(output, std.Concat(prefix, "_return_evaluation_order"), std.FormatInt(edge.return_evaluation_order));
-        output = mir_early_exit_cleanup_append_field(output, std.Concat(prefix, "_cleanup_begin_order"), std.FormatInt(edge.cleanup_begin_order));
-        output = mir_early_exit_cleanup_append_field(output, std.Concat(prefix, "_terminator_order"), std.FormatInt(edge.terminator_order));
-        output = mir_early_exit_cleanup_append_field(output, std.Concat(prefix, "_source_location"), edge.source_location);
-        output = mir_early_exit_cleanup_append_field(output, std.Concat(prefix, "_exited_scope_chain"), edge.exited_scope_chain);
+        output = mir_early_exit_cleanup_append_field(output, std.Concat(prefix, "_id"), edge.edge_id, ctx);
+        output = mir_early_exit_cleanup_append_field(output, std.Concat(prefix, "_kind"), edge.exit_kind, ctx);
+        output = mir_early_exit_cleanup_append_field(output, std.Concat(prefix, "_source_scope_id"), edge.source_scope_id, ctx);
+        output = mir_early_exit_cleanup_append_field(output, std.Concat(prefix, "_destination_scope_id"), edge.destination_scope_id, ctx);
+        output = mir_early_exit_cleanup_append_field(output, std.Concat(prefix, "_return_value_id"), edge.return_value_id, ctx);
+        output = mir_early_exit_cleanup_append_field(output, std.Concat(prefix, "_return_abi"), edge.return_abi, ctx);
+        output = mir_early_exit_cleanup_append_field(output, std.Concat(prefix, "_return_evaluation_order"), std.FormatInt(edge.return_evaluation_order), ctx);
+        output = mir_early_exit_cleanup_append_field(output, std.Concat(prefix, "_cleanup_begin_order"), std.FormatInt(edge.cleanup_begin_order), ctx);
+        output = mir_early_exit_cleanup_append_field(output, std.Concat(prefix, "_terminator_order"), std.FormatInt(edge.terminator_order), ctx);
+        output = mir_early_exit_cleanup_append_field(output, std.Concat(prefix, "_source_location"), edge.source_location, ctx);
+        output = mir_early_exit_cleanup_append_field(output, std.Concat(prefix, "_exited_scope_chain"), edge.exited_scope_chain, ctx);
         edge_index = edge_index + 1;
     }
-    output = mir_early_exit_cleanup_append_field(output, "early_exit_cleanup_entry_count", std.FormatInt(mir_early_exit_cleanup_entry_count(plan, ctx)));
+    output = mir_early_exit_cleanup_append_field(output, "early_exit_cleanup_entry_count", std.FormatInt(mir_early_exit_cleanup_entry_count(plan, ctx)), ctx);
     mut entry_index := 0;
     while entry_index < mir_early_exit_cleanup_entry_count(plan, ctx) {
         mut entry := mir_early_exit_cleanup_entry_at(plan, entry_index, ctx);
         mut prefix := std.Concat("early_exit_cleanup_entry_", std.FormatInt(entry_index));
-        output = mir_early_exit_cleanup_append_field(output, std.Concat(prefix, "_edge_id"), entry.edge_id);
-        output = mir_early_exit_cleanup_append_field(output, std.Concat(prefix, "_scope_id"), entry.scope_id);
-        output = mir_early_exit_cleanup_append_field(output, std.Concat(prefix, "_resource_id"), entry.resource_id);
-        output = mir_early_exit_cleanup_append_field(output, std.Concat(prefix, "_cleanup_operation_id"), entry.cleanup_operation_id);
-        output = mir_early_exit_cleanup_append_field(output, std.Concat(prefix, "_destructor_id"), entry.destructor_id);
-        output = mir_early_exit_cleanup_append_field(output, std.Concat(prefix, "_owning_declaration"), entry.owning_declaration);
-        output = mir_early_exit_cleanup_append_field(output, std.Concat(prefix, "_source_location"), entry.source_location);
-        output = mir_early_exit_cleanup_append_field(output, std.Concat(prefix, "_scope_depth"), std.FormatInt(entry.scope_depth));
-        output = mir_early_exit_cleanup_append_field(output, std.Concat(prefix, "_declaration_order"), std.FormatInt(entry.declaration_order));
-        output = mir_early_exit_cleanup_append_field(output, std.Concat(prefix, "_execution_order"), std.FormatInt(entry.execution_order));
-        output = mir_early_exit_cleanup_append_field(output, std.Concat(prefix, "_prior_state"), entry.prior_state);
-        output = mir_early_exit_cleanup_append_field(output, std.Concat(prefix, "_observable_effect"), entry.observable_effect);
+        output = mir_early_exit_cleanup_append_field(output, std.Concat(prefix, "_edge_id"), entry.edge_id, ctx);
+        output = mir_early_exit_cleanup_append_field(output, std.Concat(prefix, "_scope_id"), entry.scope_id, ctx);
+        output = mir_early_exit_cleanup_append_field(output, std.Concat(prefix, "_resource_id"), entry.resource_id, ctx);
+        output = mir_early_exit_cleanup_append_field(output, std.Concat(prefix, "_cleanup_operation_id"), entry.cleanup_operation_id, ctx);
+        output = mir_early_exit_cleanup_append_field(output, std.Concat(prefix, "_destructor_id"), entry.destructor_id, ctx);
+        output = mir_early_exit_cleanup_append_field(output, std.Concat(prefix, "_owning_declaration"), entry.owning_declaration, ctx);
+        output = mir_early_exit_cleanup_append_field(output, std.Concat(prefix, "_source_location"), entry.source_location, ctx);
+        output = mir_early_exit_cleanup_append_field(output, std.Concat(prefix, "_scope_depth"), std.FormatInt(entry.scope_depth), ctx);
+        output = mir_early_exit_cleanup_append_field(output, std.Concat(prefix, "_declaration_order"), std.FormatInt(entry.declaration_order), ctx);
+        output = mir_early_exit_cleanup_append_field(output, std.Concat(prefix, "_execution_order"), std.FormatInt(entry.execution_order), ctx);
+        output = mir_early_exit_cleanup_append_field(output, std.Concat(prefix, "_prior_state"), entry.prior_state, ctx);
+        output = mir_early_exit_cleanup_append_field(output, std.Concat(prefix, "_observable_effect"), entry.observable_effect, ctx);
         entry_index = entry_index + 1;
     }
-    return output;
+    return std.Clone(ctx, output);
 }
 
 func mir_early_exit_cleanup_witness(plan: MirEarlyExitCleanupPlan[ctx], ctx: &Arena) str {
@@ -290,13 +290,27 @@ func mir_early_exit_cleanup_witness(plan: MirEarlyExitCleanupPlan[ctx], ctx: &Ar
     mut edge_index := 0;
     while edge_index < mir_early_exit_cleanup_edge_count(plan, ctx) {
         mut edge := mir_early_exit_cleanup_edge_at(plan, edge_index, ctx);
-        output = std.Concat(output, std.Concat("early_return_cleanup_edge: id=", std.Concat(edge.edge_id, std.Concat(" kind=", std.Concat(edge.exit_kind, std.Concat(" exited_scopes=", std.Concat(edge.exited_scope_chain, std.Concat(" return_value=", std.Concat(edge.return_value_id, std.Concat(" return_abi=", std.Concat(edge.return_abi, "\n")))))))))));
+        mut edge_line := std.Concat("early_return_cleanup_edge: id=", edge.edge_id);
+        edge_line = std.Concat(edge_line, std.Concat(" kind=", edge.exit_kind));
+        edge_line = std.Concat(edge_line, std.Concat(" exited_scopes=", edge.exited_scope_chain));
+        edge_line = std.Concat(edge_line, std.Concat(" return_value=", edge.return_value_id));
+        edge_line = std.Concat(edge_line, std.Concat(" return_abi=", edge.return_abi));
+        edge_line = std.Concat(edge_line, "\n");
+        output = std.Clone(ctx, std.Concat(output, edge_line));
         edge_index = edge_index + 1;
     }
     mut entry_index := 0;
     while entry_index < mir_early_exit_cleanup_entry_count(plan, ctx) {
         mut entry := mir_early_exit_cleanup_entry_at(plan, entry_index, ctx);
-        output = std.Concat(output, std.Concat("early_return_cleanup: edge=", std.Concat(entry.edge_id, std.Concat(" scope=", std.Concat(entry.scope_id, std.Concat(" resource=", std.Concat(entry.resource_id, std.Concat(" order=", std.Concat(std.FormatInt(entry.execution_order), std.Concat(" destructor=", std.Concat(entry.destructor_id, std.Concat(" source=", std.Concat(entry.source_location, std.Concat(" effect=", std.Concat(entry.observable_effect, "\n")))))))))))))));
+        mut entry_line := std.Concat("early_return_cleanup: edge=", entry.edge_id);
+        entry_line = std.Concat(entry_line, std.Concat(" scope=", entry.scope_id));
+        entry_line = std.Concat(entry_line, std.Concat(" resource=", entry.resource_id));
+        entry_line = std.Concat(entry_line, std.Concat(" order=", std.FormatInt(entry.execution_order)));
+        entry_line = std.Concat(entry_line, std.Concat(" destructor=", entry.destructor_id));
+        entry_line = std.Concat(entry_line, std.Concat(" source=", entry.source_location));
+        entry_line = std.Concat(entry_line, std.Concat(" effect=", entry.observable_effect));
+        entry_line = std.Concat(entry_line, "\n");
+        output = std.Clone(ctx, std.Concat(output, entry_line));
         entry_index = entry_index + 1;
     }
     return output;

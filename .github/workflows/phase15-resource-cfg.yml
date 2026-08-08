@@ -1,0 +1,56 @@
+name: Cranelift Phase 15 Resource CFG
+
+on:
+  pull_request:
+    paths:
+      - 'compiler/mir_resource_cfg.gst'
+      - 'compiler/mir_resource_cfg_mir_to_c.gst'
+      - 'compiler/mir_resource_cfg_state_smoke_test_entry.gst'
+      - 'compiler/mir_resource_cfg_parity_smoke_test_entry.gst'
+      - 'compiler/experiments/cranelift/src/resource_cfg.rs'
+      - 'compiler/experiments/cranelift/src/main.rs'
+      - 'scripts/phase15_resource_cfg.py'
+      - 'scripts/phase15_resource_cfg_parity.sh'
+      - 'scripts/run-gust-file.sh'
+      - 'scripts/cranelift_test_levels.json'
+      - 'tests/cranelift/phase15_resource_cfg_contract.tsv'
+      - 'tests/cranelift/phase15_resource_cfg_review.txt'
+      - 'justfile'
+      - '.github/workflows/phase15-resource-cfg.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'compiler/mir_resource_cfg.gst'
+      - 'compiler/mir_resource_cfg_mir_to_c.gst'
+      - 'compiler/mir_resource_cfg_state_smoke_test_entry.gst'
+      - 'compiler/mir_resource_cfg_parity_smoke_test_entry.gst'
+      - 'compiler/experiments/cranelift/src/resource_cfg.rs'
+      - 'compiler/experiments/cranelift/src/main.rs'
+      - 'scripts/phase15_resource_cfg.py'
+      - 'scripts/phase15_resource_cfg_parity.sh'
+      - 'scripts/run-gust-file.sh'
+      - 'scripts/cranelift_test_levels.json'
+      - 'tests/cranelift/phase15_resource_cfg_contract.tsv'
+      - 'tests/cranelift/phase15_resource_cfg_review.txt'
+      - 'justfile'
+      - '.github/workflows/phase15-resource-cfg.yml'
+  workflow_dispatch:
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin"
+      - name: Phase 15.9 resource CFG contract (Level 1)
+        run: just guard-cranelift-phase15-resource-cfg-contract
+  parity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin"
+      - name: Build Gust
+        run: make gust
+      - name: Phase 15.9 resource CFG parity (Level 2)
+        run: just guard-cranelift-phase15-resource-cfg-parity

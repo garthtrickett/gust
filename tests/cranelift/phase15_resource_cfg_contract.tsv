@@ -1,0 +1,44 @@
+kind	requirement	evidence	level
+authority	compiler-owned join policy	compiler_owned_join_policy	1
+inventory	freeze supported resource-state joins	freeze_supported_resource_state_joins	1
+join	valid conditional join live/live	live/live	1
+join	valid conditional join moved/moved	moved/moved	1
+join	valid conditional join closed/closed	closed/closed	1
+join	valid conditional join reinitialized/reinitialized	reinitialized/reinitialized	1
+join	invalid join live/moved	live/moved	1
+join	invalid join live/closed	live/closed	1
+join	invalid join destroyed/live	destroyed/live	1
+join	invalid join incompatible resource identities	incompatible_resource_identities	1
+join	canonical MIR block parameters	resource_state_block_parameters	1
+join	compiler-produced join records	compiler_produced_join_records_with_block_parameters	1
+loop	policy resource remains live across iterations	resource_remains_live_across_iterations	1
+loop	policy resource moves exactly once before loop exit	resource_moves_exactly_once_before_loop_exit	1
+loop	policy resource replaced each iteration with prior cleanup	resource_is_replaced_each_iteration_with_prior_cleanup	1
+loop	policy resource closed on all exiting paths	resource_is_closed_on_all_exiting_paths	1
+rejection	path-dependent liveness without selected policy	path_dependent_liveness_without_selected_policy	1
+rejection	cleanup obligation mismatch at join	cleanup_obligation_mismatch_at_join	1
+rejection	loop backedge state mismatch	loop_backedge_state_mismatch	1
+rejection	use after conditionally moved state	use_after_conditionally_moved_state	1
+rejection	destructor schedule disagreement	destructor_schedule_disagreement	1
+positive	nested branches	nested_branches	1
+positive	selected loops	selected_loops	1
+witness	resource-state witness after join	resource_state_witness_after_join	1
+witness	resource-state witness after loop exit	resource_state_witness_after_loop_exit	1
+witness	cleanup behavior equivalent	cleanup_behavior_equivalent	1
+witness	block parameters used	block_params_used=1	1
+boundary	irreducible CFG deferred	irreducible_cfg_deferred	1
+boundary	arbitrary exception edges deferred	arbitrary_exception_edges_deferred	1
+boundary	unrestricted ownership merging deferred	unrestricted_ownership_merging_deferred	1
+integration	nested branches positive	nested_branches	1
+integration	selected loops positive	selected_loops	1
+integration	nested loops with joins	nested_branches	1
+integration	loop backedge validation	loop_backedge_state_mismatch	1
+integration	use after moved rejection	use_after_conditionally_moved_state	1
+integration	destructor schedule agreement	destructor_schedule_disagreement	1
+comparison	MIR-to-C and Cranelift equivalent cleanup	compiler_owned_join_policy_with_equivalent_cleanup_behavior_through_mir_to_c_and_cranelift	1
+comparison	default and explicit MIR-to-C byte-identical	compiler_owned_join_policy	1
+comparison	resource-state witnesses compared	resource_state_witness_after_join	1
+comparison	cleanup-edge witnesses compared	cleanup_behavior_equivalent	1
+operation	MIR-to-C lowering consumes join records	mir_resource_cfg_mir_to_c_lower	1
+wiring	contract guard exists	guard-cranelift-phase15-resource-cfg-contract	1
+wiring	parity guard exists	guard-cranelift-phase15-resource-cfg-parity	1

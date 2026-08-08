@@ -3,7 +3,7 @@
 #endif
 
 #ifndef GUST_SCRATCH_SIZE
-#define GUST_SCRATCH_SIZE 16384
+#define GUST_SCRATCH_SIZE 131072
 #endif
 
 typedef struct {
