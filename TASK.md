@@ -6,6 +6,12 @@ Flow: start new patch → run related `just`/`make`/`cargo`/`scripts/*` locally 
 
 When any local or GitHub runner fails, do **not** prompt for permission. Fix forward autonomously based on what you see best — inspect logs, run the single failing guard locally and systematically debug before pushing, then verify locally, push, and keep polling until `HEAD` is green. Applies to all work (Phase 15, 16, 17, 18, … — not just Phase 15). When a local fix is in progress, keep working autonomously in the background without asking — the whole loop is autonomous; only notify when you would otherwise need to ask, and keep `c2eab010` polling visible when polling.
 
+### Git authorization — explicit ask for this loop
+
+This file is the explicit authorization for `git commit`, `git push`, `gh pr create`/`update`, `gh run cancel`, and `gh pr merge` on `codex/**` branches. This satisfies the git safety "explicit ask" gate.
+
+Do not use "Left unpushed for your review — say push" or any push-gating prompt. After any local guard passes (`just guard-...` / `bash scripts/...` green), immediately: 1) cancel superseded runs (`headSha != HEAD` per Runner Policy), 2) `git push` (force-with-lease if needed) and create/update PR, 3) resume `c2eab010` polling every 3m with `Monitoring <branch> <SHA> via c2eab010`. Same for Merge Policy — when `HEAD` is `completed success` for all `pull_request` workflows, merge without prompting and start next patch.
+
 ## Monitoring Policy
 
 When monitoring GitHub Actions (e.g. `codex/phase15-9-resource-cfg` `HEAD` `b0332b2c`/`f34b6237`):
