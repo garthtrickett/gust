@@ -290,13 +290,39 @@ func mir_early_exit_cleanup_witness(plan: MirEarlyExitCleanupPlan[ctx], ctx: &Ar
     mut edge_index := 0;
     while edge_index < mir_early_exit_cleanup_edge_count(plan, ctx) {
         mut edge := mir_early_exit_cleanup_edge_at(plan, edge_index, ctx);
-        output = std.Concat(output, std.Concat("early_return_cleanup_edge: id=", std.Concat(edge.edge_id, std.Concat(" kind=", std.Concat(edge.exit_kind, std.Concat(" exited_scopes=", std.Concat(edge.exited_scope_chain, std.Concat(" return_value=", std.Concat(edge.return_value_id, std.Concat(" return_abi=", std.Concat(edge.return_abi, "\n")))))))))));
+        mut line := std.Clone(ctx, "early_return_cleanup_edge: id=");
+        line = std.Clone(ctx, std.Concat(line, edge.edge_id));
+        line = std.Clone(ctx, std.Concat(line, " kind="));
+        line = std.Clone(ctx, std.Concat(line, edge.exit_kind));
+        line = std.Clone(ctx, std.Concat(line, " exited_scopes="));
+        line = std.Clone(ctx, std.Concat(line, edge.exited_scope_chain));
+        line = std.Clone(ctx, std.Concat(line, " return_value="));
+        line = std.Clone(ctx, std.Concat(line, edge.return_value_id));
+        line = std.Clone(ctx, std.Concat(line, " return_abi="));
+        line = std.Clone(ctx, std.Concat(line, edge.return_abi));
+        line = std.Clone(ctx, std.Concat(line, "\n"));
+        output = std.Clone(ctx, std.Concat(output, line));
         edge_index = edge_index + 1;
     }
     mut entry_index := 0;
     while entry_index < mir_early_exit_cleanup_entry_count(plan, ctx) {
         mut entry := mir_early_exit_cleanup_entry_at(plan, entry_index, ctx);
-        output = std.Concat(output, std.Concat("early_return_cleanup: edge=", std.Concat(entry.edge_id, std.Concat(" scope=", std.Concat(entry.scope_id, std.Concat(" resource=", std.Concat(entry.resource_id, std.Concat(" order=", std.Concat(std.FormatInt(entry.execution_order), std.Concat(" destructor=", std.Concat(entry.destructor_id, std.Concat(" source=", std.Concat(entry.source_location, std.Concat(" effect=", std.Concat(entry.observable_effect, "\n")))))))))))))));
+        mut line := std.Clone(ctx, "early_return_cleanup: edge=");
+        line = std.Clone(ctx, std.Concat(line, entry.edge_id));
+        line = std.Clone(ctx, std.Concat(line, " scope="));
+        line = std.Clone(ctx, std.Concat(line, entry.scope_id));
+        line = std.Clone(ctx, std.Concat(line, " resource="));
+        line = std.Clone(ctx, std.Concat(line, entry.resource_id));
+        line = std.Clone(ctx, std.Concat(line, " order="));
+        line = std.Clone(ctx, std.Concat(line, std.FormatInt(entry.execution_order)));
+        line = std.Clone(ctx, std.Concat(line, " destructor="));
+        line = std.Clone(ctx, std.Concat(line, entry.destructor_id));
+        line = std.Clone(ctx, std.Concat(line, " source="));
+        line = std.Clone(ctx, std.Concat(line, entry.source_location));
+        line = std.Clone(ctx, std.Concat(line, " effect="));
+        line = std.Clone(ctx, std.Concat(line, entry.observable_effect));
+        line = std.Clone(ctx, std.Concat(line, "\n"));
+        output = std.Clone(ctx, std.Concat(output, line));
         entry_index = entry_index + 1;
     }
     return std.Clone(ctx, output);
