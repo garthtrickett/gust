@@ -23,6 +23,10 @@ When monitoring GitHub Actions (e.g. `codex/phase15-9-resource-cfg` `HEAD` `b033
 
 Once all PR GitHub runners for `HEAD` are green (`completed success` for every `pull_request` workflow, `Early Return Cleanup` included), autonomously merge the PR (`gh pr merge` / push to `main`) without prompting and immediately start the next patch (e.g. 15.10). Do not wait for manual approval.
 
+## Phase Completion Loop
+
+Do not stop after merging a single patch. Phase 15 is complete only when `TASK.md` Status shows every patch 15.0–15.15 `DONE`, every Phase 15 Success Criteria is satisfied, and `guard-cranelift-phase15-close` (L1) passes. After merging one patch to `main` (e.g. 15.9 `ac36120c` → 15.10 `2a9e6b3`/`8cdfb834`), immediately checkout `main`, create `codex/phase15-<next>` for the next `IN PROGRESS` patch, implement its Purpose/Exit criteria (real code, not just `TASK.md` docs), run its `just guard-...` locally, push (cancel superseded `headSha != HEAD`) and resume `c2eab010` `every 2m` polling, merge when green, and repeat. The whole 15.10–15.15 sequence is autonomous; only stop to report when the operator explicitly says stop or when no policy defines the next implementation step. This loop satisfies Workflow / Monitoring / Merge / Runner Policy and the general `if path forward defined, don't ask` rule.
+
 ## Runner Policy
 
 If any GitHub runner fails, cancel other `queued`/`in_progress` runs on that branch immediately (they are superseded by the fix) before focusing on the local reproduction. Before triggering new pushes on any PR branch, also cancel any superseded GitHub runs to free concurrency:
