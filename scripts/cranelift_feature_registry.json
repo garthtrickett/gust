@@ -1466,6 +1466,71 @@
     "level3_policy": "complete_registry_derived_phase15_inventory_owned_only_by_cranelift_historical_full",
     "backend_policy": "shared_compiler_plan_no_backend_resource_or_cleanup_planner"
   },
+  "phase15_deferred_residue_audit": {
+    "version": "phase15_deferred_residue_audit_v1",
+    "status": "patch15_14_all_opening_rows_disposed",
+    "opening_dispositions": [
+      {"id": "p15_resource_value_representation", "disposition": "migrated", "evidence_guard": "guard-cranelift-phase15-resource-mir-parity"},
+      {"id": "p15_move_state_transitions", "disposition": "migrated", "evidence_guard": "guard-cranelift-phase15-move-state-parity"},
+      {"id": "p15_use_after_move_enforcement", "disposition": "migrated", "evidence_guard": "guard-cranelift-phase15-move-state-parity"},
+      {"id": "p15_reassignment_cleanup", "disposition": "migrated", "evidence_guard": "guard-cranelift-phase15-resource-reassignment-parity"},
+      {"id": "p15_scope_exit_cleanup", "disposition": "migrated", "evidence_guard": "guard-cranelift-phase15-scope-exit-cleanup-parity"},
+      {"id": "p15_early_return_cleanup", "disposition": "migrated", "evidence_guard": "guard-cranelift-phase15-early-return-cleanup-parity"},
+      {"id": "p15_destructor_scheduling", "disposition": "migrated", "evidence_guard": "guard-cranelift-phase15-destructor-scheduling-parity"},
+      {"id": "p15_manual_close_interaction", "disposition": "migrated", "evidence_guard": "guard-cranelift-phase15-manual-close-parity"},
+      {"id": "p15_conditional_loop_resource_state", "disposition": "migrated", "evidence_guard": "guard-cranelift-phase15-resource-cfg-parity"},
+      {"id": "p15_resource_metadata_validation", "disposition": "migrated", "evidence_guard": "guard-cranelift-phase15-resource-metadata-contract"},
+      {"id": "p15_directory_resources", "disposition": "migrated", "evidence_guard": "guard-cranelift-phase15-specialized-resource-parity"},
+      {"id": "p15_selected_failure_cleanup", "disposition": "migrated", "evidence_guard": "guard-cranelift-phase15-failure-cleanup-parity"},
+      {"id": "p15_complete_resource_differential", "disposition": "migrated", "evidence_guard": "guard-cranelift-phase15-resource-composition-differential"}
+    ],
+    "narrow_deferred_rows": [
+      {
+        "id": "p17_async_unwind_resource_cleanup",
+        "parent": "p15_selected_failure_cleanup",
+        "owner": "runtime_unwind_authority",
+        "reason": "async unwind requires runtime task and unwind ownership",
+        "destination_phase": "phase17",
+        "prerequisite": "runtime_task_unwind_contract",
+        "failure_stage": "before_driver_discovery",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
+        "positive_future_fixture": "compiler/future/p17_async_unwind_resource_cleanup_source.gst",
+        "negative_current_fixture": "compiler/p17_async_unwind_resource_cleanup_deferred_source.gst",
+        "diagnostic_code": "resource_async_unwind_cleanup_deferred"
+      },
+      {
+        "id": "p17_foreign_exception_resource_cleanup",
+        "parent": "p15_selected_failure_cleanup",
+        "owner": "foreign_exception_ABI_authority",
+        "reason": "foreign exceptions require ABI and unwind interoperation ownership",
+        "destination_phase": "phase17",
+        "prerequisite": "foreign_exception_ABI_contract",
+        "failure_stage": "before_driver_discovery",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
+        "positive_future_fixture": "compiler/future/p17_foreign_exception_resource_cleanup_source.gst",
+        "negative_current_fixture": "compiler/p17_foreign_exception_resource_cleanup_deferred_source.gst",
+        "diagnostic_code": "resource_foreign_exception_cleanup_deferred"
+      },
+      {
+        "id": "p19_cancellation_resource_cleanup",
+        "parent": "p15_selected_failure_cleanup",
+        "owner": "concurrency_cancellation_authority",
+        "reason": "cancellation requires concurrency and task lifecycle ownership",
+        "destination_phase": "phase19",
+        "prerequisite": "task_cancellation_contract",
+        "failure_stage": "before_driver_discovery",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
+        "positive_future_fixture": "compiler/future/p19_cancellation_resource_cleanup_source.gst",
+        "negative_current_fixture": "compiler/p19_cancellation_resource_cleanup_deferred_source.gst",
+        "diagnostic_code": "resource_cancellation_cleanup_deferred"
+      }
+    ],
+    "excluded_items": [
+      {"id": "os_DirEntry_ctx", "reason": "borrowed directory observation is not a resource identity", "owner": "phase15_specialized_resource_authority"}
+    ],
+    "broad_residue_policy": "reject_broad_or_ambiguous_phase15_residue",
+    "coverage_policy": "every_phase15_opening_row_migrated_excluded_or_replaced_by_narrow_actionable_rows"
+  },
   "phase14_layout_authority": {
     "version": "phase14_compiler_owned_layout_authority_v1",
     "status": "consumed_by_patch14_7",

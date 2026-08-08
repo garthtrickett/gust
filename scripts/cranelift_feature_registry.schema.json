@@ -16,6 +16,7 @@
     "phase15_specialized_resource_authority",
     "phase15_failure_cleanup_authority",
     "phase15_resource_composition_authority",
+    "phase15_deferred_residue_audit",
     "phase14_layout_authority",
     "phase14_primitive_layout",
     "phase14_integer_conversions",
@@ -235,6 +236,9 @@
     },
     "phase15_resource_composition_authority": {
       "$ref": "#/$defs/phase15_resource_composition_authority"
+    },
+    "phase15_deferred_residue_audit": {
+      "$ref": "#/$defs/phase15_deferred_residue_audit"
     },
     "phase14_layout_authority": {
       "$ref": "#/$defs/phase14_layout_authority"
@@ -1401,6 +1405,61 @@
         },
         "level3_policy": {"const": "complete_registry_derived_phase15_inventory_owned_only_by_cranelift_historical_full"},
         "backend_policy": {"const": "shared_compiler_plan_no_backend_resource_or_cleanup_planner"}
+      }
+    },
+    "phase15_deferred_residue_audit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "status", "opening_dispositions", "narrow_deferred_rows", "excluded_items", "broad_residue_policy", "coverage_policy"],
+      "properties": {
+        "version": {"const": "phase15_deferred_residue_audit_v1"},
+        "status": {"const": "patch15_14_all_opening_rows_disposed"},
+        "opening_dispositions": {
+          "type": "array", "minItems": 13, "maxItems": 13,
+          "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["id", "disposition", "evidence_guard"],
+            "properties": {
+              "id": {"type": "string", "minLength": 1},
+              "disposition": {"enum": ["migrated", "excluded", "replaced"]},
+              "evidence_guard": {"type": "string", "pattern": "^guard-cranelift-phase15-"}
+            }
+          }
+        },
+        "narrow_deferred_rows": {
+          "type": "array", "minItems": 3, "maxItems": 3,
+          "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["id", "parent", "owner", "reason", "destination_phase", "prerequisite", "failure_stage", "target_applicability", "positive_future_fixture", "negative_current_fixture", "diagnostic_code"],
+            "properties": {
+              "id": {"type": "string", "pattern": "^p(17|19)_"},
+              "parent": {"const": "p15_selected_failure_cleanup"},
+              "owner": {"type": "string", "minLength": 1},
+              "reason": {"type": "string", "minLength": 1},
+              "destination_phase": {"enum": ["phase17", "phase19"]},
+              "prerequisite": {"type": "string", "minLength": 1},
+              "failure_stage": {"const": "before_driver_discovery"},
+              "target_applicability": {"const": "all_declared_host_targets_from_phase14_target_authority"},
+              "positive_future_fixture": {"type": "string", "pattern": "^compiler/future/.+\\.gst$"},
+              "negative_current_fixture": {"type": "string", "pattern": "^compiler/.+_deferred_source\\.gst$"},
+              "diagnostic_code": {"type": "string", "pattern": "^resource_.+_deferred$"}
+            }
+          }
+        },
+        "excluded_items": {
+          "type": "array", "minItems": 1, "maxItems": 1,
+          "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["id", "reason", "owner"],
+            "properties": {
+              "id": {"const": "os_DirEntry_ctx"},
+              "reason": {"type": "string", "minLength": 1},
+              "owner": {"const": "phase15_specialized_resource_authority"}
+            }
+          }
+        },
+        "broad_residue_policy": {"const": "reject_broad_or_ambiguous_phase15_residue"},
+        "coverage_policy": {"const": "every_phase15_opening_row_migrated_excluded_or_replaced_by_narrow_actionable_rows"}
       }
     },
     "phase14_layout_authority": {

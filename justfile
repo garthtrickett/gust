@@ -20451,3 +20451,12 @@ guard-cranelift-phase15-complete-resource-evidence:
     done < <(python3 scripts/phase15_resource_composition.py individual-guards)
     just guard-cranelift-phase15-resource-composition-differential
     echo "guard-cranelift-phase15-complete-resource-evidence: ok (Level 3)"
+
+guard-cranelift-phase15-deferred-residue-audit:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔎 Auditing Phase 15.14 deferred residue and resource coverage..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase15-deferred-residue-audit |
+      grep -F $'guard-cranelift-phase15-deferred-residue-audit\t1\t' >/dev/null
+    python3 scripts/phase15_deferred_residue_audit.py --check

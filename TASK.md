@@ -73,8 +73,8 @@ Cancels any `queued`/`in_progress` runs on the current PR branch whose `headSha`
 - [x] Patch 15.10 — Resource Metadata and Request Validation — DONE
 - [x] Patch 15.11 — Directory and Selected Specialized Resource Kinds — DONE
 - [x] Patch 15.12 — Panic and Failure Cleanup Policy — DONE
-- [ ] Patch 15.13 — Cross-Feature Resource Composition and Complete Differential — IN PROGRESS
-- [ ] Patch 15.14 — Deferred Residue and Resource-Coverage Audit
+- [x] Patch 15.13 — Cross-Feature Resource Composition and Complete Differential — DONE
+- [ ] Patch 15.14 — Deferred Residue and Resource-Coverage Audit — IN PROGRESS
 - [ ] Patch 15.15 — Phase 15 Closure
 
 ---
