@@ -47,6 +47,13 @@ Codex Cloud validation is advisory. GitHub Actions is the authoritative
 validation environment. A task is not complete until the required checks for
 the published commit pass.
 
+After local partial validation (relevant Level 1/Level 2 guards, not the full
+historical suite), publish via a `codex/**` branch + PR, then immediately
+check GitHub Actions runners with `gh run list` / `gh run view --log`.
+If any required check fails, reproduce the failure locally with the exact
+log excerpt, fix minimally, rerun the focused local guard, and push again.
+Do not consider a patch done until the PR's required checks are green.
+
 ## Failure handling
 
 - Diagnose the first failing command before modifying more code.
