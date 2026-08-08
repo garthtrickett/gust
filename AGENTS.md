@@ -18,7 +18,7 @@ coherent, bootstrap-safe change that satisfies the selected patch.
   request after required checks pass and all review conversations are resolved.
 - Do not change repository rules, Actions variables, secrets, or permissions
   unless the repository owner explicitly requests that configuration change.
-- Per `TASK.md` Workflow Policy Git authorization, publication to `codex/**` (commit/push/PR create+update/merge and superseded-run cancel) is pre-authorized — `TASK.md` is the explicit ask. Do not gate on the user saying "push"; after local guard passes, cancel superseded (`headSha != HEAD`) then `git push` and resume `c2eab010` polling autonomously.
+- Per `TASK.md` Workflow Policy Git authorization, publication to `codex/**` (commit/push/PR create+update/merge and superseded-run cancel) is pre-authorized — `TASK.md` is the explicit ask. General rule: if Workflow / Monitoring / Merge / Runner Policy defines the next step, do not ask the operator — continue the automated loop (includes but not limited to "say push" gating). Only ask when no policy defines the next step.
 
 ## Repository rules
 
