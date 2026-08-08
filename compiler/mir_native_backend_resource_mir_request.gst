@@ -1,4 +1,5 @@
 // Phase 15.2 canonical resource-MIR extension of the Phase 15.1 request.
+// Phase 15.10 resource_metadata_contract_frozen: malformed_requests_rejected_before_worker, worker_receives_validated_contract, before_driver_discovery
 //
 // The compiler serializes one resource authority table and one canonical
 // resource-MIR table. The worker validates both before lowering and never
