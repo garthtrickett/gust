@@ -1,0 +1,38 @@
+name: Cranelift Phase 15 Close
+
+on:
+  pull_request:
+    paths:
+      - 'TASK.md'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/cranelift_registry.py'
+      - 'scripts/cranelift_test_levels.json'
+      - 'scripts/phase15_close.py'
+      - 'tests/cranelift/phase15_close_contract.tsv'
+      - 'tests/cranelift/phase15_close_review.txt'
+      - 'justfile'
+      - '.github/workflows/phase15-close.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'TASK.md'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/cranelift_registry.py'
+      - 'scripts/cranelift_test_levels.json'
+      - 'scripts/phase15_close.py'
+      - 'tests/cranelift/phase15_close_contract.tsv'
+      - 'tests/cranelift/phase15_close_review.txt'
+      - 'justfile'
+      - '.github/workflows/phase15-close.yml'
+  workflow_dispatch:
+
+jobs:
+  close:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin"
+      - run: just guard-cranelift-phase15-close

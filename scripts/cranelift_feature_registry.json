@@ -1531,6 +1531,27 @@
     "broad_residue_policy": "reject_broad_or_ambiguous_phase15_residue",
     "coverage_policy": "every_phase15_opening_row_migrated_excluded_or_replaced_by_narrow_actionable_rows"
   },
+  "phase15_closure": {
+    "version": "phase15_closure_v1",
+    "status": "phase15_closed_resource_and_lifetime_semantics",
+    "opening_entry_count": 13,
+    "migrated_entry_count": 13,
+    "excluded_item_count": 1,
+    "narrow_deferred_row_count": 3,
+    "required_authorities": [
+      "compiler/mir_resource_authority.gst",
+      "phase15_specialized_resource_authority",
+      "phase15_failure_cleanup_authority",
+      "phase15_resource_composition_authority",
+      "phase15_deferred_residue_audit"
+    ],
+    "oracle_policy": "mir_to_c_remains_default_differential_oracle",
+    "fallback_policy": "explicit_cranelift_no_fallback",
+    "artifact_policy": "phase9g_retains_object_link_cleanup_and_atomic_publication_ownership",
+    "worker_policy": "isolated_worker_consumes_only_validated_request_canonical_mir_layout_and_resource_metadata",
+    "failure_policy": "invalid_or_deferred_stops_before_driver_and_artifact_access_with_output_preserved",
+    "test_level_policy": "level1_contracts_level2_focused_families_level3_historical_full_only"
+  },
   "phase14_layout_authority": {
     "version": "phase14_compiler_owned_layout_authority_v1",
     "status": "consumed_by_patch14_7",

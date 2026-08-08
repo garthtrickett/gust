@@ -20460,3 +20460,38 @@ guard-cranelift-phase15-deferred-residue-audit:
     python3 scripts/cranelift_test_levels.py level guard-cranelift-phase15-deferred-residue-audit |
       grep -F $'guard-cranelift-phase15-deferred-residue-audit\t1\t' >/dev/null
     python3 scripts/phase15_deferred_residue_audit.py --check
+
+guard-cranelift-phase15-resource-authority-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 15.1 compiler-owned resource authority..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase15-resource-authority-contract |
+      grep -F $'guard-cranelift-phase15-resource-authority-contract\t1\t' >/dev/null
+    python3 scripts/phase15_resource_authority.py --check
+
+guard-cranelift-phase15-close:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Closing Phase 15 resource and lifetime semantics..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase15-close |
+      grep -F $'guard-cranelift-phase15-close\t1\t' >/dev/null
+    just guard-cranelift-phase14-close
+    just guard-cranelift-phase15-opening-contract
+    just guard-cranelift-registry-schema
+    python3 scripts/phase15_resource_authority.py --check
+    just guard-cranelift-phase15-resource-mir-contract
+    just guard-cranelift-phase15-move-state-contract
+    just guard-cranelift-phase15-resource-reassignment-contract
+    just guard-cranelift-phase15-scope-exit-cleanup-contract
+    just guard-cranelift-phase15-early-return-cleanup-contract
+    just guard-cranelift-phase15-destructor-scheduling-contract
+    just guard-cranelift-phase15-manual-close-contract
+    just guard-cranelift-phase15-resource-cfg-contract
+    just guard-cranelift-phase15-resource-metadata-contract
+    just guard-cranelift-phase15-specialized-resource-contract
+    just guard-cranelift-phase15-failure-cleanup-contract
+    just guard-cranelift-phase15-resource-composition-contract
+    just guard-cranelift-phase15-deferred-residue-audit
+    python3 scripts/phase15_close.py --check
