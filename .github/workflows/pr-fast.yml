@@ -105,6 +105,9 @@ jobs:
       - name: Phase 16 canonical call MIR
         run: just guard-cranelift-phase16-call-mir-contract
 
+      - name: Phase 16 aggregate parameter classification
+        run: just guard-cranelift-phase16-aggregate-parameter-contract
+
       - name: Upload Gust build outputs
         uses: actions/upload-artifact@v4
         with:
