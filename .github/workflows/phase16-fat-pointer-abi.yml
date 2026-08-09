@@ -1,0 +1,36 @@
+name: Cranelift Phase 16 Fat Pointer ABI
+on:
+  pull_request:
+    paths: ['compiler/mir_fat_pointer_abi.gst','compiler/mir_fat_pointer_abi_mir_to_c.gst','compiler/mir_native_backend_fat_pointer_abi_request.gst','compiler/mir_fat_pointer_abi_smoke_test_entry.gst','compiler/experiments/cranelift/src/fat_pointer_abi.rs','compiler/experiments/cranelift/src/main.rs','scripts/phase16_fat_pointer_abi.py','scripts/phase16_fat_pointer_abi_parity.sh','scripts/cranelift_test_levels.json','tests/cranelift/phase16_fat_pointer_abi_contract.tsv','tests/cranelift/phase16_fat_pointer_abi_review.txt','justfile','.github/workflows/phase16-fat-pointer-abi.yml']
+  push:
+    branches: [main]
+    paths: ['compiler/mir_fat_pointer_abi.gst','compiler/mir_fat_pointer_abi_mir_to_c.gst','compiler/mir_native_backend_fat_pointer_abi_request.gst','compiler/mir_fat_pointer_abi_smoke_test_entry.gst','compiler/experiments/cranelift/src/fat_pointer_abi.rs','compiler/experiments/cranelift/src/main.rs','scripts/phase16_fat_pointer_abi.py','scripts/phase16_fat_pointer_abi_parity.sh','scripts/cranelift_test_levels.json','tests/cranelift/phase16_fat_pointer_abi_contract.tsv','tests/cranelift/phase16_fat_pointer_abi_review.txt','justfile','.github/workflows/phase16-fat-pointer-abi.yml']
+  workflow_dispatch:
+jobs:
+  contract:
+    name: Phase 16.7 fat pointer ABI contract (Level 1)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - run: just guard-cranelift-phase16-fat-pointer-abi-contract
+  parity:
+    name: Phase 16.7 fat pointer ABI parity (Level 2)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - run: just guard-cranelift-phase16-fat-pointer-abi-parity
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase16-fat-pointer-abi-diagnostics
+          if-no-files-found: ignore
+          path: |
+            to.log
+            build/gust-build.log
+            build/mir_fat_pointer_abi_smoke_test_entry.compile.log
+            build/guards/phase16_fat_pointer_abi/
