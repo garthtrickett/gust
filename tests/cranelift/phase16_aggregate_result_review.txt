@@ -1,0 +1,52 @@
+Phase 16.4 — Aggregate Return Classification and Hidden Result Transport
+guard: guard-cranelift-phase16-aggregate-return-contract
+parity_guard: guard-cranelift-phase16-aggregate-return-parity
+test_level: level1
+format: gust.compiler_aggregate_result_abi.v1
+inventory: non-resource single-i32, pair-i32, and triple-i64 struct results
+classification: direct, split, and explicit hidden-pointer result transport
+ordering: evaluate return value, run Phase 15 cleanup, then publish and extract result
+boundary: complete platform aggregate-return classification remains deferred
+
+counts:
+  classification: 3
+  consumer: 2
+  hard_ban: 2
+  metadata: 7
+  policy: 3
+  rejection: 7
+  test: 2
+  transport: 1
+
+active contract:
+  classification	direct	compiler_function_abi	selected
+  classification	split	compiler_function_abi	selected
+  classification	hidden_pointer	compiler_function_abi	selected
+  metadata	result_storage_identity	compiler_aggregate_result_plan	required
+  metadata	storage_owner	compiler_aggregate_result_plan	required
+  metadata	layout_and_alignment	compiler_layout_authority	required
+  metadata	initialization_point	compiler_aggregate_result_plan	required
+  metadata	callee_write_plan	compiler_aggregate_result_plan	required
+  metadata	caller_extraction_plan	compiler_aggregate_result_plan	required
+  metadata	failure_publication_policy	compiler_aggregate_result_plan	required
+  policy	return_evaluation_before_phase15_cleanup	compiler_canonical_mir	selected
+  policy	initialized_fields_only	compiler_aggregate_result_plan	selected
+  policy	padding_not_semantic	compiler_aggregate_result_plan	selected
+  rejection	missing_hidden_storage	compiler_aggregate_result_validation	rejected
+  rejection	duplicate_hidden_identity	compiler_aggregate_result_validation	rejected
+  rejection	wrong_layout_or_alignment	compiler_aggregate_result_validation	rejected
+  rejection	write_after_terminal	compiler_aggregate_result_validation	rejected
+  rejection	caller_callee_disagreement	compiler_aggregate_result_validation	rejected
+  rejection	uninitialized_publication	compiler_aggregate_result_validation	rejected
+  rejection	backend_invented_storage	compiler_aggregate_result_validation	rejected
+  consumer	mir_to_c_compiler_plan	mir_to_c	required
+  consumer	cranelift_compiler_plan	cranelift_worker	required
+  transport	native_request_aggregate_result_table	compiler_native_request	required
+  hard_ban	no_backend_local_result_classifier	architecture	required
+  hard_ban	no_backend_invented_hidden_storage	architecture	required
+  test	level1_aggregate_return_contract	ci	active
+  test	level2_aggregate_return_parity	ci	active
+
+exit gate:
+  every selected aggregate result has one compiler-owned placement
+  hidden result storage is explicit and equivalent through MIR-to-C and Cranelift

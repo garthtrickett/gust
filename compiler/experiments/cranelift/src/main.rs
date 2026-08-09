@@ -1,4 +1,5 @@
 mod aggregate_parameter_abi;
+mod aggregate_result_abi;
 mod destructor_scheduling;
 mod early_return_cleanup;
 mod failure_cleanup;
@@ -16331,6 +16332,19 @@ fn run() -> Result<(), Box<dyn Error>> {
     };
 
     match command.as_str() {
+        "phase16-aggregate-result-witness" => {
+            let Some(request_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            let witness = aggregate_result_abi::lower_aggregate_result_witness_path(
+                Path::new(&request_path),
+            )?;
+            print!("{witness}");
+            Ok(())
+        }
         "phase16-aggregate-parameter-witness" => {
             let Some(request_path) = args.next() else {
                 return Err(usage_error().into());
@@ -17790,6 +17804,7 @@ fn usage_error() -> IoError {
         ErrorKind::InvalidInput,
         concat!(
             "usage:\n",
+            "  gust-cranelift-experiment phase16-aggregate-result-witness <request.native>\n",
             "  gust-cranelift-experiment phase16-aggregate-parameter-witness <request.native>\n",
             "  gust-cranelift-experiment phase16-call-mir-witness <request.native>\n",
             "  gust-cranelift-experiment phase15-destructor-scheduling-witness <request.native>\n",

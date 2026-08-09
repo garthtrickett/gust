@@ -18,6 +18,8 @@
     }
   },
   "guards": {
+    "guard-cranelift-phase16-aggregate-return-contract": 1,
+    "guard-cranelift-phase16-aggregate-return-parity": 2,
     "guard-cranelift-add-i32-native-smoke": 3,
     "guard-cranelift-backend-surface": 1,
     "guard-cranelift-branch-native-smoke": 3,

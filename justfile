@@ -15804,6 +15804,7 @@ guard-cranelift-contract-fast:
     just guard-cranelift-phase16-abi-authority-contract
     just guard-cranelift-phase16-call-mir-contract
     just guard-cranelift-phase16-aggregate-parameter-contract
+    just guard-cranelift-phase16-aggregate-return-contract
 
 guard-cranelift-phase16-abi-authority-contract:
     #!/usr/bin/env bash
@@ -15851,6 +15852,25 @@ guard-cranelift-phase16-aggregate-parameter-parity:
       grep -F $'guard-cranelift-phase16-aggregate-parameter-parity\t2\t' >/dev/null
     just guard-cranelift-phase16-aggregate-parameter-contract
     bash scripts/phase16_aggregate_parameter_parity.sh
+
+guard-cranelift-phase16-aggregate-return-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 16.4 compiler-owned aggregate result classification..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase16-aggregate-return-contract |
+      grep -F $'guard-cranelift-phase16-aggregate-return-contract\t1\t' >/dev/null
+    python3 scripts/phase16_aggregate_result.py --check
+
+guard-cranelift-phase16-aggregate-return-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 16.4 aggregate result parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase16-aggregate-return-parity |
+      grep -F $'guard-cranelift-phase16-aggregate-return-parity\t2\t' >/dev/null
+    just guard-cranelift-phase16-aggregate-return-contract
+    bash scripts/phase16_aggregate_result_parity.sh
 
 guard-cranelift-historical-full:
     #!/usr/bin/env bash
