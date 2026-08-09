@@ -70,7 +70,7 @@ If more than 100 runs exist, use the paginated Actions API and apply the same ex
 ## Status
 
 - [x] Patch 16.0 — Opening Inventory and Phase 15 Residual Rebase — DONE
-- [ ] Patch 16.1 — Compiler-Owned Function ABI Authority
+- [x] Patch 16.1 — Compiler-Owned Function ABI Authority — DONE
 - [ ] Patch 16.2 — Canonical MIR Signature, Call, and Result Transport
 - [ ] Patch 16.3 — Aggregate Parameter Classification and Passing
 - [ ] Patch 16.4 — Aggregate Return Classification and Hidden Result Transport

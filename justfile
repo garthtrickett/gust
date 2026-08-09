@@ -15801,6 +15801,16 @@ guard-cranelift-contract-fast:
     just guard-cranelift-phase14-close
     just guard-cranelift-phase15-opening-contract
     just guard-cranelift-phase16-opening-contract
+    just guard-cranelift-phase16-abi-authority-contract
+
+guard-cranelift-phase16-abi-authority-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 16.1 compiler-owned function ABI authority..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase16-abi-authority-contract |
+      grep -F $'guard-cranelift-phase16-abi-authority-contract\t1\t' >/dev/null
+    python3 scripts/phase16_abi_authority.py --check
 
 guard-cranelift-historical-full:
     #!/usr/bin/env bash

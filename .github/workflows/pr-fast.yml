@@ -99,6 +99,9 @@ jobs:
       - name: Phase 16 function ABI and aggregate call opening
         run: just guard-cranelift-phase16-opening-contract
 
+      - name: Phase 16 compiler-owned function ABI authority
+        run: just guard-cranelift-phase16-abi-authority-contract
+
       - name: Upload Gust build outputs
         uses: actions/upload-artifact@v4
         with:

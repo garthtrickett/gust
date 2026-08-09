@@ -1,0 +1,54 @@
+Phase 16.1 — Compiler-Owned Function ABI Authority
+guard: guard-cranelift-phase16-abi-authority-contract
+test_level: level1
+boundary: authority_and_transport_only
+identity: compiler_semantic_state_plus_request_ordinal_no_raw_hash
+request_order: abi_authority_before_resource_and_canonical_request
+failure_stage: before_worker_driver_request_object_link_or_output_access
+
+counts:
+  boundary: 1
+  hard_ban: 4
+  query: 7
+  rejection: 8
+  semantic_type: 7
+  transport: 6
+
+active contract:
+  semantic_type	function_abi_identity	compiler.mir_function_abi_authority	active
+  semantic_type	abi_value_classification	compiler.mir_function_abi_authority	active
+  semantic_type	parameter_placement	compiler.mir_function_abi_authority	active
+  semantic_type	result_placement	compiler.mir_function_abi_authority	active
+  semantic_type	call_site_plan	compiler.mir_function_abi_authority	active
+  semantic_type	dynamic_frame_plan	compiler.mir_function_abi_authority	active
+  semantic_type	abi_compatibility_decision	compiler.mir_function_abi_authority	active
+  query	function_abi	compiler.mir_function_abi_authority	active
+  query	classify_abi_value	compiler.mir_function_abi_authority	active
+  query	parameter_placements	compiler.mir_function_abi_authority	active
+  query	result_placements	compiler.mir_function_abi_authority	active
+  query	call_plan	compiler.mir_function_abi_authority	active
+  query	frame_plan	compiler.mir_function_abi_authority	active
+  query	validate_abi_compatibility	compiler.mir_function_abi_authority	active
+  transport	deterministic_abi_value_ids	compiler.semantic_state	active
+  transport	deterministic_placement_ids	compiler.semantic_state	active
+  transport	deterministic_call_site_ids	compiler.semantic_state	active
+  transport	deterministic_frame_plan_ids	compiler.semantic_state	active
+  transport	canonical_mir_abi_references	compiler.canonical_mir_metadata	active
+  transport	native_request_abi_table	compiler.native_request	active
+  rejection	unknown_abi_ids	compiler.request_validation	active
+  rejection	duplicate_conflicting_records	compiler.request_validation	active
+  rejection	unknown_layout_or_resource_ids	compiler.request_validation	active
+  rejection	impossible_placements	compiler.request_validation	active
+  rejection	invalid_hidden_results	compiler.request_validation	active
+  rejection	signature_mismatches	compiler.request_validation	active
+  rejection	target_mismatches	compiler.request_validation	active
+  rejection	metadata_inconsistent_with_canonical_mir	compiler.request_validation	active
+  hard_ban	mir_to_c_separate_aggregate_classifier	guard-cranelift-phase16-abi-authority-contract	banned
+  hard_ban	worker_separate_call_planner	guard-cranelift-phase16-abi-authority-contract	banned
+  hard_ban	cranelift_signatures_as_semantic_authority	guard-cranelift-phase16-abi-authority-contract	banned
+  hard_ban	diagnostics_independent_abi_decisions	guard-cranelift-phase16-abi-authority-contract	banned
+  boundary	authority_and_transport_only	phase16.1	frozen
+
+consumer rule:
+  canonical MIR metadata, MIR-to-C, Cranelift, runtime-facing calls, and diagnostics consume the compiler-owned ABI table
+  the worker validates transport consistency and does not invent classification, placement, call, hidden-result, or frame semantics
