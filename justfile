@@ -15806,6 +15806,7 @@ guard-cranelift-contract-fast:
     just guard-cranelift-phase16-aggregate-parameter-contract
     just guard-cranelift-phase16-aggregate-return-contract
     just guard-cranelift-phase16-direct-call-agreement-contract
+    just guard-cranelift-phase16-typed-indirect-call-contract
 
 guard-cranelift-phase16-abi-authority-contract:
     #!/usr/bin/env bash
@@ -15889,6 +15890,23 @@ guard-cranelift-phase16-direct-call-agreement-parity:
     python3 scripts/cranelift_test_levels.py level guard-cranelift-phase16-direct-call-agreement-parity | grep -F $'guard-cranelift-phase16-direct-call-agreement-parity\t2\t' >/dev/null
     just guard-cranelift-phase16-direct-call-agreement-contract
     bash scripts/phase16_direct_call_agreement_parity.sh
+
+guard-cranelift-phase16-typed-indirect-call-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 16.6 compiler-owned typed indirect calls..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase16-typed-indirect-call-contract | grep -F $'guard-cranelift-phase16-typed-indirect-call-contract\t1\t' >/dev/null
+    python3 scripts/phase16_typed_indirect_call.py --check
+
+guard-cranelift-phase16-typed-indirect-call-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 16.6 typed indirect call parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase16-typed-indirect-call-parity | grep -F $'guard-cranelift-phase16-typed-indirect-call-parity\t2\t' >/dev/null
+    just guard-cranelift-phase16-typed-indirect-call-contract
+    bash scripts/phase16_typed_indirect_call_parity.sh
 
 guard-cranelift-historical-full:
     #!/usr/bin/env bash
