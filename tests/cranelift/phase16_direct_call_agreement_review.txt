@@ -1,0 +1,49 @@
+Phase 16.5 — Caller/Callee Placement and Direct-Call Agreement
+guard: guard-cranelift-phase16-direct-call-agreement-contract
+parity_guard: guard-cranelift-phase16-direct-call-agreement-parity
+test_level: level1
+format: gust.compiler_direct_call_agreement.v1
+inventory: same-module nested, recursive, mixed scalar/aggregate, and aggregate-result-chain direct calls
+authority: compiler compares declaration, definition, call plan, placements, layouts, hidden values, and resource disposition
+
+counts:
+  agreement: 9
+  composition: 4
+  consumer: 2
+  hard_ban: 2
+  rejection: 9
+  test: 2
+
+active contract:
+  composition	nested_direct	compiler_direct_call_authority	selected
+  composition	direct_recursion	compiler_direct_call_authority	selected
+  composition	mixed_scalar_aggregate	compiler_direct_call_authority	selected
+  composition	aggregate_result_chain	compiler_direct_call_authority	selected
+  agreement	calling_convention	compiler_function_abi	required
+  agreement	target	compiler_function_abi	required
+  agreement	ordered_parameters	compiler_call_plan	required
+  agreement	ordered_results	compiler_call_plan	required
+  agreement	hidden_values	compiler_call_plan	required
+  agreement	layout_identities	compiler_layout_authority	required
+  agreement	placement_classes	compiler_function_abi	required
+  agreement	extensions	compiler_function_abi	required
+  agreement	resource_transfer_policy	compiler_resource_authority	required
+  rejection	signature_drift	compiler_direct_call_validation	rejected
+  rejection	stale_call_plan	compiler_direct_call_validation	rejected
+  rejection	parameter_permutation	compiler_direct_call_validation	rejected
+  rejection	result_permutation	compiler_direct_call_validation	rejected
+  rejection	incompatible_layout	compiler_direct_call_validation	rejected
+  rejection	calling_convention_mismatch	compiler_direct_call_validation	rejected
+  rejection	target_mismatch	compiler_direct_call_validation	rejected
+  rejection	hidden_result_mismatch	compiler_direct_call_validation	rejected
+  rejection	resource_transfer_disagreement	compiler_direct_call_validation	rejected
+  consumer	mir_to_c_compiler_agreement	mir_to_c	required
+  consumer	cranelift_compiler_agreement	cranelift_worker	required
+  hard_ban	no_backend_signature_reconstruction	architecture	required
+  hard_ban	no_backend_placement_reconstruction	architecture	required
+  test	level1_direct_call_agreement_contract	ci	active
+  test	level2_direct_call_agreement_parity	ci	active
+
+exit gate:
+  every selected direct call has one compiler-owned compatibility decision
+  caller/callee ABI drift is rejected before worker or artifact access

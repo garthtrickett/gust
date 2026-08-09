@@ -1,0 +1,36 @@
+name: Cranelift Phase 16 Direct Call Agreement
+on:
+  pull_request:
+    paths: ['compiler/mir_direct_call_agreement.gst', 'compiler/mir_direct_call_agreement_mir_to_c.gst', 'compiler/mir_native_backend_direct_call_agreement_request.gst', 'compiler/mir_direct_call_agreement_smoke_test_entry.gst', 'compiler/experiments/cranelift/src/direct_call_agreement.rs', 'compiler/experiments/cranelift/src/main.rs', 'scripts/phase16_direct_call_agreement.py', 'scripts/phase16_direct_call_agreement_parity.sh', 'scripts/cranelift_test_levels.json', 'tests/cranelift/phase16_direct_call_agreement_contract.tsv', 'tests/cranelift/phase16_direct_call_agreement_review.txt', 'justfile', '.github/workflows/phase16-direct-call-agreement.yml']
+  push:
+    branches: [main]
+    paths: ['compiler/mir_direct_call_agreement.gst', 'compiler/mir_direct_call_agreement_mir_to_c.gst', 'compiler/mir_native_backend_direct_call_agreement_request.gst', 'compiler/mir_direct_call_agreement_smoke_test_entry.gst', 'compiler/experiments/cranelift/src/direct_call_agreement.rs', 'compiler/experiments/cranelift/src/main.rs', 'scripts/phase16_direct_call_agreement.py', 'scripts/phase16_direct_call_agreement_parity.sh', 'scripts/cranelift_test_levels.json', 'tests/cranelift/phase16_direct_call_agreement_contract.tsv', 'tests/cranelift/phase16_direct_call_agreement_review.txt', 'justfile', '.github/workflows/phase16-direct-call-agreement.yml']
+  workflow_dispatch:
+jobs:
+  contract:
+    name: Phase 16.5 direct-call agreement contract (Level 1)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - run: just guard-cranelift-phase16-direct-call-agreement-contract
+  parity:
+    name: Phase 16.5 direct-call agreement parity (Level 2)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - run: just guard-cranelift-phase16-direct-call-agreement-parity
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase16-direct-call-agreement-diagnostics
+          if-no-files-found: ignore
+          path: |
+            to.log
+            build/gust-build.log
+            build/mir_direct_call_agreement_smoke_test_entry.compile.log
+            build/guards/phase16_direct_call_agreement/

@@ -15805,6 +15805,7 @@ guard-cranelift-contract-fast:
     just guard-cranelift-phase16-call-mir-contract
     just guard-cranelift-phase16-aggregate-parameter-contract
     just guard-cranelift-phase16-aggregate-return-contract
+    just guard-cranelift-phase16-direct-call-agreement-contract
 
 guard-cranelift-phase16-abi-authority-contract:
     #!/usr/bin/env bash
@@ -15871,6 +15872,23 @@ guard-cranelift-phase16-aggregate-return-parity:
       grep -F $'guard-cranelift-phase16-aggregate-return-parity\t2\t' >/dev/null
     just guard-cranelift-phase16-aggregate-return-contract
     bash scripts/phase16_aggregate_result_parity.sh
+
+guard-cranelift-phase16-direct-call-agreement-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 16.5 compiler-owned direct-call agreement..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase16-direct-call-agreement-contract | grep -F $'guard-cranelift-phase16-direct-call-agreement-contract\t1\t' >/dev/null
+    python3 scripts/phase16_direct_call_agreement.py --check
+
+guard-cranelift-phase16-direct-call-agreement-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 16.5 direct-call agreement parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase16-direct-call-agreement-parity | grep -F $'guard-cranelift-phase16-direct-call-agreement-parity\t2\t' >/dev/null
+    just guard-cranelift-phase16-direct-call-agreement-contract
+    bash scripts/phase16_direct_call_agreement_parity.sh
 
 guard-cranelift-historical-full:
     #!/usr/bin/env bash
