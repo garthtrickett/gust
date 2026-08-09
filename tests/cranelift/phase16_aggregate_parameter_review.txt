@@ -1,0 +1,55 @@
+Phase 16.3 — Aggregate Parameter Classification and Passing
+guard: guard-cranelift-phase16-aggregate-parameter-contract
+parity_guard: guard-cranelift-phase16-aggregate-parameter-parity
+test_level: level1
+format: gust.compiler_aggregate_parameter_abi.v1
+inventory: non-resource single-i32, pair-i32, and triple-i64 structs
+classification: direct, split, and indirect-by-value compiler plans
+padding: initialized fields only; padding bytes are not semantic values
+resource_boundary: resource-bearing aggregate calls remain deferred to Phase 16.10
+
+counts:
+  classification: 3
+  consumer: 2
+  hard_ban: 2
+  metadata: 8
+  policy: 4
+  rejection: 8
+  test: 2
+  transport: 1
+
+active contract:
+  classification	direct	compiler_aggregate_parameter_classifier	selected_single_i32_struct
+  classification	split	compiler_aggregate_parameter_classifier	selected_pair_i32_struct
+  classification	indirect_by_value	compiler_aggregate_parameter_classifier	selected_triple_i64_struct
+  metadata	canonical_type_id	compiler_aggregate_parameter_classifier	required
+  metadata	layout_id	compiler_layout_authority	required
+  metadata	abi_value_id	compiler_function_abi_authority	required
+  metadata	logical_locations	compiler_aggregate_parameter_classifier	required
+  metadata	caller_materialization	compiler_aggregate_parameter_classifier	required
+  metadata	callee_materialization	compiler_aggregate_parameter_classifier	required
+  metadata	padding_policy	compiler_aggregate_parameter_classifier	required
+  metadata	copy_move_disposition	compiler_aggregate_parameter_classifier	required
+  policy	initialized_fields_only	compiler_layout_authority	selected
+  policy	padding_not_semantic	compiler_layout_authority	selected
+  policy	non_resource_copy_only	compiler_aggregate_parameter_classifier	selected
+  policy	resource_bearing_deferred_to_16_10	compiler_resource_authority	deferred
+  rejection	unsupported_shape	compiler_aggregate_abi_verifier	reject_before_worker_output
+  rejection	invalid_layout_identity	compiler_aggregate_abi_verifier	reject_before_worker_output
+  rejection	illegal_split_boundary	compiler_aggregate_abi_verifier	reject_before_worker_output
+  rejection	insufficient_alignment	compiler_aggregate_abi_verifier	reject_before_worker_output
+  rejection	overlapping_placements	compiler_aggregate_abi_verifier	reject_before_worker_output
+  rejection	caller_callee_disagreement	compiler_aggregate_abi_verifier	reject_before_worker_output
+  rejection	move_only_copy	compiler_aggregate_abi_verifier	reject_before_worker_output
+  rejection	argument_order_mismatch	compiler_aggregate_abi_verifier	reject_before_worker_output
+  consumer	mir_to_c_compiler_plan	mir_to_c	consume_only
+  consumer	cranelift_compiler_plan	cranelift_worker	consume_only
+  transport	native_request_aggregate_parameter_table	compiler_native_request	immutable_compiler_produced
+  hard_ban	no_backend_local_classifier	compiler_aggregate_parameter_classifier	required
+  hard_ban	no_source_or_generated_c_inference	compiler_aggregate_parameter_classifier	required
+  test	level1_aggregate_parameter_contract	pr_fast	active
+  test	level2_aggregate_parameter_parity	aggregate_parameters_family	active
+
+exit gate:
+  every selected aggregate parameter has one compiler-owned classification and placement
+  MIR-to-C and Cranelift consume identical logical locations and initialized-field witnesses
