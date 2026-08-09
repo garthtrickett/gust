@@ -29,6 +29,7 @@ import "mir_struct_layout.gst" as structs;
 import "mir_enum.gst" as enums;
 import "mir_aggregate_transport.gst" as aggregate;
 import "mir_resource_value.gst" as resource_mir;
+import "mir_function_call.gst" as call_mir;
 
 // Canonical resource operation and read nodes reference the compiler-owned
 // resource MIR vocabulary directly. The complete resource MIR table remains a
@@ -490,6 +491,10 @@ type MirStmt[ctx] enum {
     ResourceOperation {
         operation: Index[resource_mir.MirResourceOperation[ctx], ctx],
         span: token.Span
+    },
+    CallOperation {
+        operation: Index[call_mir.MirCallOperation[ctx], ctx],
+        span: token.Span
     }
 }
 
@@ -553,6 +558,11 @@ type MirValue[ctx] enum {
     ResourceRead {
         value: Index[resource_mir.MirResourceValue[ctx], ctx],
         carrier_id: str,
+        span: token.Span
+    },
+    AbiCallResult {
+        operation: Index[call_mir.MirCallOperation[ctx], ctx],
+        value_type: str,
         span: token.Span
     }
 }
@@ -2944,6 +2954,18 @@ func mir_make_stmt_resource_operation(operation_reference: resource_mir.MirResou
     return stmt;
 }
 
+func mir_make_stmt_call_operation(operation_reference: call_mir.MirCallOperation[ctx], span: token.Span, ctx: &Arena) MirStmt[ctx] {
+    mut operation_reference_idx: Index[call_mir.MirCallOperation[ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(operation_reference_idx, operation_reference);
+    mut stmt: MirStmt[ctx];
+    unsafe {
+        stmt.tag = 7; // CallOperation
+        stmt.CallOperation.operation = operation_reference_idx;
+        stmt.CallOperation.span = span;
+    }
+    return stmt;
+}
+
 func mir_make_value_int_literal(val: int, value_type: str, span: token.Span, ctx: &Arena) MirValue[ctx] {
     mut value: MirValue[ctx];
     unsafe {
@@ -2996,6 +3018,19 @@ func mir_make_value_call(callee: str, args: Index[std.Vector[MirValue[ctx], ctx]
         value.Call.args = args;
         value.Call.value_type = value_type;
         value.Call.span = span;
+    }
+    return value;
+}
+
+func mir_make_value_abi_call_result(operation: call_mir.MirCallOperation[ctx], value_type: str, span: token.Span, ctx: &Arena) MirValue[ctx] {
+    mut operation_index: Index[call_mir.MirCallOperation[ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(operation_index, operation);
+    mut value: MirValue[ctx];
+    unsafe {
+        value.tag = 11; // AbiCallResult, appended after existing value variants.
+        value.AbiCallResult.operation = operation_index;
+        value.AbiCallResult.value_type = std.Clone(ctx, value_type);
+        value.AbiCallResult.span = span;
     }
     return value;
 }
@@ -3226,6 +3261,9 @@ func mir_debug_stmt_kind(stmt: MirStmt[ctx]) str {
     if stmt.tag == 6 {
         return "MirStmt.ResourceOperation";
     }
+    if stmt.tag == 7 {
+        return "MirStmt.CallOperation";
+    }
     return "MirStmt.<unknown>";
 }
 
@@ -3262,6 +3300,9 @@ func mir_debug_value_kind(value: MirValue[ctx]) str {
     }
     if value.tag == 10 {
         return "MirValue.ResourceRead";
+    }
+    if value.tag == 11 {
+        return "MirValue.AbiCallResult";
     }
     return "MirValue.<unknown>";
 }

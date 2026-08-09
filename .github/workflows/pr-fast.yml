@@ -102,6 +102,9 @@ jobs:
       - name: Phase 16 compiler-owned function ABI authority
         run: just guard-cranelift-phase16-abi-authority-contract
 
+      - name: Phase 16 canonical call MIR
+        run: just guard-cranelift-phase16-call-mir-contract
+
       - name: Upload Gust build outputs
         uses: actions/upload-artifact@v4
         with:

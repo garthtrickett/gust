@@ -1,0 +1,57 @@
+Phase 16.2 — Canonical MIR Signature, Call, and Result Transport
+guard: guard-cranelift-phase16-call-mir-contract
+parity_guard: guard-cranelift-phase16-call-mir-parity
+test_level: level1
+format: gust.compiler_function_call_mir.v1
+inventory: selected direct calls with int, bool, scalar, and already-layout-supported values
+authority: explicit compiler ABI and call-plan identities
+evaluation: ordered argument materialization before call and result normalization
+resource_policy: preserve compiler-owned Phase 15 transition annotations
+
+counts:
+  consumer: 2
+  hard_ban: 4
+  metadata: 7
+  operation: 7
+  policy: 2
+  rejection: 7
+  test: 2
+  transport: 1
+
+active contract:
+  operation	function_abi_declaration	compiler/mir_function_call.gst	active
+  operation	argument_materialization	compiler/mir_function_call.gst	active
+  operation	direct_call	compiler/mir_function_call.gst	active
+  operation	result_extraction	compiler/mir_function_call.gst	active
+  operation	hidden_argument	compiler/mir_function_call.gst	active
+  operation	hidden_result_storage	compiler/mir_function_call.gst	active
+  operation	post_call_normalization	compiler/mir_function_call.gst	active
+  metadata	function_abi_id	compiler/mir_function_call.gst	active
+  metadata	call_site_abi_id	compiler/mir_function_call.gst	active
+  metadata	ordered_argument_abi_ids	compiler/mir_function_call.gst	active
+  metadata	ordered_result_abi_ids	compiler/mir_function_call.gst	active
+  metadata	target_identity	compiler/mir_function_call.gst	active
+  metadata	calling_convention	compiler/mir_function_call.gst	active
+  metadata	source_location	compiler/mir_function_call.gst	active
+  policy	evaluation_order	compiler/mir_function_call.gst	active
+  policy	phase15_resource_transition_preservation	compiler/mir_function_call.gst	active
+  rejection	missing_abi_metadata	compiler/mir_function_call.gst	active
+  rejection	argument_count_or_order_mismatch	compiler/mir_function_call.gst	active
+  rejection	result_count_mismatch	compiler/mir_function_call.gst	active
+  rejection	unknown_hidden_value	compiler/mir_function_call.gst	active
+  rejection	unsupported_calling_convention	compiler/mir_function_call.gst	active
+  rejection	target_mismatch	compiler/mir_function_call.gst	active
+  rejection	metadata_signature_disagreement	compiler/mir_function_call.gst	active
+  consumer	mir_to_c_canonical_call_operations	compiler/mir_function_call_mir_to_c.gst	active
+  consumer	cranelift_canonical_call_operations	compiler/experiments/cranelift/src/function_call_mir.rs	active
+  transport	native_request_call_mir_table	compiler/mir_native_backend_call_mir_request.gst	active
+  hard_ban	worker_no_source_text_signature_identity	compiler/experiments/cranelift/src/function_call_mir.rs	active
+  hard_ban	worker_no_symbol_signature_identity	compiler/experiments/cranelift/src/function_call_mir.rs	active
+  hard_ban	worker_no_c_prototype_signature_identity	compiler/experiments/cranelift/src/function_call_mir.rs	active
+  hard_ban	worker_no_fixture_name_signature_identity	compiler/experiments/cranelift/src/function_call_mir.rs	active
+  test	level1_call_mir_contract	scripts/phase16_call_mir.py	active
+  test	level2_call_mir_parity	scripts/phase16_call_mir_parity.sh	registered
+
+exit gate:
+  selected calls have one compiler-owned signature and canonical MIR transport
+  MIR-to-C and Cranelift consume identical ordered ABI operation records
