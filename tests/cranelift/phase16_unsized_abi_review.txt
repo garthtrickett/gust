@@ -1,0 +1,52 @@
+Phase 16.8 — Unsized Value Parameter, Return, and Storage Contract
+guard: guard-cranelift-phase16-unsized-abi-contract
+parity_guard: guard-cranelift-phase16-unsized-abi-parity
+test_level: level1
+format: gust.compiler_unsized_abi.v1
+inventory: borrowed slice parameter, caller-backed borrowed slice result, and fixed-backing local slice view
+boundary: arbitrary DSTs, unsized aggregate tails, dynamic allocation, heap allocation, and complete trait objects remain deferred
+
+counts:
+  consumer: 2
+  form: 3
+  hard_ban: 1
+  identity: 4
+  metadata: 2
+  operation: 5
+  rejection: 8
+  test: 2
+  transport: 1
+
+active contract:
+  form	borrowed_slice_parameter	compiler_unsized_abi_planner	selected
+  form	borrowed_slice_result	compiler_unsized_abi_planner	selected
+  form	fixed_backing_local_slice_view	compiler_unsized_abi_planner	selected
+  transport	fat_pointer_data_and_length	compiler_call_plan	selected
+  identity	data_identity	compiler_unsized_abi_planner	required
+  identity	length_metadata_identity	compiler_unsized_abi_planner	required
+  identity	element_layout_identity	compiler_layout_authority	required
+  identity	storage_owner_and_lifetime	compiler_unsized_abi_planner	required
+  operation	bind_unsized_data	canonical_mir	selected
+  operation	bind_length_metadata	canonical_mir	selected
+  operation	checked_size_multiply	canonical_mir	selected
+  operation	transport_unsized_view	canonical_mir	selected
+  operation	bounds_check	canonical_mir	selected
+  metadata	checked_length_and_byte_size	compiler_unsized_abi_planner	required
+  metadata	borrowed_resource_disposition	compiler_resource_authority	required
+  rejection	by_value_without_storage_plan	compiler_unsized_abi_verifier	rejected
+  rejection	missing_metadata	compiler_unsized_abi_verifier	rejected
+  rejection	inconsistent_length_or_layout	compiler_unsized_abi_verifier	rejected
+  rejection	size_overflow	compiler_unsized_abi_verifier	rejected
+  rejection	insufficient_alignment	compiler_unsized_abi_verifier	rejected
+  rejection	bounds_violation	compiler_unsized_abi_verifier	rejected
+  rejection	invalid_result_ownership	compiler_unsized_abi_verifier	rejected
+  rejection	backend_invented_size	compiler_unsized_abi_verifier	rejected
+  consumer	mir_to_c_compiler_unsized_plan	mir_to_c	required
+  consumer	cranelift_compiler_unsized_plan	cranelift_worker	required
+  hard_ban	no_backend_size_calculation	architecture	required
+  test	level1_unsized_abi_contract	ci	active
+  test	level2_unsized_abi_parity	ci	active
+
+exit gate:
+  every selected unsized value carries compiler-owned data, length, layout, storage, lifetime, bounds, and transport
+  MIR-to-C and Cranelift consume the same compiler-produced checked size and metadata flow

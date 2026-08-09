@@ -15808,6 +15808,7 @@ guard-cranelift-contract-fast:
     just guard-cranelift-phase16-direct-call-agreement-contract
     just guard-cranelift-phase16-typed-indirect-call-contract
     just guard-cranelift-phase16-fat-pointer-abi-contract
+    just guard-cranelift-phase16-unsized-abi-contract
 
 guard-cranelift-phase16-abi-authority-contract:
     #!/usr/bin/env bash
@@ -15925,6 +15926,23 @@ guard-cranelift-phase16-fat-pointer-abi-parity:
     python3 scripts/cranelift_test_levels.py level guard-cranelift-phase16-fat-pointer-abi-parity | grep -F $'guard-cranelift-phase16-fat-pointer-abi-parity\t2\t' >/dev/null
     just guard-cranelift-phase16-fat-pointer-abi-contract
     bash scripts/phase16_fat_pointer_abi_parity.sh
+
+guard-cranelift-phase16-unsized-abi-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 16.8 compiler-owned unsized value ABI..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase16-unsized-abi-contract | grep -F $'guard-cranelift-phase16-unsized-abi-contract\t1\t' >/dev/null
+    python3 scripts/phase16_unsized_abi.py --check
+
+guard-cranelift-phase16-unsized-abi-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 16.8 unsized value ABI parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase16-unsized-abi-parity | grep -F $'guard-cranelift-phase16-unsized-abi-parity\t2\t' >/dev/null
+    just guard-cranelift-phase16-unsized-abi-contract
+    bash scripts/phase16_unsized_abi_parity.sh
 
 guard-cranelift-historical-full:
     #!/usr/bin/env bash
