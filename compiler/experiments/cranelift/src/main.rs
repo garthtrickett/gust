@@ -1,6 +1,7 @@
 mod aggregate_parameter_abi;
 mod aggregate_result_abi;
 mod direct_call_agreement;
+mod typed_indirect_call;
 mod destructor_scheduling;
 mod early_return_cleanup;
 mod failure_cleanup;
@@ -16333,6 +16334,12 @@ fn run() -> Result<(), Box<dyn Error>> {
     };
 
     match command.as_str() {
+        "phase16-typed-indirect-call-witness" => {
+            let Some(request_path) = args.next() else { return Err(usage_error().into()); };
+            if args.next().is_some() { return Err(usage_error().into()); }
+            let witness = typed_indirect_call::lower_typed_indirect_call_witness_path(Path::new(&request_path))?;
+            print!("{witness}"); Ok(())
+        }
         "phase16-direct-call-agreement-witness" => {
             let Some(request_path) = args.next() else {
                 return Err(usage_error().into());
@@ -17818,6 +17825,7 @@ fn usage_error() -> IoError {
         ErrorKind::InvalidInput,
         concat!(
             "usage:\n",
+            "  gust-cranelift-experiment phase16-typed-indirect-call-witness <request.native>\n",
             "  gust-cranelift-experiment phase16-direct-call-agreement-witness <request.native>\n",
             "  gust-cranelift-experiment phase16-aggregate-result-witness <request.native>\n",
             "  gust-cranelift-experiment phase16-aggregate-parameter-witness <request.native>\n",

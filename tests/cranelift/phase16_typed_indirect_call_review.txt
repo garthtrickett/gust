@@ -1,0 +1,47 @@
+Phase 16.6 — Typed Indirect Calls and Function-Value ABI
+guard: guard-cranelift-phase16-typed-indirect-call-contract
+parity_guard: guard-cranelift-phase16-typed-indirect-call-parity
+test_level: level1
+format: gust.compiler_typed_indirect_call.v1
+inventory: compatible function selection and typed function-value parameters
+boundary: closures, erased signatures, arbitrary code pointers, dynamic symbols, and unrestricted virtual calls remain deferred
+
+counts:
+  consumer: 2
+  form: 2
+  hard_ban: 2
+  metadata: 6
+  operation: 4
+  rejection: 7
+  test: 2
+
+active contract:
+  form	compatible_function_selection	compiler_typed_function_value	selected
+  form	typed_function_value_parameter	compiler_typed_function_value	selected
+  metadata	canonical_signature_identity	compiler_function_abi	required
+  metadata	function_abi_identity	compiler_function_abi	required
+  metadata	non_null_policy	compiler_typed_function_value	required
+  metadata	calling_convention	compiler_function_abi	required
+  metadata	ordered_parameter_result_transport	compiler_call_plan	required
+  metadata	resource_transfer_policy	compiler_resource_authority	required
+  operation	create_typed_function_value	canonical_mir	selected
+  operation	select_compatible_function	canonical_mir	selected
+  operation	pass_typed_function_value	canonical_mir	selected
+  operation	typed_indirect_call	canonical_mir	selected
+  rejection	unknown_signature	compiler_typed_indirect_validation	rejected
+  rejection	signature_erasure	compiler_typed_indirect_validation	rejected
+  rejection	incompatible_function_value	compiler_typed_indirect_validation	rejected
+  rejection	null_call	compiler_typed_indirect_validation	rejected
+  rejection	unsupported_calling_convention	compiler_typed_indirect_validation	rejected
+  rejection	variadic_call	compiler_typed_indirect_validation	rejected
+  rejection	unvalidated_pointer_cast	compiler_typed_indirect_validation	rejected
+  consumer	mir_to_c_compiler_signature	mir_to_c	required
+  consumer	cranelift_compiler_signature	cranelift_worker	required
+  hard_ban	no_signature_erasure	architecture	required
+  hard_ban	no_backend_signature_reconstruction	architecture	required
+  test	level1_typed_indirect_contract	ci	active
+  test	level2_typed_indirect_parity	ci	active
+
+exit gate:
+  every selected indirect call carries a complete compiler-owned ABI identity
+  MIR-to-C and Cranelift consume the same typed call decision

@@ -18,6 +18,8 @@
     }
   },
   "guards": {
+    "guard-cranelift-phase16-typed-indirect-call-contract": 1,
+    "guard-cranelift-phase16-typed-indirect-call-parity": 2,
     "guard-cranelift-phase16-direct-call-agreement-contract": 1,
     "guard-cranelift-phase16-direct-call-agreement-parity": 2,
     "guard-cranelift-phase16-aggregate-return-contract": 1,

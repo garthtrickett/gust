@@ -1,0 +1,36 @@
+name: Cranelift Phase 16 Typed Indirect Calls
+on:
+  pull_request:
+    paths: ['compiler/mir_typed_indirect_call.gst','compiler/mir_typed_indirect_call_mir_to_c.gst','compiler/mir_native_backend_typed_indirect_call_request.gst','compiler/mir_typed_indirect_call_smoke_test_entry.gst','compiler/experiments/cranelift/src/typed_indirect_call.rs','compiler/experiments/cranelift/src/main.rs','scripts/phase16_typed_indirect_call.py','scripts/phase16_typed_indirect_call_parity.sh','scripts/cranelift_test_levels.json','tests/cranelift/phase16_typed_indirect_call_contract.tsv','tests/cranelift/phase16_typed_indirect_call_review.txt','justfile','.github/workflows/phase16-typed-indirect-calls.yml']
+  push:
+    branches: [main]
+    paths: ['compiler/mir_typed_indirect_call.gst','compiler/mir_typed_indirect_call_mir_to_c.gst','compiler/mir_native_backend_typed_indirect_call_request.gst','compiler/mir_typed_indirect_call_smoke_test_entry.gst','compiler/experiments/cranelift/src/typed_indirect_call.rs','compiler/experiments/cranelift/src/main.rs','scripts/phase16_typed_indirect_call.py','scripts/phase16_typed_indirect_call_parity.sh','scripts/cranelift_test_levels.json','tests/cranelift/phase16_typed_indirect_call_contract.tsv','tests/cranelift/phase16_typed_indirect_call_review.txt','justfile','.github/workflows/phase16-typed-indirect-calls.yml']
+  workflow_dispatch:
+jobs:
+  contract:
+    name: Phase 16.6 typed indirect call contract (Level 1)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - run: just guard-cranelift-phase16-typed-indirect-call-contract
+  parity:
+    name: Phase 16.6 typed indirect call parity (Level 2)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - run: just guard-cranelift-phase16-typed-indirect-call-parity
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase16-typed-indirect-call-diagnostics
+          if-no-files-found: ignore
+          path: |
+            to.log
+            build/gust-build.log
+            build/mir_typed_indirect_call_smoke_test_entry.compile.log
+            build/guards/phase16_typed_indirect_call/
