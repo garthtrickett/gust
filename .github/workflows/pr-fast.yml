@@ -96,6 +96,9 @@ jobs:
       - name: Phase 15 resource and lifetime opening
         run: just guard-cranelift-phase15-opening-contract
 
+      - name: Phase 16 function ABI and aggregate call opening
+        run: just guard-cranelift-phase16-opening-contract
+
       - name: Upload Gust build outputs
         uses: actions/upload-artifact@v4
         with:
