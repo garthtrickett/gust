@@ -13329,9 +13329,10 @@ guard-cranelift-phase13-close:
     rg -n -F "\"phase13\": \"$closure_status\"" "$registry" >/dev/null
     if ! rg -n -F "\"registry_status\": \"$closure_status\"" "$registry" >/dev/null &&
        ! rg -n -F '"current_phase": "phase14"' "$registry" >/dev/null &&
-       ! rg -n -F '"current_phase": "phase15"' "$registry" >/dev/null
+       ! rg -n -F '"current_phase": "phase15"' "$registry" >/dev/null &&
+       ! rg -n -F '"current_phase": "phase16"' "$registry" >/dev/null
     then
-      echo "Phase 13 closure must remain the current status or a recorded predecessor of the active Phase 14 or Phase 15 state."
+      echo "Phase 13 closure must remain the current status or a recorded predecessor of the active Phase 14, Phase 15, or Phase 16 state."
       exit 1
     fi
     rg -n -F "$closure_status" "$canonical_summary" >/dev/null
@@ -17097,9 +17098,10 @@ guard-cranelift-phase12-5-close:
     rg -n -F "$closure_status" "$registry_json" >/dev/null
     if ! rg -n -F '"current_phase": "phase13"' "$registry_json" >/dev/null &&
        ! rg -n -F '"current_phase": "phase14"' "$registry_json" >/dev/null &&
-       ! rg -n -F '"current_phase": "phase15"' "$registry_json" >/dev/null
+       ! rg -n -F '"current_phase": "phase15"' "$registry_json" >/dev/null &&
+       ! rg -n -F '"current_phase": "phase16"' "$registry_json" >/dev/null
     then
-      echo "Phase 12.5 closure must remain available to Phase 13, Phase 14, or Phase 15."
+      echo "Phase 12.5 closure must remain available to Phase 13, Phase 14, Phase 15, or Phase 16."
       exit 1
     fi
     rg -n -x -F "CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_STATUS: $closure_status" "$inventory_doc" >/dev/null
