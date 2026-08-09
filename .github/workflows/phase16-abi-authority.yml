@@ -1,0 +1,35 @@
+name: Cranelift Phase 16 ABI Authority
+
+on:
+  pull_request:
+    paths:
+      - 'compiler/mir_function_abi_authority.gst'
+      - 'compiler/mir_native_backend_abi_request.gst'
+      - 'compiler/mir_function_abi_authority_smoke_test_entry.gst'
+      - 'compiler/mir_to_c.gst'
+      - 'compiler/experiments/cranelift/src/main.rs'
+      - 'compiler/**/*diagnostic*'
+      - 'scripts/phase16_abi_authority.py'
+      - 'scripts/guard-cranelift-phase16-abi-authority-contract.sh'
+      - 'tests/cranelift/phase16_abi_authority_contract.tsv'
+      - 'tests/cranelift/phase16_abi_authority_review.txt'
+      - '.github/workflows/phase16-abi-authority.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'compiler/mir_function_abi_authority.gst'
+      - 'compiler/mir_native_backend_abi_request.gst'
+      - 'compiler/mir_function_abi_authority_smoke_test_entry.gst'
+      - 'scripts/phase16_abi_authority.py'
+      - 'tests/cranelift/phase16_abi_authority_contract.tsv'
+      - 'tests/cranelift/phase16_abi_authority_review.txt'
+
+jobs:
+  guard-cranelift-phase16-abi-authority-contract:
+    name: Phase 16.1 ABI authority contract (Level 1)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: guard-cranelift-phase16-abi-authority-contract
+        run: python3 scripts/phase16_abi_authority.py --check

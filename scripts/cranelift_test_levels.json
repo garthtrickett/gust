@@ -247,6 +247,7 @@
     "guard-cranelift-phase14-close": 1,
     "guard-cranelift-phase15-opening-contract": 1,
     "guard-cranelift-phase16-opening-contract": 1,
+    "guard-cranelift-phase16-abi-authority-contract": 1,
     "guard-cranelift-phase15-resource-mir-contract": 1,
     "guard-cranelift-phase15-resource-mir-parity": 2,
     "guard-cranelift-phase14-composition-differential": 2,
