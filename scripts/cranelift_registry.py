@@ -595,6 +595,75 @@ PHASE15_OPENING_ENTRY_IDS = (
     "p15_complete_resource_differential",
 )
 
+PHASE16_OPENING_SNAPSHOT_FIELDS = PHASE15_OPENING_SNAPSHOT_FIELDS
+PHASE16_OPENING_SNAPSHOT_ENTRY_FIELDS = PHASE15_OPENING_SNAPSHOT_ENTRY_FIELDS
+PHASE16_RESIDUAL_REBASE_FIELDS = {
+    "source_residual_id", "phase16_disposition",
+    "selected_phase16_entry_ids", "reassigned_destination_phase",
+    "reassigned_capability", "justification",
+}
+PHASE16_CI_PROJECTION_FIELDS = PHASE15_CI_PROJECTION_FIELDS
+PHASE16_OPENING_VERSION = (
+    "phase16_opening_inventory_rebased_on_phase15_closure"
+)
+PHASE16_INVENTORY_VERSION = "phase16_opening_inventory_v1"
+PHASE16_OPENING_STATUS = "ready_for_patch16_1"
+PHASE16_REGISTRY_STATUS = (
+    "phase16_opening_function_abi_aggregate_call_inventory"
+)
+PHASE16_PREDECESSOR = "phase15_closed_resource_and_lifetime_semantics"
+PHASE16_TARGET_APPLICABILITY = PHASE15_TARGET_APPLICABILITY
+PHASE16_REVIEW_VIEW = "compiler/CRANELIFT_PHASE16_OPENING.md"
+PHASE16_COMPARISON_POLICY = PHASE15_COMPARISON_POLICY
+PHASE16_BEHAVIOR_POLICY = (
+    "registry_projection_guard_and_fixture_inventory_only_no_compiler_"
+    "backend_runtime_MIR_request_ABI_object_link_package_CLI_or_level2_"
+    "level3_workflow_change"
+)
+PHASE16_CI_DERIVATION = (
+    "distinct_ci_family_values_from_phase16_opening_entries_in_first_"
+    "occurrence_order"
+)
+PHASE16_CI_WORKFLOW_POLICY = (
+    "planning_projection_only_no_phase16_level2_workflow_rows_until_"
+    "capability_migration"
+)
+PHASE16_PLANNING_CATEGORIES = (
+    "function_abi_authority", "canonical_call_result_mir",
+    "aggregate_parameter_abi", "aggregate_return_hidden_result_abi",
+    "direct_call_agreement", "typed_indirect_calls",
+    "fat_pointer_trait_object_call_abi", "unsized_value_abi",
+    "dynamic_stack_storage", "resource_aggregate_call_abi",
+    "cross_module_aggregate_resource_abi", "abi_metadata_validation",
+    "complete_abi_differential_evidence",
+)
+PHASE16_CI_FAMILIES = (
+    "call-mir", "aggregate-parameters", "aggregate-returns",
+    "direct-call-agreement", "typed-indirect-calls", "fat-pointer-abi",
+    "unsized-abi", "dynamic-stack", "resource-aggregate-abi",
+    "cross-module-abi",
+)
+PHASE16_OPENING_ENTRY_IDS = (
+    "p16_function_abi_authority",
+    "p16_canonical_call_result_mir",
+    "p16_aggregate_parameter_abi",
+    "p16_aggregate_return_hidden_result_abi",
+    "p16_direct_call_agreement",
+    "p16_typed_indirect_calls",
+    "p16_fat_pointer_trait_object_call_abi",
+    "p16_unsized_value_abi",
+    "p16_dynamic_stack_storage",
+    "p16_resource_aggregate_call_abi",
+    "p16_cross_module_aggregate_resource_abi",
+    "p16_abi_metadata_validation",
+    "p16_complete_abi_differential",
+)
+PHASE16_SELECTED_RESIDUAL_IDS = {
+    "p15_unsized_types", "p15_trait_object_fat_pointers",
+    "p16_dynamic_stack_allocation", "p15_aggregate_parameter_abi",
+    "p15_aggregate_return_abi", "p16_resource_bearing_aggregate_moves",
+}
+
 PHASE14_LAYOUT_AUTHORITY_FIELDS = {
     "version", "status", "authority_owner", "table_format",
     "semantic_types", "query_functions", "consumers", "identity_policy",
@@ -1103,8 +1172,8 @@ def validate_phase13_opening_snapshot_structure(registry):
     snapshots = registry["opening_snapshots"]
     require(
         isinstance(snapshots, dict)
-        and set(snapshots) == {"phase13", "phase14", "phase15"},
-        "opening_snapshots must contain exactly phase13, phase14, and phase15",
+        and set(snapshots) == {"phase13", "phase14", "phase15", "phase16"},
+        "opening_snapshots must contain exactly phase13 through phase16",
     )
     snapshot = snapshots["phase13"]
     require(
@@ -1605,6 +1674,142 @@ def validate_phase15_opening_snapshot_structure(registry):
         projection["workflow_policy"] == PHASE15_CI_WORKFLOW_POLICY,
         "Phase 15 CI-family workflow policy drifted",
     )
+    return snapshot
+
+
+def validate_phase16_opening_snapshot_structure(registry):
+    snapshot = registry["opening_snapshots"]["phase16"]
+    require(
+        isinstance(snapshot, dict)
+        and set(snapshot) == PHASE16_OPENING_SNAPSHOT_FIELDS,
+        "Phase 16 opening snapshot fields drifted",
+    )
+    require(
+        snapshot["opening_version"] == PHASE16_OPENING_VERSION
+        and snapshot["inventory_version"] == PHASE16_INVENTORY_VERSION
+        and snapshot["status"] == PHASE16_OPENING_STATUS,
+        "Phase 16 opening identity or status drifted",
+    )
+    require(
+        snapshot["predecessor_closure_version"]
+        == registry["closed_phase_versions"]["phase15"]
+        == PHASE16_PREDECESSOR,
+        "Phase 16 predecessor differs from the Phase 15 closure",
+    )
+    require(snapshot["review_view"] == PHASE16_REVIEW_VIEW,
+            "Phase 16 opening review path drifted")
+    require(
+        snapshot["immutable_fields"] == [
+            "id", "parent", "feature_family", "ci_family",
+            "capability_owner", "diagnostic_owner", "target_applicability",
+        ],
+        "Phase 16 opening immutable-field set drifted",
+    )
+    require(snapshot["comparison_policy"] == PHASE16_COMPARISON_POLICY,
+            "Phase 16 opening comparison policy drifted")
+    require(snapshot["behavior_policy"] == PHASE16_BEHAVIOR_POLICY,
+            "Phase 16 opening behavior policy drifted")
+    require(snapshot["next_patch"] == "16.1",
+            "Phase 16 opening next patch must be 16.1")
+
+    rows = snapshot["entries"]
+    require(isinstance(rows, list) and rows,
+            "Phase 16 opening snapshot must contain rows")
+    require(tuple(row.get("id") for row in rows) == PHASE16_OPENING_ENTRY_IDS,
+            "Phase 16 opening row ID inventory drifted")
+    derived_families = []
+    parent_kinds = Counter()
+    for index, row in enumerate(rows):
+        context = f"opening_snapshots.phase16.entries[{index}]"
+        require(
+            isinstance(row, dict)
+            and set(row) == PHASE16_OPENING_SNAPSHOT_ENTRY_FIELDS,
+            f"{context} fields drifted",
+        )
+        entry_id = text(row["id"], f"{context}.id")
+        require(re.fullmatch(r"p16_[A-Za-z0-9_]+", entry_id) is not None,
+                f"{entry_id}: invalid Phase 16 opening ID")
+        parent = text(row["parent"], f"{context}.parent")
+        require(
+            parent.startswith(
+                ("phase15_entry:", "phase15_residual:", "phase16_category:")
+            ),
+            f"{entry_id}: invalid Phase 16 opening parent {parent}",
+        )
+        parent_kinds[parent.split(":", 1)[0]] += 1
+        for field in (
+            "feature_family", "ci_family", "capability_owner",
+            "diagnostic_owner", "target_applicability",
+            "current_failure_stage",
+        ):
+            text(row[field], f"{entry_id}.{field}")
+        require(row["target_applicability"] == PHASE16_TARGET_APPLICABILITY,
+                f"{entry_id}: target applicability drifted")
+        require(row["status"] == "candidate_deferred",
+                f"{entry_id}: opening status must remain candidate_deferred")
+        require(row["current_failure_stage"] == "before_driver_discovery",
+                f"{entry_id}: opening row must stop before driver discovery")
+        fixture(row["positive_future_fixture"],
+                f"{entry_id}.positive_future_fixture")
+        fixture(row["negative_current_fixture"],
+                f"{entry_id}.negative_current_fixture")
+        require(row["positive_future_fixture"] != row["negative_current_fixture"],
+                f"{entry_id}: positive and negative fixtures must differ")
+        if row["ci_family"] not in derived_families:
+            derived_families.append(row["ci_family"])
+    require(
+        set(parent_kinds)
+        == {"phase15_entry", "phase15_residual", "phase16_category"},
+        "Phase 16 opening must preserve all parent-traceability kinds",
+    )
+
+    rebase_rows = snapshot["residual_rebase"]
+    require(isinstance(rebase_rows, list) and rebase_rows,
+            "Phase 16 residual rebase must contain rows")
+    source_ids = set()
+    selected_refs = set()
+    for index, row in enumerate(rebase_rows):
+        context = f"opening_snapshots.phase16.residual_rebase[{index}]"
+        require(isinstance(row, dict)
+                and set(row) == PHASE16_RESIDUAL_REBASE_FIELDS,
+                f"{context} fields drifted")
+        source_id = text(row["source_residual_id"],
+                         f"{context}.source_residual_id")
+        require(source_id not in source_ids,
+                f"duplicate Phase 16 residual source: {source_id}")
+        source_ids.add(source_id)
+        selected_ids = unique_strings(
+            row["selected_phase16_entry_ids"],
+            f"{source_id}.selected_phase16_entry_ids",
+        )
+        require(row["phase16_disposition"] == "selected"
+                and selected_ids
+                and set(selected_ids) <= set(PHASE16_OPENING_ENTRY_IDS)
+                and row["reassigned_destination_phase"] == "none_selected"
+                and row["reassigned_capability"] == "none_selected",
+                f"{source_id}: selected residual state drifted")
+        text(row["justification"], f"{source_id}.justification")
+        selected_refs.update(selected_ids)
+    require(source_ids == PHASE16_SELECTED_RESIDUAL_IDS,
+            "Phase 16 residual source inventory drifted")
+    residual_parent_ids = {
+        row["id"] for row in rows
+        if row["parent"].startswith("phase15_residual:")
+    }
+    require(residual_parent_ids <= selected_refs,
+            "Phase 16 residual-parent rows are not selected by the rebase")
+
+    projection = snapshot["ci_family_projection"]
+    require(isinstance(projection, dict)
+            and set(projection) == PHASE16_CI_PROJECTION_FIELDS,
+            "Phase 16 CI-family projection fields drifted")
+    require(projection["derivation"] == PHASE16_CI_DERIVATION,
+            "Phase 16 CI-family derivation drifted")
+    require(projection["family_ids"] == derived_families
+            == list(PHASE16_CI_FAMILIES),
+            "Phase 16 CI-family projection is not row-derived")
+    require(projection["workflow_policy"] == PHASE16_CI_WORKFLOW_POLICY,
+            "Phase 16 CI-family workflow policy drifted")
     return snapshot
 
 
@@ -2465,7 +2670,7 @@ def validate():
     opening_schema = schema.get("properties", {}).get("opening_snapshots", {})
     require(
         set(opening_schema.get("required", []))
-        == {"phase13", "phase14", "phase15"},
+        == {"phase13", "phase14", "phase15", "phase16"},
         "schema opening snapshot keys drifted",
     )
     phase13_snapshot_schema = definitions.get("phase13_opening_snapshot", {})
@@ -2560,6 +2765,36 @@ def validate():
         set(phase15_ci_schema.get("required", []))
         == PHASE15_CI_PROJECTION_FIELDS,
         "schema Phase 15 CI-family projection fields drifted",
+    )
+    phase16_snapshot_schema = definitions.get("phase16_opening_snapshot", {})
+    require(
+        set(phase16_snapshot_schema.get("required", []))
+        == PHASE16_OPENING_SNAPSHOT_FIELDS,
+        "schema Phase 16 opening snapshot fields drifted",
+    )
+    require(phase16_snapshot_schema.get("additionalProperties") is False,
+            "schema Phase 16 opening snapshot must reject unknown fields")
+    phase16_entry_schema = definitions.get(
+        "phase16_opening_snapshot_entry", {}
+    )
+    require(
+        set(phase16_entry_schema.get("required", []))
+        == PHASE16_OPENING_SNAPSHOT_ENTRY_FIELDS,
+        "schema Phase 16 opening snapshot entry fields drifted",
+    )
+    require(phase16_entry_schema.get("additionalProperties") is False,
+            "schema Phase 16 opening entries must reject unknown fields")
+    phase16_rebase_schema = definitions.get("phase16_residual_rebase", {})
+    require(
+        set(phase16_rebase_schema.get("required", []))
+        == PHASE16_RESIDUAL_REBASE_FIELDS,
+        "schema Phase 16 residual rebase fields drifted",
+    )
+    phase16_ci_schema = definitions.get("phase16_ci_family_projection", {})
+    require(
+        set(phase16_ci_schema.get("required", []))
+        == PHASE16_CI_PROJECTION_FIELDS,
+        "schema Phase 16 CI-family projection fields drifted",
     )
     phase14_authority_schema = definitions.get(
         "phase14_layout_authority",
@@ -2688,7 +2923,8 @@ def validate():
     require(
         set(closed_versions_schema.get("required", []))
         == {
-            "phase11", "phase12_5_opening", "phase12_5", "phase13", "phase14"
+            "phase11", "phase12_5_opening", "phase12_5", "phase13",
+            "phase14", "phase15",
         },
         "schema closed-phase version keys drifted",
     )
@@ -2722,12 +2958,12 @@ def validate():
     require(registry["schema"] == "scripts/cranelift_feature_registry.schema.json",
             "registry schema path is not canonical")
     require(registry["schema_version"] == 1, "schema_version must be 1")
-    require(registry["registry_version"] == 15, "registry_version must be 15")
+    require(registry["registry_version"] == 16, "registry_version must be 16")
     require(
-        registry["registry_status"] == PHASE15_REGISTRY_STATUS,
+        registry["registry_status"] == PHASE16_REGISTRY_STATUS,
         "registry status is missing or stale",
     )
-    require(registry["current_phase"] == "phase15", "current_phase must be phase15")
+    require(registry["current_phase"] == "phase16", "current_phase must be phase16")
     require(
         registry["closed_phase_versions"] == {
             "phase11": "phase11_closed_registry_backed_feature_parity_migration",
@@ -2735,6 +2971,7 @@ def validate():
             "phase12_5": "phase12_5_closed_cranelift_verification_framework_consolidation",
             "phase13": PHASE13_CLOSURE_VERSION,
             "phase14": PHASE14_CLOSURE_VERSION,
+            "phase15": PHASE16_PREDECESSOR,
         },
         "closed phase versions drifted",
     )
@@ -2745,6 +2982,7 @@ def validate():
     validate_phase14_closure_snapshot_structure(registry)
     validate_phase14_opening_snapshot_structure(registry)
     validate_phase15_opening_snapshot_structure(registry)
+    validate_phase16_opening_snapshot_structure(registry)
     validate_phase14_layout_authority_structure(registry)
     validate_phase14_primitive_layout_structure(registry)
     validate_phase14_integer_conversion_structure(registry)
@@ -2778,6 +3016,7 @@ def validate():
     phase13 = []
     phase14 = []
     phase15 = []
+    phase16 = []
     for index, entry in enumerate(entries):
         context = f"entries[{index}]"
         require(isinstance(entry, dict), f"{context} must be an object")
@@ -2786,7 +3025,7 @@ def validate():
             expected_fields.update(PHASE13_CAPABILITY_FIELDS)
         elif entry.get("origin_phase") == "phase14":
             expected_fields.update(PHASE14_ENTRY_FIELDS)
-        elif entry.get("origin_phase") == "phase15":
+        elif entry.get("origin_phase") in {"phase15", "phase16"}:
             expected_fields.update(PHASE15_ENTRY_FIELDS)
         require(set(entry) == expected_fields, f"{context} fields drifted")
         entry_id = text(entry["id"], f"{context}.id")
@@ -3438,6 +3677,51 @@ def validate():
                 f"{entry_id}: Phase 15 opening evidence drifted",
             )
             phase15.append(entry)
+        elif entry["origin_phase"] == "phase16":
+            require(closure == PHASE16_INVENTORY_VERSION,
+                    f"{entry_id}: Phase 16 opening inventory version drifted")
+            require(status == "candidate_deferred"
+                    and entry["route_owner"] == "deferred",
+                    f"{entry_id}: Phase 16 opening rows must remain candidate_deferred")
+            require(
+                reason
+                == f"phase16_opening_{entry_id}_awaits_compiler_owned_function_abi_authority",
+                f"{entry_id}: Phase 16 opening deferral reason drifted",
+            )
+            require(destination == "phase16",
+                    f"{entry_id}: Phase 16 opening destination drifted")
+            require(entry["target_applicability"] == PHASE16_TARGET_APPLICABILITY,
+                    f"{entry_id}: Phase 16 target applicability drifted")
+            require(entry["current_failure_stage"] == "before_driver_discovery",
+                    f"{entry_id}: Phase 16 row must stop before driver discovery")
+            require(entry["source_fixture"] == entry["negative_current_fixture"],
+                    f"{entry_id}: Phase 16 source fixture must be the negative fixture")
+            require(entry["canonical_mir_fixture"]
+                    == "none_rejected_before_canonical_MIR",
+                    f"{entry_id}: Phase 16 opening row must not claim canonical MIR")
+            require(entry["differential_case_id"]
+                    == f"phase16_opening:{entry_id}",
+                    f"{entry_id}: Phase 16 differential identity drifted")
+            fixture(entry["positive_future_fixture"],
+                    f"{entry_id}.positive_future_fixture")
+            fixture(entry["negative_current_fixture"],
+                    f"{entry_id}.negative_current_fixture")
+            evidence = entry["evidence"]
+            require(
+                evidence.get("opening_record_kind") == "phase16_candidate"
+                and isinstance(evidence.get("declared_capability"), str)
+                and evidence.get("declared_capability")
+                and evidence.get("planning_category")
+                in PHASE16_PLANNING_CATEGORIES
+                and evidence.get("phase15_closure_dependency")
+                == PHASE16_PREDECESSOR
+                and evidence.get("behavior_policy")
+                == "opening_inventory_only_no_compiler_backend_runtime_MIR_request_ABI_artifact_or_dynamic_CI_change"
+                and evidence.get("phase16_1_boundary")
+                == "compiler_owned_function_ABI_authority_not_implemented_by_patch16_0",
+                f"{entry_id}: Phase 16 opening evidence drifted",
+            )
+            phase16.append(entry)
         else:
             raise Error(f"{entry_id}: unsupported origin phase {entry['origin_phase']}")
 
@@ -3540,10 +3824,43 @@ def validate():
         else:
             raise Error(f"{entry['id']}: invalid Phase 15 parent {parent}")
 
+    phase15_by_id_for_parent = {entry["id"]: entry for entry in phase15}
+    phase15_migrated_ids = {
+        row["id"]
+        for row in registry["phase15_deferred_residue_audit"]["opening_dispositions"]
+        if row["disposition"] == "migrated"
+    }
+    phase15_residual_ids_for_parent = {
+        row["source_residual_id"]
+        for row in registry["opening_snapshots"]["phase15"]["residual_rebase"]
+        if row["reassigned_destination_phase"] == "phase16"
+    }
+    require(phase15_residual_ids_for_parent == PHASE16_SELECTED_RESIDUAL_IDS,
+            "Phase 16 source residual inventory drifted")
+    for entry in phase16:
+        parent = entry["parent"]
+        if parent.startswith("phase15_entry:"):
+            parent_id = parent.split(":", 1)[1]
+            require(parent_id in phase15_by_id_for_parent
+                    and parent_id in phase15_migrated_ids,
+                    f"{entry['id']}: Phase 15 entry parent is not migrated")
+        elif parent.startswith("phase15_residual:"):
+            residual_id = parent.split(":", 1)[1]
+            require(residual_id in phase15_residual_ids_for_parent,
+                    f"{entry['id']}: missing Phase 15 residual parent {residual_id}")
+        elif parent.startswith("phase16_category:"):
+            category = parent.split(":", 1)[1]
+            require(category in planning_categories
+                    and category in PHASE16_PLANNING_CATEGORIES,
+                    f"{entry['id']}: unknown Phase 16 category {category}")
+        else:
+            raise Error(f"{entry['id']}: invalid Phase 16 parent {parent}")
+
     require(phase11, "registry must contain Phase 11 rows")
     require(phase13, "registry must contain Phase 13 rows")
     require(phase14, "registry must contain Phase 14 rows")
     require(phase15, "registry must contain Phase 15 rows")
+    require(phase16, "registry must contain Phase 16 rows")
     active_ci_families = {entry["ci_family"] for entry in phase11}
     require(active_ci_families, "Phase 11 rows must define active CI families")
     for entry in phase13:
@@ -3567,6 +3884,14 @@ def validate():
     require(
         phase15_families == list(PHASE15_CI_FAMILIES),
         "Phase 15 opening CI-family projection drifted",
+    )
+    phase16_families = []
+    for entry in phase16:
+        if entry["ci_family"] not in phase16_families:
+            phase16_families.append(entry["ci_family"])
+    require(
+        phase16_families == list(PHASE16_CI_FAMILIES),
+        "Phase 16 opening CI-family projection drifted",
     )
 
     phase13_by_id = {entry["id"]: entry for entry in phase13}
@@ -8343,6 +8668,26 @@ def phase15_opening_summary_lines(registry):
     ]
 
 
+def phase16_opening_summary_lines(registry):
+    snapshot = validate_phase16_opening_snapshot_structure(registry)
+    rows = phase_entries(registry, "phase16")
+    families = snapshot["ci_family_projection"]["family_ids"]
+    return [
+        "## Phase 16 opening inventory summary",
+        "",
+        f"- Opening version: `{snapshot['opening_version']}`",
+        f"- Inventory version: `{snapshot['inventory_version']}`",
+        f"- Status: `{snapshot['status']}`",
+        f"- Predecessor closure: `{snapshot['predecessor_closure_version']}`",
+        f"- Opening rows: `{len(rows)}`",
+        f"- Registry-derived planned CI families: `{len(families)}`",
+        f"- Phase 15 residual capabilities selected: `{len(snapshot['residual_rebase'])}`",
+        "",
+        "Patch 16.0 is inventory-only. It selects function ABI, aggregate call, typed indirect call, fat-pointer, unsized transport, dynamic frame, resource-bearing call, cross-module, metadata-validation, and differential-evidence work without changing compiler, backend, runtime, MIR, request, ABI lowering, artifact, Level 2, or Level 3 behavior.",
+        "",
+    ]
+
+
 def render(registry):
     entries = registry["entries"]
     totals = derived_totals(registry)
@@ -8356,7 +8701,9 @@ def render(registry):
         f"- Phase 12.5 closure: `{registry['closed_phase_versions']['phase12_5']}`",
         f"- Phase 13 closure: `{registry['closed_phase_versions']['phase13']}`",
         f"- Phase 14 closure: `{registry['closed_phase_versions']['phase14']}`",
+        f"- Phase 15 closure: `{registry['closed_phase_versions']['phase15']}`",
         f"- Phase 15 opening: `{registry['opening_snapshots']['phase15']['inventory_version']}`",
+        f"- Phase 16 opening: `{registry['opening_snapshots']['phase16']['inventory_version']}`",
         f"- Total rows: `{totals['total_rows']}`",
         "",
         "## Derived origin-phase totals", "",
@@ -8388,6 +8735,7 @@ def render(registry):
         *phase14_memory_access_summary_lines(registry),
         *phase14_string_view_summary_lines(registry),
         *phase15_opening_summary_lines(registry),
+        *phase16_opening_summary_lines(registry),
         "## Registry entries", "",
         "| ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |",
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
