@@ -76,7 +76,7 @@ If more than 100 runs exist, use the paginated Actions API and apply the same ex
 - [x] Patch 16.4 — Aggregate Return Classification and Hidden Result Transport — DONE
 - [x] Patch 16.5 — Caller/Callee Placement and Direct-Call Agreement — DONE
 - [x] Patch 16.6 — Typed Indirect Calls and Function-Value ABI — DONE
-- [ ] Patch 16.7 — Fat-Pointer and Selected Trait-Object Call ABI
+- [x] Patch 16.7 — Fat-Pointer and Selected Trait-Object Call ABI — DONE
 - [ ] Patch 16.8 — Unsized Value Parameter, Return, and Storage Contract
 - [ ] Patch 16.9 — Bounded Dynamic Stack Frames and Variable-Sized Storage
 - [ ] Patch 16.10 — Resource-Bearing Aggregate Call ABI

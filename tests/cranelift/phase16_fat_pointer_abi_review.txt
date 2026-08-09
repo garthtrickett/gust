@@ -1,0 +1,54 @@
+Phase 16.7 — Fat-Pointer and Selected Trait-Object Call ABI
+guard: guard-cranelift-phase16-fat-pointer-abi-contract
+parity_guard: guard-cranelift-phase16-fat-pointer-abi-parity
+test_level: level1
+format: gust.compiler_fat_pointer_abi.v1
+inventory: borrowed two-word data/vtable trait object and one typed method slot
+boundary: general trait resolution, object safety, downcasting, complete vtables, closure objects, and foreign object models remain deferred
+
+counts:
+  component: 2
+  consumer: 2
+  form: 1
+  hard_ban: 1
+  identity: 7
+  metadata: 2
+  operation: 3
+  rejection: 8
+  representation: 1
+  test: 2
+
+active contract:
+  form	borrowed_trait_object_method_call	compiler_fat_pointer_call_planner	selected
+  representation	two_word_data_and_vtable	compiler_layout_authority	selected
+  component	data_word	compiler_layout_authority	required
+  component	vtable_metadata_word	compiler_layout_authority	required
+  identity	data_component_identity	compiler_fat_pointer_call_planner	required
+  identity	metadata_component_identity	compiler_fat_pointer_call_planner	required
+  identity	data_metadata_pair_identity	compiler_fat_pointer_call_planner	required
+  identity	vtable_identity	compiler_fat_pointer_call_planner	required
+  identity	method_signature_identity	compiler_function_abi	required
+  identity	selected_slot_identity	compiler_fat_pointer_call_planner	required
+  identity	typed_call_abi_identity	compiler_function_abi	required
+  operation	construct_fat_pointer	canonical_mir	selected
+  operation	extract_vtable_method	canonical_mir	selected
+  operation	typed_indirect_call	canonical_mir	selected
+  metadata	component_layouts_and_alignment	compiler_layout_authority	required
+  metadata	borrowed_resource_disposition	compiler_resource_authority	required
+  rejection	missing_metadata	compiler_fat_pointer_abi_verifier	rejected
+  rejection	mismatched_components	compiler_fat_pointer_abi_verifier	rejected
+  rejection	unknown_method_signature	compiler_fat_pointer_abi_verifier	rejected
+  rejection	invalid_slot_identity	compiler_fat_pointer_abi_verifier	rejected
+  rejection	untyped_dispatch	compiler_fat_pointer_abi_verifier	rejected
+  rejection	unsupported_target_representation	compiler_fat_pointer_abi_verifier	rejected
+  rejection	insufficient_alignment	compiler_fat_pointer_abi_verifier	rejected
+  rejection	resource_disposition_mismatch	compiler_fat_pointer_abi_verifier	rejected
+  consumer	mir_to_c_compiler_fat_pointer_plan	mir_to_c	required
+  consumer	cranelift_compiler_fat_pointer_plan	cranelift_worker	required
+  hard_ban	no_backend_vtable_interpretation	architecture	required
+  test	level1_fat_pointer_abi_contract	ci	active
+  test	level2_fat_pointer_abi_parity	ci	active
+
+exit gate:
+  every selected fat-pointer call carries compiler-owned component layouts, pairing, slot, and typed ABI
+  MIR-to-C and Cranelift consume the same compiler-produced trait-object call plan
