@@ -1,0 +1,62 @@
+Patch 16.12 — ABI Metadata and Native Request Validation
+guard: guard-cranelift-phase16-abi-metadata-contract
+test_level: level1
+format: gust.compiler_abi_metadata_request.v1
+authority: compiler-owned ABI, Phase 14 layout, and Phase 15 resource records
+boundary: validation precedes worker, driver, object, linker, and output replacement
+
+counts:
+  boundary: 3
+  ordering: 2
+  rejection: 13
+  schema: 11
+
+active contract:
+  schema	function_abi_identity	compiler_function_abi_authority	validated
+  schema	canonical_signature	compiler_function_abi_authority	validated
+  schema	target_and_calling_convention	compiler_function_abi_authority	validated
+  schema	value_classification	compiler_function_abi_authority	validated
+  schema	parameter_and_result_placements	compiler_function_abi_authority	validated
+  schema	hidden_values	compiler_function_abi_authority	validated
+  schema	call_site_plans	compiler_function_abi_authority	validated
+  schema	compatibility_decisions	compiler_function_abi_authority	validated
+  schema	dynamic_frame_plans	compiler_function_abi_authority	validated
+  schema	layout_references	phase14_layout_authority	validated
+  schema	resource_transfer_references	phase15_resource_authority	validated
+  ordering	deterministic_ordering	compiler_request_serializer	validated
+  ordering	deduplication	compiler_request_serializer	validated
+  rejection	unknown_abi_id	worker_request_validator	validated
+  rejection	duplicate_conflicting_record	worker_request_validator	validated
+  rejection	unknown_layout_or_resource_id	worker_request_validator	validated
+  rejection	mir_call_missing_metadata	worker_request_validator	validated
+  rejection	metadata_without_mir_owner	worker_request_validator	validated
+  rejection	impossible_placement	worker_request_validator	validated
+  rejection	overlapping_stack_areas	worker_request_validator	validated
+  rejection	invalid_hidden_result	worker_request_validator	validated
+  rejection	signature_mismatch	worker_request_validator	validated
+  rejection	target_mismatch	worker_request_validator	validated
+  rejection	invalid_frame_restoration	worker_request_validator	validated
+  rejection	resource_transfer_inconsistent	worker_request_validator	validated
+  rejection	nondeterministic_ordering	worker_request_validator	validated
+  boundary	before_worker_driver_artifact_access	compiler_capability_gate	validated
+  boundary	preserve_existing_output	phase9g_publication_owner	validated
+  boundary	worker_does_not_invent_metadata	worker_request_validator	validated
+
+malformed request reasons:
+  duplicate_record	abi_metadata_duplicate_conflicting_record
+  impossible_placement	abi_metadata_impossible_placement
+  invalid_frame_restoration	abi_metadata_invalid_frame_restoration
+  invalid_hidden_result	abi_metadata_invalid_hidden_result
+  missing_call_metadata	abi_metadata_mir_call_missing_metadata
+  missing_mir_owner	abi_metadata_without_mir_owner
+  nondeterministic_ordering	abi_metadata_nondeterministic_ordering
+  overlapping_stack	abi_metadata_overlapping_stack_areas
+  resource_transfer	abi_metadata_resource_transfer_inconsistent
+  signature_mismatch	abi_metadata_signature_mismatch
+  target_mismatch	abi_metadata_target_mismatch
+  unknown_abi	abi_metadata_unknown_abi_id
+  unknown_layout	abi_metadata_unknown_layout_or_resource_id
+
+exit gate:
+  one deterministic compiler-produced ABI metadata contract reaches the worker
+  malformed ABI metadata preserves existing output and cannot reach driver or artifact access

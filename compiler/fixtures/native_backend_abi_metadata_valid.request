@@ -1,0 +1,16 @@
+abi_metadata_format: gust.compiler_abi_metadata_request.v1
+abi_metadata_target_id: target:x86_64-unknown-linux-gnu
+abi_metadata_target_triple: x86_64-unknown-linux-gnu
+abi_metadata_record_count: 12
+abi_metadata_record:sequence=0;id=mir:function:main;kind=mir_owner;mir_owner=mir:function:main;mir_kind=function
+abi_metadata_record:sequence=1;id=mir:call:aggregate;kind=mir_owner;mir_owner=mir:call:aggregate;mir_kind=call;call_plan=callplan:aggregate
+abi_metadata_record:sequence=2;id=layout:aggregate16;kind=layout_reference;owner=mir:function:main;layout=layout:aggregate16;target=target:x86_64-unknown-linux-gnu
+abi_metadata_record:sequence=3;id=abi:aggregate;kind=function_abi;owner=mir:function:main;abi=abi:aggregate;signature=sig:(aggregate16)->aggregate16;cc=gust_canonical_v1;target=target:x86_64-unknown-linux-gnu;parameter=placement:param;result=placement:result;hidden=hidden:result;frame=frame:aggregate
+abi_metadata_record:sequence=4;id=class:aggregate;kind=classification;owner=mir:function:main;abi=abi:aggregate;classification=class:aggregate;layout=layout:aggregate16;target=target:x86_64-unknown-linux-gnu
+abi_metadata_record:sequence=5;id=placement:param;kind=parameter_placement;owner=mir:function:main;abi=abi:aggregate;classification=class:aggregate;parameter=placement:param;layout=layout:aggregate16;passing_mode=indirect_by_value;stack_offset=0;stack_size=16;target=target:x86_64-unknown-linux-gnu
+abi_metadata_record:sequence=6;id=placement:result;kind=result_placement;owner=mir:function:main;abi=abi:aggregate;classification=class:aggregate;result=placement:result;layout=layout:aggregate16;passing_mode=indirect_by_value;stack_offset=16;stack_size=16;target=target:x86_64-unknown-linux-gnu
+abi_metadata_record:sequence=7;id=hidden:result;kind=hidden_value;owner=mir:function:main;abi=abi:aggregate;result=placement:result;hidden=hidden:result;layout=layout:aggregate16;passing_mode=hidden_pointer;stack_offset=32;stack_size=8;target=target:x86_64-unknown-linux-gnu
+abi_metadata_record:sequence=8;id=callplan:aggregate;kind=call_plan;owner=mir:call:aggregate;call_plan=callplan:aggregate;compatibility=decision:aggregate;expected_abi=abi:aggregate;actual_abi=abi:aggregate;signature=sig:(aggregate16)->aggregate16;actual_signature=sig:(aggregate16)->aggregate16;cc=gust_canonical_v1;target=target:x86_64-unknown-linux-gnu
+abi_metadata_record:sequence=9;id=decision:aggregate;kind=compatibility;owner=mir:call:aggregate;compatibility=decision:aggregate;expected_abi=abi:aggregate;actual_abi=abi:aggregate;compatible=1;target=target:x86_64-unknown-linux-gnu
+abi_metadata_record:sequence=10;id=frame:aggregate;kind=dynamic_frame;owner=mir:function:main;abi=abi:aggregate;frame=frame:aggregate;stack_offset=40;stack_size=32;restore=phase15_cleanup_then_lifetime_end_then_stack_restore;target=target:x86_64-unknown-linux-gnu
+abi_metadata_record:sequence=11;id=transfer:aggregate;kind=resource_transfer;owner=mir:call:aggregate;abi=abi:aggregate;resource=resource:aggregate;transfer=transfer:aggregate;source_cleanup_cancelled=1;destination_cleanup_created=1;live_owner_count=1;target=target:x86_64-unknown-linux-gnu
