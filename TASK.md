@@ -84,7 +84,7 @@ If more than 100 runs exist, use the paginated Actions API and apply the same ex
 - [x] Patch 16.12 — ABI Metadata and Native Request Validation — DONE
 - [x] Patch 16.13 — Cross-Feature ABI Composition and Complete Differential — DONE
 - [x] Patch 16.14 — Deferred Residue and ABI-Coverage Audit — DONE
-- [ ] Patch 16.15 — Phase 16 Closure
+- [x] Patch 16.15 — Phase 16 Closure — DONE
 
 ## Immutable Phase 15 Completion Record
 

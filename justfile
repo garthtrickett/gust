@@ -15833,7 +15833,7 @@ guard-cranelift-contract-fast:
     just guard-cranelift-phase16-cross-module-abi-contract
     just guard-cranelift-phase16-abi-metadata-contract
     just guard-cranelift-phase16-composition-contract
-    just guard-cranelift-phase16-deferred-residue-audit
+    just guard-cranelift-phase16-close
 
 guard-cranelift-phase16-abi-authority-contract:
     #!/usr/bin/env bash
@@ -16063,6 +16063,42 @@ guard-cranelift-phase16-deferred-residue-audit:
     python3 scripts/cranelift_test_levels.py validate
     python3 scripts/cranelift_test_levels.py level guard-cranelift-phase16-deferred-residue-audit | grep -F $'guard-cranelift-phase16-deferred-residue-audit\t1\t' >/dev/null
     python3 scripts/phase16_deferred_residue_audit.py --check
+
+guard-cranelift-phase16-close:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Closing Phase 16 function ABI and aggregate call semantics..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase16-close | grep -F $'guard-cranelift-phase16-close\t1\t' >/dev/null
+    python3 scripts/phase15_close.py --check
+    just guard-cranelift-phase16-opening-contract
+    just guard-cranelift-registry-schema
+    just guard-cranelift-registry-projection
+    just guard-cranelift-phase14-layout-authority-contract
+    just guard-cranelift-phase15-resource-authority-contract
+    just guard-cranelift-phase16-abi-authority-contract
+    just guard-cranelift-phase16-call-mir-contract
+    just guard-cranelift-phase16-aggregate-parameter-contract
+    just guard-cranelift-phase16-aggregate-return-contract
+    just guard-cranelift-phase16-direct-call-agreement-contract
+    just guard-cranelift-phase16-typed-indirect-call-contract
+    just guard-cranelift-phase16-fat-pointer-abi-contract
+    just guard-cranelift-phase16-unsized-abi-contract
+    just guard-cranelift-phase16-dynamic-stack-contract
+    just guard-cranelift-phase16-resource-aggregate-abi-contract
+    just guard-cranelift-phase16-cross-module-abi-contract
+    just guard-cranelift-phase16-abi-metadata-contract
+    just guard-cranelift-phase16-composition-contract
+    just guard-cranelift-phase16-deferred-residue-audit
+    just guard-cranelift-ci-family-projection
+    PHASE11_ROUTE_ARCHITECTURE_SKIP_DYNAMIC=1 just guard-cranelift-route-architecture-contract
+    just guard-cranelift-manifest-architecture-contract
+    python3 scripts/cranelift_test_levels.py check-pr-workflow
+    python3 scripts/cranelift_test_levels.py check-heavy-workflow
+    python3 scripts/cranelift_test_levels.py check-historical-workflow
+    python3 scripts/phase16_abi_composition.py --check
+    python3 scripts/phase16_deferred_residue_audit.py --check
+    python3 scripts/phase16_close.py --check
 
 guard-cranelift-historical-full:
     #!/usr/bin/env bash

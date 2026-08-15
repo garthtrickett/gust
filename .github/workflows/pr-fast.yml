@@ -138,8 +138,8 @@ jobs:
       - name: Phase 16 cross-feature ABI composition
         run: just guard-cranelift-phase16-composition-contract
 
-      - name: Phase 16 deferred residue and ABI coverage audit
-        run: just guard-cranelift-phase16-deferred-residue-audit
+      - name: Phase 16 function ABI and aggregate call closure
+        run: just guard-cranelift-phase16-close
 
       - name: Upload Gust build outputs
         uses: actions/upload-artifact@v4
