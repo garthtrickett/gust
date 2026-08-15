@@ -1,0 +1,45 @@
+name: Cranelift Phase 16 Deferred Residue Audit
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/cranelift_registry.py'
+      - 'scripts/cranelift_test_levels.json'
+      - 'scripts/phase16_deferred_residue_audit.py'
+      - 'tests/cranelift/phase16_deferred_residue_audit_contract.tsv'
+      - 'tests/cranelift/phase16_deferred_residue_audit_review.txt'
+      - 'compiler/future/p17_*_source.gst'
+      - 'compiler/future/p18_*_source.gst'
+      - 'compiler/p17_*_deferred_source.gst'
+      - 'compiler/p18_*_deferred_source.gst'
+      - 'justfile'
+      - 'TASK.md'
+      - '.github/workflows/phase16-deferred-residue-audit.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/cranelift_registry.py'
+      - 'scripts/cranelift_test_levels.json'
+      - 'scripts/phase16_deferred_residue_audit.py'
+      - 'tests/cranelift/phase16_deferred_residue_audit_contract.tsv'
+      - 'tests/cranelift/phase16_deferred_residue_audit_review.txt'
+      - 'compiler/future/p17_*_source.gst'
+      - 'compiler/future/p18_*_source.gst'
+      - 'compiler/p17_*_deferred_source.gst'
+      - 'compiler/p18_*_deferred_source.gst'
+      - 'justfile'
+      - 'TASK.md'
+      - '.github/workflows/phase16-deferred-residue-audit.yml'
+  workflow_dispatch:
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin"
+      - run: just guard-cranelift-phase16-deferred-residue-audit

@@ -15833,6 +15833,7 @@ guard-cranelift-contract-fast:
     just guard-cranelift-phase16-cross-module-abi-contract
     just guard-cranelift-phase16-abi-metadata-contract
     just guard-cranelift-phase16-composition-contract
+    just guard-cranelift-phase16-deferred-residue-audit
 
 guard-cranelift-phase16-abi-authority-contract:
     #!/usr/bin/env bash
@@ -16054,6 +16055,14 @@ guard-cranelift-phase16-complete-abi-evidence:
     done < <(python3 scripts/phase16_abi_composition.py individual-guards)
     just guard-cranelift-phase16-composition-differential
     echo "guard-cranelift-phase16-complete-abi-evidence: ok (Level 3)"
+
+guard-cranelift-phase16-deferred-residue-audit:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔎 Auditing Phase 16.14 deferred residue and ABI coverage..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase16-deferred-residue-audit | grep -F $'guard-cranelift-phase16-deferred-residue-audit\t1\t' >/dev/null
+    python3 scripts/phase16_deferred_residue_audit.py --check
 
 guard-cranelift-historical-full:
     #!/usr/bin/env bash
