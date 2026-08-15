@@ -15736,9 +15736,28 @@ guard-cranelift-phase16-opening-contract:
         -e 'phase16-family:' \
         -e 'guard-cranelift-phase16-.*(parity|differential|complete-abi)' \
         -e 'matrix\.phase16' \
-        "$pr_workflow" "$heavy_workflow" "$historical_workflow" >/dev/null
+        "$pr_workflow" "$heavy_workflow" >/dev/null
     then
-      echo "Phase 16 opening must not activate Phase 16 Level 2 or Level 3 workflow rows."
+      echo "Phase 16 opening must not place Phase 16 Level 2 or Level 3 rows in PR Fast or Heavy Guards."
+      exit 1
+    fi
+    historical_phase16_rows="$(
+      (rg -n \
+          -e 'phase16-family:' \
+          -e 'guard-cranelift-phase16-.*(parity|differential|complete-abi)' \
+          -e 'matrix\.phase16' \
+          "$historical_workflow" || true) |
+        rg -v -F 'just guard-cranelift-phase16-complete-abi-evidence' || true
+    )"
+    if [ -n "$historical_phase16_rows" ]; then
+      echo "Cranelift Historical Full contains an unowned Phase 16 workflow row."
+      printf '%s\n' "$historical_phase16_rows"
+      exit 1
+    fi
+    expected_complete_abi_rows="$(python3 -c 'import json; r=json.load(open("scripts/cranelift_feature_registry.json")); print(1 if "phase16_abi_composition_authority" in r else 0)')"
+    actual_complete_abi_rows="$(rg -n -F 'just guard-cranelift-phase16-complete-abi-evidence' "$historical_workflow" | wc -l | tr -d ' ')"
+    if [ "$actual_complete_abi_rows" != "$expected_complete_abi_rows" ]; then
+      echo "Phase 16 complete ABI evidence Level 3 ownership drifted."
       exit 1
     fi
 
