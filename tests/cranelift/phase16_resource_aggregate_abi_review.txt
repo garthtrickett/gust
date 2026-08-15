@@ -1,0 +1,51 @@
+Phase 16.10 — Resource-Bearing Aggregate Call ABI
+guard: guard-cranelift-phase16-resource-aggregate-abi-contract
+parity_guard: guard-cranelift-phase16-resource-aggregate-abi-parity
+test_level: level1
+format: gust.compiler_resource_aggregate_abi.v1
+inventory: selected move-only aggregate parameters, direct and hidden results, nested receipt, early return, and reassignment
+boundary: general borrowing, shared ownership, foreign ABI, and unrestricted resource aggregates remain deferred
+
+counts:
+  consumer: 2
+  hard_ban: 1
+  identity: 4
+  policy: 3
+  rejection: 7
+  scenario: 5
+  test: 2
+  transport: 4
+
+active contract:
+  scenario	move_into_call	compiler_resource_aggregate_abi_planner	selected
+  scenario	aggregate_return_new_owner	compiler_resource_aggregate_abi_planner	selected
+  scenario	nested_resource_aggregate	compiler_resource_aggregate_abi_planner	selected
+  scenario	early_return_after_receipt	compiler_resource_aggregate_abi_planner	selected
+  scenario	reassign_returned_aggregate	compiler_resource_aggregate_abi_planner	selected
+  transport	by_value_move	compiler_abi_authority	selected
+  transport	indirect_by_value_move	compiler_abi_authority	selected
+  transport	direct_result_move	compiler_abi_authority	selected
+  transport	hidden_result_move	compiler_abi_authority	selected
+  identity	phase15_resource_identity	compiler_resource_authority	required
+  identity	resource_transition_identity	compiler_resource_authority	required
+  identity	destination_cleanup_identity	compiler_resource_authority	required
+  identity	destructor_identity	compiler_resource_authority	required
+  policy	one_live_owner	compiler_resource_aggregate_abi_planner	required
+  policy	exactly_once_destination_cleanup	compiler_resource_authority	required
+  policy	failure_before_and_after_transfer	compiler_resource_aggregate_abi_planner	required
+  rejection	silent_copy	compiler_resource_aggregate_abi_verifier	rejected
+  rejection	two_live_owners	compiler_resource_aggregate_abi_verifier	rejected
+  rejection	missing_destination_identity	compiler_resource_aggregate_abi_verifier	rejected
+  rejection	stale_source_cleanup	compiler_resource_aggregate_abi_verifier	rejected
+  rejection	uninitialized_hidden_result_publication	compiler_resource_aggregate_abi_verifier	rejected
+  rejection	destructor_mismatch	compiler_resource_aggregate_abi_verifier	rejected
+  rejection	caller_callee_transfer_disagreement	compiler_resource_aggregate_abi_verifier	rejected
+  consumer	mir_to_c_compiler_resource_aggregate_plan	mir_to_c	required
+  consumer	cranelift_compiler_resource_aggregate_plan	cranelift_worker	required
+  hard_ban	no_backend_ownership_transfer_planner	architecture	required
+  test	level1_resource_aggregate_abi_contract	ci	active
+  test	level2_resource_aggregate_abi_parity	ci	active
+
+exit gate:
+  each selected aggregate transfer has one validated Phase 15 transition, one live owner, and one destination cleanup
+  MIR-to-C and Cranelift consume the same layout, ABI, ownership, failure, and destructor plan
