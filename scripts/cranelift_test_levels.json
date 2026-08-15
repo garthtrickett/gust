@@ -18,6 +18,8 @@
     }
   },
   "guards": {
+    "guard-cranelift-phase16-cross-module-abi-contract": 1,
+    "guard-cranelift-phase16-cross-module-abi-parity": 2,
     "guard-cranelift-phase16-resource-aggregate-abi-contract": 1,
     "guard-cranelift-phase16-resource-aggregate-abi-parity": 2,
     "guard-cranelift-phase16-dynamic-stack-contract": 1,

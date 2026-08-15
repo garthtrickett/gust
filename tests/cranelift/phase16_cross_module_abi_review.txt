@@ -1,0 +1,39 @@
+Phase 16.11 — Selected Cross-Module Aggregate and Resource ABI
+guard: guard-cranelift-phase16-cross-module-abi-contract
+parity_guard: guard-cranelift-phase16-cross-module-abi-parity
+format: gust.compiler_cross_module_abi.v1
+boundary: foreign ABI, dynamic libraries, symbol negotiation, variadics, and cross-language exceptions remain deferred
+
+counts:
+  consumer: 2
+  hard_ban: 1
+  policy: 3
+  rejection: 8
+  scenario: 4
+  test: 2
+
+active contract:
+  scenario	aggregate_parameter	compiler_cross_module_abi_planner	selected
+  scenario	aggregate_result	compiler_cross_module_abi_planner	selected
+  scenario	resource_aggregate_transfer	compiler_cross_module_abi_planner	selected
+  scenario	multiple_selected_modules	compiler_cross_module_abi_planner	selected
+  policy	same_version_gust_static	compiler_cross_module_abi_planner	required
+  policy	compiler_semantic_symbol_identity	compiler_symbol_authority	required
+  policy	phase9g_artifact_ownership	phase9g	required
+  rejection	missing_abi_descriptor	compiler_cross_module_abi_verifier	rejected
+  rejection	stale_import	compiler_cross_module_abi_verifier	rejected
+  rejection	layout_mismatch	compiler_cross_module_abi_verifier	rejected
+  rejection	target_mismatch	compiler_cross_module_abi_verifier	rejected
+  rejection	calling_convention_mismatch	compiler_cross_module_abi_verifier	rejected
+  rejection	hidden_result_mismatch	compiler_cross_module_abi_verifier	rejected
+  rejection	resource_policy_mismatch	compiler_cross_module_abi_verifier	rejected
+  rejection	unsupported_foreign_symbol	compiler_cross_module_abi_verifier	rejected
+  consumer	mir_to_c_compiler_cross_module_plan	mir_to_c	required
+  consumer	cranelift_compiler_cross_module_plan	cranelift_worker	required
+  hard_ban	no_object_or_emitted_name_semantic_authority	architecture	required
+  test	level1_cross_module_abi_contract	ci	active
+  test	level2_cross_module_abi_parity	ci	active
+
+exit gate:
+  selected same-version Gust modules agree on compiler-produced ABI, layout, placement, hidden results, and resource policy
+  Phase 9G retains object, link, temporary, and publication ownership

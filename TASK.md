@@ -80,7 +80,7 @@ If more than 100 runs exist, use the paginated Actions API and apply the same ex
 - [x] Patch 16.8 — Unsized Value Parameter, Return, and Storage Contract — DONE
 - [x] Patch 16.9 — Bounded Dynamic Stack Frames and Variable-Sized Storage — DONE
 - [x] Patch 16.10 — Resource-Bearing Aggregate Call ABI — DONE
-- [ ] Patch 16.11 — Selected Cross-Module Aggregate and Resource ABI
+- [x] Patch 16.11 — Selected Cross-Module Aggregate and Resource ABI — DONE
 - [ ] Patch 16.12 — ABI Metadata and Native Request Validation
 - [ ] Patch 16.13 — Cross-Feature ABI Composition and Complete Differential
 - [ ] Patch 16.14 — Deferred Residue and ABI-Coverage Audit
