@@ -1,0 +1,24 @@
+name: Cranelift Phase 16 ABI Metadata
+on:
+  pull_request:
+    paths: ['compiler/mir_function_abi_authority.gst','compiler/mir_native_backend_abi_request.gst','compiler/mir_native_backend_abi_metadata_request.gst','compiler/fixtures/native_backend_abi_metadata_valid.request','compiler/experiments/cranelift/src/abi_metadata.rs','compiler/experiments/cranelift/src/main.rs','scripts/phase16_abi_metadata.py','scripts/phase16_abi_metadata_validation.sh','scripts/cranelift_test_levels.json','tests/cranelift/phase16_abi_metadata_contract.tsv','tests/cranelift/phase16_abi_metadata_malformed.tsv','tests/cranelift/phase16_abi_metadata_review.txt','justfile','.github/workflows/phase16-abi-metadata.yml']
+  push:
+    branches: [main]
+    paths: ['compiler/mir_function_abi_authority.gst','compiler/mir_native_backend_abi_request.gst','compiler/mir_native_backend_abi_metadata_request.gst','compiler/fixtures/native_backend_abi_metadata_valid.request','compiler/experiments/cranelift/src/abi_metadata.rs','compiler/experiments/cranelift/src/main.rs','scripts/phase16_abi_metadata.py','scripts/phase16_abi_metadata_validation.sh','scripts/cranelift_test_levels.json','tests/cranelift/phase16_abi_metadata_contract.tsv','tests/cranelift/phase16_abi_metadata_malformed.tsv','tests/cranelift/phase16_abi_metadata_review.txt','justfile','.github/workflows/phase16-abi-metadata.yml']
+  workflow_dispatch:
+jobs:
+  contract:
+    name: Phase 16.12 ABI metadata contract (Level 1)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - run: just guard-cranelift-phase16-abi-metadata-contract
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase16-abi-metadata-diagnostics
+          if-no-files-found: ignore
+          path: build/guards/phase16_abi_metadata/
