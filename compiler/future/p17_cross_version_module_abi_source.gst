@@ -1,0 +1,2 @@
+// Future Phase 17 positive marker: p17 cross version module abi awaits its named compiler ABI authority.
+func main() int { return 17; }

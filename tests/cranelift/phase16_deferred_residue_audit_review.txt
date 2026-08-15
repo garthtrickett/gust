@@ -1,0 +1,28 @@
+Patch 16.14 — Deferred Residue and ABI-Coverage Audit
+
+opening_rows	13
+migrated_rows	13
+narrow_deferred_rows	19
+excluded_rows	0
+
+coverage	every opening row has a disposition	opening_dispositions matches opening snapshot	Level 1
+coverage	all thirteen selected rows are migrated	13 migrated dispositions	Level 1
+coverage	no ownerless or ambiguous disposition remains	evidence_guard and disposition enum	Level 1
+traceability	composition authority accounts for every migrated row	12 migrated capability rows plus composition owner	Level 1
+traceability	selected Phase 15 residuals are consumed	residual_rebase selected IDs are Phase 16 opening IDs	Level 1
+residue	broad ABI residue is rejected	reject_broad_or_ambiguous_phase16_residue	Level 1
+residue	remaining ABI work is split into concrete capabilities	19 narrow deferred rows	Level 1
+deferred	each row has a stable ID	required deferred ID inventory	Level 1
+deferred	each row names capability and diagnostic owners	capability_owner and diagnostic_owner	Level 1
+deferred	each row gives a concrete reason and prerequisite	reason and prerequisite_capability	Level 1
+deferred	each row names a later destination	destination_phase Phase 17 or Phase 18	Level 1
+deferred	each row stops before driver discovery	current_failure_stage before_driver_discovery	Level 1
+deferred	each row derives target applicability	all declared host targets from Phase 14 authority	Level 1
+deferred	each row has unique positive and negative fixtures	positive_future_fixture and negative_current_fixture	Level 1
+deferred	each row has a stable unique diagnostic	diagnostic_reason_code	Level 1
+traceability	each deferred row names source opening rows	source_phase16_row_ids	Level 1
+coverage	ABI class and target coverage is explicit	abi_class_target_policy	Level 1
+coverage	no selected item is silently excluded	excluded_items is empty	Level 1
+policy	audit is canonical-registry owned	phase16_deferred_residue_audit_v1	Level 1
+policy	final totals are projection-derived	generated review totals	Level 1
+ci	audit guard is Level 1	guard-cranelift-phase16-deferred-residue-audit	Level 1

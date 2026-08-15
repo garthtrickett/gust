@@ -17,6 +17,7 @@
     "phase15_failure_cleanup_authority",
     "phase15_resource_composition_authority",
     "phase16_abi_composition_authority",
+    "phase16_deferred_residue_audit",
     "phase15_deferred_residue_audit",
     "phase15_closure",
     "phase14_layout_authority",
@@ -246,6 +247,9 @@
     },
     "phase16_abi_composition_authority": {
       "$ref": "#/$defs/phase16_abi_composition_authority"
+    },
+    "phase16_deferred_residue_audit": {
+      "$ref": "#/$defs/phase16_deferred_residue_audit"
     },
     "phase15_deferred_residue_audit": {
       "$ref": "#/$defs/phase15_deferred_residue_audit"
@@ -1533,6 +1537,56 @@
         },
         "broad_residue_policy": {"const": "reject_broad_or_ambiguous_phase15_residue"},
         "coverage_policy": {"const": "every_phase15_opening_row_migrated_excluded_or_replaced_by_narrow_actionable_rows"}
+      }
+    },
+    "phase16_deferred_residue_audit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "status", "opening_dispositions", "narrow_deferred_rows", "excluded_items", "broad_residue_policy", "coverage_policy", "abi_class_target_policy", "phase15_rebase_policy"],
+      "properties": {
+        "version": {"const": "phase16_deferred_residue_audit_v1"},
+        "status": {"const": "patch16_14_all_opening_rows_disposed"},
+        "opening_dispositions": {
+          "type": "array", "minItems": 13, "maxItems": 13,
+          "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["id", "disposition", "evidence_guard"],
+            "properties": {
+              "id": {"type": "string", "pattern": "^p16_"},
+              "disposition": {"enum": ["migrated", "excluded", "replaced"]},
+              "evidence_guard": {"type": "string", "pattern": "^guard-cranelift-phase16-"}
+            }
+          }
+        },
+        "narrow_deferred_rows": {
+          "type": "array", "minItems": 19, "maxItems": 19,
+          "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["id", "source_phase16_row_ids", "capability_owner", "diagnostic_owner", "reason", "destination_phase", "prerequisite_capability", "current_failure_stage", "target_applicability", "positive_future_fixture", "negative_current_fixture", "diagnostic_reason_code"],
+            "properties": {
+              "id": {"type": "string", "pattern": "^p(17|18)_"},
+              "source_phase16_row_ids": {
+                "type": "array", "minItems": 1, "maxItems": 3, "uniqueItems": true,
+                "items": {"type": "string", "pattern": "^p16_"}
+              },
+              "capability_owner": {"type": "string", "minLength": 1},
+              "diagnostic_owner": {"type": "string", "minLength": 1},
+              "reason": {"type": "string", "minLength": 1},
+              "destination_phase": {"enum": ["phase17", "phase18"]},
+              "prerequisite_capability": {"type": "string", "minLength": 1},
+              "current_failure_stage": {"const": "before_driver_discovery"},
+              "target_applicability": {"const": "all_declared_host_targets_from_phase14_target_authority"},
+              "positive_future_fixture": {"type": "string", "pattern": "^compiler/future/p(17|18)_.+_source\\.gst$"},
+              "negative_current_fixture": {"type": "string", "pattern": "^compiler/p(17|18)_.+_deferred_source\\.gst$"},
+              "diagnostic_reason_code": {"type": "string", "pattern": "^abi_.+_deferred$"}
+            }
+          }
+        },
+        "excluded_items": {"type": "array", "maxItems": 0},
+        "broad_residue_policy": {"const": "reject_broad_or_ambiguous_phase16_residue"},
+        "coverage_policy": {"const": "every_phase16_opening_row_migrated_excluded_or_replaced_by_narrow_actionable_rows"},
+        "abi_class_target_policy": {"const": "selected_classes_supported_all_other_declared_classes_and_targets_narrowly_deferred"},
+        "phase15_rebase_policy": {"const": "all_selected_phase15_residuals_consumed_without_ambiguous_carryover"}
       }
     },
     "phase15_closure": {
