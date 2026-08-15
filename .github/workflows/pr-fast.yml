@@ -120,6 +120,9 @@ jobs:
       - name: Phase 16 fat-pointer and selected trait-object call ABI
         run: just guard-cranelift-phase16-fat-pointer-abi-contract
 
+      - name: Phase 16 unsized value ABI
+        run: just guard-cranelift-phase16-unsized-abi-contract
+
       - name: Upload Gust build outputs
         uses: actions/upload-artifact@v4
         with:

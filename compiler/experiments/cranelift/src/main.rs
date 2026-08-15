@@ -3,6 +3,7 @@ mod aggregate_result_abi;
 mod direct_call_agreement;
 mod fat_pointer_abi;
 mod typed_indirect_call;
+mod unsized_abi;
 mod destructor_scheduling;
 mod early_return_cleanup;
 mod failure_cleanup;
@@ -16335,6 +16336,12 @@ fn run() -> Result<(), Box<dyn Error>> {
     };
 
     match command.as_str() {
+        "phase16-unsized-abi-witness" => {
+            let Some(request_path) = args.next() else { return Err(usage_error().into()); };
+            if args.next().is_some() { return Err(usage_error().into()); }
+            let witness = unsized_abi::lower_unsized_abi_witness_path(Path::new(&request_path))?;
+            print!("{witness}"); Ok(())
+        }
         "phase16-fat-pointer-abi-witness" => {
             let Some(request_path) = args.next() else { return Err(usage_error().into()); };
             if args.next().is_some() { return Err(usage_error().into()); }
@@ -17832,6 +17839,7 @@ fn usage_error() -> IoError {
         ErrorKind::InvalidInput,
         concat!(
             "usage:\n",
+            "  gust-cranelift-experiment phase16-unsized-abi-witness <request.native>\n",
             "  gust-cranelift-experiment phase16-fat-pointer-abi-witness <request.native>\n",
             "  gust-cranelift-experiment phase16-typed-indirect-call-witness <request.native>\n",
             "  gust-cranelift-experiment phase16-direct-call-agreement-witness <request.native>\n",

@@ -1,0 +1,4 @@
+import "mir_native_backend_abi_request.gst" as base;
+import "mir_unsized_abi.gst" as unsized;
+type MirNativeBackendUnsizedAbiRequest[ctx] struct { format: str, base_request: base.MirNativeBackendAbiRequest[ctx], unsized_table: unsized.MirUnsizedAbiTable[ctx] }
+func mir_native_backend_unsized_abi_request_is_valid(request: MirNativeBackendUnsizedAbiRequest[ctx], ctx: &Arena) unsized.MirUnsizedAbiValidation[ctx] { if std.str_eq(request.format,"gust.native_backend.unsized_abi_request.v1") == 0 { return unsized.mir_unsized_validation(0,"unsized_request_unknown_format",ctx); } mut validation := base.mir_native_backend_abi_request_is_valid(request.base_request,ctx); if validation.valid == 0 { return unsized.mir_unsized_validation(0,validation.reason_code,ctx); } return unsized.mir_unsized_abi_table_validate(request.unsized_table,request.base_request.base_request.base_request.layout_table,ctx); }
