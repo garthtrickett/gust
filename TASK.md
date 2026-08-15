@@ -82,7 +82,7 @@ If more than 100 runs exist, use the paginated Actions API and apply the same ex
 - [x] Patch 16.10 — Resource-Bearing Aggregate Call ABI — DONE
 - [x] Patch 16.11 — Selected Cross-Module Aggregate and Resource ABI — DONE
 - [x] Patch 16.12 — ABI Metadata and Native Request Validation — DONE
-- [ ] Patch 16.13 — Cross-Feature ABI Composition and Complete Differential
+- [x] Patch 16.13 — Cross-Feature ABI Composition and Complete Differential — DONE
 - [ ] Patch 16.14 — Deferred Residue and ABI-Coverage Audit
 - [ ] Patch 16.15 — Phase 16 Closure
 

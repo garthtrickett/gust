@@ -1,0 +1,39 @@
+Patch 16.13 — Cross-Feature ABI Composition and Complete Differential
+
+inventory	migrated inventory is registry-derived	phase16_abi_composition_authority.migrated_entries	Level 1
+inventory	all twelve migrated capability rows have individual evidence	individual_guard per migrated entry	Level 1
+inventory	one complete composition case covers all rows	covered_entry_count 12	Level 1
+composition	aggregate parameter composes	aggregate_parameter	Level 1
+composition	aggregate return composes	aggregate_result	Level 1
+composition	hidden result composes	hidden_result	Level 1
+composition	direct call agreement composes	direct_call	Level 1
+composition	typed indirect calls compose	typed_indirect_call	Level 1
+composition	fat-pointer calls compose	fat_pointer_call	Level 1
+composition	unsized metadata composes	unsized_metadata	Level 1
+composition	dynamic frames compose	dynamic_stack	Level 1
+composition	resource ownership transfer composes	resource_transfer	Level 1
+composition	selected cross-module calls compose	cross_module_call	Level 1
+composition	failure before transfer composes	failure_before_transfer	Level 1
+composition	failure after transfer composes	failure_after_transfer	Level 1
+authority	compiler owns composition plan	compiler_owned_generic_abi_composition	Level 1
+authority	generic ABI authority is required	abi_composition_generic_authority_missing	Level 1
+authority	backends own no ABI classifier	backend_abi_classifier=0	Level 1
+authority	backends own no hidden-result planner	backend_hidden_result_planner=0	Level 1
+authority	backends own no resource-transfer planner	backend_resource_transfer_planner=0	Level 1
+validation	coverage drift is rejected	abi_composition_coverage_mismatch	Level 1
+validation	comparison drift is rejected	abi_composition_contract_mismatch	Level 1
+validation	witness count drift is rejected	abi_composition_witness_count_mismatch	Level 1
+differential	default and explicit MIR-to-C are byte-identical	default_explicit_mir_to_c_byte_identity	Level 1
+differential	MIR-to-C and Cranelift witnesses agree	mir_to_c_cranelift_witness_identity	Level 1
+differential	runtime values and status are compared	runtime_values exit_status	Level 1
+differential	stdout and stderr are compared	stdout stderr	Level 1
+differential	parameter and result witnesses are compared	parameter_result_witnesses	Level 1
+differential	hidden values and layouts are compared	hidden_value_witnesses layouts	Level 1
+differential	resource transitions and cleanup order are compared	resource_transitions cleanup_destructor_order	Level 1
+differential	filesystem and initialized data are compared	filesystem_effects initialized_data	Level 1
+differential	output preservation is compared	output_preservation	Level 1
+targets	targets derive from Phase 14 authority	all_declared_host_targets_from_phase14_target_authority	Level 1
+ci	composition contract is Level 1	guard-cranelift-phase16-composition-contract	Level 1
+ci	focused differential is Level 2	guard-cranelift-phase16-composition-differential	Level 1
+ci	complete evidence is Level 3	guard-cranelift-phase16-complete-abi-evidence	Level 1
+ci	Level 3 owner is historical full	complete_registry_derived_phase16_inventory_owned_only_by_cranelift_historical_full	Level 1

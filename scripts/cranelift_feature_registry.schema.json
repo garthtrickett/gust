@@ -16,6 +16,7 @@
     "phase15_specialized_resource_authority",
     "phase15_failure_cleanup_authority",
     "phase15_resource_composition_authority",
+    "phase16_abi_composition_authority",
     "phase15_deferred_residue_audit",
     "phase15_closure",
     "phase14_layout_authority",
@@ -242,6 +243,9 @@
     },
     "phase15_resource_composition_authority": {
       "$ref": "#/$defs/phase15_resource_composition_authority"
+    },
+    "phase16_abi_composition_authority": {
+      "$ref": "#/$defs/phase16_abi_composition_authority"
     },
     "phase15_deferred_residue_audit": {
       "$ref": "#/$defs/phase15_deferred_residue_audit"
@@ -1434,6 +1438,46 @@
         },
         "level3_policy": {"const": "complete_registry_derived_phase15_inventory_owned_only_by_cranelift_historical_full"},
         "backend_policy": {"const": "shared_compiler_plan_no_backend_resource_or_cleanup_planner"}
+      }
+    },
+    "phase16_abi_composition_authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "status", "authority_owner", "target_applicability", "migrated_entries", "composition_case", "level3_policy", "backend_policy"],
+      "properties": {
+        "version": {"const": "phase16_abi_composition_authority_v1"},
+        "status": {"const": "patch16_13_complete_composition_migrated"},
+        "authority_owner": {"const": "compiler/mir_abi_composition.gst"},
+        "target_applicability": {"const": "all_declared_host_targets_from_phase14_target_authority"},
+        "migrated_entries": {
+          "type": "array", "minItems": 12, "maxItems": 12,
+          "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["id", "ci_family", "individual_guard", "canonical_mir_fixture"],
+            "properties": {
+              "id": {"type": "string", "pattern": "^p16_"},
+              "ci_family": {"type": "string", "minLength": 1},
+              "individual_guard": {"type": "string", "pattern": "^guard-cranelift-phase16-"},
+              "canonical_mir_fixture": {"type": "string", "pattern": "^compiler/.+\\.gst$"}
+            }
+          }
+        },
+        "composition_case": {
+          "type": "object", "additionalProperties": false,
+          "required": ["id", "owner_entry_id", "source_fixture", "canonical_mir_fixture", "covered_entry_count", "operations", "comparison_contract", "status"],
+          "properties": {
+            "id": {"const": "phase16:complete_abi_composition"},
+            "owner_entry_id": {"const": "p16_complete_abi_differential"},
+            "source_fixture": {"const": "compiler/future/p16_complete_abi_differential_source.gst"},
+            "canonical_mir_fixture": {"const": "compiler/mir_abi_composition_parity_smoke_test_entry.gst"},
+            "covered_entry_count": {"const": 12},
+            "operations": {"type": "array", "minItems": 12, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+            "comparison_contract": {"type": "array", "minItems": 14, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+            "status": {"const": "migrated"}
+          }
+        },
+        "level3_policy": {"const": "complete_registry_derived_phase16_inventory_owned_only_by_cranelift_historical_full"},
+        "backend_policy": {"const": "shared_compiler_abi_layout_frame_and_phase15_resource_plan_no_backend_classifier"}
       }
     },
     "phase15_deferred_residue_audit": {

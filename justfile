@@ -15736,9 +15736,28 @@ guard-cranelift-phase16-opening-contract:
         -e 'phase16-family:' \
         -e 'guard-cranelift-phase16-.*(parity|differential|complete-abi)' \
         -e 'matrix\.phase16' \
-        "$pr_workflow" "$heavy_workflow" "$historical_workflow" >/dev/null
+        "$pr_workflow" "$heavy_workflow" >/dev/null
     then
-      echo "Phase 16 opening must not activate Phase 16 Level 2 or Level 3 workflow rows."
+      echo "Phase 16 opening must not place Phase 16 Level 2 or Level 3 rows in PR Fast or Heavy Guards."
+      exit 1
+    fi
+    historical_phase16_rows="$(
+      (rg -n \
+          -e 'phase16-family:' \
+          -e 'guard-cranelift-phase16-.*(parity|differential|complete-abi)' \
+          -e 'matrix\.phase16' \
+          "$historical_workflow" || true) |
+        rg -v -F 'just guard-cranelift-phase16-complete-abi-evidence' || true
+    )"
+    if [ -n "$historical_phase16_rows" ]; then
+      echo "Cranelift Historical Full contains an unowned Phase 16 workflow row."
+      printf '%s\n' "$historical_phase16_rows"
+      exit 1
+    fi
+    expected_complete_abi_rows="$(python3 -c 'import json; r=json.load(open("scripts/cranelift_feature_registry.json")); print(1 if "phase16_abi_composition_authority" in r else 0)')"
+    actual_complete_abi_rows="$(rg -n -F 'just guard-cranelift-phase16-complete-abi-evidence' "$historical_workflow" | wc -l | tr -d ' ')"
+    if [ "$actual_complete_abi_rows" != "$expected_complete_abi_rows" ]; then
+      echo "Phase 16 complete ABI evidence Level 3 ownership drifted."
       exit 1
     fi
 
@@ -15813,6 +15832,7 @@ guard-cranelift-contract-fast:
     just guard-cranelift-phase16-resource-aggregate-abi-contract
     just guard-cranelift-phase16-cross-module-abi-contract
     just guard-cranelift-phase16-abi-metadata-contract
+    just guard-cranelift-phase16-composition-contract
 
 guard-cranelift-phase16-abi-authority-contract:
     #!/usr/bin/env bash
@@ -16004,6 +16024,36 @@ guard-cranelift-phase16-abi-metadata-contract:
     python3 scripts/cranelift_test_levels.py level guard-cranelift-phase16-abi-metadata-contract | grep -F $'guard-cranelift-phase16-abi-metadata-contract\t1\t' >/dev/null
     python3 scripts/phase16_abi_metadata.py --check
     bash scripts/phase16_abi_metadata_validation.sh
+
+guard-cranelift-phase16-composition-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 16.13 registry-derived ABI composition..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase16-composition-contract | grep -F $'guard-cranelift-phase16-composition-contract\t1\t' >/dev/null
+    python3 scripts/phase16_abi_composition.py --check
+
+guard-cranelift-phase16-composition-differential:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 16.13 focused ABI composition differential..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase16-composition-differential | grep -F $'guard-cranelift-phase16-composition-differential\t2\t' >/dev/null
+    just guard-cranelift-phase16-composition-contract
+    bash scripts/phase16_abi_composition_parity.sh
+
+guard-cranelift-phase16-complete-abi-evidence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🕰️ Running Phase 16.13 complete registry-derived ABI evidence..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase16-complete-abi-evidence | grep -F $'guard-cranelift-phase16-complete-abi-evidence\t3\t' >/dev/null
+    while IFS= read -r guard; do
+      [ -n "$guard" ] || continue
+      just "$guard"
+    done < <(python3 scripts/phase16_abi_composition.py individual-guards)
+    just guard-cranelift-phase16-composition-differential
+    echo "guard-cranelift-phase16-complete-abi-evidence: ok (Level 3)"
 
 guard-cranelift-historical-full:
     #!/usr/bin/env bash

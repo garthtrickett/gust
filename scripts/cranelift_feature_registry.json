@@ -1737,6 +1737,38 @@
     "level3_policy": "complete_registry_derived_phase15_inventory_owned_only_by_cranelift_historical_full",
     "backend_policy": "shared_compiler_plan_no_backend_resource_or_cleanup_planner"
   },
+  "phase16_abi_composition_authority": {
+    "version": "phase16_abi_composition_authority_v1",
+    "status": "patch16_13_complete_composition_migrated",
+    "authority_owner": "compiler/mir_abi_composition.gst",
+    "target_applicability": "all_declared_host_targets_from_phase14_target_authority",
+    "migrated_entries": [
+      {"id": "p16_function_abi_authority", "ci_family": "call-mir", "individual_guard": "guard-cranelift-phase16-abi-authority-contract", "canonical_mir_fixture": "compiler/mir_function_abi_authority_smoke_test_entry.gst"},
+      {"id": "p16_canonical_call_result_mir", "ci_family": "call-mir", "individual_guard": "guard-cranelift-phase16-call-mir-parity", "canonical_mir_fixture": "compiler/mir_function_call_smoke_test_entry.gst"},
+      {"id": "p16_aggregate_parameter_abi", "ci_family": "aggregate-parameters", "individual_guard": "guard-cranelift-phase16-aggregate-parameter-parity", "canonical_mir_fixture": "compiler/mir_aggregate_parameter_abi_smoke_test_entry.gst"},
+      {"id": "p16_aggregate_return_hidden_result_abi", "ci_family": "aggregate-returns", "individual_guard": "guard-cranelift-phase16-aggregate-return-parity", "canonical_mir_fixture": "compiler/mir_aggregate_result_abi_smoke_test_entry.gst"},
+      {"id": "p16_direct_call_agreement", "ci_family": "direct-call-agreement", "individual_guard": "guard-cranelift-phase16-direct-call-agreement-parity", "canonical_mir_fixture": "compiler/mir_direct_call_agreement_smoke_test_entry.gst"},
+      {"id": "p16_typed_indirect_calls", "ci_family": "typed-indirect-calls", "individual_guard": "guard-cranelift-phase16-typed-indirect-call-parity", "canonical_mir_fixture": "compiler/mir_typed_indirect_call_smoke_test_entry.gst"},
+      {"id": "p16_fat_pointer_trait_object_call_abi", "ci_family": "fat-pointer-abi", "individual_guard": "guard-cranelift-phase16-fat-pointer-abi-parity", "canonical_mir_fixture": "compiler/mir_fat_pointer_abi_smoke_test_entry.gst"},
+      {"id": "p16_unsized_value_abi", "ci_family": "unsized-abi", "individual_guard": "guard-cranelift-phase16-unsized-abi-parity", "canonical_mir_fixture": "compiler/mir_unsized_abi_smoke_test_entry.gst"},
+      {"id": "p16_dynamic_stack_storage", "ci_family": "dynamic-stack", "individual_guard": "guard-cranelift-phase16-dynamic-stack-parity", "canonical_mir_fixture": "compiler/mir_dynamic_stack_smoke_test_entry.gst"},
+      {"id": "p16_resource_aggregate_call_abi", "ci_family": "resource-aggregate-abi", "individual_guard": "guard-cranelift-phase16-resource-aggregate-abi-parity", "canonical_mir_fixture": "compiler/mir_resource_aggregate_abi_smoke_test_entry.gst"},
+      {"id": "p16_cross_module_aggregate_resource_abi", "ci_family": "cross-module-abi", "individual_guard": "guard-cranelift-phase16-cross-module-abi-parity", "canonical_mir_fixture": "compiler/mir_cross_module_abi_smoke_test_entry.gst"},
+      {"id": "p16_abi_metadata_validation", "ci_family": "call-mir", "individual_guard": "guard-cranelift-phase16-abi-metadata-contract", "canonical_mir_fixture": "compiler/mir_function_abi_authority_smoke_test_entry.gst"}
+    ],
+    "composition_case": {
+      "id": "phase16:complete_abi_composition",
+      "owner_entry_id": "p16_complete_abi_differential",
+      "source_fixture": "compiler/future/p16_complete_abi_differential_source.gst",
+      "canonical_mir_fixture": "compiler/mir_abi_composition_parity_smoke_test_entry.gst",
+      "covered_entry_count": 12,
+      "operations": ["aggregate_parameter", "aggregate_result", "hidden_result", "direct_call", "typed_indirect_call", "fat_pointer_call", "unsized_metadata", "dynamic_stack", "resource_transfer", "cross_module_call", "failure_before_transfer", "failure_after_transfer"],
+      "comparison_contract": ["default_explicit_mir_to_c_byte_identity", "runtime_values", "stdout", "stderr", "exit_status", "parameter_result_witnesses", "hidden_value_witnesses", "layouts", "resource_transitions", "cleanup_destructor_order", "filesystem_effects", "initialized_data", "output_preservation", "mir_to_c_cranelift_witness_identity"],
+      "status": "migrated"
+    },
+    "level3_policy": "complete_registry_derived_phase16_inventory_owned_only_by_cranelift_historical_full",
+    "backend_policy": "shared_compiler_abi_layout_frame_and_phase15_resource_plan_no_backend_classifier"
+  },
   "phase15_deferred_residue_audit": {
     "version": "phase15_deferred_residue_audit_v1",
     "status": "patch15_14_all_opening_rows_disposed",

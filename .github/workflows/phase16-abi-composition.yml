@@ -1,0 +1,32 @@
+name: Cranelift Phase 16 ABI Composition
+on:
+  pull_request:
+    paths: ['compiler/mir_abi_composition.gst','compiler/mir_abi_composition_mir_to_c.gst','compiler/mir_abi_composition_parity_smoke_test_entry.gst','compiler/future/p16_complete_abi_differential_source.gst','compiler/experiments/cranelift/src/abi_composition.rs','compiler/experiments/cranelift/src/main.rs','scripts/phase16_abi_composition.py','scripts/phase16_abi_composition_parity.sh','scripts/cranelift_feature_registry.json','scripts/cranelift_feature_registry.schema.json','scripts/cranelift_test_levels.json','tests/cranelift/phase16_abi_composition_contract.tsv','tests/cranelift/phase16_abi_composition_review.txt','justfile','.github/workflows/phase16-abi-composition.yml','.github/workflows/cranelift-historical-full.yml']
+  push:
+    branches: [main]
+    paths: ['compiler/mir_abi_composition.gst','compiler/mir_abi_composition_mir_to_c.gst','compiler/mir_abi_composition_parity_smoke_test_entry.gst','compiler/future/p16_complete_abi_differential_source.gst','compiler/experiments/cranelift/src/abi_composition.rs','compiler/experiments/cranelift/src/main.rs','scripts/phase16_abi_composition.py','scripts/phase16_abi_composition_parity.sh','scripts/cranelift_feature_registry.json','scripts/cranelift_feature_registry.schema.json','scripts/cranelift_test_levels.json','tests/cranelift/phase16_abi_composition_contract.tsv','tests/cranelift/phase16_abi_composition_review.txt','justfile','.github/workflows/phase16-abi-composition.yml','.github/workflows/cranelift-historical-full.yml']
+  workflow_dispatch:
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - run: just guard-cranelift-phase16-composition-contract
+  differential:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - run: make gust
+      - run: just guard-cranelift-phase16-composition-differential
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase16-abi-composition-diagnostics
+          if-no-files-found: ignore
+          path: |
+            to.log
+            build/guards/phase16_abi_composition/
