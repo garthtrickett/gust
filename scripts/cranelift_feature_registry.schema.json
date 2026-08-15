@@ -18,6 +18,7 @@
     "phase15_resource_composition_authority",
     "phase16_abi_composition_authority",
     "phase16_deferred_residue_audit",
+    "phase16_closure",
     "phase15_deferred_residue_audit",
     "phase15_closure",
     "phase14_layout_authority",
@@ -250,6 +251,9 @@
     },
     "phase16_deferred_residue_audit": {
       "$ref": "#/$defs/phase16_deferred_residue_audit"
+    },
+    "phase16_closure": {
+      "$ref": "#/$defs/phase16_closure"
     },
     "phase15_deferred_residue_audit": {
       "$ref": "#/$defs/phase15_deferred_residue_audit"
@@ -1587,6 +1591,34 @@
         "coverage_policy": {"const": "every_phase16_opening_row_migrated_excluded_or_replaced_by_narrow_actionable_rows"},
         "abi_class_target_policy": {"const": "selected_classes_supported_all_other_declared_classes_and_targets_narrowly_deferred"},
         "phase15_rebase_policy": {"const": "all_selected_phase15_residuals_consumed_without_ambiguous_carryover"}
+      }
+    },
+    "phase16_closure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "status", "opening_entry_count", "migrated_entry_count", "excluded_item_count", "narrow_deferred_row_count", "required_authorities", "semantic_assertions", "oracle_policy", "fallback_policy", "artifact_policy", "worker_policy", "failure_policy", "test_level_policy", "scope_policy"],
+      "properties": {
+        "version": {"const": "phase16_closure_v1"},
+        "status": {"const": "phase16_closed_function_abi_and_aggregate_call_semantics"},
+        "opening_entry_count": {"const": 13},
+        "migrated_entry_count": {"const": 13},
+        "excluded_item_count": {"const": 0},
+        "narrow_deferred_row_count": {"const": 19},
+        "required_authorities": {
+          "type": "array", "minItems": 5, "maxItems": 5, "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "semantic_assertions": {
+          "type": "array", "minItems": 35, "maxItems": 35, "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "oracle_policy": {"const": "mir_to_c_remains_default_differential_oracle"},
+        "fallback_policy": {"const": "explicit_cranelift_no_fallback"},
+        "artifact_policy": {"const": "phase9g_retains_object_link_cleanup_and_atomic_publication_ownership"},
+        "worker_policy": {"const": "isolated_worker_consumes_only_validated_request_canonical_mir_layout_resource_and_abi_metadata"},
+        "failure_policy": {"const": "invalid_or_deferred_stops_before_driver_and_artifact_access_with_output_preserved"},
+        "test_level_policy": {"const": "level1_contracts_level2_registry_families_level3_historical_full_only"},
+        "scope_policy": {"const": "declared_phase16_inventory_only_no_complete_platform_ffi_dispatch_unsized_runtime_or_production_claim"}
       }
     },
     "phase15_closure": {

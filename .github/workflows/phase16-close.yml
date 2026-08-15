@@ -1,0 +1,40 @@
+name: Cranelift Phase 16 Close
+
+on:
+  pull_request:
+    paths:
+      - 'TASK.md'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/cranelift_registry.py'
+      - 'scripts/cranelift_test_levels.json'
+      - 'scripts/phase16_close.py'
+      - 'tests/cranelift/phase16_close_contract.tsv'
+      - 'tests/cranelift/phase16_close_review.txt'
+      - 'justfile'
+      - '.github/workflows/pr-fast.yml'
+      - '.github/workflows/phase16-close.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'TASK.md'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/cranelift_registry.py'
+      - 'scripts/cranelift_test_levels.json'
+      - 'scripts/phase16_close.py'
+      - 'tests/cranelift/phase16_close_contract.tsv'
+      - 'tests/cranelift/phase16_close_review.txt'
+      - 'justfile'
+      - '.github/workflows/pr-fast.yml'
+      - '.github/workflows/phase16-close.yml'
+  workflow_dispatch:
+
+jobs:
+  close:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin"
+      - run: just guard-cranelift-phase16-close

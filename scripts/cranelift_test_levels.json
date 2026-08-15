@@ -22,6 +22,7 @@
     "guard-cranelift-phase16-composition-differential": 2,
     "guard-cranelift-phase16-composition-contract": 1,
     "guard-cranelift-phase16-deferred-residue-audit": 1,
+    "guard-cranelift-phase16-close": 1,
     "guard-cranelift-phase16-abi-metadata-contract": 1,
     "guard-cranelift-phase16-cross-module-abi-contract": 1,
     "guard-cranelift-phase16-cross-module-abi-parity": 2,

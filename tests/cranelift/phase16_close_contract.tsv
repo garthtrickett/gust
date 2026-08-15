@@ -1,0 +1,46 @@
+kind	requirement	evidence	level
+parent	Phase 15 semantic closure remains intact	phase15_closure	1
+opening	Phase 16 opening and parent traceability remain intact	guard-cranelift-phase16-opening-contract	1
+registry	canonical schema remains valid	guard-cranelift-registry-schema	1
+registry	all projections remain current	guard-cranelift-registry-projection	1
+authority	compiler-owned function ABI authority exists	compiler/mir_function_abi_authority.gst	1
+mir	canonical call and result transport remains compiler-owned	compiler/mir_function_call.gst	1
+abi	aggregate parameter classification remains compiler-owned	guard-cranelift-phase16-aggregate-parameter-contract	1
+abi	aggregate result and hidden storage remain compiler-owned	guard-cranelift-phase16-aggregate-return-contract	1
+abi	direct caller and callee agreement remains validated	guard-cranelift-phase16-direct-call-agreement-contract	1
+abi	typed indirect signatures remain complete	guard-cranelift-phase16-typed-indirect-call-contract	1
+abi	fat-pointer calls remain compiler-planned	guard-cranelift-phase16-fat-pointer-abi-contract	1
+abi	selected unsized metadata remains compiler-planned	guard-cranelift-phase16-unsized-abi-contract	1
+frame	bounded dynamic frames remain compiler-planned	guard-cranelift-phase16-dynamic-stack-contract	1
+resource	resource aggregate transport consumes Phase 15 decisions	guard-cranelift-phase16-resource-aggregate-abi-contract	1
+module	selected cross-module ABI remains compiler-owned	guard-cranelift-phase16-cross-module-abi-contract	1
+request	ABI metadata remains validated before the worker	guard-cranelift-phase16-abi-metadata-contract	1
+composition	composition authority covers every migrated row	phase16_abi_composition_authority	1
+residue	all residual ABI work is narrow and owned	phase16_deferred_residue_audit	1
+coverage	all thirteen opening rows are migrated	migrated_entry_count 13	1
+coverage	no selected item is excluded	excluded_item_count 0	1
+coverage	nineteen narrow future rows remain	narrow_deferred_row_count 19	1
+roadmap	patches 16.0 through 16.15 are DONE	TASK.md status checklist	1
+route	migrated rows use generic canonical MIR	generic_canonical_mir_route	1
+ownership	backends consume shared compiler ABI decisions	shared_backend_abi_data	1
+ownership	no backend classifier or hidden-result planner exists	semantic_assertions	1
+ownership	resource transfer leaves one live owner	resource_transfer_single_live_owner	1
+diagnostic	diagnostics consume compiler ABI decisions	diagnostics_share_abi_decisions	1
+failure	unsupported cases stop before driver and artifacts	early_deferral_before_artifacts	1
+preservation	existing output survives invalid or deferred input	failure_policy	1
+worker	worker request isolation includes ABI metadata	worker_policy	1
+oracle	MIR-to-C remains the default differential oracle	oracle_policy	1
+fallback	explicit Cranelift remains no-fallback	fallback_policy	1
+artifact	Phase 9G retains object link cleanup and publication	artifact_policy	1
+layout	Phase 14 retains layout ownership	guard-cranelift-phase14-layout-authority-contract	1
+resource	Phase 15 retains resource ownership	guard-cranelift-phase15-resource-authority-contract	1
+ci	CI families remain registry-derived	guard-cranelift-ci-family-projection	1
+levels	focused ABI differential remains Level 2	Level 2 mapping	1
+levels	complete ABI evidence remains Level 3	guard-cranelift-phase16-complete-abi-evidence	1
+levels	Historical Full solely owns complete evidence	cranelift-historical-full.yml	1
+architecture	route and manifest contracts remain static	architecture guards	1
+hashes	no raw hash becomes semantic authority	no_raw_hash_contract	1
+matrix	no exact matrix total claims correctness	no_exact_matrix_total_correctness	1
+scope	closure claims only the declared Phase 16 inventory	scope_policy	1
+closure	semantic status is closed	phase16_closed_function_abi_and_aggregate_call_semantics	1
+closure	close guard is Level 1	guard-cranelift-phase16-close	1
