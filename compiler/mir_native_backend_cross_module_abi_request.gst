@@ -1,0 +1,4 @@
+import "mir_native_backend_abi_request.gst" as base;
+import "mir_cross_module_abi.gst" as cross_module;
+type MirNativeBackendCrossModuleAbiRequest[ctx] struct { format: str, base_request: base.MirNativeBackendAbiRequest[ctx], cross_module_table: cross_module.MirCrossModuleAbiTable[ctx] }
+func mir_native_backend_cross_module_abi_request_is_valid(request: MirNativeBackendCrossModuleAbiRequest[ctx], ctx: &Arena) cross_module.MirCrossModuleAbiValidation[ctx] { if std.str_eq(request.format,"gust.native_backend.cross_module_abi_request.v1") == 0 { return cross_module.mir_cross_module_validation(0,"cross_module_request_unknown_format",ctx); } mut validation := base.mir_native_backend_abi_request_is_valid(request.base_request,ctx); if validation.valid == 0 { return cross_module.mir_cross_module_validation(0,validation.reason_code,ctx); } return cross_module.mir_cross_module_abi_table_validate(request.cross_module_table,ctx); }

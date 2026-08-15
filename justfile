@@ -15811,6 +15811,7 @@ guard-cranelift-contract-fast:
     just guard-cranelift-phase16-unsized-abi-contract
     just guard-cranelift-phase16-dynamic-stack-contract
     just guard-cranelift-phase16-resource-aggregate-abi-contract
+    just guard-cranelift-phase16-cross-module-abi-contract
 
 guard-cranelift-phase16-abi-authority-contract:
     #!/usr/bin/env bash
@@ -15979,6 +15980,21 @@ guard-cranelift-phase16-resource-aggregate-abi-parity:
     python3 scripts/cranelift_test_levels.py level guard-cranelift-phase16-resource-aggregate-abi-parity | grep -F $'guard-cranelift-phase16-resource-aggregate-abi-parity\t2\t' >/dev/null
     just guard-cranelift-phase16-resource-aggregate-abi-contract
     bash scripts/phase16_resource_aggregate_abi_parity.sh
+
+guard-cranelift-phase16-cross-module-abi-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase16-cross-module-abi-contract | grep -F $'guard-cranelift-phase16-cross-module-abi-contract\t1\t' >/dev/null
+    python3 scripts/phase16_cross_module_abi.py --check
+
+guard-cranelift-phase16-cross-module-abi-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase16-cross-module-abi-parity | grep -F $'guard-cranelift-phase16-cross-module-abi-parity\t2\t' >/dev/null
+    just guard-cranelift-phase16-cross-module-abi-contract
+    bash scripts/phase16_cross_module_abi_parity.sh
 
 guard-cranelift-historical-full:
     #!/usr/bin/env bash

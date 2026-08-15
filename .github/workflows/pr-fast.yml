@@ -129,6 +129,9 @@ jobs:
       - name: Phase 16 resource-bearing aggregate call ABI
         run: just guard-cranelift-phase16-resource-aggregate-abi-contract
 
+      - name: Phase 16 selected cross-module ABI
+        run: just guard-cranelift-phase16-cross-module-abi-contract
+
       - name: Upload Gust build outputs
         uses: actions/upload-artifact@v4
         with:
