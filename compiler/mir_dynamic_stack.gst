@@ -1,0 +1,64 @@
+// Phase 16.9 compiler-owned bounded dynamic stack frame authority.
+import "mir_layout.gst" as layout;
+
+type MirDynamicFramePlan[ctx] struct {
+    frame_plan_id: str, storage_id: str, form: str,
+    owning_function: str, owning_scope: str, size_operand_id: str,
+    size_dominates: int, element_layout_id: str, element_size: int,
+    element_count: int, checked_size_bytes: int, actual_size_bytes: int,
+    overflow_checked: int, maximum_size_bytes: int,
+    required_alignment: int, actual_alignment: int, zero_size_policy: str,
+    nesting_depth: int, lifetime_start: str, lifetime_end: str,
+    restore_point: str, exit_kind: str, operations: str,
+    cleanup_order: str, resource_cleanup_complete: int,
+    restoration_present: int, restoration_after_cleanup: int,
+    use_within_lifetime: int, expected_value: int, actual_value: int,
+    target_id: str, actual_target_id: str,
+    target_triple: str, actual_target_triple: str, source_location: str
+}
+type MirDynamicFrameTable[ctx] struct {
+    format: str, target_id: str, target_triple: str,
+    authority: str, size_policy: str, restoration_policy: str,
+    plans: Index[std.Vector[MirDynamicFramePlan[ctx], ctx], ctx]
+}
+type MirDynamicFrameValidation[ctx] struct { valid: int, reason_code: str }
+
+func mir_dynamic_stack_empty_plans(ctx: &Arena) Index[std.Vector[MirDynamicFramePlan[ctx], ctx], ctx] { mut values: std.Vector[MirDynamicFramePlan[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirDynamicFramePlan[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
+func mir_dynamic_stack_make_empty_table(target_id: str, target_triple: str, ctx: &Arena) MirDynamicFrameTable[ctx] { mut table: MirDynamicFrameTable[ctx]; table.format = std.Clone(ctx, "gust.compiler_dynamic_stack.v1"); table.target_id = std.Clone(ctx, target_id); table.target_triple = std.Clone(ctx, target_triple); table.authority = std.Clone(ctx, "compiler_owned_checked_dynamic_frame_lifetime_and_restore_plan"); table.size_policy = std.Clone(ctx, "compiler_checked_element_count_times_layout_size_bounded_4096"); table.restoration_policy = std.Clone(ctx, "resource_cleanup_then_lifetime_end_then_stack_restore"); table.plans = mir_dynamic_stack_empty_plans(ctx); return table; }
+func mir_dynamic_stack_table_with_plan(table: MirDynamicFrameTable[ctx], value: MirDynamicFramePlan[ctx], ctx: &Arena) MirDynamicFrameTable[ctx] { mut updated := table; mut values: std.Vector[MirDynamicFramePlan[ctx], ctx] := ctx[updated.plans]; values.Push(value); ctx.Set(updated.plans, values); return updated; }
+func mir_dynamic_stack_validation(valid: int, reason_code: str, ctx: &Arena) MirDynamicFrameValidation[ctx] { mut result: MirDynamicFrameValidation[ctx]; result.valid = valid; result.reason_code = std.Clone(ctx, reason_code); return result; }
+func mir_dynamic_stack_layout_by_id(table: layout.MirLayoutTable[ctx], layout_id: str, ctx: &Arena) layout.MirTypeLayoutQuery[ctx] { mut result: layout.MirTypeLayoutQuery[ctx]; result.found = 0; mut values: std.Vector[layout.MirTypeLayout[ctx], ctx] := ctx[table.layouts]; mut index := 0; while index < len(values) { if std.str_eq(values[index].layout_id, layout_id) == 1 { result.found = 1; result.layout = values[index]; return result; } index = index + 1; } return result; }
+func mir_dynamic_stack_form_valid(form: str, exit_kind: str) int { if std.str_eq(form, "bounded_vla_normal_exit") == 1 && std.str_eq(exit_kind, "normal_return") == 1 { return 1; } if std.str_eq(form, "bounded_vla_early_return") == 1 && std.str_eq(exit_kind, "early_return") == 1 { return 1; } if std.str_eq(form, "bounded_nested_vla") == 1 && std.str_eq(exit_kind, "normal_return") == 1 { return 1; } return 0; }
+
+func mir_dynamic_stack_table_validate(table: MirDynamicFrameTable[ctx], layouts: layout.MirLayoutTable[ctx], ctx: &Arena) MirDynamicFrameValidation[ctx] {
+    if std.str_eq(table.format, "gust.compiler_dynamic_stack.v1") == 0 { return mir_dynamic_stack_validation(0, "dynamic_stack_unknown_format", ctx); }
+    if std.str_eq(table.authority, "compiler_owned_checked_dynamic_frame_lifetime_and_restore_plan") == 0 || std.str_eq(table.size_policy, "compiler_checked_element_count_times_layout_size_bounded_4096") == 0 || std.str_eq(table.restoration_policy, "resource_cleanup_then_lifetime_end_then_stack_restore") == 0 { return mir_dynamic_stack_validation(0, "dynamic_stack_backend_invented_size", ctx); }
+    if layout.mir_layout_table_is_valid(layouts, ctx) == 0 || std.str_eq(table.target_id, layouts.target.target_id) == 0 || std.str_eq(table.target_triple, layouts.target.target_triple) == 0 || layouts.target.pointer_size != 8 { return mir_dynamic_stack_validation(0, "dynamic_stack_unsupported_target", ctx); }
+    mut values: std.Vector[MirDynamicFramePlan[ctx], ctx] := ctx[table.plans]; mut index := 0;
+    while index < len(values) {
+        mut value := values[index];
+        if len(value.frame_plan_id) == 0 || len(value.storage_id) == 0 || len(value.owning_function) == 0 || len(value.owning_scope) == 0 || len(value.size_operand_id) == 0 || mir_dynamic_stack_form_valid(value.form, value.exit_kind) == 0 { return mir_dynamic_stack_validation(0, "dynamic_stack_record_invalid", ctx); }
+        if value.size_dominates != 1 { return mir_dynamic_stack_validation(0, "dynamic_stack_non_dominating_size", ctx); }
+        mut element_layout := mir_dynamic_stack_layout_by_id(layouts, value.element_layout_id, ctx); if element_layout.found == 0 || element_layout.layout.size != value.element_size { return mir_dynamic_stack_validation(0, "dynamic_stack_record_invalid", ctx); }
+        if value.element_count < 0 || value.element_count > 1024 || value.element_size != 4 || value.checked_size_bytes != value.element_count * value.element_size || value.actual_size_bytes != value.checked_size_bytes || value.maximum_size_bytes != 4096 || value.checked_size_bytes > value.maximum_size_bytes { return mir_dynamic_stack_validation(0, "dynamic_stack_size_limit_exceeded", ctx); }
+        if value.overflow_checked != 1 || std.str_find(value.operations, "checked_dynamic_size") == 0 - 1 { return mir_dynamic_stack_validation(0, "dynamic_stack_unchecked_overflow", ctx); }
+        if value.required_alignment != 4 || value.actual_alignment != value.required_alignment || element_layout.layout.alignment != value.required_alignment { return mir_dynamic_stack_validation(0, "dynamic_stack_unsupported_alignment", ctx); }
+        if std.str_eq(value.zero_size_policy, "allow_zero_bytes_preserve_restore_marker") == 0 || value.nesting_depth < 0 || value.nesting_depth > 2 { return mir_dynamic_stack_validation(0, "dynamic_stack_record_invalid", ctx); }
+        if len(value.lifetime_start) == 0 || len(value.lifetime_end) == 0 || value.use_within_lifetime != 1 || std.str_find(value.operations, "lifetime_start") == 0 - 1 || std.str_find(value.operations, "lifetime_end") == 0 - 1 { return mir_dynamic_stack_validation(0, "dynamic_stack_use_outside_lifetime", ctx); }
+        if value.restoration_present != 1 || len(value.restore_point) == 0 || std.str_find(value.operations, "restore_stack") == 0 - 1 { return mir_dynamic_stack_validation(0, "dynamic_stack_missing_restoration", ctx); }
+        if value.resource_cleanup_complete != 1 || value.restoration_after_cleanup != 1 || std.str_eq(value.cleanup_order, table.restoration_policy) == 0 || std.str_find(value.operations, "resource_cleanup>lifetime_end>restore_stack") == 0 - 1 { return mir_dynamic_stack_validation(0, "dynamic_stack_restore_before_cleanup", ctx); }
+        if std.str_find(value.operations, "aligned_stack_allocate") == 0 - 1 { return mir_dynamic_stack_validation(0, "dynamic_stack_backend_invented_size", ctx); }
+        if value.expected_value != value.actual_value { return mir_dynamic_stack_validation(0, "dynamic_stack_value_mismatch", ctx); }
+        if std.str_eq(value.target_id, table.target_id) == 0 || std.str_eq(value.actual_target_id, table.target_id) == 0 || std.str_eq(value.target_triple, table.target_triple) == 0 || std.str_eq(value.actual_target_triple, table.target_triple) == 0 { return mir_dynamic_stack_validation(0, "dynamic_stack_unsupported_target", ctx); }
+        mut duplicate := index + 1; while duplicate < len(values) { if std.str_eq(values[duplicate].frame_plan_id, value.frame_plan_id) == 1 || std.str_eq(values[duplicate].storage_id, value.storage_id) == 1 { return mir_dynamic_stack_validation(0, "dynamic_stack_duplicate_identity", ctx); } duplicate = duplicate + 1; }
+        index = index + 1;
+    }
+    return mir_dynamic_stack_validation(1, "dynamic_stack_valid", ctx);
+}
+func mir_dynamic_stack_field(output: str, key: str, value: str, ctx: &Arena) str { mut result := std.Concat(output, key); result = std.Concat(result, "="); result = std.Concat(result, value); result = std.Concat(result, ";"); return std.Clone(ctx, result); }
+func mir_serialize_dynamic_stack_for_request(table: MirDynamicFrameTable[ctx], layouts: layout.MirLayoutTable[ctx], ctx: &Arena) str {
+    mut validation := mir_dynamic_stack_table_validate(table, layouts, ctx); if validation.valid == 0 { mut invalid := "dynamic_stack_format: invalid\ndynamic_stack_reason: "; invalid = std.Concat(invalid, validation.reason_code); invalid = std.Concat(invalid, "\n"); return std.Clone(ctx, invalid); }
+    mut values: std.Vector[MirDynamicFramePlan[ctx], ctx] := ctx[table.plans]; mut output := "dynamic_stack_format: gust.compiler_dynamic_stack.v1\n"; output = std.Concat(output, "dynamic_stack_target_id: "); output = std.Concat(output, table.target_id); output = std.Concat(output, "\ndynamic_stack_target_triple: "); output = std.Concat(output, table.target_triple); output = std.Concat(output, "\ndynamic_stack_plan_count: "); output = std.Concat(output, std.FormatInt(len(values))); output = std.Concat(output, "\n");
+    mut index := 0; while index < len(values) { mut v := values[index]; mut row := "dynamic_stack_plan:"; row = mir_dynamic_stack_field(row,"id",v.frame_plan_id,ctx); row = mir_dynamic_stack_field(row,"storage",v.storage_id,ctx); row = mir_dynamic_stack_field(row,"form",v.form,ctx); row = mir_dynamic_stack_field(row,"function",v.owning_function,ctx); row = mir_dynamic_stack_field(row,"scope",v.owning_scope,ctx); row = mir_dynamic_stack_field(row,"size_operand",v.size_operand_id,ctx); row = mir_dynamic_stack_field(row,"size_dominates",std.FormatInt(v.size_dominates),ctx); row = mir_dynamic_stack_field(row,"element_layout",v.element_layout_id,ctx); row = mir_dynamic_stack_field(row,"element_size",std.FormatInt(v.element_size),ctx); row = mir_dynamic_stack_field(row,"element_count",std.FormatInt(v.element_count),ctx); row = mir_dynamic_stack_field(row,"checked_size",std.FormatInt(v.checked_size_bytes),ctx); row = mir_dynamic_stack_field(row,"actual_size",std.FormatInt(v.actual_size_bytes),ctx); row = mir_dynamic_stack_field(row,"overflow_checked",std.FormatInt(v.overflow_checked),ctx); row = mir_dynamic_stack_field(row,"maximum_size",std.FormatInt(v.maximum_size_bytes),ctx); row = mir_dynamic_stack_field(row,"required_alignment",std.FormatInt(v.required_alignment),ctx); row = mir_dynamic_stack_field(row,"actual_alignment",std.FormatInt(v.actual_alignment),ctx); row = mir_dynamic_stack_field(row,"zero_size_policy",v.zero_size_policy,ctx); row = mir_dynamic_stack_field(row,"nesting_depth",std.FormatInt(v.nesting_depth),ctx); row = mir_dynamic_stack_field(row,"lifetime_start",v.lifetime_start,ctx); row = mir_dynamic_stack_field(row,"lifetime_end",v.lifetime_end,ctx); row = mir_dynamic_stack_field(row,"restore_point",v.restore_point,ctx); row = mir_dynamic_stack_field(row,"exit_kind",v.exit_kind,ctx); row = mir_dynamic_stack_field(row,"operations",v.operations,ctx); row = mir_dynamic_stack_field(row,"cleanup_order",v.cleanup_order,ctx); row = mir_dynamic_stack_field(row,"resource_cleanup_complete",std.FormatInt(v.resource_cleanup_complete),ctx); row = mir_dynamic_stack_field(row,"restoration_present",std.FormatInt(v.restoration_present),ctx); row = mir_dynamic_stack_field(row,"restoration_after_cleanup",std.FormatInt(v.restoration_after_cleanup),ctx); row = mir_dynamic_stack_field(row,"use_within_lifetime",std.FormatInt(v.use_within_lifetime),ctx); row = mir_dynamic_stack_field(row,"expected_value",std.FormatInt(v.expected_value),ctx); row = mir_dynamic_stack_field(row,"actual_value",std.FormatInt(v.actual_value),ctx); row = mir_dynamic_stack_field(row,"target",v.target_id,ctx); row = mir_dynamic_stack_field(row,"actual_target",v.actual_target_id,ctx); row = mir_dynamic_stack_field(row,"triple",v.target_triple,ctx); row = mir_dynamic_stack_field(row,"actual_triple",v.actual_target_triple,ctx); row = mir_dynamic_stack_field(row,"source",v.source_location,ctx); output = std.Concat(output,row); output = std.Concat(output,"\n"); index = index + 1; }
+    return std.Clone(ctx, output);
+}

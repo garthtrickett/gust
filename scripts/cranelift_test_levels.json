@@ -18,6 +18,8 @@
     }
   },
   "guards": {
+    "guard-cranelift-phase16-dynamic-stack-contract": 1,
+    "guard-cranelift-phase16-dynamic-stack-parity": 2,
     "guard-cranelift-phase16-unsized-abi-contract": 1,
     "guard-cranelift-phase16-unsized-abi-parity": 2,
     "guard-cranelift-phase16-fat-pointer-abi-contract": 1,

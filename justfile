@@ -15809,6 +15809,7 @@ guard-cranelift-contract-fast:
     just guard-cranelift-phase16-typed-indirect-call-contract
     just guard-cranelift-phase16-fat-pointer-abi-contract
     just guard-cranelift-phase16-unsized-abi-contract
+    just guard-cranelift-phase16-dynamic-stack-contract
 
 guard-cranelift-phase16-abi-authority-contract:
     #!/usr/bin/env bash
@@ -15943,6 +15944,23 @@ guard-cranelift-phase16-unsized-abi-parity:
     python3 scripts/cranelift_test_levels.py level guard-cranelift-phase16-unsized-abi-parity | grep -F $'guard-cranelift-phase16-unsized-abi-parity\t2\t' >/dev/null
     just guard-cranelift-phase16-unsized-abi-contract
     bash scripts/phase16_unsized_abi_parity.sh
+
+guard-cranelift-phase16-dynamic-stack-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 16.9 compiler-owned bounded dynamic stack plans..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase16-dynamic-stack-contract | grep -F $'guard-cranelift-phase16-dynamic-stack-contract\t1\t' >/dev/null
+    python3 scripts/phase16_dynamic_stack.py --check
+
+guard-cranelift-phase16-dynamic-stack-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 16.9 bounded dynamic stack parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase16-dynamic-stack-parity | grep -F $'guard-cranelift-phase16-dynamic-stack-parity\t2\t' >/dev/null
+    just guard-cranelift-phase16-dynamic-stack-contract
+    bash scripts/phase16_dynamic_stack_parity.sh
 
 guard-cranelift-historical-full:
     #!/usr/bin/env bash

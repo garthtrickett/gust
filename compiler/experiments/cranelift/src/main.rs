@@ -1,6 +1,7 @@
 mod aggregate_parameter_abi;
 mod aggregate_result_abi;
 mod direct_call_agreement;
+mod dynamic_stack;
 mod fat_pointer_abi;
 mod typed_indirect_call;
 mod unsized_abi;
@@ -16336,6 +16337,12 @@ fn run() -> Result<(), Box<dyn Error>> {
     };
 
     match command.as_str() {
+        "phase16-dynamic-stack-witness" => {
+            let Some(request_path) = args.next() else { return Err(usage_error().into()); };
+            if args.next().is_some() { return Err(usage_error().into()); }
+            let witness = dynamic_stack::lower_dynamic_stack_witness_path(Path::new(&request_path))?;
+            print!("{witness}"); Ok(())
+        }
         "phase16-unsized-abi-witness" => {
             let Some(request_path) = args.next() else { return Err(usage_error().into()); };
             if args.next().is_some() { return Err(usage_error().into()); }
@@ -17839,6 +17846,7 @@ fn usage_error() -> IoError {
         ErrorKind::InvalidInput,
         concat!(
             "usage:\n",
+            "  gust-cranelift-experiment phase16-dynamic-stack-witness <request.native>\n",
             "  gust-cranelift-experiment phase16-unsized-abi-witness <request.native>\n",
             "  gust-cranelift-experiment phase16-fat-pointer-abi-witness <request.native>\n",
             "  gust-cranelift-experiment phase16-typed-indirect-call-witness <request.native>\n",
