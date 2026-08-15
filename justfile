@@ -15813,6 +15813,7 @@ guard-cranelift-contract-fast:
     just guard-cranelift-phase16-resource-aggregate-abi-contract
     just guard-cranelift-phase16-cross-module-abi-contract
     just guard-cranelift-phase16-abi-metadata-contract
+    just guard-cranelift-phase16-composition-contract
 
 guard-cranelift-phase16-abi-authority-contract:
     #!/usr/bin/env bash
@@ -16004,6 +16005,36 @@ guard-cranelift-phase16-abi-metadata-contract:
     python3 scripts/cranelift_test_levels.py level guard-cranelift-phase16-abi-metadata-contract | grep -F $'guard-cranelift-phase16-abi-metadata-contract\t1\t' >/dev/null
     python3 scripts/phase16_abi_metadata.py --check
     bash scripts/phase16_abi_metadata_validation.sh
+
+guard-cranelift-phase16-composition-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 16.13 registry-derived ABI composition..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase16-composition-contract | grep -F $'guard-cranelift-phase16-composition-contract\t1\t' >/dev/null
+    python3 scripts/phase16_abi_composition.py --check
+
+guard-cranelift-phase16-composition-differential:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 16.13 focused ABI composition differential..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase16-composition-differential | grep -F $'guard-cranelift-phase16-composition-differential\t2\t' >/dev/null
+    just guard-cranelift-phase16-composition-contract
+    bash scripts/phase16_abi_composition_parity.sh
+
+guard-cranelift-phase16-complete-abi-evidence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🕰️ Running Phase 16.13 complete registry-derived ABI evidence..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase16-complete-abi-evidence | grep -F $'guard-cranelift-phase16-complete-abi-evidence\t3\t' >/dev/null
+    while IFS= read -r guard; do
+      [ -n "$guard" ] || continue
+      just "$guard"
+    done < <(python3 scripts/phase16_abi_composition.py individual-guards)
+    just guard-cranelift-phase16-composition-differential
+    echo "guard-cranelift-phase16-complete-abi-evidence: ok (Level 3)"
 
 guard-cranelift-historical-full:
     #!/usr/bin/env bash

@@ -18,6 +18,9 @@
     }
   },
   "guards": {
+    "guard-cranelift-phase16-complete-abi-evidence": 3,
+    "guard-cranelift-phase16-composition-differential": 2,
+    "guard-cranelift-phase16-composition-contract": 1,
     "guard-cranelift-phase16-abi-metadata-contract": 1,
     "guard-cranelift-phase16-cross-module-abi-contract": 1,
     "guard-cranelift-phase16-cross-module-abi-parity": 2,

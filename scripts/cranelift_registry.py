@@ -22,6 +22,7 @@ TOP_FIELDS = {
     "opening_snapshots", "phase15_specialized_resource_authority",
     "phase15_failure_cleanup_authority",
     "phase15_resource_composition_authority",
+    "phase16_abi_composition_authority",
     "phase15_deferred_residue_audit",
     "phase15_closure",
     "phase14_layout_authority",

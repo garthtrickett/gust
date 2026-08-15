@@ -135,6 +135,9 @@ jobs:
       - name: Phase 16 ABI metadata request validation
         run: just guard-cranelift-phase16-abi-metadata-contract
 
+      - name: Phase 16 cross-feature ABI composition
+        run: just guard-cranelift-phase16-composition-contract
+
       - name: Upload Gust build outputs
         uses: actions/upload-artifact@v4
         with:

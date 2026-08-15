@@ -1,0 +1,38 @@
+kind	requirement	evidence	level
+inventory	migrated inventory is registry-derived	phase16_abi_composition_authority.migrated_entries	1
+inventory	all twelve migrated capability rows have individual evidence	individual_guard per migrated entry	1
+inventory	one complete composition case covers all rows	covered_entry_count 12	1
+composition	aggregate parameter composes	aggregate_parameter	1
+composition	aggregate return composes	aggregate_result	1
+composition	hidden result composes	hidden_result	1
+composition	direct call agreement composes	direct_call	1
+composition	typed indirect calls compose	typed_indirect_call	1
+composition	fat-pointer calls compose	fat_pointer_call	1
+composition	unsized metadata composes	unsized_metadata	1
+composition	dynamic frames compose	dynamic_stack	1
+composition	resource ownership transfer composes	resource_transfer	1
+composition	selected cross-module calls compose	cross_module_call	1
+composition	failure before transfer composes	failure_before_transfer	1
+composition	failure after transfer composes	failure_after_transfer	1
+authority	compiler owns composition plan	compiler_owned_generic_abi_composition	1
+authority	generic ABI authority is required	abi_composition_generic_authority_missing	1
+authority	backends own no ABI classifier	backend_abi_classifier=0	1
+authority	backends own no hidden-result planner	backend_hidden_result_planner=0	1
+authority	backends own no resource-transfer planner	backend_resource_transfer_planner=0	1
+validation	coverage drift is rejected	abi_composition_coverage_mismatch	1
+validation	comparison drift is rejected	abi_composition_contract_mismatch	1
+validation	witness count drift is rejected	abi_composition_witness_count_mismatch	1
+differential	default and explicit MIR-to-C are byte-identical	default_explicit_mir_to_c_byte_identity	1
+differential	MIR-to-C and Cranelift witnesses agree	mir_to_c_cranelift_witness_identity	1
+differential	runtime values and status are compared	runtime_values exit_status	1
+differential	stdout and stderr are compared	stdout stderr	1
+differential	parameter and result witnesses are compared	parameter_result_witnesses	1
+differential	hidden values and layouts are compared	hidden_value_witnesses layouts	1
+differential	resource transitions and cleanup order are compared	resource_transitions cleanup_destructor_order	1
+differential	filesystem and initialized data are compared	filesystem_effects initialized_data	1
+differential	output preservation is compared	output_preservation	1
+targets	targets derive from Phase 14 authority	all_declared_host_targets_from_phase14_target_authority	1
+ci	composition contract is Level 1	guard-cranelift-phase16-composition-contract	1
+ci	focused differential is Level 2	guard-cranelift-phase16-composition-differential	1
+ci	complete evidence is Level 3	guard-cranelift-phase16-complete-abi-evidence	1
+ci	Level 3 owner is historical full	complete_registry_derived_phase16_inventory_owned_only_by_cranelift_historical_full	1

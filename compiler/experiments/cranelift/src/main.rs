@@ -1,3 +1,4 @@
+mod abi_composition;
 mod abi_metadata;
 mod aggregate_parameter_abi;
 mod aggregate_result_abi;
@@ -16340,6 +16341,12 @@ fn run() -> Result<(), Box<dyn Error>> {
     };
 
     match command.as_str() {
+        "phase16-abi-composition-witness" => {
+            let Some(request_path) = args.next() else { return Err(usage_error().into()); };
+            if args.next().is_some() { return Err(usage_error().into()); }
+            let witness = abi_composition::lower_abi_composition_witness_path(Path::new(&request_path))?;
+            print!("{witness}"); Ok(())
+        }
         "phase16-abi-metadata-witness" => {
             let Some(request_path) = args.next() else {
                 return Err(usage_error().into());
@@ -17880,6 +17887,7 @@ fn usage_error() -> IoError {
         ErrorKind::InvalidInput,
         concat!(
             "usage:\n",
+            "  gust-cranelift-experiment phase16-abi-composition-witness <request.native>\n",
             "  gust-cranelift-experiment phase16-abi-metadata-witness <request.native>\n",
             "  gust-cranelift-experiment phase16-cross-module-abi-witness <request.native>\n",
             "  gust-cranelift-experiment phase16-resource-aggregate-abi-witness <request.native>\n",
