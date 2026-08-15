@@ -15810,6 +15810,7 @@ guard-cranelift-contract-fast:
     just guard-cranelift-phase16-fat-pointer-abi-contract
     just guard-cranelift-phase16-unsized-abi-contract
     just guard-cranelift-phase16-dynamic-stack-contract
+    just guard-cranelift-phase16-resource-aggregate-abi-contract
 
 guard-cranelift-phase16-abi-authority-contract:
     #!/usr/bin/env bash
@@ -15961,6 +15962,23 @@ guard-cranelift-phase16-dynamic-stack-parity:
     python3 scripts/cranelift_test_levels.py level guard-cranelift-phase16-dynamic-stack-parity | grep -F $'guard-cranelift-phase16-dynamic-stack-parity\t2\t' >/dev/null
     just guard-cranelift-phase16-dynamic-stack-contract
     bash scripts/phase16_dynamic_stack_parity.sh
+
+guard-cranelift-phase16-resource-aggregate-abi-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 16.10 compiler-owned resource aggregate call ABI..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase16-resource-aggregate-abi-contract | grep -F $'guard-cranelift-phase16-resource-aggregate-abi-contract\t1\t' >/dev/null
+    python3 scripts/phase16_resource_aggregate_abi.py --check
+
+guard-cranelift-phase16-resource-aggregate-abi-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 16.10 resource aggregate call ABI parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase16-resource-aggregate-abi-parity | grep -F $'guard-cranelift-phase16-resource-aggregate-abi-parity\t2\t' >/dev/null
+    just guard-cranelift-phase16-resource-aggregate-abi-contract
+    bash scripts/phase16_resource_aggregate_abi_parity.sh
 
 guard-cranelift-historical-full:
     #!/usr/bin/env bash

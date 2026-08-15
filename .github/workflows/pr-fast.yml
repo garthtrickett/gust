@@ -126,6 +126,9 @@ jobs:
       - name: Phase 16 bounded dynamic stack plans
         run: just guard-cranelift-phase16-dynamic-stack-contract
 
+      - name: Phase 16 resource-bearing aggregate call ABI
+        run: just guard-cranelift-phase16-resource-aggregate-abi-contract
+
       - name: Upload Gust build outputs
         uses: actions/upload-artifact@v4
         with:
