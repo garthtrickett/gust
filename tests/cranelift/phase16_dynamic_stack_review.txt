@@ -1,0 +1,55 @@
+Phase 16.9 — Bounded Dynamic Stack Frames and Variable-Sized Storage
+guard: guard-cranelift-phase16-dynamic-stack-contract
+parity_guard: guard-cranelift-phase16-dynamic-stack-parity
+test_level: level1
+format: gust.compiler_dynamic_stack.v1
+inventory: bounded normal-exit, early-return, and nested dynamic i32 stack storage
+boundary: unbounded growth, arbitrary probing, coroutine or async frames, and heap fallback remain deferred
+
+counts:
+  boundary: 2
+  consumer: 2
+  form: 3
+  hard_ban: 1
+  identity: 4
+  operation: 5
+  policy: 3
+  rejection: 9
+  test: 2
+
+active contract:
+  form	bounded_vla_normal_exit	compiler_dynamic_frame_planner	selected
+  form	bounded_vla_early_return	compiler_dynamic_frame_planner	selected
+  form	bounded_nested_vla	compiler_dynamic_frame_planner	selected
+  operation	checked_dynamic_size	canonical_mir	selected
+  operation	aligned_stack_allocate	canonical_mir	selected
+  operation	lifetime_start	canonical_mir	selected
+  operation	lifetime_end	canonical_mir	selected
+  operation	stack_restoration	canonical_mir	selected
+  policy	bounded_4096_bytes	compiler_dynamic_frame_planner	required
+  policy	allow_zero_bytes_preserve_restore_marker	compiler_dynamic_frame_planner	required
+  policy	resource_cleanup_then_lifetime_end_then_stack_restore	compiler_resource_and_frame_authorities	required
+  identity	frame_plan_identity	compiler_dynamic_frame_planner	required
+  identity	storage_identity	compiler_dynamic_frame_planner	required
+  identity	size_operand_identity	canonical_mir	required
+  identity	element_layout_identity	compiler_layout_authority	required
+  rejection	non_dominating_size	compiler_dynamic_frame_verifier	rejected
+  rejection	unchecked_overflow	compiler_dynamic_frame_verifier	rejected
+  rejection	size_limit_exceeded	compiler_dynamic_frame_verifier	rejected
+  rejection	unsupported_alignment	compiler_dynamic_frame_verifier	rejected
+  rejection	use_outside_lifetime	compiler_dynamic_frame_verifier	rejected
+  rejection	missing_restoration	compiler_dynamic_frame_verifier	rejected
+  rejection	restore_before_resource_cleanup	compiler_dynamic_frame_verifier	rejected
+  rejection	unsupported_target	compiler_dynamic_frame_verifier	rejected
+  rejection	backend_invented_size	compiler_dynamic_frame_verifier	rejected
+  consumer	mir_to_c_compiler_dynamic_frame_plan	mir_to_c	required
+  consumer	cranelift_compiler_dynamic_frame_plan	cranelift_worker	required
+  hard_ban	no_backend_dynamic_frame_planner	architecture	required
+  boundary	no_heap_fallback	phase16_boundary	deferred
+  boundary	no_unbounded_stack_growth	phase16_boundary	deferred
+  test	level1_dynamic_stack_contract	ci	active
+  test	level2_dynamic_stack_parity	ci	active
+
+exit gate:
+  every selected dynamic stack value has a compiler-owned checked size, alignment, lifetime, and restoration plan
+  resource cleanup precedes lifetime end and stack restoration through MIR-to-C and Cranelift
