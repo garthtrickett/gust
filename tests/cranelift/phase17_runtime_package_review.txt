@@ -1,0 +1,43 @@
+Phase 17.4 — Explicit Runtime Packages (package view)
+guard: guard-cranelift-phase17-runtime-package-contract
+test_level: level1
+manifest_format: gust.runtime_package_manifest.v1
+build_authority: runtime_build_authority:gust_runtime_package
+selection_policy: compiler_owned_compatibility_decision_exactly_one_available_package_per_target
+link_execution_policy: phase9g_executes_declared_link_order_without_choosing_package_or_order
+
+contract counts:
+  boundary: 1
+  manifest_field: 7
+  package_form: 3
+  policy: 4
+  query: 2
+  rejection: 7
+  semantic_type: 4
+
+supported package forms:
+  static_archive
+  deterministic_object_set
+  explicit_native_library
+
+frozen manifest fields:
+  components
+  provided_symbols
+  permitted_system_imports
+  target_identity
+  runtime_abi_identity
+  deterministic_link_order
+  compatibility_constraints
+
+rejection classes:
+  runtime_package_ambiguous_selection
+  runtime_package_target_mismatch
+  runtime_package_duplicate_conflicting_component
+  runtime_package_missing_mandatory_symbol
+  runtime_package_abi_version_incompatible
+  runtime_package_undeclared_member_or_system_import
+  runtime_package_nondeterministic_component_order
+
+exit gate:
+  every migrated native target has an explicit deterministic runtime package selection
+  the manifest satisfies the compiler-produced runtime requirements before the link plan is executed

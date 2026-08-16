@@ -102,6 +102,35 @@ func smoke_make_reference(
     return reference;
 }
 
+func smoke_with_package_manifest(
+    table: runtime.MirRuntimeBoundaryAuthorityTable[ctx],
+    package: runtime.MirRuntimePackageIdentity[ctx],
+    member: runtime.MirRuntimePackageMember[ctx],
+    symbol: runtime.MirRuntimeSymbolIdentity[ctx],
+    ctx: &Arena
+) runtime.MirRuntimeBoundaryAuthorityTable[ctx] {
+    mut result := runtime.mir_runtime_table_with_package(table, package, ctx);
+    result = runtime.mir_runtime_table_with_package_member(result, member, ctx);
+    return smoke_with_provided_symbol(result, package.package_id, symbol, 0, ctx);
+}
+
+func smoke_with_provided_symbol(
+    table: runtime.MirRuntimeBoundaryAuthorityTable[ctx],
+    package_id: str,
+    symbol: runtime.MirRuntimeSymbolIdentity[ctx],
+    ordinal: int,
+    ctx: &Arena
+) runtime.MirRuntimeBoundaryAuthorityTable[ctx] {
+    mut provided: runtime.MirRuntimePackageProvidedSymbol[ctx];
+    provided.provided_id = runtime.mir_runtime_package_provided_symbol_id(package_id, symbol.symbol_id, ordinal, ctx);
+    provided.package_id = package_id;
+    provided.symbol_id = symbol.symbol_id;
+    provided.external_spelling = symbol.external_spelling;
+    provided.symbol_version = symbol.symbol_version;
+    provided.component_id = symbol.component_id;
+    return runtime.mir_runtime_table_with_package_provided_symbol(table, provided, ctx);
+}
+
 func main() {
     mut ctx := os.Arena.New();
     defer ctx.Free();
@@ -140,7 +169,20 @@ func main() {
     package.package_version = "gust-runtime-package-v1";
     package.target_id = target_id;
     package.available = 1;
-    table = runtime.mir_runtime_table_with_package(table, package, &ctx);
+    package.manifest_format = "gust.runtime_package_manifest.v1";
+    package.package_form = "static_archive";
+    package.runtime_abi_id = abi.runtime_abi_id;
+    package.target_triple = "x86_64-unknown-linux-gnu";
+    package.build_authority_id = "runtime_build_authority:approved_scalar_imports";
+    package.compatible_version_min = 1;
+    package.compatible_version_max = 1;
+
+    mut member: runtime.MirRuntimePackageMember[ctx];
+    member.member_id = runtime.mir_runtime_package_member_id(package.package_id, component.component_id, 0, &ctx);
+    member.package_id = package.package_id;
+    member.component_id = component.component_id;
+    member.link_order = 0;
+    member.object_identity = "runtime:approved_scalar_imports";
 
     mut helper_one: runtime.MirRuntimeHelperIdentity[ctx];
     helper_one.helper_id = runtime.mir_runtime_helper_identity_id("tiny_host_add_one_i32", target_id, 0, &ctx);
@@ -178,6 +220,8 @@ func main() {
     table = runtime.mir_runtime_table_with_symbol(table, symbol_one, &ctx);
     mut symbol_two := smoke_make_symbol(helper_two.helper_id, "tiny_host_add_i32", "i32_i32_to_i32", component.component_id, abi.runtime_abi_id, target_id, 1, &ctx);
     table = runtime.mir_runtime_table_with_symbol(table, symbol_two, &ctx);
+    table = smoke_with_package_manifest(table, package, member, symbol_one, &ctx);
+    table = smoke_with_provided_symbol(table, package.package_id, symbol_two, 1, &ctx);
 
     // Two call shapes, three canonical MIR operations, two requirements. The
     // repeated direct call is what the request-side table deduplicates.
@@ -229,7 +273,7 @@ func main() {
     mut missing_table := runtime.mir_runtime_make_empty_table(target_id, "x86_64-unknown-linux-gnu", &ctx);
     missing_table = runtime.mir_runtime_table_with_abi(missing_table, abi, &ctx);
     missing_table = runtime.mir_runtime_table_with_component(missing_table, component, &ctx);
-    missing_table = runtime.mir_runtime_table_with_package(missing_table, package, &ctx);
+    missing_table = smoke_with_package_manifest(missing_table, package, member, symbol_one, &ctx);
     missing_table = runtime.mir_runtime_table_with_helper(missing_table, helper_one, &ctx);
     missing_table = runtime.mir_runtime_table_with_classification(missing_table, classification_one, &ctx);
     missing_table = runtime.mir_runtime_table_with_symbol(missing_table, symbol_one, &ctx);
@@ -241,7 +285,7 @@ func main() {
     mut unused_table := runtime.mir_runtime_make_empty_table(target_id, "x86_64-unknown-linux-gnu", &ctx);
     unused_table = runtime.mir_runtime_table_with_abi(unused_table, abi, &ctx);
     unused_table = runtime.mir_runtime_table_with_component(unused_table, component, &ctx);
-    unused_table = runtime.mir_runtime_table_with_package(unused_table, package, &ctx);
+    unused_table = smoke_with_package_manifest(unused_table, package, member, symbol_one, &ctx);
     unused_table = runtime.mir_runtime_table_with_helper(unused_table, helper_one, &ctx);
     unused_table = runtime.mir_runtime_table_with_classification(unused_table, classification_one, &ctx);
     unused_table = runtime.mir_runtime_table_with_symbol(unused_table, symbol_one, &ctx);
@@ -253,7 +297,7 @@ func main() {
     mut mandatory_table := runtime.mir_runtime_make_empty_table(target_id, "x86_64-unknown-linux-gnu", &ctx);
     mandatory_table = runtime.mir_runtime_table_with_abi(mandatory_table, abi, &ctx);
     mandatory_table = runtime.mir_runtime_table_with_component(mandatory_table, component, &ctx);
-    mandatory_table = runtime.mir_runtime_table_with_package(mandatory_table, package, &ctx);
+    mandatory_table = smoke_with_package_manifest(mandatory_table, package, member, symbol_one, &ctx);
     mandatory_table = runtime.mir_runtime_table_with_helper(mandatory_table, helper_one, &ctx);
     mandatory_table = runtime.mir_runtime_table_with_classification(mandatory_table, classification_one, &ctx);
     mandatory_table = runtime.mir_runtime_table_with_symbol(mandatory_table, symbol_one, &ctx);
@@ -267,7 +311,7 @@ func main() {
     mut version_table := runtime.mir_runtime_make_empty_table(target_id, "x86_64-unknown-linux-gnu", &ctx);
     version_table = runtime.mir_runtime_table_with_abi(version_table, abi, &ctx);
     version_table = runtime.mir_runtime_table_with_component(version_table, component, &ctx);
-    version_table = runtime.mir_runtime_table_with_package(version_table, package, &ctx);
+    version_table = smoke_with_package_manifest(version_table, package, member, symbol_one, &ctx);
     version_table = runtime.mir_runtime_table_with_helper(version_table, helper_one, &ctx);
     version_table = runtime.mir_runtime_table_with_classification(version_table, classification_one, &ctx);
     version_table = runtime.mir_runtime_table_with_symbol(version_table, symbol_one, &ctx);
@@ -282,7 +326,7 @@ func main() {
     mut layout_table := runtime.mir_runtime_make_empty_table(target_id, "x86_64-unknown-linux-gnu", &ctx);
     layout_table = runtime.mir_runtime_table_with_abi(layout_table, abi, &ctx);
     layout_table = runtime.mir_runtime_table_with_component(layout_table, component, &ctx);
-    layout_table = runtime.mir_runtime_table_with_package(layout_table, package, &ctx);
+    layout_table = smoke_with_package_manifest(layout_table, package, member, symbol_one, &ctx);
     layout_table = runtime.mir_runtime_table_with_helper(layout_table, helper_one, &ctx);
     layout_table = runtime.mir_runtime_table_with_classification(layout_table, classification_one, &ctx);
     layout_table = runtime.mir_runtime_table_with_symbol(layout_table, symbol_one, &ctx);
@@ -297,7 +341,7 @@ func main() {
     mut unknown_table := runtime.mir_runtime_make_empty_table(target_id, "x86_64-unknown-linux-gnu", &ctx);
     unknown_table = runtime.mir_runtime_table_with_abi(unknown_table, abi, &ctx);
     unknown_table = runtime.mir_runtime_table_with_component(unknown_table, component, &ctx);
-    unknown_table = runtime.mir_runtime_table_with_package(unknown_table, package, &ctx);
+    unknown_table = smoke_with_package_manifest(unknown_table, package, member, symbol_one, &ctx);
     unknown_table = runtime.mir_runtime_table_with_helper(unknown_table, helper_one, &ctx);
     unknown_table = runtime.mir_runtime_table_with_classification(unknown_table, classification_one, &ctx);
     unknown_table = runtime.mir_runtime_table_with_symbol(unknown_table, symbol_one, &ctx);
