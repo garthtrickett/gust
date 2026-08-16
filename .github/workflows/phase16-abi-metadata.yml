@@ -13,7 +13,6 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - run: sudo apt-get update && sudo apt-get install -y ripgrep
       - name: Cache cargo registry and build outputs
         uses: actions/cache@v4
         with:
@@ -29,6 +28,7 @@ jobs:
           key: cargo-${{ runner.os }}-${{ github.workflow }}-${{ hashFiles('compiler/experiments/cranelift/Cargo.lock') }}
           restore-keys: |
             cargo-${{ runner.os }}-${{ github.workflow }}-
+      - run: sudo apt-get update && sudo apt-get install -y ripgrep
       - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - run: just guard-cranelift-phase16-abi-metadata-contract
       - if: always()

@@ -247,3 +247,21 @@ guard to push back — that is the guard doing its job.
 | Date | Change | Aggregate runner time |
 | --- | --- | --- |
 | 2026-08-16 | Baseline measured on PR #41 | 320 min |
+
+## Incident log
+
+**2026-08-16 — cache step split multi-line steps.** The first insertion pass
+placed the cache block at `checkout_line + 1`. Where a workflow's next step was
+a two-line `- name:` / `run:` pair, that landed *inside* the step: the cache step
+inherited a stray `run:` and `Install native dependencies` lost its own. Seven
+workflow files were rejected outright by GitHub (the run name shows as the file
+path when a workflow fails to load).
+
+`yaml.safe_load` did **not** catch this — the result is valid YAML and only
+invalid against the Actions schema. Local validation was checking the wrong
+thing.
+
+Fix: insert at the next *step boundary* (`^      - `) after the checkout step,
+never at a fixed line offset. Added a schema check that asserts every step has
+exactly one of `uses` or `run`; that check fails on the broken form and passes
+on the fixed one. Use it, not `yaml.safe_load`, when editing workflows in bulk.
