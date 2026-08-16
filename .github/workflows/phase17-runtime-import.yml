@@ -37,6 +37,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: guard-cranelift-phase17-runtime-import-contract
         run: python3 scripts/phase17_runtime_import.py --check
 
@@ -46,5 +47,16 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y build-essential curl ripgrep binutils
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: guard-cranelift-phase17-runtime-import-parity
         run: just guard-cranelift-phase17-runtime-import-parity
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase17-runtime-import-diagnostics
+          if-no-files-found: ignore
+          path: |
+            to.log
+            build/gust-build.log
+            build/guards/phase17_runtime_import/
