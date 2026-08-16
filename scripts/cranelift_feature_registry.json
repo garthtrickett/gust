@@ -3808,6 +3808,51 @@
     "scope_policy": "requirements_for_three_approved_scalar_imports_packages_and_selection_remain_in_patch17_4",
     "next_patch": "17.4"
   },
+  "phase17_runtime_package_authority": {
+    "version": "phase17_runtime_package_authority_v1",
+    "status": "ready_for_patch17_5",
+    "authority_owner": "compiler/mir_runtime_boundary_authority.gst",
+    "request_owner": "compiler/mir_native_backend_runtime_request.gst",
+    "manifest_format": "gust.runtime_package_manifest.v1",
+    "build_authority_id": "runtime_build_authority:gust_runtime_package",
+    "selection_policy": "compiler_owned_compatibility_decision_exactly_one_available_package_per_target",
+    "link_execution_policy": "phase9g_executes_declared_link_order_without_choosing_package_or_order",
+    "link_order_policy": "dense_ascending_component_order_declared_per_package",
+    "system_import_policy": "only_enumerated_permitted_system_imports_may_be_referenced",
+    "supported_package_forms": [
+      "static_archive",
+      "deterministic_object_set",
+      "explicit_native_library"
+    ],
+    "manifest_fields": [
+      "components",
+      "provided_symbols",
+      "permitted_system_imports",
+      "target_identity",
+      "runtime_abi_identity",
+      "deterministic_link_order",
+      "compatibility_constraints"
+    ],
+    "target_packages": [
+      {"target_id": "target:v1:triple=x86_64-unknown-linux-gnu:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8", "target_triple": "x86_64-unknown-linux-gnu", "object_format": "Elf", "package_version": "gust-runtime-package-v1", "package_form": "static_archive", "components": ["runtime_component:approved_scalar_imports"], "provided_symbols": ["tiny_host_add_one_i32", "tiny_host_add_i32", "tiny_host_is_positive_i32"], "permitted_system_imports": ["memcpy"], "compatible_version_min": 1, "compatible_version_max": 1},
+      {"target_id": "target:v1:triple=aarch64-unknown-linux-gnu:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8", "target_triple": "aarch64-unknown-linux-gnu", "object_format": "Elf", "package_version": "gust-runtime-package-v1", "package_form": "static_archive", "components": ["runtime_component:approved_scalar_imports"], "provided_symbols": ["tiny_host_add_one_i32", "tiny_host_add_i32", "tiny_host_is_positive_i32"], "permitted_system_imports": ["memcpy"], "compatible_version_min": 1, "compatible_version_max": 1},
+      {"target_id": "target:v1:triple=i686-unknown-linux-gnu:endian=little:ptr_size=4:ptr_align=4:i32_align=4:i64_align=4:max_align=4", "target_triple": "i686-unknown-linux-gnu", "object_format": "Elf", "package_version": "gust-runtime-package-v1", "package_form": "static_archive", "components": ["runtime_component:approved_scalar_imports"], "provided_symbols": ["tiny_host_add_one_i32", "tiny_host_add_i32", "tiny_host_is_positive_i32"], "permitted_system_imports": ["memcpy"], "compatible_version_min": 1, "compatible_version_max": 1},
+      {"target_id": "target:v1:triple=x86_64-apple-darwin:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8", "target_triple": "x86_64-apple-darwin", "object_format": "MachO", "package_version": "gust-runtime-package-v1", "package_form": "static_archive", "components": ["runtime_component:approved_scalar_imports"], "provided_symbols": ["tiny_host_add_one_i32", "tiny_host_add_i32", "tiny_host_is_positive_i32"], "permitted_system_imports": ["memcpy"], "compatible_version_min": 1, "compatible_version_max": 1},
+      {"target_id": "target:v1:triple=aarch64-apple-darwin:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8", "target_triple": "aarch64-apple-darwin", "object_format": "MachO", "package_version": "gust-runtime-package-v1", "package_form": "static_archive", "components": ["runtime_component:approved_scalar_imports"], "provided_symbols": ["tiny_host_add_one_i32", "tiny_host_add_i32", "tiny_host_is_positive_i32"], "permitted_system_imports": ["memcpy"], "compatible_version_min": 1, "compatible_version_max": 1}
+    ],
+    "rejection_classes": [
+      "runtime_package_ambiguous_selection",
+      "runtime_package_target_mismatch",
+      "runtime_package_duplicate_conflicting_component",
+      "runtime_package_missing_mandatory_symbol",
+      "runtime_package_abi_version_incompatible",
+      "runtime_package_undeclared_member_or_system_import",
+      "runtime_package_nondeterministic_component_order"
+    ],
+    "witness_policy": "stable_package_manifest_and_target_selection_witnesses",
+    "scope_policy": "packages_for_three_approved_scalar_imports_cranelift_import_emission_remains_in_patch17_5",
+    "next_patch": "17.5"
+  },
   "phase15_specialized_resource_authority": {
     "version": "phase15_specialized_resource_authority_v1",
     "status": "patch15_11_directory_migrated",

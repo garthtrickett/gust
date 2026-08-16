@@ -20,6 +20,7 @@
     "phase17_runtime_authority",
     "phase17_runtime_symbol_authority",
     "phase17_runtime_requirement_authority",
+    "phase17_runtime_package_authority",
     "phase16_deferred_residue_audit",
     "phase16_closure",
     "phase15_deferred_residue_audit",
@@ -266,6 +267,9 @@
     "phase17_runtime_requirement_authority": {
       "$ref": "#/$defs/phase17_runtime_requirement_authority"
     },
+    "phase17_runtime_package_authority": {
+      "$ref": "#/$defs/phase17_runtime_package_authority"
+    },
     "phase16_deferred_residue_audit": {
       "$ref": "#/$defs/phase16_deferred_residue_audit"
     },
@@ -390,6 +394,47 @@
         "witness_policy": {"const": "stable_requirement_and_canonical_mir_reference_witnesses"},
         "scope_policy": {"const": "requirements_for_three_approved_scalar_imports_packages_and_selection_remain_in_patch17_4"},
         "next_patch": {"const": "17.4"}
+      }
+    },
+    "phase17_runtime_target_package_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target_id", "target_triple", "object_format", "package_version", "package_form", "components", "provided_symbols", "permitted_system_imports", "compatible_version_min", "compatible_version_max"],
+      "properties": {
+        "target_id": {"type": "string", "pattern": "^target:v1:"},
+        "target_triple": {"type": "string", "minLength": 1},
+        "object_format": {"enum": ["Elf", "MachO"]},
+        "package_version": {"const": "gust-runtime-package-v1"},
+        "package_form": {"enum": ["static_archive", "deterministic_object_set", "explicit_native_library"]},
+        "components": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "pattern": "^runtime_component:"}},
+        "provided_symbols": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "permitted_system_imports": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "compatible_version_min": {"const": 1},
+        "compatible_version_max": {"const": 1}
+      }
+    },
+    "phase17_runtime_package_authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "status", "authority_owner", "request_owner", "manifest_format", "build_authority_id", "selection_policy", "link_execution_policy", "link_order_policy", "system_import_policy", "supported_package_forms", "manifest_fields", "target_packages", "rejection_classes", "witness_policy", "scope_policy", "next_patch"],
+      "properties": {
+        "version": {"const": "phase17_runtime_package_authority_v1"},
+        "status": {"const": "ready_for_patch17_5"},
+        "authority_owner": {"const": "compiler/mir_runtime_boundary_authority.gst"},
+        "request_owner": {"const": "compiler/mir_native_backend_runtime_request.gst"},
+        "manifest_format": {"const": "gust.runtime_package_manifest.v1"},
+        "build_authority_id": {"const": "runtime_build_authority:gust_runtime_package"},
+        "selection_policy": {"const": "compiler_owned_compatibility_decision_exactly_one_available_package_per_target"},
+        "link_execution_policy": {"const": "phase9g_executes_declared_link_order_without_choosing_package_or_order"},
+        "link_order_policy": {"const": "dense_ascending_component_order_declared_per_package"},
+        "system_import_policy": {"const": "only_enumerated_permitted_system_imports_may_be_referenced"},
+        "supported_package_forms": {"type": "array", "minItems": 3, "uniqueItems": true, "items": {"enum": ["static_archive", "deterministic_object_set", "explicit_native_library"]}},
+        "manifest_fields": {"type": "array", "minItems": 7, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "target_packages": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/phase17_runtime_target_package_record"}},
+        "rejection_classes": {"type": "array", "minItems": 7, "uniqueItems": true, "items": {"type": "string", "pattern": "^runtime_package_"}},
+        "witness_policy": {"const": "stable_package_manifest_and_target_selection_witnesses"},
+        "scope_policy": {"const": "packages_for_three_approved_scalar_imports_cranelift_import_emission_remains_in_patch17_5"},
+        "next_patch": {"const": "17.5"}
       }
     },
     "phase17_runtime_helper_classification": {

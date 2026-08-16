@@ -153,6 +153,9 @@ jobs:
       - name: Phase 17 canonical MIR runtime requirements
         run: just guard-cranelift-phase17-runtime-requirement-contract
 
+      - name: Phase 17 explicit runtime packages and target selection
+        run: just guard-cranelift-phase17-runtime-package-contract
+
       - name: Upload Gust build outputs
         uses: actions/upload-artifact@v4
         with:

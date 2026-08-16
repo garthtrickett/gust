@@ -1,0 +1,57 @@
+Phase 17.4 — Target-Specific Runtime Package Selection (target view)
+guard: guard-cranelift-phase17-runtime-package-contract
+test_level: level1
+link_order_policy: dense_ascending_component_order_declared_per_package
+system_import_policy: only_enumerated_permitted_system_imports_may_be_referenced
+selected_symbols_per_package: 3
+
+target packages:
+  x86_64-unknown-linux-gnu	Elf	static_archive	gust-runtime-package-v1	1-1
+    link order:
+      0	runtime_component:approved_scalar_imports
+    provided symbols:
+      tiny_host_add_one_i32
+      tiny_host_add_i32
+      tiny_host_is_positive_i32
+    permitted system imports:
+      memcpy
+  aarch64-unknown-linux-gnu	Elf	static_archive	gust-runtime-package-v1	1-1
+    link order:
+      0	runtime_component:approved_scalar_imports
+    provided symbols:
+      tiny_host_add_one_i32
+      tiny_host_add_i32
+      tiny_host_is_positive_i32
+    permitted system imports:
+      memcpy
+  i686-unknown-linux-gnu	Elf	static_archive	gust-runtime-package-v1	1-1
+    link order:
+      0	runtime_component:approved_scalar_imports
+    provided symbols:
+      tiny_host_add_one_i32
+      tiny_host_add_i32
+      tiny_host_is_positive_i32
+    permitted system imports:
+      memcpy
+  x86_64-apple-darwin	MachO	static_archive	gust-runtime-package-v1	1-1
+    link order:
+      0	runtime_component:approved_scalar_imports
+    provided symbols:
+      tiny_host_add_one_i32
+      tiny_host_add_i32
+      tiny_host_is_positive_i32
+    permitted system imports:
+      memcpy
+  aarch64-apple-darwin	MachO	static_archive	gust-runtime-package-v1	1-1
+    link order:
+      0	runtime_component:approved_scalar_imports
+    provided symbols:
+      tiny_host_add_one_i32
+      tiny_host_add_i32
+      tiny_host_is_positive_i32
+    permitted system imports:
+      memcpy
+
+exit gate:
+  package selection is a compiler-owned compatibility decision
+  Phase 9G executes the declared link order and does not choose it

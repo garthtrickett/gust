@@ -65,11 +65,50 @@ type MirRuntimeComponentIdentity[ctx] struct {
     target_id: str
 }
 
+// Phase 17.4 packages are explicit manifests, not directories a linker scans.
+// A package is identified by its runtime ABI version and exact target
+// applicability, and every member, provided symbol, and permitted system import
+// is enumerated before Phase 9G is allowed to execute the link plan.
 type MirRuntimePackageIdentity[ctx] struct {
     package_id: str,
     package_version: str,
     target_id: str,
-    available: int
+    available: int,
+    manifest_format: str,
+    package_form: str,
+    runtime_abi_id: str,
+    target_triple: str,
+    build_authority_id: str,
+    compatible_version_min: int,
+    compatible_version_max: int
+}
+
+// One declared component placed at an explicit, deterministic link position.
+type MirRuntimePackageMember[ctx] struct {
+    member_id: str,
+    package_id: str,
+    component_id: str,
+    link_order: int,
+    object_identity: str
+}
+
+// A symbol the package provides, at the version it provides it.
+type MirRuntimePackageProvidedSymbol[ctx] struct {
+    provided_id: str,
+    package_id: str,
+    symbol_id: str,
+    external_spelling: str,
+    symbol_version: str,
+    component_id: str
+}
+
+// A system import the package is permitted to reference. Anything outside this
+// enumeration is undeclared surface rather than an implicit platform dependency.
+type MirRuntimePackageSystemImport[ctx] struct {
+    import_id: str,
+    package_id: str,
+    external_spelling: str,
+    origin: str
 }
 
 // Phase 17.3 requirements are compiler-produced. One requirement covers every
@@ -148,6 +187,9 @@ type MirRuntimeBoundaryAuthorityTable[ctx] struct {
     symbols: Index[std.Vector[MirRuntimeSymbolIdentity[ctx], ctx], ctx],
     components: Index[std.Vector[MirRuntimeComponentIdentity[ctx], ctx], ctx],
     packages: Index[std.Vector[MirRuntimePackageIdentity[ctx], ctx], ctx],
+    package_members: Index[std.Vector[MirRuntimePackageMember[ctx], ctx], ctx],
+    package_provided_symbols: Index[std.Vector[MirRuntimePackageProvidedSymbol[ctx], ctx], ctx],
+    package_system_imports: Index[std.Vector[MirRuntimePackageSystemImport[ctx], ctx], ctx],
     requirements: Index[std.Vector[MirRuntimeRequirement[ctx], ctx], ctx],
     compatibility_decisions: Index[std.Vector[MirRuntimeCompatibilityDecision[ctx], ctx], ctx],
     link_plans: Index[std.Vector[MirRuntimeLinkPlanHandoff[ctx], ctx], ctx],
@@ -162,6 +204,8 @@ type MirRuntimeComponentQuery[ctx] struct { found: int, value: MirRuntimeCompone
 type MirRuntimePackageQuery[ctx] struct { found: int, value: MirRuntimePackageIdentity[ctx] }
 type MirRuntimeCompatibilityQuery[ctx] struct { compatible: int, reason_code: str }
 type MirRuntimeLinkPlanQuery[ctx] struct { found: int, value: MirRuntimeLinkPlanHandoff[ctx] }
+type MirRuntimePackageSelection[ctx] struct { found: int, reason_code: str, value: MirRuntimePackageIdentity[ctx] }
+type MirRuntimePackageManifestQuery[ctx] struct { valid: int, reason_code: str, member_count: int, provided_symbol_count: int, system_import_count: int }
 type MirRuntimeRequirementQuery[ctx] struct { found: int, value: MirRuntimeRequirement[ctx] }
 type MirRuntimeMirReferenceQuery[ctx] struct { found: int, value: MirRuntimeMirReference[ctx] }
 type MirRuntimeAuthorityValidation[ctx] struct { valid: int, reason_code: str }
@@ -180,6 +224,9 @@ func mir_runtime_empty_symbols(ctx: &Arena) Index[std.Vector[MirRuntimeSymbolIde
 func mir_runtime_empty_components(ctx: &Arena) Index[std.Vector[MirRuntimeComponentIdentity[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimeComponentIdentity[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimeComponentIdentity[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
 func mir_runtime_empty_packages(ctx: &Arena) Index[std.Vector[MirRuntimePackageIdentity[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimePackageIdentity[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimePackageIdentity[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
 func mir_runtime_empty_requirements(ctx: &Arena) Index[std.Vector[MirRuntimeRequirement[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimeRequirement[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimeRequirement[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
+func mir_runtime_empty_package_members(ctx: &Arena) Index[std.Vector[MirRuntimePackageMember[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimePackageMember[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimePackageMember[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
+func mir_runtime_empty_package_provided_symbols(ctx: &Arena) Index[std.Vector[MirRuntimePackageProvidedSymbol[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimePackageProvidedSymbol[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimePackageProvidedSymbol[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
+func mir_runtime_empty_package_system_imports(ctx: &Arena) Index[std.Vector[MirRuntimePackageSystemImport[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimePackageSystemImport[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimePackageSystemImport[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
 func mir_runtime_empty_compatibility(ctx: &Arena) Index[std.Vector[MirRuntimeCompatibilityDecision[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimeCompatibilityDecision[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimeCompatibilityDecision[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
 func mir_runtime_empty_link_plans(ctx: &Arena) Index[std.Vector[MirRuntimeLinkPlanHandoff[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimeLinkPlanHandoff[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimeLinkPlanHandoff[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
 func mir_runtime_empty_references(ctx: &Arena) Index[std.Vector[MirRuntimeMirReference[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimeMirReference[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimeMirReference[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
@@ -197,6 +244,15 @@ func mir_runtime_helper_classification_is_valid(value: str) int {
     if std.str_eq(value, "retained_c_runtime_component") == 1 { return 1; }
     if std.str_eq(value, "pure_gust_runtime_component") == 1 { return 1; }
     if std.str_eq(value, "obsolete_helper") == 1 { return 1; }
+    return 0;
+}
+
+// Phase 17.4 package forms are explicitly enumerated. A form outside this set is
+// rejected rather than handed to the linker as an unclassified native artifact.
+func mir_runtime_package_form_is_valid(value: str) int {
+    if std.str_eq(value, "static_archive") == 1 { return 1; }
+    if std.str_eq(value, "deterministic_object_set") == 1 { return 1; }
+    if std.str_eq(value, "explicit_native_library") == 1 { return 1; }
     return 0;
 }
 
@@ -222,6 +278,9 @@ func mir_runtime_symbol_identity_id(helper_id: str, symbol_version: str, target_
 func mir_runtime_component_identity_id(component_kind: str, target_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_component:v1:kind="; value = std.Concat(value, component_kind); value = std.Concat(value, ":target="); value = std.Concat(value, target_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
 func mir_runtime_package_identity_id(target_id: str, package_version: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_package:v1:target="; value = std.Concat(value, target_id); value = std.Concat(value, ":version="); value = std.Concat(value, package_version); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
 func mir_runtime_requirement_id(program_id: str, helper_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_requirement:v1:program="; value = std.Concat(value, program_id); value = std.Concat(value, ":helper="); value = std.Concat(value, helper_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
+func mir_runtime_package_member_id(package_id: str, component_id: str, link_order: int, ctx: &Arena) str { mut value := "runtime_package_member:v1:package="; value = std.Concat(value, package_id); value = std.Concat(value, ":component="); value = std.Concat(value, component_id); value = std.Concat(value, ":link_order="); value = std.Concat(value, std.FormatInt(link_order)); return std.Clone(ctx, value); }
+func mir_runtime_package_provided_symbol_id(package_id: str, symbol_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_package_provided:v1:package="; value = std.Concat(value, package_id); value = std.Concat(value, ":symbol="); value = std.Concat(value, symbol_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
+func mir_runtime_package_system_import_id(package_id: str, external_spelling: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_package_system_import:v1:package="; value = std.Concat(value, package_id); value = std.Concat(value, ":spelling="); value = std.Concat(value, external_spelling); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
 func mir_runtime_mir_reference_id(mir_operation_id: str, helper_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_mir_reference:v1:operation="; value = std.Concat(value, mir_operation_id); value = std.Concat(value, ":helper="); value = std.Concat(value, helper_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
 func mir_runtime_compatibility_decision_id(requirement_id: str, package_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_compatibility:v1:requirement="; value = std.Concat(value, requirement_id); value = std.Concat(value, ":package="); value = std.Concat(value, package_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
 func mir_runtime_link_plan_id(program_id: str, package_id: str, target_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_link_plan:v1:program="; value = std.Concat(value, program_id); value = std.Concat(value, ":package="); value = std.Concat(value, package_id); value = std.Concat(value, ":target="); value = std.Concat(value, target_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
@@ -242,6 +301,9 @@ func mir_runtime_make_empty_table(target_id: str, target_triple: str, ctx: &Aren
     table.symbols = mir_runtime_empty_symbols(ctx);
     table.components = mir_runtime_empty_components(ctx);
     table.packages = mir_runtime_empty_packages(ctx);
+    table.package_members = mir_runtime_empty_package_members(ctx);
+    table.package_provided_symbols = mir_runtime_empty_package_provided_symbols(ctx);
+    table.package_system_imports = mir_runtime_empty_package_system_imports(ctx);
     table.requirements = mir_runtime_empty_requirements(ctx);
     table.compatibility_decisions = mir_runtime_empty_compatibility(ctx);
     table.link_plans = mir_runtime_empty_link_plans(ctx);
@@ -255,6 +317,9 @@ func mir_runtime_table_with_classification(table: MirRuntimeBoundaryAuthorityTab
 func mir_runtime_table_with_symbol(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimeSymbolIdentity[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimeSymbolIdentity[ctx], ctx] := ctx[table.symbols]; values.Push(value); ctx.Set(table.symbols, values); return table; }
 func mir_runtime_table_with_component(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimeComponentIdentity[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimeComponentIdentity[ctx], ctx] := ctx[table.components]; values.Push(value); ctx.Set(table.components, values); return table; }
 func mir_runtime_table_with_package(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimePackageIdentity[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimePackageIdentity[ctx], ctx] := ctx[table.packages]; values.Push(value); ctx.Set(table.packages, values); return table; }
+func mir_runtime_table_with_package_member(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimePackageMember[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimePackageMember[ctx], ctx] := ctx[table.package_members]; values.Push(value); ctx.Set(table.package_members, values); return table; }
+func mir_runtime_table_with_package_provided_symbol(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimePackageProvidedSymbol[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimePackageProvidedSymbol[ctx], ctx] := ctx[table.package_provided_symbols]; values.Push(value); ctx.Set(table.package_provided_symbols, values); return table; }
+func mir_runtime_table_with_package_system_import(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimePackageSystemImport[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimePackageSystemImport[ctx], ctx] := ctx[table.package_system_imports]; values.Push(value); ctx.Set(table.package_system_imports, values); return table; }
 func mir_runtime_table_with_requirement(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimeRequirement[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimeRequirement[ctx], ctx] := ctx[table.requirements]; values.Push(value); ctx.Set(table.requirements, values); return table; }
 func mir_runtime_table_with_compatibility(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimeCompatibilityDecision[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimeCompatibilityDecision[ctx], ctx] := ctx[table.compatibility_decisions]; values.Push(value); ctx.Set(table.compatibility_decisions, values); return table; }
 func mir_runtime_table_with_link_plan(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimeLinkPlanHandoff[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimeLinkPlanHandoff[ctx], ctx] := ctx[table.link_plans]; values.Push(value); ctx.Set(table.link_plans, values); return table; }
@@ -321,6 +386,74 @@ func mir_runtime_component_for(table: MirRuntimeBoundaryAuthorityTable[ctx], hel
 // select_runtime_package(requirements, target)
 func mir_select_runtime_package(table: MirRuntimeBoundaryAuthorityTable[ctx], requirements: Index[std.Vector[MirRuntimeRequirement[ctx], ctx], ctx], target_id: str, ctx: &Arena) MirRuntimePackageQuery[ctx] { mut result: MirRuntimePackageQuery[ctx]; result.found = 0; mut required_values: std.Vector[MirRuntimeRequirement[ctx], ctx] := ctx[requirements]; mut packages: std.Vector[MirRuntimePackageIdentity[ctx], ctx] := ctx[table.packages]; mut index := 0; while index < len(packages) { if packages[index].available == 1 && std.str_eq(packages[index].target_id, target_id) == 1 { mut all_match := 1; mut req_index := 0; while req_index < len(required_values) { if std.str_eq(required_values[req_index].package_id, packages[index].package_id) == 0 { all_match = 0; } req_index = req_index + 1; } if all_match == 1 { result.found = 1; result.value = packages[index]; return result; } } index = index + 1; } return result; }
 
+func mir_runtime_package_by_id(table: MirRuntimeBoundaryAuthorityTable[ctx], package_id: str, ctx: &Arena) MirRuntimePackageQuery[ctx] { mut result: MirRuntimePackageQuery[ctx]; result.found = 0; mut values: std.Vector[MirRuntimePackageIdentity[ctx], ctx] := ctx[table.packages]; mut index := 0; while index < len(values) { if std.str_eq(values[index].package_id, package_id) == 1 { result.found = 1; result.value = values[index]; return result; } index = index + 1; } return result; }
+
+func mir_runtime_package_provides_symbol(table: MirRuntimeBoundaryAuthorityTable[ctx], package_id: str, symbol_id: str, ctx: &Arena) int { mut values: std.Vector[MirRuntimePackageProvidedSymbol[ctx], ctx] := ctx[table.package_provided_symbols]; mut index := 0; while index < len(values) { if std.str_eq(values[index].package_id, package_id) == 1 && std.str_eq(values[index].symbol_id, symbol_id) == 1 { return 1; } index = index + 1; } return 0; }
+
+// runtime_package_manifest(package) reports the enumerated manifest surface.
+// Counts are derived from the declared records rather than stored, so a manifest
+// can never claim more or fewer members than it actually enumerates.
+func mir_runtime_package_manifest(table: MirRuntimeBoundaryAuthorityTable[ctx], package_id: str, ctx: &Arena) MirRuntimePackageManifestQuery[ctx] {
+    mut result: MirRuntimePackageManifestQuery[ctx];
+    result.valid = 0;
+    result.member_count = 0;
+    result.provided_symbol_count = 0;
+    result.system_import_count = 0;
+    mut package := mir_runtime_package_by_id(table, package_id, ctx);
+    if package.found == 0 { result.reason_code = std.Clone(ctx, "runtime_package_target_mismatch"); return result; }
+    mut members: std.Vector[MirRuntimePackageMember[ctx], ctx] := ctx[table.package_members];
+    mut index := 0;
+    while index < len(members) { if std.str_eq(members[index].package_id, package_id) == 1 { result.member_count = result.member_count + 1; } index = index + 1; }
+    mut provided: std.Vector[MirRuntimePackageProvidedSymbol[ctx], ctx] := ctx[table.package_provided_symbols];
+    index = 0;
+    while index < len(provided) { if std.str_eq(provided[index].package_id, package_id) == 1 { result.provided_symbol_count = result.provided_symbol_count + 1; } index = index + 1; }
+    mut imports: std.Vector[MirRuntimePackageSystemImport[ctx], ctx] := ctx[table.package_system_imports];
+    index = 0;
+    while index < len(imports) { if std.str_eq(imports[index].package_id, package_id) == 1 { result.system_import_count = result.system_import_count + 1; } index = index + 1; }
+    result.valid = 1;
+    result.reason_code = std.Clone(ctx, "runtime_package_manifest_valid");
+    return result;
+}
+
+// select_runtime_package_for_target(requirements, target) is the compiler-owned
+// compatibility decision. Exactly one available package must satisfy every
+// requirement; zero and two are both rejections rather than a linker fallback.
+func mir_runtime_select_package_for_target(table: MirRuntimeBoundaryAuthorityTable[ctx], requirements: Index[std.Vector[MirRuntimeRequirement[ctx], ctx], ctx], target_id: str, ctx: &Arena) MirRuntimePackageSelection[ctx] {
+    mut result: MirRuntimePackageSelection[ctx];
+    result.found = 0;
+    result.reason_code = std.Clone(ctx, "runtime_package_missing_mandatory_symbol");
+    mut required_values: std.Vector[MirRuntimeRequirement[ctx], ctx] := ctx[requirements];
+    mut packages: std.Vector[MirRuntimePackageIdentity[ctx], ctx] := ctx[table.packages];
+    mut candidate_count := 0;
+    mut package_index := 0;
+    while package_index < len(packages) {
+        if packages[package_index].available == 1 && std.str_eq(packages[package_index].target_id, target_id) == 1 {
+            mut satisfies := 1;
+            mut requirement_index := 0;
+            while requirement_index < len(required_values) {
+                if mir_runtime_package_provides_symbol(table, packages[package_index].package_id, required_values[requirement_index].symbol_id, ctx) == 0 { satisfies = 0; }
+                if std.str_eq(required_values[requirement_index].runtime_abi_id, packages[package_index].runtime_abi_id) == 0 { satisfies = 0; }
+                if required_values[requirement_index].required_version_min < packages[package_index].compatible_version_min ||
+                   required_values[requirement_index].required_version_max > packages[package_index].compatible_version_max
+                {
+                    satisfies = 0;
+                }
+                requirement_index = requirement_index + 1;
+            }
+            if satisfies == 1 {
+                candidate_count = candidate_count + 1;
+                if candidate_count == 1 { result.value = packages[package_index]; }
+            }
+        }
+        package_index = package_index + 1;
+    }
+    if candidate_count > 1 { result.found = 0; result.reason_code = std.Clone(ctx, "runtime_package_ambiguous_selection"); return result; }
+    if candidate_count == 0 { return result; }
+    result.found = 1;
+    result.reason_code = std.Clone(ctx, "runtime_package_selected");
+    return result;
+}
+
 // validate_runtime_compatibility(requirements, package)
 func mir_validate_runtime_compatibility(table: MirRuntimeBoundaryAuthorityTable[ctx], requirements: Index[std.Vector[MirRuntimeRequirement[ctx], ctx], ctx], package_id: str, ctx: &Arena) MirRuntimeCompatibilityQuery[ctx] { mut result: MirRuntimeCompatibilityQuery[ctx]; result.compatible = 0; result.reason_code = std.Clone(ctx, "runtime_compatibility_mismatch"); mut required_values: std.Vector[MirRuntimeRequirement[ctx], ctx] := ctx[requirements]; mut decisions: std.Vector[MirRuntimeCompatibilityDecision[ctx], ctx] := ctx[table.compatibility_decisions]; mut req_index := 0; while req_index < len(required_values) { mut found := 0; mut decision_index := 0; while decision_index < len(decisions) { if std.str_eq(decisions[decision_index].requirement_id, required_values[req_index].requirement_id) == 1 && std.str_eq(decisions[decision_index].package_id, package_id) == 1 && decisions[decision_index].compatible == 1 { found = 1; } decision_index = decision_index + 1; } if found == 0 { return result; } req_index = req_index + 1; } result.compatible = 1; result.reason_code = std.Clone(ctx, "runtime_compatible"); return result; }
 
@@ -377,6 +510,100 @@ func mir_runtime_boundary_authority_table_validate(table: MirRuntimeBoundaryAuth
         mut duplicate_symbol_index := symbol_index + 1; while duplicate_symbol_index < len(symbols) { if std.str_eq(symbols[symbol_index].symbol_id, symbols[duplicate_symbol_index].symbol_id) == 1 { return mir_runtime_validation(0, "runtime_symbol_duplicate_conflict", ctx); } if std.str_eq(symbols[symbol_index].external_spelling, symbols[duplicate_symbol_index].external_spelling) == 1 { if std.str_eq(symbols[symbol_index].runtime_abi_id, symbols[duplicate_symbol_index].runtime_abi_id) == 0 || std.str_eq(symbols[symbol_index].function_abi_id, symbols[duplicate_symbol_index].function_abi_id) == 0 { return mir_runtime_validation(0, "runtime_symbol_spelling_abi_conflict", ctx); } return mir_runtime_validation(0, "runtime_symbol_duplicate_conflict", ctx); } duplicate_symbol_index = duplicate_symbol_index + 1; }
         symbol_index = symbol_index + 1;
     }
+    // Phase 17.4: freeze the package manifest before any requirement consults it.
+    mut members: std.Vector[MirRuntimePackageMember[ctx], ctx] := ctx[table.package_members];
+    mut provided: std.Vector[MirRuntimePackageProvidedSymbol[ctx], ctx] := ctx[table.package_provided_symbols];
+    mut system_imports: std.Vector[MirRuntimePackageSystemImport[ctx], ctx] := ctx[table.package_system_imports];
+    mut manifest_package_index := 0;
+    while manifest_package_index < len(packages) {
+        if mir_runtime_field_is_safe(packages[manifest_package_index].package_id) == 0 || mir_runtime_field_is_safe(packages[manifest_package_index].package_version) == 0 || mir_runtime_field_is_safe(packages[manifest_package_index].build_authority_id) == 0 { return mir_runtime_validation(0, "runtime_package_undeclared_member_or_system_import", ctx); }
+        if std.str_eq(packages[manifest_package_index].manifest_format, "gust.runtime_package_manifest.v1") == 0 || mir_runtime_package_form_is_valid(packages[manifest_package_index].package_form) == 0 { return mir_runtime_validation(0, "runtime_package_undeclared_member_or_system_import", ctx); }
+
+        // Package identity is target-exact: a package for another target is
+        // never a fallback candidate.
+        if std.str_eq(packages[manifest_package_index].target_id, table.target_id) == 0 || std.str_eq(packages[manifest_package_index].target_triple, table.target_triple) == 0 { return mir_runtime_validation(0, "runtime_package_target_mismatch", ctx); }
+        mut package_abi := mir_runtime_abi_by_id(table, packages[manifest_package_index].runtime_abi_id, ctx);
+        if package_abi.found == 0 { return mir_runtime_validation(0, "runtime_package_abi_version_incompatible", ctx); }
+        if packages[manifest_package_index].compatible_version_min < package_abi.value.compatible_version_min ||
+           packages[manifest_package_index].compatible_version_max > package_abi.value.compatible_version_max ||
+           packages[manifest_package_index].compatible_version_max < packages[manifest_package_index].compatible_version_min
+        {
+            return mir_runtime_validation(0, "runtime_package_abi_version_incompatible", ctx);
+        }
+        mut duplicate_manifest_package_index := manifest_package_index + 1;
+        while duplicate_manifest_package_index < len(packages) { if std.str_eq(packages[manifest_package_index].package_id, packages[duplicate_manifest_package_index].package_id) == 1 { return mir_runtime_validation(0, "runtime_package_duplicate_conflicting_component", ctx); } duplicate_manifest_package_index = duplicate_manifest_package_index + 1; }
+
+        // Deterministic link order: the members of one package must occupy
+        // exactly positions 0..n-1, declared in ascending order, with no
+        // repeated component and no repeated position.
+        mut expected_order := 0;
+        mut member_index := 0;
+        while member_index < len(members) {
+            if std.str_eq(members[member_index].package_id, packages[manifest_package_index].package_id) == 1 {
+                if members[member_index].link_order != expected_order { return mir_runtime_validation(0, "runtime_package_nondeterministic_component_order", ctx); }
+                mut component_found := 0;
+                mut component_index := 0;
+                while component_index < len(components) { if std.str_eq(components[component_index].component_id, members[member_index].component_id) == 1 && std.str_eq(components[component_index].target_id, table.target_id) == 1 { component_found = 1; } component_index = component_index + 1; }
+                if component_found == 0 { return mir_runtime_validation(0, "runtime_package_undeclared_member_or_system_import", ctx); }
+                mut duplicate_member_index := member_index + 1;
+                while duplicate_member_index < len(members) {
+                    if std.str_eq(members[duplicate_member_index].package_id, packages[manifest_package_index].package_id) == 1 &&
+                       (std.str_eq(members[member_index].component_id, members[duplicate_member_index].component_id) == 1 ||
+                        members[member_index].link_order == members[duplicate_member_index].link_order)
+                    {
+                        return mir_runtime_validation(0, "runtime_package_duplicate_conflicting_component", ctx);
+                    }
+                    duplicate_member_index = duplicate_member_index + 1;
+                }
+                expected_order = expected_order + 1;
+            }
+            member_index = member_index + 1;
+        }
+        if expected_order == 0 { return mir_runtime_validation(0, "runtime_package_undeclared_member_or_system_import", ctx); }
+        manifest_package_index = manifest_package_index + 1;
+    }
+
+    // Every provided symbol must be compiler-owned and come from a package
+    // member; a package cannot provide a symbol from an unenumerated component.
+    mut provided_index := 0;
+    while provided_index < len(provided) {
+        mut provided_package := mir_runtime_package_by_id(table, provided[provided_index].package_id, ctx);
+        if provided_package.found == 0 { return mir_runtime_validation(0, "runtime_package_undeclared_member_or_system_import", ctx); }
+        mut provided_symbol := mir_runtime_symbol_by_id(table, provided[provided_index].symbol_id, ctx);
+        if provided_symbol.found == 0 { return mir_runtime_validation(0, "runtime_package_undeclared_member_or_system_import", ctx); }
+        if std.str_eq(provided_symbol.value.external_spelling, provided[provided_index].external_spelling) == 0 ||
+           std.str_eq(provided_symbol.value.symbol_version, provided[provided_index].symbol_version) == 0 ||
+           std.str_eq(provided_symbol.value.component_id, provided[provided_index].component_id) == 0
+        {
+            return mir_runtime_validation(0, "runtime_package_missing_mandatory_symbol", ctx);
+        }
+        mut member_backed := 0;
+        mut backing_index := 0;
+        while backing_index < len(members) { if std.str_eq(members[backing_index].package_id, provided[provided_index].package_id) == 1 && std.str_eq(members[backing_index].component_id, provided[provided_index].component_id) == 1 { member_backed = 1; } backing_index = backing_index + 1; }
+        if member_backed == 0 { return mir_runtime_validation(0, "runtime_package_undeclared_member_or_system_import", ctx); }
+        mut duplicate_provided_index := provided_index + 1;
+        while duplicate_provided_index < len(provided) {
+            if std.str_eq(provided[provided_index].package_id, provided[duplicate_provided_index].package_id) == 1 &&
+               (std.str_eq(provided[provided_index].symbol_id, provided[duplicate_provided_index].symbol_id) == 1 ||
+                std.str_eq(provided[provided_index].external_spelling, provided[duplicate_provided_index].external_spelling) == 1)
+            {
+                return mir_runtime_validation(0, "runtime_package_duplicate_conflicting_component", ctx);
+            }
+            duplicate_provided_index = duplicate_provided_index + 1;
+        }
+        provided_index = provided_index + 1;
+    }
+
+    mut system_import_index := 0;
+    while system_import_index < len(system_imports) {
+        mut import_package := mir_runtime_package_by_id(table, system_imports[system_import_index].package_id, ctx);
+        if import_package.found == 0 { return mir_runtime_validation(0, "runtime_package_undeclared_member_or_system_import", ctx); }
+        if mir_runtime_field_is_safe(system_imports[system_import_index].external_spelling) == 0 || mir_runtime_field_is_safe(system_imports[system_import_index].origin) == 0 { return mir_runtime_validation(0, "runtime_package_undeclared_member_or_system_import", ctx); }
+        mut duplicate_import_index := system_import_index + 1;
+        while duplicate_import_index < len(system_imports) { if std.str_eq(system_imports[system_import_index].package_id, system_imports[duplicate_import_index].package_id) == 1 && std.str_eq(system_imports[system_import_index].external_spelling, system_imports[duplicate_import_index].external_spelling) == 1 { return mir_runtime_validation(0, "runtime_package_duplicate_conflicting_component", ctx); } duplicate_import_index = duplicate_import_index + 1; }
+        system_import_index = system_import_index + 1;
+    }
+
     mut requirement_index := 0;
     while requirement_index < len(requirements) {
         mut helper := mir_runtime_helper_by_id(table, requirements[requirement_index].helper_id, ctx);
@@ -429,6 +656,12 @@ func mir_runtime_boundary_authority_table_validate(table: MirRuntimeBoundaryAuth
         if requirements[requirement_index].required != 0 && requirements[requirement_index].required != 1 { return mir_runtime_validation(0, "runtime_requirement_mismatch", ctx); }
         if requirements[requirement_index].required == 1 && requirement_symbol.value.required == 0 { return mir_runtime_validation(0, "runtime_requirement_classification_conflict", ctx); }
 
+        // Phase 17.4: once the requirement itself is well formed, the package it
+        // names must actually provide the symbol, before Phase 9G executes any
+        // link plan. This runs after symbol resolution so a malformed
+        // requirement still reports its own defect rather than a package miss.
+        if mir_runtime_package_provides_symbol(table, requirements[requirement_index].package_id, requirements[requirement_index].symbol_id, ctx) == 0 { return mir_runtime_validation(0, "runtime_package_missing_mandatory_symbol", ctx); }
+
         // Duplicate requirement identities, and two requirements claiming the
         // same symbol in one program, are conflicts rather than deduplication.
         mut duplicate_requirement_index := requirement_index + 1;
@@ -454,7 +687,28 @@ func mir_runtime_boundary_authority_table_validate(table: MirRuntimeBoundaryAuth
         requirement_index = requirement_index + 1;
     }
     mut decision_index := 0; while decision_index < len(decisions) { mut requirement_found := 0; requirement_index = 0; while requirement_index < len(requirements) { if std.str_eq(requirements[requirement_index].requirement_id, decisions[decision_index].requirement_id) == 1 { requirement_found = 1; } requirement_index = requirement_index + 1; } if requirement_found == 0 { return mir_runtime_validation(0, "runtime_compatibility_mismatch", ctx); } decision_index = decision_index + 1; }
-    mut plan_index := 0; while plan_index < len(plans) { if plans[plan_index].compatible == 0 { return mir_runtime_validation(0, "runtime_link_plan_unresolved", ctx); } if std.str_eq(plans[plan_index].target_id, table.target_id) == 0 { return mir_runtime_validation(0, "runtime_target_mismatch", ctx); } plan_index = plan_index + 1; }
+    mut plan_index := 0;
+    while plan_index < len(plans) {
+        if plans[plan_index].compatible == 0 { return mir_runtime_validation(0, "runtime_link_plan_unresolved", ctx); }
+        if std.str_eq(plans[plan_index].target_id, table.target_id) == 0 { return mir_runtime_validation(0, "runtime_target_mismatch", ctx); }
+        // Phase 17.4: Phase 9G executes the plan, but the component order in it
+        // is the package's declared link order, not a linker-chosen sequence.
+        mut plan_package := mir_runtime_package_by_id(table, plans[plan_index].package_id, ctx);
+        if plan_package.found == 0 { return mir_runtime_validation(0, "runtime_unknown_package_id", ctx); }
+        mut plan_components: std.Vector[str, ctx] := ctx[plans[plan_index].component_ids];
+        mut ordered_index := 0;
+        mut plan_member_index := 0;
+        while plan_member_index < len(members) {
+            if std.str_eq(members[plan_member_index].package_id, plans[plan_index].package_id) == 1 {
+                if ordered_index >= len(plan_components) { return mir_runtime_validation(0, "runtime_package_nondeterministic_component_order", ctx); }
+                if std.str_eq(plan_components[ordered_index], members[plan_member_index].component_id) == 0 { return mir_runtime_validation(0, "runtime_package_nondeterministic_component_order", ctx); }
+                ordered_index = ordered_index + 1;
+            }
+            plan_member_index = plan_member_index + 1;
+        }
+        if ordered_index != len(plan_components) { return mir_runtime_validation(0, "runtime_package_nondeterministic_component_order", ctx); }
+        plan_index = plan_index + 1;
+    }
     mut reference_index := 0;
     while reference_index < len(references) {
         mut helper := mir_runtime_helper_by_id(table, references[reference_index].helper_id, ctx);
@@ -531,6 +785,38 @@ func mir_serialize_runtime_boundary_authority_table_for_request(table: MirRuntim
         output = mir_runtime_append_field(output, "runtime_requirement_version_max", std.FormatInt(requirements[index].required_version_max), ctx);
         output = mir_runtime_append_field(output, "runtime_requirement_call_kind", requirements[index].call_kind, ctx);
         output = mir_runtime_append_field(output, "runtime_requirement_package_mandatory", std.FormatInt(requirements[index].package_mandatory), ctx);
+        index = index + 1;
+    }
+    mut packages: std.Vector[MirRuntimePackageIdentity[ctx], ctx] := ctx[table.packages];
+    mut members: std.Vector[MirRuntimePackageMember[ctx], ctx] := ctx[table.package_members];
+    mut provided: std.Vector[MirRuntimePackageProvidedSymbol[ctx], ctx] := ctx[table.package_provided_symbols];
+    mut system_imports: std.Vector[MirRuntimePackageSystemImport[ctx], ctx] := ctx[table.package_system_imports];
+    index = 0;
+    while index < len(packages) {
+        output = mir_runtime_append_field(output, "runtime_package_id", packages[index].package_id, ctx);
+        output = mir_runtime_append_field(output, "runtime_package_manifest_format", packages[index].manifest_format, ctx);
+        output = mir_runtime_append_field(output, "runtime_package_form", packages[index].package_form, ctx);
+        output = mir_runtime_append_field(output, "runtime_package_build_authority", packages[index].build_authority_id, ctx);
+        output = mir_runtime_append_field(output, "runtime_package_target_triple", packages[index].target_triple, ctx);
+        index = index + 1;
+    }
+    index = 0;
+    while index < len(members) {
+        output = mir_runtime_append_field(output, "runtime_package_member_id", members[index].member_id, ctx);
+        output = mir_runtime_append_field(output, "runtime_package_member_link_order", std.FormatInt(members[index].link_order), ctx);
+        index = index + 1;
+    }
+    index = 0;
+    while index < len(provided) {
+        output = mir_runtime_append_field(output, "runtime_package_provided_id", provided[index].provided_id, ctx);
+        output = mir_runtime_append_field(output, "runtime_package_provided_spelling", provided[index].external_spelling, ctx);
+        output = mir_runtime_append_field(output, "runtime_package_provided_version", provided[index].symbol_version, ctx);
+        index = index + 1;
+    }
+    index = 0;
+    while index < len(system_imports) {
+        output = mir_runtime_append_field(output, "runtime_package_system_import_id", system_imports[index].import_id, ctx);
+        output = mir_runtime_append_field(output, "runtime_package_system_import_spelling", system_imports[index].external_spelling, ctx);
         index = index + 1;
     }
     index = 0;

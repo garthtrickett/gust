@@ -363,6 +363,18 @@ Patch 17.2 freezes the runtime ABI on every Phase 14 declared target and assigns
 
 Patch 17.3 carries compiler-produced runtime requirements through canonical MIR references and a deterministic, deduplicated native request table. The worker validates these rows and rejects malformed runtime metadata; it never infers runtime ownership from unresolved symbols, generated C, or linker behaviour. Runtime packages and target-specific selection remain owned by Patch 17.4.
 
+## Phase 17 runtime package and target selection authority
+
+- Authority version: `phase17_runtime_package_authority_v1`
+- Status: `ready_for_patch17_5`
+- Manifest format: `gust.runtime_package_manifest.v1`
+- Build authority: `runtime_build_authority:gust_runtime_package`
+- Supported package forms: `3`
+- Registry-derived target packages: `5`
+- Package forms in the selected inventory: `static_archive`
+
+Patch 17.4 freezes the runtime package manifest schema, gives every Phase 14 declared target one explicit package identified by runtime ABI version and exact target applicability, and makes package selection a compiler-owned compatibility decision. Phase 9G still executes the link plan; it does not choose the package or its component order. Cranelift stable-import emission remains owned by Patch 17.5.
+
 ## Registry entries
 
 | ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |

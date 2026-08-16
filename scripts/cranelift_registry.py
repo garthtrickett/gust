@@ -26,6 +26,7 @@ TOP_FIELDS = {
     "phase17_runtime_authority",
     "phase17_runtime_symbol_authority",
     "phase17_runtime_requirement_authority",
+    "phase17_runtime_package_authority",
     "phase16_deferred_residue_audit",
     "phase16_closure",
     "phase15_deferred_residue_audit",
@@ -883,6 +884,37 @@ PHASE17_RUNTIME_REQUIREMENT_REJECTIONS = (
     "runtime_requirement_symbol_version_incompatible",
     "runtime_requirement_target_or_layout_mismatch",
     "runtime_requirement_classification_conflict",
+)
+
+PHASE17_RUNTIME_PACKAGE_AUTHORITY_FIELDS = {
+    "version", "status", "authority_owner", "request_owner",
+    "manifest_format", "build_authority_id", "selection_policy",
+    "link_execution_policy", "link_order_policy", "system_import_policy",
+    "supported_package_forms", "manifest_fields", "target_packages",
+    "rejection_classes", "witness_policy", "scope_policy", "next_patch",
+}
+PHASE17_RUNTIME_TARGET_PACKAGE_FIELDS = {
+    "target_id", "target_triple", "object_format", "package_version",
+    "package_form", "components", "provided_symbols",
+    "permitted_system_imports", "compatible_version_min",
+    "compatible_version_max",
+}
+PHASE17_RUNTIME_PACKAGE_FORMS = (
+    "static_archive", "deterministic_object_set", "explicit_native_library",
+)
+PHASE17_RUNTIME_PACKAGE_MANIFEST_FIELDS = (
+    "components", "provided_symbols", "permitted_system_imports",
+    "target_identity", "runtime_abi_identity", "deterministic_link_order",
+    "compatibility_constraints",
+)
+PHASE17_RUNTIME_PACKAGE_REJECTIONS = (
+    "runtime_package_ambiguous_selection",
+    "runtime_package_target_mismatch",
+    "runtime_package_duplicate_conflicting_component",
+    "runtime_package_missing_mandatory_symbol",
+    "runtime_package_abi_version_incompatible",
+    "runtime_package_undeclared_member_or_system_import",
+    "runtime_package_nondeterministic_component_order",
 )
 
 PHASE14_LAYOUT_AUTHORITY_FIELDS = {
@@ -2326,6 +2358,89 @@ def validate_phase17_runtime_requirement_authority_structure(registry):
     return authority
 
 
+def validate_phase17_runtime_package_authority_structure(registry):
+    authority = registry["phase17_runtime_package_authority"]
+    require(isinstance(authority, dict)
+            and set(authority) == PHASE17_RUNTIME_PACKAGE_AUTHORITY_FIELDS,
+            "Phase 17 runtime package authority fields drifted")
+    require(authority["version"] == "phase17_runtime_package_authority_v1"
+            and authority["status"] == "ready_for_patch17_5"
+            and authority["authority_owner"]
+            == "compiler/mir_runtime_boundary_authority.gst"
+            and authority["request_owner"]
+            == "compiler/mir_native_backend_runtime_request.gst"
+            and authority["manifest_format"]
+            == "gust.runtime_package_manifest.v1"
+            and authority["build_authority_id"]
+            == "runtime_build_authority:gust_runtime_package",
+            "Phase 17 runtime package authority ownership drifted")
+    require(tuple(authority["supported_package_forms"])
+            == PHASE17_RUNTIME_PACKAGE_FORMS,
+            "Phase 17 runtime package form inventory drifted")
+    require(tuple(authority["manifest_fields"])
+            == PHASE17_RUNTIME_PACKAGE_MANIFEST_FIELDS,
+            "Phase 17 runtime package manifest schema drifted")
+    require(tuple(authority["rejection_classes"])
+            == PHASE17_RUNTIME_PACKAGE_REJECTIONS,
+            "Phase 17 runtime package rejection inventory drifted")
+
+    # Every Phase 14 declared target gets exactly one package, and the symbols
+    # it provides are the Phase 17.2 selected inventory — not a wider surface.
+    declared_targets = registry["phase14_primitive_layout"]["declared_targets"]
+    selected_spellings = [
+        row["external_spelling"]
+        for row in registry["phase17_runtime_symbol_authority"]
+        ["selected_symbols"]
+    ]
+    package_rows = authority["target_packages"]
+    require(isinstance(package_rows, list)
+            and len(package_rows) == len(declared_targets),
+            "Phase 17 runtime package target coverage drifted")
+    seen = set()
+    for index, (row, target) in enumerate(zip(package_rows, declared_targets)):
+        context = f"phase17_runtime_package_authority.target_packages[{index}]"
+        require(isinstance(row, dict)
+                and set(row) == PHASE17_RUNTIME_TARGET_PACKAGE_FIELDS,
+                f"{context} fields drifted")
+        require(row["target_id"] == target["target_id"]
+                and row["target_triple"] == target["target_triple"]
+                and row["object_format"] == target["object_format"],
+                f"{context} does not derive from Phase 14 target authority")
+        require(row["target_id"] not in seen,
+                f"{context} duplicates a declared target")
+        require(row["package_version"] == "gust-runtime-package-v1"
+                and row["package_form"] in PHASE17_RUNTIME_PACKAGE_FORMS
+                and row["compatible_version_min"] == 1
+                and row["compatible_version_max"] == 1,
+                f"{context} package identity or compatibility drifted")
+        require(list(row["provided_symbols"]) == selected_spellings,
+                f"{context} provided symbols are not the selected inventory")
+        components = list(row["components"])
+        require(len(components) == len(set(components)) and components,
+                f"{context} link order repeats or omits components")
+        seen.add(row["target_id"])
+    require(len(seen) == len(declared_targets),
+            "Phase 17 runtime package target inventory is incomplete")
+    require(authority["selection_policy"]
+            == "compiler_owned_compatibility_decision_exactly_one_available_"
+               "package_per_target"
+            and authority["link_execution_policy"]
+            == "phase9g_executes_declared_link_order_without_choosing_package_"
+               "or_order"
+            and authority["link_order_policy"]
+            == "dense_ascending_component_order_declared_per_package"
+            and authority["system_import_policy"]
+            == "only_enumerated_permitted_system_imports_may_be_referenced"
+            and authority["witness_policy"]
+            == "stable_package_manifest_and_target_selection_witnesses"
+            and authority["scope_policy"]
+            == "packages_for_three_approved_scalar_imports_cranelift_import_"
+               "emission_remains_in_patch17_5"
+            and authority["next_patch"] == "17.5",
+            "Phase 17 runtime package policies drifted")
+    return authority
+
+
 def validate_phase14_layout_authority_structure(registry):
     authority = registry["phase14_layout_authority"]
     require(
@@ -3408,6 +3523,28 @@ def validate():
         phase17_requirement_record_schema.get("additionalProperties") is False,
         "schema Phase 17 runtime requirement record must reject unknown fields",
     )
+    phase17_package_authority_schema = definitions.get(
+        "phase17_runtime_package_authority", {}
+    )
+    require(
+        set(phase17_package_authority_schema.get("required", []))
+        == PHASE17_RUNTIME_PACKAGE_AUTHORITY_FIELDS,
+        "schema Phase 17 runtime package authority fields drifted",
+    )
+    require(
+        phase17_package_authority_schema.get("additionalProperties") is False,
+        "schema Phase 17 runtime package authority must reject unknown fields",
+    )
+    phase17_target_package_schema = definitions.get(
+        "phase17_runtime_target_package_record", {}
+    )
+    require(set(phase17_target_package_schema.get("required", []))
+            == PHASE17_RUNTIME_TARGET_PACKAGE_FIELDS,
+            "schema Phase 17 runtime target package record fields drifted")
+    require(
+        phase17_target_package_schema.get("additionalProperties") is False,
+        "schema Phase 17 runtime target package record must reject unknown fields",
+    )
     phase14_authority_schema = definitions.get(
         "phase14_layout_authority",
         {},
@@ -3600,6 +3737,7 @@ def validate():
     validate_phase17_runtime_authority_structure(registry)
     validate_phase17_runtime_symbol_authority_structure(registry)
     validate_phase17_runtime_requirement_authority_structure(registry)
+    validate_phase17_runtime_package_authority_structure(registry)
     validate_phase14_layout_authority_structure(registry)
     validate_phase14_primitive_layout_structure(registry)
     validate_phase14_integer_conversion_structure(registry)
@@ -9477,6 +9615,25 @@ def phase17_runtime_requirement_authority_summary_lines(registry):
     ]
 
 
+def phase17_runtime_package_authority_summary_lines(registry):
+    authority = validate_phase17_runtime_package_authority_structure(registry)
+    forms = sorted({row["package_form"] for row in authority["target_packages"]})
+    return [
+        "## Phase 17 runtime package and target selection authority",
+        "",
+        f"- Authority version: `{authority['version']}`",
+        f"- Status: `{authority['status']}`",
+        f"- Manifest format: `{authority['manifest_format']}`",
+        f"- Build authority: `{authority['build_authority_id']}`",
+        f"- Supported package forms: `{len(authority['supported_package_forms'])}`",
+        f"- Registry-derived target packages: `{len(authority['target_packages'])}`",
+        f"- Package forms in the selected inventory: `{', '.join(forms)}`",
+        "",
+        "Patch 17.4 freezes the runtime package manifest schema, gives every Phase 14 declared target one explicit package identified by runtime ABI version and exact target applicability, and makes package selection a compiler-owned compatibility decision. Phase 9G still executes the link plan; it does not choose the package or its component order. Cranelift stable-import emission remains owned by Patch 17.5.",
+        "",
+    ]
+
+
 def render(registry):
     entries = registry["entries"]
     totals = derived_totals(registry)
@@ -9531,6 +9688,7 @@ def render(registry):
         *phase17_runtime_authority_summary_lines(registry),
         *phase17_runtime_symbol_authority_summary_lines(registry),
         *phase17_runtime_requirement_authority_summary_lines(registry),
+        *phase17_runtime_package_authority_summary_lines(registry),
         "## Registry entries", "",
         "| ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |",
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
