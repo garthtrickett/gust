@@ -3970,6 +3970,38 @@
     "scope_policy": "retained_c_inventory_frozen_pure_gust_modules_remain_in_patch17_8",
     "next_patch": "17.8"
   },
+  "phase17_gust_runtime_authority": {
+    "version": "phase17_gust_runtime_authority_v1",
+    "status": "ready_for_patch17_9",
+    "authority_owner": "compiler/mir_runtime_boundary_authority.gst",
+    "request_owner": "compiler/mir_gust_runtime_request.gst",
+    "worker_owner": "compiler/experiments/cranelift/src/gust_runtime.rs",
+    "module_source_prefix": "src/runtime/gust/",
+    "request_format": "gust.compiler_gust_runtime.v1",
+    "witness_format": "gust.gust_runtime_witness.v1",
+    "lowering_route": "generic_parse_typecheck_canonical_mir_abi_cranelift",
+    "recognition_policy": "no_exact_source_or_runtime_module_name_recognition_in_compiler_or_backend",
+    "linkage_policy": "generic_canonical_mir_route_no_bespoke_recognition",
+    "initialization_policies": [
+      "none_required_pure_functions",
+      "explicit_caller_invoked_initializer"
+    ],
+    "selected_modules": [
+      {"component_id": "runtime_component:gust_char_predicates", "module_source_path": "src/runtime/gust/char_predicates.gst", "exported_spellings": ["gust_rt_is_digit", "gust_rt_is_lower", "gust_rt_is_upper", "gust_rt_is_alpha", "gust_rt_is_whitespace", "gust_rt_is_alphanumeric"], "initialization_policy": "none_required_pure_functions", "failure_policy": "total_cannot_fail", "allowed_dependencies": [], "target_applicability": "all_declared_host_targets_from_phase14_target_authority"}
+    ],
+    "migrated_helper_count": 0,
+    "migration_note": "patch17_1_classified_zero_helpers_as_pure_gust_runtime_component_so_this_patch_establishes_the_mechanism_with_one_reference_module_the_collections_and_strings_components_remain_retained_c_until_reclassified",
+    "rejection_classes": [
+      "runtime_gust_non_generic_lowering",
+      "runtime_gust_missing_requirement",
+      "runtime_gust_circular_dependency",
+      "runtime_gust_abi_or_target_mismatch",
+      "runtime_gust_hidden_generated_c"
+    ],
+    "witness_policy": "cranelift_and_mir_to_c_gust_runtime_witnesses_must_match_byte_for_byte",
+    "scope_policy": "reference_gust_module_only_generated_c_shim_elimination_remains_in_patch17_9",
+    "next_patch": "17.9"
+  },
   "phase15_specialized_resource_authority": {
     "version": "phase15_specialized_resource_authority_v1",
     "status": "patch15_11_directory_migrated",

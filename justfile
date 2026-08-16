@@ -168,6 +168,8 @@ guard-pr-fast-ci-surface:
       'just guard-cranelift-phase17-rust-runtime-contract'
       'Phase 17 explicit retained C runtime objects'
       'just guard-cranelift-phase17-retained-c-runtime-contract'
+      'Phase 17 pure Gust runtime modules'
+      'just guard-cranelift-phase17-gust-runtime-contract'
       'phase11-family:'
       'phase11_families:'
       'matrix.family'
@@ -15972,6 +15974,7 @@ guard-cranelift-contract-fast:
     just guard-cranelift-phase17-runtime-import-contract
     just guard-cranelift-phase17-rust-runtime-contract
     just guard-cranelift-phase17-retained-c-runtime-contract
+    just guard-cranelift-phase17-gust-runtime-contract
 
 guard-cranelift-phase17-runtime-authority-contract:
     #!/usr/bin/env bash
@@ -16065,6 +16068,25 @@ guard-cranelift-phase17-retained-c-runtime-parity:
       grep -F $'guard-cranelift-phase17-retained-c-runtime-parity\t2\t' >/dev/null
     just guard-cranelift-phase17-retained-c-runtime-contract
     bash scripts/phase17_retained_c_runtime_parity.sh
+
+guard-cranelift-phase17-gust-runtime-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 17.8 pure Gust runtime modules..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase17-gust-runtime-contract |
+      grep -F $'guard-cranelift-phase17-gust-runtime-contract\t1\t' >/dev/null
+    bash scripts/guard-cranelift-phase17-gust-runtime-contract.sh
+
+guard-cranelift-phase17-gust-runtime-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 17.8 pure Gust runtime module parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase17-gust-runtime-parity |
+      grep -F $'guard-cranelift-phase17-gust-runtime-parity\t2\t' >/dev/null
+    just guard-cranelift-phase17-gust-runtime-contract
+    bash scripts/phase17_gust_runtime_parity.sh
 
 guard-cranelift-phase16-abi-authority-contract:
     #!/usr/bin/env bash

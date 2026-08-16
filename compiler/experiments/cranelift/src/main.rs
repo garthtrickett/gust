@@ -20,6 +20,7 @@ mod resource_mir;
 mod runtime_import;
 mod rust_runtime;
 mod retained_c_runtime;
+mod gust_runtime;
 mod scope_exit_cleanup;
 mod specialized_resource;
 
@@ -16404,6 +16405,13 @@ fn run() -> Result<(), Box<dyn Error>> {
             if args.next().is_some() { return Err(usage_error().into()); }
             let witness = typed_indirect_call::lower_typed_indirect_call_witness_path(Path::new(&request_path))?;
             print!("{witness}"); Ok(())
+        }
+        "phase17-gust-runtime-witness" => {
+            let Some(request_path) = args.next() else { return Err(usage_error().into()); };
+            if args.next().is_some() { return Err(usage_error().into()); }
+            let witness = gust_runtime::lower_gust_runtime_witness_path(Path::new(&request_path))?;
+            print!("{witness}");
+            Ok(())
         }
         "phase17-retained-c-witness" => {
             let Some(request_path) = args.next() else {

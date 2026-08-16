@@ -30,6 +30,7 @@ TOP_FIELDS = {
     "phase17_runtime_import_authority",
     "phase17_rust_runtime_authority",
     "phase17_retained_c_authority",
+    "phase17_gust_runtime_authority",
     "phase16_deferred_residue_audit",
     "phase16_closure",
     "phase15_deferred_residue_audit",
@@ -998,6 +999,30 @@ PHASE17_RETAINED_C_REJECTIONS = (
     "runtime_retained_c_hidden_target_assumption",
     "runtime_retained_c_duplicate_provider",
     "runtime_retained_c_direct_linker_inclusion",
+)
+
+PHASE17_GUST_RUNTIME_AUTHORITY_FIELDS = {
+    "version", "status", "authority_owner", "request_owner", "worker_owner",
+    "module_source_prefix", "request_format", "witness_format",
+    "lowering_route", "recognition_policy", "linkage_policy",
+    "initialization_policies", "selected_modules", "migrated_helper_count",
+    "migration_note", "rejection_classes", "witness_policy", "scope_policy",
+    "next_patch",
+}
+PHASE17_GUST_MODULE_RECORD_FIELDS = {
+    "component_id", "module_source_path", "exported_spellings",
+    "initialization_policy", "failure_policy", "allowed_dependencies",
+    "target_applicability",
+}
+PHASE17_GUST_INITIALIZATION_POLICIES = (
+    "none_required_pure_functions", "explicit_caller_invoked_initializer",
+)
+PHASE17_GUST_RUNTIME_REJECTIONS = (
+    "runtime_gust_non_generic_lowering",
+    "runtime_gust_missing_requirement",
+    "runtime_gust_circular_dependency",
+    "runtime_gust_abi_or_target_mismatch",
+    "runtime_gust_hidden_generated_c",
 )
 
 PHASE14_LAYOUT_AUTHORITY_FIELDS = {
@@ -2740,6 +2765,77 @@ def validate_phase17_retained_c_authority_structure(registry):
     return authority
 
 
+def validate_phase17_gust_runtime_authority_structure(registry):
+    authority = registry["phase17_gust_runtime_authority"]
+    require(isinstance(authority, dict)
+            and set(authority) == PHASE17_GUST_RUNTIME_AUTHORITY_FIELDS,
+            "Phase 17 gust runtime authority fields drifted")
+    require(authority["version"] == "phase17_gust_runtime_authority_v1"
+            and authority["status"] == "ready_for_patch17_9"
+            and authority["lowering_route"]
+            == "generic_parse_typecheck_canonical_mir_abi_cranelift"
+            and authority["module_source_prefix"] == "src/runtime/gust/",
+            "Phase 17 gust runtime route or ownership drifted")
+    require(tuple(authority["initialization_policies"])
+            == PHASE17_GUST_INITIALIZATION_POLICIES,
+            "Phase 17 gust runtime initialization inventory drifted")
+    require(tuple(authority["rejection_classes"])
+            == PHASE17_GUST_RUNTIME_REJECTIONS,
+            "Phase 17 gust runtime rejection inventory drifted")
+
+    # Patch 17.1 classified zero helpers as pure_gust_runtime_component, so the
+    # count must stay visible rather than let an empty migration pass silently.
+    classified = [
+        row for row in registry["phase17_runtime_authority"]
+        ["helper_classifications"]
+        if row["classification"] == "pure_gust_runtime_component"
+    ]
+    require(authority["migrated_helper_count"] == len(classified),
+            "Phase 17 gust runtime migrated helper count disagrees with "
+            "the Patch 17.1 classification inventory")
+
+    modules = authority["selected_modules"]
+    require(isinstance(modules, list) and modules,
+            "Phase 17 gust runtime must declare at least one module")
+    seen, spellings = set(), set()
+    for index, row in enumerate(modules):
+        context = f"phase17_gust_runtime_authority.selected_modules[{index}]"
+        require(isinstance(row, dict)
+                and set(row) == PHASE17_GUST_MODULE_RECORD_FIELDS,
+                f"{context} fields drifted")
+        require(row["component_id"] not in seen,
+                f"{context} duplicates a component id")
+        require(row["module_source_path"].startswith("src/runtime/gust/")
+                and row["module_source_path"].endswith(".gst"),
+                f"{context} source is not a repository Gust runtime module")
+        require(row["initialization_policy"]
+                in PHASE17_GUST_INITIALIZATION_POLICIES,
+                f"{context} initialization policy is undeclared")
+        require(row["component_id"] not in row["allowed_dependencies"],
+                f"{context} depends on its own component")
+        require(row["target_applicability"] == PHASE17_TARGET_APPLICABILITY,
+                f"{context} target applicability drifted")
+        for spelling in row["exported_spellings"]:
+            require(spelling not in spellings,
+                    f"{context} exports {spelling}, already provided elsewhere")
+            spellings.add(spelling)
+        seen.add(row["component_id"])
+    require(authority["recognition_policy"]
+            == "no_exact_source_or_runtime_module_name_recognition_in_compiler_"
+               "or_backend"
+            and authority["linkage_policy"]
+            == "generic_canonical_mir_route_no_bespoke_recognition"
+            and authority["witness_policy"]
+            == "cranelift_and_mir_to_c_gust_runtime_witnesses_must_match_byte_"
+               "for_byte"
+            and authority["scope_policy"]
+            == "reference_gust_module_only_generated_c_shim_elimination_"
+               "remains_in_patch17_9"
+            and authority["next_patch"] == "17.9",
+            "Phase 17 gust runtime policies drifted")
+    return authority
+
+
 def validate_phase14_layout_authority_structure(registry):
     authority = registry["phase14_layout_authority"]
     require(
@@ -3891,6 +3987,20 @@ def validate():
     require(set(phase17_retained_record_schema.get("required", []))
             == PHASE17_RETAINED_C_RECORD_FIELDS,
             "schema Phase 17 retained C record fields drifted")
+    phase17_gust_authority_schema = definitions.get(
+        "phase17_gust_runtime_authority", {}
+    )
+    require(set(phase17_gust_authority_schema.get("required", []))
+            == PHASE17_GUST_RUNTIME_AUTHORITY_FIELDS,
+            "schema Phase 17 gust runtime authority fields drifted")
+    require(phase17_gust_authority_schema.get("additionalProperties") is False,
+            "schema Phase 17 gust runtime authority must reject unknown fields")
+    phase17_gust_record_schema = definitions.get(
+        "phase17_gust_module_record", {}
+    )
+    require(set(phase17_gust_record_schema.get("required", []))
+            == PHASE17_GUST_MODULE_RECORD_FIELDS,
+            "schema Phase 17 gust module record fields drifted")
     phase14_authority_schema = definitions.get(
         "phase14_layout_authority",
         {},
@@ -4087,6 +4197,7 @@ def validate():
     validate_phase17_runtime_import_authority_structure(registry)
     validate_phase17_rust_runtime_authority_structure(registry)
     validate_phase17_retained_c_authority_structure(registry)
+    validate_phase17_gust_runtime_authority_structure(registry)
     validate_phase14_layout_authority_structure(registry)
     validate_phase14_primitive_layout_structure(registry)
     validate_phase14_integer_conversion_structure(registry)
@@ -10034,6 +10145,24 @@ def phase17_retained_c_authority_summary_lines(registry):
     ]
 
 
+def phase17_gust_runtime_authority_summary_lines(registry):
+    authority = validate_phase17_gust_runtime_authority_structure(registry)
+    exports = sum(len(r["exported_spellings"]) for r in authority["selected_modules"])
+    return [
+        "## Phase 17 pure Gust runtime module authority",
+        "",
+        f"- Authority version: `{authority['version']}`",
+        f"- Status: `{authority['status']}`",
+        f"- Module source prefix: `{authority['module_source_prefix']}`",
+        f"- Declared Gust runtime modules: `{len(authority['selected_modules'])}`",
+        f"- Exported helpers: `{exports}`",
+        f"- Helpers migrated from the Patch 17.1 inventory: `{authority['migrated_helper_count']}`",
+        "",
+        "Patch 17.8 compiles selected runtime helpers written in Gust through the same generic canonical-MIR route as any other Gust code, with no exact-source or module-name recognition in the compiler or backend. Patch 17.1 classified zero helpers as `pure_gust_runtime_component`, so this patch establishes the mechanism with one reference module; the collections and strings components remain retained C until reclassified.",
+        "",
+    ]
+
+
 def render(registry):
     entries = registry["entries"]
     totals = derived_totals(registry)
@@ -10092,6 +10221,7 @@ def render(registry):
         *phase17_runtime_import_authority_summary_lines(registry),
         *phase17_rust_runtime_authority_summary_lines(registry),
         *phase17_retained_c_authority_summary_lines(registry),
+        *phase17_gust_runtime_authority_summary_lines(registry),
         "## Registry entries", "",
         "| ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |",
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
