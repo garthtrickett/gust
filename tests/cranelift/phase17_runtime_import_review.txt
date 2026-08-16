@@ -1,0 +1,36 @@
+Phase 17.5 — Stable Runtime-Library Imports for Cranelift
+guard: guard-cranelift-phase17-runtime-import-contract
+parity_guard: guard-cranelift-phase17-runtime-import-parity
+test_level: level1
+request_format: gust.compiler_runtime_import.v1
+witness_format: gust.runtime_import_witness.v1
+linkage_policy: direct_external_call_no_generated_c_glue
+scope: three_approved_scalar_imports
+
+contract counts:
+  boundary: 1
+  failure_policy: 3
+  linkage: 5
+  policy: 4
+  query: 1
+  rejection: 5
+  semantic_type: 1
+  side_effect_policy: 3
+
+migrated stable runtime-library imports:
+  p17_helper_tiny_host_add_one_i32	tiny_host_add_one_i32	gust-runtime-symbol-v1	pure_scalar_no_side_effects	total_cannot_fail
+  p17_helper_tiny_host_add_i32	tiny_host_add_i32	gust-runtime-symbol-v1	pure_scalar_no_side_effects	total_cannot_fail
+  p17_helper_tiny_host_is_positive_i32	tiny_host_is_positive_i32	gust-runtime-symbol-v1	pure_scalar_no_side_effects	total_cannot_fail
+
+rejection classes:
+  runtime_import_missing_symbol
+  runtime_import_incompatible_version
+  runtime_import_abi_mismatch
+  runtime_import_wrong_target_component
+  runtime_import_undeclared
+
+exit gate:
+  every selected stable runtime-library helper is called by Cranelift through its compiler-owned versioned symbol
+  the explicit runtime package exports that symbol and version
+  no generated C glue stands between the caller and the runtime
+  legacy per-phase fixture symbol constants are removed in Patch 17.9

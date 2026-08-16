@@ -3853,6 +3853,43 @@
     "scope_policy": "packages_for_three_approved_scalar_imports_cranelift_import_emission_remains_in_patch17_5",
     "next_patch": "17.5"
   },
+  "phase17_runtime_import_authority": {
+    "version": "phase17_runtime_import_authority_v1",
+    "status": "ready_for_patch17_6",
+    "authority_owner": "compiler/mir_runtime_boundary_authority.gst",
+    "request_owner": "compiler/mir_runtime_import_request.gst",
+    "worker_owner": "compiler/experiments/cranelift/src/runtime_import.rs",
+    "request_format": "gust.compiler_runtime_import.v1",
+    "witness_format": "gust.runtime_import_witness.v1",
+    "linkage_policy": "direct_external_call_no_generated_c_glue",
+    "backend_table_policy": "backend_holds_no_symbol_spelling_or_signature_table_signature_derived_from_compiler_function_abi",
+    "package_export_policy": "selected_package_must_export_required_symbol_and_version",
+    "side_effect_policies": [
+      "pure_scalar_no_side_effects",
+      "observable_side_effects",
+      "allocates_in_caller_arena"
+    ],
+    "failure_policies": [
+      "total_cannot_fail",
+      "returns_explicit_error",
+      "aborts_process_on_failure"
+    ],
+    "selected_imports": [
+      {"helper_id": "p17_helper_tiny_host_add_one_i32", "external_spelling": "tiny_host_add_one_i32", "symbol_version": "gust-runtime-symbol-v1", "function_abi_identity": "function_abi:runtime:tiny_host_add_one_i32:i32_to_i32:gust_canonical_v1", "component_id": "runtime_component:approved_scalar_imports", "side_effect_policy": "pure_scalar_no_side_effects", "failure_policy": "total_cannot_fail", "target_applicability": "all_declared_host_targets_from_phase14_target_authority"},
+      {"helper_id": "p17_helper_tiny_host_add_i32", "external_spelling": "tiny_host_add_i32", "symbol_version": "gust-runtime-symbol-v1", "function_abi_identity": "function_abi:runtime:tiny_host_add_i32:i32_i32_to_i32:gust_canonical_v1", "component_id": "runtime_component:approved_scalar_imports", "side_effect_policy": "pure_scalar_no_side_effects", "failure_policy": "total_cannot_fail", "target_applicability": "all_declared_host_targets_from_phase14_target_authority"},
+      {"helper_id": "p17_helper_tiny_host_is_positive_i32", "external_spelling": "tiny_host_is_positive_i32", "symbol_version": "gust-runtime-symbol-v1", "function_abi_identity": "function_abi:runtime:tiny_host_is_positive_i32:i32_to_i32:gust_canonical_v1", "component_id": "runtime_component:approved_scalar_imports", "side_effect_policy": "pure_scalar_no_side_effects", "failure_policy": "total_cannot_fail", "target_applicability": "all_declared_host_targets_from_phase14_target_authority"}
+    ],
+    "rejection_classes": [
+      "runtime_import_missing_symbol",
+      "runtime_import_incompatible_version",
+      "runtime_import_abi_mismatch",
+      "runtime_import_wrong_target_component",
+      "runtime_import_undeclared"
+    ],
+    "witness_policy": "cranelift_and_mir_to_c_runtime_import_witnesses_must_match_byte_for_byte",
+    "scope_policy": "stable_runtime_library_imports_only_legacy_fixture_symbol_constants_removed_in_patch17_9",
+    "next_patch": "17.6"
+  },
   "phase15_specialized_resource_authority": {
     "version": "phase15_specialized_resource_authority_v1",
     "status": "patch15_11_directory_migrated",

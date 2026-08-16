@@ -162,6 +162,8 @@ guard-pr-fast-ci-surface:
       'just guard-cranelift-phase17-runtime-requirement-contract'
       'Phase 17 explicit runtime packages and target selection'
       'just guard-cranelift-phase17-runtime-package-contract'
+      'Phase 17 stable runtime-library imports'
+      'just guard-cranelift-phase17-runtime-import-contract'
       'phase11-family:'
       'phase11_families:'
       'matrix.family'
@@ -15963,6 +15965,7 @@ guard-cranelift-contract-fast:
     just guard-cranelift-phase17-runtime-symbol-version-contract
     just guard-cranelift-phase17-runtime-requirement-contract
     just guard-cranelift-phase17-runtime-package-contract
+    just guard-cranelift-phase17-runtime-import-contract
 
 guard-cranelift-phase17-runtime-authority-contract:
     #!/usr/bin/env bash
@@ -15999,6 +16002,25 @@ guard-cranelift-phase17-runtime-package-contract:
     python3 scripts/cranelift_test_levels.py level guard-cranelift-phase17-runtime-package-contract |
       grep -F $'guard-cranelift-phase17-runtime-package-contract\t1\t' >/dev/null
     bash scripts/guard-cranelift-phase17-runtime-package-contract.sh
+
+guard-cranelift-phase17-runtime-import-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 17.5 stable runtime-library imports..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase17-runtime-import-contract |
+      grep -F $'guard-cranelift-phase17-runtime-import-contract\t1\t' >/dev/null
+    bash scripts/guard-cranelift-phase17-runtime-import-contract.sh
+
+guard-cranelift-phase17-runtime-import-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 17.5 stable runtime-library import parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase17-runtime-import-parity |
+      grep -F $'guard-cranelift-phase17-runtime-import-parity\t2\t' >/dev/null
+    just guard-cranelift-phase17-runtime-import-contract
+    bash scripts/phase17_runtime_import_parity.sh
 
 guard-cranelift-phase16-abi-authority-contract:
     #!/usr/bin/env bash
