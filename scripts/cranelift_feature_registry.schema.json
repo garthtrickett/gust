@@ -17,6 +17,7 @@
     "phase15_failure_cleanup_authority",
     "phase15_resource_composition_authority",
     "phase16_abi_composition_authority",
+    "phase17_runtime_authority",
     "phase16_deferred_residue_audit",
     "phase16_closure",
     "phase15_deferred_residue_audit",
@@ -254,6 +255,9 @@
     "phase16_abi_composition_authority": {
       "$ref": "#/$defs/phase16_abi_composition_authority"
     },
+    "phase17_runtime_authority": {
+      "$ref": "#/$defs/phase17_runtime_authority"
+    },
     "phase16_deferred_residue_audit": {
       "$ref": "#/$defs/phase16_deferred_residue_audit"
     },
@@ -289,6 +293,41 @@
     }
   },
   "$defs": {
+    "phase17_runtime_helper_classification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["helper_id", "symbol_identity", "classification", "component_id", "reason_code", "target_applicability"],
+      "properties": {
+        "helper_id": {"type": "string", "pattern": "^p17_helper_"},
+        "symbol_identity": {"type": "string", "minLength": 1},
+        "classification": {"enum": ["stable_runtime_library_function", "rust_runtime_component", "retained_c_runtime_component", "pure_gust_runtime_component", "obsolete_helper"]},
+        "component_id": {"type": "string", "minLength": 1},
+        "reason_code": {"type": "string", "pattern": "^runtime_helper_classified_"},
+        "target_applicability": {"const": "all_declared_host_targets_from_phase14_target_authority"}
+      }
+    },
+    "phase17_runtime_authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "status", "authority_owner", "table_format", "semantic_types", "query_functions", "legal_helper_classifications", "helper_classifications", "consumers", "identity_policy", "request_transport_policy", "rejection_classes", "hard_bans", "behavior_policy", "next_patch"],
+      "properties": {
+        "version": {"const": "phase17_compiler_owned_runtime_boundary_authority_v1"},
+        "status": {"const": "ready_for_patch17_2"},
+        "authority_owner": {"const": "compiler/mir_runtime_boundary_authority.gst"},
+        "table_format": {"const": "gust.compiler_runtime_boundary_authority_table.v1"},
+        "semantic_types": {"type": "array", "minItems": 8, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "query_functions": {"type": "array", "minItems": 7, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "legal_helper_classifications": {"type": "array", "minItems": 5, "maxItems": 5, "uniqueItems": true, "items": {"enum": ["stable_runtime_library_function", "rust_runtime_component", "retained_c_runtime_component", "pure_gust_runtime_component", "obsolete_helper"]}},
+        "helper_classifications": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/phase17_runtime_helper_classification"}},
+        "consumers": {"type": "array", "minItems": 6, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "identity_policy": {"const": "compiler_semantic_state_plus_request_ordinal_no_raw_hash"},
+        "request_transport_policy": {"const": "immutable_runtime_table_wraps_validated_phase16_abi_request_before_worker_driver_and_artifact_access"},
+        "rejection_classes": {"type": "array", "minItems": 11, "uniqueItems": true, "items": {"type": "string", "pattern": "^runtime_"}},
+        "hard_bans": {"type": "array", "minItems": 4, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "behavior_policy": {"const": "authority_and_classification_only_no_runtime_helper_implementation_migration"},
+        "next_patch": {"const": "17.2"}
+      }
+    },
     "phase11_closure_snapshot": {
       "type": "object",
       "additionalProperties": false,

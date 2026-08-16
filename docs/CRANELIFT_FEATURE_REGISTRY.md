@@ -327,6 +327,20 @@ Patch 16.0 is inventory-only. It selects function ABI, aggregate call, typed ind
 
 Patch 17.0 is inventory-only. It selects the native runtime ABI, helper classification, symbol, requirement, package, implementation-component, generated-shim elimination, helper-domain audit, availability-diagnostic, and differential-evidence work without changing compiler, backend, runtime, MIR, request, ABI lowering, artifact, Level 2, or Level 3 behavior.
 
+## Phase 17 compiler-owned runtime boundary authority
+
+- Authority version: `phase17_compiler_owned_runtime_boundary_authority_v1`
+- Status: `ready_for_patch17_2`
+- Table format: `gust.compiler_runtime_boundary_authority_table.v1`
+- Semantic types: `8`
+- Compiler-owned queries: `7`
+- Classified helpers: `79`
+- Stable runtime-library functions: `3`
+- Retained C runtime components: `72`
+- Obsolete generated-C helper families: `4`
+
+Patch 17.1 establishes compiler-owned runtime identities, exactly-one helper classification, requirements, compatibility decisions, and the Phase 9G link-plan handoff. It does not migrate helper implementations.
+
 ## Registry entries
 
 | ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |

@@ -1,0 +1,67 @@
+Phase 17.1 — Compiler-Owned Runtime Boundary and Helper Classification Authority
+guard: guard-cranelift-phase17-runtime-authority-contract
+test_level: level1
+boundary: authority_and_classification_only
+identity: compiler_semantic_state_plus_request_ordinal_no_raw_hash
+request_order: runtime_authority_before_phase16_abi_resource_and_canonical_request
+failure_stage: before_worker_driver_request_object_link_or_output_access
+
+contract counts:
+  boundary: 1
+  hard_ban: 4
+  query: 7
+  rejection: 13
+  semantic_type: 8
+  transport: 6
+
+helper classifications:
+  stable_runtime_library_function: 3
+  rust_runtime_component: 0
+  retained_c_runtime_component: 72
+  pure_gust_runtime_component: 0
+  obsolete_helper: 4
+
+active contract:
+  semantic_type	runtime_abi_identity	compiler.mir_runtime_boundary_authority	active
+  semantic_type	runtime_helper_identity	compiler.mir_runtime_boundary_authority	active
+  semantic_type	runtime_helper_classification	compiler.mir_runtime_boundary_authority	active
+  semantic_type	runtime_component_identity	compiler.mir_runtime_boundary_authority	active
+  semantic_type	runtime_package_identity	compiler.mir_runtime_boundary_authority	active
+  semantic_type	runtime_requirement	compiler.mir_runtime_boundary_authority	active
+  semantic_type	runtime_compatibility_decision	compiler.mir_runtime_boundary_authority	active
+  semantic_type	runtime_link_plan_handoff	compiler.mir_runtime_boundary_authority	active
+  query	runtime_helper_of	compiler.mir_runtime_boundary_authority	active
+  query	classify_runtime_helper	compiler.mir_runtime_boundary_authority	active
+  query	runtime_requirements	compiler.mir_runtime_boundary_authority	active
+  query	runtime_component_for	compiler.mir_runtime_boundary_authority	active
+  query	select_runtime_package	compiler.mir_runtime_boundary_authority	active
+  query	validate_runtime_compatibility	compiler.mir_runtime_boundary_authority	active
+  query	runtime_link_plan	compiler.mir_runtime_boundary_authority	active
+  transport	deterministic_runtime_identity_ids	compiler.semantic_state	active
+  transport	deterministic_requirement_ids	compiler.semantic_state	active
+  transport	deterministic_compatibility_ids	compiler.semantic_state	active
+  transport	canonical_mir_runtime_references	compiler.canonical_mir_metadata	active
+  transport	native_request_runtime_table	compiler.native_request	active
+  transport	phase9g_runtime_link_plan_handoff	compiler.runtime_authority	active
+  rejection	unknown_format	compiler.request_validation	active
+  rejection	policy_mismatch	compiler.request_validation	active
+  rejection	unknown_helper_id	compiler.request_validation	active
+  rejection	missing_helper_classification	compiler.request_validation	active
+  rejection	conflicting_helper_classification	compiler.request_validation	active
+  rejection	invalid_helper_classification	compiler.request_validation	active
+  rejection	unknown_component_id	compiler.request_validation	active
+  rejection	unknown_package_id	compiler.request_validation	active
+  rejection	requirement_mismatch	compiler.request_validation	active
+  rejection	compatibility_mismatch	compiler.request_validation	active
+  rejection	unresolved_link_plan	compiler.request_validation	active
+  rejection	target_mismatch	compiler.request_validation	active
+  rejection	canonical_mir_metadata_mismatch	compiler.request_validation	active
+  hard_ban	cranelift_helper_classification_table	guard-cranelift-phase17-runtime-authority-contract	banned
+  hard_ban	worker_invented_runtime_requirements	guard-cranelift-phase17-runtime-authority-contract	banned
+  hard_ban	driver_package_selection_from_unresolved_symbols	guard-cranelift-phase17-runtime-authority-contract	banned
+  hard_ban	diagnostic_runtime_compatibility_recomputation	guard-cranelift-phase17-runtime-authority-contract	banned
+  boundary	authority_and_classification_only	phase17.1	frozen
+
+consumer rule:
+  canonical MIR, MIR-to-C, Cranelift, runtime packaging, diagnostics, and Phase 9G consume the compiler-owned runtime table
+  the worker validates transport consistency and does not invent classifications, requirements, components, packages, compatibility, or link plans
