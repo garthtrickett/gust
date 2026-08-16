@@ -53,6 +53,21 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+      - name: Cache cargo registry and build outputs
+        uses: actions/cache@v4
+        with:
+          # Only cargo target dirs and the registry. Never build/guards itself:
+          # those dirs hold witnesses, mutation requests, and .output sentinels,
+          # and restoring stale ones could manufacture a false pass.
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            compiler/experiments/cranelift/target
+            build/guards/*/cargo-target
+          key: cargo-${{ runner.os }}-${{ github.workflow }}-${{ hashFiles('compiler/experiments/cranelift/Cargo.lock') }}
+          restore-keys: |
+            cargo-${{ runner.os }}-${{ github.workflow }}-
       - name: Install native dependencies
         run: sudo apt-get update && sudo apt-get install -y build-essential curl ripgrep
       - name: Install pinned just
