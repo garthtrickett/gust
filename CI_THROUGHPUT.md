@@ -128,7 +128,7 @@ baseline above suggests.
 
 ### Implementation
 
-One **uniform** `actions/cache@v4` step added to the 29 workflows whose jobs
+One **uniform** `actions/cache@v4` step added to the 28 workflows whose jobs
 transitively reach cargo, inserted only into the specific jobs that do. The 11
 workflows that never reach cargo were left untouched.
 
@@ -156,6 +156,29 @@ Restoring stale copies of those could manufacture a false pass. Cache
 workspace target dirs, which does not fit the two-regime layout here. Its one
 real advantage is pruning to dependency artifacts, which keeps caches small —
 see the size risk below.
+
+### Excluded by existing policy: `heavy-guards.yml`
+
+`guard-cloud-heavy-ci-surface` (justfile:652) asserts:
+
+```
+Cloud heavy guard workflow must not enable cache yet.
+```
+
+The first attempt at this lever added a cache step to `heavy-guards.yml` and CI
+rejected it. **The guard is correct and the exclusion stands.** Heavy Guards is
+the deep-verification path; keeping it hermetic means it cannot pass on restored
+state. That is the same reasoning as the forced rebuild in `run-gust-file.sh` —
+the authoritative verification path must not be able to go green on stale
+artifacts.
+
+So the cache covers **28 workflows, not 29**. If Heavy Guards is ever to be
+cached, that is a deliberate policy change with its own review, made by editing
+the guard first — not by quietly adding a cache step and finding the guard in
+the way.
+
+Only `heavy-guards.yml` carries this policy; `cranelift-historical-full.yml` and
+the rest have no equivalent assertion.
 
 ### Open risk: cache size
 
