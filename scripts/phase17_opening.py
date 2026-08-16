@@ -461,7 +461,8 @@ def validate() -> dict:
         "src/runtime/arena.c", "src/runtime/scratch.c",
         "src/runtime/collections.c", "src/runtime/core_headers.h",
         "src/runtime/approved_scalar_imports.c", "src/runtime/file_io.c",
-        "src/runtime/mock_payload.c", "src/runtime/fiber.c",
+        "src/runtime/host_io.c", "src/runtime/strings.c",
+        "src/runtime/fiber.c",
         "compiler/codegen.gst",
     }
     require(source_paths == required_sources,

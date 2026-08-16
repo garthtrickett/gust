@@ -401,7 +401,7 @@ Patch 17.6 supports runtime helpers implemented in Rust as explicit, versioned r
 
 - Authority version: `phase17_retained_c_authority_v1`
 - Status: `ready_for_patch17_8`
-- Retained C components: `7`
+- Retained C components: `8`
 - Retained helpers: `72`
 - Owned source prefix: `src/runtime/`
 
