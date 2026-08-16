@@ -407,6 +407,17 @@ Patch 17.6 supports runtime helpers implemented in Rust as explicit, versioned r
 
 Patch 17.7 freezes the retained C inventory as separately compiled, versioned, target-scoped components. Every component names its owned repository sources, a justified retention reason, and a concrete removal criterion with a destination phase, so retention is temporary by contract rather than open-ended. No retained C source is generated from a compiled program, and retained objects reach programs only through the same manifest path as Rust and Gust components.
 
+## Phase 17 pure Gust runtime module authority
+
+- Authority version: `phase17_gust_runtime_authority_v1`
+- Status: `ready_for_patch17_9`
+- Module source prefix: `src/runtime/gust/`
+- Declared Gust runtime modules: `1`
+- Exported helpers: `6`
+- Helpers migrated from the Patch 17.1 inventory: `0`
+
+Patch 17.8 compiles selected runtime helpers written in Gust through the same generic canonical-MIR route as any other Gust code, with no exact-source or module-name recognition in the compiler or backend. Patch 17.1 classified zero helpers as `pure_gust_runtime_component`, so this patch establishes the mechanism with one reference module; the collections and strings components remain retained C until reclassified.
+
 ## Registry entries
 
 | ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |

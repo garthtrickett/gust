@@ -1,0 +1,39 @@
+Phase 17.8 — Pure Gust Runtime Modules Compiled Through MIR
+guard: guard-cranelift-phase17-gust-runtime-contract
+parity_guard: guard-cranelift-phase17-gust-runtime-parity
+test_level: level1
+module_source_prefix: src/runtime/gust/
+lowering_route: generic_parse_typecheck_canonical_mir_abi_cranelift
+recognition_policy: no_exact_source_or_runtime_module_name_recognition_in_compiler_or_backend
+helpers_migrated_from_patch17_1_inventory: 0
+
+contract counts:
+  boundary: 1
+  field: 8
+  initialization_policy: 2
+  policy: 4
+  query: 1
+  rejection: 5
+  semantic_type: 1
+
+declared pure Gust runtime modules:
+  runtime_component:gust_char_predicates	src/runtime/gust/char_predicates.gst	none_required_pure_functions	total_cannot_fail
+    export	gust_rt_is_digit
+    export	gust_rt_is_lower
+    export	gust_rt_is_upper
+    export	gust_rt_is_alpha
+    export	gust_rt_is_whitespace
+    export	gust_rt_is_alphanumeric
+
+rejection classes:
+  runtime_gust_non_generic_lowering
+  runtime_gust_missing_requirement
+  runtime_gust_circular_dependency
+  runtime_gust_abi_or_target_mismatch
+  runtime_gust_hidden_generated_c
+
+exit gate:
+  every selected pure Gust runtime helper compiles through generic canonical MIR
+  the module is supplied as an explicit native runtime package component
+  no bespoke compiler recognition and no generated C glue
+  generated C shim elimination remains in Patch 17.9

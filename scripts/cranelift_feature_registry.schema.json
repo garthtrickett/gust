@@ -24,6 +24,7 @@
     "phase17_runtime_import_authority",
     "phase17_rust_runtime_authority",
     "phase17_retained_c_authority",
+    "phase17_gust_runtime_authority",
     "phase16_deferred_residue_audit",
     "phase16_closure",
     "phase15_deferred_residue_audit",
@@ -281,6 +282,9 @@
     },
     "phase17_retained_c_authority": {
       "$ref": "#/$defs/phase17_retained_c_authority"
+    },
+    "phase17_gust_runtime_authority": {
+      "$ref": "#/$defs/phase17_gust_runtime_authority"
     },
     "phase16_deferred_residue_audit": {
       "$ref": "#/$defs/phase16_deferred_residue_audit"
@@ -568,6 +572,46 @@
         "witness_policy": {"const": "cranelift_and_mir_to_c_retained_c_witnesses_must_match_byte_for_byte"},
         "scope_policy": {"const": "retained_c_inventory_frozen_pure_gust_modules_remain_in_patch17_8"},
         "next_patch": {"const": "17.8"}
+      }
+    },
+    "phase17_gust_module_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["component_id", "module_source_path", "exported_spellings", "initialization_policy", "failure_policy", "allowed_dependencies", "target_applicability"],
+      "properties": {
+        "component_id": {"type": "string", "pattern": "^runtime_component:"},
+        "module_source_path": {"type": "string", "pattern": "^src/runtime/gust/.*\\.gst$"},
+        "exported_spellings": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "initialization_policy": {"enum": ["none_required_pure_functions", "explicit_caller_invoked_initializer"]},
+        "failure_policy": {"enum": ["total_cannot_fail", "returns_explicit_error", "aborts_process_on_failure"]},
+        "allowed_dependencies": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "target_applicability": {"const": "all_declared_host_targets_from_phase14_target_authority"}
+      }
+    },
+    "phase17_gust_runtime_authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "status", "authority_owner", "request_owner", "worker_owner", "module_source_prefix", "request_format", "witness_format", "lowering_route", "recognition_policy", "linkage_policy", "initialization_policies", "selected_modules", "migrated_helper_count", "migration_note", "rejection_classes", "witness_policy", "scope_policy", "next_patch"],
+      "properties": {
+        "version": {"const": "phase17_gust_runtime_authority_v1"},
+        "status": {"const": "ready_for_patch17_9"},
+        "authority_owner": {"const": "compiler/mir_runtime_boundary_authority.gst"},
+        "request_owner": {"const": "compiler/mir_gust_runtime_request.gst"},
+        "worker_owner": {"const": "compiler/experiments/cranelift/src/gust_runtime.rs"},
+        "module_source_prefix": {"const": "src/runtime/gust/"},
+        "request_format": {"const": "gust.compiler_gust_runtime.v1"},
+        "witness_format": {"const": "gust.gust_runtime_witness.v1"},
+        "lowering_route": {"const": "generic_parse_typecheck_canonical_mir_abi_cranelift"},
+        "recognition_policy": {"const": "no_exact_source_or_runtime_module_name_recognition_in_compiler_or_backend"},
+        "linkage_policy": {"const": "generic_canonical_mir_route_no_bespoke_recognition"},
+        "initialization_policies": {"type": "array", "minItems": 2, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "selected_modules": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/phase17_gust_module_record"}},
+        "migrated_helper_count": {"type": "integer", "minimum": 0},
+        "migration_note": {"type": "string", "minLength": 1},
+        "rejection_classes": {"type": "array", "minItems": 5, "uniqueItems": true, "items": {"type": "string", "pattern": "^runtime_gust_"}},
+        "witness_policy": {"const": "cranelift_and_mir_to_c_gust_runtime_witnesses_must_match_byte_for_byte"},
+        "scope_policy": {"const": "reference_gust_module_only_generated_c_shim_elimination_remains_in_patch17_9"},
+        "next_patch": {"const": "17.9"}
       }
     },
     "phase17_runtime_helper_classification": {

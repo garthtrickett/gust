@@ -65,6 +65,25 @@ type MirRuntimeComponentIdentity[ctx] struct {
     target_id: str
 }
 
+// Phase 17.8 pure Gust runtime modules. These compile through the same generic
+// canonical-MIR route as any other Gust code. The compiler and backend must not
+// recognise a module by name or by source contents: if generic lowering cannot
+// handle it, it is not a runtime module, it is a compiler special case.
+type MirRuntimeGustModule[ctx] struct {
+    gust_module_id: str,
+    component_id: str,
+    module_source_path: str,
+    exported_symbol_ids: Index[std.Vector[str, ctx], ctx],
+    imported_symbol_ids: Index[std.Vector[str, ctx], ctx],
+    allowed_dependency_ids: Index[std.Vector[str, ctx], ctx],
+    runtime_abi_id: str,
+    target_id: str,
+    target_applicability: str,
+    lowering_route: str,
+    initialization_policy: str,
+    failure_policy: str
+}
+
 // Phase 17.7 retained C runtime components. C stays only as separately compiled,
 // versioned, target-scoped components with a concrete retention reason and a
 // stated removal criterion. It is never an implicit per-program layer, and no
@@ -247,6 +266,7 @@ type MirRuntimeBoundaryAuthorityTable[ctx] struct {
     import_declarations: Index[std.Vector[MirRuntimeImportDeclaration[ctx], ctx], ctx],
     rust_components: Index[std.Vector[MirRuntimeRustComponent[ctx], ctx], ctx],
     retained_c_components: Index[std.Vector[MirRuntimeRetainedCComponent[ctx], ctx], ctx],
+    gust_modules: Index[std.Vector[MirRuntimeGustModule[ctx], ctx], ctx],
     requirements: Index[std.Vector[MirRuntimeRequirement[ctx], ctx], ctx],
     compatibility_decisions: Index[std.Vector[MirRuntimeCompatibilityDecision[ctx], ctx], ctx],
     link_plans: Index[std.Vector[MirRuntimeLinkPlanHandoff[ctx], ctx], ctx],
@@ -263,6 +283,7 @@ type MirRuntimeCompatibilityQuery[ctx] struct { compatible: int, reason_code: st
 type MirRuntimeLinkPlanQuery[ctx] struct { found: int, value: MirRuntimeLinkPlanHandoff[ctx] }
 type MirRuntimePackageSelection[ctx] struct { found: int, reason_code: str, value: MirRuntimePackageIdentity[ctx] }
 type MirRuntimePackageManifestQuery[ctx] struct { valid: int, reason_code: str, member_count: int, provided_symbol_count: int, system_import_count: int }
+type MirRuntimeGustModuleQuery[ctx] struct { found: int, value: MirRuntimeGustModule[ctx] }
 type MirRuntimeRetainedCQuery[ctx] struct { found: int, value: MirRuntimeRetainedCComponent[ctx] }
 type MirRuntimeRustComponentQuery[ctx] struct { found: int, value: MirRuntimeRustComponent[ctx] }
 type MirRuntimeImportQuery[ctx] struct { found: int, value: MirRuntimeImportDeclaration[ctx] }
@@ -287,6 +308,7 @@ func mir_runtime_empty_requirements(ctx: &Arena) Index[std.Vector[MirRuntimeRequ
 func mir_runtime_empty_package_members(ctx: &Arena) Index[std.Vector[MirRuntimePackageMember[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimePackageMember[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimePackageMember[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
 func mir_runtime_empty_package_provided_symbols(ctx: &Arena) Index[std.Vector[MirRuntimePackageProvidedSymbol[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimePackageProvidedSymbol[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimePackageProvidedSymbol[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
 func mir_runtime_empty_package_system_imports(ctx: &Arena) Index[std.Vector[MirRuntimePackageSystemImport[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimePackageSystemImport[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimePackageSystemImport[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
+func mir_runtime_empty_gust_modules(ctx: &Arena) Index[std.Vector[MirRuntimeGustModule[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimeGustModule[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimeGustModule[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
 func mir_runtime_empty_retained_c_components(ctx: &Arena) Index[std.Vector[MirRuntimeRetainedCComponent[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimeRetainedCComponent[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimeRetainedCComponent[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
 func mir_runtime_empty_rust_components(ctx: &Arena) Index[std.Vector[MirRuntimeRustComponent[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimeRustComponent[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimeRustComponent[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
 func mir_runtime_empty_import_declarations(ctx: &Arena) Index[std.Vector[MirRuntimeImportDeclaration[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimeImportDeclaration[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimeImportDeclaration[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
@@ -309,6 +331,21 @@ func mir_runtime_helper_classification_is_valid(value: str) int {
     if std.str_eq(value, "obsolete_helper") == 1 { return 1; }
     return 0;
 }
+
+// Only the generic route is a legal lowering path. A bespoke one would mean the
+// compiler recognised this module, which is exactly what the patch forbids.
+func mir_runtime_lowering_route_is_valid(value: str) int {
+    if std.str_eq(value, "generic_parse_typecheck_canonical_mir_abi_cranelift") == 1 { return 1; }
+    return 0;
+}
+
+func mir_runtime_initialization_policy_is_valid(value: str) int {
+    if std.str_eq(value, "none_required_pure_functions") == 1 { return 1; }
+    if std.str_eq(value, "explicit_caller_invoked_initializer") == 1 { return 1; }
+    return 0;
+}
+
+func mir_runtime_gust_module_for(table: MirRuntimeBoundaryAuthorityTable[ctx], component_id: str, ctx: &Arena) MirRuntimeGustModuleQuery[ctx] { mut result: MirRuntimeGustModuleQuery[ctx]; result.found = 0; mut values: std.Vector[MirRuntimeGustModule[ctx], ctx] := ctx[table.gust_modules]; mut index := 0; while index < len(values) { if std.str_eq(values[index].component_id, component_id) == 1 { result.found = 1; result.value = values[index]; return result; } index = index + 1; } return result; }
 
 // Retention must be justified and time-bounded, never open-ended.
 func mir_runtime_retention_reason_is_valid(value: str) int {
@@ -373,6 +410,7 @@ func mir_runtime_symbol_identity_id(helper_id: str, symbol_version: str, target_
 func mir_runtime_component_identity_id(component_kind: str, target_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_component:v1:kind="; value = std.Concat(value, component_kind); value = std.Concat(value, ":target="); value = std.Concat(value, target_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
 func mir_runtime_package_identity_id(target_id: str, package_version: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_package:v1:target="; value = std.Concat(value, target_id); value = std.Concat(value, ":version="); value = std.Concat(value, package_version); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
 func mir_runtime_requirement_id(program_id: str, helper_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_requirement:v1:program="; value = std.Concat(value, program_id); value = std.Concat(value, ":helper="); value = std.Concat(value, helper_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
+func mir_runtime_gust_module_id(component_id: str, runtime_abi_id: str, target_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_gust_module:v1:component="; value = std.Concat(value, component_id); value = std.Concat(value, ":abi="); value = std.Concat(value, runtime_abi_id); value = std.Concat(value, ":target="); value = std.Concat(value, target_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
 func mir_runtime_retained_c_component_id(component_id: str, runtime_abi_id: str, target_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_retained_c:v1:component="; value = std.Concat(value, component_id); value = std.Concat(value, ":abi="); value = std.Concat(value, runtime_abi_id); value = std.Concat(value, ":target="); value = std.Concat(value, target_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
 func mir_runtime_rust_component_id(component_id: str, runtime_abi_id: str, target_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_rust_component:v1:component="; value = std.Concat(value, component_id); value = std.Concat(value, ":abi="); value = std.Concat(value, runtime_abi_id); value = std.Concat(value, ":target="); value = std.Concat(value, target_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
 func mir_runtime_import_declaration_id(helper_id: str, symbol_version: str, target_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_import:v1:helper="; value = std.Concat(value, helper_id); value = std.Concat(value, ":version="); value = std.Concat(value, symbol_version); value = std.Concat(value, ":target="); value = std.Concat(value, target_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
@@ -405,6 +443,7 @@ func mir_runtime_make_empty_table(target_id: str, target_triple: str, ctx: &Aren
     table.import_declarations = mir_runtime_empty_import_declarations(ctx);
     table.rust_components = mir_runtime_empty_rust_components(ctx);
     table.retained_c_components = mir_runtime_empty_retained_c_components(ctx);
+    table.gust_modules = mir_runtime_empty_gust_modules(ctx);
     table.requirements = mir_runtime_empty_requirements(ctx);
     table.compatibility_decisions = mir_runtime_empty_compatibility(ctx);
     table.link_plans = mir_runtime_empty_link_plans(ctx);
@@ -421,6 +460,7 @@ func mir_runtime_table_with_package(table: MirRuntimeBoundaryAuthorityTable[ctx]
 func mir_runtime_table_with_package_member(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimePackageMember[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimePackageMember[ctx], ctx] := ctx[table.package_members]; values.Push(value); ctx.Set(table.package_members, values); return table; }
 func mir_runtime_table_with_package_provided_symbol(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimePackageProvidedSymbol[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimePackageProvidedSymbol[ctx], ctx] := ctx[table.package_provided_symbols]; values.Push(value); ctx.Set(table.package_provided_symbols, values); return table; }
 func mir_runtime_table_with_package_system_import(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimePackageSystemImport[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimePackageSystemImport[ctx], ctx] := ctx[table.package_system_imports]; values.Push(value); ctx.Set(table.package_system_imports, values); return table; }
+func mir_runtime_table_with_gust_module(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimeGustModule[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimeGustModule[ctx], ctx] := ctx[table.gust_modules]; values.Push(value); ctx.Set(table.gust_modules, values); return table; }
 func mir_runtime_table_with_retained_c_component(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimeRetainedCComponent[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimeRetainedCComponent[ctx], ctx] := ctx[table.retained_c_components]; values.Push(value); ctx.Set(table.retained_c_components, values); return table; }
 func mir_runtime_table_with_rust_component(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimeRustComponent[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimeRustComponent[ctx], ctx] := ctx[table.rust_components]; values.Push(value); ctx.Set(table.rust_components, values); return table; }
 func mir_runtime_table_with_import_declaration(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimeImportDeclaration[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimeImportDeclaration[ctx], ctx] := ctx[table.import_declarations]; values.Push(value); ctx.Set(table.import_declarations, values); return table; }
@@ -836,6 +876,69 @@ func mir_runtime_boundary_authority_table_validate(table: MirRuntimeBoundaryAuth
         if ordered_index != len(plan_components) { return mir_runtime_validation(0, "runtime_package_nondeterministic_component_order", ctx); }
         plan_index = plan_index + 1;
     }
+    // Phase 17.8: pure Gust runtime modules compile through the generic route.
+    mut gust_modules: std.Vector[MirRuntimeGustModule[ctx], ctx] := ctx[table.gust_modules];
+    mut gust_index := 0;
+    while gust_index < len(gust_modules) {
+        if mir_runtime_field_is_safe(gust_modules[gust_index].gust_module_id) == 0 || mir_runtime_field_is_safe(gust_modules[gust_index].module_source_path) == 0 { return mir_runtime_validation(0, "runtime_gust_missing_requirement", ctx); }
+
+        // A bespoke lowering path means the compiler recognised this module.
+        if mir_runtime_lowering_route_is_valid(gust_modules[gust_index].lowering_route) == 0 { return mir_runtime_validation(0, "runtime_gust_non_generic_lowering", ctx); }
+        if mir_runtime_initialization_policy_is_valid(gust_modules[gust_index].initialization_policy) == 0 { return mir_runtime_validation(0, "runtime_gust_missing_requirement", ctx); }
+        if mir_runtime_failure_policy_is_valid(gust_modules[gust_index].failure_policy) == 0 { return mir_runtime_validation(0, "runtime_gust_missing_requirement", ctx); }
+
+        // Runtime Gust source is ordinary repository source, never generated C.
+        if std.str_find(gust_modules[gust_index].module_source_path, "src/runtime/gust/") != 0 { return mir_runtime_validation(0, "runtime_gust_hidden_generated_c", ctx); }
+        if std.str_find(gust_modules[gust_index].module_source_path, ".gst") == 0 - 1 { return mir_runtime_validation(0, "runtime_gust_hidden_generated_c", ctx); }
+
+        mut gust_component_found := 0;
+        mut gust_component_index := 0;
+        while gust_component_index < len(components) { if std.str_eq(components[gust_component_index].component_id, gust_modules[gust_index].component_id) == 1 && std.str_eq(components[gust_component_index].target_id, table.target_id) == 1 { gust_component_found = 1; } gust_component_index = gust_component_index + 1; }
+        if gust_component_found == 0 { return mir_runtime_validation(0, "runtime_gust_abi_or_target_mismatch", ctx); }
+        if std.str_eq(gust_modules[gust_index].target_id, table.target_id) == 0 { return mir_runtime_validation(0, "runtime_gust_abi_or_target_mismatch", ctx); }
+        mut gust_abi := mir_runtime_abi_by_id(table, gust_modules[gust_index].runtime_abi_id, ctx);
+        if gust_abi.found == 0 { return mir_runtime_validation(0, "runtime_gust_abi_or_target_mismatch", ctx); }
+
+        mut gust_exports: std.Vector[str, ctx] := ctx[gust_modules[gust_index].exported_symbol_ids];
+        if len(gust_exports) == 0 { return mir_runtime_validation(0, "runtime_gust_missing_requirement", ctx); }
+        mut gust_export_index := 0;
+        while gust_export_index < len(gust_exports) {
+            mut gust_symbol := mir_runtime_symbol_by_id(table, gust_exports[gust_export_index], ctx);
+            if gust_symbol.found == 0 { return mir_runtime_validation(0, "runtime_gust_missing_requirement", ctx); }
+            if std.str_eq(gust_symbol.value.component_id, gust_modules[gust_index].component_id) == 0 { return mir_runtime_validation(0, "runtime_gust_missing_requirement", ctx); }
+            gust_export_index = gust_export_index + 1;
+        }
+
+        // A module may not depend on itself, directly or through its allowed
+        // dependency list, without an explicit selected policy. Recursive
+        // dependence on an unavailable version of the same component is the
+        // failure this prevents.
+        mut gust_dependencies: std.Vector[str, ctx] := ctx[gust_modules[gust_index].allowed_dependency_ids];
+        mut gust_dependency_index := 0;
+        while gust_dependency_index < len(gust_dependencies) {
+            if std.str_eq(gust_dependencies[gust_dependency_index], gust_modules[gust_index].component_id) == 1 { return mir_runtime_validation(0, "runtime_gust_circular_dependency", ctx); }
+            mut gust_imports: std.Vector[str, ctx] := ctx[gust_modules[gust_index].imported_symbol_ids];
+            mut gust_import_index := 0;
+            while gust_import_index < len(gust_imports) {
+                mut imported_gust := mir_runtime_symbol_by_id(table, gust_imports[gust_import_index], ctx);
+                if imported_gust.found == 1 && std.str_eq(imported_gust.value.component_id, gust_modules[gust_index].component_id) == 1 { return mir_runtime_validation(0, "runtime_gust_circular_dependency", ctx); }
+                gust_import_index = gust_import_index + 1;
+            }
+            gust_dependency_index = gust_dependency_index + 1;
+        }
+
+        mut duplicate_gust_index := gust_index + 1;
+        while duplicate_gust_index < len(gust_modules) {
+            if std.str_eq(gust_modules[gust_index].gust_module_id, gust_modules[duplicate_gust_index].gust_module_id) == 1 ||
+               std.str_eq(gust_modules[gust_index].component_id, gust_modules[duplicate_gust_index].component_id) == 1
+            {
+                return mir_runtime_validation(0, "runtime_gust_missing_requirement", ctx);
+            }
+            duplicate_gust_index = duplicate_gust_index + 1;
+        }
+        gust_index = gust_index + 1;
+    }
+
     // Phase 17.7: retained C is a separately compiled, versioned, target-scoped
     // component with a justified retention reason and a stated exit criterion.
     mut retained_c: std.Vector[MirRuntimeRetainedCComponent[ctx], ctx] := ctx[table.retained_c_components];
@@ -1134,6 +1237,15 @@ func mir_serialize_runtime_boundary_authority_table_for_request(table: MirRuntim
     while index < len(system_imports) {
         output = mir_runtime_append_field(output, "runtime_package_system_import_id", system_imports[index].import_id, ctx);
         output = mir_runtime_append_field(output, "runtime_package_system_import_spelling", system_imports[index].external_spelling, ctx);
+        index = index + 1;
+    }
+    mut gust_modules: std.Vector[MirRuntimeGustModule[ctx], ctx] := ctx[table.gust_modules];
+    index = 0;
+    while index < len(gust_modules) {
+        output = mir_runtime_append_field(output, "runtime_gust_module_id", gust_modules[index].gust_module_id, ctx);
+        output = mir_runtime_append_field(output, "runtime_gust_source_path", gust_modules[index].module_source_path, ctx);
+        output = mir_runtime_append_field(output, "runtime_gust_lowering_route", gust_modules[index].lowering_route, ctx);
+        output = mir_runtime_append_field(output, "runtime_gust_initialization", gust_modules[index].initialization_policy, ctx);
         index = index + 1;
     }
     mut retained_c: std.Vector[MirRuntimeRetainedCComponent[ctx], ctx] := ctx[table.retained_c_components];
