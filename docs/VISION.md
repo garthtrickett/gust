@@ -1,0 +1,1635 @@
+# Gust — The Agentic Software Vertical
+
+**Product, Language, Runtime, and Platform Decisions**
+
+> **What this document is.** A well-specified hypothesis with eight open questions. Two of them — OD-8 (is the scoping analysis sound) and OD-9 (can a model write Gust) — can invalidate the thesis outright, and both are answerable within the demo. The prose is confident because vague prose cannot be attacked; the uncertainty is real and lives in §0.15. Read that table before treating any of this as settled.
+>
+> **Read Part 0 and stop.** Parts I–XXII specify a complete system that is deliberately *not* being built yet (§0.14). They exist so that demo-stage decisions do not foreclose it.
+
+---
+
+# Part 0 — Strategy
+
+## 0.1 Thesis
+
+**Gust is built for software that is written by machines and never read by people.**
+
+Humans own intent, authority, and outcomes. The compiler owns everything in between.
+
+Nearly every language design decision since the 1970s optimises for human reading. As teams stop reading the code they ship, that constraint lifts and most of the design space reopens.
+
+The claim is about **readership**, not authorship. Authorship shifting to machines is the visible change. Readership collapsing is the one that breaks the stack, because review is the trust mechanism everything downstream depends on, and you cannot review what nobody reads.
+
+## 0.2 The problem: a flood that aggregates nowhere
+
+People build applications by asking an AI. The AI writes the code. Nobody reads it. A meaningful share of those applications ship a bug where every user can see every other user's data — missing tenant scoping, the canonical failure of generated software.
+
+**These are not CVEs, and that difference is the whole opportunity.**
+
+A CVE aggregates. It gets an identifier, lands in a vulnerability database, triggers automated alerts, appears in compliance reports. Somebody counts, and the count creates pressure.
+
+A generated app that forgets to scope its queries gets none of that. No advisory, no identifier, no registry, no patch to apply. It is one company's bad week, and the next one is a different company's bad week. Nothing anywhere turns a thousand of those into a number.
+
+So the pain is real, growing, and **invisible** — not because it is small, but because nobody is counting. That has two consequences, and they point in opposite directions:
+
+- **Bad:** there is no market pressure yet, so nobody is shopping for this.
+- **Good:** whoever starts counting defines the problem (§0.9).
+
+## 0.3 Why a language and not a scanner
+
+The reflexive response to a security panic is the thing you can buy next quarter: scanning, policy, insurance, a checklist. A language is a two-year decision.
+
+Structural fixes still win, every time:
+
+| Bug class | What ended it | Elapsed |
+|---|---|---|
+| SQL injection | Parameterised queries — structural | ~15 years |
+| XSS | Auto-escaping templates — structural | ~10 years |
+| Memory unsafety | Rust, plus government pressure — structural | ~40 years |
+
+Scanners were sold throughout all three. None of them ended the problem. The structural fix did — and took a decade or more each time, because ending a bug class meant changing millions of individual developers, one codebase at a time.
+
+**Here you have to change roughly ten generators.**
+
+The centralisation of code production is the genuinely new variable and the strongest argument in this document. One provider flips their build surface to a verified mode and millions of applications change in a single release. No previous structural fix had that lever.
+
+> Every strategic decision should be judged on whether it moves us closer to being what a generator emits by default.
+
+## 0.4 What Gust sells: containment, not correctness
+
+Agent-authored software fails in two ways:
+
+- **Unauthorized** — it touches something it should not. Leaks data, calls the wrong service, exfiltrates a secret. *Catastrophic per incident, rare in volume.*
+- **Incorrect** — it does the wrong thing within its authority. Charges the wrong amount, drops the record. *Survivable per incident, constant in volume.*
+
+Capability enforcement solves the first completely. Nothing in this document — or in any shipping system — solves the second.
+
+By volume, incorrect vastly exceeds unauthorized. So why does this document spend most of its length on capability? **Because capability is tractable and intent is not.** Capability enforcement is a solved design problem; Austral and WASI demonstrate it works. Intent checking — mechanically confirming a program does what was asked — is an open research problem nobody has solved at application scale. Leading with the unsolved half is how you never ship.
+
+State the claim precisely:
+
+> **Gust makes agent-authored code containable. Containment is shippable now. Correctness is the frontier.**
+
+Containment means the blast radius is bounded, declared, and visible in a diff. It does not mean the program is right. Anyone who reads this document and concludes Gust makes agent code trustworthy has been oversold, and the document is at fault.
+
+Three consequences: the demo sells containment and must say containment; the intent layer (Part XXI) is roadmap, not launch, and blocks v0.5 rather than v0.1; and the long-term thesis needs both — containment alone is a good security product with a ceiling.
+
+## 0.5 The four layers
+
+**1. Language — agent-writable, machine-verifiable.** Explicit effects, no ambient authority, one canonical way to express intent. Small surface, minimal idiom drift. Verbosity is free when no human types or reads it, so everything is explicit and nothing is inferred.
+
+**2. Runtime — verifiable execution substrate.** Capability manifests, no install-time execution, content-addressed reproducible builds. Determinism is the precondition for everything above and below it.
+
+**3. Framework — the full-stack surface.** So agents have a canonical target and a buyer has something recognisable to adopt.
+
+**4. Platform — the loop.** Generate, compile, run, trace, revise. Structured traces are the artifact; iteration count is a quality input.
+
+Only layers 1 and 2 matter before the demo. Layers 3 and 4 are how an acquirer productises it.
+
+## 0.6 Where it stands today
+
+Grounded in the repository, not aspiration.
+
+| Area | State |
+|---|---|
+| Contexts and arenas | Deeply built |
+| Linear resources, destructors, move/borrow tracking | Substantial |
+| Ownership and region-based memory | Working |
+| MIR, Cranelift backend, ABI, runtime imports | Working, under active development |
+| Test suite | Several hundred files |
+| **Effects in function types (§17, §18)** | **Absent** |
+| **Static tenant scoping (§56)** | **Absent** |
+| **Typed Postgres query derivation (§55)** | **Absent** |
+| **Model fluency in Gust** | **Absent** |
+
+**Everything built is table stakes. Everything missing is the product.**
+
+The memory model, resources, and arenas are the conventional core of a systems language — a great deal of work, done fast, and Austral already demonstrated the design is tractable. It is throughput-bound work and the demonstrated throughput is high.
+
+The four absent items are different in kind: less code, more design, and design does not compress the way implementation does. Making tenant-scope enforcement *sound* rather than approximately right is where the risk now lives.
+
+The risk profile has shifted, not shrunk: from *can they build a compiler* — answered — to *can they design an effect system and a sound scoping analysis*.
+
+## 0.7 What to build next
+
+Nothing but the demo. In order:
+
+1. **`uses` clauses in signatures.** Effects declared on every function, no inference (§17).
+2. **Effect checking across the call graph.** Undeclared authority is a compile error.
+3. **Typed Postgres queries** via compiler-owned derivation (§14, §55).
+4. **Tenant scope as a tracked property of query construction.** Unscoped queries rejected (§56).
+5. **Model fluency.** Training data and evals so an agent writes Gust well. **Not optional** — a compiler no model can write for is a science project, and this is the item most likely to be underestimated.
+6. **One recognisable multi-tenant application, agent-generated.** An issue tracker or a support inbox. Not a todo list.
+
+**Revised estimate: 2–4 people, 3–4 months, low single-digit millions — plausibly bootstrappable.**
+
+Bootstrapping through the demo is worth real sacrifice, for two reasons. Arriving at a buyer conversation with no cap table, no board, and no clock is the strongest negotiating position available at this stage. And more practically, the motion after publication is slow (§0.8) — runway is what makes a year of waiting survivable rather than fatal. The revised timeline puts both within reach.
+
+### The deliverable
+
+A published, third-party-reproducible side-by-side. The same specification handed to an agent targeting TypeScript and Postgres, and to an agent targeting Gust. The first reproduces the cross-tenant data leak. The second does not compile until it is fixed. Complete traces published: every capability declared, every one exercised, every authority attempt rejected.
+
+That artifact is the entire asset. Everything else is scaffolding around it.
+
+### Explicitly not next
+
+- **More language surface.** Better generics, nicer syntax, richer patterns. The temptation will be constant and every week spent there is a week the demo does not exist.
+- **A productivity suite built in Gust.** An integrated Slack/Linear/Intercom/GitHub product would take years, and if *we* build it by hand it demonstrates that skilled humans can use a new language — which nobody doubted, and which is the opposite of the thesis. The demo application must be agent-generated or it proves nothing.
+- **Deployment platform, jobs, realtime, suppliers.** All post-demo.
+
+## 0.8 Who buys, and how
+
+**You do not sell a compiler. You sell a de-risked three-year problem, and the compiler is the receipt.**
+
+### The buyers
+
+Model providers with a build surface, and AI app-building platforms. Roughly ten to fifteen real prospects globally. Not the end user, who will not pay for security until after a breach.
+
+Their mental state before the conversation: *our generated apps leak user data, we know, we are patching it with scanners and templates, we do not have a real fix and we are not going to build a language.*
+
+What they are buying: **a known liability removed, plus three years of calendar.** Not software.
+
+| Their objection | The answer |
+|---|---|
+| "We can build this" | You can. In three years, with compiler engineers you are not hiring, while your whole org is pointed at models. |
+| "We won't depend on a startup for a core surface" | Language spec and reference compiler are open. And the exit conversation is available from day one. |
+| "Show me" | The artifact. Reproducible by you, not a deck. |
+
+### The realistic outcome is acquisition
+
+Licensing a language substrate to competing labs is very hard: the first mover wants exclusivity, the value is strategic rather than operational, and buying outright is cheaper than a decade of fees. Plan for acquisition and stop pretending an ARR line is the point.
+
+That changes what to optimise for: **strategic necessity and being un-buildable in the time they have**, not revenue.
+
+### Open-core, not open
+
+Earlier drafts said open the spec. As an independent company, open-sourcing the whole thing destroys the leverage — they take it and skip you.
+
+- **Open:** language specification, reference compiler. Buys credibility, adoption, and the answer to dependency risk.
+- **Proprietary:** verified runtime, trace infrastructure, conformance tooling, scoping analysis implementation.
+
+### The motion
+
+**Publish, do not pitch.** A reproducible artifact showing a data-leak class becoming a compile error circulates in the three communities that matter — compiler people, AI-safety people, app-builder engineers. That is how infrastructure companies with no revenue get bought.
+
+But *publish and wait* is not a plan. Passive publishing buys one good week and then silence. Four things make inbound actually happen:
+
+**Two audiences, two artifacts.** They are not interchangeable and both are required.
+
+| Artifact | Audience | Function |
+|---|---|---|
+| **The demo** (§0.7) | Compiler people, AI-safety researchers, app-builder engineers | Technical proof |
+| **The statistic** (§0.9) | Journalists, analysts, and whoever at a platform has to answer for it | Makes the problem legible to people who will not read a compiler error |
+
+The demo alone is a neat trick nobody has a budget line for. The statistic alone is a scary number that sells scanners.
+
+**Named people, not the internet.** Once it is public, send it directly to specific engineers and researchers at each prospect. Not a pitch — *built this, thought you would find it interesting*. That is how it reaches an internal channel, which is how these conversations actually start.
+
+**Warm introductions beat everything.** Existing relationships in this industry are worth more than any volume of posting, and they are the cheapest asset available. Use them deliberately rather than hoping the artifact travels on its own.
+
+**Expect a long lag.** The realistic path is: an engineer sees it, mentions it internally, three or more months pass, someone reaches out. Budget for that and do not reinterpret month two as failure.
+
+**Parallel, never exclusive.** Every prospect at once, none told they are the only conversation. That is the entire pricing power. The moment one gets exclusivity the outcome is capped.
+
+**Be able to afford the wait.** This is the real argument for bootstrapping (§0.7), beyond negotiating leverage: reaching the artifact on a few months of own time means *publish and wait a year* is a bet that can be held. Having raised and hired, the same wait is fatal. Runway is what converts a slow motion into a viable one.
+
+### A note on training signal
+
+Declared effects plus deterministic execution make every run a labelled example — did it compile, did it attempt authority it lacked, did it hold authority it never used (§112). For an acquirer who trains models, that is a second reason to want this, and it costs us nothing extra to build.
+
+It is a value driver in their diligence, not a thesis we need to prove. Do not organise the company around it.
+
+## 0.9 Manufacturing the statistic
+
+If nobody is counting (§0.2), the entity that starts counting defines the problem. Snyk built the npm vulnerability database and became the authority on npm risk. Chainguard made CVE counts in base images a number people report.
+
+**Scan public AI-generated deployments. Publish the rate.** *"We examined N applications built with AI app builders. X% expose data across users."* Repeat quarterly.
+
+Three reasons this is the highest-value work after the demo, and possibly alongside it:
+
+1. **Cheap and fast.** Weeks, not months, and it does not compete with compiler work for the same person.
+2. **It is customer research.** It reveals whether tenant scoping actually dominates the bug distribution. If the top failure turns out to be exposed credentials, §56's centrality is wrong and we need to know before building the product around it.
+3. **It makes us the named alternative before the moment arrives** — which decides who wins when it does.
+
+Do this ethically: public deployments only, responsible disclosure to affected operators before publication, aggregate statistics rather than named victims. The credibility of the number depends entirely on how it was obtained.
+
+**Do not become a scanner company.** The scanner is the argument, not the product. It is the cheap fix we expect the market to reach for first, and being known for it makes us harder to distinguish from it.
+
+## 0.10 The numbers
+
+Two earlier drafts are withdrawn — direct-to-team SaaS and platform licensing — because both assumed a business we are not building.
+
+**Cost to the demo:** 2–4 people, 3–4 months, low single-digit millions. Plausibly bootstrappable.
+
+**Cost to a productised v1.0:** $30–60M and 2–3 years, revised down from earlier estimates on demonstrated velocity. Only relevant if we choose to build rather than sell.
+
+**Outcome:** an acquisition priced on strategic necessity, competitive tension between bidders, and how acute the liability feels at that moment. That range is genuinely wide — comparable infrastructure and team acquisitions in adjacent categories have cleared from the low tens of millions to several hundred, and the variable is almost entirely whether more than one buyer wants it.
+
+The number to hold onto is not the exit. It is that **the decision point is a few million over three to four months** — not $80M over four years. That is the single most important structural fact in this document.
+
+## 0.11 Principal risks
+
+- **The freakout produces a scanner, not a language.** This is the real gamble. The incidents continuing is near-certain; the market reaching for a structural fix is not. **Budget for losing the first wave.** We are playing for what happens after everyone discovers scanning did not fix it — and history says that second wave arrives, slowly.
+- **A soundness hole in the scoping analysis.** One counterexample kills the only claim we make. Someone adversarial must attack it before anything is published.
+- **The agent cannot actually write Gust.** Then we have proven a human expert can use a new language, which is the well-documented failure mode of every comparable attempt.
+- **A buyer builds it in-house first.** The window is roughly 24–36 months and it is now existential rather than competitive. Demonstrated velocity is the main defence.
+- **No forcing function ever arrives.** These apps may be low-stakes enough that the market settles into permanent tolerance, the way it did with compromised WordPress sites. §0.9 is the mitigation — manufacture the pressure rather than wait for it.
+- **Model capability routes around the problem.** If models become reliably good at writing correct code inside capability wrappers over existing languages, the language-level advantage compresses.
+- **Scope discipline.** This document specifies several companies' worth of surface area. §0.14 is the defence and must be enforced in review.
+- **We build Forge, or more language, instead of the demo.**
+
+## 0.12 What humans actually do
+
+If nobody reads the code, the source file is not the primary artifact. Three things replace it:
+
+| Human owns | Artifact | Status |
+|---|---|---|
+| **Authority** — what may it touch | Capability manifest and lockfile diff (§17, §72) | Specified |
+| **Outcomes** — what did it do | Structured execution trace (§108) | Specified |
+| **Intent** — what should it do | *Nothing yet* | **Missing — Part XXI, OD-6** |
+
+Gust's interface is the authority diff, not the editor.
+
+**The failure mode inverts.** Human code fails from misunderstanding — the author missed a case. Types and review catch that. Agent code fails from **plausible-but-wrong**: it compiles, type-checks, reads well, and does something subtly different from what was asked. Types do not catch that. Review does not catch it if nobody reads. Only execution against stated intent does — which is why Part XXI exists and why §0.4 is careful about what is being claimed.
+
+## 0.13 Prior art
+
+Almost every component exists somewhere. The composition does not. Stating the deltas is cheaper than being told them.
+
+| System | Overlap | Delta |
+|---|---|---|
+| **Austral** | Linear types, capability security, regions, no GC, no macros, universe system. Closest existing language. | Capabilities are **linear values threaded through call chains**, not effects declared in types. No full-stack surface, no platform. |
+| **Unison** | Abilities in types, content-addressed code, cloud platform. | No application model, no tenancy, no capability governance. |
+| **WASM Component Model / WASI P2** | Capability-based, deny-by-default, composable, language-agnostic, industry-backed. | Syscall-level, not domain-level. **Strongest competing path.** |
+| **Convex** | Deterministic typed server functions, full-stack. | No effect system; TypeScript's ambient authority underneath. |
+| **Darklang** | Deployless, immutable, full-stack, later repositioned around AI. | Same shape of bet, attempted, did not break through. A data point on adoption difficulty and on hand-built demos proving the wrong thing. |
+| **Roc / Gleam** | Platform-effects model, no macros, small surface. | General-purpose; no capability governance. |
+| **Pony** | Reference capabilities enforcing data-race freedom at compile time. | Actor model; no application platform. |
+| **Nix / Bazel** | Content-addressed reproducible builds. | Table stakes, not a differentiator. |
+| **Wasp** | Full-stack DSL designed to be AI-generated. | Generates React and Node; inherits ambient authority wholesale. |
+
+**Why a language rather than a capability layer over existing ones.** WASI-plus-policy gets enforcement and sandboxing with agents writing languages the models already know — no cold start, no compiler team, faster. Any diligence process will raise it. Two things it structurally cannot give: **effect granularity** (syscall-level `network.request<"stripe.com"> + secret.use<"stripe_key">` versus domain-level `payments.charge` — and when the manifest is the artifact humans read, abstraction level *is* the product), and **whole-stack coherence** (one effect system across client, server, database and jobs, so an authority change shows in one diff).
+
+**On Austral specifically.** Its existence is good news — an existence proof for the hardest technical bets here. Two consequences: do not defend Gust on language novelty, because that argument is lost; and have an answer to "why not fork it" — capability-as-value is the wrong foundation when the manifest is the primary human-readable artifact, plumbing tokens through a twelve-frame handler is untenable at application call depth, and most of this document is not language work.
+
+## 0.14 Sequencing
+
+**Demo (months 0–4).** §0.7. Language core is done; add effects, scoping, typed queries, model fluency, one agent-generated multi-tenant app. Publish.
+
+**Counting (parallel, months 0–3).** §0.9. Independent of compiler progress.
+
+**Conversations (months 4–12).** Parallel, non-exclusive, inbound-led off the published artifact.
+
+**Only if we choose to build rather than sell:**
+
+- **v0.5** — client rendering, auth and authorization, migrations, deploy, intent layer v1 (OD-6).
+- **v1.0** — jobs, self-hosted parity, capability fakes, deterministic test scheduling, multi-tenant rollout.
+- **Post-1.0** — durable workflows, realtime, distributed cache, supplier certification, registry, editions and LTS.
+
+Everything from v0.5 down is specified in this document so that demo-stage decisions do not foreclose it. None of it is committed.
+
+## 0.15 Open decisions
+
+| # | Question | Blocks | Reference |
+|---|---|---|---|
+| OD-1 | Transparent suspension vs coloured async (server) | Demo | §21 |
+| OD-2 | Generic functions vs compiler-owned query derivation | Demo | §14, §55 |
+| OD-8 | **Soundness of the tenant-scoping analysis** — adversarial review before publication | Demo | §56 |
+| OD-9 | **Model fluency approach** — synthetic corpus, fine-tune, or prompt-level | Demo | §0.7 |
+| OD-4 | WASM stack-switching support and payload cost | v0.5 | §21, §41 |
+| OD-3 | SAM state ownership under linear resources and no interior mutability | v0.5 | §27, §38 |
+| OD-6 | **Form of the intent layer** — executable specs, behavioural contracts, or property declarations | v0.5 | Part XXI |
+| OD-5 | Supplier certification staffing model | Post-1.0 | Part XVI |
+
+## 0.16 Non-goals
+
+Gust does not attempt to be:
+
+- a general-purpose systems language;
+- a host for existing JavaScript, Python, or Rust ecosystems;
+- a runtime for arbitrary untrusted third-party code in-process;
+- a formal-verification system (§79);
+- a guarantee of correctness — only of containment (§0.4);
+- a scanner or security-analysis product (§0.9);
+- a productivity suite, an app builder, or any product other than the substrate;
+- a platform whose guarantees survive an unrestricted escape hatch (Part XVIII);
+- an improvement to tooling that operates on code humans already maintain.
+
+**One line:** the fix for AI-generated data leaks is structural, and for the first time in the history of this problem the lever is ten generators instead of ten million developers.
+# Part I — Product
+
+## 1. Product vision
+
+Gust is a purpose-built programming language, compiler, and runtime for full-stack web applications that are written by machines and read by almost no one.
+
+Human developers remain the owners, reviewers, and operators of the resulting systems. They are not expected to write the code, and increasingly not to read it. What they own is stated in §0.12: **intent, authority, and outcomes.**
+
+Every decision should be read against one question: *does this make agent-authored code easier to generate correctly, cheaper to verify, and safer to deploy without anyone reading it?*
+
+### Core promise
+
+> **No code executes authority it did not declare, and the compiler enforces it.**
+
+A function's type states both the values it transforms and the authority it requires. Undeclared authority is a compile-time error, not a runtime surprise. This holds regardless of who or what wrote the code.
+
+### Lead claim
+
+> **The most common way AI-generated applications leak data cannot be expressed in this language.**
+
+Missing tenant scoping — an application querying the database without restricting to the current user — is the canonical failure of agent-authored software and the direct cause of repeated public data-exposure incidents. §56 makes an unscoped query a **compile error**. Not a lint, not a scanner, not a template someone might forget: the program does not build.
+
+### The limit of the claim
+
+Gust delivers **containment, not correctness** (§0.4). It bounds and declares what a program can reach. It does not establish that the program does what was asked. Every external statement must hold this line; the intent layer (Part XXI) is how the gap eventually closes, and it does not exist yet.
+
+### What this makes possible
+
+- **Reviewable without reading.** A diff's authority change is visible in its signatures and its lockfile. Review means reading what the code may now touch, not what it says.
+- **Deployable.** Static least privilege is a claim a security team can verify rather than a promise they must trust.
+- **Trainable.** Declared effects and deterministic builds make execution traces clean supervision signal (§112) — relevant to an acquirer who trains models.
+
+### What Gust does not claim
+
+Gust does not claim vulnerabilities cannot exist. It claims authority is declared, enforced, monitored, revocable, and auditable, and that the boundary at which each guarantee weakens is explicit (§98).
+
+When untrusted code is correctly isolated, the guarantees continue to apply outside the affected trust boundary. If untrusted code can bypass isolation or obtain unrestricted process capabilities, the guarantee is lost for the wider runtime boundary.
+
+## 2. Market positioning
+
+### The lever is the generator
+
+Ending a bug class has always meant changing millions of developers, one codebase at a time — which is why it has always taken a decade (§0.3). Code production is now centralising into roughly ten generators. Change what they emit and millions of applications change in a release.
+
+**Gust is positioned to be what a generator emits when the application handles data worth protecting.** Every other positioning question follows from that.
+
+### Who buys
+
+Model providers with a build surface, and AI app-building platforms. Ten to fifteen real prospects globally (§0.8). They are not buying a compiler — they are buying a known liability removed and three years of calendar, and the realistic outcome is acquisition rather than a licence.
+
+**Not the end user.** Someone shipping an internal tool does not wake up wanting capability enforcement, and willingness-to-pay is near zero until after a breach. That is precisely why Gust must arrive as a *mode of someone's product* rather than as a product: the user opts in because their app handles real data, and never learns what a capability is — or that Gust exists.
+
+### The three parties
+
+| Role | Who | What they experience |
+|---|---|---|
+| Chooses | The end user | A toggle and a guarantee |
+| Writes | The model | Gust, fluently, because it was trained to |
+| Carries the risk | The platform | Fewer incidents attributable to generated code |
+
+Nobody in that table reads Gust. That is §0.1 as a product fact rather than a design principle.
+
+### The market timing problem
+
+There is no acute buying pressure today, because nobody is counting (§0.2). That is the central commercial risk and §0.9 is the answer: produce the statistic, be the named alternative before the moment arrives, and accept that the first wave of demand will go to scanners.
+
+### Later markets
+
+**Regulated and security-conscious organisations** are the natural second market once verification is proven — slower, larger, higher-friction, and the slowest to stop reading code. Not a market to organise around now.
+
+### Supplier certification is a service, not the guarantee
+
+Where this document describes approved suppliers, certification, and revocation (Part XVI), read those as commercial services layered on the compiler-enforced guarantee — never substitutes for it. Curation scales linearly with ecosystem size and concentrates liability; capability enforcement does neither.
+## 3. Product philosophy
+
+Gust provides one official way to build every common part of an application. Convergence is a correctness property, not an aesthetic one: fewer idioms means less drift in generated code, higher agent accuracy, and smaller review surface.
+
+The platform owns UI and rendering, routing, client/server communication, server actions and APIs, authentication, authorization, database access, migrations, forms and validation, background jobs, scheduling and workflows, testing, deployment, configuration and secrets, and logs, metrics, tracing, and errors.
+
+These are native Gust primitives rather than a collection of hidden third-party packages.
+
+External suppliers are reserved for genuinely external services: payment providers, S3-compatible infrastructure, email and SMS delivery, AI APIs, maps, tax calculation, shipping.
+
+Developers — and the agents writing on their behalf — call Gust-owned capability interfaces such as `payments`, `storage`, and `email`. They do not import supplier SDKs directly.
+
+---
+
+# Part II — Trust, Suppliers, and Infrastructure
+
+## 4. Trusted suppliers
+
+Trusted suppliers operate behind Gust-defined capability interfaces and isolation boundaries rather than shipping unrestricted packages into applications.
+
+Preferred execution models, in order:
+
+1. Remote capability services.
+2. Sandboxed local adapters.
+3. In-process components only when strictly necessary.
+
+Gust owns the standard capability interfaces. Suppliers may implement those interfaces or propose reviewed and versioned extensions.
+
+An approved capability may be vendor-hosted, hosted by Gust, customer-hosted, or deployed inside a self-hosted Gust installation. Regardless of hosting model, the implementation, configuration, provenance, and isolation model must remain certified by Gust.
+
+## 5. Native infrastructure
+
+Every Gust application includes PostgreSQL and an S3-compatible object store.
+
+Applications access both through Gust-owned APIs. The underlying infrastructure may therefore be operated by Gust Cloud, AWS, MinIO, or another approved compatible provider.
+
+Changing infrastructure providers must not require changing the application architecture.
+
+## 6. Hosted and self-hosted deployment
+
+Gust Cloud is the default and easiest production environment, but Gust is not cloud-only.
+
+Self-hosted Gust installs the same runtime, control plane, policy system, capability model, observability system, and deployment system.
+
+Hosted and self-hosted Gust must not diverge into different products.
+
+## 7. First-use experience
+
+Within approximately fifteen minutes, a developer — or an agent acting on their behalf — should be able to create and deploy a production-shaped full-stack application containing public pages, protected pages, authentication, a database schema and migration, forms and validation, server actions, object storage, email, background work, and logging and observability.
+
+The agent-facing equivalent of this target is the loop latency budget in §107.
+
+---
+
+# Part III — Organisation, Workspace, and Tenancy
+
+## 8. Organisation and workspace model
+
+The **organisation** is the administrative and billing boundary. It owns users and memberships, billing, security policies, trusted-supplier permissions, domains, and deployments.
+
+The **workspace** is the application tenant and data-isolation boundary.
+
+Simple customers receive one default workspace automatically. Larger customers may operate multiple isolated workspaces within an organisation.
+
+Projects remain application-level data. They do not become a universal tenancy layer.
+
+## 9. Built-in multi-tenancy
+
+Multi-tenancy is native to the platform.
+
+Before application code executes, the request hostname, subdomain, or verified custom domain resolves the active workspace.
+
+Gust automatically scopes database access, object storage, jobs, caches, logs, and capability calls.
+
+The tenant context is platform-owned and immutable for the lifetime of a request or job. Background jobs carry a signed tenant context. Cross-tenant administration requires an explicit privileged capability.
+
+The default PostgreSQL isolation model is one schema per workspace. Stronger options are database-per-workspace and cluster-per-workspace.
+
+---
+
+# Part IV — Language Principles
+
+Every restriction in this Part serves two ends at once: it narrows the space of programs a human must reason about, and it narrows the space of programs an agent can generate.
+
+Under the readership thesis (§0.1) these restrictions stop needing a defence. Macros, operator overloading, inheritance, and user-level generics are conveniences for a human writing code daily, and are either free or actively harmful to a machine generating it. The austerity is not a trade-off — it is the correct answer once reading is rare.
+
+The corollary: **verbosity is free.** Where a conventional language would infer to save typing, Gust states things explicitly, because the cost of inference is paid by every reader of a diff and the benefit accrues to a typist who no longer exists.
+
+## 10. Language and runtime model
+
+Gust is a purpose-built language rather than a framework hosted inside another language.
+
+The language directly understands client and server execution boundaries, database effects, authentication and authorization, capabilities and permissions, trusted suppliers, secrets, deployment boundaries, memory regions, and ownership.
+
+Gust uses explicit ownership and region-based memory built around branded contexts such as `ctx`.
+
+The goal is strong memory safety without garbage collection, unrestricted pointer use, or hiding ownership entirely.
+
+## 11. Errors and absence
+
+Recoverable failures use `Result[T, E]` and `Option[T]`. The language includes `?`-style propagation.
+
+Ordinary operational failures must not use exceptions.
+
+Safe references are non-null. Absence is represented with `Option[T]`.
+
+`null` is restricted to raw pointers inside `unsafe`, FFI and ABI boundaries, and compiler-owned runtime representations such as a zero-length slice with a null backing pointer.
+
+*Rationale: a single total failure convention makes generated error handling mechanically checkable for exhaustiveness rather than stylistically reviewed.*
+
+## 12. Abstraction model
+
+Gust does not support inheritance, broad trait systems, or arbitrary interface hierarchies.
+
+The primary abstraction model is concrete structs, ordinary functions, composition, small explicit function tables, and Gust-owned capability interfaces.
+
+Data is represented as structs and passed into functions.
+
+Dynamic polymorphism should be used only where genuinely necessary and must remain explicit.
+
+*Rationale: resolution is local. A call site tells you what runs, without whole-program hierarchy search — for a human reviewing a diff or a model predicting a token.*
+
+## 13. Generics
+
+Gust follows a deliberately restricted Odin/C-style approach.
+
+The initial generic system supports generic structs, generic enums, compiler-owned generic containers, typed wrappers, and a small number of foundational standard-library abstractions.
+
+Gust does not support specialization, higher-kinded types, arbitrary trait bounds, associated-type systems, overlapping implementations, type-level programming, or generic metaprogramming.
+
+## 14. Generic functions and compiler-owned derivation (OD-2)
+
+User-written generic functions are not available initially.
+
+The typed query builder (§55), typed RPC schemas (§44), and typed templates (§37) all require type relationships that ordinary structs and concrete functions cannot express. **These are compiler-owned derivations, not user-level generic programming.** The compiler computes result types for joins, projections, aggregates, and serialization boundaries; application code receives concrete generated types.
+
+This resolves the apparent conflict between §13 and §55: the query builder is not implemented in the user-facing language. It is a compiler feature with a typed surface.
+
+It also answers "why not build Gust as a library over an existing austere language" — the differentiating features require compiler support, and any language austere enough to be a good base bans the metaprogramming that would let you add them from outside.
+
+**OD-2 remains open** on one point: whether a restricted form of user-written generic function is required before v0.1 for standard-library collection code, or whether compiler-owned containers cover it.
+
+## 15. Compile-time execution
+
+Gust bans user-defined macros, arbitrary compile-time execution, programmable syntax transformation, and build scripts capable of arbitrary filesystem or network access.
+
+The compiler may provide bounded, compiler-owned derivations for standard platform needs such as serialization, validation, equality, database schemas, RPC schemas, and policy metadata.
+
+Compiler-owned derivations must be deterministic, inspectable, and incapable of arbitrary code execution.
+
+> Gust permits explicit runtime code and bounded compiler-owned derivation, but no user-programmable compile-time language.
+
+*Rationale: no install-time or compile-time execution removes the single largest class of ecosystem supply-chain attack, and guarantees that reading a source file — when someone finally does — tells you what the program does.*
+
+## 16. Operators and conversions
+
+Gust does not support user-defined operator overloading. The operator set is compiler-owned.
+
+There is no implicit numeric narrowing, no implicit lossy conversion, and no conversion based on user-defined dispatch.
+
+Only obviously lossless widening conversions may be implicit. All other conversions require explicit checked operations.
+
+---
+
+# Part V — Effects and Capabilities
+
+## 17. Effects in function types
+
+A function's type describes both the values it transforms and the authority it requires.
+
+Functions declare capabilities such as:
+
+```
+db.read<User>
+db.write<Order>
+storage.read
+storage.write
+email.send
+payments.charge
+secret.use<"stripe">
+time.read
+random.use
+network.request<host>
+```
+
+**Effects are declared on every function, without exception.** Earlier drafts permitted inference on private functions; that is withdrawn. Inference exists to save human typing, and no human types. Full annotation makes diffs informative, traces correlatable, and generation more constrained. The only cost is verbosity, and verbosity is free (Part IV).
+
+This enables static least privilege, containable agent-generated code, compiler-checked mocks, automatic deployment policies, and auditable authority changes.
+
+## 18. Effect granularity
+
+**This is Gust's primary technical differentiator.** Every other capability system — WASI, Austral, Pony, object-capability designs — operates at the syscall or resource level. Gust operates at the level of business authority.
+
+Application code requests:
+
+```
+uses payments.charge
+```
+
+rather than:
+
+```
+uses network.request<"stripe.com">,
+     secret.use<"stripe_key">
+```
+
+Low-level supplier requirements are held by the approved capability implementation.
+
+This matters because of §0.12: when the manifest is the artifact humans actually read, abstraction level *is* the product. `payments.charge` is reviewable by someone who is not a systems engineer, and generatable by an agent reasoning in domain terms.
+
+Effects may carry restrictions for resource type, operation, secret name, hostname, region, and workspace scope.
+
+Function values preserve their effect sets. A function requiring fewer effects may substitute for a function type that permits more effects. Authority may only be delegated by explicitly narrowing an existing capability.
+
+## 19. Unsafe and authority
+
+`unsafe` is independent from capability authority.
+
+An unsafe block does not grant access to databases, networks, secrets, storage, suppliers, or cross-tenant operations.
+
+Unsafe code must still possess every required effect.
+
+---
+
+# Part VI — Concurrency, Tasks, and Transactions
+
+## 20. Structured concurrency
+
+Normal application concurrency is structured and request-scoped.
+
+Spawned tasks belong to a lexical task scope. Leaving that scope must wait for completed children, cancel unfinished children, and prevent detached work from leaking.
+
+Cancellation propagates from parent tasks to children. Task failures propagate through `Result`.
+
+Fire-and-forget work is not permitted in normal request code. Durable background work uses jobs.
+
+Channels may exist as a lower-level primitive. Actors are a library or platform pattern, not the universal concurrency model.
+
+## 21. Suspension model (OD-1, OD-4)
+
+**Preference:** Gust should avoid forcing all asynchronous code into a coloured async function hierarchy if capability calls can suspend transparently.
+
+Concurrency remains explicit through task creation, task scopes, joins, cancellation, and timeouts.
+
+**Open decision.** Transparent suspension implies green threads or effect handlers. Against a WASM browser target (§41) that means stack switching, with real cost in payload size, portability, and toolchain support, and it interacts directly with the ownership-across-tasks rules in §30.
+
+The demo cut (§0.14) is server-only, which splits this cleanly: **OD-1 (server suspension) must resolve before the demo; OD-4 (WASM cost) defers to v0.5.** If transparent suspension proves unworkable on WASM, the fallback is coloured async on the client and transparent suspension on the server — accepting the asymmetry rather than degrading both.
+
+## 22. Transactions
+
+Transactions are lexical and typed:
+
+```
+transaction db as tx {
+    ...
+}
+```
+
+Database operations inside the block are statically bound to `tx`. Transaction handles and transaction-bound values cannot escape the transaction scope.
+
+Nested transactions use explicit savepoints.
+
+Transactions declare isolation level, timeout, and retry policy. Serialization conflicts and retry exhaustion return typed errors.
+
+Automatic retries are allowed only for transaction blocks containing retry-safe database effects. The compiler rejects external effects — email, payments, arbitrary networking, supplier mutations — inside automatically retried transactions.
+
+Gust provides post-commit hooks and a transactional outbox for reliable external effects after commit.
+
+---
+
+# Part VII — Resources, Ownership, and Memory
+
+## 23. Value categories
+
+**Copy values.** Integers, bytes, booleans, simple enums, IDs and indices, and explicitly copyable structs. A user-defined struct is copyable only when every field is copyable and the type is explicitly marked copyable.
+
+**Context-bound views.** Non-owning views into storage associated with a branded context: `str`, slices, references. Copying a view copies the view descriptor, not its backing storage. A view cannot outlive its context.
+
+**Owned values.** Owned collections and allocations move by default unless explicitly cloned into a destination context.
+
+**Linear resources.** One owner, compiler-tracked lifecycle state. File or directory handles, secrets, transaction handles, capability handles, native resources, and structs containing linear fields.
+
+## 24. Contexts and arenas
+
+The language has one underlying branded context and arena mechanism.
+
+The platform provides well-known context kinds: scratch, temporary lexical, request, task, job execution, application, and explicitly managed persistent contexts.
+
+These are compiler/runtime-owned arena classes rather than separate ownership systems.
+
+## 25. Lifetime movement
+
+A value from a shorter-lived context may enter a longer-lived context only through cloning into the destination context, serialization, or explicit ownership transfer.
+
+Copying a view does not extend its lifetime.
+
+Request-branded references cannot enter jobs, durable messages, longer-lived caches, application state, or persistent storage.
+
+## 26. Borrows
+
+Shared immutable borrowing uses `&T[ctx]`. Exclusive mutation retains the `inout T[ctx]` model.
+
+Gust should not introduce `&mut T[ctx]` while `inout` serves the same purpose.
+
+Borrows are lexical and cannot outlive their context.
+
+Public APIs must state context brands explicitly. There is no hidden lifetime inference across public boundaries.
+
+Shared mutable references are prohibited.
+
+## 27. Shared ownership (OD-3)
+
+Ordinary references remain borrowed and context-bound.
+
+Where unavoidable, Gust may provide an explicit compiler-owned read-only shared ownership type such as `Rc[T, ctx]`.
+
+Safe application code does not receive unrestricted interior mutability.
+
+Shared mutation should instead occur through SAM state ownership, actors, transactions, or explicit synchronization primitives.
+
+**Open (v0.5):** the SAM state model (§38) is where this rule meets the operation every application performs constantly. A worked end-to-end example — store, action dispatch, optimistic update, rollback — must be written and reviewed before client work begins.
+
+## 28. Linear resources
+
+Root resource types opt into resource semantics through explicit linear metadata, a `Resource[...]` representation, and registered destructor metadata.
+
+Linearity propagates transitively. Any struct containing a linear field is itself linear. Ordinary strings, slices, collections, and branded structs do not automatically become resources.
+
+Compiler-tracked resource states: owned, borrowed, moved, closed, destructor scheduled.
+
+The compiler must reject use after move, double move, double close, closing borrowed resources, moving borrowed resources, missing required cleanup, and escaping transaction- or context-bound resources.
+
+## 29. Cleanup
+
+Linear resources clean up automatically at lexical scope exit.
+
+`defer` remains available for explicit ordering, rollback logic, additional non-default cleanup, and early scheduling.
+
+Cleanup order:
+
+1. Deferred actions execute in reverse registration order.
+2. Remaining owned locals are destroyed in reverse declaration order.
+3. A struct's explicit destructor body runs.
+4. Remaining owned fields are destroyed in reverse field-declaration order.
+
+Moved, closed, or already scheduled resources are never destroyed twice.
+
+Automatic destructors must be infallible. Operations that can meaningfully fail — committing, flushing, finishing an upload, completing durable writes — must remain explicit and return `Result`.
+
+Cleanup diagnostics may be recorded as suppressed information, but cleanup must not silently replace the active error or turn a successful return into an unrelated hidden failure.
+
+## 30. Ownership across tasks and channels
+
+Structured tasks may receive owned values, or immutable borrows valid for the complete task scope.
+
+Mutable borrows cannot be shared across tasks.
+
+Channels transfer ownership of sent values.
+
+Values containing context-bound references may cross into a task only when the receiving task shares a valid parent context.
+
+Durable jobs and messages require fully owned serializable values. They cannot contain references.
+
+---
+
+# Part VIII — Core Type-System Details
+
+## 31. Enums and matching
+
+Gust initially supports payload-carrying tagged enums, generic enum templates, and compiler-owned integer-backed enums for FFI where necessary.
+
+`match` initially supports enum cases, flat variant destructuring, and exhaustive checking.
+
+Deferred: nested patterns, arbitrary literal patterns, match guards, arbitrary extractors.
+
+All enum matching must be exhaustive.
+
+*Rationale: exhaustiveness converts a whole class of generated-code omission into a compile error.*
+
+## 32. Numbers
+
+Gust supports compiler-defined fixed-width integer types: `i32`, `u32`, `i64`, `u64`, `isize`, `usize`.
+
+**Integer overflow traps by default in all builds.** This carries a measurable runtime cost and is accepted deliberately: silent wraparound in agent-generated arithmetic is a correctness failure that no review process catches, least of all one where nobody reads the code.
+
+Explicit named operations provide wrapping, saturating, and checked arithmetic — functions or explicit methods, not overloaded operators.
+
+The compiler-owned standard library provides `Decimal`, `Money[Currency]`, `Instant`, `Duration`, `Date`, `LocalTime`, and `ZonedDateTime`.
+
+Money values with different currencies cannot be combined without explicit conversion.
+
+## 33. Strings and text
+
+`str` is an immutable UTF-8 view branded by its backing context. It is not automatically an owned heap string.
+
+Low-level length and slicing semantics are byte-based. Integer indexing must not pretend to return a Unicode character.
+
+The standard library provides explicit APIs for bytes, Unicode scalar values, grapheme clusters, and validated UTF-8 slicing.
+
+An owned text type such as `String[ctx]` may be provided for independently owned or mutable text.
+
+Raw byte access requires explicit intent.
+
+## 34. Panics
+
+Ordinary failures use `Result` and `Option`.
+
+User code may panic only for impossible states or violated invariants.
+
+A panic terminates the current request, task, or job — not the complete deployment.
+
+Runtime corruption or unsafe-memory failure may terminate the application process when containment is no longer trustworthy.
+
+---
+
+# Part IX — Client, UI, and RPC
+
+*v0.5 (§0.14). Not in the demo.*
+
+## 35. Rendering model
+
+Gust begins as a client-rendered application platform with typed RPC. The model is similar in spirit to tRPC for client/server communication and lit-html for rendering.
+
+Execution locations are explicit and fixed:
+
+- client functions run in the browser;
+- server functions run in the server runtime;
+- shared code must be pure, serializable, and capability-free.
+
+Server functions generate typed client calls. The compiler rejects server-only capabilities in client code.
+
+## 36. UI component model
+
+Gust provides a typed, compiled implementation of the lit-html template model.
+
+Components are ordinary functions returning `View`. Templates use typed HTML expressions and incremental DOM-part updates rather than a virtual DOM. Components compose by calling other component functions.
+
+```
+component Counter(model: CounterModel) View {
+    html {
+        <button on:click={Action.Increment}>
+            Count: {model.count}
+        </button>
+    }
+}
+```
+
+There is no virtual DOM, no JSX transformer, no runtime reflection, and no user-defined rendering macros.
+
+## 37. Typed templates
+
+Template type checking is a compiler-owned derivation (§14). Attribute types, event handler signatures, and interpolation types are checked against the component's model type at compile time.
+
+## 38. SAM state model (OD-3)
+
+The standard library includes a SAM-based state model.
+
+- The **model** stores application state.
+- **Actions** describe typed events and commands.
+- **Acceptors** validate and apply state transitions.
+- **Presenters** derive view state.
+- **Effects** perform RPC, timers, storage, and subscriptions.
+
+Event handlers dispatch typed SAM actions rather than directly mutating DOM state.
+
+Local and remote state use the same action model while effects remain explicit.
+
+See §27: the interaction between SAM state ownership, linear resources, and the prohibition on interior mutability is an open decision requiring a worked example before v0.5.
+
+## 39. Browser access
+
+Client code may use UI primitives, local state, SAM state machines, typed RPC clients, serializable values, pure shared functions, and approved browser capabilities.
+
+Client code may not directly use databases, server secrets, payments, server email, server object storage, unrestricted filesystems, unrestricted networking, or server resources and references.
+
+Direct DOM access and unrestricted browser APIs require explicit browser capabilities.
+
+## 40. Forms, accessibility, and styling
+
+Forms are typed, schema-validated, integrated with RPC validation, and accessibility-aware.
+
+Styling uses compiler-owned scoped CSS. Global styles require explicit declaration.
+
+## 41. Browser compilation target
+
+Gust targets WebAssembly first, with a small JavaScript bridge for DOM integration. A JavaScript output backend may be added later for compatibility.
+
+A basic application ships only the Gust UI runtime, compiled application client code, and required browser bindings.
+
+It does not ship a package loader, supplier SDKs, runtime reflection, unused standard-library code, or a large general-purpose framework runtime.
+
+Ahead-of-time compilation and tree shaking should make payload size proportional to used features. The design target for a basic application is tens of compressed kilobytes rather than hundreds.
+
+See OD-4: the suspension model (§21) may impose payload cost on this target.
+
+## 42. Routing and code splitting
+
+Routing uses explicit typed route declarations rather than filesystem routing.
+
+Typed routes improve refactoring, authorization, generated links, compiler inspection, and agent reasoning — an agent can enumerate the complete route surface from the source rather than inferring it from directory layout.
+
+Code splitting occurs at typed route boundaries and explicit component boundaries. Lazy loading is explicit and compiler-managed.
+
+## 43. Client persistence and offline support
+
+Offline support and persistence use standard browser capabilities backed by approved storage such as IndexedDB.
+
+Persistence is typed, versioned, tenant-aware where applicable, and explicitly declared.
+
+## 44. RPC model
+
+Queries, mutations, streams, subscriptions, webhooks, and public HTTP APIs share one typed action foundation while retaining distinct semantics.
+
+- **Query** — read-only typed RPC. Safe reads may retry automatically.
+- **Mutation** — state-changing RPC. Automatic retries require explicit idempotency.
+- **Stream** — ordered best-effort server-to-client stream.
+- **Subscription** — long-lived, resumable realtime feed.
+- **Webhook** — externally invoked endpoint with verification and replay protection.
+- **HTTP** — intentionally public REST-style or protocol-specific endpoint.
+
+All boundary forms share schema-derived serialization, validation, authentication, tenant resolution, authorization, tracing, auditing, and structured `Result` errors.
+
+*v0.1 ships the HTTP form only.*
+
+## 45. RPC security and validation
+
+RPC automatically handles input-schema validation, authentication context, immutable tenant context, authorization, CSRF protection, tracing, audit metadata, and structured errors.
+
+Mutations support explicit idempotency keys.
+
+## 46. Client cache and optimistic updates
+
+RPC queries use a built-in normalized cache keyed by procedure identity, typed input, and tenant context.
+
+Mutations dispatch optimistic SAM actions, retain rollback state, call the server, and reconcile against the authoritative result.
+
+Subscriptions and streams update the same cache and dispatch ordinary SAM actions.
+
+---
+
+# Part X — Authentication and Authorization
+
+*v0.5 (§0.14). The demo ships a stub sufficient to establish tenant identity.*
+
+## 47. Identity model
+
+Gust owns the identity, session, membership, recovery, MFA, and audit model.
+
+Native authentication methods: passkeys, passwords, magic links, OAuth/OIDC, and enterprise SAML through an approved identity supplier.
+
+A person has one global Gust identity with separate organisation memberships, workspace access, and roles and permissions.
+
+External identity providers verify identity but do not define Gust authorization.
+
+## 48. Sessions and devices
+
+Anonymous users receive restricted workspace-scoped sessions.
+
+Authenticated sessions are device-bound, revocable, short-lived, and backed by rotating refresh credentials.
+
+Gust tracks active devices and supports session revocation.
+
+## 49. Service accounts and API tokens
+
+Service accounts are explicit non-human identities with scoped capabilities, expiry, and audit history.
+
+API tokens are named, scoped, hashed, auditable, and revocable.
+
+Agents operating against a deployed application are service accounts. They receive scoped capabilities and appear in the audit trail as themselves, never as the human who invoked them.
+
+## 50. MFA and recovery
+
+MFA supports passkeys, authenticator applications, and recovery codes.
+
+Gust owns workflows for account recovery, session revocation, identity-provider linking, and impersonation.
+
+The default authentication state is unauthenticated.
+
+## 51. Authorization model
+
+Authorization uses a constrained combination: roles grant permissions; policies decide access to specific resources.
+
+Roles are ordinary application data. Gust provides standard primitives for identity, memberships, roles, and permissions.
+
+Policies are declared centrally by resource. Routes and actions reference policies explicitly.
+
+Policies may inspect user, organisation, workspace, ownership, relationships, request context, and capability scope.
+
+## 52. Authorization enforcement
+
+Every public query, mutation, stream, webhook, and job must have an explicit authorization decision.
+
+Authorization is enforced at three layers:
+
+1. Before application execution.
+2. Inside generated database queries where policy predicates can be translated.
+3. At runtime for decisions that cannot be expressed entirely in a query.
+
+Gust injects immutable tenant filters and policy-derived row filters.
+
+Field-level permissions use explicit readable and writable field sets.
+
+## 53. Privileged identities
+
+Explicit privileged capabilities are required for support access, administrator impersonation, service-account elevation, and cross-workspace operations.
+
+Each privileged action requires a reason, an expiry, and complete audit logging.
+
+Suppliers receive only policy-filtered, purpose-specific data views.
+
+Policies are typed, testable, versioned with the application, shown in deployment diffs, and rolled out through ordinary releases.
+
+When no policy exists or a decision is ambiguous, access is denied.
+
+> No public operation executes and no data leaves its boundary without an explicit, auditable authorization decision.
+
+---
+
+# Part XI — Database and Migrations
+
+## 54. Database source of truth
+
+PostgreSQL is the source of truth for the database schema.
+
+Gust introspects PostgreSQL and generates base Gust types, similar to Kanel.
+
+Application domain types may wrap generated database types but do not redefine the database schema.
+
+## 55. Query model
+
+Gust provides a typed Kysely-style query builder over generated database types.
+
+**The query builder is a compiler-owned derivation (§14), not a user-level generic library.** Result type computation for filters, joins, aggregates, projections, and pagination is performed by the compiler. This is what allows a Kysely-class typed surface without the type-level programming facilities §13 excludes.
+
+The query system supports typed filters, joins, aggregates, pagination, locking, inserts, updates, deletes, and transactions.
+
+PostgreSQL-specific features are exposed through explicit typed extensions rather than unrestricted generic escape hatches.
+
+Query results are strongly typed. Database schema changes regenerate types and produce compile-time errors where application code is no longer compatible.
+
+## 56. Tenant and authorization enforcement
+
+**This is the lead product claim (§1) and the whole point of the demo (§0.14).**
+
+The compiler **statically enforces** that every database query is tenant-scoped. Queries that cannot be statically shown to carry tenant scope are rejected at compile time.
+
+Missing tenant scoping is the canonical failure mode of agent-authored applications and the direct cause of repeated public data-exposure incidents across AI app-building platforms. Every other stack treats it as a configuration concern — row-level security policies, middleware, a template the generator might forget. Gust makes it a property of the type system: **the unscoped program does not compile.**
+
+Authorization predicates are injected into queries where policies can be translated into database expressions. Where full translation is impossible, a runtime policy check is required.
+
+This is static enforcement backed by generated conformance tests (§79), not formal proof. See §79 for the language Gust is permitted to use externally.
+
+## 57. Raw SQL
+
+Raw SQL is allowed only through an explicit privileged database capability.
+
+Raw SQL carries reduced static guarantees, visible warnings, audit metadata, and deployment-policy review.
+
+## 58. Migration model
+
+Migrations use explicit Laravel/Kysely-style `up` and `down` files.
+
+Every migration is registered in one central ordered manifest.
+
+The compiler may suggest generated migrations, but developers review and own the final migration code. This review is not delegated to an agent by default: migrations are the one place where an incorrect generated diff is not recoverable by rollback, and therefore the one place the readership thesis does not apply.
+
+## 59. Destructive migrations
+
+Destructive changes require explicit annotation, deployment approval, backup verification, and compatibility checks.
+
+Examples: dropping columns, narrowing types, deleting data, irreversible transformations.
+
+## 60. Backfills
+
+Backfills run as resumable, idempotent, observable jobs. They do not run as long blocking migration transactions.
+
+## 61. Production migration strategy
+
+Production migrations use expand-and-contract by default:
+
+1. Add compatible schema.
+2. Deploy compatible code.
+3. Backfill data.
+4. Switch reads and writes.
+5. Remove obsolete schema later.
+
+Compatible migrations do not stop serving traffic.
+
+Rollback normally means rolling application code back while retaining a backward-compatible schema. Destructive schema rollback is not assumed to be safe.
+
+## 62. Multi-tenant migration rollout
+
+The control plane applies tenant migrations in bounded batches with progress tracking, retries, pause and resume, and per-tenant failure isolation.
+
+Every application release declares a supported schema-version range. Jobs and supplier adapters also declare compatible schema ranges.
+
+Deployment is blocked when application, database, job, and supplier requirements do not overlap.
+
+> PostgreSQL defines the schema; Gust generates the types, provides typed queries, and manages explicit, compatibility-first migrations.
+
+---
+
+# Part XII — Jobs, Scheduling, Workflows, and Messaging
+
+*v1.0 and post-1.0 (§0.14). Not in the demo.*
+
+## 63. Jobs
+
+Jobs are typed server functions with explicit tenant context, effects, input schema, and retry policy.
+
+Delivery is at-least-once. Jobs performing mutations must be explicitly idempotent.
+
+Gust does not promise literal exactly-once execution. Exactly-once-like outcomes are achieved through idempotency, transactional state, uniqueness keys, and outbox delivery.
+
+## 64. Job runtime
+
+The runtime provides bounded exponential backoff, timeouts, cancellation, priorities, uniqueness keys, concurrency limits, dead-letter queues, and full execution history.
+
+Jobs are enqueued transactionally through the database outbox.
+
+## 65. Scheduling
+
+Scheduled jobs use explicit schedules with clear timezone semantics.
+
+Recurring schedules create individual auditable job executions.
+
+## 66. Durable workflows
+
+Durable workflows are typed state machines. They may wait for timers, events, approvals, or supplier responses.
+
+Workflow state is persisted. Worker failure does not lose workflow progress.
+
+## 67. Workspace fairness
+
+Workspace fairness is enforced through quotas, weighted queues, concurrency caps, and noisy-neighbour protection.
+
+## 68. Cache scopes
+
+Native cache scopes: request, workspace, application, distributed.
+
+Cached entries are typed and tenant-scoped. Request caches expire automatically. Cache keys include workspace identity automatically.
+
+Database-backed query caches declare dependencies so Gust can invalidate them after writes. Manual invalidation remains available for derived and external data.
+
+## 69. Realtime and event bus
+
+Database-change subscriptions use a Gust-owned changefeed. Application events use a native typed event bus.
+
+Supplier events enter through verified webhooks and approved capability adapters.
+
+Streams provide ordered best-effort live delivery. Durable subscriptions provide at-least-once delivery and resumable cursors.
+
+Messages are schema-versioned and tenant-scoped. Consumers must be idempotent.
+
+Breaking message changes require a new schema version and a compatibility period.
+
+---
+
+# Part XIII — Packages and Application Structure
+
+## 70. Modules and packages
+
+A module is one source file. A package is one directory tree with a package manifest.
+
+An application is a root package, its approved package graph, and its capability graph.
+
+Packages may be reused across projects.
+
+## 71. Package sources
+
+Initial package sources: Gust standard packages, organisation-owned packages, and explicitly approved third-party Gust packages.
+
+A public registry may be introduced later. Any public registry must use signed releases, immutable artifacts, and provenance verification.
+
+The capability system (Part V) is what makes a public registry survivable. Approval is a service tier; enforcement is the guarantee. A package obtained from any source still cannot execute authority it did not declare.
+
+## 72. Lockfiles and provenance
+
+Lockfiles record exact source hashes, compiler compatibility, signatures, and capability requirements.
+
+**Capability requirements appear in the lockfile diff.** A dependency update that widens authority is visible in review as a change to the manifest, not as a change buried in source. This is one of the three artifacts humans actually read (§0.12) and should be treated as a primary product surface, not a build detail.
+
+Cyclic package dependencies are forbidden. Cyclic file imports within a package are also forbidden or tightly constrained.
+
+## 73. Visibility
+
+Visibility levels: private to the module by default, package-visible, application-visible, externally public.
+
+Organisation and workspace access are authorization concepts, not source-code visibility levels.
+
+Imports are explicit and deterministic. Wildcard imports, implicit runtime loading, and hidden dependency injection are prohibited.
+
+## 74. Prelude
+
+The default prelude contains only basic types, `Result`, `Option`, core collections, formatting, and core language functions.
+
+Never silently imported: database access, networking, filesystem access, time, randomness, supplier capabilities.
+
+---
+
+# Part XIV — Testing and Determinism
+
+Determinism here is not a testing convenience. It is the property that makes execution traces usable as training signal (Part XX) and the only remaining check on behaviour when nobody reads the code. A non-deterministic run is a contaminated observation.
+
+## 75. Test categories
+
+Native test categories: unit, package integration, RPC, policy, migration, browser and component, tenant-isolation, and deployment smoke tests.
+
+## 76. Capability fakes
+
+Every declared capability can be replaced with a compiler-checked fake, recorded, or test implementation.
+
+Tests can virtualize time, randomness, task scheduling, RPC, jobs, and supplier responses.
+
+## 77. Deterministic scheduling
+
+Structured concurrency uses a deterministic test scheduler. Tests may advance virtual time explicitly.
+
+## 78. Database and policy testing
+
+Database tests run against isolated transactions and disposable PostgreSQL environments.
+
+Policy tests include generated deny cases, cross-tenant probes, and missing-policy cases.
+
+Migration tests verify fresh installation and every supported upgrade path.
+
+## 79. Compiler-generated conformance checks
+
+The compiler generates checks for RPC serialization, policy coverage, tenant scoping, migration manifests, and supplier capability contracts.
+
+**This is the primary defence against plausible-but-wrong output (§0.12)** and should be resourced accordingly — it is not a testing convenience, it is the mechanism that substitutes for reading. It is also the natural implementation substrate for the intent layer (Part XXI).
+
+**Gust must distinguish static enforcement and generated testing from formal verification.** Internal and external language must say *enforce*, *check*, and *reject* — never *prove* — except where a genuine machine-checked proof exists. This applies to marketing, documentation, and compiler diagnostics alike.
+
+---
+
+# Part XV — Configuration and Secrets
+
+## 80. Configuration
+
+Configuration is typed, non-sensitive application input.
+
+It supports defaults, environment-specific overrides, validation, and deployment-time checking.
+
+## 81. Secrets
+
+Secrets are opaque linear values. They have no readable string representation in safe code.
+
+Secrets cannot be logged, serialized, formatted, returned to clients, or compared except through approved operations.
+
+Secret access requires declared effects such as `secret.use<"stripe">`.
+
+Public effect signatures expose logical secret names rather than provider-specific storage paths.
+
+*Rationale: an agent cannot leak a secret into a log line or an error message, because the type does not permit it. Among the most frequent mistakes in generated code and among the most expensive.*
+
+## 82. Rotation and providers
+
+Secret rotation supports overlapping active versions. All access is audited. Expiry and rotation policies are platform-enforced.
+
+Self-hosted secret providers must implement Gust's provider protocol and be certified for isolation, auditability, rotation, and access control.
+
+---
+
+# Part XVI — Supplier Governance
+
+*Post-1.0 commercial service tier (§2), not the core guarantee. Assumes a certification function with real staffing. OD-5 is unresolved; do not commit to supplier certification externally until it is.*
+
+## 83. Supplier protocol
+
+Suppliers implement versioned Gust capability contracts.
+
+The protocol uses typed schemas, mutual authentication, tenant-scoped credentials, request IDs, deadlines, and signed provenance metadata.
+
+Capability negotiation occurs during deployment rather than dynamically during ordinary requests.
+
+## 84. Reliability contracts
+
+Every capability defines timeout policy, retry policy, idempotency requirements, rate limits, circuit-breaker behaviour, fallback rules, and error taxonomy.
+
+Default rules:
+
+- reads may retry when safe;
+- writes retry only with idempotency;
+- payments and irreversible effects require explicit idempotency keys;
+- fallback suppliers must be explicitly approved.
+
+## 85. Data minimization
+
+Gust constructs supplier-specific request views. Only declared fields may cross the supplier boundary.
+
+Tenant identity is represented through scoped supplier tokens rather than unrestricted internal context.
+
+Transferred data, retention, destination region, and purpose are declared and audited.
+
+## 86. Supplier revocation
+
+Revoked suppliers cannot receive new deployments or new credentials.
+
+Existing applications enter a visible degraded or blocked state, depending on capability criticality.
+
+Emergency revocation may immediately disable calls.
+
+Compatibility adapters are owned by Gust or the supplier as part of certification. Ordinary application developers are not responsible for maintaining supplier integration compatibility.
+
+---
+
+# Part XVII — Deployment and Operations
+
+## 87. Deployment unit
+
+The deployment unit is an immutable application release.
+
+A release may serve one or many workspaces. Workspace-specific configuration and data remain separate from release code.
+
+## 88. Preview environments
+
+Preview environments are isolated application deployments with disposable databases, storage, secrets, and tenant domains.
+
+## 89. Production rollout
+
+Production deployment supports immutable releases, health checks, canary rollout, workspace cohorts, automatic pause, rollback, and complete audit trails.
+
+Migrations pass compatibility gates before traffic shifts.
+
+Old and new clients, jobs, messages, and schemas must overlap during rolling upgrades.
+
+## 90. Regions and scaling
+
+Regions and data residency are organisation or workspace policies.
+
+Resource classes and scaling limits are deployment declarations. Application code does not receive arbitrary process control.
+
+## 91. Local development
+
+Local development runs the same runtime and control-plane semantics through approved local implementations.
+
+Local mode may reduce scale, but it must not weaken tenant isolation, authorization, effect checking, or capability enforcement.
+
+## 92. Privileged operational actions
+
+Privileged approval is required for destructive migrations, cross-tenant access, secret export, supplier changes, raw SQL, native code, unrestricted networking, data-region changes, and emergency production overrides.
+
+---
+
+# Part XVIII — Escape Hatches
+
+## 93. Native code
+
+Native code is forbidden by default.
+
+Permitted only through a signed adapter, an explicit native-code capability, and strong isolation.
+
+A separate process or sandbox is preferred over in-process execution.
+
+## 94. Arbitrary networking
+
+Arbitrary networking is forbidden by default.
+
+Approved capabilities use allowlisted hosts and protocols.
+
+Unrestricted outbound networking requires a privileged capability such as `network.unrestricted`.
+
+## 95. Files and processes
+
+Application code cannot access arbitrary host files or spawn arbitrary processes.
+
+Approved filesystem access is sandboxed and path-scoped. Process execution requires an isolated worker capability.
+
+## 96. Containers and binaries
+
+Unapproved containers or binaries cannot run inside the normal Gust runtime.
+
+They may run only as isolated external services with declared network, data, identity, and resource boundaries.
+
+## 97. Escape-hatch governance
+
+Every escape hatch requires explicit manifest declaration, human approval, defined scope, expiry, signed provenance, an isolation policy, a deployment warning, runtime monitoring, a complete audit trail, and revocation support.
+
+**Human approval means human.** An agent may request an escape hatch; it may not approve one.
+
+## 98. Guarantee boundaries
+
+- A sandboxed external adapter weakens guarantees only inside the adapter and the data explicitly exposed to it.
+- An unrestricted network capability weakens supplier and data-egress guarantees for the holder.
+- Arbitrary filesystem or process access weakens host-isolation guarantees.
+- In-process native code weakens memory-safety and process-integrity guarantees for the entire application instance.
+- Any mechanism that can bypass Gust isolation invalidates the wider guarantee for that runtime boundary.
+
+> Escape hatches are isolated products with explicit loss-of-guarantee boundaries, not ordinary language features.
+
+---
+
+# Part XIX — Versioning and Compatibility
+
+*Post-1.0 (§0.14). Recorded so demo-stage decisions do not foreclose it. Not a commitment.*
+
+## 99. Compatibility promise
+
+After 1.0, Gust promises strong source compatibility within each language edition.
+
+Compatibility is the default. Editions are the controlled escape hatch for rare syntax or semantic changes. Different editions must interoperate within the same ecosystem.
+
+## 100. Version pinning
+
+Projects pin a language edition and a platform release line.
+
+Compiler, runtime, standard library, and platform APIs normally upgrade together.
+
+## 101. Release channels
+
+Gust maintains a fast stable channel and an LTS channel. Each LTS release receives security fixes for approximately three years.
+
+## 102. Security upgrades
+
+Gust Cloud may require urgent upgrades for critical vulnerabilities.
+
+Required upgrades must include migration tooling, staged rollout, and a defined deadline.
+
+## 103. Compiler-assisted migrations
+
+Compiler-assisted migrations are a core product feature.
+
+Deprecations progress through warnings, automated rewrites, published deadlines, and removal at an edition boundary.
+
+Note that where code is regenerated rather than maintained, the migration story shifts: the primary path is often regeneration against the new edition, not rewriting old source. Design for both.
+
+## 104. Interface versioning
+
+Standard-library and capability interfaces use semantic versioning with compatibility adapters.
+
+Supplier interfaces evolve through versioned contracts. Applications are not forced to upgrade immediately when a supplier interface changes.
+
+## 105. Hosted and self-hosted compatibility
+
+Hosted and self-hosted releases remain wire-compatible throughout the supported release window.
+
+Rolling upgrades require versioned messages, backward-compatible database changes, resumable jobs, and clients compatible with at least the previous server release.
+
+## 106. Governance
+
+Language and capability evolution is governed through public proposals, compatibility reviews, and published migration plans. §0.8 commits to a credible neutral-governance path; this section is where that commitment becomes concrete.
+
+After 1.0, Gust must not silently change program meaning, weaken memory-safety guarantees, weaken authorization guarantees, break stable wire formats, or remove stable features without a migration path and edition boundary.
+
+> Compatibility is the default; editions are the controlled escape hatch.
+
+---
+
+# Part XX — The Agent Loop
+
+*The product surface of §0.5 layers 1 and 4. Traces and structured diagnostics are demo scope; colocation is post-acquisition.*
+
+## 107. The loop
+
+The unit of agent work is one iteration:
+
+```
+generate → compile → run → observe → revise
+```
+
+Everything in this document that constrains the language exists to make one of those five steps cheaper, faster, or more informative.
+
+**Latency budget.** The target for a warm iteration on a small change is single-digit milliseconds of platform overhead — compile and execute excluded. Crossing a public network boundary at any point forfeits the budget, which is why inference and execution are colocated (§113).
+
+Iteration count is a quality input, and for an acquirer who serves inference it is also a consumption input. A loop two orders of magnitude faster does not produce marginally better output; it makes classes of problem solvable that were previously abandoned at the attempt limit.
+
+## 108. Execution traces
+
+Every run emits a structured, machine-readable trace. The trace is a first-class artifact with a versioned schema, not a log format. It is one of the three things humans actually read (§0.12).
+
+A trace records:
+
+- the resolved capability set for the entry point;
+- **effects actually exercised**, in order, with arguments elided to declared schemas;
+- **declared-but-unused capabilities** — over-granted authority the agent can narrow without human input;
+- **denied authority attempts** — the single most valuable signal for correcting generated code;
+- database queries with injected tenant and policy predicates shown;
+- task tree, scheduling decisions, and cancellation points;
+- allocation and context lifetimes at region granularity;
+- typed error values with propagation path;
+- conformance-check results (§79) and, once it exists, intent-contract violations (Part XXI).
+
+Traces are tenant-scoped and subject to the same data-minimization rules as supplier boundaries (§85).
+
+## 109. Diagnostics as machine input
+
+Compiler diagnostics have a structured form alongside the human form. A diagnostic carries the rejected construct, the rule violated, the minimal set of edits that would satisfy the rule, and a stable rule identifier.
+
+The design constraint: a diagnostic must be sufficient for correction without re-reading the whole file. Diagnostics that require whole-program context to act on are defects.
+
+## 110. Sandbox lifecycle
+
+Agent execution runs in a pre-warmed sandbox with the application's capability set already resolved.
+
+The sandbox boundary and the capability boundary are the same mechanism. Gust does not wrap an untrusted container around agent output and hope; the compiler has already established what the program can reach, and the runtime enforces exactly that set.
+
+Sandboxes are disposable, content-addressed, and reproducible. Two runs of the same release with the same input produce the same trace, or the difference is itself recorded as a nondeterminism finding.
+
+## 111. Reproducibility
+
+Content-addressed builds, no install-time execution (§15), virtualized time and randomness (§76), and deterministic scheduling (§77) combine to make a run a clean observation.
+
+A nondeterministic run is not a weaker signal; it is a contaminated one, and must be discarded rather than averaged.
+
+## 112. Traces as training signal
+
+Because authority is declared and execution is deterministic, every run yields a labelled example without human annotation:
+
+- did the program compile;
+- did it attempt authority it did not hold;
+- did it hold authority it did not use;
+- did it pass its generated conformance checks (§79);
+- did it satisfy its declared intent contract (Part XXI) — *once that exists*.
+
+These labels are mechanical, and they are produced as a byproduct of running the language rather than as a separate data programme. For an acquirer who trains models this is a second reason to want Gust (§0.8). It is a value driver in their diligence, not a thesis we need to prove, and the company should not be organised around it.
+
+Note that until Part XXI exists, the labels are structural only. The most valuable label — *did it do what was asked* — is the one that is missing, which is the practical form of the argument in §0.4.
+
+**Customer data governance is a hard prerequisite, not a follow-up.** Trace retention, tenant consent, opt-out, and the boundary between structural signal and customer content must be specified and contractually committed before any trace leaves a tenant boundary. Nothing in this Part authorizes use of customer application data for training.
+
+## 113. Colocated inference and execution
+
+The platform runs model inference and application execution on the same fabric.
+
+What this buys:
+
+- **Loop latency** — no public-internet round trip per iteration (§107).
+- **Warm state** — content-addressed build cache and pre-warmed sandboxes local to the inference host.
+- **Trace fidelity** — the observation is produced where it is consumed.
+
+What it costs, stated plainly:
+
+- Multi-tenant execution of agent-authored code is a hostile-workload threat model. A compiler bug becomes a sandbox escape.
+- Serving inference and running customer workloads are different infrastructures. Colocation means building the second, not repurposing the first.
+- The benefit is bounded by where application state lives. If the database and third-party APIs sit in another cloud, the fast half of a slow round trip has been optimized.
+
+Colocation is an argument an acquirer can act on, not something we build. Recorded here because the language and runtime decisions above are what make it possible, and demo-stage choices should not foreclose it.
+
+## 114. Agent identity and authority
+
+An agent acting against a deployed application is a service account (§49) with scoped capabilities, expiry, and its own audit trail.
+
+Agents may not approve escape hatches (§97), may not self-elevate capabilities, and may not widen the authority of a release without a human-approved manifest change appearing in the lockfile diff (§72).
+
+Authority granted to an agent is narrowed, never inherited: an agent operating on behalf of a user receives a strict subset of that user's authority, scoped to the task.
+
+---
+
+# Part XXI — Intent and Specification (OD-6)
+
+*Blocks v0.5, not the demo. Specified as a requirement, not a design — the form is unresolved. This is the difference between containment and correctness (§0.4).*
+
+## 115. Why this Part exists
+
+Gust enforces **authority** and records **outcomes**. It has no representation of **intent**.
+
+You can enforce that an application cannot reach the payments API. Nothing in the preceding 114 sections tells you it charges the right amount.
+
+Where humans read code, that gap is filled by reading: intent lives in the developer's head, is expressed in the source, and is confirmed by review. Under the readership thesis (§0.1) that mechanism is gone and nothing has replaced it. This is a hole in the trust chain, not a missing convenience.
+
+The failure mode is stated in §0.12: agent-authored code fails from **plausible-but-wrong**. It compiles, type-checks, reads well, and does something subtly different from what was asked. No type system catches that. No capability system catches that. Only execution against stated intent does.
+
+**This Part is the difference between Gust being a good security product and Gust being a category.** §0.4 makes that argument; this Part is where it would be paid off.
+
+## 116. Requirements
+
+Whatever form the intent layer takes, it must:
+
+- **Be authored by humans, or reviewed by them.** This is the artifact that replaces reading. If it is generated unreviewed, the trust chain closes on itself and proves nothing.
+- **Be executable or mechanically checkable.** Prose is not enough. The check must run in the loop (§107) and produce a signal in the trace (§108).
+- **Be versioned with the application** and appear in deployment diffs, like policies (§53).
+- **Be independent of implementation.** A regeneration that changes every line but preserves behaviour must still satisfy it. This is what makes regeneration-over-maintenance (§103) safe.
+- **Compose with effects.** An intent contract on a function declaring `payments.charge` should be able to constrain what it charges, not merely that it may.
+- **Fail loudly and locally.** A violation names the contract, the observed behaviour, and the minimal difference — sufficient for an agent to correct without whole-program context (§109).
+
+## 117. Candidate forms
+
+Unresolved. Three shapes worth prototyping during v0.1, decided before v0.5:
+
+1. **Executable specifications** — typed example-based contracts checked on every run. Cheapest to build, weakest coverage, most legible to non-technical authors.
+2. **Property declarations** — invariants over state and effects, checked by generated property tests (extending §79). Strongest coverage, hardest to author, natural fit with existing conformance machinery.
+3. **Behavioural contracts on capability interfaces** — pre- and post-conditions attached to effect declarations. Best composition with Part V, narrowest scope.
+
+Not mutually exclusive. The likely answer is a small core of (3) with (1) as the authoring surface and (2) as the depth option.
+
+## 118. Relationship to the rest of the document
+
+- **§79 conformance checks** are the closest existing machinery and the natural implementation substrate. They check structural properties today; this Part extends them to domain behaviour.
+- **§108 traces** must carry contract results, or the loop cannot use them.
+- **§112 training labels** gain their most valuable entry — *did it do what was asked* — only once this exists. Until then the labels are structural and the RL claim is correspondingly weaker.
+- **§53 policies** are the model for authoring and versioning: declared centrally, referenced explicitly, shown in deployment diffs, denied by default when ambiguous.
+- **§0.4** is the strategic argument for why this Part is the roadmap rather than the launch.
+
+---
+
+# Part XXII — Consolidated Architectural Rules
+
+1. Gust is built for software written by machines and never read by people.
+2. Humans own intent, authority, and outcomes. The compiler owns everything in between.
+3. Gust delivers containment, not correctness. Never claim otherwise.
+4. No code executes authority it did not declare, and the compiler enforces it.
+5. The unscoped query does not compile.
+6. The lever is the generator, not the developer. Judge every decision against it.
+7. Gust arrives as a mode of someone's product, never as a product users must choose.
+8. The demo is the asset. Everything else is scaffolding.
+9. Untrusted code must cross an explicit, isolated, auditable boundary.
+10. Supplier certification is a service tier; capability enforcement is the guarantee.
+11. Effects are business-level authority, not syscall-level permissions.
+12. Effects are declared on every function. Nothing is inferred; verbosity is free.
+13. Gust owns the full-stack application model rather than assembling third-party frameworks.
+14. PostgreSQL and S3-compatible storage are native platform infrastructure.
+15. Workspace tenancy is resolved before application execution and automatically scopes platform operations.
+16. Recoverable failures use `Result` and `Option`.
+17. Gust favours concrete structs and functions over inheritance, broad traits, or complex generics.
+18. There are no user macros and no arbitrary compile-time execution.
+19. Typed queries, typed RPC, and typed templates are compiler-owned derivations, not user-level generic programming.
+20. Structured tasks own concurrency; jobs own durable work.
+21. Transactions are lexical, typed, and cannot leak authority.
+22. Safe references are non-null and context-branded.
+23. Gust distinguishes copy values, views, owned values, and linear resources.
+24. `str` and slices are immutable context-bound views.
+25. Shared borrowing uses `&T[ctx]`; exclusive mutation uses `inout T[ctx]`.
+26. Linear-resource opt-in is explicit and propagates through containing types.
+27. `defer` is LIFO; automatic destruction is reverse declaration order.
+28. Destructors are infallible; fallible completion is explicit.
+29. The UI uses typed lit-html-style templates with incremental DOM updates.
+30. SAM owns state transitions and effects.
+31. Client/server boundaries are explicit and communicate through typed RPC.
+32. Authorization defaults to deny and is enforced before execution, in queries, and at runtime.
+33. PostgreSQL defines the schema; Gust generates types and provides typed queries.
+34. Migrations are explicit, manifest-ordered, and compatibility-first — and are the one artifact still read by humans.
+35. Jobs are at-least-once and rely on idempotency for exactly-once-like outcomes.
+36. Caches, messages, jobs, and capability calls are tenant-scoped.
+37. Secrets are opaque linear values.
+38. Supplier access is purpose-specific and data-minimised.
+39. Hosted and self-hosted Gust share one product architecture.
+40. Escape hatches always expose the exact boundary at which Gust's guarantees weaken.
+41. Determinism is a product requirement, because a run is an observation.
+42. Every run emits a structured trace; the trace is an artifact, not a log.
+43. The sandbox boundary and the capability boundary are the same mechanism.
+44. Agents are service accounts with narrowed authority and their own audit trail.
+45. Conformance checks substitute for reading and must be resourced as such.
+46. Gust says *enforce*, *check*, and *reject*. Gust does not say *prove*.

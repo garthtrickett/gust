@@ -22,6 +22,7 @@
     "phase17_runtime_requirement_authority",
     "phase17_runtime_package_authority",
     "phase17_runtime_import_authority",
+    "phase17_rust_runtime_authority",
     "phase16_deferred_residue_audit",
     "phase16_closure",
     "phase15_deferred_residue_audit",
@@ -274,6 +275,9 @@
     "phase17_runtime_import_authority": {
       "$ref": "#/$defs/phase17_runtime_import_authority"
     },
+    "phase17_rust_runtime_authority": {
+      "$ref": "#/$defs/phase17_rust_runtime_authority"
+    },
     "phase16_deferred_residue_audit": {
       "$ref": "#/$defs/phase16_deferred_residue_audit"
     },
@@ -478,6 +482,49 @@
         "witness_policy": {"const": "cranelift_and_mir_to_c_runtime_import_witnesses_must_match_byte_for_byte"},
         "scope_policy": {"const": "stable_runtime_library_imports_only_legacy_fixture_symbol_constants_removed_in_patch17_9"},
         "next_patch": {"const": "17.6"}
+      }
+    },
+    "phase17_rust_component_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["component_id", "source_ownership", "source_path", "exported_spellings", "object_form", "panic_boundary", "allocation_boundary", "target_applicability"],
+      "properties": {
+        "component_id": {"type": "string", "pattern": "^runtime_component:"},
+        "source_ownership": {"type": "string", "minLength": 1},
+        "source_path": {"type": "string", "minLength": 1},
+        "exported_spellings": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "object_form": {"enum": ["static_library", "deterministic_object_set"]},
+        "panic_boundary": {"enum": ["abort_no_unwind_across_ffi", "catch_unwind_converted_to_explicit_error"]},
+        "allocation_boundary": {"enum": ["no_allocation_caller_owns_all_memory", "allocates_in_caller_supplied_arena"]},
+        "target_applicability": {"const": "all_declared_host_targets_from_phase14_target_authority"}
+      }
+    },
+    "phase17_rust_runtime_authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "status", "authority_owner", "request_owner", "worker_owner", "crate_owner", "request_format", "witness_format", "linkage_policy", "mangling_policy", "independent_compilation_policy", "panic_boundaries", "allocation_boundaries", "object_forms", "selected_components", "migrated_helper_count", "migration_note", "rejection_classes", "witness_policy", "scope_policy", "next_patch"],
+      "properties": {
+        "version": {"const": "phase17_rust_runtime_authority_v1"},
+        "status": {"const": "ready_for_patch17_7"},
+        "authority_owner": {"const": "compiler/mir_runtime_boundary_authority.gst"},
+        "request_owner": {"const": "compiler/mir_rust_runtime_request.gst"},
+        "worker_owner": {"const": "compiler/experiments/cranelift/src/rust_runtime.rs"},
+        "crate_owner": {"const": "src/runtime/rust/Cargo.toml"},
+        "request_format": {"const": "gust.compiler_rust_runtime.v1"},
+        "witness_format": {"const": "gust.rust_runtime_witness.v1"},
+        "linkage_policy": {"const": "independently_compiled_component_no_source_specific_c_generation"},
+        "mangling_policy": {"const": "stable_abi_facing_exports_rust_internal_mangling_is_not_a_runtime_contract"},
+        "independent_compilation_policy": {"const": "rust_components_compile_separately_from_program_compilation"},
+        "panic_boundaries": {"type": "array", "minItems": 2, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "allocation_boundaries": {"type": "array", "minItems": 2, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "object_forms": {"type": "array", "minItems": 2, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "selected_components": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/phase17_rust_component_record"}},
+        "migrated_helper_count": {"type": "integer", "minimum": 0},
+        "migration_note": {"type": "string", "minLength": 1},
+        "rejection_classes": {"type": "array", "minItems": 5, "uniqueItems": true, "items": {"type": "string", "pattern": "^runtime_rust_"}},
+        "witness_policy": {"const": "cranelift_and_mir_to_c_rust_runtime_witnesses_must_match_byte_for_byte"},
+        "scope_policy": {"const": "reference_rust_component_only_retained_c_objects_remain_in_patch17_7"},
+        "next_patch": {"const": "17.7"}
       }
     },
     "phase17_runtime_helper_classification": {

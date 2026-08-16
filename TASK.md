@@ -75,7 +75,7 @@ If more than 100 runs exist, use the paginated Actions API and apply the same ex
 - [x] Patch 17.3 — Runtime Requirements in Canonical MIR and Native Requests — DONE
 - [x] Patch 17.4 — Explicit Runtime Packages and Target-Specific Selection — DONE
 - [x] Patch 17.5 — Stable Runtime-Library Imports for Cranelift — DONE
-- [ ] Patch 17.6 — Rust Runtime Components and Native Object Integration
+- [x] Patch 17.6 — Rust Runtime Components and Native Object Integration — DONE
 - [ ] Patch 17.7 — Explicit Retained C Runtime Objects
 - [ ] Patch 17.8 — Pure Gust Runtime Modules Compiled Through MIR
 - [ ] Patch 17.9 — Generated C Shim Elimination and Obsolete Helper Removal

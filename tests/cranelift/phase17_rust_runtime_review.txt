@@ -1,0 +1,39 @@
+Phase 17.6 — Rust Runtime Components and Native Object Integration
+guard: guard-cranelift-phase17-rust-runtime-contract
+parity_guard: guard-cranelift-phase17-rust-runtime-parity
+test_level: level1
+crate: src/runtime/rust/Cargo.toml
+request_format: gust.compiler_rust_runtime.v1
+witness_format: gust.rust_runtime_witness.v1
+linkage_policy: independently_compiled_component_no_source_specific_c_generation
+mangling_policy: stable_abi_facing_exports_rust_internal_mangling_is_not_a_runtime_contract
+helpers_migrated_from_patch17_1_inventory: 0
+
+contract counts:
+  allocation_boundary: 2
+  boundary: 1
+  field: 9
+  object_form: 2
+  panic_boundary: 2
+  policy: 4
+  query: 1
+  rejection: 5
+  semantic_type: 1
+
+declared Rust runtime components:
+  runtime_component:rust_scalar_support	static_library	abort_no_unwind_across_ffi	no_allocation_caller_owns_all_memory
+    export	gust_rt_checked_add_i32
+    export	gust_rt_saturating_add_i32
+
+rejection classes:
+  runtime_rust_undeclared_export
+  runtime_rust_unwind_boundary_violation
+  runtime_rust_abi_or_target_mismatch
+  runtime_rust_duplicate_symbol_provider
+  runtime_rust_generated_c_glue_dependency
+
+exit gate:
+  every selected Rust runtime helper is supplied by an explicit compatible runtime component
+  components compile independently and export stable unmangled ABI symbols
+  no source-specific C generation stands between program and component
+  retained C runtime objects remain in Patch 17.7

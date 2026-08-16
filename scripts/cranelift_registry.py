@@ -28,6 +28,7 @@ TOP_FIELDS = {
     "phase17_runtime_requirement_authority",
     "phase17_runtime_package_authority",
     "phase17_runtime_import_authority",
+    "phase17_rust_runtime_authority",
     "phase16_deferred_residue_audit",
     "phase16_closure",
     "phase15_deferred_residue_audit",
@@ -944,6 +945,34 @@ PHASE17_RUNTIME_IMPORT_REJECTIONS = (
     "runtime_import_abi_mismatch",
     "runtime_import_wrong_target_component",
     "runtime_import_undeclared",
+)
+
+PHASE17_RUST_RUNTIME_AUTHORITY_FIELDS = {
+    "version", "status", "authority_owner", "request_owner", "worker_owner",
+    "crate_owner", "request_format", "witness_format", "linkage_policy",
+    "mangling_policy", "independent_compilation_policy", "panic_boundaries",
+    "allocation_boundaries", "object_forms", "selected_components",
+    "migrated_helper_count", "migration_note", "rejection_classes",
+    "witness_policy", "scope_policy", "next_patch",
+}
+PHASE17_RUST_COMPONENT_RECORD_FIELDS = {
+    "component_id", "source_ownership", "source_path", "exported_spellings",
+    "object_form", "panic_boundary", "allocation_boundary",
+    "target_applicability",
+}
+PHASE17_RUST_PANIC_BOUNDARIES = (
+    "abort_no_unwind_across_ffi", "catch_unwind_converted_to_explicit_error",
+)
+PHASE17_RUST_ALLOCATION_BOUNDARIES = (
+    "no_allocation_caller_owns_all_memory", "allocates_in_caller_supplied_arena",
+)
+PHASE17_RUST_OBJECT_FORMS = ("static_library", "deterministic_object_set")
+PHASE17_RUST_RUNTIME_REJECTIONS = (
+    "runtime_rust_undeclared_export",
+    "runtime_rust_unwind_boundary_violation",
+    "runtime_rust_abi_or_target_mismatch",
+    "runtime_rust_duplicate_symbol_provider",
+    "runtime_rust_generated_c_glue_dependency",
 )
 
 PHASE14_LAYOUT_AUTHORITY_FIELDS = {
@@ -2541,6 +2570,80 @@ def validate_phase17_runtime_import_authority_structure(registry):
     return authority
 
 
+def validate_phase17_rust_runtime_authority_structure(registry):
+    authority = registry["phase17_rust_runtime_authority"]
+    require(isinstance(authority, dict)
+            and set(authority) == PHASE17_RUST_RUNTIME_AUTHORITY_FIELDS,
+            "Phase 17 rust runtime authority fields drifted")
+    require(authority["version"] == "phase17_rust_runtime_authority_v1"
+            and authority["status"] == "ready_for_patch17_7"
+            and authority["request_format"] == "gust.compiler_rust_runtime.v1"
+            and authority["witness_format"] == "gust.rust_runtime_witness.v1"
+            and authority["crate_owner"] == "src/runtime/rust/Cargo.toml",
+            "Phase 17 rust runtime formats or ownership drifted")
+    require(tuple(authority["panic_boundaries"])
+            == PHASE17_RUST_PANIC_BOUNDARIES
+            and tuple(authority["allocation_boundaries"])
+            == PHASE17_RUST_ALLOCATION_BOUNDARIES
+            and tuple(authority["object_forms"]) == PHASE17_RUST_OBJECT_FORMS,
+            "Phase 17 rust runtime boundary inventories drifted")
+    require(tuple(authority["rejection_classes"])
+            == PHASE17_RUST_RUNTIME_REJECTIONS,
+            "Phase 17 rust runtime rejection inventory drifted")
+
+    # Patch 17.1 classified zero helpers as rust_runtime_component. This patch
+    # therefore establishes the mechanism with a reference component and must
+    # say so honestly rather than let an empty inventory pass silently.
+    classified = [
+        row for row in registry["phase17_runtime_authority"]
+        ["helper_classifications"]
+        if row["classification"] == "rust_runtime_component"
+    ]
+    require(authority["migrated_helper_count"] == len(classified),
+            "Phase 17 rust runtime migrated helper count disagrees with the "
+            "Patch 17.1 classification inventory")
+
+    components = authority["selected_components"]
+    require(isinstance(components, list) and components,
+            "Phase 17 rust runtime must declare at least one component")
+    seen_ids, seen_spellings = set(), set()
+    for index, row in enumerate(components):
+        context = f"phase17_rust_runtime_authority.selected_components[{index}]"
+        require(isinstance(row, dict)
+                and set(row) == PHASE17_RUST_COMPONENT_RECORD_FIELDS,
+                f"{context} fields drifted")
+        require(row["component_id"] not in seen_ids,
+                f"{context} duplicates a component id")
+        require(row["object_form"] in PHASE17_RUST_OBJECT_FORMS
+                and row["panic_boundary"] in PHASE17_RUST_PANIC_BOUNDARIES
+                and row["allocation_boundary"]
+                in PHASE17_RUST_ALLOCATION_BOUNDARIES,
+                f"{context} declares an unsupported boundary or form")
+        require(row["target_applicability"] == PHASE17_TARGET_APPLICABILITY,
+                f"{context} target applicability drifted")
+        for spelling in row["exported_spellings"]:
+            require(spelling not in seen_spellings,
+                    f"{context} exports {spelling}, already provided elsewhere")
+            seen_spellings.add(spelling)
+        seen_ids.add(row["component_id"])
+    require(authority["linkage_policy"]
+            == "independently_compiled_component_no_source_specific_c_generation"
+            and authority["mangling_policy"]
+            == "stable_abi_facing_exports_rust_internal_mangling_is_not_a_"
+               "runtime_contract"
+            and authority["independent_compilation_policy"]
+            == "rust_components_compile_separately_from_program_compilation"
+            and authority["witness_policy"]
+            == "cranelift_and_mir_to_c_rust_runtime_witnesses_must_match_"
+               "byte_for_byte"
+            and authority["scope_policy"]
+            == "reference_rust_component_only_retained_c_objects_remain_in_"
+               "patch17_7"
+            and authority["next_patch"] == "17.7",
+            "Phase 17 rust runtime policies drifted")
+    return authority
+
+
 def validate_phase14_layout_authority_structure(registry):
     authority = registry["phase14_layout_authority"]
     require(
@@ -3663,6 +3766,20 @@ def validate():
     require(set(phase17_import_record_schema.get("required", []))
             == PHASE17_RUNTIME_IMPORT_RECORD_FIELDS,
             "schema Phase 17 runtime import record fields drifted")
+    phase17_rust_authority_schema = definitions.get(
+        "phase17_rust_runtime_authority", {}
+    )
+    require(set(phase17_rust_authority_schema.get("required", []))
+            == PHASE17_RUST_RUNTIME_AUTHORITY_FIELDS,
+            "schema Phase 17 rust runtime authority fields drifted")
+    require(phase17_rust_authority_schema.get("additionalProperties") is False,
+            "schema Phase 17 rust runtime authority must reject unknown fields")
+    phase17_rust_record_schema = definitions.get(
+        "phase17_rust_component_record", {}
+    )
+    require(set(phase17_rust_record_schema.get("required", []))
+            == PHASE17_RUST_COMPONENT_RECORD_FIELDS,
+            "schema Phase 17 rust component record fields drifted")
     phase14_authority_schema = definitions.get(
         "phase14_layout_authority",
         {},
@@ -3857,6 +3974,7 @@ def validate():
     validate_phase17_runtime_requirement_authority_structure(registry)
     validate_phase17_runtime_package_authority_structure(registry)
     validate_phase17_runtime_import_authority_structure(registry)
+    validate_phase17_rust_runtime_authority_structure(registry)
     validate_phase14_layout_authority_structure(registry)
     validate_phase14_primitive_layout_structure(registry)
     validate_phase14_integer_conversion_structure(registry)
@@ -9770,6 +9888,24 @@ def phase17_runtime_import_authority_summary_lines(registry):
     ]
 
 
+def phase17_rust_runtime_authority_summary_lines(registry):
+    authority = validate_phase17_rust_runtime_authority_structure(registry)
+    exports = sum(len(r["exported_spellings"]) for r in authority["selected_components"])
+    return [
+        "## Phase 17 Rust runtime component authority",
+        "",
+        f"- Authority version: `{authority['version']}`",
+        f"- Status: `{authority['status']}`",
+        f"- Crate: `{authority['crate_owner']}`",
+        f"- Declared Rust components: `{len(authority['selected_components'])}`",
+        f"- Stable ABI-facing exports: `{exports}`",
+        f"- Helpers migrated from the Patch 17.1 inventory: `{authority['migrated_helper_count']}`",
+        "",
+        "Patch 17.6 supports runtime helpers implemented in Rust as explicit, versioned runtime package components, compiled independently of program compilation with stable unmangled ABI-facing exports and declared panic and allocation boundaries. Patch 17.1 classified zero helpers as `rust_runtime_component`, so this patch establishes the mechanism with one reference component; reclassifying existing retained-C helpers is an operator decision.",
+        "",
+    ]
+
+
 def render(registry):
     entries = registry["entries"]
     totals = derived_totals(registry)
@@ -9826,6 +9962,7 @@ def render(registry):
         *phase17_runtime_requirement_authority_summary_lines(registry),
         *phase17_runtime_package_authority_summary_lines(registry),
         *phase17_runtime_import_authority_summary_lines(registry),
+        *phase17_rust_runtime_authority_summary_lines(registry),
         "## Registry entries", "",
         "| ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |",
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
