@@ -1,0 +1,31 @@
+Phase 17.2 — Supported Runtime ABI, Symbol Identity, and Versioning
+guard: guard-cranelift-phase17-runtime-symbol-version-contract
+test_level: level1
+runtime_abi_version: gust-runtime-abi-v1
+symbol_version: gust-runtime-symbol-v1
+scope: three_approved_scalar_imports
+
+contract counts:
+  boundary: 1
+  linkage: 5
+  policy: 4
+  query: 2
+  rejection: 7
+  semantic_type: 2
+
+declared target ABIs:
+  x86_64-unknown-linux-gnu	Elf	gust_canonical_v1
+  aarch64-unknown-linux-gnu	Elf	gust_canonical_v1
+  i686-unknown-linux-gnu	Elf	gust_canonical_v1
+  x86_64-apple-darwin	MachO	gust_canonical_v1
+  aarch64-apple-darwin	MachO	gust_canonical_v1
+
+selected versioned symbols:
+  p17_helper_tiny_host_add_one_i32	tiny_host_add_one_i32	signature:i32_to_i32	gust-runtime-symbol-v1
+  p17_helper_tiny_host_add_i32	tiny_host_add_i32	signature:i32_i32_to_i32	gust-runtime-symbol-v1
+  p17_helper_tiny_host_is_positive_i32	tiny_host_is_positive_i32	signature:i32_to_i32	gust-runtime-symbol-v1
+
+exit gate:
+  every selected runtime call resolves to one compiler-owned versioned symbol
+  target layout function ABI resource linkage visibility and compatibility are explicit
+  later Phase 17 patches extend this authority for the remaining helper inventory

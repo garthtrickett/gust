@@ -18,6 +18,7 @@
     "phase15_resource_composition_authority",
     "phase16_abi_composition_authority",
     "phase17_runtime_authority",
+    "phase17_runtime_symbol_authority",
     "phase16_deferred_residue_audit",
     "phase16_closure",
     "phase15_deferred_residue_audit",
@@ -258,6 +259,9 @@
     "phase17_runtime_authority": {
       "$ref": "#/$defs/phase17_runtime_authority"
     },
+    "phase17_runtime_symbol_authority": {
+      "$ref": "#/$defs/phase17_runtime_symbol_authority"
+    },
     "phase16_deferred_residue_audit": {
       "$ref": "#/$defs/phase16_deferred_residue_audit"
     },
@@ -293,6 +297,61 @@
     }
   },
   "$defs": {
+    "phase17_runtime_abi_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target_id", "target_triple", "object_format", "calling_convention_id", "layout_authority_id", "function_abi_authority_id", "resource_authority_id", "compatible_version_min", "compatible_version_max"],
+      "properties": {
+        "target_id": {"type": "string", "pattern": "^target:v1:"},
+        "target_triple": {"type": "string", "minLength": 1},
+        "object_format": {"enum": ["Elf", "MachO"]},
+        "calling_convention_id": {"const": "gust_canonical_v1"},
+        "layout_authority_id": {"const": "phase14_compiler_owned_type_and_target_layout"},
+        "function_abi_authority_id": {"const": "phase16_compiler_owned_function_abi"},
+        "resource_authority_id": {"const": "phase15_compiler_owned_resource_operations"},
+        "compatible_version_min": {"const": 1},
+        "compatible_version_max": {"const": 1}
+      }
+    },
+    "phase17_runtime_symbol_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["helper_id", "external_spelling", "signature_id", "function_abi_identity", "component_id", "layout_id", "resource_operation_id", "required", "target_applicability"],
+      "properties": {
+        "helper_id": {"type": "string", "pattern": "^p17_helper_"},
+        "external_spelling": {"type": "string", "minLength": 1},
+        "signature_id": {"type": "string", "pattern": "^signature:"},
+        "function_abi_identity": {"type": "string", "pattern": "^function_abi:runtime:"},
+        "component_id": {"const": "runtime_component:approved_scalar_imports"},
+        "layout_id": {"const": "layout:type:gust:i32"},
+        "resource_operation_id": {"const": "none_scalar_runtime_operation"},
+        "required": {"const": true},
+        "target_applicability": {"const": "all_declared_host_targets_from_phase14_target_authority"}
+      }
+    },
+    "phase17_runtime_symbol_authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "status", "authority_owner", "runtime_abi_version", "symbol_version", "supported_abis", "selected_symbols", "symbol_naming_policy", "compatibility_policy", "visibility_policy", "linkage_policy", "backend_policy", "rejection_classes", "witness_policy", "scope_policy", "next_patch"],
+      "properties": {
+        "version": {"const": "phase17_runtime_symbol_version_authority_v1"},
+        "status": {"const": "ready_for_patch17_3"},
+        "authority_owner": {"const": "compiler/mir_runtime_boundary_authority.gst"},
+        "runtime_abi_version": {"const": "gust-runtime-abi-v1"},
+        "symbol_version": {"const": "gust-runtime-symbol-v1"},
+        "supported_abis": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/phase17_runtime_abi_record"}},
+        "selected_symbols": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/phase17_runtime_symbol_record"}},
+        "symbol_naming_policy": {"const": "preserve_real_external_spelling_version_in_compiler_symbol_identity"},
+        "compatibility_policy": {"const": "exact_major_compatible_minor_range_1_1"},
+        "visibility_policy": {"const": "default_hidden_selected_runtime_imports_public"},
+        "linkage_policy": {"const": "external_static_runtime_package_no_dynamic_loading"},
+        "backend_policy": {"const": "backends_consume_compiler_symbol_records_no_raw_symbol_substitution"},
+        "rejection_classes": {"type": "array", "minItems": 7, "uniqueItems": true, "items": {"type": "string", "pattern": "^runtime_symbol_"}},
+        "witness_policy": {"const": "stable_runtime_abi_and_versioned_symbol_witnesses"},
+        "scope_policy": {"const": "three_approved_scalar_imports_only_other_helper_symbols_extend_in_later_phase17_patches"},
+        "next_patch": {"const": "17.3"}
+      }
+    },
     "phase17_runtime_helper_classification": {
       "type": "object",
       "additionalProperties": false,

@@ -24,6 +24,7 @@ TOP_FIELDS = {
     "phase15_resource_composition_authority",
     "phase16_abi_composition_authority",
     "phase17_runtime_authority",
+    "phase17_runtime_symbol_authority",
     "phase16_deferred_residue_audit",
     "phase16_closure",
     "phase15_deferred_residue_audit",
@@ -815,6 +816,43 @@ PHASE17_RUNTIME_HARD_BANS = (
     "no_native_driver_package_selection_from_unresolved_symbols",
     "no_diagnostic_runtime_compatibility_recomputation",
 )
+PHASE17_RUNTIME_SYMBOL_AUTHORITY_FIELDS = {
+    "version", "status", "authority_owner", "runtime_abi_version",
+    "symbol_version", "supported_abis", "selected_symbols",
+    "symbol_naming_policy", "compatibility_policy", "visibility_policy",
+    "linkage_policy", "backend_policy", "rejection_classes",
+    "witness_policy", "scope_policy", "next_patch",
+}
+PHASE17_RUNTIME_ABI_RECORD_FIELDS = {
+    "target_id", "target_triple", "object_format",
+    "calling_convention_id", "layout_authority_id",
+    "function_abi_authority_id", "resource_authority_id",
+    "compatible_version_min", "compatible_version_max",
+}
+PHASE17_RUNTIME_SYMBOL_RECORD_FIELDS = {
+    "helper_id", "external_spelling", "signature_id",
+    "function_abi_identity", "component_id", "layout_id",
+    "resource_operation_id", "required", "target_applicability",
+}
+PHASE17_RUNTIME_SYMBOL_REJECTIONS = (
+    "runtime_symbol_unknown_abi", "runtime_symbol_unversioned",
+    "runtime_symbol_duplicate_conflict",
+    "runtime_symbol_spelling_abi_conflict",
+    "runtime_symbol_calling_convention_mismatch",
+    "runtime_symbol_target_or_layout_mismatch",
+    "runtime_symbol_backend_substitution",
+)
+PHASE17_SELECTED_VERSIONED_SYMBOLS = {
+    "p17_helper_tiny_host_add_one_i32": (
+        "tiny_host_add_one_i32", "signature:i32_to_i32"
+    ),
+    "p17_helper_tiny_host_add_i32": (
+        "tiny_host_add_i32", "signature:i32_i32_to_i32"
+    ),
+    "p17_helper_tiny_host_is_positive_i32": (
+        "tiny_host_is_positive_i32", "signature:i32_to_i32"
+    ),
+}
 
 PHASE14_LAYOUT_AUTHORITY_FIELDS = {
     "version", "status", "authority_owner", "table_format",
@@ -2065,6 +2103,112 @@ def validate_phase17_runtime_authority_structure(registry):
     return authority
 
 
+def validate_phase17_runtime_symbol_authority_structure(registry):
+    authority = registry["phase17_runtime_symbol_authority"]
+    require(isinstance(authority, dict)
+            and set(authority) == PHASE17_RUNTIME_SYMBOL_AUTHORITY_FIELDS,
+            "Phase 17 runtime symbol authority fields drifted")
+    require(authority["version"] == "phase17_runtime_symbol_version_authority_v1"
+            and authority["status"] == "ready_for_patch17_3"
+            and authority["authority_owner"]
+            == "compiler/mir_runtime_boundary_authority.gst"
+            and authority["runtime_abi_version"] == "gust-runtime-abi-v1"
+            and authority["symbol_version"] == "gust-runtime-symbol-v1",
+            "Phase 17 runtime ABI or symbol version drifted")
+
+    declared_targets = registry["phase14_primitive_layout"]["declared_targets"]
+    abi_rows = authority["supported_abis"]
+    require(isinstance(abi_rows, list)
+            and len(abi_rows) == len(declared_targets),
+            "Phase 17 runtime ABI target coverage drifted")
+    for index, (row, target) in enumerate(zip(abi_rows, declared_targets)):
+        context = f"phase17_runtime_symbol_authority.supported_abis[{index}]"
+        require(isinstance(row, dict)
+                and set(row) == PHASE17_RUNTIME_ABI_RECORD_FIELDS,
+                f"{context} fields drifted")
+        require(row["target_id"] == target["target_id"]
+                and row["target_triple"] == target["target_triple"]
+                and row["object_format"] == target["object_format"],
+                f"{context} does not derive from Phase 14 target authority")
+        require(row["calling_convention_id"] == "gust_canonical_v1"
+                and row["layout_authority_id"]
+                == "phase14_compiler_owned_type_and_target_layout"
+                and row["function_abi_authority_id"]
+                == "phase16_compiler_owned_function_abi"
+                and row["resource_authority_id"]
+                == "phase15_compiler_owned_resource_operations"
+                and row["compatible_version_min"] == 1
+                and row["compatible_version_max"] == 1,
+                f"{context} ABI linkage or compatibility drifted")
+
+    classifications = {
+        row["helper_id"]: row
+        for row in registry["phase17_runtime_authority"]
+        ["helper_classifications"]
+    }
+    symbol_rows = authority["selected_symbols"]
+    require(isinstance(symbol_rows, list)
+            and len(symbol_rows) == len(PHASE17_SELECTED_VERSIONED_SYMBOLS),
+            "Phase 17 selected symbol coverage drifted")
+    seen = set()
+    spellings = set()
+    for index, row in enumerate(symbol_rows):
+        context = f"phase17_runtime_symbol_authority.selected_symbols[{index}]"
+        require(isinstance(row, dict)
+                and set(row) == PHASE17_RUNTIME_SYMBOL_RECORD_FIELDS,
+                f"{context} fields drifted")
+        helper_id = row["helper_id"]
+        require(helper_id in PHASE17_SELECTED_VERSIONED_SYMBOLS
+                and helper_id not in seen,
+                f"{context} helper is unknown or duplicated")
+        expected_spelling, expected_signature = (
+            PHASE17_SELECTED_VERSIONED_SYMBOLS[helper_id]
+        )
+        require(row["external_spelling"] == expected_spelling
+                and row["signature_id"] == expected_signature,
+                f"{helper_id}: external spelling or signature drifted")
+        classification = classifications[helper_id]
+        require(classification["classification"]
+                == "stable_runtime_library_function"
+                and row["component_id"] == classification["component_id"],
+                f"{helper_id}: symbol differs from helper classification")
+        require(row["function_abi_identity"]
+                == f"function_abi:runtime:{expected_spelling}:"
+                f"{expected_signature.removeprefix('signature:')}:gust_canonical_v1"
+                and row["layout_id"] == "layout:type:gust:i32"
+                and row["resource_operation_id"]
+                == "none_scalar_runtime_operation"
+                and row["required"] is True
+                and row["target_applicability"] == PHASE17_TARGET_APPLICABILITY,
+                f"{helper_id}: ABI, layout, resource, or target linkage drifted")
+        require(expected_spelling not in spellings,
+                f"{helper_id}: external spelling reused incompatibly")
+        seen.add(helper_id)
+        spellings.add(expected_spelling)
+    require(seen == set(PHASE17_SELECTED_VERSIONED_SYMBOLS),
+            "Phase 17 selected symbol inventory is incomplete")
+    require(tuple(authority["rejection_classes"])
+            == PHASE17_RUNTIME_SYMBOL_REJECTIONS,
+            "Phase 17 runtime symbol rejection inventory drifted")
+    require(authority["symbol_naming_policy"]
+            == "preserve_real_external_spelling_version_in_compiler_symbol_identity"
+            and authority["compatibility_policy"]
+            == "exact_major_compatible_minor_range_1_1"
+            and authority["visibility_policy"]
+            == "default_hidden_selected_runtime_imports_public"
+            and authority["linkage_policy"]
+            == "external_static_runtime_package_no_dynamic_loading"
+            and authority["backend_policy"]
+            == "backends_consume_compiler_symbol_records_no_raw_symbol_substitution"
+            and authority["witness_policy"]
+            == "stable_runtime_abi_and_versioned_symbol_witnesses"
+            and authority["scope_policy"]
+            == "three_approved_scalar_imports_only_other_helper_symbols_extend_in_later_phase17_patches"
+            and authority["next_patch"] == "17.3",
+            "Phase 17 runtime symbol policies drifted")
+    return authority
+
+
 def validate_phase14_layout_authority_structure(registry):
     authority = registry["phase14_layout_authority"]
     require(
@@ -3104,6 +3248,26 @@ def validate():
         == PHASE17_RUNTIME_CLASSIFICATION_FIELDS,
         "schema Phase 17 runtime classification fields drifted",
     )
+    phase17_symbol_authority_schema = definitions.get(
+        "phase17_runtime_symbol_authority", {}
+    )
+    require(
+        set(phase17_symbol_authority_schema.get("required", []))
+        == PHASE17_RUNTIME_SYMBOL_AUTHORITY_FIELDS,
+        "schema Phase 17 runtime symbol authority fields drifted",
+    )
+    require(phase17_symbol_authority_schema.get("additionalProperties") is False,
+            "schema Phase 17 runtime symbol authority must reject unknown fields")
+    phase17_abi_record_schema = definitions.get("phase17_runtime_abi_record", {})
+    require(set(phase17_abi_record_schema.get("required", []))
+            == PHASE17_RUNTIME_ABI_RECORD_FIELDS,
+            "schema Phase 17 runtime ABI record fields drifted")
+    phase17_symbol_record_schema = definitions.get(
+        "phase17_runtime_symbol_record", {}
+    )
+    require(set(phase17_symbol_record_schema.get("required", []))
+            == PHASE17_RUNTIME_SYMBOL_RECORD_FIELDS,
+            "schema Phase 17 runtime symbol record fields drifted")
     phase14_authority_schema = definitions.get(
         "phase14_layout_authority",
         {},
@@ -3294,6 +3458,7 @@ def validate():
     validate_phase16_opening_snapshot_structure(registry)
     validate_phase17_opening_snapshot_structure(registry)
     validate_phase17_runtime_authority_structure(registry)
+    validate_phase17_runtime_symbol_authority_structure(registry)
     validate_phase14_layout_authority_structure(registry)
     validate_phase14_primitive_layout_structure(registry)
     validate_phase14_integer_conversion_structure(registry)
@@ -9134,6 +9299,23 @@ def phase17_runtime_authority_summary_lines(registry):
     ]
 
 
+def phase17_runtime_symbol_authority_summary_lines(registry):
+    authority = validate_phase17_runtime_symbol_authority_structure(registry)
+    return [
+        "## Phase 17 runtime ABI and versioned symbol authority",
+        "",
+        f"- Authority version: `{authority['version']}`",
+        f"- Status: `{authority['status']}`",
+        f"- Runtime ABI version: `{authority['runtime_abi_version']}`",
+        f"- Runtime symbol version: `{authority['symbol_version']}`",
+        f"- Registry-derived declared targets: `{len(authority['supported_abis'])}`",
+        f"- Selected versioned symbols: `{len(authority['selected_symbols'])}`",
+        "",
+        "Patch 17.2 freezes the runtime ABI on every Phase 14 declared target and assigns compiler-owned, versioned identities to the three approved scalar runtime imports. Other helper symbols remain owned by their later Phase 17 migration patches.",
+        "",
+    ]
+
+
 def render(registry):
     entries = registry["entries"]
     totals = derived_totals(registry)
@@ -9186,6 +9368,7 @@ def render(registry):
         *phase16_opening_summary_lines(registry),
         *phase17_opening_summary_lines(registry),
         *phase17_runtime_authority_summary_lines(registry),
+        *phase17_runtime_symbol_authority_summary_lines(registry),
         "## Registry entries", "",
         "| ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |",
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
