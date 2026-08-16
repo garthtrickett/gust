@@ -1,0 +1,43 @@
+name: Cranelift Phase 17 Runtime Symbol Version
+
+on:
+  pull_request:
+    paths:
+      - 'compiler/mir_runtime_boundary_authority.gst'
+      - 'compiler/mir_native_backend_runtime_request.gst'
+      - 'compiler/mir_runtime_symbol_version_smoke_test_entry.gst'
+      - 'compiler/mir_to_c.gst'
+      - 'compiler/driver.gst'
+      - 'compiler/experiments/cranelift/src/main.rs'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/cranelift_registry.py'
+      - 'scripts/phase17_runtime_symbol_version.py'
+      - 'scripts/guard-cranelift-phase17-runtime-symbol-version-contract.sh'
+      - 'tests/cranelift/phase17_runtime_symbol_version_contract.tsv'
+      - 'tests/cranelift/phase17_runtime_symbol_version_review.txt'
+      - '.github/workflows/phase17-runtime-symbol-version.yml'
+      - 'TASK.md'
+  push:
+    branches: [main]
+    paths:
+      - 'compiler/mir_runtime_boundary_authority.gst'
+      - 'compiler/mir_native_backend_runtime_request.gst'
+      - 'compiler/mir_runtime_symbol_version_smoke_test_entry.gst'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/cranelift_registry.py'
+      - 'scripts/phase17_runtime_symbol_version.py'
+      - 'scripts/guard-cranelift-phase17-runtime-symbol-version-contract.sh'
+      - 'tests/cranelift/phase17_runtime_symbol_version_contract.tsv'
+      - 'tests/cranelift/phase17_runtime_symbol_version_review.txt'
+
+jobs:
+  guard-cranelift-phase17-runtime-symbol-version-contract:
+    name: Phase 17.2 runtime symbol version contract (Level 1)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: guard-cranelift-phase17-runtime-symbol-version-contract
+        run: python3 scripts/phase17_runtime_symbol_version.py --check

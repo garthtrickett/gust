@@ -156,6 +156,8 @@ guard-pr-fast-ci-surface:
       'just guard-cranelift-phase17-opening-contract'
       'Phase 17 compiler-owned runtime boundary authority'
       'just guard-cranelift-phase17-runtime-authority-contract'
+      'Phase 17 runtime ABI and symbol versioning'
+      'just guard-cranelift-phase17-runtime-symbol-version-contract'
       'phase11-family:'
       'phase11_families:'
       'matrix.family'
@@ -15954,6 +15956,7 @@ guard-cranelift-contract-fast:
     just guard-cranelift-phase16-close
     just guard-cranelift-phase17-opening-contract
     just guard-cranelift-phase17-runtime-authority-contract
+    just guard-cranelift-phase17-runtime-symbol-version-contract
 
 guard-cranelift-phase17-runtime-authority-contract:
     #!/usr/bin/env bash
@@ -15963,6 +15966,15 @@ guard-cranelift-phase17-runtime-authority-contract:
     python3 scripts/cranelift_test_levels.py level guard-cranelift-phase17-runtime-authority-contract |
       grep -F $'guard-cranelift-phase17-runtime-authority-contract\t1\t' >/dev/null
     bash scripts/guard-cranelift-phase17-runtime-authority-contract.sh
+
+guard-cranelift-phase17-runtime-symbol-version-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 17.2 runtime ABI and symbol versioning..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase17-runtime-symbol-version-contract |
+      grep -F $'guard-cranelift-phase17-runtime-symbol-version-contract\t1\t' >/dev/null
+    bash scripts/guard-cranelift-phase17-runtime-symbol-version-contract.sh
 
 guard-cranelift-phase16-abi-authority-contract:
     #!/usr/bin/env bash

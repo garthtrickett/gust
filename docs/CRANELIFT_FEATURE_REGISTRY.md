@@ -341,6 +341,17 @@ Patch 17.0 is inventory-only. It selects the native runtime ABI, helper classifi
 
 Patch 17.1 establishes compiler-owned runtime identities, exactly-one helper classification, requirements, compatibility decisions, and the Phase 9G link-plan handoff. It does not migrate helper implementations.
 
+## Phase 17 runtime ABI and versioned symbol authority
+
+- Authority version: `phase17_runtime_symbol_version_authority_v1`
+- Status: `ready_for_patch17_3`
+- Runtime ABI version: `gust-runtime-abi-v1`
+- Runtime symbol version: `gust-runtime-symbol-v1`
+- Registry-derived declared targets: `5`
+- Selected versioned symbols: `3`
+
+Patch 17.2 freezes the runtime ABI on every Phase 14 declared target and assigns compiler-owned, versioned identities to the three approved scalar runtime imports. Other helper symbols remain owned by their later Phase 17 migration patches.
+
 ## Registry entries
 
 | ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |

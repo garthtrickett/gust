@@ -16,9 +16,16 @@ func main() {
     mut abi: runtime.MirRuntimeAbiIdentity[ctx];
     abi.runtime_abi_id = runtime.mir_runtime_abi_identity_id("module:smoke", target_id, 0, &ctx);
     abi.abi_version = "runtime-abi-v1";
+    abi.compatible_version_min = 1;
+    abi.compatible_version_max = 1;
     abi.target_id = target_id;
     abi.target_triple = "x86_64-unknown-linux-gnu";
-    abi.calling_convention_id = "phase16:c";
+    abi.calling_convention_id = "gust_canonical_v1";
+    abi.layout_authority_id = "phase14_compiler_owned_type_and_target_layout";
+    abi.function_abi_authority_id = "phase16_compiler_owned_function_abi";
+    abi.resource_authority_id = "phase15_compiler_owned_resource_operations";
+    abi.visibility_policy = "default_hidden_selected_exports_public";
+    abi.linkage_policy = "static_runtime_package_import";
     table = runtime.mir_runtime_table_with_abi(table, abi, &ctx);
 
     mut component: runtime.MirRuntimeComponentIdentity[ctx];

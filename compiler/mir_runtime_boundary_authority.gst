@@ -10,9 +10,16 @@
 type MirRuntimeAbiIdentity[ctx] struct {
     runtime_abi_id: str,
     abi_version: str,
+    compatible_version_min: int,
+    compatible_version_max: int,
     target_id: str,
     target_triple: str,
-    calling_convention_id: str
+    calling_convention_id: str,
+    layout_authority_id: str,
+    function_abi_authority_id: str,
+    resource_authority_id: str,
+    visibility_policy: str,
+    linkage_policy: str
 }
 
 type MirRuntimeHelperIdentity[ctx] struct {
@@ -29,6 +36,25 @@ type MirRuntimeHelperClassification[ctx] struct {
     classification: str,
     component_id: str,
     reason_code: str
+}
+
+type MirRuntimeSymbolIdentity[ctx] struct {
+    symbol_id: str,
+    helper_id: str,
+    external_spelling: str,
+    symbol_version: str,
+    component_id: str,
+    runtime_abi_id: str,
+    function_abi_id: str,
+    calling_convention_id: str,
+    layout_id: str,
+    resource_operation_id: str,
+    target_id: str,
+    target_triple: str,
+    required: int,
+    visibility: str,
+    linkage: str,
+    compatibility_policy: str
 }
 
 type MirRuntimeComponentIdentity[ctx] struct {
@@ -95,6 +121,7 @@ type MirRuntimeBoundaryAuthorityTable[ctx] struct {
     runtime_abis: Index[std.Vector[MirRuntimeAbiIdentity[ctx], ctx], ctx],
     helpers: Index[std.Vector[MirRuntimeHelperIdentity[ctx], ctx], ctx],
     classifications: Index[std.Vector[MirRuntimeHelperClassification[ctx], ctx], ctx],
+    symbols: Index[std.Vector[MirRuntimeSymbolIdentity[ctx], ctx], ctx],
     components: Index[std.Vector[MirRuntimeComponentIdentity[ctx], ctx], ctx],
     packages: Index[std.Vector[MirRuntimePackageIdentity[ctx], ctx], ctx],
     requirements: Index[std.Vector[MirRuntimeRequirement[ctx], ctx], ctx],
@@ -105,6 +132,8 @@ type MirRuntimeBoundaryAuthorityTable[ctx] struct {
 
 type MirRuntimeHelperQuery[ctx] struct { found: int, value: MirRuntimeHelperIdentity[ctx] }
 type MirRuntimeClassificationQuery[ctx] struct { found: int, value: MirRuntimeHelperClassification[ctx] }
+type MirRuntimeAbiQuery[ctx] struct { found: int, value: MirRuntimeAbiIdentity[ctx] }
+type MirRuntimeSymbolQuery[ctx] struct { found: int, value: MirRuntimeSymbolIdentity[ctx] }
 type MirRuntimeComponentQuery[ctx] struct { found: int, value: MirRuntimeComponentIdentity[ctx] }
 type MirRuntimePackageQuery[ctx] struct { found: int, value: MirRuntimePackageIdentity[ctx] }
 type MirRuntimeCompatibilityQuery[ctx] struct { compatible: int, reason_code: str }
@@ -121,6 +150,7 @@ func mir_runtime_empty_strings(ctx: &Arena) Index[std.Vector[str, ctx], ctx] {
 func mir_runtime_empty_abis(ctx: &Arena) Index[std.Vector[MirRuntimeAbiIdentity[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimeAbiIdentity[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimeAbiIdentity[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
 func mir_runtime_empty_helpers(ctx: &Arena) Index[std.Vector[MirRuntimeHelperIdentity[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimeHelperIdentity[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimeHelperIdentity[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
 func mir_runtime_empty_classifications(ctx: &Arena) Index[std.Vector[MirRuntimeHelperClassification[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimeHelperClassification[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimeHelperClassification[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
+func mir_runtime_empty_symbols(ctx: &Arena) Index[std.Vector[MirRuntimeSymbolIdentity[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimeSymbolIdentity[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimeSymbolIdentity[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
 func mir_runtime_empty_components(ctx: &Arena) Index[std.Vector[MirRuntimeComponentIdentity[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimeComponentIdentity[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimeComponentIdentity[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
 func mir_runtime_empty_packages(ctx: &Arena) Index[std.Vector[MirRuntimePackageIdentity[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimePackageIdentity[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimePackageIdentity[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
 func mir_runtime_empty_requirements(ctx: &Arena) Index[std.Vector[MirRuntimeRequirement[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimeRequirement[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimeRequirement[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
@@ -150,6 +180,7 @@ func mir_runtime_helper_classification_is_valid(value: str) int {
 func mir_runtime_abi_identity_id(module_id: str, target_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_abi:v1:module="; value = std.Concat(value, module_id); value = std.Concat(value, ":target="); value = std.Concat(value, target_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
 func mir_runtime_helper_identity_id(operation_id: str, target_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_helper:v1:operation="; value = std.Concat(value, operation_id); value = std.Concat(value, ":target="); value = std.Concat(value, target_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
 func mir_runtime_classification_id(helper_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_classification:v1:helper="; value = std.Concat(value, helper_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
+func mir_runtime_symbol_identity_id(helper_id: str, symbol_version: str, target_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_symbol:v1:helper="; value = std.Concat(value, helper_id); value = std.Concat(value, ":version="); value = std.Concat(value, symbol_version); value = std.Concat(value, ":target="); value = std.Concat(value, target_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
 func mir_runtime_component_identity_id(component_kind: str, target_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_component:v1:kind="; value = std.Concat(value, component_kind); value = std.Concat(value, ":target="); value = std.Concat(value, target_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
 func mir_runtime_package_identity_id(target_id: str, package_version: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_package:v1:target="; value = std.Concat(value, target_id); value = std.Concat(value, ":version="); value = std.Concat(value, package_version); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
 func mir_runtime_requirement_id(program_id: str, helper_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_requirement:v1:program="; value = std.Concat(value, program_id); value = std.Concat(value, ":helper="); value = std.Concat(value, helper_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
@@ -169,6 +200,7 @@ func mir_runtime_make_empty_table(target_id: str, target_triple: str, ctx: &Aren
     table.runtime_abis = mir_runtime_empty_abis(ctx);
     table.helpers = mir_runtime_empty_helpers(ctx);
     table.classifications = mir_runtime_empty_classifications(ctx);
+    table.symbols = mir_runtime_empty_symbols(ctx);
     table.components = mir_runtime_empty_components(ctx);
     table.packages = mir_runtime_empty_packages(ctx);
     table.requirements = mir_runtime_empty_requirements(ctx);
@@ -181,6 +213,7 @@ func mir_runtime_make_empty_table(target_id: str, target_triple: str, ctx: &Aren
 func mir_runtime_table_with_abi(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimeAbiIdentity[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimeAbiIdentity[ctx], ctx] := ctx[table.runtime_abis]; values.Push(value); ctx.Set(table.runtime_abis, values); return table; }
 func mir_runtime_table_with_helper(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimeHelperIdentity[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimeHelperIdentity[ctx], ctx] := ctx[table.helpers]; values.Push(value); ctx.Set(table.helpers, values); return table; }
 func mir_runtime_table_with_classification(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimeHelperClassification[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimeHelperClassification[ctx], ctx] := ctx[table.classifications]; values.Push(value); ctx.Set(table.classifications, values); return table; }
+func mir_runtime_table_with_symbol(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimeSymbolIdentity[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimeSymbolIdentity[ctx], ctx] := ctx[table.symbols]; values.Push(value); ctx.Set(table.symbols, values); return table; }
 func mir_runtime_table_with_component(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimeComponentIdentity[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimeComponentIdentity[ctx], ctx] := ctx[table.components]; values.Push(value); ctx.Set(table.components, values); return table; }
 func mir_runtime_table_with_package(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimePackageIdentity[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimePackageIdentity[ctx], ctx] := ctx[table.packages]; values.Push(value); ctx.Set(table.packages, values); return table; }
 func mir_runtime_table_with_requirement(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimeRequirement[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimeRequirement[ctx], ctx] := ctx[table.requirements]; values.Push(value); ctx.Set(table.requirements, values); return table; }
@@ -195,6 +228,14 @@ func mir_runtime_helper_by_id(table: MirRuntimeBoundaryAuthorityTable[ctx], help
 
 // classify_runtime_helper(helper)
 func mir_classify_runtime_helper(table: MirRuntimeBoundaryAuthorityTable[ctx], helper_id: str, ctx: &Arena) MirRuntimeClassificationQuery[ctx] { mut result: MirRuntimeClassificationQuery[ctx]; result.found = 0; mut values: std.Vector[MirRuntimeHelperClassification[ctx], ctx] := ctx[table.classifications]; mut index := 0; while index < len(values) { if std.str_eq(values[index].helper_id, helper_id) == 1 { result.found = 1; result.value = values[index]; return result; } index = index + 1; } return result; }
+
+// runtime_abi_for(target)
+func mir_runtime_abi_for(table: MirRuntimeBoundaryAuthorityTable[ctx], target_id: str, ctx: &Arena) MirRuntimeAbiQuery[ctx] { mut result: MirRuntimeAbiQuery[ctx]; result.found = 0; mut values: std.Vector[MirRuntimeAbiIdentity[ctx], ctx] := ctx[table.runtime_abis]; mut index := 0; while index < len(values) { if std.str_eq(values[index].target_id, target_id) == 1 { result.found = 1; result.value = values[index]; return result; } index = index + 1; } return result; }
+
+// runtime_symbol_for(helper, target)
+func mir_runtime_symbol_for(table: MirRuntimeBoundaryAuthorityTable[ctx], helper_id: str, target_id: str, ctx: &Arena) MirRuntimeSymbolQuery[ctx] { mut result: MirRuntimeSymbolQuery[ctx]; result.found = 0; mut values: std.Vector[MirRuntimeSymbolIdentity[ctx], ctx] := ctx[table.symbols]; mut index := 0; while index < len(values) { if std.str_eq(values[index].helper_id, helper_id) == 1 && std.str_eq(values[index].target_id, target_id) == 1 { result.found = 1; result.value = values[index]; return result; } index = index + 1; } return result; }
+
+func mir_runtime_validate_symbol_spelling(table: MirRuntimeBoundaryAuthorityTable[ctx], symbol_id: str, proposed_spelling: str, ctx: &Arena) MirRuntimeAuthorityValidation[ctx] { mut symbols: std.Vector[MirRuntimeSymbolIdentity[ctx], ctx] := ctx[table.symbols]; mut index := 0; while index < len(symbols) { if std.str_eq(symbols[index].symbol_id, symbol_id) == 1 { if std.str_eq(symbols[index].external_spelling, proposed_spelling) == 0 { return mir_runtime_validation(0, "runtime_symbol_backend_substitution", ctx); } return mir_runtime_validation(1, "runtime_symbol_spelling_valid", ctx); } index = index + 1; } return mir_runtime_validation(0, "runtime_symbol_unknown_abi", ctx); }
 
 // runtime_requirements(program)
 func mir_runtime_requirements(table: MirRuntimeBoundaryAuthorityTable[ctx], program_id: str, ctx: &Arena) Index[std.Vector[MirRuntimeRequirement[ctx], ctx], ctx] { mut result := mir_runtime_empty_requirements(ctx); mut output: std.Vector[MirRuntimeRequirement[ctx], ctx] := ctx[result]; mut values: std.Vector[MirRuntimeRequirement[ctx], ctx] := ctx[table.requirements]; mut index := 0; while index < len(values) { if std.str_eq(values[index].program_id, program_id) == 1 { output.Push(values[index]); } index = index + 1; } ctx.Set(result, output); return result; }
@@ -218,13 +259,23 @@ func mir_runtime_boundary_authority_table_validate(table: MirRuntimeBoundaryAuth
     if std.str_eq(table.semantic_authority, "compiler_owned_native_runtime_boundary_authority") == 0 || std.str_eq(table.classification_policy, "exactly_one_of_five_compiler_owned_helper_classifications") == 0 || std.str_eq(table.requirement_policy, "compiler_produced_requirements_only_worker_must_not_invent") == 0 || std.str_eq(table.link_plan_policy, "phase9g_consumes_validated_runtime_handoff_no_unresolved_symbol_inference") == 0 { return mir_runtime_validation(0, "runtime_authority_policy_mismatch", ctx); }
     if mir_runtime_field_is_safe(table.target_id) == 0 || mir_runtime_field_is_safe(table.target_triple) == 0 { return mir_runtime_validation(0, "runtime_target_mismatch", ctx); }
     mut helpers: std.Vector[MirRuntimeHelperIdentity[ctx], ctx] := ctx[table.helpers];
+    mut abis: std.Vector[MirRuntimeAbiIdentity[ctx], ctx] := ctx[table.runtime_abis];
     mut classifications: std.Vector[MirRuntimeHelperClassification[ctx], ctx] := ctx[table.classifications];
+    mut symbols: std.Vector[MirRuntimeSymbolIdentity[ctx], ctx] := ctx[table.symbols];
     mut components: std.Vector[MirRuntimeComponentIdentity[ctx], ctx] := ctx[table.components];
     mut packages: std.Vector[MirRuntimePackageIdentity[ctx], ctx] := ctx[table.packages];
     mut requirements: std.Vector[MirRuntimeRequirement[ctx], ctx] := ctx[table.requirements];
     mut decisions: std.Vector[MirRuntimeCompatibilityDecision[ctx], ctx] := ctx[table.compatibility_decisions];
     mut plans: std.Vector[MirRuntimeLinkPlanHandoff[ctx], ctx] := ctx[table.link_plans];
     mut references: std.Vector[MirRuntimeMirReference[ctx], ctx] := ctx[table.mir_references];
+    mut abi_index := 0;
+    while abi_index < len(abis) {
+        if mir_runtime_field_is_safe(abis[abi_index].runtime_abi_id) == 0 || mir_runtime_field_is_safe(abis[abi_index].abi_version) == 0 || abis[abi_index].compatible_version_min < 1 || abis[abi_index].compatible_version_max < abis[abi_index].compatible_version_min { return mir_runtime_validation(0, "runtime_abi_version_mismatch", ctx); }
+        if std.str_eq(abis[abi_index].target_id, table.target_id) == 0 || std.str_eq(abis[abi_index].target_triple, table.target_triple) == 0 { return mir_runtime_validation(0, "runtime_target_mismatch", ctx); }
+        if std.str_eq(abis[abi_index].calling_convention_id, "gust_canonical_v1") == 0 || std.str_eq(abis[abi_index].layout_authority_id, "phase14_compiler_owned_type_and_target_layout") == 0 || std.str_eq(abis[abi_index].function_abi_authority_id, "phase16_compiler_owned_function_abi") == 0 || std.str_eq(abis[abi_index].resource_authority_id, "phase15_compiler_owned_resource_operations") == 0 { return mir_runtime_validation(0, "runtime_abi_authority_mismatch", ctx); }
+        mut duplicate_abi_index := abi_index + 1; while duplicate_abi_index < len(abis) { if std.str_eq(abis[abi_index].runtime_abi_id, abis[duplicate_abi_index].runtime_abi_id) == 1 { return mir_runtime_validation(0, "runtime_duplicate_conflicting_abi", ctx); } duplicate_abi_index = duplicate_abi_index + 1; }
+        abi_index = abi_index + 1;
+    }
     mut helper_index := 0;
     while helper_index < len(helpers) {
         if mir_runtime_field_is_safe(helpers[helper_index].helper_id) == 0 || mir_runtime_field_is_safe(helpers[helper_index].operation_id) == 0 { return mir_runtime_validation(0, "runtime_unknown_helper_id", ctx); }
@@ -232,9 +283,25 @@ func mir_runtime_boundary_authority_table_validate(table: MirRuntimeBoundaryAuth
         mut classification_count := 0; mut classification_index := 0; while classification_index < len(classifications) { if std.str_eq(classifications[classification_index].helper_id, helpers[helper_index].helper_id) == 1 { classification_count = classification_count + 1; if mir_runtime_helper_classification_is_valid(classifications[classification_index].classification) == 0 { return mir_runtime_validation(0, "runtime_invalid_helper_classification", ctx); } } classification_index = classification_index + 1; }
         if classification_count == 0 { return mir_runtime_validation(0, "runtime_missing_helper_classification", ctx); }
         if classification_count > 1 { return mir_runtime_validation(0, "runtime_conflicting_helper_classification", ctx); }
+        mut stable_import := 0; classification_index = 0; while classification_index < len(classifications) { if std.str_eq(classifications[classification_index].helper_id, helpers[helper_index].helper_id) == 1 && std.str_eq(classifications[classification_index].classification, "stable_runtime_library_function") == 1 { stable_import = 1; } classification_index = classification_index + 1; }
+        if stable_import == 1 { mut selected_symbol_count := 0; mut selected_symbol_index := 0; while selected_symbol_index < len(symbols) { if std.str_eq(symbols[selected_symbol_index].helper_id, helpers[helper_index].helper_id) == 1 && std.str_eq(symbols[selected_symbol_index].target_id, table.target_id) == 1 { selected_symbol_count = selected_symbol_count + 1; } selected_symbol_index = selected_symbol_index + 1; } if selected_symbol_count == 0 { return mir_runtime_validation(0, "runtime_symbol_unversioned", ctx); } if selected_symbol_count > 1 { return mir_runtime_validation(0, "runtime_symbol_duplicate_conflict", ctx); } }
         helper_index = helper_index + 1;
     }
     mut classification_index := 0; while classification_index < len(classifications) { mut helper := mir_runtime_helper_by_id(table, classifications[classification_index].helper_id, ctx); if helper.found == 0 { return mir_runtime_validation(0, "runtime_unknown_helper_id", ctx); } mut component_found := 0; mut component_index := 0; while component_index < len(components) { if std.str_eq(components[component_index].component_id, classifications[classification_index].component_id) == 1 { component_found = 1; } component_index = component_index + 1; } if component_found == 0 { return mir_runtime_validation(0, "runtime_unknown_component_id", ctx); } classification_index = classification_index + 1; }
+    mut symbol_index := 0;
+    while symbol_index < len(symbols) {
+        mut helper := mir_runtime_helper_by_id(table, symbols[symbol_index].helper_id, ctx);
+        if helper.found == 0 { return mir_runtime_validation(0, "runtime_symbol_unknown_helper", ctx); }
+        mut classification := mir_classify_runtime_helper(table, symbols[symbol_index].helper_id, ctx);
+        if classification.found == 0 || std.str_eq(classification.value.component_id, symbols[symbol_index].component_id) == 0 || std.str_eq(helper.value.symbol_identity, symbols[symbol_index].external_spelling) == 0 { return mir_runtime_validation(0, "runtime_symbol_spelling_abi_conflict", ctx); }
+        if mir_runtime_field_is_safe(symbols[symbol_index].symbol_id) == 0 || mir_runtime_field_is_safe(symbols[symbol_index].external_spelling) == 0 || mir_runtime_field_is_safe(symbols[symbol_index].symbol_version) == 0 || mir_runtime_field_is_safe(symbols[symbol_index].function_abi_id) == 0 || mir_runtime_field_is_safe(symbols[symbol_index].visibility) == 0 || mir_runtime_field_is_safe(symbols[symbol_index].linkage) == 0 || mir_runtime_field_is_safe(symbols[symbol_index].compatibility_policy) == 0 { return mir_runtime_validation(0, "runtime_symbol_unversioned", ctx); }
+        if std.str_eq(symbols[symbol_index].target_id, table.target_id) == 0 || std.str_eq(symbols[symbol_index].target_triple, table.target_triple) == 0 || std.str_eq(symbols[symbol_index].layout_id, "layout:type:gust:i32") == 0 { return mir_runtime_validation(0, "runtime_symbol_target_or_layout_mismatch", ctx); }
+        if std.str_eq(symbols[symbol_index].calling_convention_id, "gust_canonical_v1") == 0 { return mir_runtime_validation(0, "runtime_symbol_calling_convention_mismatch", ctx); }
+        if symbols[symbol_index].required != 0 && symbols[symbol_index].required != 1 { return mir_runtime_validation(0, "runtime_symbol_required_policy_mismatch", ctx); }
+        mut abi_found := 0; abi_index = 0; while abi_index < len(abis) { if std.str_eq(abis[abi_index].runtime_abi_id, symbols[symbol_index].runtime_abi_id) == 1 { abi_found = 1; } abi_index = abi_index + 1; } if abi_found == 0 { return mir_runtime_validation(0, "runtime_symbol_unknown_abi", ctx); }
+        mut duplicate_symbol_index := symbol_index + 1; while duplicate_symbol_index < len(symbols) { if std.str_eq(symbols[symbol_index].symbol_id, symbols[duplicate_symbol_index].symbol_id) == 1 { return mir_runtime_validation(0, "runtime_symbol_duplicate_conflict", ctx); } if std.str_eq(symbols[symbol_index].external_spelling, symbols[duplicate_symbol_index].external_spelling) == 1 { if std.str_eq(symbols[symbol_index].runtime_abi_id, symbols[duplicate_symbol_index].runtime_abi_id) == 0 || std.str_eq(symbols[symbol_index].function_abi_id, symbols[duplicate_symbol_index].function_abi_id) == 0 { return mir_runtime_validation(0, "runtime_symbol_spelling_abi_conflict", ctx); } return mir_runtime_validation(0, "runtime_symbol_duplicate_conflict", ctx); } duplicate_symbol_index = duplicate_symbol_index + 1; }
+        symbol_index = symbol_index + 1;
+    }
     mut requirement_index := 0;
     while requirement_index < len(requirements) {
         mut helper := mir_runtime_helper_by_id(table, requirements[requirement_index].helper_id, ctx);
@@ -242,8 +309,7 @@ func mir_runtime_boundary_authority_table_validate(table: MirRuntimeBoundaryAuth
         mut classification := mir_classify_runtime_helper(table, requirements[requirement_index].helper_id, ctx);
         if classification.found == 0 || std.str_eq(classification.value.component_id, requirements[requirement_index].component_id) == 0 { return mir_runtime_validation(0, "runtime_requirement_mismatch", ctx); }
         mut abi_found := 0;
-        mut abis: std.Vector[MirRuntimeAbiIdentity[ctx], ctx] := ctx[table.runtime_abis];
-        mut abi_index := 0;
+        abi_index = 0;
         while abi_index < len(abis) { if std.str_eq(abis[abi_index].runtime_abi_id, requirements[requirement_index].runtime_abi_id) == 1 { abi_found = 1; } abi_index = abi_index + 1; }
         if abi_found == 0 { return mir_runtime_validation(0, "runtime_requirement_mismatch", ctx); }
         mut package_found := 0;
@@ -269,7 +335,11 @@ func mir_serialize_runtime_boundary_authority_table_for_request(table: MirRuntim
     output = mir_runtime_append_field(output, "runtime_authority_semantic_owner", table.semantic_authority, ctx);
     mut helpers: std.Vector[MirRuntimeHelperIdentity[ctx], ctx] := ctx[table.helpers];
     mut classifications: std.Vector[MirRuntimeHelperClassification[ctx], ctx] := ctx[table.classifications];
+    mut abis: std.Vector[MirRuntimeAbiIdentity[ctx], ctx] := ctx[table.runtime_abis];
+    mut symbols: std.Vector[MirRuntimeSymbolIdentity[ctx], ctx] := ctx[table.symbols];
+    mut abi_index := 0; while abi_index < len(abis) { output = mir_runtime_append_field(output, "runtime_abi_id", abis[abi_index].runtime_abi_id, ctx); output = mir_runtime_append_field(output, "runtime_abi_version", abis[abi_index].abi_version, ctx); abi_index = abi_index + 1; }
     mut index := 0; while index < len(helpers) { output = mir_runtime_append_field(output, "runtime_helper_id", helpers[index].helper_id, ctx); output = mir_runtime_append_field(output, "runtime_helper_operation", helpers[index].operation_id, ctx); index = index + 1; }
     index = 0; while index < len(classifications) { output = mir_runtime_append_field(output, "runtime_helper_classification", classifications[index].classification, ctx); index = index + 1; }
+    index = 0; while index < len(symbols) { output = mir_runtime_append_field(output, "runtime_symbol_id", symbols[index].symbol_id, ctx); output = mir_runtime_append_field(output, "runtime_symbol_external_spelling", symbols[index].external_spelling, ctx); output = mir_runtime_append_field(output, "runtime_symbol_version", symbols[index].symbol_version, ctx); index = index + 1; }
     return std.Clone(ctx, output);
 }

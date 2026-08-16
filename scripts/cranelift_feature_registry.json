@@ -3648,6 +3648,122 @@
     "behavior_policy": "authority_and_classification_only_no_runtime_helper_implementation_migration",
     "next_patch": "17.2"
   },
+  "phase17_runtime_symbol_authority": {
+    "version": "phase17_runtime_symbol_version_authority_v1",
+    "status": "ready_for_patch17_3",
+    "authority_owner": "compiler/mir_runtime_boundary_authority.gst",
+    "runtime_abi_version": "gust-runtime-abi-v1",
+    "symbol_version": "gust-runtime-symbol-v1",
+    "supported_abis": [
+      {
+        "target_id": "target:v1:triple=x86_64-unknown-linux-gnu:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8",
+        "target_triple": "x86_64-unknown-linux-gnu",
+        "object_format": "Elf",
+        "calling_convention_id": "gust_canonical_v1",
+        "layout_authority_id": "phase14_compiler_owned_type_and_target_layout",
+        "function_abi_authority_id": "phase16_compiler_owned_function_abi",
+        "resource_authority_id": "phase15_compiler_owned_resource_operations",
+        "compatible_version_min": 1,
+        "compatible_version_max": 1
+      },
+      {
+        "target_id": "target:v1:triple=aarch64-unknown-linux-gnu:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8",
+        "target_triple": "aarch64-unknown-linux-gnu",
+        "object_format": "Elf",
+        "calling_convention_id": "gust_canonical_v1",
+        "layout_authority_id": "phase14_compiler_owned_type_and_target_layout",
+        "function_abi_authority_id": "phase16_compiler_owned_function_abi",
+        "resource_authority_id": "phase15_compiler_owned_resource_operations",
+        "compatible_version_min": 1,
+        "compatible_version_max": 1
+      },
+      {
+        "target_id": "target:v1:triple=i686-unknown-linux-gnu:endian=little:ptr_size=4:ptr_align=4:i32_align=4:i64_align=4:max_align=4",
+        "target_triple": "i686-unknown-linux-gnu",
+        "object_format": "Elf",
+        "calling_convention_id": "gust_canonical_v1",
+        "layout_authority_id": "phase14_compiler_owned_type_and_target_layout",
+        "function_abi_authority_id": "phase16_compiler_owned_function_abi",
+        "resource_authority_id": "phase15_compiler_owned_resource_operations",
+        "compatible_version_min": 1,
+        "compatible_version_max": 1
+      },
+      {
+        "target_id": "target:v1:triple=x86_64-apple-darwin:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8",
+        "target_triple": "x86_64-apple-darwin",
+        "object_format": "MachO",
+        "calling_convention_id": "gust_canonical_v1",
+        "layout_authority_id": "phase14_compiler_owned_type_and_target_layout",
+        "function_abi_authority_id": "phase16_compiler_owned_function_abi",
+        "resource_authority_id": "phase15_compiler_owned_resource_operations",
+        "compatible_version_min": 1,
+        "compatible_version_max": 1
+      },
+      {
+        "target_id": "target:v1:triple=aarch64-apple-darwin:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8",
+        "target_triple": "aarch64-apple-darwin",
+        "object_format": "MachO",
+        "calling_convention_id": "gust_canonical_v1",
+        "layout_authority_id": "phase14_compiler_owned_type_and_target_layout",
+        "function_abi_authority_id": "phase16_compiler_owned_function_abi",
+        "resource_authority_id": "phase15_compiler_owned_resource_operations",
+        "compatible_version_min": 1,
+        "compatible_version_max": 1
+      }
+    ],
+    "selected_symbols": [
+      {
+        "helper_id": "p17_helper_tiny_host_add_one_i32",
+        "external_spelling": "tiny_host_add_one_i32",
+        "signature_id": "signature:i32_to_i32",
+        "function_abi_identity": "function_abi:runtime:tiny_host_add_one_i32:i32_to_i32:gust_canonical_v1",
+        "component_id": "runtime_component:approved_scalar_imports",
+        "layout_id": "layout:type:gust:i32",
+        "resource_operation_id": "none_scalar_runtime_operation",
+        "required": true,
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_tiny_host_add_i32",
+        "external_spelling": "tiny_host_add_i32",
+        "signature_id": "signature:i32_i32_to_i32",
+        "function_abi_identity": "function_abi:runtime:tiny_host_add_i32:i32_i32_to_i32:gust_canonical_v1",
+        "component_id": "runtime_component:approved_scalar_imports",
+        "layout_id": "layout:type:gust:i32",
+        "resource_operation_id": "none_scalar_runtime_operation",
+        "required": true,
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_tiny_host_is_positive_i32",
+        "external_spelling": "tiny_host_is_positive_i32",
+        "signature_id": "signature:i32_to_i32",
+        "function_abi_identity": "function_abi:runtime:tiny_host_is_positive_i32:i32_to_i32:gust_canonical_v1",
+        "component_id": "runtime_component:approved_scalar_imports",
+        "layout_id": "layout:type:gust:i32",
+        "resource_operation_id": "none_scalar_runtime_operation",
+        "required": true,
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      }
+    ],
+    "symbol_naming_policy": "preserve_real_external_spelling_version_in_compiler_symbol_identity",
+    "compatibility_policy": "exact_major_compatible_minor_range_1_1",
+    "visibility_policy": "default_hidden_selected_runtime_imports_public",
+    "linkage_policy": "external_static_runtime_package_no_dynamic_loading",
+    "backend_policy": "backends_consume_compiler_symbol_records_no_raw_symbol_substitution",
+    "rejection_classes": [
+      "runtime_symbol_unknown_abi",
+      "runtime_symbol_unversioned",
+      "runtime_symbol_duplicate_conflict",
+      "runtime_symbol_spelling_abi_conflict",
+      "runtime_symbol_calling_convention_mismatch",
+      "runtime_symbol_target_or_layout_mismatch",
+      "runtime_symbol_backend_substitution"
+    ],
+    "witness_policy": "stable_runtime_abi_and_versioned_symbol_witnesses",
+    "scope_policy": "three_approved_scalar_imports_only_other_helper_symbols_extend_in_later_phase17_patches",
+    "next_patch": "17.3"
+  },
   "phase15_specialized_resource_authority": {
     "version": "phase15_specialized_resource_authority_v1",
     "status": "patch15_11_directory_migrated",
