@@ -152,6 +152,8 @@ guard-pr-fast-ci-surface:
       'just guard-cranelift-phase15-opening-contract'
       'Phase 16 function ABI and aggregate call opening'
       'just guard-cranelift-phase16-opening-contract'
+      'Phase 17 native runtime boundary opening'
+      'just guard-cranelift-phase17-opening-contract'
       'phase11-family:'
       'phase11_families:'
       'matrix.family'
@@ -13330,9 +13332,10 @@ guard-cranelift-phase13-close:
     if ! rg -n -F "\"registry_status\": \"$closure_status\"" "$registry" >/dev/null &&
        ! rg -n -F '"current_phase": "phase14"' "$registry" >/dev/null &&
        ! rg -n -F '"current_phase": "phase15"' "$registry" >/dev/null &&
-       ! rg -n -F '"current_phase": "phase16"' "$registry" >/dev/null
+       ! rg -n -F '"current_phase": "phase16"' "$registry" >/dev/null &&
+       ! rg -n -F '"current_phase": "phase17"' "$registry" >/dev/null
     then
-      echo "Phase 13 closure must remain the current status or a recorded predecessor of the active Phase 14, Phase 15, or Phase 16 state."
+      echo "Phase 13 closure must remain the current status or a recorded predecessor of the active Phase 14, Phase 15, Phase 16, or Phase 17 state."
       exit 1
     fi
     rg -n -F "$closure_status" "$canonical_summary" >/dev/null
@@ -13509,9 +13512,10 @@ guard-cranelift-phase14-opening-contract:
 
     if ! rg -n -F '"current_phase": "phase14"' "$registry" >/dev/null &&
        ! rg -n -F '"current_phase": "phase15"' "$registry" >/dev/null &&
-       ! rg -n -F '"current_phase": "phase16"' "$registry" >/dev/null
+       ! rg -n -F '"current_phase": "phase16"' "$registry" >/dev/null &&
+       ! rg -n -F '"current_phase": "phase17"' "$registry" >/dev/null
     then
-      echo "Phase 14 opening must remain available while Phase 14 or a later Phase 15/16 state is active."
+      echo "Phase 14 opening must remain available while Phase 14 or a later Phase 15/16/17 state is active."
       exit 1
     fi
     rg -n -F '"phase14": {' "$registry" >/dev/null
@@ -15533,9 +15537,9 @@ guard-cranelift-phase15-opening-contract:
       rg -n -F "$token" "$review" >/dev/null
     done
 
-    rg -n -F '"registry_version": 16' "$registry" >/dev/null
-    rg -n -F '"registry_status": "phase16_opening_function_abi_aggregate_call_inventory"' "$registry" >/dev/null
-    rg -n -F '"current_phase": "phase16"' "$registry" >/dev/null
+    rg -n -F '"registry_version": 17' "$registry" >/dev/null
+    rg -n -F '"registry_status": "phase17_opening_native_runtime_boundary_inventory"' "$registry" >/dev/null
+    rg -n -F '"current_phase": "phase17"' "$registry" >/dev/null
     rg -n -F '"phase14": "phase14_closed_type_layout_and_memory_model"' "$registry" >/dev/null
     rg -n -F '"phase15": {' "$registry" >/dev/null
     rg -n -F '"phase16": {' "$registry" >/dev/null
@@ -15703,9 +15707,9 @@ guard-cranelift-phase16-opening-contract:
       rg -n -F "$token" "$review" >/dev/null
     done
 
-    rg -n -F '"registry_version": 16' "$registry" >/dev/null
-    rg -n -F '"registry_status": "phase16_opening_function_abi_aggregate_call_inventory"' "$registry" >/dev/null
-    rg -n -F '"current_phase": "phase16"' "$registry" >/dev/null
+    rg -n -F '"registry_version": 17' "$registry" >/dev/null
+    rg -n -F '"registry_status": "phase17_opening_native_runtime_boundary_inventory"' "$registry" >/dev/null
+    rg -n -F '"current_phase": "phase17"' "$registry" >/dev/null
     rg -n -F '"phase15": "phase15_closed_resource_and_lifetime_semantics"' "$registry" >/dev/null
     rg -n -F '"phase16": {' "$registry" >/dev/null
     rg -n -F -- '- [x] Patch 16.0 — Opening Inventory and Phase 15 Residual Rebase — DONE' TASK.md >/dev/null
@@ -15799,6 +15803,118 @@ guard-cranelift-phase16-opening-contract:
 
     echo "✅ Phase 16 opening inventory passed: stable ABI rows, Phase 15 parent and residual traceability, explicit out-of-scope ownership, fixture pairs, and planned CI families are registry-owned without behavior or workflow-matrix expansion."
 
+guard-cranelift-phase17-opening-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking the Phase 17 native runtime boundary opening inventory..."
+    registry="scripts/cranelift_feature_registry.json"
+    schema="scripts/cranelift_feature_registry.schema.json"
+    registry_validator="scripts/cranelift_registry.py"
+    opening_validator="scripts/phase17_opening.py"
+    predecessor_validator="scripts/phase16_close.py"
+    review="compiler/CRANELIFT_PHASE17_OPENING.md"
+    canonical_summary="docs/CRANELIFT_FEATURE_REGISTRY.md"
+    family_runner="scripts/cranelift_ci_family.py"
+    level_runner="scripts/cranelift_test_levels.py"
+    pr_workflow=".github/workflows/pr-fast.yml"
+    heavy_workflow=".github/workflows/heavy-guards.yml"
+    historical_workflow=".github/workflows/cranelift-historical-full.yml"
+
+    required_files=(
+      "$registry" "$schema" "$registry_validator" "$opening_validator"
+      "$predecessor_validator" "$review" "$canonical_summary"
+      "$family_runner" "$level_runner" "$pr_workflow" "$heavy_workflow"
+      "$historical_workflow"
+    )
+    for required_file in "${required_files[@]}"; do
+      if [ ! -f "$required_file" ] || [ -L "$required_file" ]; then
+        echo "Missing regular Phase 17 opening input: $required_file"
+        exit 1
+      fi
+    done
+
+    # Consume the semantic Phase 16 closure without replaying dynamic evidence.
+    python3 "$predecessor_validator" --check
+    just guard-cranelift-registry-schema
+    just guard-cranelift-registry-projection
+    python3 "$opening_validator" validate
+    python3 "$opening_validator" check-review
+    python3 "$family_runner" validate
+    python3 "$family_runner" check-pr-workflow "$pr_workflow"
+    python3 "$family_runner" check-heavy-workflow "$heavy_workflow"
+    python3 "$level_runner" validate
+    python3 "$level_runner" check-pr-workflow
+    python3 "$level_runner" check-heavy-workflow
+    python3 "$level_runner" check-historical-workflow
+    python3 "$level_runner" level guard-cranelift-phase17-opening-contract |
+      rg -n -F $'guard-cranelift-phase17-opening-contract\t1\t' >/dev/null
+
+    required_review_tokens=(
+      'CRANELIFT_PHASE17_OPENING_VIEW_VERSION: 1'
+      'CRANELIFT_PHASE17_OPENING_VERSION: phase17_opening_inventory_rebased_on_phase16_closure'
+      'CRANELIFT_PHASE17_INVENTORY_VERSION: phase17_opening_inventory_v1'
+      'CRANELIFT_PHASE17_OPENING_STATUS: ready_for_patch17_1'
+      'CRANELIFT_PHASE17_OPENING_PREDECESSOR: phase16_closed_function_abi_and_aggregate_call_semantics'
+      'CRANELIFT_PHASE17_OPENING_AUTHORITY: scripts/cranelift_feature_registry.json'
+      'CRANELIFT_PHASE17_OPENING_GUARD: guard-cranelift-phase17-opening-contract'
+      '## Patch 17.0 opening inventory and Phase 16 residual rebase'
+      '## C-dependent helper inventory'
+      '## Phase 16 residual rebase'
+      '## Opening invariants'
+    )
+    for token in "${required_review_tokens[@]}"; do
+      rg -n -F "$token" "$review" >/dev/null
+    done
+
+    rg -n -F '"registry_version": 17' "$registry" >/dev/null
+    rg -n -F '"registry_status": "phase17_opening_native_runtime_boundary_inventory"' "$registry" >/dev/null
+    rg -n -F '"current_phase": "phase17"' "$registry" >/dev/null
+    rg -n -F '"phase16": "phase16_closed_function_abi_and_aggregate_call_semantics"' "$registry" >/dev/null
+    rg -n -F '"phase17": {' "$registry" >/dev/null
+    rg -n -F -- '- [x] Patch 17.0 — Opening Inventory and Phase 16 Residual Rebase — DONE' TASK.md >/dev/null
+
+    opening_ci_count="$(
+      (rg -n -F 'just guard-cranelift-phase17-opening-contract' \
+        .github/workflows --glob '*.yml' || true) |
+        wc -l |
+        tr -d ' '
+    )"
+    if [ "$opening_ci_count" != "1" ]; then
+      echo "Phase 17 opening guard must be wired into CI exactly once, found $opening_ci_count occurrences."
+      exit 1
+    fi
+    rg -n -x -F '        run: just guard-cranelift-phase17-opening-contract' "$pr_workflow" >/dev/null
+
+    active_families="$(python3 "$family_runner" families)"
+    while IFS= read -r family; do
+      [ -n "$family" ] || continue
+      if printf '%s\n' "$active_families" | rg -n -x -F "$family" >/dev/null; then
+        echo "Patch 17.0 must not activate planned Phase 17 Level 2 family: $family"
+        exit 1
+      fi
+    done < <(python3 "$opening_validator" families)
+
+    if rg -n -e 'phase17-family:' -e 'guard-cranelift-phase17-.*(parity|differential|complete-runtime)' -e 'matrix\.phase17' "$pr_workflow" "$heavy_workflow" "$historical_workflow" >/dev/null; then
+      echo "Phase 17 opening must not add Phase 17 Level 2 or Level 3 workflow rows."
+      exit 1
+    fi
+    if rg -n -i -e 'sha-?256' -e 'sha256sum' "$registry" "$review" "$canonical_summary" >/dev/null; then
+      echo "Phase 17 opening found a forbidden raw registry or Markdown hash contract."
+      exit 1
+    fi
+    if rg -n -e 'EXPECTED_(FAMILY|MATRIX|TARGET|HELPER|RUNTIME)_COUNT' -e '(family|matrix|target|helper|runtime)_count[[:space:]]*=[[:space:]]*[0-9]+' "$opening_validator" "$family_runner" "$pr_workflow" "$heavy_workflow" "$historical_workflow" >/dev/null; then
+      echo "Phase 17 opening found an exact matrix or runtime total treated as correctness."
+      exit 1
+    fi
+
+    guard_body="$(sed -n '/^guard-cranelift-phase17-opening-contract:/,/^guard-cranelift-contract-fast:/p' justfile)"
+    if printf '%s\n' "$guard_body" | rg -n -e '^[[:space:]]+just guard-cranelift-phase16-close([[:space:]]|$)' -e '^[[:space:]]+just guard-cranelift-differential-family([[:space:]]|$)' -e '^[[:space:]]+just guard-cranelift-historical-full([[:space:]]|$)' -e '^[[:space:]]+bash scripts/phase17_.*differential\.sh([[:space:]]|$)' -e '^[[:space:]]+\./gust([[:space:]]|$)' -e '^[[:space:]]+(cargo|cc|gcc|clang|make)([[:space:]]|$)' >/dev/null; then
+      echo "Phase 17 opening must consume semantic summaries without replaying native or differential evidence."
+      exit 1
+    fi
+
+    echo "✅ Phase 17 opening inventory passed: stable runtime-boundary rows, Phase 16 parent and residual traceability, explicit helper categories and out-of-scope ownership, fixture pairs, and planned CI families are registry-owned without behavior or workflow-matrix expansion."
+
 guard-cranelift-contract-fast:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -15834,6 +15950,7 @@ guard-cranelift-contract-fast:
     just guard-cranelift-phase16-abi-metadata-contract
     just guard-cranelift-phase16-composition-contract
     just guard-cranelift-phase16-close
+    just guard-cranelift-phase17-opening-contract
 
 guard-cranelift-phase16-abi-authority-contract:
     #!/usr/bin/env bash
@@ -17397,9 +17514,10 @@ guard-cranelift-phase12-5-close:
     if ! rg -n -F '"current_phase": "phase13"' "$registry_json" >/dev/null &&
        ! rg -n -F '"current_phase": "phase14"' "$registry_json" >/dev/null &&
        ! rg -n -F '"current_phase": "phase15"' "$registry_json" >/dev/null &&
-       ! rg -n -F '"current_phase": "phase16"' "$registry_json" >/dev/null
+       ! rg -n -F '"current_phase": "phase16"' "$registry_json" >/dev/null &&
+       ! rg -n -F '"current_phase": "phase17"' "$registry_json" >/dev/null
     then
-      echo "Phase 12.5 closure must remain available to Phase 13, Phase 14, Phase 15, or Phase 16."
+      echo "Phase 12.5 closure must remain available to Phase 13, Phase 14, Phase 15, Phase 16, or Phase 17."
       exit 1
     fi
     rg -n -x -F "CRANELIFT_VERIFICATION_FRAMEWORK_INVENTORY_STATUS: $closure_status" "$inventory_doc" >/dev/null

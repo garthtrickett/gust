@@ -395,7 +395,7 @@ def validate_registry_projection(registry):
                     f"{entry.get('id', '<unknown>')}: deferred Phase 14 row ownership drifted",
                 )
             continue
-        if entry.get("origin_phase") in {"phase15", "phase16"}:
+        if entry.get("origin_phase") in {"phase15", "phase16", "phase17"}:
             require(
                 entry.get("status") == "candidate_deferred"
                 and entry.get("route_owner") == "deferred",
