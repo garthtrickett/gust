@@ -177,6 +177,9 @@ jobs:
       - name: Phase 17 Rust runtime components
         run: just guard-cranelift-phase17-rust-runtime-contract
 
+      - name: Phase 17 explicit retained C runtime objects
+        run: just guard-cranelift-phase17-retained-c-runtime-contract
+
       - name: Upload Gust build outputs
         uses: actions/upload-artifact@v4
         with:

@@ -189,11 +189,56 @@ observed, options are (a) a shared key across workflows, accepting that only the
 `~/.cargo` portion helps universally, or (b) `Swatinem/rust-cache` per workflow
 with an explicit target-dir mapping, for its pruning.
 
+### Measured result: −5.2%, roughly half the estimate
+
+Merged as `52fbcf2b`. First post-cache data point is PR #44 (Phase 17.6).
+
+**Do not compare raw aggregate runner time between PRs.** The first attempt at
+this measurement did, and reported "+267 min, 83% worse" — nonsense. PR #44 runs
+187 checks against PR #41's 138 because it touches more path-filtered surfaces
+(new workflow, new crate directory, shared authority module). That comparison
+measures the job count, not the cache.
+
+The valid method is like-for-like on jobs present in **both** PRs, restricted to
+substantial ones (≥60 s), taking the `min` of repeated samples to reduce noise:
+
+| | Total over 61 shared substantial jobs |
+| --- | --- |
+| Pre-cache (PR #41) | 284m24s |
+| Post-cache (PR #44) | 269m42s |
+| **Delta** | **−15m42s (−5.2%)** |
+
+Real cache hits, concentrated in the heavy migration guards:
+
+| Job | Change |
+| --- | --- |
+| `Phase 11 family / pointer-memory` | −147 s |
+| `guard (migration-local-binding)` | −102 s |
+| `guard / migration-provenance` | −100 s |
+| `guard / migration-return-int` | −84 s |
+
+But regressions appear too — `guard / routed-return-int` **+116 s**, and
+`migration-return-int` shows **−84 s in one shard and +53 s in another**. Same
+job, both directions: that is runner variance, not a systematic effect.
+
+**Honest read:** the estimate was ~9% (~30 min); the measurement is −5.2%. The
+cache is doing something — the −100 s-class improvements are too large and too
+concentrated to be chance — but this is not the clean win "pure win" implied.
+One PR pair with this much variance is not conclusive; get a second data point.
+
+### Implications for Lever 2
+
+If Lever 1 underdelivered by roughly half, Lever 2's ~77 min estimate plausibly
+lands nearer ~40 min. Weigh that against its risk: a parity guard silently
+validating a stale compiler. Chasing a single-digit CI percentage with a
+correctness-risky change is a poor trade. **Recommendation: gather another data
+point from ordinary Phase 17 PRs before starting Lever 2.**
+
 ### Notes
 
-- 2026-08-16 — implemented; all 40 workflow files parse, `guard-pr-fast-ci-surface`
+- 2026-08-16 — implemented; all workflow files parse, `guard-pr-fast-ci-surface`
   and registry projection guards pass unchanged.
-- (record measured before/after aggregate runner time here once merged)
+- 2026-08-16 — measured −5.2% like-for-like; method and caveats above.
 
 ---
 
@@ -247,6 +292,7 @@ guard to push back — that is the guard doing its job.
 | Date | Change | Aggregate runner time |
 | --- | --- | --- |
 | 2026-08-16 | Baseline measured on PR #41 | 320 min |
+| 2026-08-16 | Lever 1 merged (`52fbcf2b`); like-for-like on 61 shared jobs | 284m → 270m (−5.2%) |
 
 ## Incident log
 

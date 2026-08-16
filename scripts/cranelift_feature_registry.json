@@ -3930,6 +3930,45 @@
     "scope_policy": "reference_rust_component_only_retained_c_objects_remain_in_patch17_7",
     "next_patch": "17.7"
   },
+  "phase17_retained_c_authority": {
+    "version": "phase17_retained_c_authority_v1",
+    "status": "ready_for_patch17_8",
+    "authority_owner": "compiler/mir_runtime_boundary_authority.gst",
+    "request_owner": "compiler/mir_retained_c_runtime_request.gst",
+    "worker_owner": "compiler/experiments/cranelift/src/retained_c_runtime.rs",
+    "request_format": "gust.compiler_retained_c_runtime.v1",
+    "witness_format": "gust.retained_c_runtime_witness.v1",
+    "linkage_policy": "separately_compiled_component_no_program_derived_c_source",
+    "generation_policy": "no_generated_headers_wrapper_bodies_or_fragments_derived_from_canonical_mir",
+    "packaging_policy": "retained_c_objects_use_the_same_manifest_path_as_rust_and_gust_components",
+    "owned_source_prefix": "src/runtime/",
+    "retention_reasons": [
+      "awaiting_pure_gust_migration",
+      "awaiting_rust_component_migration",
+      "host_platform_primitive_no_gust_equivalent"
+    ],
+    "retained_components": [
+      {"component_id": "runtime_component:arena", "owned_source_path": "src/runtime/arena.c", "helper_count": 6, "retention_reason": "awaiting_pure_gust_migration", "destination_phase": "17.8", "removal_criterion": "removed_when_component_helpers_are_migrated_in_patch17_8", "target_applicability": "all_declared_host_targets_from_phase14_target_authority"},
+      {"component_id": "runtime_component:collections", "owned_source_path": "src/runtime/collections.c", "helper_count": 6, "retention_reason": "awaiting_pure_gust_migration", "destination_phase": "17.8", "removal_criterion": "removed_when_component_helpers_are_migrated_in_patch17_8", "target_applicability": "all_declared_host_targets_from_phase14_target_authority"},
+      {"component_id": "runtime_component:core_headers", "owned_source_path": "src/runtime/core_headers.h", "helper_count": 3, "retention_reason": "host_platform_primitive_no_gust_equivalent", "destination_phase": "17.15", "removal_criterion": "removed_when_component_helpers_are_migrated_in_patch17_15", "target_applicability": "all_declared_host_targets_from_phase14_target_authority"},
+      {"component_id": "runtime_component:fiber", "owned_source_path": "src/runtime/fiber.c", "helper_count": 18, "retention_reason": "host_platform_primitive_no_gust_equivalent", "destination_phase": "17.12", "removal_criterion": "removed_when_component_helpers_are_migrated_in_patch17_12", "target_applicability": "all_declared_host_targets_from_phase14_target_authority"},
+      {"component_id": "runtime_component:file_io", "owned_source_path": "src/runtime/file_io.c", "helper_count": 20, "retention_reason": "host_platform_primitive_no_gust_equivalent", "destination_phase": "17.11", "removal_criterion": "removed_when_component_helpers_are_migrated_in_patch17_11", "target_applicability": "all_declared_host_targets_from_phase14_target_authority"},
+      {"component_id": "runtime_component:mock_payload", "owned_source_path": "src/runtime/mock_payload.c", "helper_count": 15, "retention_reason": "awaiting_pure_gust_migration", "destination_phase": "17.8", "removal_criterion": "removed_when_component_helpers_are_migrated_in_patch17_8", "target_applicability": "all_declared_host_targets_from_phase14_target_authority"},
+      {"component_id": "runtime_component:scratch", "owned_source_path": "src/runtime/scratch.c", "helper_count": 4, "retention_reason": "awaiting_pure_gust_migration", "destination_phase": "17.8", "removal_criterion": "removed_when_component_helpers_are_migrated_in_patch17_8", "target_applicability": "all_declared_host_targets_from_phase14_target_authority"}
+    ],
+    "retained_helper_count": 72,
+    "rejection_classes": [
+      "runtime_retained_c_anonymous_object",
+      "runtime_retained_c_program_specific_generation",
+      "runtime_retained_c_unversioned_export",
+      "runtime_retained_c_hidden_target_assumption",
+      "runtime_retained_c_duplicate_provider",
+      "runtime_retained_c_direct_linker_inclusion"
+    ],
+    "witness_policy": "cranelift_and_mir_to_c_retained_c_witnesses_must_match_byte_for_byte",
+    "scope_policy": "retained_c_inventory_frozen_pure_gust_modules_remain_in_patch17_8",
+    "next_patch": "17.8"
+  },
   "phase15_specialized_resource_authority": {
     "version": "phase15_specialized_resource_authority_v1",
     "status": "patch15_11_directory_migrated",

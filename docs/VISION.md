@@ -2,9 +2,9 @@
 
 **Product, Language, Runtime, and Platform Decisions**
 
-> **What this document is.** A well-specified hypothesis with eight open questions. Two of them — OD-8 (is the scoping analysis sound) and OD-9 (can a model write Gust) — can invalidate the thesis outright, and both are answerable within the demo. The prose is confident because vague prose cannot be attacked; the uncertainty is real and lives in §0.15. Read that table before treating any of this as settled.
+> **What this document is.** A well-specified hypothesis with nine open questions. Two of them — **OD-9** (can a model write Gust) and **OD-8** (is the scoping analysis sound) — can invalidate the thesis outright, and both resolve inside the next four months. The prose is confident because vague prose cannot be attacked; the uncertainty is real and lives in §0.15. Read that table before treating any of this as settled.
 >
-> **Read Part 0 and stop.** Parts I–XXII specify a complete system that is deliberately *not* being built yet (§0.14). They exist so that demo-stage decisions do not foreclose it.
+> **The plan is four months long.** Build the demo (§0.7). Do not pick a business until it exists (§0.8). Everything past §0.16 is a specification of a system that is deliberately *not* being built yet — it exists so that demo-stage decisions do not foreclose it, and most of it should never be built by us.
 
 ---
 
@@ -112,100 +112,123 @@ The risk profile has shifted, not shrunk: from *can they build a compiler* — a
 
 ## 0.7 What to build next
 
-Nothing but the demo. In order:
+Nothing but the demo. Two tracks, both starting in week one.
+
+**Track A — the compiler.**
 
 1. **`uses` clauses in signatures.** Effects declared on every function, no inference (§17).
 2. **Effect checking across the call graph.** Undeclared authority is a compile error.
 3. **Typed Postgres queries** via compiler-owned derivation (§14, §55).
 4. **Tenant scope as a tracked property of query construction.** Unscoped queries rejected (§56).
-5. **Model fluency.** Training data and evals so an agent writes Gust well. **Not optional** — a compiler no model can write for is a science project, and this is the item most likely to be underestimated.
-6. **One recognisable multi-tenant application, agent-generated.** An issue tracker or a support inbox. Not a todo list.
 
-**Revised estimate: 2–4 people, 3–4 months, low single-digit millions — plausibly bootstrappable.**
+**Track B — model fluency (OD-9).**
 
-Bootstrapping through the demo is worth real sacrifice, for two reasons. Arriving at a buyer conversation with no cap table, no board, and no clock is the strongest negotiating position available at this stage. And more practically, the motion after publication is slow (§0.8) — runway is what makes a year of waiting survivable rather than fatal. The revised timeline puts both within reach.
+Synthetic corpus, evals, and whatever fine-tuning or prompt-level scaffolding it takes to make an agent write Gust well.
+
+**This runs in parallel from week one, not after the compiler is finished.** It is the most underweighted item in this document. Nobody has made a frontier model fluent in a language with no corpus; you would be bootstrapping from a few thousand lines of your own examples. It may be harder than everything in Track A combined, and if it fails the readership thesis (§0.1) collapses outright — the entire argument is that nobody needs to learn Gust except the model.
+
+Discovering that in month three is survivable. Discovering it in month fourteen is not.
+
+**Then:** one recognisable multi-tenant application — issue tracker or support inbox — **agent-generated**. Not a todo list.
+
+**Estimate: 2–4 people, 3–4 months, low single-digit millions — plausibly bootstrappable.**
+
+Bootstrapping through the demo is worth real sacrifice, for two reasons. Arriving at a buyer conversation with no cap table, no board, and no clock is the strongest negotiating position available at this stage. And more practically, the motion after publication is slow (§0.8) — runway is what makes a year of waiting survivable rather than fatal.
 
 ### The deliverable
 
 A published, third-party-reproducible side-by-side. The same specification handed to an agent targeting TypeScript and Postgres, and to an agent targeting Gust. The first reproduces the cross-tenant data leak. The second does not compile until it is fixed. Complete traces published: every capability declared, every one exercised, every authority attempt rejected.
 
-That artifact is the entire asset. Everything else is scaffolding around it.
+That artifact is the entire asset at this stage. Everything else is scaffolding around it.
 
 ### Explicitly not next
 
 - **More language surface.** Better generics, nicer syntax, richer patterns. The temptation will be constant and every week spent there is a week the demo does not exist.
-- **A productivity suite built in Gust.** An integrated Slack/Linear/Intercom/GitHub product would take years, and if *we* build it by hand it demonstrates that skilled humans can use a new language — which nobody doubted, and which is the opposite of the thesis. The demo application must be agent-generated or it proves nothing.
+- **Any business.** See §0.8 — the decision is deliberately deferred.
 - **Deployment platform, jobs, realtime, suppliers.** All post-demo.
 
-## 0.8 Who buys, and how
+## 0.8 The play
 
-**You do not sell a compiler. You sell a de-risked three-year problem, and the compiler is the receipt.**
+**Build the demo. Do not pick the business yet.**
 
-### The buyers
+That is the decision, and it is deliberate rather than indecisive. Every candidate business — containment substrate, an integrated product, regulated verticals, training environments — requires the identical next four months. There is no path that skips effects, tenant scoping, and model fluency.
 
-Model providers with a build surface, and AI app-building platforms. Roughly ten to fifteen real prospects globally. Not the end user, who will not pay for security until after a breach.
+More decisively: **OD-8 and OD-9 are thesis-invalidating and both resolve inside those four months.** If the scoping analysis has a hole, or a model cannot write Gust well, every downstream option dies simultaneously. Choosing a go-to-market before knowing whether the mechanism works is how a year gets spent on the wrong thing.
 
-Their mental state before the conversation: *our generated apps leak user data, we know, we are patching it with scanners and templates, we do not have a real fix and we are not going to build a language.*
+So the demo is not a step toward a strategy. **It is the instrument that selects the strategy.**
 
-What they are buying: **a known liability removed, plus three years of calendar.** Not software.
+### Then, if the demo holds: the integrated product
+
+The most likely second move is an integrated development-and-support product — issue tracking, support inbox, feature flags, team communication, git integration — built on Gust and agent-generated.
+
+**Why this and not something else:**
+
+- **The cost-structure argument is genuinely good.** All-in-one has always lost because building five good products was prohibitively expensive, producing either mediocre-at-five or excellent-at-one-and-creeping. If code is cheap, that changes. This is our own thesis producing its first commercial consequence, not an unrelated product idea.
+- **It is the same work as v0.5.** The substrate — workspaces, identity, roles, permissions, objects, comments, notifications, search, audit — is Gust's framework layer (Parts III, X, XI) with a price attached. Not a detour.
+- **The seams are the product.** Five separate tools means five identities, five permission models, five notification streams, and nothing that knows the whole story. Those vendors will never merge, so the seam is permanent unless someone builds across it. Pitch **one data model, several surfaces** — never "five tools in one," which invites the bloatware comparison.
+- **No enterprise sales.** Self-serve, credit card, no procurement. This is a hard constraint (§0.16), not a preference to be argued out of.
+
+**Build order:** substrate → feature flags → issues → support inbox → communication. **Integrate git hosting; do not rebuild it** — code review and CI are a decade of work for no differentiation, and teams will happily keep PRs elsewhere provided they are linked.
+
+**Migration tooling is a first-class surface from day one.** Nobody evaluates an all-in-one on merits; they evaluate on whether four years of history comes with them. This is where comparable attempts die.
+
+### If acquisition happens
+
+Not a plan to execute, but the likely terminal outcome and worth being ready for.
+
+**Buyers:** model providers with a build surface, and AI app-building platforms. Roughly ten to fifteen real prospects. They are not buying a compiler — they are buying **a known liability removed plus three years of calendar.**
 
 | Their objection | The answer |
 |---|---|
 | "We can build this" | You can. In three years, with compiler engineers you are not hiring, while your whole org is pointed at models. |
 | "We won't depend on a startup for a core surface" | Language spec and reference compiler are open. And the exit conversation is available from day one. |
-| "Show me" | The artifact. Reproducible by you, not a deck. |
+| "Has anyone run this in anger?" | The product, in production, with paying customers and no cross-tenant incidents. |
 
-### The realistic outcome is acquisition
+That last row is why the product matters more than the demo eventually. *A genuinely complex production system, agent-generated in Gust, publicly inspectable, with no cross-tenant incidents* is stronger evidence than any case study, and it is obtained without a single procurement call.
 
-Licensing a language substrate to competing labs is very hard: the first mover wants exclusivity, the value is strategic rather than operational, and buying outright is cheaper than a decade of fees. Plan for acquisition and stop pretending an ARR line is the point.
-
-That changes what to optimise for: **strategic necessity and being un-buildable in the time they have**, not revenue.
-
-### Open-core, not open
-
-Earlier drafts said open the spec. As an independent company, open-sourcing the whole thing destroys the leverage — they take it and skip you.
-
-- **Open:** language specification, reference compiler. Buys credibility, adoption, and the answer to dependency risk.
-- **Proprietary:** verified runtime, trace infrastructure, conformance tooling, scoping analysis implementation.
+**Open-core.** Open: language specification and reference compiler — credibility, adoption, and the answer to dependency risk. Proprietary: verified runtime, trace infrastructure, conformance tooling, scoping analysis implementation. Open-sourcing everything destroys the leverage.
 
 ### The motion
 
-**Publish, do not pitch.** A reproducible artifact showing a data-leak class becoming a compile error circulates in the three communities that matter — compiler people, AI-safety people, app-builder engineers. That is how infrastructure companies with no revenue get bought.
+**Publish, do not pitch.** A reproducible artifact showing a data-leak class becoming a compile error circulates in the three communities that matter — compiler people, AI-safety researchers, app-builder engineers.
 
 But *publish and wait* is not a plan. Passive publishing buys one good week and then silence. Four things make inbound actually happen:
 
-**Two audiences, two artifacts.** They are not interchangeable and both are required.
+**Two audiences, two artifacts.**
 
 | Artifact | Audience | Function |
 |---|---|---|
 | **The demo** (§0.7) | Compiler people, AI-safety researchers, app-builder engineers | Technical proof |
-| **The statistic** (§0.9) | Journalists, analysts, and whoever at a platform has to answer for it | Makes the problem legible to people who will not read a compiler error |
+| **The statistic** (§0.9) | Journalists, analysts, whoever at a platform has to answer for it | Makes the problem legible to people who will not read a compiler error |
 
 The demo alone is a neat trick nobody has a budget line for. The statistic alone is a scary number that sells scanners.
 
-**Named people, not the internet.** Once it is public, send it directly to specific engineers and researchers at each prospect. Not a pitch — *built this, thought you would find it interesting*. That is how it reaches an internal channel, which is how these conversations actually start.
+**Named people, not the internet.** Once public, send it directly to specific engineers and researchers at each prospect. Not a pitch — *built this, thought you would find it interesting.* That is how it reaches an internal channel.
 
-**Warm introductions beat everything.** Existing relationships in this industry are worth more than any volume of posting, and they are the cheapest asset available. Use them deliberately rather than hoping the artifact travels on its own.
+**Warm introductions beat everything.** Existing relationships are the cheapest asset available and worth more than any volume of posting.
 
-**Expect a long lag.** The realistic path is: an engineer sees it, mentions it internally, three or more months pass, someone reaches out. Budget for that and do not reinterpret month two as failure.
+**Expect a long lag.** An engineer sees it, mentions it internally, three or more months pass, someone reaches out. Do not reinterpret month two as failure.
 
-**Parallel, never exclusive.** Every prospect at once, none told they are the only conversation. That is the entire pricing power. The moment one gets exclusivity the outcome is capped.
+**Parallel, never exclusive.** Every prospect at once, none told they are the only conversation. That is the entire pricing power.
 
-**Be able to afford the wait.** This is the real argument for bootstrapping (§0.7), beyond negotiating leverage: reaching the artifact on a few months of own time means *publish and wait a year* is a bet that can be held. Having raised and hired, the same wait is fatal. Runway is what converts a slow motion into a viable one.
+### Options considered and rejected
 
-### A note on training signal
+Recorded so they are not relitigated, and so the reasoning is available if conditions change.
 
-Declared effects plus deterministic execution make every run a labelled example — did it compile, did it attempt authority it lacked, did it hold authority it never used (§112). For an acquirer who trains models, that is a second reason to want this, and it costs us nothing extra to build.
-
-It is a value driver in their diligence, not a thesis we need to prove. Do not organise the company around it.
-
+| Option | Verdict |
+|---|---|
+| **Verified RL environments for labs** | Good business, **Gust is incidental to it.** Determinism, sandboxing, and generated test suites are achievable from a formal spec plus a generator in any language. Only completeness of the derived negative-test set is genuinely Gust-shaped, and that is narrow. Someone should build this; it does not need a compiler. |
+| **Regulated verticals** (healthcare, fintech internal tools) | **Probably the best business on paper and the wrong one for us.** Present-tense blocked demand, Gust genuinely essential — an auditor asking "how do you know user A cannot see user B's records" gets a categorically better answer from a compiler than from a policy file. Killed by 6–18 month sales cycles, SOC 2 and BAA overhead, and needing full v1.0 rather than the demo. Revisit only if the team composition changes. |
+| **Scanner / statistic as a product** | Revenue sooner, and it manufactures the market pressure we are otherwise waiting for. But becoming the scanner company makes us the cheap fix rather than the structural one. Run it as marketing with a price tag (§0.9), never as the destination. |
+| **Agent governance runtime for enterprises** | Existing budget line, large buyer set — but delivered over existing languages, so Gust is optional again, and it is a real enterprise sales motion. |
+| **Containment substrate, publish and wait for acquisition** | The original plan. Survives as the *frame*, not the near-term activity — there is no urgent buyer today (§0.2), so waiting passively wastes the interval that the product would otherwise fill. |
 ## 0.9 Manufacturing the statistic
 
 If nobody is counting (§0.2), the entity that starts counting defines the problem. Snyk built the npm vulnerability database and became the authority on npm risk. Chainguard made CVE counts in base images a number people report.
 
 **Scan public AI-generated deployments. Publish the rate.** *"We examined N applications built with AI app builders. X% expose data across users."* Repeat quarterly.
 
-Three reasons this is the highest-value work after the demo, and possibly alongside it:
+This runs **alongside** the demo, months 0–3 (§0.14), done by someone who is not on Track A or B. Three reasons it earns a parallel track rather than waiting:
 
 1. **Cheap and fast.** Weeks, not months, and it does not compete with compiler work for the same person.
 2. **It is customer research.** It reveals whether tenant scoping actually dominates the bug distribution. If the top failure turns out to be exposed credentials, §56's centrality is wrong and we need to know before building the product around it.
@@ -217,27 +240,41 @@ Do this ethically: public deployments only, responsible disclosure to affected o
 
 ## 0.10 The numbers
 
-Two earlier drafts are withdrawn — direct-to-team SaaS and platform licensing — because both assumed a business we are not building.
+Earlier drafts modelled direct-to-team SaaS, platform licensing, and first-party product margin. All three are withdrawn — each assumed a business chosen before the mechanism was proven, which is the error §0.8 exists to avoid.
 
-**Cost to the demo:** 2–4 people, 3–4 months, low single-digit millions. Plausibly bootstrappable.
+**Cost to the demo:** 2–4 people, 3–4 months, low single-digit millions. Plausibly bootstrappable. **This is the only number that requires a decision today.**
 
-**Cost to a productised v1.0:** $30–60M and 2–3 years, revised down from earlier estimates on demonstrated velocity. Only relevant if we choose to build rather than sell.
+**If the product path follows:** 18–24 months to something sellable even with agent leverage, most of it the substrate. Self-serve, $30–60 per user per month, plausible path to **$1–5M ARR in three to four years** if migration tooling works. A real company, not an outcome on its own, and won on product and integration rather than on anything Gust does — customers will not care what it is written in.
 
-**Outcome:** an acquisition priced on strategic necessity, competitive tension between bidders, and how acute the liability feels at that moment. That range is genuinely wide — comparable infrastructure and team acquisitions in adjacent categories have cleared from the low tens of millions to several hundred, and the variable is almost entirely whether more than one buyer wants it.
+**If acquisition follows:** priced on strategic necessity, competitive tension between bidders, and how acute the liability feels at that moment. Genuinely wide range; the variable is almost entirely whether more than one buyer wants it.
 
-The number to hold onto is not the exit. It is that **the decision point is a few million over three to four months** — not $80M over four years. That is the single most important structural fact in this document.
+### Honest odds
+
+| Outcome | Probability |
+|---|---|
+| Thesis fails on OD-8 or OD-9; four months spent finding out | ~30% |
+| A good compiler, a small product with some customers, no exit | ~50% |
+| Product works, artifact is compelling, acquisition | ~20% |
+
+Not a strong expected value in dollars. A very good one for four months of work at the demonstrated rate, and the downside is bounded in a way almost nothing in this space is.
+
+**The number to hold onto is not the exit.** It is that the decision point is a few million over three to four months rather than $80M over four years, and that the 30% branch is the cheapest possible way to be wrong.
 
 ## 0.11 Principal risks
 
-- **The freakout produces a scanner, not a language.** This is the real gamble. The incidents continuing is near-certain; the market reaching for a structural fix is not. **Budget for losing the first wave.** We are playing for what happens after everyone discovers scanning did not fix it — and history says that second wave arrives, slowly.
-- **A soundness hole in the scoping analysis.** One counterexample kills the only claim we make. Someone adversarial must attack it before anything is published.
-- **The agent cannot actually write Gust.** Then we have proven a human expert can use a new language, which is the well-documented failure mode of every comparable attempt.
-- **A buyer builds it in-house first.** The window is roughly 24–36 months and it is now existential rather than competitive. Demonstrated velocity is the main defence.
-- **No forcing function ever arrives.** These apps may be low-stakes enough that the market settles into permanent tolerance, the way it did with compromised WordPress sites. §0.9 is the mitigation — manufacture the pressure rather than wait for it.
-- **Model capability routes around the problem.** If models become reliably good at writing correct code inside capability wrappers over existing languages, the language-level advantage compresses.
-- **Scope discipline.** This document specifies several companies' worth of surface area. §0.14 is the defence and must be enforced in review.
-- **We build Forge, or more language, instead of the demo.**
+Ordered by what actually threatens the plan, not by how alarming they sound.
 
+- **Model fluency (OD-9) — the top risk.** Nobody has made a frontier model fluent in a language with no corpus. If it fails, the readership thesis fails with it, because the whole argument is that only the model needs to learn Gust. Most underweighted item in this document, hardest to estimate, and the reason Track B starts in week one (§0.7).
+- **A soundness hole in the scoping analysis (OD-8).** One counterexample kills the only claim we make. Someone adversarial must attack it before anything is published.
+- **Distribution — unsolved.** For the product path this is as hard as the build, and there is currently no answer. Self-serve prosumer SaaS in a crowded category with no marketing budget. Think about it early rather than discovering it at launch.
+- **The product eats the compiler.** Modest traction, support tickets, churn, a customer wanting SSO — and eighteen months later there is a small business and a stalled language. Most likely slow failure, and it does not announce itself. Mitigations: self-serve only, refuse every enterprise request, cap the feature surface deliberately, treat revenue as runway rather than a metric.
+- **The freakout produces a scanner, not a language.** Incidents continuing is near-certain; the market reaching for a structural fix is not. **Budget for losing the first wave.** History says the second one arrives, slowly (§0.3).
+- **Taste does not get cheaper.** Agents make code cheap; they do not make product decisions. Several surfaces means several sets of judgment calls about what to leave out, and the all-in-one graveyard is full of teams who got the code right and the decisions wrong.
+- **Migration, not features, decides adoption.** Nobody evaluates an integrated product on merits — they evaluate on whether their history comes with them.
+- **A buyer builds it in-house first.** Window roughly 24–36 months, now existential rather than competitive. Demonstrated velocity is the main defence.
+- **No forcing function ever arrives.** The market may settle into permanent tolerance the way it did with compromised WordPress sites. §0.9 is the mitigation — manufacture the pressure rather than wait.
+- **Model capability routes around the problem.** If models become reliably good at writing correct code inside capability wrappers over existing languages, the language-level advantage compresses.
+- **Scope discipline.** §0.15 is the defence and must be enforced in review.
 ## 0.12 What humans actually do
 
 If nobody reads the code, the source file is not the primary artifact. Three things replace it:
@@ -274,31 +311,35 @@ Almost every component exists somewhere. The composition does not. Stating the d
 
 ## 0.14 Sequencing
 
-**Demo (months 0–4).** §0.7. Language core is done; add effects, scoping, typed queries, model fluency, one agent-generated multi-tenant app. Publish.
+**Months 0–4 — the demo.** §0.7, two tracks in parallel. Track A: effects, scoping, typed queries. Track B: model fluency. Then one agent-generated multi-tenant application. Publish.
 
-**Counting (parallel, months 0–3).** §0.9. Independent of compiler progress.
+**Months 0–3 — the counting, in parallel.** §0.9. Independent of compiler progress, done by someone who is not on Track A or B.
 
-**Conversations (months 4–12).** Parallel, non-exclusive, inbound-led off the published artifact.
+**Month 4 — the decision point.** OD-8 and OD-9 have resolved by now. If either failed, stop or re-scope; that is the 30% branch in §0.10 and it is the cheapest available way to be wrong. If both held, proceed.
 
-**Only if we choose to build rather than sell:**
+**Months 4–24 — the product.** The substrate first (workspaces, identity, permissions, objects, notifications, audit — Parts III, X, XI), then feature flags, then issues, then support inbox. Git hosting integrated, not rebuilt. Migration tooling from day one. This is v0.5 shipped with a price attached.
 
-- **v0.5** — client rendering, auth and authorization, migrations, deploy, intent layer v1 (OD-6).
-- **v1.0** — jobs, self-hosted parity, capability fakes, deterministic test scheduling, multi-tenant rollout.
+**Months 4 onward — conversations.** Parallel, non-exclusive, inbound-led off the published artifact and then off the product running in production.
+
+**Later, uncommitted:**
+
+- **v1.0** — jobs, self-hosted parity, capability fakes, deterministic test scheduling, multi-tenant rollout, intent layer v1 (OD-6).
 - **Post-1.0** — durable workflows, realtime, distributed cache, supplier certification, registry, editions and LTS.
 
-Everything from v0.5 down is specified in this document so that demo-stage decisions do not foreclose it. None of it is committed.
+Everything from v1.0 down is specified in this document so that demo-stage decisions do not foreclose it. None of it is committed, and most of it should never be built by us.
 
 ## 0.15 Open decisions
 
 | # | Question | Blocks | Reference |
 |---|---|---|---|
+| **OD-9** | **Model fluency** — can an agent write Gust well, and how do we get there from no corpus? *Thesis-invalidating. Starts week one.* | Demo | §0.7 |
+| **OD-8** | **Soundness of the tenant-scoping analysis** — adversarial review before publication. *Thesis-invalidating.* | Demo | §56 |
 | OD-1 | Transparent suspension vs coloured async (server) | Demo | §21 |
 | OD-2 | Generic functions vs compiler-owned query derivation | Demo | §14, §55 |
-| OD-8 | **Soundness of the tenant-scoping analysis** — adversarial review before publication | Demo | §56 |
-| OD-9 | **Model fluency approach** — synthetic corpus, fine-tune, or prompt-level | Demo | §0.7 |
-| OD-4 | WASM stack-switching support and payload cost | v0.5 | §21, §41 |
+| OD-10 | **Distribution for the product path** — currently unanswered | Month 4 | §0.11 |
 | OD-3 | SAM state ownership under linear resources and no interior mutability | v0.5 | §27, §38 |
-| OD-6 | **Form of the intent layer** — executable specs, behavioural contracts, or property declarations | v0.5 | Part XXI |
+| OD-4 | WASM stack-switching support and payload cost | v0.5 | §21, §41 |
+| OD-6 | Form of the intent layer | v1.0 | Part XXI |
 | OD-5 | Supplier certification staffing model | Post-1.0 | Part XVI |
 
 ## 0.16 Non-goals
@@ -311,11 +352,17 @@ Gust does not attempt to be:
 - a formal-verification system (§79);
 - a guarantee of correctness — only of containment (§0.4);
 - a scanner or security-analysis product (§0.9);
-- a productivity suite, an app builder, or any product other than the substrate;
+- a training-environment vendor (§0.8);
 - a platform whose guarantees survive an unrestricted escape hatch (Part XVIII);
 - an improvement to tooling that operates on code humans already maintain.
 
+And two hard constraints on how the business is run, not merely things we prefer not to do:
+
+- **No enterprise sales.** No procurement, no security questionnaires, no 6–18 month cycles. This rules out the regulated-vertical play (§0.8) despite it being arguably the better business, and that trade is accepted deliberately. A plan the team will not execute is worth zero.
+- **No business decision before month four.** §0.8. The demo selects the strategy.
+
 **One line:** the fix for AI-generated data leaks is structural, and for the first time in the history of this problem the lever is ten generators instead of ten million developers.
+
 # Part I — Product
 
 ## 1. Product vision
