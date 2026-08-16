@@ -397,6 +397,16 @@ Patch 17.5 makes Cranelift declare and call each selected stable runtime-library
 
 Patch 17.6 supports runtime helpers implemented in Rust as explicit, versioned runtime package components, compiled independently of program compilation with stable unmangled ABI-facing exports and declared panic and allocation boundaries. Patch 17.1 classified zero helpers as `rust_runtime_component`, so this patch establishes the mechanism with one reference component; reclassifying existing retained-C helpers is an operator decision.
 
+## Phase 17 retained C runtime component authority
+
+- Authority version: `phase17_retained_c_authority_v1`
+- Status: `ready_for_patch17_8`
+- Retained C components: `7`
+- Retained helpers: `72`
+- Owned source prefix: `src/runtime/`
+
+Patch 17.7 freezes the retained C inventory as separately compiled, versioned, target-scoped components. Every component names its owned repository sources, a justified retention reason, and a concrete removal criterion with a destination phase, so retention is temporary by contract rather than open-ended. No retained C source is generated from a compiled program, and retained objects reach programs only through the same manifest path as Rust and Gust components.
+
 ## Registry entries
 
 | ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |

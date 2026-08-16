@@ -23,6 +23,7 @@
     "phase17_runtime_package_authority",
     "phase17_runtime_import_authority",
     "phase17_rust_runtime_authority",
+    "phase17_retained_c_authority",
     "phase16_deferred_residue_audit",
     "phase16_closure",
     "phase15_deferred_residue_audit",
@@ -278,6 +279,9 @@
     "phase17_rust_runtime_authority": {
       "$ref": "#/$defs/phase17_rust_runtime_authority"
     },
+    "phase17_retained_c_authority": {
+      "$ref": "#/$defs/phase17_retained_c_authority"
+    },
     "phase16_deferred_residue_audit": {
       "$ref": "#/$defs/phase16_deferred_residue_audit"
     },
@@ -525,6 +529,45 @@
         "witness_policy": {"const": "cranelift_and_mir_to_c_rust_runtime_witnesses_must_match_byte_for_byte"},
         "scope_policy": {"const": "reference_rust_component_only_retained_c_objects_remain_in_patch17_7"},
         "next_patch": {"const": "17.7"}
+      }
+    },
+    "phase17_retained_c_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["component_id", "owned_source_path", "helper_count", "retention_reason", "destination_phase", "removal_criterion", "target_applicability"],
+      "properties": {
+        "component_id": {"type": "string", "pattern": "^runtime_component:"},
+        "owned_source_path": {"type": "string", "pattern": "^src/runtime/"},
+        "helper_count": {"type": "integer", "minimum": 1},
+        "retention_reason": {"enum": ["awaiting_pure_gust_migration", "awaiting_rust_component_migration", "host_platform_primitive_no_gust_equivalent"]},
+        "destination_phase": {"type": "string", "pattern": "^17\\."},
+        "removal_criterion": {"type": "string", "minLength": 1},
+        "target_applicability": {"const": "all_declared_host_targets_from_phase14_target_authority"}
+      }
+    },
+    "phase17_retained_c_authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "status", "authority_owner", "request_owner", "worker_owner", "request_format", "witness_format", "linkage_policy", "generation_policy", "packaging_policy", "owned_source_prefix", "retention_reasons", "retained_components", "retained_helper_count", "rejection_classes", "witness_policy", "scope_policy", "next_patch"],
+      "properties": {
+        "version": {"const": "phase17_retained_c_authority_v1"},
+        "status": {"const": "ready_for_patch17_8"},
+        "authority_owner": {"const": "compiler/mir_runtime_boundary_authority.gst"},
+        "request_owner": {"const": "compiler/mir_retained_c_runtime_request.gst"},
+        "worker_owner": {"const": "compiler/experiments/cranelift/src/retained_c_runtime.rs"},
+        "request_format": {"const": "gust.compiler_retained_c_runtime.v1"},
+        "witness_format": {"const": "gust.retained_c_runtime_witness.v1"},
+        "linkage_policy": {"const": "separately_compiled_component_no_program_derived_c_source"},
+        "generation_policy": {"const": "no_generated_headers_wrapper_bodies_or_fragments_derived_from_canonical_mir"},
+        "packaging_policy": {"const": "retained_c_objects_use_the_same_manifest_path_as_rust_and_gust_components"},
+        "owned_source_prefix": {"const": "src/runtime/"},
+        "retention_reasons": {"type": "array", "minItems": 3, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "retained_components": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/phase17_retained_c_record"}},
+        "retained_helper_count": {"type": "integer", "minimum": 0},
+        "rejection_classes": {"type": "array", "minItems": 6, "uniqueItems": true, "items": {"type": "string", "pattern": "^runtime_retained_c_"}},
+        "witness_policy": {"const": "cranelift_and_mir_to_c_retained_c_witnesses_must_match_byte_for_byte"},
+        "scope_policy": {"const": "retained_c_inventory_frozen_pure_gust_modules_remain_in_patch17_8"},
+        "next_patch": {"const": "17.8"}
       }
     },
     "phase17_runtime_helper_classification": {

@@ -65,6 +65,25 @@ type MirRuntimeComponentIdentity[ctx] struct {
     target_id: str
 }
 
+// Phase 17.7 retained C runtime components. C stays only as separately compiled,
+// versioned, target-scoped components with a concrete retention reason and a
+// stated removal criterion. It is never an implicit per-program layer, and no
+// retained C source is ever derived from a compiled program's canonical MIR.
+type MirRuntimeRetainedCComponent[ctx] struct {
+    retained_component_id: str,
+    component_id: str,
+    owned_source_paths: Index[std.Vector[str, ctx], ctx],
+    exported_symbol_ids: Index[std.Vector[str, ctx], ctx],
+    imported_symbol_ids: Index[std.Vector[str, ctx], ctx],
+    runtime_abi_id: str,
+    target_id: str,
+    target_applicability: str,
+    build_inputs: str,
+    retention_reason: str,
+    removal_criterion: str,
+    destination_phase: str
+}
+
 // Phase 17.6 Rust runtime components. Compiled independently of any program,
 // exporting stable ABI-facing symbols. Rust-internal mangling is never a runtime
 // contract, and the panic and allocation boundaries are declared, not assumed.
@@ -227,6 +246,7 @@ type MirRuntimeBoundaryAuthorityTable[ctx] struct {
     package_system_imports: Index[std.Vector[MirRuntimePackageSystemImport[ctx], ctx], ctx],
     import_declarations: Index[std.Vector[MirRuntimeImportDeclaration[ctx], ctx], ctx],
     rust_components: Index[std.Vector[MirRuntimeRustComponent[ctx], ctx], ctx],
+    retained_c_components: Index[std.Vector[MirRuntimeRetainedCComponent[ctx], ctx], ctx],
     requirements: Index[std.Vector[MirRuntimeRequirement[ctx], ctx], ctx],
     compatibility_decisions: Index[std.Vector[MirRuntimeCompatibilityDecision[ctx], ctx], ctx],
     link_plans: Index[std.Vector[MirRuntimeLinkPlanHandoff[ctx], ctx], ctx],
@@ -243,6 +263,7 @@ type MirRuntimeCompatibilityQuery[ctx] struct { compatible: int, reason_code: st
 type MirRuntimeLinkPlanQuery[ctx] struct { found: int, value: MirRuntimeLinkPlanHandoff[ctx] }
 type MirRuntimePackageSelection[ctx] struct { found: int, reason_code: str, value: MirRuntimePackageIdentity[ctx] }
 type MirRuntimePackageManifestQuery[ctx] struct { valid: int, reason_code: str, member_count: int, provided_symbol_count: int, system_import_count: int }
+type MirRuntimeRetainedCQuery[ctx] struct { found: int, value: MirRuntimeRetainedCComponent[ctx] }
 type MirRuntimeRustComponentQuery[ctx] struct { found: int, value: MirRuntimeRustComponent[ctx] }
 type MirRuntimeImportQuery[ctx] struct { found: int, value: MirRuntimeImportDeclaration[ctx] }
 type MirRuntimeRequirementQuery[ctx] struct { found: int, value: MirRuntimeRequirement[ctx] }
@@ -266,6 +287,7 @@ func mir_runtime_empty_requirements(ctx: &Arena) Index[std.Vector[MirRuntimeRequ
 func mir_runtime_empty_package_members(ctx: &Arena) Index[std.Vector[MirRuntimePackageMember[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimePackageMember[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimePackageMember[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
 func mir_runtime_empty_package_provided_symbols(ctx: &Arena) Index[std.Vector[MirRuntimePackageProvidedSymbol[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimePackageProvidedSymbol[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimePackageProvidedSymbol[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
 func mir_runtime_empty_package_system_imports(ctx: &Arena) Index[std.Vector[MirRuntimePackageSystemImport[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimePackageSystemImport[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimePackageSystemImport[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
+func mir_runtime_empty_retained_c_components(ctx: &Arena) Index[std.Vector[MirRuntimeRetainedCComponent[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimeRetainedCComponent[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimeRetainedCComponent[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
 func mir_runtime_empty_rust_components(ctx: &Arena) Index[std.Vector[MirRuntimeRustComponent[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimeRustComponent[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimeRustComponent[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
 func mir_runtime_empty_import_declarations(ctx: &Arena) Index[std.Vector[MirRuntimeImportDeclaration[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimeImportDeclaration[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimeImportDeclaration[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
 func mir_runtime_empty_compatibility(ctx: &Arena) Index[std.Vector[MirRuntimeCompatibilityDecision[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimeCompatibilityDecision[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimeCompatibilityDecision[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
@@ -287,6 +309,16 @@ func mir_runtime_helper_classification_is_valid(value: str) int {
     if std.str_eq(value, "obsolete_helper") == 1 { return 1; }
     return 0;
 }
+
+// Retention must be justified and time-bounded, never open-ended.
+func mir_runtime_retention_reason_is_valid(value: str) int {
+    if std.str_eq(value, "awaiting_pure_gust_migration") == 1 { return 1; }
+    if std.str_eq(value, "awaiting_rust_component_migration") == 1 { return 1; }
+    if std.str_eq(value, "host_platform_primitive_no_gust_equivalent") == 1 { return 1; }
+    return 0;
+}
+
+func mir_runtime_retained_c_for(table: MirRuntimeBoundaryAuthorityTable[ctx], component_id: str, ctx: &Arena) MirRuntimeRetainedCQuery[ctx] { mut result: MirRuntimeRetainedCQuery[ctx]; result.found = 0; mut values: std.Vector[MirRuntimeRetainedCComponent[ctx], ctx] := ctx[table.retained_c_components]; mut index := 0; while index < len(values) { if std.str_eq(values[index].component_id, component_id) == 1 { result.found = 1; result.value = values[index]; return result; } index = index + 1; } return result; }
 
 // Unwinding must never cross back into compiled Gust. Only abort-style
 // boundaries are supported, so a component declaring anything else is rejected.
@@ -341,6 +373,7 @@ func mir_runtime_symbol_identity_id(helper_id: str, symbol_version: str, target_
 func mir_runtime_component_identity_id(component_kind: str, target_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_component:v1:kind="; value = std.Concat(value, component_kind); value = std.Concat(value, ":target="); value = std.Concat(value, target_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
 func mir_runtime_package_identity_id(target_id: str, package_version: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_package:v1:target="; value = std.Concat(value, target_id); value = std.Concat(value, ":version="); value = std.Concat(value, package_version); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
 func mir_runtime_requirement_id(program_id: str, helper_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_requirement:v1:program="; value = std.Concat(value, program_id); value = std.Concat(value, ":helper="); value = std.Concat(value, helper_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
+func mir_runtime_retained_c_component_id(component_id: str, runtime_abi_id: str, target_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_retained_c:v1:component="; value = std.Concat(value, component_id); value = std.Concat(value, ":abi="); value = std.Concat(value, runtime_abi_id); value = std.Concat(value, ":target="); value = std.Concat(value, target_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
 func mir_runtime_rust_component_id(component_id: str, runtime_abi_id: str, target_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_rust_component:v1:component="; value = std.Concat(value, component_id); value = std.Concat(value, ":abi="); value = std.Concat(value, runtime_abi_id); value = std.Concat(value, ":target="); value = std.Concat(value, target_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
 func mir_runtime_import_declaration_id(helper_id: str, symbol_version: str, target_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_import:v1:helper="; value = std.Concat(value, helper_id); value = std.Concat(value, ":version="); value = std.Concat(value, symbol_version); value = std.Concat(value, ":target="); value = std.Concat(value, target_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
 func mir_runtime_package_member_id(package_id: str, component_id: str, link_order: int, ctx: &Arena) str { mut value := "runtime_package_member:v1:package="; value = std.Concat(value, package_id); value = std.Concat(value, ":component="); value = std.Concat(value, component_id); value = std.Concat(value, ":link_order="); value = std.Concat(value, std.FormatInt(link_order)); return std.Clone(ctx, value); }
@@ -371,6 +404,7 @@ func mir_runtime_make_empty_table(target_id: str, target_triple: str, ctx: &Aren
     table.package_system_imports = mir_runtime_empty_package_system_imports(ctx);
     table.import_declarations = mir_runtime_empty_import_declarations(ctx);
     table.rust_components = mir_runtime_empty_rust_components(ctx);
+    table.retained_c_components = mir_runtime_empty_retained_c_components(ctx);
     table.requirements = mir_runtime_empty_requirements(ctx);
     table.compatibility_decisions = mir_runtime_empty_compatibility(ctx);
     table.link_plans = mir_runtime_empty_link_plans(ctx);
@@ -387,6 +421,7 @@ func mir_runtime_table_with_package(table: MirRuntimeBoundaryAuthorityTable[ctx]
 func mir_runtime_table_with_package_member(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimePackageMember[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimePackageMember[ctx], ctx] := ctx[table.package_members]; values.Push(value); ctx.Set(table.package_members, values); return table; }
 func mir_runtime_table_with_package_provided_symbol(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimePackageProvidedSymbol[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimePackageProvidedSymbol[ctx], ctx] := ctx[table.package_provided_symbols]; values.Push(value); ctx.Set(table.package_provided_symbols, values); return table; }
 func mir_runtime_table_with_package_system_import(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimePackageSystemImport[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimePackageSystemImport[ctx], ctx] := ctx[table.package_system_imports]; values.Push(value); ctx.Set(table.package_system_imports, values); return table; }
+func mir_runtime_table_with_retained_c_component(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimeRetainedCComponent[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimeRetainedCComponent[ctx], ctx] := ctx[table.retained_c_components]; values.Push(value); ctx.Set(table.retained_c_components, values); return table; }
 func mir_runtime_table_with_rust_component(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimeRustComponent[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimeRustComponent[ctx], ctx] := ctx[table.rust_components]; values.Push(value); ctx.Set(table.rust_components, values); return table; }
 func mir_runtime_table_with_import_declaration(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimeImportDeclaration[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimeImportDeclaration[ctx], ctx] := ctx[table.import_declarations]; values.Push(value); ctx.Set(table.import_declarations, values); return table; }
 func mir_runtime_table_with_requirement(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimeRequirement[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimeRequirement[ctx], ctx] := ctx[table.requirements]; values.Push(value); ctx.Set(table.requirements, values); return table; }
@@ -801,6 +836,83 @@ func mir_runtime_boundary_authority_table_validate(table: MirRuntimeBoundaryAuth
         if ordered_index != len(plan_components) { return mir_runtime_validation(0, "runtime_package_nondeterministic_component_order", ctx); }
         plan_index = plan_index + 1;
     }
+    // Phase 17.7: retained C is a separately compiled, versioned, target-scoped
+    // component with a justified retention reason and a stated exit criterion.
+    mut retained_c: std.Vector[MirRuntimeRetainedCComponent[ctx], ctx] := ctx[table.retained_c_components];
+    mut retained_index := 0;
+    while retained_index < len(retained_c) {
+        // An anonymous or unclassified C object is exactly what this patch bans.
+        if mir_runtime_field_is_safe(retained_c[retained_index].retained_component_id) == 0 || mir_runtime_field_is_safe(retained_c[retained_index].component_id) == 0 || mir_runtime_field_is_safe(retained_c[retained_index].build_inputs) == 0 { return mir_runtime_validation(0, "runtime_retained_c_anonymous_object", ctx); }
+        mut retained_declared := 0;
+        mut retained_component_index := 0;
+        while retained_component_index < len(components) { if std.str_eq(components[retained_component_index].component_id, retained_c[retained_index].component_id) == 1 && std.str_eq(components[retained_component_index].target_id, table.target_id) == 1 { retained_declared = 1; } retained_component_index = retained_component_index + 1; }
+        if retained_declared == 0 { return mir_runtime_validation(0, "runtime_retained_c_anonymous_object", ctx); }
+
+        // Retention is temporary by contract: both a reason and an exit.
+        if mir_runtime_retention_reason_is_valid(retained_c[retained_index].retention_reason) == 0 { return mir_runtime_validation(0, "runtime_retained_c_anonymous_object", ctx); }
+        if mir_runtime_field_is_safe(retained_c[retained_index].removal_criterion) == 0 || mir_runtime_field_is_safe(retained_c[retained_index].destination_phase) == 0 { return mir_runtime_validation(0, "runtime_retained_c_anonymous_object", ctx); }
+
+        // Target assumptions are declared, never hidden in the source.
+        if std.str_eq(retained_c[retained_index].target_id, table.target_id) == 0 { return mir_runtime_validation(0, "runtime_retained_c_hidden_target_assumption", ctx); }
+        if std.str_eq(retained_c[retained_index].target_applicability, "all_declared_host_targets_from_phase14_target_authority") == 0 { return mir_runtime_validation(0, "runtime_retained_c_hidden_target_assumption", ctx); }
+        mut retained_abi := mir_runtime_abi_by_id(table, retained_c[retained_index].runtime_abi_id, ctx);
+        if retained_abi.found == 0 { return mir_runtime_validation(0, "runtime_retained_c_hidden_target_assumption", ctx); }
+
+        // Owned sources are repository files, never fragments generated from a
+        // program's canonical MIR.
+        mut retained_sources: std.Vector[str, ctx] := ctx[retained_c[retained_index].owned_source_paths];
+        if len(retained_sources) == 0 { return mir_runtime_validation(0, "runtime_retained_c_anonymous_object", ctx); }
+        mut source_index := 0;
+        while source_index < len(retained_sources) {
+            if std.str_find(retained_sources[source_index], "src/runtime/") != 0 { return mir_runtime_validation(0, "runtime_retained_c_program_specific_generation", ctx); }
+            if std.str_find(retained_sources[source_index], "generated") != 0 - 1 || std.str_find(retained_sources[source_index], "build/") != 0 - 1 { return mir_runtime_validation(0, "runtime_retained_c_program_specific_generation", ctx); }
+            source_index = source_index + 1;
+        }
+
+        // Every export is a compiler-owned versioned symbol of this component.
+        mut retained_exports: std.Vector[str, ctx] := ctx[retained_c[retained_index].exported_symbol_ids];
+        if len(retained_exports) == 0 { return mir_runtime_validation(0, "runtime_retained_c_unversioned_export", ctx); }
+        mut retained_export_index := 0;
+        while retained_export_index < len(retained_exports) {
+            mut retained_symbol := mir_runtime_symbol_by_id(table, retained_exports[retained_export_index], ctx);
+            if retained_symbol.found == 0 { return mir_runtime_validation(0, "runtime_retained_c_unversioned_export", ctx); }
+            if mir_runtime_field_is_safe(retained_symbol.value.symbol_version) == 0 { return mir_runtime_validation(0, "runtime_retained_c_unversioned_export", ctx); }
+            if std.str_eq(retained_symbol.value.component_id, retained_c[retained_index].component_id) == 0 { return mir_runtime_validation(0, "runtime_retained_c_duplicate_provider", ctx); }
+
+            // The component must reach the program through the selected package
+            // manifest, never by direct linker inclusion.
+            mut packaged := 0;
+            mut retained_package_index := 0;
+            while retained_package_index < len(packages) { if mir_runtime_package_provides_symbol(table, packages[retained_package_index].package_id, retained_exports[retained_export_index], ctx) == 1 { packaged = 1; } retained_package_index = retained_package_index + 1; }
+            if packaged == 0 { return mir_runtime_validation(0, "runtime_retained_c_direct_linker_inclusion", ctx); }
+
+            mut other_retained_index := 0;
+            while other_retained_index < len(retained_c) {
+                if other_retained_index != retained_index {
+                    mut other_retained_exports: std.Vector[str, ctx] := ctx[retained_c[other_retained_index].exported_symbol_ids];
+                    mut other_retained_export_index := 0;
+                    while other_retained_export_index < len(other_retained_exports) {
+                        if std.str_eq(other_retained_exports[other_retained_export_index], retained_exports[retained_export_index]) == 1 { return mir_runtime_validation(0, "runtime_retained_c_duplicate_provider", ctx); }
+                        other_retained_export_index = other_retained_export_index + 1;
+                    }
+                }
+                other_retained_index = other_retained_index + 1;
+            }
+            retained_export_index = retained_export_index + 1;
+        }
+
+        mut duplicate_retained_index := retained_index + 1;
+        while duplicate_retained_index < len(retained_c) {
+            if std.str_eq(retained_c[retained_index].retained_component_id, retained_c[duplicate_retained_index].retained_component_id) == 1 ||
+               std.str_eq(retained_c[retained_index].component_id, retained_c[duplicate_retained_index].component_id) == 1
+            {
+                return mir_runtime_validation(0, "runtime_retained_c_duplicate_provider", ctx);
+            }
+            duplicate_retained_index = duplicate_retained_index + 1;
+        }
+        retained_index = retained_index + 1;
+    }
+
     // Phase 17.6: Rust components are explicit, versioned package members whose
     // exports are compiler-owned symbols and whose boundaries are declared.
     mut rust_components: std.Vector[MirRuntimeRustComponent[ctx], ctx] := ctx[table.rust_components];
@@ -1022,6 +1134,16 @@ func mir_serialize_runtime_boundary_authority_table_for_request(table: MirRuntim
     while index < len(system_imports) {
         output = mir_runtime_append_field(output, "runtime_package_system_import_id", system_imports[index].import_id, ctx);
         output = mir_runtime_append_field(output, "runtime_package_system_import_spelling", system_imports[index].external_spelling, ctx);
+        index = index + 1;
+    }
+    mut retained_c: std.Vector[MirRuntimeRetainedCComponent[ctx], ctx] := ctx[table.retained_c_components];
+    index = 0;
+    while index < len(retained_c) {
+        output = mir_runtime_append_field(output, "runtime_retained_c_id", retained_c[index].retained_component_id, ctx);
+        output = mir_runtime_append_field(output, "runtime_retained_c_retention_reason", retained_c[index].retention_reason, ctx);
+        output = mir_runtime_append_field(output, "runtime_retained_c_removal_criterion", retained_c[index].removal_criterion, ctx);
+        output = mir_runtime_append_field(output, "runtime_retained_c_destination_phase", retained_c[index].destination_phase, ctx);
+        output = mir_runtime_append_field(output, "runtime_retained_c_build_inputs", retained_c[index].build_inputs, ctx);
         index = index + 1;
     }
     mut rust_components: std.Vector[MirRuntimeRustComponent[ctx], ctx] := ctx[table.rust_components];

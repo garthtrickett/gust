@@ -29,6 +29,7 @@ TOP_FIELDS = {
     "phase17_runtime_package_authority",
     "phase17_runtime_import_authority",
     "phase17_rust_runtime_authority",
+    "phase17_retained_c_authority",
     "phase16_deferred_residue_audit",
     "phase16_closure",
     "phase15_deferred_residue_audit",
@@ -973,6 +974,30 @@ PHASE17_RUST_RUNTIME_REJECTIONS = (
     "runtime_rust_abi_or_target_mismatch",
     "runtime_rust_duplicate_symbol_provider",
     "runtime_rust_generated_c_glue_dependency",
+)
+
+PHASE17_RETAINED_C_AUTHORITY_FIELDS = {
+    "version", "status", "authority_owner", "request_owner", "worker_owner",
+    "request_format", "witness_format", "linkage_policy", "generation_policy",
+    "packaging_policy", "owned_source_prefix", "retention_reasons",
+    "retained_components", "retained_helper_count", "rejection_classes",
+    "witness_policy", "scope_policy", "next_patch",
+}
+PHASE17_RETAINED_C_RECORD_FIELDS = {
+    "component_id", "owned_source_path", "helper_count", "retention_reason",
+    "destination_phase", "removal_criterion", "target_applicability",
+}
+PHASE17_RETAINED_C_REASONS = (
+    "awaiting_pure_gust_migration", "awaiting_rust_component_migration",
+    "host_platform_primitive_no_gust_equivalent",
+)
+PHASE17_RETAINED_C_REJECTIONS = (
+    "runtime_retained_c_anonymous_object",
+    "runtime_retained_c_program_specific_generation",
+    "runtime_retained_c_unversioned_export",
+    "runtime_retained_c_hidden_target_assumption",
+    "runtime_retained_c_duplicate_provider",
+    "runtime_retained_c_direct_linker_inclusion",
 )
 
 PHASE14_LAYOUT_AUTHORITY_FIELDS = {
@@ -2644,6 +2669,77 @@ def validate_phase17_rust_runtime_authority_structure(registry):
     return authority
 
 
+def validate_phase17_retained_c_authority_structure(registry):
+    authority = registry["phase17_retained_c_authority"]
+    require(isinstance(authority, dict)
+            and set(authority) == PHASE17_RETAINED_C_AUTHORITY_FIELDS,
+            "Phase 17 retained C authority fields drifted")
+    require(authority["version"] == "phase17_retained_c_authority_v1"
+            and authority["status"] == "ready_for_patch17_8"
+            and authority["owned_source_prefix"] == "src/runtime/",
+            "Phase 17 retained C ownership drifted")
+    require(tuple(authority["retention_reasons"]) == PHASE17_RETAINED_C_REASONS,
+            "Phase 17 retained C retention reason inventory drifted")
+    require(tuple(authority["rejection_classes"])
+            == PHASE17_RETAINED_C_REJECTIONS,
+            "Phase 17 retained C rejection inventory drifted")
+
+    # The frozen inventory must match the Patch 17.1 classifications exactly,
+    # both per component and in total, so retained C cannot quietly grow.
+    classified = [
+        row for row in registry["phase17_runtime_authority"]
+        ["helper_classifications"]
+        if row["classification"] == "retained_c_runtime_component"
+    ]
+    counts = {}
+    for row in classified:
+        counts[row["component_id"]] = counts.get(row["component_id"], 0) + 1
+    components = authority["retained_components"]
+    require(isinstance(components, list) and len(components) == len(counts),
+            "Phase 17 retained C component coverage drifted")
+    require(authority["retained_helper_count"] == len(classified),
+            "Phase 17 retained C helper count disagrees with Patch 17.1")
+    seen = set()
+    for index, row in enumerate(components):
+        context = f"phase17_retained_c_authority.retained_components[{index}]"
+        require(isinstance(row, dict)
+                and set(row) == PHASE17_RETAINED_C_RECORD_FIELDS,
+                f"{context} fields drifted")
+        component_id = row["component_id"]
+        require(component_id in counts and component_id not in seen,
+                f"{context} is unknown or duplicated")
+        require(row["helper_count"] == counts[component_id],
+                f"{component_id}: helper count disagrees with Patch 17.1")
+        require(row["retention_reason"] in PHASE17_RETAINED_C_REASONS,
+                f"{component_id}: retention reason is not justified")
+        require(row["owned_source_path"].startswith("src/runtime/")
+                and "generated" not in row["owned_source_path"]
+                and "build/" not in row["owned_source_path"],
+                f"{component_id}: owned source is not a repository runtime file")
+        require(row["target_applicability"] == PHASE17_TARGET_APPLICABILITY,
+                f"{component_id}: target applicability drifted")
+        seen.add(component_id)
+    require(seen == set(counts),
+            "Phase 17 retained C inventory is incomplete")
+    require(authority["linkage_policy"]
+            == "separately_compiled_component_no_program_derived_c_source"
+            and authority["generation_policy"]
+            == "no_generated_headers_wrapper_bodies_or_fragments_derived_from_"
+               "canonical_mir"
+            and authority["packaging_policy"]
+            == "retained_c_objects_use_the_same_manifest_path_as_rust_and_gust_"
+               "components"
+            and authority["witness_policy"]
+            == "cranelift_and_mir_to_c_retained_c_witnesses_must_match_byte_"
+               "for_byte"
+            and authority["scope_policy"]
+            == "retained_c_inventory_frozen_pure_gust_modules_remain_in_"
+               "patch17_8"
+            and authority["next_patch"] == "17.8",
+            "Phase 17 retained C policies drifted")
+    return authority
+
+
 def validate_phase14_layout_authority_structure(registry):
     authority = registry["phase14_layout_authority"]
     require(
@@ -3780,6 +3876,21 @@ def validate():
     require(set(phase17_rust_record_schema.get("required", []))
             == PHASE17_RUST_COMPONENT_RECORD_FIELDS,
             "schema Phase 17 rust component record fields drifted")
+    phase17_retained_authority_schema = definitions.get(
+        "phase17_retained_c_authority", {}
+    )
+    require(set(phase17_retained_authority_schema.get("required", []))
+            == PHASE17_RETAINED_C_AUTHORITY_FIELDS,
+            "schema Phase 17 retained C authority fields drifted")
+    require(phase17_retained_authority_schema.get("additionalProperties")
+            is False,
+            "schema Phase 17 retained C authority must reject unknown fields")
+    phase17_retained_record_schema = definitions.get(
+        "phase17_retained_c_record", {}
+    )
+    require(set(phase17_retained_record_schema.get("required", []))
+            == PHASE17_RETAINED_C_RECORD_FIELDS,
+            "schema Phase 17 retained C record fields drifted")
     phase14_authority_schema = definitions.get(
         "phase14_layout_authority",
         {},
@@ -3975,6 +4086,7 @@ def validate():
     validate_phase17_runtime_package_authority_structure(registry)
     validate_phase17_runtime_import_authority_structure(registry)
     validate_phase17_rust_runtime_authority_structure(registry)
+    validate_phase17_retained_c_authority_structure(registry)
     validate_phase14_layout_authority_structure(registry)
     validate_phase14_primitive_layout_structure(registry)
     validate_phase14_integer_conversion_structure(registry)
@@ -9906,6 +10018,22 @@ def phase17_rust_runtime_authority_summary_lines(registry):
     ]
 
 
+def phase17_retained_c_authority_summary_lines(registry):
+    authority = validate_phase17_retained_c_authority_structure(registry)
+    return [
+        "## Phase 17 retained C runtime component authority",
+        "",
+        f"- Authority version: `{authority['version']}`",
+        f"- Status: `{authority['status']}`",
+        f"- Retained C components: `{len(authority['retained_components'])}`",
+        f"- Retained helpers: `{authority['retained_helper_count']}`",
+        f"- Owned source prefix: `{authority['owned_source_prefix']}`",
+        "",
+        "Patch 17.7 freezes the retained C inventory as separately compiled, versioned, target-scoped components. Every component names its owned repository sources, a justified retention reason, and a concrete removal criterion with a destination phase, so retention is temporary by contract rather than open-ended. No retained C source is generated from a compiled program, and retained objects reach programs only through the same manifest path as Rust and Gust components.",
+        "",
+    ]
+
+
 def render(registry):
     entries = registry["entries"]
     totals = derived_totals(registry)
@@ -9963,6 +10091,7 @@ def render(registry):
         *phase17_runtime_package_authority_summary_lines(registry),
         *phase17_runtime_import_authority_summary_lines(registry),
         *phase17_rust_runtime_authority_summary_lines(registry),
+        *phase17_retained_c_authority_summary_lines(registry),
         "## Registry entries", "",
         "| ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |",
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
