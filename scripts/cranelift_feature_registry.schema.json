@@ -42,13 +42,13 @@
       "const": 1
     },
     "registry_version": {
-      "const": 16
+      "const": 17
     },
     "registry_status": {
-      "const": "phase16_opening_function_abi_aggregate_call_inventory"
+      "const": "phase17_opening_native_runtime_boundary_inventory"
     },
     "current_phase": {
-      "const": "phase16"
+      "const": "phase17"
     },
     "closed_phase_versions": {
       "type": "object",
@@ -62,7 +62,8 @@
         "phase12_5",
         "phase13",
         "phase14",
-        "phase15"
+        "phase15",
+        "phase16"
       ]
     },
     "closure_snapshots": {
@@ -92,7 +93,8 @@
         "phase13",
         "phase14",
         "phase15",
-        "phase16"
+        "phase16",
+        "phase17"
       ],
       "properties": {
         "phase13": {
@@ -106,6 +108,9 @@
         },
         "phase16": {
           "$ref": "#/$defs/phase16_opening_snapshot"
+        },
+        "phase17": {
+          "$ref": "#/$defs/phase17_opening_snapshot"
         }
       }
     },
@@ -3840,6 +3845,285 @@
         },
         "next_patch": {
           "const": "16.1"
+        }
+      }
+    },
+    "phase17_opening_snapshot_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "parent",
+        "feature_family",
+        "ci_family",
+        "capability_owner",
+        "diagnostic_owner",
+        "helper_category",
+        "target_applicability",
+        "status",
+        "current_failure_stage",
+        "positive_future_fixture",
+        "negative_current_fixture"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^p17_[A-Za-z0-9_]+$"
+        },
+        "parent": {
+          "type": "string",
+          "pattern": "^(phase16_(entry|residual)|phase17_category):[A-Za-z0-9_]+$"
+        },
+        "feature_family": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ci_family": {
+          "type": "string",
+          "minLength": 1
+        },
+        "capability_owner": {
+          "type": "string",
+          "minLength": 1
+        },
+        "diagnostic_owner": {
+          "type": "string",
+          "minLength": 1
+        },
+        "helper_category": {
+          "enum": [
+            "classification_pending_patch17_1",
+            "stable_runtime_library_function",
+            "rust_runtime_component",
+            "retained_c_runtime_component",
+            "pure_gust_runtime_component",
+            "obsolete_helper",
+            "cross_category_contract"
+          ]
+        },
+        "target_applicability": {
+          "const": "all_declared_host_targets_from_phase14_target_authority"
+        },
+        "status": {
+          "const": "candidate_deferred"
+        },
+        "current_failure_stage": {
+          "const": "before_driver_discovery"
+        },
+        "positive_future_fixture": {
+          "type": "string",
+          "minLength": 1
+        },
+        "negative_current_fixture": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "phase17_residual_rebase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_residual_id",
+        "phase17_disposition",
+        "selected_phase17_entry_ids",
+        "reassigned_destination_phase",
+        "reassigned_capability",
+        "justification"
+      ],
+      "properties": {
+        "source_residual_id": {
+          "type": "string",
+          "pattern": "^p17_[A-Za-z0-9_]+$"
+        },
+        "phase17_disposition": {
+          "enum": [
+            "split",
+            "reassigned"
+          ]
+        },
+        "selected_phase17_entry_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^p17_[A-Za-z0-9_]+$"
+          }
+        },
+        "reassigned_destination_phase": {
+          "type": "string",
+          "pattern": "^phase(1[8-9]|2[0-9])$"
+        },
+        "reassigned_capability": {
+          "type": "string",
+          "minLength": 1
+        },
+        "justification": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "phase17_ci_family_projection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "derivation",
+        "family_ids",
+        "workflow_policy"
+      ],
+      "properties": {
+        "derivation": {
+          "const": "distinct_ci_family_values_from_phase17_opening_entries_in_first_occurrence_order"
+        },
+        "family_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "workflow_policy": {
+          "const": "planning_projection_only_no_phase17_level2_workflow_rows_until_capability_migration"
+        }
+      }
+    },
+    "phase17_helper_inventory_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "symbol_identity",
+        "symbol_kind",
+        "source_path",
+        "reachability",
+        "inventory_owner",
+        "diagnostic_owner",
+        "owning_phase17_entry_id",
+        "initial_classification",
+        "target_applicability"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^p17_helper_[A-Za-z0-9_]+$"
+        },
+        "symbol_identity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "symbol_kind": {
+          "enum": ["exact_c_symbol", "generated_c_symbol_family"]
+        },
+        "source_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reachability": {
+          "enum": [
+            "runtime_public_surface",
+            "runtime_component_internal",
+            "compiler_generated_c_shim"
+          ]
+        },
+        "inventory_owner": {
+          "type": "string",
+          "minLength": 1
+        },
+        "diagnostic_owner": {
+          "type": "string",
+          "minLength": 1
+        },
+        "owning_phase17_entry_id": {
+          "type": "string",
+          "pattern": "^p17_[A-Za-z0-9_]+$"
+        },
+        "initial_classification": {
+          "const": "classification_pending_patch17_1"
+        },
+        "target_applicability": {
+          "const": "all_declared_host_targets_from_phase14_target_authority"
+        }
+      }
+    },
+    "phase17_opening_snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "opening_version",
+        "inventory_version",
+        "status",
+        "predecessor_closure_version",
+        "review_view",
+        "immutable_fields",
+        "entries",
+        "helper_inventory",
+        "residual_rebase",
+        "ci_family_projection",
+        "comparison_policy",
+        "behavior_policy",
+        "next_patch"
+      ],
+      "properties": {
+        "opening_version": {
+          "const": "phase17_opening_inventory_rebased_on_phase16_closure"
+        },
+        "inventory_version": {
+          "const": "phase17_opening_inventory_v1"
+        },
+        "status": {
+          "const": "ready_for_patch17_1"
+        },
+        "predecessor_closure_version": {
+          "const": "phase16_closed_function_abi_and_aggregate_call_semantics"
+        },
+        "review_view": {
+          "const": "compiler/CRANELIFT_PHASE17_OPENING.md"
+        },
+        "immutable_fields": {
+          "type": "array",
+          "minItems": 8,
+          "maxItems": 8,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "entries": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/phase17_opening_snapshot_entry"
+          }
+        },
+        "helper_inventory": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/phase17_helper_inventory_entry"
+          }
+        },
+        "residual_rebase": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/phase17_residual_rebase"
+          }
+        },
+        "ci_family_projection": {
+          "$ref": "#/$defs/phase17_ci_family_projection"
+        },
+        "comparison_policy": {
+          "const": "semantic_opening_fields_parent_traceability_helper_inventory_and_residual_rebase_only_generated_totals_and_markdown_are_derived"
+        },
+        "behavior_policy": {
+          "const": "registry_projection_guard_and_fixture_inventory_only_no_compiler_backend_runtime_MIR_request_ABI_runtime_package_object_link_CLI_or_level2_level3_workflow_change"
+        },
+        "next_patch": {
+          "const": "17.1"
         }
       }
     }

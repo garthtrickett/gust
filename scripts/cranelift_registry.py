@@ -667,6 +667,103 @@ PHASE16_SELECTED_RESIDUAL_IDS = {
     "p15_aggregate_return_abi", "p16_resource_bearing_aggregate_moves",
 }
 
+PHASE17_OPENING_SNAPSHOT_FIELDS = (
+    PHASE15_OPENING_SNAPSHOT_FIELDS | {"helper_inventory"}
+)
+PHASE17_OPENING_SNAPSHOT_ENTRY_FIELDS = (
+    PHASE15_OPENING_SNAPSHOT_ENTRY_FIELDS | {"helper_category"}
+)
+PHASE17_RESIDUAL_REBASE_FIELDS = {
+    "source_residual_id", "phase17_disposition",
+    "selected_phase17_entry_ids", "reassigned_destination_phase",
+    "reassigned_capability", "justification",
+}
+PHASE17_CI_PROJECTION_FIELDS = PHASE15_CI_PROJECTION_FIELDS
+PHASE17_HELPER_INVENTORY_FIELDS = {
+    "id", "symbol_identity", "symbol_kind", "source_path", "reachability",
+    "inventory_owner", "diagnostic_owner", "owning_phase17_entry_id",
+    "initial_classification", "target_applicability",
+}
+PHASE17_OPENING_VERSION = (
+    "phase17_opening_inventory_rebased_on_phase16_closure"
+)
+PHASE17_INVENTORY_VERSION = "phase17_opening_inventory_v1"
+PHASE17_OPENING_STATUS = "ready_for_patch17_1"
+PHASE17_REGISTRY_STATUS = "phase17_opening_native_runtime_boundary_inventory"
+PHASE17_PREDECESSOR = (
+    "phase16_closed_function_abi_and_aggregate_call_semantics"
+)
+PHASE17_TARGET_APPLICABILITY = PHASE16_TARGET_APPLICABILITY
+PHASE17_REVIEW_VIEW = "compiler/CRANELIFT_PHASE17_OPENING.md"
+PHASE17_COMPARISON_POLICY = (
+    "semantic_opening_fields_parent_traceability_helper_inventory_and_"
+    "residual_rebase_only_generated_totals_and_markdown_are_derived"
+)
+PHASE17_BEHAVIOR_POLICY = (
+    "registry_projection_guard_and_fixture_inventory_only_no_compiler_"
+    "backend_runtime_MIR_request_ABI_runtime_package_object_link_CLI_or_"
+    "level2_level3_workflow_change"
+)
+PHASE17_ENTRY_BEHAVIOR_POLICY = (
+    "opening_inventory_only_no_compiler_backend_runtime_MIR_request_ABI_"
+    "runtime_package_artifact_or_dynamic_CI_change"
+)
+PHASE17_CI_DERIVATION = (
+    "distinct_ci_family_values_from_phase17_opening_entries_in_first_"
+    "occurrence_order"
+)
+PHASE17_CI_WORKFLOW_POLICY = (
+    "planning_projection_only_no_phase17_level2_workflow_rows_until_"
+    "capability_migration"
+)
+PHASE17_HELPER_CATEGORIES = {
+    "classification_pending_patch17_1",
+    "stable_runtime_library_function", "rust_runtime_component",
+    "retained_c_runtime_component", "pure_gust_runtime_component",
+    "obsolete_helper", "cross_category_contract",
+}
+PHASE17_PLANNING_CATEGORIES = (
+    "runtime_abi_authority", "helper_classification_authority",
+    "runtime_symbol_versioning", "runtime_requirement_transport",
+    "target_runtime_packages", "stable_runtime_imports",
+    "rust_runtime_components", "retained_c_runtime_components",
+    "gust_runtime_components", "obsolete_helper_removal",
+    "generated_c_shim_elimination", "allocation_string_runtime",
+    "io_filesystem_runtime", "resource_runtime", "threading_runtime",
+    "runtime_availability_compatibility",
+    "complete_runtime_differential_evidence",
+)
+PHASE17_CI_FAMILIES = (
+    "runtime-abi", "runtime-symbols", "runtime-packages",
+    "runtime-imports", "runtime-rust-components", "runtime-c-components",
+    "runtime-gust-components", "runtime-allocation-strings",
+    "runtime-io-filesystem", "runtime-resources", "runtime-threading",
+    "runtime-diagnostics",
+)
+PHASE17_OPENING_ENTRY_IDS = (
+    "p17_runtime_abi_authority",
+    "p17_helper_classification_authority",
+    "p17_runtime_symbol_versioning",
+    "p17_runtime_requirement_transport",
+    "p17_target_runtime_packages",
+    "p17_stable_runtime_imports",
+    "p17_rust_runtime_components",
+    "p17_retained_c_runtime_components",
+    "p17_gust_runtime_components",
+    "p17_obsolete_helper_removal",
+    "p17_generated_c_shim_elimination",
+    "p17_allocation_string_runtime",
+    "p17_io_filesystem_runtime",
+    "p17_resource_runtime",
+    "p17_threading_runtime",
+    "p17_runtime_availability_compatibility",
+    "p17_complete_runtime_differential",
+)
+PHASE17_SELECTED_RESIDUAL_IDS = {
+    "p17_cross_version_module_abi",
+    "p17_dynamic_library_symbol_version_abi",
+}
+
 PHASE14_LAYOUT_AUTHORITY_FIELDS = {
     "version", "status", "authority_owner", "table_format",
     "semantic_types", "query_functions", "consumers", "identity_policy",
@@ -1175,8 +1272,9 @@ def validate_phase13_opening_snapshot_structure(registry):
     snapshots = registry["opening_snapshots"]
     require(
         isinstance(snapshots, dict)
-        and set(snapshots) == {"phase13", "phase14", "phase15", "phase16"},
-        "opening_snapshots must contain exactly phase13 through phase16",
+        and set(snapshots)
+        == {"phase13", "phase14", "phase15", "phase16", "phase17"},
+        "opening_snapshots must contain exactly phase13 through phase17",
     )
     snapshot = snapshots["phase13"]
     require(
@@ -1814,6 +1912,25 @@ def validate_phase16_opening_snapshot_structure(registry):
     require(projection["workflow_policy"] == PHASE16_CI_WORKFLOW_POLICY,
             "Phase 16 CI-family workflow policy drifted")
     return snapshot
+
+
+def validate_phase17_opening_snapshot_structure(registry):
+    # The phase-specific validator also checks the main registry mirror,
+    # Phase 16 closure residue, helper categories, fixtures, and projection.
+    previous_bytecode_policy = sys.dont_write_bytecode
+    sys.dont_write_bytecode = True
+    try:
+        import phase17_opening
+    finally:
+        sys.dont_write_bytecode = previous_bytecode_policy
+
+    contract = phase17_opening.validate()
+    require(
+        contract["snapshot"] is registry["opening_snapshots"]["phase17"]
+        or contract["snapshot"] == registry["opening_snapshots"]["phase17"],
+        "Phase 17 opening validator read a different registry snapshot",
+    )
+    return contract["snapshot"]
 
 
 def validate_phase14_layout_authority_structure(registry):
@@ -2673,7 +2790,7 @@ def validate():
     opening_schema = schema.get("properties", {}).get("opening_snapshots", {})
     require(
         set(opening_schema.get("required", []))
-        == {"phase13", "phase14", "phase15", "phase16"},
+        == {"phase13", "phase14", "phase15", "phase16", "phase17"},
         "schema opening snapshot keys drifted",
     )
     phase13_snapshot_schema = definitions.get("phase13_opening_snapshot", {})
@@ -2799,6 +2916,46 @@ def validate():
         == PHASE16_CI_PROJECTION_FIELDS,
         "schema Phase 16 CI-family projection fields drifted",
     )
+    phase17_snapshot_schema = definitions.get("phase17_opening_snapshot", {})
+    require(
+        set(phase17_snapshot_schema.get("required", []))
+        == PHASE17_OPENING_SNAPSHOT_FIELDS,
+        "schema Phase 17 opening snapshot fields drifted",
+    )
+    require(phase17_snapshot_schema.get("additionalProperties") is False,
+            "schema Phase 17 opening snapshot must reject unknown fields")
+    phase17_entry_schema = definitions.get(
+        "phase17_opening_snapshot_entry", {}
+    )
+    require(
+        set(phase17_entry_schema.get("required", []))
+        == PHASE17_OPENING_SNAPSHOT_ENTRY_FIELDS,
+        "schema Phase 17 opening snapshot entry fields drifted",
+    )
+    require(phase17_entry_schema.get("additionalProperties") is False,
+            "schema Phase 17 opening entries must reject unknown fields")
+    phase17_rebase_schema = definitions.get("phase17_residual_rebase", {})
+    require(
+        set(phase17_rebase_schema.get("required", []))
+        == PHASE17_RESIDUAL_REBASE_FIELDS,
+        "schema Phase 17 residual rebase fields drifted",
+    )
+    phase17_ci_schema = definitions.get("phase17_ci_family_projection", {})
+    require(
+        set(phase17_ci_schema.get("required", []))
+        == PHASE17_CI_PROJECTION_FIELDS,
+        "schema Phase 17 CI-family projection fields drifted",
+    )
+    phase17_helper_schema = definitions.get(
+        "phase17_helper_inventory_entry", {}
+    )
+    require(
+        set(phase17_helper_schema.get("required", []))
+        == PHASE17_HELPER_INVENTORY_FIELDS,
+        "schema Phase 17 helper inventory fields drifted",
+    )
+    require(phase17_helper_schema.get("additionalProperties") is False,
+            "schema Phase 17 helper inventory must reject unknown fields")
     phase14_authority_schema = definitions.get(
         "phase14_layout_authority",
         {},
@@ -2927,7 +3084,7 @@ def validate():
         set(closed_versions_schema.get("required", []))
         == {
             "phase11", "phase12_5_opening", "phase12_5", "phase13",
-            "phase14", "phase15",
+            "phase14", "phase15", "phase16",
         },
         "schema closed-phase version keys drifted",
     )
@@ -2961,12 +3118,12 @@ def validate():
     require(registry["schema"] == "scripts/cranelift_feature_registry.schema.json",
             "registry schema path is not canonical")
     require(registry["schema_version"] == 1, "schema_version must be 1")
-    require(registry["registry_version"] == 16, "registry_version must be 16")
+    require(registry["registry_version"] == 17, "registry_version must be 17")
     require(
-        registry["registry_status"] == PHASE16_REGISTRY_STATUS,
+        registry["registry_status"] == PHASE17_REGISTRY_STATUS,
         "registry status is missing or stale",
     )
-    require(registry["current_phase"] == "phase16", "current_phase must be phase16")
+    require(registry["current_phase"] == "phase17", "current_phase must be phase17")
     require(
         registry["closed_phase_versions"] == {
             "phase11": "phase11_closed_registry_backed_feature_parity_migration",
@@ -2975,6 +3132,7 @@ def validate():
             "phase13": PHASE13_CLOSURE_VERSION,
             "phase14": PHASE14_CLOSURE_VERSION,
             "phase15": PHASE16_PREDECESSOR,
+            "phase16": PHASE17_PREDECESSOR,
         },
         "closed phase versions drifted",
     )
@@ -2986,6 +3144,7 @@ def validate():
     validate_phase14_opening_snapshot_structure(registry)
     validate_phase15_opening_snapshot_structure(registry)
     validate_phase16_opening_snapshot_structure(registry)
+    validate_phase17_opening_snapshot_structure(registry)
     validate_phase14_layout_authority_structure(registry)
     validate_phase14_primitive_layout_structure(registry)
     validate_phase14_integer_conversion_structure(registry)
@@ -3020,6 +3179,7 @@ def validate():
     phase14 = []
     phase15 = []
     phase16 = []
+    phase17 = []
     for index, entry in enumerate(entries):
         context = f"entries[{index}]"
         require(isinstance(entry, dict), f"{context} must be an object")
@@ -3028,7 +3188,7 @@ def validate():
             expected_fields.update(PHASE13_CAPABILITY_FIELDS)
         elif entry.get("origin_phase") == "phase14":
             expected_fields.update(PHASE14_ENTRY_FIELDS)
-        elif entry.get("origin_phase") in {"phase15", "phase16"}:
+        elif entry.get("origin_phase") in {"phase15", "phase16", "phase17"}:
             expected_fields.update(PHASE15_ENTRY_FIELDS)
         require(set(entry) == expected_fields, f"{context} fields drifted")
         entry_id = text(entry["id"], f"{context}.id")
@@ -3725,6 +3885,53 @@ def validate():
                 f"{entry_id}: Phase 16 opening evidence drifted",
             )
             phase16.append(entry)
+        elif entry["origin_phase"] == "phase17":
+            require(closure == PHASE17_INVENTORY_VERSION,
+                    f"{entry_id}: Phase 17 opening inventory version drifted")
+            require(status == "candidate_deferred"
+                    and entry["route_owner"] == "deferred",
+                    f"{entry_id}: Phase 17 opening rows must remain candidate_deferred")
+            require(
+                reason
+                == f"phase17_opening_{entry_id}_awaits_compiler_owned_runtime_boundary_authority",
+                f"{entry_id}: Phase 17 opening deferral reason drifted",
+            )
+            require(destination == "phase17",
+                    f"{entry_id}: Phase 17 opening destination drifted")
+            require(entry["target_applicability"] == PHASE17_TARGET_APPLICABILITY,
+                    f"{entry_id}: Phase 17 target applicability drifted")
+            require(entry["current_failure_stage"] == "before_driver_discovery",
+                    f"{entry_id}: Phase 17 row must stop before driver discovery")
+            require(entry["source_fixture"] == entry["negative_current_fixture"],
+                    f"{entry_id}: Phase 17 source fixture must be the negative fixture")
+            require(entry["canonical_mir_fixture"]
+                    == "none_rejected_before_canonical_MIR",
+                    f"{entry_id}: Phase 17 opening row must not claim canonical MIR")
+            require(entry["differential_case_id"]
+                    == f"phase17_opening:{entry_id}",
+                    f"{entry_id}: Phase 17 differential identity drifted")
+            fixture(entry["positive_future_fixture"],
+                    f"{entry_id}.positive_future_fixture")
+            fixture(entry["negative_current_fixture"],
+                    f"{entry_id}.negative_current_fixture")
+            evidence = entry["evidence"]
+            require(
+                evidence.get("opening_record_kind") == "phase17_candidate"
+                and isinstance(evidence.get("declared_capability"), str)
+                and evidence.get("declared_capability")
+                and evidence.get("planning_category")
+                in PHASE17_PLANNING_CATEGORIES
+                and evidence.get("helper_category")
+                in PHASE17_HELPER_CATEGORIES
+                and evidence.get("phase16_closure_dependency")
+                == PHASE17_PREDECESSOR
+                and evidence.get("behavior_policy")
+                == PHASE17_ENTRY_BEHAVIOR_POLICY
+                and evidence.get("phase17_1_boundary")
+                == "compiler_owned_runtime_boundary_and_helper_classification_authority_not_implemented_by_patch17_0",
+                f"{entry_id}: Phase 17 opening evidence drifted",
+            )
+            phase17.append(entry)
         else:
             raise Error(f"{entry_id}: unsupported origin phase {entry['origin_phase']}")
 
@@ -3859,11 +4066,42 @@ def validate():
         else:
             raise Error(f"{entry['id']}: invalid Phase 16 parent {parent}")
 
+    phase16_by_id_for_parent = {entry["id"]: entry for entry in phase16}
+    phase16_migrated_ids = {
+        row["id"]
+        for row in registry["phase16_deferred_residue_audit"]["opening_dispositions"]
+        if row["disposition"] == "migrated"
+    }
+    phase16_residual_ids_for_parent = {
+        row["id"]
+        for row in registry["phase16_deferred_residue_audit"]["narrow_deferred_rows"]
+        if row["destination_phase"] == "phase17"
+    }
+    for entry in phase17:
+        parent = entry["parent"]
+        if parent.startswith("phase16_entry:"):
+            parent_id = parent.split(":", 1)[1]
+            require(parent_id in phase16_by_id_for_parent
+                    and parent_id in phase16_migrated_ids,
+                    f"{entry['id']}: Phase 16 entry parent is not migrated")
+        elif parent.startswith("phase16_residual:"):
+            residual_id = parent.split(":", 1)[1]
+            require(residual_id in phase16_residual_ids_for_parent,
+                    f"{entry['id']}: missing Phase 16 residual parent {residual_id}")
+        elif parent.startswith("phase17_category:"):
+            category = parent.split(":", 1)[1]
+            require(category in planning_categories
+                    and category in PHASE17_PLANNING_CATEGORIES,
+                    f"{entry['id']}: unknown Phase 17 category {category}")
+        else:
+            raise Error(f"{entry['id']}: invalid Phase 17 parent {parent}")
+
     require(phase11, "registry must contain Phase 11 rows")
     require(phase13, "registry must contain Phase 13 rows")
     require(phase14, "registry must contain Phase 14 rows")
     require(phase15, "registry must contain Phase 15 rows")
     require(phase16, "registry must contain Phase 16 rows")
+    require(phase17, "registry must contain Phase 17 rows")
     active_ci_families = {entry["ci_family"] for entry in phase11}
     require(active_ci_families, "Phase 11 rows must define active CI families")
     for entry in phase13:
@@ -3895,6 +4133,14 @@ def validate():
     require(
         phase16_families == list(PHASE16_CI_FAMILIES),
         "Phase 16 opening CI-family projection drifted",
+    )
+    phase17_families = []
+    for entry in phase17:
+        if entry["ci_family"] not in phase17_families:
+            phase17_families.append(entry["ci_family"])
+    require(
+        phase17_families == list(PHASE17_CI_FAMILIES),
+        "Phase 17 opening CI-family projection drifted",
     )
 
     phase13_by_id = {entry["id"]: entry for entry in phase13}
@@ -8691,6 +8937,31 @@ def phase16_opening_summary_lines(registry):
     ]
 
 
+def phase17_opening_summary_lines(registry):
+    snapshot = validate_phase17_opening_snapshot_structure(registry)
+    rows = phase_entries(registry, "phase17")
+    families = snapshot["ci_family_projection"]["family_ids"]
+    dispositions = Counter(
+        row["phase17_disposition"] for row in snapshot["residual_rebase"]
+    )
+    return [
+        "## Phase 17 opening inventory summary",
+        "",
+        f"- Opening version: `{snapshot['opening_version']}`",
+        f"- Inventory version: `{snapshot['inventory_version']}`",
+        f"- Status: `{snapshot['status']}`",
+        f"- Predecessor closure: `{snapshot['predecessor_closure_version']}`",
+        f"- Opening rows: `{len(rows)}`",
+        f"- Inventoried C-dependent helpers: `{len(snapshot['helper_inventory'])}`",
+        f"- Registry-derived planned CI families: `{len(families)}`",
+        f"- Phase 16 residuals split: `{dispositions.get('split', 0)}`",
+        f"- Phase 16 residuals reassigned: `{dispositions.get('reassigned', 0)}`",
+        "",
+        "Patch 17.0 is inventory-only. It selects the native runtime ABI, helper classification, symbol, requirement, package, implementation-component, generated-shim elimination, helper-domain audit, availability-diagnostic, and differential-evidence work without changing compiler, backend, runtime, MIR, request, ABI lowering, artifact, Level 2, or Level 3 behavior.",
+        "",
+    ]
+
+
 def render(registry):
     entries = registry["entries"]
     totals = derived_totals(registry)
@@ -8705,8 +8976,10 @@ def render(registry):
         f"- Phase 13 closure: `{registry['closed_phase_versions']['phase13']}`",
         f"- Phase 14 closure: `{registry['closed_phase_versions']['phase14']}`",
         f"- Phase 15 closure: `{registry['closed_phase_versions']['phase15']}`",
+        f"- Phase 16 closure: `{registry['closed_phase_versions']['phase16']}`",
         f"- Phase 15 opening: `{registry['opening_snapshots']['phase15']['inventory_version']}`",
         f"- Phase 16 opening: `{registry['opening_snapshots']['phase16']['inventory_version']}`",
+        f"- Phase 17 opening: `{registry['opening_snapshots']['phase17']['inventory_version']}`",
         f"- Total rows: `{totals['total_rows']}`",
         "",
         "## Derived origin-phase totals", "",
@@ -8739,6 +9012,7 @@ def render(registry):
         *phase14_string_view_summary_lines(registry),
         *phase15_opening_summary_lines(registry),
         *phase16_opening_summary_lines(registry),
+        *phase17_opening_summary_lines(registry),
         "## Registry entries", "",
         "| ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |",
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
@@ -8764,7 +9038,9 @@ def render(registry):
         f"- Phase 14 memory-access review: `{phase14_memory_access_summary_path(registry).relative_to(ROOT)}`",
         f"- Phase 14 string-view review: `{phase14_string_view_summary_path(registry).relative_to(ROOT)}`",
         "- Phase 14 closure review: `compiler/CRANELIFT_PHASE14_CLOSURE.md`",
-        "- Phase 15 opening review: `compiler/CRANELIFT_PHASE15_OPENING.md`", "",
+        "- Phase 15 opening review: `compiler/CRANELIFT_PHASE15_OPENING.md`",
+        "- Phase 16 opening review: `compiler/CRANELIFT_PHASE16_OPENING.md`",
+        "- Phase 17 opening review: `compiler/CRANELIFT_PHASE17_OPENING.md`", "",
         "The JSON registry is authoritative. Generated Markdown is a review artifact, and the legacy Markdown documents remain historical views only.", "",
     ]
     return "\n".join(lines)

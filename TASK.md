@@ -69,7 +69,7 @@ If more than 100 runs exist, use the paginated Actions API and apply the same ex
 
 ## Status
 
-- [ ] Patch 17.0 — Opening Inventory and Phase 16 Residual Rebase
+- [x] Patch 17.0 — Opening Inventory and Phase 16 Residual Rebase — DONE
 - [ ] Patch 17.1 — Compiler-Owned Runtime Boundary and Helper Classification Authority
 - [ ] Patch 17.2 — Supported Runtime ABI, Symbol Identity, and Versioning
 - [ ] Patch 17.3 — Runtime Requirements in Canonical MIR and Native Requests

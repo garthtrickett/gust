@@ -18,7 +18,7 @@ REVIEW = ROOT / "compiler/CRANELIFT_PHASE15_OPENING.md"
 OPENING_VERSION = "phase15_opening_inventory_rebased_on_phase14_closure"
 INVENTORY_VERSION = "phase15_opening_inventory_v1"
 STATUS = "ready_for_patch15_1"
-REGISTRY_STATUS = "phase16_opening_function_abi_aggregate_call_inventory"
+REGISTRY_STATUS = "phase17_opening_native_runtime_boundary_inventory"
 PREDECESSOR = "phase14_closed_type_layout_and_memory_model"
 REVIEW_PATH = "compiler/CRANELIFT_PHASE15_OPENING.md"
 TARGET_POLICY = "all_declared_host_targets_from_phase14_target_authority"
@@ -203,16 +203,16 @@ def validate_schema(schema: dict) -> None:
     require(schema.get("additionalProperties") is False,
             "canonical registry schema must reject unknown root fields")
     properties = schema.get("properties", {})
-    require(properties.get("registry_version", {}).get("const") == 16,
-            "schema registry version must be 16")
+    require(properties.get("registry_version", {}).get("const") == 17,
+            "schema registry version must be 17")
     require(properties.get("registry_status", {}).get("const") == REGISTRY_STATUS,
             "schema Phase 15 opening status drifted")
-    require(properties.get("current_phase", {}).get("const") == "phase16",
-            "schema current phase must be phase16")
+    require(properties.get("current_phase", {}).get("const") == "phase17",
+            "schema current phase must be phase17")
     opening = properties.get("opening_snapshots", {})
     require(
         set(opening.get("required", []))
-        == {"phase13", "phase14", "phase15", "phase16"},
+        == {"phase13", "phase14", "phase15", "phase16", "phase17"},
         "schema opening snapshot keys drifted",
     )
     require(
@@ -244,12 +244,12 @@ def validate() -> dict:
     schema = read_json(SCHEMA)
     validate_schema(schema)
 
-    require(registry.get("registry_version") == 16,
-            "registry version must be 16")
+    require(registry.get("registry_version") == 17,
+            "registry version must be 17")
     require(registry.get("registry_status") == REGISTRY_STATUS,
             "registry status does not record the Phase 15 opening")
-    require(registry.get("current_phase") == "phase16",
-            "Phase 16 is not the active registry phase")
+    require(registry.get("current_phase") == "phase17",
+            "Phase 17 is not the active registry phase")
     require(
         registry.get("closed_phase_versions", {}).get("phase14") == PREDECESSOR,
         "Phase 14 semantic closure is not recorded",
@@ -263,8 +263,8 @@ def validate() -> dict:
     opening_snapshots = registry.get("opening_snapshots")
     require(isinstance(opening_snapshots, dict)
             and set(opening_snapshots)
-            == {"phase13", "phase14", "phase15", "phase16"},
-            "opening snapshots must contain Phase 13 through Phase 16")
+            == {"phase13", "phase14", "phase15", "phase16", "phase17"},
+            "opening snapshots must contain Phase 13 through Phase 17")
     snapshot = opening_snapshots["phase15"]
     require(isinstance(snapshot, dict) and set(snapshot) == SNAPSHOT_FIELDS,
             "Phase 15 opening snapshot fields drifted")
