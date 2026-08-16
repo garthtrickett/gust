@@ -226,13 +226,45 @@ cache is doing something — the −100 s-class improvements are too large and t
 concentrated to be chance — but this is not the clean win "pure win" implied.
 One PR pair with this much variance is not conclusive; get a second data point.
 
+### Second data point, and the noise floor
+
+| Comparison | Shared substantial jobs | Result |
+| --- | --- | --- |
+| Baseline #41 → #44 (first cached) | 61 | 284m → 269m (**−5.2%**) |
+| Baseline #41 → #45 (second cached) | 61 | 284m → 276m (**−2.8%**) |
+| #44 → #45 (both cached) | 58 | 269m → 276m (**+2.4%**) |
+
+That third row is the important one. Two PRs that are **both** cached differ by
+**+2.4%** from each other. That is the run-to-run noise floor, and it is the same
+order of magnitude as the measured effect.
+
+**Conclusion: Lever 1 delivers roughly −3% to −5%, and the measurement cannot
+resolve it much more precisely than that.** The estimate was ~9% (~30 min). The
+individual −100 s-class improvements in the heavy migration guards are real and
+too concentrated to be chance, but at the aggregate level the win is small and
+partly buried in variance.
+
+Keep the cache — it costs nothing and it does help. But do not credit it with
+more than a few percent, and use the +2.4% noise floor when judging any future
+CI change: **anything under ~5% aggregate is not distinguishable from noise on a
+single PR pair.**
+
 ### Implications for Lever 2
 
-If Lever 1 underdelivered by roughly half, Lever 2's ~77 min estimate plausibly
-lands nearer ~40 min. Weigh that against its risk: a parity guard silently
-validating a stale compiler. Chasing a single-digit CI percentage with a
-correctness-risky change is a poor trade. **Recommendation: gather another data
-point from ordinary Phase 17 PRs before starting Lever 2.**
+Lever 1 was estimated at ~9% and delivered ~3–5%, roughly a third to a half of
+estimate. Applying the same discount to Lever 2's ~77 min (24%) suggests a real
+win nearer **8–12%** — larger than Lever 1, but far from the headline figure.
+
+Weigh that against what Lever 2 actually risks: a parity guard silently
+validating a stale compiler. That converts a loud failure into a quiet false
+pass, in the suite whose entire job is catching backend divergence.
+
+**Recommendation: do not do Lever 2 yet.** The measured evidence says the prize
+is smaller than modelled and the noise floor is high enough that success would be
+hard to even confirm. Phase 17 capability work is worth more per unit of risk.
+Revisit only if CI wall-clock becomes an actual blocker, and if so consider
+Lever 3 first — it attacks fixed overhead, carries no staleness class, and is
+worth a comparable amount.
 
 ### Notes
 
@@ -292,7 +324,9 @@ guard to push back — that is the guard doing its job.
 | Date | Change | Aggregate runner time |
 | --- | --- | --- |
 | 2026-08-16 | Baseline measured on PR #41 | 320 min |
-| 2026-08-16 | Lever 1 merged (`52fbcf2b`); like-for-like on 61 shared jobs | 284m → 270m (−5.2%) |
+| 2026-08-16 | Lever 1 merged (`52fbcf2b`); like-for-like on 61 shared jobs (PR #44) | 284m → 269m (−5.2%) |
+| 2026-08-16 | Second data point (PR #45) | 284m → 276m (−2.8%) |
+| 2026-08-16 | Noise floor established: two cached PRs differ by +2.4% | — |
 
 ## Incident log
 
