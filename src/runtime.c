@@ -5,7 +5,8 @@
 #include "runtime/fiber.c"
 #include "runtime/collections.c"
 #include "runtime/file_io.c"
-#include "runtime/mock_payload.c"
+#include "runtime/host_io.c"
+#include "runtime/strings.c"
 #include "runtime/approved_scalar_imports.c"
 
 
