@@ -144,6 +144,9 @@ jobs:
       - name: Phase 17 native runtime boundary opening
         run: just guard-cranelift-phase17-opening-contract
 
+      - name: Phase 17 compiler-owned runtime boundary authority
+        run: just guard-cranelift-phase17-runtime-authority-contract
+
       - name: Upload Gust build outputs
         uses: actions/upload-artifact@v4
         with:

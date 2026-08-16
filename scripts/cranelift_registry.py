@@ -23,6 +23,7 @@ TOP_FIELDS = {
     "phase15_failure_cleanup_authority",
     "phase15_resource_composition_authority",
     "phase16_abi_composition_authority",
+    "phase17_runtime_authority",
     "phase16_deferred_residue_audit",
     "phase16_closure",
     "phase15_deferred_residue_audit",
@@ -763,6 +764,57 @@ PHASE17_SELECTED_RESIDUAL_IDS = {
     "p17_cross_version_module_abi",
     "p17_dynamic_library_symbol_version_abi",
 }
+PHASE17_RUNTIME_AUTHORITY_FIELDS = {
+    "version", "status", "authority_owner", "table_format",
+    "semantic_types", "query_functions", "legal_helper_classifications",
+    "helper_classifications", "consumers", "identity_policy",
+    "request_transport_policy", "rejection_classes", "hard_bans",
+    "behavior_policy", "next_patch",
+}
+PHASE17_RUNTIME_CLASSIFICATION_FIELDS = {
+    "helper_id", "symbol_identity", "classification", "component_id",
+    "reason_code", "target_applicability",
+}
+PHASE17_RUNTIME_AUTHORITY_VERSION = (
+    "phase17_compiler_owned_runtime_boundary_authority_v1"
+)
+PHASE17_RUNTIME_TYPES = (
+    "MirRuntimeAbiIdentity", "MirRuntimeHelperIdentity",
+    "MirRuntimeHelperClassification", "MirRuntimeComponentIdentity",
+    "MirRuntimePackageIdentity", "MirRuntimeRequirement",
+    "MirRuntimeCompatibilityDecision", "MirRuntimeLinkPlanHandoff",
+)
+PHASE17_RUNTIME_QUERIES = (
+    "mir_runtime_helper_of", "mir_classify_runtime_helper",
+    "mir_runtime_requirements", "mir_runtime_component_for",
+    "mir_select_runtime_package", "mir_validate_runtime_compatibility",
+    "mir_runtime_link_plan",
+)
+PHASE17_LEGAL_HELPER_CLASSIFICATIONS = (
+    "stable_runtime_library_function", "rust_runtime_component",
+    "retained_c_runtime_component", "pure_gust_runtime_component",
+    "obsolete_helper",
+)
+PHASE17_RUNTIME_CONSUMERS = (
+    "canonical_mir", "mir_to_c", "cranelift_worker", "runtime_packaging",
+    "diagnostics", "phase9g_link_planner",
+)
+PHASE17_RUNTIME_REJECTIONS = (
+    "runtime_authority_unknown_format", "runtime_authority_policy_mismatch",
+    "runtime_unknown_helper_id", "runtime_missing_helper_classification",
+    "runtime_conflicting_helper_classification",
+    "runtime_invalid_helper_classification", "runtime_unknown_component_id",
+    "runtime_unknown_package_id", "runtime_requirement_mismatch",
+    "runtime_compatibility_mismatch", "runtime_link_plan_unresolved",
+    "runtime_target_mismatch",
+    "runtime_metadata_inconsistent_with_canonical_mir",
+)
+PHASE17_RUNTIME_HARD_BANS = (
+    "no_cranelift_helper_classification_table",
+    "no_worker_invented_runtime_requirements",
+    "no_native_driver_package_selection_from_unresolved_symbols",
+    "no_diagnostic_runtime_compatibility_recomputation",
+)
 
 PHASE14_LAYOUT_AUTHORITY_FIELDS = {
     "version", "status", "authority_owner", "table_format",
@@ -1933,6 +1985,86 @@ def validate_phase17_opening_snapshot_structure(registry):
     return contract["snapshot"]
 
 
+def validate_phase17_runtime_authority_structure(registry):
+    authority = registry["phase17_runtime_authority"]
+    require(isinstance(authority, dict)
+            and set(authority) == PHASE17_RUNTIME_AUTHORITY_FIELDS,
+            "Phase 17 runtime authority fields drifted")
+    require(authority["version"] == PHASE17_RUNTIME_AUTHORITY_VERSION
+            and authority["status"] == "ready_for_patch17_2"
+            and authority["authority_owner"]
+            == "compiler/mir_runtime_boundary_authority.gst"
+            and authority["table_format"]
+            == "gust.compiler_runtime_boundary_authority_table.v1",
+            "Phase 17 runtime authority identity drifted")
+    require(tuple(authority["semantic_types"]) == PHASE17_RUNTIME_TYPES,
+            "Phase 17 runtime semantic type inventory drifted")
+    require(tuple(authority["query_functions"]) == PHASE17_RUNTIME_QUERIES,
+            "Phase 17 runtime query inventory drifted")
+    require(tuple(authority["legal_helper_classifications"])
+            == PHASE17_LEGAL_HELPER_CLASSIFICATIONS,
+            "Phase 17 legal helper classifications drifted")
+    require(tuple(authority["consumers"]) == PHASE17_RUNTIME_CONSUMERS,
+            "Phase 17 runtime consumer inventory drifted")
+    require(authority["identity_policy"]
+            == "compiler_semantic_state_plus_request_ordinal_no_raw_hash"
+            and authority["request_transport_policy"]
+            == "immutable_runtime_table_wraps_validated_phase16_abi_request_before_worker_driver_and_artifact_access",
+            "Phase 17 runtime identity or request policy drifted")
+    require(tuple(authority["rejection_classes"])
+            == PHASE17_RUNTIME_REJECTIONS,
+            "Phase 17 runtime rejection inventory drifted")
+    require(tuple(authority["hard_bans"]) == PHASE17_RUNTIME_HARD_BANS,
+            "Phase 17 runtime hard bans drifted")
+    require(authority["behavior_policy"]
+            == "authority_and_classification_only_no_runtime_helper_implementation_migration"
+            and authority["next_patch"] == "17.2",
+            "Phase 17 runtime authority boundary drifted")
+
+    inventory = {
+        row["id"]: row
+        for row in registry["opening_snapshots"]["phase17"]["helper_inventory"]
+    }
+    rows = authority["helper_classifications"]
+    require(isinstance(rows, list) and rows,
+            "Phase 17 runtime helper classifications must contain rows")
+    require(len(rows) == len(inventory),
+            "Phase 17 runtime helper classification coverage drifted")
+    seen = set()
+    for index, row in enumerate(rows):
+        context = f"phase17_runtime_authority.helper_classifications[{index}]"
+        require(isinstance(row, dict)
+                and set(row) == PHASE17_RUNTIME_CLASSIFICATION_FIELDS,
+                f"{context} fields drifted")
+        helper_id = text(row["helper_id"], f"{context}.helper_id")
+        require(helper_id in inventory and helper_id not in seen,
+                f"{helper_id}: unknown or duplicate runtime classification")
+        seen.add(helper_id)
+        source = inventory[helper_id]
+        require(row["symbol_identity"] == source["symbol_identity"],
+                f"{helper_id}: classification symbol differs from inventory")
+        if source["source_path"] == "src/runtime/approved_scalar_imports.c":
+            expected_classification = "stable_runtime_library_function"
+            expected_reason = "runtime_helper_classified_stable_library_import"
+        elif source["symbol_kind"] == "generated_c_symbol_family":
+            expected_classification = "obsolete_helper"
+            expected_reason = "runtime_helper_classified_obsolete_generated_c_shim"
+        else:
+            expected_classification = "retained_c_runtime_component"
+            expected_reason = "runtime_helper_classified_retained_c_component"
+        require(row["classification"] == expected_classification
+                and row["reason_code"] == expected_reason,
+                f"{helper_id}: runtime classification or reason drifted")
+        require(row["classification"] in PHASE17_LEGAL_HELPER_CLASSIFICATIONS,
+                f"{helper_id}: illegal runtime classification")
+        text(row["component_id"], f"{helper_id}.component_id")
+        require(row["target_applicability"] == PHASE17_TARGET_APPLICABILITY,
+                f"{helper_id}: classification target drifted")
+    require(seen == set(inventory),
+            "Phase 17 helper classification coverage is incomplete")
+    return authority
+
+
 def validate_phase14_layout_authority_structure(registry):
     authority = registry["phase14_layout_authority"]
     require(
@@ -2956,6 +3088,22 @@ def validate():
     )
     require(phase17_helper_schema.get("additionalProperties") is False,
             "schema Phase 17 helper inventory must reject unknown fields")
+    phase17_runtime_schema = definitions.get("phase17_runtime_authority", {})
+    require(
+        set(phase17_runtime_schema.get("required", []))
+        == PHASE17_RUNTIME_AUTHORITY_FIELDS,
+        "schema Phase 17 runtime authority fields drifted",
+    )
+    require(phase17_runtime_schema.get("additionalProperties") is False,
+            "schema Phase 17 runtime authority must reject unknown fields")
+    phase17_classification_schema = definitions.get(
+        "phase17_runtime_helper_classification", {}
+    )
+    require(
+        set(phase17_classification_schema.get("required", []))
+        == PHASE17_RUNTIME_CLASSIFICATION_FIELDS,
+        "schema Phase 17 runtime classification fields drifted",
+    )
     phase14_authority_schema = definitions.get(
         "phase14_layout_authority",
         {},
@@ -3145,6 +3293,7 @@ def validate():
     validate_phase15_opening_snapshot_structure(registry)
     validate_phase16_opening_snapshot_structure(registry)
     validate_phase17_opening_snapshot_structure(registry)
+    validate_phase17_runtime_authority_structure(registry)
     validate_phase14_layout_authority_structure(registry)
     validate_phase14_primitive_layout_structure(registry)
     validate_phase14_integer_conversion_structure(registry)
@@ -8962,6 +9111,29 @@ def phase17_opening_summary_lines(registry):
     ]
 
 
+def phase17_runtime_authority_summary_lines(registry):
+    authority = validate_phase17_runtime_authority_structure(registry)
+    classifications = Counter(
+        row["classification"] for row in authority["helper_classifications"]
+    )
+    return [
+        "## Phase 17 compiler-owned runtime boundary authority",
+        "",
+        f"- Authority version: `{authority['version']}`",
+        f"- Status: `{authority['status']}`",
+        f"- Table format: `{authority['table_format']}`",
+        f"- Semantic types: `{len(authority['semantic_types'])}`",
+        f"- Compiler-owned queries: `{len(authority['query_functions'])}`",
+        f"- Classified helpers: `{len(authority['helper_classifications'])}`",
+        f"- Stable runtime-library functions: `{classifications.get('stable_runtime_library_function', 0)}`",
+        f"- Retained C runtime components: `{classifications.get('retained_c_runtime_component', 0)}`",
+        f"- Obsolete generated-C helper families: `{classifications.get('obsolete_helper', 0)}`",
+        "",
+        "Patch 17.1 establishes compiler-owned runtime identities, exactly-one helper classification, requirements, compatibility decisions, and the Phase 9G link-plan handoff. It does not migrate helper implementations.",
+        "",
+    ]
+
+
 def render(registry):
     entries = registry["entries"]
     totals = derived_totals(registry)
@@ -9013,6 +9185,7 @@ def render(registry):
         *phase15_opening_summary_lines(registry),
         *phase16_opening_summary_lines(registry),
         *phase17_opening_summary_lines(registry),
+        *phase17_runtime_authority_summary_lines(registry),
         "## Registry entries", "",
         "| ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |",
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",

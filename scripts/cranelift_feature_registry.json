@@ -2949,6 +2949,705 @@
       "next_patch": "17.1"
     }
   },
+  "phase17_runtime_authority": {
+    "version": "phase17_compiler_owned_runtime_boundary_authority_v1",
+    "status": "ready_for_patch17_2",
+    "authority_owner": "compiler/mir_runtime_boundary_authority.gst",
+    "table_format": "gust.compiler_runtime_boundary_authority_table.v1",
+    "semantic_types": [
+      "MirRuntimeAbiIdentity",
+      "MirRuntimeHelperIdentity",
+      "MirRuntimeHelperClassification",
+      "MirRuntimeComponentIdentity",
+      "MirRuntimePackageIdentity",
+      "MirRuntimeRequirement",
+      "MirRuntimeCompatibilityDecision",
+      "MirRuntimeLinkPlanHandoff"
+    ],
+    "query_functions": [
+      "mir_runtime_helper_of",
+      "mir_classify_runtime_helper",
+      "mir_runtime_requirements",
+      "mir_runtime_component_for",
+      "mir_select_runtime_package",
+      "mir_validate_runtime_compatibility",
+      "mir_runtime_link_plan"
+    ],
+    "legal_helper_classifications": [
+      "stable_runtime_library_function",
+      "rust_runtime_component",
+      "retained_c_runtime_component",
+      "pure_gust_runtime_component",
+      "obsolete_helper"
+    ],
+    "helper_classifications": [
+      {
+        "helper_id": "p17_helper_os_arena_validate",
+        "symbol_identity": "os_Arena_Validate",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:arena",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_os_arena_new",
+        "symbol_identity": "os_Arena_New",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:arena",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_os_arena_free",
+        "symbol_identity": "os_Arena_Free",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:arena",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_std_generationalswap",
+        "symbol_identity": "std_GenerationalSwap",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:arena",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_os_arenaalloc",
+        "symbol_identity": "os_ArenaAlloc",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:arena",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_os_logint",
+        "symbol_identity": "os_LogInt",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:arena",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_os_setthreadscratch",
+        "symbol_identity": "os_SetThreadScratch",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:scratch",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_os_getthreadscratch_raw",
+        "symbol_identity": "os_GetThreadScratch_raw",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:scratch",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_os_scratchalloc",
+        "symbol_identity": "os_ScratchAlloc",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:scratch",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_os_scratchreset",
+        "symbol_identity": "os_ScratchReset",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:scratch",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_os_is_key_corrupted",
+        "symbol_identity": "os_is_key_corrupted",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:core_headers",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_os_hash_key",
+        "symbol_identity": "os_hash_key",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:core_headers",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_os_key_eq",
+        "symbol_identity": "os_key_eq",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:core_headers",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_os_hashmapref_impl",
+        "symbol_identity": "os_HashMapRef_impl",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:collections",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_os_hashmapcontains_impl",
+        "symbol_identity": "os_HashMapContains_impl",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:collections",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_os_hashmapremove_impl",
+        "symbol_identity": "os_HashMapRemove_impl",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:collections",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_os_hashmapclear_impl",
+        "symbol_identity": "os_HashMapClear_impl",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:collections",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_std_poolalloc_impl",
+        "symbol_identity": "std_PoolAlloc_impl",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:collections",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_std_poolfree_impl",
+        "symbol_identity": "std_PoolFree_impl",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:collections",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_tiny_host_add_one_i32",
+        "symbol_identity": "tiny_host_add_one_i32",
+        "classification": "stable_runtime_library_function",
+        "component_id": "runtime_component:approved_scalar_imports",
+        "reason_code": "runtime_helper_classified_stable_library_import",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_tiny_host_add_i32",
+        "symbol_identity": "tiny_host_add_i32",
+        "classification": "stable_runtime_library_function",
+        "component_id": "runtime_component:approved_scalar_imports",
+        "reason_code": "runtime_helper_classified_stable_library_import",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_tiny_host_is_positive_i32",
+        "symbol_identity": "tiny_host_is_positive_i32",
+        "classification": "stable_runtime_library_function",
+        "component_id": "runtime_component:approved_scalar_imports",
+        "reason_code": "runtime_helper_classified_stable_library_import",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_os_args",
+        "symbol_identity": "os_Args",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:mock_payload",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_os_mockpayload",
+        "symbol_identity": "os_MockPayload",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:mock_payload",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_os_logstr",
+        "symbol_identity": "os_LogStr",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:mock_payload",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_os_logerror",
+        "symbol_identity": "os_LogError",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:mock_payload",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_std_str_eq",
+        "symbol_identity": "std_str_eq",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:mock_payload",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_std_str_slice",
+        "symbol_identity": "std_str_slice",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:mock_payload",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_std_str_byte_at",
+        "symbol_identity": "std_str_byte_at",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:mock_payload",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_std_str_find",
+        "symbol_identity": "std_str_find",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:mock_payload",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_std_str_trim",
+        "symbol_identity": "std_str_trim",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:mock_payload",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_std_str_split",
+        "symbol_identity": "std_str_split",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:mock_payload",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_std_is_alpha",
+        "symbol_identity": "std_is_alpha",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:mock_payload",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_std_is_digit",
+        "symbol_identity": "std_is_digit",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:mock_payload",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_std_is_whitespace",
+        "symbol_identity": "std_is_whitespace",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:mock_payload",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_std_parse_int",
+        "symbol_identity": "std_parse_int",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:mock_payload",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_std_clone_str",
+        "symbol_identity": "std_Clone_str",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:mock_payload",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_os_readfile",
+        "symbol_identity": "os_ReadFile",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:file_io",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_os_writefile",
+        "symbol_identity": "os_WriteFile",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:file_io",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_os_path_join",
+        "symbol_identity": "os_path_join",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:file_io",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_os_getenv",
+        "symbol_identity": "os_GetEnv",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:file_io",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_os_executablepath",
+        "symbol_identity": "os_ExecutablePath",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:file_io",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_os_pathabsolute",
+        "symbol_identity": "os_PathAbsolute",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:file_io",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_os_pathdir",
+        "symbol_identity": "os_PathDir",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:file_io",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_os_fileexists",
+        "symbol_identity": "os_FileExists",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:file_io",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_os_fileexecutable",
+        "symbol_identity": "os_FileExecutable",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:file_io",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_os_removefile",
+        "symbol_identity": "os_RemoveFile",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:file_io",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_os_runprocess",
+        "symbol_identity": "os_RunProcess",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:file_io",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_os_system",
+        "symbol_identity": "os_System",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:file_io",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_os_opendir",
+        "symbol_identity": "os_OpenDir",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:file_io",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_os_readdir",
+        "symbol_identity": "os_ReadDir",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:file_io",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_os_closedir",
+        "symbol_identity": "os_CloseDir",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:file_io",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_os_nativetargettriple",
+        "symbol_identity": "os_NativeTargetTriple",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:file_io",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_os_nativeobjectformat",
+        "symbol_identity": "os_NativeObjectFormat",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:file_io",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_os_copy_c_string_to_arena",
+        "symbol_identity": "os_copy_c_string_to_arena",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:file_io",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_os_slice_to_c_string",
+        "symbol_identity": "os_slice_to_c_string",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:file_io",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_os_read_stream_to_arena",
+        "symbol_identity": "os_read_stream_to_arena",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:file_io",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_gust_context_switch",
+        "symbol_identity": "gust_context_switch",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:fiber",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_gust_fiber_entry_wrapper",
+        "symbol_identity": "gust_fiber_entry_wrapper",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:fiber",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_gust_fiber_exit",
+        "symbol_identity": "gust_fiber_exit",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:fiber",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_gust_fiber_switch",
+        "symbol_identity": "gust_fiber_switch",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:fiber",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_gust_fiber_create",
+        "symbol_identity": "gust_fiber_create",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:fiber",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_gust_fiber_free",
+        "symbol_identity": "gust_fiber_free",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:fiber",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_gust_shard_loop",
+        "symbol_identity": "gust_shard_loop",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:fiber",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_gust_yield",
+        "symbol_identity": "gust_yield",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:fiber",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_gust_scheduler_spawn",
+        "symbol_identity": "gust_scheduler_spawn",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:fiber",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_get_num_threads_to_use",
+        "symbol_identity": "get_num_threads_to_use",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:fiber",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_gust_scheduler_init",
+        "symbol_identity": "gust_scheduler_init",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:fiber",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_gust_scheduler_destroy",
+        "symbol_identity": "gust_scheduler_destroy",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:fiber",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_std_mutex_alloc",
+        "symbol_identity": "std_Mutex_Alloc",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:fiber",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_std_mutex_lock_impl",
+        "symbol_identity": "std_Mutex_Lock_impl",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:fiber",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_std_mutex_unlock_impl",
+        "symbol_identity": "std_Mutex_Unlock_impl",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:fiber",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_std_channel_alloc",
+        "symbol_identity": "std_Channel_Alloc",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:fiber",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_std_channel_send_impl",
+        "symbol_identity": "std_Channel_Send_impl",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:fiber",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_std_channel_recv_impl",
+        "symbol_identity": "std_Channel_Recv_impl",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:fiber",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_generated_is_valid_family",
+        "symbol_identity": "*_IsValid",
+        "classification": "obsolete_helper",
+        "component_id": "runtime_component:generated_c_shims_to_remove",
+        "reason_code": "runtime_helper_classified_obsolete_generated_c_shim",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_generated_generational_clone_family",
+        "symbol_identity": "std_GenerationalArena_Clone_*",
+        "classification": "obsolete_helper",
+        "component_id": "runtime_component:generated_c_shims_to_remove",
+        "reason_code": "runtime_helper_classified_obsolete_generated_c_shim",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_generated_pthread_wrapper_family",
+        "symbol_identity": "*_pthread_wrapper",
+        "classification": "obsolete_helper",
+        "component_id": "runtime_component:generated_c_shims_to_remove",
+        "reason_code": "runtime_helper_classified_obsolete_generated_c_shim",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
+        "helper_id": "p17_helper_generated_entry_wrapper_family",
+        "symbol_identity": "gust_user_main/main",
+        "classification": "obsolete_helper",
+        "component_id": "runtime_component:generated_c_shims_to_remove",
+        "reason_code": "runtime_helper_classified_obsolete_generated_c_shim",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      }
+    ],
+    "consumers": [
+      "canonical_mir",
+      "mir_to_c",
+      "cranelift_worker",
+      "runtime_packaging",
+      "diagnostics",
+      "phase9g_link_planner"
+    ],
+    "identity_policy": "compiler_semantic_state_plus_request_ordinal_no_raw_hash",
+    "request_transport_policy": "immutable_runtime_table_wraps_validated_phase16_abi_request_before_worker_driver_and_artifact_access",
+    "rejection_classes": [
+      "runtime_authority_unknown_format",
+      "runtime_authority_policy_mismatch",
+      "runtime_unknown_helper_id",
+      "runtime_missing_helper_classification",
+      "runtime_conflicting_helper_classification",
+      "runtime_invalid_helper_classification",
+      "runtime_unknown_component_id",
+      "runtime_unknown_package_id",
+      "runtime_requirement_mismatch",
+      "runtime_compatibility_mismatch",
+      "runtime_link_plan_unresolved",
+      "runtime_target_mismatch",
+      "runtime_metadata_inconsistent_with_canonical_mir"
+    ],
+    "hard_bans": [
+      "no_cranelift_helper_classification_table",
+      "no_worker_invented_runtime_requirements",
+      "no_native_driver_package_selection_from_unresolved_symbols",
+      "no_diagnostic_runtime_compatibility_recomputation"
+    ],
+    "behavior_policy": "authority_and_classification_only_no_runtime_helper_implementation_migration",
+    "next_patch": "17.2"
+  },
   "phase15_specialized_resource_authority": {
     "version": "phase15_specialized_resource_authority_v1",
     "status": "patch15_11_directory_migrated",

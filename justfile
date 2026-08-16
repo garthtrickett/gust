@@ -154,6 +154,8 @@ guard-pr-fast-ci-surface:
       'just guard-cranelift-phase16-opening-contract'
       'Phase 17 native runtime boundary opening'
       'just guard-cranelift-phase17-opening-contract'
+      'Phase 17 compiler-owned runtime boundary authority'
+      'just guard-cranelift-phase17-runtime-authority-contract'
       'phase11-family:'
       'phase11_families:'
       'matrix.family'
@@ -15951,6 +15953,16 @@ guard-cranelift-contract-fast:
     just guard-cranelift-phase16-composition-contract
     just guard-cranelift-phase16-close
     just guard-cranelift-phase17-opening-contract
+    just guard-cranelift-phase17-runtime-authority-contract
+
+guard-cranelift-phase17-runtime-authority-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 17.1 compiler-owned runtime boundary authority..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase17-runtime-authority-contract |
+      grep -F $'guard-cranelift-phase17-runtime-authority-contract\t1\t' >/dev/null
+    bash scripts/guard-cranelift-phase17-runtime-authority-contract.sh
 
 guard-cranelift-phase16-abi-authority-contract:
     #!/usr/bin/env bash
