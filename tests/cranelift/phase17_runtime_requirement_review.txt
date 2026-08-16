@@ -1,0 +1,49 @@
+Phase 17.3 — Runtime Requirements in Canonical MIR and Native Requests
+guard: guard-cranelift-phase17-runtime-requirement-contract
+test_level: level1
+requirement_policy: compiler_produced_requirements_only_worker_must_not_invent
+deduplication_policy: one_requirement_per_program_and_symbol_first_appearance_order
+scope: three_approved_scalar_imports
+
+contract counts:
+  boundary: 1
+  call_kind: 5
+  linkage: 6
+  policy: 4
+  query: 3
+  rejection: 7
+  semantic_type: 2
+
+carried requirement identities:
+  helper_id
+  symbol_id
+  runtime_abi_id
+  required_version_range
+  target_applicability
+  layout_id
+  resource_operation_id
+  function_abi_id
+
+preserved runtime call shapes:
+  direct_call
+  selected_indirect_call
+  cleanup_or_destructor
+  cross_module_composition
+  runtime_module_call
+
+declared target ABI version ranges:
+  x86_64-unknown-linux-gnu	1	1
+  aarch64-unknown-linux-gnu	1	1
+  i686-unknown-linux-gnu	1	1
+  x86_64-apple-darwin	1	1
+  aarch64-apple-darwin	1	1
+
+selected requirements:
+  p17_helper_tiny_host_add_one_i32	direct_call	1	1	package_mandatory=false
+  p17_helper_tiny_host_add_i32	direct_call	1	1	package_mandatory=false
+  p17_helper_tiny_host_is_positive_i32	direct_call	1	1	package_mandatory=false
+
+exit gate:
+  every selected runtime-facing MIR operation carries one validated compiler-produced requirement
+  malformed runtime metadata is rejected without backend or linker inference
+  runtime packages and target-specific selection remain in Patch 17.4

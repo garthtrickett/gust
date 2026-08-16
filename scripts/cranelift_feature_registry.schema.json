@@ -19,6 +19,7 @@
     "phase16_abi_composition_authority",
     "phase17_runtime_authority",
     "phase17_runtime_symbol_authority",
+    "phase17_runtime_requirement_authority",
     "phase16_deferred_residue_audit",
     "phase16_closure",
     "phase15_deferred_residue_audit",
@@ -262,6 +263,9 @@
     "phase17_runtime_symbol_authority": {
       "$ref": "#/$defs/phase17_runtime_symbol_authority"
     },
+    "phase17_runtime_requirement_authority": {
+      "$ref": "#/$defs/phase17_runtime_requirement_authority"
+    },
     "phase16_deferred_residue_audit": {
       "$ref": "#/$defs/phase16_deferred_residue_audit"
     },
@@ -350,6 +354,42 @@
         "witness_policy": {"const": "stable_runtime_abi_and_versioned_symbol_witnesses"},
         "scope_policy": {"const": "three_approved_scalar_imports_only_other_helper_symbols_extend_in_later_phase17_patches"},
         "next_patch": {"const": "17.3"}
+      }
+    },
+    "phase17_runtime_requirement_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["helper_id", "symbol_helper_id", "call_kind", "required_version_min", "required_version_max", "package_mandatory", "target_applicability"],
+      "properties": {
+        "helper_id": {"type": "string", "pattern": "^p17_helper_"},
+        "symbol_helper_id": {"type": "string", "pattern": "^p17_helper_"},
+        "call_kind": {"enum": ["direct_call", "selected_indirect_call", "cleanup_or_destructor", "cross_module_composition", "runtime_module_call"]},
+        "required_version_min": {"type": "integer", "minimum": 1},
+        "required_version_max": {"type": "integer", "minimum": 1},
+        "package_mandatory": {"const": false},
+        "target_applicability": {"const": "all_declared_host_targets_from_phase14_target_authority"}
+      }
+    },
+    "phase17_runtime_requirement_authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "status", "authority_owner", "request_owner", "requirement_policy", "deduplication_policy", "version_range_policy", "unused_requirement_policy", "carried_identities", "preserved_call_kinds", "selected_requirements", "rejection_classes", "witness_policy", "scope_policy", "next_patch"],
+      "properties": {
+        "version": {"const": "phase17_runtime_requirement_authority_v1"},
+        "status": {"const": "ready_for_patch17_4"},
+        "authority_owner": {"const": "compiler/mir_runtime_boundary_authority.gst"},
+        "request_owner": {"const": "compiler/mir_native_backend_runtime_request.gst"},
+        "requirement_policy": {"const": "compiler_produced_requirements_only_worker_must_not_invent"},
+        "deduplication_policy": {"const": "one_requirement_per_program_and_symbol_first_appearance_order"},
+        "version_range_policy": {"const": "required_range_must_lie_inside_frozen_runtime_abi_range"},
+        "unused_requirement_policy": {"const": "requirement_without_canonical_mir_reference_must_be_package_mandatory"},
+        "carried_identities": {"type": "array", "minItems": 8, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "preserved_call_kinds": {"type": "array", "minItems": 5, "uniqueItems": true, "items": {"enum": ["direct_call", "selected_indirect_call", "cleanup_or_destructor", "cross_module_composition", "runtime_module_call"]}},
+        "selected_requirements": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/phase17_runtime_requirement_record"}},
+        "rejection_classes": {"type": "array", "minItems": 7, "uniqueItems": true, "items": {"type": "string", "pattern": "^runtime_requirement_"}},
+        "witness_policy": {"const": "stable_requirement_and_canonical_mir_reference_witnesses"},
+        "scope_policy": {"const": "requirements_for_three_approved_scalar_imports_packages_and_selection_remain_in_patch17_4"},
+        "next_patch": {"const": "17.4"}
       }
     },
     "phase17_runtime_helper_classification": {

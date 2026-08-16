@@ -72,6 +72,9 @@ type MirRuntimePackageIdentity[ctx] struct {
     available: int
 }
 
+// Phase 17.3 requirements are compiler-produced. One requirement covers every
+// canonical MIR runtime operation that reaches the same helper in a program, so
+// the request-side table deduplicates without the worker inventing ownership.
 type MirRuntimeRequirement[ctx] struct {
     requirement_id: str,
     program_id: str,
@@ -80,7 +83,16 @@ type MirRuntimeRequirement[ctx] struct {
     runtime_abi_id: str,
     component_id: str,
     package_id: str,
-    required: int
+    required: int,
+    symbol_id: str,
+    required_version_min: int,
+    required_version_max: int,
+    target_id: str,
+    layout_id: str,
+    resource_operation_id: str,
+    function_abi_id: str,
+    call_kind: str,
+    package_mandatory: int
 }
 
 type MirRuntimeCompatibilityDecision[ctx] struct {
@@ -102,11 +114,23 @@ type MirRuntimeLinkPlanHandoff[ctx] struct {
     reason_code: str
 }
 
+// Canonical MIR runtime operations carry this metadata. Every reference names
+// the owning requirement, so a runtime-facing operation can never reach the
+// backend with its ownership left to linker or unresolved-symbol inference.
 type MirRuntimeMirReference[ctx] struct {
     reference_id: str,
     mir_operation_id: str,
     helper_id: str,
-    requirement_id: str
+    requirement_id: str,
+    symbol_id: str,
+    runtime_abi_id: str,
+    required_version_min: int,
+    required_version_max: int,
+    target_applicability: str,
+    layout_id: str,
+    resource_operation_id: str,
+    function_abi_id: str,
+    call_kind: str
 }
 
 type MirRuntimeBoundaryAuthorityTable[ctx] struct {
@@ -138,6 +162,8 @@ type MirRuntimeComponentQuery[ctx] struct { found: int, value: MirRuntimeCompone
 type MirRuntimePackageQuery[ctx] struct { found: int, value: MirRuntimePackageIdentity[ctx] }
 type MirRuntimeCompatibilityQuery[ctx] struct { compatible: int, reason_code: str }
 type MirRuntimeLinkPlanQuery[ctx] struct { found: int, value: MirRuntimeLinkPlanHandoff[ctx] }
+type MirRuntimeRequirementQuery[ctx] struct { found: int, value: MirRuntimeRequirement[ctx] }
+type MirRuntimeMirReferenceQuery[ctx] struct { found: int, value: MirRuntimeMirReference[ctx] }
 type MirRuntimeAuthorityValidation[ctx] struct { valid: int, reason_code: str }
 
 func mir_runtime_empty_strings(ctx: &Arena) Index[std.Vector[str, ctx], ctx] {
@@ -174,6 +200,18 @@ func mir_runtime_helper_classification_is_valid(value: str) int {
     return 0;
 }
 
+// Requirement identity survives every runtime-facing call shape Phase 16 already
+// supports. A backend that meets an unlisted shape has no requirement to consume
+// and is rejected rather than allowed to guess one.
+func mir_runtime_call_kind_is_valid(value: str) int {
+    if std.str_eq(value, "direct_call") == 1 { return 1; }
+    if std.str_eq(value, "selected_indirect_call") == 1 { return 1; }
+    if std.str_eq(value, "cleanup_or_destructor") == 1 { return 1; }
+    if std.str_eq(value, "cross_module_composition") == 1 { return 1; }
+    if std.str_eq(value, "runtime_module_call") == 1 { return 1; }
+    return 0;
+}
+
 // Deterministic request-local identities derive only from compiler semantic
 // state and stable request ordinals. Raw source, registry, generated-C,
 // object, archive, linker-command, and Markdown bytes never participate.
@@ -184,6 +222,7 @@ func mir_runtime_symbol_identity_id(helper_id: str, symbol_version: str, target_
 func mir_runtime_component_identity_id(component_kind: str, target_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_component:v1:kind="; value = std.Concat(value, component_kind); value = std.Concat(value, ":target="); value = std.Concat(value, target_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
 func mir_runtime_package_identity_id(target_id: str, package_version: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_package:v1:target="; value = std.Concat(value, target_id); value = std.Concat(value, ":version="); value = std.Concat(value, package_version); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
 func mir_runtime_requirement_id(program_id: str, helper_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_requirement:v1:program="; value = std.Concat(value, program_id); value = std.Concat(value, ":helper="); value = std.Concat(value, helper_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
+func mir_runtime_mir_reference_id(mir_operation_id: str, helper_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_mir_reference:v1:operation="; value = std.Concat(value, mir_operation_id); value = std.Concat(value, ":helper="); value = std.Concat(value, helper_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
 func mir_runtime_compatibility_decision_id(requirement_id: str, package_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_compatibility:v1:requirement="; value = std.Concat(value, requirement_id); value = std.Concat(value, ":package="); value = std.Concat(value, package_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
 func mir_runtime_link_plan_id(program_id: str, package_id: str, target_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_link_plan:v1:program="; value = std.Concat(value, program_id); value = std.Concat(value, ":package="); value = std.Concat(value, package_id); value = std.Concat(value, ":target="); value = std.Concat(value, target_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
 
@@ -235,10 +274,46 @@ func mir_runtime_abi_for(table: MirRuntimeBoundaryAuthorityTable[ctx], target_id
 // runtime_symbol_for(helper, target)
 func mir_runtime_symbol_for(table: MirRuntimeBoundaryAuthorityTable[ctx], helper_id: str, target_id: str, ctx: &Arena) MirRuntimeSymbolQuery[ctx] { mut result: MirRuntimeSymbolQuery[ctx]; result.found = 0; mut values: std.Vector[MirRuntimeSymbolIdentity[ctx], ctx] := ctx[table.symbols]; mut index := 0; while index < len(values) { if std.str_eq(values[index].helper_id, helper_id) == 1 && std.str_eq(values[index].target_id, target_id) == 1 { result.found = 1; result.value = values[index]; return result; } index = index + 1; } return result; }
 
+func mir_runtime_symbol_by_id(table: MirRuntimeBoundaryAuthorityTable[ctx], symbol_id: str, ctx: &Arena) MirRuntimeSymbolQuery[ctx] { mut result: MirRuntimeSymbolQuery[ctx]; result.found = 0; mut values: std.Vector[MirRuntimeSymbolIdentity[ctx], ctx] := ctx[table.symbols]; mut index := 0; while index < len(values) { if std.str_eq(values[index].symbol_id, symbol_id) == 1 { result.found = 1; result.value = values[index]; return result; } index = index + 1; } return result; }
+
+func mir_runtime_abi_by_id(table: MirRuntimeBoundaryAuthorityTable[ctx], runtime_abi_id: str, ctx: &Arena) MirRuntimeAbiQuery[ctx] { mut result: MirRuntimeAbiQuery[ctx]; result.found = 0; mut values: std.Vector[MirRuntimeAbiIdentity[ctx], ctx] := ctx[table.runtime_abis]; mut index := 0; while index < len(values) { if std.str_eq(values[index].runtime_abi_id, runtime_abi_id) == 1 { result.found = 1; result.value = values[index]; return result; } index = index + 1; } return result; }
+
 func mir_runtime_validate_symbol_spelling(table: MirRuntimeBoundaryAuthorityTable[ctx], symbol_id: str, proposed_spelling: str, ctx: &Arena) MirRuntimeAuthorityValidation[ctx] { mut symbols: std.Vector[MirRuntimeSymbolIdentity[ctx], ctx] := ctx[table.symbols]; mut index := 0; while index < len(symbols) { if std.str_eq(symbols[index].symbol_id, symbol_id) == 1 { if std.str_eq(symbols[index].external_spelling, proposed_spelling) == 0 { return mir_runtime_validation(0, "runtime_symbol_backend_substitution", ctx); } return mir_runtime_validation(1, "runtime_symbol_spelling_valid", ctx); } index = index + 1; } return mir_runtime_validation(0, "runtime_symbol_unknown_abi", ctx); }
 
 // runtime_requirements(program)
 func mir_runtime_requirements(table: MirRuntimeBoundaryAuthorityTable[ctx], program_id: str, ctx: &Arena) Index[std.Vector[MirRuntimeRequirement[ctx], ctx], ctx] { mut result := mir_runtime_empty_requirements(ctx); mut output: std.Vector[MirRuntimeRequirement[ctx], ctx] := ctx[result]; mut values: std.Vector[MirRuntimeRequirement[ctx], ctx] := ctx[table.requirements]; mut index := 0; while index < len(values) { if std.str_eq(values[index].program_id, program_id) == 1 { output.Push(values[index]); } index = index + 1; } ctx.Set(result, output); return result; }
+
+func mir_runtime_requirement_by_id(table: MirRuntimeBoundaryAuthorityTable[ctx], requirement_id: str, ctx: &Arena) MirRuntimeRequirementQuery[ctx] { mut result: MirRuntimeRequirementQuery[ctx]; result.found = 0; mut values: std.Vector[MirRuntimeRequirement[ctx], ctx] := ctx[table.requirements]; mut index := 0; while index < len(values) { if std.str_eq(values[index].requirement_id, requirement_id) == 1 { result.found = 1; result.value = values[index]; return result; } index = index + 1; } return result; }
+
+// runtime_requirement_for(mir_operation) resolves the compiler-produced owner of
+// one canonical MIR runtime operation through its reference record.
+func mir_runtime_requirement_for(table: MirRuntimeBoundaryAuthorityTable[ctx], mir_operation_id: str, ctx: &Arena) MirRuntimeRequirementQuery[ctx] { mut result: MirRuntimeRequirementQuery[ctx]; result.found = 0; mut references: std.Vector[MirRuntimeMirReference[ctx], ctx] := ctx[table.mir_references]; mut index := 0; while index < len(references) { if std.str_eq(references[index].mir_operation_id, mir_operation_id) == 1 { return mir_runtime_requirement_by_id(table, references[index].requirement_id, ctx); } index = index + 1; } return result; }
+
+func mir_runtime_mir_reference_for(table: MirRuntimeBoundaryAuthorityTable[ctx], mir_operation_id: str, ctx: &Arena) MirRuntimeMirReferenceQuery[ctx] { mut result: MirRuntimeMirReferenceQuery[ctx]; result.found = 0; mut values: std.Vector[MirRuntimeMirReference[ctx], ctx] := ctx[table.mir_references]; mut index := 0; while index < len(values) { if std.str_eq(values[index].mir_operation_id, mir_operation_id) == 1 { result.found = 1; result.value = values[index]; return result; } index = index + 1; } return result; }
+
+// runtime_requirement_table(program) is the deterministic deduplicated table the
+// native request carries. Order follows first appearance in the compiler-owned
+// requirement inventory, and each symbol contributes exactly one row.
+func mir_runtime_requirement_table(table: MirRuntimeBoundaryAuthorityTable[ctx], program_id: str, ctx: &Arena) Index[std.Vector[MirRuntimeRequirement[ctx], ctx], ctx] {
+    mut result := mir_runtime_empty_requirements(ctx);
+    mut output: std.Vector[MirRuntimeRequirement[ctx], ctx] := ctx[result];
+    mut values: std.Vector[MirRuntimeRequirement[ctx], ctx] := ctx[table.requirements];
+    mut index := 0;
+    while index < len(values) {
+        if std.str_eq(values[index].program_id, program_id) == 1 {
+            mut duplicate := 0;
+            mut output_index := 0;
+            while output_index < len(output) {
+                if std.str_eq(output[output_index].symbol_id, values[index].symbol_id) == 1 { duplicate = 1; }
+                output_index = output_index + 1;
+            }
+            if duplicate == 0 { output.Push(values[index]); }
+        }
+        index = index + 1;
+    }
+    ctx.Set(result, output);
+    return result;
+}
 
 // runtime_component_for(helper, target)
 func mir_runtime_component_for(table: MirRuntimeBoundaryAuthorityTable[ctx], helper_id: str, target_id: str, ctx: &Arena) MirRuntimeComponentQuery[ctx] { mut result: MirRuntimeComponentQuery[ctx]; result.found = 0; mut classification := mir_classify_runtime_helper(table, helper_id, ctx); if classification.found == 0 { return result; } mut values: std.Vector[MirRuntimeComponentIdentity[ctx], ctx] := ctx[table.components]; mut index := 0; while index < len(values) { if std.str_eq(values[index].component_id, classification.value.component_id) == 1 && std.str_eq(values[index].target_id, target_id) == 1 { result.found = 1; result.value = values[index]; return result; } index = index + 1; } return result; }
@@ -316,11 +391,115 @@ func mir_runtime_boundary_authority_table_validate(table: MirRuntimeBoundaryAuth
         mut package_index := 0;
         while package_index < len(packages) { if std.str_eq(packages[package_index].package_id, requirements[requirement_index].package_id) == 1 { package_found = 1; } package_index = package_index + 1; }
         if package_found == 0 { return mir_runtime_validation(0, "runtime_unknown_package_id", ctx); }
+
+        // Phase 17.3: the requirement must name a compiler-owned symbol record.
+        mut requirement_symbol := mir_runtime_symbol_by_id(table, requirements[requirement_index].symbol_id, ctx);
+        if requirement_symbol.found == 0 { return mir_runtime_validation(0, "runtime_requirement_unknown_helper_or_symbol", ctx); }
+        if std.str_eq(requirement_symbol.value.helper_id, requirements[requirement_index].helper_id) == 0 { return mir_runtime_validation(0, "runtime_requirement_unknown_helper_or_symbol", ctx); }
+
+        // The selected symbol and the helper classification must agree on the
+        // owning component, so a requirement cannot re-home a runtime operation.
+        if std.str_eq(requirement_symbol.value.component_id, requirements[requirement_index].component_id) == 0 { return mir_runtime_validation(0, "runtime_requirement_classification_conflict", ctx); }
+        if std.str_eq(classification.value.classification, "obsolete_helper") == 1 { return mir_runtime_validation(0, "runtime_requirement_classification_conflict", ctx); }
+
+        // Requested version range must be non-empty and inside the ABI range.
+        mut requirement_abi := mir_runtime_abi_by_id(table, requirements[requirement_index].runtime_abi_id, ctx);
+        if requirement_abi.found == 0 { return mir_runtime_validation(0, "runtime_requirement_unknown_helper_or_symbol", ctx); }
+        if std.str_eq(requirement_symbol.value.runtime_abi_id, requirements[requirement_index].runtime_abi_id) == 0 { return mir_runtime_validation(0, "runtime_requirement_symbol_version_incompatible", ctx); }
+        if requirements[requirement_index].required_version_min < 1 ||
+           requirements[requirement_index].required_version_max < requirements[requirement_index].required_version_min ||
+           requirements[requirement_index].required_version_min < requirement_abi.value.compatible_version_min ||
+           requirements[requirement_index].required_version_max > requirement_abi.value.compatible_version_max
+        {
+            return mir_runtime_validation(0, "runtime_requirement_symbol_version_incompatible", ctx);
+        }
+
+        // Target, layout, resource, and function ABI identities are carried, not
+        // re-derived, so a mismatch is a compiler defect rather than a backend hint.
+        if std.str_eq(requirements[requirement_index].target_id, table.target_id) == 0 ||
+           std.str_eq(requirements[requirement_index].target_id, requirement_symbol.value.target_id) == 0 ||
+           std.str_eq(requirements[requirement_index].layout_id, requirement_symbol.value.layout_id) == 0 ||
+           std.str_eq(requirements[requirement_index].resource_operation_id, requirement_symbol.value.resource_operation_id) == 0 ||
+           std.str_eq(requirements[requirement_index].function_abi_id, requirement_symbol.value.function_abi_id) == 0
+        {
+            return mir_runtime_validation(0, "runtime_requirement_target_or_layout_mismatch", ctx);
+        }
+        if mir_runtime_call_kind_is_valid(requirements[requirement_index].call_kind) == 0 { return mir_runtime_validation(0, "runtime_requirement_target_or_layout_mismatch", ctx); }
+        if requirements[requirement_index].package_mandatory != 0 && requirements[requirement_index].package_mandatory != 1 { return mir_runtime_validation(0, "runtime_requirement_mismatch", ctx); }
+        if requirements[requirement_index].required != 0 && requirements[requirement_index].required != 1 { return mir_runtime_validation(0, "runtime_requirement_mismatch", ctx); }
+        if requirements[requirement_index].required == 1 && requirement_symbol.value.required == 0 { return mir_runtime_validation(0, "runtime_requirement_classification_conflict", ctx); }
+
+        // Duplicate requirement identities, and two requirements claiming the
+        // same symbol in one program, are conflicts rather than deduplication.
+        mut duplicate_requirement_index := requirement_index + 1;
+        while duplicate_requirement_index < len(requirements) {
+            if std.str_eq(requirements[requirement_index].requirement_id, requirements[duplicate_requirement_index].requirement_id) == 1 { return mir_runtime_validation(0, "runtime_requirement_duplicate_conflict", ctx); }
+            if std.str_eq(requirements[requirement_index].program_id, requirements[duplicate_requirement_index].program_id) == 1 &&
+               std.str_eq(requirements[requirement_index].symbol_id, requirements[duplicate_requirement_index].symbol_id) == 1
+            {
+                return mir_runtime_validation(0, "runtime_requirement_duplicate_conflict", ctx);
+            }
+            duplicate_requirement_index = duplicate_requirement_index + 1;
+        }
+
+        // A requirement no canonical MIR operation reaches must be declared
+        // package-mandatory; otherwise it is unexplained link-time surface.
+        mut reference_count := 0;
+        mut requirement_reference_index := 0;
+        while requirement_reference_index < len(references) {
+            if std.str_eq(references[requirement_reference_index].requirement_id, requirements[requirement_index].requirement_id) == 1 { reference_count = reference_count + 1; }
+            requirement_reference_index = requirement_reference_index + 1;
+        }
+        if reference_count == 0 && requirements[requirement_index].package_mandatory == 0 { return mir_runtime_validation(0, "runtime_requirement_unused_without_package_mandate", ctx); }
         requirement_index = requirement_index + 1;
     }
     mut decision_index := 0; while decision_index < len(decisions) { mut requirement_found := 0; requirement_index = 0; while requirement_index < len(requirements) { if std.str_eq(requirements[requirement_index].requirement_id, decisions[decision_index].requirement_id) == 1 { requirement_found = 1; } requirement_index = requirement_index + 1; } if requirement_found == 0 { return mir_runtime_validation(0, "runtime_compatibility_mismatch", ctx); } decision_index = decision_index + 1; }
     mut plan_index := 0; while plan_index < len(plans) { if plans[plan_index].compatible == 0 { return mir_runtime_validation(0, "runtime_link_plan_unresolved", ctx); } if std.str_eq(plans[plan_index].target_id, table.target_id) == 0 { return mir_runtime_validation(0, "runtime_target_mismatch", ctx); } plan_index = plan_index + 1; }
-    mut reference_index := 0; while reference_index < len(references) { mut helper := mir_runtime_helper_by_id(table, references[reference_index].helper_id, ctx); if helper.found == 0 { return mir_runtime_validation(0, "runtime_metadata_inconsistent_with_canonical_mir", ctx); } reference_index = reference_index + 1; }
+    mut reference_index := 0;
+    while reference_index < len(references) {
+        mut helper := mir_runtime_helper_by_id(table, references[reference_index].helper_id, ctx);
+        if helper.found == 0 { return mir_runtime_validation(0, "runtime_metadata_inconsistent_with_canonical_mir", ctx); }
+        if mir_runtime_field_is_safe(references[reference_index].reference_id) == 0 || mir_runtime_field_is_safe(references[reference_index].mir_operation_id) == 0 { return mir_runtime_validation(0, "runtime_metadata_inconsistent_with_canonical_mir", ctx); }
+
+        // Phase 17.3: a runtime-facing canonical MIR operation without exactly
+        // one owning requirement never reaches the worker, driver, or linker.
+        mut owning := mir_runtime_requirement_by_id(table, references[reference_index].requirement_id, ctx);
+        if owning.found == 0 { return mir_runtime_validation(0, "runtime_requirement_missing_for_mir_operation", ctx); }
+        if std.str_eq(owning.value.helper_id, references[reference_index].helper_id) == 0 { return mir_runtime_validation(0, "runtime_requirement_missing_for_mir_operation", ctx); }
+        mut duplicate_reference_index := reference_index + 1;
+        while duplicate_reference_index < len(references) {
+            if std.str_eq(references[reference_index].reference_id, references[duplicate_reference_index].reference_id) == 1 ||
+               std.str_eq(references[reference_index].mir_operation_id, references[duplicate_reference_index].mir_operation_id) == 1
+            {
+                return mir_runtime_validation(0, "runtime_requirement_duplicate_conflict", ctx);
+            }
+            duplicate_reference_index = duplicate_reference_index + 1;
+        }
+
+        // Reference metadata mirrors its requirement exactly. Divergence would
+        // let a backend pick whichever copy suits the symbol it already resolved.
+        mut reference_symbol := mir_runtime_symbol_by_id(table, references[reference_index].symbol_id, ctx);
+        if reference_symbol.found == 0 || std.str_eq(references[reference_index].symbol_id, owning.value.symbol_id) == 0 { return mir_runtime_validation(0, "runtime_requirement_unknown_helper_or_symbol", ctx); }
+        if std.str_eq(references[reference_index].runtime_abi_id, owning.value.runtime_abi_id) == 0 ||
+           references[reference_index].required_version_min != owning.value.required_version_min ||
+           references[reference_index].required_version_max != owning.value.required_version_max
+        {
+            return mir_runtime_validation(0, "runtime_requirement_symbol_version_incompatible", ctx);
+        }
+        if std.str_eq(references[reference_index].layout_id, owning.value.layout_id) == 0 ||
+           std.str_eq(references[reference_index].resource_operation_id, owning.value.resource_operation_id) == 0 ||
+           std.str_eq(references[reference_index].function_abi_id, owning.value.function_abi_id) == 0 ||
+           std.str_eq(references[reference_index].target_applicability, helper.value.target_applicability) == 0
+        {
+            return mir_runtime_validation(0, "runtime_requirement_target_or_layout_mismatch", ctx);
+        }
+        if mir_runtime_call_kind_is_valid(references[reference_index].call_kind) == 0 ||
+           std.str_eq(references[reference_index].call_kind, owning.value.call_kind) == 0
+        {
+            return mir_runtime_validation(0, "runtime_requirement_target_or_layout_mismatch", ctx);
+        }
+        reference_index = reference_index + 1;
+    }
     return mir_runtime_validation(1, "runtime_authority_valid", ctx);
 }
 
@@ -341,5 +520,26 @@ func mir_serialize_runtime_boundary_authority_table_for_request(table: MirRuntim
     mut index := 0; while index < len(helpers) { output = mir_runtime_append_field(output, "runtime_helper_id", helpers[index].helper_id, ctx); output = mir_runtime_append_field(output, "runtime_helper_operation", helpers[index].operation_id, ctx); index = index + 1; }
     index = 0; while index < len(classifications) { output = mir_runtime_append_field(output, "runtime_helper_classification", classifications[index].classification, ctx); index = index + 1; }
     index = 0; while index < len(symbols) { output = mir_runtime_append_field(output, "runtime_symbol_id", symbols[index].symbol_id, ctx); output = mir_runtime_append_field(output, "runtime_symbol_external_spelling", symbols[index].external_spelling, ctx); output = mir_runtime_append_field(output, "runtime_symbol_version", symbols[index].symbol_version, ctx); index = index + 1; }
+    mut requirements: std.Vector[MirRuntimeRequirement[ctx], ctx] := ctx[table.requirements];
+    mut references: std.Vector[MirRuntimeMirReference[ctx], ctx] := ctx[table.mir_references];
+    index = 0;
+    while index < len(requirements) {
+        output = mir_runtime_append_field(output, "runtime_requirement_id", requirements[index].requirement_id, ctx);
+        output = mir_runtime_append_field(output, "runtime_requirement_symbol_id", requirements[index].symbol_id, ctx);
+        output = mir_runtime_append_field(output, "runtime_requirement_abi_id", requirements[index].runtime_abi_id, ctx);
+        output = mir_runtime_append_field(output, "runtime_requirement_version_min", std.FormatInt(requirements[index].required_version_min), ctx);
+        output = mir_runtime_append_field(output, "runtime_requirement_version_max", std.FormatInt(requirements[index].required_version_max), ctx);
+        output = mir_runtime_append_field(output, "runtime_requirement_call_kind", requirements[index].call_kind, ctx);
+        output = mir_runtime_append_field(output, "runtime_requirement_package_mandatory", std.FormatInt(requirements[index].package_mandatory), ctx);
+        index = index + 1;
+    }
+    index = 0;
+    while index < len(references) {
+        output = mir_runtime_append_field(output, "runtime_mir_reference_id", references[index].reference_id, ctx);
+        output = mir_runtime_append_field(output, "runtime_mir_reference_operation", references[index].mir_operation_id, ctx);
+        output = mir_runtime_append_field(output, "runtime_mir_reference_requirement_id", references[index].requirement_id, ctx);
+        output = mir_runtime_append_field(output, "runtime_mir_reference_call_kind", references[index].call_kind, ctx);
+        index = index + 1;
+    }
     return std.Clone(ctx, output);
 }

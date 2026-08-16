@@ -72,7 +72,7 @@ If more than 100 runs exist, use the paginated Actions API and apply the same ex
 - [x] Patch 17.0 — Opening Inventory and Phase 16 Residual Rebase — DONE
 - [x] Patch 17.1 — Compiler-Owned Runtime Boundary and Helper Classification Authority — DONE
 - [x] Patch 17.2 — Supported Runtime ABI, Symbol Identity, and Versioning — DONE
-- [ ] Patch 17.3 — Runtime Requirements in Canonical MIR and Native Requests
+- [x] Patch 17.3 — Runtime Requirements in Canonical MIR and Native Requests — DONE
 - [ ] Patch 17.4 — Explicit Runtime Packages and Target-Specific Selection
 - [ ] Patch 17.5 — Stable Runtime-Library Imports for Cranelift
 - [ ] Patch 17.6 — Rust Runtime Components and Native Object Integration

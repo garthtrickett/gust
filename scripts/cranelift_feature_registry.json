@@ -3764,6 +3764,50 @@
     "scope_policy": "three_approved_scalar_imports_only_other_helper_symbols_extend_in_later_phase17_patches",
     "next_patch": "17.3"
   },
+  "phase17_runtime_requirement_authority": {
+    "version": "phase17_runtime_requirement_authority_v1",
+    "status": "ready_for_patch17_4",
+    "authority_owner": "compiler/mir_runtime_boundary_authority.gst",
+    "request_owner": "compiler/mir_native_backend_runtime_request.gst",
+    "requirement_policy": "compiler_produced_requirements_only_worker_must_not_invent",
+    "deduplication_policy": "one_requirement_per_program_and_symbol_first_appearance_order",
+    "version_range_policy": "required_range_must_lie_inside_frozen_runtime_abi_range",
+    "unused_requirement_policy": "requirement_without_canonical_mir_reference_must_be_package_mandatory",
+    "carried_identities": [
+      "helper_id",
+      "symbol_id",
+      "runtime_abi_id",
+      "required_version_range",
+      "target_applicability",
+      "layout_id",
+      "resource_operation_id",
+      "function_abi_id"
+    ],
+    "preserved_call_kinds": [
+      "direct_call",
+      "selected_indirect_call",
+      "cleanup_or_destructor",
+      "cross_module_composition",
+      "runtime_module_call"
+    ],
+    "selected_requirements": [
+      {"helper_id": "p17_helper_tiny_host_add_one_i32", "symbol_helper_id": "p17_helper_tiny_host_add_one_i32", "call_kind": "direct_call", "required_version_min": 1, "required_version_max": 1, "package_mandatory": false, "target_applicability": "all_declared_host_targets_from_phase14_target_authority"},
+      {"helper_id": "p17_helper_tiny_host_add_i32", "symbol_helper_id": "p17_helper_tiny_host_add_i32", "call_kind": "direct_call", "required_version_min": 1, "required_version_max": 1, "package_mandatory": false, "target_applicability": "all_declared_host_targets_from_phase14_target_authority"},
+      {"helper_id": "p17_helper_tiny_host_is_positive_i32", "symbol_helper_id": "p17_helper_tiny_host_is_positive_i32", "call_kind": "direct_call", "required_version_min": 1, "required_version_max": 1, "package_mandatory": false, "target_applicability": "all_declared_host_targets_from_phase14_target_authority"}
+    ],
+    "rejection_classes": [
+      "runtime_requirement_unknown_helper_or_symbol",
+      "runtime_requirement_duplicate_conflict",
+      "runtime_requirement_missing_for_mir_operation",
+      "runtime_requirement_unused_without_package_mandate",
+      "runtime_requirement_symbol_version_incompatible",
+      "runtime_requirement_target_or_layout_mismatch",
+      "runtime_requirement_classification_conflict"
+    ],
+    "witness_policy": "stable_requirement_and_canonical_mir_reference_witnesses",
+    "scope_policy": "requirements_for_three_approved_scalar_imports_packages_and_selection_remain_in_patch17_4",
+    "next_patch": "17.4"
+  },
   "phase15_specialized_resource_authority": {
     "version": "phase15_specialized_resource_authority_v1",
     "status": "patch15_11_directory_migrated",

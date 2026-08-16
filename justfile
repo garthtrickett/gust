@@ -158,6 +158,8 @@ guard-pr-fast-ci-surface:
       'just guard-cranelift-phase17-runtime-authority-contract'
       'Phase 17 runtime ABI and symbol versioning'
       'just guard-cranelift-phase17-runtime-symbol-version-contract'
+      'Phase 17 canonical MIR runtime requirements'
+      'just guard-cranelift-phase17-runtime-requirement-contract'
       'phase11-family:'
       'phase11_families:'
       'matrix.family'
@@ -15957,6 +15959,7 @@ guard-cranelift-contract-fast:
     just guard-cranelift-phase17-opening-contract
     just guard-cranelift-phase17-runtime-authority-contract
     just guard-cranelift-phase17-runtime-symbol-version-contract
+    just guard-cranelift-phase17-runtime-requirement-contract
 
 guard-cranelift-phase17-runtime-authority-contract:
     #!/usr/bin/env bash
@@ -15975,6 +15978,15 @@ guard-cranelift-phase17-runtime-symbol-version-contract:
     python3 scripts/cranelift_test_levels.py level guard-cranelift-phase17-runtime-symbol-version-contract |
       grep -F $'guard-cranelift-phase17-runtime-symbol-version-contract\t1\t' >/dev/null
     bash scripts/guard-cranelift-phase17-runtime-symbol-version-contract.sh
+
+guard-cranelift-phase17-runtime-requirement-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 17.3 canonical MIR runtime requirements..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase17-runtime-requirement-contract |
+      grep -F $'guard-cranelift-phase17-runtime-requirement-contract\t1\t' >/dev/null
+    bash scripts/guard-cranelift-phase17-runtime-requirement-contract.sh
 
 guard-cranelift-phase16-abi-authority-contract:
     #!/usr/bin/env bash
