@@ -67,3 +67,4 @@ yarn-error.log*
 /build/guards/cranelift_conditional_branch_native/
 /build/guards/cranelift_mir_to_c_differential_native/
 
+/src/runtime/rust/target/

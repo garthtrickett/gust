@@ -386,6 +386,17 @@ Patch 17.4 freezes the runtime package manifest schema, gives every Phase 14 dec
 
 Patch 17.5 makes Cranelift declare and call each selected stable runtime-library helper through its compiler-owned versioned symbol and explicit runtime package, with the signature derived from the Phase 16 function ABI identity rather than a backend-maintained table. Cranelift and MIR-to-C witnesses must match byte for byte. Legacy per-phase fixture symbol constants are removed by Patch 17.9.
 
+## Phase 17 Rust runtime component authority
+
+- Authority version: `phase17_rust_runtime_authority_v1`
+- Status: `ready_for_patch17_7`
+- Crate: `src/runtime/rust/Cargo.toml`
+- Declared Rust components: `1`
+- Stable ABI-facing exports: `2`
+- Helpers migrated from the Patch 17.1 inventory: `0`
+
+Patch 17.6 supports runtime helpers implemented in Rust as explicit, versioned runtime package components, compiled independently of program compilation with stable unmangled ABI-facing exports and declared panic and allocation boundaries. Patch 17.1 classified zero helpers as `rust_runtime_component`, so this patch establishes the mechanism with one reference component; reclassifying existing retained-C helpers is an operator decision.
+
 ## Registry entries
 
 | ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |

@@ -271,7 +271,7 @@
     "guard-cranelift-phase16-opening-contract": 1,
     "guard-cranelift-phase17-opening-contract": 1,
     "guard-cranelift-phase17-runtime-authority-contract": 1,
-    "guard-cranelift-phase17-runtime-symbol-version-contract": 1, "guard-cranelift-phase17-runtime-requirement-contract": 1, "guard-cranelift-phase17-runtime-package-contract": 1, "guard-cranelift-phase17-runtime-import-contract": 1, "guard-cranelift-phase17-runtime-import-parity": 2,
+    "guard-cranelift-phase17-runtime-symbol-version-contract": 1, "guard-cranelift-phase17-runtime-requirement-contract": 1, "guard-cranelift-phase17-runtime-package-contract": 1, "guard-cranelift-phase17-runtime-import-contract": 1, "guard-cranelift-phase17-runtime-import-parity": 2, "guard-cranelift-phase17-rust-runtime-contract": 1, "guard-cranelift-phase17-rust-runtime-parity": 2,
     "guard-cranelift-phase16-abi-authority-contract": 1,
     "guard-cranelift-phase16-call-mir-contract": 1,
     "guard-cranelift-phase16-call-mir-parity": 2,

@@ -1,0 +1,21 @@
+[package]
+name = "gust_rust_runtime"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+name = "gust_rust_runtime"
+crate-type = ["staticlib"]
+
+[dependencies]
+
+# The panic boundary is a runtime contract, not a build preference. Unwinding
+# must never cross the extern "C" boundary into compiled Gust code, so both
+# profiles abort. Phase 17.6 rejects any component whose declared panic boundary
+# disagrees with this.
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"

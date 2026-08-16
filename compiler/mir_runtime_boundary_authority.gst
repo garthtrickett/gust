@@ -65,6 +65,23 @@ type MirRuntimeComponentIdentity[ctx] struct {
     target_id: str
 }
 
+// Phase 17.6 Rust runtime components. Compiled independently of any program,
+// exporting stable ABI-facing symbols. Rust-internal mangling is never a runtime
+// contract, and the panic and allocation boundaries are declared, not assumed.
+type MirRuntimeRustComponent[ctx] struct {
+    rust_component_id: str,
+    component_id: str,
+    source_ownership: str,
+    exported_symbol_ids: Index[std.Vector[str, ctx], ctx],
+    imported_symbol_ids: Index[std.Vector[str, ctx], ctx],
+    runtime_abi_id: str,
+    target_id: str,
+    target_applicability: str,
+    object_form: str,
+    panic_boundary: str,
+    allocation_boundary: str
+}
+
 // Phase 17.5 import declarations are what Cranelift emits a direct call to. Each
 // one names a compiler-owned versioned symbol and the package that exports it,
 // so the backend never maintains its own symbol spelling or signature table.
@@ -209,6 +226,7 @@ type MirRuntimeBoundaryAuthorityTable[ctx] struct {
     package_provided_symbols: Index[std.Vector[MirRuntimePackageProvidedSymbol[ctx], ctx], ctx],
     package_system_imports: Index[std.Vector[MirRuntimePackageSystemImport[ctx], ctx], ctx],
     import_declarations: Index[std.Vector[MirRuntimeImportDeclaration[ctx], ctx], ctx],
+    rust_components: Index[std.Vector[MirRuntimeRustComponent[ctx], ctx], ctx],
     requirements: Index[std.Vector[MirRuntimeRequirement[ctx], ctx], ctx],
     compatibility_decisions: Index[std.Vector[MirRuntimeCompatibilityDecision[ctx], ctx], ctx],
     link_plans: Index[std.Vector[MirRuntimeLinkPlanHandoff[ctx], ctx], ctx],
@@ -225,6 +243,7 @@ type MirRuntimeCompatibilityQuery[ctx] struct { compatible: int, reason_code: st
 type MirRuntimeLinkPlanQuery[ctx] struct { found: int, value: MirRuntimeLinkPlanHandoff[ctx] }
 type MirRuntimePackageSelection[ctx] struct { found: int, reason_code: str, value: MirRuntimePackageIdentity[ctx] }
 type MirRuntimePackageManifestQuery[ctx] struct { valid: int, reason_code: str, member_count: int, provided_symbol_count: int, system_import_count: int }
+type MirRuntimeRustComponentQuery[ctx] struct { found: int, value: MirRuntimeRustComponent[ctx] }
 type MirRuntimeImportQuery[ctx] struct { found: int, value: MirRuntimeImportDeclaration[ctx] }
 type MirRuntimeRequirementQuery[ctx] struct { found: int, value: MirRuntimeRequirement[ctx] }
 type MirRuntimeMirReferenceQuery[ctx] struct { found: int, value: MirRuntimeMirReference[ctx] }
@@ -247,6 +266,7 @@ func mir_runtime_empty_requirements(ctx: &Arena) Index[std.Vector[MirRuntimeRequ
 func mir_runtime_empty_package_members(ctx: &Arena) Index[std.Vector[MirRuntimePackageMember[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimePackageMember[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimePackageMember[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
 func mir_runtime_empty_package_provided_symbols(ctx: &Arena) Index[std.Vector[MirRuntimePackageProvidedSymbol[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimePackageProvidedSymbol[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimePackageProvidedSymbol[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
 func mir_runtime_empty_package_system_imports(ctx: &Arena) Index[std.Vector[MirRuntimePackageSystemImport[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimePackageSystemImport[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimePackageSystemImport[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
+func mir_runtime_empty_rust_components(ctx: &Arena) Index[std.Vector[MirRuntimeRustComponent[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimeRustComponent[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimeRustComponent[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
 func mir_runtime_empty_import_declarations(ctx: &Arena) Index[std.Vector[MirRuntimeImportDeclaration[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimeImportDeclaration[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimeImportDeclaration[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
 func mir_runtime_empty_compatibility(ctx: &Arena) Index[std.Vector[MirRuntimeCompatibilityDecision[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimeCompatibilityDecision[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimeCompatibilityDecision[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
 func mir_runtime_empty_link_plans(ctx: &Arena) Index[std.Vector[MirRuntimeLinkPlanHandoff[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimeLinkPlanHandoff[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimeLinkPlanHandoff[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
@@ -267,6 +287,28 @@ func mir_runtime_helper_classification_is_valid(value: str) int {
     if std.str_eq(value, "obsolete_helper") == 1 { return 1; }
     return 0;
 }
+
+// Unwinding must never cross back into compiled Gust. Only abort-style
+// boundaries are supported, so a component declaring anything else is rejected.
+func mir_runtime_panic_boundary_is_valid(value: str) int {
+    if std.str_eq(value, "abort_no_unwind_across_ffi") == 1 { return 1; }
+    if std.str_eq(value, "catch_unwind_converted_to_explicit_error") == 1 { return 1; }
+    return 0;
+}
+
+func mir_runtime_allocation_boundary_is_valid(value: str) int {
+    if std.str_eq(value, "no_allocation_caller_owns_all_memory") == 1 { return 1; }
+    if std.str_eq(value, "allocates_in_caller_supplied_arena") == 1 { return 1; }
+    return 0;
+}
+
+func mir_runtime_rust_object_form_is_valid(value: str) int {
+    if std.str_eq(value, "static_library") == 1 { return 1; }
+    if std.str_eq(value, "deterministic_object_set") == 1 { return 1; }
+    return 0;
+}
+
+func mir_runtime_rust_component_for(table: MirRuntimeBoundaryAuthorityTable[ctx], component_id: str, ctx: &Arena) MirRuntimeRustComponentQuery[ctx] { mut result: MirRuntimeRustComponentQuery[ctx]; result.found = 0; mut values: std.Vector[MirRuntimeRustComponent[ctx], ctx] := ctx[table.rust_components]; mut index := 0; while index < len(values) { if std.str_eq(values[index].component_id, component_id) == 1 { result.found = 1; result.value = values[index]; return result; } index = index + 1; } return result; }
 
 // Phase 17.4 package forms are explicitly enumerated. A form outside this set is
 // rejected rather than handed to the linker as an unclassified native artifact.
@@ -299,6 +341,7 @@ func mir_runtime_symbol_identity_id(helper_id: str, symbol_version: str, target_
 func mir_runtime_component_identity_id(component_kind: str, target_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_component:v1:kind="; value = std.Concat(value, component_kind); value = std.Concat(value, ":target="); value = std.Concat(value, target_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
 func mir_runtime_package_identity_id(target_id: str, package_version: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_package:v1:target="; value = std.Concat(value, target_id); value = std.Concat(value, ":version="); value = std.Concat(value, package_version); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
 func mir_runtime_requirement_id(program_id: str, helper_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_requirement:v1:program="; value = std.Concat(value, program_id); value = std.Concat(value, ":helper="); value = std.Concat(value, helper_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
+func mir_runtime_rust_component_id(component_id: str, runtime_abi_id: str, target_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_rust_component:v1:component="; value = std.Concat(value, component_id); value = std.Concat(value, ":abi="); value = std.Concat(value, runtime_abi_id); value = std.Concat(value, ":target="); value = std.Concat(value, target_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
 func mir_runtime_import_declaration_id(helper_id: str, symbol_version: str, target_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_import:v1:helper="; value = std.Concat(value, helper_id); value = std.Concat(value, ":version="); value = std.Concat(value, symbol_version); value = std.Concat(value, ":target="); value = std.Concat(value, target_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
 func mir_runtime_package_member_id(package_id: str, component_id: str, link_order: int, ctx: &Arena) str { mut value := "runtime_package_member:v1:package="; value = std.Concat(value, package_id); value = std.Concat(value, ":component="); value = std.Concat(value, component_id); value = std.Concat(value, ":link_order="); value = std.Concat(value, std.FormatInt(link_order)); return std.Clone(ctx, value); }
 func mir_runtime_package_provided_symbol_id(package_id: str, symbol_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_package_provided:v1:package="; value = std.Concat(value, package_id); value = std.Concat(value, ":symbol="); value = std.Concat(value, symbol_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
@@ -327,6 +370,7 @@ func mir_runtime_make_empty_table(target_id: str, target_triple: str, ctx: &Aren
     table.package_provided_symbols = mir_runtime_empty_package_provided_symbols(ctx);
     table.package_system_imports = mir_runtime_empty_package_system_imports(ctx);
     table.import_declarations = mir_runtime_empty_import_declarations(ctx);
+    table.rust_components = mir_runtime_empty_rust_components(ctx);
     table.requirements = mir_runtime_empty_requirements(ctx);
     table.compatibility_decisions = mir_runtime_empty_compatibility(ctx);
     table.link_plans = mir_runtime_empty_link_plans(ctx);
@@ -343,6 +387,7 @@ func mir_runtime_table_with_package(table: MirRuntimeBoundaryAuthorityTable[ctx]
 func mir_runtime_table_with_package_member(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimePackageMember[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimePackageMember[ctx], ctx] := ctx[table.package_members]; values.Push(value); ctx.Set(table.package_members, values); return table; }
 func mir_runtime_table_with_package_provided_symbol(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimePackageProvidedSymbol[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimePackageProvidedSymbol[ctx], ctx] := ctx[table.package_provided_symbols]; values.Push(value); ctx.Set(table.package_provided_symbols, values); return table; }
 func mir_runtime_table_with_package_system_import(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimePackageSystemImport[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimePackageSystemImport[ctx], ctx] := ctx[table.package_system_imports]; values.Push(value); ctx.Set(table.package_system_imports, values); return table; }
+func mir_runtime_table_with_rust_component(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimeRustComponent[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimeRustComponent[ctx], ctx] := ctx[table.rust_components]; values.Push(value); ctx.Set(table.rust_components, values); return table; }
 func mir_runtime_table_with_import_declaration(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimeImportDeclaration[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimeImportDeclaration[ctx], ctx] := ctx[table.import_declarations]; values.Push(value); ctx.Set(table.import_declarations, values); return table; }
 func mir_runtime_table_with_requirement(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimeRequirement[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimeRequirement[ctx], ctx] := ctx[table.requirements]; values.Push(value); ctx.Set(table.requirements, values); return table; }
 func mir_runtime_table_with_compatibility(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimeCompatibilityDecision[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimeCompatibilityDecision[ctx], ctx] := ctx[table.compatibility_decisions]; values.Push(value); ctx.Set(table.compatibility_decisions, values); return table; }
@@ -756,6 +801,77 @@ func mir_runtime_boundary_authority_table_validate(table: MirRuntimeBoundaryAuth
         if ordered_index != len(plan_components) { return mir_runtime_validation(0, "runtime_package_nondeterministic_component_order", ctx); }
         plan_index = plan_index + 1;
     }
+    // Phase 17.6: Rust components are explicit, versioned package members whose
+    // exports are compiler-owned symbols and whose boundaries are declared.
+    mut rust_components: std.Vector[MirRuntimeRustComponent[ctx], ctx] := ctx[table.rust_components];
+    mut rust_index := 0;
+    while rust_index < len(rust_components) {
+        if mir_runtime_field_is_safe(rust_components[rust_index].rust_component_id) == 0 || mir_runtime_field_is_safe(rust_components[rust_index].source_ownership) == 0 { return mir_runtime_validation(0, "runtime_rust_undeclared_export", ctx); }
+
+        // The Rust component must be a declared component for this target.
+        mut rust_component_found := 0;
+        mut rust_component_index := 0;
+        while rust_component_index < len(components) { if std.str_eq(components[rust_component_index].component_id, rust_components[rust_index].component_id) == 1 && std.str_eq(components[rust_component_index].target_id, table.target_id) == 1 { rust_component_found = 1; } rust_component_index = rust_component_index + 1; }
+        if rust_component_found == 0 { return mir_runtime_validation(0, "runtime_rust_abi_or_target_mismatch", ctx); }
+        if std.str_eq(rust_components[rust_index].target_id, table.target_id) == 0 { return mir_runtime_validation(0, "runtime_rust_abi_or_target_mismatch", ctx); }
+        mut rust_abi := mir_runtime_abi_by_id(table, rust_components[rust_index].runtime_abi_id, ctx);
+        if rust_abi.found == 0 { return mir_runtime_validation(0, "runtime_rust_abi_or_target_mismatch", ctx); }
+        if mir_runtime_rust_object_form_is_valid(rust_components[rust_index].object_form) == 0 { return mir_runtime_validation(0, "runtime_rust_abi_or_target_mismatch", ctx); }
+
+        // Unwinding across the FFI boundary is not a supported runtime contract.
+        if mir_runtime_panic_boundary_is_valid(rust_components[rust_index].panic_boundary) == 0 { return mir_runtime_validation(0, "runtime_rust_unwind_boundary_violation", ctx); }
+        if mir_runtime_allocation_boundary_is_valid(rust_components[rust_index].allocation_boundary) == 0 { return mir_runtime_validation(0, "runtime_rust_unwind_boundary_violation", ctx); }
+
+        // Every export must be a compiler-owned symbol belonging to this
+        // component. Rust-internal mangling is never the runtime contract.
+        mut rust_exports: std.Vector[str, ctx] := ctx[rust_components[rust_index].exported_symbol_ids];
+        if len(rust_exports) == 0 { return mir_runtime_validation(0, "runtime_rust_undeclared_export", ctx); }
+        mut export_index := 0;
+        while export_index < len(rust_exports) {
+            mut exported := mir_runtime_symbol_by_id(table, rust_exports[export_index], ctx);
+            if exported.found == 0 { return mir_runtime_validation(0, "runtime_rust_undeclared_export", ctx); }
+            if std.str_eq(exported.value.component_id, rust_components[rust_index].component_id) == 0 { return mir_runtime_validation(0, "runtime_rust_undeclared_export", ctx); }
+
+            // Two components claiming the same symbol is a link-time ambiguity
+            // the compiler resolves here, not something the linker discovers.
+            mut other_index := 0;
+            while other_index < len(rust_components) {
+                if other_index != rust_index {
+                    mut other_exports: std.Vector[str, ctx] := ctx[rust_components[other_index].exported_symbol_ids];
+                    mut other_export_index := 0;
+                    while other_export_index < len(other_exports) {
+                        if std.str_eq(other_exports[other_export_index], rust_exports[export_index]) == 1 { return mir_runtime_validation(0, "runtime_rust_duplicate_symbol_provider", ctx); }
+                        other_export_index = other_export_index + 1;
+                    }
+                }
+                other_index = other_index + 1;
+            }
+            export_index = export_index + 1;
+        }
+
+        // Imports must also be compiler-owned; a hidden dependency on generated
+        // C glue is exactly what this phase exists to remove.
+        mut rust_imports: std.Vector[str, ctx] := ctx[rust_components[rust_index].imported_symbol_ids];
+        mut import_symbol_index := 0;
+        while import_symbol_index < len(rust_imports) {
+            if std.str_find(rust_imports[import_symbol_index], "generated_c_shim") != 0 - 1 { return mir_runtime_validation(0, "runtime_rust_generated_c_glue_dependency", ctx); }
+            mut imported_symbol := mir_runtime_symbol_by_id(table, rust_imports[import_symbol_index], ctx);
+            if imported_symbol.found == 0 { return mir_runtime_validation(0, "runtime_rust_generated_c_glue_dependency", ctx); }
+            import_symbol_index = import_symbol_index + 1;
+        }
+
+        mut duplicate_rust_index := rust_index + 1;
+        while duplicate_rust_index < len(rust_components) {
+            if std.str_eq(rust_components[rust_index].rust_component_id, rust_components[duplicate_rust_index].rust_component_id) == 1 ||
+               std.str_eq(rust_components[rust_index].component_id, rust_components[duplicate_rust_index].component_id) == 1
+            {
+                return mir_runtime_validation(0, "runtime_rust_duplicate_symbol_provider", ctx);
+            }
+            duplicate_rust_index = duplicate_rust_index + 1;
+        }
+        rust_index = rust_index + 1;
+    }
+
     // Phase 17.5: every declared import must resolve to a compiler-owned symbol,
     // a stable-library classification, and a package that actually exports it.
     mut imports: std.Vector[MirRuntimeImportDeclaration[ctx], ctx] := ctx[table.import_declarations];
@@ -906,6 +1022,16 @@ func mir_serialize_runtime_boundary_authority_table_for_request(table: MirRuntim
     while index < len(system_imports) {
         output = mir_runtime_append_field(output, "runtime_package_system_import_id", system_imports[index].import_id, ctx);
         output = mir_runtime_append_field(output, "runtime_package_system_import_spelling", system_imports[index].external_spelling, ctx);
+        index = index + 1;
+    }
+    mut rust_components: std.Vector[MirRuntimeRustComponent[ctx], ctx] := ctx[table.rust_components];
+    index = 0;
+    while index < len(rust_components) {
+        output = mir_runtime_append_field(output, "runtime_rust_component_id", rust_components[index].rust_component_id, ctx);
+        output = mir_runtime_append_field(output, "runtime_rust_object_form", rust_components[index].object_form, ctx);
+        output = mir_runtime_append_field(output, "runtime_rust_panic_boundary", rust_components[index].panic_boundary, ctx);
+        output = mir_runtime_append_field(output, "runtime_rust_allocation_boundary", rust_components[index].allocation_boundary, ctx);
+        output = mir_runtime_append_field(output, "runtime_rust_source_ownership", rust_components[index].source_ownership, ctx);
         index = index + 1;
     }
     mut imports: std.Vector[MirRuntimeImportDeclaration[ctx], ctx] := ctx[table.import_declarations];

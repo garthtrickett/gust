@@ -3890,6 +3890,46 @@
     "scope_policy": "stable_runtime_library_imports_only_legacy_fixture_symbol_constants_removed_in_patch17_9",
     "next_patch": "17.6"
   },
+  "phase17_rust_runtime_authority": {
+    "version": "phase17_rust_runtime_authority_v1",
+    "status": "ready_for_patch17_7",
+    "authority_owner": "compiler/mir_runtime_boundary_authority.gst",
+    "request_owner": "compiler/mir_rust_runtime_request.gst",
+    "worker_owner": "compiler/experiments/cranelift/src/rust_runtime.rs",
+    "crate_owner": "src/runtime/rust/Cargo.toml",
+    "request_format": "gust.compiler_rust_runtime.v1",
+    "witness_format": "gust.rust_runtime_witness.v1",
+    "linkage_policy": "independently_compiled_component_no_source_specific_c_generation",
+    "mangling_policy": "stable_abi_facing_exports_rust_internal_mangling_is_not_a_runtime_contract",
+    "independent_compilation_policy": "rust_components_compile_separately_from_program_compilation",
+    "panic_boundaries": [
+      "abort_no_unwind_across_ffi",
+      "catch_unwind_converted_to_explicit_error"
+    ],
+    "allocation_boundaries": [
+      "no_allocation_caller_owns_all_memory",
+      "allocates_in_caller_supplied_arena"
+    ],
+    "object_forms": [
+      "static_library",
+      "deterministic_object_set"
+    ],
+    "selected_components": [
+      {"component_id": "runtime_component:rust_scalar_support", "source_ownership": "repository_owned_src_runtime_rust", "source_path": "src/runtime/rust/src/lib.rs", "exported_spellings": ["gust_rt_checked_add_i32", "gust_rt_saturating_add_i32"], "object_form": "static_library", "panic_boundary": "abort_no_unwind_across_ffi", "allocation_boundary": "no_allocation_caller_owns_all_memory", "target_applicability": "all_declared_host_targets_from_phase14_target_authority"}
+    ],
+    "migrated_helper_count": 0,
+    "migration_note": "phase17_1_classified_zero_helpers_as_rust_runtime_component_so_this_patch_establishes_the_mechanism_with_one_reference_component_reclassification_of_existing_retained_c_helpers_is_an_operator_decision",
+    "rejection_classes": [
+      "runtime_rust_undeclared_export",
+      "runtime_rust_unwind_boundary_violation",
+      "runtime_rust_abi_or_target_mismatch",
+      "runtime_rust_duplicate_symbol_provider",
+      "runtime_rust_generated_c_glue_dependency"
+    ],
+    "witness_policy": "cranelift_and_mir_to_c_rust_runtime_witnesses_must_match_byte_for_byte",
+    "scope_policy": "reference_rust_component_only_retained_c_objects_remain_in_patch17_7",
+    "next_patch": "17.7"
+  },
   "phase15_specialized_resource_authority": {
     "version": "phase15_specialized_resource_authority_v1",
     "status": "patch15_11_directory_migrated",
