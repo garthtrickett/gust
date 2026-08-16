@@ -352,6 +352,17 @@ Patch 17.1 establishes compiler-owned runtime identities, exactly-one helper cla
 
 Patch 17.2 freezes the runtime ABI on every Phase 14 declared target and assigns compiler-owned, versioned identities to the three approved scalar runtime imports. Other helper symbols remain owned by their later Phase 17 migration patches.
 
+## Phase 17 canonical MIR runtime requirement authority
+
+- Authority version: `phase17_runtime_requirement_authority_v1`
+- Status: `ready_for_patch17_4`
+- Carried identities per requirement: `8`
+- Preserved runtime call shapes: `5`
+- Registry-derived selected requirements: `3`
+- Call kinds in the selected inventory: `direct_call`
+
+Patch 17.3 carries compiler-produced runtime requirements through canonical MIR references and a deterministic, deduplicated native request table. The worker validates these rows and rejects malformed runtime metadata; it never infers runtime ownership from unresolved symbols, generated C, or linker behaviour. Runtime packages and target-specific selection remain owned by Patch 17.4.
+
 ## Registry entries
 
 | ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |

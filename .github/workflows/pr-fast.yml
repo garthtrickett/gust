@@ -150,6 +150,9 @@ jobs:
       - name: Phase 17 runtime ABI and symbol versioning
         run: just guard-cranelift-phase17-runtime-symbol-version-contract
 
+      - name: Phase 17 canonical MIR runtime requirements
+        run: just guard-cranelift-phase17-runtime-requirement-contract
+
       - name: Upload Gust build outputs
         uses: actions/upload-artifact@v4
         with:

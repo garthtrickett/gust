@@ -25,6 +25,7 @@ TOP_FIELDS = {
     "phase16_abi_composition_authority",
     "phase17_runtime_authority",
     "phase17_runtime_symbol_authority",
+    "phase17_runtime_requirement_authority",
     "phase16_deferred_residue_audit",
     "phase16_closure",
     "phase15_deferred_residue_audit",
@@ -853,6 +854,36 @@ PHASE17_SELECTED_VERSIONED_SYMBOLS = {
         "tiny_host_is_positive_i32", "signature:i32_to_i32"
     ),
 }
+
+PHASE17_RUNTIME_REQUIREMENT_AUTHORITY_FIELDS = {
+    "version", "status", "authority_owner", "request_owner",
+    "requirement_policy", "deduplication_policy", "version_range_policy",
+    "unused_requirement_policy", "carried_identities",
+    "preserved_call_kinds", "selected_requirements", "rejection_classes",
+    "witness_policy", "scope_policy", "next_patch",
+}
+PHASE17_RUNTIME_REQUIREMENT_RECORD_FIELDS = {
+    "helper_id", "symbol_helper_id", "call_kind", "required_version_min",
+    "required_version_max", "package_mandatory", "target_applicability",
+}
+PHASE17_RUNTIME_CARRIED_IDENTITIES = (
+    "helper_id", "symbol_id", "runtime_abi_id", "required_version_range",
+    "target_applicability", "layout_id", "resource_operation_id",
+    "function_abi_id",
+)
+PHASE17_RUNTIME_PRESERVED_CALL_KINDS = (
+    "direct_call", "selected_indirect_call", "cleanup_or_destructor",
+    "cross_module_composition", "runtime_module_call",
+)
+PHASE17_RUNTIME_REQUIREMENT_REJECTIONS = (
+    "runtime_requirement_unknown_helper_or_symbol",
+    "runtime_requirement_duplicate_conflict",
+    "runtime_requirement_missing_for_mir_operation",
+    "runtime_requirement_unused_without_package_mandate",
+    "runtime_requirement_symbol_version_incompatible",
+    "runtime_requirement_target_or_layout_mismatch",
+    "runtime_requirement_classification_conflict",
+)
 
 PHASE14_LAYOUT_AUTHORITY_FIELDS = {
     "version", "status", "authority_owner", "table_format",
@@ -2209,6 +2240,92 @@ def validate_phase17_runtime_symbol_authority_structure(registry):
     return authority
 
 
+def validate_phase17_runtime_requirement_authority_structure(registry):
+    authority = registry["phase17_runtime_requirement_authority"]
+    require(isinstance(authority, dict)
+            and set(authority)
+            == PHASE17_RUNTIME_REQUIREMENT_AUTHORITY_FIELDS,
+            "Phase 17 runtime requirement authority fields drifted")
+    require(authority["version"] == "phase17_runtime_requirement_authority_v1"
+            and authority["status"] == "ready_for_patch17_4"
+            and authority["authority_owner"]
+            == "compiler/mir_runtime_boundary_authority.gst"
+            and authority["request_owner"]
+            == "compiler/mir_native_backend_runtime_request.gst",
+            "Phase 17 runtime requirement authority ownership drifted")
+    require(tuple(authority["carried_identities"])
+            == PHASE17_RUNTIME_CARRIED_IDENTITIES,
+            "Phase 17 runtime requirement carried identities drifted")
+    require(tuple(authority["preserved_call_kinds"])
+            == PHASE17_RUNTIME_PRESERVED_CALL_KINDS,
+            "Phase 17 runtime requirement call-kind coverage drifted")
+    require(tuple(authority["rejection_classes"])
+            == PHASE17_RUNTIME_REQUIREMENT_REJECTIONS,
+            "Phase 17 runtime requirement rejection inventory drifted")
+
+    # Requirements are derived from the Phase 17.2 selected symbol inventory, so
+    # this patch cannot silently widen the migrated runtime surface.
+    symbol_authority = registry["phase17_runtime_symbol_authority"]
+    selected_symbols = {
+        row["helper_id"] for row in symbol_authority["selected_symbols"]
+    }
+    abi_rows = symbol_authority["supported_abis"]
+    requirement_rows = authority["selected_requirements"]
+    require(isinstance(requirement_rows, list)
+            and len(requirement_rows) == len(selected_symbols),
+            "Phase 17 selected requirement coverage drifted")
+    seen = set()
+    for index, row in enumerate(requirement_rows):
+        context = (
+            f"phase17_runtime_requirement_authority.selected_requirements"
+            f"[{index}]"
+        )
+        require(isinstance(row, dict)
+                and set(row) == PHASE17_RUNTIME_REQUIREMENT_RECORD_FIELDS,
+                f"{context} fields drifted")
+        helper_id = row["helper_id"]
+        require(helper_id in selected_symbols and helper_id not in seen,
+                f"{context} helper is unknown or duplicated")
+        require(row["symbol_helper_id"] == helper_id,
+                f"{helper_id}: requirement does not name its selected symbol")
+        require(row["call_kind"] in PHASE17_RUNTIME_PRESERVED_CALL_KINDS,
+                f"{helper_id}: requirement call kind is not preserved")
+        require(row["target_applicability"] == PHASE17_TARGET_APPLICABILITY,
+                f"{helper_id}: requirement target applicability drifted")
+        require(row["package_mandatory"] is False,
+                f"{helper_id}: selected requirement must be MIR-reached")
+        minimum = row["required_version_min"]
+        maximum = row["required_version_max"]
+        require(isinstance(minimum, int) and isinstance(maximum, int)
+                and not isinstance(minimum, bool)
+                and not isinstance(maximum, bool)
+                and 1 <= minimum <= maximum,
+                f"{helper_id}: required version range is not well formed")
+        for abi in abi_rows:
+            require(minimum >= abi["compatible_version_min"]
+                    and maximum <= abi["compatible_version_max"],
+                    f"{helper_id}: required version range escapes the frozen "
+                    f"ABI range for {abi['target_triple']}")
+        seen.add(helper_id)
+    require(seen == selected_symbols,
+            "Phase 17 selected requirement inventory is incomplete")
+    require(authority["requirement_policy"]
+            == "compiler_produced_requirements_only_worker_must_not_invent"
+            and authority["deduplication_policy"]
+            == "one_requirement_per_program_and_symbol_first_appearance_order"
+            and authority["version_range_policy"]
+            == "required_range_must_lie_inside_frozen_runtime_abi_range"
+            and authority["unused_requirement_policy"]
+            == "requirement_without_canonical_mir_reference_must_be_package_mandatory"
+            and authority["witness_policy"]
+            == "stable_requirement_and_canonical_mir_reference_witnesses"
+            and authority["scope_policy"]
+            == "requirements_for_three_approved_scalar_imports_packages_and_selection_remain_in_patch17_4"
+            and authority["next_patch"] == "17.4",
+            "Phase 17 runtime requirement policies drifted")
+    return authority
+
+
 def validate_phase14_layout_authority_structure(registry):
     authority = registry["phase14_layout_authority"]
     require(
@@ -3268,6 +3385,29 @@ def validate():
     require(set(phase17_symbol_record_schema.get("required", []))
             == PHASE17_RUNTIME_SYMBOL_RECORD_FIELDS,
             "schema Phase 17 runtime symbol record fields drifted")
+    phase17_requirement_authority_schema = definitions.get(
+        "phase17_runtime_requirement_authority", {}
+    )
+    require(
+        set(phase17_requirement_authority_schema.get("required", []))
+        == PHASE17_RUNTIME_REQUIREMENT_AUTHORITY_FIELDS,
+        "schema Phase 17 runtime requirement authority fields drifted",
+    )
+    require(
+        phase17_requirement_authority_schema.get("additionalProperties")
+        is False,
+        "schema Phase 17 runtime requirement authority must reject unknown fields",
+    )
+    phase17_requirement_record_schema = definitions.get(
+        "phase17_runtime_requirement_record", {}
+    )
+    require(set(phase17_requirement_record_schema.get("required", []))
+            == PHASE17_RUNTIME_REQUIREMENT_RECORD_FIELDS,
+            "schema Phase 17 runtime requirement record fields drifted")
+    require(
+        phase17_requirement_record_schema.get("additionalProperties") is False,
+        "schema Phase 17 runtime requirement record must reject unknown fields",
+    )
     phase14_authority_schema = definitions.get(
         "phase14_layout_authority",
         {},
@@ -3459,6 +3599,7 @@ def validate():
     validate_phase17_opening_snapshot_structure(registry)
     validate_phase17_runtime_authority_structure(registry)
     validate_phase17_runtime_symbol_authority_structure(registry)
+    validate_phase17_runtime_requirement_authority_structure(registry)
     validate_phase14_layout_authority_structure(registry)
     validate_phase14_primitive_layout_structure(registry)
     validate_phase14_integer_conversion_structure(registry)
@@ -9316,6 +9457,26 @@ def phase17_runtime_symbol_authority_summary_lines(registry):
     ]
 
 
+def phase17_runtime_requirement_authority_summary_lines(registry):
+    authority = validate_phase17_runtime_requirement_authority_structure(registry)
+    call_kinds = sorted({
+        row["call_kind"] for row in authority["selected_requirements"]
+    })
+    return [
+        "## Phase 17 canonical MIR runtime requirement authority",
+        "",
+        f"- Authority version: `{authority['version']}`",
+        f"- Status: `{authority['status']}`",
+        f"- Carried identities per requirement: `{len(authority['carried_identities'])}`",
+        f"- Preserved runtime call shapes: `{len(authority['preserved_call_kinds'])}`",
+        f"- Registry-derived selected requirements: `{len(authority['selected_requirements'])}`",
+        f"- Call kinds in the selected inventory: `{', '.join(call_kinds)}`",
+        "",
+        "Patch 17.3 carries compiler-produced runtime requirements through canonical MIR references and a deterministic, deduplicated native request table. The worker validates these rows and rejects malformed runtime metadata; it never infers runtime ownership from unresolved symbols, generated C, or linker behaviour. Runtime packages and target-specific selection remain owned by Patch 17.4.",
+        "",
+    ]
+
+
 def render(registry):
     entries = registry["entries"]
     totals = derived_totals(registry)
@@ -9369,6 +9530,7 @@ def render(registry):
         *phase17_opening_summary_lines(registry),
         *phase17_runtime_authority_summary_lines(registry),
         *phase17_runtime_symbol_authority_summary_lines(registry),
+        *phase17_runtime_requirement_authority_summary_lines(registry),
         "## Registry entries", "",
         "| ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |",
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
