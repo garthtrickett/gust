@@ -108,6 +108,27 @@ The Phase 17 opening and closure guards consume this historical record. These ro
 - [x] Patch 16.14 — Deferred Residue and ABI-Coverage Audit — DONE
 - [x] Patch 16.15 — Phase 16 Closure — DONE
 
+## Immutable Phase 15 Completion Record
+
+The Phase 16 closure guard consumes this historical record transitively. These rows describe the already-closed Phase 15 parent and are not active Phase 17 work.
+
+- [x] Patch 15.0 — Opening Inventory and Phase 14 Residual Rebase — DONE
+- [x] Patch 15.1 — Compiler-Owned Resource and Lifetime Authority — DONE
+- [x] Patch 15.2 — Resource Values in Canonical MIR — DONE
+- [x] Patch 15.3 — Move-State Transitions and Use-After-Move Enforcement — DONE
+- [x] Patch 15.4 — Resource Reassignment Semantics — DONE
+- [x] Patch 15.5 — Cleanup Insertion at Normal Scope Exits — DONE
+- [x] Patch 15.6 — Cleanup at Early Returns and Structured Exits — DONE
+- [x] Patch 15.7 — Destructor Scheduling and Exactly-Once Destruction — DONE
+- [x] Patch 15.8 — Manual Close Versus Deferred Cleanup — DONE
+- [x] Patch 15.9 — Conditional and Loop-Carried Resource States — DONE
+- [x] Patch 15.10 — Resource Metadata and Request Validation — DONE
+- [x] Patch 15.11 — Directory and Selected Specialized Resource Kinds — DONE
+- [x] Patch 15.12 — Panic and Failure Cleanup Policy — DONE
+- [x] Patch 15.13 — Cross-Feature Resource Composition and Complete Differential — DONE
+- [x] Patch 15.14 — Deferred Residue and Resource-Coverage Audit — DONE
+- [x] Patch 15.15 — Phase 15 Closure — DONE
+
 ---
 
 ## Purpose
