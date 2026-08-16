@@ -21,6 +21,7 @@
     "phase17_runtime_symbol_authority",
     "phase17_runtime_requirement_authority",
     "phase17_runtime_package_authority",
+    "phase17_runtime_import_authority",
     "phase16_deferred_residue_audit",
     "phase16_closure",
     "phase15_deferred_residue_audit",
@@ -270,6 +271,9 @@
     "phase17_runtime_package_authority": {
       "$ref": "#/$defs/phase17_runtime_package_authority"
     },
+    "phase17_runtime_import_authority": {
+      "$ref": "#/$defs/phase17_runtime_import_authority"
+    },
     "phase16_deferred_residue_audit": {
       "$ref": "#/$defs/phase16_deferred_residue_audit"
     },
@@ -435,6 +439,45 @@
         "witness_policy": {"const": "stable_package_manifest_and_target_selection_witnesses"},
         "scope_policy": {"const": "packages_for_three_approved_scalar_imports_cranelift_import_emission_remains_in_patch17_5"},
         "next_patch": {"const": "17.5"}
+      }
+    },
+    "phase17_runtime_import_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["helper_id", "external_spelling", "symbol_version", "function_abi_identity", "component_id", "side_effect_policy", "failure_policy", "target_applicability"],
+      "properties": {
+        "helper_id": {"type": "string", "pattern": "^p17_helper_"},
+        "external_spelling": {"type": "string", "minLength": 1},
+        "symbol_version": {"const": "gust-runtime-symbol-v1"},
+        "function_abi_identity": {"type": "string", "pattern": "^function_abi:runtime:"},
+        "component_id": {"const": "runtime_component:approved_scalar_imports"},
+        "side_effect_policy": {"enum": ["pure_scalar_no_side_effects", "observable_side_effects", "allocates_in_caller_arena"]},
+        "failure_policy": {"enum": ["total_cannot_fail", "returns_explicit_error", "aborts_process_on_failure"]},
+        "target_applicability": {"const": "all_declared_host_targets_from_phase14_target_authority"}
+      }
+    },
+    "phase17_runtime_import_authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "status", "authority_owner", "request_owner", "worker_owner", "request_format", "witness_format", "linkage_policy", "backend_table_policy", "package_export_policy", "side_effect_policies", "failure_policies", "selected_imports", "rejection_classes", "witness_policy", "scope_policy", "next_patch"],
+      "properties": {
+        "version": {"const": "phase17_runtime_import_authority_v1"},
+        "status": {"const": "ready_for_patch17_6"},
+        "authority_owner": {"const": "compiler/mir_runtime_boundary_authority.gst"},
+        "request_owner": {"const": "compiler/mir_runtime_import_request.gst"},
+        "worker_owner": {"const": "compiler/experiments/cranelift/src/runtime_import.rs"},
+        "request_format": {"const": "gust.compiler_runtime_import.v1"},
+        "witness_format": {"const": "gust.runtime_import_witness.v1"},
+        "linkage_policy": {"const": "direct_external_call_no_generated_c_glue"},
+        "backend_table_policy": {"const": "backend_holds_no_symbol_spelling_or_signature_table_signature_derived_from_compiler_function_abi"},
+        "package_export_policy": {"const": "selected_package_must_export_required_symbol_and_version"},
+        "side_effect_policies": {"type": "array", "minItems": 3, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "failure_policies": {"type": "array", "minItems": 3, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "selected_imports": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/phase17_runtime_import_record"}},
+        "rejection_classes": {"type": "array", "minItems": 5, "uniqueItems": true, "items": {"type": "string", "pattern": "^runtime_import_"}},
+        "witness_policy": {"const": "cranelift_and_mir_to_c_runtime_import_witnesses_must_match_byte_for_byte"},
+        "scope_policy": {"const": "stable_runtime_library_imports_only_legacy_fixture_symbol_constants_removed_in_patch17_9"},
+        "next_patch": {"const": "17.6"}
       }
     },
     "phase17_runtime_helper_classification": {

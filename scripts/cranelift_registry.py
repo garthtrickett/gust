@@ -27,6 +27,7 @@ TOP_FIELDS = {
     "phase17_runtime_symbol_authority",
     "phase17_runtime_requirement_authority",
     "phase17_runtime_package_authority",
+    "phase17_runtime_import_authority",
     "phase16_deferred_residue_audit",
     "phase16_closure",
     "phase15_deferred_residue_audit",
@@ -915,6 +916,34 @@ PHASE17_RUNTIME_PACKAGE_REJECTIONS = (
     "runtime_package_abi_version_incompatible",
     "runtime_package_undeclared_member_or_system_import",
     "runtime_package_nondeterministic_component_order",
+)
+
+PHASE17_RUNTIME_IMPORT_AUTHORITY_FIELDS = {
+    "version", "status", "authority_owner", "request_owner", "worker_owner",
+    "request_format", "witness_format", "linkage_policy",
+    "backend_table_policy", "package_export_policy", "side_effect_policies",
+    "failure_policies", "selected_imports", "rejection_classes",
+    "witness_policy", "scope_policy", "next_patch",
+}
+PHASE17_RUNTIME_IMPORT_RECORD_FIELDS = {
+    "helper_id", "external_spelling", "symbol_version",
+    "function_abi_identity", "component_id", "side_effect_policy",
+    "failure_policy", "target_applicability",
+}
+PHASE17_RUNTIME_IMPORT_SIDE_EFFECTS = (
+    "pure_scalar_no_side_effects", "observable_side_effects",
+    "allocates_in_caller_arena",
+)
+PHASE17_RUNTIME_IMPORT_FAILURES = (
+    "total_cannot_fail", "returns_explicit_error",
+    "aborts_process_on_failure",
+)
+PHASE17_RUNTIME_IMPORT_REJECTIONS = (
+    "runtime_import_missing_symbol",
+    "runtime_import_incompatible_version",
+    "runtime_import_abi_mismatch",
+    "runtime_import_wrong_target_component",
+    "runtime_import_undeclared",
 )
 
 PHASE14_LAYOUT_AUTHORITY_FIELDS = {
@@ -2441,6 +2470,77 @@ def validate_phase17_runtime_package_authority_structure(registry):
     return authority
 
 
+def validate_phase17_runtime_import_authority_structure(registry):
+    authority = registry["phase17_runtime_import_authority"]
+    require(isinstance(authority, dict)
+            and set(authority) == PHASE17_RUNTIME_IMPORT_AUTHORITY_FIELDS,
+            "Phase 17 runtime import authority fields drifted")
+    require(authority["version"] == "phase17_runtime_import_authority_v1"
+            and authority["status"] == "ready_for_patch17_6"
+            and authority["request_format"] == "gust.compiler_runtime_import.v1"
+            and authority["witness_format"] == "gust.runtime_import_witness.v1"
+            and authority["linkage_policy"]
+            == "direct_external_call_no_generated_c_glue",
+            "Phase 17 runtime import formats or linkage drifted")
+    require(tuple(authority["side_effect_policies"])
+            == PHASE17_RUNTIME_IMPORT_SIDE_EFFECTS
+            and tuple(authority["failure_policies"])
+            == PHASE17_RUNTIME_IMPORT_FAILURES,
+            "Phase 17 runtime import behaviour policies drifted")
+    require(tuple(authority["rejection_classes"])
+            == PHASE17_RUNTIME_IMPORT_REJECTIONS,
+            "Phase 17 runtime import rejection inventory drifted")
+
+    # Imports are the Phase 17.2 selected symbols, migrated one for one.
+    selected = {
+        row["helper_id"]: row
+        for row in registry["phase17_runtime_symbol_authority"]
+        ["selected_symbols"]
+    }
+    import_rows = authority["selected_imports"]
+    require(isinstance(import_rows, list) and len(import_rows) == len(selected),
+            "Phase 17 runtime import coverage drifted")
+    seen = set()
+    for index, row in enumerate(import_rows):
+        context = f"phase17_runtime_import_authority.selected_imports[{index}]"
+        require(isinstance(row, dict)
+                and set(row) == PHASE17_RUNTIME_IMPORT_RECORD_FIELDS,
+                f"{context} fields drifted")
+        helper_id = row["helper_id"]
+        require(helper_id in selected and helper_id not in seen,
+                f"{context} helper is unknown or duplicated")
+        symbol = selected[helper_id]
+        require(row["external_spelling"] == symbol["external_spelling"]
+                and row["function_abi_identity"]
+                == symbol["function_abi_identity"]
+                and row["component_id"] == symbol["component_id"]
+                and row["target_applicability"]
+                == symbol["target_applicability"],
+                f"{helper_id}: import diverges from its selected symbol")
+        require(row["symbol_version"] == "gust-runtime-symbol-v1"
+                and row["side_effect_policy"]
+                in PHASE17_RUNTIME_IMPORT_SIDE_EFFECTS
+                and row["failure_policy"] in PHASE17_RUNTIME_IMPORT_FAILURES,
+                f"{helper_id}: import version or behaviour policy drifted")
+        seen.add(helper_id)
+    require(seen == set(selected),
+            "Phase 17 runtime import inventory is incomplete")
+    require(authority["backend_table_policy"]
+            == "backend_holds_no_symbol_spelling_or_signature_table_signature_"
+               "derived_from_compiler_function_abi"
+            and authority["package_export_policy"]
+            == "selected_package_must_export_required_symbol_and_version"
+            and authority["witness_policy"]
+            == "cranelift_and_mir_to_c_runtime_import_witnesses_must_match_"
+               "byte_for_byte"
+            and authority["scope_policy"]
+            == "stable_runtime_library_imports_only_legacy_fixture_symbol_"
+               "constants_removed_in_patch17_9"
+            and authority["next_patch"] == "17.6",
+            "Phase 17 runtime import policies drifted")
+    return authority
+
+
 def validate_phase14_layout_authority_structure(registry):
     authority = registry["phase14_layout_authority"]
     require(
@@ -3545,6 +3645,24 @@ def validate():
         phase17_target_package_schema.get("additionalProperties") is False,
         "schema Phase 17 runtime target package record must reject unknown fields",
     )
+    phase17_import_authority_schema = definitions.get(
+        "phase17_runtime_import_authority", {}
+    )
+    require(
+        set(phase17_import_authority_schema.get("required", []))
+        == PHASE17_RUNTIME_IMPORT_AUTHORITY_FIELDS,
+        "schema Phase 17 runtime import authority fields drifted",
+    )
+    require(
+        phase17_import_authority_schema.get("additionalProperties") is False,
+        "schema Phase 17 runtime import authority must reject unknown fields",
+    )
+    phase17_import_record_schema = definitions.get(
+        "phase17_runtime_import_record", {}
+    )
+    require(set(phase17_import_record_schema.get("required", []))
+            == PHASE17_RUNTIME_IMPORT_RECORD_FIELDS,
+            "schema Phase 17 runtime import record fields drifted")
     phase14_authority_schema = definitions.get(
         "phase14_layout_authority",
         {},
@@ -3738,6 +3856,7 @@ def validate():
     validate_phase17_runtime_symbol_authority_structure(registry)
     validate_phase17_runtime_requirement_authority_structure(registry)
     validate_phase17_runtime_package_authority_structure(registry)
+    validate_phase17_runtime_import_authority_structure(registry)
     validate_phase14_layout_authority_structure(registry)
     validate_phase14_primitive_layout_structure(registry)
     validate_phase14_integer_conversion_structure(registry)
@@ -9634,6 +9753,23 @@ def phase17_runtime_package_authority_summary_lines(registry):
     ]
 
 
+def phase17_runtime_import_authority_summary_lines(registry):
+    authority = validate_phase17_runtime_import_authority_structure(registry)
+    return [
+        "## Phase 17 stable runtime-library import authority",
+        "",
+        f"- Authority version: `{authority['version']}`",
+        f"- Status: `{authority['status']}`",
+        f"- Request format: `{authority['request_format']}`",
+        f"- Witness format: `{authority['witness_format']}`",
+        f"- Migrated stable imports: `{len(authority['selected_imports'])}`",
+        f"- Linkage: `{authority['linkage_policy']}`",
+        "",
+        "Patch 17.5 makes Cranelift declare and call each selected stable runtime-library helper through its compiler-owned versioned symbol and explicit runtime package, with the signature derived from the Phase 16 function ABI identity rather than a backend-maintained table. Cranelift and MIR-to-C witnesses must match byte for byte. Legacy per-phase fixture symbol constants are removed by Patch 17.9.",
+        "",
+    ]
+
+
 def render(registry):
     entries = registry["entries"]
     totals = derived_totals(registry)
@@ -9689,6 +9825,7 @@ def render(registry):
         *phase17_runtime_symbol_authority_summary_lines(registry),
         *phase17_runtime_requirement_authority_summary_lines(registry),
         *phase17_runtime_package_authority_summary_lines(registry),
+        *phase17_runtime_import_authority_summary_lines(registry),
         "## Registry entries", "",
         "| ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |",
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",

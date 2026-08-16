@@ -17,6 +17,7 @@ mod manual_close;
 mod resource_cfg;
 mod resource_composition;
 mod resource_mir;
+mod runtime_import;
 mod scope_exit_cleanup;
 mod specialized_resource;
 
@@ -16402,6 +16403,34 @@ fn run() -> Result<(), Box<dyn Error>> {
             let witness = typed_indirect_call::lower_typed_indirect_call_witness_path(Path::new(&request_path))?;
             print!("{witness}"); Ok(())
         }
+        "phase17-runtime-import-witness" => {
+            let Some(request_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            let witness =
+                runtime_import::lower_runtime_import_witness_path(Path::new(&request_path))?;
+            print!("{witness}");
+            Ok(())
+        }
+        "phase17-runtime-import-object" => {
+            let Some(request_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            let Some(object_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            emit_phase17_runtime_import_object(
+                Path::new(&request_path),
+                Path::new(&object_path),
+            )?;
+            Ok(())
+        }
         "phase16-direct-call-agreement-witness" => {
             let Some(request_path) = args.next() else {
                 return Err(usage_error().into());
@@ -29666,6 +29695,78 @@ fn emit_call_helper_i32_object(output_path: &Path) -> Result<(), Box<dyn Error>>
 
     module.define_function(caller_function_id, &mut caller_context)?;
     module.clear_context(&mut caller_context);
+
+    let object_product = module.finish();
+    fs::write(output_path, object_product.emit()?)?;
+    Ok(())
+}
+
+/// Phase 17.5: declare and call every compiler-selected stable runtime import.
+///
+/// Both the external spelling and the signature come from the compiler-produced
+/// request. This function deliberately holds no symbol table of its own, so a
+/// helper the compiler did not declare cannot be reached from here at all.
+fn emit_phase17_runtime_import_object(
+    request_path: &Path,
+    output_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let request = fs::read_to_string(request_path)?;
+    let (_target, imports) = runtime_import::parse_runtime_import_request(&request)?;
+
+    if let Some(parent) = output_path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    let isa_builder =
+        cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
+    let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
+    let object_builder = ObjectBuilder::new(
+        isa,
+        "gust_phase17_runtime_import",
+        default_libcall_names(),
+    )?;
+    let mut module = ObjectModule::new(object_builder);
+
+    for import in &imports {
+        let mut imported_signature = module.make_signature();
+        for _ in 0..import.parameter_count {
+            imported_signature.params.push(AbiParam::new(types::I32));
+        }
+        imported_signature.returns.push(AbiParam::new(types::I32));
+
+        // The compiler's external spelling is declared directly as an import.
+        let imported_id = module.declare_function(
+            &import.external_spelling,
+            Linkage::Import,
+            &imported_signature,
+        )?;
+
+        let mut caller_signature = module.make_signature();
+        for _ in 0..import.parameter_count {
+            caller_signature.params.push(AbiParam::new(types::I32));
+        }
+        caller_signature.returns.push(AbiParam::new(types::I32));
+        let caller_symbol = format!("gust_phase17_call_{}", import.external_spelling);
+        let caller_id =
+            module.declare_function(&caller_symbol, Linkage::Export, &caller_signature)?;
+
+        let mut caller_context = module.make_context();
+        caller_context.func.signature = caller_signature;
+        let mut builder_context = FunctionBuilderContext::new();
+        let mut caller_builder =
+            FunctionBuilder::new(&mut caller_context.func, &mut builder_context);
+        let entry_block = caller_builder.create_block();
+        caller_builder.append_block_params_for_function_params(entry_block);
+        caller_builder.switch_to_block(entry_block);
+        let arguments: Vec<_> = caller_builder.block_params(entry_block).to_vec();
+        let imported_ref = module.declare_func_in_func(imported_id, caller_builder.func);
+        let call_inst = caller_builder.ins().call(imported_ref, &arguments);
+        let return_value = caller_builder.inst_results(call_inst)[0];
+        caller_builder.ins().return_(&[return_value]);
+        caller_builder.seal_all_blocks();
+        caller_builder.finalize();
+        module.define_function(caller_id, &mut caller_context)?;
+        module.clear_context(&mut caller_context);
+    }
 
     let object_product = module.finish();
     fs::write(output_path, object_product.emit()?)?;

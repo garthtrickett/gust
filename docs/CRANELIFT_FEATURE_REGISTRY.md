@@ -375,6 +375,17 @@ Patch 17.3 carries compiler-produced runtime requirements through canonical MIR 
 
 Patch 17.4 freezes the runtime package manifest schema, gives every Phase 14 declared target one explicit package identified by runtime ABI version and exact target applicability, and makes package selection a compiler-owned compatibility decision. Phase 9G still executes the link plan; it does not choose the package or its component order. Cranelift stable-import emission remains owned by Patch 17.5.
 
+## Phase 17 stable runtime-library import authority
+
+- Authority version: `phase17_runtime_import_authority_v1`
+- Status: `ready_for_patch17_6`
+- Request format: `gust.compiler_runtime_import.v1`
+- Witness format: `gust.runtime_import_witness.v1`
+- Migrated stable imports: `3`
+- Linkage: `direct_external_call_no_generated_c_glue`
+
+Patch 17.5 makes Cranelift declare and call each selected stable runtime-library helper through its compiler-owned versioned symbol and explicit runtime package, with the signature derived from the Phase 16 function ABI identity rather than a backend-maintained table. Cranelift and MIR-to-C witnesses must match byte for byte. Legacy per-phase fixture symbol constants are removed by Patch 17.9.
+
 ## Registry entries
 
 | ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |

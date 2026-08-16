@@ -1,18 +1,54 @@
 # Gust Compiler
 
-> **Why Gust? Because LLMs shouldn't fight the borrow checker.**
-> 
-> Traditional systems languages were designed for human hands typing on keyboards, leading to complex abstractions, implicit macros, and indentation dependencies that cause AI code generation to hallucinate or slip.
-> 
-> Gust is built from the ground up with Locality of Behavior (LoB) and strict monadic typing. It eliminates global lifetime complexity using regional arenas and forces explicit error paths. The result? A language that feels natural for a human to read, but functions as a deterministic, bulletproof sandbox for an AI to write.
+> **Gust moves danger out of your hands and into the compiler's.**
+>
+> In C and Zig, correctness is your job — the language hands you sharp tools and trusts you not to slip. In Rust the compiler checks correctness, but *you* still write the proof: lifetimes, variance, `Send`/`Sync`. The burden moved; it did not leave.
+>
+> Gust takes a third path. Safety obligations are discharged by **structure** rather than annotation, and there is deliberately **one way to do things**. You should be able to write correct systems code without becoming a lifetime theorist, and without a garbage collector.
 
-Gust is a minimalist, self-hosted, expression-based programming language that transpiles directly to clean, standard C99. It is designed around "Grug-brained simplicity," focusing on locality of behavior, minimal abstraction, and robust compile-time safety invariants without garbage collection overhead.
+Gust is a minimalist, self-hosted, expression-based systems language built around "Grug-brained simplicity." It targets products where **stability outranks peak performance**: long-running services, edge and embedded work, and anywhere GC pauses hurt but C-level hand-tuning is not worth its risk.
 
-The language features a unique memory and concurrency model:
-*   **Value-Branded Lifetimes (Arenas):** Safe, index-based memory management bound statically to virtual memory arenas.
+## The failure-mode argument
+
+The design is clearest if you ask what happens when you get it wrong.
+
+| Language | You get it wrong → |
+| --- | --- |
+| C / Zig | Undefined behaviour, corruption, possibly exploitable |
+| Rust | It does not compile — safe, but paid for in developer time |
+| Go | Runtime panic, or a GC pause at the wrong moment |
+| **Gust** | **You hold memory longer than necessary** |
+
+Region-based memory is coarse: an arena frees as a unit, so retention is bounded by region lifetime. That is a real cost and it is the one we choose to pay. It converts a *correctness* risk into a *resource-usage* risk, which is the right trade when stability is the product requirement.
+
+## What the compiler carries — and what it does not
+
+Being explicit about the boundary is worth more than claiming it is total.
+
+**The compiler carries:** memory safety, resource and scope-exit lifetimes, move and double-free analysis, explicit error paths, type and target layout, function ABI, and the native runtime boundary.
+
+**You still carry:** logic errors, protocol misuse, and algorithmic correctness. Gust does not pretend a type system can hold those without becoming the proof-writing burden it set out to remove.
+
+## Memory and concurrency model
+
+*   **Value-Branded Lifetimes (Arenas):** Safe, index-based memory bound statically to virtual memory arenas. The region is visible in the type, so the reasoning is *local* — there are no global lifetime relationships to infer or satisfy.
 *   **Linear & Move-Only Types:** Compile-time linear move-analysis and double-move protection on resources like strings, slices, and arenas.
 *   **Cooperative Fibers:** Low-overhead, user-level cooperative threading managed by a high-density, multi-shard thread-scheduler.
 *   **Built-in Synchronization:** Co-routine safe synchronization primitives (mutexes, channels, and pools) engineered to operate seamlessly across fiber-switching boundaries.
+
+## Why LLMs write Gust well
+
+This is a consequence of the design, not its premise. Locality of Behavior, no macros, no indentation sensitivity, and the arena being visible in the type mean the information needed to edit a span is present *in that span*. A model does not have to reconstruct invariants that live three files away — the same property that makes the language readable for a human.
+
+## Two backends, and why
+
+Gust transpiles to clean C99, which is why it builds anywhere a C compiler exists and needs no Rust or LLVM toolchain.
+
+That portability has a semantic cost worth stating plainly. Transpiling to C means inheriting **C's abstract machine**, not just its syntax: pointer provenance, effective-type rules, and signed-overflow latitude included. An arena-and-index model carves differently-typed objects out of one allocation and reconstructs pointers from a base and an offset, which is precisely the pattern those rules punish. Code that is provably correct under Gust's model can still be miscompiled at `-O2` by a C compiler applying rules Gust never agreed to.
+
+The native Cranelift backend exists to close that gap. It is **not** a performance play. It is what makes "the compiler carries the danger" actually true, by expressing Gust's memory model in a backend that honours it rather than laundering it through C's. Cranelift's memory model is deliberately concrete — loads and stores with alias information the compiler supplies — rather than an abstract machine with undefined-behaviour-driven optimisation latitude.
+
+The C backend remains the portability path and the bootstrap seed. A differential test suite keeps the two backends honest against each other.
 
 ---
 
