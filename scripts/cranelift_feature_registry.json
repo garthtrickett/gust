@@ -4232,6 +4232,43 @@
     "scope_policy": "bounded_threading_and_synchronization_only_availability_and_diagnostics_remain_in_patch17_13",
     "next_patch": "17.13"
   },
+  "phase17_availability_authority": {
+    "version": "phase17_availability_authority_v1",
+    "status": "ready_for_patch17_14",
+    "authority_owner": "compiler/mir_runtime_boundary_authority.gst",
+    "request_owner": "compiler/mir_availability_request.gst",
+    "worker_owner": "compiler/experiments/cranelift/src/availability.rs",
+    "request_format": "gust.compiler_availability.v1",
+    "witness_format": "gust.availability_witness.v1",
+    "ordering_policy": "the_eight_step_decision_order_is_frozen_and_dense_a_reordered_or_partial_sequence_is_rejected",
+    "stage_policy": "every_decision_completes_after_target_selection_and_before_linker_invocation_temporary_link_output_creation_or_output_replacement",
+    "no_fallback_policy": "the_worker_and_phase9g_validate_supplied_decisions_without_inventing_replacement_packages_or_fallback_helpers",
+    "stage_boundaries": [
+      "before_worker_execution",
+      "after_target_selection_before_linker_invocation"
+    ],
+    "decision_order": [
+      {"decision_order": 0, "validation_step": "package_manifest_format", "rejection_class": "runtime_manifest_malformed", "stage_boundary": "before_worker_execution"},
+      {"decision_order": 1, "validation_step": "runtime_abi_identity_and_version", "rejection_class": "runtime_abi_incompatible", "stage_boundary": "before_worker_execution"},
+      {"decision_order": 2, "validation_step": "target_identity", "rejection_class": "runtime_wrong_target", "stage_boundary": "before_worker_execution"},
+      {"decision_order": 3, "validation_step": "required_component_presence", "rejection_class": "runtime_component_missing", "stage_boundary": "after_target_selection_before_linker_invocation"},
+      {"decision_order": 4, "validation_step": "required_symbol_presence_and_version", "rejection_class": "runtime_symbol_missing", "stage_boundary": "after_target_selection_before_linker_invocation"},
+      {"decision_order": 5, "validation_step": "function_abi_layout_and_resource_compatibility", "rejection_class": "runtime_symbol_version_incompatible", "stage_boundary": "after_target_selection_before_linker_invocation"},
+      {"decision_order": 6, "validation_step": "declared_system_library_requirements", "rejection_class": "runtime_link_plan_dependency_undeclared", "stage_boundary": "after_target_selection_before_linker_invocation"},
+      {"decision_order": 7, "validation_step": "deterministic_component_and_link_ordering", "rejection_class": "runtime_classification_inconsistent", "stage_boundary": "after_target_selection_before_linker_invocation"}
+    ],
+    "rejection_classes": [
+      "runtime_package_missing", "runtime_manifest_malformed",
+      "runtime_wrong_target", "runtime_abi_incompatible",
+      "runtime_component_missing", "runtime_symbol_missing",
+      "runtime_symbol_version_incompatible",
+      "runtime_classification_inconsistent",
+      "runtime_link_plan_dependency_undeclared"
+    ],
+    "witness_policy": "cranelift_and_mir_to_c_availability_witnesses_must_match_byte_for_byte",
+    "scope_policy": "availability_compatibility_and_diagnostics_only_cross_feature_composition_remains_in_patch17_14",
+    "next_patch": "17.14"
+  },
   "phase15_specialized_resource_authority": {
     "version": "phase15_specialized_resource_authority_v1",
     "status": "patch15_11_directory_migrated",

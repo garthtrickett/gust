@@ -195,6 +195,9 @@ jobs:
       - name: Phase 17 threading and synchronization audit
         run: just guard-cranelift-phase17-thread-runtime-contract
 
+      - name: Phase 17 runtime availability and diagnostics
+        run: just guard-cranelift-phase17-availability-contract
+
       - name: Upload Gust build outputs
         uses: actions/upload-artifact@v4
         with:
