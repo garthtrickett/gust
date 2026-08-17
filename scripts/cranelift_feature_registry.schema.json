@@ -29,6 +29,7 @@
     "phase17_memory_runtime_authority",
     "phase17_io_runtime_authority",
     "phase17_thread_runtime_authority",
+    "phase17_availability_authority",
     "phase16_deferred_residue_audit",
     "phase16_closure",
     "phase15_deferred_residue_audit",
@@ -301,6 +302,9 @@
     },
     "phase17_thread_runtime_authority": {
       "$ref": "#/$defs/phase17_thread_runtime_authority"
+    },
+    "phase17_availability_authority": {
+      "$ref": "#/$defs/phase17_availability_authority"
     },
     "phase16_deferred_residue_audit": {
       "$ref": "#/$defs/phase16_deferred_residue_audit"
@@ -791,6 +795,40 @@
         "witness_policy": {"const": "cranelift_and_mir_to_c_thread_runtime_witnesses_must_match_byte_for_byte"},
         "scope_policy": {"const": "bounded_threading_and_synchronization_only_availability_and_diagnostics_remain_in_patch17_13"},
         "next_patch": {"const": "17.13"}
+      }
+    },
+    "phase17_availability_decision_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["decision_order", "validation_step", "rejection_class", "stage_boundary"],
+      "properties": {
+        "decision_order": {"type": "integer", "minimum": 0},
+        "validation_step": {"enum": ["package_manifest_format", "runtime_abi_identity_and_version", "target_identity", "required_component_presence", "required_symbol_presence_and_version", "function_abi_layout_and_resource_compatibility", "declared_system_library_requirements", "deterministic_component_and_link_ordering"]},
+        "rejection_class": {"type": "string", "pattern": "^runtime_"},
+        "stage_boundary": {"enum": ["before_worker_execution", "after_target_selection_before_linker_invocation"]}
+      }
+    },
+    "phase17_availability_authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "status", "authority_owner", "request_owner", "worker_owner", "request_format", "witness_format", "ordering_policy", "stage_policy", "no_fallback_policy", "stage_boundaries", "decision_order", "rejection_classes", "witness_policy", "scope_policy", "next_patch"],
+      "properties": {
+        "version": {"const": "phase17_availability_authority_v1"},
+        "status": {"const": "ready_for_patch17_14"},
+        "authority_owner": {"const": "compiler/mir_runtime_boundary_authority.gst"},
+        "request_owner": {"const": "compiler/mir_availability_request.gst"},
+        "worker_owner": {"const": "compiler/experiments/cranelift/src/availability.rs"},
+        "request_format": {"const": "gust.compiler_availability.v1"},
+        "witness_format": {"const": "gust.availability_witness.v1"},
+        "ordering_policy": {"const": "the_eight_step_decision_order_is_frozen_and_dense_a_reordered_or_partial_sequence_is_rejected"},
+        "stage_policy": {"const": "every_decision_completes_after_target_selection_and_before_linker_invocation_temporary_link_output_creation_or_output_replacement"},
+        "no_fallback_policy": {"const": "the_worker_and_phase9g_validate_supplied_decisions_without_inventing_replacement_packages_or_fallback_helpers"},
+        "stage_boundaries": {"type": "array", "minItems": 2, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "decision_order": {"type": "array", "minItems": 8, "uniqueItems": true, "items": {"$ref": "#/$defs/phase17_availability_decision_record"}},
+        "rejection_classes": {"type": "array", "minItems": 9, "uniqueItems": true, "items": {"type": "string", "pattern": "^runtime_"}},
+        "witness_policy": {"const": "cranelift_and_mir_to_c_availability_witnesses_must_match_byte_for_byte"},
+        "scope_policy": {"const": "availability_compatibility_and_diagnostics_only_cross_feature_composition_remains_in_patch17_14"},
+        "next_patch": {"const": "17.14"}
       }
     },
     "phase17_runtime_helper_classification": {

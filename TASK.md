@@ -82,7 +82,7 @@ If more than 100 runs exist, use the paginated Actions API and apply the same ex
 - [x] Patch 17.10 — Allocation, String, and Core Memory Runtime Audit — DONE
 - [x] Patch 17.11 — I/O, Filesystem, and Resource Runtime Audit — DONE
 - [x] Patch 17.12 — Threading and Synchronization Runtime Audit — DONE
-- [ ] Patch 17.13 — Runtime Availability, Compatibility, and Diagnostic Enforcement
+- [x] Patch 17.13 — Runtime Availability, Compatibility, and Diagnostic Enforcement — DONE
 - [ ] Patch 17.14 — Cross-Feature Runtime Composition and Complete Differential
 - [ ] Patch 17.15 — Deferred Residue and Runtime-Coverage Audit
 - [ ] Patch 17.16 — Phase 17 Closure

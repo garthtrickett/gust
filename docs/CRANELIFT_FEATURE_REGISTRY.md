@@ -458,6 +458,16 @@ Patch 17.11 classifies and migrates the selected I/O, filesystem, directory, and
 
 Patch 17.12 classifies and migrates the bounded threading and synchronization helper inventory. Any platform thread library a helper depends on must be a permitted system import of a declared package, so pthread cannot reach the link line undeclared. This patch does not claim complete concurrency, atomics, cancellation, scheduling, or race-safety semantics, and scheduler ordering is deliberately not a stable oracle.
 
+## Phase 17 runtime availability and compatibility authority
+
+- Authority version: `phase17_availability_authority_v1`
+- Status: `ready_for_patch17_14`
+- Frozen decisions: `8`
+- Decided before worker execution: `3`
+- Stable rejection classes: `9`
+
+Patch 17.13 validates runtime package availability and compatibility before linking. The eight-step decision order is frozen and dense, so a reordered or partial sequence is rejected rather than silently accepted. Every decision completes after target selection and before linker invocation, temporary link output creation, or output replacement, and the worker validates supplied decisions without inventing replacement packages or fallback helpers.
+
 ## Registry entries
 
 | ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |

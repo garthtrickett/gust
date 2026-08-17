@@ -1,0 +1,43 @@
+Phase 17.13 — Runtime Availability, Compatibility, and Diagnostic Enforcement
+guard: guard-cranelift-phase17-availability-contract
+parity_guard: guard-cranelift-phase17-availability-parity
+test_level: level1
+ordering_policy: the_eight_step_decision_order_is_frozen_and_dense_a_reordered_or_partial_sequence_is_rejected
+stage_policy: every_decision_completes_after_target_selection_and_before_linker_invocation_temporary_link_output_creation_or_output_replacement
+no_fallback_policy: the_worker_and_phase9g_validate_supplied_decisions_without_inventing_replacement_packages_or_fallback_helpers
+
+contract counts:
+  boundary: 1
+  policy: 4
+  query: 1
+  rejection: 9
+  semantic_type: 1
+  stage_boundary: 2
+  validation_step: 8
+
+frozen decision order:
+  0	package_manifest_format	runtime_manifest_malformed	before_worker_execution
+  1	runtime_abi_identity_and_version	runtime_abi_incompatible	before_worker_execution
+  2	target_identity	runtime_wrong_target	before_worker_execution
+  3	required_component_presence	runtime_component_missing	after_target_selection_before_linker_invocation
+  4	required_symbol_presence_and_version	runtime_symbol_missing	after_target_selection_before_linker_invocation
+  5	function_abi_layout_and_resource_compatibility	runtime_symbol_version_incompatible	after_target_selection_before_linker_invocation
+  6	declared_system_library_requirements	runtime_link_plan_dependency_undeclared	after_target_selection_before_linker_invocation
+  7	deterministic_component_and_link_ordering	runtime_classification_inconsistent	after_target_selection_before_linker_invocation
+
+stable rejection classes:
+  runtime_package_missing
+  runtime_manifest_malformed
+  runtime_wrong_target
+  runtime_abi_incompatible
+  runtime_component_missing
+  runtime_symbol_missing
+  runtime_symbol_version_incompatible
+  runtime_classification_inconsistent
+  runtime_link_plan_dependency_undeclared
+
+exit gate:
+  runtime package availability and compatibility are validated before linking
+  every decision completes before linker invocation, temporary link output creation, or output replacement
+  the worker invents no replacement package and no fallback helper
+  cross-feature composition and the complete differential remain in Patch 17.14

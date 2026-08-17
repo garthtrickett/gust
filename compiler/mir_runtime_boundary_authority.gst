@@ -65,6 +65,19 @@ type MirRuntimeComponentIdentity[ctx] struct {
     target_id: str
 }
 
+// Phase 17.13 availability and compatibility decisions. Two things are frozen
+// here: the order the validation steps run in, and the stage boundary each must
+// complete before. Nothing may reach the linker, a temporary link output, or an
+// output replacement until every decision has already been made.
+type MirRuntimeAvailabilityDecision[ctx] struct {
+    decision_id: str,
+    decision_order: int,
+    validation_step: str,
+    rejection_class: str,
+    stage_boundary: str,
+    target_id: str
+}
+
 // Phase 17.12 threading and synchronization contracts. The load-bearing rule is
 // that any platform thread library a helper depends on must be declared in the
 // selected runtime package's permitted system imports, so pthread cannot reach
@@ -335,6 +348,7 @@ type MirRuntimeBoundaryAuthorityTable[ctx] struct {
     memory_contracts: Index[std.Vector[MirRuntimeMemoryContract[ctx], ctx], ctx],
     io_contracts: Index[std.Vector[MirRuntimeIoContract[ctx], ctx], ctx],
     thread_contracts: Index[std.Vector[MirRuntimeThreadContract[ctx], ctx], ctx],
+    availability_decisions: Index[std.Vector[MirRuntimeAvailabilityDecision[ctx], ctx], ctx],
     requirements: Index[std.Vector[MirRuntimeRequirement[ctx], ctx], ctx],
     compatibility_decisions: Index[std.Vector[MirRuntimeCompatibilityDecision[ctx], ctx], ctx],
     link_plans: Index[std.Vector[MirRuntimeLinkPlanHandoff[ctx], ctx], ctx],
@@ -351,6 +365,7 @@ type MirRuntimeCompatibilityQuery[ctx] struct { compatible: int, reason_code: st
 type MirRuntimeLinkPlanQuery[ctx] struct { found: int, value: MirRuntimeLinkPlanHandoff[ctx] }
 type MirRuntimePackageSelection[ctx] struct { found: int, reason_code: str, value: MirRuntimePackageIdentity[ctx] }
 type MirRuntimePackageManifestQuery[ctx] struct { valid: int, reason_code: str, member_count: int, provided_symbol_count: int, system_import_count: int }
+type MirRuntimeAvailabilityQuery[ctx] struct { found: int, value: MirRuntimeAvailabilityDecision[ctx] }
 type MirRuntimeThreadContractQuery[ctx] struct { found: int, value: MirRuntimeThreadContract[ctx] }
 type MirRuntimeIoContractQuery[ctx] struct { found: int, value: MirRuntimeIoContract[ctx] }
 type MirRuntimeMemoryContractQuery[ctx] struct { found: int, value: MirRuntimeMemoryContract[ctx] }
@@ -380,6 +395,7 @@ func mir_runtime_empty_requirements(ctx: &Arena) Index[std.Vector[MirRuntimeRequ
 func mir_runtime_empty_package_members(ctx: &Arena) Index[std.Vector[MirRuntimePackageMember[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimePackageMember[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimePackageMember[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
 func mir_runtime_empty_package_provided_symbols(ctx: &Arena) Index[std.Vector[MirRuntimePackageProvidedSymbol[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimePackageProvidedSymbol[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimePackageProvidedSymbol[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
 func mir_runtime_empty_package_system_imports(ctx: &Arena) Index[std.Vector[MirRuntimePackageSystemImport[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimePackageSystemImport[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimePackageSystemImport[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
+func mir_runtime_empty_availability_decisions(ctx: &Arena) Index[std.Vector[MirRuntimeAvailabilityDecision[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimeAvailabilityDecision[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimeAvailabilityDecision[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
 func mir_runtime_empty_thread_contracts(ctx: &Arena) Index[std.Vector[MirRuntimeThreadContract[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimeThreadContract[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimeThreadContract[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
 func mir_runtime_empty_io_contracts(ctx: &Arena) Index[std.Vector[MirRuntimeIoContract[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimeIoContract[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimeIoContract[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
 func mir_runtime_empty_memory_contracts(ctx: &Arena) Index[std.Vector[MirRuntimeMemoryContract[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimeMemoryContract[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimeMemoryContract[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
@@ -407,6 +423,41 @@ func mir_runtime_helper_classification_is_valid(value: str) int {
     if std.str_eq(value, "obsolete_helper") == 1 { return 1; }
     return 0;
 }
+
+// The frozen availability and compatibility decision order.
+func mir_runtime_validation_step_is_valid(value: str) int {
+    if std.str_eq(value, "package_manifest_format") == 1 { return 1; }
+    if std.str_eq(value, "runtime_abi_identity_and_version") == 1 { return 1; }
+    if std.str_eq(value, "target_identity") == 1 { return 1; }
+    if std.str_eq(value, "required_component_presence") == 1 { return 1; }
+    if std.str_eq(value, "required_symbol_presence_and_version") == 1 { return 1; }
+    if std.str_eq(value, "function_abi_layout_and_resource_compatibility") == 1 { return 1; }
+    if std.str_eq(value, "declared_system_library_requirements") == 1 { return 1; }
+    if std.str_eq(value, "deterministic_component_and_link_ordering") == 1 { return 1; }
+    return 0;
+}
+
+// Every decision must complete before the stage that could produce output.
+func mir_runtime_stage_boundary_is_valid(value: str) int {
+    if std.str_eq(value, "before_worker_execution") == 1 { return 1; }
+    if std.str_eq(value, "after_target_selection_before_linker_invocation") == 1 { return 1; }
+    return 0;
+}
+
+func mir_runtime_availability_rejection_is_valid(value: str) int {
+    if std.str_eq(value, "runtime_package_missing") == 1 { return 1; }
+    if std.str_eq(value, "runtime_manifest_malformed") == 1 { return 1; }
+    if std.str_eq(value, "runtime_wrong_target") == 1 { return 1; }
+    if std.str_eq(value, "runtime_abi_incompatible") == 1 { return 1; }
+    if std.str_eq(value, "runtime_component_missing") == 1 { return 1; }
+    if std.str_eq(value, "runtime_symbol_missing") == 1 { return 1; }
+    if std.str_eq(value, "runtime_symbol_version_incompatible") == 1 { return 1; }
+    if std.str_eq(value, "runtime_classification_inconsistent") == 1 { return 1; }
+    if std.str_eq(value, "runtime_link_plan_dependency_undeclared") == 1 { return 1; }
+    return 0;
+}
+
+func mir_runtime_availability_decision_for(table: MirRuntimeBoundaryAuthorityTable[ctx], validation_step: str, ctx: &Arena) MirRuntimeAvailabilityQuery[ctx] { mut result: MirRuntimeAvailabilityQuery[ctx]; result.found = 0; mut values: std.Vector[MirRuntimeAvailabilityDecision[ctx], ctx] := ctx[table.availability_decisions]; mut index := 0; while index < len(values) { if std.str_eq(values[index].validation_step, validation_step) == 1 { result.found = 1; result.value = values[index]; return result; } index = index + 1; } return result; }
 
 // The bounded threading and synchronization inventory. Atomics, unrestricted
 // sharing, cancellation, and broader concurrency semantics are deferred.
@@ -608,6 +659,7 @@ func mir_runtime_symbol_identity_id(helper_id: str, symbol_version: str, target_
 func mir_runtime_component_identity_id(component_kind: str, target_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_component:v1:kind="; value = std.Concat(value, component_kind); value = std.Concat(value, ":target="); value = std.Concat(value, target_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
 func mir_runtime_package_identity_id(target_id: str, package_version: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_package:v1:target="; value = std.Concat(value, target_id); value = std.Concat(value, ":version="); value = std.Concat(value, package_version); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
 func mir_runtime_requirement_id(program_id: str, helper_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_requirement:v1:program="; value = std.Concat(value, program_id); value = std.Concat(value, ":helper="); value = std.Concat(value, helper_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
+func mir_runtime_availability_decision_id(validation_step: str, decision_order: int, target_id: str, ctx: &Arena) str { mut value := "runtime_availability_decision:v1:step="; value = std.Concat(value, validation_step); value = std.Concat(value, ":order="); value = std.Concat(value, std.FormatInt(decision_order)); value = std.Concat(value, ":target="); value = std.Concat(value, target_id); return std.Clone(ctx, value); }
 func mir_runtime_thread_contract_id(helper_id: str, thread_operation: str, target_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_thread_contract:v1:helper="; value = std.Concat(value, helper_id); value = std.Concat(value, ":operation="); value = std.Concat(value, thread_operation); value = std.Concat(value, ":target="); value = std.Concat(value, target_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
 func mir_runtime_io_contract_id(helper_id: str, io_kind: str, target_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_io_contract:v1:helper="; value = std.Concat(value, helper_id); value = std.Concat(value, ":kind="); value = std.Concat(value, io_kind); value = std.Concat(value, ":target="); value = std.Concat(value, target_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
 func mir_runtime_memory_contract_id(helper_id: str, operation_kind: str, target_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_memory_contract:v1:helper="; value = std.Concat(value, helper_id); value = std.Concat(value, ":operation="); value = std.Concat(value, operation_kind); value = std.Concat(value, ":target="); value = std.Concat(value, target_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
@@ -650,6 +702,7 @@ func mir_runtime_make_empty_table(target_id: str, target_triple: str, ctx: &Aren
     table.memory_contracts = mir_runtime_empty_memory_contracts(ctx);
     table.io_contracts = mir_runtime_empty_io_contracts(ctx);
     table.thread_contracts = mir_runtime_empty_thread_contracts(ctx);
+    table.availability_decisions = mir_runtime_empty_availability_decisions(ctx);
     table.requirements = mir_runtime_empty_requirements(ctx);
     table.compatibility_decisions = mir_runtime_empty_compatibility(ctx);
     table.link_plans = mir_runtime_empty_link_plans(ctx);
@@ -666,6 +719,7 @@ func mir_runtime_table_with_package(table: MirRuntimeBoundaryAuthorityTable[ctx]
 func mir_runtime_table_with_package_member(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimePackageMember[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimePackageMember[ctx], ctx] := ctx[table.package_members]; values.Push(value); ctx.Set(table.package_members, values); return table; }
 func mir_runtime_table_with_package_provided_symbol(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimePackageProvidedSymbol[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimePackageProvidedSymbol[ctx], ctx] := ctx[table.package_provided_symbols]; values.Push(value); ctx.Set(table.package_provided_symbols, values); return table; }
 func mir_runtime_table_with_package_system_import(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimePackageSystemImport[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimePackageSystemImport[ctx], ctx] := ctx[table.package_system_imports]; values.Push(value); ctx.Set(table.package_system_imports, values); return table; }
+func mir_runtime_table_with_availability_decision(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimeAvailabilityDecision[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimeAvailabilityDecision[ctx], ctx] := ctx[table.availability_decisions]; values.Push(value); ctx.Set(table.availability_decisions, values); return table; }
 func mir_runtime_table_with_thread_contract(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimeThreadContract[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimeThreadContract[ctx], ctx] := ctx[table.thread_contracts]; values.Push(value); ctx.Set(table.thread_contracts, values); return table; }
 func mir_runtime_table_with_io_contract(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimeIoContract[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimeIoContract[ctx], ctx] := ctx[table.io_contracts]; values.Push(value); ctx.Set(table.io_contracts, values); return table; }
 func mir_runtime_table_with_memory_contract(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimeMemoryContract[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimeMemoryContract[ctx], ctx] := ctx[table.memory_contracts]; values.Push(value); ctx.Set(table.memory_contracts, values); return table; }
@@ -1086,6 +1140,40 @@ func mir_runtime_boundary_authority_table_validate(table: MirRuntimeBoundaryAuth
         if ordered_index != len(plan_components) { return mir_runtime_validation(0, "runtime_package_nondeterministic_component_order", ctx); }
         plan_index = plan_index + 1;
     }
+    // Phase 17.13: availability and compatibility decisions. The order is frozen
+    // as a dense ascending sequence, and every decision must complete before the
+    // linker, a temporary link output, or an output replacement could exist.
+    mut availability_decisions: std.Vector[MirRuntimeAvailabilityDecision[ctx], ctx] := ctx[table.availability_decisions];
+    mut availability_index := 0;
+    while availability_index < len(availability_decisions) {
+        if mir_runtime_field_is_safe(availability_decisions[availability_index].decision_id) == 0 { return mir_runtime_validation(0, "runtime_availability_malformed_decision", ctx); }
+        if mir_runtime_validation_step_is_valid(availability_decisions[availability_index].validation_step) == 0 { return mir_runtime_validation(0, "runtime_availability_malformed_decision", ctx); }
+        if mir_runtime_availability_rejection_is_valid(availability_decisions[availability_index].rejection_class) == 0 { return mir_runtime_validation(0, "runtime_availability_unclassified_rejection", ctx); }
+        if mir_runtime_stage_boundary_is_valid(availability_decisions[availability_index].stage_boundary) == 0 { return mir_runtime_validation(0, "runtime_availability_late_decision", ctx); }
+        if std.str_eq(availability_decisions[availability_index].target_id, table.target_id) == 0 { return mir_runtime_validation(0, "runtime_availability_malformed_decision", ctx); }
+
+        // The decision order is dense and ascending in declaration order, so a
+        // reordered or gapped sequence cannot pass as the frozen order.
+        if availability_decisions[availability_index].decision_order != availability_index { return mir_runtime_validation(0, "runtime_availability_decision_order_drift", ctx); }
+
+        mut duplicate_availability_index := availability_index + 1;
+        while duplicate_availability_index < len(availability_decisions) {
+            if std.str_eq(availability_decisions[availability_index].decision_id, availability_decisions[duplicate_availability_index].decision_id) == 1 ||
+               std.str_eq(availability_decisions[availability_index].validation_step, availability_decisions[duplicate_availability_index].validation_step) == 1
+            {
+                return mir_runtime_validation(0, "runtime_availability_duplicate_decision", ctx);
+            }
+            duplicate_availability_index = duplicate_availability_index + 1;
+        }
+        availability_index = availability_index + 1;
+    }
+
+    // If any decision is declared, the whole frozen order must be present: a
+    // partial sequence would mean some compatibility question went unasked.
+    if len(availability_decisions) > 0 {
+        if len(availability_decisions) != 8 { return mir_runtime_validation(0, "runtime_availability_incomplete_order", ctx); }
+    }
+
     // Phase 17.12: threading and synchronization contracts. A helper that needs a
     // platform thread library must have that library declared in the selected
     // package's permitted system imports, so pthread cannot arrive undeclared.
@@ -1654,6 +1742,16 @@ func mir_serialize_runtime_boundary_authority_table_for_request(table: MirRuntim
     while index < len(system_imports) {
         output = mir_runtime_append_field(output, "runtime_package_system_import_id", system_imports[index].import_id, ctx);
         output = mir_runtime_append_field(output, "runtime_package_system_import_spelling", system_imports[index].external_spelling, ctx);
+        index = index + 1;
+    }
+    mut availability_decisions: std.Vector[MirRuntimeAvailabilityDecision[ctx], ctx] := ctx[table.availability_decisions];
+    index = 0;
+    while index < len(availability_decisions) {
+        output = mir_runtime_append_field(output, "runtime_availability_decision_id", availability_decisions[index].decision_id, ctx);
+        output = mir_runtime_append_field(output, "runtime_availability_order", std.FormatInt(availability_decisions[index].decision_order), ctx);
+        output = mir_runtime_append_field(output, "runtime_availability_step", availability_decisions[index].validation_step, ctx);
+        output = mir_runtime_append_field(output, "runtime_availability_rejection", availability_decisions[index].rejection_class, ctx);
+        output = mir_runtime_append_field(output, "runtime_availability_stage", availability_decisions[index].stage_boundary, ctx);
         index = index + 1;
     }
     mut thread_contracts: std.Vector[MirRuntimeThreadContract[ctx], ctx] := ctx[table.thread_contracts];

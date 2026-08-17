@@ -35,6 +35,7 @@ TOP_FIELDS = {
     "phase17_memory_runtime_authority",
     "phase17_io_runtime_authority",
     "phase17_thread_runtime_authority",
+    "phase17_availability_authority",
     "phase16_deferred_residue_audit",
     "phase16_closure",
     "phase15_deferred_residue_audit",
@@ -1129,6 +1130,32 @@ PHASE17_THREAD_REJECTIONS = (
     "runtime_thread_undeclared_system_library",
     "runtime_thread_unsupported_cancellation",
     "runtime_thread_hidden_generated_c_wrapper",
+)
+
+PHASE17_AVAILABILITY_AUTHORITY_FIELDS = {
+    "version", "status", "authority_owner", "request_owner", "worker_owner",
+    "request_format", "witness_format", "ordering_policy", "stage_policy",
+    "no_fallback_policy", "stage_boundaries", "decision_order",
+    "rejection_classes", "witness_policy", "scope_policy", "next_patch",
+}
+PHASE17_AVAILABILITY_DECISION_FIELDS = {
+    "decision_order", "validation_step", "rejection_class", "stage_boundary",
+}
+PHASE17_AVAILABILITY_STEPS = (
+    "package_manifest_format", "runtime_abi_identity_and_version",
+    "target_identity", "required_component_presence",
+    "required_symbol_presence_and_version",
+    "function_abi_layout_and_resource_compatibility",
+    "declared_system_library_requirements",
+    "deterministic_component_and_link_ordering",
+)
+PHASE17_AVAILABILITY_REJECTIONS = (
+    "runtime_package_missing", "runtime_manifest_malformed",
+    "runtime_wrong_target", "runtime_abi_incompatible",
+    "runtime_component_missing", "runtime_symbol_missing",
+    "runtime_symbol_version_incompatible",
+    "runtime_classification_inconsistent",
+    "runtime_link_plan_dependency_undeclared",
 )
 
 PHASE14_LAYOUT_AUTHORITY_FIELDS = {
@@ -3196,6 +3223,44 @@ def validate_phase17_thread_runtime_authority_structure(registry):
     return authority
 
 
+def validate_phase17_availability_authority_structure(registry):
+    authority = registry["phase17_availability_authority"]
+    require(isinstance(authority, dict)
+            and set(authority) == PHASE17_AVAILABILITY_AUTHORITY_FIELDS,
+            "Phase 17 availability authority fields drifted")
+    require(authority["version"] == "phase17_availability_authority_v1"
+            and authority["status"] == "ready_for_patch17_14",
+            "Phase 17 availability version drifted")
+    require(tuple(authority["rejection_classes"])
+            == PHASE17_AVAILABILITY_REJECTIONS,
+            "Phase 17 availability rejection inventory drifted")
+
+    # The decision order is frozen: dense, ascending, and complete.
+    decisions = authority["decision_order"]
+    require(isinstance(decisions, list)
+            and len(decisions) == len(PHASE17_AVAILABILITY_STEPS),
+            "Phase 17 availability decision order is incomplete")
+    for index, row in enumerate(decisions):
+        context = f"phase17_availability_authority.decision_order[{index}]"
+        require(isinstance(row, dict)
+                and set(row) == PHASE17_AVAILABILITY_DECISION_FIELDS,
+                f"{context} fields drifted")
+        require(row["decision_order"] == index,
+                f"{context} claims order {row['decision_order']}")
+        require(row["validation_step"] == PHASE17_AVAILABILITY_STEPS[index],
+                f"{context} is not the frozen step for this position")
+        require(row["rejection_class"] in PHASE17_AVAILABILITY_REJECTIONS,
+                f"{context} names an unstable rejection class")
+        require(row["stage_boundary"] in authority["stage_boundaries"],
+                f"{context} is deferred past an output-producing stage")
+    require(authority["no_fallback_policy"]
+            == "the_worker_and_phase9g_validate_supplied_decisions_without_"
+               "inventing_replacement_packages_or_fallback_helpers"
+            and authority["next_patch"] == "17.14",
+            "Phase 17 availability policies drifted")
+    return authority
+
+
 def validate_phase14_layout_authority_structure(registry):
     authority = registry["phase14_layout_authority"]
     require(
@@ -4413,6 +4478,20 @@ def validate():
     require(set(phase17_thread_record_schema.get("required", []))
             == PHASE17_THREAD_OPERATION_FIELDS,
             "schema Phase 17 thread operation record fields drifted")
+    phase17_availability_schema = definitions.get(
+        "phase17_availability_authority", {}
+    )
+    require(set(phase17_availability_schema.get("required", []))
+            == PHASE17_AVAILABILITY_AUTHORITY_FIELDS,
+            "schema Phase 17 availability authority fields drifted")
+    require(phase17_availability_schema.get("additionalProperties") is False,
+            "schema Phase 17 availability authority must reject unknown fields")
+    phase17_decision_schema = definitions.get(
+        "phase17_availability_decision_record", {}
+    )
+    require(set(phase17_decision_schema.get("required", []))
+            == PHASE17_AVAILABILITY_DECISION_FIELDS,
+            "schema Phase 17 availability decision record fields drifted")
     phase14_authority_schema = definitions.get(
         "phase14_layout_authority",
         {},
@@ -4614,6 +4693,7 @@ def validate():
     validate_phase17_memory_runtime_authority_structure(registry)
     validate_phase17_io_runtime_authority_structure(registry)
     validate_phase17_thread_runtime_authority_structure(registry)
+    validate_phase17_availability_authority_structure(registry)
     validate_phase14_layout_authority_structure(registry)
     validate_phase14_primitive_layout_structure(registry)
     validate_phase14_integer_conversion_structure(registry)
@@ -10648,6 +10728,24 @@ def phase17_thread_runtime_authority_summary_lines(registry):
     ]
 
 
+def phase17_availability_authority_summary_lines(registry):
+    authority = validate_phase17_availability_authority_structure(registry)
+    early = sum(1 for r in authority["decision_order"]
+                if r["stage_boundary"] == "before_worker_execution")
+    return [
+        "## Phase 17 runtime availability and compatibility authority",
+        "",
+        f"- Authority version: `{authority['version']}`",
+        f"- Status: `{authority['status']}`",
+        f"- Frozen decisions: `{len(authority['decision_order'])}`",
+        f"- Decided before worker execution: `{early}`",
+        f"- Stable rejection classes: `{len(authority['rejection_classes'])}`",
+        "",
+        "Patch 17.13 validates runtime package availability and compatibility before linking. The eight-step decision order is frozen and dense, so a reordered or partial sequence is rejected rather than silently accepted. Every decision completes after target selection and before linker invocation, temporary link output creation, or output replacement, and the worker validates supplied decisions without inventing replacement packages or fallback helpers.",
+        "",
+    ]
+
+
 def render(registry):
     entries = registry["entries"]
     totals = derived_totals(registry)
@@ -10711,6 +10809,7 @@ def render(registry):
         *phase17_memory_runtime_authority_summary_lines(registry),
         *phase17_io_runtime_authority_summary_lines(registry),
         *phase17_thread_runtime_authority_summary_lines(registry),
+        *phase17_availability_authority_summary_lines(registry),
         "## Registry entries", "",
         "| ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |",
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
