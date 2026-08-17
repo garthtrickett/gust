@@ -1,0 +1,60 @@
+Phase 17.11 — I/O, Filesystem, and Resource Runtime Audit
+guard: guard-cranelift-phase17-io-runtime-contract
+parity_guard: guard-cranelift-phase17-io-runtime-parity
+test_level: level1
+close_pairing_policy: an_acquired_resource_kind_has_exactly_one_close_and_manual_close_and_deferred_cleanup_name_the_same_runtime_operation
+scope_selection_rule: sockets_processes_terminals_and_unrelated_os_resources_remain_deferred_unless_explicitly_selected
+selected_operations: 22
+
+contract counts:
+  boundary: 1
+  filesystem_effect: 4
+  io_kind: 7
+  policy: 5
+  query: 1
+  rejection: 6
+  resource_transition: 4
+  semantic_type: 1
+
+selected operations:
+  os_LogStr	standard_stream	none	not_a_resource	total_cannot_fail	none
+  os_LogError	standard_stream	none	not_a_resource	total_cannot_fail	none
+  os_LogInt	standard_stream	none	not_a_resource	total_cannot_fail	none
+  os_ReadFile	file_or_stream	none	not_a_resource	returns_explicit_error	reads_filesystem
+  os_WriteFile	file_or_stream	none	not_a_resource	returns_explicit_error	writes_filesystem
+  os_read_stream_to_arena	file_or_stream	none	not_a_resource	returns_explicit_error	reads_filesystem
+  os_path_join	path_or_filesystem	none	not_a_resource	returns_explicit_error	none
+  os_PathAbsolute	path_or_filesystem	none	not_a_resource	returns_explicit_error	reads_filesystem
+  os_PathDir	path_or_filesystem	none	not_a_resource	returns_explicit_error	none
+  os_FileExists	path_or_filesystem	none	not_a_resource	total_cannot_fail	reads_filesystem
+  os_FileExecutable	path_or_filesystem	none	not_a_resource	total_cannot_fail	reads_filesystem
+  os_RemoveFile	path_or_filesystem	none	not_a_resource	returns_explicit_error	removes_path
+  os_ExecutablePath	path_or_filesystem	none	not_a_resource	returns_explicit_error	reads_filesystem
+  os_OpenDir	directory_resource	directory_handle	acquires	returns_explicit_error	reads_filesystem
+  os_ReadDir	directory_resource	directory_handle	uses_borrowed	returns_explicit_error	reads_filesystem
+  os_CloseDir	directory_resource	directory_handle	closes	total_cannot_fail	none
+  os_GetEnv	environment_query	none	not_a_resource	returns_explicit_error	none
+  os_Args	environment_query	none	not_a_resource	total_cannot_fail	none
+  os_NativeTargetTriple	target_query	none	not_a_resource	total_cannot_fail	none
+  os_NativeObjectFormat	target_query	none	not_a_resource	total_cannot_fail	none
+  os_copy_c_string_to_arena	c_string_marshalling	none	not_a_resource	returns_explicit_error	none
+  os_slice_to_c_string	c_string_marshalling	none	not_a_resource	returns_explicit_error	none
+
+concrete deferred rows:
+  os_RunProcess	process_execution_deferred_by_scope_selection_rule	-> 17.15
+  os_System	process_execution_deferred_by_scope_selection_rule	-> 17.15
+  os_MockPayload	test_fixture_not_a_runtime_operation	-> 17.15
+
+rejection classes:
+  runtime_io_missing_symbol
+  runtime_io_wrong_resource_kind
+  runtime_io_close_mismatch
+  runtime_io_duplicate_close
+  runtime_io_unsupported_target
+  runtime_io_hidden_generated_c_wrapper
+
+exit gate:
+  every selected I/O, filesystem, directory, and resource operation uses its classified explicit runtime path
+  an acquired resource kind has exactly one close
+  manual close and deferred cleanup name the same runtime operation
+  threading and synchronization audit remains in Patch 17.12

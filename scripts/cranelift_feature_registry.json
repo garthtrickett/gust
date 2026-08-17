@@ -4111,6 +4111,69 @@
     "scope_policy": "allocation_core_memory_and_string_only_io_filesystem_and_resource_audit_remains_in_patch17_11",
     "next_patch": "17.11"
   },
+  "phase17_io_runtime_authority": {
+    "version": "phase17_io_runtime_authority_v1",
+    "status": "ready_for_patch17_12",
+    "authority_owner": "compiler/mir_runtime_boundary_authority.gst",
+    "request_owner": "compiler/mir_io_runtime_request.gst",
+    "worker_owner": "compiler/experiments/cranelift/src/io_runtime.rs",
+    "request_format": "gust.compiler_io_runtime.v1",
+    "witness_format": "gust.io_runtime_witness.v1",
+    "linkage_policy": "io_operations_use_their_classified_explicit_runtime_path",
+    "close_pairing_policy": "an_acquired_resource_kind_has_exactly_one_close_and_manual_close_and_deferred_cleanup_name_the_same_runtime_operation",
+    "scope_selection_rule": "sockets_processes_terminals_and_unrelated_os_resources_remain_deferred_unless_explicitly_selected",
+    "io_kinds": [
+      "standard_stream", "file_or_stream", "path_or_filesystem",
+      "directory_resource", "environment_query", "target_query",
+      "c_string_marshalling"
+    ],
+    "resource_transitions": [
+      "not_a_resource", "acquires", "uses_borrowed", "closes"
+    ],
+    "filesystem_effects": [
+      "none", "reads_filesystem", "writes_filesystem", "removes_path"
+    ],
+    "selected_operations": [
+      {"symbol_identity": "os_LogStr", "io_kind": "standard_stream", "resource_kind": "none", "resource_transition": "not_a_resource", "failure_form": "total_cannot_fail", "filesystem_effect": "none"},
+      {"symbol_identity": "os_LogError", "io_kind": "standard_stream", "resource_kind": "none", "resource_transition": "not_a_resource", "failure_form": "total_cannot_fail", "filesystem_effect": "none"},
+      {"symbol_identity": "os_LogInt", "io_kind": "standard_stream", "resource_kind": "none", "resource_transition": "not_a_resource", "failure_form": "total_cannot_fail", "filesystem_effect": "none"},
+      {"symbol_identity": "os_ReadFile", "io_kind": "file_or_stream", "resource_kind": "none", "resource_transition": "not_a_resource", "failure_form": "returns_explicit_error", "filesystem_effect": "reads_filesystem"},
+      {"symbol_identity": "os_WriteFile", "io_kind": "file_or_stream", "resource_kind": "none", "resource_transition": "not_a_resource", "failure_form": "returns_explicit_error", "filesystem_effect": "writes_filesystem"},
+      {"symbol_identity": "os_read_stream_to_arena", "io_kind": "file_or_stream", "resource_kind": "none", "resource_transition": "not_a_resource", "failure_form": "returns_explicit_error", "filesystem_effect": "reads_filesystem"},
+      {"symbol_identity": "os_path_join", "io_kind": "path_or_filesystem", "resource_kind": "none", "resource_transition": "not_a_resource", "failure_form": "returns_explicit_error", "filesystem_effect": "none"},
+      {"symbol_identity": "os_PathAbsolute", "io_kind": "path_or_filesystem", "resource_kind": "none", "resource_transition": "not_a_resource", "failure_form": "returns_explicit_error", "filesystem_effect": "reads_filesystem"},
+      {"symbol_identity": "os_PathDir", "io_kind": "path_or_filesystem", "resource_kind": "none", "resource_transition": "not_a_resource", "failure_form": "returns_explicit_error", "filesystem_effect": "none"},
+      {"symbol_identity": "os_FileExists", "io_kind": "path_or_filesystem", "resource_kind": "none", "resource_transition": "not_a_resource", "failure_form": "total_cannot_fail", "filesystem_effect": "reads_filesystem"},
+      {"symbol_identity": "os_FileExecutable", "io_kind": "path_or_filesystem", "resource_kind": "none", "resource_transition": "not_a_resource", "failure_form": "total_cannot_fail", "filesystem_effect": "reads_filesystem"},
+      {"symbol_identity": "os_RemoveFile", "io_kind": "path_or_filesystem", "resource_kind": "none", "resource_transition": "not_a_resource", "failure_form": "returns_explicit_error", "filesystem_effect": "removes_path"},
+      {"symbol_identity": "os_ExecutablePath", "io_kind": "path_or_filesystem", "resource_kind": "none", "resource_transition": "not_a_resource", "failure_form": "returns_explicit_error", "filesystem_effect": "reads_filesystem"},
+      {"symbol_identity": "os_OpenDir", "io_kind": "directory_resource", "resource_kind": "directory_handle", "resource_transition": "acquires", "failure_form": "returns_explicit_error", "filesystem_effect": "reads_filesystem"},
+      {"symbol_identity": "os_ReadDir", "io_kind": "directory_resource", "resource_kind": "directory_handle", "resource_transition": "uses_borrowed", "failure_form": "returns_explicit_error", "filesystem_effect": "reads_filesystem"},
+      {"symbol_identity": "os_CloseDir", "io_kind": "directory_resource", "resource_kind": "directory_handle", "resource_transition": "closes", "failure_form": "total_cannot_fail", "filesystem_effect": "none"},
+      {"symbol_identity": "os_GetEnv", "io_kind": "environment_query", "resource_kind": "none", "resource_transition": "not_a_resource", "failure_form": "returns_explicit_error", "filesystem_effect": "none"},
+      {"symbol_identity": "os_Args", "io_kind": "environment_query", "resource_kind": "none", "resource_transition": "not_a_resource", "failure_form": "total_cannot_fail", "filesystem_effect": "none"},
+      {"symbol_identity": "os_NativeTargetTriple", "io_kind": "target_query", "resource_kind": "none", "resource_transition": "not_a_resource", "failure_form": "total_cannot_fail", "filesystem_effect": "none"},
+      {"symbol_identity": "os_NativeObjectFormat", "io_kind": "target_query", "resource_kind": "none", "resource_transition": "not_a_resource", "failure_form": "total_cannot_fail", "filesystem_effect": "none"},
+      {"symbol_identity": "os_copy_c_string_to_arena", "io_kind": "c_string_marshalling", "resource_kind": "none", "resource_transition": "not_a_resource", "failure_form": "returns_explicit_error", "filesystem_effect": "none"},
+      {"symbol_identity": "os_slice_to_c_string", "io_kind": "c_string_marshalling", "resource_kind": "none", "resource_transition": "not_a_resource", "failure_form": "returns_explicit_error", "filesystem_effect": "none"}
+    ],
+    "deferred_rows": [
+      {"symbol_identity": "os_RunProcess", "reason": "process_execution_deferred_by_scope_selection_rule", "destination_phase": "17.15"},
+      {"symbol_identity": "os_System", "reason": "process_execution_deferred_by_scope_selection_rule", "destination_phase": "17.15"},
+      {"symbol_identity": "os_MockPayload", "reason": "test_fixture_not_a_runtime_operation", "destination_phase": "17.15"}
+    ],
+    "rejection_classes": [
+      "runtime_io_missing_symbol",
+      "runtime_io_wrong_resource_kind",
+      "runtime_io_close_mismatch",
+      "runtime_io_duplicate_close",
+      "runtime_io_unsupported_target",
+      "runtime_io_hidden_generated_c_wrapper"
+    ],
+    "witness_policy": "cranelift_and_mir_to_c_io_runtime_witnesses_must_match_byte_for_byte",
+    "scope_policy": "io_filesystem_directory_and_resource_only_threading_and_synchronization_audit_remains_in_patch17_12",
+    "next_patch": "17.12"
+  },
   "phase15_specialized_resource_authority": {
     "version": "phase15_specialized_resource_authority_v1",
     "status": "patch15_11_directory_migrated",
