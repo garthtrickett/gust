@@ -186,6 +186,9 @@ jobs:
       - name: Phase 17 generated C shim elimination
         run: just guard-cranelift-phase17-shim-elimination-contract
 
+      - name: Phase 17 allocation string and core memory audit
+        run: just guard-cranelift-phase17-memory-runtime-contract
+
       - name: Upload Gust build outputs
         uses: actions/upload-artifact@v4
         with:

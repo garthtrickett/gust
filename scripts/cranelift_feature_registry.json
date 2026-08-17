@@ -4042,6 +4042,75 @@
     "scope_policy": "native_path_c_generation_banned_allocation_string_and_core_memory_audit_remains_in_patch17_10",
     "next_patch": "17.10"
   },
+  "phase17_memory_runtime_authority": {
+    "version": "phase17_memory_runtime_authority_v1",
+    "status": "ready_for_patch17_11",
+    "authority_owner": "compiler/mir_runtime_boundary_authority.gst",
+    "request_owner": "compiler/mir_memory_runtime_request.gst",
+    "worker_owner": "compiler/experiments/cranelift/src/memory_runtime.rs",
+    "request_format": "gust.compiler_memory_runtime.v1",
+    "witness_format": "gust.memory_runtime_witness.v1",
+    "linkage_policy": "memory_operations_use_their_classified_explicit_runtime_path",
+    "domain_pairing_policy": "memory_obtained_from_one_allocation_domain_may_only_be_released_through_the_same_domain",
+    "intrinsic_boundary_policy": "semantic_compiler_intrinsics_are_not_runtime_calls_and_are_excluded_from_this_inventory",
+    "operation_kinds": [
+      "allocate", "deallocate", "reallocate", "memory_copy", "memory_move",
+      "memory_set", "memory_compare", "bounds_or_failure_report",
+      "string_create", "string_length", "string_compare", "string_convert",
+      "string_destroy"
+    ],
+    "allocation_domains": [
+      "host_process_allocator", "caller_owned_arena", "thread_local_scratch",
+      "no_allocation"
+    ],
+    "ownership_transfers": [
+      "caller_retains_ownership", "ownership_transfers_to_caller",
+      "borrowed_for_call_duration"
+    ],
+    "selected_operations": [
+      {"symbol_identity": "os_Arena_New", "operation_kind": "allocate", "allocation_domain": "host_process_allocator", "ownership_transfer": "ownership_transfers_to_caller", "failure_reporting": "returns_explicit_error"},
+      {"symbol_identity": "os_Arena_Free", "operation_kind": "deallocate", "allocation_domain": "host_process_allocator", "ownership_transfer": "caller_retains_ownership", "failure_reporting": "total_cannot_fail"},
+      {"symbol_identity": "os_ArenaAlloc", "operation_kind": "allocate", "allocation_domain": "caller_owned_arena", "ownership_transfer": "ownership_transfers_to_caller", "failure_reporting": "returns_explicit_error"},
+      {"symbol_identity": "os_Arena_Validate", "operation_kind": "bounds_or_failure_report", "allocation_domain": "no_allocation", "ownership_transfer": "borrowed_for_call_duration", "failure_reporting": "aborts_process_on_failure"},
+      {"symbol_identity": "std_GenerationalSwap", "operation_kind": "memory_move", "allocation_domain": "caller_owned_arena", "ownership_transfer": "caller_retains_ownership", "failure_reporting": "total_cannot_fail"},
+      {"symbol_identity": "os_ScratchAlloc", "operation_kind": "allocate", "allocation_domain": "thread_local_scratch", "ownership_transfer": "ownership_transfers_to_caller", "failure_reporting": "returns_explicit_error"},
+      {"symbol_identity": "os_ScratchReset", "operation_kind": "deallocate", "allocation_domain": "thread_local_scratch", "ownership_transfer": "caller_retains_ownership", "failure_reporting": "total_cannot_fail"},
+      {"symbol_identity": "os_SetThreadScratch", "operation_kind": "memory_set", "allocation_domain": "no_allocation", "ownership_transfer": "borrowed_for_call_duration", "failure_reporting": "total_cannot_fail"},
+      {"symbol_identity": "os_GetThreadScratch_raw", "operation_kind": "bounds_or_failure_report", "allocation_domain": "no_allocation", "ownership_transfer": "borrowed_for_call_duration", "failure_reporting": "total_cannot_fail"},
+      {"symbol_identity": "std_PoolAlloc_impl", "operation_kind": "allocate", "allocation_domain": "caller_owned_arena", "ownership_transfer": "ownership_transfers_to_caller", "failure_reporting": "returns_explicit_error"},
+      {"symbol_identity": "std_PoolFree_impl", "operation_kind": "deallocate", "allocation_domain": "caller_owned_arena", "ownership_transfer": "caller_retains_ownership", "failure_reporting": "total_cannot_fail"},
+      {"symbol_identity": "os_HashMapRef_impl", "operation_kind": "memory_copy", "allocation_domain": "caller_owned_arena", "ownership_transfer": "borrowed_for_call_duration", "failure_reporting": "returns_explicit_error"},
+      {"symbol_identity": "os_HashMapContains_impl", "operation_kind": "memory_compare", "allocation_domain": "no_allocation", "ownership_transfer": "borrowed_for_call_duration", "failure_reporting": "total_cannot_fail"},
+      {"symbol_identity": "os_HashMapRemove_impl", "operation_kind": "memory_set", "allocation_domain": "caller_owned_arena", "ownership_transfer": "caller_retains_ownership", "failure_reporting": "total_cannot_fail"},
+      {"symbol_identity": "os_HashMapClear_impl", "operation_kind": "memory_set", "allocation_domain": "caller_owned_arena", "ownership_transfer": "caller_retains_ownership", "failure_reporting": "total_cannot_fail"},
+      {"symbol_identity": "std_Clone_str", "operation_kind": "string_create", "allocation_domain": "caller_owned_arena", "ownership_transfer": "ownership_transfers_to_caller", "failure_reporting": "returns_explicit_error"},
+      {"symbol_identity": "std_str_eq", "operation_kind": "string_compare", "allocation_domain": "no_allocation", "ownership_transfer": "borrowed_for_call_duration", "failure_reporting": "total_cannot_fail"},
+      {"symbol_identity": "std_str_byte_at", "operation_kind": "string_length", "allocation_domain": "no_allocation", "ownership_transfer": "borrowed_for_call_duration", "failure_reporting": "total_cannot_fail"},
+      {"symbol_identity": "std_str_slice", "operation_kind": "string_convert", "allocation_domain": "no_allocation", "ownership_transfer": "borrowed_for_call_duration", "failure_reporting": "total_cannot_fail"},
+      {"symbol_identity": "std_str_find", "operation_kind": "string_compare", "allocation_domain": "no_allocation", "ownership_transfer": "borrowed_for_call_duration", "failure_reporting": "total_cannot_fail"},
+      {"symbol_identity": "std_str_trim", "operation_kind": "string_convert", "allocation_domain": "no_allocation", "ownership_transfer": "borrowed_for_call_duration", "failure_reporting": "total_cannot_fail"},
+      {"symbol_identity": "std_str_split", "operation_kind": "string_create", "allocation_domain": "caller_owned_arena", "ownership_transfer": "ownership_transfers_to_caller", "failure_reporting": "returns_explicit_error"},
+      {"symbol_identity": "std_parse_int", "operation_kind": "string_convert", "allocation_domain": "no_allocation", "ownership_transfer": "borrowed_for_call_duration", "failure_reporting": "returns_explicit_error"},
+      {"symbol_identity": "std_is_alpha", "operation_kind": "string_compare", "allocation_domain": "no_allocation", "ownership_transfer": "borrowed_for_call_duration", "failure_reporting": "total_cannot_fail"},
+      {"symbol_identity": "std_is_digit", "operation_kind": "string_compare", "allocation_domain": "no_allocation", "ownership_transfer": "borrowed_for_call_duration", "failure_reporting": "total_cannot_fail"},
+      {"symbol_identity": "std_is_whitespace", "operation_kind": "string_compare", "allocation_domain": "no_allocation", "ownership_transfer": "borrowed_for_call_duration", "failure_reporting": "total_cannot_fail"}
+    ],
+    "deferred_rows": [
+      {"symbol_identity": "os_LogInt", "reason": "standard_stream_logging_is_io_not_memory_despite_living_in_arena_c", "destination_phase": "17.11"}
+    ],
+    "deferred_policy_note": "general_allocator_policy_garbage_collection_complete_unicode_and_locale_behaviour_remain_deferred_unless_separately_selected",
+    "rejection_classes": [
+      "runtime_memory_missing_allocation_helper",
+      "runtime_memory_incompatible_allocator_domain",
+      "runtime_memory_invalid_string_layout",
+      "runtime_memory_wrong_symbol_version",
+      "runtime_memory_unsupported_target_operation",
+      "runtime_memory_hidden_generated_c_wrapper"
+    ],
+    "witness_policy": "cranelift_and_mir_to_c_memory_runtime_witnesses_must_match_byte_for_byte",
+    "scope_policy": "allocation_core_memory_and_string_only_io_filesystem_and_resource_audit_remains_in_patch17_11",
+    "next_patch": "17.11"
+  },
   "phase15_specialized_resource_authority": {
     "version": "phase15_specialized_resource_authority_v1",
     "status": "patch15_11_directory_migrated",
