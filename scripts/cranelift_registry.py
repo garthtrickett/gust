@@ -32,6 +32,7 @@ TOP_FIELDS = {
     "phase17_retained_c_authority",
     "phase17_gust_runtime_authority",
     "phase17_shim_elimination_authority",
+    "phase17_memory_runtime_authority",
     "phase16_deferred_residue_audit",
     "phase16_closure",
     "phase15_deferred_residue_audit",
@@ -1046,6 +1047,38 @@ PHASE17_SHIM_REPLACEMENT_KINDS = (
 PHASE17_SHIM_REJECTIONS = (
     "runtime_shim_unclassified_ban", "runtime_shim_ban_without_replacement",
     "runtime_shim_missing_evidence", "runtime_shim_duplicate_ban",
+)
+
+PHASE17_MEMORY_AUTHORITY_FIELDS = {
+    "version", "status", "authority_owner", "request_owner", "worker_owner",
+    "request_format", "witness_format", "linkage_policy",
+    "domain_pairing_policy", "intrinsic_boundary_policy", "operation_kinds",
+    "allocation_domains", "ownership_transfers", "selected_operations",
+    "deferred_rows", "deferred_policy_note", "rejection_classes",
+    "witness_policy", "scope_policy", "next_patch",
+}
+PHASE17_MEMORY_OPERATION_FIELDS = {
+    "symbol_identity", "operation_kind", "allocation_domain",
+    "ownership_transfer", "failure_reporting",
+}
+PHASE17_MEMORY_DEFERRED_FIELDS = {"symbol_identity", "reason", "destination_phase"}
+PHASE17_MEMORY_OPERATION_KINDS = (
+    "allocate", "deallocate", "reallocate", "memory_copy", "memory_move",
+    "memory_set", "memory_compare", "bounds_or_failure_report",
+    "string_create", "string_length", "string_compare", "string_convert",
+    "string_destroy",
+)
+PHASE17_MEMORY_DOMAINS = (
+    "host_process_allocator", "caller_owned_arena", "thread_local_scratch",
+    "no_allocation",
+)
+PHASE17_MEMORY_REJECTIONS = (
+    "runtime_memory_missing_allocation_helper",
+    "runtime_memory_incompatible_allocator_domain",
+    "runtime_memory_invalid_string_layout",
+    "runtime_memory_wrong_symbol_version",
+    "runtime_memory_unsupported_target_operation",
+    "runtime_memory_hidden_generated_c_wrapper",
 )
 
 PHASE14_LAYOUT_AUTHORITY_FIELDS = {
@@ -2920,6 +2953,86 @@ def validate_phase17_shim_elimination_authority_structure(registry):
     return authority
 
 
+def validate_phase17_memory_runtime_authority_structure(registry):
+    authority = registry["phase17_memory_runtime_authority"]
+    require(isinstance(authority, dict)
+            and set(authority) == PHASE17_MEMORY_AUTHORITY_FIELDS,
+            "Phase 17 memory runtime authority fields drifted")
+    require(authority["version"] == "phase17_memory_runtime_authority_v1"
+            and authority["status"] == "ready_for_patch17_11"
+            and authority["domain_pairing_policy"]
+            == "memory_obtained_from_one_allocation_domain_may_only_be_"
+               "released_through_the_same_domain",
+            "Phase 17 memory runtime domain pairing policy drifted")
+    require(tuple(authority["operation_kinds"])
+            == PHASE17_MEMORY_OPERATION_KINDS,
+            "Phase 17 memory operation inventory drifted")
+    require(tuple(authority["allocation_domains"]) == PHASE17_MEMORY_DOMAINS,
+            "Phase 17 memory allocation domain inventory drifted")
+    require(tuple(authority["rejection_classes"]) == PHASE17_MEMORY_REJECTIONS,
+            "Phase 17 memory rejection inventory drifted")
+
+    # Every selected operation must name a helper the Patch 17.1 inventory
+    # actually classified, so the audit cannot invent runtime surface.
+    classified = {
+        row["symbol_identity"]
+        for row in registry["phase17_runtime_authority"]
+        ["helper_classifications"]
+    }
+    operations = authority["selected_operations"]
+    require(isinstance(operations, list) and operations,
+            "Phase 17 memory runtime must select at least one operation")
+    acquiring, releasing, seen = set(), set(), set()
+    for index, row in enumerate(operations):
+        context = f"phase17_memory_runtime_authority.selected_operations[{index}]"
+        require(isinstance(row, dict)
+                and set(row) == PHASE17_MEMORY_OPERATION_FIELDS,
+                f"{context} fields drifted")
+        symbol = row["symbol_identity"]
+        require(symbol in classified,
+                f"{context} names a helper Patch 17.1 never classified")
+        require(symbol not in seen, f"{context} duplicates {symbol}")
+        require(row["operation_kind"] in PHASE17_MEMORY_OPERATION_KINDS,
+                f"{symbol}: operation kind is outside the selected inventory")
+        require(row["allocation_domain"] in PHASE17_MEMORY_DOMAINS,
+                f"{symbol}: allocation domain is undeclared")
+        if row["operation_kind"] in ("allocate", "string_create"):
+            acquiring.add(row["allocation_domain"])
+        if row["operation_kind"] in ("deallocate", "string_destroy"):
+            releasing.add(row["allocation_domain"])
+        seen.add(symbol)
+
+    # The load-bearing invariant: nothing may be released through a domain that
+    # never acquires. This is what stops an arena pointer reaching free().
+    orphaned = releasing - acquiring
+    require(not orphaned,
+            f"Phase 17 memory domains release without acquiring: "
+            f"{sorted(orphaned)}")
+
+    for index, row in enumerate(authority["deferred_rows"]):
+        context = f"phase17_memory_runtime_authority.deferred_rows[{index}]"
+        require(isinstance(row, dict)
+                and set(row) == PHASE17_MEMORY_DEFERRED_FIELDS,
+                f"{context} fields drifted")
+        require(row["symbol_identity"] in classified,
+                f"{context} defers a helper Patch 17.1 never classified")
+        require(row["symbol_identity"] not in seen,
+                f"{context} defers a helper that is also selected")
+        require(row["destination_phase"].startswith("17."),
+                f"{context} destination is not a Phase 17 patch")
+    require(authority["linkage_policy"]
+            == "memory_operations_use_their_classified_explicit_runtime_path"
+            and authority["witness_policy"]
+            == "cranelift_and_mir_to_c_memory_runtime_witnesses_must_match_"
+               "byte_for_byte"
+            and authority["scope_policy"]
+            == "allocation_core_memory_and_string_only_io_filesystem_and_"
+               "resource_audit_remains_in_patch17_11"
+            and authority["next_patch"] == "17.11",
+            "Phase 17 memory runtime policies drifted")
+    return authority
+
+
 def validate_phase14_layout_authority_structure(registry):
     authority = registry["phase14_layout_authority"]
     require(
@@ -4097,6 +4210,20 @@ def validate():
     require(set(phase17_family_schema.get("required", []))
             == PHASE17_OBSOLETE_FAMILY_FIELDS,
             "schema Phase 17 obsolete family record fields drifted")
+    phase17_memory_authority_schema = definitions.get(
+        "phase17_memory_runtime_authority", {}
+    )
+    require(set(phase17_memory_authority_schema.get("required", []))
+            == PHASE17_MEMORY_AUTHORITY_FIELDS,
+            "schema Phase 17 memory runtime authority fields drifted")
+    require(phase17_memory_authority_schema.get("additionalProperties") is False,
+            "schema Phase 17 memory authority must reject unknown fields")
+    phase17_memory_record_schema = definitions.get(
+        "phase17_memory_operation_record", {}
+    )
+    require(set(phase17_memory_record_schema.get("required", []))
+            == PHASE17_MEMORY_OPERATION_FIELDS,
+            "schema Phase 17 memory operation record fields drifted")
     phase14_authority_schema = definitions.get(
         "phase14_layout_authority",
         {},
@@ -4295,6 +4422,7 @@ def validate():
     validate_phase17_retained_c_authority_structure(registry)
     validate_phase17_gust_runtime_authority_structure(registry)
     validate_phase17_shim_elimination_authority_structure(registry)
+    validate_phase17_memory_runtime_authority_structure(registry)
     validate_phase14_layout_authority_structure(registry)
     validate_phase14_primitive_layout_structure(registry)
     validate_phase14_integer_conversion_structure(registry)
@@ -10276,6 +10404,23 @@ def phase17_shim_elimination_authority_summary_lines(registry):
     ]
 
 
+def phase17_memory_runtime_authority_summary_lines(registry):
+    authority = validate_phase17_memory_runtime_authority_structure(registry)
+    domains = sorted({r["allocation_domain"] for r in authority["selected_operations"]})
+    return [
+        "## Phase 17 allocation, core-memory, and string runtime authority",
+        "",
+        f"- Authority version: `{authority['version']}`",
+        f"- Status: `{authority['status']}`",
+        f"- Selected operations: `{len(authority['selected_operations'])}`",
+        f"- Allocation domains in use: `{', '.join(domains)}`",
+        f"- Concrete deferred rows: `{len(authority['deferred_rows'])}`",
+        "",
+        "Patch 17.10 classifies and migrates the selected allocation, core-memory, and string helper inventory through the explicit native runtime boundary. The load-bearing invariant is domain pairing: memory obtained from one allocation domain may only be released through the same domain, so ownership cannot silently cross an incompatible runtime component boundary. General allocator policy, garbage collection, complete Unicode, and locale behaviour remain deferred unless separately selected.",
+        "",
+    ]
+
+
 def render(registry):
     entries = registry["entries"]
     totals = derived_totals(registry)
@@ -10336,6 +10481,7 @@ def render(registry):
         *phase17_retained_c_authority_summary_lines(registry),
         *phase17_gust_runtime_authority_summary_lines(registry),
         *phase17_shim_elimination_authority_summary_lines(registry),
+        *phase17_memory_runtime_authority_summary_lines(registry),
         "## Registry entries", "",
         "| ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |",
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",

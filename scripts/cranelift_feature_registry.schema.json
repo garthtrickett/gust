@@ -26,6 +26,7 @@
     "phase17_retained_c_authority",
     "phase17_gust_runtime_authority",
     "phase17_shim_elimination_authority",
+    "phase17_memory_runtime_authority",
     "phase16_deferred_residue_audit",
     "phase16_closure",
     "phase15_deferred_residue_audit",
@@ -289,6 +290,9 @@
     },
     "phase17_shim_elimination_authority": {
       "$ref": "#/$defs/phase17_shim_elimination_authority"
+    },
+    "phase17_memory_runtime_authority": {
+      "$ref": "#/$defs/phase17_memory_runtime_authority"
     },
     "phase16_deferred_residue_audit": {
       "$ref": "#/$defs/phase16_deferred_residue_audit"
@@ -650,6 +654,55 @@
         "witness_policy": {"const": "cranelift_and_mir_to_c_shim_elimination_witnesses_must_match_byte_for_byte"},
         "scope_policy": {"const": "native_path_c_generation_banned_allocation_string_and_core_memory_audit_remains_in_patch17_10"},
         "next_patch": {"const": "17.10"}
+      }
+    },
+    "phase17_memory_operation_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["symbol_identity", "operation_kind", "allocation_domain", "ownership_transfer", "failure_reporting"],
+      "properties": {
+        "symbol_identity": {"type": "string", "minLength": 1},
+        "operation_kind": {"enum": ["allocate", "deallocate", "reallocate", "memory_copy", "memory_move", "memory_set", "memory_compare", "bounds_or_failure_report", "string_create", "string_length", "string_compare", "string_convert", "string_destroy"]},
+        "allocation_domain": {"enum": ["host_process_allocator", "caller_owned_arena", "thread_local_scratch", "no_allocation"]},
+        "ownership_transfer": {"enum": ["caller_retains_ownership", "ownership_transfers_to_caller", "borrowed_for_call_duration"]},
+        "failure_reporting": {"enum": ["total_cannot_fail", "returns_explicit_error", "aborts_process_on_failure"]}
+      }
+    },
+    "phase17_memory_deferred_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["symbol_identity", "reason", "destination_phase"],
+      "properties": {
+        "symbol_identity": {"type": "string", "minLength": 1},
+        "reason": {"type": "string", "minLength": 1},
+        "destination_phase": {"type": "string", "pattern": "^17\\."}
+      }
+    },
+    "phase17_memory_runtime_authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "status", "authority_owner", "request_owner", "worker_owner", "request_format", "witness_format", "linkage_policy", "domain_pairing_policy", "intrinsic_boundary_policy", "operation_kinds", "allocation_domains", "ownership_transfers", "selected_operations", "deferred_rows", "deferred_policy_note", "rejection_classes", "witness_policy", "scope_policy", "next_patch"],
+      "properties": {
+        "version": {"const": "phase17_memory_runtime_authority_v1"},
+        "status": {"const": "ready_for_patch17_11"},
+        "authority_owner": {"const": "compiler/mir_runtime_boundary_authority.gst"},
+        "request_owner": {"const": "compiler/mir_memory_runtime_request.gst"},
+        "worker_owner": {"const": "compiler/experiments/cranelift/src/memory_runtime.rs"},
+        "request_format": {"const": "gust.compiler_memory_runtime.v1"},
+        "witness_format": {"const": "gust.memory_runtime_witness.v1"},
+        "linkage_policy": {"const": "memory_operations_use_their_classified_explicit_runtime_path"},
+        "domain_pairing_policy": {"const": "memory_obtained_from_one_allocation_domain_may_only_be_released_through_the_same_domain"},
+        "intrinsic_boundary_policy": {"const": "semantic_compiler_intrinsics_are_not_runtime_calls_and_are_excluded_from_this_inventory"},
+        "operation_kinds": {"type": "array", "minItems": 13, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "allocation_domains": {"type": "array", "minItems": 4, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "ownership_transfers": {"type": "array", "minItems": 3, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "selected_operations": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/phase17_memory_operation_record"}},
+        "deferred_rows": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/phase17_memory_deferred_record"}},
+        "deferred_policy_note": {"type": "string", "minLength": 1},
+        "rejection_classes": {"type": "array", "minItems": 6, "uniqueItems": true, "items": {"type": "string", "pattern": "^runtime_memory_"}},
+        "witness_policy": {"const": "cranelift_and_mir_to_c_memory_runtime_witnesses_must_match_byte_for_byte"},
+        "scope_policy": {"const": "allocation_core_memory_and_string_only_io_filesystem_and_resource_audit_remains_in_patch17_11"},
+        "next_patch": {"const": "17.11"}
       }
     },
     "phase17_runtime_helper_classification": {

@@ -428,6 +428,16 @@ Patch 17.8 compiles selected runtime helpers written in Gust through the same ge
 
 Patch 17.9 removes generated ad hoc C wrappers from the migrated native path and the helpers classified obsolete. Each banned wrapper class is paired with the compiler-owned direct import, explicit runtime component, or narrower deferral that replaced it, so a ban is never an unexplained refusal. The exit gate is demonstrated rather than declared: the parity guard emits a native object under an emptied environment with no C compiler or linker driver reachable.
 
+## Phase 17 allocation, core-memory, and string runtime authority
+
+- Authority version: `phase17_memory_runtime_authority_v1`
+- Status: `ready_for_patch17_11`
+- Selected operations: `26`
+- Allocation domains in use: `caller_owned_arena, host_process_allocator, no_allocation, thread_local_scratch`
+- Concrete deferred rows: `1`
+
+Patch 17.10 classifies and migrates the selected allocation, core-memory, and string helper inventory through the explicit native runtime boundary. The load-bearing invariant is domain pairing: memory obtained from one allocation domain may only be released through the same domain, so ownership cannot silently cross an incompatible runtime component boundary. General allocator policy, garbage collection, complete Unicode, and locale behaviour remain deferred unless separately selected.
+
 ## Registry entries
 
 | ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |

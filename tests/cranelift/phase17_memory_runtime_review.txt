@@ -1,0 +1,62 @@
+Phase 17.10 — Allocation, String, and Core Memory Runtime Audit
+guard: guard-cranelift-phase17-memory-runtime-contract
+parity_guard: guard-cranelift-phase17-memory-runtime-parity
+test_level: level1
+domain_pairing_policy: memory_obtained_from_one_allocation_domain_may_only_be_released_through_the_same_domain
+intrinsic_boundary_policy: semantic_compiler_intrinsics_are_not_runtime_calls_and_are_excluded_from_this_inventory
+selected_operations: 26
+
+contract counts:
+  allocation_domain: 4
+  boundary: 1
+  operation_kind: 13
+  ownership_transfer: 3
+  policy: 5
+  query: 1
+  rejection: 6
+  semantic_type: 1
+
+selected operations:
+  os_Arena_New	allocate	host_process_allocator	ownership_transfers_to_caller	returns_explicit_error
+  os_Arena_Free	deallocate	host_process_allocator	caller_retains_ownership	total_cannot_fail
+  os_ArenaAlloc	allocate	caller_owned_arena	ownership_transfers_to_caller	returns_explicit_error
+  os_Arena_Validate	bounds_or_failure_report	no_allocation	borrowed_for_call_duration	aborts_process_on_failure
+  std_GenerationalSwap	memory_move	caller_owned_arena	caller_retains_ownership	total_cannot_fail
+  os_ScratchAlloc	allocate	thread_local_scratch	ownership_transfers_to_caller	returns_explicit_error
+  os_ScratchReset	deallocate	thread_local_scratch	caller_retains_ownership	total_cannot_fail
+  os_SetThreadScratch	memory_set	no_allocation	borrowed_for_call_duration	total_cannot_fail
+  os_GetThreadScratch_raw	bounds_or_failure_report	no_allocation	borrowed_for_call_duration	total_cannot_fail
+  std_PoolAlloc_impl	allocate	caller_owned_arena	ownership_transfers_to_caller	returns_explicit_error
+  std_PoolFree_impl	deallocate	caller_owned_arena	caller_retains_ownership	total_cannot_fail
+  os_HashMapRef_impl	memory_copy	caller_owned_arena	borrowed_for_call_duration	returns_explicit_error
+  os_HashMapContains_impl	memory_compare	no_allocation	borrowed_for_call_duration	total_cannot_fail
+  os_HashMapRemove_impl	memory_set	caller_owned_arena	caller_retains_ownership	total_cannot_fail
+  os_HashMapClear_impl	memory_set	caller_owned_arena	caller_retains_ownership	total_cannot_fail
+  std_Clone_str	string_create	caller_owned_arena	ownership_transfers_to_caller	returns_explicit_error
+  std_str_eq	string_compare	no_allocation	borrowed_for_call_duration	total_cannot_fail
+  std_str_byte_at	string_length	no_allocation	borrowed_for_call_duration	total_cannot_fail
+  std_str_slice	string_convert	no_allocation	borrowed_for_call_duration	total_cannot_fail
+  std_str_find	string_compare	no_allocation	borrowed_for_call_duration	total_cannot_fail
+  std_str_trim	string_convert	no_allocation	borrowed_for_call_duration	total_cannot_fail
+  std_str_split	string_create	caller_owned_arena	ownership_transfers_to_caller	returns_explicit_error
+  std_parse_int	string_convert	no_allocation	borrowed_for_call_duration	returns_explicit_error
+  std_is_alpha	string_compare	no_allocation	borrowed_for_call_duration	total_cannot_fail
+  std_is_digit	string_compare	no_allocation	borrowed_for_call_duration	total_cannot_fail
+  std_is_whitespace	string_compare	no_allocation	borrowed_for_call_duration	total_cannot_fail
+
+concrete deferred rows:
+  os_LogInt	standard_stream_logging_is_io_not_memory_despite_living_in_arena_c	-> 17.11
+
+rejection classes:
+  runtime_memory_missing_allocation_helper
+  runtime_memory_incompatible_allocator_domain
+  runtime_memory_invalid_string_layout
+  runtime_memory_wrong_symbol_version
+  runtime_memory_unsupported_target_operation
+  runtime_memory_hidden_generated_c_wrapper
+
+exit gate:
+  every selected allocation, core-memory, and string operation uses its classified explicit runtime path
+  memory obtained from one allocation domain is released only through that domain
+  Phase 14 layout and Phase 15 resource obligations are preserved
+  I/O, filesystem, and resource audit remains in Patch 17.11

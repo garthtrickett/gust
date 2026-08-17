@@ -1,0 +1,78 @@
+name: Cranelift Phase 17 Memory Runtime
+
+on:
+  pull_request:
+    paths:
+      - 'compiler/mir_runtime_boundary_authority.gst'
+      - 'compiler/mir_memory_runtime_request.gst'
+      - 'compiler/mir_memory_runtime_smoke_test_entry.gst'
+      - 'compiler/experiments/cranelift/src/memory_runtime.rs'
+      - 'compiler/experiments/cranelift/src/main.rs'
+      - 'compiler/mir_memory_runtime_request.gst'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/cranelift_registry.py'
+      - 'scripts/phase17_memory_runtime.py'
+      - 'scripts/phase17_memory_runtime_parity.sh'
+      - 'scripts/guard-cranelift-phase17-memory-runtime-contract.sh'
+      - 'tests/cranelift/phase17_memory_runtime_contract.tsv'
+      - 'tests/cranelift/phase17_memory_runtime_review.txt'
+      - '.github/workflows/phase17-memory-runtime.yml'
+      - 'TASK.md'
+  push:
+    branches: [main]
+    paths:
+      - 'compiler/mir_runtime_boundary_authority.gst'
+      - 'compiler/mir_memory_runtime_request.gst'
+      - 'compiler/mir_memory_runtime_request.gst'
+      - 'scripts/phase17_memory_runtime.py'
+      - 'scripts/phase17_memory_runtime_parity.sh'
+      - 'tests/cranelift/phase17_memory_runtime_contract.tsv'
+      - 'tests/cranelift/phase17_memory_runtime_review.txt'
+
+jobs:
+  guard-cranelift-phase17-memory-runtime-contract:
+    name: Phase 17.10 memory runtime contract (Level 1)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: guard-cranelift-phase17-memory-runtime-contract
+        run: python3 scripts/phase17_memory_runtime.py --check
+
+  guard-cranelift-phase17-memory-runtime-parity:
+    name: Phase 17.10 memory runtime parity (Level 2)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y build-essential curl ripgrep binutils
+      - name: Cache cargo registry and build outputs
+        uses: actions/cache@v4
+        with:
+          # Only cargo target dirs and the registry. Never build/guards itself:
+          # those dirs hold witnesses, mutation requests, and .output sentinels,
+          # and restoring stale ones could manufacture a false pass.
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            compiler/experiments/cranelift/target
+            src/runtime/gust
+            build/guards/*/cargo-target
+          key: cargo-${{ runner.os }}-${{ github.workflow }}-${{ hashFiles('compiler/experiments/cranelift/Cargo.lock') }}
+          restore-keys: |
+            cargo-${{ runner.os }}-${{ github.workflow }}-
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: guard-cranelift-phase17-memory-runtime-parity
+        run: just guard-cranelift-phase17-memory-runtime-parity
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase17-memory-runtime-diagnostics
+          if-no-files-found: ignore
+          path: |
+            to.log
+            build/gust-build.log
+            build/guards/phase17_memory_runtime/

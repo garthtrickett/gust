@@ -172,6 +172,8 @@ guard-pr-fast-ci-surface:
       'just guard-cranelift-phase17-gust-runtime-contract'
       'Phase 17 generated C shim elimination'
       'just guard-cranelift-phase17-shim-elimination-contract'
+      'Phase 17 allocation string and core memory audit'
+      'just guard-cranelift-phase17-memory-runtime-contract'
       'phase11-family:'
       'phase11_families:'
       'matrix.family'
@@ -15978,6 +15980,7 @@ guard-cranelift-contract-fast:
     just guard-cranelift-phase17-retained-c-runtime-contract
     just guard-cranelift-phase17-gust-runtime-contract
     just guard-cranelift-phase17-shim-elimination-contract
+    just guard-cranelift-phase17-memory-runtime-contract
 
 guard-cranelift-phase17-runtime-authority-contract:
     #!/usr/bin/env bash
@@ -16109,6 +16112,25 @@ guard-cranelift-phase17-shim-elimination-parity:
       grep -F $'guard-cranelift-phase17-shim-elimination-parity\t2\t' >/dev/null
     just guard-cranelift-phase17-shim-elimination-contract
     bash scripts/phase17_shim_elimination_parity.sh
+
+guard-cranelift-phase17-memory-runtime-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 17.10 allocation, string, and core memory audit..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase17-memory-runtime-contract |
+      grep -F $'guard-cranelift-phase17-memory-runtime-contract\t1\t' >/dev/null
+    bash scripts/guard-cranelift-phase17-memory-runtime-contract.sh
+
+guard-cranelift-phase17-memory-runtime-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 17.10 allocation, string, and core memory parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase17-memory-runtime-parity |
+      grep -F $'guard-cranelift-phase17-memory-runtime-parity\t2\t' >/dev/null
+    just guard-cranelift-phase17-memory-runtime-contract
+    bash scripts/phase17_memory_runtime_parity.sh
 
 guard-cranelift-phase16-abi-authority-contract:
     #!/usr/bin/env bash
