@@ -65,6 +65,23 @@ type MirRuntimeComponentIdentity[ctx] struct {
     target_id: str
 }
 
+// Phase 17.11 I/O, filesystem, and resource contracts. The load-bearing rule
+// mirrors Phase 15: a resource kind that is acquired must also be closed, and
+// manual close and deferred cleanup must name the same runtime operation, so a
+// directory handle cannot be released by one path and leaked by the other.
+type MirRuntimeIoContract[ctx] struct {
+    io_contract_id: str,
+    helper_id: str,
+    symbol_id: str,
+    io_kind: str,
+    resource_kind: str,
+    resource_transition: str,
+    failure_form: str,
+    filesystem_effect: str,
+    close_operation_id: str,
+    target_id: str
+}
+
 // Phase 17.10 allocation, core-memory, and string contracts. The load-bearing
 // field is allocation_domain: memory obtained from one domain may only be
 // released through the same domain, so ownership cannot silently cross an
@@ -300,6 +317,7 @@ type MirRuntimeBoundaryAuthorityTable[ctx] struct {
     gust_modules: Index[std.Vector[MirRuntimeGustModule[ctx], ctx], ctx],
     shim_bans: Index[std.Vector[MirRuntimeShimBan[ctx], ctx], ctx],
     memory_contracts: Index[std.Vector[MirRuntimeMemoryContract[ctx], ctx], ctx],
+    io_contracts: Index[std.Vector[MirRuntimeIoContract[ctx], ctx], ctx],
     requirements: Index[std.Vector[MirRuntimeRequirement[ctx], ctx], ctx],
     compatibility_decisions: Index[std.Vector[MirRuntimeCompatibilityDecision[ctx], ctx], ctx],
     link_plans: Index[std.Vector[MirRuntimeLinkPlanHandoff[ctx], ctx], ctx],
@@ -316,6 +334,7 @@ type MirRuntimeCompatibilityQuery[ctx] struct { compatible: int, reason_code: st
 type MirRuntimeLinkPlanQuery[ctx] struct { found: int, value: MirRuntimeLinkPlanHandoff[ctx] }
 type MirRuntimePackageSelection[ctx] struct { found: int, reason_code: str, value: MirRuntimePackageIdentity[ctx] }
 type MirRuntimePackageManifestQuery[ctx] struct { valid: int, reason_code: str, member_count: int, provided_symbol_count: int, system_import_count: int }
+type MirRuntimeIoContractQuery[ctx] struct { found: int, value: MirRuntimeIoContract[ctx] }
 type MirRuntimeMemoryContractQuery[ctx] struct { found: int, value: MirRuntimeMemoryContract[ctx] }
 type MirRuntimeShimBanQuery[ctx] struct { found: int, value: MirRuntimeShimBan[ctx] }
 type MirRuntimeGustModuleQuery[ctx] struct { found: int, value: MirRuntimeGustModule[ctx] }
@@ -343,6 +362,7 @@ func mir_runtime_empty_requirements(ctx: &Arena) Index[std.Vector[MirRuntimeRequ
 func mir_runtime_empty_package_members(ctx: &Arena) Index[std.Vector[MirRuntimePackageMember[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimePackageMember[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimePackageMember[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
 func mir_runtime_empty_package_provided_symbols(ctx: &Arena) Index[std.Vector[MirRuntimePackageProvidedSymbol[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimePackageProvidedSymbol[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimePackageProvidedSymbol[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
 func mir_runtime_empty_package_system_imports(ctx: &Arena) Index[std.Vector[MirRuntimePackageSystemImport[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimePackageSystemImport[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimePackageSystemImport[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
+func mir_runtime_empty_io_contracts(ctx: &Arena) Index[std.Vector[MirRuntimeIoContract[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimeIoContract[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimeIoContract[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
 func mir_runtime_empty_memory_contracts(ctx: &Arena) Index[std.Vector[MirRuntimeMemoryContract[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimeMemoryContract[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimeMemoryContract[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
 func mir_runtime_empty_shim_bans(ctx: &Arena) Index[std.Vector[MirRuntimeShimBan[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimeShimBan[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimeShimBan[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
 func mir_runtime_empty_gust_modules(ctx: &Arena) Index[std.Vector[MirRuntimeGustModule[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimeGustModule[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimeGustModule[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
@@ -368,6 +388,37 @@ func mir_runtime_helper_classification_is_valid(value: str) int {
     if std.str_eq(value, "obsolete_helper") == 1 { return 1; }
     return 0;
 }
+
+// The selected I/O, filesystem, directory, and resource operation inventory.
+// Sockets, processes, and terminals are deferred by the scope-selection rule.
+func mir_runtime_io_kind_is_valid(value: str) int {
+    if std.str_eq(value, "standard_stream") == 1 { return 1; }
+    if std.str_eq(value, "file_or_stream") == 1 { return 1; }
+    if std.str_eq(value, "path_or_filesystem") == 1 { return 1; }
+    if std.str_eq(value, "directory_resource") == 1 { return 1; }
+    if std.str_eq(value, "environment_query") == 1 { return 1; }
+    if std.str_eq(value, "target_query") == 1 { return 1; }
+    if std.str_eq(value, "c_string_marshalling") == 1 { return 1; }
+    return 0;
+}
+
+func mir_runtime_resource_transition_is_valid(value: str) int {
+    if std.str_eq(value, "not_a_resource") == 1 { return 1; }
+    if std.str_eq(value, "acquires") == 1 { return 1; }
+    if std.str_eq(value, "uses_borrowed") == 1 { return 1; }
+    if std.str_eq(value, "closes") == 1 { return 1; }
+    return 0;
+}
+
+func mir_runtime_filesystem_effect_is_valid(value: str) int {
+    if std.str_eq(value, "none") == 1 { return 1; }
+    if std.str_eq(value, "reads_filesystem") == 1 { return 1; }
+    if std.str_eq(value, "writes_filesystem") == 1 { return 1; }
+    if std.str_eq(value, "removes_path") == 1 { return 1; }
+    return 0;
+}
+
+func mir_runtime_io_contract_for(table: MirRuntimeBoundaryAuthorityTable[ctx], helper_id: str, ctx: &Arena) MirRuntimeIoContractQuery[ctx] { mut result: MirRuntimeIoContractQuery[ctx]; result.found = 0; mut values: std.Vector[MirRuntimeIoContract[ctx], ctx] := ctx[table.io_contracts]; mut index := 0; while index < len(values) { if std.str_eq(values[index].helper_id, helper_id) == 1 { result.found = 1; result.value = values[index]; return result; } index = index + 1; } return result; }
 
 // The selected allocation, core-memory, and string operation inventory.
 func mir_runtime_memory_operation_is_valid(value: str) int {
@@ -504,6 +555,7 @@ func mir_runtime_symbol_identity_id(helper_id: str, symbol_version: str, target_
 func mir_runtime_component_identity_id(component_kind: str, target_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_component:v1:kind="; value = std.Concat(value, component_kind); value = std.Concat(value, ":target="); value = std.Concat(value, target_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
 func mir_runtime_package_identity_id(target_id: str, package_version: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_package:v1:target="; value = std.Concat(value, target_id); value = std.Concat(value, ":version="); value = std.Concat(value, package_version); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
 func mir_runtime_requirement_id(program_id: str, helper_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_requirement:v1:program="; value = std.Concat(value, program_id); value = std.Concat(value, ":helper="); value = std.Concat(value, helper_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
+func mir_runtime_io_contract_id(helper_id: str, io_kind: str, target_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_io_contract:v1:helper="; value = std.Concat(value, helper_id); value = std.Concat(value, ":kind="); value = std.Concat(value, io_kind); value = std.Concat(value, ":target="); value = std.Concat(value, target_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
 func mir_runtime_memory_contract_id(helper_id: str, operation_kind: str, target_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_memory_contract:v1:helper="; value = std.Concat(value, helper_id); value = std.Concat(value, ":operation="); value = std.Concat(value, operation_kind); value = std.Concat(value, ":target="); value = std.Concat(value, target_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
 func mir_runtime_shim_ban_id(banned_class: str, target_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_shim_ban:v1:class="; value = std.Concat(value, banned_class); value = std.Concat(value, ":target="); value = std.Concat(value, target_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
 func mir_runtime_gust_module_id(component_id: str, runtime_abi_id: str, target_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_gust_module:v1:component="; value = std.Concat(value, component_id); value = std.Concat(value, ":abi="); value = std.Concat(value, runtime_abi_id); value = std.Concat(value, ":target="); value = std.Concat(value, target_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
@@ -542,6 +594,7 @@ func mir_runtime_make_empty_table(target_id: str, target_triple: str, ctx: &Aren
     table.gust_modules = mir_runtime_empty_gust_modules(ctx);
     table.shim_bans = mir_runtime_empty_shim_bans(ctx);
     table.memory_contracts = mir_runtime_empty_memory_contracts(ctx);
+    table.io_contracts = mir_runtime_empty_io_contracts(ctx);
     table.requirements = mir_runtime_empty_requirements(ctx);
     table.compatibility_decisions = mir_runtime_empty_compatibility(ctx);
     table.link_plans = mir_runtime_empty_link_plans(ctx);
@@ -558,6 +611,7 @@ func mir_runtime_table_with_package(table: MirRuntimeBoundaryAuthorityTable[ctx]
 func mir_runtime_table_with_package_member(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimePackageMember[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimePackageMember[ctx], ctx] := ctx[table.package_members]; values.Push(value); ctx.Set(table.package_members, values); return table; }
 func mir_runtime_table_with_package_provided_symbol(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimePackageProvidedSymbol[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimePackageProvidedSymbol[ctx], ctx] := ctx[table.package_provided_symbols]; values.Push(value); ctx.Set(table.package_provided_symbols, values); return table; }
 func mir_runtime_table_with_package_system_import(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimePackageSystemImport[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimePackageSystemImport[ctx], ctx] := ctx[table.package_system_imports]; values.Push(value); ctx.Set(table.package_system_imports, values); return table; }
+func mir_runtime_table_with_io_contract(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimeIoContract[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimeIoContract[ctx], ctx] := ctx[table.io_contracts]; values.Push(value); ctx.Set(table.io_contracts, values); return table; }
 func mir_runtime_table_with_memory_contract(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimeMemoryContract[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimeMemoryContract[ctx], ctx] := ctx[table.memory_contracts]; values.Push(value); ctx.Set(table.memory_contracts, values); return table; }
 func mir_runtime_table_with_shim_ban(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimeShimBan[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimeShimBan[ctx], ctx] := ctx[table.shim_bans]; values.Push(value); ctx.Set(table.shim_bans, values); return table; }
 func mir_runtime_table_with_gust_module(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimeGustModule[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimeGustModule[ctx], ctx] := ctx[table.gust_modules]; values.Push(value); ctx.Set(table.gust_modules, values); return table; }
@@ -976,6 +1030,77 @@ func mir_runtime_boundary_authority_table_validate(table: MirRuntimeBoundaryAuth
         if ordered_index != len(plan_components) { return mir_runtime_validation(0, "runtime_package_nondeterministic_component_order", ctx); }
         plan_index = plan_index + 1;
     }
+    // Phase 17.11: I/O, filesystem, and resource contracts. A resource kind that
+    // is acquired must also be closed, and the close operation named here is the
+    // one both manual close and deferred cleanup must call.
+    mut io_contracts: std.Vector[MirRuntimeIoContract[ctx], ctx] := ctx[table.io_contracts];
+    mut io_index := 0;
+    while io_index < len(io_contracts) {
+        if mir_runtime_field_is_safe(io_contracts[io_index].io_contract_id) == 0 { return mir_runtime_validation(0, "runtime_io_missing_symbol", ctx); }
+        mut io_helper := mir_runtime_helper_by_id(table, io_contracts[io_index].helper_id, ctx);
+        if io_helper.found == 0 { return mir_runtime_validation(0, "runtime_io_missing_symbol", ctx); }
+        mut io_symbol := mir_runtime_symbol_by_id(table, io_contracts[io_index].symbol_id, ctx);
+        if io_symbol.found == 0 { return mir_runtime_validation(0, "runtime_io_missing_symbol", ctx); }
+        if std.str_eq(io_symbol.value.helper_id, io_contracts[io_index].helper_id) == 0 { return mir_runtime_validation(0, "runtime_io_missing_symbol", ctx); }
+        if mir_runtime_io_kind_is_valid(io_contracts[io_index].io_kind) == 0 { return mir_runtime_validation(0, "runtime_io_unsupported_target", ctx); }
+        if mir_runtime_resource_transition_is_valid(io_contracts[io_index].resource_transition) == 0 { return mir_runtime_validation(0, "runtime_io_wrong_resource_kind", ctx); }
+        if mir_runtime_filesystem_effect_is_valid(io_contracts[io_index].filesystem_effect) == 0 { return mir_runtime_validation(0, "runtime_io_unsupported_target", ctx); }
+        if mir_runtime_failure_policy_is_valid(io_contracts[io_index].failure_form) == 0 { return mir_runtime_validation(0, "runtime_io_missing_symbol", ctx); }
+        if std.str_eq(io_contracts[io_index].target_id, table.target_id) == 0 { return mir_runtime_validation(0, "runtime_io_unsupported_target", ctx); }
+        if std.str_find(io_contracts[io_index].io_contract_id, "generated") != 0 - 1 { return mir_runtime_validation(0, "runtime_io_hidden_generated_c_wrapper", ctx); }
+
+        // A non-resource helper may not claim a resource transition, and a
+        // resource-bearing helper must name its kind.
+        if std.str_eq(io_contracts[io_index].resource_kind, "none") == 1 {
+            if std.str_eq(io_contracts[io_index].resource_transition, "not_a_resource") == 0 { return mir_runtime_validation(0, "runtime_io_wrong_resource_kind", ctx); }
+        } else {
+            if std.str_eq(io_contracts[io_index].resource_transition, "not_a_resource") == 1 { return mir_runtime_validation(0, "runtime_io_wrong_resource_kind", ctx); }
+        }
+
+        // Manual close and deferred cleanup must call the same operation.
+        if std.str_eq(io_contracts[io_index].resource_transition, "acquires") == 1 ||
+           std.str_eq(io_contracts[io_index].resource_transition, "uses_borrowed") == 1
+        {
+            if mir_runtime_field_is_safe(io_contracts[io_index].close_operation_id) == 0 { return mir_runtime_validation(0, "runtime_io_close_mismatch", ctx); }
+            mut closer_found := 0;
+            mut closer_index := 0;
+            while closer_index < len(io_contracts) {
+                if std.str_eq(io_contracts[closer_index].resource_transition, "closes") == 1 &&
+                   std.str_eq(io_contracts[closer_index].resource_kind, io_contracts[io_index].resource_kind) == 1 &&
+                   std.str_eq(io_contracts[closer_index].close_operation_id, io_contracts[io_index].close_operation_id) == 1
+                {
+                    closer_found = 1;
+                }
+                closer_index = closer_index + 1;
+            }
+            if closer_found == 0 { return mir_runtime_validation(0, "runtime_io_close_mismatch", ctx); }
+        }
+
+        // Exactly one close per resource kind: two closers is a duplicate close.
+        if std.str_eq(io_contracts[io_index].resource_transition, "closes") == 1 {
+            mut other_closer_index := io_index + 1;
+            while other_closer_index < len(io_contracts) {
+                if std.str_eq(io_contracts[other_closer_index].resource_transition, "closes") == 1 &&
+                   std.str_eq(io_contracts[other_closer_index].resource_kind, io_contracts[io_index].resource_kind) == 1
+                {
+                    return mir_runtime_validation(0, "runtime_io_duplicate_close", ctx);
+                }
+                other_closer_index = other_closer_index + 1;
+            }
+        }
+
+        mut duplicate_io_index := io_index + 1;
+        while duplicate_io_index < len(io_contracts) {
+            if std.str_eq(io_contracts[io_index].io_contract_id, io_contracts[duplicate_io_index].io_contract_id) == 1 ||
+               std.str_eq(io_contracts[io_index].helper_id, io_contracts[duplicate_io_index].helper_id) == 1
+            {
+                return mir_runtime_validation(0, "runtime_io_missing_symbol", ctx);
+            }
+            duplicate_io_index = duplicate_io_index + 1;
+        }
+        io_index = io_index + 1;
+    }
+
     // Phase 17.10: allocation, core-memory, and string contracts. Every
     // deallocate must be matched by an allocate in the same domain, so memory
     // cannot be obtained from one runtime component and released through another.
@@ -1429,6 +1554,16 @@ func mir_serialize_runtime_boundary_authority_table_for_request(table: MirRuntim
     while index < len(system_imports) {
         output = mir_runtime_append_field(output, "runtime_package_system_import_id", system_imports[index].import_id, ctx);
         output = mir_runtime_append_field(output, "runtime_package_system_import_spelling", system_imports[index].external_spelling, ctx);
+        index = index + 1;
+    }
+    mut io_contracts: std.Vector[MirRuntimeIoContract[ctx], ctx] := ctx[table.io_contracts];
+    index = 0;
+    while index < len(io_contracts) {
+        output = mir_runtime_append_field(output, "runtime_io_contract_id", io_contracts[index].io_contract_id, ctx);
+        output = mir_runtime_append_field(output, "runtime_io_kind", io_contracts[index].io_kind, ctx);
+        output = mir_runtime_append_field(output, "runtime_io_resource_kind", io_contracts[index].resource_kind, ctx);
+        output = mir_runtime_append_field(output, "runtime_io_resource_transition", io_contracts[index].resource_transition, ctx);
+        output = mir_runtime_append_field(output, "runtime_io_filesystem_effect", io_contracts[index].filesystem_effect, ctx);
         index = index + 1;
     }
     mut memory_contracts: std.Vector[MirRuntimeMemoryContract[ctx], ctx] := ctx[table.memory_contracts];

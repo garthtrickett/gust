@@ -33,6 +33,7 @@ TOP_FIELDS = {
     "phase17_gust_runtime_authority",
     "phase17_shim_elimination_authority",
     "phase17_memory_runtime_authority",
+    "phase17_io_runtime_authority",
     "phase16_deferred_residue_audit",
     "phase16_closure",
     "phase15_deferred_residue_audit",
@@ -1079,6 +1080,29 @@ PHASE17_MEMORY_REJECTIONS = (
     "runtime_memory_wrong_symbol_version",
     "runtime_memory_unsupported_target_operation",
     "runtime_memory_hidden_generated_c_wrapper",
+)
+
+PHASE17_IO_AUTHORITY_FIELDS = {
+    "version", "status", "authority_owner", "request_owner", "worker_owner",
+    "request_format", "witness_format", "linkage_policy",
+    "close_pairing_policy", "scope_selection_rule", "io_kinds",
+    "resource_transitions", "filesystem_effects", "selected_operations",
+    "deferred_rows", "rejection_classes", "witness_policy", "scope_policy",
+    "next_patch",
+}
+PHASE17_IO_OPERATION_FIELDS = {
+    "symbol_identity", "io_kind", "resource_kind", "resource_transition",
+    "failure_form", "filesystem_effect",
+}
+PHASE17_IO_KINDS = (
+    "standard_stream", "file_or_stream", "path_or_filesystem",
+    "directory_resource", "environment_query", "target_query",
+    "c_string_marshalling",
+)
+PHASE17_IO_REJECTIONS = (
+    "runtime_io_missing_symbol", "runtime_io_wrong_resource_kind",
+    "runtime_io_close_mismatch", "runtime_io_duplicate_close",
+    "runtime_io_unsupported_target", "runtime_io_hidden_generated_c_wrapper",
 )
 
 PHASE14_LAYOUT_AUTHORITY_FIELDS = {
@@ -3033,6 +3057,68 @@ def validate_phase17_memory_runtime_authority_structure(registry):
     return authority
 
 
+def validate_phase17_io_runtime_authority_structure(registry):
+    authority = registry["phase17_io_runtime_authority"]
+    require(isinstance(authority, dict)
+            and set(authority) == PHASE17_IO_AUTHORITY_FIELDS,
+            "Phase 17 io runtime authority fields drifted")
+    require(authority["version"] == "phase17_io_runtime_authority_v1"
+            and authority["status"] == "ready_for_patch17_12",
+            "Phase 17 io runtime version drifted")
+    require(tuple(authority["io_kinds"]) == PHASE17_IO_KINDS,
+            "Phase 17 io kind inventory drifted")
+    require(tuple(authority["rejection_classes"]) == PHASE17_IO_REJECTIONS,
+            "Phase 17 io rejection inventory drifted")
+
+    classified = {
+        row["symbol_identity"]
+        for row in registry["phase17_runtime_authority"]
+        ["helper_classifications"]
+    }
+    acquired, closed, seen = set(), {}, set()
+    for index, row in enumerate(authority["selected_operations"]):
+        context = f"phase17_io_runtime_authority.selected_operations[{index}]"
+        require(isinstance(row, dict)
+                and set(row) == PHASE17_IO_OPERATION_FIELDS,
+                f"{context} fields drifted")
+        symbol = row["symbol_identity"]
+        require(symbol in classified,
+                f"{context} names a helper Patch 17.1 never classified")
+        require(symbol not in seen, f"{context} duplicates {symbol}")
+        is_resource = row["resource_kind"] != "none"
+        require(is_resource != (row["resource_transition"] == "not_a_resource"),
+                f"{symbol}: resource kind disagrees with its transition")
+        if row["resource_transition"] == "acquires":
+            acquired.add(row["resource_kind"])
+        if row["resource_transition"] == "closes":
+            closed[row["resource_kind"]] = closed.get(row["resource_kind"], 0) + 1
+        seen.add(symbol)
+
+    # Phase 15 obligation: every acquired kind is closed exactly once.
+    for kind in sorted(acquired):
+        require(closed.get(kind, 0) == 1,
+                f"resource kind {kind} is acquired but closed "
+                f"{closed.get(kind, 0)} times")
+    for kind, count in sorted(closed.items()):
+        require(count == 1, f"resource kind {kind} has {count} closers")
+
+    for index, row in enumerate(authority["deferred_rows"]):
+        context = f"phase17_io_runtime_authority.deferred_rows[{index}]"
+        require(row["symbol_identity"] in classified,
+                f"{context} defers a helper Patch 17.1 never classified")
+        require(row["symbol_identity"] not in seen,
+                f"{context} defers a helper that is also selected")
+    require(authority["close_pairing_policy"]
+            == "an_acquired_resource_kind_has_exactly_one_close_and_manual_"
+               "close_and_deferred_cleanup_name_the_same_runtime_operation"
+            and authority["scope_selection_rule"]
+            == "sockets_processes_terminals_and_unrelated_os_resources_remain_"
+               "deferred_unless_explicitly_selected"
+            and authority["next_patch"] == "17.12",
+            "Phase 17 io runtime policies drifted")
+    return authority
+
+
 def validate_phase14_layout_authority_structure(registry):
     authority = registry["phase14_layout_authority"]
     require(
@@ -4224,6 +4310,18 @@ def validate():
     require(set(phase17_memory_record_schema.get("required", []))
             == PHASE17_MEMORY_OPERATION_FIELDS,
             "schema Phase 17 memory operation record fields drifted")
+    phase17_io_authority_schema = definitions.get(
+        "phase17_io_runtime_authority", {}
+    )
+    require(set(phase17_io_authority_schema.get("required", []))
+            == PHASE17_IO_AUTHORITY_FIELDS,
+            "schema Phase 17 io runtime authority fields drifted")
+    require(phase17_io_authority_schema.get("additionalProperties") is False,
+            "schema Phase 17 io authority must reject unknown fields")
+    phase17_io_record_schema = definitions.get("phase17_io_operation_record", {})
+    require(set(phase17_io_record_schema.get("required", []))
+            == PHASE17_IO_OPERATION_FIELDS,
+            "schema Phase 17 io operation record fields drifted")
     phase14_authority_schema = definitions.get(
         "phase14_layout_authority",
         {},
@@ -4423,6 +4521,7 @@ def validate():
     validate_phase17_gust_runtime_authority_structure(registry)
     validate_phase17_shim_elimination_authority_structure(registry)
     validate_phase17_memory_runtime_authority_structure(registry)
+    validate_phase17_io_runtime_authority_structure(registry)
     validate_phase14_layout_authority_structure(registry)
     validate_phase14_primitive_layout_structure(registry)
     validate_phase14_integer_conversion_structure(registry)
@@ -10421,6 +10520,24 @@ def phase17_memory_runtime_authority_summary_lines(registry):
     ]
 
 
+def phase17_io_runtime_authority_summary_lines(registry):
+    authority = validate_phase17_io_runtime_authority_structure(registry)
+    resources = sorted({r["resource_kind"] for r in authority["selected_operations"]
+                        if r["resource_kind"] != "none"})
+    return [
+        "## Phase 17 I/O, filesystem, and resource runtime authority",
+        "",
+        f"- Authority version: `{authority['version']}`",
+        f"- Status: `{authority['status']}`",
+        f"- Selected operations: `{len(authority['selected_operations'])}`",
+        f"- Resource kinds under Phase 15 obligations: `{', '.join(resources) or 'none'}`",
+        f"- Concrete deferred rows: `{len(authority['deferred_rows'])}`",
+        "",
+        "Patch 17.11 classifies and migrates the selected I/O, filesystem, directory, and resource helpers through explicit runtime packages. An acquired resource kind has exactly one close, and manual close and deferred cleanup name the same runtime operation, so a directory handle cannot be released by one path and leaked by the other. Sockets, processes, terminals, and unrelated OS resources remain deferred unless explicitly selected.",
+        "",
+    ]
+
+
 def render(registry):
     entries = registry["entries"]
     totals = derived_totals(registry)
@@ -10482,6 +10599,7 @@ def render(registry):
         *phase17_gust_runtime_authority_summary_lines(registry),
         *phase17_shim_elimination_authority_summary_lines(registry),
         *phase17_memory_runtime_authority_summary_lines(registry),
+        *phase17_io_runtime_authority_summary_lines(registry),
         "## Registry entries", "",
         "| ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |",
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",

@@ -438,6 +438,16 @@ Patch 17.9 removes generated ad hoc C wrappers from the migrated native path and
 
 Patch 17.10 classifies and migrates the selected allocation, core-memory, and string helper inventory through the explicit native runtime boundary. The load-bearing invariant is domain pairing: memory obtained from one allocation domain may only be released through the same domain, so ownership cannot silently cross an incompatible runtime component boundary. General allocator policy, garbage collection, complete Unicode, and locale behaviour remain deferred unless separately selected.
 
+## Phase 17 I/O, filesystem, and resource runtime authority
+
+- Authority version: `phase17_io_runtime_authority_v1`
+- Status: `ready_for_patch17_12`
+- Selected operations: `22`
+- Resource kinds under Phase 15 obligations: `directory_handle`
+- Concrete deferred rows: `3`
+
+Patch 17.11 classifies and migrates the selected I/O, filesystem, directory, and resource helpers through explicit runtime packages. An acquired resource kind has exactly one close, and manual close and deferred cleanup name the same runtime operation, so a directory handle cannot be released by one path and leaked by the other. Sockets, processes, terminals, and unrelated OS resources remain deferred unless explicitly selected.
+
 ## Registry entries
 
 | ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |

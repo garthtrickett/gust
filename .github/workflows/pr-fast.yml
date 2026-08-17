@@ -189,6 +189,9 @@ jobs:
       - name: Phase 17 allocation string and core memory audit
         run: just guard-cranelift-phase17-memory-runtime-contract
 
+      - name: Phase 17 io filesystem and resource audit
+        run: just guard-cranelift-phase17-io-runtime-contract
+
       - name: Upload Gust build outputs
         uses: actions/upload-artifact@v4
         with:

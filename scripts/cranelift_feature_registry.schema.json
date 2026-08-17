@@ -27,6 +27,7 @@
     "phase17_gust_runtime_authority",
     "phase17_shim_elimination_authority",
     "phase17_memory_runtime_authority",
+    "phase17_io_runtime_authority",
     "phase16_deferred_residue_audit",
     "phase16_closure",
     "phase15_deferred_residue_audit",
@@ -293,6 +294,9 @@
     },
     "phase17_memory_runtime_authority": {
       "$ref": "#/$defs/phase17_memory_runtime_authority"
+    },
+    "phase17_io_runtime_authority": {
+      "$ref": "#/$defs/phase17_io_runtime_authority"
     },
     "phase16_deferred_residue_audit": {
       "$ref": "#/$defs/phase16_deferred_residue_audit"
@@ -703,6 +707,45 @@
         "witness_policy": {"const": "cranelift_and_mir_to_c_memory_runtime_witnesses_must_match_byte_for_byte"},
         "scope_policy": {"const": "allocation_core_memory_and_string_only_io_filesystem_and_resource_audit_remains_in_patch17_11"},
         "next_patch": {"const": "17.11"}
+      }
+    },
+    "phase17_io_operation_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["symbol_identity", "io_kind", "resource_kind", "resource_transition", "failure_form", "filesystem_effect"],
+      "properties": {
+        "symbol_identity": {"type": "string", "minLength": 1},
+        "io_kind": {"enum": ["standard_stream", "file_or_stream", "path_or_filesystem", "directory_resource", "environment_query", "target_query", "c_string_marshalling"]},
+        "resource_kind": {"type": "string", "minLength": 1},
+        "resource_transition": {"enum": ["not_a_resource", "acquires", "uses_borrowed", "closes"]},
+        "failure_form": {"enum": ["total_cannot_fail", "returns_explicit_error", "aborts_process_on_failure"]},
+        "filesystem_effect": {"enum": ["none", "reads_filesystem", "writes_filesystem", "removes_path"]}
+      }
+    },
+    "phase17_io_runtime_authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "status", "authority_owner", "request_owner", "worker_owner", "request_format", "witness_format", "linkage_policy", "close_pairing_policy", "scope_selection_rule", "io_kinds", "resource_transitions", "filesystem_effects", "selected_operations", "deferred_rows", "rejection_classes", "witness_policy", "scope_policy", "next_patch"],
+      "properties": {
+        "version": {"const": "phase17_io_runtime_authority_v1"},
+        "status": {"const": "ready_for_patch17_12"},
+        "authority_owner": {"const": "compiler/mir_runtime_boundary_authority.gst"},
+        "request_owner": {"const": "compiler/mir_io_runtime_request.gst"},
+        "worker_owner": {"const": "compiler/experiments/cranelift/src/io_runtime.rs"},
+        "request_format": {"const": "gust.compiler_io_runtime.v1"},
+        "witness_format": {"const": "gust.io_runtime_witness.v1"},
+        "linkage_policy": {"const": "io_operations_use_their_classified_explicit_runtime_path"},
+        "close_pairing_policy": {"const": "an_acquired_resource_kind_has_exactly_one_close_and_manual_close_and_deferred_cleanup_name_the_same_runtime_operation"},
+        "scope_selection_rule": {"const": "sockets_processes_terminals_and_unrelated_os_resources_remain_deferred_unless_explicitly_selected"},
+        "io_kinds": {"type": "array", "minItems": 7, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "resource_transitions": {"type": "array", "minItems": 4, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "filesystem_effects": {"type": "array", "minItems": 4, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "selected_operations": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/phase17_io_operation_record"}},
+        "deferred_rows": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/phase17_memory_deferred_record"}},
+        "rejection_classes": {"type": "array", "minItems": 6, "uniqueItems": true, "items": {"type": "string", "pattern": "^runtime_io_"}},
+        "witness_policy": {"const": "cranelift_and_mir_to_c_io_runtime_witnesses_must_match_byte_for_byte"},
+        "scope_policy": {"const": "io_filesystem_directory_and_resource_only_threading_and_synchronization_audit_remains_in_patch17_12"},
+        "next_patch": {"const": "17.12"}
       }
     },
     "phase17_runtime_helper_classification": {
