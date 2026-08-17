@@ -4174,6 +4174,64 @@
     "scope_policy": "io_filesystem_directory_and_resource_only_threading_and_synchronization_audit_remains_in_patch17_12",
     "next_patch": "17.12"
   },
+  "phase17_thread_runtime_authority": {
+    "version": "phase17_thread_runtime_authority_v1",
+    "status": "ready_for_patch17_13",
+    "authority_owner": "compiler/mir_runtime_boundary_authority.gst",
+    "request_owner": "compiler/mir_thread_runtime_request.gst",
+    "worker_owner": "compiler/experiments/cranelift/src/thread_runtime.rs",
+    "request_format": "gust.compiler_thread_runtime.v1",
+    "witness_format": "gust.thread_runtime_witness.v1",
+    "linkage_policy": "thread_operations_use_their_classified_explicit_runtime_path",
+    "system_library_policy": "a_platform_thread_library_must_be_a_permitted_system_import_of_a_declared_package",
+    "scope_selection_rule": "this_patch_does_not_claim_complete_concurrency_atomics_cancellation_scheduling_or_race_safety_semantics",
+    "oracle_policy": "scheduler_ordering_is_not_a_stable_oracle_and_is_not_compared",
+    "thread_operations": [
+      "mutex_create", "mutex_lock", "mutex_unlock", "channel_create",
+      "channel_send", "channel_receive", "fiber_create", "fiber_destroy",
+      "scheduler_init", "scheduler_destroy", "thread_count_query"
+    ],
+    "lifetime_constraints": [
+      "caller_scoped", "scheduler_owned", "process_lifetime"
+    ],
+    "cancellation_policies": [
+      "no_cancellation_supported", "cooperative_yield_point"
+    ],
+    "permitted_system_libraries": ["none", "pthread"],
+    "selected_operations": [
+      {"symbol_identity": "std_Mutex_Alloc", "thread_operation": "mutex_create", "system_library_dependency": "pthread", "lifetime_constraint": "caller_scoped", "cancellation_policy": "no_cancellation_supported", "failure_form": "returns_explicit_error"},
+      {"symbol_identity": "std_Mutex_Lock_impl", "thread_operation": "mutex_lock", "system_library_dependency": "pthread", "lifetime_constraint": "caller_scoped", "cancellation_policy": "no_cancellation_supported", "failure_form": "total_cannot_fail"},
+      {"symbol_identity": "std_Mutex_Unlock_impl", "thread_operation": "mutex_unlock", "system_library_dependency": "pthread", "lifetime_constraint": "caller_scoped", "cancellation_policy": "no_cancellation_supported", "failure_form": "total_cannot_fail"},
+      {"symbol_identity": "std_Channel_Alloc", "thread_operation": "channel_create", "system_library_dependency": "none", "lifetime_constraint": "caller_scoped", "cancellation_policy": "no_cancellation_supported", "failure_form": "returns_explicit_error"},
+      {"symbol_identity": "std_Channel_Send_impl", "thread_operation": "channel_send", "system_library_dependency": "none", "lifetime_constraint": "caller_scoped", "cancellation_policy": "cooperative_yield_point", "failure_form": "total_cannot_fail"},
+      {"symbol_identity": "std_Channel_Recv_impl", "thread_operation": "channel_receive", "system_library_dependency": "none", "lifetime_constraint": "caller_scoped", "cancellation_policy": "cooperative_yield_point", "failure_form": "total_cannot_fail"},
+      {"symbol_identity": "gust_fiber_create", "thread_operation": "fiber_create", "system_library_dependency": "none", "lifetime_constraint": "scheduler_owned", "cancellation_policy": "no_cancellation_supported", "failure_form": "returns_explicit_error"},
+      {"symbol_identity": "gust_fiber_free", "thread_operation": "fiber_destroy", "system_library_dependency": "none", "lifetime_constraint": "scheduler_owned", "cancellation_policy": "no_cancellation_supported", "failure_form": "total_cannot_fail"},
+      {"symbol_identity": "gust_scheduler_init", "thread_operation": "scheduler_init", "system_library_dependency": "pthread", "lifetime_constraint": "process_lifetime", "cancellation_policy": "no_cancellation_supported", "failure_form": "returns_explicit_error"},
+      {"symbol_identity": "gust_scheduler_destroy", "thread_operation": "scheduler_destroy", "system_library_dependency": "pthread", "lifetime_constraint": "process_lifetime", "cancellation_policy": "no_cancellation_supported", "failure_form": "total_cannot_fail"},
+      {"symbol_identity": "get_num_threads_to_use", "thread_operation": "thread_count_query", "system_library_dependency": "pthread", "lifetime_constraint": "process_lifetime", "cancellation_policy": "no_cancellation_supported", "failure_form": "total_cannot_fail"}
+    ],
+    "deferred_rows": [
+      {"symbol_identity": "gust_context_switch", "reason": "scheduler_ordering_is_not_a_stable_oracle_under_the_scope_selection_rule", "destination_phase": "17.15"},
+      {"symbol_identity": "gust_fiber_switch", "reason": "scheduler_ordering_is_not_a_stable_oracle_under_the_scope_selection_rule", "destination_phase": "17.15"},
+      {"symbol_identity": "gust_yield", "reason": "scheduler_ordering_is_not_a_stable_oracle_under_the_scope_selection_rule", "destination_phase": "17.15"},
+      {"symbol_identity": "gust_shard_loop", "reason": "scheduler_ordering_is_not_a_stable_oracle_under_the_scope_selection_rule", "destination_phase": "17.15"},
+      {"symbol_identity": "gust_scheduler_spawn", "reason": "scheduler_ordering_is_not_a_stable_oracle_under_the_scope_selection_rule", "destination_phase": "17.15"},
+      {"symbol_identity": "gust_fiber_entry_wrapper", "reason": "fiber_entry_and_exit_unwind_behaviour_not_claimed_by_this_patch", "destination_phase": "17.15"},
+      {"symbol_identity": "gust_fiber_exit", "reason": "fiber_entry_and_exit_unwind_behaviour_not_claimed_by_this_patch", "destination_phase": "17.15"}
+    ],
+    "rejection_classes": [
+      "runtime_thread_unsupported_target",
+      "runtime_thread_missing_component",
+      "runtime_thread_abi_or_version_mismatch",
+      "runtime_thread_undeclared_system_library",
+      "runtime_thread_unsupported_cancellation",
+      "runtime_thread_hidden_generated_c_wrapper"
+    ],
+    "witness_policy": "cranelift_and_mir_to_c_thread_runtime_witnesses_must_match_byte_for_byte",
+    "scope_policy": "bounded_threading_and_synchronization_only_availability_and_diagnostics_remain_in_patch17_13",
+    "next_patch": "17.13"
+  },
   "phase15_specialized_resource_authority": {
     "version": "phase15_specialized_resource_authority_v1",
     "status": "patch15_11_directory_migrated",

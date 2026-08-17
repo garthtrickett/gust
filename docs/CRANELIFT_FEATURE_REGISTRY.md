@@ -448,6 +448,16 @@ Patch 17.10 classifies and migrates the selected allocation, core-memory, and st
 
 Patch 17.11 classifies and migrates the selected I/O, filesystem, directory, and resource helpers through explicit runtime packages. An acquired resource kind has exactly one close, and manual close and deferred cleanup name the same runtime operation, so a directory handle cannot be released by one path and leaked by the other. Sockets, processes, terminals, and unrelated OS resources remain deferred unless explicitly selected.
 
+## Phase 17 threading and synchronization runtime authority
+
+- Authority version: `phase17_thread_runtime_authority_v1`
+- Status: `ready_for_patch17_13`
+- Selected operations: `11`
+- System libraries in use: `none, pthread`
+- Concrete deferred rows: `7`
+
+Patch 17.12 classifies and migrates the bounded threading and synchronization helper inventory. Any platform thread library a helper depends on must be a permitted system import of a declared package, so pthread cannot reach the link line undeclared. This patch does not claim complete concurrency, atomics, cancellation, scheduling, or race-safety semantics, and scheduler ordering is deliberately not a stable oracle.
+
 ## Registry entries
 
 | ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |

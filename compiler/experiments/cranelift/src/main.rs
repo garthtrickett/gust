@@ -24,6 +24,7 @@ mod gust_runtime;
 mod shim_elimination;
 mod memory_runtime;
 mod io_runtime;
+mod thread_runtime;
 mod scope_exit_cleanup;
 mod specialized_resource;
 
@@ -16414,6 +16415,13 @@ fn run() -> Result<(), Box<dyn Error>> {
             let Some(object_path) = args.next() else { return Err(usage_error().into()); };
             if args.next().is_some() { return Err(usage_error().into()); }
             emit_phase17_shim_elimination_object(Path::new(&request_path), Path::new(&object_path))?;
+            Ok(())
+        }
+        "phase17-thread-runtime-witness" => {
+            let Some(request_path) = args.next() else { return Err(usage_error().into()); };
+            if args.next().is_some() { return Err(usage_error().into()); }
+            let witness = thread_runtime::lower_thread_runtime_witness_path(Path::new(&request_path))?;
+            print!("{witness}");
             Ok(())
         }
         "phase17-io-runtime-witness" => {

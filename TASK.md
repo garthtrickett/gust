@@ -81,7 +81,7 @@ If more than 100 runs exist, use the paginated Actions API and apply the same ex
 - [x] Patch 17.9 — Generated C Shim Elimination and Obsolete Helper Removal — DONE
 - [x] Patch 17.10 — Allocation, String, and Core Memory Runtime Audit — DONE
 - [x] Patch 17.11 — I/O, Filesystem, and Resource Runtime Audit — DONE
-- [ ] Patch 17.12 — Threading and Synchronization Runtime Audit
+- [x] Patch 17.12 — Threading and Synchronization Runtime Audit — DONE
 - [ ] Patch 17.13 — Runtime Availability, Compatibility, and Diagnostic Enforcement
 - [ ] Patch 17.14 — Cross-Feature Runtime Composition and Complete Differential
 - [ ] Patch 17.15 — Deferred Residue and Runtime-Coverage Audit

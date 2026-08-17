@@ -176,6 +176,8 @@ guard-pr-fast-ci-surface:
       'just guard-cranelift-phase17-memory-runtime-contract'
       'Phase 17 io filesystem and resource audit'
       'just guard-cranelift-phase17-io-runtime-contract'
+      'Phase 17 threading and synchronization audit'
+      'just guard-cranelift-phase17-thread-runtime-contract'
       'phase11-family:'
       'phase11_families:'
       'matrix.family'
@@ -15984,6 +15986,7 @@ guard-cranelift-contract-fast:
     just guard-cranelift-phase17-shim-elimination-contract
     just guard-cranelift-phase17-memory-runtime-contract
     just guard-cranelift-phase17-io-runtime-contract
+    just guard-cranelift-phase17-thread-runtime-contract
 
 guard-cranelift-phase17-runtime-authority-contract:
     #!/usr/bin/env bash
@@ -16153,6 +16156,25 @@ guard-cranelift-phase17-io-runtime-parity:
       grep -F $'guard-cranelift-phase17-io-runtime-parity\t2\t' >/dev/null
     just guard-cranelift-phase17-io-runtime-contract
     bash scripts/phase17_io_runtime_parity.sh
+
+guard-cranelift-phase17-thread-runtime-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 17.12 threading and synchronization audit..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase17-thread-runtime-contract |
+      grep -F $'guard-cranelift-phase17-thread-runtime-contract\t1\t' >/dev/null
+    bash scripts/guard-cranelift-phase17-thread-runtime-contract.sh
+
+guard-cranelift-phase17-thread-runtime-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 17.12 threading and synchronization parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase17-thread-runtime-parity |
+      grep -F $'guard-cranelift-phase17-thread-runtime-parity\t2\t' >/dev/null
+    just guard-cranelift-phase17-thread-runtime-contract
+    bash scripts/phase17_thread_runtime_parity.sh
 
 guard-cranelift-phase16-abi-authority-contract:
     #!/usr/bin/env bash

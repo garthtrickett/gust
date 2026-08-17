@@ -1,0 +1,53 @@
+Phase 17.12 — Threading and Synchronization Runtime Audit
+guard: guard-cranelift-phase17-thread-runtime-contract
+parity_guard: guard-cranelift-phase17-thread-runtime-parity
+test_level: level1
+system_library_policy: a_platform_thread_library_must_be_a_permitted_system_import_of_a_declared_package
+oracle_policy: scheduler_ordering_is_not_a_stable_oracle_and_is_not_compared
+selected_operations: 11
+
+contract counts:
+  boundary: 1
+  cancellation_policy: 2
+  lifetime_constraint: 3
+  policy: 5
+  query: 1
+  rejection: 6
+  semantic_type: 1
+  thread_operation: 11
+
+selected operations:
+  std_Mutex_Alloc	mutex_create	pthread	caller_scoped	no_cancellation_supported	returns_explicit_error
+  std_Mutex_Lock_impl	mutex_lock	pthread	caller_scoped	no_cancellation_supported	total_cannot_fail
+  std_Mutex_Unlock_impl	mutex_unlock	pthread	caller_scoped	no_cancellation_supported	total_cannot_fail
+  std_Channel_Alloc	channel_create	none	caller_scoped	no_cancellation_supported	returns_explicit_error
+  std_Channel_Send_impl	channel_send	none	caller_scoped	cooperative_yield_point	total_cannot_fail
+  std_Channel_Recv_impl	channel_receive	none	caller_scoped	cooperative_yield_point	total_cannot_fail
+  gust_fiber_create	fiber_create	none	scheduler_owned	no_cancellation_supported	returns_explicit_error
+  gust_fiber_free	fiber_destroy	none	scheduler_owned	no_cancellation_supported	total_cannot_fail
+  gust_scheduler_init	scheduler_init	pthread	process_lifetime	no_cancellation_supported	returns_explicit_error
+  gust_scheduler_destroy	scheduler_destroy	pthread	process_lifetime	no_cancellation_supported	total_cannot_fail
+  get_num_threads_to_use	thread_count_query	pthread	process_lifetime	no_cancellation_supported	total_cannot_fail
+
+concrete deferred rows:
+  gust_context_switch	scheduler_ordering_is_not_a_stable_oracle_under_the_scope_selection_rule	-> 17.15
+  gust_fiber_switch	scheduler_ordering_is_not_a_stable_oracle_under_the_scope_selection_rule	-> 17.15
+  gust_yield	scheduler_ordering_is_not_a_stable_oracle_under_the_scope_selection_rule	-> 17.15
+  gust_shard_loop	scheduler_ordering_is_not_a_stable_oracle_under_the_scope_selection_rule	-> 17.15
+  gust_scheduler_spawn	scheduler_ordering_is_not_a_stable_oracle_under_the_scope_selection_rule	-> 17.15
+  gust_fiber_entry_wrapper	fiber_entry_and_exit_unwind_behaviour_not_claimed_by_this_patch	-> 17.15
+  gust_fiber_exit	fiber_entry_and_exit_unwind_behaviour_not_claimed_by_this_patch	-> 17.15
+
+rejection classes:
+  runtime_thread_unsupported_target
+  runtime_thread_missing_component
+  runtime_thread_abi_or_version_mismatch
+  runtime_thread_undeclared_system_library
+  runtime_thread_unsupported_cancellation
+  runtime_thread_hidden_generated_c_wrapper
+
+exit gate:
+  every selected threading and synchronization operation uses its classified explicit runtime path
+  a platform thread library is a permitted system import of a declared package
+  scheduler ordering is not a stable oracle and is not compared
+  availability, compatibility, and diagnostics remain in Patch 17.13

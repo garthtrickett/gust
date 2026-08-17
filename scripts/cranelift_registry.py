@@ -34,6 +34,7 @@ TOP_FIELDS = {
     "phase17_shim_elimination_authority",
     "phase17_memory_runtime_authority",
     "phase17_io_runtime_authority",
+    "phase17_thread_runtime_authority",
     "phase16_deferred_residue_audit",
     "phase16_closure",
     "phase15_deferred_residue_audit",
@@ -1103,6 +1104,31 @@ PHASE17_IO_REJECTIONS = (
     "runtime_io_missing_symbol", "runtime_io_wrong_resource_kind",
     "runtime_io_close_mismatch", "runtime_io_duplicate_close",
     "runtime_io_unsupported_target", "runtime_io_hidden_generated_c_wrapper",
+)
+
+PHASE17_THREAD_AUTHORITY_FIELDS = {
+    "version", "status", "authority_owner", "request_owner", "worker_owner",
+    "request_format", "witness_format", "linkage_policy",
+    "system_library_policy", "scope_selection_rule", "oracle_policy",
+    "thread_operations", "lifetime_constraints", "cancellation_policies",
+    "permitted_system_libraries", "selected_operations", "deferred_rows",
+    "rejection_classes", "witness_policy", "scope_policy", "next_patch",
+}
+PHASE17_THREAD_OPERATION_FIELDS = {
+    "symbol_identity", "thread_operation", "system_library_dependency",
+    "lifetime_constraint", "cancellation_policy", "failure_form",
+}
+PHASE17_THREAD_OPERATIONS = (
+    "mutex_create", "mutex_lock", "mutex_unlock", "channel_create",
+    "channel_send", "channel_receive", "fiber_create", "fiber_destroy",
+    "scheduler_init", "scheduler_destroy", "thread_count_query",
+)
+PHASE17_THREAD_REJECTIONS = (
+    "runtime_thread_unsupported_target", "runtime_thread_missing_component",
+    "runtime_thread_abi_or_version_mismatch",
+    "runtime_thread_undeclared_system_library",
+    "runtime_thread_unsupported_cancellation",
+    "runtime_thread_hidden_generated_c_wrapper",
 )
 
 PHASE14_LAYOUT_AUTHORITY_FIELDS = {
@@ -3119,6 +3145,57 @@ def validate_phase17_io_runtime_authority_structure(registry):
     return authority
 
 
+def validate_phase17_thread_runtime_authority_structure(registry):
+    authority = registry["phase17_thread_runtime_authority"]
+    require(isinstance(authority, dict)
+            and set(authority) == PHASE17_THREAD_AUTHORITY_FIELDS,
+            "Phase 17 thread runtime authority fields drifted")
+    require(authority["version"] == "phase17_thread_runtime_authority_v1"
+            and authority["status"] == "ready_for_patch17_13"
+            and authority["oracle_policy"]
+            == "scheduler_ordering_is_not_a_stable_oracle_and_is_not_compared",
+            "Phase 17 thread runtime oracle policy drifted")
+    require(tuple(authority["thread_operations"]) == PHASE17_THREAD_OPERATIONS,
+            "Phase 17 thread operation inventory drifted")
+    require(tuple(authority["rejection_classes"]) == PHASE17_THREAD_REJECTIONS,
+            "Phase 17 thread rejection inventory drifted")
+
+    classified = {
+        row["symbol_identity"]
+        for row in registry["phase17_runtime_authority"]
+        ["helper_classifications"]
+    }
+    permitted = set(authority["permitted_system_libraries"])
+    seen = set()
+    for index, row in enumerate(authority["selected_operations"]):
+        context = f"phase17_thread_runtime_authority.selected_operations[{index}]"
+        require(isinstance(row, dict)
+                and set(row) == PHASE17_THREAD_OPERATION_FIELDS,
+                f"{context} fields drifted")
+        symbol = row["symbol_identity"]
+        require(symbol in classified,
+                f"{context} names a helper Patch 17.1 never classified")
+        require(symbol not in seen, f"{context} duplicates {symbol}")
+        require(row["thread_operation"] in PHASE17_THREAD_OPERATIONS,
+                f"{symbol}: operation is outside the bounded inventory")
+        require(row["system_library_dependency"] in permitted,
+                f"{symbol}: {row['system_library_dependency']} is not a "
+                f"permitted system library")
+        seen.add(symbol)
+    for index, row in enumerate(authority["deferred_rows"]):
+        context = f"phase17_thread_runtime_authority.deferred_rows[{index}]"
+        require(row["symbol_identity"] in classified,
+                f"{context} defers a helper Patch 17.1 never classified")
+        require(row["symbol_identity"] not in seen,
+                f"{context} defers a helper that is also selected")
+    require(authority["system_library_policy"]
+            == "a_platform_thread_library_must_be_a_permitted_system_import_"
+               "of_a_declared_package"
+            and authority["next_patch"] == "17.13",
+            "Phase 17 thread runtime policies drifted")
+    return authority
+
+
 def validate_phase14_layout_authority_structure(registry):
     authority = registry["phase14_layout_authority"]
     require(
@@ -4322,6 +4399,20 @@ def validate():
     require(set(phase17_io_record_schema.get("required", []))
             == PHASE17_IO_OPERATION_FIELDS,
             "schema Phase 17 io operation record fields drifted")
+    phase17_thread_authority_schema = definitions.get(
+        "phase17_thread_runtime_authority", {}
+    )
+    require(set(phase17_thread_authority_schema.get("required", []))
+            == PHASE17_THREAD_AUTHORITY_FIELDS,
+            "schema Phase 17 thread runtime authority fields drifted")
+    require(phase17_thread_authority_schema.get("additionalProperties") is False,
+            "schema Phase 17 thread authority must reject unknown fields")
+    phase17_thread_record_schema = definitions.get(
+        "phase17_thread_operation_record", {}
+    )
+    require(set(phase17_thread_record_schema.get("required", []))
+            == PHASE17_THREAD_OPERATION_FIELDS,
+            "schema Phase 17 thread operation record fields drifted")
     phase14_authority_schema = definitions.get(
         "phase14_layout_authority",
         {},
@@ -4522,6 +4613,7 @@ def validate():
     validate_phase17_shim_elimination_authority_structure(registry)
     validate_phase17_memory_runtime_authority_structure(registry)
     validate_phase17_io_runtime_authority_structure(registry)
+    validate_phase17_thread_runtime_authority_structure(registry)
     validate_phase14_layout_authority_structure(registry)
     validate_phase14_primitive_layout_structure(registry)
     validate_phase14_integer_conversion_structure(registry)
@@ -10538,6 +10630,24 @@ def phase17_io_runtime_authority_summary_lines(registry):
     ]
 
 
+def phase17_thread_runtime_authority_summary_lines(registry):
+    authority = validate_phase17_thread_runtime_authority_structure(registry)
+    libraries = sorted({r["system_library_dependency"]
+                        for r in authority["selected_operations"]})
+    return [
+        "## Phase 17 threading and synchronization runtime authority",
+        "",
+        f"- Authority version: `{authority['version']}`",
+        f"- Status: `{authority['status']}`",
+        f"- Selected operations: `{len(authority['selected_operations'])}`",
+        f"- System libraries in use: `{', '.join(libraries)}`",
+        f"- Concrete deferred rows: `{len(authority['deferred_rows'])}`",
+        "",
+        "Patch 17.12 classifies and migrates the bounded threading and synchronization helper inventory. Any platform thread library a helper depends on must be a permitted system import of a declared package, so pthread cannot reach the link line undeclared. This patch does not claim complete concurrency, atomics, cancellation, scheduling, or race-safety semantics, and scheduler ordering is deliberately not a stable oracle.",
+        "",
+    ]
+
+
 def render(registry):
     entries = registry["entries"]
     totals = derived_totals(registry)
@@ -10600,6 +10710,7 @@ def render(registry):
         *phase17_shim_elimination_authority_summary_lines(registry),
         *phase17_memory_runtime_authority_summary_lines(registry),
         *phase17_io_runtime_authority_summary_lines(registry),
+        *phase17_thread_runtime_authority_summary_lines(registry),
         "## Registry entries", "",
         "| ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |",
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
