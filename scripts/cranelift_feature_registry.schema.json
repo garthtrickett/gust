@@ -28,6 +28,7 @@
     "phase17_shim_elimination_authority",
     "phase17_memory_runtime_authority",
     "phase17_io_runtime_authority",
+    "phase17_thread_runtime_authority",
     "phase16_deferred_residue_audit",
     "phase16_closure",
     "phase15_deferred_residue_audit",
@@ -297,6 +298,9 @@
     },
     "phase17_io_runtime_authority": {
       "$ref": "#/$defs/phase17_io_runtime_authority"
+    },
+    "phase17_thread_runtime_authority": {
+      "$ref": "#/$defs/phase17_thread_runtime_authority"
     },
     "phase16_deferred_residue_audit": {
       "$ref": "#/$defs/phase16_deferred_residue_audit"
@@ -746,6 +750,47 @@
         "witness_policy": {"const": "cranelift_and_mir_to_c_io_runtime_witnesses_must_match_byte_for_byte"},
         "scope_policy": {"const": "io_filesystem_directory_and_resource_only_threading_and_synchronization_audit_remains_in_patch17_12"},
         "next_patch": {"const": "17.12"}
+      }
+    },
+    "phase17_thread_operation_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["symbol_identity", "thread_operation", "system_library_dependency", "lifetime_constraint", "cancellation_policy", "failure_form"],
+      "properties": {
+        "symbol_identity": {"type": "string", "minLength": 1},
+        "thread_operation": {"enum": ["mutex_create", "mutex_lock", "mutex_unlock", "channel_create", "channel_send", "channel_receive", "fiber_create", "fiber_destroy", "scheduler_init", "scheduler_destroy", "thread_count_query"]},
+        "system_library_dependency": {"enum": ["none", "pthread"]},
+        "lifetime_constraint": {"enum": ["caller_scoped", "scheduler_owned", "process_lifetime"]},
+        "cancellation_policy": {"enum": ["no_cancellation_supported", "cooperative_yield_point"]},
+        "failure_form": {"enum": ["total_cannot_fail", "returns_explicit_error", "aborts_process_on_failure"]}
+      }
+    },
+    "phase17_thread_runtime_authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "status", "authority_owner", "request_owner", "worker_owner", "request_format", "witness_format", "linkage_policy", "system_library_policy", "scope_selection_rule", "oracle_policy", "thread_operations", "lifetime_constraints", "cancellation_policies", "permitted_system_libraries", "selected_operations", "deferred_rows", "rejection_classes", "witness_policy", "scope_policy", "next_patch"],
+      "properties": {
+        "version": {"const": "phase17_thread_runtime_authority_v1"},
+        "status": {"const": "ready_for_patch17_13"},
+        "authority_owner": {"const": "compiler/mir_runtime_boundary_authority.gst"},
+        "request_owner": {"const": "compiler/mir_thread_runtime_request.gst"},
+        "worker_owner": {"const": "compiler/experiments/cranelift/src/thread_runtime.rs"},
+        "request_format": {"const": "gust.compiler_thread_runtime.v1"},
+        "witness_format": {"const": "gust.thread_runtime_witness.v1"},
+        "linkage_policy": {"const": "thread_operations_use_their_classified_explicit_runtime_path"},
+        "system_library_policy": {"const": "a_platform_thread_library_must_be_a_permitted_system_import_of_a_declared_package"},
+        "scope_selection_rule": {"const": "this_patch_does_not_claim_complete_concurrency_atomics_cancellation_scheduling_or_race_safety_semantics"},
+        "oracle_policy": {"const": "scheduler_ordering_is_not_a_stable_oracle_and_is_not_compared"},
+        "thread_operations": {"type": "array", "minItems": 11, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "lifetime_constraints": {"type": "array", "minItems": 3, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "cancellation_policies": {"type": "array", "minItems": 2, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "permitted_system_libraries": {"type": "array", "minItems": 2, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "selected_operations": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/phase17_thread_operation_record"}},
+        "deferred_rows": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/phase17_memory_deferred_record"}},
+        "rejection_classes": {"type": "array", "minItems": 6, "uniqueItems": true, "items": {"type": "string", "pattern": "^runtime_thread_"}},
+        "witness_policy": {"const": "cranelift_and_mir_to_c_thread_runtime_witnesses_must_match_byte_for_byte"},
+        "scope_policy": {"const": "bounded_threading_and_synchronization_only_availability_and_diagnostics_remain_in_patch17_13"},
+        "next_patch": {"const": "17.13"}
       }
     },
     "phase17_runtime_helper_classification": {
