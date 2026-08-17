@@ -1,0 +1,44 @@
+Phase 17.9 — Generated C Shim Elimination and Obsolete Helper Removal
+guard: guard-cranelift-phase17-shim-elimination-contract
+parity_guard: guard-cranelift-phase17-shim-elimination-parity
+test_level: level1
+linkage_policy: native_path_emits_no_program_specific_c
+evidence_policy: explicit_cranelift_succeeds_with_c_compiler_unavailable
+transport_ban_policy: native_request_fields_and_worker_code_may_not_transport_or_synthesize_c_wrapper_source
+
+contract counts:
+  banned_class: 6
+  boundary: 1
+  obsolete_family: 4
+  policy: 4
+  query: 1
+  rejection: 4
+  replacement_kind: 3
+  semantic_type: 1
+
+banned wrapper classes:
+  runtime_call_wrapper
+  abi_adaptation_wrapper
+  resource_or_cleanup_wrapper
+  allocation_or_string_helper_wrapper
+  io_filesystem_or_threading_wrapper
+  target_selection_wrapper_fragment
+
+obsolete generated-C families removed:
+  *_IsValid	p17_helper_generated_is_valid_family	compiler_owned_direct_import
+  std_GenerationalArena_Clone_*	p17_helper_generated_generational_clone_family	explicit_runtime_component
+  *_pthread_wrapper	p17_helper_generated_pthread_wrapper_family	explicit_runtime_component
+  gust_user_main/main	p17_helper_generated_entry_wrapper_family	narrower_explicit_deferral
+
+rejection classes:
+  runtime_shim_unclassified_ban
+  runtime_shim_ban_without_replacement
+  runtime_shim_missing_evidence
+  runtime_shim_duplicate_ban
+
+exit gate:
+  every selected retained C implementation reaches programs through the package manifest
+  no retained C source is generated from the compiled program
+  no retained C is used as an implicit Cranelift shim
+  explicit Cranelift succeeds with the C compiler unavailable
+  allocation, string, and core memory audit remains in Patch 17.10

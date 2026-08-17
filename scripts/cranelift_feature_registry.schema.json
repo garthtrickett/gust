@@ -25,6 +25,7 @@
     "phase17_rust_runtime_authority",
     "phase17_retained_c_authority",
     "phase17_gust_runtime_authority",
+    "phase17_shim_elimination_authority",
     "phase16_deferred_residue_audit",
     "phase16_closure",
     "phase15_deferred_residue_audit",
@@ -286,6 +287,9 @@
     "phase17_gust_runtime_authority": {
       "$ref": "#/$defs/phase17_gust_runtime_authority"
     },
+    "phase17_shim_elimination_authority": {
+      "$ref": "#/$defs/phase17_shim_elimination_authority"
+    },
     "phase16_deferred_residue_audit": {
       "$ref": "#/$defs/phase16_deferred_residue_audit"
     },
@@ -488,7 +492,7 @@
         "selected_imports": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/phase17_runtime_import_record"}},
         "rejection_classes": {"type": "array", "minItems": 5, "uniqueItems": true, "items": {"type": "string", "pattern": "^runtime_import_"}},
         "witness_policy": {"const": "cranelift_and_mir_to_c_runtime_import_witnesses_must_match_byte_for_byte"},
-        "scope_policy": {"const": "stable_runtime_library_imports_only_legacy_fixture_symbol_constants_removed_in_patch17_9"},
+        "scope_policy": {"const": "stable_runtime_library_imports_only_legacy_phase9_11_13_fixture_constants_audited_in_patch17_15"},
         "next_patch": {"const": "17.6"}
       }
     },
@@ -612,6 +616,40 @@
         "witness_policy": {"const": "cranelift_and_mir_to_c_gust_runtime_witnesses_must_match_byte_for_byte"},
         "scope_policy": {"const": "reference_gust_module_only_generated_c_shim_elimination_remains_in_patch17_9"},
         "next_patch": {"const": "17.9"}
+      }
+    },
+    "phase17_obsolete_family_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["family", "helper_id", "replacement_kind"],
+      "properties": {
+        "family": {"type": "string", "minLength": 1},
+        "helper_id": {"type": "string", "pattern": "^p17_helper_generated_"},
+        "replacement_kind": {"enum": ["compiler_owned_direct_import", "explicit_runtime_component", "narrower_explicit_deferral"]}
+      }
+    },
+    "phase17_shim_elimination_authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "status", "authority_owner", "request_owner", "worker_owner", "request_format", "witness_format", "linkage_policy", "evidence_policy", "transport_ban_policy", "banned_classes", "replacement_kinds", "obsolete_families", "rejection_classes", "witness_policy", "scope_policy", "next_patch"],
+      "properties": {
+        "version": {"const": "phase17_shim_elimination_authority_v1"},
+        "status": {"const": "ready_for_patch17_10"},
+        "authority_owner": {"const": "compiler/mir_runtime_boundary_authority.gst"},
+        "request_owner": {"const": "compiler/mir_shim_elimination_request.gst"},
+        "worker_owner": {"const": "compiler/experiments/cranelift/src/shim_elimination.rs"},
+        "request_format": {"const": "gust.compiler_shim_elimination.v1"},
+        "witness_format": {"const": "gust.shim_elimination_witness.v1"},
+        "linkage_policy": {"const": "native_path_emits_no_program_specific_c"},
+        "evidence_policy": {"const": "explicit_cranelift_succeeds_with_c_compiler_unavailable"},
+        "transport_ban_policy": {"const": "native_request_fields_and_worker_code_may_not_transport_or_synthesize_c_wrapper_source"},
+        "banned_classes": {"type": "array", "minItems": 6, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "replacement_kinds": {"type": "array", "minItems": 3, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "obsolete_families": {"type": "array", "minItems": 4, "uniqueItems": true, "items": {"$ref": "#/$defs/phase17_obsolete_family_record"}},
+        "rejection_classes": {"type": "array", "minItems": 4, "uniqueItems": true, "items": {"type": "string", "pattern": "^runtime_shim_"}},
+        "witness_policy": {"const": "cranelift_and_mir_to_c_shim_elimination_witnesses_must_match_byte_for_byte"},
+        "scope_policy": {"const": "native_path_c_generation_banned_allocation_string_and_core_memory_audit_remains_in_patch17_10"},
+        "next_patch": {"const": "17.10"}
       }
     },
     "phase17_runtime_helper_classification": {

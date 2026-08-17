@@ -65,6 +65,20 @@ type MirRuntimeComponentIdentity[ctx] struct {
     target_id: str
 }
 
+// Phase 17.9 shim elimination. The native path may not emit, compile, or link
+// program-specific C. Each record names one banned generation class and the
+// compiler-owned replacement that made it unnecessary, so a ban is always paired
+// with the thing that discharged it rather than being an unexplained refusal.
+type MirRuntimeShimBan[ctx] struct {
+    ban_id: str,
+    banned_class: str,
+    obsolete_family: str,
+    replacement_kind: str,
+    replacement_component_id: str,
+    target_id: str,
+    evidence_policy: str
+}
+
 // Phase 17.8 pure Gust runtime modules. These compile through the same generic
 // canonical-MIR route as any other Gust code. The compiler and backend must not
 // recognise a module by name or by source contents: if generic lowering cannot
@@ -267,6 +281,7 @@ type MirRuntimeBoundaryAuthorityTable[ctx] struct {
     rust_components: Index[std.Vector[MirRuntimeRustComponent[ctx], ctx], ctx],
     retained_c_components: Index[std.Vector[MirRuntimeRetainedCComponent[ctx], ctx], ctx],
     gust_modules: Index[std.Vector[MirRuntimeGustModule[ctx], ctx], ctx],
+    shim_bans: Index[std.Vector[MirRuntimeShimBan[ctx], ctx], ctx],
     requirements: Index[std.Vector[MirRuntimeRequirement[ctx], ctx], ctx],
     compatibility_decisions: Index[std.Vector[MirRuntimeCompatibilityDecision[ctx], ctx], ctx],
     link_plans: Index[std.Vector[MirRuntimeLinkPlanHandoff[ctx], ctx], ctx],
@@ -283,6 +298,7 @@ type MirRuntimeCompatibilityQuery[ctx] struct { compatible: int, reason_code: st
 type MirRuntimeLinkPlanQuery[ctx] struct { found: int, value: MirRuntimeLinkPlanHandoff[ctx] }
 type MirRuntimePackageSelection[ctx] struct { found: int, reason_code: str, value: MirRuntimePackageIdentity[ctx] }
 type MirRuntimePackageManifestQuery[ctx] struct { valid: int, reason_code: str, member_count: int, provided_symbol_count: int, system_import_count: int }
+type MirRuntimeShimBanQuery[ctx] struct { found: int, value: MirRuntimeShimBan[ctx] }
 type MirRuntimeGustModuleQuery[ctx] struct { found: int, value: MirRuntimeGustModule[ctx] }
 type MirRuntimeRetainedCQuery[ctx] struct { found: int, value: MirRuntimeRetainedCComponent[ctx] }
 type MirRuntimeRustComponentQuery[ctx] struct { found: int, value: MirRuntimeRustComponent[ctx] }
@@ -308,6 +324,7 @@ func mir_runtime_empty_requirements(ctx: &Arena) Index[std.Vector[MirRuntimeRequ
 func mir_runtime_empty_package_members(ctx: &Arena) Index[std.Vector[MirRuntimePackageMember[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimePackageMember[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimePackageMember[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
 func mir_runtime_empty_package_provided_symbols(ctx: &Arena) Index[std.Vector[MirRuntimePackageProvidedSymbol[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimePackageProvidedSymbol[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimePackageProvidedSymbol[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
 func mir_runtime_empty_package_system_imports(ctx: &Arena) Index[std.Vector[MirRuntimePackageSystemImport[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimePackageSystemImport[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimePackageSystemImport[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
+func mir_runtime_empty_shim_bans(ctx: &Arena) Index[std.Vector[MirRuntimeShimBan[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimeShimBan[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimeShimBan[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
 func mir_runtime_empty_gust_modules(ctx: &Arena) Index[std.Vector[MirRuntimeGustModule[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimeGustModule[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimeGustModule[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
 func mir_runtime_empty_retained_c_components(ctx: &Arena) Index[std.Vector[MirRuntimeRetainedCComponent[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimeRetainedCComponent[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimeRetainedCComponent[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
 func mir_runtime_empty_rust_components(ctx: &Arena) Index[std.Vector[MirRuntimeRustComponent[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimeRustComponent[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimeRustComponent[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
@@ -331,6 +348,27 @@ func mir_runtime_helper_classification_is_valid(value: str) int {
     if std.str_eq(value, "obsolete_helper") == 1 { return 1; }
     return 0;
 }
+
+// The six wrapper classes Patch 17.9 removes from the native path.
+func mir_runtime_banned_class_is_valid(value: str) int {
+    if std.str_eq(value, "runtime_call_wrapper") == 1 { return 1; }
+    if std.str_eq(value, "abi_adaptation_wrapper") == 1 { return 1; }
+    if std.str_eq(value, "resource_or_cleanup_wrapper") == 1 { return 1; }
+    if std.str_eq(value, "allocation_or_string_helper_wrapper") == 1 { return 1; }
+    if std.str_eq(value, "io_filesystem_or_threading_wrapper") == 1 { return 1; }
+    if std.str_eq(value, "target_selection_wrapper_fragment") == 1 { return 1; }
+    return 0;
+}
+
+// A ban is only credible if something compiler-owned replaced it.
+func mir_runtime_replacement_kind_is_valid(value: str) int {
+    if std.str_eq(value, "compiler_owned_direct_import") == 1 { return 1; }
+    if std.str_eq(value, "explicit_runtime_component") == 1 { return 1; }
+    if std.str_eq(value, "narrower_explicit_deferral") == 1 { return 1; }
+    return 0;
+}
+
+func mir_runtime_shim_ban_for(table: MirRuntimeBoundaryAuthorityTable[ctx], banned_class: str, ctx: &Arena) MirRuntimeShimBanQuery[ctx] { mut result: MirRuntimeShimBanQuery[ctx]; result.found = 0; mut values: std.Vector[MirRuntimeShimBan[ctx], ctx] := ctx[table.shim_bans]; mut index := 0; while index < len(values) { if std.str_eq(values[index].banned_class, banned_class) == 1 { result.found = 1; result.value = values[index]; return result; } index = index + 1; } return result; }
 
 // Only the generic route is a legal lowering path. A bespoke one would mean the
 // compiler recognised this module, which is exactly what the patch forbids.
@@ -410,6 +448,7 @@ func mir_runtime_symbol_identity_id(helper_id: str, symbol_version: str, target_
 func mir_runtime_component_identity_id(component_kind: str, target_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_component:v1:kind="; value = std.Concat(value, component_kind); value = std.Concat(value, ":target="); value = std.Concat(value, target_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
 func mir_runtime_package_identity_id(target_id: str, package_version: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_package:v1:target="; value = std.Concat(value, target_id); value = std.Concat(value, ":version="); value = std.Concat(value, package_version); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
 func mir_runtime_requirement_id(program_id: str, helper_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_requirement:v1:program="; value = std.Concat(value, program_id); value = std.Concat(value, ":helper="); value = std.Concat(value, helper_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
+func mir_runtime_shim_ban_id(banned_class: str, target_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_shim_ban:v1:class="; value = std.Concat(value, banned_class); value = std.Concat(value, ":target="); value = std.Concat(value, target_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
 func mir_runtime_gust_module_id(component_id: str, runtime_abi_id: str, target_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_gust_module:v1:component="; value = std.Concat(value, component_id); value = std.Concat(value, ":abi="); value = std.Concat(value, runtime_abi_id); value = std.Concat(value, ":target="); value = std.Concat(value, target_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
 func mir_runtime_retained_c_component_id(component_id: str, runtime_abi_id: str, target_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_retained_c:v1:component="; value = std.Concat(value, component_id); value = std.Concat(value, ":abi="); value = std.Concat(value, runtime_abi_id); value = std.Concat(value, ":target="); value = std.Concat(value, target_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
 func mir_runtime_rust_component_id(component_id: str, runtime_abi_id: str, target_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_rust_component:v1:component="; value = std.Concat(value, component_id); value = std.Concat(value, ":abi="); value = std.Concat(value, runtime_abi_id); value = std.Concat(value, ":target="); value = std.Concat(value, target_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
@@ -444,6 +483,7 @@ func mir_runtime_make_empty_table(target_id: str, target_triple: str, ctx: &Aren
     table.rust_components = mir_runtime_empty_rust_components(ctx);
     table.retained_c_components = mir_runtime_empty_retained_c_components(ctx);
     table.gust_modules = mir_runtime_empty_gust_modules(ctx);
+    table.shim_bans = mir_runtime_empty_shim_bans(ctx);
     table.requirements = mir_runtime_empty_requirements(ctx);
     table.compatibility_decisions = mir_runtime_empty_compatibility(ctx);
     table.link_plans = mir_runtime_empty_link_plans(ctx);
@@ -460,6 +500,7 @@ func mir_runtime_table_with_package(table: MirRuntimeBoundaryAuthorityTable[ctx]
 func mir_runtime_table_with_package_member(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimePackageMember[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimePackageMember[ctx], ctx] := ctx[table.package_members]; values.Push(value); ctx.Set(table.package_members, values); return table; }
 func mir_runtime_table_with_package_provided_symbol(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimePackageProvidedSymbol[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimePackageProvidedSymbol[ctx], ctx] := ctx[table.package_provided_symbols]; values.Push(value); ctx.Set(table.package_provided_symbols, values); return table; }
 func mir_runtime_table_with_package_system_import(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimePackageSystemImport[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimePackageSystemImport[ctx], ctx] := ctx[table.package_system_imports]; values.Push(value); ctx.Set(table.package_system_imports, values); return table; }
+func mir_runtime_table_with_shim_ban(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimeShimBan[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimeShimBan[ctx], ctx] := ctx[table.shim_bans]; values.Push(value); ctx.Set(table.shim_bans, values); return table; }
 func mir_runtime_table_with_gust_module(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimeGustModule[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimeGustModule[ctx], ctx] := ctx[table.gust_modules]; values.Push(value); ctx.Set(table.gust_modules, values); return table; }
 func mir_runtime_table_with_retained_c_component(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimeRetainedCComponent[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimeRetainedCComponent[ctx], ctx] := ctx[table.retained_c_components]; values.Push(value); ctx.Set(table.retained_c_components, values); return table; }
 func mir_runtime_table_with_rust_component(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimeRustComponent[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimeRustComponent[ctx], ctx] := ctx[table.rust_components]; values.Push(value); ctx.Set(table.rust_components, values); return table; }
@@ -876,6 +917,39 @@ func mir_runtime_boundary_authority_table_validate(table: MirRuntimeBoundaryAuth
         if ordered_index != len(plan_components) { return mir_runtime_validation(0, "runtime_package_nondeterministic_component_order", ctx); }
         plan_index = plan_index + 1;
     }
+    // Phase 17.9: every banned wrapper class is paired with the compiler-owned
+    // thing that replaced it. A ban with no replacement is an unexplained
+    // refusal, and a replacement naming an undeclared component is a fiction.
+    mut shim_bans: std.Vector[MirRuntimeShimBan[ctx], ctx] := ctx[table.shim_bans];
+    mut ban_index := 0;
+    while ban_index < len(shim_bans) {
+        if mir_runtime_field_is_safe(shim_bans[ban_index].ban_id) == 0 || mir_runtime_field_is_safe(shim_bans[ban_index].obsolete_family) == 0 { return mir_runtime_validation(0, "runtime_shim_unclassified_ban", ctx); }
+        if mir_runtime_banned_class_is_valid(shim_bans[ban_index].banned_class) == 0 { return mir_runtime_validation(0, "runtime_shim_unclassified_ban", ctx); }
+        if mir_runtime_replacement_kind_is_valid(shim_bans[ban_index].replacement_kind) == 0 { return mir_runtime_validation(0, "runtime_shim_ban_without_replacement", ctx); }
+        if std.str_eq(shim_bans[ban_index].evidence_policy, "explicit_cranelift_succeeds_with_c_compiler_unavailable") == 0 { return mir_runtime_validation(0, "runtime_shim_missing_evidence", ctx); }
+        if std.str_eq(shim_bans[ban_index].target_id, table.target_id) == 0 { return mir_runtime_validation(0, "runtime_shim_unclassified_ban", ctx); }
+
+        // A concrete replacement must name a component the table declares. A
+        // narrower deferral is the one kind allowed to name no component.
+        if std.str_eq(shim_bans[ban_index].replacement_kind, "narrower_explicit_deferral") == 0 {
+            mut replacement_found := 0;
+            mut replacement_index := 0;
+            while replacement_index < len(components) { if std.str_eq(components[replacement_index].component_id, shim_bans[ban_index].replacement_component_id) == 1 { replacement_found = 1; } replacement_index = replacement_index + 1; }
+            if replacement_found == 0 { return mir_runtime_validation(0, "runtime_shim_ban_without_replacement", ctx); }
+        }
+
+        mut duplicate_ban_index := ban_index + 1;
+        while duplicate_ban_index < len(shim_bans) {
+            if std.str_eq(shim_bans[ban_index].ban_id, shim_bans[duplicate_ban_index].ban_id) == 1 ||
+               std.str_eq(shim_bans[ban_index].banned_class, shim_bans[duplicate_ban_index].banned_class) == 1
+            {
+                return mir_runtime_validation(0, "runtime_shim_duplicate_ban", ctx);
+            }
+            duplicate_ban_index = duplicate_ban_index + 1;
+        }
+        ban_index = ban_index + 1;
+    }
+
     // Phase 17.8: pure Gust runtime modules compile through the generic route.
     mut gust_modules: std.Vector[MirRuntimeGustModule[ctx], ctx] := ctx[table.gust_modules];
     mut gust_index := 0;
@@ -1237,6 +1311,16 @@ func mir_serialize_runtime_boundary_authority_table_for_request(table: MirRuntim
     while index < len(system_imports) {
         output = mir_runtime_append_field(output, "runtime_package_system_import_id", system_imports[index].import_id, ctx);
         output = mir_runtime_append_field(output, "runtime_package_system_import_spelling", system_imports[index].external_spelling, ctx);
+        index = index + 1;
+    }
+    mut shim_bans: std.Vector[MirRuntimeShimBan[ctx], ctx] := ctx[table.shim_bans];
+    index = 0;
+    while index < len(shim_bans) {
+        output = mir_runtime_append_field(output, "runtime_shim_ban_id", shim_bans[index].ban_id, ctx);
+        output = mir_runtime_append_field(output, "runtime_shim_banned_class", shim_bans[index].banned_class, ctx);
+        output = mir_runtime_append_field(output, "runtime_shim_obsolete_family", shim_bans[index].obsolete_family, ctx);
+        output = mir_runtime_append_field(output, "runtime_shim_replacement_kind", shim_bans[index].replacement_kind, ctx);
+        output = mir_runtime_append_field(output, "runtime_shim_evidence_policy", shim_bans[index].evidence_policy, ctx);
         index = index + 1;
     }
     mut gust_modules: std.Vector[MirRuntimeGustModule[ctx], ctx] := ctx[table.gust_modules];

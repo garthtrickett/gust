@@ -154,8 +154,8 @@ def check_registry(root: Path) -> dict:
             "cranelift_and_mir_to_c_runtime_import_witnesses_must_match_"
             "byte_for_byte",
         "scope_policy":
-            "stable_runtime_library_imports_only_legacy_fixture_symbol_"
-            "constants_removed_in_patch17_9",
+            "stable_runtime_library_imports_only_legacy_phase9_11_13_"
+            "fixture_constants_audited_in_patch17_15",
         "next_patch": "17.6",
     }
     for key, value in expected_metadata.items():

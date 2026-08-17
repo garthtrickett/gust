@@ -31,6 +31,7 @@ TOP_FIELDS = {
     "phase17_rust_runtime_authority",
     "phase17_retained_c_authority",
     "phase17_gust_runtime_authority",
+    "phase17_shim_elimination_authority",
     "phase16_deferred_residue_audit",
     "phase16_closure",
     "phase15_deferred_residue_audit",
@@ -1023,6 +1024,28 @@ PHASE17_GUST_RUNTIME_REJECTIONS = (
     "runtime_gust_circular_dependency",
     "runtime_gust_abi_or_target_mismatch",
     "runtime_gust_hidden_generated_c",
+)
+
+PHASE17_SHIM_AUTHORITY_FIELDS = {
+    "version", "status", "authority_owner", "request_owner", "worker_owner",
+    "request_format", "witness_format", "linkage_policy", "evidence_policy",
+    "transport_ban_policy", "banned_classes", "replacement_kinds",
+    "obsolete_families", "rejection_classes", "witness_policy", "scope_policy",
+    "next_patch",
+}
+PHASE17_OBSOLETE_FAMILY_FIELDS = {"family", "helper_id", "replacement_kind"}
+PHASE17_SHIM_BANNED_CLASSES = (
+    "runtime_call_wrapper", "abi_adaptation_wrapper",
+    "resource_or_cleanup_wrapper", "allocation_or_string_helper_wrapper",
+    "io_filesystem_or_threading_wrapper", "target_selection_wrapper_fragment",
+)
+PHASE17_SHIM_REPLACEMENT_KINDS = (
+    "compiler_owned_direct_import", "explicit_runtime_component",
+    "narrower_explicit_deferral",
+)
+PHASE17_SHIM_REJECTIONS = (
+    "runtime_shim_unclassified_ban", "runtime_shim_ban_without_replacement",
+    "runtime_shim_missing_evidence", "runtime_shim_duplicate_ban",
 )
 
 PHASE14_LAYOUT_AUTHORITY_FIELDS = {
@@ -2613,8 +2636,8 @@ def validate_phase17_runtime_import_authority_structure(registry):
             == "cranelift_and_mir_to_c_runtime_import_witnesses_must_match_"
                "byte_for_byte"
             and authority["scope_policy"]
-            == "stable_runtime_library_imports_only_legacy_fixture_symbol_"
-               "constants_removed_in_patch17_9"
+            == "stable_runtime_library_imports_only_legacy_phase9_11_13_"
+               "fixture_constants_audited_in_patch17_15"
             and authority["next_patch"] == "17.6",
             "Phase 17 runtime import policies drifted")
     return authority
@@ -2833,6 +2856,67 @@ def validate_phase17_gust_runtime_authority_structure(registry):
                "remains_in_patch17_9"
             and authority["next_patch"] == "17.9",
             "Phase 17 gust runtime policies drifted")
+    return authority
+
+
+def validate_phase17_shim_elimination_authority_structure(registry):
+    authority = registry["phase17_shim_elimination_authority"]
+    require(isinstance(authority, dict)
+            and set(authority) == PHASE17_SHIM_AUTHORITY_FIELDS,
+            "Phase 17 shim elimination authority fields drifted")
+    require(authority["version"] == "phase17_shim_elimination_authority_v1"
+            and authority["status"] == "ready_for_patch17_10"
+            and authority["evidence_policy"]
+            == "explicit_cranelift_succeeds_with_c_compiler_unavailable",
+            "Phase 17 shim elimination evidence policy drifted")
+    require(tuple(authority["banned_classes"]) == PHASE17_SHIM_BANNED_CLASSES,
+            "Phase 17 shim banned class inventory drifted")
+    require(tuple(authority["replacement_kinds"])
+            == PHASE17_SHIM_REPLACEMENT_KINDS,
+            "Phase 17 shim replacement kind inventory drifted")
+    require(tuple(authority["rejection_classes"]) == PHASE17_SHIM_REJECTIONS,
+            "Phase 17 shim rejection inventory drifted")
+
+    # Every obsolete family must be one the Patch 17.1 inventory actually
+    # classified obsolete, and all of them must be accounted for.
+    obsolete = {
+        row["helper_id"]: row
+        for row in registry["phase17_runtime_authority"]
+        ["helper_classifications"]
+        if row["classification"] == "obsolete_helper"
+    }
+    families = authority["obsolete_families"]
+    require(isinstance(families, list) and len(families) == len(obsolete),
+            "Phase 17 obsolete family coverage disagrees with Patch 17.1")
+    seen = set()
+    for index, row in enumerate(families):
+        context = f"phase17_shim_elimination_authority.obsolete_families[{index}]"
+        require(isinstance(row, dict)
+                and set(row) == PHASE17_OBSOLETE_FAMILY_FIELDS,
+                f"{context} fields drifted")
+        helper_id = row["helper_id"]
+        require(helper_id in obsolete and helper_id not in seen,
+                f"{context} helper is unknown or duplicated")
+        require(row["family"] == obsolete[helper_id]["symbol_identity"],
+                f"{helper_id}: family disagrees with the classified symbol")
+        require(row["replacement_kind"] in PHASE17_SHIM_REPLACEMENT_KINDS,
+                f"{helper_id}: replacement kind is not supported")
+        seen.add(helper_id)
+    require(seen == set(obsolete),
+            "Phase 17 obsolete family inventory is incomplete")
+    require(authority["linkage_policy"]
+            == "native_path_emits_no_program_specific_c"
+            and authority["transport_ban_policy"]
+            == "native_request_fields_and_worker_code_may_not_transport_or_"
+               "synthesize_c_wrapper_source"
+            and authority["witness_policy"]
+            == "cranelift_and_mir_to_c_shim_elimination_witnesses_must_match_"
+               "byte_for_byte"
+            and authority["scope_policy"]
+            == "native_path_c_generation_banned_allocation_string_and_core_"
+               "memory_audit_remains_in_patch17_10"
+            and authority["next_patch"] == "17.10",
+            "Phase 17 shim elimination policies drifted")
     return authority
 
 
@@ -4001,6 +4085,18 @@ def validate():
     require(set(phase17_gust_record_schema.get("required", []))
             == PHASE17_GUST_MODULE_RECORD_FIELDS,
             "schema Phase 17 gust module record fields drifted")
+    phase17_shim_authority_schema = definitions.get(
+        "phase17_shim_elimination_authority", {}
+    )
+    require(set(phase17_shim_authority_schema.get("required", []))
+            == PHASE17_SHIM_AUTHORITY_FIELDS,
+            "schema Phase 17 shim elimination authority fields drifted")
+    require(phase17_shim_authority_schema.get("additionalProperties") is False,
+            "schema Phase 17 shim authority must reject unknown fields")
+    phase17_family_schema = definitions.get("phase17_obsolete_family_record", {})
+    require(set(phase17_family_schema.get("required", []))
+            == PHASE17_OBSOLETE_FAMILY_FIELDS,
+            "schema Phase 17 obsolete family record fields drifted")
     phase14_authority_schema = definitions.get(
         "phase14_layout_authority",
         {},
@@ -4198,6 +4294,7 @@ def validate():
     validate_phase17_rust_runtime_authority_structure(registry)
     validate_phase17_retained_c_authority_structure(registry)
     validate_phase17_gust_runtime_authority_structure(registry)
+    validate_phase17_shim_elimination_authority_structure(registry)
     validate_phase14_layout_authority_structure(registry)
     validate_phase14_primitive_layout_structure(registry)
     validate_phase14_integer_conversion_structure(registry)
@@ -10163,6 +10260,22 @@ def phase17_gust_runtime_authority_summary_lines(registry):
     ]
 
 
+def phase17_shim_elimination_authority_summary_lines(registry):
+    authority = validate_phase17_shim_elimination_authority_structure(registry)
+    return [
+        "## Phase 17 generated C shim elimination authority",
+        "",
+        f"- Authority version: `{authority['version']}`",
+        f"- Status: `{authority['status']}`",
+        f"- Banned wrapper classes: `{len(authority['banned_classes'])}`",
+        f"- Obsolete generated-C families removed: `{len(authority['obsolete_families'])}`",
+        f"- Evidence: `{authority['evidence_policy']}`",
+        "",
+        "Patch 17.9 removes generated ad hoc C wrappers from the migrated native path and the helpers classified obsolete. Each banned wrapper class is paired with the compiler-owned direct import, explicit runtime component, or narrower deferral that replaced it, so a ban is never an unexplained refusal. The exit gate is demonstrated rather than declared: the parity guard emits a native object under an emptied environment with no C compiler or linker driver reachable.",
+        "",
+    ]
+
+
 def render(registry):
     entries = registry["entries"]
     totals = derived_totals(registry)
@@ -10222,6 +10335,7 @@ def render(registry):
         *phase17_rust_runtime_authority_summary_lines(registry),
         *phase17_retained_c_authority_summary_lines(registry),
         *phase17_gust_runtime_authority_summary_lines(registry),
+        *phase17_shim_elimination_authority_summary_lines(registry),
         "## Registry entries", "",
         "| ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |",
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
