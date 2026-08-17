@@ -78,7 +78,7 @@ If more than 100 runs exist, use the paginated Actions API and apply the same ex
 - [x] Patch 17.6 — Rust Runtime Components and Native Object Integration — DONE
 - [x] Patch 17.7 — Explicit Retained C Runtime Objects — DONE
 - [x] Patch 17.8 — Pure Gust Runtime Modules Compiled Through MIR — DONE
-- [ ] Patch 17.9 — Generated C Shim Elimination and Obsolete Helper Removal
+- [x] Patch 17.9 — Generated C Shim Elimination and Obsolete Helper Removal — DONE
 - [ ] Patch 17.10 — Allocation, String, and Core Memory Runtime Audit
 - [ ] Patch 17.11 — I/O, Filesystem, and Resource Runtime Audit
 - [ ] Patch 17.12 — Threading and Synchronization Runtime Audit

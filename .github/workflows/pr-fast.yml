@@ -183,6 +183,9 @@ jobs:
       - name: Phase 17 pure Gust runtime modules
         run: just guard-cranelift-phase17-gust-runtime-contract
 
+      - name: Phase 17 generated C shim elimination
+        run: just guard-cranelift-phase17-shim-elimination-contract
+
       - name: Upload Gust build outputs
         uses: actions/upload-artifact@v4
         with:

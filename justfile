@@ -170,6 +170,8 @@ guard-pr-fast-ci-surface:
       'just guard-cranelift-phase17-retained-c-runtime-contract'
       'Phase 17 pure Gust runtime modules'
       'just guard-cranelift-phase17-gust-runtime-contract'
+      'Phase 17 generated C shim elimination'
+      'just guard-cranelift-phase17-shim-elimination-contract'
       'phase11-family:'
       'phase11_families:'
       'matrix.family'
@@ -15975,6 +15977,7 @@ guard-cranelift-contract-fast:
     just guard-cranelift-phase17-rust-runtime-contract
     just guard-cranelift-phase17-retained-c-runtime-contract
     just guard-cranelift-phase17-gust-runtime-contract
+    just guard-cranelift-phase17-shim-elimination-contract
 
 guard-cranelift-phase17-runtime-authority-contract:
     #!/usr/bin/env bash
@@ -16087,6 +16090,25 @@ guard-cranelift-phase17-gust-runtime-parity:
       grep -F $'guard-cranelift-phase17-gust-runtime-parity\t2\t' >/dev/null
     just guard-cranelift-phase17-gust-runtime-contract
     bash scripts/phase17_gust_runtime_parity.sh
+
+guard-cranelift-phase17-shim-elimination-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 17.9 generated C shim elimination..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase17-shim-elimination-contract |
+      grep -F $'guard-cranelift-phase17-shim-elimination-contract\t1\t' >/dev/null
+    bash scripts/guard-cranelift-phase17-shim-elimination-contract.sh
+
+guard-cranelift-phase17-shim-elimination-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 17.9 shim elimination parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase17-shim-elimination-parity |
+      grep -F $'guard-cranelift-phase17-shim-elimination-parity\t2\t' >/dev/null
+    just guard-cranelift-phase17-shim-elimination-contract
+    bash scripts/phase17_shim_elimination_parity.sh
 
 guard-cranelift-phase16-abi-authority-contract:
     #!/usr/bin/env bash

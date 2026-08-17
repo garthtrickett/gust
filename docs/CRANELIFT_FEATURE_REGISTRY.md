@@ -418,6 +418,16 @@ Patch 17.7 freezes the retained C inventory as separately compiled, versioned, t
 
 Patch 17.8 compiles selected runtime helpers written in Gust through the same generic canonical-MIR route as any other Gust code, with no exact-source or module-name recognition in the compiler or backend. Patch 17.1 classified zero helpers as `pure_gust_runtime_component`, so this patch establishes the mechanism with one reference module; the collections and strings components remain retained C until reclassified.
 
+## Phase 17 generated C shim elimination authority
+
+- Authority version: `phase17_shim_elimination_authority_v1`
+- Status: `ready_for_patch17_10`
+- Banned wrapper classes: `6`
+- Obsolete generated-C families removed: `4`
+- Evidence: `explicit_cranelift_succeeds_with_c_compiler_unavailable`
+
+Patch 17.9 removes generated ad hoc C wrappers from the migrated native path and the helpers classified obsolete. Each banned wrapper class is paired with the compiler-owned direct import, explicit runtime component, or narrower deferral that replaced it, so a ban is never an unexplained refusal. The exit gate is demonstrated rather than declared: the parity guard emits a native object under an emptied environment with no C compiler or linker driver reachable.
+
 ## Registry entries
 
 | ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |

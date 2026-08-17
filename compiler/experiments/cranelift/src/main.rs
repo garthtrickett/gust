@@ -21,6 +21,7 @@ mod runtime_import;
 mod rust_runtime;
 mod retained_c_runtime;
 mod gust_runtime;
+mod shim_elimination;
 mod scope_exit_cleanup;
 mod specialized_resource;
 
@@ -16406,6 +16407,20 @@ fn run() -> Result<(), Box<dyn Error>> {
             let witness = typed_indirect_call::lower_typed_indirect_call_witness_path(Path::new(&request_path))?;
             print!("{witness}"); Ok(())
         }
+        "phase17-shim-elimination-object" => {
+            let Some(request_path) = args.next() else { return Err(usage_error().into()); };
+            let Some(object_path) = args.next() else { return Err(usage_error().into()); };
+            if args.next().is_some() { return Err(usage_error().into()); }
+            emit_phase17_shim_elimination_object(Path::new(&request_path), Path::new(&object_path))?;
+            Ok(())
+        }
+        "phase17-shim-elimination-witness" => {
+            let Some(request_path) = args.next() else { return Err(usage_error().into()); };
+            if args.next().is_some() { return Err(usage_error().into()); }
+            let witness = shim_elimination::lower_shim_elimination_witness_path(Path::new(&request_path))?;
+            print!("{witness}");
+            Ok(())
+        }
         "phase17-gust-runtime-witness" => {
             let Some(request_path) = args.next() else { return Err(usage_error().into()); };
             if args.next().is_some() { return Err(usage_error().into()); }
@@ -29740,6 +29755,58 @@ fn emit_call_helper_i32_object(output_path: &Path) -> Result<(), Box<dyn Error>>
 /// Both the external spelling and the signature come from the compiler-produced
 /// request. This function deliberately holds no symbol table of its own, so a
 /// helper the compiler did not declare cannot be reached from here at all.
+/// Phase 17.9: emit a native object from the shim-elimination request alone.
+///
+/// This exists to make the exit-gate evidence self-contained: it needs no C
+/// compiler, no linker driver, and no other request, so the guard can run it
+/// with an empty PATH and show that the native path never depended on C.
+fn emit_phase17_shim_elimination_object(
+    request_path: &Path,
+    output_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let request = fs::read_to_string(request_path)?;
+    let (_target, bans) = shim_elimination::parse_shim_elimination_request(&request)?;
+
+    if let Some(parent) = output_path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    let isa_builder =
+        cranelift_native::builder().map_err(|message| IoError::new(ErrorKind::Other, message))?;
+    let isa = isa_builder.finish(settings::Flags::new(settings::builder()))?;
+    let object_builder = ObjectBuilder::new(
+        isa,
+        "gust_phase17_shim_elimination",
+        default_libcall_names(),
+    )?;
+    let mut module = ObjectModule::new(object_builder);
+
+    // One exported probe per banned wrapper class, returning its ordinal. The
+    // point is not the arithmetic: it is that a native object carrying one
+    // symbol per removed shim is produced without any C toolchain.
+    for (ordinal, ban) in bans.iter().enumerate() {
+        let mut signature = module.make_signature();
+        signature.returns.push(AbiParam::new(types::I32));
+        let symbol = format!("gust_phase17_no_shim_{}", ban.banned_class);
+        let function_id = module.declare_function(&symbol, Linkage::Export, &signature)?;
+        let mut context = module.make_context();
+        context.func.signature = signature;
+        let mut builder_context = FunctionBuilderContext::new();
+        let mut builder = FunctionBuilder::new(&mut context.func, &mut builder_context);
+        let block = builder.create_block();
+        builder.switch_to_block(block);
+        let value = builder.ins().iconst(types::I32, ordinal as i64);
+        builder.ins().return_(&[value]);
+        builder.seal_all_blocks();
+        builder.finalize();
+        module.define_function(function_id, &mut context)?;
+        module.clear_context(&mut context);
+    }
+
+    let object_product = module.finish();
+    fs::write(output_path, object_product.emit()?)?;
+    Ok(())
+}
+
 fn emit_phase17_runtime_import_object(
     request_path: &Path,
     output_path: &Path,
