@@ -4371,6 +4371,66 @@
     "scope_policy": "availability_compatibility_and_diagnostics_only_cross_feature_composition_remains_in_patch17_14",
     "next_patch": "17.14"
   },
+  "phase18_target_authority": {
+    "version": "phase18_compiler_owned_target_authority_v1",
+    "status": "ready_for_patch18_2",
+    "authority_owner": "compiler/mir_target_authority.gst",
+    "table_format": "gust.compiler_target_authority_table.v1",
+    "semantic_types": [
+      "MirDeclaredTriple",
+      "MirTargetSelection",
+      "MirTargetIdentity",
+      "MirTargetAuthorityTable"
+    ],
+    "query_functions": [
+      "mir_target_make_empty_table",
+      "mir_target_triple_is_declared",
+      "mir_target_declared_pointer_width",
+      "mir_target_selection_consulted_host",
+      "mir_target_identity_agrees_with_layout"
+    ],
+    "declared_triples": [
+      {"target_id": "target:v1:triple=x86_64-unknown-linux-gnu:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8", "target_triple": "x86_64-unknown-linux-gnu", "architecture": "x86_64", "vendor": "unknown", "operating_system": "linux", "environment": "gnu", "pointer_width_bits": 64, "endianness": "little", "declared_source": "phase17_runtime_package_authority_target_packages"},
+      {"target_id": "target:v1:triple=aarch64-unknown-linux-gnu:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8", "target_triple": "aarch64-unknown-linux-gnu", "architecture": "aarch64", "vendor": "unknown", "operating_system": "linux", "environment": "gnu", "pointer_width_bits": 64, "endianness": "little", "declared_source": "phase17_runtime_package_authority_target_packages"},
+      {"target_id": "target:v1:triple=i686-unknown-linux-gnu:endian=little:ptr_size=4:ptr_align=4:i32_align=4:i64_align=4:max_align=4", "target_triple": "i686-unknown-linux-gnu", "architecture": "i686", "vendor": "unknown", "operating_system": "linux", "environment": "gnu", "pointer_width_bits": 32, "endianness": "little", "declared_source": "phase17_runtime_package_authority_target_packages"},
+      {"target_id": "target:v1:triple=x86_64-apple-darwin:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8", "target_triple": "x86_64-apple-darwin", "architecture": "x86_64", "vendor": "apple", "operating_system": "darwin", "environment": "none", "pointer_width_bits": 64, "endianness": "little", "declared_source": "phase17_runtime_package_authority_target_packages"},
+      {"target_id": "target:v1:triple=aarch64-apple-darwin:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8", "target_triple": "aarch64-apple-darwin", "architecture": "aarch64", "vendor": "apple", "operating_system": "darwin", "environment": "none", "pointer_width_bits": 64, "endianness": "little", "declared_source": "phase17_runtime_package_authority_target_packages"}
+    ],
+    "selection_modes": [
+      "explicit_requested_target",
+      "declared_default_target"
+    ],
+    "default_target_triple": "x86_64-unknown-linux-gnu",
+    "consumers": [
+      "canonical_mir",
+      "mir_to_c",
+      "explicit_cranelift",
+      "runtime_package_selection",
+      "link_planning",
+      "diagnostics",
+      "phase9g_artifact_planner"
+    ],
+    "identity_policy": "compiler_declared_triple_vocabulary_no_host_inference",
+    "selection_policy": "explicit_requested_target_or_declared_default_never_host_probe",
+    "layout_agreement_policy": "pointer_width_and_endianness_must_agree_with_phase14_target_layout_authority",
+    "layout_authority_id": "phase14_compiler_owned_layout_authority_v1",
+    "rejection_classes": [
+      "unknown_target_triple",
+      "malformed_target_triple",
+      "ambiguous_target_triple",
+      "duplicate_declared_triple",
+      "target_layout_disagreement",
+      "host_inference_under_explicit_target",
+      "missing_target_identity_in_request"
+    ],
+    "hard_bans": [
+      "no_backend_owned_target_selection",
+      "no_host_probe_under_explicit_target",
+      "no_native_isa_builder_as_target_authority",
+      "no_target_inferred_from_file_extension_or_output_probe"
+    ],
+    "next_patch": "18.2"
+  },
   "phase17_closure": {
     "version": "phase17_closure_v1",
     "status": "phase17_closed_native_runtime_boundary",

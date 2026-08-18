@@ -31,6 +31,7 @@
     "phase17_thread_runtime_authority",
     "phase17_availability_authority",
     "phase17_composition_authority",
+    "phase18_target_authority",
     "phase17_closure",
     "phase17_deferred_residue_audit",
     "phase16_deferred_residue_audit",
@@ -315,6 +316,9 @@
     },
     "phase17_composition_authority": {
       "$ref": "#/$defs/phase17_composition_authority"
+    },
+    "phase18_target_authority": {
+      "$ref": "#/$defs/phase18_target_authority"
     },
     "phase17_closure": {
       "$ref": "#/$defs/phase17_closure"
@@ -856,6 +860,173 @@
         "participating_authorities": {"type": "array", "minItems": 2, "uniqueItems": true, "items": {"type": "string", "pattern": "^phase17_"}},
         "differential_owner": {"type": "string", "minLength": 1},
         "sentinel_policy": {"enum": ["sentinel_output_preserved_on_failure", "case_cannot_fail_no_output_to_preserve"]}
+      }
+    },
+    "phase18_target_authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "status",
+        "authority_owner",
+        "table_format",
+        "semantic_types",
+        "query_functions",
+        "declared_triples",
+        "selection_modes",
+        "default_target_triple",
+        "consumers",
+        "identity_policy",
+        "selection_policy",
+        "layout_agreement_policy",
+        "layout_authority_id",
+        "rejection_classes",
+        "hard_bans",
+        "next_patch"
+      ],
+      "properties": {
+        "version": {
+          "const": "phase18_compiler_owned_target_authority_v1"
+        },
+        "status": {
+          "const": "ready_for_patch18_2"
+        },
+        "authority_owner": {
+          "const": "compiler/mir_target_authority.gst"
+        },
+        "table_format": {
+          "const": "gust.compiler_target_authority_table.v1"
+        },
+        "semantic_types": {
+          "type": "array",
+          "minItems": 4,
+          "items": {
+            "type": "string",
+            "pattern": "^Mir"
+          }
+        },
+        "query_functions": {
+          "type": "array",
+          "minItems": 5,
+          "items": {
+            "type": "string",
+            "pattern": "^mir_target_"
+          }
+        },
+        "declared_triples": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "target_id",
+              "target_triple",
+              "architecture",
+              "vendor",
+              "operating_system",
+              "environment",
+              "pointer_width_bits",
+              "endianness",
+              "declared_source"
+            ],
+            "properties": {
+              "target_id": {
+                "type": "string",
+                "pattern": "^target:v1:"
+              },
+              "target_triple": {
+                "type": "string",
+                "minLength": 1
+              },
+              "architecture": {
+                "type": "string",
+                "minLength": 1
+              },
+              "vendor": {
+                "type": "string",
+                "minLength": 1
+              },
+              "operating_system": {
+                "type": "string",
+                "minLength": 1
+              },
+              "environment": {
+                "type": "string",
+                "minLength": 1
+              },
+              "pointer_width_bits": {
+                "enum": [
+                  32,
+                  64
+                ]
+              },
+              "endianness": {
+                "enum": [
+                  "little",
+                  "big"
+                ]
+              },
+              "declared_source": {
+                "const": "phase17_runtime_package_authority_target_packages"
+              }
+            }
+          }
+        },
+        "selection_modes": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "enum": [
+              "explicit_requested_target",
+              "declared_default_target"
+            ]
+          }
+        },
+        "default_target_triple": {
+          "type": "string",
+          "minLength": 1
+        },
+        "consumers": {
+          "type": "array",
+          "minItems": 7,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "identity_policy": {
+          "const": "compiler_declared_triple_vocabulary_no_host_inference"
+        },
+        "selection_policy": {
+          "const": "explicit_requested_target_or_declared_default_never_host_probe"
+        },
+        "layout_agreement_policy": {
+          "const": "pointer_width_and_endianness_must_agree_with_phase14_target_layout_authority"
+        },
+        "layout_authority_id": {
+          "const": "phase14_compiler_owned_layout_authority_v1"
+        },
+        "rejection_classes": {
+          "type": "array",
+          "minItems": 7,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "hard_bans": {
+          "type": "array",
+          "minItems": 4,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "next_patch": {
+          "const": "18.2"
+        }
       }
     },
     "phase17_closure": {

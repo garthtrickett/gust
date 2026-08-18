@@ -37,6 +37,7 @@ TOP_FIELDS = {
     "phase17_thread_runtime_authority",
     "phase17_availability_authority",
     "phase17_composition_authority",
+    "phase18_target_authority",
     "phase17_closure",
     "phase17_deferred_residue_audit",
     "phase16_deferred_residue_audit",
@@ -10852,6 +10853,28 @@ def phase17_availability_authority_summary_lines(registry):
     ]
 
 
+def phase18_target_authority_summary_lines(registry):
+    authority = registry["phase18_target_authority"]
+    triples = authority["declared_triples"]
+    architectures = sorted({row["architecture"] for row in triples})
+    systems = sorted({row["operating_system"] for row in triples})
+    return [
+        "## Phase 18 compiler-owned target authority",
+        "",
+        f"- Authority version: `{authority['version']}`",
+        f"- Status: `{authority['status']}`",
+        f"- Declared triples: `{len(triples)}`",
+        f"- Architectures: {', '.join(f'`{value}`' for value in architectures)}",
+        f"- Operating systems: {', '.join(f'`{value}`' for value in systems)}",
+        f"- Declared default: `{authority['default_target_triple']}`",
+        "",
+        "Patch 18.1 makes target identity a compiler-owned decision. A target is selected explicitly or from a declared default, and an explicitly requested target never consults the host. Declaring a triple is not enough to make a target supported; that requires the complete tuple proven in Patch 18.2 and after.",
+        "",
+        "The vocabulary is registry-derived rather than hand-written: a triple may be declared only if the Phase 17 runtime package authority already owns it. Pointer width and endianness are not restated but checked, by parsing the layout fields out of the registry-owned target id, so a declared triple cannot disagree with the Phase 14 target layout authority. The worker performs the same derivation independently and the two witnesses are compared byte for byte, so an identity that merely claims agreement cannot launder that claim into evidence.",
+        "",
+    ]
+
+
 def phase18_opening_summary_lines(registry):
     snapshot = registry["opening_snapshots"]["phase18"]
     rebase = snapshot["residual_rebase"]
@@ -11013,6 +11036,7 @@ def render(registry):
         *phase17_deferred_residue_audit_summary_lines(registry),
         *phase17_closure_summary_lines(registry),
         *phase18_opening_summary_lines(registry),
+        *phase18_target_authority_summary_lines(registry),
         "## Registry entries", "",
         "| ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |",
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
