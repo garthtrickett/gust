@@ -345,3 +345,45 @@ Fix: insert at the next *step boundary* (`^      - `) after the checkout step,
 never at a fixed line offset. Added a schema check that asserts every step has
 exactly one of `uses` or `run`; that check fails on the broken form and passes
 on the fixed one. Use it, not `yaml.safe_load`, when editing workflows in bulk.
+
+**2026-08-18 — degraded Ubuntu mirror wedged runner slots for hours.** PR #54
+lost twelve Level 2 parity jobs across Phases 15, 16, and 17 to the same step:
+`sudo apt-get update && sudo apt-get install -y ...`. Each hung 20–30 minutes
+until its `timeout-minutes` killed it, and each needed a manual requeue. Two
+workflows with no timeout at all — `phase15-resource-cfg` and
+`phase15-resource-composition` — held the only two active runner slots for
+roughly 90 minutes apiece, starving everything queued behind them.
+
+The step runs before any repository code executes and takes no input from the
+branch, so the trigger was upstream: GitHub reported Actions "operational"
+because the Actions service *was* fine; it was the distro mirror the runners
+pull from. What was ours is that the step had no retry, no per-attempt timeout,
+and no verification.
+
+Two diagnostic traps worth remembering:
+
+- *A run reporting `queued` is not stalled.* Run-level status shows `queued`
+  while its matrix jobs are still dispatching, even as they complete. I read
+  two long-`queued` runs as evidence GitHub had stopped scheduling; both were
+  progressing normally at 9 jobs done / 12 pending.
+- *"The Level 1 job in the same run passed" proves nothing about the runner.*
+  Level 1 contract jobs don't install native dependencies at all — they finish
+  in ~7 seconds. Only Level 2 parity jobs run apt, which is exactly why only
+  they hung. I cited this as evidence several times before checking it.
+
+Fix (`13564188`): `scripts/install-native-deps-ci.sh`, modeled on the existing
+retrying installer for `just` — bounded attempts with backoff, a `timeout`
+around each apt invocation, `Acquire::*::Timeout` bounding connections inside
+apt, and a `dpkg-query` check proving packages are present rather than trusting
+exit status. All 44 apt steps across 38 workflows now call it, collapsing six
+divergent textual forms into one. Every job carries `timeout-minutes` (was 57
+of 90). The Heavy Guards surface guard pins the installer and the hardening
+constants, and raw `apt-get` is rejected anywhere under `.github/workflows`.
+
+Result: the rerun went 203/203 with zero apt cancellations. Worst case per job
+is now ~10.5 minutes and self-healing; measured healthy path is 10 seconds.
+
+**Implication for Lever 3 (job consolidation).** Each job pays its own cold
+`apt-get`, so mirror degradation costs scale with job count. Consolidation now
+looks more valuable for *reliability* than for the wall-clock saving it was
+originally scoped for.
