@@ -41,9 +41,8 @@ selected operations:
   os_slice_to_c_string	c_string_marshalling	none	not_a_resource	returns_explicit_error	none
 
 concrete deferred rows:
-  os_RunProcess	process_execution_deferred_by_scope_selection_rule	-> 17.15
-  os_System	process_execution_deferred_by_scope_selection_rule	-> 17.15
-  os_MockPayload	test_fixture_not_a_runtime_operation	-> 17.15
+  os_RunProcess	tracked_by_p18_subprocess_execution	-> phase18
+  os_System	tracked_by_p18_subprocess_execution	-> phase18
 
 rejection classes:
   runtime_io_missing_symbol

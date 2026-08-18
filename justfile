@@ -181,6 +181,8 @@ guard-pr-fast-ci-surface:
       'just guard-cranelift-phase17-thread-runtime-contract'
       'Phase 17 runtime availability and diagnostics'
       'just guard-cranelift-phase17-availability-contract'
+      'Phase 17 deferred residue and runtime coverage'
+      'just guard-cranelift-phase17-deferred-residue-audit'
       'Phase 17 cross-feature runtime composition'
       'just guard-cranelift-phase17-composition-contract'
       'phase11-family:'
@@ -16027,6 +16029,7 @@ guard-cranelift-contract-fast:
     just guard-cranelift-phase17-thread-runtime-contract
     just guard-cranelift-phase17-availability-contract
     just guard-cranelift-phase17-composition-contract
+    just guard-cranelift-phase17-deferred-residue-audit
 
 guard-cranelift-phase17-runtime-authority-contract:
     #!/usr/bin/env bash
@@ -16234,6 +16237,14 @@ guard-cranelift-phase17-availability-parity:
       grep -F $'guard-cranelift-phase17-availability-parity\t2\t' >/dev/null
     just guard-cranelift-phase17-availability-contract
     bash scripts/phase17_availability_parity.sh
+
+guard-cranelift-phase17-deferred-residue-audit:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔎 Auditing Phase 17.15 deferred residue and runtime coverage..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase17-deferred-residue-audit | grep -F $'guard-cranelift-phase17-deferred-residue-audit\t1\t' >/dev/null
+    python3 scripts/phase17_deferred_residue_audit.py --check
 
 guard-cranelift-phase17-composition-contract:
     #!/usr/bin/env bash

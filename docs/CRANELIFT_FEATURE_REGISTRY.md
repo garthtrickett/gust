@@ -434,7 +434,7 @@ Patch 17.9 removes generated ad hoc C wrappers from the migrated native path and
 - Status: `ready_for_patch17_11`
 - Selected operations: `26`
 - Allocation domains in use: `caller_owned_arena, host_process_allocator, no_allocation, thread_local_scratch`
-- Concrete deferred rows: `1`
+- Concrete deferred rows: `0`
 
 Patch 17.10 classifies and migrates the selected allocation, core-memory, and string helper inventory through the explicit native runtime boundary. The load-bearing invariant is domain pairing: memory obtained from one allocation domain may only be released through the same domain, so ownership cannot silently cross an incompatible runtime component boundary. General allocator policy, garbage collection, complete Unicode, and locale behaviour remain deferred unless separately selected.
 
@@ -444,7 +444,7 @@ Patch 17.10 classifies and migrates the selected allocation, core-memory, and st
 - Status: `ready_for_patch17_12`
 - Selected operations: `22`
 - Resource kinds under Phase 15 obligations: `directory_handle`
-- Concrete deferred rows: `3`
+- Concrete deferred rows: `2`
 
 Patch 17.11 classifies and migrates the selected I/O, filesystem, directory, and resource helpers through explicit runtime packages. An acquired resource kind has exactly one close, and manual close and deferred cleanup name the same runtime operation, so a directory handle cannot be released by one path and leaked by the other. Sockets, processes, terminals, and unrelated OS resources remain deferred unless explicitly selected.
 
@@ -476,6 +476,20 @@ Patch 17.13 validates runtime package availability and compatibility before link
 - Authorities covered by composition: `13`
 
 Patch 17.14 proves the migrated Phase 17 capabilities compose. The differential inventory is derived from canonical registry ownership rather than a hand-written list, and every Phase 17 authority with migrated rows must participate in at least one composition case, so no capability is proven in isolation and then never combined. The explicit Cranelift link plan contains no generated C shim artifact, and the incompatible-version case preserves sentinel output on failure.
+
+## Phase 17 deferred residue and runtime coverage
+
+- Audit version: `phase17_deferred_residue_audit_v1`
+- Opening rows disposed: `17`
+- Inventoried helpers disposed: `79` (66 migrated, 4 excluded, 9 narrowly deferred)
+- Retained C components with a named destination: `8`
+- Narrow deferred rows: `8`
+
+Patch 17.15 requires every Phase 17 opening row and every inventoried C-dependent helper to terminate exactly once. The termination is computed from the registry rather than asserted: a helper is disposed by a selected operation, a selected import, an obsolete family, or a deferred row. Two categories are deliberately excluded from that join. The classification authority records all inventoried helpers by design, so counting it would hide every genuine gap; the symbol-versioning and MIR-requirement authorities are cross-cutting layers a single helper legitimately appears in more than once, so treating a repeat appearance as a defect would reject correct rows. Helper identity resolves through both the helper id and the symbol identity, because authorities key on different spellings.
+
+The audit closed three helper defects. One standard-stream logging helper terminated twice, carrying an unretired allocation-domain deferral alongside the I/O selection that Patch 17.11 migrated it into. One test-fixture payload was recorded as a deferral when it has no future capability, so it is now an exclusion. Three static inline hashmap helpers had no termination at all; having no external linkage, they are excluded and subsumed by the hashmap operations that do terminate.
+
+Every retained C component names a narrow deferred row as its removal or reassessment destination. Five components previously pointed at patches that had already shipped without removing them, which is not a concrete destination.
 
 ## Registry entries
 

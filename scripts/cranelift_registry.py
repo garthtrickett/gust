@@ -37,6 +37,7 @@ TOP_FIELDS = {
     "phase17_thread_runtime_authority",
     "phase17_availability_authority",
     "phase17_composition_authority",
+    "phase17_deferred_residue_audit",
     "phase16_deferred_residue_audit",
     "phase16_closure",
     "phase15_deferred_residue_audit",
@@ -10850,6 +10851,33 @@ def phase17_availability_authority_summary_lines(registry):
     ]
 
 
+def phase17_deferred_residue_audit_summary_lines(registry):
+    audit = registry["phase17_deferred_residue_audit"]
+    helpers = audit["helper_dispositions"]
+    counts = {
+        kind: sum(row["disposition"] == kind for row in helpers)
+        for kind in ("migrated", "excluded", "narrowly_deferred")
+    }
+    return [
+        "## Phase 17 deferred residue and runtime coverage",
+        "",
+        f"- Audit version: `{audit['version']}`",
+        f"- Opening rows disposed: `{len(audit['opening_dispositions'])}`",
+        f"- Inventoried helpers disposed: `{len(helpers)}` "
+        f"({counts['migrated']} migrated, {counts['excluded']} excluded, "
+        f"{counts['narrowly_deferred']} narrowly deferred)",
+        f"- Retained C components with a named destination: `{len(audit['component_dispositions'])}`",
+        f"- Narrow deferred rows: `{len(audit['narrow_deferred_rows'])}`",
+        "",
+        "Patch 17.15 requires every Phase 17 opening row and every inventoried C-dependent helper to terminate exactly once. The termination is computed from the registry rather than asserted: a helper is disposed by a selected operation, a selected import, an obsolete family, or a deferred row. Two categories are deliberately excluded from that join. The classification authority records all inventoried helpers by design, so counting it would hide every genuine gap; the symbol-versioning and MIR-requirement authorities are cross-cutting layers a single helper legitimately appears in more than once, so treating a repeat appearance as a defect would reject correct rows. Helper identity resolves through both the helper id and the symbol identity, because authorities key on different spellings.",
+        "",
+        "The audit closed three helper defects. One standard-stream logging helper terminated twice, carrying an unretired allocation-domain deferral alongside the I/O selection that Patch 17.11 migrated it into. One test-fixture payload was recorded as a deferral when it has no future capability, so it is now an exclusion. Three static inline hashmap helpers had no termination at all; having no external linkage, they are excluded and subsumed by the hashmap operations that do terminate.",
+        "",
+        "Every retained C component names a narrow deferred row as its removal or reassessment destination. Five components previously pointed at patches that had already shipped without removing them, which is not a concrete destination.",
+        "",
+    ]
+
+
 def phase17_composition_authority_summary_lines(registry):
     authority = validate_phase17_composition_authority_structure(registry)
     participants = set()
@@ -10933,6 +10961,7 @@ def render(registry):
         *phase17_thread_runtime_authority_summary_lines(registry),
         *phase17_availability_authority_summary_lines(registry),
         *phase17_composition_authority_summary_lines(registry),
+        *phase17_deferred_residue_audit_summary_lines(registry),
         "## Registry entries", "",
         "| ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |",
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",

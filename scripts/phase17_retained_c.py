@@ -157,8 +157,30 @@ def check_registry(root: Path) -> dict:
             fail(f"{cid}: owned source is not a repository runtime file")
         if not (root / source).is_file():
             fail(f"{cid}: owned source does not exist: {source}")
-        if not str(row.get("destination_phase", "")).startswith("17."):
-            fail(f"{cid}: destination phase is not a Phase 17 patch")
+        destination = str(row.get("destination_phase", ""))
+        if destination.startswith("17."):
+            pass
+        elif destination == "phase18":
+            # Patch 17.15 reconciles residue. A component that survives the
+            # phase must point beyond it, but only through a named narrow
+            # deferred row -- never as a bare "later". Permitted solely once
+            # the residue audit exists and claims this component.
+            audit = registry.get("phase17_deferred_residue_audit")
+            if not isinstance(audit, dict):
+                fail(f"{cid}: destination is beyond Phase 17 with no residue audit")
+            claimed = {
+                disposition["component_id"]: disposition["narrow_deferred_row"]
+                for disposition in audit.get("component_dispositions", [])
+            }
+            narrow_row = claimed.get(cid)
+            if not narrow_row:
+                fail(f"{cid}: destination is beyond Phase 17 with no residue disposition")
+            if narrow_row not in {r["id"] for r in audit.get("narrow_deferred_rows", [])}:
+                fail(f"{cid}: residue disposition names an unknown narrow row")
+            if narrow_row not in str(row.get("removal_criterion", "")):
+                fail(f"{cid}: removal criterion does not name its destination row")
+        else:
+            fail(f"{cid}: destination phase is neither a Phase 17 patch nor a named residue row")
     return authority
 
 
