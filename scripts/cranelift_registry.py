@@ -1698,7 +1698,7 @@ def validate_phase13_opening_snapshot_structure(registry):
     require(
         isinstance(snapshots, dict)
         and set(snapshots)
-        == {"phase13", "phase14", "phase15", "phase16", "phase17"},
+        == {"phase13", "phase14", "phase15", "phase16", "phase17", "phase18"},
         "opening_snapshots must contain exactly phase13 through phase17",
     )
     snapshot = snapshots["phase13"]
@@ -4211,7 +4211,7 @@ def validate():
     opening_schema = schema.get("properties", {}).get("opening_snapshots", {})
     require(
         set(opening_schema.get("required", []))
-        == {"phase13", "phase14", "phase15", "phase16", "phase17"},
+        == {"phase13", "phase14", "phase15", "phase16", "phase17", "phase18"},
         "schema opening snapshot keys drifted",
     )
     phase13_snapshot_schema = definitions.get("phase13_opening_snapshot", {})
@@ -10852,6 +10852,33 @@ def phase17_availability_authority_summary_lines(registry):
     ]
 
 
+def phase18_opening_summary_lines(registry):
+    snapshot = registry["opening_snapshots"]["phase18"]
+    rebase = snapshot["residual_rebase"]
+    dispositions = {}
+    for row in rebase:
+        key = row["phase18_disposition"]
+        dispositions[key] = dispositions.get(key, 0) + 1
+    ordered = ", ".join(f"{count} {kind}" for kind, count in sorted(dispositions.items()))
+    return [
+        "## Phase 18 opening inventory",
+        "",
+        f"- Opening version: `{snapshot['opening_version']}`",
+        f"- Status: `{snapshot['status']}`",
+        f"- Opening rows: `{len(snapshot['entries'])}`",
+        f"- Host assumptions: `{len(snapshot['host_assumption_inventory'])}`",
+        f"- Candidate targets: `{len(snapshot['candidate_targets'])}`",
+        f"- Inherited residuals rebased: `{len(rebase)}` ({ordered})",
+        "",
+        "Patch 18.0 records the Phase 18 input without changing compiler, backend, runtime, object, linker, or artifact behaviour. Every candidate target is unsupported until its complete compiler, runtime, linker, and ABI tuple is proven, so the declared supported set is empty at the opening.",
+        "",
+        "The host assumption inventory names real assumptions rather than planned ones, and must cover all six reachability areas: target selection, Cranelift lowering, object emission, runtime package selection, link planning, and publication. Each assumption names an existing source file, so the inventory cannot drift into fiction.",
+        "",
+        "Phase 18 inherits residuals from two parents: Phase 16 rows that Phase 17 reassigned forward, and Phase 17's own narrow deferred rows. Most are function ABI or runtime capability work rather than target, object, or linker work, so they are reassigned onward rather than selected. Three rows genuinely contain both, and are split: selecting the SysV and AArch64 ABIs for declared targets, and choosing static or dynamic runtime linking, are Phase 18 work, while complete aggregate classification, the complete procedure call standard, and dynamic library loading are not.",
+        "",
+    ]
+
+
 def phase17_closure_summary_lines(registry):
     closure = registry["phase17_closure"]
     return [
@@ -10985,6 +11012,7 @@ def render(registry):
         *phase17_composition_authority_summary_lines(registry),
         *phase17_deferred_residue_audit_summary_lines(registry),
         *phase17_closure_summary_lines(registry),
+        *phase18_opening_summary_lines(registry),
         "## Registry entries", "",
         "| ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |",
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
