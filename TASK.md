@@ -1,4 +1,4 @@
-# Phase 17 — Native Runtime Boundary
+# Phase 18 — Target, Object, and Linker Hardening
 
 ## Workflow Policy
 
@@ -8,13 +8,13 @@ When a local or GitHub runner fails, do not prompt for permission when this docu
 
 ### Roadmap Publication and Activation
 
-The current task authorizes writing, validating, committing, pushing, and opening or updating the pull request for this Phase 17 roadmap. It does **not** by itself activate implementation of Patch 17.0 or any later capability patch.
+The current task authorizes writing, validating, committing, pushing, and opening or updating the pull request for this Phase 18 roadmap. It does **not** by itself activate implementation of Patch 18.0 or any later capability patch.
 
-Phase 17 implementation begins only after an explicit operator request to start Phase 17. Once activated, the Phase Completion Loop below authorizes autonomous work through Patch 17.16, subject to the patch boundaries, validation requirements, and stop conditions in this document.
+Phase 18 implementation begins only after an explicit operator request to start Phase 18. Once activated, the Phase Completion Loop below authorizes autonomous work through Patch 18.19, subject to the patch boundaries, validation requirements, and stop conditions in this document.
 
 ### Git Authorization
 
-This file is the explicit authorization for `git commit`, `git push`, `gh pr create`/`update`, `gh run cancel`, and `gh pr merge` on `codex/**` branches for the roadmap publication and, once Phase 17 is explicitly activated, for the Phase 17 implementation loop. Never push directly to `main`. Do not self-approve.
+This file is the explicit authorization for `git commit`, `git push`, `gh pr create`/`update`, `gh run cancel`, and `gh pr merge` on `codex/**` branches for the roadmap publication and, once Phase 18 is explicitly activated, for the Phase 18 implementation loop. Never push directly to `main`. Do not self-approve.
 
 General rule: when Workflow, Monitoring, Merge, Phase Completion, or Runner Policy defines the next step, continue without a permission prompt. Ask only when the next action falls outside those policies or requires a material scope expansion.
 
@@ -24,22 +24,22 @@ When monitoring GitHub Actions or long-running local guard runs:
 
 - State it explicitly in chat as `Monitoring <branch> <SHA> via c2eab010 every 2m`.
 - Use `gh run list --branch <branch> --limit 100` and, where necessary, the paginated Actions API filtered to the exact `head_sha`.
-- Report each poll as `SHA | workflow | event | status | conclusion` and distinguish the owning Phase 17 guard failure from unrelated or superseded runs.
+- Report each poll as `SHA | workflow | event | status | conclusion` and distinguish the owning Phase 18 guard failure from unrelated or superseded runs.
 - Keep monitor `c2eab010` visible; after each poll say `Monitoring continues` or `All green — proceeding`.
 - Do not silently poll.
 - Always set a 5 minute pulse when monitoring local tests or GitHub CI/CD, and message a status update on every pulse. This applies to long-running local guard families as well as cloud runs; silence during a long wait is not acceptable even when nothing has changed.
 
 ## Merge Policy
 
-Once every required `pull_request` workflow for the exact PR `HEAD` is `completed success`, all review conversations are resolved, and repository rules permit the operation, autonomously merge the agent's own `codex/**` pull request without prompting. After a capability patch merges, proceed to the next Phase 17 patch only when Phase 17 implementation has been explicitly activated.
+Once every required `pull_request` workflow for the exact PR `HEAD` is `completed success`, all review conversations are resolved, and repository rules permit the operation, autonomously merge the agent's own `codex/**` pull request without prompting. After a capability patch merges, proceed to the next Phase 18 patch only when Phase 18 implementation has been explicitly activated.
 
 ## Phase Completion Loop
 
-After explicit Phase 17 activation, do not stop after one capability merge. Phase 17 is complete only when Status shows every patch 17.0–17.16 `DONE`, every Phase 17 Success Criterion is satisfied, all review conversations are resolved, and `guard-cranelift-phase17-close` passes in the authoritative GitHub environment.
+After explicit Phase 18 activation, do not stop after one capability merge. Phase 18 is complete only when Status shows every patch 18.0–18.19 `DONE`, every Phase 18 Success Criterion is satisfied, all review conversations are resolved, and `guard-cranelift-phase18-close` passes in the authoritative GitHub environment.
 
-After merging one patch, update local `main`, create `codex/phase17-<next>` from that `main`, implement the next patch's full Purpose and Exit Gate, validate locally, publish, monitor, fix forward if needed, and merge when green. Stop only when the operator explicitly says stop, repository policy blocks progress, or the required correction would materially expand the selected patch.
+After merging one patch, update local `main`, create `codex/phase18-<next>` from that `main`, implement the next patch's full Purpose and Exit Gate, validate locally, publish, monitor, fix forward if needed, and merge when green. Stop only when the operator explicitly says stop, repository policy blocks progress, or the required correction would materially expand the selected patch.
 
-**Atomic per-patch commits and PRs:** Each initial publication must contain one complete patch such as 17.3 or 17.4, with its owning focused checks green before push. Do not combine planned patches into one PR and do not split a patch across multiple initial PRs unless its Exit Gate explicitly requires that split. Narrow corrective commits on the same PR are allowed when CI or review identifies a defect; reproduce and validate each correction locally before republishing.
+**Atomic per-patch commits and PRs:** Each initial publication must contain one complete patch such as 18.3 or 18.4, with its owning focused checks green before push. Do not combine planned patches into one PR and do not split a patch across multiple initial PRs unless its Exit Gate explicitly requires that split. Narrow corrective commits on the same PR are allowed when CI or review identifies a defect; reproduce and validate each correction locally before republishing.
 
 ## Runner Policy
 
@@ -70,6 +70,31 @@ If more than 100 runs exist, use the paginated Actions API and apply the same ex
 
 ## Status
 
+- [ ] Patch 18.0 — Opening Inventory and Phase 17 Residual Rebase
+- [ ] Patch 18.1 — Compiler-Owned Target Authority and Declared Target Triples
+- [ ] Patch 18.2 — Complete Target Support Tuple and Support Decisions
+- [ ] Patch 18.3 — Object Format, Section, and Symbol Binding Authority
+- [ ] Patch 18.4 — Relocation Model and Validation
+- [ ] Patch 18.5 — Target-Specific ABI Selection
+- [ ] Patch 18.6 — Target-Specific Runtime Package Selection
+- [ ] Patch 18.7 — Linker Discovery, Selection, and Invocation Policy
+- [ ] Patch 18.8 — Static and Dynamic Runtime Linking Modes
+- [ ] Patch 18.9 — Cross-Compilation Policy and Host/Target Separation
+- [ ] Patch 18.10 — Unsupported-Target Detection and Diagnostics
+- [ ] Patch 18.11 — Symbol and Relocation Inspection Evidence
+- [ ] Patch 18.12 — Debug Information Strategy
+- [ ] Patch 18.13 — Source-Location Preservation
+- [ ] Patch 18.14 — Optimisation-Level Policy
+- [ ] Patch 18.15 — Reproducible Object and Artifact Output
+- [ ] Patch 18.16 — Atomic Executable Publication Under Phase 9G
+- [ ] Patch 18.17 — Cross-Target Composition and Complete Per-Target Evidence
+- [ ] Patch 18.18 — Deferred Residue and Target-Coverage Audit
+- [ ] Patch 18.19 — Phase 18 Closure
+
+## Immutable Phase 17 Completion Record
+
+The Phase 18 opening and closure guards consume this historical record. These rows describe the already-closed parent phase and are not active Phase 18 work.
+
 - [x] Patch 17.0 — Opening Inventory and Phase 16 Residual Rebase — DONE
 - [x] Patch 17.1 — Compiler-Owned Runtime Boundary and Helper Classification Authority — DONE
 - [x] Patch 17.2 — Supported Runtime ABI, Symbol Identity, and Versioning — DONE
@@ -90,7 +115,7 @@ If more than 100 runs exist, use the paginated Actions API and apply the same ex
 
 ## Immutable Phase 16 Completion Record
 
-The Phase 17 opening and closure guards consume this historical record. These rows describe the already-closed parent phase and are not active Phase 17 work.
+The Phase 18 closure guard consumes this historical record transitively. These rows describe the already-closed Phase 16 parent and are not active Phase 18 work.
 
 - [x] Patch 16.0 — Opening Inventory and Phase 15 Residual Rebase — DONE
 - [x] Patch 16.1 — Compiler-Owned Function ABI Authority — DONE
@@ -111,7 +136,7 @@ The Phase 17 opening and closure guards consume this historical record. These ro
 
 ## Immutable Phase 15 Completion Record
 
-The Phase 16 closure guard consumes this historical record transitively. These rows describe the already-closed Phase 15 parent and are not active Phase 17 work.
+The Phase 16 closure guard consumes this historical record transitively. These rows describe the already-closed Phase 15 parent and are not active Phase 18 work.
 
 - [x] Patch 15.0 — Opening Inventory and Phase 14 Residual Rebase — DONE
 - [x] Patch 15.1 — Compiler-Owned Resource and Lifetime Authority — DONE
@@ -134,301 +159,271 @@ The Phase 16 closure guard consumes this historical record transitively. These r
 
 ## Purpose
 
-Phase 17 removes generated C glue as an implicit implementation layer between compiler-produced native code and the Gust runtime.
+Phase 18 turns the host-only native path into a supported compiler backend.
 
-Every existing C-dependent helper selected by this phase must be classified as exactly one of:
+Phase 17 proved that a migrated program can be compiled to native objects and linked against an explicit runtime package without generated C glue. It proved this on the host. Phase 18 makes target support an explicit, declared, and evidenced property rather than an accident of the machine the compiler happens to run on.
 
-- a stable runtime-library function imported by Cranelift;
-- a Rust implementation compiled into the runtime;
-- a separately compiled C runtime object retained temporarily;
-- pure Gust runtime code compiled through canonical MIR;
-- an obsolete helper to remove.
+The central rule of this phase is that **a target is not supported because Cranelift can emit code for its architecture**. A declared supported target requires the complete combination of:
+
+- a compiler able to produce correct native objects for the target;
+- a runtime package built for and compatible with the target;
+- a linker that can be discovered and invoked for the target;
+- an ABI selection valid for the target.
+
+All four must hold simultaneously, be validated together, and carry evidence together. Any target missing any element is unsupported and must be diagnosed as unsupported rather than attempted.
 
 The phase covers the declared inventory for:
 
-- a compiler-owned supported runtime ABI;
-- stable runtime symbol identities and versions;
-- separation of compiler-generated program code from runtime implementation;
-- explicit runtime package manifests;
-- target-specific runtime objects or libraries;
-- runtime requirement transport in canonical MIR and native requests;
-- runtime availability and compatibility validation before linking;
-- stable diagnostics for missing, unknown, or incompatible runtime symbols;
-- elimination of generated ad hoc C wrappers and shims from the native path;
-- allocation, core memory, string, I/O, filesystem, resource, threading, and synchronization helper audits;
-- native linking of migrated programs from native program objects plus an explicit runtime package.
+- explicit target selection and declared architecture and operating-system triples;
+- object-format handling, section naming, and symbol binding;
+- relocation model selection and relocation validation;
+- target-specific ABI selection consuming the Phase 16 authority;
+- target-specific runtime package selection consuming the Phase 17 authority;
+- linker discovery, selection, and invocation policy;
+- static versus dynamic runtime linking;
+- reproducible object and artifact output;
+- atomic executable publication under existing Phase 9G ownership;
+- cross-compilation policy and host/target separation;
+- unsupported-target detection and stable diagnostics;
+- symbol and relocation inspection evidence;
+- debug information strategy;
+- source-location preservation;
+- optimisation-level policy.
 
-Retiring generated C as the native intermediary does not require every runtime implementation to be rewritten in Rust or Gust during this phase. A separately compiled C runtime component is valid only when it is explicit, versioned, target-scoped, built independently of the source program, and selected through the same runtime package authority as every other component.
+The initial declared supported target set must remain narrow and explicit. Breadth is not a goal of this phase; a small number of completely supported targets is the goal. Adding a target is a deliberate, evidenced act, not a consequence of a backend capability table.
 
-MIR-to-C may remain the default backend and differential oracle during Phase 17. Its generated C output is an independent comparison route and must not be used as a shim, wrapper source, or hidden runtime implementation in an explicit Cranelift/native artifact.
-
-Phase 17 closes only the declared native runtime-boundary inventory. It does not claim complete runtime reimplementation, complete standard-library coverage, complete foreign-function interoperability, complete threading semantics, complete allocation policy, complete filesystem portability, complete platform ABI coverage, retirement of the MIR-to-C oracle, or production readiness.
+Phase 18 closes only the declared target, object, and linker inventory. It does not claim complete platform coverage, complete cross-compilation, complete debug-information fidelity, complete optimisation support, a stable public target-triple vocabulary, distribution or packaging policy, retirement of the MIR-to-C oracle, or production readiness.
 
 ## Starting State
 
 The expected starting state is:
 
-- Phase 16 is closed with status `phase16_closed_function_abi_and_aggregate_call_semantics`.
+- Phase 17 is closed with status `phase17_closed_native_runtime_boundary`.
 - The canonical feature registry remains the only active feature-state authority.
-- The Phase 16 semantic closure snapshot remains immutable.
-- The Phase 16 deferred residue snapshot contains concrete capabilities assigned to later phases.
+- The Phase 17 semantic closure snapshot remains immutable.
+- The Phase 17 deferred residue snapshot contains concrete capabilities assigned to later phases.
 - Phase 14 remains the compiler-owned authority for type layout, target layout, and memory-access validation.
 - Phase 15 remains the compiler-owned authority for resource identity, move state, cleanup obligations, and destruction.
 - Phase 16 remains the compiler-owned authority for signatures, parameter and result placement, call plans, frame plans, and compatibility.
+- Phase 17 remains the compiler-owned authority for runtime ABI identity, helper classification, runtime symbol identity and version, runtime components, runtime packages, runtime requirements, and pre-link availability and compatibility decisions.
 - MIR-to-C remains the default backend and differential oracle unless a later explicit roadmap patch changes that ownership.
 - Explicit Cranelift selection has no fallback.
 - The compiler owns source interpretation and canonical MIR production.
-- The worker receives only request data, canonical MIR, and compiler-produced layout, resource, ABI, and selected runtime-boundary metadata.
+- The worker receives only request data, canonical MIR, and compiler-produced layout, resource, ABI, and runtime metadata.
 - Phase 9G owns object handling, linking, cleanup of owned temporary artifacts, and atomic publication.
 - Registry-derived CI families own focused differential evidence.
 - Cranelift Historical Full remains the sole Level 3 historical owner.
 
-Phase 17 must consume those contracts rather than recreate them.
+Phase 18 must consume those contracts rather than recreate them. In particular, Phase 18 selects an ABI for a target; it does not define ABI semantics. It selects a runtime package for a target; it does not define runtime symbol identity. It plans and validates a link; it does not take link execution or publication ownership from Phase 9G.
 
 ## Phase Boundary
 
-Phase 17 may implement:
+Phase 18 may implement:
 
-- compiler-owned runtime ABI identity;
-- deterministic helper classification;
-- stable runtime symbol identity and versioning;
-- runtime component and package manifests;
-- target-specific runtime package selection;
-- compiler-produced runtime requirements;
-- stable Cranelift imports of runtime-library symbols;
-- Rust runtime components compiled into explicit runtime packages;
-- separately compiled C runtime components retained under explicit policy;
-- pure Gust runtime modules compiled through canonical MIR;
-- removal of obsolete helpers;
-- elimination of generated per-program C wrappers and shims;
-- selected allocation and core-memory runtime operations;
-- selected string runtime operations;
-- selected I/O runtime operations;
-- selected filesystem and resource runtime operations;
-- selected threading and synchronization runtime operations where an existing semantic authority is stable;
-- pre-link runtime availability and compatibility validation;
-- stable runtime-boundary witnesses and diagnostics;
-- target-specific runtime object or library production;
-- deterministic runtime link-plan integration under Phase 9G artifact ownership.
+- a compiler-owned target authority and declared target triple vocabulary;
+- explicit target selection from the request and from a declared default;
+- the complete target support tuple and its support decision;
+- object-format descriptors covering section naming, symbol binding, and visibility;
+- relocation kind vocabularies per target and object format;
+- relocation validation before object publication;
+- target-specific ABI selection consuming Phase 16 records;
+- target-specific runtime package selection consuming Phase 17 records;
+- linker discovery, selection, and a declared invocation policy;
+- static and dynamic runtime link modes;
+- deterministic and reproducible object and artifact bytes;
+- atomic executable publication integrated with Phase 9G ownership;
+- host and target separation for cross-compilation;
+- unsupported-target detection with stable diagnostics at a declared early stage;
+- symbol table and relocation inspection witnesses;
+- a declared debug-information strategy and level;
+- source-location preservation from source through canonical MIR to emitted debug records;
+- a declared optimisation-level vocabulary and its effect on emitted code.
 
-Phase 17 must not silently absorb:
+Phase 18 must not silently absorb:
 
-- complete replacement of every C runtime implementation;
+- complete platform or architecture coverage;
+- a stable, publicly committed target-triple vocabulary;
+- complete cross-compilation including sysroot acquisition and management;
+- toolchain distribution, installation, or package-manager design;
+- complete debug-information fidelity or debugger integration;
+- complete optimisation pipelines or performance guarantees;
+- profile-guided or link-time optimisation;
+- position-independent executable, address-space-layout, or hardening policy unless separately selected;
+- code signing, notarisation, or platform attestation;
+- shared-library authoring or plugin loading;
+- dynamic loader design;
 - removal of MIR-to-C as the default differential oracle;
+- linker implementation;
+- object-format writing beyond what the declared targets require;
 - arbitrary foreign-function interfaces;
-- unversioned or dynamically guessed runtime imports;
-- general dynamic loading or plugin discovery;
-- package-manager design or distribution policy unrelated to native runtime artifacts;
-- complete platform calling-convention classification;
-- complete libc replacement;
-- allocator design beyond explicitly selected operations;
-- garbage collection;
-- unrestricted shared ownership or reference counting;
-- general borrow checking or alias analysis;
-- complete Unicode or locale semantics;
-- complete asynchronous I/O;
-- sockets, processes, signals, terminals, or other OS services unless separately selected;
-- complete filesystem portability;
-- general atomics or concurrency semantics;
-- thread cancellation or asynchronous unwinding;
-- complete panic unwinding or foreign exceptions;
-- linker or atomic-publication ownership already assigned to Phase 9G;
+- capabilities already deferred by Phase 17 to later phases;
 - full Gust language parity or production readiness.
 
-Out-of-scope Phase 16 residual rows must remain deferred, be reassigned to a later phase, or be split into narrower rows. They must not be marked migrated merely because Phase 17 introduces a runtime symbol or package.
+Out-of-scope Phase 17 residual rows must remain deferred, be reassigned to a later phase, or be split into narrower rows. They must not be marked migrated merely because Phase 18 introduces a target, object format, or linker policy.
 
-## Compiler-Owned Native Runtime Authority
+## Compiler-Owned Target and Artifact Authority
 
-Phase 17 must establish one compiler-owned native runtime service with semantic records equivalent to the following concepts.
+Phase 18 must establish one compiler-owned target service with semantic records equivalent to the following concepts. No backend, worker, linker driver, or diagnostic path may derive these independently.
 
-### Runtime ABI Identity
+### Target Identity
 
-Every selected runtime ABI has a compiler-produced identity containing:
+- stable target ID;
+- architecture;
+- vendor;
+- operating system;
+- environment or ABI suffix where the target requires one;
+- pointer width;
+- endianness;
+- declared source of the triple.
 
-- stable runtime ABI ID;
-- ABI version;
-- target triple or target class;
-- data layout identity;
-- calling-convention identity;
-- symbol naming and versioning policy;
-- compatibility policy;
-- package format identity;
-- minimum required component set;
-- source registry row;
-- diagnostic owner.
+Target identity is the only authority for what a target is. A backend capability table is not a target identity.
 
-### Runtime Helper Classification
+### Complete Target Support Tuple
 
-Every selected helper has exactly one compiler-owned classification record containing:
+- target ID;
+- compiler support record;
+- runtime package support record;
+- linker support record;
+- ABI support record;
+- resulting support decision.
 
-- stable helper ID;
-- semantic operation identity;
-- source declaration or intrinsic identity;
-- helper family;
-- one classification from the five Phase 17 categories;
-- runtime symbol identity where retained;
-- implementation component identity;
-- ABI identity and version range;
-- target applicability;
-- side-effect and failure policy;
-- resource, layout, and call-ABI dependencies;
-- replacement or removal disposition;
-- owning registry row;
-- stable diagnostic reason codes.
+A target is declared supported only when all four support records are present, mutually compatible, and evidenced. The tuple is the phase's central invariant.
 
-No helper may be classified simultaneously as generated glue and an explicit runtime component. A retained C implementation is a separately built runtime component, never program-specific generated source.
+### Object Format Descriptor
 
-### Runtime Symbol Identity
+- object format;
+- section naming rules;
+- symbol binding vocabulary;
+- symbol visibility vocabulary;
+- alignment requirements;
+- permitted section kinds.
 
-Every imported or exported runtime symbol has a compiler-produced identity containing:
+### Relocation Model
 
-- stable runtime symbol ID;
-- semantic operation identity;
-- external symbol spelling;
-- symbol version;
-- function ABI identity;
-- parameter and result ABI records;
-- linkage and visibility policy;
-- defining component;
-- target applicability;
-- compatibility range;
-- optionality policy;
-- diagnostic ownership.
+- relocation kind vocabulary for the target and object format;
+- permitted relocation kinds per section kind;
+- addend policy;
+- validation rules applied before an object is published.
 
-Raw symbol strings in backend code, generated C templates, linker command fragments, or fixture names are not semantic authority.
+### Target ABI Selection
 
-### Runtime Component
+- target ID;
+- selected Phase 16 ABI identity;
+- selection reason;
+- compatibility decision.
 
-Every runtime component has a compiler-owned record containing:
+Phase 18 selects an existing ABI. It does not define ABI placement, classification, or transport.
 
-- stable component ID;
-- implementation language or form;
-- source ownership;
-- produced object or library kind;
-- runtime ABI identity and version;
-- exported symbol IDs;
-- imported symbol IDs;
-- target applicability;
-- build authority;
-- reproducibility inputs;
-- compatibility constraints;
-- temporary-retention policy where the component is C;
-- owning registry rows.
+### Target Runtime Package Selection
 
-### Runtime Package Manifest
+- target ID;
+- selected Phase 17 runtime package identity;
+- link mode;
+- compatibility decision.
 
-Every explicit runtime package manifest contains:
+Phase 18 selects an existing package. It does not define runtime symbol identity or version.
 
-- stable package ID;
-- package format version;
-- runtime ABI identity and version;
-- exact target identity;
-- component IDs;
-- provided symbol IDs and versions;
-- required external system symbols where permitted;
-- object or library members;
-- deterministic ordering;
-- compatibility and rejection rules;
-- provenance sufficient for reproducible selection;
-- ownership handoff to the Phase 9G link plan.
+### Linker Descriptor
 
-The semantic contract is the structured manifest and compiler-owned records, not a raw file hash, archive hash, directory name, or emitted linker command.
+- linker ID;
+- discovery method;
+- discovery result;
+- invocation policy;
+- permitted argument vocabulary;
+- supported object formats;
+- supported targets.
 
-### Runtime Requirement
+### Link Mode Decision
 
-Every compiled program has a compiler-produced runtime requirement set containing:
+- target ID;
+- static or dynamic runtime linking;
+- decision reason;
+- required runtime package form;
+- rejection reason where the requested mode is unavailable.
 
-- requirement ID;
-- source operation or canonical MIR operation;
-- required helper ID;
-- required symbol ID and accepted version range;
-- required runtime ABI identity;
-- target applicability;
-- optional or mandatory status;
-- resource, layout, and function-ABI dependencies;
-- failure stage and stable diagnostic reason code.
+### Reproducibility Contract
 
-Requirements must be deduplicated and deterministically ordered. Neither backend nor the linker driver may infer requirements by scanning generated code or unresolved symbols.
+- declared reproducible fields;
+- excluded non-deterministic inputs;
+- normalisation rules for paths, timestamps, and ordering;
+- comparison method for repeated builds.
 
-### Runtime Compatibility Decision
+### Publication Plan
 
-Every package selection records:
+- temporary artifact ownership;
+- publication order;
+- atomicity method;
+- preservation guarantee on failure and deferral.
 
-- requirement set identity;
-- candidate package identity;
+Publication remains owned by Phase 9G. Phase 18 supplies the plan; it does not perform or reassign publication.
+
+### Host and Target Separation
+
+- host identity;
 - target identity;
-- compiler-required ABI version;
-- package-provided ABI version;
-- required and provided symbol versions;
-- component availability;
-- validity result;
-- rejection reason;
-- stable diagnostic owner.
+- whether the build is native or cross;
+- permitted host-dependent inputs;
+- rejection rules for host leakage into target artifacts.
 
-### Runtime Link Plan
+### Debug Information Plan
 
-Every migrated native link plan records:
+- debug information format;
+- debug level;
+- included record kinds;
+- excluded record kinds;
+- target applicability.
 
-- compiler-produced program object identities;
-- selected runtime package identity;
-- selected runtime component objects or libraries;
-- deterministic link ordering;
-- required system libraries already authorized by the package manifest;
-- target identity;
-- compatibility decision identity;
-- Phase 9G artifact and publication ownership.
+### Source Location Record
 
-The runtime service selects semantic requirements and compatible package components. Phase 9G remains responsible for executing object handling, linking, temporary cleanup, and atomic output publication.
+- source file identity;
+- source span;
+- canonical MIR association;
+- emitted debug association;
+- preservation guarantee through lowering.
+
+### Optimisation Level Decision
+
+- declared optimisation level vocabulary;
+- selected level;
+- permitted transformations at that level;
+- guarantees preserved across levels;
+- observable-behaviour equivalence requirement.
+
+### Target Support Decision
+
+- target ID;
+- supported or unsupported;
+- missing tuple elements where unsupported;
+- stable diagnostic reason code;
+- declared failure stage.
 
 ## Request and MIR Ownership
 
-Canonical MIR must refer to compiler-owned runtime helper and symbol identities for selected runtime-facing operations.
-
-The native request must carry an immutable, deduplicated runtime requirement table or equivalent compiler-produced representation containing only the runtime data required by the worker.
-
-The consumers must behave as follows:
-
-- MIR-to-C remains an independent differential oracle and emits its own comparison artifact from compiler-produced semantics.
-- Explicit Cranelift lowers runtime-facing operations to compiler-selected runtime symbol IDs and ABI records.
-- The native link path combines compiler-produced native objects with an explicitly selected compatible runtime package.
-- No Cranelift/native request may trigger generation or compilation of an ad hoc C wrapper or shim.
-- Rust runtime code is compiled as a declared runtime component, not embedded into compiler-generated program code.
-- Retained C runtime code is compiled separately as a declared runtime component, not synthesized from the input program.
-- Pure Gust runtime code is compiled through the generic source-to-canonical-MIR route and packaged as a declared runtime component.
-- Neither backend may independently choose a helper classification, symbol spelling, version, package, compatibility policy, or link order.
-- Diagnostics query the compiler runtime service and report the same requirement or compatibility decision consumed by native lowering and linking.
-- Generated views derive active rows, helper categories, symbol versions, component kinds, targets, totals, families, and dispositions from structured authorities.
-
-No raw registry hash, MIR hash, generated-C hash, object hash, archive hash, Markdown hash, or emitted-link-command hash becomes a semantic contract.
+- The compiler selects the target and produces the target identity, support decision, ABI selection, runtime package selection, link mode, debug plan, and optimisation level.
+- The native request carries the selected target identity and the compiler-produced target records it depends on.
+- Canonical MIR references compiler-produced target and source-location identities rather than backend-inferred ones.
+- The worker receives only request data, canonical MIR, and compiler-produced layout, resource, ABI, runtime, and target metadata.
+- Request validation rejects missing, duplicate, conflicting, unknown, or target-incompatible target metadata.
+- The worker does not choose a target, an object format, a relocation kind, a linker, a link mode, a debug level, or an optimisation level.
 
 ## Architectural Invariants
 
-Every Phase 17 patch must preserve:
-
-- MIR-to-C as the default backend and differential oracle until a separate roadmap patch explicitly changes that role;
-- explicit Cranelift selection with no fallback;
-- generic source-to-canonical-MIR routing;
-- no exact-source, filename, fixture-name, literal, symbol-output, object-output, or linker-output recognizer;
-- compiler-owned source interpretation;
-- compiler-owned type and target layout authority from Phase 14;
-- compiler-owned resource and cleanup authority from Phase 15;
-- compiler-owned function ABI and call-plan authority from Phase 16;
-- one compiler-owned native runtime authority;
-- exactly one Phase 17 classification for every selected C-dependent helper;
-- no backend-local runtime ABI table;
-- no backend-local runtime package selector;
-- no linker-driven discovery of semantic runtime requirements;
-- no generated per-program C shim in an explicit Cranelift/native link path;
-- worker input limited to request data, canonical MIR, and compiler-produced layout, resource, ABI, and runtime data;
-- capability and deferral decisions before native driver or artifact access;
-- runtime package compatibility validation before linker invocation and output replacement;
-- Phase 9G ownership of object handling, linking, temporary cleanup, and atomic publication;
-- preservation of an existing output on deferral, incompatibility, or failure;
-- deterministic registry and generated projections;
-- registry-derived CI families;
-- separate Level 1, Level 2, and Level 3 ownership;
-- no exact CI matrix total treated as backend correctness;
-- no claim that Phase 17 completes the runtime, FFI, allocation, concurrency, platform, or production inventory.
+- A target is supported only as a complete compiler, runtime, linker, and ABI combination.
+- The declared supported target set is explicit, narrow, and registry-owned.
+- Backend architecture capability is necessary but never sufficient for target support.
+- No component infers a target from the host environment when an explicit target is selected.
+- No component infers an object format, relocation kind, or linker from an unresolved symbol, a file extension, or a probe of the output.
+- Unsupported targets stop at a declared early failure stage before native driver access, object creation, linker invocation, or output replacement.
+- Object bytes for a fixed input, target, and level are reproducible.
+- Existing output is preserved on failure and deferral.
+- Phase 9G retains object handling, linking, temporary cleanup, and atomic publication ownership.
+- Phase 14, 15, 16, and 17 authorities remain the owners of layout, resource, ABI, and runtime decisions respectively.
+- MIR-to-C remains an independent default differential oracle and never acts as an implementation intermediary for a native artifact.
+- Explicit Cranelift has no fallback to MIR-to-C.
+- Source locations survive lowering wherever the declared debug plan requires them.
+- Optimisation level changes emitted code but never observable program behaviour where the contract requires equivalence.
+- No exact-source, fixture-name, object-output, archive-output, linker-output, or debug-output recognizer exists.
+- No exact target, format, relocation, or linker count is treated as backend correctness.
 
 ## Verification Policy
 
@@ -436,32 +431,37 @@ Every Phase 17 patch must preserve:
 
 Level 1 guards may validate:
 
-- Phase 16 semantic closure availability;
-- Phase 17 opening and parent traceability;
+- Phase 17 semantic closure availability;
+- Phase 18 opening and parent traceability;
 - canonical registry schema and semantic state;
-- compiler-owned runtime ABI and helper-classification APIs;
-- runtime symbol identity and version records;
-- runtime component and package manifest schemas;
-- canonical MIR runtime operation ownership;
-- native request runtime requirement ownership;
-- deterministic requirement deduplication and ordering;
-- target-specific package selection rules;
-- runtime compatibility decisions;
-- stable missing or incompatible runtime diagnostics;
+- compiler-owned target identity and triple vocabulary;
+- complete target support tuple records and support decisions;
+- object format descriptor schemas;
+- relocation kind vocabularies and validation rules;
+- target ABI selection records consuming Phase 16;
+- target runtime package selection records consuming Phase 17;
+- linker descriptor and invocation policy schemas;
+- link mode decisions;
+- reproducibility contract declarations;
+- publication plan handoff to Phase 9G;
+- host and target separation rules;
+- unsupported-target diagnostics;
+- debug information plan schemas;
+- source-location record ownership in canonical MIR;
+- optimisation level vocabularies and permitted transformations;
 - generated projection freshness;
-- no generated C shim in the explicit Cranelift/native path;
-- no backend-local runtime package selector;
+- no backend-local target, format, relocation, linker, or level selector;
+- no host inference when an explicit target is selected;
 - no fallback;
 - worker isolation;
 - early deferral;
 - output preservation;
-- Phase 9G link-plan handoff;
 - manifest and route architecture;
 - CI-family projection;
 - test-level and workflow ownership;
 - residue and closure summaries.
 
-Level 1 guards must not build every target runtime package, replay every helper program, run every target runner, inspect every archive member, or execute the full historical suite.
+Level 1 guards must not build every declared target, invoke every linker, produce every object, run every target runner, inspect every emitted artifact, or execute the full historical suite.
 
 ### Level 2 — Focused Differential Families
 
@@ -469,20 +469,24 @@ Level 2 evidence validates bounded migrated behavior on the primary PR host thro
 
 A proposed initial family vocabulary is:
 
-- `runtime-abi`;
-- `runtime-symbols`;
-- `runtime-packages`;
-- `runtime-imports`;
-- `runtime-rust-components`;
-- `runtime-c-components`;
-- `runtime-gust-components`;
-- `runtime-allocation-strings`;
-- `runtime-io-filesystem`;
-- `runtime-resources`;
-- `runtime-threading`;
-- `runtime-diagnostics`.
+- `target-identity`;
+- `target-support-tuple`;
+- `object-format`;
+- `relocations`;
+- `target-abi-selection`;
+- `target-runtime-packages`;
+- `linker-policy`;
+- `link-modes`;
+- `reproducibility`;
+- `publication`;
+- `cross-compilation`;
+- `target-diagnostics`;
+- `object-inspection`;
+- `debug-info`;
+- `source-locations`;
+- `optimisation-levels`.
 
-The active family set and count must be derived from the canonical registry. The workflow must not hard-code one matrix row per patch, helper, symbol, component, or target.
+The active family set and count must be derived from the canonical registry. The workflow must not hard-code one matrix row per patch, target, object format, relocation kind, linker, or level.
 
 For each applicable case, Level 2 should compare:
 
@@ -492,121 +496,128 @@ For each applicable case, Level 2 should compare:
 - runtime values;
 - stdout and stderr where declared stable;
 - exit status;
-- selected memory, filesystem, resource, and thread effects;
-- runtime requirement witnesses;
-- selected package and component witnesses;
-- symbol identity and version witnesses;
-- link-plan witnesses;
-- stable missing or incompatible runtime diagnostics;
+- target identity and support decision witnesses;
+- object format and section witnesses;
+- relocation validation witnesses;
+- selected ABI and runtime package witnesses;
+- linker discovery and invocation-plan witnesses;
+- link mode witnesses;
+- repeated-build byte comparison for reproducible outputs;
+- symbol table and relocation inspection witnesses;
+- debug record presence and source-location association where declared;
+- stable unsupported-target diagnostics;
 - preservation of sentinel output on failure.
 
-Default and explicit MIR-to-C output should remain byte-identical for the same target and source where the existing differential contract requires it. The explicit Cranelift result must not include or depend on a program-generated C shim.
+Default and explicit MIR-to-C output should remain byte-identical for the same target and source where the existing differential contract requires it. Level 2 runs on the primary PR host; it validates target decisions and plans for non-host targets rather than executing non-host binaries.
 
-### Level 3 — Historical and Complete Runtime Evidence
+### Level 3 — Historical and Complete Target Evidence
 
 Cranelift Historical Full remains the sole Level 3 owner.
 
 It owns:
 
-- complete Phase 9–17 historical replay;
-- the complete registry-derived Phase 17 differential inventory;
-- representative runtime-boundary programs across every declared applicable target;
-- target-specific runtime package build and selection evidence;
-- runtime package reproducibility evidence;
-- complete selected helper-domain evidence;
-- platform-specific runtime symbol and package evidence where behavior differs;
-- all historical native runtime fixtures;
+- complete Phase 9–18 historical replay;
+- the complete registry-derived Phase 18 differential inventory;
+- native compile, object inspection, link, execution, diagnostic, and reproducibility evidence for every declared supported target;
+- cross-compilation evidence for every declared cross pair;
+- linker discovery and invocation evidence per target;
+- static and dynamic link mode evidence where both are declared;
+- repeated-build reproducibility evidence;
+- debug information and source-location evidence where declared;
+- optimisation-level equivalence evidence;
+- unsupported-target diagnostic matrices;
 - complete object, link, cleanup, and publication failure matrices owned by Phase 9G;
-- packaging and reproducibility evidence;
-- representative long-running I/O, filesystem, resource, and threading programs where selected.
+- all historical native fixtures.
 
-Phase 17 opening and closure guards validate that the Level 3 suite remains available, registry-derived, and separately runnable. They do not execute it.
+Phase 18 opening and closure guards validate that the Level 3 suite remains available, registry-derived, and separately runnable. They do not execute it.
 
-## Standard Definition of Done for Every Phase 17 Capability Patch
+## Standard Definition of Done for Every Phase 18 Capability Patch
 
-A Phase 17 capability is migrated only when all of the following are true:
+A Phase 18 capability is migrated only when all of the following are true:
 
 - The supported source shape is precisely bounded.
 - The supported canonical-MIR shape is precisely bounded.
 - The owning canonical registry row is identified.
-- The owning target set is explicit or derived.
-- Every selected helper has exactly one Phase 17 classification.
-- Every retained helper has a compiler-owned semantic operation identity.
-- Every imported or exported helper has a compiler-owned symbol ID and version.
-- Every implementation belongs to an explicit runtime component.
-- Every component belongs to a compatible target-specific runtime package.
+- The owning declared target set is explicit or derived.
+- Every declared supported target has a complete support tuple.
+- Every support tuple element names its owning authority.
+- Every target has a compiler-owned target identity.
+- Every emitted object has a compiler-selected object format and section plan.
+- Every emitted relocation is a declared kind permitted for its section.
+- Every target names a selected Phase 16 ABI and a compatibility decision.
+- Every target names a selected Phase 17 runtime package, link mode, and compatibility decision.
+- Every link names a discovered linker and a declared invocation policy.
 - A real source fixture lowers through the generic producer.
 - A compiler-owned canonical-MIR fixture exists where applicable.
-- The compiler runtime service returns the required helper, symbol, component, package, requirement, and compatibility records.
-- The compiler layout, resource, and function ABI services return the required dependent records.
-- Canonical MIR references compiler-produced runtime identities rather than raw backend symbol guesses.
-- The native request carries the required deduplicated runtime requirements.
-- Request validation rejects missing, duplicate, conflicting, unknown, or target-incompatible runtime metadata.
-- Explicit Cranelift imports the compiler-selected symbol using the compiler-selected ABI.
-- The explicit native link path uses native program objects plus an explicit runtime package.
-- No program-specific C wrapper or shim is generated, compiled, or linked for the migrated capability.
-- Any retained C implementation is separately compiled as a declared runtime component.
-- Any Rust implementation is compiled as a declared runtime component.
-- Any pure Gust implementation passes through generic canonical MIR and is packaged as a declared runtime component.
-- Any obsolete helper is removed from producers, consumers, package manifests, and generated views.
-- Diagnostics report the same runtime requirement and compatibility decisions used by lowering and linking.
-- No consumer independently guesses helper classification, symbol spelling, symbol version, package, component, compatibility, or link order.
+- The compiler target service returns the required identity, tuple, format, relocation, ABI, package, linker, mode, debug, and level records.
+- The compiler layout, resource, ABI, and runtime services return the required dependent records.
+- Canonical MIR references compiler-produced target and source-location identities rather than backend guesses.
+- The native request carries the required deduplicated target metadata.
+- Request validation rejects missing, duplicate, conflicting, unknown, or target-incompatible target metadata.
+- Explicit Cranelift emits for the compiler-selected target using the compiler-selected format, ABI, and level.
+- The explicit native link path uses native program objects plus an explicit runtime package for the selected target.
+- No component infers the target, format, relocation kind, linker, mode, or level from the host or from output inspection.
+- Repeated builds of the same input, target, and level produce identical declared reproducible bytes.
+- Diagnostics report the same target support and compatibility decisions used by lowering and linking.
+- Unsupported targets are diagnosed as unsupported and never attempted.
 - Default and explicit MIR-to-C remain equivalent where the existing contract applies.
 - MIR-to-C and explicit Cranelift native behavior are compared.
-- Runtime requirement, package, symbol, and link-plan witnesses are compared where observable.
-- Malformed and unavailable cases have stable diagnostics.
+- Target, format, relocation, ABI, package, linker, mode, debug, and level witnesses are compared where observable.
+- Malformed and unsupported cases have stable diagnostics.
 - Unsupported cases remain explicitly deferred.
-- Deferred and invalid cases stop at their declared early failure stage before prohibited native-driver or artifact access.
-- Missing or incompatible runtime packages stop before linker invocation and output replacement.
+- Deferred and invalid cases stop at their declared early failure stage before prohibited native-driver, object, linker, or artifact access.
+- Missing or incompatible targets, packages, or linkers stop before linker invocation and output replacement.
 - Existing output survives deferral and failure.
 - Phase 9G still owns object handling, linking, temporary cleanup, and atomic publication.
-- The worker still receives only request data, canonical MIR, and compiler-produced layout, resource, ABI, and runtime metadata.
+- The worker still receives only request data, canonical MIR, and compiler-produced layout, resource, ABI, runtime, and target metadata.
 - The registry row is updated using the existing status vocabulary.
 - Generated projections are refreshed.
 - The owning CI family contains focused evidence.
 - At least one appropriate composition relationship exists.
-- No exact-source, generated-wrapper, object-output, or linker-output recognizer was introduced.
+- No exact-source, fixture-name, object-output, archive-output, linker-output, or debug-output recognizer was introduced.
+- No exact target, format, relocation, or linker count is treated as backend correctness.
 - Explicit Cranelift still cannot fall back to MIR-to-C.
 - The new guards are assigned to the correct test level.
 
 ## Patch Sequence
 
-### Patch 17.0 — Opening Inventory and Phase 16 Residual Rebase
+### Patch 18.0 — Opening Inventory and Phase 17 Residual Rebase
 
 **Purpose**
 
-Establish the exact Phase 17 input from the closed Phase 16 state without changing compiler, backend, runtime, or artifact behavior.
+Establish the exact Phase 18 input from the closed Phase 17 state without changing compiler, backend, runtime, object, linker, or artifact behavior.
 
 **Steps**
 
-- Add a semantic Phase 17 opening snapshot to the canonical registry.
+- Add a semantic Phase 18 opening snapshot to the canonical registry.
 - Preserve parent traceability to:
-  - Phase 16 migrated runtime-related rows;
-  - Phase 16 residual capability IDs;
-  - explicit Phase 17 planning categories.
-- Inventory every C-dependent helper reachable from compiler-generated code, Cranelift lowering, native runtime code, and link plans.
-- Select only runtime-boundary, helper-classification, symbol-versioning, package, and generated-shim rows owned by this phase.
-- Split broad residuals where one Phase 16 row contains both:
-  - runtime ABI or runtime-package work owned by Phase 17; and
-  - FFI, dynamic loading, allocator policy, GC, concurrency semantics, platform ABI, distribution, or linker work owned later.
+  - Phase 17 migrated target-related and package-related rows;
+  - Phase 17 narrow deferred rows assigned to a later phase;
+  - explicit Phase 18 planning categories.
+- Inventory every existing host assumption reachable from compiler target selection, Cranelift lowering, object emission, runtime package selection, link planning, and publication.
+- Select only target, object-format, relocation, linker, link-mode, reproducibility, cross-compilation, diagnostic, debug, source-location, and optimisation rows owned by this phase.
+- Split broad residuals where one Phase 17 row contains both:
+  - target, object, or linker work owned by Phase 18; and
+  - runtime capability work owned by a later phase.
 - Keep out-of-scope rows deferred and explicitly assign their destination phases.
-- Add stable Phase 17 rows for:
-  - runtime ABI authority;
-  - helper classification;
-  - runtime symbols and versions;
-  - runtime requirement transport;
-  - target-specific runtime packages;
-  - stable runtime-library imports;
-  - Rust runtime components;
-  - retained C runtime components;
-  - pure Gust runtime components;
-  - obsolete helper removal;
-  - generated C shim elimination;
-  - allocation and string helpers;
-  - I/O, filesystem, and resource helpers;
-  - threading and synchronization helpers;
-  - runtime availability and compatibility diagnostics;
-  - complete runtime differential evidence.
+- Add stable Phase 18 rows for:
+  - target authority and declared triples;
+  - complete target support tuple;
+  - object format and section binding;
+  - relocation model and validation;
+  - target ABI selection;
+  - target runtime package selection;
+  - linker discovery and invocation policy;
+  - static and dynamic link modes;
+  - reproducible object output;
+  - atomic executable publication;
+  - cross-compilation policy;
+  - unsupported-target diagnostics;
+  - symbol and relocation inspection;
+  - debug information strategy;
+  - source-location preservation;
+  - optimisation-level policy;
+  - complete per-target evidence.
 - Require each opening row to contain:
   - stable ID;
   - parent;
@@ -614,15 +625,15 @@ Establish the exact Phase 17 input from the closed Phase 16 state without changi
   - CI family;
   - capability owner;
   - diagnostic owner;
-  - helper category where applicable;
   - target applicability;
   - status;
   - current failure stage;
   - positive future fixture;
   - negative current fixture.
-- Freeze the initial registry-derived Phase 17 CI-family projection.
-- Generate the Phase 17 opening review view.
-- Add `guard-cranelift-phase17-opening-contract`.
+- Declare the initial candidate target set and mark every candidate unsupported until its tuple is proven.
+- Freeze the initial registry-derived Phase 18 CI-family projection.
+- Generate the Phase 18 opening review view.
+- Add `guard-cranelift-phase18-opening-contract`.
 
 **Test Level**
 
@@ -630,707 +641,474 @@ Level 1.
 
 **Exit Gate**
 
-Every declared Phase 17 row has a stable parent, owner, target scope, failure stage, fixture pair, and initial disposition. Every selected C-dependent helper has an inventory owner, and non-runtime Phase 16 residuals remain explicitly outside Phase 17.
+Every declared Phase 18 row has a stable parent, owner, target scope, failure stage, fixture pair, and initial disposition. Every host assumption has an inventory owner. Every candidate target is recorded as unsupported pending tuple evidence, and non-target Phase 17 residuals remain explicitly outside Phase 18.
 
-### Patch 17.1 — Compiler-Owned Runtime Boundary and Helper Classification Authority
+### Patch 18.1 — Compiler-Owned Target Authority and Declared Target Triples
 
 **Purpose**
 
-Create the single runtime-boundary decision path consumed by canonical MIR, Cranelift, runtime packaging, diagnostics, and Phase 9G link planning.
+Create the single target-identity decision path consumed by canonical MIR, Cranelift, runtime package selection, link planning, diagnostics, and Phase 9G publication.
 
 **Steps**
 
-- Add compiler-owned semantic types equivalent to:
-  - runtime ABI identity;
-  - runtime helper identity;
-  - helper classification;
-  - runtime component identity;
-  - runtime package identity;
-  - runtime requirement;
-  - runtime compatibility decision;
-  - runtime link-plan handoff.
-- Freeze the five legal helper classifications.
-- Require exactly one classification for every selected helper.
-- Give each request-local requirement and compatibility decision a deterministic identity derived from compiler state rather than raw hashes.
-- Add compiler-owned queries equivalent to:
-  - `runtime_helper_of(operation)`;
-  - `classify_runtime_helper(helper)`;
-  - `runtime_requirements(program)`;
-  - `runtime_component_for(helper, target)`;
-  - `select_runtime_package(requirements, target)`;
-  - `validate_runtime_compatibility(requirements, package)`;
-  - `runtime_link_plan(program, package)`.
-- Require conflicting, missing, or multi-category classifications to reject with stable diagnostics.
-- Add a reduced generated runtime-boundary review view.
-- Add hard bans proving:
-  - Cranelift does not own a separate helper-classification table;
-  - the worker does not invent runtime requirements;
-  - the native driver does not select packages from unresolved symbols;
-  - diagnostics do not recompute runtime compatibility independently.
-- Add `guard-cranelift-phase17-runtime-authority-contract`.
+- Add a compiler-owned target authority module.
+- Define the target identity record: stable ID, architecture, vendor, operating system, environment, pointer width, endianness, and declared triple source.
+- Define the declared triple vocabulary and reject any triple outside it.
+- Make target selection explicit: a requested target, or a declared default when none is requested.
+- Forbid inferring a target from the host environment when an explicit target is selected.
+- Require the target identity to agree with the Phase 14 target layout authority for pointer width and endianness.
+- Reject unknown, malformed, ambiguous, and duplicate triples with stable reasons.
+- Add the target identity to the native request and validate it.
+- Generate the target authority review view.
+- Add `guard-cranelift-phase18-target-authority-contract`.
 
 **Test Level**
 
-Level 1.
-
-**Boundary**
-
-This patch establishes authority and classification. It does not by itself migrate every helper implementation.
+Level 1, with a Level 2 parity family.
 
 **Exit Gate**
 
-Every later Phase 17 patch can migrate one bounded helper or runtime component by extending the compiler-owned authority and existing request path without adding backend-local or linker-local runtime semantics.
+Exactly one compiler-owned authority produces target identity. Every declared triple is registry-owned and agrees with the Phase 14 target layout authority. No consumer infers a target independently, and unknown or malformed triples are rejected with stable diagnostics.
 
-### Patch 17.2 — Supported Runtime ABI, Symbol Identity, and Versioning
+### Patch 18.2 — Complete Target Support Tuple and Support Decisions
 
 **Purpose**
 
-Define the supported native runtime ABI and make runtime symbols stable, versioned compiler-owned identities.
+Make target support mean the complete compiler, runtime, linker, and ABI combination rather than backend architecture capability.
 
 **Steps**
 
-- Freeze the selected runtime ABI inventory by target.
-- Define:
-  - runtime ABI IDs and versions;
-  - symbol naming and versioning rules;
-  - calling-convention linkage to Phase 16;
-  - layout linkage to Phase 14;
-  - resource-operation linkage to Phase 15;
-  - compatibility ranges;
-  - required versus optional symbols;
-  - visibility and linkage policy.
-- Add compiler-owned symbol records for every selected imported or exported runtime operation.
-- Require each symbol to identify:
-  - semantic helper operation;
-  - external spelling;
-  - symbol version;
-  - defining component;
-  - function ABI identity;
-  - target applicability;
-  - compatibility policy.
-- Reject:
-  - unknown runtime ABI IDs;
-  - unversioned selected symbols;
-  - duplicate conflicting symbol records;
-  - symbol spelling reused for incompatible ABIs;
-  - incompatible calling conventions;
-  - target or layout mismatches;
-  - backend-local raw symbol substitutions.
-- Add stable witnesses for runtime ABI and symbol decisions.
-- Add `guard-cranelift-phase17-runtime-symbol-version-contract`.
+- Add the complete target support tuple record: target ID plus compiler, runtime package, linker, and ABI support records.
+- Require every element to name its owning authority and its evidence.
+- Produce a support decision that is supported only when all four elements are present, mutually compatible, and evidenced.
+- Record missing elements explicitly when the decision is unsupported.
+- Reject any attempt to declare a target supported from backend architecture capability alone.
+- Forbid a partial tuple from reaching lowering, object emission, or link planning.
+- Require the declared supported target set to remain narrow and registry-derived.
+- Freeze the ordering of tuple validation so a partial or reordered sequence is rejected.
+- Accept that the declared supported set may be empty at this patch, because the ABI, runtime package, and linker elements are not supplied until Patch 18.5, Patch 18.6, and Patch 18.7. A target becomes supported only as later patches supply its elements.
+- Generate the target support review view.
+- Add `guard-cranelift-phase18-target-support-contract`.
 
 **Test Level**
 
-Level 1.
+Level 1, with a Level 2 parity family.
 
 **Exit Gate**
 
-Every selected runtime call resolves to one compiler-owned, versioned symbol whose target, layout, and function ABI are explicit and compatible.
+The tuple record, its validation order, and the support decision rule exist and are registry-owned. Backend architecture capability alone never yields support, and every unsupported target names its missing tuple elements. The declared supported set may still be empty at this patch; it becomes non-empty only as later patches supply ABI, runtime package, and linker elements.
 
-### Patch 17.3 — Runtime Requirements in Canonical MIR and Native Requests
+### Patch 18.3 — Object Format, Section, and Symbol Binding Authority
 
 **Purpose**
 
-Carry compiler-produced runtime requirements through canonical MIR and the native request without backend or linker inference.
+Give each declared target one compiler-owned object format plan covering sections, symbol binding, and visibility.
 
 **Steps**
 
-- Add canonical MIR runtime operations or associated metadata referencing:
-  - helper ID;
-  - symbol ID;
-  - runtime ABI ID;
-  - required version range;
-  - target applicability;
-  - relevant layout, resource, and call-ABI identities.
-- Extend the native request with a deterministic, deduplicated runtime requirement table.
-- Preserve requirement identity through:
-  - direct calls;
-  - selected indirect runtime calls already supported by Phase 16;
-  - cleanup and destructor operations;
-  - cross-module composition;
-  - selected runtime module calls.
-- Require request deserialization to reject:
-  - unknown helper or symbol IDs;
-  - duplicate conflicting requirements;
-  - MIR runtime operations missing requirements;
-  - requirements unused by canonical MIR unless explicitly package-mandatory;
-  - incompatible symbol versions;
-  - target, layout, resource, or ABI mismatches;
-  - helper classification inconsistent with the selected symbol or component.
-- Prove the worker validates consistency but cannot invent missing runtime ownership semantics.
-- Add `guard-cranelift-phase17-runtime-requirement-contract`.
+- Add the object format descriptor record for each declared target.
+- Define the permitted section kinds, section naming rules, and alignment requirements.
+- Define the symbol binding and visibility vocabularies.
+- Select the object format from the target identity, never from a file extension, probe, or host default.
+- Require emitted program objects to use only declared section kinds and symbol bindings.
+- Reject unknown formats, unknown sections, unknown bindings, and misaligned sections with stable reasons.
+- Compare emitted section and symbol plans against the compiler-produced descriptor.
+- Generate the object format review view.
+- Add `guard-cranelift-phase18-object-format-contract`.
 
 **Test Level**
 
-Level 1.
+Level 1, with a Level 2 parity family.
 
 **Exit Gate**
 
-Every selected runtime-facing MIR operation carries one validated compiler-produced requirement, and malformed runtime metadata is rejected without backend or linker inference.
+Every declared target has exactly one compiler-owned object format descriptor. Emitted objects use only declared sections, bindings, and visibilities, and no consumer infers the format from the host or from output inspection.
 
-### Patch 17.4 — Explicit Runtime Packages and Target-Specific Selection
+### Patch 18.4 — Relocation Model and Validation
 
 **Purpose**
 
-Produce and select explicit target-specific runtime packages containing the declared runtime components needed by migrated native programs.
+Make relocations a validated compiler-owned decision rather than an emitted side effect.
 
 **Steps**
 
-- Freeze the runtime package manifest schema.
-- Define package identities by runtime ABI version and exact target applicability.
-- Define supported package forms such as:
-  - static archive;
-  - deterministic object set;
-  - another explicitly selected native library form.
-- Require every package to enumerate:
-  - components;
-  - provided symbols and versions;
-  - permitted system imports;
-  - target identity;
-  - runtime ABI identity;
-  - deterministic link order;
-  - compatibility constraints.
-- Produce target-specific runtime objects or libraries through a declared build authority.
-- Make package selection a compiler-owned compatibility decision.
-- Keep execution of the selected link plan under Phase 9G.
-- Reject:
-  - ambiguous package selection;
-  - packages for the wrong target;
-  - duplicate conflicting components;
-  - missing mandatory symbols;
-  - incompatible runtime ABI versions;
-  - undeclared archive members or system imports;
-  - non-deterministic component ordering.
-- Add generated package and target review views.
-- Add `guard-cranelift-phase17-runtime-package-contract`.
+- Add the relocation model record: relocation kind vocabulary per target and object format.
+- Declare which relocation kinds are permitted per section kind.
+- Declare the addend policy.
+- Validate every emitted relocation against the model before the object is published.
+- Reject unknown relocation kinds, relocations in disallowed sections, and malformed addends with stable reasons.
+- Ensure relocation validation runs before object publication and before linker invocation.
+- Preserve existing output when relocation validation fails.
+- Generate the relocation review view.
+- Add `guard-cranelift-phase18-relocation-contract`.
 
 **Test Level**
 
-Level 1.
+Level 1, with a Level 2 parity family.
 
 **Exit Gate**
 
-Every migrated native target has an explicit, deterministic runtime package selection whose manifest satisfies the compiler-produced runtime requirements before the link plan is executed.
+Every emitted relocation is a declared kind permitted for its section and target. Invalid relocations are rejected before object publication and before linker invocation, with existing output preserved.
 
-### Patch 17.5 — Stable Runtime-Library Imports for Cranelift
+### Patch 18.5 — Target-Specific ABI Selection
 
 **Purpose**
 
-Migrate helpers classified as stable runtime-library functions to direct, versioned Cranelift imports.
+Select an existing Phase 16 ABI per target without redefining ABI semantics.
 
 **Steps**
 
-- Freeze the selected stable-import helper inventory.
-- For each selected helper, define:
-  - helper ID;
-  - symbol ID and version;
-  - Phase 16 function ABI identity;
-  - defining runtime component;
-  - target applicability;
-  - side-effect and failure policy.
-- Make Cranelift declare and call the compiler-selected external symbol directly.
-- Prohibit raw backend-maintained symbol spelling or signature tables.
-- Ensure the runtime package exports the required symbol and version.
-- Add positives for representative stable imports.
-- Add negatives for:
-  - missing symbols;
-  - incompatible versions;
-  - ABI mismatch;
-  - wrong target component;
-  - undeclared imports.
-- Compare runtime behavior and symbol/package witnesses with MIR-to-C.
-- Add:
-  - `guard-cranelift-phase17-runtime-import-contract`;
-  - `guard-cranelift-phase17-runtime-import-parity`.
+- Add the target ABI selection record: target ID, selected Phase 16 ABI identity, selection reason, and compatibility decision.
+- Consume the Phase 16 function ABI authority as the sole owner of placement, classification, and transport.
+- Reject a target whose required ABI is undeclared or incompatible.
+- Forbid Phase 18 from introducing new ABI classification rules.
+- Require the selected ABI to appear in the native request and in link planning.
+- Compare selected ABI witnesses against the Phase 16 authority records.
+- Generate the target ABI selection review view.
+- Add `guard-cranelift-phase18-target-abi-contract`.
 
-**Test Levels**
+**Test Level**
 
-Contract: Level 1.
-
-Parity: Level 2.
+Level 1, with a Level 2 parity family.
 
 **Exit Gate**
 
-Every selected stable runtime-library helper is called by Cranelift through its compiler-owned versioned symbol and explicit runtime package, without generated C glue.
+Every declared supported target names exactly one selected Phase 16 ABI with a compatibility decision. Phase 18 selects but never defines ABI semantics, and an undeclared or incompatible ABI makes the target unsupported.
 
-### Patch 17.6 — Rust Runtime Components and Native Object Integration
+### Patch 18.6 — Target-Specific Runtime Package Selection
 
 **Purpose**
 
-Support selected runtime helpers implemented in Rust as explicit, versioned runtime package components.
+Select an existing Phase 17 runtime package per target without redefining runtime symbol identity.
 
 **Steps**
 
-- Freeze the selected Rust runtime component inventory.
-- Define each Rust component's:
-  - component ID;
-  - source ownership;
-  - exported and imported symbol IDs;
-  - runtime ABI version;
-  - target applicability;
-  - object or library form;
-  - panic and failure boundary;
-  - allocation and ownership boundary.
-- Compile Rust runtime components independently from program compilation.
-- Require stable ABI-facing exports; Rust-internal symbol mangling is not a runtime contract.
-- Package produced objects or libraries through the Phase 17 manifest.
-- Hand the selected component to Phase 9G without bypassing artifact ownership.
-- Reject:
-  - undeclared Rust exports;
-  - unwinding across an unsupported runtime boundary;
-  - ABI or target mismatch;
-  - duplicate symbol providers;
-  - hidden dependency on generated C glue.
-- Add focused runtime and failure parity evidence.
-- Add:
-  - `guard-cranelift-phase17-rust-runtime-contract`;
-  - `guard-cranelift-phase17-rust-runtime-parity`.
+- Add the target runtime package selection record: target ID, selected Phase 17 package identity, link mode, and compatibility decision.
+- Consume the Phase 17 runtime package authority as the sole owner of component and symbol identity.
+- Require the selected package to be built for the selected target.
+- Reject a target whose runtime package is missing, unbuilt, or incompatible, before linker invocation.
+- Forbid Phase 18 from introducing new runtime symbols, versions, or components.
+- Compare selected package witnesses against the Phase 17 authority records.
+- Generate the target runtime package review view.
+- Add `guard-cranelift-phase18-target-package-contract`.
 
-**Test Levels**
+**Test Level**
 
-Contract: Level 1.
-
-Parity: Level 2.
+Level 1, with a Level 2 parity family.
 
 **Exit Gate**
 
-Every selected Rust runtime helper is supplied by an explicit compatible runtime component and linked into migrated native programs without source-specific C generation.
+Every declared supported target names exactly one compatible Phase 17 runtime package built for that target. Missing or incompatible packages make the target unsupported and stop before linker invocation and output replacement.
 
-### Patch 17.7 — Explicit Retained C Runtime Objects
+### Patch 18.7 — Linker Discovery, Selection, and Invocation Policy
 
 **Purpose**
 
-Retain selected C runtime implementations temporarily without allowing C generation to remain an implicit per-program implementation layer.
+Make linker choice and invocation an explicit compiler-owned policy rather than an environment accident.
 
 **Steps**
 
-- Freeze the exact retained C helper and component inventory.
-- Require each retained C component to have:
-  - a stable component ID;
-  - explicit owned source files;
-  - exported and imported versioned symbol IDs;
-  - runtime ABI identity;
-  - target applicability;
-  - independent build inputs;
-  - a concrete retention reason;
-  - a destination phase or removal criterion.
-- Compile retained C components independently of user-program compilation.
-- Prohibit generated headers, wrapper bodies, or source fragments derived from a program's canonical MIR.
-- Package retained C objects or libraries through the same manifest path as Rust and Gust components.
-- Reject:
-  - anonymous or unclassified C objects;
-  - program-specific C source generation;
-  - unversioned exports;
-  - hidden target assumptions;
-  - duplicate providers;
-  - direct linker inclusion outside the selected runtime package.
-- Compare observable behavior through MIR-to-C and explicit Cranelift.
-- Add:
-  - `guard-cranelift-phase17-retained-c-runtime-contract`;
-  - `guard-cranelift-phase17-retained-c-runtime-parity`.
+- Add the linker descriptor record: linker ID, discovery method, discovery result, invocation policy, permitted argument vocabulary, supported object formats, and supported targets.
+- Declare the discovery order and make it deterministic.
+- Select a linker from the target identity and the descriptor, never from an unvalidated environment variable alone.
+- Restrict invocation arguments to the declared vocabulary.
+- Reject a target whose linker is undiscovered, unsupported, or incompatible with the object format, before invocation.
+- Record the planned invocation as a witness without executing it at Level 1.
+- Keep linker execution under Phase 9G ownership.
+- Generate the linker policy review view.
+- Add `guard-cranelift-phase18-linker-policy-contract`.
 
-**Test Levels**
+**Test Level**
 
-Contract: Level 1.
-
-Parity: Level 2.
+Level 1, with a Level 2 parity family.
 
 **Exit Gate**
 
-Every selected retained C implementation is a separately compiled, versioned, target-scoped runtime component; no retained C source is generated from the compiled program or used as an implicit Cranelift shim.
+Every declared supported target names a discovered linker and a declared invocation policy using only permitted arguments. An undiscovered or incompatible linker makes the target unsupported, and Phase 9G still executes the link.
 
-### Patch 17.8 — Pure Gust Runtime Modules Compiled Through MIR
+### Patch 18.8 — Static and Dynamic Runtime Linking Modes
 
 **Purpose**
 
-Support selected runtime helpers written in Gust and compiled through the same generic canonical-MIR route as other Gust code.
+Make the runtime link mode an explicit per-target decision with declared consequences.
 
 **Steps**
 
-- Freeze the selected pure Gust runtime module inventory.
-- Require each module to declare:
-  - component ID;
-  - exported and imported helper and symbol IDs;
-  - runtime ABI version;
-  - target applicability;
-  - allowed dependencies;
-  - initialization and failure policy.
-- Compile runtime Gust source through generic parsing, typechecking, canonical MIR, ABI, and Cranelift lowering.
-- Prohibit exact-source or runtime-module-name recognition in the compiler or backend.
-- Package the resulting native objects as explicit runtime components.
-- Prevent recursive dependence on an unavailable version of the same runtime component.
-- Reject:
-  - non-generic lowering paths;
-  - missing runtime requirements;
-  - circular component dependencies without an explicit selected policy;
-  - ABI or target mismatch;
-  - hidden generated C compilation.
-- Compare behavior against MIR-to-C where the oracle route supports the selected module.
-- Add:
-  - `guard-cranelift-phase17-gust-runtime-contract`;
-  - `guard-cranelift-phase17-gust-runtime-parity`.
+- Add the link mode decision record: target ID, static or dynamic, reason, required runtime package form, and rejection reason where unavailable.
+- Declare which modes each target supports.
+- Require the selected mode to match a runtime package form that actually exists for the target.
+- Reject a requested mode that the target or package does not provide, before linker invocation.
+- Record the resulting link plan differences between modes as witnesses.
+- Forbid silently substituting one mode for another.
+- Generate the link mode review view.
+- Add `guard-cranelift-phase18-link-mode-contract`.
 
-**Test Levels**
+**Test Level**
 
-Contract: Level 1.
-
-Parity: Level 2.
+Level 1, with a Level 2 parity family.
 
 **Exit Gate**
 
-Every selected pure Gust runtime helper is compiled through generic canonical MIR and supplied as an explicit native runtime package component, without bespoke compiler recognition or generated C glue.
+Every declared supported target declares its available link modes, and the selected mode matches an existing runtime package form. An unavailable mode is rejected with a stable diagnostic and is never silently substituted.
 
-### Patch 17.9 — Generated C Shim Elimination and Obsolete Helper Removal
+### Patch 18.9 — Cross-Compilation Policy and Host/Target Separation
 
 **Purpose**
 
-Remove generated ad hoc C wrappers from the migrated native path and remove helpers classified as obsolete.
+Separate host identity from target identity so a cross build never absorbs host state.
 
 **Steps**
 
-- Inventory every path that can emit, compile, or link C during explicit Cranelift/native compilation.
-- Distinguish:
-  - independent MIR-to-C oracle output;
-  - separately compiled retained C runtime components;
-  - forbidden program-specific C wrappers or shims.
-- Remove native-path generation of:
-  - runtime call wrappers;
-  - ABI adaptation wrappers;
-  - resource or cleanup wrappers;
-  - allocation or string helper wrappers;
-  - I/O, filesystem, or threading wrappers;
-  - target-selection wrapper fragments.
-- Replace each removed wrapper with a compiler-owned direct import, explicit runtime component, or narrower deferral.
-- Remove obsolete helpers from:
-  - canonical producers;
-  - Cranelift lowering;
-  - runtime manifests;
-  - link plans;
-  - generated views;
-  - focused fixtures.
-- Add hard bans against native request fields or worker code that transport or synthesize C wrapper source.
-- Add evidence that explicit Cranelift succeeds with the C compiler unavailable when all selected package components are already built.
-- Preserve MIR-to-C as a separately invoked oracle path.
-- Add:
-  - `guard-cranelift-phase17-no-generated-c-shim-contract`;
-  - `guard-cranelift-phase17-no-generated-c-shim-parity`.
+- Add the host and target separation record: host identity, target identity, native or cross classification, permitted host-dependent inputs, and host leakage rejection rules.
+- Declare which cross pairs are supported, and keep the set narrow.
+- Forbid host paths, host libraries, host headers, and host runtime packages from entering a cross artifact.
+- Require a cross build to select the target runtime package and linker for the target, never for the host.
+- Reject a cross pair whose target support tuple is incomplete.
+- Record native and cross classification as a witness.
+- Generate the cross-compilation review view.
+- Add `guard-cranelift-phase18-cross-compilation-contract`.
 
-**Test Levels**
+**Test Level**
 
-Contract: Level 1.
-
-Parity: Level 2.
+Level 1, with a Level 2 parity family.
 
 **Exit Gate**
 
-Migrated explicit Cranelift programs generate and link no program-specific C source. The only permitted C is independently built, explicitly manifested runtime code, and every obsolete helper has been removed from active ownership paths.
+Host and target identities are distinct and explicit. Declared cross pairs are narrow and registry-owned, host state cannot leak into a cross artifact, and an incomplete tuple rejects the cross pair.
 
-### Patch 17.10 — Allocation, String, and Core Memory Runtime Audit
+### Patch 18.10 — Unsupported-Target Detection and Diagnostics
 
 **Purpose**
 
-Classify and migrate the selected allocation, core-memory, and string helper inventory through the explicit native runtime boundary.
-
-**Scope-Selection Rule**
-
-Before implementation, freeze the exact selected operations and distinguish semantic compiler intrinsics from runtime calls. General allocator policy, garbage collection, complete Unicode, and locale behavior remain deferred unless separately selected.
+Make an unsupported target a stable, early, diagnosed outcome rather than a late failure.
 
 **Steps**
 
-- Audit selected helpers for:
-  - allocation and deallocation;
-  - reallocation where already supported;
-  - memory copy, move, set, and comparison;
-  - bounds or failure reporting;
-  - string creation, length, comparison, concatenation, conversion, and destruction where supported.
-- Classify every selected helper into exactly one Phase 17 category.
-- Define symbol, ABI, ownership, allocation-domain, failure, and target contracts.
-- Preserve Phase 14 layout and Phase 15 resource obligations.
-- Prevent allocation or ownership from crossing incompatible runtime component boundaries.
-- Add positives for selected ordinary and failure behavior.
-- Add negatives for:
-  - missing allocation helpers;
-  - incompatible allocator domains;
-  - invalid string layout;
-  - wrong symbol versions;
-  - unsupported target operations;
-  - hidden generated C wrappers.
-- Compare values, memory effects, diagnostics, and cleanup where stable.
-- Keep unselected helper kinds as concrete deferred rows.
-- Add:
-  - `guard-cranelift-phase17-allocation-string-runtime-contract`;
-  - `guard-cranelift-phase17-allocation-string-runtime-parity`.
+- Add the target support decision diagnostic path.
+- Emit a stable diagnostic naming the target and every missing tuple element.
+- Declare the failure stage and require rejection before native driver access, object creation, linker invocation, and output replacement.
+- Freeze the rejection class vocabulary for unknown triple, unsupported architecture, missing runtime package, missing linker, incompatible ABI, unavailable link mode, and incomplete tuple.
+- Require diagnostics to consume the same support decision used by lowering and linking.
+- Forbid attempting an unsupported target and failing later.
+- Prove sentinel output preservation for every rejection class.
+- Generate the target diagnostic review view.
+- Add `guard-cranelift-phase18-target-diagnostic-contract`.
 
-**Test Levels**
+**Test Level**
 
-Contract: Level 1.
-
-Parity: Level 2.
+Level 1, with a Level 2 parity family.
 
 **Exit Gate**
 
-Every selected allocation, core-memory, and string operation uses its classified explicit runtime path with compatible ABI, layout, ownership, and observable behavior through both backends.
+Every unsupported target is diagnosed early with a stable reason naming its missing tuple elements. No unsupported target is attempted, and sentinel output survives every rejection class.
 
-### Patch 17.11 — I/O, Filesystem, and Resource Runtime Audit
+### Patch 18.11 — Symbol and Relocation Inspection Evidence
 
 **Purpose**
 
-Classify and migrate selected I/O, filesystem, directory, and resource helpers through explicit runtime packages.
-
-**Scope-Selection Rule**
-
-Before implementation, freeze the exact selected operations, resource kinds, error forms, filesystem effects, and target applicability. Sockets, processes, terminals, and unrelated OS resources remain deferred unless explicitly selected.
+Make emitted objects inspectable so target evidence is observed rather than assumed.
 
 **Steps**
 
-- Audit selected helpers for:
-  - standard input, output, and error;
-  - file or stream operations already supported;
-  - path and filesystem operations;
-  - directory acquisition, iteration, close, and cleanup;
-  - Phase 15 selected specialized resources;
-  - stable error reporting.
-- Classify every selected helper into exactly one Phase 17 category.
-- Map resource-bearing helpers to Phase 15 identities, transitions, close capabilities, and cleanup obligations.
-- Define symbol, ABI, failure, target, and filesystem-effect contracts.
-- Ensure manual close and deferred cleanup call the same compiler-selected runtime operations.
-- Add positives for acquisition, use, move, close, normal cleanup, and early cleanup where applicable.
-- Add negatives for:
-  - missing or incompatible runtime symbols;
-  - wrong resource kind;
-  - destructor or close mismatch;
-  - duplicate close;
-  - unsupported target or runtime availability;
-  - hidden generated C wrappers.
-- Compare stable stdout, stderr, exit status, close/destructor counts, and selected filesystem effects.
-- Keep unselected helper and resource kinds as concrete deferred rows.
-- Add:
-  - `guard-cranelift-phase17-io-filesystem-resource-runtime-contract`;
-  - `guard-cranelift-phase17-io-filesystem-resource-runtime-parity`.
+- Add an object inspection witness covering the symbol table and relocation table.
+- Record symbol names, bindings, visibilities, and section associations.
+- Record relocation kinds, offsets, and targets.
+- Compare inspected symbols against the compiler-produced runtime symbol and ABI records.
+- Compare inspected relocations against the declared relocation model.
+- Reject an object whose inspected contents disagree with the compiler-produced plan.
+- Forbid inspection from becoming a semantic authority; it observes and compares, and never decides.
+- Generate the object inspection review view.
+- Add `guard-cranelift-phase18-object-inspection-contract`.
 
-**Test Levels**
+**Test Level**
 
-Contract: Level 1.
-
-Parity: Level 2.
+Level 1, with a Level 2 parity family.
 
 **Exit Gate**
 
-Every selected I/O, filesystem, directory, and resource helper uses an explicit classified runtime component while preserving compiler-owned resource semantics and equivalent observable behavior.
+Every declared supported target has symbol and relocation inspection evidence that agrees with the compiler-produced plan. Inspection compares and rejects but never decides, and disagreement fails the build.
 
-### Patch 17.12 — Threading and Synchronization Runtime Audit
+### Patch 18.12 — Debug Information Strategy
 
 **Purpose**
 
-Classify and migrate the bounded threading and synchronization helper inventory for which the current compiler and runtime provide stable semantic authority.
-
-**Scope-Selection Rule**
-
-Before implementation, freeze the selected operations, memory-order assumptions, lifetime constraints, failure policy, and target applicability. This patch does not claim complete concurrency, atomics, cancellation, scheduling, or race-safety semantics.
+Declare what debug information the native path emits, for which targets, at which level.
 
 **Steps**
 
-- Audit selected helpers for:
-  - thread creation and join where already supported;
-  - mutex or lock operations where already supported;
-  - thread-local or synchronization helpers already represented by stable compiler semantics;
-  - selected failure and cleanup operations.
-- Classify every selected helper into exactly one Phase 17 category.
-- Define symbol, ABI, resource-lifetime, failure, and target contracts.
-- Preserve Phase 15 ownership and cleanup for selected thread or lock resources.
-- Require explicit runtime package dependencies for platform thread libraries where permitted.
-- Reject:
-  - unsupported targets;
-  - missing thread runtime components;
-  - ABI or symbol-version mismatch;
-  - undeclared system-library dependencies;
-  - unsupported cancellation or unwind behavior;
-  - hidden generated C wrappers.
-- Compare bounded deterministic effects and diagnostics; do not make scheduler ordering a stable oracle unless explicitly selected.
-- Keep atomics, unrestricted sharing, cancellation, and broader concurrency semantics deferred as concrete rows.
-- Add:
-  - `guard-cranelift-phase17-threading-runtime-contract`;
-  - `guard-cranelift-phase17-threading-runtime-parity`.
+- Add the debug information plan record: format, level, included record kinds, excluded record kinds, and target applicability.
+- Declare the debug format per target and object format.
+- Declare the debug levels and what each includes.
+- Emit only declared record kinds, and reject undeclared ones.
+- Require debug emission to be selected by the compiler, never inferred by the backend.
+- Record the emitted debug plan as a witness.
+- Declare explicitly what debug fidelity this phase does not claim.
+- Generate the debug information review view.
+- Add `guard-cranelift-phase18-debug-info-contract`.
 
-**Test Levels**
+**Test Level**
 
-Contract: Level 1.
-
-Parity: Level 2.
+Level 1, with a Level 2 parity family.
 
 **Exit Gate**
 
-Every selected threading or synchronization helper uses a classified, versioned, target-compatible runtime component without generated C glue, while broader concurrency semantics remain explicitly deferred.
+Every declared supported target has a compiler-owned debug information plan naming its format, level, and record kinds. Only declared records are emitted, and the phase's fidelity limits are explicit.
 
-### Patch 17.13 — Runtime Availability, Compatibility, and Diagnostic Enforcement
+### Patch 18.13 — Source-Location Preservation
 
 **Purpose**
 
-Validate runtime package availability and compatibility before linking, with stable diagnostics and output preservation.
+Preserve source locations from source through canonical MIR to emitted debug records.
 
 **Steps**
 
-- Freeze the runtime availability and compatibility decision order.
-- Validate:
-  - package manifest format;
-  - runtime ABI identity and version;
-  - target identity;
-  - required component presence;
-  - required symbol presence and version;
-  - function ABI, layout, and resource compatibility;
-  - declared system-library requirements;
-  - deterministic component and link ordering.
-- Distinguish stable rejection classes for:
-  - runtime package missing;
-  - manifest malformed;
-  - wrong target;
-  - runtime ABI incompatible;
-  - component missing;
-  - symbol missing;
-  - symbol version incompatible;
-  - helper classification inconsistent;
-  - link-plan dependency undeclared.
-- Require compiler-semantic requirement validation before worker execution.
-- Require package availability and compatibility validation after target selection but before linker invocation, temporary link output creation, or output replacement.
-- Ensure the worker and Phase 9G code validate supplied decisions without inventing replacement packages or fallback helpers.
-- Add malformed and unavailable package fixtures for every rejection class.
-- Add poisoned-linker and sentinel-output evidence.
-- Preserve stable diagnostic reason codes and relevant requirement, symbol, expected-version, provided-version, target, and package identities.
-- Add:
-  - `guard-cranelift-phase17-runtime-availability-contract`;
-  - `guard-cranelift-phase17-runtime-availability-parity`.
+- Add the source location record: source file identity, source span, canonical MIR association, and emitted debug association.
+- Require canonical MIR to carry compiler-produced source locations rather than backend-reconstructed ones.
+- Require lowering to preserve the association through to emitted debug records where the debug plan requires it.
+- Reject a lost, duplicated, or fabricated source association with a stable reason.
+- Compare emitted source locations against the compiler-produced records.
+- Declare where source locations are deliberately not preserved.
+- Generate the source location review view.
+- Add `guard-cranelift-phase18-source-location-contract`.
 
-**Test Levels**
+**Test Level**
 
-Contract: Level 1.
-
-Focused failure evidence: Level 2.
+Level 1, with a Level 2 parity family.
 
 **Exit Gate**
 
-Missing, malformed, or incompatible runtime packages and symbols fail with compiler-owned stable diagnostics before linker invocation and output replacement, without fallback or loss of an existing output.
+Source locations survive from source through canonical MIR to emitted debug records wherever the debug plan requires. Lost, duplicated, or fabricated associations are rejected, and deliberate gaps are declared.
 
-### Patch 17.14 — Cross-Feature Runtime Composition and Complete Differential
+### Patch 18.14 — Optimisation-Level Policy
 
 **Purpose**
 
-Prove that migrated Phase 17 runtime capabilities compose and that native program objects plus explicit runtime packages agree with the MIR-to-C oracle.
+Declare optimisation levels and bound what they may change.
 
 **Steps**
 
-- Generate the active Phase 17 differential inventory from canonical registry ownership.
-- Do not maintain an unrelated hand-written helper, symbol, component, target, or family list.
-- Add representative composed programs combining:
-  - versioned stable runtime imports;
-  - Rust runtime components;
-  - retained C runtime components;
-  - pure Gust runtime components;
-  - allocation and strings;
-  - I/O and filesystem operations;
-  - resource move, close, and cleanup;
-  - selected threading operations;
-  - aggregate and resource-bearing calls from Phase 16;
-  - runtime availability and compatibility failures.
-- Include nested combinations such as:
-  - allocation followed by string formatting and output;
-  - a resource-bearing aggregate passed across a runtime call;
-  - directory acquisition, branch use, early return, and cleanup;
-  - a pure Gust runtime helper calling a stable imported symbol;
-  - Rust and retained C components in one package without duplicate providers;
-  - a selected thread helper using resource cleanup;
-  - a compatible package chosen from target-specific candidates;
-  - an incompatible symbol version preserving sentinel output.
-- For each applicable case on the primary Level 2 host, run:
-  - default MIR-to-C;
-  - explicit MIR-to-C;
-  - explicit Cranelift with native objects plus the selected runtime package.
-- Require default and explicit MIR-to-C output to remain byte-identical where the existing contract applies.
-- Prove the explicit Cranelift link plan contains no generated C shim artifact.
-- Compare:
-  - runtime values;
-  - stdout and stderr where stable;
-  - exit status;
-  - runtime requirements;
-  - selected helper classifications;
-  - symbol IDs and versions;
-  - package and component identities;
-  - link ordering;
-  - selected memory, filesystem, resource, and thread effects;
-  - preservation of sentinel output on failure.
-- Add at least one composition case per active Phase 17 CI family.
-- Ensure every migrated Phase 17 row has:
-  - individual focused evidence;
-  - at least one composition relationship;
-  - a differential case owner;
-  - target applicability.
-- Keep the Phase 17 closure guard static and lightweight.
-- Assign:
-  - primary-host focused composition to Level 2;
-  - complete historical and applicable-target runtime evidence to Level 3.
-- Add:
-  - `guard-cranelift-phase17-composition-contract`;
-  - `guard-cranelift-phase17-composition-differential`;
-  - `guard-cranelift-phase17-complete-runtime-evidence`.
+- Add the optimisation level decision record: declared level vocabulary, selected level, permitted transformations, and preserved guarantees.
+- Declare the level vocabulary and reject any level outside it.
+- Select the level in the compiler and carry it in the native request.
+- Declare which transformations each level permits.
+- Require observable program behaviour to remain equivalent across levels where the contract applies.
+- Compare program results across declared levels for representative programs.
+- Declare where a level may change resource usage, code size, or debug fidelity but not observable behaviour.
+- Reject an undeclared level and a level incompatible with the selected debug plan.
+- Generate the optimisation level review view.
+- Add `guard-cranelift-phase18-optimisation-level-contract`.
 
-**Test Levels**
+**Test Level**
 
-Composition contract: Level 1.
-
-Focused composition differential: Level 2.
-
-Complete historical/applicable-target evidence: Level 3.
+Level 1, with a Level 2 parity family.
 
 **Exit Gate**
 
-Every migrated Phase 17 row has individual and composed evidence, and representative programs link from native program objects plus an explicit runtime package with behavior equivalent to MIR-to-C and no generated C shim.
+Every declared level is registry-owned with declared permitted transformations. Observable behaviour is equivalent across levels where the contract applies, and undeclared or debug-incompatible levels are rejected.
 
-### Patch 17.15 — Deferred Residue and Runtime-Coverage Audit
+### Patch 18.15 — Reproducible Object and Artifact Output
 
 **Purpose**
 
-Eliminate broad or ambiguous runtime, helper, symbol, package, and generated-C deferrals before Phase 17 closure.
+Make emitted objects and artifacts byte-reproducible for a fixed input, target, and level.
 
 **Steps**
 
-- Audit every Phase 17 opening row and every inventoried C-dependent helper.
-- Require every row and helper to finish as one of:
-  - migrated under exactly one Phase 17 classification;
+- Add the reproducibility contract record: declared reproducible fields, excluded non-deterministic inputs, and normalisation rules.
+- Normalise embedded paths, timestamps, symbol ordering, and section ordering.
+- Exclude host-specific and time-specific inputs from declared reproducible bytes.
+- Compare two builds of the same input, target, and level byte-for-byte.
+- Reject non-determinism in declared reproducible fields with a stable reason.
+- Record which fields are deliberately excluded from the guarantee.
+- Generate the reproducibility review view.
+- Add `guard-cranelift-phase18-reproducibility-contract`.
+
+**Test Level**
+
+Level 1, with a Level 2 parity family.
+
+**Exit Gate**
+
+Repeated builds of the same input, target, and level produce identical declared reproducible bytes. Every excluded field is declared, and non-determinism in a guaranteed field is rejected rather than tolerated.
+
+### Patch 18.16 — Atomic Executable Publication Under Phase 9G
+
+**Purpose**
+
+Give publication an explicit compiler-owned plan while leaving execution and ownership with Phase 9G.
+
+**Steps**
+
+- Add the publication plan record: temporary artifact ownership, publication order, atomicity method, and preservation guarantee.
+- Require publication to be atomic so a partially written executable never replaces a valid one.
+- Require every temporary artifact to have a declared owner and cleanup rule.
+- Require existing output to survive failure, deferral, and unsupported-target rejection.
+- Validate that publication occurs only after object emission, relocation validation, availability validation, and link success.
+- Keep publication execution, temporary cleanup, and artifact ownership with Phase 9G.
+- Prove with a sentinel that no output is replaced before a rejection.
+- Generate the publication review view.
+- Add `guard-cranelift-phase18-publication-contract`.
+
+**Test Level**
+
+Level 1, with a Level 2 parity family.
+
+**Exit Gate**
+
+Publication is atomic, ordered after every validation stage, and owned by Phase 9G. Sentinel output survives every failure, deferral, and unsupported-target rejection.
+
+### Patch 18.17 — Cross-Target Composition and Complete Per-Target Evidence
+
+**Purpose**
+
+Prove that the migrated Phase 18 capabilities compose, and that every declared supported target carries the complete evidence set.
+
+**Steps**
+
+- Add cross-target composition cases combining target identity, object format, relocations, ABI selection, package selection, linker policy, link mode, reproducibility, debug plan, and optimisation level.
+- Derive the composition inventory from canonical registry ownership rather than a hand-written list.
+- Require every Phase 18 authority with migrated rows to participate in at least one composition case.
+- Require every declared supported target to carry all six evidence kinds: native compile, object inspection, link, execution, diagnostic, and reproducibility.
+- Derive the per-target evidence matrix from the declared supported target set.
+- Require execution evidence for a target to come from that target's own runner.
+- Require a target with no available runner to remain undeclared rather than supported, because execution evidence is part of the phase exit gate. Such a target stays a narrow deferred row naming the missing runner.
+- Prove that a target missing any evidence kind is not declared supported.
+- Add `guard-cranelift-phase18-composition-contract` at Level 1.
+- Add `guard-cranelift-phase18-composition-differential` at Level 2.
+- Add `guard-cranelift-phase18-complete-target-evidence` at Level 3, owned solely by Cranelift Historical Full.
+
+**Test Level**
+
+Level 1 contract, Level 2 differential, Level 3 complete evidence.
+
+**Exit Gate**
+
+Every Phase 18 authority participates in at least one composition case, and every declared supported target carries native compile, object inspection, link, execution, diagnostic, and reproducibility evidence from its own runner. A target missing any evidence kind, including a target with no available runner, is not declared supported.
+
+### Patch 18.18 — Deferred Residue and Target-Coverage Audit
+
+**Purpose**
+
+Eliminate broad or ambiguous target, object, linker, debug, and optimisation deferrals before Phase 18 closure.
+
+**Steps**
+
+- Audit every Phase 18 opening row and every inventoried host assumption.
+- Require every row and assumption to finish as one of:
+  - migrated under exactly one Phase 18 classification;
   - explicitly excluded;
   - removed as obsolete;
   - replaced by one or more narrower deferred rows.
-- Reject broad residual descriptions such as:
-  - more runtime work;
-  - more C helpers;
-  - more native libraries;
-  - more ABI work;
-  - more I/O;
-  - more threading;
-  - wrappers later;
-  - platform support later.
+- Reject broad residual descriptions such as more targets, more platforms, more formats, more linkers, better debug info, more optimisation, or cross-compilation later.
 - Replace broad residue with concrete capabilities such as:
-  - complete C backend retirement;
-  - remaining named C runtime component retirement;
-  - shared or dynamically loaded runtime libraries;
-  - runtime package distribution and installation;
-  - runtime package signing or provenance verification;
-  - foreign-function ABI adapters;
-  - foreign callbacks;
-  - allocator replacement or multiple allocator domains;
-  - garbage collection;
-  - complete Unicode and locale runtime;
-  - asynchronous I/O;
-  - sockets;
-  - subprocesses;
-  - signals and terminal control;
-  - file-handle resources;
-  - socket resources;
-  - process resources;
-  - atomics and memory ordering;
-  - lock-guard semantics;
-  - thread cancellation cleanup;
-  - complete panic unwinding;
-  - foreign exception boundaries;
-  - platform-specific runtime helpers for named targets.
+  - named additional target triples;
+  - shared library and dynamic loader support;
+  - position-independent executable and hardening policy;
+  - link-time and profile-guided optimisation;
+  - complete debug-information fidelity and debugger integration;
+  - sysroot acquisition and management;
+  - code signing and platform attestation;
+  - toolchain distribution and installation.
 - Require every remaining deferred row to contain:
   - stable ID;
   - specific capability owner;
@@ -1343,15 +1121,14 @@ Eliminate broad or ambiguous runtime, helper, symbol, package, and generated-C d
   - positive future fixture;
   - negative current fixture;
   - stable diagnostic reason code;
-  - source Phase 17 row IDs and helper IDs.
-- Confirm no Phase 16 residual assigned to Phase 17 remains unchanged and ambiguous.
-- Confirm every inherited row has migrated, been excluded with justification, been removed as obsolete, or been replaced by smaller actionable rows.
-- Confirm every selected helper domain and applicable target is supported, explicitly excluded with justification, or represented by a narrower deferred row.
-- Confirm every retained C component has a concrete removal or reassessment destination.
+  - source Phase 18 row IDs.
+- Confirm no Phase 17 residual assigned to Phase 18 remains unchanged and ambiguous.
+- Confirm every candidate target from Patch 18.0 is either declared supported with a complete tuple, or explicitly deferred with the missing elements named.
+- Confirm no declared supported target depends on an undeclared host assumption.
 - Derive final totals from the registry.
-- Generate the final Phase 17 review view.
+- Generate the final Phase 18 review view.
 - Freeze the residual inventory semantically as input to later phases.
-- Add `guard-cranelift-phase17-deferred-residue-audit`.
+- Add `guard-cranelift-phase18-deferred-residue-audit`.
 
 **Test Level**
 
@@ -1359,53 +1136,58 @@ Level 1.
 
 **Exit Gate**
 
-Every Phase 17 item and inventoried C-dependent helper has migrated, been excluded or removed with justification, or become a smaller actionable future-phase entry; runtime component and target coverage is explicit.
+Every Phase 18 row and inventoried host assumption has migrated, been excluded or removed with justification, or become a smaller actionable future-phase entry. Every candidate target is either supported with a complete tuple or deferred with its missing elements named.
 
-### Patch 17.16 — Phase 17 Closure
+### Patch 18.19 — Phase 18 Closure
 
 **Purpose**
 
-Close only the declared Phase 17 native runtime-boundary inventory.
+Close only the declared Phase 18 target, object, and linker inventory.
 
-The closure must not claim complete runtime reimplementation, complete standard-library support, complete C removal, complete FFI, complete allocation, complete concurrency, complete platform support, or production readiness.
+The closure must not claim complete platform coverage, complete cross-compilation, complete debug fidelity, complete optimisation support, a stable public target vocabulary, or production readiness.
 
 **Closure Guard**
 
-Add `guard-cranelift-phase17-close` and register it as a Level 1 guard.
+Add `guard-cranelift-phase18-close` and register it as a Level 1 guard.
 
 **Required Contracts**
 
 The closure guard must require:
 
-- the semantic Phase 16 closure summary;
-- the Phase 17 opening contract;
+- the semantic Phase 17 closure summary;
+- the Phase 18 opening contract;
 - the canonical registry schema;
 - the canonical registry projection guard;
-- the Phase 17 parent-traceability contract;
-- the compiler-owned runtime authority contract;
-- the runtime ABI and symbol-version contract;
-- the canonical MIR and native-request runtime requirement contract;
-- the explicit runtime package contract;
-- the stable runtime-import contract;
-- the Rust runtime component contract;
-- the retained C runtime component contract;
-- the pure Gust runtime component contract;
-- the no-generated-C-shim contract;
-- the allocation, string, and core-memory runtime contract;
-- the I/O, filesystem, and resource runtime contract;
-- the threading and synchronization runtime contract;
-- the runtime availability and compatibility contract;
+- the Phase 18 parent-traceability contract;
+- the compiler-owned target authority contract;
+- the complete target support tuple contract;
+- the object format, section, and symbol binding contract;
+- the relocation model and validation contract;
+- the target-specific ABI selection contract;
+- the target-specific runtime package selection contract;
+- the linker discovery and invocation policy contract;
+- the static and dynamic link mode contract;
+- the cross-compilation and host/target separation contract;
+- the unsupported-target diagnostic contract;
+- the symbol and relocation inspection contract;
+- the debug information contract;
+- the source-location preservation contract;
+- the optimisation-level contract;
+- the reproducibility contract;
+- the atomic publication contract;
+- the cross-target composition contract;
 - the deferred residue audit;
-- the registry-derived Phase 17 CI-family projection;
+- the registry-derived Phase 18 CI-family projection;
 - the semantic route architecture contract;
 - the reduced manifest architecture contract through its canonical validator;
 - the three-level test mapping and workflow ownership checks;
-- the Phase 17 generated-view projection;
-- the Phase 17 registry differential wiring;
-- the separately runnable Level 3 historical and complete runtime suite;
+- the Phase 18 generated-view projection;
+- the Phase 18 registry differential wiring;
+- the separately runnable Level 3 historical and complete target suite;
 - the Phase 14 layout ownership contract;
 - the Phase 15 resource ownership contract;
 - the Phase 16 function ABI ownership contract;
+- the Phase 17 runtime boundary ownership contract;
 - the Phase 9G artifact ownership contract;
 - MIR-to-C default ownership;
 - explicit Cranelift no-fallback policy;
@@ -1416,154 +1198,134 @@ The closure guard must require:
 
 The closure guard must prove:
 
-- every Phase 17 opening row has a valid final disposition;
-- every selected C-dependent helper has exactly one final classification or an explicit obsolete/excluded disposition;
-- every migrated helper uses generic canonical-MIR routing and compiler-owned runtime requirements;
-- every migrated runtime call has a compiler-owned ABI, symbol identity, and version;
-- every migrated runtime implementation belongs to an explicit component and package;
-- every runtime package is target-specific and compatibility-validated;
-- explicit Cranelift consumes the compiler-produced runtime requirement and symbol data;
-- diagnostics consume the same runtime availability and compatibility decisions;
-- no exact-source, helper-name, fixture-name, generated-wrapper, object-output, or linker-output recognizer was introduced;
-- no backend-local runtime ABI or package authority exists;
-- no native linker step infers semantic requirements from unresolved symbols;
-- no migrated explicit Cranelift program generates or links an ad hoc C shim;
-- retained C implementations are separately built explicit runtime components;
-- Rust implementations are separately built explicit runtime components;
-- pure Gust runtime implementations pass through generic canonical MIR;
-- obsolete helpers are absent from active producers, consumers, packages, and views;
+- every Phase 18 opening row has a valid final disposition;
+- every inventoried host assumption has exactly one final disposition;
+- every declared supported target has a complete support tuple;
+- no target is declared supported from backend architecture capability alone;
+- every declared supported target has native compile, object inspection, link, execution, diagnostic, and reproducibility evidence;
+- every emitted object uses a compiler-selected format, section plan, and symbol binding;
+- every emitted relocation is validated against the declared model before publication;
+- every target names a selected Phase 16 ABI and a compatibility decision;
+- every target names a selected Phase 17 runtime package, link mode, and compatibility decision;
+- every link names a discovered linker and a declared invocation policy;
+- declared reproducible bytes are identical across repeated builds;
+- publication is atomic and owned by Phase 9G;
+- host state cannot leak into a cross artifact;
+- unsupported targets are diagnosed early and never attempted;
+- source locations survive lowering where the debug plan requires;
+- observable behaviour is equivalent across declared optimisation levels where the contract applies;
+- no component infers target, format, relocation, linker, mode, or level from the host or from output inspection;
+- no backend-local target, format, relocation, linker, or level authority exists;
 - explicit Cranelift cannot fall back to MIR-to-C;
-- unsupported cases stop at their declared early failure stage;
-- missing or incompatible runtime packages stop before linker invocation and output replacement;
 - MIR-to-C remains the default oracle and is not part of the explicit Cranelift link path;
-- default and explicit MIR-to-C remain equivalent where required;
-- the worker receives only request data, canonical MIR, and compiler-produced layout, resource, ABI, and runtime data;
+- unsupported cases stop at their declared early failure stage;
+- existing output is preserved on failure and deferral;
+- the worker receives only request data, canonical MIR, and compiler-produced metadata;
 - Phase 9G still owns object handling, linking, temporary cleanup, and publication;
-- active totals, helper categories, symbols, versions, components, packages, targets, and families are registry-derived;
+- active totals, targets, formats, relocations, linkers, modes, and families are registry-derived;
 - generated views are current;
 - CI families remain registry-derived;
-- no raw registry, MIR, generated-C, object, archive, linker-command, or Markdown hash contract exists;
-- no exact matrix total is treated as backend correctness;
-- Cranelift Historical Full remains separately runnable and owns complete historical evidence;
-- representative runtime-package evidence is assigned to every applicable declared target;
-- no selected helper is supplied by two incompatible runtime components;
-- runtime symbol and package incompatibility cannot silently fall back to generated C.
+- no raw registry, object, archive, linker-command, debug-output, or Markdown hash contract exists;
+- no exact target, format, relocation, linker, or matrix total is treated as backend correctness;
+- Cranelift Historical Full remains separately runnable and owns complete historical and per-target evidence.
 
 **What the Closure Guard Must Not Run**
 
-It must not directly replay:
-
-- every Phase 17 differential family;
-- every target runtime package build;
-- every target runner;
-- the full Phase 9–17 historical suite;
-- every historical native fixture;
-- complete object/link failure matrices;
-- complete packaging and reproducibility matrices;
-- long-running I/O, filesystem, resource, or threading stress suites.
-
-It validates ownership and wiring for those suites.
+It must not directly replay every Phase 18 differential family, every target build, every target runner, every linker invocation, the full Phase 9–18 historical suite, complete object or link failure matrices, complete reproducibility matrices, or cross-compilation matrices. It validates ownership and wiring for those suites.
 
 **CI Wiring**
 
-At closure:
-
-- Replace the direct PR Fast invocation of the preceding Phase 17 Level 1 owner with `guard-cranelift-phase17-close`.
+- Replace the direct PR Fast invocation of the preceding Phase 18 Level 1 owner with `guard-cranelift-phase18-close`.
 - Invoke the closure guard exactly once as the Level 1 phase-closure owner.
 - Keep registry-derived Level 2 family jobs unchanged.
-- Keep Heavy Guards focused on expensive primary-host native runtime, package, filesystem, resource, thread, and artifact evidence.
-- Keep Cranelift Historical Full as the sole Level 3 historical and complete-runtime owner.
-- Do not introduce a Phase 17 closure matrix family.
-- Do not hard-code an exact target, helper-category, symbol, component, package, or family count as a correctness claim.
+- Keep Heavy Guards focused on expensive primary-host native, object, link, and artifact evidence.
+- Keep Cranelift Historical Full as the sole Level 3 historical and complete-target owner.
+- Do not introduce a Phase 18 closure matrix family.
+- Do not hard-code an exact target, format, relocation, linker, mode, level, or family count as a correctness claim.
 
 **Suggested Status**
 
-`phase17_closed_native_runtime_boundary`
+`phase18_closed_target_object_and_linker_boundary`
 
 **Suggested Closure Wording**
 
-The declared Phase 17 native runtime-boundary inventory is complete. Migrated programs use compiler-owned runtime requirements, versioned runtime symbols, native program objects, and explicit target-compatible runtime packages without generated C shims, while remaining unsupported runtime capabilities are represented by narrower, explicitly owned future-phase deferrals.
+The declared Phase 18 target, object, and linker inventory is complete. Every declared supported target holds a complete compiler, runtime, linker, and ABI combination and carries native compile, object inspection, link, execution, diagnostic, and reproducibility evidence, while remaining unsupported targets and capabilities are represented by narrower, explicitly owned future-phase deferrals.
 
 **It Must Not Say**
 
-- The entire Gust runtime has been rewritten in Rust or Gust.
-- All C runtime code has been removed.
+- Gust supports every platform or architecture.
+- Cross-compilation is complete.
+- The target triple vocabulary is stable or public.
+- Debug information is complete or debugger-ready.
+- Optimisation is complete or performance-competitive.
+- Link-time or profile-guided optimisation is supported.
+- Shared libraries, dynamic loading, or plugins are supported.
+- Position-independent executables or hardening are complete.
+- Code signing or platform attestation is supported.
+- Sysroot management is handled.
+- Toolchain distribution is solved.
 - The MIR-to-C backend has been retired.
-- Cranelift has complete Gust runtime support.
-- Every standard-library helper is native.
-- Every target has complete runtime support.
-- Gust has complete C or foreign-function interoperability.
-- All allocation strategies are supported.
-- Garbage collection is complete.
-- Unicode and locale support are complete.
-- All I/O, filesystem, socket, process, signal, or terminal operations are supported.
-- All threading, atomics, cancellation, or concurrency semantics are correct.
-- All panic and exception paths unwind safely.
 - The experimental backend is production complete.
 
 **Final Exit Gate**
 
-Phase 17 is closed when every declared Phase 17 row and selected C-dependent helper has migrated through the generic canonical-MIR and compiler-owned runtime path; been explicitly excluded or removed with justification; or been replaced by one or more narrower deferred rows assigned to later phases; and all migrated programs link using native objects plus an explicit compatible runtime package, with no generated C shim, for every applicable declared target.
+Phase 18 is closed when every declared Phase 18 row and inventoried host assumption has migrated, been explicitly excluded or removed with justification, or been replaced by narrower deferred rows assigned to later phases; and every declared supported target holds a complete compiler, runtime, linker, and ABI combination with native compile, object inspection, link, execution, diagnostic, and reproducibility evidence.
 
 ## Recommended Implementation Order
 
-Patch 17.0 opening inventory and Phase 16 residual rebase
-→ Patch 17.1 compiler-owned runtime boundary and helper classification authority
-→ Patch 17.2 supported runtime ABI, symbol identity, and versioning
-→ Patch 17.3 runtime requirements in canonical MIR and native requests
-→ Patch 17.4 explicit runtime packages and target-specific selection
-→ Patch 17.5 stable runtime-library imports for Cranelift
-→ Patch 17.6 Rust runtime components and native object integration
-→ Patch 17.7 explicit retained C runtime objects
-→ Patch 17.8 pure Gust runtime modules compiled through MIR
-→ Patch 17.9 generated C shim elimination and obsolete helper removal
-→ Patch 17.10 allocation, string, and core-memory runtime audit
-→ Patch 17.11 I/O, filesystem, and resource runtime audit
-→ Patch 17.12 threading and synchronization runtime audit
-→ Patch 17.13 runtime availability, compatibility, and diagnostic enforcement
-→ Patch 17.14 cross-feature runtime composition and complete differential
-→ Patch 17.15 deferred residue and runtime-coverage audit
-→ Patch 17.16 closure.
+Patch 18.0 opening inventory and Phase 17 residual rebase
+→ Patch 18.1 compiler-owned target authority and declared triples
+→ Patch 18.2 complete target support tuple and support decisions
+→ Patch 18.3 object format, section, and symbol binding authority
+→ Patch 18.4 relocation model and validation
+→ Patch 18.5 target-specific ABI selection
+→ Patch 18.6 target-specific runtime package selection
+→ Patch 18.7 linker discovery, selection, and invocation policy
+→ Patch 18.8 static and dynamic runtime linking modes
+→ Patch 18.9 cross-compilation policy and host/target separation
+→ Patch 18.10 unsupported-target detection and diagnostics
+→ Patch 18.11 symbol and relocation inspection evidence
+→ Patch 18.12 debug information strategy
+→ Patch 18.13 source-location preservation
+→ Patch 18.14 optimisation-level policy
+→ Patch 18.15 reproducible object and artifact output
+→ Patch 18.16 atomic executable publication under Phase 9G
+→ Patch 18.17 cross-target composition and complete per-target evidence
+→ Patch 18.18 deferred residue and target-coverage audit
+→ Patch 18.19 closure.
 
-## Phase 17 Success Criteria
+## Phase 18 Success Criteria
 
-Phase 17 succeeds when:
+Phase 18 succeeds when:
 
-- Phase 16 closure remains semantically intact.
-- One canonical registry owns active feature state.
-- One compiler-owned runtime service owns runtime ABI, helper classification, symbol identity and version, requirements, component selection, package compatibility, and link-plan handoff.
-- Every selected C-dependent helper has exactly one Phase 17 classification.
-- All generated views, active families, helper categories, symbols, versions, components, packages, targets, and totals come from structured authorities.
-- Canonical MIR refers to compiler-owned runtime helper and symbol identities.
-- Native requests carry deterministic compiler-produced runtime requirements.
-- Explicit Cranelift imports compiler-selected versioned runtime symbols with Phase 16 ABI records.
-- Runtime implementations are separate from compiler-generated program code.
-- Selected Rust implementations are explicit runtime package components.
-- Selected retained C implementations are separately compiled explicit runtime package components.
-- Selected pure Gust runtime implementations compile through generic canonical MIR into explicit runtime package components.
-- Obsolete helpers are removed from active producers, consumers, packages, and views.
-- Target-specific runtime objects or libraries are produced through declared build authorities.
-- Runtime package availability and compatibility are validated before linking and output replacement.
-- Missing or incompatible symbols produce stable compiler-owned diagnostics.
-- No generated ad hoc C wrapper or shim participates in an explicit Cranelift/native link path.
-- Every migrated program links from native program objects plus an explicit compatible runtime package.
-- MIR-to-C remains an independent default differential oracle unless a later roadmap phase explicitly retires it.
-- MIR-to-C generated output is never used as the implementation intermediary for an explicit Cranelift artifact.
-- Selected allocation, core-memory, and string helpers use the explicit classified runtime path.
-- Selected I/O, filesystem, directory, and resource helpers use the explicit classified runtime path.
-- Selected threading and synchronization helpers use the explicit classified runtime path.
-- Phase 14 layout decisions remain compiler-owned.
-- Phase 15 resource, move, cleanup, and destruction decisions remain compiler-owned.
-- Phase 16 call and ABI decisions remain compiler-owned.
-- No backend independently chooses helper classification, symbol spelling, symbol version, component, package, compatibility, or link order.
-- No exact-source, generated-wrapper, object-output, archive-output, or linker-output recognizer exists.
-- No explicit Cranelift fallback exists.
-- Deferred input stops before prohibited native-driver and artifact access.
-- Missing or incompatible runtime packages stop before linker invocation and output replacement.
+- Target selection is explicit and compiler-owned.
+- Declared target triples are registry-owned and agree with the Phase 14 target layout authority.
+- A target is supported only as a complete compiler, runtime, linker, and ABI combination.
+- The declared supported target set is narrow, explicit, and registry-derived.
+- Backend architecture capability is never sufficient for target support.
+- Every emitted object uses a compiler-selected format, section plan, symbol binding, and visibility.
+- Every emitted relocation is a declared kind permitted for its section and is validated before publication.
+- Every target selects an existing Phase 16 ABI without redefining ABI semantics.
+- Every target selects an existing Phase 17 runtime package without redefining runtime symbol identity.
+- Every link uses a discovered linker under a declared invocation policy.
+- Static and dynamic link modes are declared per target and never silently substituted.
+- Declared reproducible bytes are identical across repeated builds of the same input, target, and level.
+- Executable publication is atomic and remains owned by Phase 9G.
+- Host and target identities are separate, and host state cannot leak into a cross artifact.
+- Unsupported targets are diagnosed early with stable reasons naming the missing tuple elements.
+- Unsupported targets are never attempted.
+- Symbol and relocation inspection evidence agrees with the compiler-produced plan.
+- Debug information is emitted under a declared per-target plan.
+- Source locations survive from source through canonical MIR to emitted debug records where required.
+- Observable behaviour is equivalent across declared optimisation levels where the contract applies.
+- Deferred input stops before prohibited native-driver, object, linker, and artifact access.
 - Existing output is preserved on failure and deferral.
 - Phase 9G retains object, link, temporary cleanup, and publication ownership.
+- Phase 14, 15, 16, and 17 authorities remain the owners of layout, resource, ABI, and runtime decisions.
+- MIR-to-C remains an independent default differential oracle and is never an implementation intermediary.
+- No explicit Cranelift fallback exists.
 - Registry-derived Level 2 families own focused differential evidence.
 - Cranelift Historical Full remains the sole Level 3 owner.
-- Representative runtime-boundary programs agree through MIR-to-C and explicit Cranelift for every applicable declared target.
+- Every declared supported target has native compile, object inspection, link, execution, diagnostic, and reproducibility evidence.
 - Every residual deferral is narrow, actionable, target-scoped where necessary, and assigned to a later phase.
-- Phase 17 closure does not claim complete runtime rewriting, complete C removal, complete FFI, allocation, I/O, filesystem, concurrency, platform, or production parity.
+- Phase 18 closure does not claim complete platform coverage, complete cross-compilation, complete debug fidelity, complete optimisation support, a stable public target vocabulary, or production readiness.
