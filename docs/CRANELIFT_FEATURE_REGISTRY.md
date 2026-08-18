@@ -519,6 +519,21 @@ The closure is scoped to the declared inventory. MIR-to-C remains the default di
 - `all_panic_and_exception_paths_unwind_safely`
 - `experimental_backend_production_complete`
 
+## Phase 18 opening inventory
+
+- Opening version: `phase18_opening_inventory_rebased_on_phase17_closure`
+- Status: `ready_for_patch18_1`
+- Opening rows: `17`
+- Host assumptions: `9`
+- Candidate targets: `5`
+- Inherited residuals rebased: `24` (21 reassigned, 3 split)
+
+Patch 18.0 records the Phase 18 input without changing compiler, backend, runtime, object, linker, or artifact behaviour. Every candidate target is unsupported until its complete compiler, runtime, linker, and ABI tuple is proven, so the declared supported set is empty at the opening.
+
+The host assumption inventory names real assumptions rather than planned ones, and must cover all six reachability areas: target selection, Cranelift lowering, object emission, runtime package selection, link planning, and publication. Each assumption names an existing source file, so the inventory cannot drift into fiction.
+
+Phase 18 inherits residuals from two parents: Phase 16 rows that Phase 17 reassigned forward, and Phase 17's own narrow deferred rows. Most are function ABI or runtime capability work rather than target, object, or linker work, so they are reassigned onward rather than selected. Three rows genuinely contain both, and are split: selecting the SysV and AArch64 ABIs for declared targets, and choosing static or dynamic runtime linking, are Phase 18 work, while complete aggregate classification, the complete procedure call standard, and dynamic library loading are not.
+
 ## Registry entries
 
 | ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |
