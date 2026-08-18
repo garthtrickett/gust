@@ -20,13 +20,14 @@ General rule: when Workflow, Monitoring, Merge, Phase Completion, or Runner Poli
 
 ## Monitoring Policy
 
-When monitoring GitHub Actions:
+When monitoring GitHub Actions or long-running local guard runs:
 
 - State it explicitly in chat as `Monitoring <branch> <SHA> via c2eab010 every 2m`.
 - Use `gh run list --branch <branch> --limit 100` and, where necessary, the paginated Actions API filtered to the exact `head_sha`.
 - Report each poll as `SHA | workflow | event | status | conclusion` and distinguish the owning Phase 17 guard failure from unrelated or superseded runs.
 - Keep monitor `c2eab010` visible; after each poll say `Monitoring continues` or `All green — proceeding`.
 - Do not silently poll.
+- Always set a 5 minute pulse when monitoring local tests or GitHub CI/CD, and message a status update on every pulse. This applies to long-running local guard families as well as cloud runs; silence during a long wait is not acceptable even when nothing has changed.
 
 ## Merge Policy
 
@@ -84,7 +85,7 @@ If more than 100 runs exist, use the paginated Actions API and apply the same ex
 - [x] Patch 17.12 — Threading and Synchronization Runtime Audit — DONE
 - [x] Patch 17.13 — Runtime Availability, Compatibility, and Diagnostic Enforcement — DONE
 - [x] Patch 17.14 — Cross-Feature Runtime Composition and Complete Differential — DONE
-- [ ] Patch 17.15 — Deferred Residue and Runtime-Coverage Audit
+- [x] Patch 17.15 — Deferred Residue and Runtime-Coverage Audit — DONE
 - [ ] Patch 17.16 — Phase 17 Closure
 
 ## Immutable Phase 16 Completion Record

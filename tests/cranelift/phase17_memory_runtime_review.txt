@@ -45,7 +45,6 @@ selected operations:
   std_is_whitespace	string_compare	no_allocation	borrowed_for_call_duration	total_cannot_fail
 
 concrete deferred rows:
-  os_LogInt	standard_stream_logging_is_io_not_memory_despite_living_in_arena_c	-> 17.11
 
 rejection classes:
   runtime_memory_missing_allocation_helper

@@ -55,6 +55,15 @@ If any required check fails, reproduce the failure locally with the exact
 log excerpt, fix minimally, rerun the focused local guard, and push again.
 Do not consider a patch done until the PR's required checks are green.
 
+## Monitoring and status updates
+
+- Always set a 5 minute pulse when monitoring local tests or GitHub CI/CD, and
+  message a status update on every pulse. This applies to long-running local
+  guard families as well as cloud runs; silence during a long wait is not
+  acceptable even when nothing has changed.
+- State what is being monitored explicitly, including branch and commit SHA.
+- Do not silently poll.
+
 ## Failure handling
 
 - Diagnose the first failing command before modifying more code.

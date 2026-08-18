@@ -1,0 +1,37 @@
+Patch 17.15 — Deferred Residue and Runtime-Coverage Audit
+
+opening_rows	17
+inventoried_helpers	79
+migrated_helpers	66
+excluded_helpers	4
+removed_helpers	0
+narrowly_deferred_helpers	9
+retained_components	8
+narrow_deferred_rows	8
+
+coverage	every opening row has a disposition	opening_dispositions matches the Phase 17 opening snapshot	Level 1
+coverage	all seventeen selected opening rows are migrated	17 migrated dispositions with evidence guards	Level 1
+coverage	every inventoried helper has a disposition	helper_dispositions matches the 79-row helper inventory	Level 1
+termination	every helper terminates exactly once	registry join over selected, imported, obsolete, and deferred rows	Level 1
+termination	the classification authority is not a termination	helper_classifications excluded from the join	Level 1
+termination	cross-cutting layers are not double terminations	symbol and requirement authorities excluded from the join	Level 1
+termination	helper identity joins on both key spellings	helper_id and symbol_identity both resolved	Level 1
+termination	a recorded terminating authority must match the registry	terminating_authority compared against the computed join	Level 1
+exclusion	excluded helpers carry a justification	excluded_items reason for each excluded disposition	Level 1
+exclusion	an excluded helper must not also terminate elsewhere	exclusion rejected when a termination exists	Level 1
+component	every retained C component names a destination	component_dispositions covers all 8 retained components	Level 1
+component	no component destination points at a shipped phase	destination_phase is phase18 for every component	Level 1
+component	the removal criterion names its destination row	narrow_deferred_row appears in removal_criterion	Level 1
+deferral	every deferred row carries all twelve required fields	ROW_FIELDS equality per narrow deferred row	Level 1
+deferral	no blank field survives in a deferred row	non-empty scalar check per field	Level 1
+deferral	broad residue phrasing is rejected	BROAD_RESIDUE substring rejection over reason text	Level 1
+deferral	every deferred row traces to a source opening row	source_phase17_row_ids validated against opening ids	Level 1
+deferral	every deferred source helper exists in the inventory	source_helper_ids validated against helper inventory	Level 1
+deferral	each deferred row has a unique positive future fixture	fixture uniqueness and regular-file check	Level 1
+deferral	each deferred row has a unique negative current fixture	fixture uniqueness and regular-file check	Level 1
+deferral	the diagnostic reason code appears in its negative fixture	fixture text contains diagnostic_reason_code	Level 1
+deferral	no narrow deferred row is claimed by nothing	claimed set from helper and component dispositions	Level 1
+policy	broad residue policy is frozen	reject_broad_or_ambiguous_phase17_runtime_residue	Level 1
+policy	coverage policy is frozen	every opening row and inventoried helper disposed	Level 1
+policy	helper termination policy is frozen	terminates exactly once outside the classification authority	Level 1
+policy	component destination policy is frozen	every retained component names a narrow deferred row	Level 1
