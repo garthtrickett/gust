@@ -198,8 +198,8 @@ jobs:
       - name: Phase 17 runtime availability and diagnostics
         run: just guard-cranelift-phase17-availability-contract
 
-      - name: Phase 17 deferred residue and runtime coverage
-        run: just guard-cranelift-phase17-deferred-residue-audit
+      - name: Phase 17 native runtime boundary closure
+        run: just guard-cranelift-phase17-close
 
       - name: Phase 17 cross-feature runtime composition
         run: just guard-cranelift-phase17-composition-contract

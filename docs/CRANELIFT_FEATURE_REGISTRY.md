@@ -491,6 +491,34 @@ The audit closed three helper defects. One standard-stream logging helper termin
 
 Every retained C component names a narrow deferred row as its removal or reassessment destination. Five components previously pointed at patches that had already shipped without removing them, which is not a concrete destination.
 
+## Phase 17 closure
+
+- Closure version: `phase17_closure_v1`
+- Status: `phase17_closed_native_runtime_boundary`
+- Opening rows disposed: `17`
+- Inventoried helpers disposed: `79`
+- Retained C components with a named destination: `8`
+- Narrow future-phase deferrals: `8`
+
+The declared Phase 17 native runtime-boundary inventory is complete. Migrated programs use compiler-owned runtime requirements, versioned runtime symbols, native program objects, and explicit target-compatible runtime packages without generated C shims, while remaining unsupported runtime capabilities are represented by narrower, explicitly owned future-phase deferrals.
+
+The closure is scoped to the declared inventory. MIR-to-C remains the default differential oracle and is not part of the explicit Cranelift link path. This closure explicitly does not claim:
+
+- `entire_gust_runtime_rewritten_in_rust_or_gust`
+- `all_c_runtime_code_removed`
+- `mir_to_c_backend_retired`
+- `cranelift_has_complete_gust_runtime_support`
+- `every_standard_library_helper_is_native`
+- `every_target_has_complete_runtime_support`
+- `complete_c_or_foreign_function_interoperability`
+- `all_allocation_strategies_supported`
+- `garbage_collection_complete`
+- `unicode_and_locale_support_complete`
+- `all_io_filesystem_socket_process_signal_terminal_operations_supported`
+- `all_threading_atomics_cancellation_concurrency_semantics_correct`
+- `all_panic_and_exception_paths_unwind_safely`
+- `experimental_backend_production_complete`
+
 ## Registry entries
 
 | ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |

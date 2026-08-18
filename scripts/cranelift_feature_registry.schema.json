@@ -31,6 +31,7 @@
     "phase17_thread_runtime_authority",
     "phase17_availability_authority",
     "phase17_composition_authority",
+    "phase17_closure",
     "phase17_deferred_residue_audit",
     "phase16_deferred_residue_audit",
     "phase16_closure",
@@ -310,6 +311,9 @@
     },
     "phase17_composition_authority": {
       "$ref": "#/$defs/phase17_composition_authority"
+    },
+    "phase17_closure": {
+      "$ref": "#/$defs/phase17_closure"
     },
     "phase17_deferred_residue_audit": {
       "$ref": "#/$defs/phase17_deferred_residue_audit"
@@ -848,6 +852,134 @@
         "participating_authorities": {"type": "array", "minItems": 2, "uniqueItems": true, "items": {"type": "string", "pattern": "^phase17_"}},
         "differential_owner": {"type": "string", "minLength": 1},
         "sentinel_policy": {"enum": ["sentinel_output_preserved_on_failure", "case_cannot_fail_no_output_to_preserve"]}
+      }
+    },
+    "phase17_closure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "status",
+        "opening_entry_count",
+        "migrated_entry_count",
+        "inventoried_helper_count",
+        "migrated_helper_count",
+        "excluded_helper_count",
+        "narrowly_deferred_helper_count",
+        "retained_component_count",
+        "narrow_deferred_row_count",
+        "required_authorities",
+        "semantic_assertions",
+        "oracle_policy",
+        "fallback_policy",
+        "artifact_policy",
+        "worker_policy",
+        "failure_policy",
+        "availability_policy",
+        "test_level_policy",
+        "scope_policy",
+        "non_claims",
+        "forbidden_replays",
+        "closure_wording"
+      ],
+      "properties": {
+        "version": {
+          "const": "phase17_closure_v1"
+        },
+        "status": {
+          "const": "phase17_closed_native_runtime_boundary"
+        },
+        "opening_entry_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "migrated_entry_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "inventoried_helper_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "migrated_helper_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "excluded_helper_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "narrowly_deferred_helper_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "retained_component_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "narrow_deferred_row_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "required_authorities": {
+          "type": "array",
+          "minItems": 17,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "semantic_assertions": {
+          "type": "array",
+          "minItems": 32,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "oracle_policy": {
+          "const": "mir_to_c_remains_default_differential_oracle"
+        },
+        "fallback_policy": {
+          "const": "explicit_cranelift_no_fallback"
+        },
+        "artifact_policy": {
+          "const": "phase9g_retains_object_link_cleanup_and_atomic_publication_ownership"
+        },
+        "worker_policy": {
+          "const": "isolated_worker_consumes_only_validated_request_canonical_mir_layout_resource_abi_and_runtime_metadata"
+        },
+        "failure_policy": {
+          "const": "invalid_or_deferred_stops_before_driver_and_artifact_access_with_output_preserved"
+        },
+        "availability_policy": {
+          "const": "missing_or_incompatible_runtime_package_stops_before_linker_invocation_and_output_replacement"
+        },
+        "test_level_policy": {
+          "const": "level1_contracts_level2_registry_families_level3_historical_full_only"
+        },
+        "scope_policy": {
+          "const": "declared_phase17_inventory_only_no_complete_runtime_rewrite_c_removal_ffi_allocation_concurrency_platform_or_production_claim"
+        },
+        "non_claims": {
+          "type": "array",
+          "minItems": 14,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "forbidden_replays": {
+          "type": "array",
+          "minItems": 8,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "closure_wording": {
+          "const": "The declared Phase 17 native runtime-boundary inventory is complete. Migrated programs use compiler-owned runtime requirements, versioned runtime symbols, native program objects, and explicit target-compatible runtime packages without generated C shims, while remaining unsupported runtime capabilities are represented by narrower, explicitly owned future-phase deferrals."
+        }
       }
     },
     "phase17_deferred_residue_audit": {
