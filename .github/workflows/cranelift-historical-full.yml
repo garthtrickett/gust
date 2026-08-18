@@ -68,6 +68,7 @@ jobs:
           PHASE14_HISTORICAL_EXTERNAL_MATRIX=1 just guard-cranelift-historical-full
           just guard-cranelift-phase15-complete-resource-evidence
           just guard-cranelift-phase16-complete-abi-evidence
+          just guard-cranelift-phase17-complete-runtime-evidence
 
   phase14-target:
     name: Phase 14 target / ${{ matrix.target }}

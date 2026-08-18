@@ -198,6 +198,9 @@ jobs:
       - name: Phase 17 runtime availability and diagnostics
         run: just guard-cranelift-phase17-availability-contract
 
+      - name: Phase 17 cross-feature runtime composition
+        run: just guard-cranelift-phase17-composition-contract
+
       - name: Upload Gust build outputs
         uses: actions/upload-artifact@v4
         with:

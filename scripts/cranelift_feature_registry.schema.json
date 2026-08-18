@@ -30,6 +30,7 @@
     "phase17_io_runtime_authority",
     "phase17_thread_runtime_authority",
     "phase17_availability_authority",
+    "phase17_composition_authority",
     "phase16_deferred_residue_audit",
     "phase16_closure",
     "phase15_deferred_residue_audit",
@@ -305,6 +306,9 @@
     },
     "phase17_availability_authority": {
       "$ref": "#/$defs/phase17_availability_authority"
+    },
+    "phase17_composition_authority": {
+      "$ref": "#/$defs/phase17_composition_authority"
     },
     "phase16_deferred_residue_audit": {
       "$ref": "#/$defs/phase16_deferred_residue_audit"
@@ -829,6 +833,41 @@
         "witness_policy": {"const": "cranelift_and_mir_to_c_availability_witnesses_must_match_byte_for_byte"},
         "scope_policy": {"const": "availability_compatibility_and_diagnostics_only_cross_feature_composition_remains_in_patch17_14"},
         "next_patch": {"const": "17.14"}
+      }
+    },
+    "phase17_composition_case_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["composition_kind", "participating_authorities", "differential_owner", "sentinel_policy"],
+      "properties": {
+        "composition_kind": {"enum": ["allocation_then_string_formatting_and_output", "resource_bearing_aggregate_across_runtime_call", "directory_acquire_branch_early_return_cleanup", "gust_runtime_helper_calling_stable_import", "rust_and_retained_c_in_one_package", "thread_helper_using_resource_cleanup", "compatible_package_from_target_candidates", "incompatible_version_preserving_sentinel"]},
+        "participating_authorities": {"type": "array", "minItems": 2, "uniqueItems": true, "items": {"type": "string", "pattern": "^phase17_"}},
+        "differential_owner": {"type": "string", "minLength": 1},
+        "sentinel_policy": {"enum": ["sentinel_output_preserved_on_failure", "case_cannot_fail_no_output_to_preserve"]}
+      }
+    },
+    "phase17_composition_authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "status", "authority_owner", "request_owner", "worker_owner", "request_format", "witness_format", "inventory_policy", "coverage_policy", "shim_policy", "level_policy", "sentinel_policies", "composition_cases", "rejection_classes", "witness_policy", "scope_policy", "next_patch"],
+      "properties": {
+        "version": {"const": "phase17_composition_authority_v1"},
+        "status": {"const": "ready_for_patch17_15"},
+        "authority_owner": {"const": "compiler/mir_runtime_boundary_authority.gst"},
+        "request_owner": {"const": "compiler/mir_composition_request.gst"},
+        "worker_owner": {"const": "compiler/experiments/cranelift/src/composition.rs"},
+        "request_format": {"const": "gust.compiler_composition.v1"},
+        "witness_format": {"const": "gust.composition_witness.v1"},
+        "inventory_policy": {"const": "the_differential_inventory_is_derived_from_canonical_registry_ownership_not_a_hand_written_list"},
+        "coverage_policy": {"const": "every_phase17_authority_with_migrated_rows_participates_in_at_least_one_composition_case"},
+        "shim_policy": {"const": "the_explicit_cranelift_link_plan_contains_no_generated_c_shim_artifact"},
+        "level_policy": {"const": "primary_host_focused_composition_is_level2_and_complete_applicable_target_runtime_evidence_is_level3"},
+        "sentinel_policies": {"type": "array", "minItems": 2, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "composition_cases": {"type": "array", "minItems": 8, "uniqueItems": true, "items": {"$ref": "#/$defs/phase17_composition_case_record"}},
+        "rejection_classes": {"type": "array", "minItems": 6, "uniqueItems": true, "items": {"type": "string", "pattern": "^runtime_composition_"}},
+        "witness_policy": {"const": "cranelift_and_mir_to_c_composition_witnesses_must_match_byte_for_byte"},
+        "scope_policy": {"const": "cross_feature_composition_only_deferred_residue_audit_remains_in_patch17_15"},
+        "next_patch": {"const": "17.15"}
       }
     },
     "phase17_runtime_helper_classification": {

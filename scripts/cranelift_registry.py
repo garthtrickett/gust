@@ -36,6 +36,7 @@ TOP_FIELDS = {
     "phase17_io_runtime_authority",
     "phase17_thread_runtime_authority",
     "phase17_availability_authority",
+    "phase17_composition_authority",
     "phase16_deferred_residue_audit",
     "phase16_closure",
     "phase15_deferred_residue_audit",
@@ -1156,6 +1157,34 @@ PHASE17_AVAILABILITY_REJECTIONS = (
     "runtime_symbol_version_incompatible",
     "runtime_classification_inconsistent",
     "runtime_link_plan_dependency_undeclared",
+)
+
+PHASE17_COMPOSITION_AUTHORITY_FIELDS = {
+    "version", "status", "authority_owner", "request_owner", "worker_owner",
+    "request_format", "witness_format", "inventory_policy", "coverage_policy",
+    "shim_policy", "level_policy", "sentinel_policies", "composition_cases",
+    "rejection_classes", "witness_policy", "scope_policy", "next_patch",
+}
+PHASE17_COMPOSITION_CASE_FIELDS = {
+    "composition_kind", "participating_authorities", "differential_owner",
+    "sentinel_policy",
+}
+PHASE17_COMPOSITION_KINDS = (
+    "allocation_then_string_formatting_and_output",
+    "resource_bearing_aggregate_across_runtime_call",
+    "directory_acquire_branch_early_return_cleanup",
+    "gust_runtime_helper_calling_stable_import",
+    "rust_and_retained_c_in_one_package",
+    "thread_helper_using_resource_cleanup",
+    "compatible_package_from_target_candidates",
+    "incompatible_version_preserving_sentinel",
+)
+PHASE17_COMPOSITION_REJECTIONS = (
+    "runtime_composition_unknown_kind", "runtime_composition_not_composed",
+    "runtime_composition_no_differential_owner",
+    "runtime_composition_missing_sentinel_policy",
+    "runtime_composition_duplicate_case",
+    "runtime_composition_incomplete_inventory",
 )
 
 PHASE14_LAYOUT_AUTHORITY_FIELDS = {
@@ -3261,6 +3290,68 @@ def validate_phase17_availability_authority_structure(registry):
     return authority
 
 
+def validate_phase17_composition_authority_structure(registry):
+    authority = registry["phase17_composition_authority"]
+    require(isinstance(authority, dict)
+            and set(authority) == PHASE17_COMPOSITION_AUTHORITY_FIELDS,
+            "Phase 17 composition authority fields drifted")
+    require(authority["version"] == "phase17_composition_authority_v1"
+            and authority["status"] == "ready_for_patch17_15",
+            "Phase 17 composition version drifted")
+    require(tuple(authority["rejection_classes"])
+            == PHASE17_COMPOSITION_REJECTIONS,
+            "Phase 17 composition rejection inventory drifted")
+
+    cases = authority["composition_cases"]
+    require(isinstance(cases, list)
+            and len(cases) == len(PHASE17_COMPOSITION_KINDS),
+            "Phase 17 composition inventory is incomplete")
+    seen_kinds, participants = set(), set()
+    for index, row in enumerate(cases):
+        context = f"phase17_composition_authority.composition_cases[{index}]"
+        require(isinstance(row, dict)
+                and set(row) == PHASE17_COMPOSITION_CASE_FIELDS,
+                f"{context} fields drifted")
+        require(row["composition_kind"] in PHASE17_COMPOSITION_KINDS,
+                f"{context} is not a required nested combination")
+        require(row["composition_kind"] not in seen_kinds,
+                f"{context} duplicates a combination")
+        require(len(row["participating_authorities"]) >= 2,
+                f"{context} composes fewer than two authorities")
+        require(row["differential_owner"],
+                f"{context} names no differential owner")
+        seen_kinds.add(row["composition_kind"])
+        participants.update(row["participating_authorities"])
+    require(seen_kinds == set(PHASE17_COMPOSITION_KINDS),
+            "Phase 17 composition inventory is missing a combination")
+
+    # The inventory is derived from registry ownership, so coverage is checked
+    # against the registry rather than against a hand-written list.
+    authorities = {
+        key for key in registry
+        if key.startswith("phase17_") and key.endswith("_authority")
+        and key != "phase17_composition_authority"
+    }
+    uncovered = sorted(authorities - participants)
+    require(not uncovered,
+            f"Phase 17 authorities with no composition case: {uncovered}")
+    unknown = sorted(participants - authorities)
+    require(not unknown,
+            f"Phase 17 composition names non-registry authorities: {unknown}")
+
+    sentinel = next(
+        (row for row in cases
+         if row["composition_kind"] == "incompatible_version_preserving_sentinel"),
+        None,
+    )
+    require(sentinel is not None
+            and sentinel["sentinel_policy"] == "sentinel_output_preserved_on_failure",
+            "the incompatible-version case must preserve sentinel output")
+    require(authority["next_patch"] == "17.15",
+            "Phase 17 composition policies drifted")
+    return authority
+
+
 def validate_phase14_layout_authority_structure(registry):
     authority = registry["phase14_layout_authority"]
     require(
@@ -4492,6 +4583,18 @@ def validate():
     require(set(phase17_decision_schema.get("required", []))
             == PHASE17_AVAILABILITY_DECISION_FIELDS,
             "schema Phase 17 availability decision record fields drifted")
+    phase17_composition_schema = definitions.get(
+        "phase17_composition_authority", {}
+    )
+    require(set(phase17_composition_schema.get("required", []))
+            == PHASE17_COMPOSITION_AUTHORITY_FIELDS,
+            "schema Phase 17 composition authority fields drifted")
+    require(phase17_composition_schema.get("additionalProperties") is False,
+            "schema Phase 17 composition authority must reject unknown fields")
+    phase17_case_schema = definitions.get("phase17_composition_case_record", {})
+    require(set(phase17_case_schema.get("required", []))
+            == PHASE17_COMPOSITION_CASE_FIELDS,
+            "schema Phase 17 composition case record fields drifted")
     phase14_authority_schema = definitions.get(
         "phase14_layout_authority",
         {},
@@ -4694,6 +4797,7 @@ def validate():
     validate_phase17_io_runtime_authority_structure(registry)
     validate_phase17_thread_runtime_authority_structure(registry)
     validate_phase17_availability_authority_structure(registry)
+    validate_phase17_composition_authority_structure(registry)
     validate_phase14_layout_authority_structure(registry)
     validate_phase14_primitive_layout_structure(registry)
     validate_phase14_integer_conversion_structure(registry)
@@ -10746,6 +10850,24 @@ def phase17_availability_authority_summary_lines(registry):
     ]
 
 
+def phase17_composition_authority_summary_lines(registry):
+    authority = validate_phase17_composition_authority_structure(registry)
+    participants = set()
+    for row in authority["composition_cases"]:
+        participants.update(row["participating_authorities"])
+    return [
+        "## Phase 17 cross-feature composition authority",
+        "",
+        f"- Authority version: `{authority['version']}`",
+        f"- Status: `{authority['status']}`",
+        f"- Nested combinations: `{len(authority['composition_cases'])}`",
+        f"- Authorities covered by composition: `{len(participants)}`",
+        "",
+        "Patch 17.14 proves the migrated Phase 17 capabilities compose. The differential inventory is derived from canonical registry ownership rather than a hand-written list, and every Phase 17 authority with migrated rows must participate in at least one composition case, so no capability is proven in isolation and then never combined. The explicit Cranelift link plan contains no generated C shim artifact, and the incompatible-version case preserves sentinel output on failure.",
+        "",
+    ]
+
+
 def render(registry):
     entries = registry["entries"]
     totals = derived_totals(registry)
@@ -10810,6 +10932,7 @@ def render(registry):
         *phase17_io_runtime_authority_summary_lines(registry),
         *phase17_thread_runtime_authority_summary_lines(registry),
         *phase17_availability_authority_summary_lines(registry),
+        *phase17_composition_authority_summary_lines(registry),
         "## Registry entries", "",
         "| ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |",
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",

@@ -65,6 +65,20 @@ type MirRuntimeComponentIdentity[ctx] struct {
     target_id: str
 }
 
+// Phase 17.14 cross-feature composition cases. Each case names the migrated
+// authorities it exercises together. The load-bearing rule is coverage: every
+// authority that migrated rows must participate in at least one composition, so
+// a capability cannot be proven in isolation and then never composed.
+type MirRuntimeCompositionCase[ctx] struct {
+    case_id: str,
+    composition_kind: str,
+    participating_authorities: Index[std.Vector[str, ctx], ctx],
+    differential_owner: str,
+    target_applicability: str,
+    sentinel_policy: str,
+    target_id: str
+}
+
 // Phase 17.13 availability and compatibility decisions. Two things are frozen
 // here: the order the validation steps run in, and the stage boundary each must
 // complete before. Nothing may reach the linker, a temporary link output, or an
@@ -349,6 +363,7 @@ type MirRuntimeBoundaryAuthorityTable[ctx] struct {
     io_contracts: Index[std.Vector[MirRuntimeIoContract[ctx], ctx], ctx],
     thread_contracts: Index[std.Vector[MirRuntimeThreadContract[ctx], ctx], ctx],
     availability_decisions: Index[std.Vector[MirRuntimeAvailabilityDecision[ctx], ctx], ctx],
+    composition_cases: Index[std.Vector[MirRuntimeCompositionCase[ctx], ctx], ctx],
     requirements: Index[std.Vector[MirRuntimeRequirement[ctx], ctx], ctx],
     compatibility_decisions: Index[std.Vector[MirRuntimeCompatibilityDecision[ctx], ctx], ctx],
     link_plans: Index[std.Vector[MirRuntimeLinkPlanHandoff[ctx], ctx], ctx],
@@ -365,6 +380,7 @@ type MirRuntimeCompatibilityQuery[ctx] struct { compatible: int, reason_code: st
 type MirRuntimeLinkPlanQuery[ctx] struct { found: int, value: MirRuntimeLinkPlanHandoff[ctx] }
 type MirRuntimePackageSelection[ctx] struct { found: int, reason_code: str, value: MirRuntimePackageIdentity[ctx] }
 type MirRuntimePackageManifestQuery[ctx] struct { valid: int, reason_code: str, member_count: int, provided_symbol_count: int, system_import_count: int }
+type MirRuntimeCompositionQuery[ctx] struct { found: int, value: MirRuntimeCompositionCase[ctx] }
 type MirRuntimeAvailabilityQuery[ctx] struct { found: int, value: MirRuntimeAvailabilityDecision[ctx] }
 type MirRuntimeThreadContractQuery[ctx] struct { found: int, value: MirRuntimeThreadContract[ctx] }
 type MirRuntimeIoContractQuery[ctx] struct { found: int, value: MirRuntimeIoContract[ctx] }
@@ -395,6 +411,7 @@ func mir_runtime_empty_requirements(ctx: &Arena) Index[std.Vector[MirRuntimeRequ
 func mir_runtime_empty_package_members(ctx: &Arena) Index[std.Vector[MirRuntimePackageMember[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimePackageMember[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimePackageMember[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
 func mir_runtime_empty_package_provided_symbols(ctx: &Arena) Index[std.Vector[MirRuntimePackageProvidedSymbol[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimePackageProvidedSymbol[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimePackageProvidedSymbol[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
 func mir_runtime_empty_package_system_imports(ctx: &Arena) Index[std.Vector[MirRuntimePackageSystemImport[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimePackageSystemImport[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimePackageSystemImport[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
+func mir_runtime_empty_composition_cases(ctx: &Arena) Index[std.Vector[MirRuntimeCompositionCase[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimeCompositionCase[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimeCompositionCase[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
 func mir_runtime_empty_availability_decisions(ctx: &Arena) Index[std.Vector[MirRuntimeAvailabilityDecision[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimeAvailabilityDecision[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimeAvailabilityDecision[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
 func mir_runtime_empty_thread_contracts(ctx: &Arena) Index[std.Vector[MirRuntimeThreadContract[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimeThreadContract[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimeThreadContract[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
 func mir_runtime_empty_io_contracts(ctx: &Arena) Index[std.Vector[MirRuntimeIoContract[ctx], ctx], ctx] { mut values: std.Vector[MirRuntimeIoContract[ctx], ctx] := std.VectorNew(ctx); mut index: Index[std.Vector[MirRuntimeIoContract[ctx], ctx], ctx] := os.ArenaAlloc(ctx); ctx.Set(index, values); return index; }
@@ -421,6 +438,46 @@ func mir_runtime_helper_classification_is_valid(value: str) int {
     if std.str_eq(value, "retained_c_runtime_component") == 1 { return 1; }
     if std.str_eq(value, "pure_gust_runtime_component") == 1 { return 1; }
     if std.str_eq(value, "obsolete_helper") == 1 { return 1; }
+    return 0;
+}
+
+// The nested combinations Patch 17.14 requires. Each names a real interaction
+// between migrated capabilities rather than a capability in isolation.
+func mir_runtime_composition_kind_is_valid(value: str) int {
+    if std.str_eq(value, "allocation_then_string_formatting_and_output") == 1 { return 1; }
+    if std.str_eq(value, "resource_bearing_aggregate_across_runtime_call") == 1 { return 1; }
+    if std.str_eq(value, "directory_acquire_branch_early_return_cleanup") == 1 { return 1; }
+    if std.str_eq(value, "gust_runtime_helper_calling_stable_import") == 1 { return 1; }
+    if std.str_eq(value, "rust_and_retained_c_in_one_package") == 1 { return 1; }
+    if std.str_eq(value, "thread_helper_using_resource_cleanup") == 1 { return 1; }
+    if std.str_eq(value, "compatible_package_from_target_candidates") == 1 { return 1; }
+    if std.str_eq(value, "incompatible_version_preserving_sentinel") == 1 { return 1; }
+    return 0;
+}
+
+// Every case must state what happens to existing output when it fails.
+func mir_runtime_sentinel_policy_is_valid(value: str) int {
+    if std.str_eq(value, "sentinel_output_preserved_on_failure") == 1 { return 1; }
+    if std.str_eq(value, "case_cannot_fail_no_output_to_preserve") == 1 { return 1; }
+    return 0;
+}
+
+func mir_runtime_composition_case_for(table: MirRuntimeBoundaryAuthorityTable[ctx], composition_kind: str, ctx: &Arena) MirRuntimeCompositionQuery[ctx] { mut result: MirRuntimeCompositionQuery[ctx]; result.found = 0; mut values: std.Vector[MirRuntimeCompositionCase[ctx], ctx] := ctx[table.composition_cases]; mut index := 0; while index < len(values) { if std.str_eq(values[index].composition_kind, composition_kind) == 1 { result.found = 1; result.value = values[index]; return result; } index = index + 1; } return result; }
+
+// composition_covers(authority) answers whether a migrated authority takes part
+// in any composition case, which is what stops isolated-only evidence.
+func mir_runtime_composition_covers(table: MirRuntimeBoundaryAuthorityTable[ctx], authority_id: str, ctx: &Arena) int {
+    mut values: std.Vector[MirRuntimeCompositionCase[ctx], ctx] := ctx[table.composition_cases];
+    mut index := 0;
+    while index < len(values) {
+        mut participants: std.Vector[str, ctx] := ctx[values[index].participating_authorities];
+        mut participant_index := 0;
+        while participant_index < len(participants) {
+            if std.str_eq(participants[participant_index], authority_id) == 1 { return 1; }
+            participant_index = participant_index + 1;
+        }
+        index = index + 1;
+    }
     return 0;
 }
 
@@ -659,6 +716,7 @@ func mir_runtime_symbol_identity_id(helper_id: str, symbol_version: str, target_
 func mir_runtime_component_identity_id(component_kind: str, target_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_component:v1:kind="; value = std.Concat(value, component_kind); value = std.Concat(value, ":target="); value = std.Concat(value, target_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
 func mir_runtime_package_identity_id(target_id: str, package_version: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_package:v1:target="; value = std.Concat(value, target_id); value = std.Concat(value, ":version="); value = std.Concat(value, package_version); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
 func mir_runtime_requirement_id(program_id: str, helper_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_requirement:v1:program="; value = std.Concat(value, program_id); value = std.Concat(value, ":helper="); value = std.Concat(value, helper_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
+func mir_runtime_composition_case_id(composition_kind: str, target_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_composition_case:v1:kind="; value = std.Concat(value, composition_kind); value = std.Concat(value, ":target="); value = std.Concat(value, target_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
 func mir_runtime_availability_decision_id(validation_step: str, decision_order: int, target_id: str, ctx: &Arena) str { mut value := "runtime_availability_decision:v1:step="; value = std.Concat(value, validation_step); value = std.Concat(value, ":order="); value = std.Concat(value, std.FormatInt(decision_order)); value = std.Concat(value, ":target="); value = std.Concat(value, target_id); return std.Clone(ctx, value); }
 func mir_runtime_thread_contract_id(helper_id: str, thread_operation: str, target_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_thread_contract:v1:helper="; value = std.Concat(value, helper_id); value = std.Concat(value, ":operation="); value = std.Concat(value, thread_operation); value = std.Concat(value, ":target="); value = std.Concat(value, target_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
 func mir_runtime_io_contract_id(helper_id: str, io_kind: str, target_id: str, request_ordinal: int, ctx: &Arena) str { mut value := "runtime_io_contract:v1:helper="; value = std.Concat(value, helper_id); value = std.Concat(value, ":kind="); value = std.Concat(value, io_kind); value = std.Concat(value, ":target="); value = std.Concat(value, target_id); value = std.Concat(value, ":ordinal="); value = std.Concat(value, std.FormatInt(request_ordinal)); return std.Clone(ctx, value); }
@@ -703,6 +761,7 @@ func mir_runtime_make_empty_table(target_id: str, target_triple: str, ctx: &Aren
     table.io_contracts = mir_runtime_empty_io_contracts(ctx);
     table.thread_contracts = mir_runtime_empty_thread_contracts(ctx);
     table.availability_decisions = mir_runtime_empty_availability_decisions(ctx);
+    table.composition_cases = mir_runtime_empty_composition_cases(ctx);
     table.requirements = mir_runtime_empty_requirements(ctx);
     table.compatibility_decisions = mir_runtime_empty_compatibility(ctx);
     table.link_plans = mir_runtime_empty_link_plans(ctx);
@@ -719,6 +778,7 @@ func mir_runtime_table_with_package(table: MirRuntimeBoundaryAuthorityTable[ctx]
 func mir_runtime_table_with_package_member(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimePackageMember[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimePackageMember[ctx], ctx] := ctx[table.package_members]; values.Push(value); ctx.Set(table.package_members, values); return table; }
 func mir_runtime_table_with_package_provided_symbol(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimePackageProvidedSymbol[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimePackageProvidedSymbol[ctx], ctx] := ctx[table.package_provided_symbols]; values.Push(value); ctx.Set(table.package_provided_symbols, values); return table; }
 func mir_runtime_table_with_package_system_import(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimePackageSystemImport[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimePackageSystemImport[ctx], ctx] := ctx[table.package_system_imports]; values.Push(value); ctx.Set(table.package_system_imports, values); return table; }
+func mir_runtime_table_with_composition_case(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimeCompositionCase[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimeCompositionCase[ctx], ctx] := ctx[table.composition_cases]; values.Push(value); ctx.Set(table.composition_cases, values); return table; }
 func mir_runtime_table_with_availability_decision(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimeAvailabilityDecision[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimeAvailabilityDecision[ctx], ctx] := ctx[table.availability_decisions]; values.Push(value); ctx.Set(table.availability_decisions, values); return table; }
 func mir_runtime_table_with_thread_contract(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimeThreadContract[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimeThreadContract[ctx], ctx] := ctx[table.thread_contracts]; values.Push(value); ctx.Set(table.thread_contracts, values); return table; }
 func mir_runtime_table_with_io_contract(table: MirRuntimeBoundaryAuthorityTable[ctx], value: MirRuntimeIoContract[ctx], ctx: &Arena) MirRuntimeBoundaryAuthorityTable[ctx] { mut values: std.Vector[MirRuntimeIoContract[ctx], ctx] := ctx[table.io_contracts]; values.Push(value); ctx.Set(table.io_contracts, values); return table; }
@@ -1140,6 +1200,43 @@ func mir_runtime_boundary_authority_table_validate(table: MirRuntimeBoundaryAuth
         if ordered_index != len(plan_components) { return mir_runtime_validation(0, "runtime_package_nondeterministic_component_order", ctx); }
         plan_index = plan_index + 1;
     }
+    // Phase 17.14: cross-feature composition. Every migrated authority must take
+    // part in at least one case, so no capability is proven only in isolation.
+    mut composition_cases: std.Vector[MirRuntimeCompositionCase[ctx], ctx] := ctx[table.composition_cases];
+    mut composition_index := 0;
+    while composition_index < len(composition_cases) {
+        if mir_runtime_field_is_safe(composition_cases[composition_index].case_id) == 0 { return mir_runtime_validation(0, "runtime_composition_malformed_case", ctx); }
+        if mir_runtime_composition_kind_is_valid(composition_cases[composition_index].composition_kind) == 0 { return mir_runtime_validation(0, "runtime_composition_unknown_kind", ctx); }
+        if mir_runtime_sentinel_policy_is_valid(composition_cases[composition_index].sentinel_policy) == 0 { return mir_runtime_validation(0, "runtime_composition_missing_sentinel_policy", ctx); }
+        if mir_runtime_field_is_safe(composition_cases[composition_index].differential_owner) == 0 { return mir_runtime_validation(0, "runtime_composition_no_differential_owner", ctx); }
+        if std.str_eq(composition_cases[composition_index].target_applicability, "all_declared_host_targets_from_phase14_target_authority") == 0 { return mir_runtime_validation(0, "runtime_composition_malformed_case", ctx); }
+        if std.str_eq(composition_cases[composition_index].target_id, table.target_id) == 0 { return mir_runtime_validation(0, "runtime_composition_malformed_case", ctx); }
+
+        // A composition of one is not a composition.
+        mut participants: std.Vector[str, ctx] := ctx[composition_cases[composition_index].participating_authorities];
+        if len(participants) < 2 { return mir_runtime_validation(0, "runtime_composition_not_composed", ctx); }
+
+        mut duplicate_composition_index := composition_index + 1;
+        while duplicate_composition_index < len(composition_cases) {
+            if std.str_eq(composition_cases[composition_index].case_id, composition_cases[duplicate_composition_index].case_id) == 1 ||
+               std.str_eq(composition_cases[composition_index].composition_kind, composition_cases[duplicate_composition_index].composition_kind) == 1
+            {
+                return mir_runtime_validation(0, "runtime_composition_duplicate_case", ctx);
+            }
+            duplicate_composition_index = duplicate_composition_index + 1;
+        }
+        composition_index = composition_index + 1;
+    }
+
+    // If any case is declared, all eight nested combinations must be, and an
+    // incompatible-version case must preserve sentinel output.
+    if len(composition_cases) > 0 {
+        if len(composition_cases) != 8 { return mir_runtime_validation(0, "runtime_composition_incomplete_inventory", ctx); }
+        mut sentinel_case := mir_runtime_composition_case_for(table, "incompatible_version_preserving_sentinel", ctx);
+        if sentinel_case.found == 0 { return mir_runtime_validation(0, "runtime_composition_incomplete_inventory", ctx); }
+        if std.str_eq(sentinel_case.value.sentinel_policy, "sentinel_output_preserved_on_failure") == 0 { return mir_runtime_validation(0, "runtime_composition_missing_sentinel_policy", ctx); }
+    }
+
     // Phase 17.13: availability and compatibility decisions. The order is frozen
     // as a dense ascending sequence, and every decision must complete before the
     // linker, a temporary link output, or an output replacement could exist.
@@ -1742,6 +1839,15 @@ func mir_serialize_runtime_boundary_authority_table_for_request(table: MirRuntim
     while index < len(system_imports) {
         output = mir_runtime_append_field(output, "runtime_package_system_import_id", system_imports[index].import_id, ctx);
         output = mir_runtime_append_field(output, "runtime_package_system_import_spelling", system_imports[index].external_spelling, ctx);
+        index = index + 1;
+    }
+    mut composition_cases: std.Vector[MirRuntimeCompositionCase[ctx], ctx] := ctx[table.composition_cases];
+    index = 0;
+    while index < len(composition_cases) {
+        output = mir_runtime_append_field(output, "runtime_composition_case_id", composition_cases[index].case_id, ctx);
+        output = mir_runtime_append_field(output, "runtime_composition_kind", composition_cases[index].composition_kind, ctx);
+        output = mir_runtime_append_field(output, "runtime_composition_owner", composition_cases[index].differential_owner, ctx);
+        output = mir_runtime_append_field(output, "runtime_composition_sentinel", composition_cases[index].sentinel_policy, ctx);
         index = index + 1;
     }
     mut availability_decisions: std.Vector[MirRuntimeAvailabilityDecision[ctx], ctx] := ctx[table.availability_decisions];

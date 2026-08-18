@@ -180,6 +180,8 @@ guard-pr-fast-ci-surface:
       'just guard-cranelift-phase17-thread-runtime-contract'
       'Phase 17 runtime availability and diagnostics'
       'just guard-cranelift-phase17-availability-contract'
+      'Phase 17 cross-feature runtime composition'
+      'just guard-cranelift-phase17-composition-contract'
       'phase11-family:'
       'phase11_families:'
       'matrix.family'
@@ -15920,8 +15922,27 @@ guard-cranelift-phase17-opening-contract:
       fi
     done < <(python3 "$opening_validator" families)
 
-    if rg -n -e 'phase17-family:' -e 'guard-cranelift-phase17-.*(parity|differential|complete-runtime)' -e 'matrix\.phase17' "$pr_workflow" "$heavy_workflow" "$historical_workflow" >/dev/null; then
-      echo "Phase 17 opening must not add Phase 17 Level 2 or Level 3 workflow rows."
+    if rg -n -e 'phase17-family:' -e 'guard-cranelift-phase17-.*(parity|differential|complete-runtime)' -e 'matrix\.phase17' "$pr_workflow" "$heavy_workflow" >/dev/null; then
+      echo "Phase 17 opening must not place Phase 17 Level 2 or Level 3 rows in PR Fast or Heavy Guards."
+      exit 1
+    fi
+    historical_phase17_rows="$(
+      (rg -n \
+          -e 'phase17-family:' \
+          -e 'guard-cranelift-phase17-.*(parity|differential|complete-runtime)' \
+          -e 'matrix\.phase17' \
+          "$historical_workflow" || true) |
+        rg -v -F 'just guard-cranelift-phase17-complete-runtime-evidence' || true
+    )"
+    if [ -n "$historical_phase17_rows" ]; then
+      echo "Cranelift Historical Full contains an unowned Phase 17 workflow row."
+      printf '%s\n' "$historical_phase17_rows"
+      exit 1
+    fi
+    expected_complete_runtime_rows="$(python3 -c 'import json; r=json.load(open("scripts/cranelift_feature_registry.json")); print(1 if "phase17_composition_authority" in r else 0)')"
+    actual_complete_runtime_rows="$(rg -n -F 'just guard-cranelift-phase17-complete-runtime-evidence' "$historical_workflow" | wc -l | tr -d ' ')"
+    if [ "$actual_complete_runtime_rows" != "$expected_complete_runtime_rows" ]; then
+      echo "Phase 17 complete runtime evidence Level 3 ownership drifted."
       exit 1
     fi
     if rg -n -i -e 'sha-?256' -e 'sha256sum' "$registry" "$review" "$canonical_summary" >/dev/null; then
@@ -15990,6 +16011,7 @@ guard-cranelift-contract-fast:
     just guard-cranelift-phase17-io-runtime-contract
     just guard-cranelift-phase17-thread-runtime-contract
     just guard-cranelift-phase17-availability-contract
+    just guard-cranelift-phase17-composition-contract
 
 guard-cranelift-phase17-runtime-authority-contract:
     #!/usr/bin/env bash
@@ -16197,6 +16219,39 @@ guard-cranelift-phase17-availability-parity:
       grep -F $'guard-cranelift-phase17-availability-parity\t2\t' >/dev/null
     just guard-cranelift-phase17-availability-contract
     bash scripts/phase17_availability_parity.sh
+
+guard-cranelift-phase17-composition-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 17.14 cross-feature runtime composition..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase17-composition-contract |
+      grep -F $'guard-cranelift-phase17-composition-contract\t1\t' >/dev/null
+    bash scripts/guard-cranelift-phase17-composition-contract.sh
+
+guard-cranelift-phase17-composition-differential:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 17.14 cross-feature composition differential..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase17-composition-differential |
+      grep -F $'guard-cranelift-phase17-composition-differential\t2\t' >/dev/null
+    just guard-cranelift-phase17-composition-contract
+    bash scripts/phase17_composition_differential.sh
+
+guard-cranelift-phase17-complete-runtime-evidence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🕰️ Running Phase 17.14 complete registry-derived runtime evidence..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase17-complete-runtime-evidence |
+      grep -F $'guard-cranelift-phase17-complete-runtime-evidence\t3\t' >/dev/null
+    while IFS= read -r guard; do
+      [ -n "$guard" ] || continue
+      just "$guard"
+    done < <(python3 scripts/phase17_composition.py individual-guards)
+    just guard-cranelift-phase17-composition-differential
+    echo "guard-cranelift-phase17-complete-runtime-evidence: ok (Level 3)"
 
 guard-cranelift-phase16-abi-authority-contract:
     #!/usr/bin/env bash
