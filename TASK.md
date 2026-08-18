@@ -86,7 +86,7 @@ If more than 100 runs exist, use the paginated Actions API and apply the same ex
 - [x] Patch 17.13 — Runtime Availability, Compatibility, and Diagnostic Enforcement — DONE
 - [x] Patch 17.14 — Cross-Feature Runtime Composition and Complete Differential — DONE
 - [x] Patch 17.15 — Deferred Residue and Runtime-Coverage Audit — DONE
-- [ ] Patch 17.16 — Phase 17 Closure
+- [x] Patch 17.16 — Phase 17 Closure — DONE
 
 ## Immutable Phase 16 Completion Record
 

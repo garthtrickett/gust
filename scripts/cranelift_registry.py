@@ -37,6 +37,7 @@ TOP_FIELDS = {
     "phase17_thread_runtime_authority",
     "phase17_availability_authority",
     "phase17_composition_authority",
+    "phase17_closure",
     "phase17_deferred_residue_audit",
     "phase16_deferred_residue_audit",
     "phase16_closure",
@@ -10851,6 +10852,27 @@ def phase17_availability_authority_summary_lines(registry):
     ]
 
 
+def phase17_closure_summary_lines(registry):
+    closure = registry["phase17_closure"]
+    return [
+        "## Phase 17 closure",
+        "",
+        f"- Closure version: `{closure['version']}`",
+        f"- Status: `{closure['status']}`",
+        f"- Opening rows disposed: `{closure['opening_entry_count']}`",
+        f"- Inventoried helpers disposed: `{closure['inventoried_helper_count']}`",
+        f"- Retained C components with a named destination: `{closure['retained_component_count']}`",
+        f"- Narrow future-phase deferrals: `{closure['narrow_deferred_row_count']}`",
+        "",
+        closure["closure_wording"],
+        "",
+        "The closure is scoped to the declared inventory. MIR-to-C remains the default differential oracle and is not part of the explicit Cranelift link path. This closure explicitly does not claim:",
+        "",
+        *(f"- `{claim}`" for claim in closure["non_claims"]),
+        "",
+    ]
+
+
 def phase17_deferred_residue_audit_summary_lines(registry):
     audit = registry["phase17_deferred_residue_audit"]
     helpers = audit["helper_dispositions"]
@@ -10962,6 +10984,7 @@ def render(registry):
         *phase17_availability_authority_summary_lines(registry),
         *phase17_composition_authority_summary_lines(registry),
         *phase17_deferred_residue_audit_summary_lines(registry),
+        *phase17_closure_summary_lines(registry),
         "## Registry entries", "",
         "| ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |",
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",

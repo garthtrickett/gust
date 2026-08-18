@@ -181,8 +181,8 @@ guard-pr-fast-ci-surface:
       'just guard-cranelift-phase17-thread-runtime-contract'
       'Phase 17 runtime availability and diagnostics'
       'just guard-cranelift-phase17-availability-contract'
-      'Phase 17 deferred residue and runtime coverage'
-      'just guard-cranelift-phase17-deferred-residue-audit'
+      'Phase 17 native runtime boundary closure'
+      'just guard-cranelift-phase17-close'
       'Phase 17 cross-feature runtime composition'
       'just guard-cranelift-phase17-composition-contract'
       'phase11-family:'
@@ -16029,7 +16029,7 @@ guard-cranelift-contract-fast:
     just guard-cranelift-phase17-thread-runtime-contract
     just guard-cranelift-phase17-availability-contract
     just guard-cranelift-phase17-composition-contract
-    just guard-cranelift-phase17-deferred-residue-audit
+    just guard-cranelift-phase17-close
 
 guard-cranelift-phase17-runtime-authority-contract:
     #!/usr/bin/env bash
@@ -16543,6 +16543,42 @@ guard-cranelift-phase16-close:
     python3 scripts/phase16_abi_composition.py --check
     python3 scripts/phase16_deferred_residue_audit.py --check
     python3 scripts/phase16_close.py --check
+
+guard-cranelift-phase17-close:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Closing Phase 17 native runtime boundary..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase17-close | grep -F $'guard-cranelift-phase17-close\t1\t' >/dev/null
+    python3 scripts/phase16_close.py --check
+    just guard-cranelift-phase17-opening-contract
+    just guard-cranelift-registry-schema
+    just guard-cranelift-registry-projection
+    just guard-cranelift-phase14-layout-authority-contract
+    just guard-cranelift-phase15-resource-authority-contract
+    just guard-cranelift-phase16-abi-authority-contract
+    just guard-cranelift-phase17-runtime-authority-contract
+    just guard-cranelift-phase17-runtime-symbol-version-contract
+    just guard-cranelift-phase17-runtime-requirement-contract
+    just guard-cranelift-phase17-runtime-package-contract
+    just guard-cranelift-phase17-runtime-import-contract
+    just guard-cranelift-phase17-rust-runtime-contract
+    just guard-cranelift-phase17-retained-c-runtime-contract
+    just guard-cranelift-phase17-gust-runtime-contract
+    just guard-cranelift-phase17-shim-elimination-contract
+    just guard-cranelift-phase17-memory-runtime-contract
+    just guard-cranelift-phase17-io-runtime-contract
+    just guard-cranelift-phase17-thread-runtime-contract
+    just guard-cranelift-phase17-availability-contract
+    just guard-cranelift-phase17-composition-contract
+    just guard-cranelift-phase17-deferred-residue-audit
+    just guard-cranelift-ci-family-projection
+    PHASE11_ROUTE_ARCHITECTURE_SKIP_DYNAMIC=1 just guard-cranelift-route-architecture-contract
+    just guard-cranelift-manifest-architecture-contract
+    python3 scripts/cranelift_test_levels.py check-pr-workflow
+    python3 scripts/cranelift_test_levels.py check-heavy-workflow
+    python3 scripts/cranelift_test_levels.py check-historical-workflow
+    python3 scripts/phase17_close.py --check
 
 guard-cranelift-historical-full:
     #!/usr/bin/env bash

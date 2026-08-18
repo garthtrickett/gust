@@ -1,0 +1,27 @@
+Patch 17.16 — Phase 17 Closure
+
+closure	every Phase 17 opening row has a final disposition	opening_dispositions equals the opening snapshot	Level 1
+closure	every inventoried helper terminates exactly once	deferred residue audit helper join	Level 1
+closure	closure totals are registry-derived	derived counts compared against the closure block	Level 1
+closure	closure wording states its scope limit	declared inventory, no shims, future-phase deferrals	Level 1
+closure	closure wording cannot overclaim	forbidden claim phrases rejected	Level 1
+authority	every required registry authority exists	required_authorities resolved in the registry	Level 1
+authority	the compiler runtime authority module exists	compiler/mir_runtime_boundary_authority.gst	Level 1
+ownership	Phase 9G retains object, link, cleanup, and publication	artifact_policy plus justfile phase9g close	Level 1
+ownership	MIR-to-C remains the default differential oracle	oracle_policy	Level 1
+ownership	explicit Cranelift cannot fall back to MIR-to-C	fallback_policy	Level 1
+ownership	the worker consumes only validated compiler-produced data	worker_policy	Level 1
+ownership	unsupported cases stop at the declared early stage	failure_policy	Level 1
+ownership	incompatible packages stop before link and output replacement	availability_policy	Level 1
+wiring	PR Fast invokes the closure guard exactly once	pr-fast workflow occurrence count	Level 1
+wiring	PR Fast no longer invokes the superseded 17.15 owner	pr-fast workflow absence check	Level 1
+wiring	closure introduces no matrix family	pr-fast matrix absence check	Level 1
+wiring	Historical Full solely owns complete runtime evidence	historical workflow occurrence count	Level 1
+wiring	Historical Full remains separately runnable	workflow_dispatch present	Level 1
+wiring	Level 1 closure mapping is complete	test level mapping for required Level 1 guards	Level 1
+wiring	Level 2 focused runtime mapping is complete	test level mapping for required Level 2 guards	Level 1
+wiring	complete runtime evidence stays Level 3	test level mapping	Level 1
+scope	the closure guard does not replay Level 2 evidence	forbidden replay token scan of the recipe	Level 1
+scope	the closure guard does not replay Level 3 evidence	forbidden replay token scan of the recipe	Level 1
+scope	the closure guard does not build or run native artifacts	forbidden cargo, make, and gust tokens	Level 1
+scope	Phase 17 task list is fully complete	TASK.md patch 17.0 through 17.16 marked DONE	Level 1
