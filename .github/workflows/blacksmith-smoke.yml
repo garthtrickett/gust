@@ -6,6 +6,7 @@ on:
 jobs:
   smoke:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - run: echo "picked up by blacksmith"
       - run: uname -a

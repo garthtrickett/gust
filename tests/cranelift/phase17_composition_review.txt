@@ -1,0 +1,69 @@
+Phase 17.14 — Cross-Feature Runtime Composition and Complete Differential
+guard: guard-cranelift-phase17-composition-contract
+differential_guard: guard-cranelift-phase17-composition-differential
+test_level: level1
+inventory_policy: the_differential_inventory_is_derived_from_canonical_registry_ownership_not_a_hand_written_list
+coverage_policy: every_phase17_authority_with_migrated_rows_participates_in_at_least_one_composition_case
+authorities_covered: 13
+
+contract counts:
+  boundary: 1
+  composition_kind: 8
+  policy: 5
+  query: 2
+  rejection: 6
+  semantic_type: 1
+  sentinel_policy: 2
+
+nested combinations:
+  allocation_then_string_formatting_and_output	case_cannot_fail_no_output_to_preserve
+    participant	phase17_runtime_authority
+    participant	phase17_memory_runtime_authority
+    participant	phase17_io_runtime_authority
+    owner	compiler_memory_and_io_differential_owner
+  resource_bearing_aggregate_across_runtime_call	sentinel_output_preserved_on_failure
+    participant	phase17_runtime_requirement_authority
+    participant	phase17_io_runtime_authority
+    participant	phase17_runtime_package_authority
+    owner	compiler_requirement_and_resource_differential_owner
+  directory_acquire_branch_early_return_cleanup	sentinel_output_preserved_on_failure
+    participant	phase17_io_runtime_authority
+    participant	phase17_retained_c_authority
+    owner	compiler_resource_cleanup_differential_owner
+  gust_runtime_helper_calling_stable_import	case_cannot_fail_no_output_to_preserve
+    participant	phase17_gust_runtime_authority
+    participant	phase17_runtime_import_authority
+    participant	phase17_runtime_symbol_authority
+    owner	compiler_gust_and_import_differential_owner
+  rust_and_retained_c_in_one_package	sentinel_output_preserved_on_failure
+    participant	phase17_rust_runtime_authority
+    participant	phase17_retained_c_authority
+    participant	phase17_runtime_package_authority
+    owner	compiler_package_composition_differential_owner
+  thread_helper_using_resource_cleanup	sentinel_output_preserved_on_failure
+    participant	phase17_thread_runtime_authority
+    participant	phase17_io_runtime_authority
+    owner	compiler_threading_and_cleanup_differential_owner
+  compatible_package_from_target_candidates	sentinel_output_preserved_on_failure
+    participant	phase17_runtime_package_authority
+    participant	phase17_availability_authority
+    owner	compiler_package_selection_differential_owner
+  incompatible_version_preserving_sentinel	sentinel_output_preserved_on_failure
+    participant	phase17_availability_authority
+    participant	phase17_runtime_symbol_authority
+    participant	phase17_shim_elimination_authority
+    owner	compiler_availability_failure_differential_owner
+
+rejection classes:
+  runtime_composition_unknown_kind
+  runtime_composition_not_composed
+  runtime_composition_no_differential_owner
+  runtime_composition_missing_sentinel_policy
+  runtime_composition_duplicate_case
+  runtime_composition_incomplete_inventory
+
+exit gate:
+  migrated Phase 17 capabilities compose rather than being proven only in isolation
+  the differential inventory is derived from canonical registry ownership
+  the explicit Cranelift link plan contains no generated C shim artifact
+  deferred residue and runtime-coverage audit remains in Patch 17.15

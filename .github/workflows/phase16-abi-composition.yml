@@ -9,6 +9,7 @@ on:
 jobs:
   contract:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
@@ -33,7 +34,7 @@ jobs:
           key: cargo-${{ runner.os }}-${{ github.workflow }}-${{ hashFiles('compiler/experiments/cranelift/Cargo.lock') }}
           restore-keys: |
             cargo-${{ runner.os }}-${{ github.workflow }}-
-      - run: sudo apt-get update && sudo apt-get install -y build-essential curl ripgrep
+      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
       - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - run: make gust
       - run: just guard-cranelift-phase16-composition-differential

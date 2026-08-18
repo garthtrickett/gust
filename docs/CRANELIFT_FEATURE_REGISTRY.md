@@ -468,6 +468,15 @@ Patch 17.12 classifies and migrates the bounded threading and synchronization he
 
 Patch 17.13 validates runtime package availability and compatibility before linking. The eight-step decision order is frozen and dense, so a reordered or partial sequence is rejected rather than silently accepted. Every decision completes after target selection and before linker invocation, temporary link output creation, or output replacement, and the worker validates supplied decisions without inventing replacement packages or fallback helpers.
 
+## Phase 17 cross-feature composition authority
+
+- Authority version: `phase17_composition_authority_v1`
+- Status: `ready_for_patch17_15`
+- Nested combinations: `8`
+- Authorities covered by composition: `13`
+
+Patch 17.14 proves the migrated Phase 17 capabilities compose. The differential inventory is derived from canonical registry ownership rather than a hand-written list, and every Phase 17 authority with migrated rows must participate in at least one composition case, so no capability is proven in isolation and then never combined. The explicit Cranelift link plan contains no generated C shim artifact, and the incompatible-version case preserves sentinel output on failure.
+
 ## Registry entries
 
 | ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |

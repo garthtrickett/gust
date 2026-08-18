@@ -1,48 +1,48 @@
-name: Cranelift Phase 17 IO Runtime
+name: Cranelift Phase 17 Composition
 
 on:
   pull_request:
     paths:
       - 'compiler/mir_runtime_boundary_authority.gst'
-      - 'compiler/mir_io_runtime_request.gst'
-      - 'compiler/mir_io_runtime_smoke_test_entry.gst'
-      - 'compiler/experiments/cranelift/src/io_runtime.rs'
+      - 'compiler/mir_composition_request.gst'
+      - 'compiler/mir_composition_smoke_test_entry.gst'
+      - 'compiler/experiments/cranelift/src/composition.rs'
       - 'compiler/experiments/cranelift/src/main.rs'
-      - 'compiler/mir_io_runtime_request.gst'
+      - 'compiler/mir_composition_request.gst'
       - 'scripts/cranelift_feature_registry.json'
       - 'scripts/cranelift_feature_registry.schema.json'
       - 'scripts/cranelift_registry.py'
-      - 'scripts/phase17_io_runtime.py'
-      - 'scripts/phase17_io_runtime_parity.sh'
-      - 'scripts/guard-cranelift-phase17-io-runtime-contract.sh'
-      - 'tests/cranelift/phase17_io_runtime_contract.tsv'
-      - 'tests/cranelift/phase17_io_runtime_review.txt'
-      - '.github/workflows/phase17-io-runtime.yml'
+      - 'scripts/phase17_composition.py'
+      - 'scripts/phase17_composition_differential.sh'
+      - 'scripts/guard-cranelift-phase17-composition-contract.sh'
+      - 'tests/cranelift/phase17_composition_contract.tsv'
+      - 'tests/cranelift/phase17_composition_review.txt'
+      - '.github/workflows/phase17-composition.yml'
       - 'TASK.md'
   push:
     branches: [main]
     paths:
       - 'compiler/mir_runtime_boundary_authority.gst'
-      - 'compiler/mir_io_runtime_request.gst'
-      - 'compiler/mir_io_runtime_request.gst'
-      - 'scripts/phase17_io_runtime.py'
-      - 'scripts/phase17_io_runtime_parity.sh'
-      - 'tests/cranelift/phase17_io_runtime_contract.tsv'
-      - 'tests/cranelift/phase17_io_runtime_review.txt'
+      - 'compiler/mir_composition_request.gst'
+      - 'compiler/mir_composition_request.gst'
+      - 'scripts/phase17_composition.py'
+      - 'scripts/phase17_composition_differential.sh'
+      - 'tests/cranelift/phase17_composition_contract.tsv'
+      - 'tests/cranelift/phase17_composition_review.txt'
 
 jobs:
-  guard-cranelift-phase17-io-runtime-contract:
-    name: Phase 17.11 io runtime contract (Level 1)
+  guard-cranelift-phase17-composition-contract:
+    name: Phase 17.14 composition contract (Level 1)
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
       - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-      - name: guard-cranelift-phase17-io-runtime-contract
-        run: python3 scripts/phase17_io_runtime.py --check
+      - name: guard-cranelift-phase17-composition-contract
+        run: python3 scripts/phase17_composition.py --check
 
-  guard-cranelift-phase17-io-runtime-parity:
-    name: Phase 17.11 io runtime parity (Level 2)
+  guard-cranelift-phase17-composition-differential:
+    name: Phase 17.14 composition differential (Level 2)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -65,14 +65,14 @@ jobs:
           restore-keys: |
             cargo-${{ runner.os }}-${{ github.workflow }}-
       - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-      - name: guard-cranelift-phase17-io-runtime-parity
-        run: just guard-cranelift-phase17-io-runtime-parity
+      - name: guard-cranelift-phase17-composition-differential
+        run: just guard-cranelift-phase17-composition-differential
       - if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: phase17-io-runtime-diagnostics
+          name: phase17-composition-diagnostics
           if-no-files-found: ignore
           path: |
             to.log
             build/gust-build.log
-            build/guards/phase17_io_runtime/
+            build/guards/phase17_composition/

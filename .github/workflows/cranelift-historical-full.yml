@@ -17,6 +17,7 @@ jobs:
        github.actor == vars.CODEX_GITHUB_ACTOR)
     name: Project declared Phase 14 targets
     runs-on: ubuntu-latest
+    timeout-minutes: 180
     outputs:
       phase14_targets: ${{ steps.phase14_targets.outputs.matrix }}
     steps:
@@ -30,6 +31,7 @@ jobs:
   historical-full:
     name: Level 3 full history
     runs-on: ubuntu-latest
+    timeout-minutes: 180
     needs: inventory
     steps:
       - name: Checkout
@@ -52,8 +54,7 @@ jobs:
             cargo-${{ runner.os }}-${{ github.workflow }}-
       - name: Install system dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential curl ripgrep gcc clang
+          bash scripts/install-native-deps-ci.sh build-essential curl ripgrep gcc clang
 
       - name: Install just
         run: |
@@ -68,10 +69,12 @@ jobs:
           PHASE14_HISTORICAL_EXTERNAL_MATRIX=1 just guard-cranelift-historical-full
           just guard-cranelift-phase15-complete-resource-evidence
           just guard-cranelift-phase16-complete-abi-evidence
+          just guard-cranelift-phase17-complete-runtime-evidence
 
   phase14-target:
     name: Phase 14 target / ${{ matrix.target }}
     runs-on: ubuntu-latest
+    timeout-minutes: 180
     needs: inventory
     strategy:
       fail-fast: false
@@ -83,8 +86,7 @@ jobs:
 
       - name: Install system dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential curl ripgrep gcc clang
+          bash scripts/install-native-deps-ci.sh build-essential curl ripgrep gcc clang
 
       - name: Install just
         run: |
@@ -102,6 +104,7 @@ jobs:
   final:
     name: Level 3 declared-target completion
     runs-on: ubuntu-latest
+    timeout-minutes: 180
     needs: [historical-full, phase14-target]
     steps:
       - name: Confirm full history and target matrix
