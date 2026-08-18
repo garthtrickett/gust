@@ -70,8 +70,8 @@ If more than 100 runs exist, use the paginated Actions API and apply the same ex
 
 ## Status
 
-- [ ] Patch 18.0 — Opening Inventory and Phase 17 Residual Rebase
-- [ ] Patch 18.1 — Compiler-Owned Target Authority and Declared Target Triples
+- [x] Patch 18.0 — Opening Inventory and Phase 17 Residual Rebase — DONE
+- [x] Patch 18.1 — Compiler-Owned Target Authority and Declared Target Triples — DONE
 - [ ] Patch 18.2 — Complete Target Support Tuple and Support Decisions
 - [ ] Patch 18.3 — Object Format, Section, and Symbol Binding Authority
 - [ ] Patch 18.4 — Relocation Model and Validation

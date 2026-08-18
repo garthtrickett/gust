@@ -204,6 +204,9 @@ jobs:
       - name: Phase 18 target object and linker opening
         run: just guard-cranelift-phase18-opening-contract
 
+      - name: Phase 18 compiler-owned target authority
+        run: just guard-cranelift-phase18-target-authority-contract
+
       - name: Phase 17 cross-feature runtime composition
         run: just guard-cranelift-phase17-composition-contract
 

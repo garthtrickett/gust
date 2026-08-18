@@ -1,0 +1,19 @@
+kind	requirement	evidence	level
+authority	exactly one compiler module owns target identity	compiler/mir_target_authority.gst semantic types and query functions	1
+authority	the authority module declares its identity and selection policies	module token scan	1
+vocabulary	every declared triple is registry-owned	declared triples validated against the Phase 17 package authority	1
+vocabulary	no duplicate declared target id or triple spelling	uniqueness check over declared triples	1
+vocabulary	a malformed triple is rejected	triple component count and architecture agreement	1
+vocabulary	the declared default is inside the vocabulary	default target membership check	1
+layout	pointer width agrees with the Phase 14 target layout authority	ptr_size parsed from the registry-owned target id	1
+layout	endianness agrees with the Phase 14 target layout authority	endian parsed from the registry-owned target id	1
+layout	the named layout authority version exists	compared against phase14_layout_authority version	1
+selection	target selection is explicit or a declared default	selection mode vocabulary is frozen to two modes	1
+selection	an explicit target never consults the host	mir_target_selection_consulted_host and the host probe ban	1
+bans	no backend owns target selection	hard ban inventory	1
+bans	a native ISA builder is not a target authority	hard ban inventory	1
+bans	no target is inferred from a file extension or output probe	hard ban inventory	1
+rejection	unknown, malformed, ambiguous, and duplicate triples are rejected	rejection class inventory	1
+rejection	a target layout disagreement is rejected	rejection class inventory	1
+rejection	a missing target identity in the request is rejected	rejection class inventory	1
+traceability	the native ISA host assumption is owned by this row	Patch 18.0 host assumption ownership	1

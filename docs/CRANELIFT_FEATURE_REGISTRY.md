@@ -534,6 +534,19 @@ The host assumption inventory names real assumptions rather than planned ones, a
 
 Phase 18 inherits residuals from two parents: Phase 16 rows that Phase 17 reassigned forward, and Phase 17's own narrow deferred rows. Most are function ABI or runtime capability work rather than target, object, or linker work, so they are reassigned onward rather than selected. Three rows genuinely contain both, and are split: selecting the SysV and AArch64 ABIs for declared targets, and choosing static or dynamic runtime linking, are Phase 18 work, while complete aggregate classification, the complete procedure call standard, and dynamic library loading are not.
 
+## Phase 18 compiler-owned target authority
+
+- Authority version: `phase18_compiler_owned_target_authority_v1`
+- Status: `ready_for_patch18_2`
+- Declared triples: `5`
+- Architectures: `aarch64`, `i686`, `x86_64`
+- Operating systems: `darwin`, `linux`
+- Declared default: `x86_64-unknown-linux-gnu`
+
+Patch 18.1 makes target identity a compiler-owned decision. A target is selected explicitly or from a declared default, and an explicitly requested target never consults the host. Declaring a triple is not enough to make a target supported; that requires the complete tuple proven in Patch 18.2 and after.
+
+The vocabulary is registry-derived rather than hand-written: a triple may be declared only if the Phase 17 runtime package authority already owns it. Pointer width and endianness are not restated but checked, by parsing the layout fields out of the registry-owned target id, so a declared triple cannot disagree with the Phase 14 target layout authority. The worker performs the same derivation independently and the two witnesses are compared byte for byte, so an identity that merely claims agreement cannot launder that claim into evidence.
+
 ## Registry entries
 
 | ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |
