@@ -24,12 +24,12 @@ jobs:
       vars.CODEX_GITHUB_ACTOR != '' &&
       github.actor == vars.CODEX_GITHUB_ACTOR)
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
       - name: Install system dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential curl ripgrep
+          bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
       - name: Install just
         run: |
           bash scripts/install-just-ci.sh "$HOME/.local/bin"
@@ -59,6 +59,7 @@ jobs:
   guard:
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
@@ -100,8 +101,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install system dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential curl ripgrep
+          bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
       - name: Install just
         run: |
           bash scripts/install-just-ci.sh "$HOME/.local/bin"
@@ -120,6 +120,7 @@ jobs:
   phase9g-link-driver:
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
@@ -134,8 +135,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install Phase 9G link-driver dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential curl ripgrep gcc clang
+          bash scripts/install-native-deps-ci.sh build-essential curl ripgrep gcc clang
       - name: Install just
         run: |
           bash scripts/install-just-ci.sh "$HOME/.local/bin"
@@ -160,12 +160,12 @@ jobs:
   final:
     needs: [guard, phase9g-link-driver]
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
       - name: Install system dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential curl ripgrep
+          bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
       - name: Install just
         run: |
           bash scripts/install-just-ci.sh "$HOME/.local/bin"

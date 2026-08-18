@@ -16,6 +16,7 @@ jobs:
   trusted-actor:
     name: Codex / Trusted actor
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - name: Verify Codex actor and branch
         env:

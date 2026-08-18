@@ -87,12 +87,13 @@ guard-pr-fast-ci-surface:
     family_runner="scripts/cranelift_ci_family.py"
     level_runner="scripts/cranelift_test_levels.py"
     just_installer="scripts/install-just-ci.sh"
+    native_deps_installer="scripts/install-native-deps-ci.sh"
     for required_file in \
       "$workflow" "$family_runner" "$level_runner" \
       scripts/cranelift_test_levels.json \
       .github/workflows/heavy-guards.yml \
       .github/workflows/cranelift-historical-full.yml \
-      "$just_installer"
+      "$just_installer" "$native_deps_installer"
     do
       if [ ! -f "$required_file" ] || [ -L "$required_file" ]; then
         echo "Missing regular PR fast CI input: $required_file"
@@ -515,8 +516,10 @@ guard-cloud-heavy-ci-surface:
     family_runner="scripts/cranelift_ci_family.py"
     level_runner="scripts/cranelift_test_levels.py"
     just_installer="scripts/install-just-ci.sh"
+    native_deps_installer="scripts/install-native-deps-ci.sh"
     for required_file in \
-      "$workflow" "$family_runner" "$level_runner" "$just_installer"
+      "$workflow" "$family_runner" "$level_runner" "$just_installer" \
+      "$native_deps_installer"
     do
       if [ ! -f "$required_file" ] || [ -L "$required_file" ]; then
         echo "Missing regular Heavy CI input: $required_file"
@@ -653,13 +656,25 @@ guard-cloud-heavy-ci-surface:
     rg -n -F 'build/' "$workflow" >/dev/null
     rg -n -F 'chmod +x ./gust' "$workflow" >/dev/null
 
-    rg -n -F 'sudo apt-get install -y build-essential curl ripgrep' "$workflow" >/dev/null
+    rg -n -F 'bash scripts/install-native-deps-ci.sh build-essential curl ripgrep' "$workflow" >/dev/null
     if [ "$(rg -c -F 'bash scripts/install-just-ci.sh "$HOME/.local/bin"' "$workflow")" != "4" ]; then
       echo "Heavy Guards must install pinned just through the retrying repository-owned installer in all four executable jobs."
       exit 1
     fi
     rg -n -x -F 'JUST_CI_VERSION="1.55.1"' "$just_installer" >/dev/null
     rg -n -x -F 'JUST_CI_TARGET="x86_64-unknown-linux-musl"' "$just_installer" >/dev/null
+
+    # The native dependency installer must stay bounded. Without a per-attempt
+    # timeout a degraded Ubuntu mirror blocks until the job is killed, holding
+    # the runner slot and starving every job queued behind it.
+    rg -n -x -F 'NATIVE_DEPS_CI_MAX_ATTEMPTS=3' "$native_deps_installer" >/dev/null
+    rg -n -x -F 'NATIVE_DEPS_CI_UPDATE_TIMEOUT=60' "$native_deps_installer" >/dev/null
+    rg -n -x -F 'NATIVE_DEPS_CI_INSTALL_TIMEOUT=150' "$native_deps_installer" >/dev/null
+    if rg -n -F 'apt-get' .github/workflows/ >/dev/null; then
+      echo "CI workflows must install native dependencies through the bounded repository-owned installer."
+      rg -n -F 'apt-get' .github/workflows/
+      exit 1
+    fi
     rg -n -x -F 'JUST_CI_MAX_ATTEMPTS=5' "$just_installer" >/dev/null
     rg -n -F 'tar -tzf "$archive" just' "$just_installer" >/dev/null
     bash -n "$just_installer"

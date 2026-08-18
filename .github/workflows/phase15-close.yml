@@ -31,6 +31,7 @@ on:
 jobs:
   close:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - name: Cache cargo registry and build outputs
@@ -48,6 +49,6 @@ jobs:
           key: cargo-${{ runner.os }}-${{ github.workflow }}-${{ hashFiles('compiler/experiments/cranelift/Cargo.lock') }}
           restore-keys: |
             cargo-${{ runner.os }}-${{ github.workflow }}-
-      - run: sudo apt-get update && sudo apt-get install -y ripgrep
+      - run: bash scripts/install-native-deps-ci.sh ripgrep
       - run: bash scripts/install-just-ci.sh "$HOME/.local/bin"
       - run: just guard-cranelift-phase15-close
