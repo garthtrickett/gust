@@ -243,10 +243,6 @@ jobs:
         shard:
           - mir-to-c-return-int
           - routed-return-int
-          - migration-return-int
-          - migration-local-binding
-          - migration-if-else
-          - migration-provenance
 
     steps:
       - name: Checkout

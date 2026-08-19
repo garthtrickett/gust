@@ -87,10 +87,14 @@ jobs:
           - phase9c-native-diff-boundary
           - mir-branch
           - migration-surfaces
-          - migration-return-int
-          - migration-local-binding
-          - migration-if-else
-          - migration-provenance
+          - migration-return-int-owned
+          - migration-return-int-routed
+          - migration-local-binding-owned
+          - migration-local-binding-routed
+          - migration-if-else-owned
+          - migration-if-else-routed
+          - migration-provenance-owned
+          - migration-provenance-routed
           - step51-policy
           - step52-registration
           - step52-lifetime-diagnostics

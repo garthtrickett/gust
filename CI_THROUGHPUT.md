@@ -307,9 +307,29 @@ worth a comparable amount.
 
 ## Lever 2 — Gust binary artifact
 
-**Status:** not started
+**Status:** already implemented, discovered 2026-08-19. Not by this document's
+plan — by whoever added `Upload Gust build outputs` to `pr-fast.yml`.
+
+Both large workflows already build `gust` once and share it:
+
+```
+Heavy Guards / migration-if-else:   1s  actions/download-artifact@v4  →  702s guard
+PR Fast     / migration-provenance: 5s  Download Gust build outputs   →  683s shard
+```
+
+The "23 jobs doing a full bootstrap" this lever targeted were those shards. They
+stopped bootstrapping some time ago; the estimate of ~77 min was measured before
+that happened and was never revisited.
+
+**Remaining scope, and it is small.** The ~35 phase-workflow parity jobs still
+bootstrap. Their *entire* guard step is 80 s — `make gust` is ~126 s locally but
+much less on a runner with the Lever 1 cache warm. Extending the artifact to them
+is worth roughly 20–30 min of aggregate runner time and **nothing** in
+wall-clock: they finish at ~100 s while the critical path is ~12 min. Do it for
+cost, not for speed, and only after the levers below.
+
 **Risk:** medium — this is a correctness change wearing a performance costume
-**Target:** the 23 jobs doing a full bootstrap
+**Original target:** the 23 jobs doing a full bootstrap
 
 Build `gust` once, share it to downstream jobs. `pr-fast.yml` already uploads
 `./gust` via `Upload Gust build outputs`, so the pattern exists in the repo; the
@@ -330,9 +350,82 @@ Review this as a correctness change, not a speed change.
 
 ---
 
-## Lever 3 — Job consolidation
+## Lever 3 — Job splitting (was: consolidation)
 
-**Status:** not started
+**Status:** merged 2026-08-19
+**Prize:** PR Fast critical path ~23 min → ~12.5 min
+
+This lever was scoped as *consolidation*: fold the ~86 sub-two-minute jobs into
+fewer matrix entries to reduce job count. That was right at 20 concurrent slots.
+At 40 it is backwards. Short jobs are nearly free; consolidating them *lengthens*
+the critical path, because a wave costs as much as its slowest member. The
+correct move is the opposite.
+
+Measured on PR Fast, 2026-08-19 (wall-clock 03:15:23 → 03:53:31, 38 min):
+
+| | |
+| --- | --- |
+| `build and Level 1 contracts` — everything `needs:` it | **688 s** |
+| ↳ `Build Gust` | 126 s |
+| ↳ 52 Level 1 guards, **sequential in that one job** | 431 s |
+| ↳ `Install guard tools` | 104 s |
+| then the longest shard, `migration-provenance` | **710 s** |
+
+Critical path ≈ 688 + 710 ≈ 23 min. Three changes:
+
+**3a — split the build job. Attempted, reverted, deferred.** The plan was to
+reduce `build` to checkout, install, `make gust`, and upload, moving the 52
+Level 1 contracts into a `level1` matrix of 3 duration-balanced shards. Serial
+prefix **688 s → ~255 s**, the largest single win available.
+
+It does not fit in this pull request. **Fourteen scripts read `pr-fast.yml`**, and
+twelve of them assert that a specific guard is invoked there — for example
+`phase17_close.py:212` requires `run: just guard-cranelift-phase17-close` to
+appear exactly once. Guards living in a dispatcher recipe satisfy none of those
+assertions. A merge simulation against `main` caught all twelve failing; the
+first implementation had updated only `cranelift_test_levels.py` and
+`guard-pr-fast-ci-surface`.
+
+The twelve use three different idioms, and one is a data-driven loop over
+`(path, token)` pairs requiring the literal `run: just <guard>` string in the
+workflow file. That contract cannot be satisfied while the guards live in a
+recipe; it has to be renegotiated deliberately, across all fourteen scripts, as
+its own change.
+
+So 3a is deferred rather than bundled. The prize is unchanged and it remains the
+largest single item in the plan.
+
+**3b — split the migration shards.** Each ran exactly two guards, an
+`owned-*-validation` and a `feature-*-routed-execution`, for ~690 s. Heavy Guards
+now runs them as 8 single-guard shards of ~345 s. Longest shard **727 s → ~345 s**.
+
+**3c — stop running the migration shards twice.** All four were byte-identical
+between `pr-fast.yml` and `heavy-guards.yml` — same two guards each, verified in
+both justfile dispatchers. They were also the four slowest jobs in both, ~46 min
+of exactly duplicated compute per push. They now run in Heavy Guards only, which
+also owns `migration-surfaces` and is the deep-verification path. No PR loses
+coverage: Heavy Guards runs on `pull_request` too.
+
+### Guard contracts were updated, not worked around
+
+Moving 52 guards out of the workflow would have silently voided the checks that
+keep this architecture honest — `check_pr_workflow` counts guard invocations in
+the workflow text, and `require_direct_levels` verifies every directly-invoked
+guard is Level 1 or 2. Guards inside a dispatcher recipe are invisible to both.
+
+So the checks were extended to span the recipe as well as the workflow:
+`scripts/cranelift_test_levels.py` gained `just_recipe_body()`, and
+`guard-pr-fast-ci-surface` now searches workflow-plus-recipe. Sharding still
+cannot drop a contract or smuggle in a guard from another level.
+
+Verified by set comparison before and after: PR Fast's guard set lost exactly the
+7 migration guards intended by 3c and nothing else, and all 7 are present in the
+Heavy Guards dispatcher. Every one of the 50 guard scripts that passes on `main`
+still passes here.
+
+## Lever 3 (original) — Job consolidation
+
+**Status:** superseded by Lever 3 above. Retained for the reasoning.
 **Risk:** high — most likely to fight existing invariants
 **Target:** the 86 sub-2-minute jobs
 
@@ -445,14 +538,21 @@ is worth more than any single item here.
 - [x] **Lever 5 — concurrency groups.** 50 workflows, 3 deliberate exclusions.
 - [ ] **Lever 6a — GitHub Pro.** 20 → 40 concurrent jobs. Account-level purchase;
       no repository change required. Re-measure wave count afterwards.
-- [ ] **Lever 2 — Gust binary artifact.** Largest remaining duration prize
-      (~77 min, 24% of the original baseline). Build `gust` once per SHA, publish
-      as an artifact, consume in the ~23 jobs that currently each spend 202 s
-      bootstrapping. Read **The correctness constraint** first: the forced
-      rebuild in `scripts/run-gust-file.sh:17` must not be defeated by accident.
-- [ ] **Lever 3 — job consolidation.** ~36 min. Fold the ~86 sub-2-minute jobs
-      into fewer matrix entries. This also reduces job *count*, so it helps the
-      ceiling as well as the duration.
+- [x] **Lever 6a — GitHub Pro.** 20 → 40 concurrent jobs.
+- [x] **Lever 2 — Gust binary artifact.** Found already implemented for the two
+      large workflows. Remainder is the ~35 phase parity jobs: ~20–30 min
+      aggregate, zero wall-clock. Deferred as a cost item.
+- [x] **Lever 3b/3c — split the migration shards, stop running them twice.**
+      Heavy Guards longest shard 727 s → ~345 s; ~46 min/push of duplication gone.
+- [ ] **Lever 3a — split PR Fast's build job.** Serial prefix 688 s → ~255 s, the
+      largest single remaining win. Blocked on renegotiating the `pr-fast.yml`
+      guard-invocation contract across the 14 scripts that read it.
+- [ ] **Cut `Install guard tools` (104 s per job).** Now the largest fixed
+      overhead, paid by every one of ~105 jobs. It is an `apt-get` install, which
+      is also the source of every flake in the incident log. Cache the packages,
+      or move to a runner image that ships them.
+- [ ] **Shard `phase11-family`.** With 3a and 3c landed, `phase11-family /
+      pointer-memory` at 502 s is the new critical path in PR Fast.
 - [ ] **Re-measure and update the Changelog.** The estimates above are derived
       from the 2026-08-16 baseline and the 2026-08-19 job census, not from a
       post-change measurement.
@@ -470,6 +570,8 @@ is worth more than any single item here.
 | 2026-08-16 | Noise floor established: two cached PRs differ by +2.4% | — |
 | 2026-08-19 | Job census on PR #64: ~169 jobs/push, ~9 waves | — |
 | 2026-08-19 | Levers 4 and 5 merged; job count −37%, superseded runs auto-cancelled | pending re-measure |
+| 2026-08-19 | Lever 2 found already implemented; estimate was pre-artifact | — |
+| 2026-08-19 | Lever 3 re-scoped from consolidation to splitting, and merged | pending re-measure |
 
 ## Incident log
 

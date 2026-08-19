@@ -56,25 +56,9 @@ guard-pr-fast-shard shard:
       routed-return-int)
         just guard-mir-feature-return-int-routed-execution
         ;;
-      migration-return-int)
-        just guard-mir-owned-return-int-literal-validation
-        just guard-mir-feature-return-int-routed-execution
-        ;;
-      migration-local-binding)
-        just guard-mir-owned-local-binding-read-validation
-        just guard-mir-feature-local-binding-read-routed-execution
-        ;;
-      migration-if-else)
-        just guard-mir-owned-if-else-return-int-validation
-        just guard-mir-feature-if-else-return-int-routed-execution
-        ;;
-      migration-provenance)
-        just guard-mir-owned-local-binding-read-provenance-metadata-validation
-        just guard-mir-feature-local-binding-read-provenance-metadata-routed-execution
-        ;;
       *)
         echo "unknown PR fast shard: {{shard}}"
-        echo "expected one of: mir-to-c-return-int, routed-return-int, migration-return-int, migration-local-binding, migration-if-else, migration-provenance"
+        echo "expected one of: mir-to-c-return-int, routed-return-int"
         exit 1
         ;;
     esac
@@ -421,20 +405,28 @@ guard-cloud-heavy-shard shard:
         just guard-mir-feature-registry-surface
         just guard-mir-ast-to-c-retirement-manifest-surface
         ;;
-      migration-return-int)
+      migration-return-int-owned)
         just guard-mir-owned-return-int-literal-validation
+        ;;
+      migration-return-int-routed)
         just guard-mir-feature-return-int-routed-execution
         ;;
-      migration-local-binding)
+      migration-local-binding-owned)
         just guard-mir-owned-local-binding-read-validation
+        ;;
+      migration-local-binding-routed)
         just guard-mir-feature-local-binding-read-routed-execution
         ;;
-      migration-if-else)
+      migration-if-else-owned)
         just guard-mir-owned-if-else-return-int-validation
+        ;;
+      migration-if-else-routed)
         just guard-mir-feature-if-else-return-int-routed-execution
         ;;
-      migration-provenance)
+      migration-provenance-owned)
         just guard-mir-owned-local-binding-read-provenance-metadata-validation
+        ;;
+      migration-provenance-routed)
         just guard-mir-feature-local-binding-read-provenance-metadata-routed-execution
         ;;
       step51-policy)
@@ -515,7 +507,7 @@ guard-cloud-heavy-shard shard:
         ;;
       *)
         echo "unknown cloud heavy shard: {{shard}}"
-        echo "expected one of: phase9-branch-core-baseline, phase9-branch-core-legacy, phase9-branch-core-mir-basic-scalars, phase9-branch-core-mir-basic-calls, phase9-branch-core-mir-basic-differential, phase9-branch-core-mir-bundles, phase9-branch-core-mir-block-graphs, phase9-branch-compiler-mir-scalars, phase9-branch-compiler-mir-metadata, phase9-branch-compiler-mir-blocks, phase9-branch-translator-scalar, phase9-branch-translator-cfg, phase9-branch-translator-metadata, phase9-branch-translator-imports, phase9c-native-diff-return-local, phase9c-native-diff-cfg, phase9c-native-diff-metadata, phase9c-native-diff-boundary, mir-branch, migration-surfaces, migration-return-int, migration-local-binding, migration-if-else, migration-provenance, step51-policy, step52-registration, step52-lifetime-diagnostics, step52-cleanup-boundary, step52-terminal-states, step52-transfer-defer, step52-directory, runner-surface, parser-raw-casts"
+        echo "expected one of: phase9-branch-core-baseline, phase9-branch-core-legacy, phase9-branch-core-mir-basic-scalars, phase9-branch-core-mir-basic-calls, phase9-branch-core-mir-basic-differential, phase9-branch-core-mir-bundles, phase9-branch-core-mir-block-graphs, phase9-branch-compiler-mir-scalars, phase9-branch-compiler-mir-metadata, phase9-branch-compiler-mir-blocks, phase9-branch-translator-scalar, phase9-branch-translator-cfg, phase9-branch-translator-metadata, phase9-branch-translator-imports, phase9c-native-diff-return-local, phase9c-native-diff-cfg, phase9c-native-diff-metadata, phase9c-native-diff-boundary, mir-branch, migration-surfaces, migration-return-int-owned, migration-return-int-routed, migration-local-binding-owned, migration-local-binding-routed, migration-if-else-owned, migration-if-else-routed, migration-provenance-owned, migration-provenance-routed, step51-policy, step52-registration, step52-lifetime-diagnostics, step52-cleanup-boundary, step52-terminal-states, step52-transfer-defer, step52-directory, runner-surface, parser-raw-casts"
         exit 1
         ;;
     esac
