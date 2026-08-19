@@ -109,6 +109,55 @@ The ruleset also sets `required_review_thread_resolution: true` with
 `required_approving_review_count: 0`, which is what "all review conversations are
 resolved" in the Merge policy refers to.
 
+## Working tree isolation
+
+Two lanes and one checkout do not mix. Work from a dedicated git worktree per
+branch, created outside the repository directory:
+
+```bash
+git worktree add ../gust-<short-name> codex/<branch>
+```
+
+This is not tidiness. A checkout has exactly one HEAD, so if anything else
+switches branches in it, your uncommitted work follows silently onto someone
+else's branch and is one `git add -A` away from being committed there. Git
+refuses to check the same branch out in two worktrees, which turns that failure
+from likely into impossible.
+
+Per-worktree isolation also covers the root volatiles: `gust`, `gust_bootstrap`,
+`gust_program`, `gust_unsafe_program`, `to.log`, and `build/`. Two agents sharing
+a checkout share those binaries, which means one agent's `make` silently decides
+what the other agent's guards actually test.
+
+### What a worktree does not isolate
+
+`/tmp` is shared by every worktree on the machine. Around 70 fixed
+`/tmp/gust-*.request` and `/tmp/gust-*.witness` paths are hard-coded across
+`scripts/` and the `justfile` — `/tmp/gust-phase15-move-state.request`,
+`/tmp/gust-phase16-resource-aggregate-abi.request`, and so on. Two worktrees
+running the same guard family at the same time overwrite each other's fixtures
+and produce a result that belongs to neither run.
+
+A worktree isolates the repository, not the machine. Do not run the same guard
+family concurrently in two worktrees. Where guards must run in parallel, let CI
+provide the parallelism — it has one machine per job.
+
+The `justfile`'s parallel Cranelift suite already creates a worktree per shard
+for this reason: each shard needs its own `to.log`.
+
+### Cleaning up
+
+Remove the worktree when its branch merges:
+
+```bash
+git worktree remove ../gust-<short-name>
+git worktree prune
+```
+
+`git worktree list` accumulates `prunable` entries from earlier phases if this is
+skipped. Beyond the disk cost, it makes the list useless for its most valuable
+purpose — seeing at a glance who is working where.
+
 ## Git authorization
 
 This file is the explicit authorization for `git commit`, `git push`,
