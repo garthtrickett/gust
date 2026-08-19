@@ -192,6 +192,8 @@ guard-pr-fast-ci-surface:
       'just guard-cranelift-phase18-target-diagnostic-contract'
       'Phase 18 symbol and relocation inspection'
       'just guard-cranelift-phase18-object-inspection-contract'
+      'Phase 18 debug information strategy'
+      'just guard-cranelift-phase18-debug-info-contract'
       'Phase 17 cross-feature runtime composition'
       'just guard-cranelift-phase17-composition-contract'
       'phase11-family:'
@@ -15871,6 +15873,25 @@ guard-cranelift-phase18-object-inspection-parity:
     just guard-cranelift-phase18-object-inspection-contract
     bash scripts/phase18_object_inspection_parity.sh
 
+guard-cranelift-phase18-debug-info-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 18.12 debug information parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase18-debug-info-parity |
+      grep -F $'guard-cranelift-phase18-debug-info-parity\t2\t' >/dev/null
+    just guard-cranelift-phase18-debug-info-contract
+    bash scripts/phase18_debug_info_parity.sh
+
+guard-cranelift-phase18-debug-info-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 18.12 debug information strategy..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase18-debug-info-contract | grep -F $'guard-cranelift-phase18-debug-info-contract\t1\t' >/dev/null
+    just guard-cranelift-phase18-object-format-contract
+    python3 scripts/phase18_debug_information.py --check
+
 guard-cranelift-phase18-object-inspection-contract:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -16205,6 +16226,7 @@ guard-cranelift-contract-fast:
     just guard-cranelift-phase18-cross-compilation-contract
     just guard-cranelift-phase18-target-diagnostic-contract
     just guard-cranelift-phase18-object-inspection-contract
+    just guard-cranelift-phase18-debug-info-contract
 
 guard-cranelift-phase17-runtime-authority-contract:
     #!/usr/bin/env bash

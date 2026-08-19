@@ -37,6 +37,7 @@ TOP_FIELDS = {
     "phase17_thread_runtime_authority",
     "phase17_availability_authority",
     "phase17_composition_authority",
+    "phase18_debug_information",
     "phase18_object_inspection",
     "phase18_target_diagnostics",
     "phase18_cross_compilation",
@@ -10863,6 +10864,27 @@ def phase17_availability_authority_summary_lines(registry):
     ]
 
 
+def phase18_debug_information_summary_lines(registry):
+    authority = registry["phase18_debug_information"]
+    plans = authority["debug_plans"]
+    return [
+        "## Phase 18 debug information strategy",
+        "",
+        f"- Authority version: `{authority['version']}`",
+        f"- Status: `{authority['status']}`",
+        f"- Debug plans: `{len(plans)}`",
+        f"- Debug levels: {', '.join(f'`{value}`' for value in authority['debug_levels'])}",
+        f"- Fidelity non-claims: `{len(authority['fidelity_non_claims'])}`",
+        "",
+        "Patch 18.12 declares what debug information the native path emits, for which targets, at which level. The plan is compiler-selected and derived from the object format, and a plan the backend inferred is rejected rather than accepted as a default.",
+        "",
+        "A plan must say both what it emits and what it does not. A plan that states only its inclusions leaves its gaps implicit, and a record kind that is both promised and disclaimed is a contradiction; both are rejections. The vocabulary is deliberately narrow: two levels, three included record kinds, and four record kinds excluded by name.",
+        "",
+        "The fidelity limits are recorded where the capability is defined rather than deferred to the closure. This patch does not claim complete debug information, debugger integration, variable location fidelity, inlined frame reconstruction, or type description completeness, and thinning that inventory is itself a rejection.",
+        "",
+    ]
+
+
 def phase18_object_inspection_summary_lines(registry):
     authority = registry["phase18_object_inspection"]
     object_format = registry["phase18_object_format"]
@@ -11280,6 +11302,7 @@ def render(registry):
         *phase18_cross_compilation_summary_lines(registry),
         *phase18_target_diagnostics_summary_lines(registry),
         *phase18_object_inspection_summary_lines(registry),
+        *phase18_debug_information_summary_lines(registry),
         "## Registry entries", "",
         "| ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |",
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",

@@ -483,3 +483,37 @@ func mir_serialize_object_inspection_request(observation: target.MirObjectObserv
 func mir_object_inspection_mir_to_c_witness(observation: target.MirObjectObservation[ctx], ctx: &Arena) str {
     return mir_object_inspection_body(observation, mir_object_inspection_witness_format(), ctx);
 }
+
+func mir_debug_plan_request_format() str { return "gust.compiler_debug_plan.v1"; }
+func mir_debug_plan_witness_format() str { return "gust.debug_plan_witness.v1"; }
+
+func mir_debug_plan_body(plan: target.MirDebugPlan[ctx], header: str, ctx: &Arena) str {
+    mut validation := target.mir_debug_plan_validate(plan, ctx);
+    if validation.valid == 0 {
+        mut invalid := "format: invalid\nreason: ";
+        invalid = std.Concat(invalid, validation.reason_code);
+        invalid = std.Concat(invalid, "\n");
+        return std.Clone(ctx, invalid);
+    }
+    mut output := "format: ";
+    output = std.Concat(output, header);
+    output = std.Concat(output, "\nauthority: compiler/mir_target_authority.gst\n");
+    mut row := "debug_plan:";
+    row = mir_target_append(row, "target_id", plan.target_id, ctx);
+    row = mir_target_append(row, "debug_format", plan.debug_format, ctx);
+    row = mir_target_append(row, "derived_from", plan.derived_from, ctx);
+    row = mir_target_append(row, "level", plan.debug_level, ctx);
+    row = mir_target_append(row, "included", plan.included_kind, ctx);
+    row = mir_target_append(row, "excluded", plan.excluded_kind, ctx);
+    output = std.Concat(output, row);
+    output = std.Concat(output, "\n");
+    return std.Clone(ctx, output);
+}
+
+func mir_serialize_debug_plan_request(plan: target.MirDebugPlan[ctx], ctx: &Arena) str {
+    return mir_debug_plan_body(plan, mir_debug_plan_request_format(), ctx);
+}
+
+func mir_debug_plan_mir_to_c_witness(plan: target.MirDebugPlan[ctx], ctx: &Arena) str {
+    return mir_debug_plan_body(plan, mir_debug_plan_witness_format(), ctx);
+}

@@ -4371,6 +4371,39 @@
     "scope_policy": "availability_compatibility_and_diagnostics_only_cross_feature_composition_remains_in_patch17_14",
     "next_patch": "17.14"
   },
+  "phase18_debug_information": {
+    "version": "phase18_debug_information_v1",
+    "status": "ready_for_patch18_13",
+    "authority_owner": "compiler/mir_target_authority.gst",
+    "debug_levels": [
+      "none",
+      "line_tables_only"
+    ],
+    "debug_plans": [
+      {"target_id": "target:v1:triple=x86_64-unknown-linux-gnu:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8", "debug_format": "dwarf", "derived_from": "object_format_in_the_phase18_object_format_authority", "debug_level": "line_tables_only", "included_record_kinds": ["compilation_unit", "line_table", "function_range"], "excluded_record_kinds": ["variable_location", "type_description", "inlined_frame", "macro_info"]},
+      {"target_id": "target:v1:triple=aarch64-unknown-linux-gnu:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8", "debug_format": "dwarf", "derived_from": "object_format_in_the_phase18_object_format_authority", "debug_level": "line_tables_only", "included_record_kinds": ["compilation_unit", "line_table", "function_range"], "excluded_record_kinds": ["variable_location", "type_description", "inlined_frame", "macro_info"]},
+      {"target_id": "target:v1:triple=i686-unknown-linux-gnu:endian=little:ptr_size=4:ptr_align=4:i32_align=4:i64_align=4:max_align=4", "debug_format": "dwarf", "derived_from": "object_format_in_the_phase18_object_format_authority", "debug_level": "line_tables_only", "included_record_kinds": ["compilation_unit", "line_table", "function_range"], "excluded_record_kinds": ["variable_location", "type_description", "inlined_frame", "macro_info"]},
+      {"target_id": "target:v1:triple=x86_64-apple-darwin:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8", "debug_format": "dwarf", "derived_from": "object_format_in_the_phase18_object_format_authority", "debug_level": "line_tables_only", "included_record_kinds": ["compilation_unit", "line_table", "function_range"], "excluded_record_kinds": ["variable_location", "type_description", "inlined_frame", "macro_info"]},
+      {"target_id": "target:v1:triple=aarch64-apple-darwin:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8", "debug_format": "dwarf", "derived_from": "object_format_in_the_phase18_object_format_authority", "debug_level": "line_tables_only", "included_record_kinds": ["compilation_unit", "line_table", "function_range"], "excluded_record_kinds": ["variable_location", "type_description", "inlined_frame", "macro_info"]}
+    ],
+    "selection_policy": "the_compiler_selects_the_debug_plan_and_the_backend_never_infers_one",
+    "emission_policy": "only_declared_record_kinds_are_emitted_and_an_undeclared_kind_is_rejected",
+    "fidelity_non_claims": [
+      "complete_debug_information",
+      "debugger_integration",
+      "variable_location_fidelity",
+      "inlined_frame_reconstruction",
+      "type_description_completeness"
+    ],
+    "rejection_classes": [
+      "debug_level_unknown",
+      "debug_record_kind_undeclared",
+      "debug_format_disagrees_with_object_format",
+      "debug_plan_inferred_by_backend",
+      "debug_plan_missing_for_declared_target"
+    ],
+    "next_patch": "18.13"
+  },
   "phase18_object_inspection": {
     "version": "phase18_object_inspection_v1",
     "status": "ready_for_patch18_12",

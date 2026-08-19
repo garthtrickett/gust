@@ -904,3 +904,62 @@ func mir_object_observation_validate(observation: MirObjectObservation[ctx], ctx
     result.reason_code = std.Clone(ctx, "ok");
     return result;
 }
+
+// ---- Patch 18.12: debug information strategy ----
+//
+// The debug plan is compiler-selected and derived from the object format. A
+// plan must say what it emits and what it does not; a record kind cannot be
+// both promised and disclaimed, and a plan that states only its inclusions
+// leaves its gaps implicit.
+
+type MirDebugPlan[ctx] struct {
+    target_id: str,
+    debug_format: str,
+    derived_from: str,
+    debug_level: str,
+    included_kind: str,
+    excluded_kind: str
+}
+
+func mir_debug_level_is_declared(level: str, ctx: &Arena) int {
+    if std.str_eq(level, "none") == 1 { return 1; }
+    if std.str_eq(level, "line_tables_only") == 1 { return 1; }
+    return 0;
+}
+
+func mir_debug_plan_validate(plan: MirDebugPlan[ctx], ctx: &Arena) MirTargetValidation[ctx] {
+    mut result: MirTargetValidation[ctx];
+    result.valid = 0;
+
+    // A plan the backend inferred is not a compiler-selected plan.
+    if std.str_eq(plan.derived_from, "object_format_in_the_phase18_object_format_authority") == 0 {
+        result.reason_code = std.Clone(ctx, "debug_plan_inferred_by_backend");
+        return result;
+    }
+    if mir_debug_level_is_declared(plan.debug_level, ctx) == 0 {
+        result.reason_code = std.Clone(ctx, "debug_level_unknown");
+        return result;
+    }
+    if std.str_eq(plan.debug_format, "dwarf") == 0 {
+        result.reason_code = std.Clone(ctx, "debug_format_disagrees_with_object_format");
+        return result;
+    }
+    if std.str_eq(plan.included_kind, "") == 1 {
+        result.reason_code = std.Clone(ctx, "debug_record_kind_undeclared");
+        return result;
+    }
+    // A plan that says nothing about what it omits leaves its gaps implicit.
+    if std.str_eq(plan.excluded_kind, "") == 1 {
+        result.reason_code = std.Clone(ctx, "debug_record_kind_undeclared");
+        return result;
+    }
+    // A record kind both promised and disclaimed is a contradiction.
+    if std.str_eq(plan.included_kind, plan.excluded_kind) == 1 {
+        result.reason_code = std.Clone(ctx, "debug_record_kind_undeclared");
+        return result;
+    }
+
+    result.valid = 1;
+    result.reason_code = std.Clone(ctx, "ok");
+    return result;
+}

@@ -689,6 +689,20 @@ Each comparison source must be an authority that exists and carries content. A s
 
 Inspection may contradict the compiler plan, which is its purpose, but it may never extend it. An object whose inspected contents disagree with the plan is rejected, and inspection runs after object emission and before linker invocation so a disagreement is caught before anything links.
 
+## Phase 18 debug information strategy
+
+- Authority version: `phase18_debug_information_v1`
+- Status: `ready_for_patch18_13`
+- Debug plans: `5`
+- Debug levels: `none`, `line_tables_only`
+- Fidelity non-claims: `5`
+
+Patch 18.12 declares what debug information the native path emits, for which targets, at which level. The plan is compiler-selected and derived from the object format, and a plan the backend inferred is rejected rather than accepted as a default.
+
+A plan must say both what it emits and what it does not. A plan that states only its inclusions leaves its gaps implicit, and a record kind that is both promised and disclaimed is a contradiction; both are rejections. The vocabulary is deliberately narrow: two levels, three included record kinds, and four record kinds excluded by name.
+
+The fidelity limits are recorded where the capability is defined rather than deferred to the closure. This patch does not claim complete debug information, debugger integration, variable location fidelity, inlined frame reconstruction, or type description completeness, and thinning that inventory is itself a rejection.
+
 ## Registry entries
 
 | ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |

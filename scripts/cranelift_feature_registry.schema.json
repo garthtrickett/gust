@@ -31,6 +31,7 @@
     "phase17_thread_runtime_authority",
     "phase17_availability_authority",
     "phase17_composition_authority",
+    "phase18_debug_information",
     "phase18_object_inspection",
     "phase18_target_diagnostics",
     "phase18_cross_compilation",
@@ -326,6 +327,9 @@
     },
     "phase17_composition_authority": {
       "$ref": "#/$defs/phase17_composition_authority"
+    },
+    "phase18_debug_information": {
+      "$ref": "#/$defs/phase18_debug_information"
     },
     "phase18_object_inspection": {
       "$ref": "#/$defs/phase18_object_inspection"
@@ -900,6 +904,119 @@
         "participating_authorities": {"type": "array", "minItems": 2, "uniqueItems": true, "items": {"type": "string", "pattern": "^phase17_"}},
         "differential_owner": {"type": "string", "minLength": 1},
         "sentinel_policy": {"enum": ["sentinel_output_preserved_on_failure", "case_cannot_fail_no_output_to_preserve"]}
+      }
+    },
+    "phase18_debug_information": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "status",
+        "authority_owner",
+        "debug_levels",
+        "debug_plans",
+        "selection_policy",
+        "emission_policy",
+        "fidelity_non_claims",
+        "rejection_classes",
+        "next_patch"
+      ],
+      "properties": {
+        "version": {
+          "const": "phase18_debug_information_v1"
+        },
+        "status": {
+          "const": "ready_for_patch18_13"
+        },
+        "authority_owner": {
+          "const": "compiler/mir_target_authority.gst"
+        },
+        "debug_levels": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "enum": [
+              "none",
+              "line_tables_only"
+            ]
+          }
+        },
+        "debug_plans": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "target_id",
+              "debug_format",
+              "derived_from",
+              "debug_level",
+              "included_record_kinds",
+              "excluded_record_kinds"
+            ],
+            "properties": {
+              "target_id": {
+                "type": "string",
+                "pattern": "^target:v1:"
+              },
+              "debug_format": {
+                "const": "dwarf"
+              },
+              "derived_from": {
+                "const": "object_format_in_the_phase18_object_format_authority"
+              },
+              "debug_level": {
+                "enum": [
+                  "none",
+                  "line_tables_only"
+                ]
+              },
+              "included_record_kinds": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "excluded_record_kinds": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          }
+        },
+        "selection_policy": {
+          "const": "the_compiler_selects_the_debug_plan_and_the_backend_never_infers_one"
+        },
+        "emission_policy": {
+          "const": "only_declared_record_kinds_are_emitted_and_an_undeclared_kind_is_rejected"
+        },
+        "fidelity_non_claims": {
+          "type": "array",
+          "minItems": 5,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "rejection_classes": {
+          "type": "array",
+          "minItems": 5,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "next_patch": {
+          "const": "18.13"
+        }
       }
     },
     "phase18_object_inspection": {
