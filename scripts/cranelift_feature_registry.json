@@ -4371,6 +4371,43 @@
     "scope_policy": "availability_compatibility_and_diagnostics_only_cross_feature_composition_remains_in_patch17_14",
     "next_patch": "17.14"
   },
+  "phase18_linker_policy": {
+    "version": "phase18_linker_policy_v1",
+    "status": "ready_for_patch18_8",
+    "authority_owner": "compiler/mir_target_authority.gst",
+    "discovery_order": [
+      "declared_target_linker",
+      "validated_cc_environment_override",
+      "declared_default_driver"
+    ],
+    "discovery_policy": "deterministic_ordered_discovery_never_an_unvalidated_environment_variable_alone",
+    "linker_descriptors": [
+      {"linker_id": "linker:v1:x86_64-unknown-linux-gnu", "target_id": "target:v1:triple=x86_64-unknown-linux-gnu:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8", "driver_name": "cc", "discovery_order": ["declared_target_linker", "validated_cc_environment_override", "declared_default_driver"], "discovery_result": "discovered", "supported_object_formats": ["elf"], "permitted_arguments": ["-o", "output_path", "object_inputs", "runtime_package_path"], "invocation_owner": "phase9g_artifact_planner"},
+      {"linker_id": "linker:v1:aarch64-unknown-linux-gnu", "target_id": "target:v1:triple=aarch64-unknown-linux-gnu:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8", "driver_name": "cc", "discovery_order": ["declared_target_linker", "validated_cc_environment_override", "declared_default_driver"], "discovery_result": "undiscovered_no_cross_linker_declared", "supported_object_formats": ["elf"], "permitted_arguments": ["-o", "output_path", "object_inputs", "runtime_package_path"], "invocation_owner": "phase9g_artifact_planner"},
+      {"linker_id": "linker:v1:i686-unknown-linux-gnu", "target_id": "target:v1:triple=i686-unknown-linux-gnu:endian=little:ptr_size=4:ptr_align=4:i32_align=4:i64_align=4:max_align=4", "driver_name": "cc", "discovery_order": ["declared_target_linker", "validated_cc_environment_override", "declared_default_driver"], "discovery_result": "undiscovered_no_cross_linker_declared", "supported_object_formats": ["elf"], "permitted_arguments": ["-o", "output_path", "object_inputs", "runtime_package_path"], "invocation_owner": "phase9g_artifact_planner"},
+      {"linker_id": "linker:v1:x86_64-apple-darwin", "target_id": "target:v1:triple=x86_64-apple-darwin:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8", "driver_name": "cc", "discovery_order": ["declared_target_linker", "validated_cc_environment_override", "declared_default_driver"], "discovery_result": "undiscovered_no_cross_linker_declared", "supported_object_formats": ["macho"], "permitted_arguments": ["-o", "output_path", "object_inputs", "runtime_package_path"], "invocation_owner": "phase9g_artifact_planner"},
+      {"linker_id": "linker:v1:aarch64-apple-darwin", "target_id": "target:v1:triple=aarch64-apple-darwin:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8", "driver_name": "cc", "discovery_order": ["declared_target_linker", "validated_cc_environment_override", "declared_default_driver"], "discovery_result": "undiscovered_no_cross_linker_declared", "supported_object_formats": ["macho"], "permitted_arguments": ["-o", "output_path", "object_inputs", "runtime_package_path"], "invocation_owner": "phase9g_artifact_planner"}
+    ],
+    "permitted_arguments": [
+      "-o",
+      "output_path",
+      "object_inputs",
+      "runtime_package_path"
+    ],
+    "argument_policy": "invocation_uses_only_the_declared_argument_vocabulary",
+    "invocation_owner": "phase9g_artifact_planner",
+    "invocation_ownership_policy": "phase18_plans_the_invocation_and_phase9g_executes_it",
+    "validation_stage": "before_linker_invocation_and_before_output_replacement",
+    "rejection_classes": [
+      "linker_undiscovered",
+      "linker_unsupported_object_format",
+      "linker_argument_outside_vocabulary",
+      "linker_selected_from_unvalidated_environment",
+      "linker_invoked_by_phase18",
+      "linker_target_mismatch"
+    ],
+    "next_patch": "18.8"
+  },
   "phase18_target_package_selection": {
     "version": "phase18_target_package_selection_v1",
     "status": "ready_for_patch18_7",

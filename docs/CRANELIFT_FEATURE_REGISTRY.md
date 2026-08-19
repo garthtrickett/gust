@@ -617,6 +617,20 @@ The consumed authority is one that refuses rather than records. Phase 17 rejects
 
 Phase 17 spells the object format with different casing than the Patch 18.3 descriptor, so the comparison normalises explicitly rather than relying on an accident. A package whose format disagrees with the format derived from the target's operating system belongs to a different target, and both the guard and the worker reject it.
 
+## Phase 18 linker discovery and invocation policy
+
+- Authority version: `phase18_linker_policy_v1`
+- Status: `ready_for_patch18_8`
+- Linker descriptors: `5`
+- Discovered linkers: `1`
+- Permitted invocation arguments: `4`
+
+Patch 18.7 makes linker choice an explicit compiler-owned policy rather than an environment accident. Discovery is ordered and deterministic, and the CC environment variable remains available as a validated step in that order rather than as an unvalidated escape hatch: whatever it names must still satisfy the target's descriptor before it is used.
+
+One declared target has a discoverable linker. The others record an undiscovered result, and an undiscovered linker may be reported but never used, so a target with no cross linker cannot slip into a link plan. That constraint is what keeps the declared supported target set narrow.
+
+Phase 18 plans the invocation and Phase 9G executes it. A descriptor naming Phase 18 as its invocation owner is rejected, because that would take artifact ownership the earlier phase already holds, and the invocation may use only the declared argument vocabulary.
+
 ## Registry entries
 
 | ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |
