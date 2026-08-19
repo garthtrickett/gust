@@ -373,7 +373,31 @@ Measured on PR Fast, 2026-08-19 (wall-clock 03:15:23 → 03:53:31, 38 min):
 
 Critical path ≈ 688 + 710 ≈ 23 min. Three changes:
 
-**3a — split the build job. Attempted, reverted, deferred.** The plan was to
+**3a — split the build job. Done, on the second design.**
+
+`build` now does checkout, install, `make gust`, and artifact upload. A sibling
+`level1` job depends on it and runs the 52 Level 1 contracts, consuming the same
+`gust` artifact the other jobs already use. Serial prefix **688 s → ~255 s**;
+`level1` runs concurrently with `guard` and `phase11-family` instead of ahead of
+them.
+
+The first attempt moved the contracts into a sharded dispatcher recipe and broke
+twelve guard scripts, because the problem was misdiagnosed. It is not that the
+52 guards share a job — it is that they share the job everything else `needs:`.
+Moving them to a *sibling* job fixes the dependency without moving them out of
+the workflow file, so every `run: just <guard>` line stays exactly where the
+twelve scripts look for it. Four assertions needed updating instead of fourteen
+contracts: the `install-just` count, and the `final` job's `needs:` list in
+`guard-pr-fast-ci-surface`, `cranelift_test_levels.py`, and
+`cranelift_ci_family.py`.
+
+The sharding idea is dropped, not deferred. `level1` at ~535 s sits alongside
+`phase11-family` at 502 s, so sharding it would buy nothing until that changes.
+
+The record of the first attempt follows, because the reasoning is what makes the
+second design obviously correct.
+
+**3a — first attempt, reverted.** The plan was to
 reduce `build` to checkout, install, `make gust`, and upload, moving the 52
 Level 1 contracts into a `level1` matrix of 3 duration-balanced shards. Serial
 prefix **688 s → ~255 s**, the largest single win available.
@@ -569,9 +593,9 @@ is worth more than any single item here.
       aggregate, zero wall-clock. Deferred as a cost item.
 - [x] **Lever 3b/3c — split the migration shards, stop running them twice.**
       Heavy Guards longest shard 727 s → ~345 s; ~46 min/push of duplication gone.
-- [ ] **Lever 3a — split PR Fast's build job.** Serial prefix 688 s → ~255 s, the
-      largest single remaining win. Blocked on renegotiating the `pr-fast.yml`
-      guard-invocation contract across the 14 scripts that read it.
+- [x] **Lever 3a — split PR Fast's build job.** Serial prefix 688 s → ~255 s, via
+      a sibling `level1` job rather than a dispatcher recipe, so the
+      `pr-fast.yml` guard-invocation contract is untouched.
 - [ ] **Cut `Install guard tools` (104 s per job).** Now the largest fixed
       overhead, paid by every one of ~105 jobs. It is an `apt-get` install, which
       is also the source of every flake in the incident log. Cache the packages,
