@@ -246,6 +246,13 @@ The lanes share `main` and will conflict if they drift.
 
 ## Runner policy
 
+Workflows declare a `concurrency` group keyed on workflow and branch, with
+`cancel-in-progress` enabled everywhere except `main`. Superseded runs are
+therefore cancelled by the platform the moment a new commit lands, and the script
+below is a backstop rather than the primary mechanism. Reach for it when a run
+survives that the group did not cover — a different workflow name, a run started
+before the group existed, or one of the deliberately excluded workflows.
+
 If a GitHub runner fails, cancel other queued or in-progress runs on that branch
 that are superseded by the fix. Before a new push, cancel runs whose `headSha` is
 not the current `HEAD` so obsolete jobs do not consume runner capacity. Never
