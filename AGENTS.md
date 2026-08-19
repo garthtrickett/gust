@@ -232,6 +232,29 @@ locally, publish, monitor, fix forward if needed, and merge when green. Stop onl
 when the operator explicitly says stop, repository policy blocks progress, or the
 required correction would materially expand the selected patch.
 
+### A phase is not closed while its Level 3 owner is failing
+
+Every phase closure guard asserts that the Level 3 suite — `Cranelift Historical
+Full` — "remains available, registry-derived, and separately runnable". **None of
+them assert that it passes.** A suite that exists and fails satisfies that check
+exactly.
+
+That gap is not hypothetical. The suite failed every night from 2026-07-21 to
+2026-08-19 — 30 of 30 runs in the retained window, zero successes — while two
+phases closed citing Level 3 evidence. The technical cause was a set of
+assertions orphaned by a consolidation. The reason a month passed before anyone
+noticed was this loophole, plus the fact that a nightly nobody reads is
+indistinguishable from a nightly that passes.
+
+Before declaring a phase closed:
+
+- check the most recent `Cranelift Historical Full` run on `main`;
+- cite its run ID and conclusion in the completion report;
+- if it is failing, the phase is **not** closed — diagnose it first.
+
+A red nightly is not background noise. It is the Level 3 evidence being absent,
+and every closure claim that depends on it is unsupported until it is green.
+
 ## Cross-lane rebase discipline
 
 The lanes share `main` and will conflict if they drift.
