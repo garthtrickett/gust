@@ -2395,6 +2395,18 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 return t_bool;
             }
 
+            // str is an immutable view, so '==' would compare the view's fields
+            // rather than the text they point at. Codegen emitted C '==' over two
+            // structs, which the host C compiler rejects, so the error surfaced
+            // from generated C instead of from here. Text matches
+            // STR_EQUALITY_DIAGNOSTIC in src/typechecker/visitor.rs.
+            if std.str_eq(op, "==") == 1 || std.str_eq(op, "!=") == 1 {
+                if left_type.tag == 5 || right_type.tag == 5 { // Str
+                    mut str_eq_msg := "Semantic Error: str does not support '==' or '!='. Use std.str_eq(a, b) to compare text.";
+                    report_error(2, str_eq_msg, get_expression_span(expr.Binary.left, ctx), env, ctx);
+                }
+            }
+
             if types_match(left_type, right_type, ctx) == 0 {
                 mut is_ptr_arith := 0;
                 if (std.str_eq(op, "+") == 1 || std.str_eq(op, "-") == 1) && left_type.tag == 9 && (right_type.tag == 0 || right_type.tag == 1) { 

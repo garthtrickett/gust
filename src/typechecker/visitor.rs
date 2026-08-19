@@ -28,6 +28,12 @@ fn get_file_stem(path_str: &str) -> String {
         .to_string()
 }
 
+/// Rejection text for `str == str` / `str != str`. The self-hosted typechecker in
+/// `compiler/typechecker.gst` emits this same string; `guard-stdlib-s1-str-equality-diagnostic`
+/// asserts both spellings stay identical.
+pub const STR_EQUALITY_DIAGNOSTIC: &str =
+    "Semantic Error: str does not support '==' or '!='. Use std.str_eq(a, b) to compare text.";
+
 impl TypeChecker {
     pub fn is_ephemeral_view(&self, t: &Type) -> bool {
         match t {
@@ -2817,6 +2823,18 @@ impl TypeChecker {
                         && name == "null"
                     {
                         return Ok(Type::Int);
+                    }
+
+                    // `str` is an immutable view, so `==` would compare the view's
+                    // fields rather than the text they point at. Codegen emitted C
+                    // `==` over two structs, which the host C compiler rejects, so
+                    // the error surfaced from generated C instead of from here.
+                    if left_type == Type::Str || right_type == Type::Str {
+                        return Err(TypeError {
+                            kind: TypeErrorKind::TypeMismatch,
+                            message: STR_EQUALITY_DIAGNOSTIC.to_string(),
+                            span: Some(left.span()),
+                        });
                     }
                 }
 
