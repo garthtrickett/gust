@@ -26,7 +26,7 @@ jobs:
       startsWith(github.head_ref, 'codex/') &&
       vars.CODEX_GITHUB_ACTOR != '' &&
       github.actor == vars.CODEX_GITHUB_ACTOR)
-    name: build and Level 1 contracts
+    name: build Gust and CI surface
     runs-on: ubuntu-latest
     timeout-minutes: 60
     outputs:
@@ -70,158 +70,6 @@ jobs:
       - name: Build Gust
         run: make gust
 
-      - name: Phase 12.5 consolidation closure
-        run: just guard-cranelift-phase12-5-close
-
-      - name: Phase 13 scoped closure
-        run: just guard-cranelift-phase13-close
-
-      - name: Phase 14 opening inventory
-        run: just guard-cranelift-phase14-opening-contract
-
-      - name: Phase 14 layout authority
-        run: just guard-cranelift-phase14-layout-authority-contract
-
-      - name: Phase 14 declared targets and primitive layouts
-        run: just guard-cranelift-phase14-target-and-primitive-contract
-
-      - name: Phase 14 signed unsigned and width conversions
-        run: just guard-cranelift-phase14-integer-conversion-contract
-
-      - name: Phase 14 bounded typed pointers and nullability
-        run: just guard-cranelift-phase14-pointer-contract
-
-      - name: Phase 14 deterministic stack slots and addressable locals
-        run: just guard-cranelift-phase14-stack-slot-contract
-
-      - name: Phase 14 typed loads stores and memory access
-        run: just guard-cranelift-phase14-memory-access-contract
-
-      - name: Phase 14 strings and string views
-        run: just guard-cranelift-phase14-string-view-contract
-      - name: Phase 14 arrays and slices
-        run: just guard-cranelift-phase14-array-slice-contract
-      - name: Phase 14 declaration-order structs
-        run: just guard-cranelift-phase14-struct-contract
-      - name: Phase 14 enums and tagged unions
-        run: just guard-cranelift-phase14-enum-contract
-      - name: Phase 14 aggregate transport across blocks
-        run: just guard-cranelift-phase14-aggregate-contract
-
-      - name: Phase 14 type layout and memory model closure
-        run: just guard-cranelift-phase14-close
-
-      - name: Phase 15 resource and lifetime opening
-        run: just guard-cranelift-phase15-opening-contract
-
-      - name: Phase 16 function ABI and aggregate call opening
-        run: just guard-cranelift-phase16-opening-contract
-
-      - name: Phase 16 compiler-owned function ABI authority
-        run: just guard-cranelift-phase16-abi-authority-contract
-
-      - name: Phase 16 canonical call MIR
-        run: just guard-cranelift-phase16-call-mir-contract
-
-      - name: Phase 16 aggregate parameter classification
-        run: just guard-cranelift-phase16-aggregate-parameter-contract
-
-      - name: Phase 16 aggregate return classification
-        run: just guard-cranelift-phase16-aggregate-return-contract
-
-      - name: Phase 16 direct-call agreement
-        run: just guard-cranelift-phase16-direct-call-agreement-contract
-
-      - name: Phase 16 typed indirect calls
-        run: just guard-cranelift-phase16-typed-indirect-call-contract
-
-      - name: Phase 16 fat-pointer and selected trait-object call ABI
-        run: just guard-cranelift-phase16-fat-pointer-abi-contract
-
-      - name: Phase 16 unsized value ABI
-        run: just guard-cranelift-phase16-unsized-abi-contract
-
-      - name: Phase 16 bounded dynamic stack plans
-        run: just guard-cranelift-phase16-dynamic-stack-contract
-
-      - name: Phase 16 resource-bearing aggregate call ABI
-        run: just guard-cranelift-phase16-resource-aggregate-abi-contract
-
-      - name: Phase 16 selected cross-module ABI
-        run: just guard-cranelift-phase16-cross-module-abi-contract
-
-      - name: Phase 16 ABI metadata request validation
-        run: just guard-cranelift-phase16-abi-metadata-contract
-
-      - name: Phase 16 cross-feature ABI composition
-        run: just guard-cranelift-phase16-composition-contract
-
-      - name: Phase 16 function ABI and aggregate call closure
-        run: just guard-cranelift-phase16-close
-
-      - name: Phase 17 native runtime boundary opening
-        run: just guard-cranelift-phase17-opening-contract
-
-      - name: Phase 17 compiler-owned runtime boundary authority
-        run: just guard-cranelift-phase17-runtime-authority-contract
-
-      - name: Phase 17 runtime ABI and symbol versioning
-        run: just guard-cranelift-phase17-runtime-symbol-version-contract
-
-      - name: Phase 17 canonical MIR runtime requirements
-        run: just guard-cranelift-phase17-runtime-requirement-contract
-
-      - name: Phase 17 explicit runtime packages and target selection
-        run: just guard-cranelift-phase17-runtime-package-contract
-
-      - name: Phase 17 stable runtime-library imports
-        run: just guard-cranelift-phase17-runtime-import-contract
-
-      - name: Phase 17 Rust runtime components
-        run: just guard-cranelift-phase17-rust-runtime-contract
-
-      - name: Phase 17 explicit retained C runtime objects
-        run: just guard-cranelift-phase17-retained-c-runtime-contract
-
-      - name: Phase 17 pure Gust runtime modules
-        run: just guard-cranelift-phase17-gust-runtime-contract
-
-      - name: Phase 17 generated C shim elimination
-        run: just guard-cranelift-phase17-shim-elimination-contract
-
-      - name: Phase 17 allocation string and core memory audit
-        run: just guard-cranelift-phase17-memory-runtime-contract
-
-      - name: Phase 17 io filesystem and resource audit
-        run: just guard-cranelift-phase17-io-runtime-contract
-
-      - name: Phase 17 threading and synchronization audit
-        run: just guard-cranelift-phase17-thread-runtime-contract
-
-      - name: Phase 17 runtime availability and diagnostics
-        run: just guard-cranelift-phase17-availability-contract
-
-      - name: Phase 17 native runtime boundary closure
-        run: just guard-cranelift-phase17-close
-
-      - name: Phase 18 target object and linker opening
-        run: just guard-cranelift-phase18-opening-contract
-
-      - name: Phase 18 compiler-owned target authority
-        run: just guard-cranelift-phase18-target-authority-contract
-
-      - name: Phase 18 complete target support tuple
-        run: just guard-cranelift-phase18-target-support-contract
-
-      - name: Phase 18 object format and section binding
-        run: just guard-cranelift-phase18-object-format-contract
-
-      - name: Phase 18 relocation model and validation
-        run: just guard-cranelift-phase18-relocation-contract
-
-      - name: Phase 17 cross-feature runtime composition
-        run: just guard-cranelift-phase17-composition-contract
-
       - name: Upload Gust build outputs
         uses: actions/upload-artifact@v4
         with:
@@ -230,6 +78,42 @@ jobs:
             ./gust
             build/
           if-no-files-found: error
+
+  level1:
+    name: Level 1 / ${{ matrix.shard }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: build
+
+    strategy:
+      fail-fast: false
+      matrix:
+        shard:
+          - level1-1
+          - level1-2
+          - level1-3
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install guard tools
+        run: |
+          bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+          bash scripts/install-just-ci.sh "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Download Gust build outputs
+        uses: actions/download-artifact@v4
+        with:
+          name: gust-build
+          path: .
+
+      - name: Restore executable bit
+        run: chmod +x ./gust 2>/dev/null || true
+
+      - name: Run Level 1 shard
+        run: just guard-pr-fast-level1-shard "${{ matrix.shard }}"
 
   guard:
     name: guard / ${{ matrix.shard }}
@@ -243,10 +127,6 @@ jobs:
         shard:
           - mir-to-c-return-int
           - routed-return-int
-          - migration-return-int
-          - migration-local-binding
-          - migration-if-else
-          - migration-provenance
 
     steps:
       - name: Checkout
@@ -306,7 +186,7 @@ jobs:
     name: final diff check
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    needs: [guard, phase11-family]
+    needs: [guard, level1, phase11-family]
 
     steps:
       - name: Checkout
