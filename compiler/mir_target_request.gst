@@ -206,3 +206,44 @@ func mir_serialize_object_format_request(descriptor: target.MirObjectFormatDescr
 func mir_object_format_mir_to_c_witness(descriptor: target.MirObjectFormatDescriptor[ctx], operating_system: str, ctx: &Arena) str {
     return mir_object_format_body(descriptor, operating_system, mir_object_format_witness_format(), ctx);
 }
+
+func mir_relocation_request_format() str { return "gust.compiler_relocation.v1"; }
+func mir_relocation_witness_format() str { return "gust.relocation_witness.v1"; }
+
+func mir_relocation_body(model: target.MirRelocationModel[ctx], relocation: target.MirRelocation[ctx], header: str, ctx: &Arena) str {
+    mut validation := target.mir_relocation_validate(model, relocation, ctx);
+    if validation.valid == 0 {
+        mut invalid := "format: invalid\nreason: ";
+        invalid = std.Concat(invalid, validation.reason_code);
+        invalid = std.Concat(invalid, "\n");
+        return std.Clone(ctx, invalid);
+    }
+    mut output := "format: ";
+    output = std.Concat(output, header);
+    output = std.Concat(output, "\nauthority: compiler/mir_target_authority.gst\n");
+    mut model_row := "relocation_model:";
+    model_row = mir_target_append(model_row, "target_id", model.target_id, ctx);
+    model_row = mir_target_append(model_row, "object_format", model.object_format, ctx);
+    model_row = mir_target_append(model_row, "arch", model.architecture, ctx);
+    model_row = mir_target_append(model_row, "stage", model.validation_stage, ctx);
+    output = std.Concat(output, model_row);
+    output = std.Concat(output, "\n");
+    mut row := "relocation:";
+    row = mir_target_append(row, "kind", relocation.relocation_kind, ctx);
+    row = mir_target_append(row, "section", relocation.section_kind, ctx);
+    row = mir_target_append(row, "offset", std.FormatInt(relocation.offset), ctx);
+    row = mir_target_append(row, "addend", std.FormatInt(relocation.addend), ctx);
+    row = mir_target_append(row, "symbol", relocation.symbol_identity, ctx);
+    row = mir_target_append(row, "absolute", std.FormatInt(target.mir_relocation_kind_is_absolute(relocation.relocation_kind, ctx)), ctx);
+    output = std.Concat(output, row);
+    output = std.Concat(output, "\n");
+    return std.Clone(ctx, output);
+}
+
+func mir_serialize_relocation_request(model: target.MirRelocationModel[ctx], relocation: target.MirRelocation[ctx], ctx: &Arena) str {
+    return mir_relocation_body(model, relocation, mir_relocation_request_format(), ctx);
+}
+
+func mir_relocation_mir_to_c_witness(model: target.MirRelocationModel[ctx], relocation: target.MirRelocation[ctx], ctx: &Arena) str {
+    return mir_relocation_body(model, relocation, mir_relocation_witness_format(), ctx);
+}

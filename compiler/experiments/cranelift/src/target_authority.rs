@@ -483,3 +483,103 @@ pub fn lower_object_format_witness_path(path: &Path) -> Result<String, Box<dyn E
     let request = fs::read_to_string(path)?;
     Ok(lower_object_format_witness(&request)?)
 }
+
+// ---- Patch 18.4: relocation model and validation ----
+
+const RELOCATION_FORMAT: &str = "gust.compiler_relocation.v1";
+const RELOCATION_WITNESS_FORMAT: &str = "gust.relocation_witness.v1";
+
+/// Zero-initialised data holds no bytes, so it can hold no relocation.
+const PERMITTED_SECTIONS: [&str; 3] = ["text", "read_only_data", "data"];
+
+/// Absolute kinds carry an explicit addend; relative kinds carry none. The
+/// worker recomputes this rather than trusting the request's claim.
+fn relocation_is_absolute(kind: &str) -> bool {
+    matches!(kind,
+        "R_X86_64_64" | "R_AARCH64_ABS64" | "R_386_32"
+        | "X86_64_RELOC_UNSIGNED" | "ARM64_RELOC_UNSIGNED")
+}
+
+pub fn lower_relocation_witness(request: &str) -> Result<String, TargetError> {
+    let lines: Vec<&str> = request.lines().collect();
+    if header(&lines, "format")? != RELOCATION_FORMAT {
+        return Err(error("relocation_malformed", "unknown request format"));
+    }
+    if header(&lines, "authority")? != AUTHORITY {
+        return Err(error("relocation_malformed", "unknown target authority"));
+    }
+
+    let model_line = lines.iter().find(|l| l.starts_with("relocation_model:"))
+        .ok_or_else(|| error("relocation_malformed", "request declares no relocation model"))?;
+    let model = row(model_line, "relocation_model:")?;
+
+    // A model validating after output could exist cannot preserve it.
+    if field(&model, "stage")? != "before_object_publication_and_before_linker_invocation" {
+        return Err(error("relocation_validated_too_late",
+            "relocation validation must precede object publication and linker invocation"));
+    }
+    let object_format = field(&model, "object_format")?;
+    let prefix_ok = |kind: &str| match object_format {
+        "elf" => kind.starts_with("R_"),
+        _ => kind.starts_with("X86_64_RELOC_") || kind.starts_with("ARM64_RELOC_"),
+    };
+
+    let reloc_line = lines.iter().find(|l| l.starts_with("relocation:"))
+        .ok_or_else(|| error("relocation_malformed", "request declares no relocation"))?;
+    let reloc = row(reloc_line, "relocation:")?;
+
+    let kind = field(&reloc, "kind")?;
+    if !prefix_ok(kind) {
+        return Err(error("relocation_kind_unknown",
+            format!("{kind} is not a {object_format} relocation kind")));
+    }
+    let section = field(&reloc, "section")?;
+    if !PERMITTED_SECTIONS.contains(&section) {
+        return Err(error("relocation_in_disallowed_section",
+            format!("{section} holds no bytes and can hold no relocation")));
+    }
+    let offset: i64 = field(&reloc, "offset")?.parse()
+        .map_err(|_| error("relocation_offset_malformed", "offset is not a number"))?;
+    if offset < 0 {
+        return Err(error("relocation_offset_malformed", "offset is negative"));
+    }
+    let addend: i64 = field(&reloc, "addend")?.parse()
+        .map_err(|_| error("relocation_addend_malformed", "addend is not a number"))?;
+
+    // The request states absoluteness; the worker recomputes it.
+    let absolute = relocation_is_absolute(kind);
+    let claimed_absolute = match field(&reloc, "absolute")? {
+        "0" => false, "1" => true,
+        other => return Err(error("relocation_malformed", format!("absolute={other}"))),
+    };
+    if claimed_absolute != absolute {
+        return Err(error("relocation_addend_malformed",
+            "claimed absoluteness disagrees with the relocation kind"));
+    }
+    if !absolute && addend != 0 {
+        return Err(error("relocation_addend_malformed",
+            format!("{kind} is relative and must carry no addend")));
+    }
+    let symbol = reloc.get("symbol").map(String::as_str).unwrap_or_default();
+    if symbol.is_empty() {
+        return Err(error("relocation_symbol_missing", "relocation names no symbol"));
+    }
+
+    let mut witness = String::new();
+    witness.push_str(&format!("format: {RELOCATION_WITNESS_FORMAT}\n"));
+    witness.push_str(&format!("authority: {AUTHORITY}\n"));
+    witness.push_str(&format!(
+        "relocation_model:target_id={};object_format={};arch={};stage={};\n",
+        field(&model, "target_id")?, object_format, field(&model, "arch")?, field(&model, "stage")?,
+    ));
+    witness.push_str(&format!(
+        "relocation:kind={};section={};offset={};addend={};symbol={};absolute={};\n",
+        kind, section, offset, addend, symbol, u8::from(absolute),
+    ));
+    Ok(witness)
+}
+
+pub fn lower_relocation_witness_path(path: &Path) -> Result<String, Box<dyn Error>> {
+    let request = fs::read_to_string(path)?;
+    Ok(lower_relocation_witness(&request)?)
+}
