@@ -647,11 +647,34 @@ not work. `build` finished at 08:34:26 and the first dependent job started at
 matrix fills. Roughly half the wall-clock of a PR Fast run is now runners waiting
 to be allocated rather than jobs executing.
 
-That reframes what is left. Shaving job durations has reached diminishing
-returns; the remaining wall-clock is allocation latency, which no lever in this
-document addresses. Raising concurrency does not help either — the jobs are not
-queued behind our own jobs. If PR Fast wall-clock matters more from here, the
-next thing to measure is that gap, not the jobs.
+The cause is the concurrency cap, and an earlier draft of this section got that
+wrong. It claimed "raising concurrency does not help — the jobs are not queued
+behind our own jobs." They are.
+
+Measured 2026-08-19 by pulling every workflow run overlapping a window,
+deduplicating by run ID, and counting each job's `started_at`/`completed_at`,
+**including only jobs that concluded `success` or `failure`**:
+
+| Window (UTC) | Jobs executed | Peak concurrent |
+| --- | --- | --- |
+| 03:00–10:00 | 1,066 | **20** |
+| 08:00–10:00 | 452 | **19** |
+
+Concurrency reached exactly 20 and never 21, across seven hours. That is the
+Free-plan limit; Pro documents 40. A support ticket is open asking why.
+
+**Counting method matters here, and two earlier figures were wrong.** A first
+pass sampled only two runs and reported a peak of 14, ignoring every other
+workflow running at the same time. A second pass covered all runs and reported
+46 — but counted **cancelled** jobs, which record a `started_at`/`completed_at`
+interval without ever occupying a runner. At the claimed 46-job peak, 39 of the
+41 jobs were cancelled. Roughly a hundred runs were cancelled by hand that day,
+so the error was large. Filter to `success` and `failure` before counting
+concurrency.
+
+So the remaining wall-clock is queueing against a cap, not scheduling latency,
+and it responds to exactly two things: fewer or shorter jobs, which this document
+is about, and a higher cap, which the ticket is about.
 
 ## Ordered plan
 
@@ -673,9 +696,10 @@ next thing to measure is that gap, not the jobs.
       overhead, paid by every one of ~105 jobs. It is an `apt-get` install, which
       is also the source of every flake in the incident log. Cache the packages,
       or move to a runner image that ships them.
-- [ ] **Measure runner allocation latency.** About half of a PR Fast run's
-      wall-clock is now gaps between jobs, not job duration. This is the largest
-      remaining item and no lever here addresses it.
+- [ ] **Resolve the concurrency cap.** Peak concurrency measures 20, the
+      Free-plan limit, on an account that should have Pro's 40. Support ticket
+      open. Until it resolves, about half of a PR Fast run's wall-clock is
+      queueing against that cap.
 - [ ] **Shard `phase11-family`.** `phase11-family / pointer-memory` at 578 s is
       the longest job in PR Fast. Worth less than it looks while allocation gaps
       dominate.
