@@ -575,6 +575,40 @@ is worth more than any single item here.
 
 ## Incident log
 
+**2026-08-19 — apt removed from the guard path.** Three of the four
+infrastructure failures observed during a single documentation-only pull request
+(#64) were `Failed to install native dependencies after 3 attempts`, the same
+signature as the 2026-08-18 mirror incident below and after that incident's
+hardening had landed. Retries, timeouts, and `dpkg-query` verification bound the
+damage; they do not remove the dependency.
+
+Checking `actions/runner-images` showed the Ubuntu 24.04 image already ships
+`curl`, `binutils`, `gcc`, `g++`, `clang`, `make`, `pkg-config`, and `python3`.
+Of everything this repository asks apt for, only **ripgrep** is genuinely
+missing. The repository was running `apt-get update` — the slow, mirror-dependent
+step — to obtain one static binary.
+
+`scripts/install-native-deps-ci.sh` now satisfies each request from what is
+already present, installs ripgrep from a pinned release like
+`install-just-ci.sh` already does for just, and reaches apt only for whatever
+genuinely remains. On a healthy image it makes no apt call. On a changed image it
+behaves as before.
+
+Capabilities are probed rather than assumed. `build-essential` is a metapackage
+that can be absent while every tool it installs is present, so asking dpkg about
+it answers the wrong question; the script compiles a C file instead. This was not
+theoretical: in a sandbox lacking `as` and `ld` the probe correctly reported
+`build-essential` unsatisfied, and in one with them it correctly reported it
+satisfied. A package-name check would have been wrong both times.
+
+**Sizing, corrected.** An initial estimate put this step at ~41% of monthly
+runner minutes, extrapolated from a single 104 s observation in PR Fast's build
+job. Sampling 103 install steps across four workflows gave a mean of **9 s**
+(apt steps ~15 s, max 129 s), so the real figure is nearer **6%** — about 4,400
+of 74,000 minutes. The change is worth making for reliability, not for speed:
+the flake costs a failed job plus a full re-run, and it is the only recurring
+infrastructure failure in this log.
+
 **2026-08-16 — cache step split multi-line steps.** The first insertion pass
 placed the cache block at `checkout_line + 1`. Where a workflow's next step was
 a two-line `- name:` / `run:` pair, that landed *inside* the step: the cache step
