@@ -766,3 +766,69 @@ pub fn lower_linker_witness_path(path: &Path) -> Result<String, Box<dyn Error>> 
     let request = fs::read_to_string(path)?;
     Ok(lower_linker_witness(&request)?)
 }
+
+// ---- Patch 18.8: static and dynamic runtime linking modes ----
+
+const LINK_MODE_FORMAT: &str = "gust.compiler_link_mode.v1";
+const LINK_MODE_WITNESS_FORMAT: &str = "gust.link_mode_witness.v1";
+
+/// A mode is available only when a package form provides it. The worker
+/// recomputes this rather than trusting the request, so a selection cannot
+/// silently substitute a mode no package backs.
+fn link_mode_for_package_form(form: &str) -> Option<&'static str> {
+    match form {
+        "static_archive" => Some("static"),
+        "shared_library" => Some("dynamic"),
+        _ => None,
+    }
+}
+
+pub fn lower_link_mode_witness(request: &str) -> Result<String, TargetError> {
+    let lines: Vec<&str> = request.lines().collect();
+    if header(&lines, "format")? != LINK_MODE_FORMAT {
+        return Err(error("link_mode_malformed", "unknown request format"));
+    }
+    if header(&lines, "authority")? != AUTHORITY {
+        return Err(error("link_mode_malformed", "unknown target authority"));
+    }
+
+    let mode_line = lines.iter().find(|l| l.starts_with("link_mode:"))
+        .ok_or_else(|| error("link_mode_malformed", "request declares no link mode"))?;
+    let decision = row(mode_line, "link_mode:")?;
+
+    let form = field(&decision, "package_form")?;
+    let Some(derived) = link_mode_for_package_form(form) else {
+        return Err(error("link_mode_package_form_mismatch",
+            format!("{form} provides no link mode")));
+    };
+
+    let selected = field(&decision, "selected_mode")?;
+    if selected != "static" && selected != "dynamic" {
+        return Err(error("link_mode_unknown", format!("{selected} is not a declared link mode")));
+    }
+
+    // The request states the derived mode; the worker recomputes it. A request
+    // cannot declare its own availability.
+    if field(&decision, "derived_mode")? != derived {
+        return Err(error("link_mode_silently_substituted",
+            "claimed derived mode disagrees with the package form"));
+    }
+    if selected != derived {
+        return Err(error("link_mode_unavailable_for_target",
+            format!("{form} provides {derived}, not {selected}")));
+    }
+
+    let mut witness = String::new();
+    witness.push_str(&format!("format: {LINK_MODE_WITNESS_FORMAT}\n"));
+    witness.push_str(&format!("authority: {AUTHORITY}\n"));
+    witness.push_str(&format!(
+        "link_mode:target_id={};package_form={};selected_mode={};derived_mode={};\n",
+        field(&decision, "target_id")?, form, selected, derived,
+    ));
+    Ok(witness)
+}
+
+pub fn lower_link_mode_witness_path(path: &Path) -> Result<String, Box<dyn Error>> {
+    let request = fs::read_to_string(path)?;
+    Ok(lower_link_mode_witness(&request)?)
+}

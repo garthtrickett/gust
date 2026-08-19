@@ -31,6 +31,7 @@
     "phase17_thread_runtime_authority",
     "phase17_availability_authority",
     "phase17_composition_authority",
+    "phase18_link_mode",
     "phase18_linker_policy",
     "phase18_target_package_selection",
     "phase18_target_abi_selection",
@@ -322,6 +323,9 @@
     },
     "phase17_composition_authority": {
       "$ref": "#/$defs/phase17_composition_authority"
+    },
+    "phase18_link_mode": {
+      "$ref": "#/$defs/phase18_link_mode"
     },
     "phase18_linker_policy": {
       "$ref": "#/$defs/phase18_linker_policy"
@@ -884,6 +888,126 @@
         "participating_authorities": {"type": "array", "minItems": 2, "uniqueItems": true, "items": {"type": "string", "pattern": "^phase17_"}},
         "differential_owner": {"type": "string", "minLength": 1},
         "sentinel_policy": {"enum": ["sentinel_output_preserved_on_failure", "case_cannot_fail_no_output_to_preserve"]}
+      }
+    },
+    "phase18_link_mode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "status",
+        "authority_owner",
+        "link_modes",
+        "form_to_mode",
+        "availability_derivation",
+        "link_mode_decisions",
+        "substitution_policy",
+        "validation_stage",
+        "rejection_classes",
+        "next_patch"
+      ],
+      "properties": {
+        "version": {
+          "const": "phase18_link_mode_v1"
+        },
+        "status": {
+          "const": "ready_for_patch18_9"
+        },
+        "authority_owner": {
+          "const": "compiler/mir_target_authority.gst"
+        },
+        "link_modes": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "enum": [
+              "static",
+              "dynamic"
+            ]
+          }
+        },
+        "form_to_mode": {
+          "type": "object",
+          "additionalProperties": {
+            "enum": [
+              "static",
+              "dynamic"
+            ]
+          }
+        },
+        "availability_derivation": {
+          "const": "a_mode_is_available_only_when_a_phase17_runtime_package_form_provides_it"
+        },
+        "link_mode_decisions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "target_id",
+              "available_modes",
+              "selected_mode",
+              "required_package_form",
+              "decision_reason",
+              "unavailable_mode_reason"
+            ],
+            "properties": {
+              "target_id": {
+                "type": "string",
+                "pattern": "^target:v1:"
+              },
+              "available_modes": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "enum": [
+                    "static",
+                    "dynamic"
+                  ]
+                }
+              },
+              "selected_mode": {
+                "enum": [
+                  "static",
+                  "dynamic"
+                ]
+              },
+              "required_package_form": {
+                "enum": [
+                  "static_archive",
+                  "shared_library"
+                ]
+              },
+              "decision_reason": {
+                "type": "string",
+                "minLength": 1
+              },
+              "unavailable_mode_reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "substitution_policy": {
+          "const": "an_unavailable_mode_is_refused_and_never_silently_substituted"
+        },
+        "validation_stage": {
+          "const": "before_linker_invocation_and_before_output_replacement"
+        },
+        "rejection_classes": {
+          "type": "array",
+          "minItems": 5,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "next_patch": {
+          "const": "18.9"
+        }
       }
     },
     "phase18_linker_policy": {

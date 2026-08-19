@@ -184,6 +184,8 @@ guard-pr-fast-ci-surface:
       'just guard-cranelift-phase18-target-package-contract'
       'Phase 18 linker discovery and invocation policy'
       'just guard-cranelift-phase18-linker-policy-contract'
+      'Phase 18 static and dynamic link modes'
+      'just guard-cranelift-phase18-link-mode-contract'
       'Phase 17 cross-feature runtime composition'
       'just guard-cranelift-phase17-composition-contract'
       'phase11-family:'
@@ -15823,6 +15825,25 @@ guard-cranelift-phase18-linker-policy-parity:
     just guard-cranelift-phase18-linker-policy-contract
     bash scripts/phase18_linker_policy_parity.sh
 
+guard-cranelift-phase18-link-mode-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 18.8 link mode parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase18-link-mode-parity |
+      grep -F $'guard-cranelift-phase18-link-mode-parity\t2\t' >/dev/null
+    just guard-cranelift-phase18-link-mode-contract
+    bash scripts/phase18_link_mode_parity.sh
+
+guard-cranelift-phase18-link-mode-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 18.8 static and dynamic runtime linking modes..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase18-link-mode-contract | grep -F $'guard-cranelift-phase18-link-mode-contract\t1\t' >/dev/null
+    just guard-cranelift-phase18-target-package-contract
+    python3 scripts/phase18_link_mode.py --check
+
 guard-cranelift-phase18-linker-policy-contract:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -16117,6 +16138,7 @@ guard-cranelift-contract-fast:
     just guard-cranelift-phase18-target-abi-contract
     just guard-cranelift-phase18-target-package-contract
     just guard-cranelift-phase18-linker-policy-contract
+    just guard-cranelift-phase18-link-mode-contract
 
 guard-cranelift-phase17-runtime-authority-contract:
     #!/usr/bin/env bash

@@ -1,0 +1,13 @@
+kind	requirement	evidence	level
+decision	every declared target has exactly one link mode decision	decision coverage compared against the declared triple vocabulary	1
+decision	no duplicate link mode decision for a target	uniqueness check over decision target ids	1
+decision	the selected mode is inside the declared vocabulary	mode vocabulary membership	1
+decision	the selected mode is available for the target	selected mode checked against available modes	1
+derivation	available modes are recomputed from the package form	per-target availability derivation	1
+derivation	a target cannot advertise a mode no package backs	derived availability compared against declared availability	1
+derivation	the required package form agrees with Phase 17	per-target form comparison	1
+derivation	the form to mode map is frozen	derivation map comparison	1
+substitution	an unavailable mode is refused and never silently substituted	substitution policy is frozen	1
+substitution	an unavailable mode states why it is unavailable	non-empty unavailable mode reason	1
+stage	link mode validation precedes linker invocation and output replacement	validation stage is frozen	1
+rejection	the rejection class inventory is complete	five required rejection classes	1

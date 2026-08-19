@@ -685,3 +685,48 @@ func mir_linker_descriptor_validate(descriptor: MirLinkerDescriptor[ctx], target
     result.reason_code = std.Clone(ctx, "ok");
     return result;
 }
+
+// ---- Patch 18.8: static and dynamic runtime linking modes ----
+//
+// A mode is available only when a runtime package form provides it. Every
+// declared package is a static archive today, so dynamic is unavailable and a
+// request for it is refused rather than quietly downgraded to static.
+
+type MirLinkModeDecision[ctx] struct {
+    target_id: str,
+    required_package_form: str,
+    selected_mode: str
+}
+
+func mir_link_mode_for_package_form(package_form: str, ctx: &Arena) str {
+    if std.str_eq(package_form, "static_archive") == 1 { return std.Clone(ctx, "static"); }
+    if std.str_eq(package_form, "shared_library") == 1 { return std.Clone(ctx, "dynamic"); }
+    return std.Clone(ctx, "");
+}
+
+func mir_link_mode_validate(decision: MirLinkModeDecision[ctx], ctx: &Arena) MirTargetValidation[ctx] {
+    mut result: MirTargetValidation[ctx];
+    result.valid = 0;
+
+    // A package form that provides no mode cannot back any link.
+    mut available := mir_link_mode_for_package_form(decision.required_package_form, ctx);
+    if std.str_eq(available, "") == 1 {
+        result.reason_code = std.Clone(ctx, "link_mode_package_form_mismatch");
+        return result;
+    }
+    if std.str_eq(decision.selected_mode, "static") == 0 &&
+       std.str_eq(decision.selected_mode, "dynamic") == 0 {
+        result.reason_code = std.Clone(ctx, "link_mode_unknown");
+        return result;
+    }
+    // The selected mode must be the one the package form actually provides.
+    // Falling back to another mode would be a silent substitution.
+    if std.str_eq(decision.selected_mode, available) == 0 {
+        result.reason_code = std.Clone(ctx, "link_mode_unavailable_for_target");
+        return result;
+    }
+
+    result.valid = 1;
+    result.reason_code = std.Clone(ctx, "ok");
+    return result;
+}
