@@ -263,6 +263,9 @@ jobs:
       - name: Phase 18 linker discovery and invocation policy
         run: just guard-cranelift-phase18-linker-policy-contract
 
+      - name: Phase 18 static and dynamic link modes
+        run: just guard-cranelift-phase18-link-mode-contract
+
       - name: Phase 17 cross-feature runtime composition
         run: just guard-cranelift-phase17-composition-contract
 

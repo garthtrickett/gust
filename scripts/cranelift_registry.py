@@ -37,6 +37,7 @@ TOP_FIELDS = {
     "phase17_thread_runtime_authority",
     "phase17_availability_authority",
     "phase17_composition_authority",
+    "phase18_link_mode",
     "phase18_linker_policy",
     "phase18_target_package_selection",
     "phase18_target_abi_selection",
@@ -10859,6 +10860,28 @@ def phase17_availability_authority_summary_lines(registry):
     ]
 
 
+def phase18_link_mode_summary_lines(registry):
+    authority = registry["phase18_link_mode"]
+    decisions = authority["link_mode_decisions"]
+    available = sorted({mode for row in decisions for mode in row["available_modes"]})
+    return [
+        "## Phase 18 static and dynamic runtime linking modes",
+        "",
+        f"- Authority version: `{authority['version']}`",
+        f"- Status: `{authority['status']}`",
+        f"- Link mode decisions: `{len(decisions)}`",
+        f"- Declared modes: {', '.join(f'`{value}`' for value in authority['link_modes'])}",
+        f"- Available across declared targets: {', '.join(f'`{value}`' for value in available)}",
+        "",
+        "Patch 18.8 makes the runtime link mode an explicit per-target decision. A mode is available only when a Phase 17 runtime package form provides it, and availability is recomputed from that form rather than declared, so a target cannot advertise a mode no package backs.",
+        "",
+        "Every declared package is a static archive, so dynamic linking is unavailable for every target today. Requesting it is refused with a stable reason rather than quietly downgraded to static, and weakening the substitution policy into that fallback is itself a rejection.",
+        "",
+        "The Cranelift worker recomputes the derived mode from the package form and refuses a request whose claimed derivation disagrees. A request cannot declare its own availability, which would otherwise let a caller assert support that nothing provides.",
+        "",
+    ]
+
+
 def phase18_linker_policy_summary_lines(registry):
     authority = registry["phase18_linker_policy"]
     descriptors = authority["linker_descriptors"]
@@ -11180,6 +11203,7 @@ def render(registry):
         *phase18_target_abi_summary_lines(registry),
         *phase18_target_package_summary_lines(registry),
         *phase18_linker_policy_summary_lines(registry),
+        *phase18_link_mode_summary_lines(registry),
         "## Registry entries", "",
         "| ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |",
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",

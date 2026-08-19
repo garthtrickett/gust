@@ -351,3 +351,35 @@ func mir_serialize_linker_request(descriptor: target.MirLinkerDescriptor[ctx], t
 func mir_linker_mir_to_c_witness(descriptor: target.MirLinkerDescriptor[ctx], target_format: str, ctx: &Arena) str {
     return mir_linker_body(descriptor, target_format, mir_linker_witness_format(), ctx);
 }
+
+func mir_link_mode_request_format() str { return "gust.compiler_link_mode.v1"; }
+func mir_link_mode_witness_format() str { return "gust.link_mode_witness.v1"; }
+
+func mir_link_mode_body(decision: target.MirLinkModeDecision[ctx], header: str, ctx: &Arena) str {
+    mut validation := target.mir_link_mode_validate(decision, ctx);
+    if validation.valid == 0 {
+        mut invalid := "format: invalid\nreason: ";
+        invalid = std.Concat(invalid, validation.reason_code);
+        invalid = std.Concat(invalid, "\n");
+        return std.Clone(ctx, invalid);
+    }
+    mut output := "format: ";
+    output = std.Concat(output, header);
+    output = std.Concat(output, "\nauthority: compiler/mir_target_authority.gst\n");
+    mut row := "link_mode:";
+    row = mir_target_append(row, "target_id", decision.target_id, ctx);
+    row = mir_target_append(row, "package_form", decision.required_package_form, ctx);
+    row = mir_target_append(row, "selected_mode", decision.selected_mode, ctx);
+    row = mir_target_append(row, "derived_mode", target.mir_link_mode_for_package_form(decision.required_package_form, ctx), ctx);
+    output = std.Concat(output, row);
+    output = std.Concat(output, "\n");
+    return std.Clone(ctx, output);
+}
+
+func mir_serialize_link_mode_request(decision: target.MirLinkModeDecision[ctx], ctx: &Arena) str {
+    return mir_link_mode_body(decision, mir_link_mode_request_format(), ctx);
+}
+
+func mir_link_mode_mir_to_c_witness(decision: target.MirLinkModeDecision[ctx], ctx: &Arena) str {
+    return mir_link_mode_body(decision, mir_link_mode_witness_format(), ctx);
+}

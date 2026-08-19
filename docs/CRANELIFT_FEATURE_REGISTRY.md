@@ -631,6 +631,20 @@ One declared target has a discoverable linker. The others record an undiscovered
 
 Phase 18 plans the invocation and Phase 9G executes it. A descriptor naming Phase 18 as its invocation owner is rejected, because that would take artifact ownership the earlier phase already holds, and the invocation may use only the declared argument vocabulary.
 
+## Phase 18 static and dynamic runtime linking modes
+
+- Authority version: `phase18_link_mode_v1`
+- Status: `ready_for_patch18_9`
+- Link mode decisions: `5`
+- Declared modes: `static`, `dynamic`
+- Available across declared targets: `static`
+
+Patch 18.8 makes the runtime link mode an explicit per-target decision. A mode is available only when a Phase 17 runtime package form provides it, and availability is recomputed from that form rather than declared, so a target cannot advertise a mode no package backs.
+
+Every declared package is a static archive, so dynamic linking is unavailable for every target today. Requesting it is refused with a stable reason rather than quietly downgraded to static, and weakening the substitution policy into that fallback is itself a rejection.
+
+The Cranelift worker recomputes the derived mode from the package form and refuses a request whose claimed derivation disagrees. A request cannot declare its own availability, which would otherwise let a caller assert support that nothing provides.
+
 ## Registry entries
 
 | ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |

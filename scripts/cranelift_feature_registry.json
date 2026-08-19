@@ -4371,6 +4371,37 @@
     "scope_policy": "availability_compatibility_and_diagnostics_only_cross_feature_composition_remains_in_patch17_14",
     "next_patch": "17.14"
   },
+  "phase18_link_mode": {
+    "version": "phase18_link_mode_v1",
+    "status": "ready_for_patch18_9",
+    "authority_owner": "compiler/mir_target_authority.gst",
+    "link_modes": [
+      "static",
+      "dynamic"
+    ],
+    "form_to_mode": {
+      "static_archive": "static",
+      "shared_library": "dynamic"
+    },
+    "availability_derivation": "a_mode_is_available_only_when_a_phase17_runtime_package_form_provides_it",
+    "link_mode_decisions": [
+      {"target_id": "target:v1:triple=x86_64-unknown-linux-gnu:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8", "available_modes": ["static"], "selected_mode": "static", "required_package_form": "static_archive", "decision_reason": "the_only_runtime_package_form_phase17_provides_for_this_target", "unavailable_mode_reason": "dynamic_requires_a_shared_library_package_form_that_phase17_does_not_provide"},
+      {"target_id": "target:v1:triple=aarch64-unknown-linux-gnu:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8", "available_modes": ["static"], "selected_mode": "static", "required_package_form": "static_archive", "decision_reason": "the_only_runtime_package_form_phase17_provides_for_this_target", "unavailable_mode_reason": "dynamic_requires_a_shared_library_package_form_that_phase17_does_not_provide"},
+      {"target_id": "target:v1:triple=i686-unknown-linux-gnu:endian=little:ptr_size=4:ptr_align=4:i32_align=4:i64_align=4:max_align=4", "available_modes": ["static"], "selected_mode": "static", "required_package_form": "static_archive", "decision_reason": "the_only_runtime_package_form_phase17_provides_for_this_target", "unavailable_mode_reason": "dynamic_requires_a_shared_library_package_form_that_phase17_does_not_provide"},
+      {"target_id": "target:v1:triple=x86_64-apple-darwin:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8", "available_modes": ["static"], "selected_mode": "static", "required_package_form": "static_archive", "decision_reason": "the_only_runtime_package_form_phase17_provides_for_this_target", "unavailable_mode_reason": "dynamic_requires_a_shared_library_package_form_that_phase17_does_not_provide"},
+      {"target_id": "target:v1:triple=aarch64-apple-darwin:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8", "available_modes": ["static"], "selected_mode": "static", "required_package_form": "static_archive", "decision_reason": "the_only_runtime_package_form_phase17_provides_for_this_target", "unavailable_mode_reason": "dynamic_requires_a_shared_library_package_form_that_phase17_does_not_provide"}
+    ],
+    "substitution_policy": "an_unavailable_mode_is_refused_and_never_silently_substituted",
+    "validation_stage": "before_linker_invocation_and_before_output_replacement",
+    "rejection_classes": [
+      "link_mode_unavailable_for_target",
+      "link_mode_silently_substituted",
+      "link_mode_unknown",
+      "link_mode_package_form_mismatch",
+      "link_mode_selected_without_package_evidence"
+    ],
+    "next_patch": "18.9"
+  },
   "phase18_linker_policy": {
     "version": "phase18_linker_policy_v1",
     "status": "ready_for_patch18_8",
