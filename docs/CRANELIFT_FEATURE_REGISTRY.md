@@ -561,6 +561,20 @@ Both failure directions are rejections. Declaring a target supported without a c
 
 The supported set is empty at this patch. The runtime package, linker, and ABI elements are supplied by Patch 18.6, Patch 18.7, and Patch 18.5, and an element may name a registry authority that exists or be explicitly pending a later patch, but never an owner that was never built.
 
+## Phase 18 object format and section binding
+
+- Authority version: `phase18_object_format_authority_v1`
+- Status: `ready_for_patch18_4`
+- Format descriptors: `5`
+- Object formats: `elf`, `macho`
+- Section kinds: `4`
+
+Patch 18.3 gives every declared target one compiler-owned object format descriptor. The format is derived from the operating system in the declared target identity, never from a file extension, an output probe, or the host the compiler happens to be running on.
+
+The derivation is recomputed rather than trusted. A descriptor claiming a format its operating system does not imply is rejected, and so is one that does not declare it was derived from target identity, because that is a host default wearing a descriptor's clothes. The Cranelift worker performs the same derivation independently and the two witnesses are compared byte for byte.
+
+Section kinds are common across formats and only the spelling differs, so the compiler reasons in kinds while the descriptor supplies the name. ELF names are dot-prefixed and Mach-O names are segment and section pairs, and a descriptor using the wrong spelling is describing a different object file.
+
 ## Registry entries
 
 | ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |

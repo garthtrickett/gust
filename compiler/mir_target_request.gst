@@ -162,3 +162,47 @@ func mir_serialize_target_support_request(table: target.MirTargetAuthorityTable[
 func mir_target_support_mir_to_c_witness(table: target.MirTargetAuthorityTable[ctx], tuple: target.MirTargetSupportTuple[ctx], ctx: &Arena) str {
     return mir_target_support_body(table, tuple, mir_target_support_witness_format(), ctx);
 }
+
+func mir_object_format_request_format() str { return "gust.compiler_object_format.v1"; }
+func mir_object_format_witness_format() str { return "gust.object_format_witness.v1"; }
+
+func mir_object_format_body(descriptor: target.MirObjectFormatDescriptor[ctx], operating_system: str, header: str, ctx: &Arena) str {
+    mut validation := target.mir_object_format_validate(descriptor, operating_system, ctx);
+    if validation.valid == 0 {
+        mut invalid := "format: invalid\nreason: ";
+        invalid = std.Concat(invalid, validation.reason_code);
+        invalid = std.Concat(invalid, "\n");
+        return std.Clone(ctx, invalid);
+    }
+    mut output := "format: ";
+    output = std.Concat(output, header);
+    output = std.Concat(output, "\nauthority: compiler/mir_target_authority.gst\n");
+    mut row := "object_format:";
+    row = mir_target_append(row, "target_id", descriptor.target_id, ctx);
+    row = mir_target_append(row, "object_format", descriptor.object_format, ctx);
+    row = mir_target_append(row, "os", operating_system, ctx);
+    row = mir_target_append(row, "derived_from", descriptor.derived_from, ctx);
+    row = mir_target_append(row, "max_align", std.FormatInt(descriptor.max_section_alignment), ctx);
+    output = std.Concat(output, row);
+    output = std.Concat(output, "\n");
+    mut sections: std.Vector[target.MirObjectSection[ctx], ctx] := ctx[descriptor.sections];
+    mut index := 0;
+    while index < len(sections) {
+        mut section_row := "object_section:";
+        section_row = mir_target_append(section_row, "kind", sections[index].section_kind, ctx);
+        section_row = mir_target_append(section_row, "name", sections[index].section_name, ctx);
+        section_row = mir_target_append(section_row, "align", std.FormatInt(sections[index].alignment), ctx);
+        output = std.Concat(output, section_row);
+        output = std.Concat(output, "\n");
+        index = index + 1;
+    }
+    return std.Clone(ctx, output);
+}
+
+func mir_serialize_object_format_request(descriptor: target.MirObjectFormatDescriptor[ctx], operating_system: str, ctx: &Arena) str {
+    return mir_object_format_body(descriptor, operating_system, mir_object_format_request_format(), ctx);
+}
+
+func mir_object_format_mir_to_c_witness(descriptor: target.MirObjectFormatDescriptor[ctx], operating_system: str, ctx: &Arena) str {
+    return mir_object_format_body(descriptor, operating_system, mir_object_format_witness_format(), ctx);
+}

@@ -210,6 +210,9 @@ jobs:
       - name: Phase 18 complete target support tuple
         run: just guard-cranelift-phase18-target-support-contract
 
+      - name: Phase 18 object format and section binding
+        run: just guard-cranelift-phase18-object-format-contract
+
       - name: Phase 17 cross-feature runtime composition
         run: just guard-cranelift-phase17-composition-contract
 

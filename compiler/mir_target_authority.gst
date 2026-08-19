@@ -333,3 +333,115 @@ func mir_target_tuple_validate(tuple: MirTargetSupportTuple[ctx], ctx: &Arena) M
     result.reason_code = std.Clone(ctx, "ok");
     return result;
 }
+
+// ---- Patch 18.3: object format, section, and symbol binding ----
+//
+// The object format is derived from the operating system in the declared target
+// identity. It is never taken from a file extension, an output probe, or the
+// host the compiler happens to be running on. Section kinds are common across
+// formats; only the spelling differs, so the compiler reasons in kinds and the
+// descriptor supplies the name.
+
+type MirObjectSection[ctx] struct {
+    section_kind: str,
+    section_name: str,
+    alignment: int
+}
+
+type MirObjectFormatDescriptor[ctx] struct {
+    target_id: str,
+    object_format: str,
+    derived_from: str,
+    max_section_alignment: int,
+    sections: Index[std.Vector[MirObjectSection[ctx], ctx], ctx],
+    symbol_bindings: Index[std.Vector[str, ctx], ctx],
+    symbol_visibilities: Index[std.Vector[str, ctx], ctx]
+}
+
+func mir_object_format_for_operating_system(operating_system: str, ctx: &Arena) str {
+    if std.str_eq(operating_system, "linux") == 1 { return std.Clone(ctx, "elf"); }
+    if std.str_eq(operating_system, "darwin") == 1 { return std.Clone(ctx, "macho"); }
+    return std.Clone(ctx, "");
+}
+
+func mir_object_section_declared(descriptor: MirObjectFormatDescriptor[ctx], section_kind: str, ctx: &Arena) int {
+    mut values: std.Vector[MirObjectSection[ctx], ctx] := ctx[descriptor.sections];
+    mut index := 0;
+    while index < len(values) {
+        if std.str_eq(values[index].section_kind, section_kind) == 1 { return 1; }
+        index = index + 1;
+    }
+    return 0;
+}
+
+func mir_object_binding_declared(descriptor: MirObjectFormatDescriptor[ctx], binding: str, ctx: &Arena) int {
+    mut values: std.Vector[str, ctx] := ctx[descriptor.symbol_bindings];
+    mut index := 0;
+    while index < len(values) {
+        if std.str_eq(values[index], binding) == 1 { return 1; }
+        index = index + 1;
+    }
+    return 0;
+}
+
+// The descriptor must agree with the target identity that produced it. A
+// descriptor claiming a format the target's operating system does not imply is
+// a host default wearing a descriptor's clothes.
+func mir_object_format_validate(descriptor: MirObjectFormatDescriptor[ctx], operating_system: str, ctx: &Arena) MirTargetValidation[ctx] {
+    mut result: MirTargetValidation[ctx];
+    result.valid = 0;
+
+    mut expected := mir_object_format_for_operating_system(operating_system, ctx);
+    if std.str_eq(expected, "") == 1 {
+        result.reason_code = std.Clone(ctx, "object_format_unknown_operating_system");
+        return result;
+    }
+    if std.str_eq(descriptor.object_format, expected) == 0 {
+        result.reason_code = std.Clone(ctx, "object_format_disagrees_with_target_identity");
+        return result;
+    }
+    if std.str_eq(descriptor.derived_from, "operating_system_in_declared_target_identity") == 0 {
+        result.reason_code = std.Clone(ctx, "object_format_not_derived_from_target_identity");
+        return result;
+    }
+
+    mut sections: std.Vector[MirObjectSection[ctx], ctx] := ctx[descriptor.sections];
+    if len(sections) == 0 {
+        result.reason_code = std.Clone(ctx, "object_format_declares_no_sections");
+        return result;
+    }
+    mut index := 0;
+    while index < len(sections) {
+        if sections[index].alignment <= 0 {
+            result.reason_code = std.Clone(ctx, "object_section_misaligned");
+            return result;
+        }
+        if sections[index].alignment > descriptor.max_section_alignment {
+            result.reason_code = std.Clone(ctx, "object_section_misaligned");
+            return result;
+        }
+        if std.str_eq(sections[index].section_name, "") == 1 {
+            result.reason_code = std.Clone(ctx, "object_section_unnamed");
+            return result;
+        }
+        mut probe := 0;
+        while probe < index {
+            if std.str_eq(sections[probe].section_kind, sections[index].section_kind) == 1 {
+                result.reason_code = std.Clone(ctx, "object_section_kind_duplicated");
+                return result;
+            }
+            probe = probe + 1;
+        }
+        index = index + 1;
+    }
+
+    mut bindings: std.Vector[str, ctx] := ctx[descriptor.symbol_bindings];
+    if len(bindings) == 0 {
+        result.reason_code = std.Clone(ctx, "object_format_declares_no_symbol_bindings");
+        return result;
+    }
+
+    result.valid = 1;
+    result.reason_code = std.Clone(ctx, "ok");
+    return result;
+}

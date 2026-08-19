@@ -37,6 +37,7 @@ TOP_FIELDS = {
     "phase17_thread_runtime_authority",
     "phase17_availability_authority",
     "phase17_composition_authority",
+    "phase18_object_format",
     "phase18_target_support",
     "phase18_target_authority",
     "phase17_closure",
@@ -10854,6 +10855,28 @@ def phase17_availability_authority_summary_lines(registry):
     ]
 
 
+def phase18_object_format_summary_lines(registry):
+    authority = registry["phase18_object_format"]
+    descriptors = authority["format_descriptors"]
+    formats = sorted({row["object_format"] for row in descriptors})
+    return [
+        "## Phase 18 object format and section binding",
+        "",
+        f"- Authority version: `{authority['version']}`",
+        f"- Status: `{authority['status']}`",
+        f"- Format descriptors: `{len(descriptors)}`",
+        f"- Object formats: {', '.join(f'`{value}`' for value in formats)}",
+        f"- Section kinds: `{len(authority['section_kinds'])}`",
+        "",
+        "Patch 18.3 gives every declared target one compiler-owned object format descriptor. The format is derived from the operating system in the declared target identity, never from a file extension, an output probe, or the host the compiler happens to be running on.",
+        "",
+        "The derivation is recomputed rather than trusted. A descriptor claiming a format its operating system does not imply is rejected, and so is one that does not declare it was derived from target identity, because that is a host default wearing a descriptor's clothes. The Cranelift worker performs the same derivation independently and the two witnesses are compared byte for byte.",
+        "",
+        "Section kinds are common across formats and only the spelling differs, so the compiler reasons in kinds while the descriptor supplies the name. ELF names are dot-prefixed and Mach-O names are segment and section pairs, and a descriptor using the wrong spelling is describing a different object file.",
+        "",
+    ]
+
+
 def phase18_target_support_summary_lines(registry):
     support = registry["phase18_target_support"]
     tuples = support["support_tuples"]
@@ -11061,6 +11084,7 @@ def render(registry):
         *phase18_opening_summary_lines(registry),
         *phase18_target_authority_summary_lines(registry),
         *phase18_target_support_summary_lines(registry),
+        *phase18_object_format_summary_lines(registry),
         "## Registry entries", "",
         "| ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |",
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
