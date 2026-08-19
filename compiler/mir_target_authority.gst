@@ -580,3 +580,50 @@ func mir_target_abi_selection_validate(selection: MirTargetAbiSelection[ctx], ac
     result.reason_code = std.Clone(ctx, "ok");
     return result;
 }
+
+// ---- Patch 18.6: target-specific runtime package selection ----
+//
+// Phase 18 selects a package Phase 17 already built for the target. It never
+// defines runtime symbol identity or version, and the selected package's object
+// format must agree with the format Patch 18.3 derived for that target.
+
+type MirTargetPackageSelection[ctx] struct {
+    target_id: str,
+    selected_package_version: str,
+    package_form: str,
+    owning_authority: str,
+    declared_object_format: str,
+    compatibility_decision: str
+}
+
+func mir_target_package_selection_validate(selection: MirTargetPackageSelection[ctx], descriptor_format: str, ctx: &Arena) MirTargetValidation[ctx] {
+    mut result: MirTargetValidation[ctx];
+    result.valid = 0;
+    if std.str_eq(selection.selected_package_version, "") == 1 {
+        result.reason_code = std.Clone(ctx, "target_package_missing");
+        return result;
+    }
+    if std.str_eq(selection.owning_authority, "phase17_runtime_package_authority") == 0 {
+        result.reason_code = std.Clone(ctx, "target_package_defined_by_phase18");
+        return result;
+    }
+    // The package format must agree with the format Patch 18.3 derived from the
+    // target's operating system, or the package belongs to a different target.
+    if std.str_eq(selection.declared_object_format, descriptor_format) == 0 {
+        result.reason_code = std.Clone(ctx, "target_package_object_format_mismatch");
+        return result;
+    }
+    if std.str_eq(selection.package_form, "static_archive") == 0 &&
+       std.str_eq(selection.package_form, "shared_library") == 0 {
+        result.reason_code = std.Clone(ctx, "target_package_wrong_target");
+        return result;
+    }
+    if std.str_eq(selection.compatibility_decision, "compatible") == 0 &&
+       std.str_eq(selection.compatibility_decision, "incompatible") == 0 {
+        result.reason_code = std.Clone(ctx, "target_package_incompatible");
+        return result;
+    }
+    result.valid = 1;
+    result.reason_code = std.Clone(ctx, "ok");
+    return result;
+}

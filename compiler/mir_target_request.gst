@@ -280,3 +280,38 @@ func mir_serialize_target_abi_request(selection: target.MirTargetAbiSelection[ct
 func mir_target_abi_mir_to_c_witness(selection: target.MirTargetAbiSelection[ctx], accepted: str, ctx: &Arena) str {
     return mir_target_abi_body(selection, accepted, mir_target_abi_witness_format(), ctx);
 }
+
+func mir_target_package_request_format() str { return "gust.compiler_target_package.v1"; }
+func mir_target_package_witness_format() str { return "gust.target_package_witness.v1"; }
+
+func mir_target_package_body(selection: target.MirTargetPackageSelection[ctx], descriptor_format: str, header: str, ctx: &Arena) str {
+    mut validation := target.mir_target_package_selection_validate(selection, descriptor_format, ctx);
+    if validation.valid == 0 {
+        mut invalid := "format: invalid\nreason: ";
+        invalid = std.Concat(invalid, validation.reason_code);
+        invalid = std.Concat(invalid, "\n");
+        return std.Clone(ctx, invalid);
+    }
+    mut output := "format: ";
+    output = std.Concat(output, header);
+    output = std.Concat(output, "\nauthority: compiler/mir_target_authority.gst\n");
+    mut row := "target_package:";
+    row = mir_target_append(row, "target_id", selection.target_id, ctx);
+    row = mir_target_append(row, "package_version", selection.selected_package_version, ctx);
+    row = mir_target_append(row, "form", selection.package_form, ctx);
+    row = mir_target_append(row, "owner", selection.owning_authority, ctx);
+    row = mir_target_append(row, "object_format", selection.declared_object_format, ctx);
+    row = mir_target_append(row, "descriptor_format", descriptor_format, ctx);
+    row = mir_target_append(row, "compatibility", selection.compatibility_decision, ctx);
+    output = std.Concat(output, row);
+    output = std.Concat(output, "\n");
+    return std.Clone(ctx, output);
+}
+
+func mir_serialize_target_package_request(selection: target.MirTargetPackageSelection[ctx], descriptor_format: str, ctx: &Arena) str {
+    return mir_target_package_body(selection, descriptor_format, mir_target_package_request_format(), ctx);
+}
+
+func mir_target_package_mir_to_c_witness(selection: target.MirTargetPackageSelection[ctx], descriptor_format: str, ctx: &Arena) str {
+    return mir_target_package_body(selection, descriptor_format, mir_target_package_witness_format(), ctx);
+}

@@ -1,0 +1,13 @@
+kind	requirement	evidence	level
+selection	every declared target has exactly one package selection	selection coverage compared against the declared triple vocabulary	1
+selection	no duplicate package selection for a target	uniqueness check over selection target ids	1
+selection	every selection names the consumed authority as owner	per-selection owner comparison	1
+selection	every selection carries a compatibility decision	decision vocabulary membership	1
+boundary	the consumed authority declares the enforcement evidence	evidence checked against the Phase 17 rejection class inventory	1
+boundary	Phase 18 selects an existing Phase 17 package	selected version compared against the Phase 17 package	1
+boundary	Phase 18 never defines runtime symbol identity or version	selection policy is frozen	1
+agreement	the selected package version agrees with Phase 17	per-target version comparison	1
+agreement	the selected package form agrees with Phase 17	per-target form comparison	1
+agreement	the package object format agrees with the Patch 18.3 descriptor	case-normalised format comparison	1
+stage	package selection precedes linker invocation and output replacement	validation stage is frozen	1
+rejection	the rejection class inventory is complete	six required rejection classes	1

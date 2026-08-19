@@ -639,3 +639,65 @@ pub fn lower_target_abi_witness_path(path: &Path) -> Result<String, Box<dyn Erro
     let request = fs::read_to_string(path)?;
     Ok(lower_target_abi_witness(&request)?)
 }
+
+// ---- Patch 18.6: target-specific runtime package selection ----
+
+const TARGET_PACKAGE_FORMAT: &str = "gust.compiler_target_package.v1";
+const TARGET_PACKAGE_WITNESS_FORMAT: &str = "gust.target_package_witness.v1";
+const PACKAGE_OWNER: &str = "phase17_runtime_package_authority";
+const PACKAGE_FORMS: [&str; 2] = ["static_archive", "shared_library"];
+
+pub fn lower_target_package_witness(request: &str) -> Result<String, TargetError> {
+    let lines: Vec<&str> = request.lines().collect();
+    if header(&lines, "format")? != TARGET_PACKAGE_FORMAT {
+        return Err(error("target_package_malformed", "unknown request format"));
+    }
+    if header(&lines, "authority")? != AUTHORITY {
+        return Err(error("target_package_malformed", "unknown target authority"));
+    }
+
+    let package_line = lines.iter().find(|l| l.starts_with("target_package:"))
+        .ok_or_else(|| error("target_package_missing", "request declares no package selection"))?;
+    let selection = row(package_line, "target_package:")?;
+
+    // Phase 17 owns the package. A selection Phase 18 claims to own would mean
+    // Phase 18 defining runtime symbol identity or version.
+    if field(&selection, "owner")? != PACKAGE_OWNER {
+        return Err(error("target_package_defined_by_phase18",
+            "the runtime package is owned by the Phase 17 authority"));
+    }
+
+    // The package format must agree with the format Patch 18.3 derived for this
+    // target, or the package belongs to a different target.
+    let object_format = field(&selection, "object_format")?;
+    let descriptor_format = field(&selection, "descriptor_format")?;
+    if object_format != descriptor_format {
+        return Err(error("target_package_object_format_mismatch",
+            format!("package format {object_format} disagrees with the descriptor format {descriptor_format}")));
+    }
+
+    let form = field(&selection, "form")?;
+    if !PACKAGE_FORMS.contains(&form) {
+        return Err(error("target_package_wrong_target", format!("unknown package form {form}")));
+    }
+    let compatibility = field(&selection, "compatibility")?;
+    if compatibility != "compatible" && compatibility != "incompatible" {
+        return Err(error("target_package_incompatible",
+            format!("{compatibility} is not a compatibility decision")));
+    }
+
+    let mut witness = String::new();
+    witness.push_str(&format!("format: {TARGET_PACKAGE_WITNESS_FORMAT}\n"));
+    witness.push_str(&format!("authority: {AUTHORITY}\n"));
+    witness.push_str(&format!(
+        "target_package:target_id={};package_version={};form={};owner={};object_format={};descriptor_format={};compatibility={};\n",
+        field(&selection, "target_id")?, field(&selection, "package_version")?, form,
+        PACKAGE_OWNER, object_format, descriptor_format, compatibility,
+    ));
+    Ok(witness)
+}
+
+pub fn lower_target_package_witness_path(path: &Path) -> Result<String, Box<dyn Error>> {
+    let request = fs::read_to_string(path)?;
+    Ok(lower_target_package_witness(&request)?)
+}

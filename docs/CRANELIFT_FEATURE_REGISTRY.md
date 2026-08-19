@@ -603,6 +603,20 @@ The consumed authority is the module that rejects a calling convention it does n
 
 Platform-specific calling conventions remain deferred. Phase 16 accepts exactly one convention today, so selecting a platform convention would be Phase 18 defining ABI semantics, and every target records that status explicitly rather than leaving the gap implicit.
 
+## Phase 18 target-specific runtime package selection
+
+- Authority version: `phase18_target_package_selection_v1`
+- Status: `ready_for_patch18_7`
+- Package selections: `5`
+- Package forms: `static_archive`
+- Consumed authority: `phase17_runtime_package_authority`
+
+Patch 18.6 selects a runtime package Phase 17 already built for each declared target. Phase 18 selects but never defines: it introduces no runtime symbol identity, version, or component, and a selection it claimed to own would be Phase 18 defining what Phase 17 owns.
+
+The consumed authority is one that refuses rather than records. Phase 17 rejects a wrong-target or ambiguous package with stable reasons, and the guard requires the declared enforcement evidence to appear in that authority's own rejection class inventory, so a selection cannot cite an owner that could not refuse.
+
+Phase 17 spells the object format with different casing than the Patch 18.3 descriptor, so the comparison normalises explicitly rather than relying on an accident. A package whose format disagrees with the format derived from the target's operating system belongs to a different target, and both the guard and the worker reject it.
+
 ## Registry entries
 
 | ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |

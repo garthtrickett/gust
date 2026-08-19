@@ -4371,6 +4371,36 @@
     "scope_policy": "availability_compatibility_and_diagnostics_only_cross_feature_composition_remains_in_patch17_14",
     "next_patch": "17.14"
   },
+  "phase18_target_package_selection": {
+    "version": "phase18_target_package_selection_v1",
+    "status": "ready_for_patch18_7",
+    "authority_owner": "compiler/mir_target_authority.gst",
+    "consumed_authority": "phase17_runtime_package_authority",
+    "consumed_authority_reason": "the_phase17_authority_rejects_a_wrong_target_or_ambiguous_package_rather_than_merely_recording_one",
+    "enforcement_evidence": [
+      "runtime_package_target_mismatch",
+      "runtime_package_ambiguous_selection"
+    ],
+    "selection_policy": "phase18_selects_an_existing_phase17_package_and_never_defines_runtime_symbol_identity_or_version",
+    "format_agreement_policy": "the_selected_package_object_format_must_match_the_phase18_descriptor_after_case_normalisation",
+    "package_selections": [
+      {"target_id": "target:v1:triple=x86_64-unknown-linux-gnu:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8", "selected_package_version": "gust-runtime-package-v1", "package_form": "static_archive", "owning_authority": "phase17_runtime_package_authority", "object_format_agreement": "package_object_format_matches_the_phase18_descriptor_after_case_normalisation", "compatibility_decision": "compatible"},
+      {"target_id": "target:v1:triple=aarch64-unknown-linux-gnu:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8", "selected_package_version": "gust-runtime-package-v1", "package_form": "static_archive", "owning_authority": "phase17_runtime_package_authority", "object_format_agreement": "package_object_format_matches_the_phase18_descriptor_after_case_normalisation", "compatibility_decision": "compatible"},
+      {"target_id": "target:v1:triple=i686-unknown-linux-gnu:endian=little:ptr_size=4:ptr_align=4:i32_align=4:i64_align=4:max_align=4", "selected_package_version": "gust-runtime-package-v1", "package_form": "static_archive", "owning_authority": "phase17_runtime_package_authority", "object_format_agreement": "package_object_format_matches_the_phase18_descriptor_after_case_normalisation", "compatibility_decision": "compatible"},
+      {"target_id": "target:v1:triple=x86_64-apple-darwin:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8", "selected_package_version": "gust-runtime-package-v1", "package_form": "static_archive", "owning_authority": "phase17_runtime_package_authority", "object_format_agreement": "package_object_format_matches_the_phase18_descriptor_after_case_normalisation", "compatibility_decision": "compatible"},
+      {"target_id": "target:v1:triple=aarch64-apple-darwin:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8", "selected_package_version": "gust-runtime-package-v1", "package_form": "static_archive", "owning_authority": "phase17_runtime_package_authority", "object_format_agreement": "package_object_format_matches_the_phase18_descriptor_after_case_normalisation", "compatibility_decision": "compatible"}
+    ],
+    "rejection_classes": [
+      "target_package_missing",
+      "target_package_wrong_target",
+      "target_package_object_format_mismatch",
+      "target_package_incompatible",
+      "target_package_defined_by_phase18",
+      "target_package_selected_after_linker_invocation"
+    ],
+    "validation_stage": "before_linker_invocation_and_before_output_replacement",
+    "next_patch": "18.7"
+  },
   "phase18_target_abi_selection": {
     "version": "phase18_target_abi_selection_v1",
     "status": "ready_for_patch18_6",

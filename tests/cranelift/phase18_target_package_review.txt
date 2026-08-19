@@ -1,0 +1,19 @@
+Patch 18.6 — Target-Specific Runtime Package Selection
+
+package_selections	5
+package_forms	1
+enforcement_evidence	2
+rejection_classes	6
+
+selection	every declared target has exactly one package selection	selection coverage compared against the declared triple vocabulary	Level 1
+selection	no duplicate package selection for a target	uniqueness check over selection target ids	Level 1
+selection	every selection names the consumed authority as owner	per-selection owner comparison	Level 1
+selection	every selection carries a compatibility decision	decision vocabulary membership	Level 1
+boundary	the consumed authority declares the enforcement evidence	evidence checked against the Phase 17 rejection class inventory	Level 1
+boundary	Phase 18 selects an existing Phase 17 package	selected version compared against the Phase 17 package	Level 1
+boundary	Phase 18 never defines runtime symbol identity or version	selection policy is frozen	Level 1
+agreement	the selected package version agrees with Phase 17	per-target version comparison	Level 1
+agreement	the selected package form agrees with Phase 17	per-target form comparison	Level 1
+agreement	the package object format agrees with the Patch 18.3 descriptor	case-normalised format comparison	Level 1
+stage	package selection precedes linker invocation and output replacement	validation stage is frozen	Level 1
+rejection	the rejection class inventory is complete	six required rejection classes	Level 1
