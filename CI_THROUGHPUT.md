@@ -580,6 +580,46 @@ With Lever 4 landed, roughly 105 jobs per push. At 20 slots that is ~6 waves; at
 40 it is ~3. Combined with Levers 2 and 3 shortening each wave, the compounding
 is worth more than any single item here.
 
+## A guard nobody runs is not a saving
+
+`guard-mir-to-c-boring-surface` was in no workflow. Its only caller is
+`guard-mir-feature-migration-suite`, which `make test` runs, and `make test` is
+in no workflow either. So it failed only for whoever ran the full local suite —
+and it took the suite down with it.
+
+It had been failing since roughly Phase 10. Two of its blocks were Phase 8/9
+gates asserting Cranelift was still a contained experiment: a hand-maintained
+allowlist of Cranelift `justfile` recipes, and a ban on the word `cranelift`
+appearing anywhere in `compiler/`, `src/`, or `tests/`. By 2026-08-19 that was
+327 recipes against 62 allowlist entries, 249 flagged, last maintained
+2026-07-13.
+
+Both blocks are removed. Their intent is carried by things that do run in CI:
+`scripts/cranelift_test_levels.py` for Level 1/2/3 ownership, and
+`guard-cranelift-dependency-beachhead` for production routing. The rest of the
+guard — manifest entry counts, retirement statuses, suite wiring, and four
+MIR-to-C native smokes — still runs and still passes.
+
+**The guard is now a Heavy Guards shard**, which is the point. This adds a job in
+a document otherwise about removing them, and that is deliberate: the same rot
+took down the Level 3 nightly for a month for the same reason, invisibility.
+
+**It does extend the Heavy Guards critical path, and the first estimate of that
+was wrong.** Timed locally at **854 s** — each of the guard's four native smokes
+forces a full `make gust` rebuild through `scripts/run-gust-file.sh`, whose
+`touch` is deliberate and must not be defeated. The current longest Heavy Guards
+job is `mir-branch` at 478 s. So this becomes the longest shard and sets Heavy
+Guards' wall-clock, roughly 478 s → 600-850 s. CI may be faster than this machine
+— `make gust` measured 126 s on a runner against about 200 s locally, and this
+timing ran alongside other work — but it will still be the longest.
+
+That is the honest trade: about five minutes of Heavy Guards wall-clock, once per
+push, to stop a guard from failing invisibly for nine phases. Taken knowingly. If
+it proves too expensive, the fix is to make the four smokes share one build
+rather than to remove the shard.
+
+Heavy Guards goes from 37 to 38 shards, within its declared maximum of 40.
+
 ## Ordered plan
 
 - [x] **Lever 1 — Rust cache.** Merged `52fbcf2b` (PR #43), 41 workflows.

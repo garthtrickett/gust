@@ -403,6 +403,9 @@ guard-cloud-heavy-shard shard:
         just guard-mir-to-c-conditional-branch-native-smoke
         just guard-mir-feature-if-else-return-int-routed-execution
         ;;
+      mir-to-c-boring-surface)
+        just guard-mir-to-c-boring-surface
+        ;;
       migration-surfaces)
         just guard-mir-feature-harness-surface
         just guard-mir-feature-registry-surface
@@ -510,7 +513,7 @@ guard-cloud-heavy-shard shard:
         ;;
       *)
         echo "unknown cloud heavy shard: {{shard}}"
-        echo "expected one of: phase9-branch-core-baseline, phase9-branch-core-legacy, phase9-branch-core-mir-basic-scalars, phase9-branch-core-mir-basic-calls, phase9-branch-core-mir-basic-differential, phase9-branch-core-mir-bundles, phase9-branch-core-mir-block-graphs, phase9-branch-compiler-mir-scalars, phase9-branch-compiler-mir-metadata, phase9-branch-compiler-mir-blocks, phase9-branch-translator-scalar, phase9-branch-translator-cfg, phase9-branch-translator-metadata, phase9-branch-translator-imports, phase9c-native-diff-return-local, phase9c-native-diff-cfg, phase9c-native-diff-metadata, phase9c-native-diff-boundary, mir-branch, migration-surfaces, migration-return-int-owned, migration-return-int-routed, migration-local-binding-owned, migration-local-binding-routed, migration-if-else-owned, migration-if-else-routed, migration-provenance-owned, migration-provenance-routed, step51-policy, step52-registration, step52-lifetime-diagnostics, step52-cleanup-boundary, step52-terminal-states, step52-transfer-defer, step52-directory, runner-surface, parser-raw-casts"
+        echo "expected one of: phase9-branch-core-baseline, phase9-branch-core-legacy, phase9-branch-core-mir-basic-scalars, phase9-branch-core-mir-basic-calls, phase9-branch-core-mir-basic-differential, phase9-branch-core-mir-bundles, phase9-branch-core-mir-block-graphs, phase9-branch-compiler-mir-scalars, phase9-branch-compiler-mir-metadata, phase9-branch-compiler-mir-blocks, phase9-branch-translator-scalar, phase9-branch-translator-cfg, phase9-branch-translator-metadata, phase9-branch-translator-imports, phase9c-native-diff-return-local, phase9c-native-diff-cfg, phase9c-native-diff-metadata, phase9c-native-diff-boundary, mir-branch, migration-surfaces, mir-to-c-boring-surface, migration-return-int-owned, migration-return-int-routed, migration-local-binding-owned, migration-local-binding-routed, migration-if-else-owned, migration-if-else-routed, migration-provenance-owned, migration-provenance-routed, step51-policy, step52-registration, step52-lifetime-diagnostics, step52-cleanup-boundary, step52-terminal-states, step52-transfer-defer, step52-directory, runner-surface, parser-raw-casts"
         exit 1
         ;;
     esac
@@ -1541,88 +1544,18 @@ guard-mir-to-c-boring-surface:
       exit 1
     fi
 
-    cranelift_recipe_wiring="$(just --list | rg -n -i '(^|[[:space:]])(guard-.*cranelift|cranelift[-_:])' | rg -v -F 'guard-cranelift-experiment-manifest-surface' | rg -v -F 'guard-cranelift-backend-surface' | rg -v -F 'guard-cranelift-dependency-beachhead' | rg -v -F 'guard-cranelift-experimental-backend-suite' | rg -v -F 'guard-cranelift-no-fixture-regression' | rg -v -F 'guard-cranelift-return-int-native-smoke' | rg -v -F 'guard-cranelift-local-binding-native-smoke' | rg -v -F 'guard-cranelift-local-binding-read-native-smoke' | rg -v -F 'guard-cranelift-conditional-branch-native-smoke' | rg -v -F 'guard-cranelift-branch-native-smoke' | rg -v -F 'guard-cranelift-identity-i32-native-smoke' | rg -v -F 'guard-cranelift-mir-to-c-differential-native-smoke' | rg -v -F 'guard-cranelift-differential-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-add-i32-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-positive-i32-branch-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-increment-local-i32-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-call-helper-i32-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-extern-call-i32-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-extern-add-i32-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-extern-predicate-branch-i32-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-mir-return-int-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-mir-local-binding-read-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-mir-conditional-branch-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-mir-add-i32-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-mir-positive-i32-branch-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-mir-increment-local-i32-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-mir-call-helper-i32-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-mir-extern-call-i32-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-mir-extern-add-i32-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-mir-extern-predicate-branch-i32-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-compiler-mir-return-int-ingestion-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-compiler-mir-conditional-branch-ingestion-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-compiler-mir-ingestion-invalid-fixtures-native-rejection' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-compiler-mir-ingestion-corpus-surface' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-compiler-mir-add-i32-ingestion-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-compiler-mir-provenance-metadata-ingestion-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-compiler-mir-resource-metadata-ingestion-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-compiler-mir-native-boundary-metadata-ingestion-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-compiler-mir-positive-i32-branch-ingestion-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-compiler-mir-block-jump-ingestion-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-compiler-mir-block-local-branch-ingestion-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-compiler-mir-block-two-local-update-branch-ingestion-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-compiler-mir-block-local-branch-join-ingestion-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-compiler-mir-block-param-update-branch-ingestion-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-compiler-mir-block-param-local-call-branch-ingestion-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-compiler-mir-block-param-imported-call-branch-ingestion-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-compiler-mir-block-param-imported-call-return-ingestion-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-compiler-mir-block-param-imported-predicate-update-branch-ingestion-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-compiler-mir-block-param-merge-update-branch-ingestion-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-compiler-mir-block-param-merge-imported-call-return-ingestion-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-compiler-mir-block-param-merge-arm-update-imported-call-return-ingestion-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-compiler-mir-block-param-merge-arm-update-imported-call-branch-ingestion-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-compiler-mir-block-param-merge-imported-branch-joined-return-ingestion-native-smoke' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9d-opening-contract' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9d-ingestion-inventory-architecture' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9d-schema-parser-validator' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9e-opening-contract' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9f-opening-contract' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9f-call-import-schema-validator' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9f-module-emitter-local-call-cohort' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-opening-contract' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-object-artifact-contract' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-target-relocation-contract' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-object-inspection-contract' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-link-driver-contract' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-pipeline-failure-classification' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-positive-link-matrix' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-negative-link-matrix' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'cranelift-phase9g-link-canonical-ingestion-object' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'cranelift-phase9g-link-canonical-unresolved-ingestion-object' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-phase9c-phase9e-link-migration' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-link-bypass-retirement' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-object-reproducibility' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-ci-surface' || true)"
-    cranelift_recipe_wiring="$(printf '%s\n' "$cranelift_recipe_wiring" | rg -v -F 'guard-cranelift-phase9g-close' || true)"
-    if [ -n "$cranelift_recipe_wiring" ]; then
-      echo "MIR-to-C boring gate allows only manifest, inert backend, dependency beachhead, explicit backend suite, return-int/local-binding/branch native smokes, and differential Cranelift guards before backend implementation expands."
-      echo "$cranelift_recipe_wiring"
-      exit 1
-    fi
-
-    cranelift_refs="$(rg -n -i -F 'cranelift' compiler src tests Cargo.toml Cargo.lock Makefile 2>/dev/null | rg -v '^compiler/CRANELIFT_EXPERIMENT_MANIFEST\.md:' | rg -v '^compiler/CRANELIFT_PHASE9C_DIFFERENTIAL_LEDGER\.md:' | rg -v '^compiler/experiments/cranelift/' || true)"
-    if [ -n "$cranelift_refs" ]; then
-      echo "MIR-to-C boring gate allows only the manifest and isolated experimental Cranelift crate before production implementation references exist:"
-      echo "$cranelift_refs"
-      exit 1
-    fi
+    # The recipe allowlist and the blanket `cranelift` source-reference ban that
+    # stood here were Phase 8/9 gates asserting Cranelift was still a contained
+    # experiment. Cranelift is now the subject of Phases 9 through 19. Their
+    # intent is carried by scripts/cranelift_test_levels.py for Level 1/2/3
+    # ownership and by guard-cranelift-dependency-beachhead for production
+    # routing, both of which run in CI. See CI_THROUGHPUT.md.
 
     just guard-mir-to-c-return-int-literal-native-smoke
     just guard-mir-to-c-local-binding-read-native-smoke
     just guard-mir-to-c-conditional-branch-native-smoke
     just guard-mir-to-c-provenance-metadata-native-smoke
-    echo "✅ MIR-to-C boring surface passed: all Phase 8 entries are retired, suite routing is MIR-owned, and only isolated Cranelift experiment lanes are allowed."
+    echo "✅ MIR-to-C boring surface passed: all Phase 8 entries are retired, suite routing is MIR-owned, and the four migrated features execute natively through MIR-to-C."
 
 guard-cranelift-experiment-guard-wiring-surface:
     #!/usr/bin/env bash
