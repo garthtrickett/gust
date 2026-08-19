@@ -580,6 +580,79 @@ With Lever 4 landed, roughly 105 jobs per push. At 20 slots that is ~6 waves; at
 40 it is ~3. Combined with Levers 2 and 3 shortening each wave, the compounding
 is worth more than any single item here.
 
+## A guard nobody runs is not a saving
+
+`guard-mir-to-c-boring-surface` was in no workflow. Its only caller is
+`guard-mir-feature-migration-suite`, which `make test` runs, and `make test` is
+in no workflow either. So it failed only for whoever ran the full local suite —
+and it took the suite down with it.
+
+It had been failing since roughly Phase 10. Two of its blocks were Phase 8/9
+gates asserting Cranelift was still a contained experiment: a hand-maintained
+allowlist of Cranelift `justfile` recipes, and a ban on the word `cranelift`
+appearing anywhere in `compiler/`, `src/`, or `tests/`. By 2026-08-19 that was
+327 recipes against 62 allowlist entries, 249 flagged, last maintained
+2026-07-13.
+
+Both blocks are removed. Their intent is carried by things that do run in CI:
+`scripts/cranelift_test_levels.py` for Level 1/2/3 ownership, and
+`guard-cranelift-dependency-beachhead` for production routing. The rest of the
+guard — manifest entry counts, retirement statuses, suite wiring, and four
+MIR-to-C native smokes — still runs and still passes.
+
+**The guard is now a Heavy Guards shard**, which is the point. This adds a job in
+a document otherwise about removing them, and that is deliberate: the same rot
+took down the Level 3 nightly for a month for the same reason, invisibility.
+
+**It does extend the Heavy Guards critical path, and the first estimate of that
+was wrong.** Timed locally at **854 s** — each of the guard's four native smokes
+forces a full `make gust` rebuild through `scripts/run-gust-file.sh`, whose
+`touch` is deliberate and must not be defeated. The current longest Heavy Guards
+job is `mir-branch` at 478 s. So this becomes the longest shard and sets Heavy
+Guards' wall-clock, roughly 478 s → 600-850 s. CI may be faster than this machine
+— `make gust` measured 126 s on a runner against about 200 s locally, and this
+timing ran alongside other work — but it will still be the longest.
+
+That is the honest trade: about five minutes of Heavy Guards wall-clock, once per
+push, to stop a guard from failing invisibly for nine phases. Taken knowingly. If
+it proves too expensive, the fix is to make the four smokes share one build
+rather than to remove the shard.
+
+Heavy Guards goes from 37 to 38 shards, within its declared maximum of 40.
+
+## Measured outcome
+
+Taken on `main` at `bc40864` with a quiet queue, against the PR #64 baseline.
+Both runs passed.
+
+| | before | after | |
+| --- | --- | --- | --- |
+| PR Fast — `build` job | 688 s | **128 s** | −81% |
+| PR Fast — aggregate | 133 min | **81 min** | −39% |
+| PR Fast — longest job | 710 s | **578 s** | now `phase11-family / pointer-memory` |
+| PR Fast — jobs | 22 | 19 | |
+| Heavy Guards — longest job | 727 s | **490 s** | −33% |
+| Heavy Guards — aggregate | 120 min | **108 min** | −10% |
+| Heavy Guards — jobs | 41 | 45 | 3b split adds jobs on purpose |
+
+**Critical path, which is what the levers targeted:** `build` + longest dependent
+job, 688 + 710 = 1398 s before, 128 + 578 = **706 s** after. That is 23 min → 12
+min, against a projection of ~13 min. Lever 3a is the bulk of it: the `build` job
+fell from 688 s to 128 s because the 52 Level 1 contracts moved off the serial
+prefix.
+
+**Observed wall-clock improved less: 38 min → 29 m 45 s.** The gap is scheduling,
+not work. `build` finished at 08:34:26 and the first dependent job started at
+08:37:46 — a 3 m 20 s hole with nothing running, and similar gaps recur as the
+matrix fills. Roughly half the wall-clock of a PR Fast run is now runners waiting
+to be allocated rather than jobs executing.
+
+That reframes what is left. Shaving job durations has reached diminishing
+returns; the remaining wall-clock is allocation latency, which no lever in this
+document addresses. Raising concurrency does not help either — the jobs are not
+queued behind our own jobs. If PR Fast wall-clock matters more from here, the
+next thing to measure is that gap, not the jobs.
+
 ## Ordered plan
 
 - [x] **Lever 1 — Rust cache.** Merged `52fbcf2b` (PR #43), 41 workflows.
@@ -600,8 +673,12 @@ is worth more than any single item here.
       overhead, paid by every one of ~105 jobs. It is an `apt-get` install, which
       is also the source of every flake in the incident log. Cache the packages,
       or move to a runner image that ships them.
-- [ ] **Shard `phase11-family`.** With 3a and 3c landed, `phase11-family /
-      pointer-memory` at 502 s is the new critical path in PR Fast.
+- [ ] **Measure runner allocation latency.** About half of a PR Fast run's
+      wall-clock is now gaps between jobs, not job duration. This is the largest
+      remaining item and no lever here addresses it.
+- [ ] **Shard `phase11-family`.** `phase11-family / pointer-memory` at 578 s is
+      the longest job in PR Fast. Worth less than it looks while allocation gaps
+      dominate.
 - [ ] **Re-measure and update the Changelog.** The estimates above are derived
       from the 2026-08-16 baseline and the 2026-08-19 job census, not from a
       post-change measurement.
@@ -621,6 +698,8 @@ is worth more than any single item here.
 | 2026-08-19 | Levers 4 and 5 merged; job count −37%, superseded runs auto-cancelled | pending re-measure |
 | 2026-08-19 | Lever 2 found already implemented; estimate was pre-artifact | — |
 | 2026-08-19 | Lever 3 re-scoped from consolidation to splitting, and merged | pending re-measure |
+| 2026-08-19 | Lever 3a merged: build job split from Level 1 contracts | — |
+| 2026-08-19 | **Measured on `main` @ `bc40864`, clean queue** | PR Fast 133m → **81m** |
 
 ## Incident log
 
