@@ -33,6 +33,10 @@ on:
       - 'tests/cranelift/phase17_runtime_authority_contract.tsv'
       - 'tests/cranelift/phase17_runtime_authority_review.txt'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   guard-cranelift-phase17-runtime-authority-contract:
     name: Phase 17.1 runtime authority contract (Level 1)

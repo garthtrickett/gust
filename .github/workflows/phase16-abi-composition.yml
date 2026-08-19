@@ -6,6 +6,10 @@ on:
     branches: [main]
     paths: ['compiler/mir_abi_composition.gst','compiler/mir_abi_composition_mir_to_c.gst','compiler/mir_abi_composition_parity_smoke_test_entry.gst','compiler/future/p16_complete_abi_differential_source.gst','compiler/experiments/cranelift/src/abi_composition.rs','compiler/experiments/cranelift/src/main.rs','scripts/phase16_abi_composition.py','scripts/phase16_abi_composition_parity.sh','scripts/cranelift_feature_registry.json','scripts/cranelift_feature_registry.schema.json','scripts/cranelift_test_levels.json','tests/cranelift/phase16_abi_composition_contract.tsv','tests/cranelift/phase16_abi_composition_review.txt','justfile','.github/workflows/phase16-abi-composition.yml','.github/workflows/cranelift-historical-full.yml']
   workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   contract:
     runs-on: ubuntu-latest

@@ -30,6 +30,10 @@ on:
       - 'tests/cranelift/phase17_availability_contract.tsv'
       - 'tests/cranelift/phase17_availability_review.txt'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   guard-cranelift-phase17-availability-contract:
     name: Phase 17.13 availability contract (Level 1)

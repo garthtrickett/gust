@@ -34,6 +34,10 @@ on:
       - 'tests/cranelift/phase17_runtime_package_review.txt'
       - 'tests/cranelift/phase17_runtime_package_target_review.txt'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   guard-cranelift-phase17-runtime-package-contract:
     name: Phase 17.4 runtime package contract (Level 1)

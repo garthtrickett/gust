@@ -42,6 +42,10 @@ on:
       - '.github/workflows/phase15-resource-reassignment.yml'
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   reassignment-contract:
     name: Phase 15.4 resource reassignment contract (Level 1)

@@ -6,6 +6,10 @@ on:
     branches: [main]
     paths: ['compiler/mir_unsized_abi.gst','compiler/mir_unsized_abi_mir_to_c.gst','compiler/mir_native_backend_unsized_abi_request.gst','compiler/mir_unsized_abi_smoke_test_entry.gst','compiler/experiments/cranelift/src/unsized_abi.rs','compiler/experiments/cranelift/src/main.rs','scripts/phase16_unsized_abi.py','scripts/phase16_unsized_abi_parity.sh','scripts/cranelift_test_levels.json','tests/cranelift/phase16_unsized_abi_contract.tsv','tests/cranelift/phase16_unsized_abi_review.txt','justfile','.github/workflows/phase16-unsized-abi.yml']
   workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   contract:
     name: Phase 16.8 unsized ABI contract (Level 1)

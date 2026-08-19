@@ -32,6 +32,10 @@ on:
       - 'tests/cranelift/phase17_runtime_requirement_contract.tsv'
       - 'tests/cranelift/phase17_runtime_requirement_review.txt'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   guard-cranelift-phase17-runtime-requirement-contract:
     name: Phase 17.3 runtime requirement contract (Level 1)

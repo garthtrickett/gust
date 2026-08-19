@@ -6,6 +6,10 @@ on:
     branches: [main]
     paths: ['compiler/mir_direct_call_agreement.gst', 'compiler/mir_direct_call_agreement_mir_to_c.gst', 'compiler/mir_native_backend_direct_call_agreement_request.gst', 'compiler/mir_direct_call_agreement_smoke_test_entry.gst', 'compiler/experiments/cranelift/src/direct_call_agreement.rs', 'compiler/experiments/cranelift/src/main.rs', 'scripts/phase16_direct_call_agreement.py', 'scripts/phase16_direct_call_agreement_parity.sh', 'scripts/cranelift_test_levels.json', 'tests/cranelift/phase16_direct_call_agreement_contract.tsv', 'tests/cranelift/phase16_direct_call_agreement_review.txt', 'justfile', '.github/workflows/phase16-direct-call-agreement.yml']
   workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   contract:
     name: Phase 16.5 direct-call agreement contract (Level 1)

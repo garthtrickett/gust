@@ -34,6 +34,10 @@ on:
       - '.github/workflows/phase16-aggregate-parameters.yml'
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   aggregate-parameter-contract:
     name: Phase 16.3 aggregate parameter contract (Level 1)
