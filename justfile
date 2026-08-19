@@ -88,12 +88,13 @@ guard-pr-fast-ci-surface:
     level_runner="scripts/cranelift_test_levels.py"
     just_installer="scripts/install-just-ci.sh"
     native_deps_installer="scripts/install-native-deps-ci.sh"
+    ripgrep_installer="scripts/install-ripgrep-ci.sh"
     for required_file in \
       "$workflow" "$family_runner" "$level_runner" \
       scripts/cranelift_test_levels.json \
       .github/workflows/heavy-guards.yml \
       .github/workflows/cranelift-historical-full.yml \
-      "$just_installer" "$native_deps_installer"
+      "$just_installer" "$native_deps_installer" "$ripgrep_installer"
     do
       if [ ! -f "$required_file" ] || [ -L "$required_file" ]; then
         echo "Missing regular PR fast CI input: $required_file"
@@ -529,9 +530,10 @@ guard-cloud-heavy-ci-surface:
     level_runner="scripts/cranelift_test_levels.py"
     just_installer="scripts/install-just-ci.sh"
     native_deps_installer="scripts/install-native-deps-ci.sh"
+    ripgrep_installer="scripts/install-ripgrep-ci.sh"
     for required_file in \
       "$workflow" "$family_runner" "$level_runner" "$just_installer" \
-      "$native_deps_installer"
+      "$native_deps_installer" "$ripgrep_installer"
     do
       if [ ! -f "$required_file" ] || [ -L "$required_file" ]; then
         echo "Missing regular Heavy CI input: $required_file"
