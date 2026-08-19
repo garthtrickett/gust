@@ -4371,6 +4371,40 @@
     "scope_policy": "availability_compatibility_and_diagnostics_only_cross_feature_composition_remains_in_patch17_14",
     "next_patch": "17.14"
   },
+  "phase18_cross_compilation": {
+    "version": "phase18_cross_compilation_v1",
+    "status": "ready_for_patch18_10",
+    "authority_owner": "compiler/mir_target_authority.gst",
+    "host_triple": "x86_64-unknown-linux-gnu",
+    "host_target_pairs": [
+      {"host_triple": "x86_64-unknown-linux-gnu", "target_triple": "x86_64-unknown-linux-gnu", "classification": "native", "declared": false, "blocking_reason": ""},
+      {"host_triple": "x86_64-unknown-linux-gnu", "target_triple": "aarch64-unknown-linux-gnu", "classification": "cross", "declared": false, "blocking_reason": "no_declared_cross_linker_for_this_target"},
+      {"host_triple": "x86_64-unknown-linux-gnu", "target_triple": "i686-unknown-linux-gnu", "classification": "cross", "declared": false, "blocking_reason": "no_declared_cross_linker_for_this_target"},
+      {"host_triple": "x86_64-unknown-linux-gnu", "target_triple": "x86_64-apple-darwin", "classification": "cross", "declared": false, "blocking_reason": "no_declared_cross_linker_for_this_target"},
+      {"host_triple": "x86_64-unknown-linux-gnu", "target_triple": "aarch64-apple-darwin", "classification": "cross", "declared": false, "blocking_reason": "no_declared_cross_linker_for_this_target"}
+    ],
+    "declared_cross_pairs": [],
+    "classification_derivation": "a_pair_is_cross_when_the_target_triple_differs_from_the_host_triple",
+    "declaration_policy": "a_cross_pair_is_declared_only_when_its_complete_target_support_tuple_holds",
+    "host_leakage_bans": [
+      "no_host_paths_in_a_cross_artifact",
+      "no_host_libraries_in_a_cross_artifact",
+      "no_host_headers_in_a_cross_artifact",
+      "no_host_runtime_package_in_a_cross_artifact"
+    ],
+    "permitted_host_dependent_inputs": [
+      "compiler_binary",
+      "build_directory"
+    ],
+    "rejection_classes": [
+      "cross_pair_undeclared",
+      "cross_pair_incomplete_tuple",
+      "cross_artifact_host_leakage",
+      "cross_pair_host_runtime_package_selected",
+      "cross_pair_host_linker_selected"
+    ],
+    "next_patch": "18.10"
+  },
   "phase18_link_mode": {
     "version": "phase18_link_mode_v1",
     "status": "ready_for_patch18_9",

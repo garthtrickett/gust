@@ -832,3 +832,74 @@ pub fn lower_link_mode_witness_path(path: &Path) -> Result<String, Box<dyn Error
     let request = fs::read_to_string(path)?;
     Ok(lower_link_mode_witness(&request)?)
 }
+
+// ---- Patch 18.9: cross-compilation policy and host/target separation ----
+
+const CROSS_PAIR_FORMAT: &str = "gust.compiler_cross_pair.v1";
+const CROSS_PAIR_WITNESS_FORMAT: &str = "gust.cross_pair_witness.v1";
+
+pub fn lower_cross_pair_witness(request: &str) -> Result<String, TargetError> {
+    let lines: Vec<&str> = request.lines().collect();
+    if header(&lines, "format")? != CROSS_PAIR_FORMAT {
+        return Err(error("cross_pair_malformed", "unknown request format"));
+    }
+    if header(&lines, "authority")? != AUTHORITY {
+        return Err(error("cross_pair_malformed", "unknown target authority"));
+    }
+
+    let pair_line = lines.iter().find(|l| l.starts_with("cross_pair:"))
+        .ok_or_else(|| error("cross_pair_malformed", "request declares no host target pair"))?;
+    let pair = row(pair_line, "cross_pair:")?;
+
+    let host = field(&pair, "host")?;
+    let target = field(&pair, "target")?;
+
+    // Classification is recomputed from the triples, never trusted.
+    let derived = if host == target { "native" } else { "cross" };
+    if field(&pair, "classification")? != derived {
+        return Err(error("cross_pair_undeclared",
+            format!("classification disagrees with the triples, which imply {derived}")));
+    }
+
+    let flag = |key: &str| -> Result<bool, TargetError> {
+        match field(&pair, key)? {
+            "0" => Ok(false), "1" => Ok(true),
+            other => Err(error("cross_pair_malformed", format!("{key}={other}"))),
+        }
+    };
+    let discovered = flag("linker_discovered")?;
+    let declared = flag("declared")?;
+    let blocking = pair.get("blocking_reason").map(String::as_str).unwrap_or_default();
+
+    if declared {
+        if derived != "cross" {
+            return Err(error("cross_pair_undeclared", "a native pair is not a cross pair"));
+        }
+        // Declaring a pair that cannot link is a claim without evidence.
+        if !discovered {
+            return Err(error("cross_pair_incomplete_tuple",
+                "a cross pair cannot be declared without a discovered linker"));
+        }
+        if !blocking.is_empty() {
+            return Err(error("cross_pair_undeclared",
+                "a declared pair cannot also carry a blocking reason"));
+        }
+    } else if derived == "cross" && blocking.is_empty() {
+        return Err(error("cross_pair_undeclared",
+            "an undeclared cross pair must state what blocks it"));
+    }
+
+    let mut witness = String::new();
+    witness.push_str(&format!("format: {CROSS_PAIR_WITNESS_FORMAT}\n"));
+    witness.push_str(&format!("authority: {AUTHORITY}\n"));
+    witness.push_str(&format!(
+        "cross_pair:host={};target={};classification={};linker_discovered={};declared={};blocking_reason={};\n",
+        host, target, derived, u8::from(discovered), u8::from(declared), blocking,
+    ));
+    Ok(witness)
+}
+
+pub fn lower_cross_pair_witness_path(path: &Path) -> Result<String, Box<dyn Error>> {
+    let request = fs::read_to_string(path)?;
+    Ok(lower_cross_pair_witness(&request)?)
+}

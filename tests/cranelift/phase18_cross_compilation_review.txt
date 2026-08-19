@@ -1,0 +1,23 @@
+Patch 18.9 — Cross-Compilation Policy and Host/Target Separation
+
+host_target_pairs	5
+cross_candidates	4
+declared_cross_pairs	0
+host_leakage_bans	4
+rejection_classes	5
+
+pair	every declared target has a host target pair	pair coverage compared against the declared triple vocabulary	Level 1
+pair	the host triple is one of the declared targets	host membership check	Level 1
+classification	a pair is cross when the target differs from the host	classification recomputed from the triples	Level 1
+classification	a native pair cannot be declared as a cross pair	declaration rejected for native classification	Level 1
+declaration	a cross pair is declared only with a discovered linker	declaration checked against Patch 18.7 discovery	Level 1
+declaration	a declared pair carries no blocking reason	mutual exclusion of declared and blocked	Level 1
+declaration	an undeclared cross pair states what blocks it	non-empty blocking reason required	Level 1
+declaration	declared cross pairs are derived from the pair list	declared set recomputed from pairs	Level 1
+separation	host paths cannot enter a cross artifact	host leakage ban inventory	Level 1
+separation	host libraries cannot enter a cross artifact	host leakage ban inventory	Level 1
+separation	host headers cannot enter a cross artifact	host leakage ban inventory	Level 1
+separation	a cross artifact cannot select the host runtime package	host leakage ban inventory	Level 1
+policy	the classification derivation is frozen	derivation string comparison	Level 1
+policy	the declaration policy is frozen	policy string comparison	Level 1
+rejection	the rejection class inventory is complete	five required rejection classes	Level 1

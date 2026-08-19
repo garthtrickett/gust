@@ -1,0 +1,16 @@
+kind	requirement	evidence	level
+pair	every declared target has a host target pair	pair coverage compared against the declared triple vocabulary	1
+pair	the host triple is one of the declared targets	host membership check	1
+classification	a pair is cross when the target differs from the host	classification recomputed from the triples	1
+classification	a native pair cannot be declared as a cross pair	declaration rejected for native classification	1
+declaration	a cross pair is declared only with a discovered linker	declaration checked against Patch 18.7 discovery	1
+declaration	a declared pair carries no blocking reason	mutual exclusion of declared and blocked	1
+declaration	an undeclared cross pair states what blocks it	non-empty blocking reason required	1
+declaration	declared cross pairs are derived from the pair list	declared set recomputed from pairs	1
+separation	host paths cannot enter a cross artifact	host leakage ban inventory	1
+separation	host libraries cannot enter a cross artifact	host leakage ban inventory	1
+separation	host headers cannot enter a cross artifact	host leakage ban inventory	1
+separation	a cross artifact cannot select the host runtime package	host leakage ban inventory	1
+policy	the classification derivation is frozen	derivation string comparison	1
+policy	the declaration policy is frozen	policy string comparison	1
+rejection	the rejection class inventory is complete	five required rejection classes	1

@@ -645,6 +645,21 @@ Every declared package is a static archive, so dynamic linking is unavailable fo
 
 The Cranelift worker recomputes the derived mode from the package form and refuses a request whose claimed derivation disagrees. A request cannot declare its own availability, which would otherwise let a caller assert support that nothing provides.
 
+## Phase 18 cross-compilation policy and host/target separation
+
+- Authority version: `phase18_cross_compilation_v1`
+- Status: `ready_for_patch18_10`
+- Host triple: `x86_64-unknown-linux-gnu`
+- Host target pairs: `5` (4 cross candidates)
+- Declared cross pairs: `0`
+- Host leakage bans: `4`
+
+Patch 18.9 separates host identity from target identity so a cross build cannot absorb host state. A pair is cross exactly when the target triple differs from the host triple, and that classification is recomputed rather than declared.
+
+A cross pair is declared only when its linker was discovered. No cross pair is declared today, because no declared target other than the host has a discoverable linker. That is the honest state rather than a gap: the separation rules and leakage bans are defined and enforced, and the moment a cross linker appears the machinery is already in place. Declaring a pair that cannot link would be a claim without evidence.
+
+Every cross candidate ends in exactly one defensible state. A declared pair has a linker and carries no blocking reason; an undeclared cross candidate must state what blocks it. A pair that is neither declared nor explained is rejected, so the ambiguous middle does not exist.
+
 ## Registry entries
 
 | ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |

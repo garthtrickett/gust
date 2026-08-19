@@ -730,3 +730,60 @@ func mir_link_mode_validate(decision: MirLinkModeDecision[ctx], ctx: &Arena) Mir
     result.reason_code = std.Clone(ctx, "ok");
     return result;
 }
+
+// ---- Patch 18.9: cross-compilation policy and host/target separation ----
+//
+// A pair is cross exactly when the target triple differs from the host triple.
+// A cross pair may be declared only when its linker was discovered; declaring
+// one that cannot link would be a claim without evidence. Every cross candidate
+// ends in exactly one defensible state: declared with a linker, or undeclared
+// with a stated blocker.
+
+type MirHostTargetPair[ctx] struct {
+    host_triple: str,
+    target_triple: str,
+    linker_discovered: int,
+    declared: int,
+    blocking_reason: str
+}
+
+func mir_cross_classification(host_triple: str, target_triple: str, ctx: &Arena) str {
+    if std.str_eq(host_triple, target_triple) == 1 { return std.Clone(ctx, "native"); }
+    return std.Clone(ctx, "cross");
+}
+
+func mir_host_target_pair_validate(pair: MirHostTargetPair[ctx], ctx: &Arena) MirTargetValidation[ctx] {
+    mut result: MirTargetValidation[ctx];
+    result.valid = 0;
+
+    mut classification := mir_cross_classification(pair.host_triple, pair.target_triple, ctx);
+    mut is_cross := 0;
+    if std.str_eq(classification, "cross") == 1 { is_cross = 1; }
+
+    if pair.declared == 1 {
+        // A native pair is not a cross pair, and a declared pair must have a
+        // linker and cannot simultaneously carry a blocker.
+        if is_cross == 0 {
+            result.reason_code = std.Clone(ctx, "cross_pair_undeclared");
+            return result;
+        }
+        if pair.linker_discovered == 0 {
+            result.reason_code = std.Clone(ctx, "cross_pair_incomplete_tuple");
+            return result;
+        }
+        if std.str_eq(pair.blocking_reason, "") == 0 {
+            result.reason_code = std.Clone(ctx, "cross_pair_undeclared");
+            return result;
+        }
+    } else {
+        // An undeclared cross candidate must say what blocks it.
+        if is_cross == 1 && std.str_eq(pair.blocking_reason, "") == 1 {
+            result.reason_code = std.Clone(ctx, "cross_pair_undeclared");
+            return result;
+        }
+    }
+
+    result.valid = 1;
+    result.reason_code = std.Clone(ctx, "ok");
+    return result;
+}

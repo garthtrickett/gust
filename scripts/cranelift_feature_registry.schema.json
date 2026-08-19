@@ -31,6 +31,7 @@
     "phase17_thread_runtime_authority",
     "phase17_availability_authority",
     "phase17_composition_authority",
+    "phase18_cross_compilation",
     "phase18_link_mode",
     "phase18_linker_policy",
     "phase18_target_package_selection",
@@ -323,6 +324,9 @@
     },
     "phase17_composition_authority": {
       "$ref": "#/$defs/phase17_composition_authority"
+    },
+    "phase18_cross_compilation": {
+      "$ref": "#/$defs/phase18_cross_compilation"
     },
     "phase18_link_mode": {
       "$ref": "#/$defs/phase18_link_mode"
@@ -888,6 +892,115 @@
         "participating_authorities": {"type": "array", "minItems": 2, "uniqueItems": true, "items": {"type": "string", "pattern": "^phase17_"}},
         "differential_owner": {"type": "string", "minLength": 1},
         "sentinel_policy": {"enum": ["sentinel_output_preserved_on_failure", "case_cannot_fail_no_output_to_preserve"]}
+      }
+    },
+    "phase18_cross_compilation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "status",
+        "authority_owner",
+        "host_triple",
+        "host_target_pairs",
+        "declared_cross_pairs",
+        "classification_derivation",
+        "declaration_policy",
+        "host_leakage_bans",
+        "permitted_host_dependent_inputs",
+        "rejection_classes",
+        "next_patch"
+      ],
+      "properties": {
+        "version": {
+          "const": "phase18_cross_compilation_v1"
+        },
+        "status": {
+          "const": "ready_for_patch18_10"
+        },
+        "authority_owner": {
+          "const": "compiler/mir_target_authority.gst"
+        },
+        "host_triple": {
+          "type": "string",
+          "minLength": 1
+        },
+        "host_target_pairs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "host_triple",
+              "target_triple",
+              "classification",
+              "declared",
+              "blocking_reason"
+            ],
+            "properties": {
+              "host_triple": {
+                "type": "string",
+                "minLength": 1
+              },
+              "target_triple": {
+                "type": "string",
+                "minLength": 1
+              },
+              "classification": {
+                "enum": [
+                  "native",
+                  "cross"
+                ]
+              },
+              "declared": {
+                "type": "boolean"
+              },
+              "blocking_reason": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "declared_cross_pairs": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "classification_derivation": {
+          "const": "a_pair_is_cross_when_the_target_triple_differs_from_the_host_triple"
+        },
+        "declaration_policy": {
+          "const": "a_cross_pair_is_declared_only_when_its_complete_target_support_tuple_holds"
+        },
+        "host_leakage_bans": {
+          "type": "array",
+          "minItems": 4,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "permitted_host_dependent_inputs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "rejection_classes": {
+          "type": "array",
+          "minItems": 5,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "next_patch": {
+          "const": "18.10"
+        }
       }
     },
     "phase18_link_mode": {
