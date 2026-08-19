@@ -31,6 +31,7 @@
     "phase17_thread_runtime_authority",
     "phase17_availability_authority",
     "phase17_composition_authority",
+    "phase18_object_format",
     "phase18_target_support",
     "phase18_target_authority",
     "phase17_closure",
@@ -317,6 +318,9 @@
     },
     "phase17_composition_authority": {
       "$ref": "#/$defs/phase17_composition_authority"
+    },
+    "phase18_object_format": {
+      "$ref": "#/$defs/phase18_object_format"
     },
     "phase18_target_support": {
       "$ref": "#/$defs/phase18_target_support"
@@ -864,6 +868,173 @@
         "participating_authorities": {"type": "array", "minItems": 2, "uniqueItems": true, "items": {"type": "string", "pattern": "^phase17_"}},
         "differential_owner": {"type": "string", "minLength": 1},
         "sentinel_policy": {"enum": ["sentinel_output_preserved_on_failure", "case_cannot_fail_no_output_to_preserve"]}
+      }
+    },
+    "phase18_object_format": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "status",
+        "authority_owner",
+        "format_derivation",
+        "object_formats",
+        "section_kinds",
+        "symbol_bindings",
+        "symbol_visibilities",
+        "format_descriptors",
+        "selection_policy",
+        "emission_policy",
+        "rejection_classes",
+        "hard_bans",
+        "next_patch"
+      ],
+      "properties": {
+        "version": {
+          "const": "phase18_object_format_authority_v1"
+        },
+        "status": {
+          "const": "ready_for_patch18_4"
+        },
+        "authority_owner": {
+          "const": "compiler/mir_target_authority.gst"
+        },
+        "format_derivation": {
+          "const": "operating_system_in_declared_target_identity"
+        },
+        "object_formats": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "enum": [
+              "elf",
+              "macho"
+            ]
+          }
+        },
+        "section_kinds": {
+          "type": "array",
+          "minItems": 4,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "symbol_bindings": {
+          "type": "array",
+          "minItems": 3,
+          "items": {
+            "enum": [
+              "local",
+              "global",
+              "weak"
+            ]
+          }
+        },
+        "symbol_visibilities": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "enum": [
+              "default",
+              "hidden"
+            ]
+          }
+        },
+        "format_descriptors": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "target_id",
+              "object_format",
+              "derived_from",
+              "section_kinds",
+              "section_names",
+              "max_section_alignment",
+              "symbol_bindings",
+              "symbol_visibilities"
+            ],
+            "properties": {
+              "target_id": {
+                "type": "string",
+                "pattern": "^target:v1:"
+              },
+              "object_format": {
+                "enum": [
+                  "elf",
+                  "macho"
+                ]
+              },
+              "derived_from": {
+                "const": "operating_system_in_declared_target_identity"
+              },
+              "section_kinds": {
+                "type": "array",
+                "minItems": 4,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "section_names": {
+                "type": "array",
+                "minItems": 4,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "max_section_alignment": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "symbol_bindings": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "symbol_visibilities": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          }
+        },
+        "selection_policy": {
+          "const": "object_format_is_derived_from_target_identity_never_from_a_file_extension_probe_or_host_default"
+        },
+        "emission_policy": {
+          "const": "emitted_objects_use_only_declared_section_kinds_bindings_and_visibilities"
+        },
+        "rejection_classes": {
+          "type": "array",
+          "minItems": 9,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "hard_bans": {
+          "type": "array",
+          "minItems": 4,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "next_patch": {
+          "const": "18.4"
+        }
       }
     },
     "phase18_target_support": {

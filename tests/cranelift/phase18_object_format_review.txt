@@ -1,0 +1,25 @@
+Patch 18.3 — Object Format, Section, and Symbol Binding Authority
+
+format_descriptors	5
+object_formats	2
+section_kinds	4
+symbol_bindings	3
+rejection_classes	9
+
+descriptor	every declared target has exactly one descriptor	descriptor coverage compared against the declared triple vocabulary	Level 1
+descriptor	no duplicate descriptor for a target	uniqueness check over descriptor target ids	Level 1
+derivation	the object format is recomputed from the operating system	format compared against the derivation map	Level 1
+derivation	a descriptor must declare it was derived from target identity	derived_from field is frozen	Level 1
+derivation	the declared format list is derived from the descriptors	format set recomputed from descriptors	Level 1
+section	section kinds match the declared vocabulary	per-descriptor section kind comparison	Level 1
+section	every section kind has exactly one name	section name and kind count agreement	Level 1
+section	no duplicate section name	uniqueness check over section names	Level 1
+section	ELF section names are dot-prefixed	format-specific spelling check	Level 1
+section	Mach-O section names are segment comma section pairs	format-specific spelling check	Level 1
+section	the maximum section alignment is positive	alignment bound check	Level 1
+symbol	symbol bindings stay inside the declared vocabulary	per-descriptor binding subset check	Level 1
+symbol	symbol visibilities stay inside the declared vocabulary	per-descriptor visibility subset check	Level 1
+bans	no object format from the host ISA	hard ban inventory	Level 1
+bans	no object format from a file extension or output probe	hard ban inventory	Level 1
+bans	no backend owned section naming	hard ban inventory	Level 1
+traceability	the host ISA object builder assumption is owned by this row	Patch 18.0 host assumption ownership	Level 1

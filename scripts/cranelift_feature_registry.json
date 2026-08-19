@@ -4371,6 +4371,58 @@
     "scope_policy": "availability_compatibility_and_diagnostics_only_cross_feature_composition_remains_in_patch17_14",
     "next_patch": "17.14"
   },
+  "phase18_object_format": {
+    "version": "phase18_object_format_authority_v1",
+    "status": "ready_for_patch18_4",
+    "authority_owner": "compiler/mir_target_authority.gst",
+    "format_derivation": "operating_system_in_declared_target_identity",
+    "object_formats": [
+      "elf",
+      "macho"
+    ],
+    "section_kinds": [
+      "text",
+      "read_only_data",
+      "data",
+      "zero_initialised_data"
+    ],
+    "symbol_bindings": [
+      "local",
+      "global",
+      "weak"
+    ],
+    "symbol_visibilities": [
+      "default",
+      "hidden"
+    ],
+    "format_descriptors": [
+      {"target_id": "target:v1:triple=x86_64-unknown-linux-gnu:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8", "object_format": "elf", "derived_from": "operating_system_in_declared_target_identity", "section_kinds": ["text", "read_only_data", "data", "zero_initialised_data"], "section_names": [".text", ".rodata", ".data", ".bss"], "max_section_alignment": 16, "symbol_bindings": ["local", "global", "weak"], "symbol_visibilities": ["default", "hidden"]},
+      {"target_id": "target:v1:triple=aarch64-unknown-linux-gnu:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8", "object_format": "elf", "derived_from": "operating_system_in_declared_target_identity", "section_kinds": ["text", "read_only_data", "data", "zero_initialised_data"], "section_names": [".text", ".rodata", ".data", ".bss"], "max_section_alignment": 16, "symbol_bindings": ["local", "global", "weak"], "symbol_visibilities": ["default", "hidden"]},
+      {"target_id": "target:v1:triple=i686-unknown-linux-gnu:endian=little:ptr_size=4:ptr_align=4:i32_align=4:i64_align=4:max_align=4", "object_format": "elf", "derived_from": "operating_system_in_declared_target_identity", "section_kinds": ["text", "read_only_data", "data", "zero_initialised_data"], "section_names": [".text", ".rodata", ".data", ".bss"], "max_section_alignment": 16, "symbol_bindings": ["local", "global", "weak"], "symbol_visibilities": ["default", "hidden"]},
+      {"target_id": "target:v1:triple=x86_64-apple-darwin:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8", "object_format": "macho", "derived_from": "operating_system_in_declared_target_identity", "section_kinds": ["text", "read_only_data", "data", "zero_initialised_data"], "section_names": ["__TEXT,__text", "__TEXT,__const", "__DATA,__data", "__DATA,__bss"], "max_section_alignment": 16, "symbol_bindings": ["local", "global", "weak"], "symbol_visibilities": ["default", "hidden"]},
+      {"target_id": "target:v1:triple=aarch64-apple-darwin:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8", "object_format": "macho", "derived_from": "operating_system_in_declared_target_identity", "section_kinds": ["text", "read_only_data", "data", "zero_initialised_data"], "section_names": ["__TEXT,__text", "__TEXT,__const", "__DATA,__data", "__DATA,__bss"], "max_section_alignment": 16, "symbol_bindings": ["local", "global", "weak"], "symbol_visibilities": ["default", "hidden"]}
+    ],
+    "selection_policy": "object_format_is_derived_from_target_identity_never_from_a_file_extension_probe_or_host_default",
+    "emission_policy": "emitted_objects_use_only_declared_section_kinds_bindings_and_visibilities",
+    "rejection_classes": [
+      "object_format_unknown_operating_system",
+      "object_format_disagrees_with_target_identity",
+      "object_format_not_derived_from_target_identity",
+      "object_format_declares_no_sections",
+      "object_section_misaligned",
+      "object_section_unnamed",
+      "object_section_kind_duplicated",
+      "object_format_declares_no_symbol_bindings",
+      "object_symbol_binding_undeclared"
+    ],
+    "hard_bans": [
+      "no_object_format_from_host_isa",
+      "no_object_format_from_file_extension",
+      "no_object_format_from_output_probe",
+      "no_backend_owned_section_naming"
+    ],
+    "next_patch": "18.4"
+  },
   "phase18_target_support": {
     "version": "phase18_target_support_tuple_v1",
     "status": "ready_for_patch18_3",

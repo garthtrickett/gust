@@ -1,0 +1,18 @@
+kind	requirement	evidence	level
+descriptor	every declared target has exactly one descriptor	descriptor coverage compared against the declared triple vocabulary	1
+descriptor	no duplicate descriptor for a target	uniqueness check over descriptor target ids	1
+derivation	the object format is recomputed from the operating system	format compared against the derivation map	1
+derivation	a descriptor must declare it was derived from target identity	derived_from field is frozen	1
+derivation	the declared format list is derived from the descriptors	format set recomputed from descriptors	1
+section	section kinds match the declared vocabulary	per-descriptor section kind comparison	1
+section	every section kind has exactly one name	section name and kind count agreement	1
+section	no duplicate section name	uniqueness check over section names	1
+section	ELF section names are dot-prefixed	format-specific spelling check	1
+section	Mach-O section names are segment comma section pairs	format-specific spelling check	1
+section	the maximum section alignment is positive	alignment bound check	1
+symbol	symbol bindings stay inside the declared vocabulary	per-descriptor binding subset check	1
+symbol	symbol visibilities stay inside the declared vocabulary	per-descriptor visibility subset check	1
+bans	no object format from the host ISA	hard ban inventory	1
+bans	no object format from a file extension or output probe	hard ban inventory	1
+bans	no backend owned section naming	hard ban inventory	1
+traceability	the host ISA object builder assumption is owned by this row	Patch 18.0 host assumption ownership	1

@@ -371,3 +371,115 @@ pub fn lower_target_support_witness_path(path: &Path) -> Result<String, Box<dyn 
     let request = fs::read_to_string(path)?;
     Ok(lower_target_support_witness(&request)?)
 }
+
+// ---- Patch 18.3: object format, section, and symbol binding ----
+
+const OBJECT_FORMAT_FORMAT: &str = "gust.compiler_object_format.v1";
+const OBJECT_FORMAT_WITNESS_FORMAT: &str = "gust.object_format_witness.v1";
+
+/// The format derivation. The worker recomputes the format from the operating
+/// system rather than trusting the descriptor, so a host default cannot pass as
+/// a target-derived decision.
+fn object_format_for_os(operating_system: &str) -> Option<&'static str> {
+    match operating_system {
+        "linux" => Some("elf"),
+        "darwin" => Some("macho"),
+        _ => None,
+    }
+}
+
+pub fn lower_object_format_witness(request: &str) -> Result<String, TargetError> {
+    let lines: Vec<&str> = request.lines().collect();
+    if header(&lines, "format")? != OBJECT_FORMAT_FORMAT {
+        return Err(error("object_format_malformed", "unknown request format"));
+    }
+    if header(&lines, "authority")? != AUTHORITY {
+        return Err(error("object_format_malformed", "unknown target authority"));
+    }
+
+    let format_line = lines
+        .iter()
+        .find(|l| l.starts_with("object_format:"))
+        .ok_or_else(|| error("object_format_malformed", "request declares no object format"))?;
+    let descriptor = row(format_line, "object_format:")?;
+
+    let operating_system = field(&descriptor, "os")?;
+    let claimed = field(&descriptor, "object_format")?;
+    let Some(expected) = object_format_for_os(operating_system) else {
+        return Err(error(
+            "object_format_unknown_operating_system",
+            format!("no object format derivation for {operating_system}"),
+        ));
+    };
+    if claimed != expected {
+        return Err(error(
+            "object_format_disagrees_with_target_identity",
+            format!("{operating_system} implies {expected}, descriptor claims {claimed}"),
+        ));
+    }
+    if field(&descriptor, "derived_from")? != "operating_system_in_declared_target_identity" {
+        return Err(error(
+            "object_format_not_derived_from_target_identity",
+            "descriptor does not declare a target-derived format",
+        ));
+    }
+
+    let max_align: i64 = field(&descriptor, "max_align")?
+        .parse()
+        .map_err(|_| error("object_format_malformed", "max_align is not a number"))?;
+
+    let mut sections = Vec::new();
+    let mut seen_kinds = Vec::new();
+    for line in lines.iter().filter(|l| l.starts_with("object_section:")) {
+        let s = row(line, "object_section:")?;
+        let kind = field(&s, "kind")?.to_owned();
+        let name = field(&s, "name")?.to_owned();
+        let align: i64 = field(&s, "align")?
+            .parse()
+            .map_err(|_| error("object_format_malformed", "align is not a number"))?;
+        if align <= 0 || align > max_align {
+            return Err(error(
+                "object_section_misaligned",
+                format!("{name} alignment {align} outside 1..{max_align}"),
+            ));
+        }
+        if seen_kinds.contains(&kind) {
+            return Err(error("object_section_kind_duplicated", format!("duplicate kind {kind}")));
+        }
+        // ELF and Mach-O spell sections differently. A descriptor using the
+        // wrong spelling is describing a different object file.
+        let spelling_ok = match expected {
+            "elf" => name.starts_with('.'),
+            _ => name.starts_with("__") && name.contains(','),
+        };
+        if !spelling_ok {
+            return Err(error(
+                "object_section_name_wrong_format",
+                format!("{name} is not a valid {expected} section name"),
+            ));
+        }
+        seen_kinds.push(kind.clone());
+        sections.push((kind, name, align));
+    }
+    if sections.is_empty() {
+        return Err(error("object_format_declares_no_sections", "descriptor declares no sections"));
+    }
+
+    let mut witness = String::new();
+    witness.push_str(&format!("format: {OBJECT_FORMAT_WITNESS_FORMAT}\n"));
+    witness.push_str(&format!("authority: {AUTHORITY}\n"));
+    witness.push_str(&format!(
+        "object_format:target_id={};object_format={};os={};derived_from={};max_align={};\n",
+        field(&descriptor, "target_id")?, expected, operating_system,
+        "operating_system_in_declared_target_identity", max_align,
+    ));
+    for (kind, name, align) in &sections {
+        witness.push_str(&format!("object_section:kind={kind};name={name};align={align};\n"));
+    }
+    Ok(witness)
+}
+
+pub fn lower_object_format_witness_path(path: &Path) -> Result<String, Box<dyn Error>> {
+    let request = fs::read_to_string(path)?;
+    Ok(lower_object_format_witness(&request)?)
+}
