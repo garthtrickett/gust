@@ -4371,6 +4371,33 @@
     "scope_policy": "availability_compatibility_and_diagnostics_only_cross_feature_composition_remains_in_patch17_14",
     "next_patch": "17.14"
   },
+  "phase18_target_diagnostics": {
+    "version": "phase18_target_diagnostics_v1",
+    "status": "ready_for_patch18_11",
+    "authority_owner": "compiler/mir_target_authority.gst",
+    "rejection_classes": [
+      "unknown_triple",
+      "unsupported_architecture",
+      "missing_runtime_package",
+      "missing_linker",
+      "incompatible_abi",
+      "unavailable_link_mode",
+      "incomplete_tuple"
+    ],
+    "target_diagnostics": [
+      {"target_id": "target:v1:triple=x86_64-unknown-linux-gnu:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8", "target_triple": "x86_64-unknown-linux-gnu", "support_decision": "supported", "missing_tuple_elements": [], "rejection_class": "", "failure_stage": "before_driver_discovery"},
+      {"target_id": "target:v1:triple=aarch64-unknown-linux-gnu:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8", "target_triple": "aarch64-unknown-linux-gnu", "support_decision": "unsupported_missing_elements", "missing_tuple_elements": ["linker"], "rejection_class": "missing_linker", "failure_stage": "before_driver_discovery"},
+      {"target_id": "target:v1:triple=i686-unknown-linux-gnu:endian=little:ptr_size=4:ptr_align=4:i32_align=4:i64_align=4:max_align=4", "target_triple": "i686-unknown-linux-gnu", "support_decision": "unsupported_missing_elements", "missing_tuple_elements": ["linker"], "rejection_class": "missing_linker", "failure_stage": "before_driver_discovery"},
+      {"target_id": "target:v1:triple=x86_64-apple-darwin:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8", "target_triple": "x86_64-apple-darwin", "support_decision": "unsupported_missing_elements", "missing_tuple_elements": ["linker"], "rejection_class": "missing_linker", "failure_stage": "before_driver_discovery"},
+      {"target_id": "target:v1:triple=aarch64-apple-darwin:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8", "target_triple": "aarch64-apple-darwin", "support_decision": "unsupported_missing_elements", "missing_tuple_elements": ["linker"], "rejection_class": "missing_linker", "failure_stage": "before_driver_discovery"}
+    ],
+    "failure_stage": "before_driver_discovery",
+    "stage_policy": "an_unsupported_target_is_refused_before_native_driver_access_object_creation_linker_invocation_and_output_replacement",
+    "derivation_policy": "each_diagnostic_names_the_tuple_elements_the_target_actually_lacks_rather_than_a_generic_refusal",
+    "attempt_policy": "an_unsupported_target_is_never_attempted_and_then_failed_later",
+    "output_preservation_policy": "existing_output_survives_every_rejection_class",
+    "next_patch": "18.11"
+  },
   "phase18_cross_compilation": {
     "version": "phase18_cross_compilation_v1",
     "status": "ready_for_patch18_10",

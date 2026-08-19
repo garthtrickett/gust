@@ -660,6 +660,21 @@ A cross pair is declared only when its linker was discovered. No cross pair is d
 
 Every cross candidate ends in exactly one defensible state. A declared pair has a linker and carries no blocking reason; an undeclared cross candidate must state what blocks it. A pair that is neither declared nor explained is rejected, so the ambiguous middle does not exist.
 
+## Phase 18 unsupported-target detection and diagnostics
+
+- Authority version: `phase18_target_diagnostics_v1`
+- Status: `ready_for_patch18_11`
+- Target diagnostics: `5`
+- Supported targets: `1`
+- Unsupported targets: `4`
+- Rejection classes: `7`
+
+Patch 18.10 makes an unsupported target a stable, early, diagnosed outcome rather than a late failure. Each diagnostic names the tuple elements the target actually lacks, and that set is recomputed from the owning authorities rather than declared, so a diagnostic can neither invent a gap the registry does not have nor omit one it does.
+
+A refusal that does not say why is not a diagnostic. An unsupported target must name both its missing element and a rejection class from the declared inventory, and a supported target carries neither. Both directions are rejections, so the ambiguous middle where something is refused without explanation does not exist.
+
+Every refusal happens before driver discovery, ahead of native driver access, object creation, linker invocation, and output replacement. A refusal deferred past that point could no longer preserve existing output, so a late failure stage is itself rejected.
+
 ## Registry entries
 
 | ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |

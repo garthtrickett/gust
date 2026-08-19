@@ -417,3 +417,36 @@ func mir_serialize_cross_pair_request(pair: target.MirHostTargetPair[ctx], ctx: 
 func mir_cross_pair_mir_to_c_witness(pair: target.MirHostTargetPair[ctx], ctx: &Arena) str {
     return mir_cross_pair_body(pair, mir_cross_pair_witness_format(), ctx);
 }
+
+func mir_target_diagnostic_request_format() str { return "gust.compiler_target_diagnostic.v1"; }
+func mir_target_diagnostic_witness_format() str { return "gust.target_diagnostic_witness.v1"; }
+
+func mir_target_diagnostic_body(diagnostic: target.MirTargetDiagnostic[ctx], header: str, ctx: &Arena) str {
+    mut validation := target.mir_target_diagnostic_validate(diagnostic, ctx);
+    if validation.valid == 0 {
+        mut invalid := "format: invalid\nreason: ";
+        invalid = std.Concat(invalid, validation.reason_code);
+        invalid = std.Concat(invalid, "\n");
+        return std.Clone(ctx, invalid);
+    }
+    mut output := "format: ";
+    output = std.Concat(output, header);
+    output = std.Concat(output, "\nauthority: compiler/mir_target_authority.gst\n");
+    mut row := "target_diagnostic:";
+    row = mir_target_append(row, "target_id", diagnostic.target_id, ctx);
+    row = mir_target_append(row, "decision", diagnostic.support_decision, ctx);
+    row = mir_target_append(row, "missing", diagnostic.missing_element, ctx);
+    row = mir_target_append(row, "rejection", diagnostic.rejection_class, ctx);
+    row = mir_target_append(row, "stage", diagnostic.failure_stage, ctx);
+    output = std.Concat(output, row);
+    output = std.Concat(output, "\n");
+    return std.Clone(ctx, output);
+}
+
+func mir_serialize_target_diagnostic_request(diagnostic: target.MirTargetDiagnostic[ctx], ctx: &Arena) str {
+    return mir_target_diagnostic_body(diagnostic, mir_target_diagnostic_request_format(), ctx);
+}
+
+func mir_target_diagnostic_mir_to_c_witness(diagnostic: target.MirTargetDiagnostic[ctx], ctx: &Arena) str {
+    return mir_target_diagnostic_body(diagnostic, mir_target_diagnostic_witness_format(), ctx);
+}

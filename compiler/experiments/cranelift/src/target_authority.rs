@@ -903,3 +903,71 @@ pub fn lower_cross_pair_witness_path(path: &Path) -> Result<String, Box<dyn Erro
     let request = fs::read_to_string(path)?;
     Ok(lower_cross_pair_witness(&request)?)
 }
+
+// ---- Patch 18.10: unsupported-target detection and diagnostics ----
+
+const DIAGNOSTIC_FORMAT: &str = "gust.compiler_target_diagnostic.v1";
+const DIAGNOSTIC_WITNESS_FORMAT: &str = "gust.target_diagnostic_witness.v1";
+
+/// The declared rejection inventory. A refusal outside it is a generic refusal
+/// wearing a class name.
+const REJECTION_CLASSES: [&str; 7] = [
+    "unknown_triple", "unsupported_architecture", "missing_runtime_package",
+    "missing_linker", "incompatible_abi", "unavailable_link_mode", "incomplete_tuple",
+];
+
+pub fn lower_target_diagnostic_witness(request: &str) -> Result<String, TargetError> {
+    let lines: Vec<&str> = request.lines().collect();
+    if header(&lines, "format")? != DIAGNOSTIC_FORMAT {
+        return Err(error("target_diagnostic_malformed", "unknown request format"));
+    }
+    if header(&lines, "authority")? != AUTHORITY {
+        return Err(error("target_diagnostic_malformed", "unknown target authority"));
+    }
+
+    let diagnostic_line = lines.iter().find(|l| l.starts_with("target_diagnostic:"))
+        .ok_or_else(|| error("target_diagnostic_malformed", "request declares no diagnostic"))?;
+    let diagnostic = row(diagnostic_line, "target_diagnostic:")?;
+
+    // A refusal after output could already exist cannot preserve it.
+    if field(&diagnostic, "stage")? != "before_driver_discovery" {
+        return Err(error("target_diagnostic_refused_too_late",
+            "an unsupported target must be refused before driver discovery"));
+    }
+
+    let decision = field(&diagnostic, "decision")?;
+    let missing = diagnostic.get("missing").map(String::as_str).unwrap_or_default();
+    let rejection = diagnostic.get("rejection").map(String::as_str).unwrap_or_default();
+
+    if decision == "supported" {
+        // A supported target has nothing to refuse.
+        if !rejection.is_empty() || !missing.is_empty() {
+            return Err(error("target_diagnostic_supported_with_rejection",
+                "a supported target carries no rejection class or missing element"));
+        }
+    } else {
+        // An unsupported target must say both what is missing and why.
+        if rejection.is_empty() || missing.is_empty() {
+            return Err(error("target_diagnostic_generic_refusal",
+                "an unsupported target must name its missing element and rejection class"));
+        }
+        if !REJECTION_CLASSES.contains(&rejection) {
+            return Err(error("target_diagnostic_generic_refusal",
+                format!("{rejection} is not a declared rejection class")));
+        }
+    }
+
+    let mut witness = String::new();
+    witness.push_str(&format!("format: {DIAGNOSTIC_WITNESS_FORMAT}\n"));
+    witness.push_str(&format!("authority: {AUTHORITY}\n"));
+    witness.push_str(&format!(
+        "target_diagnostic:target_id={};decision={};missing={};rejection={};stage={};\n",
+        field(&diagnostic, "target_id")?, decision, missing, rejection, "before_driver_discovery",
+    ));
+    Ok(witness)
+}
+
+pub fn lower_target_diagnostic_witness_path(path: &Path) -> Result<String, Box<dyn Error>> {
+    let request = fs::read_to_string(path)?;
+    Ok(lower_target_diagnostic_witness(&request)?)
+}

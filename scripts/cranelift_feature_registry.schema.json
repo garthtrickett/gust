@@ -31,6 +31,7 @@
     "phase17_thread_runtime_authority",
     "phase17_availability_authority",
     "phase17_composition_authority",
+    "phase18_target_diagnostics",
     "phase18_cross_compilation",
     "phase18_link_mode",
     "phase18_linker_policy",
@@ -324,6 +325,9 @@
     },
     "phase17_composition_authority": {
       "$ref": "#/$defs/phase17_composition_authority"
+    },
+    "phase18_target_diagnostics": {
+      "$ref": "#/$defs/phase18_target_diagnostics"
     },
     "phase18_cross_compilation": {
       "$ref": "#/$defs/phase18_cross_compilation"
@@ -892,6 +896,109 @@
         "participating_authorities": {"type": "array", "minItems": 2, "uniqueItems": true, "items": {"type": "string", "pattern": "^phase17_"}},
         "differential_owner": {"type": "string", "minLength": 1},
         "sentinel_policy": {"enum": ["sentinel_output_preserved_on_failure", "case_cannot_fail_no_output_to_preserve"]}
+      }
+    },
+    "phase18_target_diagnostics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "status",
+        "authority_owner",
+        "rejection_classes",
+        "target_diagnostics",
+        "failure_stage",
+        "stage_policy",
+        "derivation_policy",
+        "attempt_policy",
+        "output_preservation_policy",
+        "next_patch"
+      ],
+      "properties": {
+        "version": {
+          "const": "phase18_target_diagnostics_v1"
+        },
+        "status": {
+          "const": "ready_for_patch18_11"
+        },
+        "authority_owner": {
+          "const": "compiler/mir_target_authority.gst"
+        },
+        "rejection_classes": {
+          "type": "array",
+          "minItems": 7,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "target_diagnostics": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "target_id",
+              "target_triple",
+              "support_decision",
+              "missing_tuple_elements",
+              "rejection_class",
+              "failure_stage"
+            ],
+            "properties": {
+              "target_id": {
+                "type": "string",
+                "pattern": "^target:v1:"
+              },
+              "target_triple": {
+                "type": "string",
+                "minLength": 1
+              },
+              "support_decision": {
+                "enum": [
+                  "supported",
+                  "unsupported_missing_elements"
+                ]
+              },
+              "missing_tuple_elements": {
+                "type": "array",
+                "items": {
+                  "enum": [
+                    "compiler",
+                    "runtime_package",
+                    "linker",
+                    "abi"
+                  ]
+                }
+              },
+              "rejection_class": {
+                "type": "string"
+              },
+              "failure_stage": {
+                "const": "before_driver_discovery"
+              }
+            }
+          }
+        },
+        "failure_stage": {
+          "const": "before_driver_discovery"
+        },
+        "stage_policy": {
+          "const": "an_unsupported_target_is_refused_before_native_driver_access_object_creation_linker_invocation_and_output_replacement"
+        },
+        "derivation_policy": {
+          "const": "each_diagnostic_names_the_tuple_elements_the_target_actually_lacks_rather_than_a_generic_refusal"
+        },
+        "attempt_policy": {
+          "const": "an_unsupported_target_is_never_attempted_and_then_failed_later"
+        },
+        "output_preservation_policy": {
+          "const": "existing_output_survives_every_rejection_class"
+        },
+        "next_patch": {
+          "const": "18.11"
+        }
       }
     },
     "phase18_cross_compilation": {

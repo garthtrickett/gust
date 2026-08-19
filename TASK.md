@@ -37,7 +37,7 @@ is activated separately.
 - [x] Patch 18.7 — Linker Discovery, Selection, and Invocation Policy — DONE
 - [x] Patch 18.8 — Static and Dynamic Runtime Linking Modes — DONE
 - [x] Patch 18.9 — Cross-Compilation Policy and Host/Target Separation — DONE
-- [ ] Patch 18.10 — Unsupported-Target Detection and Diagnostics
+- [x] Patch 18.10 — Unsupported-Target Detection and Diagnostics — DONE
 - [ ] Patch 18.11 — Symbol and Relocation Inspection Evidence
 - [ ] Patch 18.12 — Debug Information Strategy
 - [ ] Patch 18.13 — Source-Location Preservation
