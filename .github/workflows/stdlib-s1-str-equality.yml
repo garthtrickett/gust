@@ -1,0 +1,38 @@
+name: Stdlib S1 Str Equality
+
+on:
+  pull_request:
+    paths:
+      - 'src/typechecker/visitor.rs'
+      - 'compiler/typechecker.gst'
+      - 'tests/test_str_equality_rejected.gst'
+      - 'tests/test_str_inequality_rejected.gst'
+      - 'tests/test_str_equality_literal_rejected.gst'
+      - 'tests/test_str_equality_param_rejected.gst'
+      - '.github/workflows/stdlib-s1-str-equality.yml'
+      - 'TASK_STDLIB.md'
+  push:
+    branches: [main]
+    paths:
+      - 'src/typechecker/visitor.rs'
+      - 'compiler/typechecker.gst'
+      - '.github/workflows/stdlib-s1-str-equality.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  str-equality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: guard-stdlib-s1-str-equality-diagnostic
+        run: just guard-stdlib-s1-str-equality-diagnostic

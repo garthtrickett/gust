@@ -21472,3 +21472,50 @@ guard-cranelift-phase15-close:
     just guard-cranelift-phase15-resource-composition-contract
     just guard-cranelift-phase15-deferred-residue-audit
     python3 scripts/phase15_close.py --check
+
+# Stdlib lane, Phase S1. Appended at the end of the file on purpose: several
+# guards extract recipe bodies with sed ranges bounded by the next recipe name,
+# so inserting between existing recipes can silently change what they check.
+guard-stdlib-s1-str-equality-diagnostic:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking str equality rejection..."
+    expected="Semantic Error: str does not support '==' or '!='. Use std.str_eq(a, b) to compare text."
+
+    # Both compilers must reject with the same words. A drift here means one
+    # backend's users get a different explanation for the same program.
+    rg -n -F "$expected" src/typechecker/visitor.rs >/dev/null
+    rg -n -F "$expected" compiler/typechecker.gst >/dev/null
+
+    mkdir -p build
+    make gust >build/stdlib-s1-str-equality.build.log 2>&1
+
+    for fixture in \
+      tests/test_str_equality_rejected.gst \
+      tests/test_str_inequality_rejected.gst \
+      tests/test_str_equality_literal_rejected.gst \
+      tests/test_str_equality_param_rejected.gst
+    do
+      if [ ! -f "$fixture" ]; then
+        echo "Missing str equality compile-fail fixture: $fixture"
+        exit 1
+      fi
+      output="$(./gust "$fixture" 2>&1 || true)"
+      if ./gust "$fixture" >/dev/null 2>&1; then
+        echo "$fixture must be rejected, but it compiled."
+        exit 1
+      fi
+      if ! printf '%s\n' "$output" | rg -n -F "$expected" >/dev/null; then
+        echo "$fixture was rejected, but not with the str equality diagnostic:"
+        printf '%s\n' "$output" | head -3
+        exit 1
+      fi
+    done
+
+    # The recommended replacement must keep working, or the diagnostic sends
+    # users somewhere broken.
+    printf 'func main() {\n    mut a: str := "PING";\n    if std.str_eq(a, "PING") == 1 { os.LogStr("pong"); }\n}\n' >build/stdlib-s1-str-eq-ok.gst
+    ./gust build/stdlib-s1-str-eq-ok.gst >build/stdlib-s1-str-eq-ok.c 2>&1
+    rg -n -F 'std_str_eq' build/stdlib-s1-str-eq-ok.c >/dev/null
+
+    echo "✅ str equality rejected in both compilers with one diagnostic; std.str_eq unchanged."
