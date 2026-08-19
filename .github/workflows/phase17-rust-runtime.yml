@@ -30,6 +30,10 @@ on:
       - 'tests/cranelift/phase17_rust_runtime_contract.tsv'
       - 'tests/cranelift/phase17_rust_runtime_review.txt'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   guard-cranelift-phase17-rust-runtime-contract:
     name: Phase 17.6 rust runtime contract (Level 1)

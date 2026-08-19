@@ -6,6 +6,10 @@ on:
     branches: [main]
     paths: ['compiler/mir_cross_module_abi.gst','compiler/mir_cross_module_abi_mir_to_c.gst','compiler/mir_native_backend_cross_module_abi_request.gst','compiler/mir_cross_module_abi_smoke_test_entry.gst','compiler/experiments/cranelift/src/cross_module_abi.rs','compiler/experiments/cranelift/src/main.rs','scripts/phase16_cross_module_abi.py','scripts/phase16_cross_module_abi_parity.sh','scripts/cranelift_test_levels.json','tests/cranelift/phase16_cross_module_abi_contract.tsv','tests/cranelift/phase16_cross_module_abi_review.txt','justfile','.github/workflows/phase16-cross-module-abi.yml']
   workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   contract:
     runs-on: ubuntu-latest

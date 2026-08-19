@@ -6,6 +6,10 @@ on:
     branches: [main]
     paths: ['compiler/mir_resource_aggregate_abi.gst','compiler/mir_resource_aggregate_abi_mir_to_c.gst','compiler/mir_native_backend_aggregate_resource_abi_request.gst','compiler/mir_resource_aggregate_abi_smoke_test_entry.gst','compiler/experiments/cranelift/src/resource_aggregate_abi.rs','compiler/experiments/cranelift/src/main.rs','scripts/phase16_resource_aggregate_abi.py','scripts/phase16_resource_aggregate_abi_parity.sh','scripts/cranelift_test_levels.json','tests/cranelift/phase16_resource_aggregate_abi_contract.tsv','tests/cranelift/phase16_resource_aggregate_abi_review.txt','justfile','.github/workflows/phase16-resource-aggregate-abi.yml']
   workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   contract:
     name: Phase 16.10 resource aggregate ABI contract (Level 1)

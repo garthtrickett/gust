@@ -30,6 +30,10 @@ on:
       - 'tests/cranelift/phase17_gust_runtime_contract.tsv'
       - 'tests/cranelift/phase17_gust_runtime_review.txt'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   guard-cranelift-phase17-gust-runtime-contract:
     name: Phase 17.8 gust runtime contract (Level 1)

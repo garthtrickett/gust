@@ -6,6 +6,10 @@ on:
     branches: [main]
     paths: ['compiler/mir_typed_indirect_call.gst','compiler/mir_typed_indirect_call_mir_to_c.gst','compiler/mir_native_backend_typed_indirect_call_request.gst','compiler/mir_typed_indirect_call_smoke_test_entry.gst','compiler/experiments/cranelift/src/typed_indirect_call.rs','compiler/experiments/cranelift/src/main.rs','scripts/phase16_typed_indirect_call.py','scripts/phase16_typed_indirect_call_parity.sh','scripts/cranelift_test_levels.json','tests/cranelift/phase16_typed_indirect_call_contract.tsv','tests/cranelift/phase16_typed_indirect_call_review.txt','justfile','.github/workflows/phase16-typed-indirect-calls.yml']
   workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   contract:
     name: Phase 16.6 typed indirect call contract (Level 1)

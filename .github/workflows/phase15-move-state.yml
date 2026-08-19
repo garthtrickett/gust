@@ -37,6 +37,10 @@ on:
       - 'justfile'
       - '.github/workflows/phase15-move-state.yml'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   move-state-contract:
     name: Phase 15.3 move-state contract (Level 1)

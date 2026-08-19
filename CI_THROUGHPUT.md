@@ -1,10 +1,12 @@
 # CI Throughput
 
-Working notes for reducing GitHub Actions cost on this repository. Three levers,
-ordered by safety × impact. Each lever is its own PR: infrastructure changes stay
-out of Phase 17 capability patches, because a guard that goes green after a
-caching change should never leave you wondering whether the code is right or the
-caching altered what was tested.
+Working notes for reducing GitHub Actions cost on this repository. Each lever is
+its own PR: infrastructure changes stay out of capability patches, because a
+guard that goes green after a caching change should never leave you wondering
+whether the code is right or the caching altered what was tested.
+
+See **Ordered plan** below for current status. The levers divide into two kinds,
+and the distinction is the whole game — see **The concurrency ceiling**.
 
 ## Baseline measurement
 
@@ -42,6 +44,33 @@ roughly nine sequential waves regardless of per-runner speed.
 
 > Runner specs above are from GitHub's documented tiers, not measured on these
 > runners. To confirm empirically, add `nproc && free -g` to a diagnostic step.
+
+## The concurrency ceiling
+
+Levers 1–3 all reduce **per-job duration**. The binding constraint is a
+**concurrency** limit: 20 jobs at once on the Free plan, [per billing
+entity](https://docs.github.com/en/actions/reference/limits), the same for public
+and private repositories. With `N` jobs and 20 slots you wait `ceil(N/20)` waves
+however fast each job runs. Caching shortens waves; it does not remove them.
+
+So the levers split in two:
+
+| Kind | Effect | Levers |
+| --- | --- | --- |
+| Reduce per-job duration | shorter waves | 1, 2, 3 |
+| Reduce job count, or raise the cap | **fewer waves** | 4, 5, 6 |
+
+Both matter, but only the second kind moves the ceiling. Measured 2026-08-19 on
+PR #64, a documentation-only change:
+
+| | jobs | aggregate |
+| --- | --- | --- |
+| Heavy Guards | 41 | 120 min |
+| PR Fast | 22 | 133 min |
+| 21 phase workflows (2 jobs each) | 42 | — |
+| **per push** | **~169** | ~9 waves |
+
+The wave count matches the original baseline's "roughly nine sequential waves".
 
 ## Measured build costs
 
@@ -114,7 +143,9 @@ staleness on a pinned CI SHA*. Those are different threats.
 
 ## Lever 1 — Rust cache
 
-**Status:** not started
+**Status:** merged 2026-08-16 (`52fbcf2b`, PR #43). 41 workflows carry a cache
+step. This heading read "not started" until 2026-08-19 while the Changelog below
+already recorded the merge — the status line was simply never updated.
 **Risk:** low — no staleness class to reason about
 **Target:** the 46 jobs running `cargo build`
 
@@ -319,6 +350,116 @@ guard to push back — that is the guard doing its job.
 
 ---
 
+## Lever 4 — duplicate-run elimination
+
+**Status:** merged 2026-08-19 (this document's PR)
+**Risk:** low — no coverage is lost for any pull request
+**Prize:** −63 jobs and −253 min per push, roughly **37% of the job count**
+
+`pr-fast.yml` and `heavy-guards.yml` triggered on `push: branches: [main, codex/**]`
+**and** on `pull_request`. Because agents publish to `codex/**` and open a pull
+request immediately, every push fired both events and ran both workflows twice.
+Confirmed on all five commits of PR #64: two `Heavy Guards` runs and two
+`PR Fast` runs per SHA, every time.
+
+The 49 phase workflows were never affected — their `push:` is scoped to `main`
+alone. Only the two largest workflows had the wider scope.
+
+The fix is to drop `codex/**` from those two `push:` triggers. Pull requests keep
+full coverage through the `pull_request` event. Three things make this safe:
+
+- the required `Codex / Trusted actor` check comes from `codex-trusted-ci.yml`,
+  a separate push-only workflow that is untouched;
+- `workflow_dispatch` still reaches both workflows on any branch, and the
+  in-workflow `if:` conditions already handle that event, so manual runs on a
+  `codex/**` branch still work;
+- `AGENTS.md` requires opening a draft pull request immediately, so a `codex/**`
+  branch without a PR is not a state the workflow is expected to cover.
+
+Verified: `guard-pr-fast-ci-surface` and `guard-cloud-heavy-ci-surface` both
+pass, and no guard, script, or workflow asserts anything about trigger branch
+lists.
+
+## Lever 5 — concurrency groups
+
+**Status:** merged 2026-08-19 (this document's PR)
+**Risk:** low
+**Prize:** superseded runs stop holding slots the moment a new commit lands
+
+Exactly one workflow of 53 declared a `concurrency:` block. Everything else let
+superseded runs occupy slots until they finished on their own. On PR #64, five
+pushes meant runs for four dead SHAs competing with the live one for the same 20
+slots.
+
+The `AGENTS.md` Runner Policy exists to compensate: it tells the agent to run a
+`gh run cancel` script filtered to non-current-`HEAD` runs on the branch. That
+policy is a manual reimplementation of a platform feature. Both now exist; the
+platform handles the common case and the script remains as a backstop for
+anything it misses.
+
+```yaml
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+```
+
+`head_ref || ref` keys pull requests by source branch and pushes by ref, so the
+two event types land in the same group for the same branch. Cancellation is
+disabled on `main` — a push to `main` is a merge, and cancelling it would leave
+the merge commit unverified.
+
+Three workflows are deliberately excluded:
+
+- `codex-trusted-ci.yml` — already had its own group.
+- `cranelift-historical-full.yml` — the sole Level 3 owner, scheduled nightly.
+  Adding cancellation semantics to the authoritative historical suite is a policy
+  change deserving its own review, the same reasoning that keeps it out of the
+  cache lever.
+- `blacksmith-smoke.yml` — a single-job manual smoke test.
+
+## Lever 6 — raise the concurrency ceiling
+
+**Status:** not started
+
+Levers 4 and 5 cut the job count. This one raises the cap. Verified 2026-08-19:
+
+| Option | Concurrent jobs | Cost | Note |
+| --- | --- | --- | --- |
+| Free (current) | 20 | — | per billing entity, not per repository |
+| Ask GitHub Support | negotiable | free | the limits page states support can raise it |
+| **GitHub Pro** | **40** | ~$4/mo | straight 2× |
+| Team | 60 | $4/user/mo | |
+| Blacksmith | separate pool | 3000 free min/mo, then ~½ GitHub | `blacksmith-smoke.yml` is an unfinished evaluation |
+| Ubicloud | separate pool | ~$0.0008/min | open source, cheapest observed |
+| Self-hosted | your hardware | free | GitHub advises against on public repositories; the `CODEX_GITHUB_ACTOR` gate mitigates but does not erase this, and the machine would contend with local agent work |
+| ~~BuildJet~~ | — | — | **shutting down 2026-03-31 — do not adopt** |
+
+With Lever 4 landed, roughly 105 jobs per push. At 20 slots that is ~6 waves; at
+40 it is ~3. Combined with Levers 2 and 3 shortening each wave, the compounding
+is worth more than any single item here.
+
+## Ordered plan
+
+- [x] **Lever 1 — Rust cache.** Merged `52fbcf2b` (PR #43), 41 workflows.
+- [x] **Lever 4 — duplicate-run elimination.** −37% job count.
+- [x] **Lever 5 — concurrency groups.** 50 workflows, 3 deliberate exclusions.
+- [ ] **Lever 6a — GitHub Pro.** 20 → 40 concurrent jobs. Account-level purchase;
+      no repository change required. Re-measure wave count afterwards.
+- [ ] **Lever 2 — Gust binary artifact.** Largest remaining duration prize
+      (~77 min, 24% of the original baseline). Build `gust` once per SHA, publish
+      as an artifact, consume in the ~23 jobs that currently each spend 202 s
+      bootstrapping. Read **The correctness constraint** first: the forced
+      rebuild in `scripts/run-gust-file.sh:17` must not be defeated by accident.
+- [ ] **Lever 3 — job consolidation.** ~36 min. Fold the ~86 sub-2-minute jobs
+      into fewer matrix entries. This also reduces job *count*, so it helps the
+      ceiling as well as the duration.
+- [ ] **Re-measure and update the Changelog.** The estimates above are derived
+      from the 2026-08-16 baseline and the 2026-08-19 job census, not from a
+      post-change measurement.
+- [ ] **Lever 6b — third-party runners**, only if 6a plus Levers 2 and 3 prove
+      insufficient. Finish or delete `blacksmith-smoke.yml` rather than leaving
+      an unfinished evaluation in the tree.
+
 ## Changelog
 
 | Date | Change | Aggregate runner time |
@@ -327,6 +468,8 @@ guard to push back — that is the guard doing its job.
 | 2026-08-16 | Lever 1 merged (`52fbcf2b`); like-for-like on 61 shared jobs (PR #44) | 284m → 269m (−5.2%) |
 | 2026-08-16 | Second data point (PR #45) | 284m → 276m (−2.8%) |
 | 2026-08-16 | Noise floor established: two cached PRs differ by +2.4% | — |
+| 2026-08-19 | Job census on PR #64: ~169 jobs/push, ~9 waves | — |
+| 2026-08-19 | Levers 4 and 5 merged; job count −37%, superseded runs auto-cancelled | pending re-measure |
 
 ## Incident log
 

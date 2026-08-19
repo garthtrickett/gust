@@ -44,6 +44,10 @@ on:
       - '.github/workflows/cranelift-historical-full.yml'
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   contract:
     runs-on: ubuntu-latest

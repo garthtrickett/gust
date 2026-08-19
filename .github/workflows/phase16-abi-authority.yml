@@ -24,6 +24,10 @@ on:
       - 'tests/cranelift/phase16_abi_authority_contract.tsv'
       - 'tests/cranelift/phase16_abi_authority_review.txt'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   guard-cranelift-phase16-abi-authority-contract:
     name: Phase 16.1 ABI authority contract (Level 1)

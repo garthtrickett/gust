@@ -34,6 +34,10 @@ on:
       - '.github/workflows/phase16-aggregate-returns.yml'
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   aggregate-return-contract:
     name: Phase 16.4 aggregate return contract (Level 1)

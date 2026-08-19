@@ -6,6 +6,10 @@ on:
     branches: [main]
     paths: ['compiler/mir_function_abi_authority.gst','compiler/mir_native_backend_abi_request.gst','compiler/mir_native_backend_abi_metadata_request.gst','compiler/fixtures/native_backend_abi_metadata_valid.request','compiler/experiments/cranelift/src/abi_metadata.rs','compiler/experiments/cranelift/src/main.rs','scripts/phase16_abi_metadata.py','scripts/phase16_abi_metadata_validation.sh','scripts/cranelift_test_levels.json','tests/cranelift/phase16_abi_metadata_contract.tsv','tests/cranelift/phase16_abi_metadata_malformed.tsv','tests/cranelift/phase16_abi_metadata_review.txt','justfile','.github/workflows/phase16-abi-metadata.yml']
   workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   contract:
     name: Phase 16.12 ABI metadata contract (Level 1)

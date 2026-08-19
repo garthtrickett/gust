@@ -23,6 +23,10 @@ on:
       - 'tests/cranelift/phase15_resource_authority_contract.tsv'
       - 'tests/cranelift/phase15_resource_authority_review.txt'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   guard-cranelift-phase15-resource-authority-contract:
     name: Phase 15.1 resource authority contract (Level 1)
