@@ -112,11 +112,21 @@ func main() {
     ) == 0 - 1 {
         fail("Backend request smoke: deterministic unfrozen target identity missing");
     }
+    // The frozen target fields run adjacently through layout_count. The per-layout
+    // rows (layout_0_id, layout_0_type_id, ...) are emitted between layout_count and
+    // memory_access_count by mir_layout.gst, so those two are checked separately.
+    // Requiring them adjacent asserted a format that has never existed.
     if std.str_find(
         serialized_a,
-        "layout_target_endianness: little\nlayout_target_pointer_size: 8\nlayout_target_pointer_alignment: 8\nlayout_target_i32_alignment: 4\nlayout_target_i64_alignment: 8\nlayout_target_max_aggregate_alignment: 8\nlayout_target_decisions_frozen: 1\nlayout_count: 7\nmemory_access_count: 0\n"
+        "layout_target_endianness: little\nlayout_target_pointer_size: 8\nlayout_target_pointer_alignment: 8\nlayout_target_i32_alignment: 4\nlayout_target_i64_alignment: 8\nlayout_target_max_aggregate_alignment: 8\nlayout_target_decisions_frozen: 1\nlayout_count: 7\n"
     ) == 0 - 1 {
         fail("Backend request smoke: declared primitive Phase 14 layout transport drifted");
+    }
+    if std.str_find(serialized_a, "\nlayout_0_id: layout:v1:type=type:gust:bool:") == 0 - 1 {
+        fail("Backend request smoke: declared primitive layout rows missing from transport");
+    }
+    if std.str_find(serialized_a, "\nmemory_access_count: 0\n") == 0 - 1 {
+        fail("Backend request smoke: memory access transport drifted");
     }
     if std.str_find(
         serialized_a,
