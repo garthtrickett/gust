@@ -501,6 +501,31 @@ two event types land in the same group for the same branch. Cancellation is
 disabled on `main` — a push to `main` is a merge, and cancelling it would leave
 the merge commit unverified.
 
+### Pending runs are cancelled even with `cancel-in-progress: false`
+
+Observed 2026-08-19 while merging four pull requests in quick succession: 22
+runs on `main` showed `cancelled` despite the expression above evaluating to
+`false` there. This is not a misconfiguration and it is worth writing down,
+because it reads exactly like one.
+
+GitHub protects the **in-progress** run in a concurrency group. It does not
+protect **pending** ones: when a newer run joins the group, previously pending
+runs in it are cancelled regardless of `cancel-in-progress`. With a deep queue,
+four merges in a row therefore leave one pending run per group — the newest —
+and cancel the rest.
+
+The effect is desirable: `main` gets validated at its tip rather than at three
+intermediate states nobody will ship. But it changes what "main is green" means.
+It refers to the tip only, and intermediate merge commits may carry no evidence
+at all. When bisecting a failure across a burst of merges, do not read a
+`cancelled` run as a signal about that commit — there is simply no result for it.
+
+Two ways to get per-commit evidence when it matters: merge one pull request at a
+time and let its runs finish, or re-run the workflow against the specific commit
+afterwards.
+
+### Deliberate exclusions
+
 Three workflows are deliberately excluded:
 
 - `codex-trusted-ci.yml` — already had its own group.
