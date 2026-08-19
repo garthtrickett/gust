@@ -620,6 +620,39 @@ rather than to remove the shard.
 
 Heavy Guards goes from 37 to 38 shards, within its declared maximum of 40.
 
+## Measured outcome
+
+Taken on `main` at `bc40864` with a quiet queue, against the PR #64 baseline.
+Both runs passed.
+
+| | before | after | |
+| --- | --- | --- | --- |
+| PR Fast — `build` job | 688 s | **128 s** | −81% |
+| PR Fast — aggregate | 133 min | **81 min** | −39% |
+| PR Fast — longest job | 710 s | **578 s** | now `phase11-family / pointer-memory` |
+| PR Fast — jobs | 22 | 19 | |
+| Heavy Guards — longest job | 727 s | **490 s** | −33% |
+| Heavy Guards — aggregate | 120 min | **108 min** | −10% |
+| Heavy Guards — jobs | 41 | 45 | 3b split adds jobs on purpose |
+
+**Critical path, which is what the levers targeted:** `build` + longest dependent
+job, 688 + 710 = 1398 s before, 128 + 578 = **706 s** after. That is 23 min → 12
+min, against a projection of ~13 min. Lever 3a is the bulk of it: the `build` job
+fell from 688 s to 128 s because the 52 Level 1 contracts moved off the serial
+prefix.
+
+**Observed wall-clock improved less: 38 min → 29 m 45 s.** The gap is scheduling,
+not work. `build` finished at 08:34:26 and the first dependent job started at
+08:37:46 — a 3 m 20 s hole with nothing running, and similar gaps recur as the
+matrix fills. Roughly half the wall-clock of a PR Fast run is now runners waiting
+to be allocated rather than jobs executing.
+
+That reframes what is left. Shaving job durations has reached diminishing
+returns; the remaining wall-clock is allocation latency, which no lever in this
+document addresses. Raising concurrency does not help either — the jobs are not
+queued behind our own jobs. If PR Fast wall-clock matters more from here, the
+next thing to measure is that gap, not the jobs.
+
 ## Ordered plan
 
 - [x] **Lever 1 — Rust cache.** Merged `52fbcf2b` (PR #43), 41 workflows.
@@ -640,8 +673,12 @@ Heavy Guards goes from 37 to 38 shards, within its declared maximum of 40.
       overhead, paid by every one of ~105 jobs. It is an `apt-get` install, which
       is also the source of every flake in the incident log. Cache the packages,
       or move to a runner image that ships them.
-- [ ] **Shard `phase11-family`.** With 3a and 3c landed, `phase11-family /
-      pointer-memory` at 502 s is the new critical path in PR Fast.
+- [ ] **Measure runner allocation latency.** About half of a PR Fast run's
+      wall-clock is now gaps between jobs, not job duration. This is the largest
+      remaining item and no lever here addresses it.
+- [ ] **Shard `phase11-family`.** `phase11-family / pointer-memory` at 578 s is
+      the longest job in PR Fast. Worth less than it looks while allocation gaps
+      dominate.
 - [ ] **Re-measure and update the Changelog.** The estimates above are derived
       from the 2026-08-16 baseline and the 2026-08-19 job census, not from a
       post-change measurement.
@@ -661,6 +698,8 @@ Heavy Guards goes from 37 to 38 shards, within its declared maximum of 40.
 | 2026-08-19 | Levers 4 and 5 merged; job count −37%, superseded runs auto-cancelled | pending re-measure |
 | 2026-08-19 | Lever 2 found already implemented; estimate was pre-artifact | — |
 | 2026-08-19 | Lever 3 re-scoped from consolidation to splitting, and merged | pending re-measure |
+| 2026-08-19 | Lever 3a merged: build job split from Level 1 contracts | — |
+| 2026-08-19 | **Measured on `main` @ `bc40864`, clean queue** | PR Fast 133m → **81m** |
 
 ## Incident log
 
