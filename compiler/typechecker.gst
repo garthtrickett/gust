@@ -2626,6 +2626,16 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     left_type = ctx[left_type.RawPointer.inner];
                     is_ptr = 1;
                 }
+                // A `&T` receiver is a Reference, not a RawPointer, so it fell
+                // through the deref above and resolved no methods at all:
+                // `helper(m: &std.HashMap[...])` could not call m.Get. Normalize it
+                // to the referent so a reference receiver resolves exactly what a
+                // value receiver resolves. Mutability is unchanged — references do
+                // not carry it either way (VISION.md OD-11).
+                if left_type.tag == 11 { // Reference
+                    left_type = ctx[left_type.Reference.inner];
+                    is_ptr = 1;
+                }
 
                 if std.str_eq(right_name, "get_ref") == 1 && typechecker_is_arena_value_or_ref(left_type, ctx) == 1 {
                     mut args_vec_ref: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];

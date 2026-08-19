@@ -2980,7 +2980,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                         
                 mut arg_type := codegen_get_expression_type(arg0_idx, env, ctx);
                 mut arrow_or_dot := ".";
-                if arg_type.tag == 9 {
+                if arg_type.tag == 9 || arg_type.tag == 11 { // RawPointer or Reference
                     arrow_or_dot = "->";
                 }
                         

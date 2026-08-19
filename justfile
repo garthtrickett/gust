@@ -21651,3 +21651,55 @@ guard-stdlib-s1-str-equality-diagnostic:
     rg -n -F 'std_str_eq' build/stdlib-s1-str-eq-ok.c >/dev/null
 
     echo "✅ str equality rejected in both compilers with one diagnostic; std.str_eq unchanged."
+
+# Stdlib lane, Phase S1. Appended at the end for the same reason as the S1.1
+# guard: several guards extract recipe bodies with sed ranges bounded by the next
+# recipe name, so inserting between existing recipes can change what they check.
+guard-stdlib-s1-collection-receivers:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking collection methods through a reference receiver..."
+    mkdir -p build
+    make gust >build/stdlib-s1-receivers.build.log 2>&1
+
+    positive="tests/test_hashmap_reference_receiver.gst"
+    negative="tests/test_hashmap_reference_use_after_move_rejected.gst"
+    for fixture in "$positive" "$negative"; do
+      if [ ! -f "$fixture" ]; then
+        echo "Missing collection receiver fixture: $fixture"
+        exit 1
+      fi
+    done
+
+    bash scripts/run-gust-file.sh "$positive" >/dev/null 2>&1
+    rg -n -F 'SUCCESS: HashMap reference receiver' to.log >/dev/null
+    # 7 from Get, 2 from len after Insert, 5 from the value inserted through the
+    # reference. The third proves the mutation reached the caller's map.
+    rg -n -F '7' to.log >/dev/null
+    rg -n -F '5' to.log >/dev/null
+
+    # Move tracking must not weaken just because the use is behind a reference.
+    if ./gust "$negative" >/dev/null 2>&1; then
+      echo "$negative must be rejected, but it compiled."
+      exit 1
+    fi
+    negative_output="$(./gust "$negative" 2>&1 || true)"
+    printf '%s\n' "$negative_output" | rg -n -F 'Use of moved variable' >/dev/null
+
+    # A reference receiver must lower to the same runtime operations as a value
+    # receiver. Only the C access differs: `m.len` becomes `m->len`.
+    printf 'func main() {\n    mut arena := os.Arena.New();\n    defer arena.Free();\n    mut m: std.HashMap[str, int, arena] := std.HashMapNew(arena);\n    m.Insert("k", 7);\n    mut r := m.Get("k");\n    if r.Ok { os.LogInt(r.Val); }\n    os.LogInt(len(m));\n}\n' >build/stdlib-s1-byval.gst
+    printf 'func work(m: &std.HashMap[str, int, ctx]) {\n    mut r := m.Get("k");\n    if r.Ok { os.LogInt(r.Val); }\n    os.LogInt(len(m));\n}\nfunc main() {\n    mut arena := os.Arena.New();\n    defer arena.Free();\n    mut m: std.HashMap[str, int, arena] := std.HashMapNew(arena);\n    m.Insert("k", 7);\n    work(&m);\n}\n' >build/stdlib-s1-byref.gst
+    ./gust build/stdlib-s1-byval.gst >build/stdlib-s1-byval.c 2>&1
+    ./gust build/stdlib-s1-byref.gst >build/stdlib-s1-byref.c 2>&1
+    byval_ops="$(rg -o -N 'os_HashMap[A-Za-z_]*' build/stdlib-s1-byval.c | sort | uniq -c)"
+    byref_ops="$(rg -o -N 'os_HashMap[A-Za-z_]*' build/stdlib-s1-byref.c | sort | uniq -c)"
+    if [ "$byval_ops" != "$byref_ops" ]; then
+      echo "Reference receiver lowered to different runtime operations than a value receiver:"
+      diff <(printf '%s\n' "$byval_ops") <(printf '%s\n' "$byref_ops") || true
+      exit 1
+    fi
+    rg -n -F 'LookupResult_int' build/stdlib-s1-byval.c >/dev/null
+    rg -n -F 'LookupResult_int' build/stdlib-s1-byref.c >/dev/null
+
+    echo "✅ Reference receivers resolve the same methods, lower to the same operations, and keep move tracking."

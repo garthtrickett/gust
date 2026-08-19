@@ -48,7 +48,7 @@ This is a scheduling fact, not an objection to the two-lane model.
 - [ ] Patch S1.0 — Opening Inventory and Stdlib Surface Baseline
 - [x] Patch S1.1 — `str` Equality Diagnostic — DONE
 - [ ] Patch S1.2 — String Surface Regression Suite
-- [ ] Patch S1.3 — HashMap Methods Through References
+- [x] Patch S1.3 — HashMap Methods Through References — DONE
 - [ ] Patch S1.4 — Branded Collection Type Consistency
 - [ ] Patch S1.5 — Clone Arena Destination Normalization
 - [ ] Patch S1.6 — Stdlib Composition Regression Program
@@ -530,13 +530,16 @@ receivers.
 
 - Normalize the receiver before method lookup so a reference receiver resolves the
   same methods a value receiver does.
-- Cover `Get`, `Contains`, `Keys`, `Insert`, `Set`, `Remove`, `len`.
+- Cover `Get`, `Keys`, `Insert`, `Set`, `Remove`, `len`, `get_opt`, `GetRef`.
+  **`Contains` is not in the list**: it does not exist as a HashMap method on a
+  value receiver either, so it was never a reference-receiver gap. The original
+  list was wrong.
 - **Scope correction, 2026-08-19.** This patch originally required an immutable
   reference to resolve read methods and a mutable one to resolve read and
   mutation methods. That distinction does not exist: `inout` is not a keyword in
-  either compiler, and every `&T` parameter other than `&Arena` is registered as
-  mutable. See CR-6 and `VISION.md` §26. The patch therefore delivers
-  resolution only, and adds no immutability guarantee.
+  either compiler, and `&T` resolves to a `Reference` that carries no mutability
+  at all. See CR-6 and `VISION.md` §26. The patch therefore delivers resolution
+  only, and adds no immutability guarantee.
 - Require that the resolved canonical type and canonical MIR are identical to
   the value-receiver form. If they are not, stop: this becomes a coordination
   request.
