@@ -9,7 +9,7 @@ exactly one roadmap.
 
 | Lane | Roadmap | Branch prefix | Owns |
 | --- | --- | --- | --- |
-| Cranelift | `TASK.md` | `codex/cranelift-` | canonical MIR, native lowering, backend parity, target/object/linker authority |
+| Cranelift | `TASK.md` | `codex/phase<N>-<patch>-<slug>` | canonical MIR, native lowering, backend parity, target/object/linker authority |
 | Stdlib | `TASK_STDLIB.md` | `codex/stdlib-` | safe stdlib surface, ergonomics, stdlib tests, examples, documentation |
 
 Everything in this file applies to both lanes. Where it says *the active
@@ -18,6 +18,13 @@ Stdlib lane.
 
 If the requested work does not clearly belong to one lane, stop and ask. Do not
 pick a lane by convenience.
+
+The Cranelift lane keeps the branch naming it already uses — `codex/phase18-5-target-abi`,
+`codex/phase18-4-relocations`, and so on. That pattern already identifies the
+lane, and renaming it mid-phase would churn a running loop for no benefit. The
+Stdlib lane is new, so it takes an explicit `codex/stdlib-<feature>` prefix. What
+matters to CI is the `codex/` namespace itself, not the suffix — see Branch and
+publication policy.
 
 ## Objective
 
@@ -94,10 +101,9 @@ A pull request from a branch outside `codex/**` therefore runs neither PR Fast
 nor Heavy Guards, and never produces the one required check — so it cannot merge
 and has verified almost nothing while getting there.
 
-This is why the lanes are distinguished by suffix (`codex/cranelift-`,
-`codex/stdlib-`) rather than by a new top-level namespace. The handoff document's
-proposed `cranelift/<phase>` and `stdlib/<feature>` branches would be
-unmergeable.
+This is why both lanes stay inside `codex/**` and are distinguished by suffix
+rather than by a new top-level namespace. The handoff document's proposed
+`cranelift/<phase>` and `stdlib/<feature>` branches would be unmergeable.
 
 The ruleset also sets `required_review_thread_resolution: true` with
 `required_approving_review_count: 0`, which is what "all review conversations are

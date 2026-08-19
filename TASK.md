@@ -1,6 +1,6 @@
 # Phase 18 — Target, Object, and Linker Hardening
 
-**Lane:** Cranelift. Branch prefix `codex/cranelift-`.
+**Lane:** Cranelift. Branches follow the existing `codex/phase<N>-<patch>-<slug>` pattern.
 
 Workflow, Monitoring, Merge, Phase Completion, Runner, and Git Authorization
 policies are defined once in `AGENTS.md` and apply to both lanes. Ownership
