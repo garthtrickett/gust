@@ -123,8 +123,9 @@ git diff --check
 ### G. Phase 4A Autoformatter Infrastructure
 * **Scope:** Phase 4A is tooling scaffolding only. Add treefmt, Topiary, rustfmt, and clang-format availability checks plus checked-in placeholder config files, but do not run repo-wide formatting yet.
 * **No Formatting Churn:** Do not run repo-wide formatting until Phase 4B after Phase 5/6. Formatting rollout should happen as a dedicated formatting-only commit so compiler safety work remains easy to bisect and patch.
-* **Targets:** Use `make report_phase4_formatter_tools` to report formatter binary availability in the current shell. Use `make fmt_check_phase4_infra` to verify scaffold files exist. These targets must not format files and must not be wired into `make test` during Phase 4A.
+* **Targets:** Use `make report_phase4_formatter_tools` to report formatter binary availability in the current shell. It must not format files and must not be wired into `make test` during Phase 4A.
 * **Deferred Phase 4B Work:** Complete `topiary/languages.ncl`, write the Gust Topiary query file, enable `treefmt.toml` formatter blocks, add formatter golden/sample checks, and only then perform a controlled repo-wide formatting rollout.
+* **Status:** Phase 4B has not happened. The gate above — "after Phase 5/6" — opened long ago; the Cranelift roadmap is at Phase 18. `treefmt.toml` is still an entirely commented-out scaffold and `topiary/queries/gust.scm` is a four-line placeholder. Treat this as outstanding work with no owner, not as an active deferral.
 
 ### H. Step 5.1 Raw Pointer Safety Inventory Discipline
 * **Scope:** Step 5.1 introduces gated raw pointers, unsafe blocks/functions, and sandboxed FFI. The first checkpoint is inventory-only: identify raw pointer dereferences, raw pointer casts/address escapes, direct FFI candidates, and unsafe function signature syntax needs before enforcing anything.
@@ -209,94 +210,30 @@ git diff --check
 * **Reusable Focused Runner:** Shared self-hosted Gust compile/build/run plumbing belongs in `scripts/run-gust-file.sh`. Shell helpers and `justfile` aliases should call that script instead of copy-pasting the three-phase compile-C-run sequence. Regex/textual guard implementations that do not produce artifacts should live in `justfile` / imported `justfile-*` modules and be invoked from Make only as aggregate-test wrappers.
 * **Nix Role:** The dev shell should install command-runner tools such as `just` alongside Rust, C, Python, tree-sitter, and formatting tools. It should not become a large task runner full of duplicated guard scripts.
 
-## AGENT EXECUTION MODES
+### K. Updating the Tree-sitter Grammar for Helix
 
-### Chat patch mode
+After changing `tree-sitter-gust`, the editor grammar is refreshed through the
+Nix flake rather than in this repository:
 
-This mode applies when an assistant does not have a checked-out repository.
-
-- Do not claim to execute commands.
-- Use information-retrieval and text-generation tools only.
-- Return repository-compatible transactional JSON patches.
-- Leave compilation, tests, and command execution to the user.
-
-### Codex Cloud mode
-
-This mode applies when Codex operates in an isolated environment containing a
-checked-out Gust repository.
-
-- Read `AGENTS.md` before modifying the repository.
-- Direct source editing and repository-local command execution are permitted.
-- Repository-local builds, focused guards, and tests are permitted.
-- Read-only Git inspection is permitted.
-- Publishing changes through an upstream `codex/**` branch and draft pull
-  request is permitted. The agent may mark its own pull request ready and merge
-  it after required checks pass and all review conversations are resolved.
-- Pushing directly to protected branches is prohibited.
-- Self-approval is not required and must not be used as a substitute for the
-  protected merge requirements.
-- Changing repository rules, Actions variables, secrets, or permissions is
-  prohibited unless the repository owner explicitly requests the change.
-- Accessing production systems or external secrets is prohibited.
-- Tests and guards may not be weakened, removed, skipped, or bypassed to
-  obtain a pass.
-- GitHub Actions remains the authoritative validation environment.
-
-# GEMINI.md: Code Patching & Diff Guidelines
-
-## IMPORTANT
-If there is more than one block of changes write out more than one code block with a json patch in it for each change in that file
-
-
-## CRITICAL: JSON DIFF FORMATTING RULES
-When providing file updates, you must output a single JSON payload. The pipeline executes updates transactionally: if any single search block fails to match, or if syntax errors are introduced, **the entire patch is aborted and no files are modified on disk**.
-
-### 1. Root Structure Rules
-* The root of your response MUST be a single, valid JSON object. Do NOT wrap it in a root array.
-* If you are editing multiple files, include all of them in the single `"files"` array.
-* Add a root-level `"project"` string to route downloads to the correct watcher. By default, each watcher uses the folder name of its `--cwd` as the project key. For example, a watcher running in `~/code/my-project` expects `"project": "my-project"`.
-in this case the project is gust
-"project": "gust",
-
----
-
-### 2. The `"summary"` Field (Git Commit Message)
-* The `"summary"` string at the root of your JSON is automatically extracted and used as the **Git commit message** by the pipeline.
-* Make this summary clear, concise, and professional (e.g., following Conventional Commits, such as `feat: add auth check middleware` or `fix: resolve crash in user loop`).
-
----
-
-### 3. Search / Replace Blocks (`code_diff`)
-Within the `"code_diff"` string of each file entry, use Aider-style `<<<<<<< SEARCH` and `>>>>>>> REPLACE` blocks.
-
-```json
-{
-  "project": "my-project",
-  "summary": "feat: implement rate limiting middleware",
-  "files": [
-    {
-      "file_path": "src/middleware/rate_limit.ts",
-      "code_diff": "<<<<<<< SEARCH\nexport function setup(app) {\n  // old logic\n}\n=======\nexport function setup(app) {\n  // new rate limit logic\n}\n>>>>>>> REPLACE"
-    }
-  ]
-}
-```
-
-
-
-
-Updating tree sitter for helix
+```bash
 git add .
 git commit
-cd ~/nixos-config  # or cd /etc/nixos
+cd ~/nixos-config          # or /etc/nixos
 nix flake update tree-sitter-gust
 rebuild
-reopen helix
+# reopen helix
+```
 
-make gust to.log 2>&1
+## Agent execution
 
+Operational policy for agents — lanes, ownership boundaries, the shared
+coordination zone, branch and publication rules, working-tree isolation,
+validation, and stop conditions — lives in `AGENTS.md`. It is not duplicated
+here.
 
-42069
+This document covers Gust and Rust *style*: how to write code that the
+typechecker, the transpiler, and the bootstrap seed will accept. Read `AGENTS.md`
+for how to work; read this for what to write.
 
 # Rust Style Guide: Sovereign Core & Gust Compiler
 
@@ -527,13 +464,19 @@ Maintain a multi-layered testing topology:
 
 ---
 
-## 9. Diagnostic CLI Flags & Self-Hosting Roadmap
+## 9. Diagnostic CLI Flags
 
-The `gust_v1` compiler provides two diagnostic command-line flags to assist with ground-truth verification during the self-hosting phase:
+The Rust prototype compiler in `src/` provides two diagnostic flags. They were
+built to give the self-hosted parser and typechecker a ground truth to diff
+against; self-hosting is complete, but the flags remain useful for the same
+reason — they are an independent implementation of the same pipeline.
+
+These are `cargo run --` flags on the Rust compiler. The self-hosted `./gust`
+binary does not accept them; its options are `--backend`, `-o`, and `-h`.
 
 ### `--dump-ast`
 * **Purpose**: Intercepts the pipeline directly after parsing.
-* **Behavior**: Walking the parsed Abstract Syntax Tree (AST), this flag serializes it into a highly deterministic, stable, human-readable indented text structure. Volatile spans are stripped to ensure the output remains perfectly diffable against the self-hosted parser in Phase 3.
+* **Behavior**: Walking the parsed Abstract Syntax Tree (AST), this flag serializes it into a highly deterministic, stable, human-readable indented text structure. Volatile spans are stripped so the output stays perfectly diffable against the self-hosted parser.
 * **Usage**:
   ```bash
   cargo run -- --dump-ast src/main.gst
@@ -541,7 +484,7 @@ The `gust_v1` compiler provides two diagnostic command-line flags to assist with
 
 ### `--dump-types`
 * **Purpose**: Intercepts the pipeline directly after typechecking.
-* **Behavior**: Extracts the populated type checking databases (including resolved variable types, alphabetically sorted struct layouts, enum variant listings, and alphabetically sorted function signatures) and serializes them. This acts as our semantic ground-truth reference database for the self-hosted typechecker in Phase 4.
+* **Behavior**: Extracts the populated type checking databases (including resolved variable types, alphabetically sorted struct layouts, enum variant listings, and alphabetically sorted function signatures) and serializes them. This acts as a semantic ground-truth reference database for the self-hosted typechecker.
 * **Usage**:
   ```bash
   cargo run -- --dump-types src/main.gst

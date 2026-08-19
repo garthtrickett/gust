@@ -141,9 +141,19 @@ A published, third-party-reproducible side-by-side. The same specification hande
 
 That artifact is the entire asset at this stage. Everything else is scaffolding around it.
 
+### Track A0 — the floor under both tracks
+
+Two prerequisites sit underneath Track A and Track B rather than beside them.
+
+**The native backend.** The README's "Two backends, and why" section argues the case: transpiling to C means inheriting C's abstract machine, and an arena-and-index model is precisely the pattern its rules punish. The Cranelift backend is what makes "the compiler carries the danger" true rather than aspirational. It is not a performance play and it is not deferrable to post-demo, because containment (§0.4) is what is being sold.
+
+**A stdlib an agent can actually write against.** OD-9 asks whether a model can write Gust well. That question is not answerable while ordinary operations still require representation-aware code — comparing two strings, calling a method on a collection held by reference, cloning into an arena reached through shared state. An agent that must know that `str` is a slice struct is not being tested on fluency; it is being tested on compiler trivia. Every such workaround is also a line of corpus teaching the wrong thing.
+
+Track A0 is scoped by a single question: **can an agent express this without knowing how the compiler represents it?** Work that answers yes belongs here. Work that merely makes the language richer does not, and the paragraph below still applies to it in full.
+
 ### Explicitly not next
 
-- **More language surface.** Better generics, nicer syntax, richer patterns. The temptation will be constant and every week spent there is a week the demo does not exist.
+- **More language surface.** Better generics, nicer syntax, richer patterns. The temptation will be constant and every week spent there is a week the demo does not exist. Track A0 is not an exemption from this: it is bounded by removing representation leakage from operations that already exist, never by adding expressive power. A stdlib change that makes something newly *possible* rather than newly *writable* is more language surface, and belongs here.
 - **Any business.** See §0.8 — the decision is deliberately deferred.
 - **Deployment platform, jobs, realtime, suppliers.** All post-demo.
 

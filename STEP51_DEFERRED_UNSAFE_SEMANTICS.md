@@ -1,5 +1,10 @@
 # Step 5.1 Deferred Unsafe Semantics Checkpoint
 
+> **Status: historical, unverified.** This document predates the closure of
+> Phase 15 (`TASK.md`). Its claims about what the compiler can represent have
+> not been re-checked since. Do not treat it as a current statement of compiler
+> capability. Verify against the compiler before relying on any item here.
+
 This checkpoint returns sequencing to Step 5.1 before any compiler-backed Step 5.2 linear-resource enforcement continues. Basic unsafe enforcement is compiler-backed, but the full Step 5.1 objective is not complete until the deferred unsafe, FFI, layout, sandboxing, address-escape, and provenance lanes have semantic designs and guards.
 
 ## Current closed subset

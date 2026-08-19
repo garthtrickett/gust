@@ -14,7 +14,7 @@ if [ -f "$CONFIG_FILE" ]; then
 else
     # Fallback Defaults
     OUTPUT_FILE="a.txt"
-    ROOT_CONFIG_FILES=("flake.nix" "Cargo.toml" "GEMINI.md" "bridge.sh" "Makefile")
+    ROOT_CONFIG_FILES=("flake.nix" "Cargo.toml" "GEMINI.md" "Makefile")
     TARGET_DIRS=("src" "compiler" "tests")
     FILE_EXTENSIONS=("gst" "c" "h")
     EXCLUDE_PATTERNS=()

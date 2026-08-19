@@ -1,0 +1,835 @@
+# Stdlib Phase S1 — Safe Standard-Library Surface
+
+**Lane:** Stdlib. Branch prefix `codex/stdlib-`.
+
+Workflow, Monitoring, Merge, Phase Completion, Runner, and Git Authorization
+policies are defined once in `AGENTS.md` and apply to both lanes. Ownership
+boundaries and the shared coordination zone are defined in `AGENTS.md` and
+`docs/SHARED_SEMANTIC_ZONE.md`. This document defines only what is specific to
+Phase S1.
+
+The parallel Cranelift lane is described by `TASK.md`. Phase S1 does not own,
+schedule, or validate any work in that roadmap.
+
+Phase numbering is deliberately `S`-prefixed. Cranelift phases are numbered
+`14`–`18` and their guards are named `guard-cranelift-phase<N>-*`. Stdlib guards
+are named `guard-stdlib-s1-*` so no guard, workflow, script, or registry key can
+be mistaken for the other lane's.
+
+## Roadmap Activation
+
+Phase S1 implementation begins only after an explicit operator request to start
+Phase S1. Once activated, the Phase Completion Loop in `AGENTS.md` authorizes
+autonomous work through Patch S1.12, subject to the patch boundaries, validation
+requirements, and stop conditions in this document.
+
+Activating Phase S1 does not activate the Cranelift lane, and vice versa.
+
+## Parallelism Warning — read before activating
+
+Phase S1 was scoped after checking its premises against the compiler
+(`docs/STDLIB_SURFACE_FINDINGS.md`, verified 2026-08-19). Five of the thirteen patches are
+unblocked today. The rest depend on coordination requests that only the
+Cranelift lane can land.
+
+| Unblocked now (5) | Blocked (7) | Depends on the rest (1) |
+| --- | --- | --- |
+| S1.0, S1.1, S1.2, S1.3, S1.7 | S1.4, S1.5, S1.6 — CR-2 · S1.8, S1.9, S1.10, S1.11 — CR-5 | S1.12 closure |
+
+Activating both lanes on day one therefore does **not** produce two independent
+streams of work. It produces roughly one PR-week of stdlib work followed by a
+block. Either sequence CR-2 into the Cranelift roadmap first, or accept that the
+Stdlib lane idles after S1.3.
+
+This is a scheduling fact, not an objection to the two-lane model.
+
+## Status
+
+- [ ] Patch S1.0 — Opening Inventory and Stdlib Surface Baseline
+- [ ] Patch S1.1 — `str` Equality Diagnostic
+- [ ] Patch S1.2 — String Surface Regression Suite
+- [ ] Patch S1.3 — HashMap Methods Through References
+- [ ] Patch S1.4 — Branded Collection Type Consistency
+- [ ] Patch S1.5 — Clone Arena Destination Normalization
+- [ ] Patch S1.6 — Stdlib Composition Regression Program
+- [ ] Patch S1.7 — MutexGuard Prerequisite Audit
+- [ ] Patch S1.8 — MutexGuard Prototype
+- [ ] Patch S1.9 — MutexGuard Scope and Resource Tests
+- [ ] Patch S1.10 — MutexGuard Fiber Contention Tests
+- [ ] Patch S1.11 — Realistic Example Migration
+- [ ] Patch S1.12 — Phase S1 Closure
+
+Status rows are machine-parsed, exactly as the Cranelift guards parse `TASK.md`
+(`scripts/phase15_close.py:51` matches `^- \[x\] Patch 15\.(\d+).+— DONE$`).
+Keep each row in the form `- [ ] Patch S1.N — <Title>` / `- [x] Patch S1.N — <Title> — DONE`
+with no trailing annotation. Which patches are blocked is recorded in the
+Parallelism Warning table above and in the Coordination Requests section, never
+inline in a Status row.
+
+## Purpose
+
+Phase S1 makes Gust's existing safe primitives usable by ordinary application
+code without representation-aware workarounds.
+
+The governing rule is that **the stdlib consumes Gust semantics; it does not
+define them**. Phase S1 composes `Arena`, `Mutex`, `Channel`, `Fiber`, `Move`,
+`Index`, and scope-exit resource semantics into safe abstractions. It does not
+grow the core language sideways to make a library convenient.
+
+The phase covers:
+
+- a `str` surface an ordinary program can use without knowing `str` is a slice
+  struct;
+- collection methods reachable through references, so wrapper types are possible;
+- one canonical branded type per collection regardless of source spelling;
+- an arena-clone destination that does not leak `Arena*` versus `Arena**`;
+- a scoped `MutexGuard` built from generic resource semantics rather than
+  compiler knowledge of `Mutex`.
+
+Phase S1 closes only the declared stdlib surface. It does not claim a complete
+standard library, a text or Unicode API, networking, or production readiness.
+
+## Starting State
+
+Verified 2026-08-19 against `6c94728d`. Evidence and reproductions:
+`docs/STDLIB_SURFACE_FINDINGS.md`.
+
+Already present, contrary to the originating handoff document:
+
+- `len(s)` accepts `str` and returns byte length — `src/typechecker/visitor.rs:3084`.
+  This already satisfies the byte-length requirement and agrees with
+  `VISION.md` §33.
+- `std.str_slice(s, start, end)` — `src/runtime/strings.c:16`.
+- `std.str_byte_at(s, idx)` — `src/runtime/strings.c:27`.
+- `std.str_eq(a, b)`, `std.str_find`, `std.str_trim`, `std.str_split` —
+  `src/runtime/strings.c:10,35,46,61`.
+- All three string helpers are registry-owned Phase 17 runtime symbols
+  (`p17_helper_std_str_eq`, `p17_helper_std_str_slice`,
+  `p17_helper_std_str_byte_at`).
+
+Confirmed defects:
+
+- `str == str` typechecks and emits `(a == b)` over two C structs, which is not
+  valid C. The failure surfaces from the host C compiler.
+- Both compilers infer arena brands from a hardcoded list of identifier
+  spellings — `["connCtx", "arena", "ctx", "Any", "a", "main_ctx", "bg_ctx", "file_ctx"]`
+  at `src/codegen.rs:71` and `src/typechecker/types.rs:61`. A local named `a` has
+  `&` prepended at call sites regardless of its type. The Rust and self-hosted
+  compilers use different matching rules for the same list (`ends_with` versus
+  substring), and the list is present in the committed bootstrap seed.
+- A method call on a reference receiver fails resolution:
+  `func lookup(m: &std.HashMap[str, int, ctx]) int { return m.Get("k"); }` →
+  `Semantic Error: Undefined function 'm.Get'`. `GEMINI.md` §D already records
+  this as a known deferral.
+- `std_str_slice` and `std_str_byte_at` handle out-of-range input with
+  `printf` + `exit(1)`, terminating the process rather than the request or task
+  as `VISION.md` §34 requires.
+- `STEP52_RESOURCE_SEMANTICS.md:20-27` items 2 and 6 — automatic resource lifecycle
+  enforcement, and an AST/typechecker representation for `defer` — are unmet.
+  That document was last modified 2026-06-28, before Phase 15 closed.
+
+Contracts Phase S1 consumes and must not redefine:
+
+- Phase 14 owns type layout, target layout, and memory-access validation.
+- Phase 15 owns resource identity, move state, cleanup obligations, destruction.
+- Phase 16 owns signatures, placement, call plans, frame plans, compatibility.
+- Phase 17 owns runtime ABI identity, runtime symbol identity and version,
+  runtime components and packages. **Every `std.*` name is a Phase 17 runtime
+  symbol.**
+- MIR-to-C is the default backend and differential oracle.
+- Explicit Cranelift selection has no fallback.
+- `GEMINI.md` §A–§D govern branding, ephemeral views in structs, flat function
+  scope, and arena-stored collection access in Gust sources.
+
+## Phase Boundary
+
+Phase S1 may implement:
+
+- stable Gust-level diagnostics for stdlib misuse that currently escapes to the
+  C compiler;
+- regression and compile-fail suites over the existing stdlib surface;
+- method resolution through reference receivers where the resolved canonical
+  type and canonical MIR are unchanged;
+- safe library wrappers composed from existing primitives;
+- examples and documentation;
+- one scoped `MutexGuard` expressed as an ordinary Gust linear resource.
+
+Phase S1 must not silently absorb:
+
+- a new or changed `std_*` runtime symbol without a Phase 17 registry row;
+- new lifetime syntax, lifetime relations, or lifetime casts;
+- arena-brand escape hatches or brand casts;
+- new smart-pointer families;
+- `Mutex[T]`, `Guard[T]`, or a protected-value borrowing system;
+- removal or weakening of raw `Mutex.Lock` / `Mutex.Unlock`;
+- removal or weakening of the `Lock(); defer Unlock();` pattern;
+- operator semantics changes;
+- a new MIR operation, or a changed meaning for an existing one;
+- resource, drop, or move semantics changes;
+- ABI, layout, or runtime-ABI changes;
+- compiler knowledge of `Mutex`, `HashMap`, or any other individual stdlib type;
+- backend-specific stdlib behaviour, in either backend;
+- a silent Cranelift-to-C fallback for an unsupported stdlib feature;
+- `std.net`, sockets, or scheduler-aware networking;
+- Unicode scalar, grapheme, or validated-UTF-8 APIs;
+- an owned `String[ctx]` type.
+
+## Coordination Requests
+
+These are shared-zone changes Phase S1 cannot make. Each is stated in the
+seven-point format from `AGENTS.md`. They are scheduled by the operator into the
+Cranelift lane, not by this roadmap.
+
+### CR-1 — Content equality for `str ==`
+
+1. **Intended behaviour:** `if command == "PING"` compares contents; `!=` is its
+   negation.
+2. **Existing limitation:** the typechecker accepts `str == str` and codegen
+   emits `==` over two `Slice_unsigned_char` values, which is not valid C.
+3. **Smallest generic change:** define `==` and `!=` on `str` as content
+   equality in the compiler-owned operator set, lowering to the existing
+   `std_str_eq` semantics through canonical MIR. No new operator, no user-level
+   overloading.
+4. **Affected:** `src/typechecker/visitor.rs`, `src/codegen.rs`,
+   `compiler/typechecker.gst`, `compiler/codegen.gst`, canonical MIR equality
+   lowering, `src/runtime/strings.c` (unchanged if `std_str_eq` is reused).
+5. **MIR-to-C:** yes.
+6. **Cranelift:** yes — parity required, or the feature is deferred in both.
+7. **Bootstrap:** yes — dual compiler and seed.
+
+`VISION.md` §16 makes the operator set compiler-owned, so this is Cranelift-lane
+work by default even though the motivation is ergonomic. Patch S1.1 delivers the
+non-semantic half — a stable diagnostic — so the miscompile stops immediately
+whether or not CR-1 is scheduled.
+
+### CR-2 — Brand identity from types, not identifier spelling
+
+1. **Intended behaviour:** whether a value is an arena, and whether an argument
+   is passed by value or by address, follows from its resolved type. Renaming a
+   variable never changes generated code.
+2. **Existing limitation:** both compilers test identifier spelling against a
+   hardcoded brand-name list, and the two compilers use different matching rules
+   for it.
+3. **Smallest generic change:** resolve arena-ness and argument representation
+   from the type system; delete the name list from both compilers; make the two
+   matching rules identical or make the concept unnecessary.
+4. **Affected:** `src/codegen.rs:71,128,1762,1808,1843`,
+   `src/typechecker/types.rs:61,439`, `src/typechecker.rs:135,172`,
+   `src/typechecker/monomorphize.rs:234,254,268,599,722`,
+   `compiler/codegen.gst:658,762,896,1101,1851`,
+   `compiler/typechecker.gst:4953,5151`, `gust_v4.c`.
+5. **MIR-to-C:** yes.
+6. **Cranelift:** yes — argument representation is Phase 16 ABI territory.
+7. **Bootstrap:** yes, and this is the highest-risk element. The seed encodes
+   the current behaviour.
+
+CR-2 is the single common root cause of the originating document's Task 3
+(branded collection consistency) and Task 4 (Clone arena references). It blocks
+S1.4, S1.5, and S1.6. It is not a "small frontend fix", and the Stdlib lane must
+not attempt it.
+
+**Placement — decided 2026-08-19:** CR-2 is assigned to a narrow **Phase 19**
+owning brand and argument representation, and nothing else. It is not folded into
+Phase 18, whose boundary is targets, objects, and linkers, and it is not carried
+inside a Stdlib patch. The reasons are that it is bootstrap-sensitive — it
+changes both compilers and requires a seed regeneration — that it reaches into
+Phase 16 ABI territory for argument representation, and that a defect present in
+the committed seed deserves its own boundary and its own evidence rather than
+arriving as a side effect of an ergonomics patch.
+
+The Phase 19 roadmap is published separately, before any Phase 19 patch, in the
+same way `TASK.md` was published before Patch 18.0.
+
+### CR-3 — String bounds-failure policy
+
+1. **Intended behaviour:** an out-of-range `str` index or slice fails the
+   current request, task, or job — not the process.
+2. **Existing limitation:** `std_str_slice` and `std_str_byte_at` call
+   `printf` + `exit(1)`.
+3. **Smallest generic change:** route runtime bounds failures through the
+   existing panic path defined by `VISION.md` §34, rather than adding a
+   `Result`-returning variant of each helper.
+4. **Affected:** `src/runtime/strings.c`, the Phase 17 helper rows for both
+   symbols, the fiber scheduler's failure path.
+5. **MIR-to-C:** yes.
+6. **Cranelift:** yes.
+7. **Bootstrap:** no, if the symbol signatures are unchanged.
+
+### CR-4 — Protocol for adding a `std.*` symbol — **RESOLVED 2026-08-19**
+
+`std.X` resolves to the C symbol `std_X` (`src/typechecker/visitor.rs:1017`), and
+every such symbol is a Phase 17 registry-owned runtime symbol whose registry
+`AGENTS.md` assigns to the Cranelift lane. The Stdlib lane cannot add a stdlib
+function without touching a Cranelift-owned file.
+
+**Resolution — the three-step protocol:**
+
+1. **Stdlib proposes.** The Stdlib patch states the symbol name, signature,
+   semantics, failure behaviour, and which of its Exit Gates requires it. It
+   writes no registry entry.
+2. **Cranelift admits.** The Cranelift lane adds the helper row to
+   `scripts/cranelift_feature_registry.json` with `symbol_identity`,
+   `symbol_kind`, `source_path`, `reachability`, `inventory_owner`,
+   `diagnostic_owner`, `owning_phase17_entry_id`, classification, and
+   `target_applicability`, and refreshes
+   `compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md` and
+   `docs/CRANELIFT_FEATURE_REGISTRY.md`. This is a narrow PR of its own.
+3. **Stdlib implements.** Only after the row exists does the Stdlib lane add the
+   runtime implementation, the compiler-side binding, and the tests.
+
+**Standing rules:**
+
+- The Stdlib lane never edits `scripts/cranelift_feature_registry.json`,
+  `scripts/cranelift_feature_registry.schema.json`,
+  `compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md`, or
+  `docs/CRANELIFT_FEATURE_REGISTRY.md`. Not to add a row, not to fix a typo.
+- A Stdlib patch that discovers mid-flight that it needs a new symbol stops and
+  files the step-1 proposal. It does not add the symbol and backfill the row.
+- Composing existing registered symbols into a safe wrapper requires no
+  proposal. Only a new or changed `std_*` symbol does.
+- Changing the *behaviour* of an existing symbol — for example CR-3 — is the
+  same three-step protocol, because the registry records its classification.
+
+Phase S1 as scoped needs no new `std.*` symbol. The protocol exists so that the
+first patch which does need one already knows the answer.
+
+### CR-5 — Generic resource semantics sufficient for a scoped guard
+
+1. **Intended behaviour:** `guard := mutex.Lock()` yields a move-only value that
+   releases the lock exactly once on every scope exit, including early return,
+   error return, and across fiber suspension.
+2. **Existing limitation:** `STEP52_RESOURCE_SEMANTICS.md` items 2 and 6 are
+   unmet — resource lifecycle enforcement is inert, and `defer` has no
+   AST/typechecker representation. `VISION.md` §27 marks shared ownership open
+   as OD-3.
+3. **Smallest generic change:** whatever Phase 15's resource authority still
+   lacks to express one non-directory linear resource end to end. Determined by
+   Patch S1.7, which is report-only.
+4. **Affected:** typechecker resource state, canonical MIR resource values,
+   scope-exit cleanup, destructor scheduling, `src/runtime/*` mutex contract.
+5. **MIR-to-C:** yes.
+6. **Cranelift:** yes.
+7. **Bootstrap:** likely.
+
+No Mutex-specific compiler support may be added under any circumstances. If the
+generic change is too large, `MutexGuard` is deferred and the `Lock(); defer
+Unlock();` pattern remains the recommended form.
+
+## Verification Policy
+
+### Level 1 — Fast contracts
+
+Level 1 guards may validate:
+
+- the stdlib surface inventory and its agreement with the Phase 17 helper rows;
+- stable diagnostic text and diagnostic ownership;
+- compile-fail expectations;
+- canonical type identity for paired inferred and explicit programs;
+- brand propagation through references;
+- resource state expectations where applicable;
+- absence of new `std_*` symbols without a registry row;
+- absence of backend-specific stdlib behaviour;
+- test-level and workflow ownership.
+
+Level 1 guards must not build every target, run the full historical suite, or
+execute fiber contention matrices.
+
+### Level 2 — Focused differential families
+
+Level 2 compares, for each applicable case:
+
+- default MIR-to-C;
+- explicit MIR-to-C;
+- explicit Cranelift, where the feature is inside the supported cohort;
+- runtime values, stdout, stderr where declared stable, and exit status;
+- mutation results;
+- failure classification.
+
+Equivalence means equivalent observable semantics, not identical machine code.
+
+A feature outside Cranelift's current cohort is recorded as explicitly deferred.
+It is never silently validated on MIR-to-C alone and never falls back.
+
+Proposed family vocabulary:
+
+- `stdlib-str-surface`;
+- `stdlib-str-equality`;
+- `stdlib-collection-receivers`;
+- `stdlib-branded-collections`;
+- `stdlib-clone-destination`;
+- `stdlib-composition`;
+- `stdlib-mutex-guard`.
+
+### Level 3 — Historical evidence
+
+Cranelift Historical Full remains the sole Level 3 owner. Phase S1 does not
+create a second historical suite. Stdlib fixtures that require Level 3 coverage
+are handed to the Cranelift lane as a coordination request and land in the
+existing suite.
+
+## Standard Definition of Done for Every Phase S1 Patch
+
+A Phase S1 capability is done only when all of the following are true:
+
+- The supported source shape is precisely bounded.
+- The change composes existing Gust semantics and introduces no new semantic
+  concept.
+- No new or changed `std_*` runtime symbol exists without a Phase 17 registry
+  row added by the Cranelift lane.
+- Canonical type identity is unchanged, or the change is a scheduled
+  coordination request.
+- Canonical MIR is unchanged, or the change is a scheduled coordination request.
+- A paired inferred-type and explicit-type program produces the same semantic
+  type, ABI, layout, brand identity, and behaviour.
+- A positive source test exists.
+- A negative compile-fail test exists with stable diagnostic text.
+- A runtime behaviour test exists.
+- MIR-to-C behaviour is validated.
+- Cranelift behaviour is validated where the feature is inside the supported
+  cohort, and explicitly deferred where it is not.
+- Brand misuse is rejected: wrong arena, use after move, mutation through an
+  immutable receiver, value from an incompatible region.
+- Resource misuse is rejected where the patch involves resources: copy, double
+  release, use after move, two owners for one acquisition, fabricated guard.
+- No raw-pointer or `unsafe` workaround appears in a user-facing safe surface.
+- No backend learns about the feature independently.
+- Explicit Cranelift still cannot fall back to MIR-to-C.
+- Bootstrap remains safe: no construct the checked-in seed cannot compile.
+- `GEMINI.md` guidance that the patch invalidates is updated in the same PR.
+- The owning CI family contains focused evidence.
+- The new guards are assigned to the correct test level.
+
+## Patch Sequence
+
+### Patch S1.0 — Opening Inventory and Stdlib Surface Baseline
+
+**Purpose**
+
+Establish the exact stdlib surface and its defects as a checked artifact, so no
+later patch is scoped from assumption.
+
+**Steps**
+
+- Enumerate every `std.*` name reachable from user code, its C symbol, its
+  signature, and its Phase 17 helper row.
+- Record which names have no helper row.
+- Record, per name, whether it is inside Cranelift's supported cohort.
+- Record the confirmed defects from `docs/STDLIB_SURFACE_FINDINGS.md` as inventory rows
+  with owners: CR-1, CR-2, CR-3, CR-5.
+- Record the `GEMINI.md` §D deferral as an inventory row owned by S1.3.
+- Resolve CR-4 (the symbol-addition protocol) before any later patch.
+- Add `guard-stdlib-s1-surface-inventory`.
+
+**Test Level**
+
+Level 1.
+
+**Exit Gate**
+
+The stdlib surface inventory exists, is generated rather than hand-written,
+agrees with the Phase 17 helper rows, and names an owner for every confirmed
+defect. No behaviour changes.
+
+### Patch S1.1 — `str` Equality Diagnostic
+
+**Purpose**
+
+Stop `str == str` from reaching the C compiler.
+
+**Steps**
+
+- Reject `==` and `!=` between two `str` operands in the typechecker with a
+  stable diagnostic that names `std.str_eq` as the current form.
+- Emit the diagnostic from both the Rust and self-hosted typecheckers with
+  identical text.
+- Add compile-fail fixtures for `==` and `!=`, for locals, parameters, return
+  values, and struct fields.
+- Confirm no existing source in `compiler/`, `tests/`, or `src/` relies on the
+  previously accepted form.
+- Add `guard-stdlib-s1-str-equality-diagnostic`.
+
+**Test Level**
+
+Level 1.
+
+**Exit Gate**
+
+`str == str` produces a stable Gust diagnostic at the source span. No program
+reaches the C compiler with `==` over two slice structs. Behaviour of
+`std.str_eq` is unchanged. This patch does not make `==` mean content equality;
+that is CR-1.
+
+### Patch S1.2 — String Surface Regression Suite
+
+**Purpose**
+
+Pin the existing string surface before anything else changes it.
+
+**Steps**
+
+- Cover `len`, `std.str_byte_at`, `std.str_slice`, `std.str_find`,
+  `std.str_trim`, `std.str_eq`, `std.str_split`.
+- Cover the value positions: local, function parameter, return value, struct
+  field, arena-cloned string, string produced by split.
+- Cover the boundary matrix: empty, whole, prefix, suffix, middle, first byte,
+  final byte.
+- Record current out-of-range behaviour as an observed fact referencing CR-3.
+  Do not change it.
+- Observe `GEMINI.md` §A: a struct holding a `str` field must be a branded
+  template. Observe §C: unique local names within a function.
+- Add a MIR-to-C and Cranelift differential family `stdlib-str-surface`, with
+  any out-of-cohort case explicitly deferred.
+- Add `guard-stdlib-s1-str-surface`.
+
+**Test Level**
+
+Level 1, with a Level 2 parity family.
+
+**Exit Gate**
+
+Every string operation has positive, boundary, and position coverage on
+MIR-to-C, with Cranelift parity or an explicit deferral. Out-of-range behaviour
+is recorded, not altered.
+
+### Patch S1.3 — HashMap Methods Through References
+
+**Purpose**
+
+Make collections usable inside abstractions by resolving methods on reference
+receivers.
+
+**Steps**
+
+- Normalize the receiver before method lookup so an immutable reference resolves
+  read methods and a mutable receiver resolves read and mutation methods.
+- Cover `Get`, `Contains`, `Keys`, `Insert`, `Set`, `Remove`, `len`.
+- Require that the resolved canonical type and canonical MIR are identical to
+  the value-receiver form. If they are not, stop: this becomes a coordination
+  request.
+- Preserve brand identity through the reference: no erasure, no substitution, no
+  invented brand relation, no wrong-arena insertion.
+- Add compile-fail tests: mutation through an immutable receiver, wrong arena
+  brand, use after move, use of a moved map through a reference, value inserted
+  from an incompatible region.
+- Update `GEMINI.md` §D, which currently defers this exact migration.
+- Add `guard-stdlib-s1-collection-receivers`.
+
+**Test Level**
+
+Level 1, with a Level 2 parity family.
+
+**Exit Gate**
+
+A helper taking a map by reference can call read methods, and by mutable
+receiver can mutate, without copying the container. The value-receiver and
+reference-receiver forms produce identical canonical types and canonical MIR.
+Brand misuse is still rejected.
+
+### Patch S1.4 — Branded Collection Type Consistency
+
+*Blocked by CR-2.*
+
+**Purpose**
+
+Make an explicit type annotation semantically invisible.
+
+**Steps**
+
+- For `Vector[T, arena]`, `Slice[T, arena]`, `HashMap[K, V, arena]`, and every
+  other branded collection, establish one canonical semantic representation
+  produced by type resolution and consumed unchanged by both backends.
+- Build paired programs: Program A with the type inferred, Program B with the
+  same type written explicitly.
+- Cover: inferred local, explicit local, function parameter, function return
+  type, struct field, immutable reference, mutable reference, generic use,
+  collection returned from a stdlib helper.
+- Assert the pairs agree on semantic type, ABI, layout, brand identity, and
+  behaviour.
+- Neither backend reconstructs branding.
+- Add `guard-stdlib-s1-branded-collections`.
+
+**Test Level**
+
+Level 1, with a Level 2 parity family.
+
+**Exit Gate**
+
+Adding an explicit annotation cannot alter the generated type, ABI, layout,
+brand identity, or backend behaviour for any covered position.
+
+### Patch S1.5 — Clone Arena Destination Normalization
+
+*Blocked by CR-2.*
+
+**Purpose**
+
+Let application code express "clone this value into this region" without knowing
+how the arena is represented.
+
+**Steps**
+
+- Accept an owned arena and a valid arena reference as the same destination when
+  the type system says they denote the same arena.
+- Resolve the destination in the frontend; hand codegen a resolved destination
+  representation rather than a source expression to decorate.
+- Cover: `Clone(local_arena, string)`, `Clone(valid_arena_reference, string)`,
+  clone into an arena stored in a struct, clone via a helper function.
+- Reject: wrong brand, moved arena, and freed or invalid arena where statically
+  detectable.
+- Introduce no arena pointers, brand casts, lifetime conversions, or raw-pointer
+  escape hatches. Brand identity remains authoritative.
+- Add `guard-stdlib-s1-clone-destination`.
+
+**Test Level**
+
+Level 1, with a Level 2 parity family.
+
+**Exit Gate**
+
+Application code never needs to know about `Arena*`, `Arena**`, address-of
+insertion, or backend arena representation in order to clone a value. Wrong-brand
+and moved-arena destinations are still rejected.
+
+### Patch S1.6 — Stdlib Composition Regression Program
+
+*Blocked by CR-2.*
+
+**Purpose**
+
+Prove the core ergonomics hold together in something shaped like an application.
+
+**Steps**
+
+- Write one program combining arenas, `str`, `Vector`, `HashMap`, `Clone`,
+  references, function calls, and both explicit and inferred branded types.
+- Shape it as a small parser or key-value workload, not as a synthetic compiler
+  fixture.
+- Require MIR-to-C success and correct execution.
+- Require Cranelift parity where the current phase supports it, and an explicit
+  deferral where it does not.
+- Require no backend-specific source.
+- Add `guard-stdlib-s1-composition`.
+
+**Test Level**
+
+Level 2.
+
+**Exit Gate**
+
+The composition program compiles and runs correctly with identical observable
+behaviour on both backends, or with an explicitly recorded Cranelift deferral,
+and contains no representation-aware code.
+
+### Patch S1.7 — MutexGuard Prerequisite Audit
+
+**Purpose**
+
+Determine whether generic resource semantics can already express a scoped guard,
+before any guard is written. Report-only.
+
+**Steps**
+
+- Re-verify each of the eight required semantic states in
+  `STEP52_RESOURCE_SEMANTICS.md` against the post-Phase-15 compiler.
+- Record which are met, which are inert, and which are absent.
+- Refresh or supersede `STEP52_RESOURCE_SEMANTICS.md`, which predates Phase 15
+  closure.
+- State whether `VISION.md` §27 OD-3 must resolve before a guard can exist.
+- Populate CR-5 item 3 with the smallest generic change actually required.
+- Change no behaviour and add no enforcement.
+- Add `guard-stdlib-s1-resource-prerequisites`.
+
+**Test Level**
+
+Level 1.
+
+**Exit Gate**
+
+A checked report states precisely which generic resource capabilities exist and
+which are missing, and CR-5 names a concrete smallest change. If everything
+required already exists, S1.8 proceeds; otherwise S1.8 is blocked and CR-5 is
+handed to the Cranelift lane.
+
+### Patch S1.8 — MutexGuard Prototype
+
+*Blocked by CR-5.*
+
+**Purpose**
+
+Express a scoped lock as an ordinary Gust linear resource.
+
+**Steps**
+
+- `mutex.Lock()` returns a `MutexGuard` representing exactly one acquisition.
+- The guard is move-only, non-copyable, and released exactly once on scope exit.
+- Implement it with existing linear-resource metadata and registered destructor
+  identity. No compiler knowledge of `Mutex`.
+- Keep raw `Mutex.Lock` and `Mutex.Unlock` public and unchanged.
+- Keep `Lock(); defer Unlock();` working and documented as the safer manual form.
+- Do not introduce `Mutex[T]`, `Guard[T]`, or protected-value borrowing. The
+  guard represents lock ownership only; shared data stays separate.
+- Add `guard-stdlib-s1-mutex-guard`.
+
+**Test Level**
+
+Level 1, with a Level 2 parity family.
+
+**Exit Gate**
+
+A `MutexGuard` exists as an ordinary linear resource type, releases exactly once
+at scope exit, and required no Mutex-specific compiler support. Raw lock and
+unlock are unchanged.
+
+### Patch S1.9 — MutexGuard Scope and Resource Tests
+
+*Blocked by CR-5.*
+
+**Purpose**
+
+Validate the guard against control flow, not just the happy path.
+
+**Steps**
+
+- Positive: normal scope exit, early return, nested scope, error return, guard
+  move, guard passed into a helper, guard returned where legal.
+- Compile-fail: copy the guard, double release, use after move, two owners for
+  one acquisition, construct a fabricated guard, release the underlying mutex and
+  then let the guard release again.
+- Where preventing raw double-unlock would require a broad compiler semantic
+  change, document it as a limitation rather than expanding scope.
+- Add `guard-stdlib-s1-mutex-guard-scope`.
+
+**Test Level**
+
+Level 1, with a Level 2 parity family.
+
+**Exit Gate**
+
+Every listed positive case releases exactly once and every listed misuse is
+rejected at compile time, or is recorded as an explicit documented limitation.
+
+### Patch S1.10 — MutexGuard Fiber Contention Tests
+
+*Blocked by CR-5.*
+
+**Purpose**
+
+Validate the guard under real fibers without altering mutex runtime semantics.
+
+**Steps**
+
+- Fiber A acquires a guard, yields; fiber B attempts acquisition and suspends;
+  fiber A resumes; the guard leaves scope; fiber B wakes and acquires.
+- Many fibers increment a shared integer; the final count is exact.
+- Assert the guard abstraction does not change existing mutex runtime semantics.
+- Record multi-shard scheduler and real parallel contention as future coverage if
+  CI cannot run them.
+- Add `guard-stdlib-s1-mutex-guard-fibers`.
+
+**Test Level**
+
+Level 2.
+
+**Exit Gate**
+
+Contention, suspension, and wakeup behave identically with and without the
+guard, and the shared-counter result is exact.
+
+### Patch S1.11 — Realistic Example Migration
+
+*Blocked by CR-5.*
+
+**Purpose**
+
+Show the abstraction pays for itself in code that already exists.
+
+**Steps**
+
+- Convert one existing realistic test or example from manual `Lock()` / `Unlock()`
+  to a scoped guard. A shared `HashMap`, a concurrent counter, or a small
+  key-value workload is a good candidate.
+- Require fewer manual cleanup paths, identical observable behaviour, identical
+  synchronization guarantees, no `unsafe`, and no raw-pointer workaround.
+- Add `guard-stdlib-s1-migration`.
+
+**Test Level**
+
+Level 2.
+
+**Exit Gate**
+
+The migrated program has strictly fewer manual cleanup paths and identical
+observable behaviour and synchronization guarantees.
+
+### Patch S1.12 — Phase S1 Closure
+
+**Purpose**
+
+Close the declared stdlib surface without overclaiming.
+
+**Steps**
+
+- Confirm every Status row is `DONE` or explicitly deferred with an owner.
+- Confirm every coordination request is resolved, scheduled, or deferred with a
+  named owning phase.
+- Confirm no new `std_*` symbol lacks a Phase 17 registry row.
+- Confirm no backend-specific stdlib behaviour exists in either backend.
+- Confirm no fallback exists.
+- Confirm `GEMINI.md` reflects the delivered behaviour.
+- Record the residue: what a normal program still cannot express safely.
+- Add `guard-stdlib-s1-close`.
+
+**Test Level**
+
+Level 1.
+
+**Exit Gate**
+
+Phase S1 is closed with an explicit residue list, no unowned deferrals, and no
+claim of a complete standard library.
+
+## Recommended Implementation Order
+
+Patch S1.0 opening inventory and surface baseline
+→ resolve CR-4
+→ Patch S1.1 `str` equality diagnostic
+→ Patch S1.2 string surface regression suite
+→ Patch S1.3 HashMap methods through references
+→ Patch S1.7 MutexGuard prerequisite audit
+→ **hand CR-2 and CR-5 to the Cranelift lane**
+→ Patch S1.4 branded collection type consistency
+→ Patch S1.5 Clone arena destination normalization
+→ Patch S1.6 stdlib composition regression program
+→ Patch S1.8 MutexGuard prototype
+→ Patch S1.9 MutexGuard scope and resource tests
+→ Patch S1.10 MutexGuard fiber contention tests
+→ Patch S1.11 realistic example migration
+→ Patch S1.12 closure.
+
+S1.7 is placed early on purpose. It is report-only, it is unblocked, and its
+output is what makes CR-5 actionable. Running it before the block is reached
+turns idle time into the information the other lane needs.
+
+## Phase S1 Success Criteria
+
+Phase S1 succeeds when ordinary safe Gust code can express strings, collections,
+references to collections, arena cloning, shared synchronized state, and scoped
+mutex locking without the author knowing:
+
+- that `str` is a slice struct;
+- the difference between `Arena*` and `Arena**`;
+- how to reconstruct a brand by hand;
+- which variable names the compiler treats as arenas;
+- any backend detail;
+- any manual unlock path;
+- any Cranelift limitation.
+
+And without the compiler acquiring:
+
+- new lifetime machinery;
+- new ownership proof systems;
+- backend-specific semantics;
+- knowledge of any individual stdlib type.
+
+Phase S1 closure does not claim a complete standard library, a text or Unicode
+API, networking, or production readiness.

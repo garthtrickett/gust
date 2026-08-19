@@ -1,72 +1,29 @@
 # Phase 18 — Target, Object, and Linker Hardening
 
-## Workflow Policy
+**Lane:** Cranelift. Branches follow the existing `codex/phase<N>-<patch>-<slug>` pattern.
 
-Flow: start one patch → run the related `just`/`make`/`cargo`/`scripts/*` checks locally → once local checks pass, publish through a `codex/**` branch and pull request to trigger GitHub runners. If a GitHub runner fails, cancel superseded runs on that branch, reproduce the first failing guard locally from the smallest useful log excerpt, fix it, rerun the focused local guard, push, and monitor the new `HEAD` until green. Do not poll GitHub while an unchanged local failure remains.
+Workflow, Monitoring, Merge, Phase Completion, Runner, and Git Authorization
+policies are defined once in `AGENTS.md` and apply to both lanes. Ownership
+boundaries and the shared coordination zone are defined in `AGENTS.md` and
+`docs/SHARED_SEMANTIC_ZONE.md`. This document defines only what is specific to
+Phase 18.
 
-When a local or GitHub runner fails, do not prompt for permission when this document defines the next step. Fix forward within the current patch, preserve the patch boundary, and stop only when the correction would materially expand scope or no policy defines the next action.
+The parallel Stdlib lane is described by `TASK_STDLIB.md`. Phase 18 does not
+own, schedule, or validate any work in that roadmap. Where a Stdlib patch
+requires a change to canonical MIR, resource semantics, ABI, layout, the runtime
+symbol surface, or operator semantics, it arrives here as a coordination request
+and must be scheduled as an explicit Phase 18 patch or deferred to a later phase
+— never absorbed into an existing patch.
 
-### Roadmap Publication and Activation
+## Roadmap Activation
 
-The current task authorizes writing, validating, committing, pushing, and opening or updating the pull request for this Phase 18 roadmap. It does **not** by itself activate implementation of Patch 18.0 or any later capability patch.
+Phase 18 implementation begins only after an explicit operator request to start
+Phase 18. Once activated, the Phase Completion Loop in `AGENTS.md` authorizes
+autonomous work through Patch 18.19, subject to the patch boundaries, validation
+requirements, and stop conditions in this document.
 
-Phase 18 implementation begins only after an explicit operator request to start Phase 18. Once activated, the Phase Completion Loop below authorizes autonomous work through Patch 18.19, subject to the patch boundaries, validation requirements, and stop conditions in this document.
-
-### Git Authorization
-
-This file is the explicit authorization for `git commit`, `git push`, `gh pr create`/`update`, `gh run cancel`, and `gh pr merge` on `codex/**` branches for the roadmap publication and, once Phase 18 is explicitly activated, for the Phase 18 implementation loop. Never push directly to `main`. Do not self-approve.
-
-General rule: when Workflow, Monitoring, Merge, Phase Completion, or Runner Policy defines the next step, continue without a permission prompt. Ask only when the next action falls outside those policies or requires a material scope expansion.
-
-## Monitoring Policy
-
-When monitoring GitHub Actions or long-running local guard runs:
-
-- State it explicitly in chat as `Monitoring <branch> <SHA> via c2eab010 every 2m`.
-- Use `gh run list --branch <branch> --limit 100` and, where necessary, the paginated Actions API filtered to the exact `head_sha`.
-- Report each poll as `SHA | workflow | event | status | conclusion` and distinguish the owning Phase 18 guard failure from unrelated or superseded runs.
-- Keep monitor `c2eab010` visible; after each poll say `Monitoring continues` or `All green — proceeding`.
-- Do not silently poll.
-- Always set a 5 minute pulse when monitoring local tests or GitHub CI/CD, and message a status update on every pulse. This applies to long-running local guard families as well as cloud runs; silence during a long wait is not acceptable even when nothing has changed.
-
-## Merge Policy
-
-Once every required `pull_request` workflow for the exact PR `HEAD` is `completed success`, all review conversations are resolved, and repository rules permit the operation, autonomously merge the agent's own `codex/**` pull request without prompting. After a capability patch merges, proceed to the next Phase 18 patch only when Phase 18 implementation has been explicitly activated.
-
-## Phase Completion Loop
-
-After explicit Phase 18 activation, do not stop after one capability merge. Phase 18 is complete only when Status shows every patch 18.0–18.19 `DONE`, every Phase 18 Success Criterion is satisfied, all review conversations are resolved, and `guard-cranelift-phase18-close` passes in the authoritative GitHub environment.
-
-After merging one patch, update local `main`, create `codex/phase18-<next>` from that `main`, implement the next patch's full Purpose and Exit Gate, validate locally, publish, monitor, fix forward if needed, and merge when green. Stop only when the operator explicitly says stop, repository policy blocks progress, or the required correction would materially expand the selected patch.
-
-**Atomic per-patch commits and PRs:** Each initial publication must contain one complete patch such as 18.3 or 18.4, with its owning focused checks green before push. Do not combine planned patches into one PR and do not split a patch across multiple initial PRs unless its Exit Gate explicitly requires that split. Narrow corrective commits on the same PR are allowed when CI or review identifies a defect; reproduce and validate each correction locally before republishing.
-
-## Runner Policy
-
-If a GitHub runner fails, cancel other queued or in-progress runs on that branch that are superseded by the fix. Before a new push, cancel runs whose `headSha` is not the current `HEAD` so obsolete jobs do not consume runner capacity. Never cancel a current-`HEAD` run merely because it is slow.
-
-```bash
-BRANCH=$(git branch --show-current)
-PATCH_HEAD=$(git rev-parse HEAD)
-export PATCH_HEAD
-gh run list --branch "$BRANCH" --limit 100 --json databaseId,headSha,status,name | python3 -c "
-import json, os, subprocess, sys
-head = os.environ['PATCH_HEAD']
-runs = json.load(sys.stdin)
-seen = set()
-cancelled = 0
-for run in runs:
-    run_id = run['databaseId']
-    if run['headSha'] != head and run['status'] != 'completed' and run_id not in seen:
-        seen.add(run_id)
-        print(f\"cancel {run_id} {run['headSha'][:7]} {run['name']} {run['status']}\")
-        subprocess.run(['gh', 'run', 'cancel', str(run_id), '--repo', 'garthtrickett/gust'], check=False)
-        cancelled += 1
-print(f\"cancelled {cancelled} superseded (limit 100)\")
-"
-```
-
-If more than 100 runs exist, use the paginated Actions API and apply the same exact branch, non-completed, and non-current-`HEAD` filters.
+Activating Phase 18 does not activate the Stdlib lane, and vice versa. Each lane
+is activated separately.
 
 ## Status
 
