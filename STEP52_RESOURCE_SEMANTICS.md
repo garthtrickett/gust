@@ -1,12 +1,38 @@
 # Step 5.2 Resource Semantics Design Checkpoint
 
-> **Status: historical, unverified.** This document predates the closure of
-> Phase 15 (`TASK.md`). Its claims about what the compiler can represent have
-> not been re-checked since. Do not treat it as a current statement of compiler
-> capability. Verify against the compiler before relying on any item here.
->
-> `STEP52_RESOURCE_SEMANTICS.md` is scheduled for re-verification by Patch S1.7
-> of `TASK_STDLIB.md`.
+> **Status: re-verified 2026-08-19 by Patch S1.7 of `TASK_STDLIB.md`.** The
+> per-item findings are in "Verified state" immediately below. The original text
+> is kept unchanged beneath it as the historical record.
+
+## Verified state, 2026-08-19
+
+Re-checked against the post-Phase-15 compiler. Item numbers match the original
+list below.
+
+| # | Requirement | Status |
+| --- | --- | --- |
+| 1 | Opt-in metadata | **met** — `is_linear_resource` metadata exists and is registered |
+| 2 | Resource representation | **inert** — helpers exist; no automatic declaration, assignment, or lifecycle enforcement |
+| 3 | Open-resource registry | **met** — `open_linear_resources` is a typed registry |
+| 4 | Destructor identity | **not met for user types** — see below |
+| 5 | Transfer state | **met** — owned, borrowed, moved, closed, destructor_scheduled all represented |
+| 6 | Defer semantics | **met** — `Defer` is an AST node; this changed after the original text was written |
+| 7 | Provenance eligibility | **partial** — Step 5.1 provenance machinery exists |
+| 8 | Directory parity | **not met** — `open_directories` is still present and has not been retired |
+
+Two findings matter more than the table.
+
+**There is no way to declare a destructor in source.** `env_register_struct_linear_destructor` is called from exactly two places in `compiler/typechecker.gst`, both registering `os.CloseDir`, and the second is gated on a directory-handle predicate. There is no keyword, attribute, or annotation in `compiler/lexer.gst`, `compiler/parser*.gst`, `src/lexer.rs`, or `src/parser.rs` that lets a user-defined type name its destructor. The framework supports exactly one destructor, for one built-in type.
+
+**Cleanup validation is not wired into typechecking.** `env_validate_linear_resource_scope_exit_cleanup` and `env_validate_linear_resource_cleanup_boundary` are called only from test entries and from each other; nothing on the real typechecking path invokes them. Confirmed by running the compiler: a program that opens a directory handle and never closes it compiles clean. The one resource type the framework does support is not actually enforced.
+
+So the framework is further along than the original text says on representation, state, and `defer`, and further behind on enforcement: what exists is a set of helpers with test coverage, not a checker that runs.
+
+---
+
+## Original text, 2026-06-28
+
+Retained unchanged. Read the verified state above first.
 
 This checkpoint freezes the semantic design direction for generalized linear resources after the Step 5.2 report-only closure. It is not an enforcement patch and must not add new `report_step52_*` targets.
 

@@ -21703,3 +21703,50 @@ guard-stdlib-s1-collection-receivers:
     rg -n -F 'LookupResult_int' build/stdlib-s1-byref.c >/dev/null
 
     echo "✅ Reference receivers resolve the same methods, lower to the same operations, and keep move tracking."
+
+# Stdlib lane, Phase S1. Appended at the end for the same reason as the other S1
+# guards: several guards extract recipe bodies with sed ranges bounded by the
+# next recipe name.
+guard-stdlib-s1-resource-prerequisites:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking the resource prerequisites recorded by S1.7..."
+    tc="compiler/typechecker.gst"
+
+    # This guard pins the audit rather than a behaviour. If any of these change,
+    # STEP52_RESOURCE_SEMANTICS.md and CR-5 are stale and must be re-verified
+    # before MutexGuard work resumes.
+
+    # (a) Destructor identity: every registration must still be os.CloseDir. A
+    # third registration, or one naming a different destructor, means source-level
+    # destructor declaration may now exist.
+    registrations="$(rg -n -F 'env_register_struct_linear_destructor(env,' "$tc" || true)"
+    count="$(printf '%s\n' "$registrations" | rg -c . || true)"
+    if [ "$count" != "2" ]; then
+      echo "Expected exactly 2 destructor registrations, found $count:"
+      printf '%s\n' "$registrations"
+      echo "Re-verify STEP52_RESOURCE_SEMANTICS.md and TASK_STDLIB.md CR-5."
+      exit 1
+    fi
+    if printf '%s\n' "$registrations" | rg -v -F '"os.CloseDir"' | rg -q .; then
+      echo "A destructor other than os.CloseDir is registered:"
+      printf '%s\n' "$registrations"
+      echo "Re-verify STEP52_RESOURCE_SEMANTICS.md and TASK_STDLIB.md CR-5."
+      exit 1
+    fi
+
+    # (b) No source syntax for declaring a destructor. If one appears, CR-5 (a)
+    # may be satisfied and MutexGuard becomes possible.
+    for f in compiler/lexer.gst src/lexer.rs src/parser.rs; do
+      if [ -f "$f" ] && rg -q -i -e '"drop_func"' -e '"destructor"' "$f"; then
+        echo "A destructor keyword or attribute appeared in $f."
+        echo "Re-verify STEP52_RESOURCE_SEMANTICS.md and TASK_STDLIB.md CR-5."
+        exit 1
+      fi
+    done
+
+    # (c) The audit's own record must stay present and dated.
+    rg -n -F 'Status: re-verified 2026-08-19 by Patch S1.7' STEP52_RESOURCE_SEMANTICS.md >/dev/null
+    rg -n -F 'S1.7 verdict: S1.8 through S1.11 stay blocked' TASK_STDLIB.md >/dev/null
+
+    echo "✅ Resource prerequisites unchanged since the S1.7 audit: one built-in destructor, no source syntax to declare one."

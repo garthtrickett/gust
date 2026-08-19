@@ -1,0 +1,42 @@
+name: Stdlib S1 Resource Prerequisites
+
+# Pins the S1.7 audit rather than a behaviour. If the resource framework gains
+# source-level destructor declaration, this fails and the audit in
+# STEP52_RESOURCE_SEMANTICS.md and TASK_STDLIB.md CR-5 must be re-verified before
+# MutexGuard work resumes.
+
+on:
+  pull_request:
+    paths:
+      - 'compiler/typechecker.gst'
+      - 'compiler/lexer.gst'
+      - 'src/lexer.rs'
+      - 'src/parser.rs'
+      - 'STEP52_RESOURCE_SEMANTICS.md'
+      - 'TASK_STDLIB.md'
+      - '.github/workflows/stdlib-s1-resource-prerequisites.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'compiler/typechecker.gst'
+      - 'STEP52_RESOURCE_SEMANTICS.md'
+      - '.github/workflows/stdlib-s1-resource-prerequisites.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  resource-prerequisites:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: guard-stdlib-s1-resource-prerequisites
+        run: just guard-stdlib-s1-resource-prerequisites
