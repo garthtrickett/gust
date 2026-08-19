@@ -43,128 +43,6 @@ gt-one-gst file:
 guard file:
     bash scripts/run-gust-file.sh "{{file}}"
 
-guard-pr-fast-level1-shard shard:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    echo "🔀 Running PR fast Level 1 shard: {{shard}}"
-    case "{{shard}}" in
-      level1-1)
-        # Phase 13 scoped closure
-        just guard-cranelift-phase13-close
-        # Phase 14 typed loads stores and memory access
-        just guard-cranelift-phase14-memory-access-contract
-        # Phase 14 bounded typed pointers and nullability
-        just guard-cranelift-phase14-pointer-contract
-        # Phase 16 ABI metadata request validation
-        just guard-cranelift-phase16-abi-metadata-contract
-        # Phase 15 resource and lifetime opening
-        just guard-cranelift-phase15-opening-contract
-        # Phase 18 target object and linker opening
-        just guard-cranelift-phase18-opening-contract
-        # Phase 16 selected cross-module ABI
-        just guard-cranelift-phase16-cross-module-abi-contract
-        # Phase 17 threading and synchronization audit
-        just guard-cranelift-phase17-thread-runtime-contract
-        ;;
-      level1-2)
-        # Phase 14 type layout and memory model closure
-        just guard-cranelift-phase14-close
-        # Phase 18 relocation model and validation
-        just guard-cranelift-phase18-relocation-contract
-        # Phase 14 deterministic stack slots and addressable locals
-        just guard-cranelift-phase14-stack-slot-contract
-        # Phase 14 declared targets and primitive layouts
-        just guard-cranelift-phase14-target-and-primitive-contract
-        # Phase 14 opening inventory
-        just guard-cranelift-phase14-opening-contract
-        # Phase 16 function ABI and aggregate call opening
-        just guard-cranelift-phase16-opening-contract
-        # Phase 16 aggregate parameter classification
-        just guard-cranelift-phase16-aggregate-parameter-contract
-        # Phase 17 canonical MIR runtime requirements
-        just guard-cranelift-phase17-runtime-requirement-contract
-        # Phase 18 complete target support tuple
-        just guard-cranelift-phase18-target-support-contract
-        ;;
-      level1-3)
-        # Phase 12.5 consolidation closure
-        just guard-cranelift-phase12-5-close
-        # Phase 14 declaration-order structs
-        just guard-cranelift-phase14-struct-contract
-        # Phase 14 enums and tagged unions
-        just guard-cranelift-phase14-enum-contract
-        # Phase 14 aggregate transport across blocks
-        just guard-cranelift-phase14-aggregate-contract
-        # Phase 14 strings and string views
-        just guard-cranelift-phase14-string-view-contract
-        # Phase 14 arrays and slices
-        just guard-cranelift-phase14-array-slice-contract
-        # Phase 16 function ABI and aggregate call closure
-        just guard-cranelift-phase16-close
-        # Phase 17 native runtime boundary closure
-        just guard-cranelift-phase17-close
-        # Phase 14 signed unsigned and width conversions
-        just guard-cranelift-phase14-integer-conversion-contract
-        # Phase 14 layout authority
-        just guard-cranelift-phase14-layout-authority-contract
-        # Phase 17 native runtime boundary opening
-        just guard-cranelift-phase17-opening-contract
-        # Phase 16 fat-pointer and selected trait-object call ABI
-        just guard-cranelift-phase16-fat-pointer-abi-contract
-        # Phase 17 pure Gust runtime modules
-        just guard-cranelift-phase17-gust-runtime-contract
-        # Phase 16 compiler-owned function ABI authority
-        just guard-cranelift-phase16-abi-authority-contract
-        # Phase 16 canonical call MIR
-        just guard-cranelift-phase16-call-mir-contract
-        # Phase 16 aggregate return classification
-        just guard-cranelift-phase16-aggregate-return-contract
-        # Phase 16 direct-call agreement
-        just guard-cranelift-phase16-direct-call-agreement-contract
-        # Phase 16 typed indirect calls
-        just guard-cranelift-phase16-typed-indirect-call-contract
-        # Phase 16 unsized value ABI
-        just guard-cranelift-phase16-unsized-abi-contract
-        # Phase 16 bounded dynamic stack plans
-        just guard-cranelift-phase16-dynamic-stack-contract
-        # Phase 16 resource-bearing aggregate call ABI
-        just guard-cranelift-phase16-resource-aggregate-abi-contract
-        # Phase 16 cross-feature ABI composition
-        just guard-cranelift-phase16-composition-contract
-        # Phase 17 compiler-owned runtime boundary authority
-        just guard-cranelift-phase17-runtime-authority-contract
-        # Phase 17 runtime ABI and symbol versioning
-        just guard-cranelift-phase17-runtime-symbol-version-contract
-        # Phase 17 explicit runtime packages and target selection
-        just guard-cranelift-phase17-runtime-package-contract
-        # Phase 17 stable runtime-library imports
-        just guard-cranelift-phase17-runtime-import-contract
-        # Phase 17 Rust runtime components
-        just guard-cranelift-phase17-rust-runtime-contract
-        # Phase 17 explicit retained C runtime objects
-        just guard-cranelift-phase17-retained-c-runtime-contract
-        # Phase 17 generated C shim elimination
-        just guard-cranelift-phase17-shim-elimination-contract
-        # Phase 17 allocation string and core memory audit
-        just guard-cranelift-phase17-memory-runtime-contract
-        # Phase 17 io filesystem and resource audit
-        just guard-cranelift-phase17-io-runtime-contract
-        # Phase 17 runtime availability and diagnostics
-        just guard-cranelift-phase17-availability-contract
-        # Phase 18 compiler-owned target authority
-        just guard-cranelift-phase18-target-authority-contract
-        # Phase 18 object format and section binding
-        just guard-cranelift-phase18-object-format-contract
-        # Phase 17 cross-feature runtime composition
-        just guard-cranelift-phase17-composition-contract
-        ;;
-      *)
-        echo "unknown PR fast Level 1 shard: {{shard}}"
-        echo "expected one of: level1-1, level1-2, level1-3"
-        exit 1
-        ;;
-    esac
-
 guard-pr-fast-shard shard:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -207,8 +85,8 @@ guard-pr-fast-ci-surface:
       fi
     done
 
-    if [ "$(rg -c -F 'bash scripts/install-just-ci.sh "$HOME/.local/bin"' "$workflow")" != "4" ]; then
-      echo "PR Fast must install pinned just in its build, Level 1, static guard, and family jobs."
+    if [ "$(rg -c -F 'bash scripts/install-just-ci.sh "$HOME/.local/bin"' "$workflow")" != "3" ]; then
+      echo "PR Fast must install pinned just in its build, static guard, and family jobs."
       exit 1
     fi
 
@@ -224,7 +102,7 @@ guard-pr-fast-ci-surface:
       'pull_request:'
       'push:'
       'workflow_dispatch:'
-      'build Gust and CI surface'
+      'build and Level 1 contracts'
       'Phase 12.5 consolidation closure'
       'just guard-cranelift-phase12-5-close'
       'Phase 13 scoped closure'
@@ -306,18 +184,14 @@ guard-pr-fast-ci-surface:
       'matrix.family'
       'Run Level 2 differential family'
       'just guard-cranelift-differential-family'
-      'needs: [guard, level1, phase11-family]'
+      'needs: [guard, phase11-family]'
       'actions/upload-artifact@v4'
       'actions/download-artifact@v4'
       'name: gust-build'
       'if-no-files-found: error'
     )
-    # Level 1 contracts moved from inline workflow steps into the sharded
-    # dispatcher below. Search both surfaces so sharding cannot drop a contract.
-    level1_recipe="$(sed -n '/^guard-pr-fast-level1-shard shard:/,/^$/p' justfile)"
-    pr_fast_surface="$(cat "$workflow"; printf '%s\n' "$level1_recipe")"
     for token in "${required_workflow_tokens[@]}"; do
-      printf '%s\n' "$pr_fast_surface" | rg -n -F "$token" >/dev/null
+      rg -n -F "$token" "$workflow" >/dev/null
     done
 
     if rg -n \

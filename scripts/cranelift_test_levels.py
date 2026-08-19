@@ -144,21 +144,8 @@ def require_direct_levels(
     )
 
 
-def just_recipe_body(name: str) -> str:
-    """Return the body of a justfile recipe, so guards moved out of a workflow
-    and into a shard dispatcher stay inside the level policy's reach."""
-    text = read_text(JUSTFILE)
-    start = text.index(f"\n{name}")
-    end = text.index("\n\n", start)
-    return text[start:end]
-
-
 def check_pr_workflow(policy: dict) -> None:
     text = read_text(PR_WORKFLOW)
-    # Level 1 contracts run through a sharded dispatcher rather than as inline
-    # workflow steps. Check both surfaces together so sharding cannot quietly
-    # drop a contract or smuggle in a guard from another level.
-    text = text + just_recipe_body("guard-pr-fast-level1-shard shard:")
     require("pull_request:" in text, "PR Fast must remain a pull-request workflow")
     require(
         text.count("just guard-cranelift-phase12-5-close") == 1,
@@ -202,7 +189,7 @@ def check_pr_workflow(policy: dict) -> None:
         "PR Fast must not run Level 3 full-history entry points",
     )
     require(
-        "needs: [guard, level1, phase11-family]" in text,
+        "needs: [guard, phase11-family]" in text,
         "PR Fast final job must depend only on Level 1 and Level 2 jobs",
     )
     require_direct_levels(policy, text, {1, 2}, "PR Fast")

@@ -373,14 +373,27 @@ Measured on PR Fast, 2026-08-19 (wall-clock 03:15:23 → 03:53:31, 38 min):
 
 Critical path ≈ 688 + 710 ≈ 23 min. Three changes:
 
-**3a — split the build job.** `build` now does checkout, install, `make gust`,
-and artifact upload only. A new `level1` job depends on it and runs the 52
-contracts across 3 duration-balanced shards (~148 s each), consuming the same
-`gust` artifact the other jobs already use. Serial prefix **688 s → ~255 s**.
+**3a — split the build job. Attempted, reverted, deferred.** The plan was to
+reduce `build` to checkout, install, `make gust`, and upload, moving the 52
+Level 1 contracts into a `level1` matrix of 3 duration-balanced shards. Serial
+prefix **688 s → ~255 s**, the largest single win available.
 
-Three shards, not more: `phase11-family` at 502 s dominates that wave regardless,
-so extra shards would add ~104 s of `Install guard tools` overhead each and buy
-nothing. Three is a hedge in case `phase11-family` gets faster.
+It does not fit in this pull request. **Fourteen scripts read `pr-fast.yml`**, and
+twelve of them assert that a specific guard is invoked there — for example
+`phase17_close.py:212` requires `run: just guard-cranelift-phase17-close` to
+appear exactly once. Guards living in a dispatcher recipe satisfy none of those
+assertions. A merge simulation against `main` caught all twelve failing; the
+first implementation had updated only `cranelift_test_levels.py` and
+`guard-pr-fast-ci-surface`.
+
+The twelve use three different idioms, and one is a data-driven loop over
+`(path, token)` pairs requiring the literal `run: just <guard>` string in the
+workflow file. That contract cannot be satisfied while the guards live in a
+recipe; it has to be renegotiated deliberately, across all fourteen scripts, as
+its own change.
+
+So 3a is deferred rather than bundled. The prize is unchanged and it remains the
+largest single item in the plan.
 
 **3b — split the migration shards.** Each ran exactly two guards, an
 `owned-*-validation` and a `feature-*-routed-execution`, for ~690 s. Heavy Guards
@@ -407,7 +420,8 @@ cannot drop a contract or smuggle in a guard from another level.
 
 Verified by set comparison before and after: PR Fast's guard set lost exactly the
 7 migration guards intended by 3c and nothing else, and all 7 are present in the
-Heavy Guards dispatcher.
+Heavy Guards dispatcher. Every one of the 50 guard scripts that passes on `main`
+still passes here.
 
 ## Lever 3 (original) — Job consolidation
 
@@ -528,7 +542,11 @@ is worth more than any single item here.
 - [x] **Lever 2 — Gust binary artifact.** Found already implemented for the two
       large workflows. Remainder is the ~35 phase parity jobs: ~20–30 min
       aggregate, zero wall-clock. Deferred as a cost item.
-- [x] **Lever 3 — job splitting.** Critical path ~23 min → ~12.5 min.
+- [x] **Lever 3b/3c — split the migration shards, stop running them twice.**
+      Heavy Guards longest shard 727 s → ~345 s; ~46 min/push of duplication gone.
+- [ ] **Lever 3a — split PR Fast's build job.** Serial prefix 688 s → ~255 s, the
+      largest single remaining win. Blocked on renegotiating the `pr-fast.yml`
+      guard-invocation contract across the 14 scripts that read it.
 - [ ] **Cut `Install guard tools` (104 s per job).** Now the largest fixed
       overhead, paid by every one of ~105 jobs. It is an `apt-get` install, which
       is also the source of every flake in the incident log. Cache the packages,
