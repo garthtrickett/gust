@@ -220,3 +220,116 @@ func mir_target_authority_table_validate(table: MirTargetAuthorityTable[ctx], ct
     result.reason_code = std.Clone(ctx, "ok");
     return result;
 }
+
+// ---- Patch 18.2: the complete target support tuple ----
+//
+// A target is supported only as a complete combination of compiler, runtime
+// package, linker, and ABI support. Backend architecture capability is one
+// input to the compiler element and is never sufficient on its own; a tuple
+// missing any element yields an unsupported decision naming what is absent.
+
+type MirTargetSupportElement[ctx] struct {
+    element_kind: str,
+    owning_authority: str,
+    evidence_id: str,
+    present: int,
+    compatible: int
+}
+
+type MirTargetSupportTuple[ctx] struct {
+    tuple_id: str,
+    target_id: str,
+    compiler_element: MirTargetSupportElement[ctx],
+    runtime_package_element: MirTargetSupportElement[ctx],
+    linker_element: MirTargetSupportElement[ctx],
+    abi_element: MirTargetSupportElement[ctx],
+    support_decision: str,
+    missing_elements: Index[std.Vector[str, ctx], ctx],
+    validation_order_frozen: int
+}
+
+func mir_target_make_element(element_kind: str, owning_authority: str, evidence_id: str, present: int, compatible: int, ctx: &Arena) MirTargetSupportElement[ctx] {
+    mut element: MirTargetSupportElement[ctx];
+    element.element_kind = std.Clone(ctx, element_kind);
+    element.owning_authority = std.Clone(ctx, owning_authority);
+    element.evidence_id = std.Clone(ctx, evidence_id);
+    element.present = present;
+    element.compatible = compatible;
+    return element;
+}
+
+// The frozen validation order. Compiler support is asked first because it is
+// the cheapest to refuse, and ABI last because it depends on the target the
+// earlier questions establish. A tuple validated in another order has not
+// asked the same questions.
+func mir_target_tuple_element_order(element_kind: str, ctx: &Arena) int {
+    if std.str_eq(element_kind, "compiler") == 1 { return 0; }
+    if std.str_eq(element_kind, "runtime_package") == 1 { return 1; }
+    if std.str_eq(element_kind, "linker") == 1 { return 2; }
+    if std.str_eq(element_kind, "abi") == 1 { return 3; }
+    return 99;
+}
+
+func mir_target_element_supported(element: MirTargetSupportElement[ctx], ctx: &Arena) int {
+    if element.present == 0 { return 0; }
+    if element.compatible == 0 { return 0; }
+    if std.str_eq(element.owning_authority, "") == 1 { return 0; }
+    if std.str_eq(element.evidence_id, "") == 1 { return 0; }
+    return 1;
+}
+
+// Support is a conjunction, never a disjunction. There is no path here that
+// returns supported because one element looked promising.
+func mir_target_tuple_is_complete(tuple: MirTargetSupportTuple[ctx], ctx: &Arena) int {
+    if mir_target_element_supported(tuple.compiler_element, ctx) == 0 { return 0; }
+    if mir_target_element_supported(tuple.runtime_package_element, ctx) == 0 { return 0; }
+    if mir_target_element_supported(tuple.linker_element, ctx) == 0 { return 0; }
+    if mir_target_element_supported(tuple.abi_element, ctx) == 0 { return 0; }
+    return 1;
+}
+
+func mir_target_tuple_validate(tuple: MirTargetSupportTuple[ctx], ctx: &Arena) MirTargetValidation[ctx] {
+    mut result: MirTargetValidation[ctx];
+    result.valid = 0;
+
+    if tuple.validation_order_frozen == 0 {
+        result.reason_code = std.Clone(ctx, "target_support_order_not_frozen");
+        return result;
+    }
+    if mir_target_tuple_element_order(tuple.compiler_element.element_kind, ctx) != 0 ||
+       mir_target_tuple_element_order(tuple.runtime_package_element.element_kind, ctx) != 1 ||
+       mir_target_tuple_element_order(tuple.linker_element.element_kind, ctx) != 2 ||
+       mir_target_tuple_element_order(tuple.abi_element.element_kind, ctx) != 3 {
+        result.reason_code = std.Clone(ctx, "target_support_order_drift");
+        return result;
+    }
+
+    mut complete := mir_target_tuple_is_complete(tuple, ctx);
+    mut missing: std.Vector[str, ctx] := ctx[tuple.missing_elements];
+
+    if complete == 1 {
+        if std.str_eq(tuple.support_decision, "supported") == 0 {
+            result.reason_code = std.Clone(ctx, "target_support_decision_drift");
+            return result;
+        }
+        if len(missing) != 0 {
+            result.reason_code = std.Clone(ctx, "target_support_missing_elements_drift");
+            return result;
+        }
+    } else {
+        if std.str_eq(tuple.support_decision, "supported") == 1 {
+            result.reason_code = std.Clone(ctx, "target_supported_without_complete_tuple");
+            return result;
+        }
+        // An unsupported decision must say what is absent, or it is not a
+        // decision, only a refusal.
+        if len(missing) == 0 {
+            result.reason_code = std.Clone(ctx, "target_unsupported_without_named_missing_elements");
+            return result;
+        }
+    }
+
+    result.valid = 1;
+    result.reason_code = std.Clone(ctx, "ok");
+    return result;
+}

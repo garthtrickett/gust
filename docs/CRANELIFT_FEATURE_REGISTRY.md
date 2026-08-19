@@ -547,6 +547,20 @@ Patch 18.1 makes target identity a compiler-owned decision. A target is selected
 
 The vocabulary is registry-derived rather than hand-written: a triple may be declared only if the Phase 17 runtime package authority already owns it. Pointer width and endianness are not restated but checked, by parsing the layout fields out of the registry-owned target id, so a declared triple cannot disagree with the Phase 14 target layout authority. The worker performs the same derivation independently and the two witnesses are compared byte for byte, so an identity that merely claims agreement cannot launder that claim into evidence.
 
+## Phase 18 complete target support tuple
+
+- Authority version: `phase18_target_support_tuple_v1`
+- Status: `ready_for_patch18_3`
+- Support tuples: `5`
+- Complete tuples: `0`
+- Declared supported targets: `0`
+
+Patch 18.2 makes target support a conjunction of four elements: compiler, runtime package, linker, and ABI. Every element names the authority that owns it and the evidence that supports it, and an element counts only when it is present, compatible, and evidenced. Backend architecture capability is one input to the compiler element and is never sufficient alone.
+
+Both failure directions are rejections. Declaring a target supported without a complete tuple is refused, and so is declaring one unsupported without naming which elements are absent, because a refusal that does not say why is not a decision. The declared supported set is recomputed from the tuples rather than asserted, so it cannot drift from the evidence.
+
+The supported set is empty at this patch. The runtime package, linker, and ABI elements are supplied by Patch 18.6, Patch 18.7, and Patch 18.5, and an element may name a registry authority that exists or be explicitly pending a later patch, but never an owner that was never built.
+
 ## Registry entries
 
 | ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |

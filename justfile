@@ -187,6 +187,8 @@ guard-pr-fast-ci-surface:
       'just guard-cranelift-phase18-opening-contract'
       'Phase 18 compiler-owned target authority'
       'just guard-cranelift-phase18-target-authority-contract'
+      'Phase 18 complete target support tuple'
+      'just guard-cranelift-phase18-target-support-contract'
       'Phase 17 cross-feature runtime composition'
       'just guard-cranelift-phase17-composition-contract'
       'phase11-family:'
@@ -15852,6 +15854,25 @@ guard-cranelift-phase16-opening-contract:
 
     echo "✅ Phase 16 opening inventory passed: stable ABI rows, Phase 15 parent and residual traceability, explicit out-of-scope ownership, fixture pairs, and planned CI families are registry-owned without behavior or workflow-matrix expansion."
 
+guard-cranelift-phase18-target-support-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 18.2 complete target support tuple..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase18-target-support-contract | grep -F $'guard-cranelift-phase18-target-support-contract\t1\t' >/dev/null
+    just guard-cranelift-phase18-target-authority-contract
+    python3 scripts/phase18_target_support.py --check
+
+guard-cranelift-phase18-target-support-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 18.2 target support tuple parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase18-target-support-parity |
+      grep -F $'guard-cranelift-phase18-target-support-parity\t2\t' >/dev/null
+    just guard-cranelift-phase18-target-support-contract
+    bash scripts/phase18_target_support_parity.sh
+
 guard-cranelift-phase18-target-authority-contract:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -16066,6 +16087,7 @@ guard-cranelift-contract-fast:
     just guard-cranelift-phase17-close
     just guard-cranelift-phase18-opening-contract
     just guard-cranelift-phase18-target-authority-contract
+    just guard-cranelift-phase18-target-support-contract
 
 guard-cranelift-phase17-runtime-authority-contract:
     #!/usr/bin/env bash

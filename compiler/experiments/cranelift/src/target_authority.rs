@@ -247,3 +247,127 @@ pub fn lower_target_witness_path(path: &Path) -> Result<String, Box<dyn Error>> 
     let request = fs::read_to_string(path)?;
     Ok(lower_target_witness(&request)?)
 }
+
+// ---- Patch 18.2: the complete target support tuple ----
+
+const SUPPORT_FORMAT: &str = "gust.compiler_target_support.v1";
+const SUPPORT_WITNESS_FORMAT: &str = "gust.target_support_witness.v1";
+
+/// The frozen validation order. Position is the required slot, so a tuple whose
+/// elements arrive in another order has not asked the same questions.
+const TUPLE_ELEMENTS: [&str; 4] = ["compiler", "runtime_package", "linker", "abi"];
+
+#[derive(Debug, Clone)]
+pub struct SupportElement {
+    pub kind: String,
+    pub owner: String,
+    pub evidence: String,
+    pub present: bool,
+    pub compatible: bool,
+}
+
+impl SupportElement {
+    /// An element counts only when it is present, compatible, and carries both
+    /// an owner and evidence. A claim with no owner is not support.
+    fn supported(&self) -> bool {
+        self.present && self.compatible && !self.owner.is_empty() && !self.evidence.is_empty()
+    }
+}
+
+fn parse_element(f: &HashMap<String, String>) -> Result<SupportElement, TargetError> {
+    let flag = |key: &str| -> Result<bool, TargetError> {
+        match field(f, key)? {
+            "0" => Ok(false),
+            "1" => Ok(true),
+            other => Err(error("target_support_malformed", format!("{key}={other}"))),
+        }
+    };
+    Ok(SupportElement {
+        kind: field(f, "kind")?.to_owned(),
+        owner: field(f, "owner")?.to_owned(),
+        evidence: f.get("evidence").cloned().unwrap_or_default(),
+        present: flag("present")?,
+        compatible: flag("compatible")?,
+    })
+}
+
+pub fn lower_target_support_witness(request: &str) -> Result<String, TargetError> {
+    let lines: Vec<&str> = request.lines().collect();
+    if header(&lines, "format")? != SUPPORT_FORMAT {
+        return Err(error("target_support_malformed", "unknown request format"));
+    }
+    if header(&lines, "authority")? != AUTHORITY {
+        return Err(error("target_support_malformed", "unknown target authority"));
+    }
+
+    let tuple_line = lines
+        .iter()
+        .find(|l| l.starts_with("target_support:"))
+        .ok_or_else(|| error("target_support_malformed", "request declares no support tuple"))?;
+    let tuple = row(tuple_line, "target_support:")?;
+
+    let mut elements = Vec::new();
+    for line in lines.iter().filter(|l| l.starts_with("support_element:")) {
+        elements.push(parse_element(&row(line, "support_element:")?)?);
+    }
+
+    // The four elements must arrive in the frozen order, exactly once each.
+    let kinds: Vec<&str> = elements.iter().map(|e| e.kind.as_str()).collect();
+    if kinds != TUPLE_ELEMENTS {
+        return Err(error(
+            "target_support_order_drift",
+            format!("element order {kinds:?} is not the frozen order {TUPLE_ELEMENTS:?}"),
+        ));
+    }
+
+    let complete = elements.iter().all(SupportElement::supported);
+    let decision = field(&tuple, "decision")?;
+
+    // The request states completeness; the worker recomputes it. A request
+    // cannot declare itself complete.
+    let claimed_complete = match field(&tuple, "complete")? {
+        "0" => false,
+        "1" => true,
+        other => return Err(error("target_support_malformed", format!("complete={other}"))),
+    };
+    if claimed_complete != complete {
+        return Err(error(
+            "target_support_decision_drift",
+            "claimed completeness disagrees with the tuple contents",
+        ));
+    }
+
+    if decision == "supported" && !complete {
+        return Err(error(
+            "target_supported_without_complete_tuple",
+            "supported requires all four elements present, compatible, and evidenced",
+        ));
+    }
+    if decision != "supported" && complete {
+        return Err(error(
+            "target_support_decision_drift",
+            "a complete tuple recorded as unsupported",
+        ));
+    }
+
+    let mut witness = String::new();
+    witness.push_str(&format!("format: {SUPPORT_WITNESS_FORMAT}\n"));
+    witness.push_str(&format!("authority: {AUTHORITY}\n"));
+    witness.push_str(&format!(
+        "target_support:tuple_id={};target_id={};decision={};complete={};\n",
+        field(&tuple, "tuple_id")?, field(&tuple, "target_id")?, decision, u8::from(complete),
+    ));
+    for element in &elements {
+        witness.push_str(&format!(
+            "support_element:kind={};owner={};evidence={};present={};compatible={};\n",
+            element.kind, element.owner, element.evidence,
+            u8::from(element.present), u8::from(element.compatible),
+        ));
+    }
+    Ok(witness)
+}
+
+pub fn lower_target_support_witness_path(path: &Path) -> Result<String, Box<dyn Error>> {
+    let request = fs::read_to_string(path)?;
+    Ok(lower_target_support_witness(&request)?)
+}

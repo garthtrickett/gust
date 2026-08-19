@@ -37,6 +37,7 @@ TOP_FIELDS = {
     "phase17_thread_runtime_authority",
     "phase17_availability_authority",
     "phase17_composition_authority",
+    "phase18_target_support",
     "phase18_target_authority",
     "phase17_closure",
     "phase17_deferred_residue_audit",
@@ -10853,6 +10854,28 @@ def phase17_availability_authority_summary_lines(registry):
     ]
 
 
+def phase18_target_support_summary_lines(registry):
+    support = registry["phase18_target_support"]
+    tuples = support["support_tuples"]
+    complete = sum(row["support_decision"] == "supported" for row in tuples)
+    return [
+        "## Phase 18 complete target support tuple",
+        "",
+        f"- Authority version: `{support['version']}`",
+        f"- Status: `{support['status']}`",
+        f"- Support tuples: `{len(tuples)}`",
+        f"- Complete tuples: `{complete}`",
+        f"- Declared supported targets: `{len(support['declared_supported_targets'])}`",
+        "",
+        "Patch 18.2 makes target support a conjunction of four elements: compiler, runtime package, linker, and ABI. Every element names the authority that owns it and the evidence that supports it, and an element counts only when it is present, compatible, and evidenced. Backend architecture capability is one input to the compiler element and is never sufficient alone.",
+        "",
+        "Both failure directions are rejections. Declaring a target supported without a complete tuple is refused, and so is declaring one unsupported without naming which elements are absent, because a refusal that does not say why is not a decision. The declared supported set is recomputed from the tuples rather than asserted, so it cannot drift from the evidence.",
+        "",
+        "The supported set is empty at this patch. The runtime package, linker, and ABI elements are supplied by Patch 18.6, Patch 18.7, and Patch 18.5, and an element may name a registry authority that exists or be explicitly pending a later patch, but never an owner that was never built.",
+        "",
+    ]
+
+
 def phase18_target_authority_summary_lines(registry):
     authority = registry["phase18_target_authority"]
     triples = authority["declared_triples"]
@@ -11037,6 +11060,7 @@ def render(registry):
         *phase17_closure_summary_lines(registry),
         *phase18_opening_summary_lines(registry),
         *phase18_target_authority_summary_lines(registry),
+        *phase18_target_support_summary_lines(registry),
         "## Registry entries", "",
         "| ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |",
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",

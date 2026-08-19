@@ -31,6 +31,7 @@
     "phase17_thread_runtime_authority",
     "phase17_availability_authority",
     "phase17_composition_authority",
+    "phase18_target_support",
     "phase18_target_authority",
     "phase17_closure",
     "phase17_deferred_residue_audit",
@@ -316,6 +317,9 @@
     },
     "phase17_composition_authority": {
       "$ref": "#/$defs/phase17_composition_authority"
+    },
+    "phase18_target_support": {
+      "$ref": "#/$defs/phase18_target_support"
     },
     "phase18_target_authority": {
       "$ref": "#/$defs/phase18_target_authority"
@@ -860,6 +864,195 @@
         "participating_authorities": {"type": "array", "minItems": 2, "uniqueItems": true, "items": {"type": "string", "pattern": "^phase17_"}},
         "differential_owner": {"type": "string", "minLength": 1},
         "sentinel_policy": {"enum": ["sentinel_output_preserved_on_failure", "case_cannot_fail_no_output_to_preserve"]}
+      }
+    },
+    "phase18_target_support": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "status",
+        "authority_owner",
+        "tuple_elements",
+        "validation_order",
+        "element_owning_authorities",
+        "support_tuples",
+        "declared_supported_targets",
+        "support_decisions",
+        "completeness_policy",
+        "capability_policy",
+        "partial_tuple_policy",
+        "narrowness_policy",
+        "rejection_classes",
+        "next_patch"
+      ],
+      "properties": {
+        "version": {
+          "const": "phase18_target_support_tuple_v1"
+        },
+        "status": {
+          "const": "ready_for_patch18_3"
+        },
+        "authority_owner": {
+          "const": "compiler/mir_target_authority.gst"
+        },
+        "tuple_elements": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": {
+            "enum": [
+              "compiler",
+              "runtime_package",
+              "linker",
+              "abi"
+            ]
+          }
+        },
+        "validation_order": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": {
+            "enum": [
+              "compiler",
+              "runtime_package",
+              "linker",
+              "abi"
+            ]
+          }
+        },
+        "element_owning_authorities": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "support_tuples": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "tuple_id",
+              "target_id",
+              "elements",
+              "support_decision",
+              "missing_elements",
+              "validation_order_frozen"
+            ],
+            "properties": {
+              "tuple_id": {
+                "type": "string",
+                "pattern": "^tuple:v1:"
+              },
+              "target_id": {
+                "type": "string",
+                "pattern": "^target:v1:"
+              },
+              "elements": {
+                "type": "array",
+                "minItems": 4,
+                "maxItems": 4,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "element_kind",
+                    "owning_authority",
+                    "evidence_id",
+                    "present",
+                    "compatible"
+                  ],
+                  "properties": {
+                    "element_kind": {
+                      "enum": [
+                        "compiler",
+                        "runtime_package",
+                        "linker",
+                        "abi"
+                      ]
+                    },
+                    "owning_authority": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "evidence_id": {
+                      "type": "string"
+                    },
+                    "present": {
+                      "type": "boolean"
+                    },
+                    "compatible": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              },
+              "support_decision": {
+                "enum": [
+                  "supported",
+                  "unsupported_pending_tuple_evidence",
+                  "unsupported_missing_elements"
+                ]
+              },
+              "missing_elements": {
+                "type": "array",
+                "items": {
+                  "enum": [
+                    "compiler",
+                    "runtime_package",
+                    "linker",
+                    "abi"
+                  ]
+                }
+              },
+              "validation_order_frozen": {
+                "const": true
+              }
+            }
+          }
+        },
+        "declared_supported_targets": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^target:v1:"
+          }
+        },
+        "support_decisions": {
+          "type": "array",
+          "minItems": 3,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "completeness_policy": {
+          "const": "supported_requires_all_four_elements_present_compatible_and_evidenced"
+        },
+        "capability_policy": {
+          "const": "backend_architecture_capability_is_one_input_to_the_compiler_element_and_never_sufficient_alone"
+        },
+        "partial_tuple_policy": {
+          "const": "a_partial_tuple_must_not_reach_lowering_object_emission_or_link_planning"
+        },
+        "narrowness_policy": {
+          "const": "declared_supported_target_set_is_registry_derived_and_may_be_empty_until_later_patches_supply_elements"
+        },
+        "rejection_classes": {
+          "type": "array",
+          "minItems": 7,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "next_patch": {
+          "const": "18.3"
+        }
       }
     },
     "phase18_target_authority": {
