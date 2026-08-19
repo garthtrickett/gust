@@ -493,7 +493,7 @@ def check_pr_workflow(path):
         'matrix=$(python3 scripts/cranelift_ci_family.py matrix-json)',
         "family: ${{ fromJSON(needs.build.outputs.phase11_families) }}",
         'just guard-cranelift-differential-family "${{ matrix.family }}"',
-        "needs: [guard, phase11-family]",
+        "needs: [guard, level1, phase11-family]",
     )
     for token in required:
         require_token(text, token, path.relative_to(ROOT))

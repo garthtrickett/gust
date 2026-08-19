@@ -86,8 +86,8 @@ guard-pr-fast-ci-surface:
       fi
     done
 
-    if [ "$(rg -c -F 'bash scripts/install-just-ci.sh "$HOME/.local/bin"' "$workflow")" != "3" ]; then
-      echo "PR Fast must install pinned just in its build, static guard, and family jobs."
+    if [ "$(rg -c -F 'bash scripts/install-just-ci.sh "$HOME/.local/bin"' "$workflow")" != "4" ]; then
+      echo "PR Fast must install pinned just in its build, Level 1, static guard, and family jobs."
       exit 1
     fi
 
@@ -103,7 +103,7 @@ guard-pr-fast-ci-surface:
       'pull_request:'
       'push:'
       'workflow_dispatch:'
-      'build and Level 1 contracts'
+      'build Gust and CI surface'
       'Phase 12.5 consolidation closure'
       'just guard-cranelift-phase12-5-close'
       'Phase 13 scoped closure'
@@ -187,7 +187,7 @@ guard-pr-fast-ci-surface:
       'matrix.family'
       'Run Level 2 differential family'
       'just guard-cranelift-differential-family'
-      'needs: [guard, phase11-family]'
+      'needs: [guard, level1, phase11-family]'
       'actions/upload-artifact@v4'
       'actions/download-artifact@v4'
       'name: gust-build'

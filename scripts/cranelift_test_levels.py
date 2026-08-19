@@ -189,7 +189,7 @@ def check_pr_workflow(policy: dict) -> None:
         "PR Fast must not run Level 3 full-history entry points",
     )
     require(
-        "needs: [guard, phase11-family]" in text,
+        "needs: [guard, level1, phase11-family]" in text,
         "PR Fast final job must depend only on Level 1 and Level 2 jobs",
     )
     require_direct_levels(policy, text, {1, 2}, "PR Fast")
