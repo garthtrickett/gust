@@ -20281,6 +20281,7 @@ guard-cranelift-dependency-beachhead:
         compiler src tests Cargo.toml Cargo.lock Makefile 2>/dev/null |
         rg -v '^compiler/experiments/cranelift/' |
         rg -v '^compiler/CRANELIFT_EXPERIMENT_MANIFEST\.md:' |
+        rg -v '^compiler/CRANELIFT_PHASE[0-9]+_OPENING\.md:' |
         rg -v '^compiler/test_runner_entry\.gst:[0-9]+:[[:space:]]*os\.LogStr\("  gust --backend cranelift -o <output> <source\.gst>"\);$' |
         rg -v '^compiler/phase10_help\.txt:[0-9]+:  gust --backend cranelift -o <output> <source\.gst>$' ||
         true
