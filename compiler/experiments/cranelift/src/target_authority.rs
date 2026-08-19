@@ -583,3 +583,59 @@ pub fn lower_relocation_witness_path(path: &Path) -> Result<String, Box<dyn Erro
     let request = fs::read_to_string(path)?;
     Ok(lower_relocation_witness(&request)?)
 }
+
+// ---- Patch 18.5: target-specific ABI selection ----
+
+const TARGET_ABI_FORMAT: &str = "gust.compiler_target_abi.v1";
+const TARGET_ABI_WITNESS_FORMAT: &str = "gust.target_abi_witness.v1";
+
+/// The only calling convention the Phase 16 authority accepts. The worker holds
+/// this as the accepted set rather than deriving it, because widening it is
+/// Phase 16's decision to make, not the backend's.
+const ACCEPTED_ABI_IDS: [&str; 1] = ["gust_canonical_v1"];
+const PLATFORM_CONVENTION_DEFERRED: &str = "deferred_to_a_later_abi_phase";
+
+pub fn lower_target_abi_witness(request: &str) -> Result<String, TargetError> {
+    let lines: Vec<&str> = request.lines().collect();
+    if header(&lines, "format")? != TARGET_ABI_FORMAT {
+        return Err(error("target_abi_malformed", "unknown request format"));
+    }
+    if header(&lines, "authority")? != AUTHORITY {
+        return Err(error("target_abi_malformed", "unknown target authority"));
+    }
+
+    let abi_line = lines.iter().find(|l| l.starts_with("target_abi:"))
+        .ok_or_else(|| error("target_abi_selection_missing", "request declares no ABI selection"))?;
+    let selection = row(abi_line, "target_abi:")?;
+
+    let abi_id = field(&selection, "abi_id")?;
+    if !ACCEPTED_ABI_IDS.contains(&abi_id) {
+        return Err(error("target_abi_undeclared_by_phase16",
+            format!("{abi_id} is not an ABI the Phase 16 authority accepts")));
+    }
+    let compatibility = field(&selection, "compatibility")?;
+    if compatibility != "compatible" && compatibility != "incompatible" {
+        return Err(error("target_abi_incompatible",
+            format!("{compatibility} is not a compatibility decision")));
+    }
+    // Selecting a platform convention would be Phase 18 defining ABI semantics.
+    if field(&selection, "platform_convention")? != PLATFORM_CONVENTION_DEFERRED {
+        return Err(error("target_abi_platform_convention_selected_without_phase16_support",
+            "platform calling conventions are not Phase 16's to offer yet"));
+    }
+
+    let mut witness = String::new();
+    witness.push_str(&format!("format: {TARGET_ABI_WITNESS_FORMAT}\n"));
+    witness.push_str(&format!("authority: {AUTHORITY}\n"));
+    witness.push_str(&format!(
+        "target_abi:target_id={};abi_id={};owner={};compatibility={};platform_convention={};\n",
+        field(&selection, "target_id")?, abi_id, field(&selection, "owner")?,
+        compatibility, PLATFORM_CONVENTION_DEFERRED,
+    ));
+    Ok(witness)
+}
+
+pub fn lower_target_abi_witness_path(path: &Path) -> Result<String, Box<dyn Error>> {
+    let request = fs::read_to_string(path)?;
+    Ok(lower_target_abi_witness(&request)?)
+}

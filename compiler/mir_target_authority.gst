@@ -539,3 +539,44 @@ func mir_relocation_validate(model: MirRelocationModel[ctx], relocation: MirRelo
     result.reason_code = std.Clone(ctx, "ok");
     return result;
 }
+
+// ---- Patch 18.5: target-specific ABI selection ----
+//
+// Phase 18 selects an ABI the Phase 16 authority already accepts. It never
+// defines placement, classification, or transport, and a target may not select
+// a platform calling convention Phase 16 does not offer.
+
+type MirTargetAbiSelection[ctx] struct {
+    target_id: str,
+    selected_abi_id: str,
+    owning_authority: str,
+    compatibility_decision: str,
+    platform_convention_status: str
+}
+
+func mir_target_abi_selection_validate(selection: MirTargetAbiSelection[ctx], accepted_abi_id: str, ctx: &Arena) MirTargetValidation[ctx] {
+    mut result: MirTargetValidation[ctx];
+    result.valid = 0;
+    if std.str_eq(selection.selected_abi_id, accepted_abi_id) == 0 {
+        result.reason_code = std.Clone(ctx, "target_abi_undeclared_by_phase16");
+        return result;
+    }
+    if std.str_eq(selection.owning_authority, "") == 1 {
+        result.reason_code = std.Clone(ctx, "target_abi_selection_missing");
+        return result;
+    }
+    if std.str_eq(selection.compatibility_decision, "compatible") == 0 &&
+       std.str_eq(selection.compatibility_decision, "incompatible") == 0 {
+        result.reason_code = std.Clone(ctx, "target_abi_incompatible");
+        return result;
+    }
+    // Claiming a platform convention would be selecting something Phase 16 does
+    // not own, which is Phase 18 defining ABI semantics.
+    if std.str_eq(selection.platform_convention_status, "deferred_to_a_later_abi_phase") == 0 {
+        result.reason_code = std.Clone(ctx, "target_abi_platform_convention_selected_without_phase16_support");
+        return result;
+    }
+    result.valid = 1;
+    result.reason_code = std.Clone(ctx, "ok");
+    return result;
+}

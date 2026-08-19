@@ -589,6 +589,20 @@ Permitted and excluded section kinds partition the declared section kinds exactl
 
 Relocation kind spelling is format-specific, and a kind spelled for another format is a model describing a different object file. Absolute kinds carry an explicit addend while relative kinds carry none, and the Cranelift worker recomputes absoluteness from the kind rather than trusting the request, so a mislabelled relocation cannot smuggle an addend past the addend policy.
 
+## Phase 18 target-specific ABI selection
+
+- Authority version: `phase18_target_abi_selection_v1`
+- Status: `ready_for_patch18_6`
+- ABI selections: `5`
+- Available ABI identities: `1`
+- Consumed authority: `compiler/mir_cross_module_abi.gst`
+
+Patch 18.5 selects an existing Phase 16 ABI for each declared target. Phase 18 selects but never defines: it does not introduce placement, classification, or transport rules, and it may only choose an identity the Phase 16 authority already accepts.
+
+The consumed authority is the module that rejects a calling convention it does not accept, rather than one that merely carries the field. The guard opens that module and requires both the declared enforcement evidence and every available identity to appear in it, so a selection cannot name an owner that could not refuse a wrong answer.
+
+Platform-specific calling conventions remain deferred. Phase 16 accepts exactly one convention today, so selecting a platform convention would be Phase 18 defining ABI semantics, and every target records that status explicitly rather than leaving the gap implicit.
+
 ## Registry entries
 
 | ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |

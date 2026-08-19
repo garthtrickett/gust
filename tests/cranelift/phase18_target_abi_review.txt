@@ -1,0 +1,17 @@
+Patch 18.5 — Target-Specific ABI Selection
+
+abi_selections	5
+available_abi_ids	1
+rejection_classes	5
+
+selection	every declared target has exactly one ABI selection	selection coverage compared against the declared triple vocabulary	Level 1
+selection	no duplicate ABI selection for a target	uniqueness check over selection target ids	Level 1
+selection	every selection names the consumed authority as owner	per-selection owner comparison	Level 1
+selection	every selection carries a compatibility decision	decision vocabulary membership	Level 1
+boundary	Phase 18 selects only an ABI Phase 16 accepts	available ABI ids checked against the consumed module source	Level 1
+boundary	the consumed authority exists as a regular file	module path resolution	Level 1
+boundary	the consumed authority contains its declared enforcement evidence	rejection code located in the module source	Level 1
+boundary	no target selects a platform calling convention	platform convention status is frozen to deferred	Level 1
+boundary	Phase 18 never defines ABI placement or classification	selection policy is frozen	Level 1
+deferral	platform conventions remain deferred to a later ABI phase	platform convention policy is frozen	Level 1
+rejection	the rejection class inventory is complete	five required rejection classes	Level 1

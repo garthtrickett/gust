@@ -31,6 +31,7 @@
     "phase17_thread_runtime_authority",
     "phase17_availability_authority",
     "phase17_composition_authority",
+    "phase18_target_abi_selection",
     "phase18_relocation_model",
     "phase18_object_format",
     "phase18_target_support",
@@ -319,6 +320,9 @@
     },
     "phase17_composition_authority": {
       "$ref": "#/$defs/phase17_composition_authority"
+    },
+    "phase18_target_abi_selection": {
+      "$ref": "#/$defs/phase18_target_abi_selection"
     },
     "phase18_relocation_model": {
       "$ref": "#/$defs/phase18_relocation_model"
@@ -872,6 +876,115 @@
         "participating_authorities": {"type": "array", "minItems": 2, "uniqueItems": true, "items": {"type": "string", "pattern": "^phase17_"}},
         "differential_owner": {"type": "string", "minLength": 1},
         "sentinel_policy": {"enum": ["sentinel_output_preserved_on_failure", "case_cannot_fail_no_output_to_preserve"]}
+      }
+    },
+    "phase18_target_abi_selection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "status",
+        "authority_owner",
+        "consumed_authority",
+        "consumed_authority_reason",
+        "enforcement_evidence",
+        "selection_policy",
+        "available_abi_ids",
+        "abi_selections",
+        "platform_convention_policy",
+        "rejection_classes",
+        "next_patch"
+      ],
+      "properties": {
+        "version": {
+          "const": "phase18_target_abi_selection_v1"
+        },
+        "status": {
+          "const": "ready_for_patch18_6"
+        },
+        "authority_owner": {
+          "const": "compiler/mir_target_authority.gst"
+        },
+        "consumed_authority": {
+          "type": "string",
+          "pattern": "^compiler/"
+        },
+        "consumed_authority_reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "enforcement_evidence": {
+          "type": "string",
+          "minLength": 1
+        },
+        "selection_policy": {
+          "const": "phase18_selects_an_existing_phase16_abi_and_never_defines_abi_placement_classification_or_transport"
+        },
+        "available_abi_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "abi_selections": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "target_id",
+              "selected_abi_id",
+              "owning_authority",
+              "selection_reason",
+              "compatibility_decision",
+              "platform_convention_status"
+            ],
+            "properties": {
+              "target_id": {
+                "type": "string",
+                "pattern": "^target:v1:"
+              },
+              "selected_abi_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "owning_authority": {
+                "type": "string",
+                "pattern": "^compiler/"
+              },
+              "selection_reason": {
+                "type": "string",
+                "minLength": 1
+              },
+              "compatibility_decision": {
+                "enum": [
+                  "compatible",
+                  "incompatible"
+                ]
+              },
+              "platform_convention_status": {
+                "const": "deferred_to_a_later_abi_phase"
+              }
+            }
+          }
+        },
+        "platform_convention_policy": {
+          "const": "platform_specific_calling_conventions_are_not_declared_by_phase16_so_they_remain_deferred_and_no_target_may_select_one"
+        },
+        "rejection_classes": {
+          "type": "array",
+          "minItems": 5,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "next_patch": {
+          "const": "18.6"
+        }
       }
     },
     "phase18_relocation_model": {

@@ -4371,6 +4371,34 @@
     "scope_policy": "availability_compatibility_and_diagnostics_only_cross_feature_composition_remains_in_patch17_14",
     "next_patch": "17.14"
   },
+  "phase18_target_abi_selection": {
+    "version": "phase18_target_abi_selection_v1",
+    "status": "ready_for_patch18_6",
+    "authority_owner": "compiler/mir_target_authority.gst",
+    "consumed_authority": "compiler/mir_cross_module_abi.gst",
+    "selection_policy": "phase18_selects_an_existing_phase16_abi_and_never_defines_abi_placement_classification_or_transport",
+    "available_abi_ids": [
+      "gust_canonical_v1"
+    ],
+    "abi_selections": [
+      {"target_id": "target:v1:triple=x86_64-unknown-linux-gnu:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8", "selected_abi_id": "gust_canonical_v1", "owning_authority": "compiler/mir_cross_module_abi.gst", "selection_reason": "the_only_calling_convention_the_phase16_function_abi_authority_declares", "compatibility_decision": "compatible", "platform_convention_status": "deferred_to_a_later_abi_phase"},
+      {"target_id": "target:v1:triple=aarch64-unknown-linux-gnu:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8", "selected_abi_id": "gust_canonical_v1", "owning_authority": "compiler/mir_cross_module_abi.gst", "selection_reason": "the_only_calling_convention_the_phase16_function_abi_authority_declares", "compatibility_decision": "compatible", "platform_convention_status": "deferred_to_a_later_abi_phase"},
+      {"target_id": "target:v1:triple=i686-unknown-linux-gnu:endian=little:ptr_size=4:ptr_align=4:i32_align=4:i64_align=4:max_align=4", "selected_abi_id": "gust_canonical_v1", "owning_authority": "compiler/mir_cross_module_abi.gst", "selection_reason": "the_only_calling_convention_the_phase16_function_abi_authority_declares", "compatibility_decision": "compatible", "platform_convention_status": "deferred_to_a_later_abi_phase"},
+      {"target_id": "target:v1:triple=x86_64-apple-darwin:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8", "selected_abi_id": "gust_canonical_v1", "owning_authority": "compiler/mir_cross_module_abi.gst", "selection_reason": "the_only_calling_convention_the_phase16_function_abi_authority_declares", "compatibility_decision": "compatible", "platform_convention_status": "deferred_to_a_later_abi_phase"},
+      {"target_id": "target:v1:triple=aarch64-apple-darwin:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8", "selected_abi_id": "gust_canonical_v1", "owning_authority": "compiler/mir_cross_module_abi.gst", "selection_reason": "the_only_calling_convention_the_phase16_function_abi_authority_declares", "compatibility_decision": "compatible", "platform_convention_status": "deferred_to_a_later_abi_phase"}
+    ],
+    "platform_convention_policy": "platform_specific_calling_conventions_are_not_declared_by_phase16_so_they_remain_deferred_and_no_target_may_select_one",
+    "rejection_classes": [
+      "target_abi_undeclared_by_phase16",
+      "target_abi_incompatible",
+      "target_abi_selection_missing",
+      "target_abi_defined_by_phase18",
+      "target_abi_platform_convention_selected_without_phase16_support"
+    ],
+    "next_patch": "18.6",
+    "consumed_authority_reason": "the_only_phase16_module_that_rejects_a_calling_convention_it_does_not_accept",
+    "enforcement_evidence": "cross_module_calling_convention_mismatch"
+  },
   "phase18_relocation_model": {
     "version": "phase18_relocation_model_v1",
     "status": "ready_for_patch18_5",
