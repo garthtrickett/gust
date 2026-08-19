@@ -37,6 +37,7 @@ TOP_FIELDS = {
     "phase17_thread_runtime_authority",
     "phase17_availability_authority",
     "phase17_composition_authority",
+    "phase18_target_diagnostics",
     "phase18_cross_compilation",
     "phase18_link_mode",
     "phase18_linker_policy",
@@ -10861,6 +10862,29 @@ def phase17_availability_authority_summary_lines(registry):
     ]
 
 
+def phase18_target_diagnostics_summary_lines(registry):
+    authority = registry["phase18_target_diagnostics"]
+    diagnostics = authority["target_diagnostics"]
+    supported = sum(row["support_decision"] == "supported" for row in diagnostics)
+    return [
+        "## Phase 18 unsupported-target detection and diagnostics",
+        "",
+        f"- Authority version: `{authority['version']}`",
+        f"- Status: `{authority['status']}`",
+        f"- Target diagnostics: `{len(diagnostics)}`",
+        f"- Supported targets: `{supported}`",
+        f"- Unsupported targets: `{len(diagnostics) - supported}`",
+        f"- Rejection classes: `{len(authority['rejection_classes'])}`",
+        "",
+        "Patch 18.10 makes an unsupported target a stable, early, diagnosed outcome rather than a late failure. Each diagnostic names the tuple elements the target actually lacks, and that set is recomputed from the owning authorities rather than declared, so a diagnostic can neither invent a gap the registry does not have nor omit one it does.",
+        "",
+        "A refusal that does not say why is not a diagnostic. An unsupported target must name both its missing element and a rejection class from the declared inventory, and a supported target carries neither. Both directions are rejections, so the ambiguous middle where something is refused without explanation does not exist.",
+        "",
+        "Every refusal happens before driver discovery, ahead of native driver access, object creation, linker invocation, and output replacement. A refusal deferred past that point could no longer preserve existing output, so a late failure stage is itself rejected.",
+        "",
+    ]
+
+
 def phase18_cross_compilation_summary_lines(registry):
     authority = registry["phase18_cross_compilation"]
     pairs = authority["host_target_pairs"]
@@ -11229,6 +11253,7 @@ def render(registry):
         *phase18_linker_policy_summary_lines(registry),
         *phase18_link_mode_summary_lines(registry),
         *phase18_cross_compilation_summary_lines(registry),
+        *phase18_target_diagnostics_summary_lines(registry),
         "## Registry entries", "",
         "| ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |",
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",

@@ -188,6 +188,8 @@ guard-pr-fast-ci-surface:
       'just guard-cranelift-phase18-link-mode-contract'
       'Phase 18 cross-compilation and host target separation'
       'just guard-cranelift-phase18-cross-compilation-contract'
+      'Phase 18 unsupported target diagnostics'
+      'just guard-cranelift-phase18-target-diagnostic-contract'
       'Phase 17 cross-feature runtime composition'
       'just guard-cranelift-phase17-composition-contract'
       'phase11-family:'
@@ -15847,6 +15849,25 @@ guard-cranelift-phase18-cross-compilation-parity:
     just guard-cranelift-phase18-cross-compilation-contract
     bash scripts/phase18_cross_compilation_parity.sh
 
+guard-cranelift-phase18-target-diagnostic-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 18.10 target diagnostic parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase18-target-diagnostic-parity |
+      grep -F $'guard-cranelift-phase18-target-diagnostic-parity\t2\t' >/dev/null
+    just guard-cranelift-phase18-target-diagnostic-contract
+    bash scripts/phase18_target_diagnostic_parity.sh
+
+guard-cranelift-phase18-target-diagnostic-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 18.10 unsupported-target detection and diagnostics..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase18-target-diagnostic-contract | grep -F $'guard-cranelift-phase18-target-diagnostic-contract\t1\t' >/dev/null
+    just guard-cranelift-phase18-linker-policy-contract
+    python3 scripts/phase18_target_diagnostics.py --check
+
 guard-cranelift-phase18-cross-compilation-contract:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -16161,6 +16182,7 @@ guard-cranelift-contract-fast:
     just guard-cranelift-phase18-linker-policy-contract
     just guard-cranelift-phase18-link-mode-contract
     just guard-cranelift-phase18-cross-compilation-contract
+    just guard-cranelift-phase18-target-diagnostic-contract
 
 guard-cranelift-phase17-runtime-authority-contract:
     #!/usr/bin/env bash

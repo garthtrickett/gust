@@ -787,3 +787,54 @@ func mir_host_target_pair_validate(pair: MirHostTargetPair[ctx], ctx: &Arena) Mi
     result.reason_code = std.Clone(ctx, "ok");
     return result;
 }
+
+// ---- Patch 18.10: unsupported-target detection and diagnostics ----
+//
+// An unsupported target names the tuple elements it actually lacks and is
+// refused before driver discovery. A refusal that does not say what is missing
+// is not a diagnostic, and a supported target carries no rejection class.
+
+type MirTargetDiagnostic[ctx] struct {
+    target_id: str,
+    support_decision: str,
+    missing_element: str,
+    rejection_class: str,
+    failure_stage: str
+}
+
+func mir_target_diagnostic_validate(diagnostic: MirTargetDiagnostic[ctx], ctx: &Arena) MirTargetValidation[ctx] {
+    mut result: MirTargetValidation[ctx];
+    result.valid = 0;
+
+    // A refusal after output could already exist cannot preserve it.
+    if std.str_eq(diagnostic.failure_stage, "before_driver_discovery") == 0 {
+        result.reason_code = std.Clone(ctx, "target_diagnostic_refused_too_late");
+        return result;
+    }
+
+    if std.str_eq(diagnostic.support_decision, "supported") == 1 {
+        // A supported target has nothing to refuse.
+        if std.str_eq(diagnostic.rejection_class, "") == 0 {
+            result.reason_code = std.Clone(ctx, "target_diagnostic_supported_with_rejection");
+            return result;
+        }
+        if std.str_eq(diagnostic.missing_element, "") == 0 {
+            result.reason_code = std.Clone(ctx, "target_diagnostic_supported_with_rejection");
+            return result;
+        }
+    } else {
+        // An unsupported target must say both what is missing and why.
+        if std.str_eq(diagnostic.rejection_class, "") == 1 {
+            result.reason_code = std.Clone(ctx, "target_diagnostic_generic_refusal");
+            return result;
+        }
+        if std.str_eq(diagnostic.missing_element, "") == 1 {
+            result.reason_code = std.Clone(ctx, "target_diagnostic_generic_refusal");
+            return result;
+        }
+    }
+
+    result.valid = 1;
+    result.reason_code = std.Clone(ctx, "ok");
+    return result;
+}

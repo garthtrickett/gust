@@ -1,0 +1,15 @@
+kind	requirement	evidence	level
+coverage	every declared target has exactly one diagnostic	diagnostic coverage compared against the declared triple vocabulary	1
+coverage	no duplicate diagnostic for a target	uniqueness check over diagnostic target ids	1
+derivation	the missing element set is recomputed from the owning authorities	per-target join over packages, linkers, and ABI selections	1
+derivation	a diagnostic cannot invent a gap the registry does not have	recomputed set compared against the declared set	1
+derivation	a diagnostic cannot omit a gap the registry does have	recomputed set compared against the declared set	1
+derivation	the support decision is derived from the tuple	decision recomputed from the missing element set	1
+specificity	an unsupported target names a specific rejection class	non-empty class required for unsupported decisions	1
+specificity	the rejection class is inside the declared inventory	class membership check	1
+specificity	a supported target carries no rejection class	empty class required for supported decisions	1
+stage	an unsupported target is refused before driver discovery	failure stage is frozen	1
+stage	refusal precedes object creation, linking, and output replacement	stage policy is frozen	1
+stage	an unsupported target is never attempted and failed later	attempt policy is frozen	1
+output	existing output survives every rejection class	output preservation policy is frozen	1
+rejection	the rejection class inventory is complete	seven required rejection classes	1
