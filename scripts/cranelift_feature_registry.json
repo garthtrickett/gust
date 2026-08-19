@@ -4371,6 +4371,56 @@
     "scope_policy": "availability_compatibility_and_diagnostics_only_cross_feature_composition_remains_in_patch17_14",
     "next_patch": "17.14"
   },
+  "phase18_target_support": {
+    "version": "phase18_target_support_tuple_v1",
+    "status": "ready_for_patch18_3",
+    "authority_owner": "compiler/mir_target_authority.gst",
+    "tuple_elements": [
+      "compiler",
+      "runtime_package",
+      "linker",
+      "abi"
+    ],
+    "validation_order": [
+      "compiler",
+      "runtime_package",
+      "linker",
+      "abi"
+    ],
+    "element_owning_authorities": {
+      "compiler": "phase18_target_authority",
+      "runtime_package": "phase17_runtime_package_authority",
+      "linker": "pending_patch18_7_linker_policy",
+      "abi": "pending_patch18_5_target_abi_selection"
+    },
+    "support_tuples": [
+      {"tuple_id": "tuple:v1:x86_64-unknown-linux-gnu", "target_id": "target:v1:triple=x86_64-unknown-linux-gnu:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8", "elements": [{"element_kind": "compiler", "owning_authority": "phase18_target_authority", "evidence_id": "", "present": false, "compatible": false}, {"element_kind": "runtime_package", "owning_authority": "phase17_runtime_package_authority", "evidence_id": "", "present": false, "compatible": false}, {"element_kind": "linker", "owning_authority": "pending_patch18_7_linker_policy", "evidence_id": "", "present": false, "compatible": false}, {"element_kind": "abi", "owning_authority": "pending_patch18_5_target_abi_selection", "evidence_id": "", "present": false, "compatible": false}], "support_decision": "unsupported_pending_tuple_evidence", "missing_elements": ["compiler", "runtime_package", "linker", "abi"], "validation_order_frozen": true},
+      {"tuple_id": "tuple:v1:aarch64-unknown-linux-gnu", "target_id": "target:v1:triple=aarch64-unknown-linux-gnu:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8", "elements": [{"element_kind": "compiler", "owning_authority": "phase18_target_authority", "evidence_id": "", "present": false, "compatible": false}, {"element_kind": "runtime_package", "owning_authority": "phase17_runtime_package_authority", "evidence_id": "", "present": false, "compatible": false}, {"element_kind": "linker", "owning_authority": "pending_patch18_7_linker_policy", "evidence_id": "", "present": false, "compatible": false}, {"element_kind": "abi", "owning_authority": "pending_patch18_5_target_abi_selection", "evidence_id": "", "present": false, "compatible": false}], "support_decision": "unsupported_pending_tuple_evidence", "missing_elements": ["compiler", "runtime_package", "linker", "abi"], "validation_order_frozen": true},
+      {"tuple_id": "tuple:v1:i686-unknown-linux-gnu", "target_id": "target:v1:triple=i686-unknown-linux-gnu:endian=little:ptr_size=4:ptr_align=4:i32_align=4:i64_align=4:max_align=4", "elements": [{"element_kind": "compiler", "owning_authority": "phase18_target_authority", "evidence_id": "", "present": false, "compatible": false}, {"element_kind": "runtime_package", "owning_authority": "phase17_runtime_package_authority", "evidence_id": "", "present": false, "compatible": false}, {"element_kind": "linker", "owning_authority": "pending_patch18_7_linker_policy", "evidence_id": "", "present": false, "compatible": false}, {"element_kind": "abi", "owning_authority": "pending_patch18_5_target_abi_selection", "evidence_id": "", "present": false, "compatible": false}], "support_decision": "unsupported_pending_tuple_evidence", "missing_elements": ["compiler", "runtime_package", "linker", "abi"], "validation_order_frozen": true},
+      {"tuple_id": "tuple:v1:x86_64-apple-darwin", "target_id": "target:v1:triple=x86_64-apple-darwin:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8", "elements": [{"element_kind": "compiler", "owning_authority": "phase18_target_authority", "evidence_id": "", "present": false, "compatible": false}, {"element_kind": "runtime_package", "owning_authority": "phase17_runtime_package_authority", "evidence_id": "", "present": false, "compatible": false}, {"element_kind": "linker", "owning_authority": "pending_patch18_7_linker_policy", "evidence_id": "", "present": false, "compatible": false}, {"element_kind": "abi", "owning_authority": "pending_patch18_5_target_abi_selection", "evidence_id": "", "present": false, "compatible": false}], "support_decision": "unsupported_pending_tuple_evidence", "missing_elements": ["compiler", "runtime_package", "linker", "abi"], "validation_order_frozen": true},
+      {"tuple_id": "tuple:v1:aarch64-apple-darwin", "target_id": "target:v1:triple=aarch64-apple-darwin:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8", "elements": [{"element_kind": "compiler", "owning_authority": "phase18_target_authority", "evidence_id": "", "present": false, "compatible": false}, {"element_kind": "runtime_package", "owning_authority": "phase17_runtime_package_authority", "evidence_id": "", "present": false, "compatible": false}, {"element_kind": "linker", "owning_authority": "pending_patch18_7_linker_policy", "evidence_id": "", "present": false, "compatible": false}, {"element_kind": "abi", "owning_authority": "pending_patch18_5_target_abi_selection", "evidence_id": "", "present": false, "compatible": false}], "support_decision": "unsupported_pending_tuple_evidence", "missing_elements": ["compiler", "runtime_package", "linker", "abi"], "validation_order_frozen": true}
+    ],
+    "declared_supported_targets": [],
+    "support_decisions": [
+      "supported",
+      "unsupported_pending_tuple_evidence",
+      "unsupported_missing_elements"
+    ],
+    "completeness_policy": "supported_requires_all_four_elements_present_compatible_and_evidenced",
+    "capability_policy": "backend_architecture_capability_is_one_input_to_the_compiler_element_and_never_sufficient_alone",
+    "partial_tuple_policy": "a_partial_tuple_must_not_reach_lowering_object_emission_or_link_planning",
+    "narrowness_policy": "declared_supported_target_set_is_registry_derived_and_may_be_empty_until_later_patches_supply_elements",
+    "rejection_classes": [
+      "target_supported_without_complete_tuple",
+      "target_unsupported_without_named_missing_elements",
+      "target_support_order_not_frozen",
+      "target_support_order_drift",
+      "target_support_decision_drift",
+      "target_support_missing_elements_drift",
+      "target_support_element_without_owner_or_evidence"
+    ],
+    "next_patch": "18.3"
+  },
   "phase18_target_authority": {
     "version": "phase18_compiler_owned_target_authority_v1",
     "status": "ready_for_patch18_2",

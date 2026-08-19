@@ -1,0 +1,17 @@
+kind	requirement	evidence	level
+tuple	support requires all four elements	completeness policy and per-tuple conjunction check	1
+tuple	every declared target has exactly one tuple	tuple coverage compared against the declared triple vocabulary	1
+tuple	the element order is the frozen validation order	per-tuple element kind sequence	1
+tuple	the validation order is frozen	validation_order_frozen flag	1
+element	every element names its owning authority	element owner compared against the authority map	1
+element	an owning authority must exist or be explicitly pending	registry key resolution for non-pending owners	1
+element	an element claiming support must carry evidence	present and compatible without evidence is rejected	1
+decision	supported requires a complete tuple	declared supported without four elements is rejected	1
+decision	a complete tuple cannot be recorded unsupported	completeness and decision agreement	1
+decision	unsupported must name its missing elements	refusal without named absences is rejected	1
+decision	the missing element list must match the tuple contents	derived expected missing set	1
+capability	backend architecture capability alone never yields support	capability policy is frozen	1
+narrowness	the supported set is derived from complete tuples	declared supported targets recomputed from tuples	1
+narrowness	the supported set may be empty at this patch	narrowness policy is frozen	1
+partial	a partial tuple must not reach lowering, emission, or linking	partial tuple policy is frozen	1
+rejection	the rejection class inventory is complete	seven required rejection classes	1
