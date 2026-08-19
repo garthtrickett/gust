@@ -191,6 +191,8 @@ guard-pr-fast-ci-surface:
       'just guard-cranelift-phase18-target-support-contract'
       'Phase 18 object format and section binding'
       'just guard-cranelift-phase18-object-format-contract'
+      'Phase 18 relocation model and validation'
+      'just guard-cranelift-phase18-relocation-contract'
       'Phase 17 cross-feature runtime composition'
       'just guard-cranelift-phase17-composition-contract'
       'phase11-family:'
@@ -15866,6 +15868,25 @@ guard-cranelift-phase18-object-format-parity:
     just guard-cranelift-phase18-object-format-contract
     bash scripts/phase18_object_format_parity.sh
 
+guard-cranelift-phase18-relocation-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 18.4 relocation model and validation..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase18-relocation-contract | grep -F $'guard-cranelift-phase18-relocation-contract\t1\t' >/dev/null
+    just guard-cranelift-phase18-object-format-contract
+    python3 scripts/phase18_relocation.py --check
+
+guard-cranelift-phase18-relocation-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 18.4 relocation parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase18-relocation-parity |
+      grep -F $'guard-cranelift-phase18-relocation-parity\t2\t' >/dev/null
+    just guard-cranelift-phase18-relocation-contract
+    bash scripts/phase18_relocation_parity.sh
+
 guard-cranelift-phase18-object-format-contract:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -16110,6 +16131,7 @@ guard-cranelift-contract-fast:
     just guard-cranelift-phase18-target-authority-contract
     just guard-cranelift-phase18-target-support-contract
     just guard-cranelift-phase18-object-format-contract
+    just guard-cranelift-phase18-relocation-contract
 
 guard-cranelift-phase17-runtime-authority-contract:
     #!/usr/bin/env bash

@@ -1,0 +1,26 @@
+Patch 18.4 — Relocation Model and Validation
+
+relocation_models	5
+relocation_kinds	14
+permitted_section_kinds	3
+excluded_section_kinds	1
+rejection_classes	6
+
+model	every declared target has exactly one relocation model	model coverage compared against the declared triple vocabulary	Level 1
+model	the model object format agrees with Patch 18.3	per-model format comparison	Level 1
+model	the model architecture agrees with the target identity	per-model architecture comparison	Level 1
+model	no duplicate relocation kind in a model	uniqueness check over relocation kinds	Level 1
+kind	relocation kind spelling matches the object format	ELF and Mach-O kind prefix check	Level 1
+kind	an unknown relocation kind is rejected	relocation kind vocabulary membership	Level 1
+section	permitted and excluded section kinds partition the declared kinds	partition check against Patch 18.3 section kinds	Level 1
+section	no section kind is both permitted and excluded	disjointness check	Level 1
+section	zero initialised data is excluded from relocations	explicit exclusion and frozen reason	Level 1
+section	a relocation in a disallowed section is rejected	permitted section membership	Level 1
+addend	a relative relocation carries no addend	addend policy applied per kind	Level 1
+addend	an absolute relocation states its addend explicitly	addend policy is frozen	Level 1
+stage	relocation validation runs before object publication	validation stage is frozen	Level 1
+stage	relocation validation runs before linker invocation	validation stage is frozen	Level 1
+stage	a model validating too late is rejected	validation stage comparison	Level 1
+output	existing output survives relocation validation failure	output preservation policy is frozen	Level 1
+rejection	the rejection class inventory is complete	six required rejection classes	Level 1
+traceability	the relocation defaults host assumption is owned by this row	Patch 18.0 host assumption ownership	Level 1

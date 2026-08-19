@@ -445,3 +445,97 @@ func mir_object_format_validate(descriptor: MirObjectFormatDescriptor[ctx], oper
     result.reason_code = std.Clone(ctx, "ok");
     return result;
 }
+
+// ---- Patch 18.4: relocation model and validation ----
+//
+// A relocation is a compiler-owned decision, not an emitted side effect. Every
+// relocation is validated against the declared model before the object is
+// published and before the linker is invoked, so an invalid relocation cannot
+// replace a valid artifact.
+
+type MirRelocation[ctx] struct {
+    relocation_kind: str,
+    section_kind: str,
+    offset: int,
+    addend: int,
+    symbol_identity: str
+}
+
+type MirRelocationModel[ctx] struct {
+    target_id: str,
+    object_format: str,
+    architecture: str,
+    addend_policy: str,
+    validation_stage: str,
+    relocation_kinds: Index[std.Vector[str, ctx], ctx],
+    permitted_section_kinds: Index[std.Vector[str, ctx], ctx]
+}
+
+func mir_relocation_kind_declared(model: MirRelocationModel[ctx], relocation_kind: str, ctx: &Arena) int {
+    mut values: std.Vector[str, ctx] := ctx[model.relocation_kinds];
+    mut index := 0;
+    while index < len(values) {
+        if std.str_eq(values[index], relocation_kind) == 1 { return 1; }
+        index = index + 1;
+    }
+    return 0;
+}
+
+func mir_relocation_section_permitted(model: MirRelocationModel[ctx], section_kind: str, ctx: &Arena) int {
+    mut values: std.Vector[str, ctx] := ctx[model.permitted_section_kinds];
+    mut index := 0;
+    while index < len(values) {
+        if std.str_eq(values[index], section_kind) == 1 { return 1; }
+        index = index + 1;
+    }
+    return 0;
+}
+
+// A relative relocation carries no addend. An absolute one must carry an
+// explicit addend, even when that addend is zero, so the value is stated
+// rather than inferred from its absence.
+func mir_relocation_kind_is_absolute(relocation_kind: str, ctx: &Arena) int {
+    if std.str_eq(relocation_kind, "R_X86_64_64") == 1 { return 1; }
+    if std.str_eq(relocation_kind, "R_AARCH64_ABS64") == 1 { return 1; }
+    if std.str_eq(relocation_kind, "R_386_32") == 1 { return 1; }
+    if std.str_eq(relocation_kind, "X86_64_RELOC_UNSIGNED") == 1 { return 1; }
+    if std.str_eq(relocation_kind, "ARM64_RELOC_UNSIGNED") == 1 { return 1; }
+    return 0;
+}
+
+func mir_relocation_validate(model: MirRelocationModel[ctx], relocation: MirRelocation[ctx], ctx: &Arena) MirTargetValidation[ctx] {
+    mut result: MirTargetValidation[ctx];
+    result.valid = 0;
+
+    if std.str_eq(model.validation_stage, "before_object_publication_and_before_linker_invocation") == 0 {
+        result.reason_code = std.Clone(ctx, "relocation_validated_too_late");
+        return result;
+    }
+    if mir_relocation_kind_declared(model, relocation.relocation_kind, ctx) == 0 {
+        result.reason_code = std.Clone(ctx, "relocation_kind_unknown");
+        return result;
+    }
+    // Zero-initialised data holds no bytes, so it can hold no relocation.
+    if mir_relocation_section_permitted(model, relocation.section_kind, ctx) == 0 {
+        result.reason_code = std.Clone(ctx, "relocation_in_disallowed_section");
+        return result;
+    }
+    if relocation.offset < 0 {
+        result.reason_code = std.Clone(ctx, "relocation_offset_malformed");
+        return result;
+    }
+    if mir_relocation_kind_is_absolute(relocation.relocation_kind, ctx) == 0 {
+        if relocation.addend != 0 {
+            result.reason_code = std.Clone(ctx, "relocation_addend_malformed");
+            return result;
+        }
+    }
+    if std.str_eq(relocation.symbol_identity, "") == 1 {
+        result.reason_code = std.Clone(ctx, "relocation_symbol_missing");
+        return result;
+    }
+
+    result.valid = 1;
+    result.reason_code = std.Clone(ctx, "ok");
+    return result;
+}

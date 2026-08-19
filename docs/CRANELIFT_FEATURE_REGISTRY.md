@@ -575,6 +575,20 @@ The derivation is recomputed rather than trusted. A descriptor claiming a format
 
 Section kinds are common across formats and only the spelling differs, so the compiler reasons in kinds while the descriptor supplies the name. ELF names are dot-prefixed and Mach-O names are segment and section pairs, and a descriptor using the wrong spelling is describing a different object file.
 
+## Phase 18 relocation model and validation
+
+- Authority version: `phase18_relocation_model_v1`
+- Status: `ready_for_patch18_5`
+- Relocation models: `5`
+- Declared relocation kinds: `14`
+- Permitted section kinds: `3`
+
+Patch 18.4 makes a relocation a compiler-owned decision rather than an emitted side effect. Every relocation is validated against the declared model before the object is published and before the linker is invoked, so an invalid relocation cannot replace a valid artifact.
+
+Permitted and excluded section kinds partition the declared section kinds exactly, so a section kind added later cannot be silently omitted from the model. Zero-initialised data is excluded because it holds no bytes and can therefore hold no relocation, and that reason is recorded in the registry rather than left implicit.
+
+Relocation kind spelling is format-specific, and a kind spelled for another format is a model describing a different object file. Absolute kinds carry an explicit addend while relative kinds carry none, and the Cranelift worker recomputes absoluteness from the kind rather than trusting the request, so a mislabelled relocation cannot smuggle an addend past the addend policy.
+
 ## Registry entries
 
 | ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |

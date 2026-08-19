@@ -37,6 +37,7 @@ TOP_FIELDS = {
     "phase17_thread_runtime_authority",
     "phase17_availability_authority",
     "phase17_composition_authority",
+    "phase18_relocation_model",
     "phase18_object_format",
     "phase18_target_support",
     "phase18_target_authority",
@@ -10855,6 +10856,28 @@ def phase17_availability_authority_summary_lines(registry):
     ]
 
 
+def phase18_relocation_summary_lines(registry):
+    authority = registry["phase18_relocation_model"]
+    models = authority["relocation_models"]
+    kinds = sum(len(row["relocation_kinds"]) for row in models)
+    return [
+        "## Phase 18 relocation model and validation",
+        "",
+        f"- Authority version: `{authority['version']}`",
+        f"- Status: `{authority['status']}`",
+        f"- Relocation models: `{len(models)}`",
+        f"- Declared relocation kinds: `{kinds}`",
+        f"- Permitted section kinds: `{len(authority['permitted_section_kinds'])}`",
+        "",
+        "Patch 18.4 makes a relocation a compiler-owned decision rather than an emitted side effect. Every relocation is validated against the declared model before the object is published and before the linker is invoked, so an invalid relocation cannot replace a valid artifact.",
+        "",
+        "Permitted and excluded section kinds partition the declared section kinds exactly, so a section kind added later cannot be silently omitted from the model. Zero-initialised data is excluded because it holds no bytes and can therefore hold no relocation, and that reason is recorded in the registry rather than left implicit.",
+        "",
+        "Relocation kind spelling is format-specific, and a kind spelled for another format is a model describing a different object file. Absolute kinds carry an explicit addend while relative kinds carry none, and the Cranelift worker recomputes absoluteness from the kind rather than trusting the request, so a mislabelled relocation cannot smuggle an addend past the addend policy.",
+        "",
+    ]
+
+
 def phase18_object_format_summary_lines(registry):
     authority = registry["phase18_object_format"]
     descriptors = authority["format_descriptors"]
@@ -11085,6 +11108,7 @@ def render(registry):
         *phase18_target_authority_summary_lines(registry),
         *phase18_target_support_summary_lines(registry),
         *phase18_object_format_summary_lines(registry),
+        *phase18_relocation_summary_lines(registry),
         "## Registry entries", "",
         "| ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |",
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",

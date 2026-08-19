@@ -4371,6 +4371,39 @@
     "scope_policy": "availability_compatibility_and_diagnostics_only_cross_feature_composition_remains_in_patch17_14",
     "next_patch": "17.14"
   },
+  "phase18_relocation_model": {
+    "version": "phase18_relocation_model_v1",
+    "status": "ready_for_patch18_5",
+    "authority_owner": "compiler/mir_target_authority.gst",
+    "relocation_models": [
+      {"target_id": "target:v1:triple=x86_64-unknown-linux-gnu:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8", "object_format": "elf", "architecture": "x86_64", "relocation_kinds": ["R_X86_64_64", "R_X86_64_PC32", "R_X86_64_PLT32"], "permitted_section_kinds": ["text", "read_only_data", "data"], "addend_policy": "explicit_addend_required_for_absolute_kinds_zero_for_relative_kinds", "validation_stage": "before_object_publication_and_before_linker_invocation"},
+      {"target_id": "target:v1:triple=aarch64-unknown-linux-gnu:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8", "object_format": "elf", "architecture": "aarch64", "relocation_kinds": ["R_AARCH64_ABS64", "R_AARCH64_CALL26", "R_AARCH64_ADR_PREL_PG_HI21"], "permitted_section_kinds": ["text", "read_only_data", "data"], "addend_policy": "explicit_addend_required_for_absolute_kinds_zero_for_relative_kinds", "validation_stage": "before_object_publication_and_before_linker_invocation"},
+      {"target_id": "target:v1:triple=i686-unknown-linux-gnu:endian=little:ptr_size=4:ptr_align=4:i32_align=4:i64_align=4:max_align=4", "object_format": "elf", "architecture": "i686", "relocation_kinds": ["R_386_32", "R_386_PC32"], "permitted_section_kinds": ["text", "read_only_data", "data"], "addend_policy": "explicit_addend_required_for_absolute_kinds_zero_for_relative_kinds", "validation_stage": "before_object_publication_and_before_linker_invocation"},
+      {"target_id": "target:v1:triple=x86_64-apple-darwin:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8", "object_format": "macho", "architecture": "x86_64", "relocation_kinds": ["X86_64_RELOC_UNSIGNED", "X86_64_RELOC_BRANCH", "X86_64_RELOC_SIGNED"], "permitted_section_kinds": ["text", "read_only_data", "data"], "addend_policy": "explicit_addend_required_for_absolute_kinds_zero_for_relative_kinds", "validation_stage": "before_object_publication_and_before_linker_invocation"},
+      {"target_id": "target:v1:triple=aarch64-apple-darwin:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8", "object_format": "macho", "architecture": "aarch64", "relocation_kinds": ["ARM64_RELOC_UNSIGNED", "ARM64_RELOC_BRANCH26", "ARM64_RELOC_PAGE21"], "permitted_section_kinds": ["text", "read_only_data", "data"], "addend_policy": "explicit_addend_required_for_absolute_kinds_zero_for_relative_kinds", "validation_stage": "before_object_publication_and_before_linker_invocation"}
+    ],
+    "permitted_section_kinds": [
+      "text",
+      "read_only_data",
+      "data"
+    ],
+    "excluded_section_kinds": [
+      "zero_initialised_data"
+    ],
+    "exclusion_reason": "zero_initialised_data_holds_no_bytes_so_it_can_hold_no_relocation",
+    "addend_policy": "explicit_addend_required_for_absolute_kinds_zero_for_relative_kinds",
+    "validation_stage": "before_object_publication_and_before_linker_invocation",
+    "output_preservation_policy": "existing_output_survives_relocation_validation_failure",
+    "rejection_classes": [
+      "relocation_kind_unknown",
+      "relocation_in_disallowed_section",
+      "relocation_offset_malformed",
+      "relocation_addend_malformed",
+      "relocation_symbol_missing",
+      "relocation_validated_too_late"
+    ],
+    "next_patch": "18.5"
+  },
   "phase18_object_format": {
     "version": "phase18_object_format_authority_v1",
     "status": "ready_for_patch18_4",
