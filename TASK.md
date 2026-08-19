@@ -34,7 +34,7 @@ is activated separately.
 - [x] Patch 18.4 — Relocation Model and Validation — DONE
 - [x] Patch 18.5 — Target-Specific ABI Selection — DONE
 - [x] Patch 18.6 — Target-Specific Runtime Package Selection — DONE
-- [ ] Patch 18.7 — Linker Discovery, Selection, and Invocation Policy
+- [x] Patch 18.7 — Linker Discovery, Selection, and Invocation Policy — DONE
 - [ ] Patch 18.8 — Static and Dynamic Runtime Linking Modes
 - [ ] Patch 18.9 — Cross-Compilation Policy and Host/Target Separation
 - [ ] Patch 18.10 — Unsupported-Target Detection and Diagnostics

@@ -315,3 +315,39 @@ func mir_serialize_target_package_request(selection: target.MirTargetPackageSele
 func mir_target_package_mir_to_c_witness(selection: target.MirTargetPackageSelection[ctx], descriptor_format: str, ctx: &Arena) str {
     return mir_target_package_body(selection, descriptor_format, mir_target_package_witness_format(), ctx);
 }
+
+func mir_linker_request_format() str { return "gust.compiler_linker_policy.v1"; }
+func mir_linker_witness_format() str { return "gust.linker_policy_witness.v1"; }
+
+func mir_linker_body(descriptor: target.MirLinkerDescriptor[ctx], target_format: str, header: str, ctx: &Arena) str {
+    mut validation := target.mir_linker_descriptor_validate(descriptor, target_format, ctx);
+    if validation.valid == 0 {
+        mut invalid := "format: invalid\nreason: ";
+        invalid = std.Concat(invalid, validation.reason_code);
+        invalid = std.Concat(invalid, "\n");
+        return std.Clone(ctx, invalid);
+    }
+    mut output := "format: ";
+    output = std.Concat(output, header);
+    output = std.Concat(output, "\nauthority: compiler/mir_target_authority.gst\n");
+    mut row := "linker:";
+    row = mir_target_append(row, "linker_id", descriptor.linker_id, ctx);
+    row = mir_target_append(row, "target_id", descriptor.target_id, ctx);
+    row = mir_target_append(row, "driver", descriptor.driver_name, ctx);
+    row = mir_target_append(row, "discovery", descriptor.discovery_result, ctx);
+    row = mir_target_append(row, "object_format", descriptor.supported_object_format, ctx);
+    row = mir_target_append(row, "target_format", target_format, ctx);
+    row = mir_target_append(row, "invocation_owner", descriptor.invocation_owner, ctx);
+    row = mir_target_append(row, "argument", descriptor.probe_argument, ctx);
+    output = std.Concat(output, row);
+    output = std.Concat(output, "\n");
+    return std.Clone(ctx, output);
+}
+
+func mir_serialize_linker_request(descriptor: target.MirLinkerDescriptor[ctx], target_format: str, ctx: &Arena) str {
+    return mir_linker_body(descriptor, target_format, mir_linker_request_format(), ctx);
+}
+
+func mir_linker_mir_to_c_witness(descriptor: target.MirLinkerDescriptor[ctx], target_format: str, ctx: &Arena) str {
+    return mir_linker_body(descriptor, target_format, mir_linker_witness_format(), ctx);
+}

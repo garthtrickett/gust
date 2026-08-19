@@ -182,6 +182,8 @@ guard-pr-fast-ci-surface:
       'just guard-cranelift-phase18-target-abi-contract'
       'Phase 18 target-specific runtime package selection'
       'just guard-cranelift-phase18-target-package-contract'
+      'Phase 18 linker discovery and invocation policy'
+      'just guard-cranelift-phase18-linker-policy-contract'
       'Phase 17 cross-feature runtime composition'
       'just guard-cranelift-phase17-composition-contract'
       'phase11-family:'
@@ -15811,6 +15813,25 @@ guard-cranelift-phase18-target-package-parity:
     just guard-cranelift-phase18-target-package-contract
     bash scripts/phase18_target_package_parity.sh
 
+guard-cranelift-phase18-linker-policy-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 18.7 linker policy parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase18-linker-policy-parity |
+      grep -F $'guard-cranelift-phase18-linker-policy-parity\t2\t' >/dev/null
+    just guard-cranelift-phase18-linker-policy-contract
+    bash scripts/phase18_linker_policy_parity.sh
+
+guard-cranelift-phase18-linker-policy-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 18.7 linker discovery and invocation policy..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase18-linker-policy-contract | grep -F $'guard-cranelift-phase18-linker-policy-contract\t1\t' >/dev/null
+    just guard-cranelift-phase18-object-format-contract
+    python3 scripts/phase18_linker_policy.py --check
+
 guard-cranelift-phase18-target-package-contract:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -16095,6 +16116,7 @@ guard-cranelift-contract-fast:
     just guard-cranelift-phase18-relocation-contract
     just guard-cranelift-phase18-target-abi-contract
     just guard-cranelift-phase18-target-package-contract
+    just guard-cranelift-phase18-linker-policy-contract
 
 guard-cranelift-phase17-runtime-authority-contract:
     #!/usr/bin/env bash

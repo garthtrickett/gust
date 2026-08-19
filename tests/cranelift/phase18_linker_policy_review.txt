@@ -1,0 +1,23 @@
+Patch 18.7 — Linker Discovery, Selection, and Invocation Policy
+
+linker_descriptors	5
+discovered_linkers	1
+discovery_steps	3
+permitted_arguments	4
+rejection_classes	6
+
+descriptor	every declared target has exactly one linker descriptor	descriptor coverage compared against the declared triple vocabulary	Level 1
+descriptor	no duplicate linker descriptor for a target	uniqueness check over descriptor target ids	Level 1
+descriptor	every descriptor carries the authority discovery order	per-descriptor order comparison	Level 1
+discovery	the discovery order is deterministic and frozen	three-step order is fixed	Level 1
+discovery	an unvalidated environment variable alone never selects a linker	discovery policy is frozen	Level 1
+discovery	the CC override is a validated step in the order	second discovery step names a validated override	Level 1
+discovery	a discovery result is one of the declared outcomes	discovery result vocabulary membership	Level 1
+format	the linker supports the target object format	supported formats checked against the derived format	Level 1
+format	the object format derivation agrees with Patch 18.3	per-target format comparison	Level 1
+argument	invocation uses only the declared argument vocabulary	per-descriptor argument subset check	Level 1
+ownership	Phase 9G executes the link and Phase 18 only plans it	invocation owner is Phase 9G for every descriptor	Level 1
+ownership	the Phase 9G artifact ownership guard is present	justfile guard reference	Level 1
+stage	linker validation precedes invocation and output replacement	validation stage is frozen	Level 1
+rejection	the rejection class inventory is complete	six required rejection classes	Level 1
+traceability	both linker host assumptions are owned by this row	Patch 18.0 host assumption ownership	Level 1

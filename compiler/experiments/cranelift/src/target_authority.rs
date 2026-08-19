@@ -701,3 +701,68 @@ pub fn lower_target_package_witness_path(path: &Path) -> Result<String, Box<dyn 
     let request = fs::read_to_string(path)?;
     Ok(lower_target_package_witness(&request)?)
 }
+
+// ---- Patch 18.7: linker discovery and invocation policy ----
+
+const LINKER_FORMAT: &str = "gust.compiler_linker_policy.v1";
+const LINKER_WITNESS_FORMAT: &str = "gust.linker_policy_witness.v1";
+const LINKER_INVOCATION_OWNER: &str = "phase9g_artifact_planner";
+
+/// The declared argument vocabulary. An invocation using anything else is not
+/// the invocation the compiler planned.
+const PERMITTED_ARGUMENTS: [&str; 4] = ["-o", "output_path", "object_inputs", "runtime_package_path"];
+
+pub fn lower_linker_witness(request: &str) -> Result<String, TargetError> {
+    let lines: Vec<&str> = request.lines().collect();
+    if header(&lines, "format")? != LINKER_FORMAT {
+        return Err(error("linker_malformed", "unknown request format"));
+    }
+    if header(&lines, "authority")? != AUTHORITY {
+        return Err(error("linker_malformed", "unknown target authority"));
+    }
+
+    let linker_line = lines.iter().find(|l| l.starts_with("linker:"))
+        .ok_or_else(|| error("linker_undiscovered", "request declares no linker"))?;
+    let descriptor = row(linker_line, "linker:")?;
+
+    // An undiscovered linker may be reported but never used.
+    if field(&descriptor, "discovery")? != "discovered" {
+        return Err(error("linker_undiscovered",
+            "an undiscovered linker cannot be used, only reported"));
+    }
+
+    let object_format = field(&descriptor, "object_format")?;
+    let target_format = field(&descriptor, "target_format")?;
+    if object_format != target_format {
+        return Err(error("linker_unsupported_object_format",
+            format!("linker supports {object_format}, target uses {target_format}")));
+    }
+
+    // Phase 9G owns execution; Phase 18 only plans it.
+    if field(&descriptor, "invocation_owner")? != LINKER_INVOCATION_OWNER {
+        return Err(error("linker_invoked_by_phase18",
+            "the Phase 9G artifact planner owns linker invocation"));
+    }
+
+    let argument = field(&descriptor, "argument")?;
+    if !PERMITTED_ARGUMENTS.contains(&argument) {
+        return Err(error("linker_argument_outside_vocabulary",
+            format!("{argument} is not in the declared argument vocabulary")));
+    }
+
+    let mut witness = String::new();
+    witness.push_str(&format!("format: {LINKER_WITNESS_FORMAT}\n"));
+    witness.push_str(&format!("authority: {AUTHORITY}\n"));
+    witness.push_str(&format!(
+        "linker:linker_id={};target_id={};driver={};discovery={};object_format={};target_format={};invocation_owner={};argument={};\n",
+        field(&descriptor, "linker_id")?, field(&descriptor, "target_id")?,
+        field(&descriptor, "driver")?, "discovered", object_format, target_format,
+        LINKER_INVOCATION_OWNER, argument,
+    ));
+    Ok(witness)
+}
+
+pub fn lower_linker_witness_path(path: &Path) -> Result<String, Box<dyn Error>> {
+    let request = fs::read_to_string(path)?;
+    Ok(lower_linker_witness(&request)?)
+}

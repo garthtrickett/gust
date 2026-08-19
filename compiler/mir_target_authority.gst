@@ -627,3 +627,61 @@ func mir_target_package_selection_validate(selection: MirTargetPackageSelection[
     result.reason_code = std.Clone(ctx, "ok");
     return result;
 }
+
+// ---- Patch 18.7: linker discovery and invocation policy ----
+//
+// Discovery is ordered and deterministic. The CC environment variable stays
+// available, but as a validated step in that order rather than an unvalidated
+// escape hatch: whatever it names must still satisfy the descriptor. Phase 18
+// plans the invocation; Phase 9G executes it.
+
+type MirLinkerDescriptor[ctx] struct {
+    linker_id: str,
+    target_id: str,
+    driver_name: str,
+    discovery_result: str,
+    supported_object_format: str,
+    invocation_owner: str,
+    probe_argument: str
+}
+
+func mir_linker_argument_permitted(argument: str, ctx: &Arena) int {
+    if std.str_eq(argument, "-o") == 1 { return 1; }
+    if std.str_eq(argument, "output_path") == 1 { return 1; }
+    if std.str_eq(argument, "object_inputs") == 1 { return 1; }
+    if std.str_eq(argument, "runtime_package_path") == 1 { return 1; }
+    return 0;
+}
+
+func mir_linker_descriptor_validate(descriptor: MirLinkerDescriptor[ctx], target_format: str, ctx: &Arena) MirTargetValidation[ctx] {
+    mut result: MirTargetValidation[ctx];
+    result.valid = 0;
+
+    // An undiscovered linker can be reported but never used.
+    if std.str_eq(descriptor.discovery_result, "discovered") == 0 {
+        result.reason_code = std.Clone(ctx, "linker_undiscovered");
+        return result;
+    }
+    if std.str_eq(descriptor.supported_object_format, target_format) == 0 {
+        result.reason_code = std.Clone(ctx, "linker_unsupported_object_format");
+        return result;
+    }
+    // Phase 9G owns execution. Phase 18 producing an invocation itself would
+    // take artifact ownership the earlier phase already holds.
+    if std.str_eq(descriptor.invocation_owner, "phase9g_artifact_planner") == 0 {
+        result.reason_code = std.Clone(ctx, "linker_invoked_by_phase18");
+        return result;
+    }
+    if mir_linker_argument_permitted(descriptor.probe_argument, ctx) == 0 {
+        result.reason_code = std.Clone(ctx, "linker_argument_outside_vocabulary");
+        return result;
+    }
+    if std.str_eq(descriptor.driver_name, "") == 1 {
+        result.reason_code = std.Clone(ctx, "linker_target_mismatch");
+        return result;
+    }
+
+    result.valid = 1;
+    result.reason_code = std.Clone(ctx, "ok");
+    return result;
+}

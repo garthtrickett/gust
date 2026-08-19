@@ -37,6 +37,7 @@ TOP_FIELDS = {
     "phase17_thread_runtime_authority",
     "phase17_availability_authority",
     "phase17_composition_authority",
+    "phase18_linker_policy",
     "phase18_target_package_selection",
     "phase18_target_abi_selection",
     "phase18_relocation_model",
@@ -10858,6 +10859,28 @@ def phase17_availability_authority_summary_lines(registry):
     ]
 
 
+def phase18_linker_policy_summary_lines(registry):
+    authority = registry["phase18_linker_policy"]
+    descriptors = authority["linker_descriptors"]
+    discovered = sum(row["discovery_result"] == "discovered" for row in descriptors)
+    return [
+        "## Phase 18 linker discovery and invocation policy",
+        "",
+        f"- Authority version: `{authority['version']}`",
+        f"- Status: `{authority['status']}`",
+        f"- Linker descriptors: `{len(descriptors)}`",
+        f"- Discovered linkers: `{discovered}`",
+        f"- Permitted invocation arguments: `{len(authority['permitted_arguments'])}`",
+        "",
+        "Patch 18.7 makes linker choice an explicit compiler-owned policy rather than an environment accident. Discovery is ordered and deterministic, and the CC environment variable remains available as a validated step in that order rather than as an unvalidated escape hatch: whatever it names must still satisfy the target's descriptor before it is used.",
+        "",
+        "One declared target has a discoverable linker. The others record an undiscovered result, and an undiscovered linker may be reported but never used, so a target with no cross linker cannot slip into a link plan. That constraint is what keeps the declared supported target set narrow.",
+        "",
+        "Phase 18 plans the invocation and Phase 9G executes it. A descriptor naming Phase 18 as its invocation owner is rejected, because that would take artifact ownership the earlier phase already holds, and the invocation may use only the declared argument vocabulary.",
+        "",
+    ]
+
+
 def phase18_target_package_summary_lines(registry):
     authority = registry["phase18_target_package_selection"]
     selections = authority["package_selections"]
@@ -11156,6 +11179,7 @@ def render(registry):
         *phase18_relocation_summary_lines(registry),
         *phase18_target_abi_summary_lines(registry),
         *phase18_target_package_summary_lines(registry),
+        *phase18_linker_policy_summary_lines(registry),
         "## Registry entries", "",
         "| ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |",
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
