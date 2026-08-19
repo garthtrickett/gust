@@ -450,3 +450,36 @@ func mir_serialize_target_diagnostic_request(diagnostic: target.MirTargetDiagnos
 func mir_target_diagnostic_mir_to_c_witness(diagnostic: target.MirTargetDiagnostic[ctx], ctx: &Arena) str {
     return mir_target_diagnostic_body(diagnostic, mir_target_diagnostic_witness_format(), ctx);
 }
+
+func mir_object_inspection_request_format() str { return "gust.compiler_object_inspection.v1"; }
+func mir_object_inspection_witness_format() str { return "gust.object_inspection_witness.v1"; }
+
+func mir_object_inspection_body(observation: target.MirObjectObservation[ctx], header: str, ctx: &Arena) str {
+    mut validation := target.mir_object_observation_validate(observation, ctx);
+    if validation.valid == 0 {
+        mut invalid := "format: invalid\nreason: ";
+        invalid = std.Concat(invalid, validation.reason_code);
+        invalid = std.Concat(invalid, "\n");
+        return std.Clone(ctx, invalid);
+    }
+    mut output := "format: ";
+    output = std.Concat(output, header);
+    output = std.Concat(output, "\nauthority: compiler/mir_target_authority.gst\n");
+    mut row := "observation:";
+    row = mir_target_append(row, "symbol", observation.symbol_name, ctx);
+    row = mir_target_append(row, "binding", observation.binding, ctx);
+    row = mir_target_append(row, "section", observation.section_kind, ctx);
+    row = mir_target_append(row, "relocation", observation.relocation_kind, ctx);
+    row = mir_target_append(row, "in_plan", std.FormatInt(observation.in_compiler_plan), ctx);
+    output = std.Concat(output, row);
+    output = std.Concat(output, "\n");
+    return std.Clone(ctx, output);
+}
+
+func mir_serialize_object_inspection_request(observation: target.MirObjectObservation[ctx], ctx: &Arena) str {
+    return mir_object_inspection_body(observation, mir_object_inspection_request_format(), ctx);
+}
+
+func mir_object_inspection_mir_to_c_witness(observation: target.MirObjectObservation[ctx], ctx: &Arena) str {
+    return mir_object_inspection_body(observation, mir_object_inspection_witness_format(), ctx);
+}

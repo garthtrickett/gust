@@ -1,0 +1,20 @@
+Patch 18.11 — Symbol and Relocation Inspection Evidence
+
+symbol_fields	4
+relocation_fields	3
+comparison_sources	3
+rejection_classes	7
+
+role	inspection observes and compares but never decides	inspection role is frozen	Level 1
+role	inspection never supplies a fact the compiler did not produce	authority ban is frozen	Level 1
+source	the symbol comparison source exists in the registry	source resolution against Phase 17 symbol authority	Level 1
+source	the relocation comparison source exists in the registry	source resolution against the Patch 18.4 model	Level 1
+source	the binding comparison source exists in the registry	source resolution against the Patch 18.3 descriptor	Level 1
+source	there are symbol bindings to compare against	non-empty binding vocabulary	Level 1
+source	there are section kinds to compare against	non-empty section vocabulary	Level 1
+source	there are relocation kinds to compare against	non-empty relocation kind set	Level 1
+field	every inspected symbol field is named	non-empty symbol field list	Level 1
+field	every inspected relocation field is named	non-empty relocation field list	Level 1
+disagreement	an object disagreeing with the compiler plan is rejected	disagreement policy is frozen	Level 1
+stage	inspection runs after emission and before linker invocation	validation stage is frozen	Level 1
+rejection	the rejection class inventory is complete	seven required rejection classes	Level 1

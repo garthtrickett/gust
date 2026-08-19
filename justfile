@@ -190,6 +190,8 @@ guard-pr-fast-ci-surface:
       'just guard-cranelift-phase18-cross-compilation-contract'
       'Phase 18 unsupported target diagnostics'
       'just guard-cranelift-phase18-target-diagnostic-contract'
+      'Phase 18 symbol and relocation inspection'
+      'just guard-cranelift-phase18-object-inspection-contract'
       'Phase 17 cross-feature runtime composition'
       'just guard-cranelift-phase17-composition-contract'
       'phase11-family:'
@@ -15859,6 +15861,25 @@ guard-cranelift-phase18-target-diagnostic-parity:
     just guard-cranelift-phase18-target-diagnostic-contract
     bash scripts/phase18_target_diagnostic_parity.sh
 
+guard-cranelift-phase18-object-inspection-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 18.11 object inspection parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase18-object-inspection-parity |
+      grep -F $'guard-cranelift-phase18-object-inspection-parity\t2\t' >/dev/null
+    just guard-cranelift-phase18-object-inspection-contract
+    bash scripts/phase18_object_inspection_parity.sh
+
+guard-cranelift-phase18-object-inspection-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 18.11 symbol and relocation inspection evidence..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase18-object-inspection-contract | grep -F $'guard-cranelift-phase18-object-inspection-contract\t1\t' >/dev/null
+    just guard-cranelift-phase18-relocation-contract
+    python3 scripts/phase18_object_inspection.py --check
+
 guard-cranelift-phase18-target-diagnostic-contract:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -16183,6 +16204,7 @@ guard-cranelift-contract-fast:
     just guard-cranelift-phase18-link-mode-contract
     just guard-cranelift-phase18-cross-compilation-contract
     just guard-cranelift-phase18-target-diagnostic-contract
+    just guard-cranelift-phase18-object-inspection-contract
 
 guard-cranelift-phase17-runtime-authority-contract:
     #!/usr/bin/env bash

@@ -838,3 +838,69 @@ func mir_target_diagnostic_validate(diagnostic: MirTargetDiagnostic[ctx], ctx: &
     result.reason_code = std.Clone(ctx, "ok");
     return result;
 }
+
+// ---- Patch 18.11: symbol and relocation inspection evidence ----
+//
+// Inspection observes and compares; it never decides. An observed symbol,
+// binding, section, or relocation kind must trace to a compiler-produced
+// record. Inspection supplying a fact the compiler did not produce would make
+// the object file a second source of truth.
+
+type MirObjectObservation[ctx] struct {
+    symbol_name: str,
+    binding: str,
+    section_kind: str,
+    relocation_kind: str,
+    in_compiler_plan: int
+}
+
+func mir_object_binding_is_declared(binding: str, ctx: &Arena) int {
+    if std.str_eq(binding, "local") == 1 { return 1; }
+    if std.str_eq(binding, "global") == 1 { return 1; }
+    if std.str_eq(binding, "weak") == 1 { return 1; }
+    return 0;
+}
+
+func mir_object_section_is_declared(section_kind: str, ctx: &Arena) int {
+    if std.str_eq(section_kind, "text") == 1 { return 1; }
+    if std.str_eq(section_kind, "read_only_data") == 1 { return 1; }
+    if std.str_eq(section_kind, "data") == 1 { return 1; }
+    if std.str_eq(section_kind, "zero_initialised_data") == 1 { return 1; }
+    return 0;
+}
+
+func mir_object_observation_validate(observation: MirObjectObservation[ctx], ctx: &Arena) MirTargetValidation[ctx] {
+    mut result: MirTargetValidation[ctx];
+    result.valid = 0;
+
+    // A symbol the compiler never planned would make the object a second
+    // source of truth.
+    if observation.in_compiler_plan == 0 {
+        result.reason_code = std.Clone(ctx, "inspected_symbol_not_in_compiler_plan");
+        return result;
+    }
+    if mir_object_binding_is_declared(observation.binding, ctx) == 0 {
+        result.reason_code = std.Clone(ctx, "inspected_binding_outside_declared_vocabulary");
+        return result;
+    }
+    if mir_object_section_is_declared(observation.section_kind, ctx) == 0 {
+        result.reason_code = std.Clone(ctx, "inspected_section_outside_declared_vocabulary");
+        return result;
+    }
+    // Zero-initialised data holds no bytes, so an observed relocation there is
+    // a real defect rather than a vocabulary question.
+    if std.str_eq(observation.section_kind, "zero_initialised_data") == 1 {
+        result.reason_code = std.Clone(ctx, "inspected_relocation_in_disallowed_section");
+        return result;
+    }
+    if mir_relocation_kind_is_absolute(observation.relocation_kind, ctx) == 0 &&
+       std.str_eq(observation.relocation_kind, "R_X86_64_PC32") == 0 &&
+       std.str_eq(observation.relocation_kind, "R_X86_64_PLT32") == 0 {
+        result.reason_code = std.Clone(ctx, "inspected_relocation_kind_not_in_model");
+        return result;
+    }
+
+    result.valid = 1;
+    result.reason_code = std.Clone(ctx, "ok");
+    return result;
+}

@@ -971,3 +971,77 @@ pub fn lower_target_diagnostic_witness_path(path: &Path) -> Result<String, Box<d
     let request = fs::read_to_string(path)?;
     Ok(lower_target_diagnostic_witness(&request)?)
 }
+
+// ---- Patch 18.11: symbol and relocation inspection evidence ----
+
+const INSPECTION_FORMAT: &str = "gust.compiler_object_inspection.v1";
+const INSPECTION_WITNESS_FORMAT: &str = "gust.object_inspection_witness.v1";
+
+/// The vocabularies inspection compares against, owned by Patch 18.3 and 18.4.
+/// Inspection never extends them; it only confirms or contradicts.
+const DECLARED_BINDINGS: [&str; 3] = ["local", "global", "weak"];
+const DECLARED_SECTIONS: [&str; 4] =
+    ["text", "read_only_data", "data", "zero_initialised_data"];
+const RELOCATION_BEARING_SECTIONS: [&str; 3] = ["text", "read_only_data", "data"];
+
+pub fn lower_object_inspection_witness(request: &str) -> Result<String, TargetError> {
+    let lines: Vec<&str> = request.lines().collect();
+    if header(&lines, "format")? != INSPECTION_FORMAT {
+        return Err(error("object_inspection_malformed", "unknown request format"));
+    }
+    if header(&lines, "authority")? != AUTHORITY {
+        return Err(error("object_inspection_malformed", "unknown target authority"));
+    }
+
+    let observation_line = lines.iter().find(|l| l.starts_with("observation:"))
+        .ok_or_else(|| error("object_inspection_malformed", "request declares no observation"))?;
+    let observation = row(observation_line, "observation:")?;
+
+    // A symbol the compiler never planned would make the object file a second
+    // source of truth. Inspection may contradict the plan, never extend it.
+    let in_plan = match field(&observation, "in_plan")? {
+        "0" => false, "1" => true,
+        other => return Err(error("object_inspection_malformed", format!("in_plan={other}"))),
+    };
+    if !in_plan {
+        return Err(error("inspected_symbol_not_in_compiler_plan",
+            "an observed symbol must trace to a compiler-produced record"));
+    }
+
+    let binding = field(&observation, "binding")?;
+    if !DECLARED_BINDINGS.contains(&binding) {
+        return Err(error("inspected_binding_outside_declared_vocabulary",
+            format!("{binding} is not a declared symbol binding")));
+    }
+    let section = field(&observation, "section")?;
+    if !DECLARED_SECTIONS.contains(&section) {
+        return Err(error("inspected_section_outside_declared_vocabulary",
+            format!("{section} is not a declared section kind")));
+    }
+    // Zero-initialised data holds no bytes, so an observed relocation there is
+    // a real defect rather than a vocabulary question.
+    if !RELOCATION_BEARING_SECTIONS.contains(&section) {
+        return Err(error("inspected_relocation_in_disallowed_section",
+            format!("{section} holds no bytes and can hold no relocation")));
+    }
+
+    let kind = field(&observation, "relocation")?;
+    if !relocation_is_absolute(kind) && kind != "R_X86_64_PC32" && kind != "R_X86_64_PLT32" {
+        return Err(error("inspected_relocation_kind_not_in_model",
+            format!("{kind} is not a kind any declared model permits")));
+    }
+
+    let mut witness = String::new();
+    witness.push_str(&format!("format: {INSPECTION_WITNESS_FORMAT}\n"));
+    witness.push_str(&format!("authority: {AUTHORITY}\n"));
+    witness.push_str(&format!(
+        "observation:symbol={};binding={};section={};relocation={};in_plan=1;\n",
+        field(&observation, "symbol")?, binding, section, kind,
+    ));
+    Ok(witness)
+}
+
+pub fn lower_object_inspection_witness_path(path: &Path) -> Result<String, Box<dyn Error>> {
+    let request = fs::read_to_string(path)?;
+    Ok(lower_object_inspection_witness(&request)?)
+}

@@ -1,0 +1,14 @@
+kind	requirement	evidence	level
+role	inspection observes and compares but never decides	inspection role is frozen	1
+role	inspection never supplies a fact the compiler did not produce	authority ban is frozen	1
+source	the symbol comparison source exists in the registry	source resolution against Phase 17 symbol authority	1
+source	the relocation comparison source exists in the registry	source resolution against the Patch 18.4 model	1
+source	the binding comparison source exists in the registry	source resolution against the Patch 18.3 descriptor	1
+source	there are symbol bindings to compare against	non-empty binding vocabulary	1
+source	there are section kinds to compare against	non-empty section vocabulary	1
+source	there are relocation kinds to compare against	non-empty relocation kind set	1
+field	every inspected symbol field is named	non-empty symbol field list	1
+field	every inspected relocation field is named	non-empty relocation field list	1
+disagreement	an object disagreeing with the compiler plan is rejected	disagreement policy is frozen	1
+stage	inspection runs after emission and before linker invocation	validation stage is frozen	1
+rejection	the rejection class inventory is complete	seven required rejection classes	1

@@ -31,6 +31,7 @@
     "phase17_thread_runtime_authority",
     "phase17_availability_authority",
     "phase17_composition_authority",
+    "phase18_object_inspection",
     "phase18_target_diagnostics",
     "phase18_cross_compilation",
     "phase18_link_mode",
@@ -325,6 +326,9 @@
     },
     "phase17_composition_authority": {
       "$ref": "#/$defs/phase17_composition_authority"
+    },
+    "phase18_object_inspection": {
+      "$ref": "#/$defs/phase18_object_inspection"
     },
     "phase18_target_diagnostics": {
       "$ref": "#/$defs/phase18_target_diagnostics"
@@ -896,6 +900,88 @@
         "participating_authorities": {"type": "array", "minItems": 2, "uniqueItems": true, "items": {"type": "string", "pattern": "^phase17_"}},
         "differential_owner": {"type": "string", "minLength": 1},
         "sentinel_policy": {"enum": ["sentinel_output_preserved_on_failure", "case_cannot_fail_no_output_to_preserve"]}
+      }
+    },
+    "phase18_object_inspection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "status",
+        "authority_owner",
+        "inspection_role",
+        "symbol_fields",
+        "relocation_fields",
+        "symbol_comparison_source",
+        "relocation_comparison_source",
+        "binding_comparison_source",
+        "disagreement_policy",
+        "authority_ban",
+        "validation_stage",
+        "rejection_classes",
+        "next_patch"
+      ],
+      "properties": {
+        "version": {
+          "const": "phase18_object_inspection_v1"
+        },
+        "status": {
+          "const": "ready_for_patch18_12"
+        },
+        "authority_owner": {
+          "const": "compiler/mir_target_authority.gst"
+        },
+        "inspection_role": {
+          "const": "observe_and_compare_never_decide"
+        },
+        "symbol_fields": {
+          "type": "array",
+          "minItems": 4,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "relocation_fields": {
+          "type": "array",
+          "minItems": 3,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "symbol_comparison_source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "relocation_comparison_source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "binding_comparison_source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "disagreement_policy": {
+          "const": "an_object_whose_inspected_contents_disagree_with_the_compiler_produced_plan_is_rejected"
+        },
+        "authority_ban": {
+          "const": "inspection_never_supplies_a_symbol_binding_relocation_kind_or_section_that_the_compiler_did_not_produce"
+        },
+        "validation_stage": {
+          "const": "after_object_emission_and_before_linker_invocation"
+        },
+        "rejection_classes": {
+          "type": "array",
+          "minItems": 7,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "next_patch": {
+          "const": "18.12"
+        }
       }
     },
     "phase18_target_diagnostics": {

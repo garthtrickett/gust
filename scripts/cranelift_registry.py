@@ -37,6 +37,7 @@ TOP_FIELDS = {
     "phase17_thread_runtime_authority",
     "phase17_availability_authority",
     "phase17_composition_authority",
+    "phase18_object_inspection",
     "phase18_target_diagnostics",
     "phase18_cross_compilation",
     "phase18_link_mode",
@@ -10862,6 +10863,30 @@ def phase17_availability_authority_summary_lines(registry):
     ]
 
 
+def phase18_object_inspection_summary_lines(registry):
+    authority = registry["phase18_object_inspection"]
+    object_format = registry["phase18_object_format"]
+    kinds = {kind for model in registry["phase18_relocation_model"]["relocation_models"]
+             for kind in model["relocation_kinds"]}
+    return [
+        "## Phase 18 symbol and relocation inspection",
+        "",
+        f"- Authority version: `{authority['version']}`",
+        f"- Status: `{authority['status']}`",
+        f"- Inspected symbol fields: `{len(authority['symbol_fields'])}`",
+        f"- Inspected relocation fields: `{len(authority['relocation_fields'])}`",
+        f"- Bindings, sections, and relocation kinds available to compare against: "
+        f"`{len(object_format['symbol_bindings'])}`, `{len(object_format['section_kinds'])}`, `{len(kinds)}`",
+        "",
+        "Patch 18.11 makes emitted objects inspectable so target evidence is observed rather than assumed. Inspection observes and compares; it never decides. An observed symbol, binding, section, or relocation kind must trace to a compiler-produced record, and inspection supplying a fact the compiler did not produce would make the object file a second source of truth.",
+        "",
+        "Each comparison source must be an authority that exists and carries content. A source naming nothing, or a vocabulary that is empty, would let every comparison trivially succeed while still appearing to pass, which is the subtler way inspection becomes decorative. Both are rejections.",
+        "",
+        "Inspection may contradict the compiler plan, which is its purpose, but it may never extend it. An object whose inspected contents disagree with the plan is rejected, and inspection runs after object emission and before linker invocation so a disagreement is caught before anything links.",
+        "",
+    ]
+
+
 def phase18_target_diagnostics_summary_lines(registry):
     authority = registry["phase18_target_diagnostics"]
     diagnostics = authority["target_diagnostics"]
@@ -11254,6 +11279,7 @@ def render(registry):
         *phase18_link_mode_summary_lines(registry),
         *phase18_cross_compilation_summary_lines(registry),
         *phase18_target_diagnostics_summary_lines(registry),
+        *phase18_object_inspection_summary_lines(registry),
         "## Registry entries", "",
         "| ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |",
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
