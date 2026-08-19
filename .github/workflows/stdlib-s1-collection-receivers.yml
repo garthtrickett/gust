@@ -1,0 +1,36 @@
+name: Stdlib S1 Collection Receivers
+
+on:
+  pull_request:
+    paths:
+      - 'compiler/typechecker.gst'
+      - 'compiler/codegen.gst'
+      - 'tests/test_hashmap_reference_receiver.gst'
+      - 'tests/test_hashmap_reference_use_after_move_rejected.gst'
+      - '.github/workflows/stdlib-s1-collection-receivers.yml'
+      - 'TASK_STDLIB.md'
+  push:
+    branches: [main]
+    paths:
+      - 'compiler/typechecker.gst'
+      - 'compiler/codegen.gst'
+      - '.github/workflows/stdlib-s1-collection-receivers.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  collection-receivers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: guard-stdlib-s1-collection-receivers
+        run: just guard-stdlib-s1-collection-receivers
