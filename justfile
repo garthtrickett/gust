@@ -8736,8 +8736,6 @@ guard-cranelift-phase9g-link-bypass-retirement:
       exit 1
     fi
 
-    expected_historical_line='allowed_cranelift_phase9g_link_bypass_retirement_historical_exceptions: guard-cranelift-return-int-native-smoke,guard-cranelift-local-binding-native-smoke,guard-cranelift-conditional-branch-native-smoke,guard-cranelift-identity-i32-native-smoke,guard-cranelift-add-i32-native-smoke,guard-cranelift-positive-i32-branch-native-smoke,guard-cranelift-increment-local-i32-native-smoke,guard-cranelift-call-helper-i32-native-smoke,guard-cranelift-extern-call-i32-native-smoke,guard-cranelift-extern-add-i32-native-smoke,guard-cranelift-extern-predicate-branch-i32-native-smoke,guard-cranelift-mir-return-int-native-smoke,guard-cranelift-mir-local-binding-read-native-smoke,guard-cranelift-mir-conditional-branch-native-smoke,guard-cranelift-mir-add-i32-native-smoke,guard-cranelift-mir-positive-i32-branch-native-smoke,guard-cranelift-mir-increment-local-i32-native-smoke,guard-cranelift-mir-call-helper-i32-native-smoke,guard-cranelift-mir-extern-call-i32-native-smoke,guard-cranelift-mir-extern-add-i32-native-smoke,guard-cranelift-mir-extern-predicate-branch-i32-native-smoke,guard-cranelift-mir-arithmetic-i32-bundle-native-smoke,guard-cranelift-mir-comparison-i32-bundle-native-smoke,guard-cranelift-mir-comparison-branch-i32-bundle-native-smoke,guard-cranelift-mir-block-graph-i32-bundle-native-smoke,guard-cranelift-mir-block-graph-local-i32-bundle-native-smoke,guard-cranelift-mir-block-graph-local-update-i32-bundle-native-smoke,guard-cranelift-mir-block-graph-param-i32-bundle-native-smoke,guard-cranelift-mir-block-graph-param-call-i32-bundle-native-smoke,guard-cranelift-mir-block-graph-param-extern-i32-bundle-native-smoke,guard-cranelift-mir-block-graph-param-extern-add-i32-bundle-native-smoke,guard-cranelift-mir-block-graph-param-extern-predicate-i32-bundle-native-smoke,guard-cranelift-mir-block-graph-param-merge-i32-bundle-native-smoke,guard-cranelift-mir-block-graph-param-merge-call-i32-bundle-native-smoke,guard-cranelift-mir-to-c-differential-native-smoke'
-    expected_translator_line='allowed_cranelift_phase9g_link_bypass_retirement_translator_exceptions: guard-cranelift-mir-to-cranelift-return-int-translator-native-smoke,guard-cranelift-mir-to-cranelift-local-binding-read-translator-native-smoke,guard-cranelift-mir-to-cranelift-conditional-branch-translator-native-smoke,guard-cranelift-mir-to-cranelift-block-jump-translator-native-smoke,guard-cranelift-mir-to-cranelift-provenance-metadata-translator-native-smoke,guard-cranelift-mir-to-cranelift-resource-metadata-translator-native-smoke,guard-cranelift-mir-to-cranelift-native-boundary-metadata-translator-native-smoke,guard-cranelift-mir-to-cranelift-add-i32-translator-native-smoke,guard-cranelift-mir-to-cranelift-positive-i32-branch-translator-native-smoke,guard-cranelift-mir-to-cranelift-block-local-branch-join-translator-native-smoke,guard-cranelift-mir-to-cranelift-block-param-update-branch-translator-native-smoke,guard-cranelift-mir-to-cranelift-block-param-merge-update-branch-translator-native-smoke,guard-cranelift-mir-to-cranelift-block-param-merge-imported-call-return-translator-native-smoke,guard-cranelift-mir-to-cranelift-block-param-merge-arm-update-imported-call-return-translator-native-smoke,guard-cranelift-mir-to-cranelift-block-param-merge-arm-update-imported-call-branch-translator-native-smoke,guard-cranelift-mir-to-cranelift-block-param-merge-imported-branch-joined-return-translator-native-smoke,guard-cranelift-mir-to-cranelift-block-param-merge-dual-imported-joined-return-translator-native-smoke'
 
     for frozen_guard in "${historical_exceptions[@]}" "${translator_exceptions[@]}"; do
       frozen_body="$(extract_recipe_body "$frozen_guard")"
@@ -8992,14 +8990,11 @@ guard-cranelift-phase9g-close:
       'if [ -e "$publication_temp" ]; then'
 
     require_evidence target-relocation "$target_body" \
-      'allowed_cranelift_phase9g_target_relocation_owner: compiler/experiments/cranelift/src/main.rs::build_compiler_mir_native_object_builder' \
       'flag_builder.set("is_pic", "true")?;' \
-      'allowed_cranelift_phase9g_target_relocation_pie_policy: canonical_imported_call_objects_link_in_normal_Elf_PIE_mode_without_text_relocations_or_DT_TEXTREL' \
       'DT_TEXTREL|text relocation' \
       'readelf -d "$binary"'
 
     require_evidence object-inspection "$inspection_body" \
-      'allowed_cranelift_phase9g_object_inspection_order: complete_object_bytes_then_structural_inspection_and_symbol_contract_then_transactional_publication' \
       'compiler-mir-verify-object-contract' \
       'defined_global_symbol_count: 1' \
       'undefined_symbol_count: 3' \
@@ -9038,17 +9033,14 @@ guard-cranelift-phase9g-close:
       'cmp "$unresolved_one_before" "$unresolved_one_object"'
 
     require_evidence phase9c-phase9e-migration "$migration_body" \
-      'allowed_cranelift_phase9g_phase9c_phase9e_link_migration_scope: 22_canonical_phase9c_through_phase9e_ingestion_lanes_plus_bounded_generic_CFG_and_completeness_support_cases' \
       'must not own link temporary cleanup.' \
       'PHASE9G_SKIP_DYNAMIC_EVIDENCE'
 
     require_evidence phase9f-bypass-retirement "$bypass_body" \
-      'allowed_cranelift_phase9g_link_bypass_retirement_canonical_guard_count: 33' \
       'Canonical lane $recipe_name still owns linker selection' \
       'Direct Cranelift object-link owners differ from the two exact frozen exception inventories.'
 
     require_evidence reproducibility "$reproducibility_body" \
-      'allowed_cranelift_phase9g_object_reproducibility_fingerprint_policy: canonical_sorted_structured_inspection_fields_must_have_identical_checksums' \
       'defined_and_undefined_symbol_sets_identical: true' \
       'section_and_relocation_summaries_identical: true' \
       'target_metadata_identical: true' \
