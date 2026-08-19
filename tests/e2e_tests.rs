@@ -3905,7 +3905,8 @@ fn test_e2e_c_std_clone_str() {
     c_program.push_str(gust_lexer::codegen_runtime::ARENA_RUNTIME);
     c_program.push_str(gust_lexer::codegen_runtime::SCRATCH_RUNTIME);
     c_program.push_str(gust_lexer::codegen_runtime::COLLECTIONS_RUNTIME);
-    c_program.push_str(gust_lexer::codegen_runtime::MOCK_PAYLOAD_RUNTIME);
+    c_program.push_str(gust_lexer::codegen_runtime::HOST_IO_RUNTIME);
+    c_program.push_str(gust_lexer::codegen_runtime::STRINGS_RUNTIME);
 
     c_program.push_str(
         r#"
@@ -5225,7 +5226,8 @@ fn test_self_hosted_compiler_full_bootstrap() {
             full_c_output_v3.push_str(gust_lexer::codegen_runtime::ARENA_RUNTIME);
             full_c_output_v3.push_str(gust_lexer::codegen_runtime::SCRATCH_RUNTIME);
             full_c_output_v3.push_str(gust_lexer::codegen_runtime::COLLECTIONS_RUNTIME);
-            full_c_output_v3.push_str(gust_lexer::codegen_runtime::MOCK_PAYLOAD_RUNTIME);
+            full_c_output_v3.push_str(gust_lexer::codegen_runtime::HOST_IO_RUNTIME);
+            full_c_output_v3.push_str(gust_lexer::codegen_runtime::STRINGS_RUNTIME);
             full_c_output_v3.push_str(gust_lexer::codegen_runtime::FILE_IO_RUNTIME);
             full_c_output_v3.push_str(&c_output_v3);
 
@@ -5283,7 +5285,8 @@ fn test_self_hosted_compiler_full_bootstrap() {
                     full_c_output_v4.push_str(gust_lexer::codegen_runtime::ARENA_RUNTIME);
                     full_c_output_v4.push_str(gust_lexer::codegen_runtime::SCRATCH_RUNTIME);
                     full_c_output_v4.push_str(gust_lexer::codegen_runtime::COLLECTIONS_RUNTIME);
-                    full_c_output_v4.push_str(gust_lexer::codegen_runtime::MOCK_PAYLOAD_RUNTIME);
+                    full_c_output_v4.push_str(gust_lexer::codegen_runtime::HOST_IO_RUNTIME);
+                    full_c_output_v4.push_str(gust_lexer::codegen_runtime::STRINGS_RUNTIME);
                     full_c_output_v4.push_str(gust_lexer::codegen_runtime::FILE_IO_RUNTIME);
                     full_c_output_v4.push_str(&c_output_v4);
 

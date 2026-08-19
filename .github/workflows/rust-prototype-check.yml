@@ -1,0 +1,54 @@
+name: Rust Prototype Check
+
+# The root `gust_lexer` crate is the Rust prototype compiler in src/. Nothing in
+# the Makefile or the bootstrap chain compiles it, so between 2026-06-22 and
+# 2026-08-19 it did not compile at all and nothing reported it: a duplicated
+# block left an unclosed delimiter, a format! call lost its argument, and Phase
+# 17 renamed a runtime file out from under an include_str!. This job exists so
+# that cannot happen silently again.
+
+on:
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'tests/**.rs'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - '.github/workflows/rust-prototype-check.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'tests/**.rs'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  cargo-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache cargo registry and build outputs
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            target
+          key: cargo-root-${{ runner.os }}-${{ hashFiles('Cargo.lock') }}
+          restore-keys: |
+            cargo-root-${{ runner.os }}-
+
+      - name: cargo check
+        run: cargo check --all-targets --locked

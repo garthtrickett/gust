@@ -2894,9 +2894,6 @@ impl TypeChecker {
                 if let Type::Struct(struct_name, _brand) = &left_type {
                     let clean_struct_name = if let Some(pos) = struct_name.find("__") {
                         let after_pfx = &struct_name[pos + 2..];
-                if let Type::Struct(struct_name, _brand) = &left_type {
-                    let clean_struct_name = if let Some(pos) = struct_name.find("__") {
-                        let after_pfx = &struct_name[pos + 2..];
                         if after_pfx.starts_with("CastResult_")
                             || after_pfx.starts_with("LookupResult_")
                         {

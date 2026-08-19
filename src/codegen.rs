@@ -1569,7 +1569,7 @@ impl Codegen {
                 if is_cast_val {
                     inner_str
                 } else {
-                    format!("&({})")
+                    format!("&({})", inner_str)
                 }
             }
             Expression::Move(inner, _) => {

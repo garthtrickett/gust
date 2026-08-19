@@ -11,4 +11,6 @@ pub const ARENA_RUNTIME: &str = include_str!("runtime/arena.c");
 
 pub const FILE_IO_RUNTIME: &str = include_str!("runtime/file_io.c");
 
-pub const MOCK_PAYLOAD_RUNTIME: &str = include_str!("runtime/mock_payload.c");
+pub const HOST_IO_RUNTIME: &str = include_str!("runtime/host_io.c");
+
+pub const STRINGS_RUNTIME: &str = include_str!("runtime/strings.c");
