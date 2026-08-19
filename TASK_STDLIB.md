@@ -293,6 +293,34 @@ function without touching a Cranelift-owned file.
 Phase S1 as scoped needs no new `std.*` symbol. The protocol exists so that the
 first patch which does need one already knows the answer.
 
+### CR-6 — The borrow model, or a restatement of it
+
+1. **Intended behaviour:** `&T[ctx]` is a shared immutable borrow; `inout T[ctx]`
+   is exclusive mutation; shared mutable references are rejected. That is what
+   `VISION.md` §26 and Consolidated Rule 25 describe.
+2. **Existing limitation:** one reference form exists and it carries no
+   mutability. `inout` is not a keyword in `compiler/lexer.gst`,
+   `compiler/parser*.gst`, `src/lexer.rs`, or `src/parser.rs`. `&T` resolves to a
+   `Reference` type; writing through it with `(*r).field = value` is permitted
+   with no mutability check and reaches the caller's value. Two `&T` arguments
+   may alias one value and both write through it; fixtures doing both compile and
+   run.
+3. **Smallest generic change:** restrict mutation through references, by
+   reintroducing `inout` or another mechanism, and enforce non-aliasing.
+4. **Affected:** lexer, parser, and typechecker in both compilers; every `&T`
+   signature in `compiler/*.gst` and `tests/*.gst`; the bootstrap seed.
+5. **MIR-to-C:** yes, if mutability becomes a type property.
+6. **Cranelift:** yes, for the same reason.
+7. **Bootstrap:** yes.
+
+**Resolved 2026-08-19 as a documentation correction.** `VISION.md` §26 described
+a two-form borrow model that was never implemented; it now describes the single
+mutable reference form that exists, and §30 and Consolidated Rule 25 are
+corrected to match. Enforcement is deferred and unscheduled — it is a containment
+property, so taking it up later needs a design decision and real enforcement, not
+a wording change. Nothing in the Stdlib lane waits on it, and S1.3 shipped
+without it.
+
 ### CR-5 — Generic resource semantics sufficient for a scoped guard
 
 1. **Intended behaviour:** `guard := mutex.Lock()` yields a move-only value that
@@ -500,17 +528,24 @@ receivers.
 
 **Steps**
 
-- Normalize the receiver before method lookup so an immutable reference resolves
-  read methods and a mutable receiver resolves read and mutation methods.
+- Normalize the receiver before method lookup so a reference receiver resolves the
+  same methods a value receiver does.
 - Cover `Get`, `Contains`, `Keys`, `Insert`, `Set`, `Remove`, `len`.
+- **Scope correction, 2026-08-19.** This patch originally required an immutable
+  reference to resolve read methods and a mutable one to resolve read and
+  mutation methods. That distinction does not exist: `inout` is not a keyword in
+  either compiler, and every `&T` parameter other than `&Arena` is registered as
+  mutable. See CR-6 and `VISION.md` §26. The patch therefore delivers
+  resolution only, and adds no immutability guarantee.
 - Require that the resolved canonical type and canonical MIR are identical to
   the value-receiver form. If they are not, stop: this becomes a coordination
   request.
 - Preserve brand identity through the reference: no erasure, no substitution, no
   invented brand relation, no wrong-arena insertion.
-- Add compile-fail tests: mutation through an immutable receiver, wrong arena
-  brand, use after move, use of a moved map through a reference, value inserted
-  from an incompatible region.
+- Add compile-fail tests: wrong arena brand, use after move, use of a moved map
+  through a reference, value inserted from an incompatible region. Mutation
+  through an immutable receiver is **not** testable — there is no immutable
+  receiver, and enforcement is deferred (`VISION.md` §26).
 - Update `GEMINI.md` §D, which currently defers this exact migration.
 - Add `guard-stdlib-s1-collection-receivers`.
 
@@ -520,10 +555,11 @@ Level 1, with a Level 2 parity family.
 
 **Exit Gate**
 
-A helper taking a map by reference can call read methods, and by mutable
-receiver can mutate, without copying the container. The value-receiver and
-reference-receiver forms produce identical canonical types and canonical MIR.
-Brand misuse is still rejected.
+A helper taking a map by reference can call the same methods a value receiver
+can, without copying the container. The value-receiver and reference-receiver
+forms produce identical canonical types and canonical MIR. Brand misuse is still
+rejected. Mutability is unchanged: `&T` was already mutable, so this grants no
+new mutation capability — it makes an existing one reachable.
 
 ### Patch S1.4 — Branded Collection Type Consistency
 

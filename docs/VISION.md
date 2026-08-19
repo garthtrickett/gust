@@ -746,15 +746,15 @@ Request-branded references cannot enter jobs, durable messages, longer-lived cac
 
 ## 26. Borrows
 
-Shared immutable borrowing uses `&T[ctx]`. Exclusive mutation retains the `inout T[ctx]` model.
+Gust has one reference form, `&T[ctx]`. It is context-branded, non-null, and lexical: a borrow cannot outlive its context.
 
-Gust should not introduce `&mut T[ctx]` while `inout` serves the same purpose.
+**It does not carry mutability.** Writing through a reference — `(*r).field = value` — is permitted, and the write reaches the caller's value. Two `&T[ctx]` arguments may alias the same value and both write through it. There is no `inout`, no `&mut T[ctx]`, and no aliasing analysis.
 
-Borrows are lexical and cannot outlive their context.
+This section previously described a two-form model — `&T[ctx]` as a shared immutable borrow, `inout T[ctx]` as exclusive mutation, shared mutable references prohibited — as though it were current. None of it was implemented, and it is corrected here rather than left as a claim the compiler does not make. `tests/test_shared_mutable_aliasing_observed.gst` pins the actual behaviour.
 
 Public APIs must state context brands explicitly. There is no hidden lifetime inference across public boundaries.
 
-Shared mutable references are prohibited.
+**Deferred.** Restricting mutation through references, whether by reintroducing `inout` or by another mechanism, is future work and is not scheduled. It is a containment property (§0.4), so when it is taken up it needs a design decision and enforcement, not just a wording change. Until then, do not cite `&T[ctx]` as an immutability guarantee anywhere — in documentation, in review, or in a safety argument.
 
 ## 27. Shared ownership (OD-3)
 
@@ -799,9 +799,9 @@ Cleanup diagnostics may be recorded as suppressed information, but cleanup must 
 
 ## 30. Ownership across tasks and channels
 
-Structured tasks may receive owned values, or immutable borrows valid for the complete task scope.
+Structured tasks may receive owned values, or borrows valid for the complete task scope.
 
-Mutable borrows cannot be shared across tasks.
+Borrows should not be shared across tasks. This is a design rule, not an enforced one: references carry no mutability and there is no aliasing analysis to enforce it against (§26).
 
 Channels transfer ownership of sent values.
 
@@ -1668,7 +1668,7 @@ Not mutually exclusive. The likely answer is a small core of (3) with (1) as the
 22. Safe references are non-null and context-branded.
 23. Gust distinguishes copy values, views, owned values, and linear resources.
 24. `str` and slices are immutable context-bound views.
-25. Shared borrowing uses `&T[ctx]`; exclusive mutation uses `inout T[ctx]`.
+25. References are `&T[ctx]`: context-branded, non-null, lexical, and mutable. Restricting mutation through them is deferred (§26).
 26. Linear-resource opt-in is explicit and propagates through containing types.
 27. `defer` is LIFO; automatic destruction is reverse declaration order.
 28. Destructors are infallible; fallible completion is explicit.
