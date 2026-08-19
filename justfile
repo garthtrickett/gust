@@ -178,6 +178,8 @@ guard-pr-fast-ci-surface:
       'just guard-cranelift-phase18-object-format-contract'
       'Phase 18 relocation model and validation'
       'just guard-cranelift-phase18-relocation-contract'
+      'Phase 18 target-specific ABI selection'
+      'just guard-cranelift-phase18-target-abi-contract'
       'Phase 17 cross-feature runtime composition'
       'just guard-cranelift-phase17-composition-contract'
       'phase11-family:'
@@ -15862,6 +15864,25 @@ guard-cranelift-phase18-object-format-parity:
     just guard-cranelift-phase18-object-format-contract
     bash scripts/phase18_object_format_parity.sh
 
+guard-cranelift-phase18-target-abi-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 18.5 target ABI selection parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase18-target-abi-parity |
+      grep -F $'guard-cranelift-phase18-target-abi-parity\t2\t' >/dev/null
+    just guard-cranelift-phase18-target-abi-contract
+    bash scripts/phase18_target_abi_parity.sh
+
+guard-cranelift-phase18-target-abi-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 18.5 target-specific ABI selection..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase18-target-abi-contract | grep -F $'guard-cranelift-phase18-target-abi-contract\t1\t' >/dev/null
+    just guard-cranelift-phase18-target-authority-contract
+    python3 scripts/phase18_target_abi.py --check
+
 guard-cranelift-phase18-relocation-contract:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -16126,6 +16147,7 @@ guard-cranelift-contract-fast:
     just guard-cranelift-phase18-target-support-contract
     just guard-cranelift-phase18-object-format-contract
     just guard-cranelift-phase18-relocation-contract
+    just guard-cranelift-phase18-target-abi-contract
 
 guard-cranelift-phase17-runtime-authority-contract:
     #!/usr/bin/env bash

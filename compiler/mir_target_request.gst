@@ -247,3 +247,36 @@ func mir_serialize_relocation_request(model: target.MirRelocationModel[ctx], rel
 func mir_relocation_mir_to_c_witness(model: target.MirRelocationModel[ctx], relocation: target.MirRelocation[ctx], ctx: &Arena) str {
     return mir_relocation_body(model, relocation, mir_relocation_witness_format(), ctx);
 }
+
+func mir_target_abi_request_format() str { return "gust.compiler_target_abi.v1"; }
+func mir_target_abi_witness_format() str { return "gust.target_abi_witness.v1"; }
+
+func mir_target_abi_body(selection: target.MirTargetAbiSelection[ctx], accepted: str, header: str, ctx: &Arena) str {
+    mut validation := target.mir_target_abi_selection_validate(selection, accepted, ctx);
+    if validation.valid == 0 {
+        mut invalid := "format: invalid\nreason: ";
+        invalid = std.Concat(invalid, validation.reason_code);
+        invalid = std.Concat(invalid, "\n");
+        return std.Clone(ctx, invalid);
+    }
+    mut output := "format: ";
+    output = std.Concat(output, header);
+    output = std.Concat(output, "\nauthority: compiler/mir_target_authority.gst\n");
+    mut row := "target_abi:";
+    row = mir_target_append(row, "target_id", selection.target_id, ctx);
+    row = mir_target_append(row, "abi_id", selection.selected_abi_id, ctx);
+    row = mir_target_append(row, "owner", selection.owning_authority, ctx);
+    row = mir_target_append(row, "compatibility", selection.compatibility_decision, ctx);
+    row = mir_target_append(row, "platform_convention", selection.platform_convention_status, ctx);
+    output = std.Concat(output, row);
+    output = std.Concat(output, "\n");
+    return std.Clone(ctx, output);
+}
+
+func mir_serialize_target_abi_request(selection: target.MirTargetAbiSelection[ctx], accepted: str, ctx: &Arena) str {
+    return mir_target_abi_body(selection, accepted, mir_target_abi_request_format(), ctx);
+}
+
+func mir_target_abi_mir_to_c_witness(selection: target.MirTargetAbiSelection[ctx], accepted: str, ctx: &Arena) str {
+    return mir_target_abi_body(selection, accepted, mir_target_abi_witness_format(), ctx);
+}

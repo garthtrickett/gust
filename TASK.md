@@ -32,7 +32,7 @@ is activated separately.
 - [x] Patch 18.2 — Complete Target Support Tuple and Support Decisions — DONE
 - [x] Patch 18.3 — Object Format, Section, and Symbol Binding Authority — DONE
 - [x] Patch 18.4 — Relocation Model and Validation — DONE
-- [ ] Patch 18.5 — Target-Specific ABI Selection
+- [x] Patch 18.5 — Target-Specific ABI Selection — DONE
 - [ ] Patch 18.6 — Target-Specific Runtime Package Selection
 - [ ] Patch 18.7 — Linker Discovery, Selection, and Invocation Policy
 - [ ] Patch 18.8 — Static and Dynamic Runtime Linking Modes

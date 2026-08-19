@@ -37,6 +37,7 @@ TOP_FIELDS = {
     "phase17_thread_runtime_authority",
     "phase17_availability_authority",
     "phase17_composition_authority",
+    "phase18_target_abi_selection",
     "phase18_relocation_model",
     "phase18_object_format",
     "phase18_target_support",
@@ -10856,6 +10857,27 @@ def phase17_availability_authority_summary_lines(registry):
     ]
 
 
+def phase18_target_abi_summary_lines(registry):
+    authority = registry["phase18_target_abi_selection"]
+    selections = authority["abi_selections"]
+    return [
+        "## Phase 18 target-specific ABI selection",
+        "",
+        f"- Authority version: `{authority['version']}`",
+        f"- Status: `{authority['status']}`",
+        f"- ABI selections: `{len(selections)}`",
+        f"- Available ABI identities: `{len(authority['available_abi_ids'])}`",
+        f"- Consumed authority: `{authority['consumed_authority']}`",
+        "",
+        "Patch 18.5 selects an existing Phase 16 ABI for each declared target. Phase 18 selects but never defines: it does not introduce placement, classification, or transport rules, and it may only choose an identity the Phase 16 authority already accepts.",
+        "",
+        "The consumed authority is the module that rejects a calling convention it does not accept, rather than one that merely carries the field. The guard opens that module and requires both the declared enforcement evidence and every available identity to appear in it, so a selection cannot name an owner that could not refuse a wrong answer.",
+        "",
+        "Platform-specific calling conventions remain deferred. Phase 16 accepts exactly one convention today, so selecting a platform convention would be Phase 18 defining ABI semantics, and every target records that status explicitly rather than leaving the gap implicit.",
+        "",
+    ]
+
+
 def phase18_relocation_summary_lines(registry):
     authority = registry["phase18_relocation_model"]
     models = authority["relocation_models"]
@@ -11109,6 +11131,7 @@ def render(registry):
         *phase18_target_support_summary_lines(registry),
         *phase18_object_format_summary_lines(registry),
         *phase18_relocation_summary_lines(registry),
+        *phase18_target_abi_summary_lines(registry),
         "## Registry entries", "",
         "| ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |",
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
