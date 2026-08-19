@@ -1,5 +1,13 @@
 # Step 5.2 Resource Semantics Design Checkpoint
 
+> **Status: historical, unverified.** This document predates the closure of
+> Phase 15 (`TASK.md`). Its claims about what the compiler can represent have
+> not been re-checked since. Do not treat it as a current statement of compiler
+> capability. Verify against the compiler before relying on any item here.
+>
+> `STEP52_RESOURCE_SEMANTICS.md` is scheduled for re-verification by Patch S1.7
+> of `TASK_STDLIB.md`.
+
 This checkpoint freezes the semantic design direction for generalized linear resources after the Step 5.2 report-only closure. It is not an enforcement patch and must not add new `report_step52_*` targets.
 
 ## Goal
