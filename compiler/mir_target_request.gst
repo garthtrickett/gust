@@ -383,3 +383,37 @@ func mir_serialize_link_mode_request(decision: target.MirLinkModeDecision[ctx], 
 func mir_link_mode_mir_to_c_witness(decision: target.MirLinkModeDecision[ctx], ctx: &Arena) str {
     return mir_link_mode_body(decision, mir_link_mode_witness_format(), ctx);
 }
+
+func mir_cross_pair_request_format() str { return "gust.compiler_cross_pair.v1"; }
+func mir_cross_pair_witness_format() str { return "gust.cross_pair_witness.v1"; }
+
+func mir_cross_pair_body(pair: target.MirHostTargetPair[ctx], header: str, ctx: &Arena) str {
+    mut validation := target.mir_host_target_pair_validate(pair, ctx);
+    if validation.valid == 0 {
+        mut invalid := "format: invalid\nreason: ";
+        invalid = std.Concat(invalid, validation.reason_code);
+        invalid = std.Concat(invalid, "\n");
+        return std.Clone(ctx, invalid);
+    }
+    mut output := "format: ";
+    output = std.Concat(output, header);
+    output = std.Concat(output, "\nauthority: compiler/mir_target_authority.gst\n");
+    mut row := "cross_pair:";
+    row = mir_target_append(row, "host", pair.host_triple, ctx);
+    row = mir_target_append(row, "target", pair.target_triple, ctx);
+    row = mir_target_append(row, "classification", target.mir_cross_classification(pair.host_triple, pair.target_triple, ctx), ctx);
+    row = mir_target_append(row, "linker_discovered", std.FormatInt(pair.linker_discovered), ctx);
+    row = mir_target_append(row, "declared", std.FormatInt(pair.declared), ctx);
+    row = mir_target_append(row, "blocking_reason", pair.blocking_reason, ctx);
+    output = std.Concat(output, row);
+    output = std.Concat(output, "\n");
+    return std.Clone(ctx, output);
+}
+
+func mir_serialize_cross_pair_request(pair: target.MirHostTargetPair[ctx], ctx: &Arena) str {
+    return mir_cross_pair_body(pair, mir_cross_pair_request_format(), ctx);
+}
+
+func mir_cross_pair_mir_to_c_witness(pair: target.MirHostTargetPair[ctx], ctx: &Arena) str {
+    return mir_cross_pair_body(pair, mir_cross_pair_witness_format(), ctx);
+}

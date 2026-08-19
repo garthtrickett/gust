@@ -37,6 +37,7 @@ TOP_FIELDS = {
     "phase17_thread_runtime_authority",
     "phase17_availability_authority",
     "phase17_composition_authority",
+    "phase18_cross_compilation",
     "phase18_link_mode",
     "phase18_linker_policy",
     "phase18_target_package_selection",
@@ -10860,6 +10861,29 @@ def phase17_availability_authority_summary_lines(registry):
     ]
 
 
+def phase18_cross_compilation_summary_lines(registry):
+    authority = registry["phase18_cross_compilation"]
+    pairs = authority["host_target_pairs"]
+    cross = sum(row["classification"] == "cross" for row in pairs)
+    return [
+        "## Phase 18 cross-compilation policy and host/target separation",
+        "",
+        f"- Authority version: `{authority['version']}`",
+        f"- Status: `{authority['status']}`",
+        f"- Host triple: `{authority['host_triple']}`",
+        f"- Host target pairs: `{len(pairs)}` ({cross} cross candidates)",
+        f"- Declared cross pairs: `{len(authority['declared_cross_pairs'])}`",
+        f"- Host leakage bans: `{len(authority['host_leakage_bans'])}`",
+        "",
+        "Patch 18.9 separates host identity from target identity so a cross build cannot absorb host state. A pair is cross exactly when the target triple differs from the host triple, and that classification is recomputed rather than declared.",
+        "",
+        "A cross pair is declared only when its linker was discovered. No cross pair is declared today, because no declared target other than the host has a discoverable linker. That is the honest state rather than a gap: the separation rules and leakage bans are defined and enforced, and the moment a cross linker appears the machinery is already in place. Declaring a pair that cannot link would be a claim without evidence.",
+        "",
+        "Every cross candidate ends in exactly one defensible state. A declared pair has a linker and carries no blocking reason; an undeclared cross candidate must state what blocks it. A pair that is neither declared nor explained is rejected, so the ambiguous middle does not exist.",
+        "",
+    ]
+
+
 def phase18_link_mode_summary_lines(registry):
     authority = registry["phase18_link_mode"]
     decisions = authority["link_mode_decisions"]
@@ -11204,6 +11228,7 @@ def render(registry):
         *phase18_target_package_summary_lines(registry),
         *phase18_linker_policy_summary_lines(registry),
         *phase18_link_mode_summary_lines(registry),
+        *phase18_cross_compilation_summary_lines(registry),
         "## Registry entries", "",
         "| ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |",
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",

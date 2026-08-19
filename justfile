@@ -186,6 +186,8 @@ guard-pr-fast-ci-surface:
       'just guard-cranelift-phase18-linker-policy-contract'
       'Phase 18 static and dynamic link modes'
       'just guard-cranelift-phase18-link-mode-contract'
+      'Phase 18 cross-compilation and host target separation'
+      'just guard-cranelift-phase18-cross-compilation-contract'
       'Phase 17 cross-feature runtime composition'
       'just guard-cranelift-phase17-composition-contract'
       'phase11-family:'
@@ -15835,6 +15837,25 @@ guard-cranelift-phase18-link-mode-parity:
     just guard-cranelift-phase18-link-mode-contract
     bash scripts/phase18_link_mode_parity.sh
 
+guard-cranelift-phase18-cross-compilation-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 18.9 cross compilation parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase18-cross-compilation-parity |
+      grep -F $'guard-cranelift-phase18-cross-compilation-parity\t2\t' >/dev/null
+    just guard-cranelift-phase18-cross-compilation-contract
+    bash scripts/phase18_cross_compilation_parity.sh
+
+guard-cranelift-phase18-cross-compilation-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 18.9 cross-compilation policy and host/target separation..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase18-cross-compilation-contract | grep -F $'guard-cranelift-phase18-cross-compilation-contract\t1\t' >/dev/null
+    just guard-cranelift-phase18-linker-policy-contract
+    python3 scripts/phase18_cross_compilation.py --check
+
 guard-cranelift-phase18-link-mode-contract:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -16139,6 +16160,7 @@ guard-cranelift-contract-fast:
     just guard-cranelift-phase18-target-package-contract
     just guard-cranelift-phase18-linker-policy-contract
     just guard-cranelift-phase18-link-mode-contract
+    just guard-cranelift-phase18-cross-compilation-contract
 
 guard-cranelift-phase17-runtime-authority-contract:
     #!/usr/bin/env bash

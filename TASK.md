@@ -36,7 +36,7 @@ is activated separately.
 - [x] Patch 18.6 — Target-Specific Runtime Package Selection — DONE
 - [x] Patch 18.7 — Linker Discovery, Selection, and Invocation Policy — DONE
 - [x] Patch 18.8 — Static and Dynamic Runtime Linking Modes — DONE
-- [ ] Patch 18.9 — Cross-Compilation Policy and Host/Target Separation
+- [x] Patch 18.9 — Cross-Compilation Policy and Host/Target Separation — DONE
 - [ ] Patch 18.10 — Unsupported-Target Detection and Diagnostics
 - [ ] Patch 18.11 — Symbol and Relocation Inspection Evidence
 - [ ] Patch 18.12 — Debug Information Strategy
