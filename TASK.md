@@ -38,7 +38,7 @@ is activated separately.
 - [x] Patch 18.8 — Static and Dynamic Runtime Linking Modes — DONE
 - [x] Patch 18.9 — Cross-Compilation Policy and Host/Target Separation — DONE
 - [x] Patch 18.10 — Unsupported-Target Detection and Diagnostics — DONE
-- [ ] Patch 18.11 — Symbol and Relocation Inspection Evidence
+- [x] Patch 18.11 — Symbol and Relocation Inspection Evidence — DONE
 - [ ] Patch 18.12 — Debug Information Strategy
 - [ ] Patch 18.13 — Source-Location Preservation
 - [ ] Patch 18.14 — Optimisation-Level Policy

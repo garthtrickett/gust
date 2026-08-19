@@ -4371,6 +4371,39 @@
     "scope_policy": "availability_compatibility_and_diagnostics_only_cross_feature_composition_remains_in_patch17_14",
     "next_patch": "17.14"
   },
+  "phase18_object_inspection": {
+    "version": "phase18_object_inspection_v1",
+    "status": "ready_for_patch18_12",
+    "authority_owner": "compiler/mir_target_authority.gst",
+    "inspection_role": "observe_and_compare_never_decide",
+    "symbol_fields": [
+      "symbol_name",
+      "binding",
+      "visibility",
+      "section_kind"
+    ],
+    "relocation_fields": [
+      "relocation_kind",
+      "offset",
+      "target_symbol"
+    ],
+    "symbol_comparison_source": "phase17_runtime_symbol_authority",
+    "relocation_comparison_source": "phase18_relocation_model",
+    "binding_comparison_source": "phase18_object_format",
+    "disagreement_policy": "an_object_whose_inspected_contents_disagree_with_the_compiler_produced_plan_is_rejected",
+    "authority_ban": "inspection_never_supplies_a_symbol_binding_relocation_kind_or_section_that_the_compiler_did_not_produce",
+    "validation_stage": "after_object_emission_and_before_linker_invocation",
+    "rejection_classes": [
+      "inspected_symbol_not_in_compiler_plan",
+      "inspected_binding_outside_declared_vocabulary",
+      "inspected_section_outside_declared_vocabulary",
+      "inspected_relocation_kind_not_in_model",
+      "inspected_relocation_in_disallowed_section",
+      "inspection_used_as_semantic_authority",
+      "inspected_object_missing_expected_symbol"
+    ],
+    "next_patch": "18.12"
+  },
   "phase18_target_diagnostics": {
     "version": "phase18_target_diagnostics_v1",
     "status": "ready_for_patch18_11",

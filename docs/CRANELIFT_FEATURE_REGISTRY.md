@@ -675,6 +675,20 @@ A refusal that does not say why is not a diagnostic. An unsupported target must 
 
 Every refusal happens before driver discovery, ahead of native driver access, object creation, linker invocation, and output replacement. A refusal deferred past that point could no longer preserve existing output, so a late failure stage is itself rejected.
 
+## Phase 18 symbol and relocation inspection
+
+- Authority version: `phase18_object_inspection_v1`
+- Status: `ready_for_patch18_12`
+- Inspected symbol fields: `4`
+- Inspected relocation fields: `3`
+- Bindings, sections, and relocation kinds available to compare against: `3`, `4`, `14`
+
+Patch 18.11 makes emitted objects inspectable so target evidence is observed rather than assumed. Inspection observes and compares; it never decides. An observed symbol, binding, section, or relocation kind must trace to a compiler-produced record, and inspection supplying a fact the compiler did not produce would make the object file a second source of truth.
+
+Each comparison source must be an authority that exists and carries content. A source naming nothing, or a vocabulary that is empty, would let every comparison trivially succeed while still appearing to pass, which is the subtler way inspection becomes decorative. Both are rejections.
+
+Inspection may contradict the compiler plan, which is its purpose, but it may never extend it. An object whose inspected contents disagree with the plan is rejected, and inspection runs after object emission and before linker invocation so a disagreement is caught before anything links.
+
 ## Registry entries
 
 | ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |

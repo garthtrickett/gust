@@ -272,6 +272,9 @@ jobs:
       - name: Phase 18 unsupported target diagnostics
         run: just guard-cranelift-phase18-target-diagnostic-contract
 
+      - name: Phase 18 symbol and relocation inspection
+        run: just guard-cranelift-phase18-object-inspection-contract
+
       - name: Phase 17 cross-feature runtime composition
         run: just guard-cranelift-phase17-composition-contract
 
