@@ -381,7 +381,7 @@ second, drifting copy of it.
 | OD-3 | SAM state ownership under linear resources and no interior mutability | **OPEN** — leading direction proposed 2026-08-20 (§38.1); partly decided by implementation, `std.Rc` already ships | v0.5 | §27, §38; the discrepancy as `TASK_STDLIB.md` CR-9; evidence in `docs/ONE_WAY_LEDGER.md` E8 |
 | OD-4 | WASM stack-switching support and payload cost | **OPEN** | v0.5 | §21, §41 |
 | OD-6 | Form of the intent layer | **OPEN** | v1.0 | Part XXI |
-| OD-11 | **The fate of `std.Spawn`** — does it gain a task handle and become the low-level primitive, or is it deprecated? | **OPEN 2026-08-20** | Demo | §20 |
+| OD-11 | ~~The fate of `std.Spawn`~~ | **RESOLVED 2026-08-20** — bare form deleted; scoped spawn returns a linear task handle | Demo | §20.1 |
 | OD-5 | Supplier certification staffing model | **OPEN** | Post-1.0 | Part XVI |
 
 There is no OD-7. The number is unused and nothing in the repository references it; it is recorded here so a reader who notices the gap does not go looking.
@@ -858,6 +858,52 @@ Channels may exist as a lower-level primitive. Actors are a library or platform 
 
 **The leaning, not a decision.** Deprecation. §20 already routes durable background work to jobs and unowned work is not permitted in request code, so the use case a bare `std.Spawn` serves is one the design has already declined; keeping it means keeping two spellings for one concept, which is the thing §13 and `docs/ONE_WAY_LEDGER.md` exist to prevent. The argument the other way is real and should be made if anyone holds it: a handle-bearing `std.Spawn` gives the structured layer something to be built *out of*, and a language with no low-level primitive at all has to get the high-level one right on the first attempt.
 
+#### Resolved, 2026-08-20 — the bare form is deleted; scoped spawn returns a linear handle
+
+**Operator decision.** `std.Spawn` as it stands is removed. The scoped spawn is the only way to start a task, and it returns a **linear task handle** that must be joined, cancelled, or transferred before its scope exits.
+
+The reason this is the right shape rather than merely the tidiest: §20's ban on detached work stops being a rule nothing checks and becomes **a move-checker obligation**, using Phase 15 machinery that already ships. And it answers the one real objection to deletion — that removing the bare form leaves nothing to build the structured layer out of. **A linear handle is that thing.** The primitive survives; what is deleted is the version of it that hands back nothing.
+
+The ranking below is kept as the record of what was considered. Option 2 (demote to the runtime surface) remains the fallback if the scoped layer proves to need iteration — it is the same design with the handle non-public.
+
+#### 20.2 The scoped API — illustrative sketch
+
+Not yet implemented, and not a syntax proposal; it exists so the decision above is concrete enough to argue with.
+
+```
+fn handle(req: &Request[r], ctx: Ctx[a]) -> Result[Response[a]] uses net.fetch {
+    scope s {
+        let user  : Task[User, s]  = s.Spawn(fetch_user(req.id))
+        let prefs : Task[Prefs, s] = s.Spawn(fetch_prefs(req.id))
+
+        let u = user.Join()?          // consumes the handle
+        prefs.Cancel()                // also consumes it
+        Ok(render(u, ctx))
+    }                                 // scope exit: every handle already consumed
+}
+```
+
+Three things carry the design:
+
+- **`Task[T, s]` is brand-parameterised on the scope.** A handle cannot outlive `s` for the same reason an arena-allocated value cannot outlive its arena — it is the mechanism §24 already has, not a new one.
+- **`Join`, `Cancel`, and `Transfer` all consume the handle.** They are the only three ways to discharge it, and each takes it by move.
+- **Scope exit is where the check lands.** A live handle at the closing brace is a compile error, in the same class as an unconsumed linear resource under §28.
+
+```
+error: task handle `prefs` is still live at scope exit
+  --> handler.gst:9:5
+   |
+ 5 |         let prefs : Task[Prefs, s] = s.Spawn(fetch_prefs(req.id))
+   |             ----- created here
+ 9 |     }
+   |     ^ scope `s` ends here with `prefs` unconsumed
+   |
+   = a task handle must be joined, cancelled, or transferred before its scope exits
+   = §20: fire-and-forget work is not permitted in request code
+```
+
+**Consequences worth stating now.** `Transfer` is the interesting one: moving a handle out of `s` to a longer-lived scope is what a supervisor is, so §21's three named concepts — child task, supervisor, durable job — fall out of one mechanism plus where the handle ends up, rather than needing three primitives. And **`?` still means only "may fail"**: `Join` can propagate a task's failure through `Result` without suspension acquiring a keyword, which is what §21's direction requires.
+
 #### The candidates, ranked
 
 The two options above are the ones stated when OD-11 was opened. Both assume the handle must exist; **what they actually disagree about is whether the low-level primitive is *public*.** Naming that reframes the decision and admits a third answer that neither states.
@@ -874,7 +920,7 @@ The two options above are the ones stated when OD-11 was opened. Both assume the
 
 **Last: change nothing.** Recorded because it is the outcome that happens by default if the decision is not made, not because it is a candidate. It leaves §20 stating a rule the only available primitive violates.
 
-**Owner: the Cranelift lane**, under `docs/SHARED_SEMANTIC_ZONE.md`'s "Fiber scheduling contract" row. Reported as `TASK_STDLIB.md` CR-8 and issue #101. Status owned by §0.15.
+**Owner: the Cranelift lane**, under `docs/SHARED_SEMANTIC_ZONE.md`'s "Fiber scheduling contract" row. **The decision above sets what to build; it does not authorise the patch.** Implementation is that lane's, and the removal of `std.Spawn` is a breaking change to a shipped surface, so it needs a deprecation path recorded in the owning phase's roadmap rather than a deletion. Reported as `TASK_STDLIB.md` CR-8 and issue #101. Status owned by §0.15.
 
 ## 21. Suspension model (OD-1, OD-4)
 
