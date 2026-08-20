@@ -480,6 +480,60 @@ because the gap between §20 and `std.Spawn` is invisible from either roadmap:
 Precedent: CR-6 was resolved the same way — `VISION.md` §26 described a borrow
 model that was never implemented and was corrected to the one that exists.
 
+### CR-10 — Is an opt-in layout attribute shared-zone work?
+
+Raised because `docs/UNBLOCKED_CONTAINMENT_WORK.md` proposal 1 cannot start until
+it is classified, and classifying it wrongly in either direction is worse than
+asking. This is a **classification question**, not a request to implement.
+
+1. **Intended behaviour:** a type can declare that it has no readable string
+   representation, so passing it to `std.Format` is a compile error. This is the
+   half of `VISION.md` §81 that does not require effects — the §81 rationale is
+   that an agent cannot leak a secret into a log line because the type forbids
+   it.
+2. **Existing limitation:** nothing marks a type unformattable.
+   `grep -ciE 'opaque|no_format|not_formattable' compiler/typechecker.gst`
+   returns 0, and `std.Format` accepts whatever it is given.
+3. **Smallest generic change:** a fourth layout attribute beside `#[linear]`,
+   `#[packed]`, and `#[repr(C)]` — one arm in the attribute chain at
+   `compiler/parser.gst:869-872`, one field on `StructDecl`, one registry map
+   mirroring `struct_linear_resource`, and one check at the formatting dispatch
+   sites `compiler/typechecker.gst:1962-1963` and `:3810`, which already resolve
+   `std_Format` / `std.Format` / `std_FormatInt` by name.
+4. **Affected:** both parsers, both typecheckers, and the bootstrap seed. No MIR,
+   no ABI, no layout computation, no runtime symbol.
+5. **MIR-to-C:** no. The attribute is consumed entirely in the frontend; codegen
+   never sees it, because a program using it either compiles unchanged or is
+   rejected.
+6. **Cranelift:** no, for the same reason.
+7. **Bootstrap:** yes — dual compiler and seed regeneration, since both
+   typecheckers must agree.
+
+**The question.** `docs/SHARED_SEMANTIC_ZONE.md` places outside the zone "a
+diagnostic that **rejects** a program the compiler currently miscompiles,
+provided no accepted program changes meaning". This satisfies the second clause —
+no existing type carries the attribute, so no currently-accepted program changes
+meaning — but not the first: the programs it would reject are not miscompiled
+today, they are correct, and formatting a would-be-secret works fine.
+
+So it is neither clearly in the zone nor clearly out of it. Two readings, both
+defensible:
+
+- **Out of zone / Stdlib.** It adds no semantics to any existing construct, is
+  opt-in, touches no MIR or ABI, and is the same size and shape as S1.1.
+- **In zone / Cranelift.** It adds language surface — a new attribute is a
+  permanent grammar commitment, and `VISION.md` §16 makes the operator and
+  attribute surface compiler-owned.
+
+**Recommendation, weakly held:** treat it as in-zone for the *decision* and
+out-of-zone for the *work* — the owner rules on whether the attribute exists and
+what it is called, and the implementation then proceeds as ordinary Stdlib-lane
+work under that ruling. That matches how CR-1 was handled: `VISION.md` §16 made
+the semantics Cranelift's call while S1.1 shipped the non-semantic half.
+
+Nothing in Phase S1 is blocked on the answer. The proposal is, which is why it is
+recorded here rather than left in a document nobody is assigned to read.
+
 ## Verification Policy
 
 ### Level 1 — Fast contracts

@@ -87,12 +87,24 @@ That hole is worth closing on its own terms, because §81 identifies logging a
 secret as among the most frequent and most expensive mistakes in generated code,
 and this is the half of the defence that does not wait on Part V.
 
-**Ownership question.** Additive and opt-in: no existing type carries the
-attribute, so no currently-accepted program changes meaning. That is the
-condition `docs/SHARED_SEMANTIC_ZONE.md` attaches to its out-of-zone carve-out
-for rejecting diagnostics. But this adds a language-surface attribute rather than
-only a diagnostic, so **the lane owner should confirm the classification before
-anyone starts.** It touches no MIR, no ABI, no layout, and no runtime symbol.
+**Ownership question — raised formally as `TASK_STDLIB.md` CR-10.**
+
+The carve-out in `docs/SHARED_SEMANTIC_ZONE.md` covers "a diagnostic that
+**rejects** a program the compiler currently miscompiles, provided no accepted
+program changes meaning". This proposal satisfies the second clause and not the
+first: no existing type carries the attribute, so nothing accepted changes
+meaning — but the programs it would reject are not miscompiled today, they are
+correct.
+
+So it is neither clearly in nor clearly out, and CR-10 states both readings in
+the seven-point format rather than assuming one. The recommendation there,
+weakly held, is to treat it as in-zone for the *decision* and out-of-zone for the
+*work*, following how CR-1 was handled: the owner rules on whether the attribute
+exists and what it is called, and implementation then proceeds as ordinary
+Stdlib-lane work under that ruling.
+
+It touches no MIR, no ABI, no layout computation, and no runtime symbol; the
+attribute is consumed entirely in the frontend, so codegen never sees it.
 
 ---
 
