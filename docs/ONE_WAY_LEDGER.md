@@ -1068,7 +1068,11 @@ predicates, none of which exist (E10, E16) — but it is the difference between 
 absent mechanism and an absent decision.
 
 §108 is the only one of §0.12's three human-read artifacts that could exist
-without the platform. The capability manifest needs effects; the lockfile diff
+without the platform, and it is written up as a proposal in
+`docs/UNBLOCKED_CONTAINMENT_WORK.md`. The compiler already computes more than the
+two expressible bullets need: `ExpressionProvenance` carries a resolved type and
+an `AddressOriginMetadata` per expression, and all nine origin categories are
+live (`compiler/typechecker.gst:5-24`). The capability manifest needs effects; the lockfile diff
 needs packages (row 38). A trace of allocation and context lifetimes at region
 granularity, and of typed error propagation, could be emitted today, because
 regions and errors both exist. It is not, and nothing schedules it.
@@ -1117,7 +1121,10 @@ model. `secret.use<"stripe">` does need effects; "this value has no string
 representation" does not.
 
 Recorded as its own rule rather than folded into E16 for that reason: unlike the
-platform rows, this one is not blocked on the platform.
+platform rows, this one is not blocked on the platform. Written up as a concrete
+proposal in `docs/UNBLOCKED_CONTAINMENT_WORK.md` — a fourth layout attribute
+beside `#[linear]`, `#[packed]`, and `#[repr(C)]`, checked at the two formatting
+dispatch sites that already resolve `std.Format` by name.
 
 ### §22 and the platform rows
 

@@ -165,6 +165,23 @@ the memory model is approximated by string matching until it lands, row 3 becaus
 OD-9 cannot be tested against a surface that requires `unsafe` to construct an
 `Option`.
 
+## Two things that could ship before any of the above
+
+Every row in the table waits on the backend or on Track A. Two containment
+properties do not, and both are `docs/VISION.md` product claims:
+
+- **Type opacity** — §81's "no readable string representation". The `#[linear]`
+  attribute mechanism already exists and formatting dispatch is centralised, so
+  this is a fourth attribute plus one check.
+- **A provenance trace** — §108's "allocation and context lifetimes at region
+  granularity" and "typed error values with propagation path". The compiler
+  already computes a per-expression origin classification across nine categories;
+  nothing emits it.
+
+Neither needs effects, a database, or a native backend. Both are specified in
+`docs/UNBLOCKED_CONTAINMENT_WORK.md`. They do not substitute for this program —
+they are simply the parts of the claim that are reachable now.
+
 ## What this does not require
 
 Recorded so the table is not read as a licence to build the platform:
