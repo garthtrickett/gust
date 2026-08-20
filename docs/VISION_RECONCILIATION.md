@@ -44,7 +44,7 @@ named.
 | `advice.md` | no | Outside critique, tactical. Source of the four-ring layer model (§4 below). |
 | `async.md` | no | Async/concurrency proposal. **Conflicts with `VISION.md` §21.** See §3.2. |
 | `compiler-plan.md` | no | FFI/provenance/layout ordering, plus the self-hosting bootstrap discipline. Largely superseded by `TASK.md` phases 13–19. |
-| `mir-to-cranelift.md` | no | Roadmap tail, phases 18–25. Consistent with `TASK.md`. |
+| `mir-to-cranelift.md` | no | Roadmap tail, phases 18–25. Consistent with `TASK.md`. **Its content is now recorded in `docs/ROADMAP_TAIL.md`** — the three citations to it in this document previously pointed at a file that is not in the repository. |
 | `general-ecosystem.md` | no | **Retired.** See §3.3 and Appendices A–B. |
 | `gust-fullstack.md` | no | Full-stack architecture — gustrpc, Reactive SAM, Lit-style templates. Speculative; matches VISION Parts IX and XIII. |
 | `full-stack-slice-0.md` | no | Executable spec for the smallest full-stack loop. Speculative but well scoped; use verbatim when Part IX is committed. |
