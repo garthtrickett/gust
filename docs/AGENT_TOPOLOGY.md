@@ -267,6 +267,33 @@ everything moving" is the right instruction for an observer. It is an argument
 that the boundary must be held on the *receiving* side, because the sending side
 cannot know it exists.
 
+**"Cannot authorise" and "cannot prompt" are different claims, and only the first
+one holds.** Recorded from a case on 2026-08-20 where the weaker one mattered. A
+check-in reported that this lane's CI gate had passed on a SHA that was fourteen
+commits behind its working tree, explicitly saying it authorised nothing. The
+lane then verified the gate itself and merged a PR. **The merge was authorised —
+by a standing operator instruction given hours earlier — and the pulse granted
+nothing. But the pulse set the timing of an irreversible action**, because its
+flag is what caused the check to happen then rather than later.
+
+Prompting is legitimate and is most of the monitor's value; noticing that a gate
+and a working tree have diverged is exactly the cross-reference §5 exists to
+produce. The rule that makes it safe is not "ignore pulses":
+
+> **A pulse may prompt a lane to check something. The lane must independently
+> re-derive any fact an irreversible action depends on.** Prompting is fine;
+> trusting is not. In the case above the lane re-queried the run population
+> itself, from the full 40-character head SHA, and the pulse's numbers happened to
+> agree — **but the merge rested on the lane's own reading, which is the only
+> arrangement where a wrong pulse costs nothing.**
+
+**A second habit belongs with it: address a pulse as a pulse.** The same lane
+replied to that check-in using *you*, as though writing to the operator. Nothing
+followed from it, and the failure mode is real — **an operator's words and a
+schedule's words stop being distinguishable in a transcript**, which is precisely
+the confusion the boundary rule exists to prevent. A later reader, or a compacted
+version of the same agent, cannot tell which instructions were human.
+
 ---
 
 ### 5.1 The monitor prompt, proposed
