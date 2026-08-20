@@ -1177,6 +1177,34 @@ Nobody holds a long-lived reference to the model because none is ever handed out
 
 **What this does not settle.** OD-3's other half — whether an explicit compiler-owned `Rc` is the right general answer for shared ownership — is untouched. This direction narrows OD-3 to that question by removing the SAM case from it.
 
+#### Backup 1 — shadow-arena snapshot, and the one to build first
+
+`std.GenerationalArena` and `std.GenerationalSwap` already ship (`docs/STDLIB_SURFACE_INVENTORY.md`, "Names the typechecker registers"; `std_GenerationalSwap` resolves to `src/runtime/arena.c`). Two model arenas, current and shadow. An optimistic update clones the model into the shadow arena and applies the action there. Confirm swaps; rollback resets the shadow arena in constant time, with nothing to undo.
+
+**Why it is second in design and first in build order.** It is the cheapest way to produce the artifact §27 actually demands — store, action dispatch, optimistic update, rollback, written and reviewed. It needs no new language surface and would settle the single-mutation case in days rather than months.
+
+**Why it is not the shipping design.** One outstanding mutation at a time. Two in flight and it needs N buffers plus a scheme for interleaved acknowledgements — at which point it is a worse implementation of the direction above. **These two are not rivals: the shadow arena is a good implementation of the pending journal's derived buffer.**
+
+> **Verified 2026-08-20, and the caution was right.** `std_GenerationalArena_Clone_*` is listed under "Helper rows with no runtime symbol" — and it is the *only* entry in that section. So the two halves of this option are in opposite states: **the rollback half is built** (`std_GenerationalSwap` has a runtime symbol), **the setup half is the gap** (clone-into-arena does not). That inverts "uses primitives that exist" by half, and it is a prerequisite to close before committing to this route rather than a discovery to make mid-way through it.
+
+#### Backup 2 — a compiler-owned `Store[T, ctx]`
+
+Admit the store is shared mutable state, name it, and contain it: one blessed type, not user-constructible, where dispatch takes exclusive access and read returns a borrow that provably cannot span a dispatch. §27 bans *unrestricted* interior mutability, and a single compiler-owned store arguably does not violate the letter of that.
+
+**The most ergonomic option, and the honest one.** But "a borrow that cannot span a dispatch" is an aliasing rule, and §26 has no aliasing analysis and no mutable/shared distinction. So it converts a v0.5 client design question into unscheduled Ring 1 containment work. That makes it the wrong first move and the right fallback — specifically if the pending journal's refold cost proves prohibitive in practice, at which point the §26 work is worth paying for because something concrete has demanded it.
+
+#### The conclusion that survives whichever wins
+
+Every option forces the same constraint from a different direction: **the model may not contain linear resources.** Anything replayable, clonable, or swappable has to be plain data, so open sockets, subscriptions, and handles live in effects, not in state.
+
+That is likely the actual answer to the question §38 asks. "SAM state ownership under linear resources" resolves not by making resources work inside the model, but by **ruling them out of it** — a real constraint on how applications are structured, and exactly the kind of thing discovered by writing the worked example rather than by specifying it.
+
+*Recorded faithfully: the operator's note refers to options 1–4 and three are stated here. The fourth was not supplied and is not reconstructed — an invented option would be indistinguishable from a considered one.*
+
+#### Suggested route
+
+Build the shadow arena to produce the §27 artifact and clear the "before client work begins" gate; design toward the pending journal as the shipping model; hold `Store[T, ctx]` as the escape hatch, and pay for the §26 work only if something forces it.
+
 ## 39. Browser access
 
 Client code may use UI primitives, local state, SAM state machines, typed RPC clients, serializable values, pure shared functions, and approved browser capabilities.
