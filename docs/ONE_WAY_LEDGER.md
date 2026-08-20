@@ -1739,9 +1739,19 @@ already characterised there. What is recorded here is only the gate shape.
 what it replaced.**
 
 `cancelled` is neither success nor pending. A gate counting only failures and
-pending runs reads a wholly cancelled wave as clean — and three PRs in this
-repository are in exactly that state, 63, 64 and 65 runs each, all cancelled,
-nothing queued, nothing running. Presence rejects them; absence cannot.
+pending runs reads a wholly cancelled wave as clean.
+
+Observed on 2026-08-20: three PRs sat with 63, 64 and 65 runs respectively, every
+one `cancelled`, nothing queued and nothing running — zero failures, zero
+pending, and dead. The state persisted roughly two hours before their lane
+re-dispatched them, and it was invisible to an absence-phrased gate throughout.
+Presence rejects it; absence cannot.
+
+Stated in the past tense deliberately. Those PRs have since been rebased and now
+carry live waves, which is what makes this a clean case study rather than a live
+incident — and a present-tense claim about a repository that changes hourly is
+the same defect as an inherited line citation, one row of which this file already
+records against itself.
 
 The other is subtler and was self-inflicted. The presence gate carried a
 plausibility floor — assert the run set has at least 30 members, so an empty or
