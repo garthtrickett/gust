@@ -1,0 +1,37 @@
+{
+  "_comment": [
+    "Guard recipes that no workflow and no CI-family registry can reach.",
+    "This file is a ratchet, not an exemption: scripts/guard_reachability.py fails",
+    "on any orphan NOT listed here, and also fails when a listed name stops being",
+    "an orphan, so entries have to be removed as they are fixed.",
+    "Recorded 2026-08-20 from issue #92. Each entry needs its owner to either wire",
+    "it into CI or delete it as superseded. Do not add to this list to silence a",
+    "new orphan."
+  ],
+  "recorded": "2026-08-20",
+  "issue": 92,
+  "known_unreachable": {
+    "guard-mir-debug-leaf-smoke": "Cranelift lane (MIR)",
+    "guard-mir-debug-printer-smoke": "Cranelift lane (MIR)",
+    "guard-mir-debug-printer-surface": "Cranelift lane (MIR)",
+    "guard-mir-feature-migration-registry": "Cranelift lane (MIR feature migration)",
+    "guard-mir-feature-migration-suite": "Cranelift lane (MIR feature migration)",
+    "guard-mir-lower-block-jump-smoke": "Cranelift lane (MIR)",
+    "guard-mir-lower-function-shell-smoke": "Cranelift lane (MIR)",
+    "guard-mir-lower-native-boundary-metadata-smoke": "Cranelift lane (MIR)",
+    "guard-mir-lower-resource-metadata-smoke": "Cranelift lane (MIR)",
+    "guard-mir-lower-tiny-function-fixture-smoke": "Cranelift lane (MIR)",
+    "guard-mir-lower-tiny-function-surface": "Cranelift lane (MIR)",
+    "guard-mir-to-c-block-jump-smoke": "Cranelift lane (MIR)",
+    "guard-mir-to-c-entry-smoke": "Cranelift lane (MIR)",
+    "guard-mir-to-c-function-shell-smoke": "Cranelift lane (MIR)",
+    "guard-mir-to-c-native-boundary-metadata-smoke": "Cranelift lane (MIR)",
+    "guard-mir-to-c-resource-metadata-smoke": "Cranelift lane (MIR)",
+    "guard-mir-to-c-tiny-surface": "Cranelift lane (MIR)",
+    "guard-step51-hashmap-get-value": "Step 51 provenance work",
+    "guard-step51-hashmap-get-value-field": "Step 51 provenance work",
+    "guard-step51-non-launder-hashmap-get-value": "Step 51 provenance work",
+    "guard-step51-non-launder-hashmap-get-value-field": "Step 51 provenance work",
+    "guard-step51-provenance-origin-spine-fast-c": "Step 51 provenance work"
+  }
+}

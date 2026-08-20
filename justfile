@@ -21825,3 +21825,15 @@ guard-stdlib-s1-str-surface:
     fi
 
     echo "✅ str surface regression suite matches the pinned output."
+
+# CI wiring, from issue #92
+#
+# A guard recipe that no workflow and no CI-family registry can reach looks like
+# coverage and provides none. This one fails on any orphan that is not already
+# recorded, and on any recorded name that has since been wired, so the list can
+# only shrink.
+guard-ci-guard-reachability:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking every guard recipe is reachable from CI..."
+    python3 scripts/guard_reachability.py
