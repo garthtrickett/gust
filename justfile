@@ -21879,3 +21879,14 @@ guard-ci-guard-reachability:
     set -euo pipefail
     echo "🔒 Checking every guard recipe is reachable from CI..."
     python3 scripts/guard_reachability.py
+
+# CI wiring, from issue #92
+#
+# The companion to guard-ci-guard-reachability, one level down. A fixture whose
+# only referencing recipe is itself unreachable is the same defect as a guard
+# nothing runs, and easier to miss, because a recipe does name it.
+guard-ci-fixture-reachability:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking every test fixture is reachable from CI..."
+    python3 scripts/fixture_reachability.py
