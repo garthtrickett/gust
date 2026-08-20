@@ -21961,4 +21961,21 @@ guard-stdlib-s1-close:
     fi
 
     outstanding="$(rg -c -e '^- \[ \] Patch S1\.[0-9]+' "$roadmap" || true)"
+    # AGENTS.md: a phase is not closed while its Level 3 owner is failing, and the
+    # completion report must cite the run. Enforced only at the point of closure.
+    if rg -n -e '^- \[x\] Patch S1\.12' "$roadmap" >/dev/null 2>&1; then
+      if ! rg -q -e 'Level 3 owner not failing, cited by run ID' "$roadmap"; then
+        echo "S1.12 is DONE but the closure requirements do not cite the Level 3 owner."
+        exit 1
+      fi
+      # A run ID alone is not evidence -- a queued run has an ID too, and the
+      # first cut of this check passed by matching one. Require an ID stated
+      # together with a conclusion, on the same line.
+      if ! rg -q -e 'conclusion `(failure|success)`' "$roadmap"; then
+        echo "S1.12 is DONE but no Level 3 conclusion is cited. A run ID alone is not evidence:"
+        echo "a queued run has an ID and no result."
+        exit 1
+      fi
+    fi
+
     echo "✅ Closure gate is accurate: ${outstanding:-0} patch(es) outstanding, each with a named owner, residue recorded."

@@ -1097,6 +1097,19 @@ Recording this is the point of the phase, not an apology for it.
    enforcement — then S1.8 through S1.11.
 3. The residue list above re-checked against the compiler, not from memory.
 4. `guard-stdlib-s1-close` passing with S1.12 marked `DONE`.
+5. **The Level 3 owner not failing, cited by run ID and conclusion.**
+   `AGENTS.md` requires that a phase is not closed while its Level 3 owner is
+   failing, and that the completion report cites the run. Phase S1 does not own a
+   Level 3 suite — `Cranelift Historical Full` is the sole owner — so closure
+   inherits its state rather than being independent of it.
+
+   **Observed 2026-08-20:** the most recent *completed* run on `main` is
+   `32243700245`, **conclusion `failure`** (2026-08-19T10:38:56Z); the two before
+   it also failed. A newer run `32330451344` exists but is **`queued`**, not a
+   result. Recording this here rather than asserting the suite is available: a
+   suite that exists and fails satisfies an availability check exactly, which is
+   why the requirement is phrased as *not failing* rather than *present*. The
+   diagnosis belongs to the Cranelift lane; Phase S1 may not close on top of it.
 
 Phase S1 closure will not claim a complete standard library, a text or Unicode
 API, networking, or production readiness.
