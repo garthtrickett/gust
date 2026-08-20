@@ -146,14 +146,14 @@ Ordered by dependency. Status verified 2026-08-20; evidence in
 | # | Requirement | Status | Owner |
 | --- | --- | --- | --- |
 | 1 | Brand identity carried by type, not identifier spelling | **VIOLATED** — ledger D-1 | Phase 19 (`TASK_PHASE19.md`), staged |
-| 2 | `Result[T, E]` as a builtin, with `?` propagation | **ABSENT** — ledger E2 | **unowned** |
+| 2 | `Result[T, E]` as a builtin, with `?` propagation | **ABSENT** — ledger E2 | **unowned** — spec proposed at VISION **§11.1** |
 | 3 | A constructor for `Option` — `Some(42)` rather than writing `.tag` and `.Some.val` | **PARTIAL** — ledger E1 | Stdlib (Track A0 scope) — issue #102 |
-| 4 | Implicit context in application code (`using ctx`) | **ABSENT** | **unowned** — `compiler-plan.md` Phase 5.3 |
-| 5 | `uses` clauses parsed and checked across the call graph | **ABSENT** — ledger E10, but `FunctionSignature` already carries per-function obligations | **unowned** — VISION §0.7 Track A |
-| 6 | Entity declarations that mark an entity workspace-scoped | **ABSENT** | **unowned** — VISION §56 |
-| 7 | Compiler-owned query derivation (`from`, `.where`, `.all`) | **ABSENT** | **unowned** — VISION §55. OD-2 resolved 2026-08-20: this is compiler work by decision, not a library someone could contribute |
-| 8 | Tenant scope tracked through query construction; unscoped rejected | **ABSENT** | **unowned** — VISION §56, OD-8 |
-| 9 | A Postgres capability to execute the query against | **ABSENT** | **unowned** — VISION Part XI |
+| 4 | Implicit context in application code (`using ctx`) | **ABSENT** | **unowned** — `compiler-plan.md` Phase 5.3; spec proposed at VISION **§24.1**, which finds this row **depends on Phase 19** |
+| 5 | `uses` clauses parsed and checked across the call graph | **ABSENT** — ledger E10, but `FunctionSignature` already carries per-function obligations | **unowned** — VISION §0.7 Track A; spec proposed at **§18.1** |
+| 6 | Entity declarations that mark an entity workspace-scoped | **ABSENT** | **unowned** — VISION §56; spec proposed at **§56.2** rule 1 |
+| 7 | Compiler-owned query derivation (`from`, `.where`, `.all`) | **ABSENT** | **unowned** — VISION §55, spec proposed at **§55.1**. OD-2 resolved 2026-08-20: this is compiler work by decision, not a library someone could contribute |
+| 8 | Tenant scope tracked through query construction; unscoped rejected | **ABSENT** | **unowned** — VISION §56, OD-8; spec proposed at **§56.2**, attack list at **§56.1** |
+| 9 | A Postgres capability to execute the query against | **ABSENT** | **unowned** — VISION **§54.0**, which finds this row shares CR-5's blocker with `MutexGuard` |
 | 10 | Panic scoped to the request, not the process | **VIOLATED** — ledger E3 | `TASK_STDLIB.md` CR-3, issue #91 — unscheduled |
 
 **OD-2's resolution on 2026-08-20 sharpens the ordering of this table, without
@@ -230,6 +230,15 @@ properties do not, and both are `docs/VISION.md` product claims:
 Neither needs effects, a database, or a native backend. Both are specified in
 `docs/UNBLOCKED_CONTAINMENT_WORK.md`. They do not substitute for this program —
 they are simply the parts of the claim that are reachable now.
+
+> **All six unowned rows now have a written proposal, as of 2026-08-20.** The
+> Owner column points at each. **They remain unowned** — a specification is not a
+> schedule, and none of these rows moved status because someone described them.
+> What changed is that the next person to pick one starts from a stated design
+> and its open questions rather than from a blank row. Two of the six also came
+> back with their difficulty revised, in opposite directions: **row 4 is harder
+> than it looked** (it depends on Phase 19), and **row 5 is easier**
+> (`FunctionSignature` already carries the shape).
 
 ## A proposed order for the six unowned rows
 
