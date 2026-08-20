@@ -4604,6 +4604,14 @@
         ]
       },
       {
+        "case_id": "phase18:residue_and_coverage",
+        "participating_authorities": [
+          "phase18_deferrals",
+          "phase18_cross_compilation",
+          "phase18_target_diagnostics"
+        ]
+      },
+      {
         "case_id": "phase18:bytes_and_publication",
         "participating_authorities": [
           "phase18_optimisation_level",
@@ -4666,6 +4674,765 @@
       "runnerless_target_declared_supported"
     ],
     "next_patch": "18.18"
+  },
+  "phase18_deferrals": {
+    "version": "phase18_deferrals_v1",
+    "status": "ready_for_patch18_19",
+    "authority_owner": "scripts/cranelift_feature_registry.json",
+    "audit_policy": "a_deferral_names_its_carrying_phase_its_capability_owner_its_diagnostic_owner_and_the_phase18_rows_it_comes_from",
+    "taxonomy_policy": "every_declared_rejection_class_is_emitted_and_forced_or_guard_enforced_and_forced_or_a_banned_practice_or_a_carried_value_or_vocabulary_naming_the_deferral_that_would_instantiate_it",
+    "deferrals": [
+      {
+        "deferral_id": "p19_additional_target_triples",
+        "capability_owner": "compiler_additional_target_planner",
+        "diagnostic_owner": "compiler_additional_target_verifier",
+        "reason": "the four undeclared candidate targets need a cross linker before their support tuple can complete",
+        "prerequisite": "cross_linker_discovery_and_declaration_contract",
+        "rejection_code": "target_additional_triples_deferred",
+        "phase18_rows": [
+          "p18_target_authority",
+          "p18_linker_policy"
+        ]
+      },
+      {
+        "deferral_id": "p19_shared_library_and_dynamic_loader",
+        "capability_owner": "compiler_shared_library_planner",
+        "diagnostic_owner": "compiler_shared_library_verifier",
+        "reason": "dynamic linking needs a shared library package form that the runtime package authority does not produce",
+        "prerequisite": "shared_library_package_form_and_dynamic_loader_contract",
+        "rejection_code": "link_mode_dynamic_deferred",
+        "phase18_rows": [
+          "p18_link_modes",
+          "p18_target_runtime_package_selection"
+        ]
+      },
+      {
+        "deferral_id": "p19_position_independent_and_hardening",
+        "capability_owner": "compiler_hardening_planner",
+        "diagnostic_owner": "compiler_hardening_verifier",
+        "reason": "position independent executables and hardening flags need a declared relocation and linker argument vocabulary this phase does not carry",
+        "prerequisite": "position_independent_relocation_and_hardening_argument_contract",
+        "rejection_code": "hardening_policy_deferred",
+        "phase18_rows": [
+          "p18_relocation_model",
+          "p18_linker_policy"
+        ]
+      },
+      {
+        "deferral_id": "p19_link_time_and_profile_guided_optimisation",
+        "capability_owner": "compiler_whole_program_optimisation_planner",
+        "diagnostic_owner": "compiler_whole_program_optimisation_verifier",
+        "reason": "link time and profile guided optimisation change emitted bytes across translation units, which the declared level vocabulary does not model",
+        "prerequisite": "whole_program_optimisation_and_profile_input_contract",
+        "rejection_code": "optimisation_whole_program_deferred",
+        "phase18_rows": [
+          "p18_optimisation_levels",
+          "p18_reproducible_output"
+        ]
+      },
+      {
+        "deferral_id": "p19_complete_debug_fidelity",
+        "capability_owner": "compiler_debug_fidelity_planner",
+        "diagnostic_owner": "compiler_debug_fidelity_verifier",
+        "reason": "variable locations, type descriptions, inlined frames, and debugger integration are excluded by name from the declared debug plan",
+        "prerequisite": "complete_debug_record_and_debugger_integration_contract",
+        "rejection_code": "debug_fidelity_deferred",
+        "phase18_rows": [
+          "p18_debug_information",
+          "p18_source_locations"
+        ]
+      },
+      {
+        "deferral_id": "p19_sysroot_acquisition",
+        "capability_owner": "compiler_sysroot_planner",
+        "diagnostic_owner": "compiler_sysroot_verifier",
+        "reason": "cross compilation to a declared pair needs target headers and libraries that no declared authority acquires or manages",
+        "prerequisite": "sysroot_acquisition_and_host_isolation_contract",
+        "rejection_code": "cross_sysroot_deferred",
+        "phase18_rows": [
+          "p18_cross_compilation"
+        ]
+      },
+      {
+        "deferral_id": "p19_code_signing_and_attestation",
+        "capability_owner": "compiler_artifact_signing_planner",
+        "diagnostic_owner": "compiler_artifact_signing_verifier",
+        "reason": "signing and platform attestation modify a published artifact after the atomic publication this phase declares",
+        "prerequisite": "artifact_signing_and_attestation_ordering_contract",
+        "rejection_code": "publication_signing_deferred",
+        "phase18_rows": [
+          "p18_atomic_publication"
+        ]
+      },
+      {
+        "deferral_id": "p19_toolchain_distribution",
+        "capability_owner": "compiler_toolchain_distribution_planner",
+        "diagnostic_owner": "compiler_toolchain_distribution_verifier",
+        "reason": "installing a compiler and its runtime packages on a machine that has neither is outside the declared target, object, and linker boundary",
+        "prerequisite": "toolchain_packaging_and_installation_contract",
+        "rejection_code": "toolchain_distribution_deferred",
+        "phase18_rows": [
+          "p18_target_runtime_package_selection"
+        ]
+      },
+      {
+        "deferral_id": "p19_cross_compilation_pairs",
+        "capability_owner": "compiler_cross_pair_planner",
+        "diagnostic_owner": "compiler_cross_pair_verifier",
+        "reason": "phase 18 declares zero cross pairs, so the three cross rejection classes have no input that can reach them",
+        "prerequisite": "declared_host_target_pair_with_a_complete_cross_toolchain",
+        "rejection_code": "cross_pairs_deferred",
+        "phase18_rows": [
+          "p18_cross_compilation",
+          "p18_linker_policy"
+        ]
+      }
+    ],
+    "rejection_taxonomy": [
+      {
+        "rejection_class": "composition_authority_uncomposed",
+        "authority": "phase18_composition",
+        "kind": "guard_enforced",
+        "enforcing_guard": "scripts/phase18_composition.py",
+        "justification": "a registry-level property no compiler refusal can raise; the named contract guard raises it and a negative test forces it"
+      },
+      {
+        "rejection_class": "composition_names_absent_authority",
+        "authority": "phase18_composition",
+        "kind": "guard_enforced",
+        "enforcing_guard": "scripts/phase18_composition.py",
+        "justification": "a registry-level property no compiler refusal can raise; the named contract guard raises it and a negative test forces it"
+      },
+      {
+        "rejection_class": "per_target_evidence_incomplete",
+        "authority": "phase18_composition",
+        "kind": "guard_enforced",
+        "enforcing_guard": "scripts/phase18_composition.py",
+        "justification": "a registry-level property no compiler refusal can raise; the named contract guard raises it and a negative test forces it"
+      },
+      {
+        "rejection_class": "execution_evidence_from_another_runner",
+        "authority": "phase18_composition",
+        "kind": "guard_enforced",
+        "enforcing_guard": "scripts/phase18_composition.py",
+        "justification": "a registry-level property no compiler refusal can raise; the named contract guard raises it and a negative test forces it"
+      },
+      {
+        "rejection_class": "runnerless_target_declared_supported",
+        "authority": "phase18_composition",
+        "kind": "guard_enforced",
+        "enforcing_guard": "scripts/phase18_composition.py",
+        "justification": "a registry-level property no compiler refusal can raise; the named contract guard raises it and a negative test forces it"
+      },
+      {
+        "rejection_class": "cross_pair_undeclared",
+        "authority": "phase18_cross_compilation",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "cross_pair_incomplete_tuple",
+        "authority": "phase18_cross_compilation",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "cross_artifact_host_leakage",
+        "authority": "phase18_cross_compilation",
+        "kind": "vocabulary_only",
+        "deferral_id": "p19_cross_compilation_pairs",
+        "justification": "declared vocabulary with no instance among the declared targets; the named deferral would introduce one"
+      },
+      {
+        "rejection_class": "cross_pair_host_runtime_package_selected",
+        "authority": "phase18_cross_compilation",
+        "kind": "vocabulary_only",
+        "deferral_id": "p19_cross_compilation_pairs",
+        "justification": "declared vocabulary with no instance among the declared targets; the named deferral would introduce one"
+      },
+      {
+        "rejection_class": "cross_pair_host_linker_selected",
+        "authority": "phase18_cross_compilation",
+        "kind": "vocabulary_only",
+        "deferral_id": "p19_cross_compilation_pairs",
+        "justification": "declared vocabulary with no instance among the declared targets; the named deferral would introduce one"
+      },
+      {
+        "rejection_class": "debug_level_unknown",
+        "authority": "phase18_debug_information",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "debug_record_kind_undeclared",
+        "authority": "phase18_debug_information",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "debug_format_disagrees_with_object_format",
+        "authority": "phase18_debug_information",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "debug_plan_inferred_by_backend",
+        "authority": "phase18_debug_information",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "debug_plan_missing_for_declared_target",
+        "authority": "phase18_debug_information",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "link_mode_unavailable_for_target",
+        "authority": "phase18_link_mode",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "link_mode_silently_substituted",
+        "authority": "phase18_link_mode",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "link_mode_unknown",
+        "authority": "phase18_link_mode",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "link_mode_package_form_mismatch",
+        "authority": "phase18_link_mode",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "link_mode_selected_without_package_evidence",
+        "authority": "phase18_link_mode",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "linker_undiscovered",
+        "authority": "phase18_linker_policy",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "linker_unsupported_object_format",
+        "authority": "phase18_linker_policy",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "linker_argument_outside_vocabulary",
+        "authority": "phase18_linker_policy",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "linker_selected_from_unvalidated_environment",
+        "authority": "phase18_linker_policy",
+        "kind": "architectural_ban",
+        "enforcing_guard": "scripts/phase18_linker_policy.py",
+        "justification": "not an input the compiler can be handed; a source-level ban a guard enforces"
+      },
+      {
+        "rejection_class": "linker_invoked_by_phase18",
+        "authority": "phase18_linker_policy",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "linker_target_mismatch",
+        "authority": "phase18_linker_policy",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "linker_driver_unnamed",
+        "authority": "phase18_linker_policy",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "object_format_unknown_operating_system",
+        "authority": "phase18_object_format",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "object_format_disagrees_with_target_identity",
+        "authority": "phase18_object_format",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "object_format_not_derived_from_target_identity",
+        "authority": "phase18_object_format",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "object_format_declares_no_sections",
+        "authority": "phase18_object_format",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "object_section_misaligned",
+        "authority": "phase18_object_format",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "object_section_unnamed",
+        "authority": "phase18_object_format",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "object_section_kind_duplicated",
+        "authority": "phase18_object_format",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "object_format_declares_no_symbol_bindings",
+        "authority": "phase18_object_format",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "object_symbol_binding_undeclared",
+        "authority": "phase18_object_format",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "inspected_symbol_not_in_compiler_plan",
+        "authority": "phase18_object_inspection",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "inspected_binding_outside_declared_vocabulary",
+        "authority": "phase18_object_inspection",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "inspected_section_outside_declared_vocabulary",
+        "authority": "phase18_object_inspection",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "inspected_relocation_kind_not_in_model",
+        "authority": "phase18_object_inspection",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "inspected_relocation_in_disallowed_section",
+        "authority": "phase18_object_inspection",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "inspection_used_as_semantic_authority",
+        "authority": "phase18_object_inspection",
+        "kind": "architectural_ban",
+        "enforcing_guard": "scripts/phase18_object_inspection.py",
+        "justification": "not an input the compiler can be handed; a source-level ban a guard enforces"
+      },
+      {
+        "rejection_class": "inspected_object_missing_expected_symbol",
+        "authority": "phase18_object_inspection",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "optimisation_level_unknown",
+        "authority": "phase18_optimisation_level",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "optimisation_level_transformation_undeclared",
+        "authority": "phase18_optimisation_level",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "optimisation_level_changed_observable_behaviour",
+        "authority": "phase18_optimisation_level",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "optimisation_level_incompatible_with_debug_plan",
+        "authority": "phase18_optimisation_level",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "optimisation_level_selected_by_backend",
+        "authority": "phase18_optimisation_level",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "publication_before_object_emission",
+        "authority": "phase18_publication",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "publication_before_relocation_validation",
+        "authority": "phase18_publication",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "publication_before_availability_validation",
+        "authority": "phase18_publication",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "publication_before_link_success",
+        "authority": "phase18_publication",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "publication_not_atomic",
+        "authority": "phase18_publication",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "publication_executed_by_phase18",
+        "authority": "phase18_publication",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "temporary_artifact_without_owner_or_cleanup_rule",
+        "authority": "phase18_publication",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "relocation_kind_unknown",
+        "authority": "phase18_relocation_model",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "relocation_in_disallowed_section",
+        "authority": "phase18_relocation_model",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "relocation_offset_malformed",
+        "authority": "phase18_relocation_model",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "relocation_addend_malformed",
+        "authority": "phase18_relocation_model",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "relocation_symbol_missing",
+        "authority": "phase18_relocation_model",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "relocation_validated_too_late",
+        "authority": "phase18_relocation_model",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "reproducible_field_varied_between_builds",
+        "authority": "phase18_reproducibility",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "excluded_field_not_declared",
+        "authority": "phase18_reproducibility",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "normalisation_rule_not_applied",
+        "authority": "phase18_reproducibility",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "reproducibility_claimed_without_a_repeated_build",
+        "authority": "phase18_reproducibility",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "nondeterministic_order_in_a_reproducible_field",
+        "authority": "phase18_reproducibility",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "reproducibility_input_undeclared",
+        "authority": "phase18_reproducibility",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "source_location_lost_in_lowering",
+        "authority": "phase18_source_location",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "source_location_duplicated_for_one_instruction",
+        "authority": "phase18_source_location",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "source_location_fabricated_without_a_source_span",
+        "authority": "phase18_source_location",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "source_location_reconstructed_by_backend",
+        "authority": "phase18_source_location",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "source_location_missing_where_the_debug_plan_requires_it",
+        "authority": "phase18_source_location",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "target_abi_undeclared_by_phase16",
+        "authority": "phase18_target_abi_selection",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "target_abi_incompatible",
+        "authority": "phase18_target_abi_selection",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "target_abi_selection_missing",
+        "authority": "phase18_target_abi_selection",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "target_abi_defined_by_phase18",
+        "authority": "phase18_target_abi_selection",
+        "kind": "architectural_ban",
+        "enforcing_guard": "scripts/phase18_target_abi.py",
+        "justification": "not an input the compiler can be handed; a source-level ban a guard enforces"
+      },
+      {
+        "rejection_class": "target_abi_platform_convention_selected_without_phase16_support",
+        "authority": "phase18_target_abi_selection",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "unknown_target_triple",
+        "authority": "phase18_target_authority",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "malformed_target_triple",
+        "authority": "phase18_target_authority",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "ambiguous_target_triple",
+        "authority": "phase18_target_authority",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "duplicate_declared_triple",
+        "authority": "phase18_target_authority",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "target_layout_disagreement",
+        "authority": "phase18_target_authority",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "host_inference_under_explicit_target",
+        "authority": "phase18_target_authority",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "missing_target_identity_in_request",
+        "authority": "phase18_target_authority",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "unknown_triple",
+        "authority": "phase18_target_diagnostics",
+        "kind": "vocabulary_only",
+        "deferral_id": "p19_additional_target_triples",
+        "justification": "declared vocabulary with no instance among the declared targets; the named deferral would introduce one"
+      },
+      {
+        "rejection_class": "unsupported_architecture",
+        "authority": "phase18_target_diagnostics",
+        "kind": "vocabulary_only",
+        "deferral_id": "p19_additional_target_triples",
+        "justification": "declared vocabulary with no instance among the declared targets; the named deferral would introduce one"
+      },
+      {
+        "rejection_class": "missing_runtime_package",
+        "authority": "phase18_target_diagnostics",
+        "kind": "vocabulary_only",
+        "deferral_id": "p19_additional_target_triples",
+        "justification": "declared vocabulary with no instance among the declared targets; the named deferral would introduce one"
+      },
+      {
+        "rejection_class": "missing_linker",
+        "authority": "phase18_target_diagnostics",
+        "kind": "diagnostic_value",
+        "justification": "a value declared rows carry, not a refusal a validator raises"
+      },
+      {
+        "rejection_class": "incompatible_abi",
+        "authority": "phase18_target_diagnostics",
+        "kind": "vocabulary_only",
+        "deferral_id": "p19_additional_target_triples",
+        "justification": "declared vocabulary with no instance among the declared targets; the named deferral would introduce one"
+      },
+      {
+        "rejection_class": "unavailable_link_mode",
+        "authority": "phase18_target_diagnostics",
+        "kind": "vocabulary_only",
+        "deferral_id": "p19_additional_target_triples",
+        "justification": "declared vocabulary with no instance among the declared targets; the named deferral would introduce one"
+      },
+      {
+        "rejection_class": "incomplete_tuple",
+        "authority": "phase18_target_diagnostics",
+        "kind": "vocabulary_only",
+        "deferral_id": "p19_additional_target_triples",
+        "justification": "declared vocabulary with no instance among the declared targets; the named deferral would introduce one"
+      },
+      {
+        "rejection_class": "target_package_missing",
+        "authority": "phase18_target_package_selection",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "target_package_wrong_target",
+        "authority": "phase18_target_package_selection",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "target_package_object_format_mismatch",
+        "authority": "phase18_target_package_selection",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "target_package_incompatible",
+        "authority": "phase18_target_package_selection",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "target_package_defined_by_phase18",
+        "authority": "phase18_target_package_selection",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "target_package_selected_after_linker_invocation",
+        "authority": "phase18_target_package_selection",
+        "kind": "architectural_ban",
+        "enforcing_guard": "scripts/phase18_target_package.py",
+        "justification": "not an input the compiler can be handed; a source-level ban a guard enforces"
+      },
+      {
+        "rejection_class": "target_supported_without_complete_tuple",
+        "authority": "phase18_target_support",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "target_unsupported_without_named_missing_elements",
+        "authority": "phase18_target_support",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "target_support_order_not_frozen",
+        "authority": "phase18_target_support",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "target_support_order_drift",
+        "authority": "phase18_target_support",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "target_support_decision_drift",
+        "authority": "phase18_target_support",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "target_support_missing_elements_drift",
+        "authority": "phase18_target_support",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      },
+      {
+        "rejection_class": "target_support_element_without_owner_or_evidence",
+        "authority": "phase18_target_support",
+        "kind": "emittable",
+        "justification": "emitted at a refusal site in an authority module and forced by a negative test"
+      }
+    ],
+    "next_patch": "18.19"
   },
   "phase18_object_inspection": {
     "version": "phase18_object_inspection_v1",
@@ -4825,7 +5592,8 @@
       "linker_argument_outside_vocabulary",
       "linker_selected_from_unvalidated_environment",
       "linker_invoked_by_phase18",
-      "linker_target_mismatch"
+      "linker_target_mismatch",
+      "linker_driver_unnamed"
     ],
     "next_patch": "18.8"
   },

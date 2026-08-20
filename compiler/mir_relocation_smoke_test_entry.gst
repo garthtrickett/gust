@@ -46,6 +46,15 @@ func relocation(kind: str, section_kind: str, offset: int, addend: int, symbol: 
     return value;
 }
 
+
+// AUDIT (18.18): relocation_offset_malformed had no test. Gust rejects a
+// negative int literal in some positions, so the value is built by subtraction.
+func negative_offset_relocation(ctx: &Arena) target.MirRelocation[ctx] {
+    mut value := relocation("R_X86_64_64", "text", 0, 0, "symbol:main", ctx);
+    value.offset = 0 - 8;
+    return value;
+}
+
 func main() {
     mut ctx := os.Arena.New();
     defer ctx.Free();
@@ -99,6 +108,12 @@ func main() {
     mut late_model := model("during_output_replacement", &ctx);
     mut late_validation := target.mir_relocation_validate(late_model, absolute, &ctx);
     if late_validation.valid == 1 || std.str_eq(late_validation.reason_code, "relocation_validated_too_late") == 0 { os.Exit(14); }
+
+
+    // AUDIT (18.18): an offset is a position within a section, so a negative one
+    // names no byte at all.
+    mut negative := target.mir_relocation_validate(good_model, negative_offset_relocation(&ctx), &ctx);
+    if negative.valid == 1 || std.str_eq(negative.reason_code, "relocation_offset_malformed") == 0 { os.Exit(20); }
 
     os.LogStr("SUCCESS: Phase 18.4 relocation model smoke passed");
 }

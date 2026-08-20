@@ -48,5 +48,17 @@ func main() {
     mut bad_form_validation := target.mir_link_mode_validate(bad_form, &ctx);
     if bad_form_validation.valid == 1 || std.str_eq(bad_form_validation.reason_code, "link_mode_package_form_mismatch") == 0 { os.Exit(8); }
 
+
+    // AUDIT (18.18): a decision naming no package form selected its mode without
+    // consulting the package authority at all. This is checked before the
+    // package-form lookup, which would otherwise swallow it as a mismatch.
+    mut evidenceless := target.mir_link_mode_validate(decision("", "static", &ctx), &ctx);
+    if evidenceless.valid == 1 || std.str_eq(evidenceless.reason_code, "link_mode_selected_without_package_evidence") == 0 { os.Exit(20); }
+
+    // Sentinel: a named but unrecognised form is a DIFFERENT fault and keeps its
+    // own class, proving the check above is not just catching everything empty.
+    mut unrecognised := target.mir_link_mode_validate(decision("loose_objects", "static", &ctx), &ctx);
+    if unrecognised.valid == 1 || std.str_eq(unrecognised.reason_code, "link_mode_selected_without_package_evidence") == 1 { os.Exit(21); }
+
     os.LogStr("SUCCESS: Phase 18.8 link mode smoke passed");
 }

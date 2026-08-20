@@ -4,7 +4,7 @@ linker_descriptors	5
 discovered_linkers	1
 discovery_steps	3
 permitted_arguments	4
-rejection_classes	6
+rejection_classes	7
 
 descriptor	every declared target has exactly one linker descriptor	descriptor coverage compared against the declared triple vocabulary	Level 1
 descriptor	no duplicate linker descriptor for a target	uniqueness check over descriptor target ids	Level 1

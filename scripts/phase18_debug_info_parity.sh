@@ -53,4 +53,19 @@ if "$worker" phase18-debug-plan-witness "$build_dir/both.request" >"$build_dir/b
 fi
 rg -n -F 'debug_record_kind_undeclared' "$build_dir/both.err" >/dev/null
 
-echo "guard-cranelift-phase18-debug-info-parity: ok (byte-identical witness, 4 refusals, Level 2)"
+# AUDIT (18.18): two declared classes the worker emits that nothing forced.
+stage="reject a debug format the object format does not imply"
+sed 's/debug_format=dwarf;/debug_format=codeview;/' "$request" >"$build_dir/format.request"
+if "$worker" phase18-debug-plan-witness "$build_dir/format.request" >"$build_dir/format.witness" 2>"$build_dir/format.err"; then
+  echo "worker accepted a debug format ELF does not imply" >&2; exit 1
+fi
+rg -n -F 'debug_format_disagrees_with_object_format' "$build_dir/format.err" >/dev/null
+
+stage="reject a declared target carrying no debug plan"
+grep -v '^debug_plan:' "$request" >"$build_dir/planless.request"
+if "$worker" phase18-debug-plan-witness "$build_dir/planless.request" >"$build_dir/planless.witness" 2>"$build_dir/planless.err"; then
+  echo "worker accepted a request with no debug plan" >&2; exit 1
+fi
+rg -n -F 'debug_plan_missing_for_declared_target' "$build_dir/planless.err" >/dev/null
+
+echo "guard-cranelift-phase18-debug-info-parity: ok (byte-identical witness, 6 refusals, Level 2)"

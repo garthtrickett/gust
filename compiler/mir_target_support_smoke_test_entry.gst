@@ -45,6 +45,25 @@ func make_tuple(
     return tuple;
 }
 
+
+// AUDIT (18.18): two declared classes with no negative test. Both need a tuple
+// shaped in ways make_tuple cannot produce, so they get their own builders.
+func complete_tuple_with_stray_missing(ctx: &Arena) target.MirTargetSupportTuple[ctx] {
+    mut tuple := make_tuple("supported", 1, 1, 1, 1, 0, 1, ctx);
+    mut missing: std.Vector[str, ctx] := std.VectorNew(ctx);
+    missing.Push(std.Clone(ctx, "linker"));
+    mut index: Index[std.Vector[str, ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(index, missing);
+    tuple.missing_elements = index;
+    return tuple;
+}
+
+func tuple_with_unattributed_element(ctx: &Arena) target.MirTargetSupportTuple[ctx] {
+    mut tuple := make_tuple("supported", 1, 1, 1, 1, 0, 1, ctx);
+    tuple.linker_element = target.mir_target_make_element("linker", "", "", 1, 1, ctx);
+    return tuple;
+}
+
 func main() {
     mut ctx := os.Arena.New();
     defer ctx.Free();
@@ -90,6 +109,18 @@ func main() {
     mut unfrozen := make_tuple("unsupported_pending_tuple_evidence", 1, 0, 0, 0, 1, 0, &ctx);
     mut unfrozen_validation := target.mir_target_tuple_validate(unfrozen, &ctx);
     if unfrozen_validation.valid == 1 || std.str_eq(unfrozen_validation.reason_code, "target_support_order_not_frozen") == 0 { os.Exit(9); }
+
+
+    // AUDIT (18.18): a complete tuple that still names a missing element. The
+    // two statements contradict each other, so the tuple cannot be trusted.
+    mut strayed := target.mir_target_tuple_validate(complete_tuple_with_stray_missing(&ctx), &ctx);
+    if strayed.valid == 1 || std.str_eq(strayed.reason_code, "target_support_missing_elements_drift") == 0 { os.Exit(20); }
+
+    // AUDIT (18.18): an element naming no owning authority and no evidence.
+    // Completeness judges present and compatible only, so without this the
+    // tuple could list all four parts and prove none of them.
+    mut unattributed := target.mir_target_tuple_validate(tuple_with_unattributed_element(&ctx), &ctx);
+    if unattributed.valid == 1 || std.str_eq(unattributed.reason_code, "target_support_element_without_owner_or_evidence") == 0 { os.Exit(21); }
 
     os.LogStr("SUCCESS: Phase 18.2 target support tuple smoke passed");
 }

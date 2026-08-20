@@ -1,0 +1,72 @@
+Patch 18.18 — Phase 18 Deferral Audit
+deferrals	9
+rejection_classes_classified	104
+kind:architectural_ban	4
+kind:diagnostic_value	1
+kind:emittable	85
+kind:guard_enforced	5
+kind:vocabulary_only	9
+
+p19_additional_target_triples
+	reason	the four undeclared candidate targets need a cross linker before their support tuple can complete
+	prerequisite	cross_linker_discovery_and_declaration_contract
+	capability owner	compiler_additional_target_planner
+	diagnostic owner	compiler_additional_target_verifier
+	rejection code	target_additional_triples_deferred
+	from rows	p18_target_authority, p18_linker_policy
+p19_shared_library_and_dynamic_loader
+	reason	dynamic linking needs a shared library package form that the runtime package authority does not produce
+	prerequisite	shared_library_package_form_and_dynamic_loader_contract
+	capability owner	compiler_shared_library_planner
+	diagnostic owner	compiler_shared_library_verifier
+	rejection code	link_mode_dynamic_deferred
+	from rows	p18_link_modes, p18_target_runtime_package_selection
+p19_position_independent_and_hardening
+	reason	position independent executables and hardening flags need a declared relocation and linker argument vocabulary this phase does not carry
+	prerequisite	position_independent_relocation_and_hardening_argument_contract
+	capability owner	compiler_hardening_planner
+	diagnostic owner	compiler_hardening_verifier
+	rejection code	hardening_policy_deferred
+	from rows	p18_relocation_model, p18_linker_policy
+p19_link_time_and_profile_guided_optimisation
+	reason	link time and profile guided optimisation change emitted bytes across translation units, which the declared level vocabulary does not model
+	prerequisite	whole_program_optimisation_and_profile_input_contract
+	capability owner	compiler_whole_program_optimisation_planner
+	diagnostic owner	compiler_whole_program_optimisation_verifier
+	rejection code	optimisation_whole_program_deferred
+	from rows	p18_optimisation_levels, p18_reproducible_output
+p19_complete_debug_fidelity
+	reason	variable locations, type descriptions, inlined frames, and debugger integration are excluded by name from the declared debug plan
+	prerequisite	complete_debug_record_and_debugger_integration_contract
+	capability owner	compiler_debug_fidelity_planner
+	diagnostic owner	compiler_debug_fidelity_verifier
+	rejection code	debug_fidelity_deferred
+	from rows	p18_debug_information, p18_source_locations
+p19_sysroot_acquisition
+	reason	cross compilation to a declared pair needs target headers and libraries that no declared authority acquires or manages
+	prerequisite	sysroot_acquisition_and_host_isolation_contract
+	capability owner	compiler_sysroot_planner
+	diagnostic owner	compiler_sysroot_verifier
+	rejection code	cross_sysroot_deferred
+	from rows	p18_cross_compilation
+p19_code_signing_and_attestation
+	reason	signing and platform attestation modify a published artifact after the atomic publication this phase declares
+	prerequisite	artifact_signing_and_attestation_ordering_contract
+	capability owner	compiler_artifact_signing_planner
+	diagnostic owner	compiler_artifact_signing_verifier
+	rejection code	publication_signing_deferred
+	from rows	p18_atomic_publication
+p19_toolchain_distribution
+	reason	installing a compiler and its runtime packages on a machine that has neither is outside the declared target, object, and linker boundary
+	prerequisite	toolchain_packaging_and_installation_contract
+	capability owner	compiler_toolchain_distribution_planner
+	diagnostic owner	compiler_toolchain_distribution_verifier
+	rejection code	toolchain_distribution_deferred
+	from rows	p18_target_runtime_package_selection
+p19_cross_compilation_pairs
+	reason	phase 18 declares zero cross pairs, so the three cross rejection classes have no input that can reach them
+	prerequisite	declared_host_target_pair_with_a_complete_cross_toolchain
+	capability owner	compiler_cross_pair_planner
+	diagnostic owner	compiler_cross_pair_verifier
+	rejection code	cross_pairs_deferred
+	from rows	p18_cross_compilation, p18_linker_policy

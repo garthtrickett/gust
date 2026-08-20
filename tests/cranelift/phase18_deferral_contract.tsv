@@ -1,0 +1,16 @@
+kind	requirement	evidence	level
+taxonomy	every declared rejection class carries a taxonomy entry	class set compared against the taxonomy	1
+taxonomy	the taxonomy classifies no class that is not declared	same comparison in the other direction	1
+taxonomy	an emittable class is emitted at a refusal site	anchored match on the emission syntax, not a substring	1
+taxonomy	an emittable class is forced by a negative test	class name searched in the smoke and parity corpus	1
+taxonomy	an architectural ban is not emitted as a runtime refusal	emission check inverted for bans	1
+taxonomy	an architectural ban names a guard that exists and mentions it	guard file read and searched	1
+taxonomy	a guard-enforced class names a guard that raises it	guard file read and searched	1
+taxonomy	a diagnostic value is carried by a declared row	value searched among declared row fields	1
+taxonomy	vocabulary with no instance names a deferral that would add one	deferral id checked against the audit	1
+taxonomy	no bare allowlist exists for unreachable classes	no allowlist field is accepted	1
+deferral	every deferral names the phase that will carry it	deferral id prefix check	1
+deferral	every deferral names a capability owner and a separate diagnostic owner	per-deferral distinctness check	1
+deferral	every deferral names its prerequisite and rejection code	per-deferral field check	1
+deferral	every deferral names the Phase 18 rows it comes from	rows checked against the registry	1
+deferral	no deferral is declared twice	uniqueness check over deferral ids	1
