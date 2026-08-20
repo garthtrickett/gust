@@ -6,7 +6,8 @@
     "an orphan, so entries have to be removed as they are fixed.",
     "Recorded 2026-08-20 from issue #92. Each entry needs its owner to either wire",
     "it into CI or delete it as superseded. Do not add to this list to silence a",
-    "new orphan."
+    "new orphan.",
+    "Not every entry should be wired. Some are unreachable BY DESIGN and are still load-bearing: guard-cloud-heavy-ci-surface asserts that heavy-guards.yml must NOT run guard-mir-feature-migration-suite, because it was deliberately split into migration-* matrix shards; and guard-mir-ast-to-c-retirement-manifest-surface and guard-mir-to-c-boring-surface both parse that recipe's BODY as a specification. Deleting it would break two guards. Check for readers before removing anything here."
   ],
   "recorded": "2026-08-20",
   "issue": 92,
@@ -33,5 +34,9 @@
     "guard-step51-non-launder-hashmap-get-value": "Step 51 provenance work",
     "guard-step51-non-launder-hashmap-get-value-field": "Step 51 provenance work",
     "guard-step51-provenance-origin-spine-fast-c": "Step 51 provenance work"
+  },
+  "notes": {
+    "guard-mir-feature-migration-suite": "Intentionally not run. Split into the migration-* shards in heavy-guards.yml, and guard-cloud-heavy-ci-surface fails if the workflow references it again. Its body is read as a spec by guard-mir-ast-to-c-retirement-manifest-surface and guard-mir-to-c-boring-surface. Keep the recipe; do not wire it.",
+    "guard-mir-feature-migration-registry": "Reached only from guard-mir-feature-migration-suite, which is intentionally unreachable. Confirm the migration-* shards cover it before deciding."
   }
 }
