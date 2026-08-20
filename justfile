@@ -21925,6 +21925,19 @@ guard-stdlib-s1-close:
     done
 
     # S1.12 must not be marked DONE while anything is outstanding.
+    # WARNING to anyone adding a clause below this line.
+    #
+    # Everything inside this `if` is gated on S1.12 being DONE, which is false in
+    # normal operation -- S1.12 cannot be DONE while any patch is outstanding, and
+    # patches are outstanding. So a clause added here NEVER EXECUTES during ordinary
+    # runs, and a negative test for it will pass without ever reaching it.
+    #
+    # That is not hypothetical: the Level 3 check below was first written to accept
+    # any run ID, its negative test passed, and it was only caught by asking why.
+    # It would have accepted a *queued* run's ID as evidence of a *result*.
+    #
+    # To test a clause in here, temporarily mark every patch DONE, then restore.
+    # Otherwise the clause is decorative.
     if rg -n -F -e '- [x] Patch S1.12' "$roadmap" >/dev/null 2>&1; then
       if [ -n "$(rg -n -e '^- \[ \] Patch S1\.[0-9]+' "$roadmap" | rg -v 'S1\.12' || true)" ]; then
         echo "S1.12 is marked DONE while other S1 patches are still outstanding:"
