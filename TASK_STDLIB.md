@@ -47,7 +47,7 @@ This is a scheduling fact, not an objection to the two-lane model.
 
 - [x] Patch S1.0 — Opening Inventory and Stdlib Surface Baseline — DONE
 - [x] Patch S1.1 — `str` Equality Diagnostic — DONE
-- [ ] Patch S1.2 — String Surface Regression Suite
+- [x] Patch S1.2 — String Surface Regression Suite — DONE
 - [x] Patch S1.3 — HashMap Methods Through References — DONE
 - [ ] Patch S1.4 — Branded Collection Type Consistency
 - [ ] Patch S1.5 — Clone Arena Destination Normalization
@@ -254,6 +254,15 @@ same way `TASK.md` was published before Patch 18.0.
 5. **MIR-to-C:** yes.
 6. **Cranelift:** yes.
 7. **Bootstrap:** no, if the symbol signatures are unchanged.
+
+**Observed 2026-08-20 by Patch S1.2.** Confirmed by running a compiled program:
+`std.str_byte_at("abc", 99)` prints `std.str_byte_at bounds check failed` and the
+process exits with status 1. The program's own output stops there — `before` is
+printed, `after` is not. So the failure terminates the process rather than the
+request, task, or job, which is what `VISION.md` §34 requires. S1.2 records this
+and does not change it; the regression suite deliberately does not exercise an
+out-of-range index, because doing so would terminate the suite instead of
+reporting a failure.
 
 ### CR-4 — Protocol for adding a `std.*` symbol — **RESOLVED 2026-08-19**
 
