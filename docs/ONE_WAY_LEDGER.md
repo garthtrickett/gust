@@ -68,8 +68,10 @@ Evidence section below; row-level citations are `path:line` pinned to that commi
 | 27 | Backend | Cranelift native | — (C retained as bootstrap seed and differential oracle) | **PARTIAL** — Phase 18 open |
 | 28 | Integer types | Fixed-width `i32`, `u32`, `i64`, `u64`, `isize`, `usize` | a single unsized integer | **ABSENT** — E11 |
 | 29 | Overflow | Traps by default in all builds; wrapping/saturating/checked are named operations | silent wraparound | **VIOLATED** — E11 |
+| 30 | Exhaustiveness | All enum matching is exhaustive | unhandled variants | **HOLDS** — E12 |
+| 31 | Copy vs move | A struct is copyable when every field is and the type is *explicitly marked* copyable | inferred copyability | **PARTIAL** — E13 |
 
-Counts: 7 `HOLDS`, 4 `PARTIAL`, 5 `VIOLATED`, 1 `DEFERRED`, 12 `ABSENT`.
+Counts: 8 `HOLDS`, 5 `PARTIAL`, 5 `VIOLATED`, 1 `DEFERRED`, 12 `ABSENT`.
 
 | Row | Rule | Status | Owner |
 | --- | --- | --- | --- |
@@ -363,6 +365,68 @@ $ grep -cE 'Decimal|Money|Instant|Duration|ZonedDateTime|LocalTime' docs/STDLIB_
 ```
 
 Filed as issue #103.
+
+### E12 — match exhaustiveness is enforced, in both compilers (row 30)
+
+Good news, recorded because a stale plan says otherwise. `compiler-plan.md`'s
+IMMEDIATE ROADMAP still lists "Guarantee exhaustive match/switch checking for
+enums" as outstanding. It is done.
+
+```
+$ grep -rin 'exhaust' src/typechecker/visitor.rs compiler/typechecker.gst
+src/typechecker/visitor.rs:1949:  // Exhaustiveness check: Ensure all variants are matched
+src/typechecker/visitor.rs:1955:  "Semantic Error: Match on enum '{}' is not exhaustive. Missing variant '{}'"
+compiler/typechecker.gst:10809: // Exhaustiveness check
+compiler/typechecker.gst:10822: msg = std.Concat(msg, "' is not exhaustive. Missing variant '");
+```
+
+Both compilers check it and both name the missing variant. §31's rationale —
+"exhaustiveness converts a whole class of generated-code omission into a compile
+error" — is one of the few containment-shaped claims in the document that the
+compiler actually makes good on today.
+
+### E13 — copyability is inferred, never declared (row 31)
+
+`docs/VISION.md` §23: "A user-defined struct is copyable only when every field is
+copyable **and the type is explicitly marked copyable**."
+
+The first half holds. The second half describes a mechanism that does not exist:
+
+```
+$ for k in copyable Copyable; do
+    printf '%-10s rs=%s gst=%s\n' "$k" \
+      "$(grep -c "\"$k\"" src/lexer.rs)" "$(grep -c "\"$k\"" compiler/lexer.gst)"
+  done
+copyable   rs=0 gst=0
+Copyable   rs=0 gst=0
+```
+
+There is no marker. Copy-versus-move is decided structurally by `is_linear`
+(`src/typechecker.rs:219-250`, mirrored at `compiler/typechecker.gst:1761`):
+
+| Type | Linear (moves) |
+| --- | --- |
+| `Int`, `Byte`, `Bool`, `Void`, `Index` | no — copies |
+| `Arena`, `RawPointer`, `Slice`, `ByteSlice`, `Str`, `Generic` | yes |
+| `Struct` | yes iff **any** field is linear, transitively |
+| unregistered `Struct` | yes — conservative fallback |
+
+**The consequence worth knowing.** Because linearity is structural, transitive,
+and unannotated, *adding one `str` field to a plain struct silently converts that
+struct from copy to move*, changing behaviour at every existing use site, with no
+annotation at the declaration and no diagnostic at the edit. An explicit
+`copyable` marker is precisely the mechanism that would turn that into a compile
+error at the declaration, which is presumably why §23 specifies one.
+
+The row is `PARTIAL`, not `VIOLATED`: the compiler's rule is a coherent design
+and it enforces the field-transitivity half. What is missing is the declaration
+that would make a change of category visible.
+
+Note this is a different mechanism from the resource opt-in in §28. `is_linear`
+here drives move tracking; resource semantics use separate `is_linear_resource`
+metadata, which is registered only in the self-hosted compiler
+(`STEP52_RESOURCE_SEMANTICS.md` verified state, item 1). Do not conflate them —
+the two answer different questions and only one is opt-in.
 
 ## Maintenance
 
