@@ -97,8 +97,10 @@ when the backend does.
 | 34 | Host access | Filesystem and process access are never silently available | ambient host authority | **VIOLATED** — E19 |
 | 35 | Visibility | private-to-module by default, then package / application / public | everything visible everywhere | **ABSENT** — E19 |
 | 36 | Cross-context movement | A shorter-lived value enters a longer-lived context only by cloning or explicit transfer | silently extending a lifetime | **PARTIAL** — E20 |
+| 37 | Native code | Forbidden by default; only via signed adapter, capability, isolation | ungated native execution | **PARTIAL** — E21 |
+| 38 | Packages | A package is a directory tree with a manifest; lockfiles record provenance | no package identity | **ABSENT** — E21 |
 
-Counts: 9 `HOLDS`, 6 `PARTIAL`, 7 `VIOLATED`, 1 `DEFERRED`, 13 `ABSENT`.
+Counts: 9 `HOLDS`, 7 `PARTIAL`, 7 `VIOLATED`, 1 `DEFERRED`, 14 `ABSENT`.
 
 Row 27 is the one in motion. It is the declared priority and several other rows
 resolve with it — see E17.
@@ -810,6 +812,68 @@ The qualification is that the whole mechanism rests on brand *identity*, which
 D-1 derives from identifier spelling rather than from the type. A rule enforced
 by comparing brands is only as sound as the way brands are identified, so row 36
 cannot be stronger than row 2 until Phase 19 lands.
+
+### E21 — the FFI gate exists and the builtins bypass it (rows 37, 38)
+
+**Row 37 — there is a real gate, and it is inverted.**
+
+`docs/VISION.md` §93: "Native code is forbidden by default. Permitted only
+through a signed adapter, an explicit native-code capability, and strong
+isolation."
+
+Part of this holds, and it is worth crediting. `extern` is a keyword in the live
+lexer, `extern func` declarations parse (`compiler/parser.gst:1169-1199`), and
+**calling one requires an explicit `unsafe` block** —
+`compiler/typechecker.gst:4047`:
+
+```
+Semantic Error: Direct external/native function calls require an explicit 'unsafe' block
+```
+
+None of §93's governance exists — no signed adapter, no native-code capability,
+no isolation, no separate process — so the row is `PARTIAL` rather than `HOLDS`.
+
+**The asymmetry is the finding.** The built-in `os.*` surface bypasses that gate
+entirely. `tests/e2e_os_system.gst` is the whole program:
+
+```gust
+func main() {
+    mut code := os.System("echo 'FFI_SUBPROCESS_OK'");
+    os.LogInt(code);
+}
+```
+
+No `unsafe` block, no import, four lines, and it spawns `/bin/sh`
+(`src/runtime/file_io.c:573`). So a *declared* FFI call is gated and *arbitrary
+shell execution* is not. The dangerous path is the ungated one, and it is
+ungated because it is built in rather than declared.
+
+This narrows E19 into something actionable. E19 said host authority is ambient
+and the fix was the whole effect system. This says the gate mechanism **already
+exists** and simply is not applied to the builtins. Applying it is a policy
+decision plus the wrap-then-gate sequencing `compiler-plan.md` Step 5.1 already
+describes — wrap every existing call site in `unsafe` first, then turn on
+enforcement — because the compiler and test runner use `os.*` throughout. Filed as issue #108, posing the question rather than prescribing the answer.
+
+**Row 38 — packages do not exist as a concept.**
+
+§70: "A package is one directory tree with a package manifest." §72: lockfiles
+record source hashes, compiler compatibility, signatures, and capability
+requirements.
+
+No `package`, `module`, or `manifest` keyword exists in the live lexer, and there
+is no manifest or lockfile format in the repository. The only `.toml` files are
+`Cargo.toml`, which belongs to the deprecated prototype, and `treefmt.toml`.
+
+What exists is `import` resolving one source file at a time, which makes §70's
+"a module is one source file" true de facto. Package identity, the approved
+package graph, the capability graph, and the lockfile diff that §72 calls a
+primary product surface have no representation. `ABSENT` rather than `VIOLATED`:
+nothing does the opposite, there is simply no mechanism.
+
+**Row 37's sibling in §94 holds vacuously.** "Arbitrary networking is forbidden
+by default" is true because there is no networking at all — no socket, no
+`connect`, no `AF_INET` anywhere in `src/runtime/*.c`.
 
 ## Maintenance
 

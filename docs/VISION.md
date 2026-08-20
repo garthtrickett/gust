@@ -1319,6 +1319,8 @@ Breaking message changes require a new schema version and a compatibility period
 
 A module is one source file. A package is one directory tree with a package manifest.
 
+> **The first sentence holds; the second has no mechanism.** `import` resolves one source file at a time, so "a module is one source file" is true de facto. There is no `package`, `module`, or `manifest` keyword in the live lexer and no manifest or lockfile format in the repository — the only `.toml` files belong to the deprecated prototype and to `treefmt`. Package identity, the approved package graph, the capability graph, and §72's lockfile diff have no representation. `docs/ONE_WAY_LEDGER.md` E21.
+
 An application is a root package, its approved package graph, and its capability graph.
 
 Packages may be reused across projects.
@@ -1524,11 +1526,17 @@ Native code is forbidden by default.
 
 Permitted only through a signed adapter, an explicit native-code capability, and strong isolation.
 
+> **A gate exists; the governance does not; and the builtins bypass it.** Verified 2026-08-20 at `b47d0049`. `extern func` declarations parse (`compiler/parser.gst:1169-1199`) and calling one requires an explicit `unsafe` block (`compiler/typechecker.gst:4047`) — that much is real. No signed adapter, native-code capability, isolation, or separate process exists.
+>
+> The asymmetry matters more than the missing governance: the built-in `os.*` surface passes through no gate at all, so `os.System` spawns `/bin/sh` from a four-line program with no `unsafe` and no import (`tests/e2e_os_system.gst`). A *declared* FFI call is gated; *arbitrary shell execution* is not. `docs/ONE_WAY_LEDGER.md` E21, issue #108.
+
 A separate process or sandbox is preferred over in-process execution.
 
 ## 94. Arbitrary networking
 
 Arbitrary networking is forbidden by default.
+
+> **True, vacuously.** There is no networking at all — no socket, `connect`, or `AF_INET` anywhere in `src/runtime/*.c`. Nothing enforces the rule; there is simply nothing to enforce it against, and it becomes testable only when a network capability exists.
 
 Approved capabilities use allowlisted hosts and protocols.
 
