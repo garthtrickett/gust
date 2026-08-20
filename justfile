@@ -10627,11 +10627,9 @@ guard-cranelift-phase11-scalar-expression-parity:
       cat "$negative_dir/default.compiler.stderr"
       exit 1
     fi
-    cat src/runtime.c "$negative_dir/default.c" >"$negative_dir/final.c"
     cat src/runtime.c "$negative_dir/default.c" >"$negative_dir/default.final.c"
     "$CC_BIN" $CFLAGS_VAL -Isrc \
       "$negative_dir/default.final.c" \
-      "$negative_dir/final.c" \
       -o "$negative_dir/mir-to-c-program"
     execute_and_capture \
       "$negative_dir/mir-to-c-program" \
@@ -10652,7 +10650,6 @@ guard-cranelift-phase11-scalar-expression-parity:
         "$negative_source" \
         >"$negative_dir/native.stdout" \
         2>"$negative_dir/native.stderr"
-        >"$negative_dir/native.stdout" 2>"$negative_dir/native.stderr"
     negative_status="$?"
     set -e
     if [ "$negative_status" = "0" ]; then

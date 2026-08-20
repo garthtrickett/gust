@@ -328,59 +328,16 @@ func mir_native_generic_const_eval(
             if left.known == 0 || right.known == 0 {
                 return result;
             }
-            mut op := expression.Binary.op;
-            if std.str_eq(op, "+") == 1 {
-                result.known = 1;
-                result.value = left.value + right.value;
+            mut folded := scalar_expression.mir_native_scalar_const_binary(
+                expression.Binary.op,
+                left.value,
+                right.value
+            );
+            if folded.known == 0 {
                 return result;
             }
-            if std.str_eq(op, "-") == 1 {
-                result.known = 1;
-                result.value = left.value - right.value;
-                return result;
-            }
-            if std.str_eq(op, "*") == 1 {
-                result.known = 1;
-                result.value = left.value * right.value;
-                return result;
-            }
-            // Comparisons yield the canonical boolean values 0 and 1.
-            if std.str_eq(op, "==") == 1 {
-                result.known = 1;
-                result.value = 0;
-                if left.value == right.value { result.value = 1; }
-                return result;
-            }
-            if std.str_eq(op, "!=") == 1 {
-                result.known = 1;
-                result.value = 0;
-                if left.value != right.value { result.value = 1; }
-                return result;
-            }
-            if std.str_eq(op, ">") == 1 {
-                result.known = 1;
-                result.value = 0;
-                if left.value > right.value { result.value = 1; }
-                return result;
-            }
-            if std.str_eq(op, "<") == 1 {
-                result.known = 1;
-                result.value = 0;
-                if left.value < right.value { result.value = 1; }
-                return result;
-            }
-            if std.str_eq(op, ">=") == 1 {
-                result.known = 1;
-                result.value = 0;
-                if left.value >= right.value { result.value = 1; }
-                return result;
-            }
-            if std.str_eq(op, "<=") == 1 {
-                result.known = 1;
-                result.value = 0;
-                if left.value <= right.value { result.value = 1; }
-                return result;
-            }
+            result.known = 1;
+            result.value = folded.value;
             return result;
         }
         return result;
@@ -910,7 +867,8 @@ type MirNativeGenericSelectorFold struct {
 // bound to the helper's parameters. Handles exactly three forms:
 //   <int param>              -> the literal bound to that parameter
 //   <int literal>            -> itself
-//   <either of the above> +/- <int literal>
+//   <either of the above> <op> <int literal>, for the operators the
+//   Phase 13 scalar-expression owner can resolve at compile time
 // Anything else declines, so the fold declines with it.
 func mir_native_generic_fold_arm(
     expression: ast.Expression[ctx],
@@ -945,11 +903,6 @@ func mir_native_generic_fold_arm(
             return arm;
         }
         if expression.tag == 10 {
-            mut is_add := std.str_eq(expression.Binary.op, "+");
-            mut is_sub := std.str_eq(expression.Binary.op, "-");
-            if is_add == 0 && is_sub == 0 {
-                return arm;
-            }
             mut right := ctx[expression.Binary.right];
             if right.tag != 1 {
                 return arm;
@@ -964,12 +917,16 @@ func mir_native_generic_fold_arm(
             if left_arm.represented == 0 {
                 return arm;
             }
-            arm.represented = 1;
-            if is_add == 1 {
-                arm.value = left_arm.value + right.Integer.val;
-            } else {
-                arm.value = left_arm.value - right.Integer.val;
+            mut folded := scalar_expression.mir_native_scalar_const_binary(
+                expression.Binary.op,
+                left_arm.value,
+                right.Integer.val
+            );
+            if folded.known == 0 {
+                return arm;
             }
+            arm.represented = 1;
+            arm.value = folded.value;
             return arm;
         }
         return arm;
@@ -1050,28 +1007,25 @@ func mir_native_generic_selector_fold(
             probe = probe + 1;
         }
 
-        // Both arms must fold, even though only one is selected: an arm that
-        // cannot be evaluated means the shape is not the one claimed here.
-        mut then_arm := mir_native_generic_fold_arm(
-            ctx[then_statements[0].Return.expr],
+        // The predicate is a literal, so exactly one arm is reachable. Fold
+        // that arm and that arm only: the other is dead code, and evaluating
+        // it would make this route answer questions about expressions the
+        // program never runs.
+        mut selected := ctx[else_statements[0].Return.expr];
+        if arguments[0].Bool.val == 1 {
+            selected = ctx[then_statements[0].Return.expr];
+        }
+        mut arm := mir_native_generic_fold_arm(
+            selected,
             parameters,
             arguments,
             ctx
         );
-        mut else_arm := mir_native_generic_fold_arm(
-            ctx[else_statements[0].Return.expr],
-            parameters,
-            arguments,
-            ctx
-        );
-        if then_arm.represented == 0 || else_arm.represented == 0 {
+        if arm.represented == 0 {
             return fold;
         }
 
-        fold.value = else_arm.value;
-        if arguments[0].Bool.val == 1 {
-            fold.value = then_arm.value;
-        }
+        fold.value = arm.value;
         fold.represented = 1;
         return fold;
     }

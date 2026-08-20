@@ -665,3 +665,69 @@ func mir_native_scalar_expression_source_lower(
         ctx
     );
 }
+
+// Compile-time evaluation of one bounded integer binary operation.
+//
+// Phase 13 already owns subtraction and multiplication here -- they are the
+// operations this module lowers as SubI32Literal and MulI32Literal -- so the
+// arithmetic that resolves them at compile time belongs here too, next to the
+// lowering it mirrors. Callers that only need a folded literal ask for one and
+// never learn which operator produced it.
+//
+// Division is absent: no phase has connected it, and a fold that resolved it
+// would connect it by another name.
+type MirNativeScalarConstBinary struct {
+    known: int,
+    value: int
+}
+
+func mir_native_scalar_const_binary(
+    op: str,
+    left: int,
+    right: int
+) MirNativeScalarConstBinary {
+    mut folded: MirNativeScalarConstBinary;
+    folded.known = 1;
+    folded.value = 0;
+
+    if std.str_eq(op, "+") == 1 {
+        folded.value = left + right;
+        return folded;
+    }
+    if std.str_eq(op, "-") == 1 {
+        folded.value = left - right;
+        return folded;
+    }
+    if std.str_eq(op, "*") == 1 {
+        folded.value = left * right;
+        return folded;
+    }
+    // Comparisons yield the canonical boolean values 0 and 1.
+    if std.str_eq(op, "==") == 1 {
+        if left == right { folded.value = 1; }
+        return folded;
+    }
+    if std.str_eq(op, "!=") == 1 {
+        if left != right { folded.value = 1; }
+        return folded;
+    }
+    if std.str_eq(op, ">") == 1 {
+        if left > right { folded.value = 1; }
+        return folded;
+    }
+    if std.str_eq(op, "<") == 1 {
+        if left < right { folded.value = 1; }
+        return folded;
+    }
+    if std.str_eq(op, ">=") == 1 {
+        if left >= right { folded.value = 1; }
+        return folded;
+    }
+    if std.str_eq(op, "<=") == 1 {
+        if left <= right { folded.value = 1; }
+        return folded;
+    }
+
+    folded.known = 0;
+    return folded;
+}
