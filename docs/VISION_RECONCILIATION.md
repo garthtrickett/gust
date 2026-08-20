@@ -528,6 +528,48 @@ The honest summary is that the transition is a precondition for the claim rather
 than the claim. It makes the memory model true; it does not make the authority
 model exist.
 
+### 3.3.1 Its second half — "what we build ourselves" — is also retired, and mostly by decisions taken later
+
+§3.3 retires `general-ecosystem.md`'s Part 1, the fifty-library wrapping
+proposal. Its Part 2 proposes ten components Gust would build itself, and was
+**not** obviously wrong when the retirement was written. **Eight of the ten now
+contradict a decision, and most of those decisions were taken on 2026-08-20.**
+Recorded so the document is fully accounted for and nobody re-mines the half that
+§3.3 did not reach.
+
+| Proposal | Contradicts |
+| --- | --- |
+| `func find_user[ctx](…)`, `handle_request[ctx]`, `create_pipeline[ctx]` | **User-written generic functions.** §13's ban, confirmed by **OD-2** on 2026-08-20 |
+| Dependency-injection container | **§74 prohibits hidden dependency injection** by name |
+| `std.Spawn(worker.run, &worker)` | **OD-11**, 2026-08-20 — the bare form is deleted |
+| Middleware pipeline holding `fn` handlers in a vector | §17 — see below |
+| Hand-written `MockDB` with `.Expect(…)` | §17 gives **compiler-checked mocks**; a hand-written mock is what effects make unnecessary |
+| `Response[ctx] { arena: *Arena }` | A struct holding a raw arena pointer, adjacent to **D-1** and to the non-laundering rule |
+| ORM `.Where(User, { … })` | The *idea* survives as §55/§55.1; **the spelling implies user generics** |
+| "Use C for the 90% already written perfectly" | §93, §98, and the C-retirement priority — §3.3 above |
+
+**The middleware example deserves its own line, because it fails for a reason
+that is not obvious and that will recur.** §17 states that *function values
+preserve their effect sets*. So a `Vector[Middleware[ctx], ctx]` requires every
+middleware in it to carry the **identical** effect set — an auth middleware
+needing `db.read<Session>` cannot sit in the same vector as a logging middleware
+that needs nothing. **Homogeneous collections of function values are where an
+effect system bites hardest**, and any pipeline, hook list, or handler table
+design will hit it. That is a real design constraint on the platform layer, not a
+flaw in this example, and it is worth knowing before the platform is built.
+
+**What survives, and it is not nothing.** Appendices A and B below were extracted
+from this document before retirement and remain the best statements of their
+ideas; **Appendix A is now extended by `docs/VISION.md` §38.1**, which supersedes
+its rollback story with the pending-action journal. And the narrow form of the C
+argument survives where the general form does not: `docs/VISION.md` §54.0 records
+linking a C client for **one** vendor capability as a live option, and
+`docs/STRATEGY_REVIEW.md` notes that hiding the implementation behind
+`use sql.postgres` makes that choice reversible. **The difference between the
+surviving argument and the retired one is fifty libraries versus one, in-process
+versus behind a capability boundary** — which is exactly the distinction §98
+draws.
+
 ## Appendix A — Arena-based SAM topology
 
 Extracted from `general-ecosystem.md` before its retirement (§3.3). This is the
