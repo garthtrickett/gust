@@ -1923,7 +1923,28 @@ Both instances share a shape: the author was reasoning carefully about something
 else, and the defective reading was scenery for that reasoning rather than its
 subject. **Scrutiny follows attention, and attention was elsewhere by
 construction** — which is why "be more careful" is not a remedy and "notice that a
-figure became evidence" is. The rule is not to check more; it is to notice that a figure has
+figure became evidence" is.
+
+**A third instance is what makes the mechanism testable, because it is the
+prediction the mechanism makes.** The same count was corrected twice more: "one
+genuine failure exists in the repository" became two, then three. The third
+failing run had been there throughout and was the root workflow the other two
+chain through.
+
+What matters is the sequence. By the third reading the pagination rule had been
+established independently by two lanes, written into this file, cited in a
+correction, and personally apologised for by the author who then read the number
+un-paginated a fourth time. That eliminates the readings that would let the rule
+be about competence: not ignorance, not a first slip after learning, not
+carelessness in the ordinary sense.
+
+If scrutiny follows attention, then a rule cannot protect a reading that
+attention never lands on, however well the rule is known — and the same author
+will reproduce the same defect at the same spot as often as the situation
+recurs. That is a prediction, and these three are it being observed rather than
+argued. It is also why the remedy has to be structural: the reading must stop
+being background, either by being gathered with the same tool that gathers
+findings, or by being labelled as unverified where it is quoted. The rule is not to check more; it is to notice that a figure has
 become evidence the moment an argument rests on it, whatever it was gathered
 for.
 
