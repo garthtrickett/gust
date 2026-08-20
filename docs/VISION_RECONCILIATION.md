@@ -385,26 +385,34 @@ lane/registry/guard governance in `AGENTS.md` and `docs/SHARED_SEMANTIC_ZONE.md`
 
 | Required by | Thing | State |
 | --- | --- | --- |
-| §17, §18 | Effects in function types — *the differentiator* | No `uses` keyword in either lexer |
+| §17, §18 | Effects in function types — *the differentiator* | No `uses` keyword in either lexer. But `FunctionSignature` already carries per-function obligations, so adding effects extends a struct with the right shape. Ledger E10 |
 | §56 | Static tenant scoping — *the lead claim* | Absent |
 | §55 | Typed Postgres derivation | Absent |
 | OD-9 | Model fluency | Untested |
 | Parts IX–XVII | HTTP, sockets, TLS, JSON, Postgres | None in `src/runtime/` |
-| §20 | Structured concurrency | `std.Spawn` is detached; no scope keyword |
+| §20 | Structured concurrency | `std.Spawn` is detached and yields no handle; no scope keyword. Channel transfer is *opt-in* via `move` rather than absent. Ledger E9, E18 |
 | §26 | Two-form borrow model | Corrected in VISION 2026-08-19 (#84): one mutable reference form, no aliasing analysis |
 | §27 | Shared ownership as OD-3 | `std.Rc` already exists — see §3.6 |
 | §34 | Panic terminates request, not deployment | `exit(1)` in `src/runtime/strings.c:20,30` |
 | D-1, D-2 | Brand identity | Inferred from identifier spelling; `compiler/codegen.gst:658,762,896,1101`, `compiler/typechecker.gst:4975,5173`. Owned by staged Phase 19 |
-| §32 | Fixed-width integers, overflow trapping, `Decimal`/`Money`/time types | **All absent.** One integer type, `int`, lowering to C `int` — so overflow is UB, not a trap. Issue #103 |
+| §32 | Fixed-width integers, overflow trapping, `Decimal`/`Money`/time types | **All absent.** Two integer-ish scalars, `int` and `byte`; `int` lowers to C `int`, so overflow is UB rather than a trap. Issue #103 |
 | §23 | `copyable` marker | Absent. Copy-versus-move is inferred structurally; adding a `str` field silently changes a struct's category |
-| §29 | Automatic resource cleanup | Runs, but only for `Resource[T]` and only in the self-hosted compiler. The Rust compiler has none — zone defect D-6, issue #104 |
+| §29 | Automatic resource cleanup | Runs, but only for `Resource[T]`: `type_is_resource` keys on a `Generic` named `Resource`, so a directory handle falls outside it. Ledger E7 |
+
+> **This table was refreshed 2026-08-20 against the ledger.** Five entries had
+> gone stale as findings landed after it was written, and one had become a
+> dangling reference: it cited zone defect D-6 and issue #104, both of which
+> *this lane* subsequently withdrew — the defect deleted and the issue closed,
+> because they were filed against the deprecated Rust prototype. A summary table
+> is a cache of another document, and a cache nobody invalidates is how a
+> withdrawn finding outlives its withdrawal.
 
 Found in the same sweep and worth recording as the counterweight — these hold:
 
 | Section | Thing | State |
 | --- | --- | --- |
 | §31 | Enum match exhaustiveness | **Enforced in both compilers**, and both name the missing variant. `compiler-plan.md` still lists this as outstanding; it is done |
-| §11 | Safe references non-null | Holds by construction — no `null`, `nil`, or `NULL` literal exists in either lexer |
+| §11 | Safe references non-null | Holds for *references* — no `null`, `nil`, or `NULL` literal in either lexer. But `empty[T]` is a second spelling of absence for handles, used in safe code. Ledger E14 |
 | §12 | No inheritance, traits, or interfaces | Holds by construction — none of the keywords exists |
 | §15 | No macros or compile-time execution | Holds by construction |
 | §33 | `str` immutability | Holds — no mutation API and no element-assignment path |
