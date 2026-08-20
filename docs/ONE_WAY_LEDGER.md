@@ -104,8 +104,9 @@ when the backend does.
 | 41 | Reproducibility | A run is a clean observation; nondeterministic runs are discarded | averaging over noisy runs | **PARTIAL** — E24 |
 | 42 | Execution traces | Every run emits a structured, versioned, machine-readable trace | logs | **ABSENT** — E25 |
 | 43 | Editions | Source compatibility within an edition; editions are the controlled escape hatch | silent meaning changes | **ABSENT** — E25 |
+| 44 | Opacity | A value can be made unprintable and unloggable by its type | secrets leaking into logs and errors | **ABSENT** — E26 |
 
-Counts: 9 `HOLDS`, 10 `PARTIAL`, 7 `VIOLATED`, 1 `DEFERRED`, 16 `ABSENT`.
+Counts: 9 `HOLDS`, 10 `PARTIAL`, 7 `VIOLATED`, 1 `DEFERRED`, 17 `ABSENT`.
 
 Row 27 is the one in motion. It is the declared priority and several other rows
 resolve with it — see E17.
@@ -1084,6 +1085,46 @@ manifest to pin one in (row 38).
 and Part XIX marks itself post-1.0 and not a commitment. Recorded because §103
 calls compiler-assisted migrations "a core product feature", and every migration
 mechanism it describes depends on an edition boundary that has no representation.
+
+### E26 — §81 is half-mechanised: linear exists, opaque does not (row 44)
+
+§81: "Secrets are opaque linear values. They have no readable string
+representation in safe code. Secrets cannot be logged, serialized, formatted,
+returned to clients, or compared except through approved operations."
+
+Its rationale is one of the sharpest containment arguments in the document:
+
+> an agent cannot leak a secret into a log line or an error message, because the
+> type does not permit it. Among the most frequent mistakes in generated code and
+> among the most expensive.
+
+The claim splits into two mechanisms, and exactly one exists.
+
+**Linear — exists.** `#[linear]` marks a type as a resource and the metadata is
+wired end to end (E20). Whatever "secrets are linear values" would require, the
+opt-in half of it is already there.
+
+**Opaque — does not.** There is no `Secret` type in the typechecker or the
+registered surface, and no opacity mechanism of any kind: nothing marks a type
+as unprintable, unformattable, or unloggable
+(`grep -ciE 'opaque|no_format|not_formattable' compiler/typechecker.gst` → 0).
+`std.Format` and `os.LogStr` will accept whatever they are given.
+
+So the row is `ABSENT`, but the gap is narrower than the section implies. What is
+missing is a way for a type to refuse formatting — a property of the type system
+rather than of the platform. It does not need effects, a database, or a supplier
+model. `secret.use<"stripe">` does need effects; "this value has no string
+representation" does not.
+
+Recorded as its own rule rather than folded into E16 for that reason: unlike the
+platform rows, this one is not blocked on the platform.
+
+### §22 and the platform rows
+
+`transaction`, `tx`, and `savepoint` are not keywords in the live lexer. §22
+joins the platform surface already covered by E16 and is not given a separate
+row — a transaction block is meaningless without a database, and nothing about it
+is checkable before one exists.
 
 ## Maintenance
 

@@ -683,6 +683,10 @@ Only obviously lossless widening conversions may be implicit. All other conversi
 
 A function's type describes both the values it transforms and the authority it requires.
 
+> **None of Part V is implemented.** Verified 2026-08-20 at `b47d0049`: there is no `uses` keyword in either lexer, and no effect is declared, checked, or recorded anywhere. This is the differentiator (§0.4) and Track A item 1, and §0.6 already lists it as absent — annotated here too because every lesser section in this document now carries its status, and the section the product rests on should not be the one that reads as settled. `docs/ONE_WAY_LEDGER.md` E10.
+>
+> Its absence is what makes several other rows unfixable in isolation: §81's `secret.use<…>`, §22's rejection of external effects inside retried transactions, §52's pre-execution authorization, and §108's record of exercised and denied authority all presuppose it.
+
 Functions declare capabilities such as:
 
 ```
@@ -782,6 +786,8 @@ transaction db as tx {
 ```
 
 Database operations inside the block are statically bound to `tx`. Transaction handles and transaction-bound values cannot escape the transaction scope.
+
+> **Not implemented.** `transaction`, `tx`, and `savepoint` are not keywords in the live lexer. This is platform surface (`docs/ONE_WAY_LEDGER.md` E16) — a transaction block is meaningless without a database, and nothing in it is checkable before one exists.
 
 Nested transactions use explicit savepoints.
 
@@ -1420,6 +1426,10 @@ It supports defaults, environment-specific overrides, validation, and deployment
 ## 81. Secrets
 
 Secrets are opaque linear values. They have no readable string representation in safe code.
+
+> **Half-mechanised, and the missing half is not blocked on the platform.** The *linear* half has a mechanism: `#[linear]` marks a type as a resource and is wired end to end (§28). The *opaque* half has none — there is no `Secret` type and nothing marks a type as unprintable, unformattable, or unloggable, so `std.Format` and `os.LogStr` accept whatever they are given.
+>
+> Worth separating from the platform sections around it: "this value has no string representation" is a property of the type system, not of the platform. `secret.use<"stripe">` needs effects; refusing to format does not. `docs/ONE_WAY_LEDGER.md` E26.
 
 Secrets cannot be logged, serialized, formatted, returned to clients, or compared except through approved operations.
 
