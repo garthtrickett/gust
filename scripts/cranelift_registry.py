@@ -42,6 +42,7 @@ TOP_FIELDS = {
     "phase18_optimisation_level",
     "phase18_reproducibility",
     "phase18_publication",
+    "phase18_composition",
     "phase18_object_inspection",
     "phase18_target_diagnostics",
     "phase18_cross_compilation",
@@ -10974,6 +10975,28 @@ def phase18_publication_summary_lines(registry):
     ]
 
 
+def phase18_composition_summary_lines(registry):
+    authority = registry["phase18_composition"]
+    evidence = authority["per_target_evidence"]
+    return [
+        "## Phase 18 cross-target composition and per-target evidence",
+        "",
+        f"- Authority version: `{authority['version']}`",
+        f"- Status: `{authority['status']}`",
+        f"- Composition cases: `{len(authority['composition_cases'])}`",
+        f"- Evidence kinds required of every supported target: `{len(authority['evidence_kinds'])}`",
+        f"- Declared supported targets: `{len(evidence)}`",
+        f"- Targets held back for want of a runner: `{len(authority['targets_without_runner'])}`",
+        "",
+        "Patch 18.17 composes the Phase 18 authorities and states the phase exit gate. The composition inventory is derived from registry ownership rather than hand-written, so an authority added later cannot be quietly left out of every case.",
+        "",
+        "Every declared supported target carries all six evidence kinds -- native compile, object inspection, link, execution, diagnostic, and reproducibility -- and the supported set itself is derived from the target diagnostics rather than asserted a second time. Execution evidence must come from that target's own runner.",
+        "",
+        "A target with no available runner stays undeclared and names the future-phase row that would introduce one. Execution evidence is part of the exit gate, so a target that cannot be run cannot be called supported: four of the five declared triples are held back on exactly that basis, and one is supported.",
+        "",
+    ]
+
+
 def phase18_object_inspection_summary_lines(registry):
     authority = registry["phase18_object_inspection"]
     object_format = registry["phase18_object_format"]
@@ -11396,6 +11419,7 @@ def render(registry):
         *phase18_optimisation_level_summary_lines(registry),
         *phase18_reproducibility_summary_lines(registry),
         *phase18_publication_summary_lines(registry),
+        *phase18_composition_summary_lines(registry),
         "## Registry entries", "",
         "| ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |",
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",

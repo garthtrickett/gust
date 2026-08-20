@@ -202,6 +202,8 @@ guard-pr-fast-ci-surface:
       'just guard-cranelift-phase18-reproducibility-contract'
       'Phase 18 artifact publication plan'
       'just guard-cranelift-phase18-publication-contract'
+      'Phase 18 cross-target composition'
+      'just guard-cranelift-phase18-composition-contract'
       'Phase 17 cross-feature runtime composition'
       'just guard-cranelift-phase17-composition-contract'
       'phase11-family:'
@@ -15899,6 +15901,26 @@ guard-cranelift-phase18-debug-info-contract:
     python3 scripts/cranelift_test_levels.py level guard-cranelift-phase18-debug-info-contract | grep -F $'guard-cranelift-phase18-debug-info-contract\t1\t' >/dev/null
     just guard-cranelift-phase18-object-format-contract
     python3 scripts/phase18_debug_information.py --check
+
+guard-cranelift-phase18-complete-target-evidence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧾 Collecting Phase 18 complete target evidence (Level 3)..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase18-complete-target-evidence |
+      grep -F $'guard-cranelift-phase18-complete-target-evidence\t3\t' >/dev/null
+    just guard-cranelift-phase18-composition-contract
+    bash scripts/phase18_complete_target_evidence.sh
+
+guard-cranelift-phase18-composition-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 18.17 cross-target composition..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase18-composition-contract | grep -F $'guard-cranelift-phase18-composition-contract\t1\t' >/dev/null
+    just guard-cranelift-phase18-publication-contract
+    python3 scripts/phase18_composition.py --check
+    bash scripts/phase18_composition_smoke.sh
 
 guard-cranelift-phase18-publication-parity:
     #!/usr/bin/env bash

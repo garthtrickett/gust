@@ -36,6 +36,7 @@
     "phase18_optimisation_level",
     "phase18_reproducibility",
     "phase18_publication",
+    "phase18_composition",
     "phase18_object_inspection",
     "phase18_target_diagnostics",
     "phase18_cross_compilation",
@@ -346,6 +347,9 @@
     },
     "phase18_publication": {
       "$ref": "#/$defs/phase18_publication"
+    },
+    "phase18_composition": {
+      "$ref": "#/$defs/phase18_composition"
     },
     "phase18_object_inspection": {
       "$ref": "#/$defs/phase18_object_inspection"
@@ -1463,6 +1467,178 @@
         },
         "next_patch": {
           "const": "18.17"
+        }
+      }
+    },
+    "phase18_composition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "status",
+        "authority_owner",
+        "inventory_derivation",
+        "composition_cases",
+        "evidence_kinds",
+        "per_target_evidence",
+        "targets_without_runner",
+        "runner_policy",
+        "rejection_classes",
+        "next_patch"
+      ],
+      "properties": {
+        "version": {
+          "const": "phase18_composition_v1"
+        },
+        "status": {
+          "const": "ready_for_patch18_18"
+        },
+        "authority_owner": {
+          "const": "scripts/cranelift_feature_registry.json"
+        },
+        "inventory_derivation": {
+          "const": "composition_inventory_is_derived_from_canonical_registry_ownership_not_a_hand_written_list"
+        },
+        "composition_cases": {
+          "type": "array",
+          "minItems": 5,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "case_id",
+              "participating_authorities"
+            ],
+            "properties": {
+              "case_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "participating_authorities": {
+                "type": "array",
+                "minItems": 2,
+                "items": {
+                  "type": "string",
+                  "pattern": "^phase18_"
+                }
+              }
+            }
+          }
+        },
+        "evidence_kinds": {
+          "type": "array",
+          "minItems": 6,
+          "maxItems": 6,
+          "prefixItems": [
+            {
+              "const": "native_compile"
+            },
+            {
+              "const": "object_inspection"
+            },
+            {
+              "const": "link"
+            },
+            {
+              "const": "execution"
+            },
+            {
+              "const": "diagnostic"
+            },
+            {
+              "const": "reproducibility"
+            }
+          ],
+          "items": false
+        },
+        "per_target_evidence": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "target_id",
+              "target_triple",
+              "evidence_kinds",
+              "execution_runner"
+            ],
+            "properties": {
+              "target_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "target_triple": {
+                "type": "string",
+                "minLength": 1
+              },
+              "evidence_kinds": {
+                "type": "array",
+                "minItems": 6,
+                "maxItems": 6,
+                "items": {
+                  "enum": [
+                    "native_compile",
+                    "object_inspection",
+                    "link",
+                    "execution",
+                    "diagnostic",
+                    "reproducibility"
+                  ]
+                }
+              },
+              "execution_runner": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "targets_without_runner": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "target_id",
+              "target_triple",
+              "deferred_row"
+            ],
+            "properties": {
+              "target_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "target_triple": {
+                "type": "string",
+                "minLength": 1
+              },
+              "deferred_row": {
+                "type": "string",
+                "pattern": "^p19_"
+              }
+            }
+          }
+        },
+        "runner_policy": {
+          "const": "a_target_with_no_available_runner_remains_undeclared_because_execution_evidence_is_part_of_the_phase_exit_gate"
+        },
+        "rejection_classes": {
+          "type": "array",
+          "minItems": 5,
+          "maxItems": 5,
+          "items": {
+            "enum": [
+              "composition_authority_uncomposed",
+              "composition_names_absent_authority",
+              "per_target_evidence_incomplete",
+              "execution_evidence_from_another_runner",
+              "runnerless_target_declared_supported"
+            ]
+          }
+        },
+        "next_patch": {
+          "const": "18.18"
         }
       }
     },

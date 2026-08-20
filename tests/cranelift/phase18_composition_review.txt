@@ -1,0 +1,13 @@
+Patch 18.17 — Cross-Target Composition and Complete Per-Target Evidence
+
+composition_cases	5
+participating_authorities	16
+evidence_kinds	6
+declared_supported_targets	1
+
+composition	every Phase 18 authority in the registry participates in at least one composition case	guard-cranelift-phase18-composition-contract derives the inventory from registry ownership	Level 1
+composition	a composition case may not name an authority that does not exist	unknown-authority names are rejected	Level 1
+evidence	every declared supported target carries all six exit-gate evidence kinds	per-target evidence matrix checked against the declared kind list	Level 1
+evidence	the supported set is derived from the target diagnostics, not asserted separately	matrix target ids compared to diagnostics with support_decision supported	Level 1
+evidence	execution evidence for a target comes from that target's own runner	execution_runner compared to target_id	Level 1
+runner	a target with no available runner remains undeclared and names its deferred row	targets_without_runner entries checked against the supported set	Level 1
