@@ -155,24 +155,35 @@ means. `VISION.md` §16 makes the operator set compiler-owned, so defining `==`
 on `str` as content equality remains zone work, tracked as `TASK_STDLIB.md`
 CR-1. Until it lands, `std.str_eq(a, b)` is the only spelling.
 
-### D-4 — Resource semantics prerequisites are unmet and their record is stale
+### D-4 — Resource obligations cannot attach to a user type
 
-`STEP52_RESOURCE_SEMANTICS.md` items 2 and 6 (lines 20–27) — automatic resource lifecycle
+`STEP52_RESOURCE_SEMANTICS.md` items 2 and 6 — automatic resource lifecycle
 enforcement, and an AST/typechecker representation for `defer` — were recorded as
-unmet. The document was last modified 2026-06-28, before Phase 15 closed.
-`VISION.md` §27 marks shared ownership open as OD-3.
+unmet. That document predates Phase 15 closure. `VISION.md` §27 marks shared
+ownership open as OD-3.
 
-**Re-verified 2026-08-19 by Patch S1.7 (#87).** Item 6 is superseded: `defer` is
-an AST node, and `STEP52_RESOURCE_SEMANTICS.md` predates that. The live gap is
-narrower than the row says — representation, transfer state, and `defer` are
-present; what is missing is destructor *declaration* and enforcement. There is
-one built-in destructor and no source syntax to declare another, which is why
-`MutexGuard` is blocked. Stated in full as `TASK_STDLIB.md` CR-5 and pinned by
-`guard-stdlib-s1-resource-prerequisites`.
+**Re-verified 2026-08-19 by Patch S1.7 (#87), and corrected again 2026-08-20.**
+Item 6 is superseded: `defer` is an AST node the typechecker handles. Item 2's
+generic `Resource[ctx, T]` representation has *not* been re-verified and stays
+open.
+
+Enforcement is not absent, and it is not one mechanism. The `Resource[T]`
+scope-exit validator does run on the real typechecking path, but keys on the
+compiler-owned `Resource` generic, so a directory handle falls outside it. A
+*separate* directory-specific predicate enforces directory handles: an unclosed
+one bound to a local is rejected, verified by compiling and running it. Two
+audits each found one half. The remaining gap is that no user type can declare a
+destructor, so no user-defined resource carries any obligation — stated in full
+as `TASK_STDLIB.md` CR-5 and pinned by
+`guard-stdlib-s1-resource-prerequisites`. The obligation is also keyed to the
+*binding* rather than the acquisition (issue #106).
 
 One part of the row has since been decided by implementation rather than by
 decision: OD-3 is still marked open in `VISION.md` §27 while `std.Rc`,
 `std.RcNew`, and `std.RcNode` already ship. Tracked as `TASK_STDLIB.md` CR-9.
+
+The original entry cited line numbers in a living document, which this file
+forbids elsewhere; it now cites the item.
 
 ### D-5 — String bounds failures terminate the process
 
