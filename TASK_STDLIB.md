@@ -1018,6 +1018,69 @@ Level 1.
 Phase S1 is closed with an explicit residue list, no unowned deferrals, and no
 claim of a complete standard library.
 
+## Closure gate
+
+Phase S1 cannot close yet. This section records exactly what gates it, and
+`guard-stdlib-s1-close` enforces that the record stays accurate — including
+refusing to let S1.12 be marked `DONE` while anything below is outstanding.
+
+### Delivered
+
+| patch | what it delivered |
+| --- | --- |
+| S1.0 | `docs/STDLIB_SURFACE_INVENTORY.md`, generated from the compiler |
+| S1.1 | `str == str` rejected with one diagnostic in both compilers |
+| S1.2 | the string surface pinned, 33 values asserted in order |
+| S1.3 | collection methods resolve through a reference receiver |
+| S1.7 | the resource prerequisites re-verified; CR-5 made concrete |
+
+### Outstanding, with owners
+
+| patch | blocked by | owner |
+| --- | --- | --- |
+| S1.4 branded collection consistency | CR-2 | Phase 19 (`TASK_PHASE19.md`) |
+| S1.5 clone arena destination | CR-2 | Phase 19 |
+| S1.6 composition regression | CR-2 | Phase 19 |
+| S1.8 MutexGuard prototype | CR-5 | Cranelift lane |
+| S1.9 MutexGuard scope tests | CR-5 | Cranelift lane |
+| S1.10 MutexGuard fiber tests | CR-5 | Cranelift lane |
+| S1.11 realistic migration | CR-5 | Cranelift lane |
+| S1.12 closure | all of the above | Stdlib lane |
+
+No deferral here is unowned. CR-2 has a published roadmap; CR-5 has a concrete
+statement of the smallest change required, from S1.7.
+
+### Residue — what a normal program still cannot express safely
+
+Recording this is the point of the phase, not an apology for it.
+
+- **`command == "PING"` does not work.** S1.1 turned the miscompile into a
+  diagnostic, but content equality is CR-1, and operator semantics are
+  compiler-owned (`VISION.md` §16). Users write `std.str_eq(a, b)`.
+- **A variable's name can change generated code.** Arena-ness is inferred from a
+  hardcoded list of identifier spellings, so a local named `a` is treated as an
+  arena. CR-2, Phase 19.
+- **An out-of-range string index kills the process**, not the request, which
+  `VISION.md` §34 forbids. CR-3, and filed as issue #91.
+- **No user type can declare a destructor.** One exists, `os.CloseDir` for
+  directory handles, hardcoded. So no scoped guard of any kind is expressible,
+  `MutexGuard` included. CR-5, from S1.7.
+- **References carry no mutability and are not analysed for aliasing.** Two `&T`
+  arguments may alias one value and both write through it (`VISION.md` §26).
+- **Cleanup obligations are not enforced.** An unclosed directory handle — the
+  one supported resource — compiles clean. S1.7.
+
+### What closure requires
+
+1. CR-2 resolved by Phase 19, then S1.4, S1.5, S1.6.
+2. CR-5 resolved — source-level destructor declaration plus scope-exit
+   enforcement — then S1.8 through S1.11.
+3. The residue list above re-checked against the compiler, not from memory.
+4. `guard-stdlib-s1-close` passing with S1.12 marked `DONE`.
+
+Phase S1 closure will not claim a complete standard library, a text or Unicode
+API, networking, or production readiness.
+
 ## Recommended Implementation Order
 
 Patch S1.0 opening inventory and surface baseline
