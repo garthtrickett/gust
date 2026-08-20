@@ -354,10 +354,18 @@ without it.
 1. **Intended behaviour:** `guard := mutex.Lock()` yields a move-only value that
    releases the lock exactly once on every scope exit, including early return,
    error return, and across fiber suspension.
-2. **Existing limitation:** `STEP52_RESOURCE_SEMANTICS.md` items 2 and 6 are
-   unmet — resource lifecycle enforcement is inert, and `defer` has no
-   AST/typechecker representation. `VISION.md` §27 marks shared ownership open
-   as OD-3.
+2. **Existing limitation. Corrected 2026-08-20.** This previously said
+   `STEP52_RESOURCE_SEMANTICS.md` items 2 and 6 were both unmet, that resource
+   lifecycle enforcement was inert, and that `defer` had no AST/typechecker
+   representation. Verified against the compiler, two of those are false and the
+   third was contradicted by item 3 below. **Item 6 is met:** `Defer` is an AST
+   node and the typechecker handles it. **Enforcement is not inert:** it runs at
+   function exit and at `Return`, and rejects an unclosed directory handle. What
+   remains is that the obligation is keyed to a hardcoded directory predicate and
+   no user type can declare a destructor, so it cannot attach to a user resource.
+   Item 2, the generic `Resource[ctx, T]` representation, is not re-verified here
+   and is still recorded as open. `VISION.md` §27 marks shared ownership open as
+   OD-3.
 3. **Smallest generic change**, determined by Patch S1.7 on 2026-08-19, is two
    things:
    **(a) a way to declare destructor identity in source for a user-defined type.**
