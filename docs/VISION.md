@@ -385,6 +385,13 @@ second, drifting copy of it.
 
 There is no OD-7. The number is unused and nothing in the repository references it; it is recorded here so a reader who notices the gap does not go looking.
 
+**How to cite a status elsewhere.** Attribute it, never assert it: "§27 marks
+this open" is safe, "this is open" is not. An attributed citation is wrong only
+when it misquotes; an asserted one is wrong whenever the register moves and
+nobody remembered the file. The distinction is not pedantic — a sweep on
+2026-08-20 found §27 stale at the source and three documents citing it correctly,
+which meant the error propagated with every citation intact.
+
 **Why the register is centralised rather than distributed.** An open decision that
 lives only in the document that happened to prompt it inherits that document's
 readership, and the decisions here are exactly the ones that must not be resolved
@@ -952,6 +959,8 @@ Ordinary references remain borrowed and context-bound.
 
 Where unavoidable, Gust may provide an explicit compiler-owned read-only shared ownership type such as `Rc[T, ctx]`.
 
+> **Correction, 2026-08-20 — "may provide" is out of date.** It already does: `std.Rc`, `std.RcNew`, and `std.RcNode` ship today. This sentence is the source three other documents cite when they describe OD-3 as open (`docs/SHARED_SEMANTIC_ZONE.md` D-4, `docs/STDLIB_SURFACE_FINDINGS.md`, `docs/ONE_WAY_LEDGER.md` E8), so its staleness propagated accurately rather than being caught. **What shipped is not the whole of OD-3** — the type exists; whether it is the right answer for SAM state ownership under §38 does not follow from it, and that half is still open. Recorded as `TASK_STDLIB.md` CR-9; status owned by §0.15.
+
 Safe application code does not receive unrestricted interior mutability.
 
 Shared mutation should instead occur through SAM state ownership, actors, transactions, or explicit synchronization primitives.
@@ -1309,6 +1318,8 @@ Missing tenant scoping is the canonical failure mode of agent-authored applicati
 Authorization predicates are injected into queries where policies can be translated into database expressions. Where full translation is impossible, a runtime policy check is required.
 
 This is static enforcement backed by generated conformance tests (§79), not formal proof. See §79 for the language Gust is permitted to use externally.
+
+> **OD-8 lives here.** §0.15 names this section as where OD-8 is stated in full, and until 2026-08-20 it was not stated here at all — a reader could finish §56 without learning that the soundness of the analysis above is an open, *thesis-invalidating* question. **Is the scoping analysis sound?** One counterexample — one program that carries no tenant scope and compiles anyway — retires the only claim this document makes, which is why §0.11 requires an adversarial review before publication rather than after. Nothing in §56 is weakened by saying so; the claim is exactly as strong as the analysis, and the analysis has not yet been attacked. Status is owned by §0.15.
 
 ## 57. Raw SQL
 
