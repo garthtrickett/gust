@@ -168,12 +168,36 @@ def validate(registry: dict) -> dict:
             "Phase 18 CI family projection is not derived from the opening rows in first-occurrence order")
 
     # Patch 18.0 changes no behavior and adds no Level 2 or Level 3 workflow rows.
-    for workflow in (".github/workflows/pr-fast.yml", ".github/workflows/heavy-guards.yml",
-                     ".github/workflows/cranelift-historical-full.yml"):
+    # PR Fast and Heavy Guards keep the absolute ban; the ban is never deleted.
+    for workflow in (".github/workflows/pr-fast.yml", ".github/workflows/heavy-guards.yml"):
         text = (ROOT / workflow).read_text()
         for token in ("phase18-family:", "matrix.phase18", "phase18-parity",
                       "phase18-differential", "phase18-complete-target"):
             require(token not in text, f"Phase 18 opening must not add {token} to {workflow}")
+
+    # Cranelift Historical Full is the sole Level 3 owner, so from Patch 18.17 it
+    # may carry exactly the complete-target-evidence row and nothing else. This
+    # follows the Phase 16 and Phase 17 precedent: the ban is gated on registry
+    # evidence rather than removed.
+    historical = (ROOT / ".github/workflows/cranelift-historical-full.yml").read_text()
+    permitted = "just guard-cranelift-phase18-complete-target-evidence"
+    unowned = [
+        line.strip() for line in historical.splitlines()
+        if any(token in line for token in
+               ("phase18-family:", "matrix.phase18", "phase18-parity",
+                "phase18-differential", "phase18-complete-target"))
+        and permitted not in line
+    ]
+    require(not unowned,
+            f"Cranelift Historical Full carries an unowned Phase 18 row: {unowned}")
+
+    # The permission exists exactly when the composition authority does. Adding
+    # the row early and dropping it afterwards are both ownership drift.
+    expected_rows = 1 if "phase18_composition" in registry else 0
+    actual_rows = historical.count(permitted)
+    require(actual_rows == expected_rows,
+            "Phase 18 complete target evidence Level 3 ownership drifted: "
+            f"expected {expected_rows}, found {actual_rows}")
     return snap
 
 

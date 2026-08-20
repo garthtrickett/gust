@@ -70,6 +70,7 @@ jobs:
           just guard-cranelift-phase15-complete-resource-evidence
           just guard-cranelift-phase16-complete-abi-evidence
           just guard-cranelift-phase17-complete-runtime-evidence
+          just guard-cranelift-phase18-complete-target-evidence
 
   phase14-target:
     name: Phase 14 target / ${{ matrix.target }}

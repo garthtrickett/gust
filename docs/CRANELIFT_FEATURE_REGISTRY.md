@@ -760,6 +760,21 @@ Publication is atomic: the bytes are written to a temporary path and renamed ove
 
 Every temporary artifact names the owner that removes it and the rule under which it is removed. A temporary with no owner is what leaves half-written objects behind after a failed build. Existing output survives failure, deferral, and unsupported-target rejection, and the parity guard proves it: a sentinel output is hashed before six refusals and re-hashed after, and must be unchanged.
 
+## Phase 18 cross-target composition and per-target evidence
+
+- Authority version: `phase18_composition_v1`
+- Status: `ready_for_patch18_18`
+- Composition cases: `5`
+- Evidence kinds required of every supported target: `6`
+- Declared supported targets: `1`
+- Targets held back for want of a runner: `4`
+
+Patch 18.17 composes the Phase 18 authorities and states the phase exit gate. The composition inventory is derived from registry ownership rather than hand-written, so an authority added later cannot be quietly left out of every case.
+
+Every declared supported target carries all six evidence kinds -- native compile, object inspection, link, execution, diagnostic, and reproducibility -- and the supported set itself is derived from the target diagnostics rather than asserted a second time. Execution evidence must come from that target's own runner.
+
+A target with no available runner stays undeclared and names the future-phase row that would introduce one. Execution evidence is part of the exit gate, so a target that cannot be run cannot be called supported: four of the five declared triples are held back on exactly that basis, and one is supported.
+
 ## Registry entries
 
 | ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |

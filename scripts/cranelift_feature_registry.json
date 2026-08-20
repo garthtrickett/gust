@@ -4564,6 +4564,109 @@
     ],
     "next_patch": "18.17"
   },
+  "phase18_composition": {
+    "version": "phase18_composition_v1",
+    "status": "ready_for_patch18_18",
+    "authority_owner": "scripts/cranelift_feature_registry.json",
+    "inventory_derivation": "composition_inventory_is_derived_from_canonical_registry_ownership_not_a_hand_written_list",
+    "composition_cases": [
+      {
+        "case_id": "phase18:identity_and_format",
+        "participating_authorities": [
+          "phase18_target_authority",
+          "phase18_target_support",
+          "phase18_object_format",
+          "phase18_relocation_model"
+        ]
+      },
+      {
+        "case_id": "phase18:selection_and_link",
+        "participating_authorities": [
+          "phase18_target_abi_selection",
+          "phase18_target_package_selection",
+          "phase18_linker_policy",
+          "phase18_link_mode"
+        ]
+      },
+      {
+        "case_id": "phase18:host_separation_and_refusal",
+        "participating_authorities": [
+          "phase18_cross_compilation",
+          "phase18_target_diagnostics"
+        ]
+      },
+      {
+        "case_id": "phase18:emitted_evidence",
+        "participating_authorities": [
+          "phase18_object_inspection",
+          "phase18_debug_information",
+          "phase18_source_location"
+        ]
+      },
+      {
+        "case_id": "phase18:bytes_and_publication",
+        "participating_authorities": [
+          "phase18_optimisation_level",
+          "phase18_reproducibility",
+          "phase18_publication"
+        ]
+      }
+    ],
+    "evidence_kinds": [
+      "native_compile",
+      "object_inspection",
+      "link",
+      "execution",
+      "diagnostic",
+      "reproducibility"
+    ],
+    "per_target_evidence": [
+      {
+        "target_id": "target:v1:triple=x86_64-unknown-linux-gnu:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8",
+        "target_triple": "x86_64-unknown-linux-gnu",
+        "evidence_kinds": [
+          "native_compile",
+          "object_inspection",
+          "link",
+          "execution",
+          "diagnostic",
+          "reproducibility"
+        ],
+        "execution_runner": "target:v1:triple=x86_64-unknown-linux-gnu:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8"
+      }
+    ],
+    "targets_without_runner": [
+      {
+        "target_id": "target:v1:triple=aarch64-unknown-linux-gnu:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8",
+        "target_triple": "aarch64-unknown-linux-gnu",
+        "deferred_row": "p19_additional_target_triples"
+      },
+      {
+        "target_id": "target:v1:triple=i686-unknown-linux-gnu:endian=little:ptr_size=4:ptr_align=4:i32_align=4:i64_align=4:max_align=4",
+        "target_triple": "i686-unknown-linux-gnu",
+        "deferred_row": "p19_additional_target_triples"
+      },
+      {
+        "target_id": "target:v1:triple=x86_64-apple-darwin:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8",
+        "target_triple": "x86_64-apple-darwin",
+        "deferred_row": "p19_additional_target_triples"
+      },
+      {
+        "target_id": "target:v1:triple=aarch64-apple-darwin:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8",
+        "target_triple": "aarch64-apple-darwin",
+        "deferred_row": "p19_additional_target_triples"
+      }
+    ],
+    "runner_policy": "a_target_with_no_available_runner_remains_undeclared_because_execution_evidence_is_part_of_the_phase_exit_gate",
+    "rejection_classes": [
+      "composition_authority_uncomposed",
+      "composition_names_absent_authority",
+      "per_target_evidence_incomplete",
+      "execution_evidence_from_another_runner",
+      "runnerless_target_declared_supported"
+    ],
+    "next_patch": "18.18"
+  },
   "phase18_object_inspection": {
     "version": "phase18_object_inspection_v1",
     "status": "ready_for_patch18_12",
