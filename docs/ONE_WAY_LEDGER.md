@@ -93,8 +93,9 @@ when the backend does.
 | 30 | Exhaustiveness | All enum matching is exhaustive | unhandled variants | **HOLDS** — E12 |
 | 31 | Copy vs move | A struct is copyable when every field is and the type is *explicitly marked* copyable | inferred copyability | **PARTIAL** — E13 |
 | 32 | Null | Safe references are non-null; absence is `Option[T]` | `null` in safe code | **HOLDS** — E14 |
+| 33 | Channel ownership | Channels transfer ownership of sent values | sender retaining a sent value | **VIOLATED** — E18 |
 
-Counts: 9 `HOLDS`, 5 `PARTIAL`, 5 `VIOLATED`, 1 `DEFERRED`, 12 `ABSENT`.
+Counts: 9 `HOLDS`, 5 `PARTIAL`, 6 `VIOLATED`, 1 `DEFERRED`, 12 `ABSENT`.
 
 Row 27 is the one in motion. It is the declared priority and several other rows
 resolve with it — see E17.
@@ -105,6 +106,7 @@ resolve with it — see E17.
 | 6 | Panic scope | VIOLATED | `TASK_STDLIB.md` CR-3, issue #91 — unscheduled |
 | 17 | Shared ownership | VIOLATED | `TASK_STDLIB.md` CR-9 — new |
 | 19 | Concurrency | VIOLATED | `TASK_STDLIB.md` CR-8, issue #101 — new |
+| 33 | Channel ownership | VIOLATED | issue #101 — same root cause |
 | 29 | Overflow | VIOLATED | issue #103 — new |
 | 14 | Mutation | DEFERRED | `TASK_STDLIB.md` CR-6 — rule withdrawn, unscheduled |
 
@@ -650,6 +652,45 @@ compiler currently miscompiles" outside the shared zone.
 design rather than backend: 21 (effects), 4 (`Result` and `?`), 3 (`Option`
 without `unsafe`), 19 (structured concurrency), 28 (fixed-width integers), and
 the platform rows in E16. A native backend does not write any of those.
+
+### E18 — `Channel.Send` does not transfer ownership (row 33)
+
+`docs/VISION.md` §30: "Channels transfer ownership of sent values."
+
+`Channel.Send` type-checks its argument against the channel's element type and
+returns `Void` (`compiler/typechecker.gst:2823-2841`). It checks the type and
+nothing else:
+
+```gust
+if std.str_eq(right_name, "Send") {
+    // … arg_type := check_expression(arg0_idx, env, scope, ctx);
+    if types_match(elem_type, arg_type, ctx) == 0 {
+        // "Semantic Error: Argument type mismatch for Channel.Send…"
+    }
+}
+mut t_void: ast.Type[ctx]; t_void.tag = 3; // Void
+return t_void;
+```
+
+No move is recorded at the send site — nothing marks the argument moved, and
+`grep -n 'Send' compiler/typechecker.gst | grep -iE 'move|linear|consume'`
+returns nothing. So the sender keeps a usable binding to a value it has handed to
+another fiber.
+
+**Scope of this claim.** What is verified is that the typechecker records no move
+at the send site. I did not build the compiler to confirm end-to-end that
+send-then-use compiles clean; that is the negative fixture for whoever fixes it.
+
+**Why it belongs beside row 19 rather than on its own.** The two are one gap.
+Row 19 says no task owns spawned work; this says no ownership moves at the
+boundary between tasks. Together they mean the only concurrency primitives
+available — `std.Spawn` and `std.Channel` — provide neither task ownership nor
+value ownership, while §20 and §30 describe both as though they were properties
+of the system. For a linear value that is a use-after-transfer across fibers with
+no diagnostic, which is the class §0.4 calls containment.
+
+Recorded on issue #101 rather than filed separately, because the fix is the same
+OD-1 decision.
 
 ## Maintenance
 

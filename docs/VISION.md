@@ -807,6 +807,12 @@ The platform provides well-known context kinds: scratch, temporary lexical, requ
 
 These are compiler/runtime-owned arena classes rather than separate ownership systems.
 
+> **The first sentence of this section holds; the list of kinds does not yet.** Verified 2026-08-20 at `b47d0049`. There is one branded arena mechanism, and that is the load-bearing claim — `os.Arena.New` and `os.ArenaAlloc` are the general form, with a distinct thread-local scratch class (`os.SetThreadScratch`, `os.ScratchAlloc`, `os_ScratchReset` in `src/runtime/scratch.c`).
+>
+> Of the seven kinds named, two exist as distinct mechanisms: scratch, and the general arena that covers "temporary lexical", "application", and "explicitly managed persistent" — those three are not separate classes, they are an arena with a different lifetime. **Request, task, and job-execution contexts do not exist**, and cannot until the platform they belong to does (`docs/ONE_WAY_LEDGER.md` E16).
+>
+> The list is also under-inclusive: `std.GenerationalArena` with `std.GenerationalSwap`, and `std.ThreadLocalContext`, are shipped arena classes this section does not name.
+
 ## 25. Lifetime movement
 
 A value from a shorter-lived context may enter a longer-lived context only through cloning into the destination context, serialization, or explicit ownership transfer.
@@ -875,6 +881,8 @@ Structured tasks may receive owned values, or borrows valid for the complete tas
 Borrows should not be shared across tasks. This is a design rule, not an enforced one: references carry no mutability and there is no aliasing analysis to enforce it against (§26).
 
 Channels transfer ownership of sent values.
+
+> **Not enforced.** Verified 2026-08-20 at `b47d0049`: `Channel.Send` checks its argument against the element type and returns `Void` (`compiler/typechecker.gst:2823-2841`). No move is recorded at the send site, so the sender retains a usable binding to a value it has handed to another fiber. Together with §20's unenforced task ownership this means the two concurrency primitives that exist — `std.Spawn` and `std.Channel` — provide neither task ownership nor value ownership. `docs/ONE_WAY_LEDGER.md` E18; tracked with issue #101, since the fix is the same OD-1 decision.
 
 Values containing context-bound references may cross into a task only when the receiving task shares a valid parent context.
 
