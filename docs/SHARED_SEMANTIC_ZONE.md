@@ -123,8 +123,13 @@ Both compilers hardcode
 `["connCtx", "arena", "ctx", "Any", "a", "main_ctx", "bg_ctx", "file_ctx"]`
 as arena brand names and prepend `&` at call sites for any matching identifier,
 regardless of type. `src/codegen.rs:71`, `src/typechecker/types.rs:61`, and
-seven other sites; also `compiler/codegen.gst:658,896,1101,1851` and
-`compiler/typechecker.gst:4953,5151`.
+seven other sites; also `compiler/codegen.gst:658,762,896,1101,1851` and
+`compiler/typechecker.gst:4975,5173`, applied at `:5629,5778,6713`.
+
+*Citations re-verified 2026-08-20 at `b47d0049`. The previous pair
+`typechecker.gst:4953,5151` had drifted — `:4953` is now a Void-return path and
+`:5151` is `typechecker_matches_template_prefix`. The defect is unchanged; only
+the line numbers moved.*
 
 A local `str` named `a` is emitted as `&a` and fails to compile in C. Renaming it
 fixes the program.
@@ -207,6 +212,31 @@ Never cite a line number in a living document — `TASK.md`, `TASK_STDLIB.md`,
 `docs/VISION.md`, `AGENTS.md`. Their Status lists and section bodies grow with
 every patch, so a line reference silently becomes a reference to something else.
 Cite the section heading or the numbered section instead.
+
+### Two rules learned the hard way
+
+Both were derived from defects found in this repository's own documents, and
+both cost real rework. They generalise the paragraph above rather than repeating
+it.
+
+**Confirm a citation before *copying* it, not only before acting on it.** The
+rule above says to confirm a construct still exists before acting on a citation.
+That is necessary and not sufficient. D-1's `compiler/typechecker.gst` line
+numbers were copied from `docs/STDLIB_SURFACE_FINDINGS.md` — correct when pinned
+at `6c94728d` — into this document and two others. By 2026-08-20 both lines had
+moved to unrelated code, and every document agreed with every other document,
+which is precisely why nobody noticed. A citation inherited from another document
+is not evidence; it is a claim about evidence, and it decays at the same rate as
+the code.
+
+**Read the block, not the matching line.** A `grep` hit tells you a word appears,
+not what the code does. Four separate claims in this repository's documents were
+wrong this way: `typechecker.gst:1962` was described as a formatting check when
+it computes a provenance set; `typechecker_log_trace`'s 40 call sites were
+described as an emitter substrate when they carry only prose; a proposal was
+described as having no prerequisite when field reads defeated it; and
+`codegen.gst:1382` was cited for the `Int` lowering when it is the `Index`
+lowering. In each case the grep was accurate and the conclusion was not.
 
 ## Maintenance
 

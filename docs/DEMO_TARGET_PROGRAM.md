@@ -72,6 +72,20 @@ func list_my_issues(session: Session) Result[std.Vector[Issue], ListError]
 }
 ```
 
+**Every method call in it must be compiler- or platform-provided, and that is
+not a stylistic choice.** Verified 2026-08-20 at `b47d0049`: a user cannot define
+a method on their own type — there is no receiver syntax in
+`compiler/parser.gst` and no test defines one (`docs/ONE_WAY_LEDGER.md` E15). So
+`session.user()` must come from the platform, and the `from(Issue).where(…).all()`
+chain must be the compiler-owned derivation §14 and §55 describe, not a builder
+someone writes in Gust.
+
+That is consistent with §14, which already says the query builder "is not
+implemented in the user-facing language — it is a compiler feature with a typed
+surface". It is recorded here because a demo written in method-call style invites
+the assumption that a user could write those methods, and today they could not
+write any method at all.
+
 Three properties, and each is load-bearing:
 
 1. **No `ctx`.** The handler runs in the request context; it does not name an

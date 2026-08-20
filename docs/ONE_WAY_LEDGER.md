@@ -93,20 +93,21 @@ when the backend does.
 | 30 | Exhaustiveness | All enum matching is exhaustive | unhandled variants | **HOLDS** — E12 |
 | 31 | Copy vs move | A struct is copyable when every field is and the type is *explicitly marked* copyable | inferred copyability | **PARTIAL** — E13 |
 | 32 | Null | Safe references are non-null; absence is `Option[T]` | `null` in safe code | **HOLDS** — E14 |
+| 45 | One spelling of absence | `Option[T]` | a second sentinel alongside it | **VIOLATED** — E14 |
 | 33 | Channel ownership | Channels transfer ownership of sent values | sender retaining a sent value | **VIOLATED** — E18 |
 | 34 | Host access | Filesystem and process access are never silently available | ambient host authority | **VIOLATED** — E19 |
 | 35 | Visibility | private-to-module by default, then package / application / public | everything visible everywhere | **ABSENT** — E19 |
 | 36 | Cross-context movement | A shorter-lived value enters a longer-lived context only by cloning or explicit transfer | silently extending a lifetime | **PARTIAL** — E20 |
 | 37 | Native code | Forbidden by default; only via signed adapter, capability, isolation | ungated native execution | **PARTIAL** — E21 |
 | 38 | Packages | A package is a directory tree with a manifest; lockfiles record provenance | no package identity | **ABSENT** — E21 |
-| 39 | Conformance checking | Generated checks substitute for reading | trusting unread output | **PARTIAL** — E22 |
+| 39 | Conformance checking | Generated checks substitute for reading | trusting unread output | **ABSENT** — E22 |
 | 40 | Machine-readable diagnostics | Structured form with a stable rule identifier and candidate edits | prose-only errors | **PARTIAL** — E23 |
 | 41 | Reproducibility | A run is a clean observation; nondeterministic runs are discarded | averaging over noisy runs | **PARTIAL** — E24 |
 | 42 | Execution traces | Every run emits a structured, versioned, machine-readable trace | logs | **ABSENT** — E25 |
 | 43 | Editions | Source compatibility within an edition; editions are the controlled escape hatch | silent meaning changes | **ABSENT** — E25 |
 | 44 | Opacity | A value can be made unprintable and unloggable by its type | secrets leaking into logs and errors | **ABSENT** — E26 |
 
-Counts: 9 `HOLDS`, 10 `PARTIAL`, 7 `VIOLATED`, 1 `DEFERRED`, 17 `ABSENT`.
+Counts: 9 `HOLDS`, 9 `PARTIAL`, 8 `VIOLATED`, 1 `DEFERRED`, 18 `ABSENT`.
 
 Row 27 is the one in motion. It is the declared priority and several other rows
 resolve with it — see E17.
@@ -146,10 +147,19 @@ $ grep -n 'connCtx' compiler/codegen.gst
 1101: if std.str_eq(var_name, "ctx") == 1 || … || std.str_eq(var_name, "a") == 1 {
 ```
 
-`docs/STDLIB_SURFACE_FINDINGS.md` F3b lists the full set, including
-`compiler/typechecker.gst:4953,5151`. The deprecated prototype carries the same
-list at `src/codegen.rs:71` and `src/typechecker/types.rs:61`, but the live
-compiler above is the claim.
+The typechecker carries the same list at `compiler/typechecker.gst:4975,5173`
+and applies it at `:5629,5778,6713`. The deprecated prototype has it too
+(`src/codegen.rs:71`, `src/typechecker/types.rs:61`), but the live compiler above
+is the claim.
+
+> **Citation correction, 2026-08-20.** An earlier revision of this row cited
+> `compiler/typechecker.gst:4953,5151`, inherited from
+> `docs/STDLIB_SURFACE_FINDINGS.md` F3b, which is pinned to `6c94728d`. Those
+> lines have since drifted: `:4953` is now inside a Void-return path and `:5151`
+> is `typechecker_matches_template_prefix`. Neither is brand matching. The
+> defect is unchanged and the codegen citations were always correct — only the
+> typechecker line numbers were stale, and they were propagated here without
+> being re-read.
 
 A local `str` named `a` is emitted as `&a`. Renaming the variable fixes the
 program. Full reproduction: `docs/STDLIB_SURFACE_FINDINGS.md` F3.
@@ -169,8 +179,40 @@ unsafe {
 ```
 
 There is no `Some(42)` constructor. Writing an `Option` requires knowing it is a
-tagged union with a `tag` field, and requires `unsafe` to say so. Filed as
-issue #102.
+tagged union with a `tag` field. Filed as issue #102.
+
+**"and requires `unsafe` to say so" is not established — refined 2026-08-20.**
+All five `std.Option` tests use `unsafe`, which is consistent with the claim and
+does not prove it: every test doing something one way shows a convention, not a
+constraint. That is the shape that misled E26.
+
+The typechecker demands `unsafe` in exactly six places, and none is about union
+tags or field assignment:
+
+```
+$ grep -ohE '"Semantic Error: [^"]*unsafe[^"]*"' compiler/typechecker.gst
+Dereferencing raw pointers is strictly prohibited outside 'unsafe' blocks
+Direct external/native function calls require an explicit 'unsafe' block
+Pointer arithmetic is strictly prohibited outside 'unsafe' blocks
+Raw pointer casts are strictly prohibited outside 'unsafe' blocks
+Unsafe function calls require an explicit 'unsafe' block
+[UnsafeSubscriptWrite] direct subscript writes require unsafe or explicit write APIs
+```
+
+So a plain field write like `opt_some.tag = 0` matches none of the six on its
+face. The `unsafe` in those tests may instead be carrying the `*val` dereference
+in the match arm, which *is* rule one.
+
+**What is established and what is not.** Established: there is no `Some(42)`
+constructor, so writing an `Option` means naming its tag and payload field —
+which is the representation leakage §0.7 Track A0 targets and the substance of
+issue #102. Not established: that the compiler *rejects* the construction
+without `unsafe`. Settling it needs a fixture that constructs an `Option` outside
+an `unsafe` block, which this lane cannot write or run.
+
+Row 3 stays `PARTIAL` on the established half. The unestablished half is marked
+here rather than left in the row, because a reader deciding what #102 costs
+should know which part is measured.
 
 This is the clearest instance of the representation leakage that `docs/VISION.md`
 §0.7 Track A0 exists to remove, and it is directly relevant to OD-9: a model
@@ -279,8 +321,22 @@ with no check and reaches the caller's value, and two `&T` arguments may alias
 one value and both write through it.
 
 Corrected in `docs/VISION.md` §26 on 2026-08-19 (#84), which now describes the
-single form that exists. The evidence fixture is committed as
-`tests/test_shared_mutable_aliasing_observed.gst`. Recorded as `TASK_STDLIB.md`
+single form that exists.
+
+The claim is demonstrated rather than inferred. `tests/test_shared_mutable_aliasing_observed.gst`
+passes two `&Box[ctx]` arguments aliasing one value and writes through both:
+
+```gust
+func bump_twice(x: &Box[ctx], y: &Box[ctx]) {
+    (*x).n = (*x).n + 10;
+    (*y).n = (*y).n + 100;
+}
+```
+
+It compiles and prints 111. Its header states the intent: "If mutation through
+references is ever restricted, this program must stop compiling and this fixture
+becomes a compile-fail test." That is the strongest evidence shape in this file —
+an executable claim that fails loudly when the compiler changes under it. Recorded as `TASK_STDLIB.md`
 CR-6; enforcement is deferred and unscheduled.
 
 The row is `DEFERRED`, not `VIOLATED`, and the distinction is deliberate. This
@@ -306,6 +362,25 @@ compiler/ast.gst:4
 ```
 
 `defer` exists in both lexers and parses to a `Statement::Defer`.
+
+**LIFO verified 2026-08-20**, previously asserted. Row 15 states "`defer`, LIFO"
+and nothing had checked the ordering. Codegen collects deferred expressions into
+a `defer_stack` in source order and emits them from the end backwards
+(`compiler/codegen.gst:3908-3930`):
+
+```gust
+mut defer_stack: std.Vector[str, ctx] := std.VectorNew(ctx);
+…
+defer_stack.Push(std.Clone(ctx, formatted));
+…
+mut k := len(defer_stack) - 1;
+…
+mut defer_str := defer_stack[k];
+chunks.Push(defer_str);
+```
+
+Reverse registration order, which is what LIFO means here. That half of row 15
+holds and now rests on a construct rather than on the word appearing in a lexer.
 `STEP52_RESOURCE_SEMANTICS.md` items 2 and 6 record that automatic resource
 lifecycle enforcement and a full AST/typechecker representation for `defer` are
 unmet; re-verified 2026-08-19 by `15334657` (#87), which records why `MutexGuard`
@@ -354,6 +429,14 @@ requirement, no cancellation propagation, and no task handle type — so a spawn
 task cannot be awaited, cancelled, or transferred, and nothing prevents it
 outliving the context whose data it captured.
 
+The "no handle" half was re-verified by reading rather than inferred from the
+absent keywords. The `std.Spawn` branch (`compiler/typechecker.gst:3691-3772`)
+validates the argument count and that the spawned function takes exactly one
+parameter, and produces no value to hold. No task or handle type is registered
+anywhere: the only `task`-shaped name in the typechecker is the fixture type
+`TestTaskArg_ctx`, and the sole `handle` is a field on the directory struct
+(`:6194`).
+
 That is detached spawn plus channels: **the Go concurrency model, which
 `docs/VISION.md` §20, `async.md`, and `advice.md` each independently reject.**
 `docs/VISION.md` §20 states that "fire-and-forget work is not permitted in normal
@@ -374,8 +457,49 @@ src/lexer.rs:0
 ```
 
 `docs/VISION.md` §17, §18, Consolidated Rules 4 and 12, and §0.7 Track A item 1
-all rest on `uses` clauses. There is no such keyword. This is the differentiator
-in §0.4 and it is unstarted; `docs/VISION.md` §0.6 says so.
+all rest on `uses` clauses. There is no such keyword.
+
+**Corrected 2026-08-20 — "unstarted" reached past the count, and the correction
+is good news.** An earlier revision said no effect is "declared, checked, or
+recorded anywhere". Something effect-shaped is recorded, in exactly the place an
+effect system would put it. `FunctionSignature` (`compiler/typechecker.gst:633-645`)
+carries per-function obligations alongside the types:
+
+```gust
+type FunctionSignature[ctx] struct {
+    param_names: std.Vector[str, ctx],
+    params: std.Vector[ast.Type[ctx], ctx],
+    return_type: ast.Type[ctx],
+    return_origins: Index[OriginSet[ctx], ctx],
+    is_unsafe: int,
+    is_extern: int,
+    extern_symbol_name: str,
+    extern_abi: str,
+    requires_unsafe_call: int,
+    requires_layout_metadata: int,
+    requires_sandbox_arena: int
+}
+```
+
+That is the structural shape §17 describes — a signature stating what a call
+requires, not only what it transforms — at a much coarser grain than
+`uses db.read<User>`, and one of these is enforced: calling an `extern` function
+outside `unsafe` is rejected (E21).
+
+**But two of the three `requires_*` fields are inert.**
+`requires_layout_metadata` and `requires_sandbox_arena` are initialised to 0
+(`:653-654`), never assigned 1 anywhere, and
+`function_signature_requires_sandbox_arena` (`:658`) is defined and never
+called — one occurrence in the file, its own definition.
+
+So the accurate statement is narrower than either "effects exist" or "nothing
+exists": **the carrier exists and is partly wired, with two fields already
+reserved for obligations nothing yet sets.** That matters for §0.7 Track A item
+1, because it means adding effects extends a struct that already has the right
+shape and already anticipates more entries, rather than introducing the concept.
+
+The row stays `ABSENT` — `uses` does not exist and no effect in §17's sense is
+declared or checked. What changes is the estimate of what starting would cost.
 
 ---
 
@@ -399,7 +523,12 @@ isize    gst=0 rs=0
 usize    gst=0 rs=0
 ```
 
-There is one integer type, `int`.
+There are two integer-ish scalars, `int` and `byte`, and neither is sized in
+§32's sense. `byte` is spellable and used — `: byte` and `[]byte` appear in
+`tests/*.gst` and `compiler/*.gst` — and is a distinct type tag resolved by the
+typechecker. An earlier revision of this block said "there is one integer type,
+`int`", which overstated the case; the §32 claim it supports is unaffected, since
+none of the six fixed-width types exists either way.
 
 **Overflow trapping.** §32: "Integer overflow traps by default in all builds.
 This carries a measurable runtime cost and is accepted deliberately."
@@ -414,8 +543,10 @@ No overflow handling exists anywhere in codegen or the typechecker. The cost is
 not being paid because the check is not there.
 
 It is worse than absent. Gust `int` lowers to C `int` in the self-hosted
-compiler (`compiler/codegen.gst:61-62,1358,1382`; no `long long` or `int64_t`
-appears anywhere in it), and **signed overflow in C is undefined behaviour**. So on the default backend
+compiler — `compiler/codegen.gst:61-62` for the named type and `:1358`
+(`if erased_t.tag == 0 { // Int … return "int" }`) after erasure, with no
+`long long` or `int64_t` anywhere in the file — and **signed overflow in C is
+undefined behaviour**. So on the default backend
 the behaviour at overflow is not wraparound, which would merely be wrong — it is
 UB, which is the class `README.md`'s two-backends section identifies as the
 reason the Cranelift backend exists. §32 promises a trap and the compiler emits
@@ -514,11 +645,37 @@ nil    gst=0 rs=0
 NULL    gst=0 rs=0
 ```
 
-§11's "safe references are non-null" holds by construction: there is no null
-literal to write in either compiler. The restriction §11 describes — null
-confined to raw pointers inside `unsafe`, FFI, and compiler-owned runtime
-representations — is satisfied trivially rather than enforced, which is the
-strongest form it could take.
+§11's "safe references are non-null" holds for *references*: there is no null
+literal to write in either compiler.
+
+**Corrected 2026-08-20 — the count did not support the whole claim.** An earlier
+revision of this block concluded that the restriction is "satisfied trivially
+rather than enforced, which is the strongest form it could take". That reached
+past what the grep showed. `null`, `nil`, and `NULL` are absent, but **`empty` is
+a keyword**, and `empty[T]` is a sentinel meaning *absent* for `Index[T, ctx]`
+handles:
+
+```gust
+// compiler/typechecker.gst:885 — ordinary safe code, no unsafe block
+if left.legacy_origins != empty[Index[OriginSet[ctx], ctx]] {
+```
+
+It appears 130 times in the typechecker alone and in 6 test programs, always in
+safe code, and it is compared with `==` and `!=` exactly as a null check would
+be.
+
+So the language does have a null-equivalent for handles. §11 says absence is
+represented with `Option[T]` and that null is confined to raw pointers inside
+`unsafe`, FFI, and compiler-owned runtime representations. `empty[T]` is
+arguably the last of those — a compiler-owned representation — but it is not
+confined to a boundary: it is the ordinary way the compiler's own source spells
+"no value", in preference to the `Option[T]` §11 nominates.
+
+The row stays `HOLDS` because §11's sentence is about *references* and that part
+is true. But it is narrower than "Gust has no null", and this file should not be
+read as saying the stronger thing. `Option` and `empty[T]` are two spellings of
+absence coexisting, which is itself a one-way-to-do-it problem — recorded as row
+45 rather than left inside this block.
 
 ### Addendum to E7 — cleanup validation runs, narrowly, and only in one compiler
 
@@ -547,8 +704,28 @@ user-defined types remain absent, which is what blocks `MutexGuard`
 These held on inspection but carried no reproduction, which this file's own rule
 forbids. Recorded together.
 
-**Row 7 — no inheritance, traits, or interfaces.** Holds by construction; none
-of the keywords exists in either lexer:
+**Row 7 — no inheritance, traits, or interfaces.** Holds, and more strongly than
+the keyword grep shows. There is no method-receiver syntax at all: `receiver`
+appears nowhere in `compiler/parser.gst`, and no test defines a method on a
+user type (`grep -rlE '^func \([a-z]' tests/*.gst` → nothing). **A user cannot
+define a method on their own type**, so the collection methods that exist —
+`Vector.Push`, `HashMap.Get` — are compiler builtins rather than a user-facing
+dispatch mechanism.
+
+That one fact settles three rows at once, which is why it is recorded here rather
+than three times:
+
+- **Row 7** — inheritance and traits are impossible, not merely unspelled.
+- **Row 11** — operator overloading is impossible for the same reason: there is
+  no user-supplied function for an operator to dispatch to. E4's grep found no
+  "overload" string; this is why there is nothing to find.
+- **Row 8** — the data-oriented interface registry in
+  `docs/VISION_RECONCILIATION.md` Appendix B, and §12's "small explicit function
+  tables", are **not currently expressible by a user**. They would be a compiler
+  feature or nothing. That is worth knowing before either is proposed as a
+  library pattern.
+
+The keywords are absent as expected:
 
 ```
 $ for k in class extends impl trait interface inherits; do
@@ -629,9 +806,22 @@ hardening, whole-program differential qualification, self-hosting through
 Cranelift, the default flip, then deprecating and deleting MIR-to-C, and finally
 the bootstrap seed. Phase 18 stood at 13 of 20 patches at `b47d0049`.
 
-`PARTIAL` because both backends exist: Cranelift is real and under active
-development, and MIR-to-C is still the default and the differential oracle
-(`AGENTS.md`).
+`PARTIAL` because both backends exist, and this now rests on the driver rather
+than on a roadmap's status line. `compiler/test_runner_entry.gst` exposes the
+choice to users directly:
+
+```
+gust --backend mir-to-c <source.gst>
+gust --backend cranelift -o <output> <source.gst>
+  --backend <mir-to-c|cranelift>  Select the backend explicitly.
+  -o <output>                     Required only by the cranelift backend.
+```
+
+The driver also carries `backend_was_explicit` alongside the selection (`:17,20`),
+which is the field the no-silent-fallback rule in `docs/SHARED_SEMANTIC_ZONE.md`
+needs: an explicitly requested Cranelift build must fail rather than quietly
+retry through C, and distinguishing explicit from defaulted is what makes that
+expressible. MIR-to-C remains the default and the differential oracle.
 
 **Two rows in this ledger close when it does, without anyone working on them
 directly.**
@@ -698,14 +888,81 @@ mut t_void: ast.Type[ctx]; t_void.tag = 3; // Void
 return t_void;
 ```
 
-No move is recorded at the send site — nothing marks the argument moved, and
-`grep -n 'Send' compiler/typechecker.gst | grep -iE 'move|linear|consume'`
-returns nothing. So the sender keeps a usable binding to a value it has handed to
-another fiber.
+`Send` itself records no move — nothing in that branch marks the argument moved.
 
-**Scope of this claim.** What is verified is that the typechecker records no move
-at the send site. I did not build the compiler to confirm end-to-end that
-send-then-use compiles clean; that is the negative fixture for whoever fixes it.
+**Corrected 2026-08-20 after reading the committed fixtures.** An earlier
+revision of this block concluded from that grep that ownership transfer is
+impossible and the sender always keeps a usable binding. That is too strong.
+`move` is a keyword, and transfer at a send *is* tracked when the caller asks for
+it — `tests/test_arena_moved_through_channel_invalid_rejected.gst`:
+
+```gust
+mut chan: std.Channel[Arena, ctx] := std.ChannelNew(ctx);
+chan.Send(move ctx);
+mut n_ref_after_move := ctx.get_ref(n);   // rejected: use after move
+```
+
+So the gap is narrower and different in kind than "no ownership transfer
+exists". The mechanism exists and is enforced; it is **opt-in at the call site**
+rather than a property of the channel. §30 says "channels transfer ownership of
+sent values", which reads as automatic. A caller who omits `move` is not
+transferring anything, and nothing at the send site requires it.
+
+The row stays `VIOLATED` on that basis — §30 describes a property of channels and
+the compiler provides a property of call sites — but the remedy is smaller than
+the earlier text implied: require `move` for non-copy sends, rather than build
+transfer semantics from nothing.
+
+Two neighbouring fixtures bound the behaviour: `e2e_channel_ping_pong.gst` sends
+a copy value with no `move` and is expected to pass, and
+`test_channel_mismatched_send_rejected.gst` confirms the element-type check.
+**Whether `chan.Send(x)` on a linear `x` without `move` is accepted is the open
+question**, and it is the fixture whoever takes this on should write first.
+
+### The fixture that would settle it — specified, not written
+
+`tests/` belongs to the lanes that own it and is outside this lane's boundary, so
+this is a specification rather than a patch. It is also deliberately not written
+blind: the expected outcome is exactly what is unknown, so committing a fixture
+that asserts one direction would be guessing, and a negative test asserting the
+wrong direction is worse than no test.
+
+Take `test_arena_moved_through_channel_invalid_rejected.gst` and delete one
+keyword:
+
+```gust
+type CustomNode[ctx] struct { val: int }
+
+func main() {
+    mut ctx := os.Arena.New();
+    defer ctx.Free();
+    mut n: Index[CustomNode, ctx] := os.ArenaAlloc(ctx);
+    mut chan: std.Channel[Arena, ctx] := std.ChannelNew(ctx);
+    chan.Send(ctx);                        // no `move`
+    mut after := ctx.get_ref(n);           // does this still compile?
+    after.val = 100;
+}
+```
+
+The existing fixture is the same program with `move ctx`, and it is rejected. So
+this one isolates a single variable: whether the send *requires* the keyword.
+
+Both outcomes are informative, which is why it is worth running before anything
+is scheduled:
+
+- **Rejected** — `Send` already demands `move` for a linear argument. §30's
+  claim is then substantially true in practice, row 33 narrows to a
+  documentation correction, and the "require `move` for non-copy sends" work is
+  already done.
+- **Accepted** — the sender keeps a usable arena binding after handing it to
+  another fiber, which is the gap as this row describes it, and the fixture
+  becomes the compile-fail test for the eventual change.
+
+Name it for whichever it turns out to be, following the convention in `tests/`:
+`test_channel_send_without_move_rejected.gst` if it rejects, or
+`e2e_channel_send_without_move_observed.gst` if it compiles — the latter shaped
+like `test_shared_mutable_aliasing_observed.gst`, which records what the compiler
+permits and says in its header what must change if that ever stops being true.
 
 **Why it belongs beside row 19 rather than on its own.** The two are one gap.
 Row 19 says no task owns spawned work; this says no ownership moves at the
@@ -818,8 +1075,33 @@ automatically become resources" is therefore true *of resources*, even though
 `str` and slices are automatically linear for move tracking. Same word, two
 mechanisms, and only the resource one is opt-in — exactly as §28 says.
 
-Row 16 stays `PARTIAL` for the reason CR-5 gives, not for this one: the opt-in
-is real, and destructor *declaration* for user-defined types is what is missing.
+Row 16 stays `PARTIAL`, but for a wider reason than CR-5 alone, found while
+auditing the `PARTIAL` rows.
+
+**§28's transitivity claim does not hold for the opt-in.** The section says
+"Linearity propagates transitively. Any struct containing a linear field is
+itself linear." That is true of the *structural* linearity governing move-versus-
+copy — `typechecker_is_linear` (`:1761`) walks a struct's fields through
+`struct_registry` and returns linear if any field is. It is **not** true of the
+`#[linear]` marker. `env_struct_is_linear_resource` has exactly two consumers
+besides its own definition — a wrapper at `:6820` and
+`env_struct_has_resource_tracking_metadata` at `:6850` — and neither walks
+fields. Nothing propagates resource-ness from a field to its container.
+
+Nor does the other mechanism pick it up: `typechecker_is_linear` never consults
+the resource registry (zero references to `linear_resource` in its body), so it
+classifies by type tag and field recursion alone. A `#[linear]` struct whose
+fields are all `int` is therefore linear by neither route, and a plain struct
+containing it does not become a resource.
+
+So §28 states one rule over a word that names two mechanisms, and the rule holds
+for the one it is not about. That is the same conflation E20 warned of, now with
+a consequence rather than only a caution: **the marker is opt-in per type and
+does not compose.**
+
+`PARTIAL` is still right — the opt-in exists and is wired (E20) — but the row's
+"propagating transitively" is the half that does not hold, alongside CR-5's
+missing destructor declaration for user-defined types.
 
 **§25 is enforced, by a mechanism D-1 undermines.** Brands are part of the type,
 so a value from one context is not assignable where another is expected, and the
@@ -935,7 +1217,33 @@ it changes what the remaining work is. The project does not need to learn this
 discipline or be argued into it; it needs to point an existing and demonstrably
 sustained practice at a different target once there is a platform to aim it at.
 
-`PARTIAL` records exactly that: the practice holds, the surface does not.
+**Corrected 2026-08-20: this row was `PARTIAL` and should be `ABSENT`.** The
+error was mine and it is worth naming, because it is a different failure from the
+count-sweep ones.
+
+The rule this row states is *generated checks substitute for reading*, and what
+it governs is applications written in Gust. Nothing generates a check for one.
+Scoring it `PARTIAL` credited a related practice aimed at a different target —
+the compiler's own guards — which is scoring **the project** rather than **the
+rule**. This file's own statement of purpose is that `docs/VISION.md` is
+authoritative for what a rule is and this file is authoritative for whether it
+holds; a status that reflects something other than the rule crosses exactly that
+line, the same way row 14 did before it was corrected.
+
+So the status is `ABSENT` and the observation stays here, where it belongs:
+
+> The discipline §79 argues for exists, is well resourced, and is aimed at the
+> compiler rather than at applications. The remaining work is aiming an existing
+> practice at a new target, not establishing one.
+
+That sentence is the useful part and it survives the correction intact. What it
+is not is evidence that the rule partly holds.
+
+**The general form, since row 41 sits next to it and stays `PARTIAL`.** A status
+is `PARTIAL` when the rule is partly enforced *for the thing the rule governs* —
+row 41 qualifies, because "no install-time execution" is one of the four
+ingredients §111 names and it genuinely holds for any run. A status is not
+`PARTIAL` because something admirable exists nearby.
 
 ### E23 — diagnostics carry structure but no identity (row 40)
 
@@ -1020,6 +1328,50 @@ Byte-identical self-compilation is a demanding determinism property, checked on
 every bootstrap. It is simply about *the compiler's output*, whereas §111 is
 about *a program's run*.
 
+### The `PARTIAL` audit, completed
+
+All ten `PARTIAL` rows were re-tested against the question that moved row 39:
+*does the evidence support the status, or does the status reach past it?*
+
+| Row | Outcome |
+| --- | --- |
+| 39 Conformance | **Moved to `ABSENT`.** Its status credited the compiler's own guards — a practice aimed at a different target from the rule |
+| 16 Resources | Kept, **wider reason**: §28's transitivity holds only for the mechanism the section is not about |
+| 15 Cleanup | Kept, **half upgraded**: LIFO verified from `defer_stack` emission rather than asserted |
+| 27 Backend | Kept, **evidence upgraded**: from a roadmap's status line to `--backend` in the driver |
+| 3 Absence | Kept, **claim split**: no `Some(42)` constructor is established; "requires `unsafe`" was inferred |
+| 41 Reproducibility | Kept — **and the reasoning tested, not assumed.** See below |
+| 31, 36, 37, 40 | Kept. Each states a conjunction where part is enforced for the thing the rule governs: field-transitivity without the `copyable` marker (E13); brand diagnostics capped by D-1 (E20); `extern` gated by `unsafe` without §93's governance (E21); a structured `CompilerError` without identity or a machine form (E23) |
+
+**Row 41 deserves its own note, because I used it as the contrast case when
+correcting row 39 and had not applied the test to it.** The worry is that it
+fails the same way: §111 governs *runs as observations*, and nothing observes a
+run, so partial credit might be coming from outside the rule again.
+
+It survives, and the distinction is real rather than convenient. Row 39's credit
+came from a practice aimed at **a different target** — guards over the compiler,
+where the rule is about applications. Row 41's credit comes from **one of §111's
+own four enumerated ingredients**, aimed at the same target: no install-time
+execution holds (E4, verified independently — no `const`, `comptime`, or
+const-folding machinery anywhere), and it holds for any Gust program that ever
+runs. A conjunct of the rule, for the thing the rule governs, is what `PARTIAL`
+means.
+
+Ten rows, and **not one was simply confirmed as written**. The yield was
+*independent of which rows looked worth auditing* — none of the ten looked
+suspicious beforehand, and the two largest findings (row 39's misfiled status,
+row 16's transitivity gap) came from rows that read as settled. The same held
+across the other sweeps: the citation defect had propagated into three
+documents precisely because every document agreed, and the count corrections
+landed on rows whose greps were accurate.
+
+**So spot-checking the interesting rows is the move this file's own data
+refutes.** If a set is worth auditing, audit the set. Four kept their status
+with better evidence, four kept it with a corrected or narrowed reason, one split
+into an established and an inferred half, and one moved. None of the ten looked
+suspicious beforehand, which is the argument for auditing a whole set rather than
+its interesting members.
+
 ### The recurring pattern — worth reading before concluding anything from the counts
 
 E24 is the third instance of one shape, and it changes how the `ABSENT` and
@@ -1061,15 +1413,22 @@ compiler debug logging which has been stubbed out, not an execution trace, and i
 records nothing about a *program's* run in any case.
 
 Worth noting what the stub implies rather than only that it is empty: the
-instrumentation *points* exist and are maintained through bootstrap. Turning them
-back on is a body, not a design. That is unrelated to §108 — which needs
+instrumentation *points* exist and are maintained through bootstrap, so they map
+where the compiler does something worth recording.
+
+They are **not** a substrate for a structured trace, and an earlier draft of
+`docs/UNBLOCKED_CONTAINMENT_WORK.md` said otherwise. The signature is
+`(emoji: str, message: str, ctx: &Arena)` and every caller passes prose —
+`"scope_new: spawned root scope"`. Reusing them for structured emission means
+changing 40 signatures. Treat them as a map, not as plumbing. That is unrelated to §108 — which needs
 capability sets, exercised effects, denied authority attempts, and query
 predicates, none of which exist (E10, E16) — but it is the difference between an
 absent mechanism and an absent decision.
 
 §108 is the only one of §0.12's three human-read artifacts that could exist
 without the platform, and it is written up as a proposal in
-`docs/UNBLOCKED_CONTAINMENT_WORK.md`. The compiler already computes more than the
+`docs/UNBLOCKED_CONTAINMENT_WORK.md`, now with a versioned schema
+(`gust.trace/1`) and a first-patch scope. The compiler already computes more than the
 two expressible bullets need: `ExpressionProvenance` carries a resolved type and
 an `AddressOriginMetadata` per expression, and all nine origin categories are
 live (`compiler/typechecker.gst:5-24`). The capability manifest needs effects; the lockfile diff
@@ -1112,7 +1471,20 @@ opt-in half of it is already there.
 registered surface, and no opacity mechanism of any kind: nothing marks a type
 as unprintable, unformattable, or unloggable
 (`grep -ciE 'opaque|no_format|not_formattable' compiler/typechecker.gst` → 0).
-`std.Format` and `os.LogStr` will accept whatever they are given.
+
+**Correction, 2026-08-20.** An earlier revision of this block added that
+"`std.Format` and `os.LogStr` will accept whatever they are given". That is
+false. `std.Format` is strongly typed (`compiler/typechecker.gst:3810-3923`): it
+requires a literal format string, parses its `%` specifiers, and checks each
+argument — `%s` requires exactly `Str`, `%d` and `%r` require `Int`, `Byte`,
+`Bool`, or `Index`. **A struct cannot be passed to it at all.**
+
+That narrows the row rather than closing it. `std.Format("%s", secret)` is
+already rejected; `std.Format("%s", secret.value)` is not, and that is the whole
+leak. So the missing mechanism is not a predicate on a declaration but
+propagation of opacity through a field read, which is a different and larger
+change than the attribute this row originally implied.
+`docs/UNBLOCKED_CONTAINMENT_WORK.md` proposal 1 carries both shapes.
 
 So the row is `ABSENT`, but the gap is narrower than the section implies. What is
 missing is a way for a type to refuse formatting — a property of the type system
@@ -1133,7 +1505,406 @@ joins the platform surface already covered by E16 and is not given a separate
 row — a transaction block is meaningless without a database, and nothing about it
 is checkable before one exists.
 
+## Evidence shapes, strongest first
+
+Rows in this file rest on evidence of four kinds. They are not equally durable,
+and the difference matters when the compiler moves under them.
+
+| Shape | Fails when the compiler changes? | Example |
+| --- | --- | --- |
+| **A committed guard** | Yes, in CI | `guard-stdlib-s1-str-equality-diagnostic` pins the `str ==` message in both compilers (E5) |
+| **A committed fixture** | Yes, on the next run | `test_shared_mutable_aliasing_observed.gst` compiles and prints 111 (E6); `test_arena_moved_through_channel_invalid_rejected.gst` (E18) |
+| **A quoted construct** | No — but a reader can check it | `type Scope[ctx]` at `compiler/typechecker.gst:695` (E17) |
+| **A grep count** | No, and it silently rots | `grep -c '"uses"'` → 0 (E10) |
+
+Every self-correction recorded in this file moved a claim *up* this table, and
+the two that changed a finding's substance — E26 and E18 — were both grep counts
+that a construct or a fixture later contradicted. A count proves a word is
+absent; it does not prove the thing the word names is absent, because the thing
+may be spelled differently or reached another way.
+
+**The count sweep is complete: 11 of 11 examined.** Five corrected — E26
+(`std.Format` is strongly typed), E18 (`move` exists and transfer is enforced),
+E14 (`empty[T]` is a second spelling of absence), E10 (`FunctionSignature`
+already carries per-function obligations), E11 (`byte` is a second integer-ish
+scalar). Six confirmed, three of them after a real attempt to break them:
+
+- **E12** — exhaustiveness is checked in both compilers.
+- **E15** — no method-receiver syntax exists, so traits and operator overloading
+  are impossible rather than unspelled.
+- **E23** — `report_error`'s leading integer is a `kind_tag`, a category, not a
+  per-rule identifier. The row could have died here and did not.
+- **E4** — no `const`, `comptime`, `constexpr`, `static_assert`, or `eval`
+  keyword, and no const-folding or compile-time-evaluation machinery in the
+  typechecker or codegen. With E15, §15's ban on user-programmable compile-time
+  execution holds by construction: there is no mechanism, not merely no macro
+  syntax.
+- **E16** — checked by an independent route rather than the same greps: the only
+  libraries linked anywhere in the build are `pthread` and `m`. No TLS, no
+  network, no database client is linked, which is a different kind of evidence
+  from "no HTTP symbol is registered" and agrees with it.
+- **E25** — no language-version or edition pin exists in `Makefile` or
+  `flake.nix` either, so the absence is not merely of a keyword.
+
+Of the five corrections: one changed a design (E26), three changed an estimate or
+a scope (E18, E14, E10), and one changed only a sentence (E11). Recording that
+split matters more than the raw count, because it says how far a count-backed row
+can be trusted before it is re-read: usually the direction is right and the
+boundary is wrong.
+
+**How much weight a count-backed row carries, measured.** Six count-backed rows
+have been re-examined against the code they summarise. Four had a claim that
+reached past the count and were corrected — E26 (`std.Format` is strongly typed),
+E18 (`move` exists and transfer is enforced), E14 (`empty[T]` is a second
+spelling of absence), E10 (`FunctionSignature` already carries per-function
+obligations). Two were confirmed and came out *stronger* than the count showed —
+E12 (exhaustiveness is checked in both compilers) and E15 (users cannot define
+methods at all, so traits and operator overloading are impossible rather than
+unspelled).
+
+Four corrected, two strengthened. The lesson is not that counts are usually
+wrong; it is that **counts are where claims drift**, in either direction, because
+a count answers a narrower question than the sentence built on it. Three of the
+four corrections also made the underlying problem *smaller or better founded*
+rather than larger.
+
+**So prefer the strongest shape available, and say which one a row rests on.**
+Absence claims are the hard case: nothing can be committed that fails when
+something starts existing, so a grep count is often all there is. Where that is
+true, say so explicitly rather than leaving the reader to assume a fixture backs
+it — E10 and E16 are the large ones, and both are honest about resting on
+absence.
+
+## Examples invite capabilities the prose disclaims
+
+A document can state a caveat correctly and still mislead, because a reader
+copies the example rather than the paragraph above it. Every Gust code block in
+this lane's documents was checked against what the compiler can express — 20
+blocks across four files.
+
+| File | Blocks | Result |
+| --- | --- | --- |
+| `ONE_WAY_LEDGER.md` | 13 | Clean by construction — all are verbatim quotes from `compiler/*.gst` or `tests/*.gst`, and their citations were checked in the citation sweep |
+| `UNBLOCKED_CONTAINMENT_WORK.md` | 4 | Clean — two verbatim compiler quotes, one using real `std.Format` calls, and the JSON-writer signatures, which correctly write `func f(args) ReturnType` |
+| `DEMO_TARGET_PROGRAM.md` | 2 | One defect, fixed: the program is written in method-call style and a user cannot define a method, so every call in it must be compiler- or platform-provided. Now says so |
+| `VISION_RECONCILIATION.md` | 1 | One defect, fixed: `func … -> str`. **Gust has no arrow return syntax** |
+
+The arrow is worth recording as its own instance. It was copied from
+`full-stack-slice-0.md`, an uploaded document, and it is not Gust: a return type
+follows the parameter list directly, the only arrow token in the lexer is
+`FatArrow` (`=>`) for match arms, and every ` -> ` in `compiler/*.gst` is inside
+a comment. That is the citation-propagation failure again in a new medium —
+**syntax inherited from a source document, never checked against the grammar.**
+
+The general rule this sweep produced:
+
+> A caveat in the prose does not neutralise the capability an example invites.
+> If a block shows something the compiler cannot express, say so *in the block's
+> vicinity*, not only in a section elsewhere.
+
+`DEMO_TARGET_PROGRAM.md` is the case that makes it concrete: §14 already said the
+query builder is a compiler feature and not user-facing, and the demo still
+invited the opposite reading by showing a method chain with no note attached.
+
+## Verify the checker before believing it
+
+Every verification script written while auditing this file was wrong on its first
+run, and each one was wrong differently:
+
+| Check | Reported | Actually |
+| --- | --- | --- |
+| §0.18 index vs evidence | 5 sections missing | 2 were cross-document `§` refs to `VISION_RECONCILIATION.md`; 3 were inside the range `§75–§79` |
+| `std_*` symbol count | 21 symbols | 20 — the regex matched the summary row *describing* the symbols |
+| Linked libraries | `-locked`, then `-ladder`/`-layout`/`-legacy` | `--locked` is a cargo flag and the rest are hyphenated recipe names; the real link set is `-lpthread -lm` |
+| A paginated API read | 100 check-runs (88 success / 12 queued) | 119 — the un-paginated call silently truncated at the page limit, and the short answer looked complete |
+| A denominator taken mid-creation | "54 total, so 54 outstanding" | 71 total — the run set was still being created, so the denominator itself was still growing |
+| A gate check on an empty parse | "0 outstanding — proceed" | 4 outstanding; the parser mismatched its input format, read zero items, and zero-of-zero satisfied the go condition |
+| An edit to this section | "ok" | nothing changed; the anchor existed but the replacement never matched |
+
+Three distinct traps, one root cause: **each tool treated a structured document
+as flat text.** These documents are not flat. A `§` belongs to whichever document
+its sentence names. A table row may describe the table rather than belong to it.
+A range compresses an enumeration. Generated files state their own counts, so
+they necessarily contain rows that look like data and are not.
+
+The scoreboard is worth holding before acting on a tool's complaint. Of 47
+`path:line` citations, 3 were wrong. Of 11 measured counts, 1 was wrong. Of the
+checkers, **every one was wrong on first run.** The documents here have been
+roughly 93–96% accurate; the tools written to check them, none.
+
+That asymmetry has a cause rather than being luck. The documents were written by
+reading code; the checkers were written by pattern-matching text.
+
+> When a checker disagrees with a document, investigate the checker first. Only
+> after the checker survives scrutiny is its complaint evidence about the
+> document.
+
+**The silent direction is the expensive one.** A false positive costs the next
+reader the time it took to write the check. A false negative — a check that
+passes because its pattern never matched anything — costs nothing visible and
+protects nothing. The third row above is that failure: an edit asserted its
+anchor existed, reported success, and changed no bytes. Elsewhere in this
+repository the same shape appeared as a regex missing `re.M` that reported
+"sources parsed: 1".
+
+**Adoption measures a rule's generality, not its coverage — and it was ranked
+wrongly here.** The empty-set guard from artifact eleven was taken up by another
+lane's checker, and an earlier revision of this file promoted "a rule another
+tool adopts" to the top of the evidence-shape table above. That was a
+misfiling, and it was tested almost immediately: the adopting lane, holding the
+guard, still shipped a false conclusion — it reported that CI had stopped
+entirely, from a momentary zero.
+
+The guard was not defeated. It was answering a different question. It protects
+against an **empty** set; the failure was a **transient** one. Both satisfy
+"nothing is running" with identical confidence.
+
+Two corrections follow. The shape table ranks evidence *for a row about the
+compiler*, by whether it fails when the compiler changes; adoption is evidence
+about a rule's reach and belongs nowhere in it, so the row is removed. And the
+guard itself was incomplete:
+
+> **Non-emptiness and persistence are different failure modes of the same
+> shape.** A check whose passing condition can be satisfied by a momentary
+> reading must require that reading to persist across genuinely spaced samples.
+
+`/tmp/gate98.sh`, on which this lane's merge decision rests, had the identical
+hole — its assertions proved the sets were non-empty, not that zero-outstanding
+held twice. It now requires both, spaced far enough apart to span a dispatch gap.
+The lesson generalises past CI: any count read from a live system can be
+momentarily zero for reasons unrelated to the thing being measured.
+
+### One rule, four instances: phrase a gate as presence, not absence
+
+The guards above accumulated one patch at a time — assert the set is non-empty,
+then assert the zero persisted — and that was the wrong shape. They are four
+symptoms of a single fault, and each patch only closed the way it had already
+failed.
+
+The fault: **a condition phrased as an absence is satisfied by every kind of
+nothing.** "No outstanding items", "no failures", "no violations" are all true of
+a set with nothing in it, and nothing about such a set announces itself.
+
+Four instances, all from this session, all reading as a confident clean pass:
+
+| Nothing | Where it came from |
+| --- | --- |
+| An **empty** set | A parser mismatched its input format and read zero records; the gate reported zero outstanding and a go signal while four checks ran |
+| A **truncated** set | An un-paginated read returned 100 of 119; internally consistent, wrong by nineteen |
+| A **momentary** zero | A dispatch gap between admissions; two samples 90s apart landed inside the same gap and looked like persistence |
+| A **cancelled** set | A PR with 65 of 65 runs `cancelled` — zero outstanding, zero failures, and no successful evidence whatsoever |
+| A **stalled** unit | A run `queued` for 2h28m with nothing executing repo-wide — the status field reports the run's state correctly and says nothing about whether it will ever run |
+
+The durable fix is not a fifth guard. It is inverting the predicate:
+
+> **Gate on the presence of the thing you require, not on the absence of the
+> thing you fear.** Require every unit to be *completed and successful*, and
+> require the count to be plausible. Non-emptiness and persistence stop being
+> separate patches, because an empty set, a truncated set, a momentarily quiet
+> set and a wholly cancelled set all fail a presence test by construction.
+
+**A sixth instance, and the only one this lane did not find in its own
+instruments.** `AGENTS.md` § *A phase is not closed while its Level 3 owner is
+failing* records the same fault, discovered independently and written down before
+this file restated it:
+
+> Every phase closure guard asserts that the Level 3 suite — `Cranelift
+> Historical Full` — "remains available, registry-derived, and separately
+> runnable". **None of them assert that it passes.** A suite that exists and
+> fails satisfies that check exactly.
+
+That is an existence test standing in for a success test — precisely the
+inversion this section argues for, reached from a different direction.
+
+**It is better evidence for the rule than the other five, and it is worth being
+clear why.** The first five were all found by one lane in its own tools inside a
+single session, which is a sample with an obvious common cause. This one is in a
+different artifact, found by someone else, and it survived long enough to cost
+something: `AGENTS.md` records the suite failing 30 of 30 nights from 2026-07-21
+to 2026-08-19 while two phases closed citing Level 3 evidence. Verified
+independently — run `32243700245` on `main`, `Cranelift Historical Full`,
+2026-08-19T10:38:56Z, `completed/failure`.
+
+**And it is the only instance that shipped a wrong conclusion rather than being
+caught before one.** The other five were caught by the check that found them; a
+month of unnoticed red was not. The cost of an absence-phrased gate is not that
+it fails loudly — it is that it passes quietly for as long as nobody looks.
+
+The diagnosis of why that suite is red belongs to the Cranelift lane and is
+already characterised there. What is recorded here is only the gate shape.
+
+**The fifth instance is the one that tests the inversion, because it was
+discovered after the rule was written.** A run `queued` for two and a half hours,
+with zero runs executing anywhere in the repository, is a fifth kind of nothing —
+and unlike the previous four it reports its own state accurately. `queued` is
+true. It simply carries no information about whether the run will ever start.
+
+Nothing was patched to handle it. A queued run is not a success, so the presence
+gate rejected it by construction, without the case having been anticipated. That
+is the difference between an inversion and a guard: **a guard closes the hole you
+found, an inversion closes the ones you have not.** Four patches would have
+needed a fifth; the presence phrasing needed none.
+
+It also distinguishes two situations that look identical from a run's own status
+field and have opposite correct responses — waiting behind other work, versus a
+queue that is not draining at all. The run says `queued` in both. Telling them
+apart requires looking at the *runner* side: whether anything is executing
+repository-wide, and whether every queued item is aging together. Measured here —
+zero self-hosted runners, five queued runs aged 73 to 94 minutes, nothing
+`in_progress` — it is capacity, and the correct action is to keep waiting and
+touch nothing, since re-dispatching would replace the run and destroy the age
+evidence that identified the case.
+
+`AGENTS.md` § *Merge policy* already says `completed success`. Every one of these
+failures came from a gate that paraphrased it as "nothing outstanding, nothing
+failed", which is not the same condition and is satisfied by strictly more
+states. `/tmp/gate98.sh`, on which this lane's merge rests, was rewritten as a
+presence test for exactly this reason, and it now rejects a wholly-cancelled run
+set that its previous form would have passed.
+
+**Where these were found matters as much as what they were.** All four came from
+checking the *instrument*, not the thing being measured, and in three the
+instrument's author caught it only after shipping a wrong conclusion. Twelve
+checker artifacts this session; not once has the document been the thing that was
+wrong on first run. The companion to "audit the set, not its interesting members"
+is that **the checker is never the interesting row.**
+
+**And a sharper form of the same thing, which cost a real conclusion.** One of
+these truncations was committed *one turn after* its author wrote the paragraph
+warning about truncated sets, using the endpoint that paragraph named. Knowing
+the rule did not produce applying it — because the reading was done in passing,
+as background for a conclusion being reasoned about carefully.
+
+That is the failure the previous sentence does not cover. "The checker is never
+the interesting row" points at tools you set out to write. This points at
+readings you do not think of as checks at all:
+
+> **The check you run in passing is the one that isn't checked.** A number quoted
+> as background gets none of the scrutiny given to the claim it supports — and it
+> is load-bearing anyway, because conclusions get built on it.
+
+In that instance the truncated figure produced a "dispatch has gone quiet"
+conclusion and an instruction to investigate it, from a number nobody had treated
+as a finding. The rule is not to check more; it is to notice that a figure has
+become evidence the moment an argument rests on it, whatever it was gathered
+for.
+
+**Assert that a check found what it was looking for, not merely that it ran.**
+For an edit, compare the file before and after. For a search, assert a non-zero
+match count. A check that cannot fail is not a check.
+
+**And assert that it saw everything, and that everything exists yet.** These are
+two different faults that produce the same plausible-looking answer:
+
+- **A complete set reported short.** The pagination case: 100 results, all real,
+  mutually consistent, wrong by 19, with nothing in the output indicating it was
+  cut off.
+- **An incomplete set reported as complete.** A denominator read while the set is
+  still being created — 54 items when the true total will be 71. Every item is
+  real and the total is simply not final yet.
+
+The second is the more dangerous when computing a ratio, because *both* terms
+move and the ratio looks stable while being wrong.
+
+**And an empty set satisfies almost every condition worth checking.** "No
+outstanding items", "no failures", "no violations" are all true of nothing. A
+parser that mismatches its input and reads zero records reports a clean result
+with total confidence — this happened here on a live gate check, where a
+malformed read of a CI status returned zero runs, zero outstanding, and a
+go signal while four checks were still running. It was caught by asserting the
+set size before interpreting it:
+
+```python
+assert len(r) > 50, f'IMPLAUSIBLE SET SIZE {len(r)} — refusing to report'
+```
+
+That assertion is cheap and it is the difference between a wrong document and a
+wrong action. **Any check whose passing condition can be satisfied by an empty
+result must assert the result is non-empty first.** A total is only a denominator
+once nothing further can join the set; until then, "outstanding" understates.
+Where this file quotes a proportion — 44% of the test corpus is negative, 9 of 45
+rules hold — the denominator was a directory listing or this file itself, both
+closed sets. Any proportion taken from a growing set needs the set closed first. Any count in this file taken from a tool with a default
+limit — an API page size, a `head`, a `grep -m` — needs the limit disabled or the
+total asserted independently, because a silently truncated count is
+indistinguishable from a complete one.
+
 ## Maintenance
+
+- **Re-read the block, not the matching line.** Every defect this file has found
+  in its own claims came from citing a `grep` hit without reading what surrounds
+  it. Three instances, all corrected in place: `typechecker_log_trace`'s 40 call
+  sites described as an emitter substrate when they carry only prose;
+  `typechecker.gst:1962` described as a formatting check when it is a provenance
+  branch; and `#[opaque]` described as needing no prerequisite when field reads
+  defeat it. Grep finds the word, not the meaning.
+- **Re-verify inherited citations before propagating them.** `path:line` drifts.
+  This file carried `compiler/typechecker.gst:4953,5151` for D-1, inherited from
+  `docs/STDLIB_SURFACE_FINDINGS.md` (pinned to `6c94728d`); both had moved, and
+  the error reached two other documents before anyone read the lines.
+  `docs/SHARED_SEMANTIC_ZONE.md` already states the rule — "treat them as a
+  starting point and confirm the construct still exists" — and it applies to
+  citations copied *between* documents, not only to citations acted on.
+- **`docs/VISION.md` §0.18 is derived from this file. Regenerate it when you add
+  or renumber an evidence section**, or the two drift into agreeing with each
+  other while the compiler has moved — the same failure as the inherited-citation
+  defect above.
+
+  The index maps a `docs/VISION.md` section to the evidence blocks that verify
+  it, extracted from the `§` references inside each `### E<n>` block here:
+
+  ```
+  python3 - <<'EOF'
+  import re, pathlib
+  led = pathlib.Path('docs/ONE_WAY_LEDGER.md').read_text()
+  ev = {}
+  for m in re.finditer(r'^### (E\d+|D-1)[^\n]*\n(.*?)(?=^### |\Z)', led, re.S|re.M):
+      eid, body = m.group(1), m.group(2)
+      # drop cross-document refs before extracting, or you get false hits
+      body = re.sub(r'`docs/[A-Z_]+\.md`[^.]{0,40}?§\d+', '', body)
+      for s in set(re.findall(r'§(\d+|0\.\d+)', body)):
+          if s != '0': ev.setdefault(s, set()).add(eid)
+  for s in sorted(ev, key=lambda x: (float(x) if '.' in x else int(x))):
+      print(f"§{s}: {', '.join(sorted(ev[s]))}")
+  EOF
+  ```
+
+  **Two traps, both of which produced false positives the first time this was
+  checked.** A naive comparison reported five missing sections and all five were
+  artifacts:
+
+  - **Cross-document `§` references.** `§4` and `§5` appear in E23 and E16 but
+    refer to `docs/VISION_RECONCILIATION.md`, not to `docs/VISION.md`. Strip
+    them before extracting, as the snippet does.
+  - **Range notation.** §0.18 writes `§75–§79` as a range; a per-number regex
+    finds 75 and 79 and reports 76, 77 and 78 as missing. Expand ranges before
+    comparing, or compare by evidence id rather than by section.
+
+  A checker that is wrong in this direction is worse than none, because it costs
+  the next reader the same twenty minutes it cost to write.
+
+- **Measured counts drift too. Re-measure before restating one.** Several rows
+  and evidence blocks quote figures — test programs, guard recipes, negative
+  fixtures, compiler size. They were correct when taken and are not
+  self-updating. The commands, all run from the repository root:
+
+  ```
+  find tests -name '*.gst' | wc -l                            # test programs
+  ls tests/ | grep -c 'reject'                                # *reject* fixtures
+  ls tests/ | grep -cE 'reject|invalid|_fail|error|violation' # negative by name
+  just --list | grep -c 'guard-'                              # guard recipes
+  just --list | grep -ci 'parity\|differential'               # differential guards
+  ls .github/workflows/*.yml | wc -l                          # workflows
+  ls compiler/*.gst | wc -l ; cat compiler/*.gst | wc -l      # compiler size
+  grep -c 'typechecker_log_trace(' compiler/typechecker.gst   # trace call sites
+  ```
+
+  For the `std.*` surface, **read the Summary table of
+  `docs/STDLIB_SURFACE_INVENTORY.md` rather than grepping it.** That file is
+  generated and states its own counts; a regex over its rows also matches the
+  summary row describing them, which inflates the total by one. That mistake was
+  made here and produced a phantom 21st runtime symbol against a true count of
+  20.
 
 - A row changes status only with a reproduction, per `AGENTS.md`.
 - A `VIOLATED` row is removed only when fixed, never because it is inconvenient.

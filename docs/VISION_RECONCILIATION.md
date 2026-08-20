@@ -221,8 +221,16 @@ Every code sample in the corpus threads a context by hand:
 ```gust
 mut v := std.VectorNew(ctx);
 mut s := std.Clone(ctx, name);
-func encode_PingInput(value: PingInput, ctx: &Arena) -> str
+func encode_PingInput(value: PingInput, ctx: &Arena) str
 ```
+
+> **Syntax note.** An earlier revision of this block wrote the signature as
+> `-> str`, copied from `full-stack-slice-0.md`. Gust has no arrow return syntax:
+> a return type follows the parameter list directly, as in
+> `func create_vector(ctx: &Arena) std.Vector[…]`. The only arrow token in the
+> lexer is `FatArrow` (`=>`) for match arms, and every ` -> ` in `compiler/*.gst`
+> is inside a comment. Corrected 2026-08-20; the point the block makes about
+> `ctx` threading is unaffected.
 
 This is the largest visible divergence from Go-shaped simplicity, it appears on
 essentially every line of application code, and it is a direct risk to OD-9: a
@@ -370,7 +378,7 @@ nine documents describe the platform in the present tense.
 **Built:** self-hosted compiler (712 `.gst` files, ~104k lines), arenas and
 branded contexts, linear resources with move and borrow tracking, MIR, the
 Cranelift backend through Phase 18, cooperative fibers with channels and
-mutexes, 256 test programs, fixed-point bootstrap convergence, and the
+mutexes, 260 test programs, fixed-point bootstrap convergence, and the
 lane/registry/guard governance in `AGENTS.md` and `docs/SHARED_SEMANTIC_ZONE.md`.
 
 **Absent or divergent:**
@@ -386,7 +394,7 @@ lane/registry/guard governance in `AGENTS.md` and `docs/SHARED_SEMANTIC_ZONE.md`
 | §26 | Two-form borrow model | Corrected in VISION 2026-08-19 (#84): one mutable reference form, no aliasing analysis |
 | §27 | Shared ownership as OD-3 | `std.Rc` already exists — see §3.6 |
 | §34 | Panic terminates request, not deployment | `exit(1)` in `src/runtime/strings.c:20,30` |
-| D-1, D-2 | Brand identity | Inferred from identifier spelling; `compiler/codegen.gst:658,762,896,1101`, `compiler/typechecker.gst:4953,5151`. Owned by staged Phase 19 |
+| D-1, D-2 | Brand identity | Inferred from identifier spelling; `compiler/codegen.gst:658,762,896,1101`, `compiler/typechecker.gst:4975,5173`. Owned by staged Phase 19 |
 | §32 | Fixed-width integers, overflow trapping, `Decimal`/`Money`/time types | **All absent.** One integer type, `int`, lowering to C `int` — so overflow is UB, not a trap. Issue #103 |
 | §23 | `copyable` marker | Absent. Copy-versus-move is inferred structurally; adding a `str` field silently changes a struct's category |
 | §29 | Automatic resource cleanup | Runs, but only for `Resource[T]` and only in the self-hosted compiler. The Rust compiler has none — zone defect D-6, issue #104 |
@@ -529,6 +537,14 @@ What this buys, none of which requires a new language feature:
   single call.
 
 ## Appendix B — Data-oriented interface registry
+
+> **Feasibility note, 2026-08-20 at `b47d0049`.** This pattern is not expressible
+> by a user today and would have to be a compiler feature. There is no
+> method-receiver syntax in `compiler/parser.gst` and no test defines a method on
+> a user type, so a user cannot attach behaviour to their own struct at all — the
+> collection methods that exist are compiler builtins. The same fact is why §12
+> can ban inheritance so cheaply and why operator overloading is impossible
+> rather than merely unspelled. `docs/ONE_WAY_LEDGER.md` E15.
 
 Extracted from `general-ecosystem.md` (§3.3). This is the concrete implementation
 of `VISION.md` §12's "small explicit function tables", and the reason §12 can ban

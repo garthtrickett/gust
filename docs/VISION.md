@@ -416,6 +416,58 @@ A status marker is not a quality judgement and does not weaken a Part's authorit
 
 Where a Part splits, the marker names the split by section. `docs/ONE_WAY_LEDGER.md` records, per rule, whether the compiler currently does what the Part says.
 
+## 0.18 Verification index
+
+Which sections have been checked against the compiler, and where the evidence
+is. `docs/ONE_WAY_LEDGER.md` holds the reproductions; this table is the index
+into them, so a reader of any section can find out whether it describes the
+compiler or describes the target.
+
+**This table is derived from `docs/ONE_WAY_LEDGER.md`, not maintained by hand.**
+The regeneration command, and two extraction traps that produce false positives,
+are recorded in that file's Maintenance section. Regenerate it when evidence
+sections are added or renumbered.
+
+| Section | Subject | Evidence |
+| --- | --- | --- |
+| §11 | `Result`, `?`, non-null references | E2, E14 |
+| §14, §16 | generics, operators, conversions | E15 |
+| §17, §18 | effects — **the differentiator** | E10 |
+| §20, §30 | structured concurrency, channel ownership | E9, E18 |
+| §23, §28 | value categories, linear resources | E13, E20 |
+| §25 | cross-context movement | E20 |
+| §26 | borrows | E6 |
+| §27 | shared ownership (OD-3) | E8 |
+| §31 | enum exhaustiveness | E12 |
+| §32 | numbers, overflow | E11, E15 |
+| §34 | panic scope | E3 |
+| §70, §72 | modules, packages, lockfiles | E21, E16 |
+| §73, §74 | visibility, prelude | E19 |
+| §75–§79 | testing and conformance | E22 |
+| §81 | secrets | E26 |
+| §93, §94, §95 | native code, networking, host access | E21, E19 |
+| §99, §100, §103 | editions and migrations | E25 |
+| §108, §109 | traces, diagnostics | E25, E23 |
+| §111 | reproducibility | E24 |
+| §15 | no compile-time execution | E24, and the `HOLDS` rows in E4 |
+
+**Sections not listed are covered by their Part's status marker rather than
+individually.** That is deliberate, not an omission. Most of them describe
+platform surface — Parts IX through XII, XVI and XVII — and E16 verifies the
+whole of it in one place: the runtime is eight C files, and no HTTP, SQL, RPC,
+job, template, or supplier concept exists as a runtime symbol, a registered
+name, or a keyword. Auditing those sections one at a time would restate E16
+forty times.
+
+Part 0 is also unlisted, for a different reason: it is strategy, and there is
+nothing in the compiler to check it against.
+
+**Counts, 2026-08-20 at `b47d0049`:** 44 rules tracked, of which 9 hold, 10 are
+partial, 7 are violated, 1 is deferred, and 17 are absent. Read
+`docs/ONE_WAY_LEDGER.md`'s "recurring pattern" note before drawing a conclusion
+from those numbers — three of the practices this document asks for already exist
+and are aimed at the compiler rather than at applications.
+
 # Part I — Product
 
 > **Status: COMMITTED.** §1–§2 are the claim being demonstrated. §3's platform ownership list is the target state, not the current one.
@@ -613,6 +665,10 @@ Safe references are non-null. Absence is represented with `Option[T]`.
 
 `null` is restricted to raw pointers inside `unsafe`, FFI and ABI boundaries, and compiler-owned runtime representations such as a zero-length slice with a null backing pointer.
 
+> **There is a second spelling of absence, and it is the one the compiler uses.** Verified 2026-08-20 at `b47d0049`. `null`, `nil`, and `NULL` are absent from both lexers, so the sentence above holds for *references*. But `empty` is a keyword and `empty[T]` is a sentinel meaning absent for `Index[T, ctx]` handles — 130 uses in the typechecker alone and 6 test programs, always in ordinary safe code, compared with `==` and `!=` exactly as a null check would be.
+>
+> `empty[T]` is arguably one of the "compiler-owned runtime representations" this paragraph permits, but it is not confined to a boundary: it is how the compiler's own source spells "no value", in preference to the `Option[T]` the previous paragraph nominates. Two spellings of absence coexisting is a one-way-to-do-it problem in its own right. `docs/ONE_WAY_LEDGER.md` E14, rows 32 and 45.
+
 *Rationale: a single total failure convention makes generated error handling mechanically checkable for exhaustiveness rather than stylistically reviewed.*
 
 ## 12. Abstraction model
@@ -683,7 +739,7 @@ Only obviously lossless widening conversions may be implicit. All other conversi
 
 A function's type describes both the values it transforms and the authority it requires.
 
-> **None of Part V is implemented.** Verified 2026-08-20 at `b47d0049`: there is no `uses` keyword in either lexer, and no effect is declared, checked, or recorded anywhere. This is the differentiator (§0.4) and Track A item 1, and §0.6 already lists it as absent — annotated here too because every lesser section in this document now carries its status, and the section the product rests on should not be the one that reads as settled. `docs/ONE_WAY_LEDGER.md` E10.
+> **None of Part V is implemented, but the carrier exists.** Verified 2026-08-20 at `b47d0049`: there is no `uses` keyword in either lexer and no effect in this Part's sense is declared or checked. What does exist is the structural shape — `FunctionSignature` (`compiler/typechecker.gst:633-645`) already states per-function obligations alongside the types (`is_unsafe`, `is_extern`, `requires_unsafe_call`, `requires_layout_metadata`, `requires_sandbox_arena`), and one is enforced: calling an `extern` function outside `unsafe` is rejected. Two of the three `requires_*` fields are inert — never set, and one accessor never called — so they read as reserved for obligations nothing yet assigns. Adding effects extends a struct with the right shape rather than introducing the concept. `docs/ONE_WAY_LEDGER.md` E10. This is the differentiator (§0.4) and Track A item 1, and §0.6 already lists it as absent — annotated here too because every lesser section in this document now carries its status, and the section the product rests on should not be the one that reads as settled. `docs/ONE_WAY_LEDGER.md` E10.
 >
 > Its absence is what makes several other rows unfixable in isolation: §81's `secret.use<…>`, §22's rejection of external effects inside retried transactions, §52's pre-execution authorization, and §108's record of exercised and denied authority all presuppose it.
 
@@ -873,7 +929,9 @@ Root resource types opt into resource semantics through explicit linear metadata
 >
 > Worth stating explicitly because the word is overloaded: this opt-in is separate from the structural linearity that governs move-versus-copy for ordinary values. `str` and slices are automatically linear for move tracking and are *not* automatically resources — which is exactly what the next paragraph claims. `docs/ONE_WAY_LEDGER.md` E20 and E13.
 
-Linearity propagates transitively. Any struct containing a linear field is itself linear. Ordinary strings, slices, collections, and branded structs do not automatically become resources.
+Linearity propagates transitively. Any struct containing a linear field is itself linear.
+
+> **Not for the `#[linear]` marker.** Verified 2026-08-20 at `b47d0049`. This holds for the structural linearity that governs move-versus-copy — `typechecker_is_linear` walks a struct's fields and returns linear if any field is. It does not hold for the opt-in above: `env_struct_is_linear_resource` has two consumers and neither walks fields, and `typechecker_is_linear` never consults the resource registry. A `#[linear]` struct whose fields are all `int` is linear by neither route, and a plain struct containing one does not become a resource. **The marker is opt-in per type and does not compose.** `docs/ONE_WAY_LEDGER.md` E20. Ordinary strings, slices, collections, and branded structs do not automatically become resources.
 
 Compiler-tracked resource states: owned, borrowed, moved, closed, destructor scheduled.
 
@@ -906,7 +964,9 @@ Borrows should not be shared across tasks. This is a design rule, not an enforce
 
 Channels transfer ownership of sent values.
 
-> **Not enforced.** Verified 2026-08-20 at `b47d0049`: `Channel.Send` checks its argument against the element type and returns `Void` (`compiler/typechecker.gst:2823-2841`). No move is recorded at the send site, so the sender retains a usable binding to a value it has handed to another fiber. Together with §20's unenforced task ownership this means the two concurrency primitives that exist — `std.Spawn` and `std.Channel` — provide neither task ownership nor value ownership. `docs/ONE_WAY_LEDGER.md` E18; tracked with issue #101, since the fix is the same OD-1 decision.
+> **Opt-in, not automatic.** Verified 2026-08-20 at `b47d0049`. `Channel.Send` checks its argument against the element type and returns `Void` (`compiler/typechecker.gst:2823-2841`); it records no move itself. But `move` is a keyword and transfer at a send *is* enforced when the caller writes it — `tests/test_arena_moved_through_channel_invalid_rejected.gst` sends `move ctx` and the compiler rejects the use that follows.
+>
+> So this sentence describes a property of channels while the compiler provides a property of call sites: a caller who omits `move` transfers nothing, and nothing at the send site requires it. The remedy is to require `move` for non-copy sends rather than to build transfer semantics from nothing. Whether `chan.Send(x)` on a linear `x` without `move` is accepted is untested and is the fixture to write first. `docs/ONE_WAY_LEDGER.md` E18; tracked with issue #101.
 
 Values containing context-bound references may cross into a task only when the receiving task shares a valid parent context.
 
@@ -932,7 +992,7 @@ All enum matching must be exhaustive.
 
 ## 32. Numbers
 
-> **None of this section is implemented.** Verified 2026-08-20 at `b47d0049`: there is one integer type, `int`, and none of the six fixed-width types below exists in either lexer; there is no overflow handling anywhere in codegen or the typechecker; the named arithmetic operations and every one of the numeric and time types below are absent. `Type::Int` lowers to C `int`, where signed overflow is undefined behaviour — so the current behaviour at overflow is not wraparound but UB, which is the opposite end of the spectrum from the trap this section promises. Reproductions in `docs/ONE_WAY_LEDGER.md` E11; tracked as issue #103. The section is retained as the target, not as a description.
+> **None of this section is implemented.** Verified 2026-08-20 at `b47d0049`: the integer-ish scalars are `int` and `byte` — `byte` lowers to C `unsigned char` (`compiler/codegen.gst:1360-1362`) — and none of the six fixed-width types below exists in either lexer; there is no overflow handling anywhere in codegen or the typechecker; the named arithmetic operations and every one of the numeric and time types below are absent. `Type::Int` lowers to C `int`, where signed overflow is undefined behaviour — so the current behaviour at overflow is not wraparound but UB, which is the opposite end of the spectrum from the trap this section promises. Reproductions in `docs/ONE_WAY_LEDGER.md` E11; tracked as issue #103. The section is retained as the target, not as a description.
 
 Gust supports compiler-defined fixed-width integer types: `i32`, `u32`, `i64`, `u64`, `isize`, `usize`.
 
@@ -1377,7 +1437,7 @@ Never silently imported: database access, networking, filesystem access, time, r
 
 > **Status: DEFERRED**, except §79's conformance checks, which §79 itself calls the primary defence against plausible-but-wrong output. Nothing here is required for the demo.
 >
-> **The discipline this Part argues for already exists, aimed at the compiler rather than at applications.** Measured 2026-08-20 at `b47d0049`: 260 test programs of which 115 are named negative fixtures (102 `*reject*`), 409 `guard-` recipes, 82 parity/differential guards, and 66 CI workflows — roughly 44% of the corpus asserts programs must *not* compile. None of §75's categories or §79's generated checks exist, because they presuppose the platform. So the remaining work is aiming an existing, sustained practice at a new target, not establishing one. `docs/ONE_WAY_LEDGER.md` E22.
+> **Nothing here is implemented for applications; the discipline it argues for exists, aimed at the compiler.** Measured 2026-08-20 at `b47d0049`: 260 test programs of which 115 are named negative fixtures (102 `*reject*`), 409 `guard-` recipes, 82 parity/differential guards, and 66 CI workflows — roughly 44% of the corpus asserts programs must *not* compile. None of §75's categories or §79's generated checks exist, because they presuppose the platform. So the remaining work is aiming an existing, sustained practice at a new target, not establishing one. `docs/ONE_WAY_LEDGER.md` E22.
 
 Determinism here is not a testing convenience. It is the property that makes execution traces usable as training signal (Part XX) and the only remaining check on behaviour when nobody reads the code. A non-deterministic run is a contaminated observation.
 
