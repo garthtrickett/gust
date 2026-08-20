@@ -149,13 +149,19 @@ documents want:
 > independently reject.** There is no structured scope, no task ownership, and no
 > cancellation propagation.
 
-**Recommendation (not a decision — owner is the Cranelift lane via
-`SHARED_SEMANTIC_ZONE.md`, "Fiber scheduling contract"):**
+**Adopted as the direction, 2026-08-20** — operator decision on the server
+question: transparent suspension unless a fatal blocker is hit. `docs/VISION.md`
+§21 is authoritative and names the three blockers that would count; this section
+keeps the *reasoning*, not the status. **Ownership is unchanged** — the Cranelift
+lane still owns the fiber scheduling contract via `SHARED_SEMANTIC_ZONE.md`, and
+a direction does not authorise a patch outside the owning lane.
+
+**The recommendation, now the direction:**
 
 > Take Go's suspension model. Reject Go's task model.
 
-- **Transparent suspension**, no colouring. This resolves OD-1 in the direction
-  §21 already prefers, and it is the single largest reason Go reads as simple.
+- **Transparent suspension**, no colouring. This is the direction OD-1 now takes,
+  and it is the single largest reason Go reads as simple.
   The expensive half — a cooperative fiber scheduler — is already built and
   shipping.
 - **Never detached.** Every task belongs to a lexical scope that cannot exit while
@@ -178,6 +184,14 @@ implies: client code dispatches actions and returns effects; it never awaits.
 **Blocking prerequisite:** this cannot be scoped until `std.Spawn`'s current
 semantics are recorded as either deprecated or as the low-level primitive under
 the structured layer. Today they are neither.
+
+**The direction sharpens that prerequisite rather than removing it.** Before
+2026-08-20 the choice between those two fates depended on which way OD-1 went;
+now it does not. Under transparent suspension `std.Spawn` cannot be the low-level
+primitive *as it stands*, because it hands back no handle, and a structured layer
+needs something to own. So the question narrows from "which fate" to "does it
+gain a handle or get deprecated" — a smaller question, and one the Cranelift lane
+can answer without reopening the suspension model.
 
 ### 3.3 The C library ecosystem — `general-ecosystem.md` is retired
 
