@@ -594,3 +594,61 @@ func mir_serialize_optimisation_request(decision: target.MirOptimisationDecision
 func mir_optimisation_mir_to_c_witness(decision: target.MirOptimisationDecision[ctx], ctx: &Arena) str {
     return mir_optimisation_body(decision, mir_optimisation_witness_format(), 1, ctx);
 }
+
+func mir_reproducible_request_format() str { return "gust.compiler_reproducible_build.v1"; }
+func mir_reproducible_witness_format() str { return "gust.reproducible_build_witness.v1"; }
+
+func mir_reproducible_row(build: target.MirReproducibleBuild[ctx], ctx: &Arena) str {
+    mut row := "build:";
+    row = mir_target_append(row, "target_id", build.target_id, ctx);
+    row = mir_target_append(row, "level", build.optimisation_level, ctx);
+    row = mir_target_append(row, "field_value", build.reproducible_field_value, ctx);
+    row = mir_target_append(row, "excluded_reason", build.excluded_field_reason, ctx);
+    row = mir_target_append(row, "path_form", build.embedded_path_form, ctx);
+    row = mir_target_append(row, "order_source", build.order_source, ctx);
+    return std.Clone(ctx, row);
+}
+
+// The request carries BOTH builds. A reproducibility claim made from one build
+// is a claim about nothing, so the worker is given the two builds and compares
+// them itself rather than being handed a "reproducible: true" field.
+func mir_serialize_reproducibility_request(first: target.MirReproducibleBuild[ctx], second: target.MirReproducibleBuild[ctx], ctx: &Arena) str {
+    mut validation := target.mir_reproducibility_validate(first, second, ctx);
+    if validation.valid == 0 {
+        mut invalid := "format: invalid\nreason: ";
+        invalid = std.Concat(invalid, validation.reason_code);
+        invalid = std.Concat(invalid, "\n");
+        return std.Clone(ctx, invalid);
+    }
+    mut output := "format: ";
+    output = std.Concat(output, mir_reproducible_request_format());
+    output = std.Concat(output, "\nauthority: compiler/mir_target_authority.gst\n");
+    output = std.Concat(output, mir_reproducible_row(first, ctx));
+    output = std.Concat(output, "\n");
+    output = std.Concat(output, mir_reproducible_row(second, ctx));
+    output = std.Concat(output, "\n");
+    return std.Clone(ctx, output);
+}
+
+func mir_reproducibility_mir_to_c_witness(first: target.MirReproducibleBuild[ctx], second: target.MirReproducibleBuild[ctx], ctx: &Arena) str {
+    mut validation := target.mir_reproducibility_validate(first, second, ctx);
+    if validation.valid == 0 {
+        mut invalid := "format: invalid\nreason: ";
+        invalid = std.Concat(invalid, validation.reason_code);
+        invalid = std.Concat(invalid, "\n");
+        return std.Clone(ctx, invalid);
+    }
+    mut output := "format: ";
+    output = std.Concat(output, mir_reproducible_witness_format());
+    output = std.Concat(output, "\nauthority: compiler/mir_target_authority.gst\n");
+    mut row := "reproducible:";
+    row = mir_target_append(row, "target_id", first.target_id, ctx);
+    row = mir_target_append(row, "level", first.optimisation_level, ctx);
+    row = mir_target_append(row, "field_value", first.reproducible_field_value, ctx);
+    row = mir_target_append(row, "path_form", "relative_to_source_root", ctx);
+    row = mir_target_append(row, "order_source", "compiler_produced_order", ctx);
+    row = mir_target_append(row, "comparison", "two_builds_compared_byte_for_byte_over_the_reproducible_fields", ctx);
+    output = std.Concat(output, row);
+    output = std.Concat(output, "\n");
+    return std.Clone(ctx, output);
+}

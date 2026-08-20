@@ -34,6 +34,7 @@
     "phase18_debug_information",
     "phase18_source_location",
     "phase18_optimisation_level",
+    "phase18_reproducibility",
     "phase18_object_inspection",
     "phase18_target_diagnostics",
     "phase18_cross_compilation",
@@ -338,6 +339,9 @@
     },
     "phase18_optimisation_level": {
       "$ref": "#/$defs/phase18_optimisation_level"
+    },
+    "phase18_reproducibility": {
+      "$ref": "#/$defs/phase18_reproducibility"
     },
     "phase18_object_inspection": {
       "$ref": "#/$defs/phase18_object_inspection"
@@ -1231,6 +1235,117 @@
         },
         "next_patch": {
           "const": "18.15"
+        }
+      }
+    },
+    "phase18_reproducibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "status",
+        "authority_owner",
+        "reproducible_inputs",
+        "reproducible_fields",
+        "excluded_fields",
+        "normalisation_rules",
+        "comparison_method",
+        "rejection_classes",
+        "next_patch"
+      ],
+      "properties": {
+        "version": {
+          "const": "phase18_reproducibility_v1"
+        },
+        "status": {
+          "const": "ready_for_patch18_16"
+        },
+        "authority_owner": {
+          "const": "compiler/mir_target_authority.gst"
+        },
+        "reproducible_inputs": {
+          "type": "array",
+          "minItems": 5,
+          "maxItems": 5,
+          "items": {
+            "enum": [
+              "source_content",
+              "target_id",
+              "optimisation_level",
+              "debug_plan",
+              "runtime_package_version"
+            ]
+          }
+        },
+        "reproducible_fields": {
+          "type": "array",
+          "minItems": 5,
+          "maxItems": 5,
+          "items": {
+            "enum": [
+              "section_contents",
+              "section_order",
+              "symbol_table_order",
+              "relocation_table_order",
+              "debug_line_table"
+            ]
+          }
+        },
+        "excluded_fields": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "field",
+              "reason"
+            ],
+            "properties": {
+              "field": {
+                "type": "string",
+                "minLength": 1
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "normalisation_rules": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {
+            "enum": [
+              "embedded_paths_are_recorded_relative_to_the_source_root",
+              "timestamps_are_omitted_rather_than_zeroed",
+              "symbol_and_section_order_is_deterministic_from_compiler_produced_order"
+            ]
+          }
+        },
+        "comparison_method": {
+          "const": "two_builds_of_the_same_input_target_and_level_are_compared_byte_for_byte_over_the_reproducible_fields"
+        },
+        "rejection_classes": {
+          "type": "array",
+          "minItems": 6,
+          "maxItems": 6,
+          "items": {
+            "enum": [
+              "reproducible_field_varied_between_builds",
+              "excluded_field_not_declared",
+              "normalisation_rule_not_applied",
+              "reproducibility_claimed_without_a_repeated_build",
+              "nondeterministic_order_in_a_reproducible_field",
+            "reproducibility_input_undeclared"
+            ]
+          }
+        },
+        "next_patch": {
+          "const": "18.16"
         }
       }
     },

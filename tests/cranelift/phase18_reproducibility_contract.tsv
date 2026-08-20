@@ -1,0 +1,14 @@
+kind	requirement	evidence	level
+input	the optimisation level is a reproducibility input	input membership check	1
+input	the debug plan is a reproducibility input	input membership check	1
+input	the target is a reproducibility input	input membership check	1
+field	the guarantee covers at least one field	non-empty reproducible field list	1
+field	a byte guarantee that excludes nothing must say so	non-empty excluded field list	1
+field	every exclusion states its reason	per-exclusion name and reason check	1
+field	no field is both guaranteed and disclaimed	disjointness check	1
+normalisation	normalisation rules are declared	non-empty rule list	1
+comparison	two builds are compared byte for byte over the reproducible fields	comparison method is frozen	1
+comparison	reproducibility is not claimed without a repeated build	rejection class inventory	1
+rejection	a reproducible field varying between builds is rejected	rejection class inventory	1
+rejection	nondeterministic order in a reproducible field is rejected	rejection class inventory	1
+rejection	the rejection class inventory is complete	six required rejection classes	1

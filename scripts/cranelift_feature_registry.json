@@ -4477,6 +4477,54 @@
     ],
     "next_patch": "18.15"
   },
+  "phase18_reproducibility": {
+    "version": "phase18_reproducibility_v1",
+    "status": "ready_for_patch18_16",
+    "authority_owner": "compiler/mir_target_authority.gst",
+    "reproducible_inputs": [
+      "source_content",
+      "target_id",
+      "optimisation_level",
+      "debug_plan",
+      "runtime_package_version"
+    ],
+    "reproducible_fields": [
+      "section_contents",
+      "section_order",
+      "symbol_table_order",
+      "relocation_table_order",
+      "debug_line_table"
+    ],
+    "excluded_fields": [
+      {
+        "field": "build_timestamp",
+        "reason": "wall_clock_is_not_a_property_of_the_input"
+      },
+      {
+        "field": "absolute_source_path",
+        "reason": "the_path_a_build_ran_from_is_not_a_property_of_the_program"
+      },
+      {
+        "field": "compiler_binary_path",
+        "reason": "host_layout_is_not_a_property_of_the_target_artifact"
+      }
+    ],
+    "normalisation_rules": [
+      "embedded_paths_are_recorded_relative_to_the_source_root",
+      "timestamps_are_omitted_rather_than_zeroed",
+      "symbol_and_section_order_is_deterministic_from_compiler_produced_order"
+    ],
+    "comparison_method": "two_builds_of_the_same_input_target_and_level_are_compared_byte_for_byte_over_the_reproducible_fields",
+    "rejection_classes": [
+      "reproducible_field_varied_between_builds",
+      "excluded_field_not_declared",
+      "normalisation_rule_not_applied",
+      "reproducibility_claimed_without_a_repeated_build",
+      "nondeterministic_order_in_a_reproducible_field",
+      "reproducibility_input_undeclared"
+    ],
+    "next_patch": "18.16"
+  },
   "phase18_object_inspection": {
     "version": "phase18_object_inspection_v1",
     "status": "ready_for_patch18_12",

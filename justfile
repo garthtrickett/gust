@@ -198,6 +198,8 @@ guard-pr-fast-ci-surface:
       'just guard-cranelift-phase18-source-location-contract'
       'Phase 18 optimisation level policy'
       'just guard-cranelift-phase18-optimisation-level-contract'
+      'Phase 18 reproducible output'
+      'just guard-cranelift-phase18-reproducibility-contract'
       'Phase 17 cross-feature runtime composition'
       'just guard-cranelift-phase17-composition-contract'
       'phase11-family:'
@@ -15895,6 +15897,25 @@ guard-cranelift-phase18-debug-info-contract:
     python3 scripts/cranelift_test_levels.py level guard-cranelift-phase18-debug-info-contract | grep -F $'guard-cranelift-phase18-debug-info-contract\t1\t' >/dev/null
     just guard-cranelift-phase18-object-format-contract
     python3 scripts/phase18_debug_information.py --check
+
+guard-cranelift-phase18-reproducibility-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 18.15 reproducibility parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase18-reproducibility-parity |
+      grep -F $'guard-cranelift-phase18-reproducibility-parity\t2\t' >/dev/null
+    just guard-cranelift-phase18-reproducibility-contract
+    bash scripts/phase18_reproducibility_parity.sh
+
+guard-cranelift-phase18-reproducibility-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 18.15 reproducible output..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase18-reproducibility-contract | grep -F $'guard-cranelift-phase18-reproducibility-contract\t1\t' >/dev/null
+    just guard-cranelift-phase18-optimisation-level-contract
+    python3 scripts/phase18_reproducibility.py --check
 
 guard-cranelift-phase18-optimisation-level-parity:
     #!/usr/bin/env bash

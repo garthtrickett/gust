@@ -40,6 +40,7 @@ TOP_FIELDS = {
     "phase18_debug_information",
     "phase18_source_location",
     "phase18_optimisation_level",
+    "phase18_reproducibility",
     "phase18_object_inspection",
     "phase18_target_diagnostics",
     "phase18_cross_compilation",
@@ -10929,6 +10930,28 @@ def phase18_optimisation_level_summary_lines(registry):
     ]
 
 
+def phase18_reproducibility_summary_lines(registry):
+    authority = registry["phase18_reproducibility"]
+    excluded = authority["excluded_fields"]
+    return [
+        "## Phase 18 reproducible output",
+        "",
+        f"- Authority version: `{authority['version']}`",
+        f"- Status: `{authority['status']}`",
+        f"- Reproducibility inputs: `{len(authority['reproducible_inputs'])}`",
+        f"- Fields guaranteed byte-identical: `{len(authority['reproducible_fields'])}`",
+        f"- Fields excluded by name: `{len(excluded)}`",
+        f"- Normalisation rules: `{len(authority['normalisation_rules'])}`",
+        "",
+        "Patch 18.15 declares that two builds of the same source, target, optimisation level, and debug plan produce the same bytes in every field named reproducible. The guarantee is stated over a named field list rather than over the artifact as a whole, so what is and is not covered can be read off directly.",
+        "",
+        "Fields that are not a property of the input are excluded BY NAME with a reason: the wall clock, the absolute path the build ran from, and where the compiler binary happens to live. Excluding a field without saying why is indistinguishable from hiding a nondeterminism, so a missing reason is a rejection.",
+        "",
+        "Reproducibility is claimed only after a repeated build has actually been compared. A claim made from a single build is a claim about nothing, so the request carries both builds and the consumer compares them itself rather than reading a claim field.",
+        "",
+    ]
+
+
 def phase18_object_inspection_summary_lines(registry):
     authority = registry["phase18_object_inspection"]
     object_format = registry["phase18_object_format"]
@@ -11349,6 +11372,7 @@ def render(registry):
         *phase18_debug_information_summary_lines(registry),
         *phase18_source_location_summary_lines(registry),
         *phase18_optimisation_level_summary_lines(registry),
+        *phase18_reproducibility_summary_lines(registry),
         "## Registry entries", "",
         "| ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |",
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
