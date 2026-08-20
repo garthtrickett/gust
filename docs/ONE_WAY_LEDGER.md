@@ -1642,7 +1642,11 @@ reading code; the checkers were written by pattern-matching text.
 **The silent direction is the expensive one.** A false positive costs the next
 reader the time it took to write the check. A false negative — a check that
 passes because its pattern never matched anything — costs nothing visible and
-protects nothing. The third row above is that failure: an edit asserted its
+protects nothing. **In a sweep that is worse than in a gate: a gate that wrongly
+refuses gets investigated; a sweep that wrongly reports clean ends the
+investigation.** Observed, not reasoned — a shell `grep` returned nothing on a
+line a Python regex found for the same pattern, and a dangling `D-6` citation
+survived one search because only the other was believed. The third row above is that failure: an edit asserted its
 anchor existed, reported success, and changed no bytes. Elsewhere in this
 repository the same shape appeared as a regex missing `re.M` that reported
 "sources parsed: 1".
@@ -1733,6 +1737,30 @@ independently — run `32243700245` on `main`, `Cranelift Historical Full`,
 caught before one.** The other five were caught by the check that found them; a
 month of unnoticed red was not. The cost of an absence-phrased gate is not that
 it fails loudly — it is that it passes quietly for as long as nobody looks.
+
+**And the red is worse than "the most recent run failed", which is how an
+earlier revision of this block put it.** Counted independently across the
+workflow's whole retained window on 2026-08-20, every run of `Cranelift
+Historical Full` from 2026-07-21 to 2026-08-20:
+
+| Conclusion | Runs |
+| --- | --- |
+| `failure` | 32 |
+| `cancelled` | 2 |
+| `in_progress` | 1 |
+| **`success`** | **0** |
+
+There is no green Level 3 evidence at any depth, not merely a stale one. A row
+citing Level 3 is not citing something that has gone out of date; it is citing
+something that has never existed in the retained window. Understating it made the
+closure loophole look like a lag rather than a floor — the difference between a
+suite that slipped and one that has never passed while phases closed on it.
+
+Two notes on how the figure was obtained, both families this file already tracks.
+A borrowed count put it at "fifteen runs across eleven days", short by twenty
+runs and nineteen days, consistent with an un-paginated read. And the count was
+totalled by conclusion rather than read down the list, because a list beginning
+with twenty consecutive failures reads as conclusive well before it is complete.
 
 The diagnosis of why that suite is red belongs to the Cranelift lane and is
 already characterised there. What is recorded here is only the gate shape.
