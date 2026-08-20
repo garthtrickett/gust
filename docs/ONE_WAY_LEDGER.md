@@ -1648,7 +1648,8 @@ repository the same shape appeared as a regex missing `re.M` that reported
 "sources parsed: 1".
 
 **Adoption measures a rule's generality, not its coverage — and it was ranked
-wrongly here.** The empty-set guard from artifact eleven was taken up by another
+wrongly here.** The empty-set guard — the one added after a
+malformed read returned zero runs and a go signal — was taken up by another
 lane's checker, and an earlier revision of this file promoted "a rule another
 tool adopts" to the top of the evidence-shape table above. That was a
 misfiling, and it was tested almost immediately: the adopting lane, holding the
@@ -1674,7 +1675,7 @@ held twice. It now requires both, spaced far enough apart to span a dispatch gap
 The lesson generalises past CI: any count read from a live system can be
 momentarily zero for reasons unrelated to the thing being measured.
 
-### One rule, four instances: phrase a gate as presence, not absence
+### One rule, many instances: phrase a gate as presence, not absence
 
 The guards above accumulated one patch at a time — assert the set is non-empty,
 then assert the zero persisted — and that was the wrong shape. They are four
@@ -1685,17 +1686,18 @@ The fault: **a condition phrased as an absence is satisfied by every kind of
 nothing.** "No outstanding items", "no failures", "no violations" are all true of
 a set with nothing in it, and nothing about such a set announces itself.
 
-Four instances, all from this session, all reading as a confident clean pass:
+Every one of these was observed rather than constructed, and each read as a
+confident clean pass:
 
 | Nothing | Where it came from |
 | --- | --- |
 | An **empty** set | A parser mismatched its input format and read zero records; the gate reported zero outstanding and a go signal while four checks ran |
 | A **truncated** set | An un-paginated read returned 100 of 119; internally consistent, wrong by nineteen |
 | A **momentary** zero | A dispatch gap between admissions; two samples 90s apart landed inside the same gap and looked like persistence |
-| A **cancelled** set | A PR with 65 of 65 runs `cancelled` — zero outstanding, zero failures, and no successful evidence whatsoever |
 | A **stalled** unit | A run `queued` for 2h28m with nothing executing repo-wide — the status field reports the run's state correctly and says nothing about whether it will ever run |
-| A **wholly cancelled** wave | Three PRs with 63, 64 and 65 of their runs `cancelled` and nothing queued or running — zero failures, zero pending, and a dead PR |
-| A **context-calibrated floor** | A gate asserting `len >= 30`, correct for a 34-run wave, which refuses a legitimate 2-run wave permanently |
+| A **cancelled** wave | Three PRs with 63, 64 and 65 runs, every one `cancelled`, nothing queued or running — zero failures, zero pending, and dead |
+| A **context-calibrated floor** | A gate asserting `len >= 30`, correct for a 34-run wave, refusing a legitimate 2-run wave permanently |
+| The **same floor, silent** | The watcher armed beside that gate carried `len(r) < 5: exit` — on a 2-run wave it reports nothing, and nothing is what a quiet watcher is meant to report |
 
 The durable fix is not a fifth guard. It is inverting the predicate:
 
@@ -1822,11 +1824,23 @@ states. `/tmp/gate98.sh`, on which this lane's merge rests, was rewritten as a
 presence test for exactly this reason, and it now rejects a wholly-cancelled run
 set that its previous form would have passed.
 
+> **Counts in prose were removed from this section on 2026-08-20, having drifted
+> twice.** It claimed "twelve checker artifacts" against tables listing seven and
+> six, said "four instances" of a table that had grown to six, and referenced
+> "artifact eleven" after the numbering was dropped. The section also carried the
+> same instance twice, as *a cancelled set* and *a wholly cancelled wave*, added
+> months apart in attention if not in time.
+>
+> This file tells its own readers to recount rather than restate, and the section
+> arguing that a checker is never the interesting row had itself gone
+> uninspected. Descriptions now stand where numbers were, because a description
+> does not drift when a row is added.
+
 **Where these were found matters as much as what they were.** All four came from
 checking the *instrument*, not the thing being measured, and in three the
-instrument's author caught it only after shipping a wrong conclusion. Twelve
-checker artifacts this session; not once has the document been the thing that was
-wrong on first run. The companion to "audit the set, not its interesting members"
+instrument's author caught it only after shipping a wrong conclusion. Every artifact in the two tables
+above was found this way, and **not once has the document been the thing that was
+wrong on first run.** The companion to "audit the set, not its interesting members"
 is that **the checker is never the interesting row.**
 
 **And a sharper form of the same thing, which cost a real conclusion.** One of
