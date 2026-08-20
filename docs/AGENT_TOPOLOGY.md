@@ -336,6 +336,10 @@ Proposed replacement:
 >    disk, and do not infer that something changed because you did not see it last
 >    time — you did not see last time.
 >
+> 7. **Flag any lane that is idle while unblocked work exists for it.** Not to
+>    instruct it — to report that a lane and its queue have become disconnected.
+>    This is the same cross-reference as item 2, pointed at agents instead of PRs.
+>
 > Report `now` from `date -u` in the same command that reads the runs. If nothing
 > needs attention, say so in one line.
 
@@ -464,6 +468,35 @@ finished, and it is not obvious from the outside whether that means done, blocke
 or forgotten. An idle agent is indistinguishable from a stalled one, which costs
 whoever looks next a real investigation. A lane that has finished should record
 its terminal state where §8's durable channel can see it.
+
+### 7.1 Never idle — the continuation ladder
+
+A lane that finishes, blocks, or refuses should **descend a ladder, not stop.**
+Observed on 2026-08-20: the stdlib lane opened #115 and went idle forty-four
+seconds later, and `TASK_STDLIB.md` records that the lane "idles after S1.3"
+as a *fact* rather than as a problem to route around. Both are the same gap —
+**no lane has a defined next move.**
+
+1. **The next unblocked item in its own roadmap.** Blocked is not stopped: file
+   the CR or stop-and-report, then take the next item. A blocked *task* almost
+   never blocks a *lane*.
+2. **Documentation the lane owns** — recording what it just learned, correcting a
+   citation, closing a gap its own work exposed.
+3. **The standing unblocked-work list** — `docs/UNBLOCKED_CONTAINMENT_WORK.md`
+   and the specification rows in `docs/DEMO_TARGET_PROGRAM.md`.
+4. **Record a terminal state and say so**, in the durable channel, naming what it
+   finished and what it is waiting on.
+
+**Only step 4 is stopping, and it is a written act.** An agent that simply goes
+idle is indistinguishable from one that stalled, which costs the next reader a
+real investigation — §7's lifecycle rule, restated as an obligation rather than
+an observation.
+
+**Refusing is not stopping either.** A lane that declines work outside its
+boundary has *finished deciding* and should descend this ladder immediately.
+Twice on 2026-08-20 this lane refused a pulse's instruction to write into
+`compiler/` and `tests/`; both refusals were correct, and in each case the lane
+still had to choose its own next task, because nothing told it to.
 
 ## 8. How lanes communicate
 

@@ -388,6 +388,38 @@ There is no OD-7. The number is unused and nothing in the repository references 
 
 **Numbers are append-only and never recycled.** OD-11 was opened on 2026-08-20 with OD-7 sitting vacant, deliberately. A recycled number reads correctly in every new document and silently wrong in every old one, and the failure is invisible precisely because the reference resolves. A permanent gap costs one sentence of explanation; a reused number costs a misreading nobody can see.
 
+**This table is also the escalation list, and that is its second job.** A lane
+working autonomously needs a test for *when to stop and ask*, and the test is
+this register: **an open decision is a decision-tree node; everything else is
+lane work.** Stated as a rule so a lane does not have to invent one:
+
+**Escalate to the operator — stop and wait — only when:**
+
+1. **an OD's status would change.** Opening, closing, or renumbering happens here
+   and nowhere else, and no lane does it alone;
+2. **the action is irreversible and outward-facing** — publishing, an external
+   claim, revoking a supplier, deleting a shipped surface;
+3. **it spends money or promises something to a third party;**
+4. **it crosses a boundary the operator set**, which no pulse and no other lane
+   can widen.
+
+**Register and keep going — do not wait — when:**
+
+- **the question is new but OD-sized** (thesis-affecting, cross-lane, or
+  commercially binding). **Registering is not escalating.** Add the row, record a
+  proposal marked as a proposal per §0.17, and move to other work. The operator
+  answers when they answer, and the analysis is on disk in the meantime;
+- **an existing OD blocks the task.** Record what the task needs from it, and
+  take the next unblocked item;
+- **two designs both satisfy every stated constraint.** Pick one, record why, and
+  note what would falsify the choice. **A lane that asks "is this OK?" rather
+  than "which do you want?" is asking for reassurance rather than a decision**,
+  and that is the failure mode this rule exists to prevent.
+
+The distinction that does the work: **escalate on *authority*, not on
+*difficulty*.** A hard question a lane is competent to answer is lane work; an
+easy question about what the operator wants is not.
+
 **How to cite a status elsewhere.** Attribute it, never assert it: "§27 marks
 this open" is safe, "this is open" is not. An attributed citation is wrong only
 when it misquotes; an asserted one is wrong whenever the register moves and
