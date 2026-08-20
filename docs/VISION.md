@@ -379,7 +379,7 @@ second, drifting copy of it.
 | OD-2 | ~~Generic functions vs compiler-owned query derivation~~ | **RESOLVED 2026-08-20** — compiler-owned derivation; §13's ban stands | — | §14; consequences in §13 and `docs/DEMO_TARGET_PROGRAM.md` |
 | OD-10 | **Distribution for the product path** | **OPEN** — currently unanswered | Month 4 | §0.11 |
 | OD-3 | SAM state ownership under linear resources and no interior mutability | **OPEN** — leading direction proposed 2026-08-20 (§38.1); partly decided by implementation, `std.Rc` already ships | v0.5 | §27, §38; the discrepancy as `TASK_STDLIB.md` CR-9; evidence in `docs/ONE_WAY_LEDGER.md` E8 |
-| OD-4 | WASM stack-switching support and payload cost | **OPEN** — recommendation recorded 2026-08-20 (§21.1) | v0.5 | §21, §41 |
+| OD-4 | WASM stack-switching support and payload cost | **OPEN** — recommendation recorded and then revised on checked support data, 2026-08-20 (§21.1) | v0.5 | §21, §41 |
 | OD-6 | Form of the intent layer | **OPEN** | v1.0 | Part XXI |
 | OD-11 | ~~The fate of `std.Spawn`~~ | **RESOLVED 2026-08-20** — bare form deleted; scoped spawn returns a linear task handle | Demo | §20.1 |
 | OD-5 | Supplier certification staffing model | **OPEN** | Post-1.0 | Part XVI |
@@ -974,13 +974,17 @@ The demo cut (§0.14) is server-only, which splits this cleanly: **OD-1 (server 
 
 Two ways to make a WASM function pause. **Rewrite the emitted module** so every function saves its own position and locals and can be re-entered later — an off-the-shelf build step, works in every browser today, and roughly doubles the binary. Or **use the platform's own stack switching**, which costs nothing in size and depends on the browser having it.
 
-**Recommendation: the platform feature, with §21's no-client-suspension fallback behind it — and not the transform.**
+**Support, checked 2026-08-20 rather than assumed.** The platform feature is JSPI, standardised by the W3C WebAssembly CG at Phase 4 in April 2025. **Chrome shipped it in 137.** **Firefox has it in 139 but behind a flag.** **Safari has not shipped it and has not publicly committed to doing so** — it withdrew its objection in late 2025 and has someone assigned, which is progress and is not a ship date.
 
-The reason is the shape of the two costs rather than their size today. **The transform's cost is permanent and paid by every user on every load, forever; the platform feature's cost is temporary and shrinks on its own.** Adopting a standing tax on payload to serve browsers that will have aged out before v0.5 ships is paying permanently for a problem that is expiring, and payload is the one cost a browser user feels before anything appears on screen.
+**That kills the argument this section was originally written on.** The first draft recommended waiting because the gap would age out. It will not: this is not old browsers lingering, it is **a vendor that has not implemented**, and vendor gaps do not expire on a schedule. On iOS the gap is total, because every browser there is WebKit. "Wait and the cost shrinks" was the wrong shape of argument, and it was wrong because it was asserted rather than checked.
 
-**There is also a real chance the question does not arise.** §21's fallback — client code dispatches actions and returns effects, never awaits — is not a degradation of the SAM model, it is a description of it. SAM already separates effects into a named layer, which is architectural colouring rather than type-level colouring, and the browser's own event loop already handles that boundary. If the only suspension points in client code are effects, the interior never needs to pause, and **neither option gets bought.** That is the first thing to measure once a real client program exists, and it is cheaper to measure than either option is to adopt.
+**Revised recommendation: build the client to need no suspension, and treat both options as contingencies.**
 
-Keep the transform available as a bridge for a specific customer on a specific old browser. That is a deployment decision with a known price, which is a very different thing from making it the default and paying it everywhere.
+§21's fallback — client code dispatches actions and returns effects, never awaits — is not a degradation of the SAM model, it is a description of it. SAM already separates effects into a named layer, which is architectural colouring rather than type-level colouring, and the browser's own event loop already handles that boundary. It is the only path that **works in every browser today at zero payload cost**, and it is now the recommendation rather than the fallback. Whether client code has suspension points that are not effects is the thing to measure once a real client program exists, and measuring it is cheaper than adopting either option.
+
+If that measurement says client suspension is genuinely required, the ranking inverts from the original draft: **the transform becomes the bridge**, because it works on Safari now and JSPI does not, and JSPI becomes the thing to adopt when Safari ships. Paying the transform's payload cost is then a real cost for a real capability, rather than a standing tax paid pre-emptively.
+
+**The correction is recorded rather than edited away** because the failure mode is the one this repository keeps finding: a claim that sounded like a fact ("browsers will have aged out") load-bearing an argument, never checked, and wrong in the direction that made the recommendation look easy. `docs/ONE_WAY_LEDGER.md` records the same shape in the unit-error section.
 
 The fallback above — coloured async on the client, transparent on the server — is recorded here as the worse option. Two concurrency models in a language whose premise is one of everything refutes the premise; if OD-4 makes WASM stack switching unaffordable, restricting client code to event-driven dispatch with no suspension is the better trade, and Part IX's SAM model already implies it.
 
