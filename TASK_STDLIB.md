@@ -365,10 +365,16 @@ without it.
    `compiler/typechecker.gst`, both registering `os.CloseDir`, the second gated on
    a directory-handle predicate. No keyword, attribute, or annotation exists in
    either compiler's lexer or parser for a user type to name its destructor.
-   **(b) wiring the existing scope-exit cleanup validator into typechecking.**
-   `env_validate_linear_resource_scope_exit_cleanup` is called only from test
-   entries. A program that opens a directory handle and never closes it compiles
-   clean, so even the one supported resource type is unenforced.
+   **(b) generalising the scope-exit obligation beyond its hardcoded predicate.**
+   **Corrected 2026-08-20.** This item previously said the validator was called
+   only from test entries and that an unclosed directory handle compiled clean.
+   Both were wrong. `env_validate_linear_resource_scope_exit_cleanup` is called
+   from the real typechecking path at function-declaration exit and at `Return`,
+   and an unclosed directory handle is rejected — verified by compiling one. What
+   is actually missing is generality: the obligation that fires is driven by
+   `env_open_directory_resource_requires_cleanup`, a directory-specific
+   predicate, so it cannot attach to a user type. This is smaller than the
+   original item — enforcement need not be built, only widened once (a) exists.
    Representation, transfer state, and `defer` are already present — `defer` in
    particular became an AST node after `STEP52_RESOURCE_SEMANTICS.md` was
    written. The gap is destructor declaration and enforcement, not modelling.
