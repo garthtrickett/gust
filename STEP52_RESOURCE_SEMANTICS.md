@@ -24,13 +24,29 @@ Two findings matter more than the table.
 
 **There is no way to declare a destructor in source.** `env_register_struct_linear_destructor` is called from exactly two places in `compiler/typechecker.gst`, both registering `os.CloseDir`, and the second is gated on a directory-handle predicate. There is no keyword, attribute, or annotation in `compiler/lexer.gst`, `compiler/parser*.gst`, `src/lexer.rs`, or `src/parser.rs` that lets a user-defined type name its destructor. The framework supports exactly one destructor, for one built-in type.
 
-**Cleanup validation is wired, but only for `Resource[T]`.** *Corrected 2026-08-20 at `b47d0049` — see the note below.* `env_validate_linear_resource_scope_exit_cleanup` is invoked from two real typechecking paths in the self-hosted compiler: function exit (`compiler/typechecker.gst:9859`, "Step 5.2Q") and explicit return (`:10976`, "Step 5.2R"). Both call sites were added by `ce211321` on 2026-06-30, seven weeks before this audit.
+**Cleanup validation is wired, and two separate checks are involved.** Both lanes audited this independently and each found half of it.
 
-What it validates is narrow. It delegates to `env_validate_linear_resource_cleanup_boundary`, and the surrounding machinery keys on the compiler-owned `Resource` generic specifically — `type_is_resource` requires a `Generic` type literally named `Resource` with one argument (`compiler/typechecker.gst:7690`). A directory handle is not a `Resource[T]`, so it is outside the check.
+`env_validate_linear_resource_scope_exit_cleanup` is invoked from two real typechecking paths in the self-hosted compiler — function exit ("Step 5.2Q") and explicit return ("Step 5.2R"). Both call sites were added by `ce211321` on 2026-06-30, seven weeks before either audit. It delegates to `env_validate_linear_resource_cleanup_boundary`, and the surrounding machinery keys on the compiler-owned `Resource` generic specifically: `type_is_resource` requires a `Generic` type literally named `Resource` with one argument. **A directory handle is not a `Resource[T]`, so it is outside that check.**
 
-The behavioural finding below is therefore still correct and the mechanism claim was not: a program that opens a directory handle and never closes it compiles clean, because that type is not covered — not because nothing runs.
+**But directory handles are still enforced, by a different check.** A separate, directory-specific predicate — `env_open_directory_resource_requires_cleanup` — runs over `current_function_local_vars` at function exit. Compiled and run on `main`:
 
-So the framework is further along than the original text says on representation, state, and `defer`, and further behind on enforcement: what exists is a set of helpers with test coverage, not a checker that runs.
+```gust
+mut opt_dir := os.OpenDir(ctx, "src");
+if opt_dir.Ok { mut d := opt_dir.Val; os.LogStr("opened and never closed"); }
+```
+
+```
+Semantic Error: Resource leak. Directory resource variable 'd' must be cleanly
+closed with os.CloseDir before leaving local scope
+```
+
+Exit 1. So the earlier behavioural claim that such a program "compiles clean" is **false**, while the mechanism claim that the `Resource[T]` validator does not cover directory handles is **true**. Both audits were half right, and neither would have been corrected by the other alone.
+
+The enforcement that does exist is narrower than it looks: it is keyed to the *binding*, not the acquisition. The same leak with the handle never bound to a local compiles clean and runs — filed as issue #106.
+
+> **Correction, 2026-08-20.** This paragraph previously said the opposite — that nothing on the typechecking path invoked those helpers and that such a program compiled clean. That was wrong when written. The wiring landed in `ce211321` on 2026-06-30, seven weeks before S1.7 claimed to have re-verified it.
+
+So the framework is further along than the original text says on representation, state, `defer`, **and enforcement** — the scope-exit check does run. The real limit is reach, not wiring: exactly one built-in type carries an obligation, because the compiler hardcodes its destructor and no user type can declare one.
 
 ---
 
