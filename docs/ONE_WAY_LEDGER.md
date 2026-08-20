@@ -823,8 +823,8 @@ needs: an explicitly requested Cranelift build must fail rather than quietly
 retry through C, and distinguishing explicit from defaulted is what makes that
 expressible. MIR-to-C remains the default and the differential oracle.
 
-**Two rows in this ledger close when it does, without anyone working on them
-directly.**
+**Row 29 closes when it does, without anyone working on it directly**, and
+`GEMINI.md` §C is the same shape although it is not a row here.
 
 Row 29 — overflow is undefined behaviour rather than a trap — is a property of C
 (E11). Cranelift has no signed-overflow latitude to inherit.
@@ -1824,6 +1824,27 @@ states. `/tmp/gate98.sh`, on which this lane's merge rests, was rewritten as a
 presence test for exactly this reason, and it now rejects a wholly-cancelled run
 set that its previous form would have passed.
 
+> **A check for this, and an honest account of what it is worth.** The drift is
+> narrow enough to grep: an enumerating numeral bound to a countable noun,
+> outside tables and block quotes.
+>
+> ```
+> NUM='(one|two|...|twelve|[0-9]+)'; NOUN='(instances?|artifacts?|rows?|entries|sweeps?)'
+> # flag "$NUM $NOUN" in prose lines only — skip lines starting with | or >
+> ```
+>
+> Run against this file it returned eight hits, of which **four were real** — a
+> stale "three instances" listing a class that had since grown, a "six rows"
+> bound to a group that can gain members, a "ten rows" pinned to the `PARTIAL`
+> count, and a "two rows" whose own next paragraph says one of them is not a row.
+> The other four name specific known rows and do not drift.
+>
+> **So it is a review prompt, not a gate.** At roughly half precision it would be
+> ignored inside a week if it blocked anything, which this file's own artifact
+> table says is worse than no check. It earns its place by being cheap to run
+> deliberately, and it was verified to fail on a synthetic positive before being
+> trusted on a real negative — a check that cannot fail is not a check.
+
 > **Counts in prose were removed from this section on 2026-08-20, having drifted
 > twice.** It claimed "twelve checker artifacts" against tables listing seven and
 > six, said "four instances" of a table that had grown to six, and referenced
@@ -1907,7 +1928,7 @@ indistinguishable from a complete one.
 
 - **Re-read the block, not the matching line.** Every defect this file has found
   in its own claims came from citing a `grep` hit without reading what surrounds
-  it. Three instances, all corrected in place: `typechecker_log_trace`'s 40 call
+  it. Corrected in place each time: `typechecker_log_trace`'s 40 call
   sites described as an emitter substrate when they carry only prose;
   `typechecker.gst:1962` described as a formatting check when it is a provenance
   branch; and `#[opaque]` described as needing no prerequisite when field reads
