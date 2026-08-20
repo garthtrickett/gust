@@ -1956,6 +1956,36 @@ findings, or by being labelled as unverified where it is quoted. The rule is not
 become evidence the moment an argument rests on it, whatever it was gathered
 for.
 
+### The unit has been the error every time, never the arithmetic
+
+Four wrong conclusions this session were each a **real measurement, correctly
+taken, in the wrong unit.** No arithmetic was wrong in any of them:
+
+| Claim | Unit taken | Unit needed |
+| --- | --- | --- |
+| Which PR was closest to landing | check-runs outstanding | runs outstanding |
+| Size of a lane's re-armed wave (~360) | check-runs | runs (~181) |
+| Failing runs on one PR (one, then two) | workflows read once | runs, paginated (three) |
+| "A PR's run set is not fixed by its push" | check-run growth (111→172) | run creation times (fixed, one 4-second window) |
+
+The last one was promoted to a whole failure class before being measured and
+disconfirmed. Its residue is the general form:
+
+> **A count is meaningless without its unit, and the plausible-looking units are
+> the dangerous ones.** Runs and check-runs both count "CI work on a PR", differ
+> by a factor of three, and are returned by adjacent endpoints with similar
+> shapes. Jobs and runs stand in the same relation again one level down.
+
+Why this family is harder than truncation: nothing is missing, nothing is stale,
+and re-running the query reproduces the number exactly. **Repetition confirms it
+and pagination cannot touch it** — the check is to name the unit out loud and ask
+whether it is the one the claim needs.
+
+This lane's gate counts **runs**, deliberately, and says so in its own comments.
+The check-run count on the same PR reached 120 while the run count was 34, and a
+gate written against the larger number would have been measuring matrix legs
+rather than workflows.
+
 ### A different mechanism: presentation is not meaning
 
 Most of the artifacts above are **truncation** — a subset presented as the whole,
