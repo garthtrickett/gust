@@ -378,7 +378,7 @@ second, drifting copy of it.
 | OD-1 | Transparent suspension vs coloured async (server) | **DIRECTION SET 2026-08-20** — transparent suspension unless a fatal blocker is hit; §21 defines what counts | Demo | §21; evidence in `docs/ONE_WAY_LEDGER.md` E9; escalation as `TASK_STDLIB.md` CR-8 |
 | OD-2 | ~~Generic functions vs compiler-owned query derivation~~ | **RESOLVED 2026-08-20** — compiler-owned derivation; §13's ban stands | — | §14; consequences in §13 and `docs/DEMO_TARGET_PROGRAM.md` |
 | OD-10 | **Distribution for the product path** | **OPEN** — currently unanswered | Month 4 | §0.11 |
-| OD-3 | SAM state ownership under linear resources and no interior mutability | **OPEN, partly decided by implementation** — `std.Rc` already ships | v0.5 | §27, §38; the discrepancy as `TASK_STDLIB.md` CR-9; evidence in `docs/ONE_WAY_LEDGER.md` E8 |
+| OD-3 | SAM state ownership under linear resources and no interior mutability | **OPEN** — leading direction proposed 2026-08-20 (§38.1); partly decided by implementation, `std.Rc` already ships | v0.5 | §27, §38; the discrepancy as `TASK_STDLIB.md` CR-9; evidence in `docs/ONE_WAY_LEDGER.md` E8 |
 | OD-4 | WASM stack-switching support and payload cost | **OPEN** | v0.5 | §21, §41 |
 | OD-6 | Form of the intent layer | **OPEN** | v1.0 | Part XXI |
 | OD-11 | **The fate of `std.Spawn`** — does it gain a task handle and become the low-level primitive, or is it deprecated? | **OPEN 2026-08-20** | Demo | §20 |
@@ -941,6 +941,8 @@ These are compiler/runtime-owned arena classes rather than separate ownership sy
 > Of the seven kinds named, two exist as distinct mechanisms: scratch, and the general arena that covers "temporary lexical", "application", and "explicitly managed persistent" — those three are not separate classes, they are an arena with a different lifetime. **Request, task, and job-execution contexts do not exist**, and cannot until the platform they belong to does (`docs/ONE_WAY_LEDGER.md` E16).
 >
 > The list is also under-inclusive: `std.GenerationalArena` with `std.GenerationalSwap`, and `std.ThreadLocalContext`, are shipped arena classes this section does not name.
+>
+> It is also missing one the design now wants. §38.1's pending action journal needs a class between scratch and application — actions must outlive the dispatch that created them and die well before the application does. By this section's own reasoning that is an arena with a different lifetime rather than a new mechanism, so the cost is naming it, not building it.
 
 ## 25. Lifetime movement
 
@@ -979,6 +981,8 @@ Safe application code does not receive unrestricted interior mutability.
 Shared mutation should instead occur through SAM state ownership, actors, transactions, or explicit synchronization primitives.
 
 **Open (v0.5):** the SAM state model (§38) is where this rule meets the operation every application performs constantly. A worked end-to-end example — store, action dispatch, optimistic update, rollback — must be written and reviewed before client work begins.
+
+> **A leading direction was proposed on 2026-08-20** — confirmed base plus a pending action journal, stated in full at §38.1. The requirement above is unchanged: it names the design the worked example should be written against, and does not replace the example. Status owned by §0.15.
 
 ## 28. Linear resources
 
@@ -1144,6 +1148,34 @@ Local and remote state use the same action model while effects remain explicit.
 See §27: the interaction between SAM state ownership, linear resources, and the prohibition on interior mutability is an open decision requiring a worked example before v0.5.
 
 The argument that SAM is the *right* fit for an arena language — model in a long-lived arena, action payloads in a scratch arena, view in a frame-bound arena wiped in constant time, and therefore no cyclic widget graph and no listener leaks — is recorded in `docs/VISION_RECONCILIATION.md` Appendix A.
+
+### 38.1 Proposed leading direction for OD-3 — confirmed base plus a pending action journal
+
+**Operator proposal, 2026-08-20.** Recorded as the leading direction for the SAM half of OD-3. It is not a decision: §27's requirement of a worked, reviewed end-to-end example before v0.5 stands, and this is the design that example should be written against.
+
+Keep two things. `confirmed: Model[app]`, mutated only by authoritative server results, and `pending: List[Action][pending_arena]`, the actions dispatched but not yet acknowledged. The model anyone reads is derived:
+
+```
+presented = fold(confirmed, pending)      // into the frame arena
+```
+
+- **Optimistic update** — push the action onto `pending`. Nothing is copied.
+- **Rollback** — remove that action and refold. There is no "rollback state" to own, because the inverse of *append to a list* is *remove from a list*.
+- **Reconcile** — replace `confirmed` with the server's result, drop the acknowledged action, refold the rest.
+
+Acceptors are pure and move-in / move-out, so exclusivity is structural rather than checked:
+
+```
+fn accept(model: Model[a], action: &Action[s]) -> Model[a]
+```
+
+Nobody holds a long-lived reference to the model because none is ever handed out — the store lends it only for the duration of a call. **That sidesteps §26 entirely: it is not that aliasing writes are forbidden, it is that no alias exists.**
+
+**Why it leads.** Rollback state is *actions*, which SAM already makes first-class, typed, and small — so §27's hardest case stops being a memory-ownership problem. It is the only candidate that handles several in-flight mutations correctly. Replayability forces the acceptor purity §38 already claims but cannot currently enforce. And it lands exactly on Appendix A's table: `confirmed` in the application arena, actions in a pending arena, `presented` in the frame arena wiped in constant time.
+
+**Costs, stated rather than discovered later.** Refolding is O(|pending| × model size); cache `presented` and invalidate on any change to `confirmed` or `pending`, not per frame. Acceptors must be deterministic and replayable — a real constraint, and one worth having. Actions must outlive scratch, so they need a third arena class between scratch and application, which §24 does not name today. Per §24's own correction that is an arena with a different lifetime rather than a new mechanism, which is why the cost is cheap.
+
+**What this does not settle.** OD-3's other half — whether an explicit compiler-owned `Rc` is the right general answer for shared ownership — is untouched. This direction narrows OD-3 to that question by removing the SAM case from it.
 
 ## 39. Browser access
 
