@@ -149,13 +149,19 @@ documents want:
 > independently reject.** There is no structured scope, no task ownership, and no
 > cancellation propagation.
 
-**Recommendation (not a decision — owner is the Cranelift lane via
-`SHARED_SEMANTIC_ZONE.md`, "Fiber scheduling contract"):**
+**Adopted as the direction, 2026-08-20** — operator decision on the server
+question: transparent suspension unless a fatal blocker is hit. `docs/VISION.md`
+§21 is authoritative and names the three blockers that would count; this section
+keeps the *reasoning*, not the status. **Ownership is unchanged** — the Cranelift
+lane still owns the fiber scheduling contract via `SHARED_SEMANTIC_ZONE.md`, and
+a direction does not authorise a patch outside the owning lane.
+
+**The recommendation, now the direction:**
 
 > Take Go's suspension model. Reject Go's task model.
 
-- **Transparent suspension**, no colouring. This resolves OD-1 in the direction
-  §21 already prefers, and it is the single largest reason Go reads as simple.
+- **Transparent suspension**, no colouring. This is the direction OD-1 now takes,
+  and it is the single largest reason Go reads as simple.
   The expensive half — a cooperative fiber scheduler — is already built and
   shipping.
 - **Never detached.** Every task belongs to a lexical scope that cannot exit while
@@ -178,6 +184,16 @@ implies: client code dispatches actions and returns effects; it never awaits.
 **Blocking prerequisite:** this cannot be scoped until `std.Spawn`'s current
 semantics are recorded as either deprecated or as the low-level primitive under
 the structured layer. Today they are neither.
+
+**The direction sharpens that prerequisite rather than removing it.** Before
+2026-08-20 the choice between those two fates depended on which way OD-1 went;
+now it does not. Under transparent suspension `std.Spawn` cannot be the low-level
+primitive *as it stands*, because it hands back no handle, and a structured layer
+needs something to own. So the question narrows from "which fate" to "does it
+gain a handle or get deprecated" — a smaller question, and one the Cranelift lane
+can answer without reopening the suspension model. **Registered as OD-11 on
+2026-08-20** and stated in full at `docs/VISION.md` §20.1, so that it is tracked
+in its own right rather than as a residue of the decision it came out of.
 
 ### 3.3 The C library ecosystem — `general-ecosystem.md` is retired
 
@@ -221,8 +237,16 @@ Every code sample in the corpus threads a context by hand:
 ```gust
 mut v := std.VectorNew(ctx);
 mut s := std.Clone(ctx, name);
-func encode_PingInput(value: PingInput, ctx: &Arena) -> str
+func encode_PingInput(value: PingInput, ctx: &Arena) str
 ```
+
+> **Syntax note.** An earlier revision of this block wrote the signature as
+> `-> str`, copied from `full-stack-slice-0.md`. Gust has no arrow return syntax:
+> a return type follows the parameter list directly, as in
+> `func create_vector(ctx: &Arena) std.Vector[…]`. The only arrow token in the
+> lexer is `FatArrow` (`=>`) for match arms, and every ` -> ` in `compiler/*.gst`
+> is inside a comment. Corrected 2026-08-20; the point the block makes about
+> `ctx` threading is unaffected.
 
 This is the largest visible divergence from Go-shaped simplicity, it appears on
 essentially every line of application code, and it is a direct risk to OD-9: a
@@ -370,33 +394,41 @@ nine documents describe the platform in the present tense.
 **Built:** self-hosted compiler (712 `.gst` files, ~104k lines), arenas and
 branded contexts, linear resources with move and borrow tracking, MIR, the
 Cranelift backend through Phase 18, cooperative fibers with channels and
-mutexes, 256 test programs, fixed-point bootstrap convergence, and the
+mutexes, 260 test programs, fixed-point bootstrap convergence, and the
 lane/registry/guard governance in `AGENTS.md` and `docs/SHARED_SEMANTIC_ZONE.md`.
 
 **Absent or divergent:**
 
 | Required by | Thing | State |
 | --- | --- | --- |
-| §17, §18 | Effects in function types — *the differentiator* | No `uses` keyword in either lexer |
+| §17, §18 | Effects in function types — *the differentiator* | No `uses` keyword in either lexer. But `FunctionSignature` already carries per-function obligations, so adding effects extends a struct with the right shape. Ledger E10 |
 | §56 | Static tenant scoping — *the lead claim* | Absent |
 | §55 | Typed Postgres derivation | Absent |
 | OD-9 | Model fluency | Untested |
 | Parts IX–XVII | HTTP, sockets, TLS, JSON, Postgres | None in `src/runtime/` |
-| §20 | Structured concurrency | `std.Spawn` is detached; no scope keyword |
+| §20 | Structured concurrency | `std.Spawn` is detached and yields no handle; no scope keyword. Channel transfer is *opt-in* via `move` rather than absent. Ledger E9, E18 |
 | §26 | Two-form borrow model | Corrected in VISION 2026-08-19 (#84): one mutable reference form, no aliasing analysis |
 | §27 | Shared ownership as OD-3 | `std.Rc` already exists — see §3.6 |
 | §34 | Panic terminates request, not deployment | `exit(1)` in `src/runtime/strings.c:20,30` |
-| D-1, D-2 | Brand identity | Inferred from identifier spelling; `compiler/codegen.gst:658,762,896,1101`, `compiler/typechecker.gst:4953,5151`. Owned by staged Phase 19 |
-| §32 | Fixed-width integers, overflow trapping, `Decimal`/`Money`/time types | **All absent.** One integer type, `int`, lowering to C `int` — so overflow is UB, not a trap. Issue #103 |
+| D-1, D-2 | Brand identity | Inferred from identifier spelling; `compiler/codegen.gst:658,762,896,1101`, `compiler/typechecker.gst:4975,5173`. Owned by staged Phase 19 |
+| §32 | Fixed-width integers, overflow trapping, `Decimal`/`Money`/time types | **All absent.** Two integer-ish scalars, `int` and `byte`; `int` lowers to C `int`, so overflow is UB rather than a trap. Issue #103 |
 | §23 | `copyable` marker | Absent. Copy-versus-move is inferred structurally; adding a `str` field silently changes a struct's category |
-| §29 | Automatic resource cleanup | Runs, but only for `Resource[T]` and only in the self-hosted compiler. The Rust compiler has none — zone defect D-6, issue #104 |
+| §29 | Automatic resource cleanup | Runs, but only for `Resource[T]`: `type_is_resource` keys on a `Generic` named `Resource`, so a directory handle falls outside it. Ledger E7 |
+
+> **This table was refreshed 2026-08-20 against the ledger.** Five entries had
+> gone stale as findings landed after it was written, and one had become a
+> dangling reference: it cited zone defect D-6 and issue #104, both of which
+> *this lane* subsequently withdrew — the defect deleted and the issue closed,
+> because they were filed against the deprecated Rust prototype. A summary table
+> is a cache of another document, and a cache nobody invalidates is how a
+> withdrawn finding outlives its withdrawal.
 
 Found in the same sweep and worth recording as the counterweight — these hold:
 
 | Section | Thing | State |
 | --- | --- | --- |
 | §31 | Enum match exhaustiveness | **Enforced in both compilers**, and both name the missing variant. `compiler-plan.md` still lists this as outstanding; it is done |
-| §11 | Safe references non-null | Holds by construction — no `null`, `nil`, or `NULL` literal exists in either lexer |
+| §11 | Safe references non-null | Holds for *references* — no `null`, `nil`, or `NULL` literal in either lexer. But `empty[T]` is a second spelling of absence for handles, used in safe code. Ledger E14 |
 | §12 | No inheritance, traits, or interfaces | Holds by construction — none of the keywords exists |
 | §15 | No macros or compile-time execution | Holds by construction |
 | §33 | `str` immutability | Holds — no mutation API and no element-assignment path |
@@ -529,6 +561,14 @@ What this buys, none of which requires a new language feature:
   single call.
 
 ## Appendix B — Data-oriented interface registry
+
+> **Feasibility note, 2026-08-20 at `b47d0049`.** This pattern is not expressible
+> by a user today and would have to be a compiler feature. There is no
+> method-receiver syntax in `compiler/parser.gst` and no test defines a method on
+> a user type, so a user cannot attach behaviour to their own struct at all — the
+> collection methods that exist are compiler builtins. The same fact is why §12
+> can ban inheritance so cheaply and why operator overloading is impossible
+> rather than merely unspelled. `docs/ONE_WAY_LEDGER.md` E15.
 
 Extracted from `general-ecosystem.md` (§3.3). This is the concrete implementation
 of `VISION.md` §12's "small explicit function tables", and the reason §12 can ban

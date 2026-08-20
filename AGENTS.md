@@ -19,6 +19,11 @@ Stdlib lane.
 If the requested work does not clearly belong to one lane, stop and ask. Do not
 pick a lane by convenience.
 
+For how many lanes may run at once, what runs them, how they communicate, and why
+there is no manager agent, see `docs/AGENT_TOPOLOGY.md`. That document is
+descriptive and changes no rule in this file; where the two differ, this file
+wins.
+
 The Cranelift lane keeps the branch naming it already uses — `codex/phase18-5-target-abi`,
 `codex/phase18-4-relocations`, and so on. That pattern already identifies the
 lane, and renaming it mid-phase would churn a running loop for no benefit. The

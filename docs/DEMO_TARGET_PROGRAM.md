@@ -72,6 +72,20 @@ func list_my_issues(session: Session) Result[std.Vector[Issue], ListError]
 }
 ```
 
+**Every method call in it must be compiler- or platform-provided, and that is
+not a stylistic choice.** Verified 2026-08-20 at `b47d0049`: a user cannot define
+a method on their own type — there is no receiver syntax in
+`compiler/parser.gst` and no test defines one (`docs/ONE_WAY_LEDGER.md` E15). So
+`session.user()` must come from the platform, and the `from(Issue).where(…).all()`
+chain must be the compiler-owned derivation §14 and §55 describe, not a builder
+someone writes in Gust.
+
+That is consistent with §14, which already says the query builder "is not
+implemented in the user-facing language — it is a compiler feature with a typed
+surface". It is recorded here because a demo written in method-call style invites
+the assumption that a user could write those methods, and today they could not
+write any method at all.
+
 Three properties, and each is load-bearing:
 
 1. **No `ctx`.** The handler runs in the request context; it does not name an
@@ -132,15 +146,33 @@ Ordered by dependency. Status verified 2026-08-20; evidence in
 | # | Requirement | Status | Owner |
 | --- | --- | --- | --- |
 | 1 | Brand identity carried by type, not identifier spelling | **VIOLATED** — ledger D-1 | Phase 19 (`TASK_PHASE19.md`), staged |
-| 2 | `Result[T, E]` as a builtin, with `?` propagation | **ABSENT** — ledger E2 | **unowned** |
-| 3 | `Option` constructible without `unsafe` | **PARTIAL** — ledger E1 | Stdlib (Track A0 scope) — issue #102 |
-| 4 | Implicit context in application code (`using ctx`) | **ABSENT** | **unowned** — `compiler-plan.md` Phase 5.3 |
-| 5 | `uses` clauses parsed and checked across the call graph | **ABSENT** — ledger E10 | **unowned** — VISION §0.7 Track A |
-| 6 | Entity declarations that mark an entity workspace-scoped | **ABSENT** | **unowned** — VISION §56 |
-| 7 | Compiler-owned query derivation (`from`, `.where`, `.all`) | **ABSENT** | **unowned** — VISION §55, OD-2 |
-| 8 | Tenant scope tracked through query construction; unscoped rejected | **ABSENT** | **unowned** — VISION §56, OD-8 |
-| 9 | A Postgres capability to execute the query against | **ABSENT** | **unowned** — VISION Part XI |
+| 2 | `Result[T, E]` as a builtin, with `?` propagation | **ABSENT** — ledger E2 | **unowned** — spec proposed at VISION **§11.1** |
+| 3 | A constructor for `Option` — `Some(42)` rather than writing `.tag` and `.Some.val` | **PARTIAL** — ledger E1 | Stdlib (Track A0 scope) — issue #102 |
+| 4 | Implicit context in application code (`using ctx`) | **ABSENT** | **unowned** — `compiler-plan.md` Phase 5.3; spec proposed at VISION **§24.1**, which finds this row **depends on Phase 19** |
+| 5 | `uses` clauses parsed and checked across the call graph | **ABSENT** — ledger E10, but `FunctionSignature` already carries per-function obligations | **unowned** — VISION §0.7 Track A; spec proposed at **§18.1** |
+| 6 | Entity declarations that mark an entity workspace-scoped | **ABSENT** | **unowned** — VISION §56; spec proposed at **§56.2** rule 1 |
+| 7 | Compiler-owned query derivation (`from`, `.where`, `.all`) | **ABSENT** | **unowned** — VISION §55, spec proposed at **§55.1**. OD-2 resolved 2026-08-20: this is compiler work by decision, not a library someone could contribute |
+| 8 | Tenant scope tracked through query construction; unscoped rejected | **ABSENT** | **unowned** — VISION §56, OD-8; spec proposed at **§56.2**, attack list at **§56.1** |
+| 9 | A Postgres capability to execute the query against | **ABSENT** | **unowned** — VISION **§54.0**, which finds this row shares CR-5's blocker with `MutexGuard` |
 | 10 | Panic scoped to the request, not the process | **VIOLATED** — ledger E3 | `TASK_STDLIB.md` CR-3, issue #91 — unscheduled |
+
+**OD-2's resolution on 2026-08-20 sharpens the ordering of this table, without
+changing a single row.** With user-written generic functions excluded, every
+typed surface here is compiler work by decision — row 7's query derivation, and
+§44's RPC schemas and §37's templates behind it. None can be prototyped as a
+library, contributed by a lane that does not own the compiler, or deferred to a
+user.
+
+So compiler throughput is the binding constraint on the whole table, and the
+sequencing question becomes sharper than "what is unowned". Rows 5 through 8 are
+Track A; rows 6 to 8 are the lead claim (§56). **If every surface competes for
+one queue, the authority model has to be built before the convenience surfaces,
+or it does not get built** — query derivation is demo scope, but effects are what
+make containment true and are the harder design.
+
+That is not an argument against the decision, which is the right one for reasons
+§14 records. It is the reason these six unowned rows matter more after it than
+before it.
 
 Rows 5 through 8 are `docs/VISION.md` §0.7 Track A verbatim, and **none of them
 has an owning roadmap.** `TASK.md` runs targets, objects, and linkers;
@@ -159,6 +191,23 @@ owns.
 So this document does not argue for reordering anything. It records what the
 demo needs, so that when the backend work closes, the remaining distance is
 already written down and costed rather than rediscovered.
+
+> **Two rows were restated 2026-08-20 after later findings.**
+>
+> Row 3 read "`Option` constructible without `unsafe`". That framing rested on a
+> claim the ledger has since split: no `Some(42)` constructor exists — which is
+> established and is the substance — while *requiring* `unsafe` to work around it
+> was inferred from every `std.Option` test using one, and none of the six
+> `unsafe`-demanding diagnostics concerns union tags. The row now names the
+> established requirement, because a prerequisite phrased around an unverified
+> claim would send someone to fix the wrong thing.
+>
+> Row 5 keeps its `ABSENT` status and gains what changes its cost.
+> `FunctionSignature` already carries per-function obligations — `is_unsafe`,
+> `is_extern`, `requires_unsafe_call` and two inert `requires_*` fields — so
+> effects extend a struct with the right shape rather than introducing the
+> concept. The status is what to build; the note is what it will take, and a
+> table of unowned work is read for the second more than the first.
 
 Rows 1 and 3 are genuine prerequisites rather than scope creep — row 1 because
 the memory model is approximated by string matching until it lands, row 3 because
@@ -181,6 +230,55 @@ properties do not, and both are `docs/VISION.md` product claims:
 Neither needs effects, a database, or a native backend. Both are specified in
 `docs/UNBLOCKED_CONTAINMENT_WORK.md`. They do not substitute for this program —
 they are simply the parts of the claim that are reachable now.
+
+> **All six unowned rows now have a written proposal, as of 2026-08-20.** The
+> Owner column points at each. **They remain unowned** — a specification is not a
+> schedule, and none of these rows moved status because someone described them.
+> What changed is that the next person to pick one starts from a stated design
+> and its open questions rather than from a blank row. Two of the six also came
+> back with their difficulty revised, in opposite directions: **row 4 is harder
+> than it looked** (it depends on Phase 19), and **row 5 is easier**
+> (`FunctionSignature` already carries the shape).
+
+## A proposed order for the six unowned rows
+
+Recorded because OD-2 made it necessary: with every typed surface now compiler
+work by decision, these six compete for one queue, and no document says in what
+order. **This is a recommendation, not a decision** — the ordering argument is
+written down so that choosing differently is a choice rather than an accident.
+
+**1. Rows 6 and 8 — workspace-scoped entities, and scope tracked through query
+construction.** These are §56, the lead claim, and OD-8 is thesis-invalidating:
+*is the scoping analysis sound?* §0.11 says one counterexample kills the only
+claim being made, and that someone adversarial must attack it before publication.
+**A soundness question should be answered while the surface is small enough to
+attack.** Every row below adds code the analysis must then hold over.
+
+**2. Row 5 — `uses` clauses and effect checking.** Track A item 1, and the thing
+§81, §22, §52 and §108 each presuppose — one gap seen from four sections. It also
+has the least uncertain path: `FunctionSignature` already carries per-function
+obligations, so this extends a struct with the right shape rather than
+introducing the concept.
+
+**3. Row 2 — `Result` and `?`.** Core language, and unlike the platform rows it
+blocks *writing* the demo rather than running it. The compiler hand-rolls
+`Result` today (`compiler/errors.gst:17`), which is both the evidence it is
+absent and the evidence it is expressible.
+
+**4. Row 7 — query derivation.** Large, and it is the row OD-2 moved decisively
+into the compiler. Worth doing after the analysis it must satisfy exists, not
+before: a builder built first would have to be retrofitted to whatever §56's
+scope tracking turns out to require.
+
+**5. Rows 4 and 9 — implicit context, and a Postgres capability.** Row 4 is
+ergonomic and matters most for OD-9, but it is desugaring and can land any time.
+Row 9 is genuinely platform and the only row here that is not compiler work.
+
+**The single ordering claim worth arguing about:** the authority model belongs
+before the convenience surfaces. If compiler throughput is the binding constraint
+— which OD-2 made true by decision — then anything built before effects and scope
+tracking is code those analyses must later be made to hold over. That is a cost
+that compounds, and it is the one sequencing error that cannot be undone cheaply.
 
 ## What this does not require
 

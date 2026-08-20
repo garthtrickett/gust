@@ -123,8 +123,13 @@ Both compilers hardcode
 `["connCtx", "arena", "ctx", "Any", "a", "main_ctx", "bg_ctx", "file_ctx"]`
 as arena brand names and prepend `&` at call sites for any matching identifier,
 regardless of type. `src/codegen.rs:71`, `src/typechecker/types.rs:61`, and
-seven other sites; also `compiler/codegen.gst:658,896,1101,1851` and
-`compiler/typechecker.gst:4953,5151`.
+seven other sites; also `compiler/codegen.gst:658,762,896,1101,1851` and
+`compiler/typechecker.gst:4975,5173`, applied at `:5629,5778,6713`.
+
+*Citations re-verified 2026-08-20 at `b47d0049`. The previous pair
+`typechecker.gst:4953,5151` had drifted — `:4953` is now a Void-return path and
+`:5151` is `typechecker_matches_template_prefix`. The defect is unchanged; only
+the line numbers moved.*
 
 A local `str` named `a` is emitted as `&a` and fails to compile in C. Renaming it
 fixes the program.
@@ -157,10 +162,35 @@ CR-1. Until it lands, `std.str_eq(a, b)` is the only spelling.
 
 ### D-4 — Resource obligations cannot attach to a user type
 
-`STEP52_RESOURCE_SEMANTICS.md` items 2 and 6 — automatic resource lifecycle
-enforcement, and an AST/typechecker representation for `defer` — were recorded as
-unmet. That document predates Phase 15 closure. `VISION.md` §27 marks shared
-ownership open as OD-3.
+`STEP52_RESOURCE_SEMANTICS.md` items 2 and 6 in its "Verified state" table —
+resource representation (originally "automatic resource lifecycle enforcement")
+and `defer` semantics (originally "an AST/typechecker representation for
+`defer`") — were recorded as unmet, when that document predated Phase 15's
+closure. `VISION.md` §27 marks shared ownership open as OD-3.
+
+> **Citation corrected 2026-08-20.** This row cited those items as "lines 20–27"
+> and stated the document was "last modified 2026-06-28". Both were true when
+> written and both are now false: `STEP52_RESOURCE_SEMANTICS.md` gained a
+> "Verified state" section at its head in #87 (`15334657`) and a
+> cleanup-validation correction in #98 (`017fec42`), so items 2 and 6 now sit at
+> lines 15 and 19 and the file's last modification is 2026-08-20 (`2cd40718`,
+> #97). The row now cites the table by name rather than by line, per this
+> document's own rule against line numbers in a document that is still being
+> edited.
+>
+> Recorded rather than silently fixed because of how it survived: the line
+> citation was inherited, carried through an edit to this very row that added the
+> #87 re-verification below, and not re-checked at that point. That is precisely
+> the failure the "Citing evidence" section names — *confirm a citation before
+> copying it, not only before acting on it* — committed in the row that documents
+> the defect it describes.
+>
+> **Both descriptions of items 2 and 6 are kept, 2026-08-20.** #97 and this
+> lane's audit named the same two items differently — #97 from the original
+> requirement text, this row from the "Verified state" table that superseded it.
+> Neither was wrong and the conflict was wording, not substance. Keeping both
+> spellings costs one clause and means a reader arriving from either document
+> recognises the row.
 
 **Re-verified 2026-08-19 by Patch S1.7 (#87), and corrected again 2026-08-20.**
 Item 6 is superseded: `defer` is an AST node the typechecker handles. Item 2's
@@ -207,6 +237,31 @@ Never cite a line number in a living document — `TASK.md`, `TASK_STDLIB.md`,
 `docs/VISION.md`, `AGENTS.md`. Their Status lists and section bodies grow with
 every patch, so a line reference silently becomes a reference to something else.
 Cite the section heading or the numbered section instead.
+
+### Two rules learned the hard way
+
+Both were derived from defects found in this repository's own documents, and
+both cost real rework. They generalise the paragraph above rather than repeating
+it.
+
+**Confirm a citation before *copying* it, not only before acting on it.** The
+rule above says to confirm a construct still exists before acting on a citation.
+That is necessary and not sufficient. D-1's `compiler/typechecker.gst` line
+numbers were copied from `docs/STDLIB_SURFACE_FINDINGS.md` — correct when pinned
+at `6c94728d` — into this document and two others. By 2026-08-20 both lines had
+moved to unrelated code, and every document agreed with every other document,
+which is precisely why nobody noticed. A citation inherited from another document
+is not evidence; it is a claim about evidence, and it decays at the same rate as
+the code.
+
+**Read the block, not the matching line.** A `grep` hit tells you a word appears,
+not what the code does. Four separate claims in this repository's documents were
+wrong this way: `typechecker.gst:1962` was described as a formatting check when
+it computes a provenance set; `typechecker_log_trace`'s 40 call sites were
+described as an emitter substrate when they carry only prose; a proposal was
+described as having no prerequisite when field reads defeated it; and
+`codegen.gst:1382` was cited for the `Int` lowering when it is the `Index`
+lowering. In each case the grep was accurate and the conclusion was not.
 
 ## Maintenance
 

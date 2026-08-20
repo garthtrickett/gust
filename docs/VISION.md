@@ -365,19 +365,44 @@ Everything from v1.0 down is specified in this document so that demo-stage decis
 
 ## 0.15 Open decisions
 
-| # | Question | Blocks | Reference |
-|---|---|---|---|
-| **OD-9** | **Model fluency** — can an agent write Gust well, and how do we get there from no corpus? *Thesis-invalidating. Starts week one.* | Demo | §0.7 |
-| **OD-8** | **Soundness of the tenant-scoping analysis** — adversarial review before publication. *Thesis-invalidating.* | Demo | §56 |
-| OD-1 | Transparent suspension vs coloured async (server). **Recommendation recorded in §21**; decision owned by the Cranelift lane | Demo | §21 |
-| OD-2 | Generic functions vs compiler-owned query derivation | Demo | §14, §55 |
-| OD-10 | **Distribution for the product path** — currently unanswered | Month 4 | §0.11 |
-| OD-3 | SAM state ownership under linear resources and no interior mutability. **`std.Rc` already ships**, so part of this was decided by implementation — see `TASK_STDLIB.md` CR-9 | v0.5 | §27, §38 |
-| OD-4 | WASM stack-switching support and payload cost | v0.5 | §21, §41 |
-| OD-6 | Form of the intent layer | v1.0 | Part XXI |
-| OD-5 | Supplier certification staffing model | Post-1.0 | Part XVI |
+**This table is the register. It is the only place an OD is opened, closed, or
+renumbered.** Other documents may *discuss* an OD and should link back here; none
+of them may change its status. The `Stated in full` column names the one place
+that carries the reasoning, so that this table stays an index and never becomes a
+second, drifting copy of it.
+
+| # | Question | Status | Blocks | Stated in full |
+|---|---|---|---|---|
+| **OD-9** | **Model fluency** — can an agent write Gust well, and how do we get there from no corpus? *Thesis-invalidating. Starts week one.* | **OPEN** | Demo | §0.7; blocked-on evidence in `TASK_STDLIB.md` CR-6 and `docs/ONE_WAY_LEDGER.md` E1 |
+| **OD-8** | **Soundness of the tenant-scoping analysis** — adversarial review before publication. *Thesis-invalidating.* | **OPEN** | Demo | §56; sequencing in `docs/DEMO_TARGET_PROGRAM.md` |
+| OD-1 | Transparent suspension vs coloured async (server) | **DIRECTION SET 2026-08-20** — transparent suspension unless a fatal blocker is hit; §21 defines what counts | Demo | §21; evidence in `docs/ONE_WAY_LEDGER.md` E9; escalation as `TASK_STDLIB.md` CR-8 |
+| OD-2 | ~~Generic functions vs compiler-owned query derivation~~ | **RESOLVED 2026-08-20** — compiler-owned derivation; §13's ban stands | — | §14; consequences in §13 and `docs/DEMO_TARGET_PROGRAM.md` |
+| OD-10 | **Distribution for the product path** | **OPEN** — currently unanswered | Month 4 | §0.11 |
+| OD-3 | SAM state ownership under linear resources and no interior mutability | **OPEN** — leading direction proposed 2026-08-20 (§38.1); partly decided by implementation, `std.Rc` already ships | v0.5 | §27, §38; the discrepancy as `TASK_STDLIB.md` CR-9; evidence in `docs/ONE_WAY_LEDGER.md` E8 |
+| OD-4 | WASM stack-switching support and payload cost | **OPEN** — recommendation recorded and then revised on checked support data, 2026-08-20 (§21.1) | v0.5 | §21, §41 |
+| OD-6 | Form of the intent layer | **OPEN** — leading proposal recorded 2026-08-20 (§117.1): contracts on capabilities as the core, examples as the authoring surface, properties for depth | v1.0 | Part XXI |
+| OD-11 | ~~The fate of `std.Spawn`~~ | **RESOLVED 2026-08-20** — bare form deleted; scoped spawn returns a linear task handle | Demo | §20.1 |
+| OD-5 | Supplier certification staffing model | **OPEN** | Post-1.0 | Part XVI |
 
 There is no OD-7. The number is unused and nothing in the repository references it; it is recorded here so a reader who notices the gap does not go looking.
+
+**Numbers are append-only and never recycled.** OD-11 was opened on 2026-08-20 with OD-7 sitting vacant, deliberately. A recycled number reads correctly in every new document and silently wrong in every old one, and the failure is invisible precisely because the reference resolves. A permanent gap costs one sentence of explanation; a reused number costs a misreading nobody can see.
+
+**How to cite a status elsewhere.** Attribute it, never assert it: "§27 marks
+this open" is safe, "this is open" is not. An attributed citation is wrong only
+when it misquotes; an asserted one is wrong whenever the register moves and
+nobody remembered the file. The distinction is not pedantic — a sweep on
+2026-08-20 found §27 stale at the source and three documents citing it correctly,
+which meant the error propagated with every citation intact.
+
+**Why the register is centralised rather than distributed.** An open decision that
+lives only in the document that happened to prompt it inherits that document's
+readership, and the decisions here are exactly the ones that must not be resolved
+by whoever reads the narrowest file. OD-3 is the worked example of the failure
+mode: it was recorded open in §27, and `std.Rc` shipped anyway. Nothing lied —
+the shipping lane simply was not reading §27. A register does not prevent that,
+but it makes the discrepancy findable from one place, which is how CR-9 came to
+be written at all.
 
 ## 0.16 Non-goals
 
@@ -415,6 +440,70 @@ Every Part below therefore carries a status line. The markers are:
 A status marker is not a quality judgement and does not weaken a Part's authority over its own subject. `SHARED_SEMANTIC_ZONE.md` cites §16, §26, §28, §29, and §34 as authoritative regardless of the marker on their Part.
 
 Where a Part splits, the marker names the split by section. `docs/ONE_WAY_LEDGER.md` records, per rule, whether the compiler currently does what the Part says.
+
+**Numbered subsections carry a second, finer status, and it is not the same scale.** Ten `x.y` subsections were added on 2026-08-20, all of them design work on decisions that were open. A Part marker answers *is this scheduled*; a subsection marker answers *has anyone agreed to it*. A reader who applies the Part's COMMITTED marker to a subsection inside it will read an undecided proposal as settled policy, which is the same confusion §0.17 exists to prevent, one level down.
+
+| Subsection wording | State | Who can change it |
+| --- | --- | --- |
+| **"— proposed"**, **"Recommendation for …"** | This lane's design work. **Nobody has ruled on it.** Written to be argued with. | Anyone with a better argument |
+| **"Proposed leading direction"**, **"Leading proposal"** | The operator has indicated a preference. **Not closed** — the requirement it answers still stands. | The operator |
+| **A decision stated with a date** | Decided. §0.15 carries the status; the subsection carries the reasoning. | The operator, by reopening the OD |
+
+Two subsections fit none of these and should not be read as proposals: **§56.1** is a target list for a review §0.11 already requires, and **§20.1** records a resolved decision.
+
+**The rule that keeps this honest: a subsection may not promote itself.** Rewording "proposed" to "leading" is a status change, and §0.15 is the only place a status changes. If a subsection's wording and the register disagree, the register wins.
+
+## 0.18 Verification index
+
+Which sections have been checked against the compiler, and where the evidence
+is. `docs/ONE_WAY_LEDGER.md` holds the reproductions; this table is the index
+into them, so a reader of any section can find out whether it describes the
+compiler or describes the target.
+
+**This table is derived from `docs/ONE_WAY_LEDGER.md`, not maintained by hand.**
+The regeneration command, and two extraction traps that produce false positives,
+are recorded in that file's Maintenance section. Regenerate it when evidence
+sections are added or renumbered.
+
+| Section | Subject | Evidence |
+| --- | --- | --- |
+| §11 | `Result`, `?`, non-null references | E2, E14 |
+| §14, §16 | generics, operators, conversions | E15 |
+| §17, §18 | effects — **the differentiator** | E10 |
+| §20, §30 | structured concurrency, channel ownership | E9, E18 |
+| §23, §28 | value categories, linear resources | E13, E20 |
+| §25 | cross-context movement | E20 |
+| §26 | borrows | E6 |
+| §27 | shared ownership (OD-3) | E8 |
+| §31 | enum exhaustiveness | E12 |
+| §32 | numbers, overflow | E11, E15 |
+| §34 | panic scope | E3 |
+| §70, §72 | modules, packages, lockfiles | E21, E16 |
+| §73, §74 | visibility, prelude | E19 |
+| §75–§79 | testing and conformance | E22 |
+| §81 | secrets | E26 |
+| §93, §94, §95 | native code, networking, host access | E21, E19 |
+| §99, §100, §103 | editions and migrations | E25 |
+| §108, §109 | traces, diagnostics | E25, E23 |
+| §111 | reproducibility | E24 |
+| §15 | no compile-time execution | E24, and the `HOLDS` rows in E4 |
+
+**Sections not listed are covered by their Part's status marker rather than
+individually.** That is deliberate, not an omission. Most of them describe
+platform surface — Parts IX through XII, XVI and XVII — and E16 verifies the
+whole of it in one place: the runtime is eight C files, and no HTTP, SQL, RPC,
+job, template, or supplier concept exists as a runtime symbol, a registered
+name, or a keyword. Auditing those sections one at a time would restate E16
+forty times.
+
+Part 0 is also unlisted, for a different reason: it is strategy, and there is
+nothing in the compiler to check it against.
+
+**Counts, 2026-08-20 at `b47d0049`:** 44 rules tracked, of which 9 hold, 10 are
+partial, 7 are violated, 1 is deferred, and 17 are absent. Read
+`docs/ONE_WAY_LEDGER.md`'s "recurring pattern" note before drawing a conclusion
+from those numbers — three of the practices this document asks for already exist
+and are aimed at the compiler rather than at applications.
 
 # Part I — Product
 
@@ -613,7 +702,30 @@ Safe references are non-null. Absence is represented with `Option[T]`.
 
 `null` is restricted to raw pointers inside `unsafe`, FFI and ABI boundaries, and compiler-owned runtime representations such as a zero-length slice with a null backing pointer.
 
+> **There is a second spelling of absence, and it is the one the compiler uses.** Verified 2026-08-20 at `b47d0049`. `null`, `nil`, and `NULL` are absent from both lexers, so the sentence above holds for *references*. But `empty` is a keyword and `empty[T]` is a sentinel meaning absent for `Index[T, ctx]` handles — 130 uses in the typechecker alone and 6 test programs, always in ordinary safe code, compared with `==` and `!=` exactly as a null check would be.
+>
+> `empty[T]` is arguably one of the "compiler-owned runtime representations" this paragraph permits, but it is not confined to a boundary: it is how the compiler's own source spells "no value", in preference to the `Option[T]` the previous paragraph nominates. Two spellings of absence coexisting is a one-way-to-do-it problem in its own right. `docs/ONE_WAY_LEDGER.md` E14, rows 32 and 45.
+
 *Rationale: a single total failure convention makes generated error handling mechanically checkable for exhaustiveness rather than stylistically reviewed.*
+
+### 11.1 What `?` must do — proposed
+
+Row 2 of `docs/DEMO_TARGET_PROGRAM.md`. Verified 2026-08-20: **there is no `?` operator** — zero occurrences in `compiler/lexer.gst`. What exists is `Result` itself, hand-rolled by the compiler at `compiler/errors.gst:17`, which is simultaneously the evidence that the language lacks it and the evidence that it is expressible.
+
+**The problem nobody has stated: `?` as everyone knows it depends on a facility §13 bans.** Rust's `?` converts the callee's error into the caller's error type through a generic trait implementation. Gust has no user-written generic functions, and OD-2 settled that it will not get them. So the conversion step has to come from somewhere else, and **that — not the propagation — is the whole design question.** Three ways out:
+
+1. **One error type.** No conversion, because there is nothing to convert. `?` is then pure propagation.
+2. **Compiler-owned conversion**, derived rather than user-written, on the OD-2 precedent.
+3. **Explicit conversion at every `?` site.** Honest, and it defeats the point of having the operator.
+
+**Recommendation: option 1, and the compiler is the evidence.** `compiler/errors.gst` declares a single `CompilerError[ctx]` with a `kind: ErrorKind` discriminant, not an error type per module. The most demanding real consumer of this language, free to structure errors any way it liked, chose one type and a tag. A design that generalises from that is generalising from practice rather than from taste.
+
+**Where the error lives is already answered, and the answer is not the obvious one.** `Err` holds `Index[CompilerError[ctx], ctx]` — an **arena index**, brand-parameterised, not a pointer and not an inline value. That is what makes the type sound under §24: an error cannot outlive the arena it was raised in, because its handle is branded. The consequence for `?` is direct and worth stating before it is discovered: **an error propagating out of a callee must be allocated in an arena that outlives the callee**, so `Result[T, ctx]`'s brand is the caller's, not the callee's scratch. `Result` already carries the brand parameter that makes this expressible.
+
+**Two constraints from elsewhere in this document.**
+
+- **`?` means "may fail" and nothing else (§21).** It must not acquire a suspension meaning, which is what makes the transparent-suspension direction coherent — the operator stays about failure because suspension needs no operator.
+- **It cannot fix absence.** §11's note records that `empty[T]` is the compiler's actual spelling of "no value", used 130 times in the typechecker in preference to `Option[T]`. `?` over `Result` does not touch that, and shipping `?` while two spellings of absence coexist would leave the smaller half of row 2 unfinished. `docs/ONE_WAY_LEDGER.md` E14, rows 32 and 45.
 
 ## 12. Abstraction model
 
@@ -637,6 +749,8 @@ The initial generic system supports generic structs, generic enums, compiler-own
 
 Gust does not support specialization, higher-kinded types, arbitrary trait bounds, associated-type systems, overlapping implementations, type-level programming, or generic metaprogramming.
 
+> **Confirmed 2026-08-20 by the resolution of OD-2 (§14).** This list is settled rather than provisional: user-written generic *functions* are excluded with the rest, and the surfaces that would otherwise need them are compiler-owned derivations. A feature request that requires generic functions is a request to reopen OD-2, not a request for an exception here.
+
 ## 14. Generic functions and compiler-owned derivation (OD-2)
 
 User-written generic functions are not available initially.
@@ -647,7 +761,17 @@ This resolves the apparent conflict between §13 and §55: the query builder is 
 
 It also answers "why not build Gust as a library over an existing austere language" — the differentiating features require compiler support, and any language austere enough to be a good base bans the metaprogramming that would let you add them from outside.
 
-**OD-2 remains open** on one point: whether a restricted form of user-written generic function is required before v0.1 for standard-library collection code, or whether compiler-owned containers cover it.
+**OD-2 is resolved, 2026-08-20: compiler-owned derivation, and §13's ban on user-written generic functions stands.**
+
+The question was whether a restricted form of user-written generic function is required before v0.1 for standard-library collection code, or whether compiler-owned containers cover it. The decision is that they cover it. Generic *structs* and *enums* remain available; generic *functions* do not, and the derived surfaces — the query builder, RPC schemas, templates — stay compiler features with typed surfaces rather than libraries written in Gust.
+
+What this commits the project to, stated plainly because it is a constraint and not only a simplification:
+
+- **Every collection in the standard library must be expressible without generic functions.** If one is not, that is a reason to reopen this decision, not a reason to add a local exception. §13's value comes from being categorical.
+- **Every derived type surface is compiler work.** There is no path where a library author supplies one, so the cost lands on the compiler team by construction — which is the trade §13 is buying.
+- **The escape hatch is a new compiler-owned derivation, never a user generic.** A request that would be answered by "write it generically" is answered here by adding a derivation or declining the feature.
+
+The evidence for feasibility is the compiler itself: `compiler/errors.gst:17` declares `Result[T, ctx]` as an ordinary generic enum, so a demanding real consumer needed a generic sum type and expressed it with the facilities users already have.
 
 > **No compiler-owned derivation exists yet**, because everything §14 lists as derived — the query builder, RPC schemas, templates — is itself unbuilt. What the section gets right today is the negative half: user-written generic functions are genuinely unavailable, while generic structs and enums with monomorphisation work (`docs/ONE_WAY_LEDGER.md` E15).
 >
@@ -683,7 +807,7 @@ Only obviously lossless widening conversions may be implicit. All other conversi
 
 A function's type describes both the values it transforms and the authority it requires.
 
-> **None of Part V is implemented.** Verified 2026-08-20 at `b47d0049`: there is no `uses` keyword in either lexer, and no effect is declared, checked, or recorded anywhere. This is the differentiator (§0.4) and Track A item 1, and §0.6 already lists it as absent — annotated here too because every lesser section in this document now carries its status, and the section the product rests on should not be the one that reads as settled. `docs/ONE_WAY_LEDGER.md` E10.
+> **None of Part V is implemented, but the carrier exists.** Verified 2026-08-20 at `b47d0049`: there is no `uses` keyword in either lexer and no effect in this Part's sense is declared or checked. What does exist is the structural shape — `FunctionSignature` (`compiler/typechecker.gst:633-645`) already states per-function obligations alongside the types (`is_unsafe`, `is_extern`, `requires_unsafe_call`, `requires_layout_metadata`, `requires_sandbox_arena`), and one is enforced: calling an `extern` function outside `unsafe` is rejected. Two of the three `requires_*` fields are inert — never set, and one accessor never called — so they read as reserved for obligations nothing yet assigns. Adding effects extends a struct with the right shape rather than introducing the concept. `docs/ONE_WAY_LEDGER.md` E10. This is the differentiator (§0.4) and Track A item 1, and §0.6 already lists it as absent — annotated here too because every lesser section in this document now carries its status, and the section the product rests on should not be the one that reads as settled. `docs/ONE_WAY_LEDGER.md` E10.
 >
 > Its absence is what makes several other rows unfixable in isolation: §81's `secret.use<…>`, §22's rejection of external effects inside retried transactions, §52's pre-execution authorization, and §108's record of exercised and denied authority all presuppose it.
 
@@ -731,6 +855,30 @@ Effects may carry restrictions for resource type, operation, secret name, hostna
 
 Function values preserve their effect sets. A function requiring fewer effects may substitute for a function type that permits more effects. Authority may only be delegated by explicitly narrowing an existing capability.
 
+### 18.1 What effect checking must do — proposed
+
+Row 5 of `docs/DEMO_TARGET_PROGRAM.md`, Track A item 1, and the thing §81, §22, §52 and §108 each presuppose. §17 and §18 say what effects *are*; nothing says what the checker *does*. This is a proposal.
+
+**1. The declaration is part of the signature, and it is the whole set.** A function performs an effect only if its own clause names it. There is no ambient authority and no inference at a declaration boundary — §17 already withdrew inference on private functions, and this is the rule that gives that teeth.
+
+**2. Call sites check by subsumption, in the direction §17 states.** A caller's declared set must cover every effect its callees declare. Fewer effects may substitute where more are permitted, never the reverse. This is the only propagation rule; there is no separate inference pass, because the sets are written down.
+
+**3. Restrictions are part of the effect, not commentary on it.** `db.read<User>` and `db.read<Order>` are different effects. So are `secret.use<"stripe">` and `secret.use<"twilio">`, and `network.request<host>` for two hosts. Subsumption compares the restriction, so widening one — a function that read `User` now reading everything — is a signature change and shows up in a diff, which is the property §0.12 and §108 are actually buying.
+
+**4. `main` is where authority enters, and the only place.** The platform grants the root set; every other set is a narrowing of something a caller already held. §17's "authority may only be delegated by explicitly narrowing an existing capability" is the same rule stated from the other end.
+
+**5. `unsafe` grants nothing (§19).** An unsafe block still needs every effect it uses. Worth restating as a checker rule because it is the natural place for an implementation to take a shortcut.
+
+**6. The compiler needs no new carrier.** `FunctionSignature` already states per-function obligations alongside types, with two `requires_*` fields inert. An effect set is another such field, and one of the existing ones — the `extern`-outside-`unsafe` rejection — is already the enforcement shape this needs. **This is why row 5 is cheaper than its position on the list suggests: the concept is new, the plumbing is not.**
+
+**Open sub-questions, stated rather than assumed away.**
+
+- **Do spawned tasks inherit the parent's effect set?** §20.2's `s.Spawn(f())` runs `f` elsewhere, so either the scope's set bounds it or the task carries its own. Inheritance is convenient and makes the spawn site useless for review; an explicit set is verbose at exactly the point where the concurrency is already dense. Not decided here, and it is a real question rather than a detail.
+- **What do function values carry?** §17 says function values preserve their effect sets. That makes the effect set part of the type of a closure, and therefore part of every signature that takes one.
+- **Where do supplier capabilities (§98) sit in the naming scheme?** `payments.charge` is business-level by design, but a supplier boundary is where business-level and vendor-level meet.
+
+**How this composes with §56.2.** They are two obligations on one call, and they are independent. `uses db.read<Issue>` answers *may this function read issues at all*; the scope obligation answers *does this particular query carry the caller's tenant*. Neither implies the other, and a design that collapses them will be wrong in the direction that matters — an authorised read of the wrong tenant's data is the failure mode §56 exists to prevent.
+
 ## 19. Unsafe and authority
 
 `unsafe` is independent from capability authority.
@@ -743,7 +891,7 @@ Unsafe code must still possess every required effect.
 
 # Part VI — Concurrency, Tasks, and Transactions
 
-> **Status: COMMITTED (§20–§21) / DEFERRED (§22 transactions).** OD-1 must resolve before the demo. What exists today is detached `std.Spawn` plus channels — the model §20 rejects; see §21 and `docs/ONE_WAY_LEDGER.md` E9.
+> **Status: COMMITTED (§20–§21) / DEFERRED (§22 transactions).** OD-1 has a **direction set as of 2026-08-20 — transparent suspension unless a fatal blocker is hit** (§21). What exists today is still detached `std.Spawn` plus channels — the model §20 rejects; see §21 and `docs/ONE_WAY_LEDGER.md` E9.
 
 ## 20. Structured concurrency
 
@@ -757,6 +905,78 @@ Fire-and-forget work is not permitted in normal request code. Durable background
 
 Channels may exist as a lower-level primitive. Actors are a library or platform pattern, not the universal concurrency model.
 
+### 20.1 OD-11 — the fate of `std.Spawn`
+
+**The question.** `std.Spawn` starts work that no scope owns, returns no handle, and has no join or cancellation path (`docs/ONE_WAY_LEDGER.md` E9). Either it **gains a task handle** and becomes the low-level primitive beneath the structured layer, the way §20 already permits for channels — or it is **deprecated**, and a scoped spawn is the only spelling. Today it is neither, which is why §20 forbids fire-and-forget in request code while the only primitive available is fire-and-forget.
+
+**Why it is opened now, and why it is small.** This was previously a sub-clause of OD-1: which fate `std.Spawn` deserved depended on whether suspension would be transparent or coloured. **OD-1's direction removed that dependency** (§21). Under transparent suspension, `std.Spawn` cannot be the low-level primitive *as it stands* — it hands back nothing, and a structured layer needs something to own. So the residue is a single binary question that the owning lane can answer without reopening the suspension model. It is registered rather than left implicit because a question that has narrowed enough to be answerable is exactly the kind that gets forgotten inside the larger one it came from.
+
+**The leaning, not a decision.** Deprecation. §20 already routes durable background work to jobs and unowned work is not permitted in request code, so the use case a bare `std.Spawn` serves is one the design has already declined; keeping it means keeping two spellings for one concept, which is the thing §13 and `docs/ONE_WAY_LEDGER.md` exist to prevent. The argument the other way is real and should be made if anyone holds it: a handle-bearing `std.Spawn` gives the structured layer something to be built *out of*, and a language with no low-level primitive at all has to get the high-level one right on the first attempt.
+
+#### Resolved, 2026-08-20 — the bare form is deleted; scoped spawn returns a linear handle
+
+**Operator decision.** `std.Spawn` as it stands is removed. The scoped spawn is the only way to start a task, and it returns a **linear task handle** that must be joined, cancelled, or transferred before its scope exits.
+
+The reason this is the right shape rather than merely the tidiest: §20's ban on detached work stops being a rule nothing checks and becomes **a move-checker obligation**, using Phase 15 machinery that already ships. And it answers the one real objection to deletion — that removing the bare form leaves nothing to build the structured layer out of. **A linear handle is that thing.** The primitive survives; what is deleted is the version of it that hands back nothing.
+
+The ranking below is kept as the record of what was considered. Option 2 (demote to the runtime surface) remains the fallback if the scoped layer proves to need iteration — it is the same design with the handle non-public.
+
+#### 20.2 The scoped API — illustrative sketch
+
+Not yet implemented, and not a syntax proposal; it exists so the decision above is concrete enough to argue with.
+
+```
+fn handle(req: &Request[r], ctx: Ctx[a]) -> Result[Response[a]] uses net.fetch {
+    scope s {
+        let user  : Task[User, s]  = s.Spawn(fetch_user(req.id))
+        let prefs : Task[Prefs, s] = s.Spawn(fetch_prefs(req.id))
+
+        let u = user.Join()?          // consumes the handle
+        prefs.Cancel()                // also consumes it
+        Ok(render(u, ctx))
+    }                                 // scope exit: every handle already consumed
+}
+```
+
+Three things carry the design:
+
+- **`Task[T, s]` is brand-parameterised on the scope.** A handle cannot outlive `s` for the same reason an arena-allocated value cannot outlive its arena — it is the mechanism §24 already has, not a new one.
+- **`Join`, `Cancel`, and `Transfer` all consume the handle.** They are the only three ways to discharge it, and each takes it by move.
+- **Scope exit is where the check lands.** A live handle at the closing brace is a compile error, in the same class as an unconsumed linear resource under §28.
+
+```
+error: task handle `prefs` is still live at scope exit
+  --> handler.gst:9:5
+   |
+ 5 |         let prefs : Task[Prefs, s] = s.Spawn(fetch_prefs(req.id))
+   |             ----- created here
+ 9 |     }
+   |     ^ scope `s` ends here with `prefs` unconsumed
+   |
+   = a task handle must be joined, cancelled, or transferred before its scope exits
+   = §20: fire-and-forget work is not permitted in request code
+```
+
+**Consequences worth stating now.** `Transfer` is the interesting one: moving a handle out of `s` to a longer-lived scope is what a supervisor is, so §21's three named concepts — child task, supervisor, durable job — fall out of one mechanism plus where the handle ends up, rather than needing three primitives. And **`?` still means only "may fail"**: `Join` can propagate a task's failure through `Result` without suspension acquiring a keyword, which is what §21's direction requires.
+
+#### The candidates, ranked
+
+The two options above are the ones stated when OD-11 was opened. Both assume the handle must exist; **what they actually disagree about is whether the low-level primitive is *public*.** Naming that reframes the decision and admits a third answer that neither states.
+
+**1. Deprecate the bare form; the scoped spawn returns a *linear* task handle.** One spelling. The handle must be joined, cancelled, or transferred before scope exit, so §20's "no detached work" is enforced by the move checker rather than by a rule nobody checks — and that machinery is Phase 15's, already built and shipping. This is option 2 done properly: the objection to deletion was that it leaves nothing to build the structured layer out of, and a linear handle *is* the thing it is built out of.
+
+**2. Demote `std.Spawn` to the runtime surface.** It survives with a handle, but stops being application-facing — the structured layer becomes its only caller. This keeps every engineering benefit of option 1 while removing what is actually wrong with it, since the problem was never the handle but the second public spelling. The best available compromise, and the right answer if the scoped layer turns out to need iteration.
+
+**3. Give it a handle, publicly — option 1 as stated.** Sound engineering, and the ranking cost is not technical: two public ways to start a task, permanently, in a language whose premise is one of each. Migration never completes because nothing forces it.
+
+**4. Implicit scope from the arena brand.** No call-site change; a task is owned by the context it allocates in. Elegant, and Gust already has the branding. Ranked below the compromises because it ties task lifetime to *allocation* lifetime, which are genuinely different things — a task can outlive the data that spawned it and often should — and §30's ownership-across-tasks rules do not fall out of it. Clever on the wrong axis.
+
+**5. Retain the bare form under `unsafe` or a privileged capability.** Part XVIII exists for exactly this shape of thing, so it is legitimate rather than absurd. But §20 already routes durable unowned work to jobs, so this adds an escape hatch for a use case the design has declined — an escape hatch nobody has yet asked for.
+
+**Last: change nothing.** Recorded because it is the outcome that happens by default if the decision is not made, not because it is a candidate. It leaves §20 stating a rule the only available primitive violates.
+
+**Owner: the Cranelift lane**, under `docs/SHARED_SEMANTIC_ZONE.md`'s "Fiber scheduling contract" row. **The decision above sets what to build; it does not authorise the patch.** Implementation is that lane's, and the removal of `std.Spawn` is a breaking change to a shipped surface, so it needs a deprecation path recorded in the owning phase's roadmap rather than a deletion. Reported as `TASK_STDLIB.md` CR-8 and issue #101. Status owned by §0.15.
+
 ## 21. Suspension model (OD-1, OD-4)
 
 **Preference:** Gust should avoid forcing all asynchronous code into a coloured async function hierarchy if capability calls can suspend transparently.
@@ -769,11 +989,37 @@ The demo cut (§0.14) is server-only, which splits this cleanly: **OD-1 (server 
 
 **What exists today (verified 2026-08-20, `b47d0049`).** Neither model. There is no `async`, `await`, `spawn`, or `scope` keyword in either lexer. Concurrency is a library surface over the cooperative fibers in `src/runtime/fiber.c`: `std.Spawn`, `std.Channel`, `std.Mutex`, `std.Yield`. `std.Spawn` starts work that no scope owns, with no join requirement, no cancellation propagation, and no task handle — which is detached spawn plus channels, the model §20 rejects and the only one available. Recorded with reproductions in `docs/ONE_WAY_LEDGER.md` E9 and tracked as `TASK_STDLIB.md` CR-8.
 
-**Recommendation, not a decision.** Take Go's *suspension* model and reject Go's *task* model: transparent suspension with no colouring, over a scheduler that already exists, with every task owned by a lexical scope that cannot exit while a child is live, and task handles as linear resources. Three named concepts — child task, supervisor, durable job — rather than one `spawn` with adjectives. `?` continues to mean "may fail"; suspension needs no keyword because it is always owned.
+**Direction set, 2026-08-20: transparent suspension, unless a fatal blocker is hit.** This is an operator decision on the server question. It is recorded as a direction rather than a closure because it carries an escape hatch, and an escape hatch that is not defined is not a hatch — it is a way to reopen the decision at any time. What follows defines it.
+
+**What counts as a fatal blocker.** Exactly three things, and the burden is on the finding, not on the direction:
+
+1. **A capability call cannot suspend without unwinding a native frame.** The scheduler is cooperative fibers in `src/runtime/fiber.c`, and vendor capabilities (§98) call into native code. If a blocking native call sits on the stack at the suspension point, transparent suspension requires either non-blocking native APIs throughout or an offload pool — and if neither is affordable, suspension cannot be transparent because it cannot happen.
+2. **Ownership across tasks (§30) cannot be made sound without colouring.** If the only way to check that a linear value does not cross a suspension point illegally is to make suspension visible in the type, then the colour is doing load-bearing safety work and the direction is wrong.
+3. **Cranelift cannot emit code compatible with the chosen switching mechanism for the server target.** A backend limitation, not a design preference.
+
+**What explicitly does not count.** *Implementation difficulty* — this was known to be the harder option when it was chosen. *WASM stack-switching cost* — that is OD-4, it defers to v0.5, and §0.14's demo cut is server-only. The strongest available argument against transparent suspension is therefore out of scope for the decision this direction settles, and may not be borrowed back into it.
+
+**The recommendation this direction adopts.** Take Go's *suspension* model and reject Go's *task* model: transparent suspension with no colouring, over a scheduler that already exists, with every task owned by a lexical scope that cannot exit while a child is live, and task handles as linear resources. Three named concepts — child task, supervisor, durable job — rather than one `spawn` with adjectives. `?` continues to mean "may fail"; suspension needs no keyword because it is always owned.
+
+### 21.1 Recommendation for OD-4 — do not buy the transform
+
+Two ways to make a WASM function pause. **Rewrite the emitted module** so every function saves its own position and locals and can be re-entered later — an off-the-shelf build step, works in every browser today, and roughly doubles the binary. Or **use the platform's own stack switching**, which costs nothing in size and depends on the browser having it.
+
+**Support, checked 2026-08-20 rather than assumed.** The platform feature is JSPI, standardised by the W3C WebAssembly CG at Phase 4 in April 2025. **Chrome shipped it in 137.** **Firefox has it in 139 but behind a flag.** **Safari has not shipped it and has not publicly committed to doing so** — it withdrew its objection in late 2025 and has someone assigned, which is progress and is not a ship date.
+
+**That kills the argument this section was originally written on.** The first draft recommended waiting because the gap would age out. It will not: this is not old browsers lingering, it is **a vendor that has not implemented**, and vendor gaps do not expire on a schedule. On iOS the gap is total, because every browser there is WebKit. "Wait and the cost shrinks" was the wrong shape of argument, and it was wrong because it was asserted rather than checked.
+
+**Revised recommendation: build the client to need no suspension, and treat both options as contingencies.**
+
+§21's fallback — client code dispatches actions and returns effects, never awaits — is not a degradation of the SAM model, it is a description of it. SAM already separates effects into a named layer, which is architectural colouring rather than type-level colouring, and the browser's own event loop already handles that boundary. It is the only path that **works in every browser today at zero payload cost**, and it is now the recommendation rather than the fallback. Whether client code has suspension points that are not effects is the thing to measure once a real client program exists, and measuring it is cheaper than adopting either option.
+
+If that measurement says client suspension is genuinely required, the ranking inverts from the original draft: **the transform becomes the bridge**, because it works on Safari now and JSPI does not, and JSPI becomes the thing to adopt when Safari ships. Paying the transform's payload cost is then a real cost for a real capability, rather than a standing tax paid pre-emptively.
+
+**The correction is recorded rather than edited away** because the failure mode is the one this repository keeps finding: a claim that sounded like a fact ("browsers will have aged out") load-bearing an argument, never checked, and wrong in the direction that made the recommendation look easy. `docs/ONE_WAY_LEDGER.md` records the same shape in the unit-error section.
 
 The fallback above — coloured async on the client, transparent on the server — is recorded here as the worse option. Two concurrency models in a language whose premise is one of everything refutes the premise; if OD-4 makes WASM stack switching unaffordable, restricting client code to event-driven dispatch with no suspension is the better trade, and Part IX's SAM model already implies it.
 
-Ownership: this is a Ring 1 semantic decision. `docs/SHARED_SEMANTIC_ZONE.md` assigns the fiber scheduling contract to the Cranelift lane, so neither lane may act on the recommendation unilaterally. Reasoning in `docs/VISION_RECONCILIATION.md` §3.2.
+Ownership: this is a Ring 1 semantic decision. `docs/SHARED_SEMANTIC_ZONE.md` assigns the fiber scheduling contract to the Cranelift lane, so neither lane may act on the direction unilaterally. **A direction sets what to build toward; it does not reassign who builds it, and it does not authorise a patch outside the owning lane.** If a lane hits one of the three blockers above, that is a stop-and-report under the zone protocol, and the finding is recorded against OD-1 in §0.15 — not resolved inside the lane that found it. Reasoning in `docs/VISION_RECONCILIATION.md` §3.2.
 
 ## 22. Transactions
 
@@ -828,6 +1074,20 @@ These are compiler/runtime-owned arena classes rather than separate ownership sy
 > Of the seven kinds named, two exist as distinct mechanisms: scratch, and the general arena that covers "temporary lexical", "application", and "explicitly managed persistent" — those three are not separate classes, they are an arena with a different lifetime. **Request, task, and job-execution contexts do not exist**, and cannot until the platform they belong to does (`docs/ONE_WAY_LEDGER.md` E16).
 >
 > The list is also under-inclusive: `std.GenerationalArena` with `std.GenerationalSwap`, and `std.ThreadLocalContext`, are shipped arena classes this section does not name.
+>
+> It is also missing one the design now wants. §38.1's pending action journal needs a class between scratch and application — actions must outlive the dispatch that created them and die well before the application does. By this section's own reasoning that is an arena with a different lifetime rather than a new mechanism, so the cost is naming it, not building it.
+
+### 24.1 Implicit context — proposed, and it has an unnoticed dependency
+
+Row 4 of `docs/DEMO_TARGET_PROGRAM.md`. Every function that allocates threads a context parameter today, and the demo handler drowns in it. The proposal is ordinary: a `using ctx` declaration binds one context for a scope, and calls inside it pass that context without spelling it at each site. Pure desugaring, no new mechanism.
+
+**Why this is safe where implicit *authority* would not be.** §17 forbids ambient authority, and an implicit parameter looks like exactly the thing that rule prohibits. It is not, and the distinction is worth stating precisely: **an arena is a destination, not a permission.** It says where a value goes, never what a function may do. Effects stay explicit and stay declared, and no `using` clause may make one implicit. If a future proposal tries to bind a capability the same way, the argument here does not extend to it.
+
+**The dependency nobody has noted.** `docs/SHARED_SEMANTIC_ZONE.md` D-1 records that both compilers infer brand identity from **identifier spelling** — a hardcoded list including `ctx`, `arena`, and `a` — and prepend `&` for anything matching, regardless of type. Implicit context makes that heuristic load-bearing in a way it currently is not: if the context is not written at the call site, the compiler must resolve which context is meant **by type and scope rather than by name**, and there is nothing left to pattern-match on.
+
+> **Row 4 therefore depends on Phase 19**, which owns D-1, and the demo table does not say so. Built first, it would either entrench the spelling heuristic at more sites or require a brand resolution that is itself the Phase 19 work. That moves row 4 from "desugaring, can land any time" — which is how `docs/DEMO_TARGET_PROGRAM.md` ranks it — to *cheap, but not before Phase 19*. The ranking there should be read with this attached.
+
+**One rule to fix now while it is free.** `using` binds exactly one context per scope and nested `using` shadows rather than merges. Two implicit contexts in scope would reintroduce by ambiguity precisely the question the explicit parameter answered by construction, and an ambiguity rule written after the feature ships is written under pressure to accept existing code.
 
 ## 25. Lifetime movement
 
@@ -859,11 +1119,15 @@ Ordinary references remain borrowed and context-bound.
 
 Where unavoidable, Gust may provide an explicit compiler-owned read-only shared ownership type such as `Rc[T, ctx]`.
 
+> **Correction, 2026-08-20 — "may provide" is out of date.** It already does: `std.Rc`, `std.RcNew`, and `std.RcNode` ship today. This sentence is the source three other documents cite when they describe OD-3 as open (`docs/SHARED_SEMANTIC_ZONE.md` D-4, `docs/STDLIB_SURFACE_FINDINGS.md`, `docs/ONE_WAY_LEDGER.md` E8), so its staleness propagated accurately rather than being caught. **What shipped is not the whole of OD-3** — the type exists; whether it is the right answer for SAM state ownership under §38 does not follow from it, and that half is still open. Recorded as `TASK_STDLIB.md` CR-9; status owned by §0.15.
+
 Safe application code does not receive unrestricted interior mutability.
 
 Shared mutation should instead occur through SAM state ownership, actors, transactions, or explicit synchronization primitives.
 
 **Open (v0.5):** the SAM state model (§38) is where this rule meets the operation every application performs constantly. A worked end-to-end example — store, action dispatch, optimistic update, rollback — must be written and reviewed before client work begins.
+
+> **A leading direction was proposed on 2026-08-20** — confirmed base plus a pending action journal, stated in full at §38.1. The requirement above is unchanged: it names the design the worked example should be written against, and does not replace the example. Status owned by §0.15.
 
 ## 28. Linear resources
 
@@ -873,7 +1137,9 @@ Root resource types opt into resource semantics through explicit linear metadata
 >
 > Worth stating explicitly because the word is overloaded: this opt-in is separate from the structural linearity that governs move-versus-copy for ordinary values. `str` and slices are automatically linear for move tracking and are *not* automatically resources — which is exactly what the next paragraph claims. `docs/ONE_WAY_LEDGER.md` E20 and E13.
 
-Linearity propagates transitively. Any struct containing a linear field is itself linear. Ordinary strings, slices, collections, and branded structs do not automatically become resources.
+Linearity propagates transitively. Any struct containing a linear field is itself linear.
+
+> **Not for the `#[linear]` marker.** Verified 2026-08-20 at `b47d0049`. This holds for the structural linearity that governs move-versus-copy — `typechecker_is_linear` walks a struct's fields and returns linear if any field is. It does not hold for the opt-in above: `env_struct_is_linear_resource` has two consumers and neither walks fields, and `typechecker_is_linear` never consults the resource registry. A `#[linear]` struct whose fields are all `int` is linear by neither route, and a plain struct containing one does not become a resource. **The marker is opt-in per type and does not compose.** `docs/ONE_WAY_LEDGER.md` E20. Ordinary strings, slices, collections, and branded structs do not automatically become resources.
 
 Compiler-tracked resource states: owned, borrowed, moved, closed, destructor scheduled.
 
@@ -906,7 +1172,9 @@ Borrows should not be shared across tasks. This is a design rule, not an enforce
 
 Channels transfer ownership of sent values.
 
-> **Not enforced.** Verified 2026-08-20 at `b47d0049`: `Channel.Send` checks its argument against the element type and returns `Void` (`compiler/typechecker.gst:2823-2841`). No move is recorded at the send site, so the sender retains a usable binding to a value it has handed to another fiber. Together with §20's unenforced task ownership this means the two concurrency primitives that exist — `std.Spawn` and `std.Channel` — provide neither task ownership nor value ownership. `docs/ONE_WAY_LEDGER.md` E18; tracked with issue #101, since the fix is the same OD-1 decision.
+> **Opt-in, not automatic.** Verified 2026-08-20 at `b47d0049`. `Channel.Send` checks its argument against the element type and returns `Void` (`compiler/typechecker.gst:2823-2841`); it records no move itself. But `move` is a keyword and transfer at a send *is* enforced when the caller writes it — `tests/test_arena_moved_through_channel_invalid_rejected.gst` sends `move ctx` and the compiler rejects the use that follows.
+>
+> So this sentence describes a property of channels while the compiler provides a property of call sites: a caller who omits `move` transfers nothing, and nothing at the send site requires it. The remedy is to require `move` for non-copy sends rather than to build transfer semantics from nothing. Whether `chan.Send(x)` on a linear `x` without `move` is accepted is untested and is the fixture to write first. `docs/ONE_WAY_LEDGER.md` E18; tracked with issue #101.
 
 Values containing context-bound references may cross into a task only when the receiving task shares a valid parent context.
 
@@ -932,7 +1200,7 @@ All enum matching must be exhaustive.
 
 ## 32. Numbers
 
-> **None of this section is implemented.** Verified 2026-08-20 at `b47d0049`: there is one integer type, `int`, and none of the six fixed-width types below exists in either lexer; there is no overflow handling anywhere in codegen or the typechecker; the named arithmetic operations and every one of the numeric and time types below are absent. `Type::Int` lowers to C `int`, where signed overflow is undefined behaviour — so the current behaviour at overflow is not wraparound but UB, which is the opposite end of the spectrum from the trap this section promises. Reproductions in `docs/ONE_WAY_LEDGER.md` E11; tracked as issue #103. The section is retained as the target, not as a description.
+> **None of this section is implemented.** Verified 2026-08-20 at `b47d0049`: the integer-ish scalars are `int` and `byte` — `byte` lowers to C `unsigned char` (`compiler/codegen.gst:1360-1362`) — and none of the six fixed-width types below exists in either lexer; there is no overflow handling anywhere in codegen or the typechecker; the named arithmetic operations and every one of the numeric and time types below are absent. `Type::Int` lowers to C `int`, where signed overflow is undefined behaviour — so the current behaviour at overflow is not wraparound but UB, which is the opposite end of the spectrum from the trap this section promises. Reproductions in `docs/ONE_WAY_LEDGER.md` E11; tracked as issue #103. The section is retained as the target, not as a description.
 
 Gust supports compiler-defined fixed-width integer types: `i32`, `u32`, `i64`, `u64`, `isize`, `usize`.
 
@@ -1025,6 +1293,62 @@ Local and remote state use the same action model while effects remain explicit.
 See §27: the interaction between SAM state ownership, linear resources, and the prohibition on interior mutability is an open decision requiring a worked example before v0.5.
 
 The argument that SAM is the *right* fit for an arena language — model in a long-lived arena, action payloads in a scratch arena, view in a frame-bound arena wiped in constant time, and therefore no cyclic widget graph and no listener leaks — is recorded in `docs/VISION_RECONCILIATION.md` Appendix A.
+
+### 38.1 Proposed leading direction for OD-3 — confirmed base plus a pending action journal
+
+**Operator proposal, 2026-08-20.** Recorded as the leading direction for the SAM half of OD-3. It is not a decision: §27's requirement of a worked, reviewed end-to-end example before v0.5 stands, and this is the design that example should be written against.
+
+Keep two things. `confirmed: Model[app]`, mutated only by authoritative server results, and `pending: List[Action][pending_arena]`, the actions dispatched but not yet acknowledged. The model anyone reads is derived:
+
+```
+presented = fold(confirmed, pending)      // into the frame arena
+```
+
+- **Optimistic update** — push the action onto `pending`. Nothing is copied.
+- **Rollback** — remove that action and refold. There is no "rollback state" to own, because the inverse of *append to a list* is *remove from a list*.
+- **Reconcile** — replace `confirmed` with the server's result, drop the acknowledged action, refold the rest.
+
+Acceptors are pure and move-in / move-out, so exclusivity is structural rather than checked:
+
+```
+fn accept(model: Model[a], action: &Action[s]) -> Model[a]
+```
+
+Nobody holds a long-lived reference to the model because none is ever handed out — the store lends it only for the duration of a call. **That sidesteps §26 entirely: it is not that aliasing writes are forbidden, it is that no alias exists.**
+
+**Why it leads.** Rollback state is *actions*, which SAM already makes first-class, typed, and small — so §27's hardest case stops being a memory-ownership problem. It is the only candidate that handles several in-flight mutations correctly. Replayability forces the acceptor purity §38 already claims but cannot currently enforce. And it lands exactly on Appendix A's table: `confirmed` in the application arena, actions in a pending arena, `presented` in the frame arena wiped in constant time.
+
+**Costs, stated rather than discovered later.** Refolding is O(|pending| × model size); cache `presented` and invalidate on any change to `confirmed` or `pending`, not per frame. Acceptors must be deterministic and replayable — a real constraint, and one worth having. Actions must outlive scratch, so they need a third arena class between scratch and application, which §24 does not name today. Per §24's own correction that is an arena with a different lifetime rather than a new mechanism, which is why the cost is cheap.
+
+**What this does not settle.** OD-3's other half — whether an explicit compiler-owned `Rc` is the right general answer for shared ownership — is untouched. This direction narrows OD-3 to that question by removing the SAM case from it.
+
+#### Backup 1 — shadow-arena snapshot, and the one to build first
+
+`std.GenerationalArena` and `std.GenerationalSwap` already ship (`docs/STDLIB_SURFACE_INVENTORY.md`, "Names the typechecker registers"; `std_GenerationalSwap` resolves to `src/runtime/arena.c`). Two model arenas, current and shadow. An optimistic update clones the model into the shadow arena and applies the action there. Confirm swaps; rollback resets the shadow arena in constant time, with nothing to undo.
+
+**Why it is second in design and first in build order.** It is the cheapest way to produce the artifact §27 actually demands — store, action dispatch, optimistic update, rollback, written and reviewed. It needs no new language surface and would settle the single-mutation case in days rather than months.
+
+**Why it is not the shipping design.** One outstanding mutation at a time. Two in flight and it needs N buffers plus a scheme for interleaved acknowledgements — at which point it is a worse implementation of the direction above. **These two are not rivals: the shadow arena is a good implementation of the pending journal's derived buffer.**
+
+> **Verified 2026-08-20, and the caution was right.** `std_GenerationalArena_Clone_*` is listed under "Helper rows with no runtime symbol" — and it is the *only* entry in that section. So the two halves of this option are in opposite states: **the rollback half is built** (`std_GenerationalSwap` has a runtime symbol), **the setup half is the gap** (clone-into-arena does not). That inverts "uses primitives that exist" by half, and it is a prerequisite to close before committing to this route rather than a discovery to make mid-way through it.
+
+#### Backup 2 — a compiler-owned `Store[T, ctx]`
+
+Admit the store is shared mutable state, name it, and contain it: one blessed type, not user-constructible, where dispatch takes exclusive access and read returns a borrow that provably cannot span a dispatch. §27 bans *unrestricted* interior mutability, and a single compiler-owned store arguably does not violate the letter of that.
+
+**The most ergonomic option, and the honest one.** But "a borrow that cannot span a dispatch" is an aliasing rule, and §26 has no aliasing analysis and no mutable/shared distinction. So it converts a v0.5 client design question into unscheduled Ring 1 containment work. That makes it the wrong first move and the right fallback — specifically if the pending journal's refold cost proves prohibitive in practice, at which point the §26 work is worth paying for because something concrete has demanded it.
+
+#### The conclusion that survives whichever wins
+
+Every option forces the same constraint from a different direction: **the model may not contain linear resources.** Anything replayable, clonable, or swappable has to be plain data, so open sockets, subscriptions, and handles live in effects, not in state.
+
+That is likely the actual answer to the question §38 asks. "SAM state ownership under linear resources" resolves not by making resources work inside the model, but by **ruling them out of it** — a real constraint on how applications are structured, and exactly the kind of thing discovered by writing the worked example rather than by specifying it.
+
+*Recorded faithfully: the operator's note refers to options 1–4 and three are stated here. The fourth was not supplied and is not reconstructed — an invented option would be indistinguishable from a considered one.*
+
+#### Suggested route
+
+Build the shadow arena to produce the §27 artifact and clear the "before client work begins" gate; design toward the pending journal as the shipping model; hold `Store[T, ctx]` as the escape hatch, and pay for the §26 work only if something forces it.
 
 ## 39. Browser access
 
@@ -1179,6 +1503,29 @@ When no policy exists or a decision is ambiguous, access is denied.
 
 # Part XI — Database and Migrations
 
+> **Row 9 of `docs/DEMO_TARGET_PROGRAM.md` — a Postgres capability — is the only row on that list marked "not compiler work". §54.0 below argues that is the least accurate label on the table.**
+
+## 54.0 The Postgres capability — proposed, and its prerequisites are not what the table says
+
+`docs/DEMO_TARGET_PROGRAM.md` ranks this row as platform rather than compiler work, and this lane ranked it last on that basis. Both readings are wrong in the same direction: **it is the row with the most compiler prerequisites, not the fewest.**
+
+**What it must provide.** A connection acquired from a capability, a way to execute what §55.1 derives, transactions, and release on scope exit. Nothing exotic — which is why it looked cheap.
+
+**Prerequisite 1, and the one nobody has connected to it: a database connection must close, and there is no way to declare that it does.** `docs/SHARED_SEMANTIC_ZONE.md` D-4 records that resource *representation*, transfer state, and `defer` are all present, while destructor **declaration** is not: there is one built-in destructor and no source syntax to declare another. That is the gap `TASK_STDLIB.md` CR-5 states, and it is why `MutexGuard` is blocked.
+
+> **A Postgres connection is `MutexGuard` with a socket.** It is a linear resource whose release must be enforced rather than remembered, and it is blocked by exactly the same missing feature. The two have been tracked as unrelated — one a stdlib ergonomics item, the other a platform item — and they are one prerequisite with two consumers. **Whoever unblocks `MutexGuard` unblocks this row**, and that is worth knowing before either is scheduled.
+
+**Prerequisite 2 — effects (row 5).** Without `uses db.read<…>`, acquiring a connection grants ambient database authority, which is §17's failure mode rather than a partial implementation of it.
+
+**Prerequisite 3 — the derivation (row 7).** Something must produce what this executes, and §55.1's three outputs are what a connection is handed.
+
+**Prerequisite 4 — a native boundary, which is Phase 17/18 territory.** Talking to Postgres means either linking a client library or implementing the wire protocol in Gust. Either way it crosses the native boundary the Phase 17 runtime symbol surface and the Phase 18 link-mode and cross-compilation work govern. **That is the sense in which the row is "platform", and it is a small part of it.**
+
+**One choice worth taking deliberately rather than by default.** Linking a C client is the fast path; implementing the wire protocol in Gust is slower and is the first real test of whether this language can write the code it intends to contain. `docs/VISION_RECONCILIATION.md` §7 puts C retirement at the top of the current priority list — that is about the MIR-to-C *backend* rather than a ban on C libraries, so linking a client does not violate it. But choosing the fast path here means the first vendor capability (§98) is a C dependency, and §98's whole argument is about what a dependency costs. **Take it as a decision with that stated, not as an implementation detail.**
+
+**What this row actually is.** The first supplier capability under §98, and therefore the test of that model rather than an application of it. If the shape does not work for Postgres — the easiest, best-understood, most stable vendor surface available — it will not work for the ones that follow.
+
+
 > **Status: COMMITTED (§55–§56) / SPECULATIVE (§54, §57–§62).** Typed query derivation and tenant enforcement are Track A items 3 and 4. Migrations, backfills, and rollout are post-demo.
 
 ## 54. Database source of truth
@@ -1201,6 +1548,26 @@ PostgreSQL-specific features are exposed through explicit typed extensions rathe
 
 Query results are strongly typed. Database schema changes regenerate types and produce compile-time errors where application code is no longer compatible.
 
+### 55.1 What the derivation must produce — proposed
+
+Row 7 of `docs/DEMO_TARGET_PROGRAM.md`, and the largest single item on that list. OD-2 settled *who* derives — the compiler, because §13's ban on user-written generic functions stands. Nothing states *what* comes out of the derivation.
+
+**The claim this section makes: a query site derives three things, not one, and they must come out of one derivation rather than three passes.**
+
+At a site such as `from Issue where workspace == scope and state == Open`, the compiler must produce:
+
+1. **The result type.** §55's existing commitment — filters, joins, aggregates, projections and pagination each transform it, computed by the compiler because users cannot express the computation.
+2. **The effect requirement.** The entity determines what authority the query needs: reading `Issue` requires `db.read<Issue>`. The compiler derives the *requirement*; §18.1's rule 1 still applies, so the enclosing function must have **declared** a set that covers it. Derivation never widens a declaration — it only says what the declaration must contain.
+3. **The scope obligation.** §56.2's provenance rule attaches here: which scoped entities the query roots at, and whether each obligation is discharged by a predicate flowing from a `Scope[…]` binding.
+
+**Why one derivation and not three.** These three read the same query structure — the entity set, the join graph, the predicate list. Computed separately they can disagree about it, and the disagreement is silent because each pass individually succeeds. A join that the type derivation treats as one entity and the scope derivation treats as another produces a well-typed query with an unchecked obligation, which is §56.1's attack class 2 arriving through the back door rather than the front. **One walk over one structure, emitting three facts, cannot disagree with itself.**
+
+**What is not derived.** The operator set (§16 is compiler-owned and closed), the predicate language, and any user extension of the builder. PostgreSQL-specific features arrive as explicit typed extensions (§55) rather than as a generic escape hatch, and the escape hatch that does exist is §57's privileged raw SQL — outside the derivation, and therefore outside all three of its guarantees. That is the honest cost of having an escape hatch and the reason §56.1 asks whether holding that capability is non-transitive.
+
+**Where the results live.** Query results allocate, so a query needs a destination arena, and §11.1's finding applies unchanged: the rows must outlive the call that produced them, so the arena is the caller's rather than the callee's scratch. The brand parameter that makes this expressible is the same one `Result[T, ctx]` already carries.
+
+**The sequencing consequence, restated because it is the practical one.** `docs/DEMO_TARGET_PROGRAM.md` places this row after scope soundness deliberately. A builder built before §56.2's obligation model exists would derive one of the three facts and have the other two retrofitted, and retrofitting a scope obligation into a finished derivation is how the presence-versus-provenance distinction gets quietly weakened — the retrofit will be tempted to match on syntax, because the structure it needed was not kept.
+
 ## 56. Tenant and authorization enforcement
 
 **This is the lead product claim (§1) and the whole point of the demo (§0.14).**
@@ -1212,6 +1579,49 @@ Missing tenant scoping is the canonical failure mode of agent-authored applicati
 Authorization predicates are injected into queries where policies can be translated into database expressions. Where full translation is impossible, a runtime policy check is required.
 
 This is static enforcement backed by generated conformance tests (§79), not formal proof. See §79 for the language Gust is permitted to use externally.
+
+### 56.1 The attack list for OD-8
+
+§0.11 requires that someone adversarial attack the scoping analysis before publication. An instruction to "review it adversarially" with no target list produces a review that confirms what it was shown. This is the target list — the classes a reviewer should try to build a counterexample from, written before the analysis exists so that it cannot be shaped around what the analysis happens to catch.
+
+**The class most likely to succeed, and it is not a bug.** "The unscoped program does not compile" is a **presence** claim: it says a tenant scope is *there*. It does not say the scope is the *caller's* tenant. A program that scopes every query to a tenant id read straight from an attacker-controlled request field satisfies the analysis completely and leaks everything. If that is out of scope, §1 and §79 must say so in the words used externally, because a reader will hear the stronger claim. **Presence is cheap to check and correctness is not** — that asymmetry is the analysis's shape, not an oversight in it, and it is the first thing an honest reviewer will find.
+
+The remaining classes, roughly by how much they would cost to close:
+
+1. **The privileged raw-SQL capability (§57).** A declared escape hatch is not a hole, but it is only sound if possessing it is rare, visible, and non-transitive. Can a library acquire it and re-export a helper that looks ordinary?
+2. **Joins to unscoped tables.** A scoped table joined to a lookup table that carries no tenant column — does scope propagate across the join, or is it satisfied by the scoped side alone?
+3. **Nesting.** Scope in the outer query and an unscoped subquery, aggregate, or `EXISTS` beneath it.
+4. **Queries as values.** A query built in one function, stored in a struct or returned, and scoped by the caller. The analysis must follow it or refuse it.
+5. **The result cache.** A correctly scoped query whose result is cached and served to a different tenant. The analysis covers queries; caches are not queries.
+6. **Multi-step flows.** An id legitimately obtained under tenant A, used in a query correctly scoped to tenant B. Every individual query passes.
+7. **The legitimately cross-tenant path.** Admin tooling and migrations must be able to do this. How is that marked, how visible is the marking, and can it be applied by someone who did not realise what it turns off?
+8. **Non-query reads.** Stored procedures, triggers, a raw connection obtained through a capability, or any supplier surface (§98) that returns rows without passing through the query layer.
+9. **Dynamic shape.** Table or column names computed at runtime.
+10. **Where the tenant value comes from.** The analysis assumes the request context is trustworthy. Whatever establishes that context is inside the trusted base and belongs in the review.
+
+**How to run it.** The reviewer's job is to produce a program that compiles and leaks, not to assess whether the design seems sound. One such program resolves OD-8 negatively, which is the outcome §0.11 wants found in month four rather than after publication. A review that produces no counterexample should say which of these classes it actually attempted.
+
+### 56.2 What the analysis must check — proposed
+
+Row 6 and row 8 of `docs/DEMO_TARGET_PROGRAM.md` are both unowned, and nothing states what the analysis checks. The attack list in §56.1 has nothing to attack until it does. This is a proposal, not a decision; the value of writing it now is that §56.1 was written first and can be run against it.
+
+**1. Declaration.** An entity type declares which field carries its scope. The compiler records the pairing; nothing else in the program may assert it.
+
+**2. Obligation.** Every query rooted at a scoped entity carries a scope obligation. A query whose obligations are not all discharged does not compile.
+
+**3. Discharge is by *provenance*, not by syntax — this is the load-bearing rule.** An obligation is discharged only by a predicate whose value flows from a **scope-typed** binding, `Scope[Workspace]`, obtainable only from the request context and not constructible from user input. A `where workspace == <some string>` does not discharge anything, however well-formed it looks. This is what converts the presence claim §56.1 identifies as the weakest point into a provenance claim, and it is the difference between "a scope is present" and "the caller's scope is present". **If exactly one rule here survives review, it should be this one.** It is also the rule most likely to be quietly weakened during implementation, because syntactic matching is far easier and passes the same tests until someone attacks it.
+
+**4. Joins introduce obligations; they do not satisfy them.** Each scoped entity in a query carries its own obligation. Discharging one never discharges another, and an unscoped lookup table joined in carries none — which is correct only if the scoped side cannot be widened through the join, and that is exactly what §56.1's class 2 exists to test.
+
+**5. Nesting is not a boundary.** A subquery, aggregate, or `EXISTS` over a scoped entity carries its own obligation regardless of the enclosing query's.
+
+**6. The cross-tenant path is explicit, capability-gated, and visible at the call site.** Admin tooling and migrations genuinely need it. It is a named marker requiring a capability, spelled at the site rather than configured, so that reading the code shows what it turns off.
+
+**7. Rejection is at compile time, at the query, with the diagnostic in `docs/DEMO_TARGET_PROGRAM.md`.** Not a lint, not a runtime check, not a generated test — those are §79's evidence that the rule holds, not the rule.
+
+**What this proposal does not cover, and knows it.** Caches (§56.1 class 5), non-query reads (class 8), and multi-step flows (class 6) are all outside the query analysis by construction. Naming them here rather than leaving them out is the point: the analysis is sound over queries, and **the claim made externally must be about queries** or it will be broader than the thing that was checked.
+
+> **OD-8 lives here.** §0.15 names this section as where OD-8 is stated in full, and until 2026-08-20 it was not stated here at all — a reader could finish §56 without learning that the soundness of the analysis above is an open, *thesis-invalidating* question. **Is the scoping analysis sound?** One counterexample — one program that carries no tenant scope and compiles anyway — retires the only claim this document makes, which is why §0.11 requires an adversarial review before publication rather than after. Nothing in §56 is weakened by saying so; the claim is exactly as strong as the analysis, and the analysis has not yet been attacked. Status is owned by §0.15.
 
 ## 57. Raw SQL
 
@@ -1377,7 +1787,7 @@ Never silently imported: database access, networking, filesystem access, time, r
 
 > **Status: DEFERRED**, except §79's conformance checks, which §79 itself calls the primary defence against plausible-but-wrong output. Nothing here is required for the demo.
 >
-> **The discipline this Part argues for already exists, aimed at the compiler rather than at applications.** Measured 2026-08-20 at `b47d0049`: 260 test programs of which 115 are named negative fixtures (102 `*reject*`), 409 `guard-` recipes, 82 parity/differential guards, and 66 CI workflows — roughly 44% of the corpus asserts programs must *not* compile. None of §75's categories or §79's generated checks exist, because they presuppose the platform. So the remaining work is aiming an existing, sustained practice at a new target, not establishing one. `docs/ONE_WAY_LEDGER.md` E22.
+> **Nothing here is implemented for applications; the discipline it argues for exists, aimed at the compiler.** Measured 2026-08-20 at `b47d0049`: 260 test programs of which 115 are named negative fixtures (102 `*reject*`), 409 `guard-` recipes, 82 parity/differential guards, and 66 CI workflows — roughly 44% of the corpus asserts programs must *not* compile. None of §75's categories or §79's generated checks exist, because they presuppose the platform. So the remaining work is aiming an existing, sustained practice at a new target, not establishing one. `docs/ONE_WAY_LEDGER.md` E22.
 
 Determinism here is not a testing convenience. It is the property that makes execution traces usable as training signal (Part XX) and the only remaining check on behaviour when nobody reads the code. A non-deterministic run is a contaminated observation.
 
@@ -1805,7 +2215,25 @@ Unresolved. Three shapes worth prototyping during v0.1, decided before v0.5:
 2. **Property declarations** — invariants over state and effects, checked by generated property tests (extending §79). Strongest coverage, hardest to author, natural fit with existing conformance machinery.
 3. **Behavioural contracts on capability interfaces** — pre- and post-conditions attached to effect declarations. Best composition with Part V, narrowest scope.
 
-Not mutually exclusive. The likely answer is a small core of (3) with (1) as the authoring surface and (2) as the depth option.
+Not mutually exclusive.
+
+### 117.1 Leading proposal for OD-6 — one attachment point, two authoring depths
+
+**Operator proposal, 2026-08-20.** Recorded as the leading answer for OD-6. The candidates above are kept as the record of what was considered; this is the shape to prototype against during v0.1.
+
+**(3) Contracts on capabilities — *where* a check attaches.** A function already declares `uses payments.charge`. The contract hangs off that same declaration: *the amount charged equals the amount on the order*, *never charge the same order twice*. This is the core because effect declarations are a small fixed set of points the compiler already knows about, so **intent lands on exactly the same boundary authority does.** There is nothing new to invent about placement.
+
+**(1) Examples — *who* can author one.** *A £10 order charges £10.* Writable by someone who understands the business and not the codebase. That matters more than it looks: §116 requires human authorship, and **that requirement is worthless if only the system's own authors can satisfy it.** Examples are the surface that keeps a non-programmer inside the trust chain.
+
+**(2) Properties — *how much* a check covers.** *A refund never exceeds the original charge.* One statement standing in for every case, checked by generated tests over §79's existing conformance machinery. Powerful and genuinely hard to write, which is why it is the depth option rather than the front door.
+
+**So: one attachment point, two authoring depths.** A reviewer never picks between an example and a property for the same job — they are a case and its generalisation, not rival spellings. You write the example because it is what you can state; you write the property when you can state something stronger.
+
+**What this proposal decides, and what it leaves open.** It settles placement, which was the part with a defensible answer: intent attaches where authority attaches. It does not settle the language a contract is written in, how a contract composes when one capability calls another, or what a violation costs at runtime versus at build time. Those are prototype questions, and the prototypes now have a fixed attachment point to be prototypes *of* — which is the practical gain from deciding this half early.
+
+**Why that combination, and why it is not three ways to do one thing.** The three candidates answer different questions, which is what makes stacking them legitimate under §13 rather than a violation of it. (3) answers **where a check attaches** — effect declarations, a small fixed set of points the compiler already knows about, so intent lands on the same boundary authority does. (1) answers **who can author one** — an example is writable by someone who understands the business and not the codebase, which matters because §116 requires human authorship and that requirement is worthless if only the system's authors can satisfy it. (2) answers **how much a check covers** — properties generalise a case into a class, over §79's existing conformance machinery.
+
+One attachment point, two authoring depths. A reviewer never chooses between them for the same job: an example and a property attached to the same contract are not rival spellings, they are a case and its generalisation. **If that stops being true — if the same intent can be stated equally well as either — the combination has become three ways to do one thing and should collapse to one.** Worth checking during the v0.1 prototypes, because it is the failure mode this document's own premise would predict.
 
 ## 118. Relationship to the rest of the document
 
@@ -1876,7 +2304,7 @@ This list is the most quotable part of the document and the easiest to mistake f
 
 **Not implemented at all.** 4 and 5 — the two rules the product claim rests on. There is no `uses` keyword in either lexer and no query layer, so neither undeclared authority nor an unscoped query is currently rejected by anything. Also 11, 13, 14, 15, 19, 20, 29–36, and 38–45: the platform they describe does not exist (ledger E16).
 
-**Partly true, and misleading as stated.** 16 — `Option` exists but `Result` is not a builtin and there is no `?` operator; the working convention is `guard … else` (E2). 26 — resource *opt-in* is explicit, but the move-versus-copy linearity that governs ordinary values is *inferred* structurally and unannotated, so adding a `str` field silently changes a struct's category (E13); the two mechanisms share a word and only one is opt-in. 27 — `defer` parses and scope-exit cleanup is validated, but only for `Resource[T]` and only in the self-hosted compiler (E7 addendum, D-6).
+**Partly true, and misleading as stated.** 16 — `Option` exists but `Result` is not a builtin and there is no `?` operator; the working convention is `guard … else` (E2). 26 — resource *opt-in* is explicit, but the move-versus-copy linearity that governs ordinary values is *inferred* structurally and unannotated, so adding a `str` field silently changes a struct's category (E13); the two mechanisms share a word and only one is opt-in. 27 — `defer` parses and scope-exit cleanup is validated, but only for `Resource[T]` and only in the self-hosted compiler, because `type_is_resource` keys on a `Generic` named `Resource` (E7 addendum).
 
 **Violated.** §34's panic scoping, reached from rule 28's neighbourhood: a string bounds failure calls `exit(1)` and terminates the process rather than the request (E3, issue #91). And §32's overflow trapping, which rule 3's "containment, not correctness" does not cover: overflow is undefined behaviour on the default backend rather than a trap (E11, issue #103).
 
