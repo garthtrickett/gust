@@ -1065,6 +1065,18 @@ These are compiler/runtime-owned arena classes rather than separate ownership sy
 >
 > It is also missing one the design now wants. §38.1's pending action journal needs a class between scratch and application — actions must outlive the dispatch that created them and die well before the application does. By this section's own reasoning that is an arena with a different lifetime rather than a new mechanism, so the cost is naming it, not building it.
 
+### 24.1 Implicit context — proposed, and it has an unnoticed dependency
+
+Row 4 of `docs/DEMO_TARGET_PROGRAM.md`. Every function that allocates threads a context parameter today, and the demo handler drowns in it. The proposal is ordinary: a `using ctx` declaration binds one context for a scope, and calls inside it pass that context without spelling it at each site. Pure desugaring, no new mechanism.
+
+**Why this is safe where implicit *authority* would not be.** §17 forbids ambient authority, and an implicit parameter looks like exactly the thing that rule prohibits. It is not, and the distinction is worth stating precisely: **an arena is a destination, not a permission.** It says where a value goes, never what a function may do. Effects stay explicit and stay declared, and no `using` clause may make one implicit. If a future proposal tries to bind a capability the same way, the argument here does not extend to it.
+
+**The dependency nobody has noted.** `docs/SHARED_SEMANTIC_ZONE.md` D-1 records that both compilers infer brand identity from **identifier spelling** — a hardcoded list including `ctx`, `arena`, and `a` — and prepend `&` for anything matching, regardless of type. Implicit context makes that heuristic load-bearing in a way it currently is not: if the context is not written at the call site, the compiler must resolve which context is meant **by type and scope rather than by name**, and there is nothing left to pattern-match on.
+
+> **Row 4 therefore depends on Phase 19**, which owns D-1, and the demo table does not say so. Built first, it would either entrench the spelling heuristic at more sites or require a brand resolution that is itself the Phase 19 work. That moves row 4 from "desugaring, can land any time" — which is how `docs/DEMO_TARGET_PROGRAM.md` ranks it — to *cheap, but not before Phase 19*. The ranking there should be read with this attached.
+
+**One rule to fix now while it is free.** `using` binds exactly one context per scope and nested `using` shadows rather than merges. Two implicit contexts in scope would reintroduce by ambiguity precisely the question the explicit parameter answered by construction, and an ambiguity rule written after the feature ships is written under pressure to accept existing code.
+
 ## 25. Lifetime movement
 
 A value from a shorter-lived context may enter a longer-lived context only through cloning into the destination context, serialization, or explicit ownership transfer.
