@@ -1973,7 +1973,7 @@ for.
 
 ### The unit has been the error every time, never the arithmetic
 
-Four wrong conclusions this session were each a **real measurement, correctly
+Five wrong conclusions this session were each a **real measurement, correctly
 taken, in the wrong unit.** No arithmetic was wrong in any of them:
 
 | Claim | Unit taken | Unit needed |
@@ -1982,6 +1982,29 @@ taken, in the wrong unit.** No arithmetic was wrong in any of them:
 | Size of a lane's re-armed wave (~360) | check-runs | runs (~181) |
 | Failing runs on one PR (one, then two) | workflows read once | runs, paginated (three) |
 | "A PR's run set is not fixed by its push" | check-run growth (111→172) | run creation times (fixed, one 4-second window) |
+| **How many runs #114 is waiting on** | **all events on the SHA (3)** | **`pull_request` events (2)** |
+
+**The fifth is the first one caught before it cost anything, and it came from a
+disagreement rather than from a review.** A monitor reported three runs on
+#114's head SHA; this lane's own query returned two. Neither was arithmetically
+wrong — the monitor counted every event on the SHA, the lane counted
+`pull_request` only, because that is what its gate filters on. The third run is
+`Codex Trusted Gate` on a `push` event, which no `success == total` comparison
+over pull-request runs can ever account for.
+
+**What makes it the most dangerous instance so far:** the lane had already
+adopted the other number, writing "the denominator moved 2 → 3" into its own
+cold-start handoff. Had a resuming agent believed that, the gate would have been
+"corrected" to expect a run it filters out — **a gate that hangs forever, while
+every visible signal says the work is nearly done.** The four rows above cost a
+wrong sentence each; this one would have cost the merge.
+
+The rule it adds to the four: **when two readings of the same quantity disagree,
+the answer is almost never that one is miscounting.** They are counting different
+sets, and the useful question is which set the decision depends on. **Reconciling
+by adopting the larger number is the reflex to suppress** — the larger number
+usually contains the smaller one, so it always looks like the safer choice, and
+in a gate it is the one that never fires.
 
 The last one was promoted to a whole failure class before being measured and
 disconfirmed. Its residue is the general form:
