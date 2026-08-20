@@ -39,6 +39,7 @@ TOP_FIELDS = {
     "phase17_composition_authority",
     "phase18_debug_information",
     "phase18_source_location",
+    "phase18_optimisation_level",
     "phase18_object_inspection",
     "phase18_target_diagnostics",
     "phase18_cross_compilation",
@@ -10907,6 +10908,27 @@ def phase18_source_location_summary_lines(registry):
     ]
 
 
+def phase18_optimisation_level_summary_lines(registry):
+    authority = registry["phase18_optimisation_level"]
+    transformations = authority["level_transformations"]
+    return [
+        "## Phase 18 optimisation level policy",
+        "",
+        f"- Authority version: `{authority['version']}`",
+        f"- Status: `{authority['status']}`",
+        f"- Declared levels: {', '.join(f'`{v}`' for v in authority['declared_levels'])}",
+        f"- Transformations under `basic`: `{len(transformations['basic'])}`",
+        f"- Observable behaviour fixed across levels: `{len(authority['observable_behaviour'])}`",
+        "",
+        "Patch 18.14 declares what an optimisation level may and may not change. A level may reshape the emitted instruction sequence, code size, compile time, or debug record density. It may never change observable program behaviour, and a level that did is a rejection rather than a tradeoff.",
+        "",
+        "The unoptimised level declares no transformations at all. That is the point of it: a baseline carrying even one transformation makes every comparison it anchors a comparison between two optimised builds, which proves nothing. A transformation appearing under `none` is therefore rejected.",
+        "",
+        "The compiler selects the level and carries it in the native request. A level the backend chose for itself takes a decision the compiler already owns, and a level incompatible with the selected debug plan is refused rather than silently degrading the line table the plan promises.",
+        "",
+    ]
+
+
 def phase18_object_inspection_summary_lines(registry):
     authority = registry["phase18_object_inspection"]
     object_format = registry["phase18_object_format"]
@@ -11326,6 +11348,7 @@ def render(registry):
         *phase18_object_inspection_summary_lines(registry),
         *phase18_debug_information_summary_lines(registry),
         *phase18_source_location_summary_lines(registry),
+        *phase18_optimisation_level_summary_lines(registry),
         "## Registry entries", "",
         "| ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |",
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",

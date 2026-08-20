@@ -33,6 +33,7 @@
     "phase17_composition_authority",
     "phase18_debug_information",
     "phase18_source_location",
+    "phase18_optimisation_level",
     "phase18_object_inspection",
     "phase18_target_diagnostics",
     "phase18_cross_compilation",
@@ -334,6 +335,9 @@
     },
     "phase18_source_location": {
       "$ref": "#/$defs/phase18_source_location"
+    },
+    "phase18_optimisation_level": {
+      "$ref": "#/$defs/phase18_optimisation_level"
     },
     "phase18_object_inspection": {
       "$ref": "#/$defs/phase18_object_inspection"
@@ -1108,6 +1112,125 @@
         },
         "next_patch": {
           "const": "18.14"
+        }
+      }
+    },
+    "phase18_optimisation_level": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "status",
+        "authority_owner",
+        "declared_levels",
+        "level_transformations",
+        "selection_policy",
+        "equivalence_policy",
+        "observable_behaviour",
+        "permitted_to_vary",
+        "debug_compatibility_policy",
+        "rejection_classes",
+        "next_patch"
+      ],
+      "properties": {
+        "version": {
+          "const": "phase18_optimisation_level_v1"
+        },
+        "status": {
+          "const": "ready_for_patch18_15"
+        },
+        "authority_owner": {
+          "const": "compiler/mir_target_authority.gst"
+        },
+        "declared_levels": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "enum": [
+              "none",
+              "basic"
+            ]
+          }
+        },
+        "level_transformations": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "none",
+            "basic"
+          ],
+          "properties": {
+            "none": {
+              "type": "array",
+              "maxItems": 0
+            },
+            "basic": {
+              "type": "array",
+              "minItems": 3,
+              "maxItems": 3,
+              "items": {
+                "enum": [
+                  "dead_code_elimination",
+                  "constant_folding",
+                  "redundant_move_elimination"
+                ]
+              }
+            }
+          }
+        },
+        "selection_policy": {
+          "const": "the_compiler_selects_the_level_and_carries_it_in_the_native_request"
+        },
+        "equivalence_policy": {
+          "const": "observable_program_behaviour_is_identical_across_declared_levels"
+        },
+        "observable_behaviour": {
+          "type": "array",
+          "minItems": 5,
+          "maxItems": 5,
+          "items": {
+            "enum": [
+              "return_value",
+              "stdout",
+              "stderr",
+              "exit_status",
+              "declared_filesystem_effects"
+            ]
+          }
+        },
+        "permitted_to_vary": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": {
+            "enum": [
+              "emitted_instruction_sequence",
+              "code_size",
+              "compile_time",
+              "debug_record_density"
+            ]
+          }
+        },
+        "debug_compatibility_policy": {
+          "const": "a_level_incompatible_with_the_selected_debug_plan_is_rejected"
+        },
+        "rejection_classes": {
+          "type": "array",
+          "minItems": 5,
+          "maxItems": 5,
+          "items": {
+            "enum": [
+              "optimisation_level_unknown",
+              "optimisation_level_transformation_undeclared",
+              "optimisation_level_changed_observable_behaviour",
+              "optimisation_level_incompatible_with_debug_plan",
+              "optimisation_level_selected_by_backend"
+            ]
+          }
+        },
+        "next_patch": {
+          "const": "18.15"
         }
       }
     },

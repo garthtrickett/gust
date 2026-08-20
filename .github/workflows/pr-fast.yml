@@ -281,6 +281,9 @@ jobs:
       - name: Phase 18 source location preservation
         run: just guard-cranelift-phase18-source-location-contract
 
+      - name: Phase 18 optimisation level policy
+        run: just guard-cranelift-phase18-optimisation-level-contract
+
       - name: Phase 17 cross-feature runtime composition
         run: just guard-cranelift-phase17-composition-contract
 
