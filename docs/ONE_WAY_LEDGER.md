@@ -2023,7 +2023,7 @@ none of the three wrong readings touched this lane's gate, which consumes
 every field read correctly" but "which fields does a decision actually rest on",
 and those are the ones to corroborate.
 
-### A fifth class, recorded at the strength it actually has
+### A fifth class, measured and disconfirmed — the unit confusion is what survives
 
 An invariant every lane here holds implicitly — *a PR's run set is fixed by its
 push* — may not hold on this repository. Three PRs on one lane acquired
@@ -2036,13 +2036,30 @@ shape and did not find it: both this branch's runs and the verify lane's are
 three observations from one lane, with a plausible cause — base movement in a
 stacked chain re-dispatching downstream PRs — that nobody has demonstrated.
 
-It is recorded at that strength deliberately. **A class that grows by lanes
-assuming it applies to them is the drain-trend error in a new costume**: a run of
-consistent observations extrapolated into a property. The correction that trimmed
-this one arrived before it spread, which is the only reason it is one paragraph
-rather than a rule.
+**Disconfirmed 2026-08-20 by direct measurement, and struck rather than held
+weakly.** The lane that reported it measured its own three PRs: 63, 64 and 63
+runs, every one `attempt=1`, and on all three the earliest and latest creation
+timestamps are *identical and equal to the push second*. The runs were created
+**at** the push, not hours after it.
 
-**What follows for a gate is real even so, and does not depend on the mechanism.**
+What actually grew was the **check-run** count — 111 to 172 on one PR — from late
+matrix-leg registration *inside* those same runs. **The class was a runs-versus-
+check-runs unit confusion**, and two different quantities were being compared as
+though they were one.
+
+That is the finding worth keeping, and it is more useful than the class would
+have been: *runs* and *check-runs* are different denominators, and a total that
+grows in one may be fixed in the other. This file's own gate counts runs for
+exactly that reason.
+
+Worth noting how it died. A class that grows by lanes assuming it applies to them
+is the drain-trend error in a new costume — a run of consistent observations
+extrapolated into a property — and **it was killed by the one lane that measured
+instead of assuming.** Two lanes had already checked their own PRs and found the
+shape absent; the third measured its own and refuted it outright.
+
+**The gate discipline survives the refutation intact, and is worth keeping stated
+either way.**
 "Total stable across spaced samples" is a claim about a set assumed closed. If a
 PR can acquire a run after its total has been stable, a gate can pass and then be
 wrong — so keep sampling `total` up to the merge call rather than treating an
