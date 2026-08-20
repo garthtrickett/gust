@@ -87,7 +87,7 @@ when the backend does.
 | 24 | Client↔server | Typed gustrpc calls | hand-written clients; duplicated schemas | **ABSENT** — E16 |
 | 25 | Rendering and state | Lit-style compiled templates; SAM action→model→state→effect | VirtualDOM; ad-hoc stores; two-way binding | **ABSENT** — E16 |
 | 26 | Schema | Postgres is source of truth; Gust derives types | ORM-first | **ABSENT** — E16 |
-| 27 | Backend | Cranelift native | — (C retained as bootstrap seed and differential oracle) | **PARTIAL** — Phase 18 open |
+| 27 | Backend | Cranelift native — **the declared current priority** | generated C as a supported backend | **PARTIAL** — E17 |
 | 28 | Integer types | Fixed-width `i32`, `u32`, `i64`, `u64`, `isize`, `usize` | a single unsized integer | **ABSENT** — E11 |
 | 29 | Overflow | Traps by default in all builds; wrapping/saturating/checked are named operations | silent wraparound | **VIOLATED** — E11 |
 | 30 | Exhaustiveness | All enum matching is exhaustive | unhandled variants | **HOLDS** — E12 |
@@ -95,6 +95,9 @@ when the backend does.
 | 32 | Null | Safe references are non-null; absence is `Option[T]` | `null` in safe code | **HOLDS** — E14 |
 
 Counts: 9 `HOLDS`, 5 `PARTIAL`, 5 `VIOLATED`, 1 `DEFERRED`, 12 `ABSENT`.
+
+Row 27 is the one in motion. It is the declared priority and several other rows
+resolve with it — see E17.
 
 | Row | Rule | Status | Owner |
 | --- | --- | --- | --- |
@@ -579,6 +582,51 @@ sense: there is no dependency *mechanism* at all — no manifest, no lockfile, n
 resolver — so the rule is neither held nor broken. `docs/VISION_RECONCILIATION.md`
 §5 describes what it should become, and the lockfile-diff artifact there is
 `docs/VISION.md` §72, marked DEFERRED.
+
+### E17 — the C backend is being retired, and that closes some rows for free (row 27)
+
+The active direction is replacing generated C with Cranelift. `TASK.md` is
+executing Phase 18 of the arc `mir-to-cranelift.md` lays out: target and linker
+hardening, whole-program differential qualification, self-hosting through
+Cranelift, the default flip, then deprecating and deleting MIR-to-C, and finally
+the bootstrap seed. Phase 18 stood at 13 of 20 patches at `b47d0049`.
+
+`PARTIAL` because both backends exist: Cranelift is real and under active
+development, and MIR-to-C is still the default and the differential oracle
+(`AGENTS.md`).
+
+**Two rows in this ledger close when it does, without anyone working on them
+directly.**
+
+Row 29 — overflow is undefined behaviour rather than a trap — is a property of C
+(E11). Cranelift has no signed-overflow latitude to inherit.
+
+`GEMINI.md` §C is the same shape and is worth recording even though it is not a
+row here, because it is the clearest live instance of representation leakage:
+
+> All variables declared within a single function block must have completely
+> unique names across that entire block, even if they reside in separate logical
+> phases, test steps, or conditional structures.
+>
+> **Why:** The Gust-to-C transpiler outputs variable declarations directly into
+> flat C function scopes.
+
+Neither typechecker diagnoses a redeclaration — `grep -rniE 'redefin|already
+declared|shadow|redeclar' compiler/typechecker.gst` returns only function
+redefinition and directory-shadow resource tracking, nothing for local
+variables. So a program that shadows a name in two disjoint blocks is accepted
+by Gust and rejected by the C compiler against generated code, which is the same
+diagnostic-quality failure that S1.1 fixed for `str ==`. It is a constraint C
+imposes on Gust source, and a native backend has no reason to impose it.
+
+That matters for OD-9 beyond tidiness: a generator must know the backend
+flattens scopes in order to emit valid Gust, which is exactly what §0.7 Track A0
+disqualifies.
+
+**What the transition does not close.** Every row marked `ABSENT` for want of
+design rather than backend: 21 (effects), 4 (`Result` and `?`), 3 (`Option`
+without `unsafe`), 19 (structured concurrency), 28 (fixed-width integers), and
+the platform rows in E16. A native backend does not write any of those.
 
 ## Maintenance
 

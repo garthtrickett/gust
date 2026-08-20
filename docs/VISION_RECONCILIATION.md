@@ -405,13 +405,73 @@ The standard library is 20 `std_*` runtime symbols and 38 registered `std.*`
 names (`docs/STDLIB_SURFACE_INVENTORY.md`, generated). It is not a place the
 platform in Parts IX–XVII can be built yet.
 
-**The distance between the roadmap and the vision has no owner.** `TASK.md` runs
-targets, objects, and linkers. `TASK_STDLIB.md` runs the safe stdlib surface.
-Neither owns effects, tenant scoping, or typed queries — the three things
-`VISION.md` §0.7 calls the entire deliverable. `docs/DEMO_TARGET_PROGRAM.md` is
-the proposed meeting point; `TASK_STDLIB.md` CR-7 routes it.
+**Effects, tenant scoping, and typed queries have no owning roadmap.** `TASK.md`
+runs targets, objects, and linkers; `TASK_STDLIB.md` runs the safe stdlib
+surface. Neither owns the three things `VISION.md` §0.7 calls the entire
+deliverable.
+
+This is sequencing rather than an oversight, and the sequence is deliberate. The
+declared priority is retiring the C backend in favour of Cranelift, which is what
+Phase 18 and the phases after it are. `README.md` argues the case: C's abstract
+machine — pointer provenance, effective types, signed-overflow latitude — is
+hostile to an arena-and-index model, so the native backend is what makes the
+containment claim true rather than aspirational. E11 is a live example: integer
+overflow is undefined behaviour today *because* of the C backend, and Cranelift
+resolves that by having no such latitude to inherit.
+
+`docs/DEMO_TARGET_PROGRAM.md` records what remains once that lands, so the
+distance is written down and costed rather than rediscovered.
+`TASK_STDLIB.md` CR-7 routes it.
 
 ---
+
+## 7. The declared priority: retiring C
+
+None of the nine documents states this as plainly as it needs to be, and it is
+the single most useful thing to know when reading the rest of this file:
+
+> **The current goal is retiring the C backend in favour of Cranelift.**
+
+`mir-to-cranelift.md` describes the arc across phases 18–25 — target and linker
+hardening, whole-program differential qualification, self-hosting through
+Cranelift, the default-backend flip, then deprecating and finally deleting
+MIR-to-C, and last the bootstrap seed. `TASK.md` is executing the front of it.
+`README.md` supplies the argument for why it is not a performance project:
+
+> Transpiling to C means inheriting **C's abstract machine**, not just its
+> syntax: pointer provenance, effective-type rules, and signed-overflow latitude
+> included. An arena-and-index model carves differently-typed objects out of one
+> allocation and reconstructs pointers from a base and an offset, which is
+> precisely the pattern those rules punish.
+
+That is why this reordering is not up for debate in a reconciliation document.
+Containment (§0.4) is the product, and containment expressed through a backend
+that may legally optimise on the assumption your arithmetic never overflowed is
+not containment.
+
+### What it resolves, and what it does not
+
+Worth separating, because it is easy to assume the transition fixes more than it
+does.
+
+**Resolved by the transition itself.** `docs/ONE_WAY_LEDGER.md` row 29 —
+integer overflow is undefined behaviour rather than a trap — is a property of C,
+not of Gust. Cranelift has no signed-overflow latitude to inherit, so the
+weakest-possible-position problem goes away with the backend. `GEMINI.md` §C's
+requirement that every variable in a function be uniquely named is the same
+shape: it exists because the transpiler emits declarations into flat C function
+scopes, and it is representation leakage that a native backend has no reason to
+impose.
+
+**Not resolved by it.** Everything the ledger records as `ABSENT` for want of
+design rather than for want of a backend: effects (row 21), tenant scoping,
+typed queries, `Result` and `?` (row 4), constructing an `Option` without
+`unsafe` (row 3), structured concurrency (row 19), and §32's fixed-width types
+and named arithmetic. A native backend does not write any of those.
+
+The honest summary is that the transition is a precondition for the claim rather
+than the claim. It makes the memory model true; it does not make the authority
+model exist.
 
 ## Appendix A — Arena-based SAM topology
 

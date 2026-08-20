@@ -143,9 +143,22 @@ Ordered by dependency. Status verified 2026-08-20; evidence in
 | 10 | Panic scoped to the request, not the process | **VIOLATED** — ledger E3 | `TASK_STDLIB.md` CR-3, issue #91 — unscheduled |
 
 Rows 5 through 8 are `docs/VISION.md` §0.7 Track A verbatim, and **none of them
-has an owning roadmap.** Both active lanes are working below this line: Phase 18
-on targets and linkers, Phase S1 on the safe stdlib surface. That is the
-observation this document exists to make legible.
+has an owning roadmap.** `TASK.md` runs targets, objects, and linkers;
+`TASK_STDLIB.md` runs the safe stdlib surface.
+
+That is a statement of sequence, not a criticism of it. The declared priority is
+retiring the **C backend in favour of Cranelift**, and Phase 18 is that work.
+`README.md` gives the reason directly: transpiling to C means inheriting C's
+abstract machine, and the arena-and-index model is precisely the pattern its
+rules punish — so the native backend is what makes "the compiler carries the
+danger" true rather than aspirational. `docs/VISION.md` §0.7 Track A0 says the
+same, and calls it not deferrable to post-demo. Row 9 of this table depends on
+it too: a Postgres capability needs a backend whose memory model the compiler
+owns.
+
+So this document does not argue for reordering anything. It records what the
+demo needs, so that when the backend work closes, the remaining distance is
+already written down and costed rather than rediscovered.
 
 Rows 1 and 3 are genuine prerequisites rather than scope creep — row 1 because
 the memory model is approximated by string matching until it lands, row 3 because
