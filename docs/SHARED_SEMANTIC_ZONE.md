@@ -162,10 +162,35 @@ CR-1. Until it lands, `std.str_eq(a, b)` is the only spelling.
 
 ### D-4 — Resource obligations cannot attach to a user type
 
-`STEP52_RESOURCE_SEMANTICS.md` items 2 and 6 — automatic resource lifecycle
-enforcement, and an AST/typechecker representation for `defer` — were recorded as
-unmet. That document predates Phase 15 closure. `VISION.md` §27 marks shared
-ownership open as OD-3.
+`STEP52_RESOURCE_SEMANTICS.md` items 2 and 6 in its "Verified state" table —
+resource representation (originally "automatic resource lifecycle enforcement")
+and `defer` semantics (originally "an AST/typechecker representation for
+`defer`") — were recorded as unmet, when that document predated Phase 15's
+closure. `VISION.md` §27 marks shared ownership open as OD-3.
+
+> **Citation corrected 2026-08-20.** This row cited those items as "lines 20–27"
+> and stated the document was "last modified 2026-06-28". Both were true when
+> written and both are now false: `STEP52_RESOURCE_SEMANTICS.md` gained a
+> "Verified state" section at its head in #87 (`15334657`) and a
+> cleanup-validation correction in #98 (`017fec42`), so items 2 and 6 now sit at
+> lines 15 and 19 and the file's last modification is 2026-08-20 (`2cd40718`,
+> #97). The row now cites the table by name rather than by line, per this
+> document's own rule against line numbers in a document that is still being
+> edited.
+>
+> Recorded rather than silently fixed because of how it survived: the line
+> citation was inherited, carried through an edit to this very row that added the
+> #87 re-verification below, and not re-checked at that point. That is precisely
+> the failure the "Citing evidence" section names — *confirm a citation before
+> copying it, not only before acting on it* — committed in the row that documents
+> the defect it describes.
+>
+> **Both descriptions of items 2 and 6 are kept, 2026-08-20.** #97 and this
+> lane's audit named the same two items differently — #97 from the original
+> requirement text, this row from the "Verified state" table that superseded it.
+> Neither was wrong and the conflict was wording, not substance. Keeping both
+> spellings costs one clause and means a reader arriving from either document
+> recognises the row.
 
 **Re-verified 2026-08-19 by Patch S1.7 (#87), and corrected again 2026-08-20.**
 Item 6 is superseded: `defer` is an AST node the typechecker handles. Item 2's
