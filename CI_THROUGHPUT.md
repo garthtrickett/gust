@@ -709,6 +709,646 @@ is about, and a higher cap, which the ticket is about.
 - [ ] **Lever 6b — third-party runners**, only if 6a plus Levers 2 and 3 prove
       insufficient. Finish or delete `blacksmith-smoke.yml` rather than leaving
       an unfinished evaluation in the tree.
+- [ ] **Lever 7 — docs-only fast path for `pr-fast.yml`.** `paths-ignore` for
+      root Markdown. One YAML key; the guard-script coupling that looked like a
+      blocker does not exist. CI/guard lane.
+- [ ] **Lever 8 — drop `push: main` outside a sentinel set.** Measured at **20%
+      of the queue** (32 of 158 runs; 29 from a single merge, 45 min old and
+      unstarted). Re-proves what the PR already proved. Keep `pr-fast` and
+      `heavy-guards` as sentinels for close-together merges. CI/guard lane.
+
+## The ten-PR steady state, measured 2026-08-20
+
+Every lever above reasons about a single wave. This section is about what happens
+when three lanes have ten pull requests open at once, which is now the normal
+condition rather than an unusual one.
+
+### Census at 03:53 UTC
+
+| PR | lane | queued | note |
+| --- | --- | --- | --- |
+| #99, #96, #111 | Cranelift | ~295 | page-capped, see below |
+| **#97, #112, #113** | **Stdlib/CI (mine)** | **58 / 55 / 54** | exact |
+| #98 | docs/VISION | 35 | draining fastest |
+| #100, #107, #109 | Cranelift | 0 | all checks cancelled by their owner |
+
+Ten open pull requests, **at least 496 queued checks**, against a concurrency cap
+that measures 20.
+
+### Drain rate
+
+Computed from the `completed_at` timestamps of successful check runs across all
+open pull requests, in a single API sweep. Sampling this by polling would perturb
+what it measures and take as long as the thing being measured.
+
+| window | successful checks completed | rate |
+| --- | --- | --- |
+| last 5 min | 12 | 2.4/min |
+| last 10 min | 18 | 1.8/min |
+| last 15 min | 24 | 1.6/min |
+| last 30 min | 42 | 1.4/min |
+| last 60 min | 67 | 1.1/min |
+
+### Both numbers are lower bounds, and the document should say so
+
+**7 of the 10 pull requests returned exactly 100 check runs**, which is the
+`per_page` cap on `/commits/{sha}/check-runs`, not a real total. Their true counts
+are higher by an unknown amount, so both the 496 and every rate above understate
+the load. A throughput document that reports a lower bound as a measurement is
+worse than one that reports nothing, because the error is invisible downstream.
+
+**This caveat is not theoretical and it caught the author of this section.** An
+un-paginated read of one pull request reported 22 succeeded and 78 outstanding;
+paginating the same request at the same moment gave **41 succeeded of 119 total**.
+The un-paginated figure was wrong by 19 checks and looked entirely plausible —
+exactly 100 is the tell, and it is easy to miss because it is a round number in a
+column of round numbers. Anything reporting exactly 100 should be assumed
+truncated until paginated. Use `gh api --paginate`.
+
+The three pull requests showing zero queued are excluded from the rate: their
+checks were **cancelled** by their owner deliberately clearing the head of the
+train. Counting cancellations as drain would inflate the rate — the same error
+that once produced a bogus peak-concurrency figure of 46 in the section above.
+
+### Measured concurrency is far below the cap, and it ramps
+
+The obvious explanation for the drain rate is the concurrency cap. It is wrong,
+and it is worth stating plainly because this document has previously drawn the
+cap conclusion twice.
+
+Counting **jobs** with status `in_progress` across every running workflow, three
+consecutive samples:
+
+```
+in_progress JOBS=5   queued-inside-running-runs=0   in_progress runs=5
+in_progress JOBS=5   queued-inside-running-runs=0   in_progress runs=5
+in_progress JOBS=5   queued-inside-running-runs=0   in_progress runs=5
+```
+
+Five. Not 20, not Pro's 40, against roughly 500 queued checks. And five
+concurrent jobs at two to five minutes each *is* 1–2.5 completions per minute,
+which reproduces the drain rate measured above. The two measurements agree.
+
+**But five is not a ceiling.** Sampling the same jobs view every three minutes
+for the following twenty-five gives:
+
+```
+04:01  5, 5, 5      (three consecutive samples)
+04:14  10
+04:17   8
+04:20   9
+04:23  13
+04:26  15
+```
+
+```
+04:29  11   04:32  14   04:35  12   04:38  11
+04:41   9   04:44  11   04:47  13
+```
+
+Twelve samples over thirty-three minutes: **10, 8, 9, 13, 15, 11, 14, 12, 11, 9,
+11, 13.** Mean 11.3, range 8–15, no trend across the second half.
+
+Read at 04:26 this looked like a monotonic climb from 5 to 15. It is not. The
+full series resolves into **a ramp from 5 up to a noisy plateau of about 11,
+oscillating 8–15** — comfortably below a cap of at least 20. Every running
+workflow contributes exactly one job, so this is workflow admission, not
+jobs-per-workflow growing.
+
+Two samples suggested a fluctuation, six suggested a climb, twelve show ramp then
+plateau. The ramp rule applied to itself: *samples taken close together are one
+observation of a level, not evidence of a ceiling.*
+
+The final sample is worth reading closely for a second reason. Of 13 concurrent
+jobs, **9 were `main` push runs** — the post-merge duplicate suite of Lever 8 was
+consuming two thirds of the repository's entire admission budget while three
+pull requests waited on their last two workflows each. That is the clearest
+single observation of what Lever 8 costs.
+
+Two samples suggested a fluctuation, six suggested a climb, eight show a ramp
+then a plateau. That is the ramp rule applying to itself. So the figure is not a fixed cap being hit — it is a
+level that moves, and it doubled inside a quarter of an hour while the queue depth
+barely changed.
+
+That is worth stating carefully, because the tempting reading of the first sample
+was "the effective cap is five", and repeating a measurement eleven minutes later
+falsified it. **A single sample of this number is not evidence of a ceiling.**
+Anyone re-measuring should take samples minutes apart before concluding anything,
+and should expect a ramp rather than a step.
+
+**What this does not establish is why**, but one candidate can be bounded and
+largely ruled out. Expanding every matrix in every workflow gives **166 jobs, of
+which 53 (32%) sit behind a `needs:` and 113 (68%) are free to start
+immediately**. So `needs: build` serialisation cannot explain five: two thirds of
+a wave's jobs have no dependency at all, and with ten waves open there are
+hundreds of ungated jobs eligible to run at any moment while five, then ten, do.
+
+That leaves scheduler behaviour and runner availability, neither of which is
+observable through the API. Naming what is ruled out and what is not beats a
+tidy answer: the cause is **not** the cap and **not** dependency serialisation,
+and beyond that this document should not guess.
+
+The plateau reading is now available, and it **restores the original conclusion**:
+the level settles around **12, against a cap of at least 20**. It is not pressed
+against the ceiling, so raising the cap still buys nothing.
+
+I flagged that conclusion as provisional at 15-and-climbing, and was right to —
+had the ramp stopped at 20 it would have inverted. It stopped at about 12.
+
+**The plateau test has a confound worth stating, because it nearly invalidated
+this reading.** Queue depth fell from roughly 200 runs to 87 during the sampling
+window. A level that falls because the queue is draining looks exactly like a
+level that has plateaued against nothing. The test is only sound while depth
+stays comfortably above the cap — and 87 queued against a cap of 20 is still
+four times the ceiling, so admission was never depth-limited here. Had depth
+fallen to ~20 the reading would have been uninterpretable and the measurement
+would need retaking under load. The earlier peak measurement
+of 20 was taken during a single large wave; ten simultaneous waves do not
+reproduce it. Any future cap work should re-measure first, over several samples,
+and stop if the observed level is still well under the cap.
+
+It also rules out a per-pull-request limit of five: one branch alone accounted for
+6 of the 10 concurrent jobs.
+
+### Why one pull request drains and another never starts
+
+Three of my pull requests were open simultaneously with comparable check counts.
+One drained steadily; the other two sat at **zero started** for the whole session
+despite 112 eligible queued checks between them. That is not round-robin, and it
+is worth knowing which it is, because it decides whether a second pull request is
+worth opening at all.
+
+Run creation times settle it:
+
+| PR | first run created | outcome |
+| --- | --- | --- |
+| #112 | 03:39:21Z | draining, 7 concurrent jobs |
+| #97 | 03:42:47Z | 0 of 36 runs started |
+| #113 | 03:47:45Z | 0 of 32 runs started |
+
+At the same instant, every `in_progress` run in the repository was created inside
+a **90-second window, 03:39:39Z–03:41:00Z**. So the scheduler is working through
+runs in roughly the order they were created, and #97's runs — queued three
+minutes later — are behind an entire batch, not behind three minutes of work.
+
+It is not *strictly* first-in-first-out: 44 queued runs were older than the
+newest running one, some created the previous day on a since-merged branch.
+
+That signal invited an obvious explanation — a clogged queue full of stuck runs —
+and it is wrong. Of 219 queued runs, **213 are under an hour old and only 6
+exceed it: 2.7%**. The queue is genuinely live, and **the non-FIFO ordering is
+therefore not explained by staleness.** This matters for anyone building on the
+scheduling finding above: the ordering anomaly is real and still unexplained,
+rather than an artefact of dead entries, and queue-depth figures here can be
+taken at face value.
+
+**The practical consequence: a pull request's wait is set by how much was queued
+before it, not by how many pull requests are open.** Opening a second one does
+not halve anyone's throughput; it joins the back of a queue and waits. The
+corollary is that rebasing is worse than it looks — a rebase does not merely
+discard accumulated green checks, it moves the branch from wherever it sat in the
+queue to the very back of a ~200-run line.
+
+### A fifth of the queue is the post-merge duplicate suite
+
+The ordering residue above — 44 queued runs older than the newest running one,
+with staleness ruled out at 2.7% — turns out to have a single dominant cause.
+Broken down by event and branch:
+
+| | count |
+| --- | --- |
+| `push` on `main` | **32** |
+| `pull_request` | 12 |
+
+**32 of the 44 are `push` events on `main`**, and repo-wide they are **20% of the
+entire 158-run queue**. Note the unit: these are *runs*. A related figure for the
+bulk re-arm of three cancelled pull requests was first quoted as ~360 and is
+actually **~181 runs** — the larger number counted check-runs. The runs-versus-
+check-runs distinction is easy to lose the moment a figure is quoted twice. 29 of them were triggered by one merge (`e6c194c6`), were
+45 minutes old at the time of measurement, and had not started.
+
+This is the same duplication measured in *Lever 4* — every merge re-runs on `main`
+a suite the pull request already proved green, because branches are rebased
+immediately before merging so the merged tree is byte-identical to the tested
+head. What is new is the cost. Lever 4 priced it in minutes; the real price is
+**queue position**. Those 32 runs sit ahead of live pull-request work in a queue
+where two of my own pull requests have had zero jobs admitted for the entire
+session.
+
+That reframes the lever. Dropping `push: main` from the workflows that already
+run on `pull_request` is not a minutes saving — it is a **20% reduction in queue
+depth**, and it directly buys admission for work that is actually waiting on a
+review decision.
+
+The safety caveat from Lever 4 still applies and still bounds the change:
+rebasing guarantees identity only against the `main` you rebased *onto*, so if
+two pull requests merge close together the second one's merged content is not
+what its checks proved. Keep a small sentinel set — `pr-fast` and `heavy-guards`
+— on `push: main`, and drop it from the rest.
+
+One straggler is worth noting for whoever does it: a queued `push` run on a
+merged branch was **1369 minutes old**, roughly 23 hours. It is a rounding error
+in the queue, not a cause, but it shows nothing reaps these.
+
+### The ordering model, tested against a prediction it could have failed
+
+The scheduling model above — admission in roughly the order runs were created —
+was built to explain why one pull request drained while two did not. A model
+built to explain what you already saw is worth little. This one then made a
+prediction, and the prediction was checkable.
+
+#97's runs were created at **03:42:47Z**, #113's at **03:47:45Z**, five minutes
+apart. When the model was written, the in-progress creation window was
+**03:39:39Z–03:41:00Z** and both were unstarted. The model predicts that as the
+window advances it must admit #97 first, and #113 only about five minutes of
+queue later — not both together, and not #113 first.
+
+Twenty-five minutes later the window had advanced to
+**03:41:47Z–03:42:50Z**. #97 was admitted, with four jobs running. #113, five
+minutes younger, was still at zero.
+
+The window advanced monotonically and picked up #97 exactly when it reached
+#97's creation timestamp. The model could have failed here — simultaneous
+admission, or #113 first, would have falsified it — and it did not.
+
+It then passed a second time. #113, five minutes younger, was admitted about
+nine minutes after #97 and not before it, in the order and roughly the spacing
+the model requires. **Two confirmations on predictions that could have failed is
+a materially stronger result than the original fit**, which merely explained
+something already observed.
+
+### Two truncation artifacts, and why they need different defences
+
+Both make a partial answer look finished. They are not the same bug and
+pagination only fixes one.
+
+**A complete set reported short.** `/commits/{sha}/check-runs` caps at 100 per
+page. The set is final; the tool under-reports it. *Tell:* a total of exactly
+100. *Defence:* `gh api --paginate`.
+
+**An incomplete set reported as complete.** Every row is real, nothing is missing
+from the page, and the total simply is not final yet — GitHub is still creating
+runs for the head. *Tell:* the total changes between two paginated samples.
+*Defence:* none available from a single sample; only `queued == 0` settles it.
+
+The second one is worse, because pagination gives false confidence that it has
+been handled. Measured on one pull request, all reads paginated:
+
+| time | total | outstanding |
+| --- | --- | --- |
+| 04:37 | 54 | 40 |
+| ~04:41 | 71 | 47 |
+| 04:42 | **115** | **86** |
+
+That pull request went from *closest to landing* to *furthest from landing* in
+five minutes without a single check failing, because its denominator doubled
+while being watched.
+
+**Rule: `outstanding` is only comparable between pull requests whose total has
+been stable across at least two paginated samples.** Ranking by it while runs are
+still being created ranks the observation, not the work. I got this wrong three
+times in one session, and the shape was identical each time — a label outliving
+the measurement that produced it: carried forward from an earlier pulse, then
+computed from a truncated page, then computed from a growing denominator.
+
+### Was the ramp sampler subject to the same artifact?
+
+A fair objection, given the above. It was not. The sampler counts **in-progress
+jobs repo-wide** from the runs endpoint; it never divides by any pull request's
+total, so a growing denominator cannot move it.
+
+The finding actually cuts the other way. Runs were still being *created*
+throughout the sampling window, so arrivals were ongoing and queue depth was
+being replenished rather than monotonically drained. That strengthens the
+condition the plateau reading depends on — depth remained far above the cap, so
+admission was never depth-limited — rather than undermining it.
+
+### Rank landers by outstanding *runs*, not outstanding *checks*
+
+Ranking pull requests by outstanding check-runs is measuring the wrong unit, and
+it produces an order that is not merely imprecise but inverted.
+
+Same three pull requests, same instant, two endpoints:
+
+| PR | check-runs outstanding | **runs outstanding** | what is left |
+| --- | --- | --- | --- |
+| #97 | 62 of 119 | **2 of 36** | `Heavy Guards`, `PR Fast` |
+| #112 | 61 of 116 | **2 of 33** | `Heavy Guards`, `PR Fast` |
+| #113 | 70 of 115 | **8 of 32** | those two plus six Cranelift phase workflows |
+
+By checks, all three look roughly half finished. By runs, #97 and #112 are **34 of
+36 and 31 of 33 complete**, each waiting on the same two workflows.
+
+The reason is matrix expansion. `Heavy Guards` and `PR Fast` are the two large
+matrix workflows in this repository, so a single unadmitted run of either carries
+tens of queued check-runs with it. A pull request can be 94% done by run and
+appear 47% done by check.
+
+That also explains a flat completed count that looked like a stall. #112's
+succeeded count did not move across four samples spanning nine minutes, which is
+consistent with slot starvation and equally consistent with a stuck job. It was
+neither: **all of its remaining work sits inside two runs that have not been
+admitted yet.** Nothing was stuck; there was simply nothing eligible to complete.
+The check-runs endpoint reported 2 in-progress for it while the runs endpoint
+reported none — the same lag that makes the jobs view authoritative.
+
+**That diagnosis then predicted a distinctive later behaviour, and got it.**
+Starvation and a stuck job both predict the count stays flat or trickles. The
+runs-unit explanation predicts something different and specific: nothing, then a
+*step*, as a whole matrix run is admitted at once. Five minutes later #112 jumped
+**55 → 63 successes** after four samples flat at 55. Step-function drain is the
+signature of the runs-unit explanation and is inconsistent with both alternatives
+that were ruled out. A diagnosis that anticipates a distinctive later observation
+is worth more than one that merely fits the data already in hand, and this
+document should be read as having the former.
+
+It also settles what a rate term would have done here. A rate computed on
+check-runs would have read #112 as draining at **zero** while it was two runs from
+finished. **A rate on the wrong unit is worse than no rate, because it is
+confidently wrong in the direction of that unit's error.** If a rate belongs
+anywhere, it belongs on runs.
+
+**A lander order needs three things, and each fixes a failure the previous one
+does not:** paginate, or a complete set reads short; require a stable total, or
+an incomplete set reads complete; and rank by outstanding **runs**, because
+that is the unit admission actually operates on. A rate term — Δcompleted across
+two timestamped samples — is the natural fourth, but on this evidence it would
+have mis-ranked too: #113 was draining fastest at roughly 5 checks per minute
+while being the furthest from landing by runs.
+
+### A pre-registered prediction, and it failed
+
+Three pull requests had been cancelled wholesale and were re-armed, putting a
+known quantity of work into the queue at a known moment. Before it landed, two
+outcomes were written down:
+
+- if the plateau of ~11 is a genuine admission ceiling, queue depth steps up and
+  in-progress jobs stay at ~11;
+- if depth was ever the limiter, in-progress jobs rise with depth.
+
+Measured across the arrival edge:
+
+| | in-progress jobs | queued runs |
+| --- | --- | --- |
+| before, 04:53:21 | **12** | 17 |
+| after, 04:56:13 | **2** | 199 |
+| confirm, 04:57 | **2** | 199 |
+
+Queue depth stepped by 182 runs, matching the arrival. **In-progress jobs did not
+hold at 11 and did not rise. They collapsed to 2**, an 83% drop, confirmed on an
+independent sample with only one workflow run executing repository-wide.
+
+Neither branch of the prediction survived. The result is not a refinement of the
+plateau model; it contradicts the assumption both branches shared — that
+admission is a function of the cap and the depth, monotone in each. A twelve-fold
+increase in depth reduced admission by six-fold.
+
+**No mechanism was claimed at the time.** A burst of arrivals appearing to
+*suspend* admission rather than saturate it is consistent with a scheduler
+reshuffle, a rate limit on run creation competing with dispatch, or an artefact
+of how the API reports state during a large enqueue.
+
+**That claim was retracted.** It was wrong, and the way it was wrong matters more
+than the claim did.
+
+Later samples appeared to show admission falling to zero and staying there — 2
+jobs, then 1, then 0 — and this document briefly asserted a repository-wide
+availability failure. **Dispatch never stopped.** At the moment "0 in-progress
+jobs" was recorded, a job named `Level 1 contracts` had been executing for over
+nine minutes and continued afterwards. Jobs were being dispatched continuously
+across the entire window.
+
+**The instrument was at fault, and it is the same class of error this document
+catalogues elsewhere.** The sampler counts in-progress jobs by first asking
+`runs?status=in_progress` and then enumerating jobs within those runs. When that
+endpoint transiently reports zero runs — as it does, being subject to exactly the
+lag that makes the jobs view authoritative over check-runs — the job count is
+zero regardless of what is actually executing. **The "authoritative" jobs view
+was never independent: it was gated on the endpoint whose lag it was supposed to
+correct.**
+
+Two rules follow, and the second is new:
+
+- **A check whose passing condition is satisfiable by a momentary zero must
+  require that zero to persist across spaced samples.** The empty-set guard
+  protects the numerator; nothing protected against a transient zero. Two samples
+  two minutes apart looked like persistence and were not.
+- **A derived metric inherits every defect of the endpoint it is derived from.**
+  Calling the jobs view authoritative was correct about check-run lag and wrong
+  about independence.
+
+**This casts a caveat back over the ramp curve.** The plateau's *level* — around
+11 — is an average over twelve samples and is probably sound. Its *variance*, the
+8–15 oscillation, is not trustworthy: an unknown share of the low readings may be
+the runs endpoint under-reporting rather than admission genuinely dipping. The
+same doubt applies to the 12 → 2 "collapse", which must be re-derived in job
+units measured independently of run status before it is called a collapse at all.
+
+A correction that costs something is the test of the standard set earlier in this
+document for reporting a failed prediction. This one cost a section.
+
+What can be said is narrower and still useful:
+
+- The plateau of ~11 measured over 33 minutes describes a *steady state*, not a
+  ceiling. It does not survive a large arrival, so it should not be used to
+  predict behaviour during one.
+- **Every drain estimate in this document assumes steady state.** Anyone
+  estimating time-to-green across a period containing a bulk re-arm — a lane
+  clearing and re-dispatching its train, for instance — should expect the
+  estimate to be wrong by a large factor, in the pessimistic direction.
+- The earlier conclusion that *raising the cap buys nothing* was reached at
+  depths of 87–200 with admission at 8–15, and is unaffected: admission was
+  nowhere near the cap before the arrival, and is further from it after.
+
+**Every timing figure in this document must be read with the queue depth it was
+measured at.** Under starvation — one execution slot against seventeen queued
+runs, with `actions/runners` reporting **zero** self-hosted runners — measured job
+duration is dominated by scheduling, not by the job. A throughput edge derived
+from wall-clock during such a window measures GitHub's queue, not the change it
+is attributed to. Edges measured at different depths are not comparable
+quantities, and this document did not previously say so.
+
+A prediction that fails is worth recording more carefully than one that survives,
+because the failure is where the model was actually wrong. This one was written
+down before the event precisely so it could not be quietly reinterpreted
+afterwards.
+
+### A gate phrased as the absence of a bad reading passes on no reading at all
+
+Three defects in this document look unrelated and are one defect. Each was found
+separately; stating them as a list invites a fourth guard for the fourth
+instance. They generalise instead.
+
+| instance | how nothing was supplied |
+| --- | --- |
+| empty result set | a paginated query returned no rows and the gate read *open* |
+| momentary zero | a dispatch gap read as *nothing running*, twice, two minutes apart |
+| all-`cancelled` set | 65 of 65 runs `cancelled`: zero pending, zero failures, **zero evidence** |
+| abbreviated SHA | `runs?head_sha=` returns `total_count: 0` for an 8-char SHA — no error, no warning |
+
+The last is the sharpest. A filter that silently matches nothing is
+indistinguishable from a condition genuinely met, and it produces a confident
+zero from a typo.
+
+**The general form: a gate phrased as the absence of a bad reading is satisfiable
+by the absence of any reading.** Every instance above supplies nothing and is
+scored as success.
+
+**The repair is not a fourth guard. It is inverting the predicate**: require the
+*presence* of `success` on every required workflow, and require the count of
+successes to equal the count of required runs. Presence cannot be satisfied by
+nothing, so the inversion subsumes all four instances and the ones not yet seen.
+
+**A fifth arrived after the inversion was written, and the inversion already
+rejected it.** `queued` is a status that reports the run's own state perfectly
+accurately while saying nothing whatever about whether it will ever complete. It
+is not an error, so an absence gate waves it through once pending is
+miscounted; the presence gate cannot be satisfied by it, because a queued run
+supplies no `success`. **An inversion earns its keep when it absorbs a case
+discovered after it was written** — that is the argument for preferring it to a
+growing list of guards, and this is the first case to test it.
+
+One reconciliation worth recording, because the gate's equality depends on it.
+The runs endpoint returns **36 runs for a head SHA: 35 `pull_request` plus one
+`push`** (`Codex Trusted Gate`). Filtering to `pull_request` gives a different
+denominator, and a gate comparing `success` from one event set against `total`
+from another cannot pass. This gate counts every event, which is also the
+fail-closed direction: a stuck non-pull-request gate blocks the merge rather than
+being invisible to it.
+
+This was not hypothetical here. The merge watcher used in this session gated on
+"zero pending and zero failures". Three pull requests in this repository sat at
+65, 64 and 63 runs *entirely* `cancelled` — zero pending, zero failures — and
+that gate would have merged them on no evidence whatever. It was rewritten to
+require `success == total`, with a non-emptiness assertion and a 40-character SHA
+check, before it could fire.
+
+### The forty-sample re-derivation, which refutes the section above
+
+The collapse reading was drawn from two samples. The sampler ran to completion
+and produced **forty samples over 1h55m**, spanning queue depths from 16 to 383 —
+a 24-fold range. That is enough to test the claim properly, and it does not
+survive.
+
+| | |
+| --- | --- |
+| in-progress jobs | min 1, max 17, **mean 8.9** |
+| queue depth | min 16, max 383 |
+| **Pearson r(jobs, depth)** | **+0.49** |
+| mean jobs at depth < 100 (n=10) | **5.4** |
+| mean jobs at depth ≥ 100 (n=30) | **10.1** |
+
+Admission is **positively** correlated with depth. Concurrency is roughly twice as
+high when the queue is deep than when it is shallow — the opposite direction from
+the "12 → 2 collapse" this document asserted, and the opposite of what a
+depth-limited system would show.
+
+**So the 04:58 conclusion was wrong, and wrong in a specific way worth naming.**
+It took two samples straddling a bulk arrival, observed depth up and jobs down,
+and concluded that admission was non-monotone in depth — a claim about mechanism,
+from n=2, with the confounder in plain sight. The arrival itself is the
+confounder: 181 runs were created in one burst, and a run counted as executing
+only once its `status` field says so, which lags creation. The instrument reads
+low exactly when many runs have just been created. The collapse is an artefact of
+sampling at the arrival edge, not a property of the scheduler.
+
+What survives is narrower and better supported than either claim:
+
+- Admission sits around **9 jobs on average**, ranging 1–17, against a cap of at
+  least 20 — so the cap is not the binding constraint, which was the original
+  conclusion and is the one thing that has held throughout.
+- Depth does not suppress admission. If anything it accompanies more of it,
+  presumably because both track overall repository activity rather than one
+  causing the other. **No causal claim is made in either direction**; that is the
+  error this section exists to correct.
+
+A prediction that fails is worth recording. A conclusion drawn from two samples
+and refuted by forty is worth recording more loudly, because the failure was not
+in the prediction but in thinking two points were enough to replace it.
+
+### One error class, four instances: a correct measurement in the wrong unit
+
+Every wrong number in this document came from the same place, and it was never
+the arithmetic.
+
+| what was wrong | claimed | actual | unit confused |
+| --- | --- | --- | --- |
+| lander order | #113 closest | #113 furthest | check-runs vs **runs** |
+| bulk re-arm size | ~360 | **~181** | check-runs vs **runs** |
+| failures on one PR | 1, then 2 | **3** | jobs vs **runs** |
+| "runs appear on unchanged SHAs" | established | **disconfirmed** | check-runs vs **runs** |
+
+In each case the query was well-formed, the data was real, and the count was
+correct *for the unit it was counting*. Nothing looked wrong, because nothing was
+wrong except which noun was being counted.
+
+Two structural remarks, both of which generalise past CI.
+
+**The unit is chosen before the measurement and remembered afterwards, so it is
+invisible at the point of use.** A number carried across two sentences loses its
+unit long before it loses its precision. That is why the re-arm figure survived
+being quoted twice at ~360 while the underlying data said ~181.
+
+**The remedy is the same one that fixed the prose-versus-gate drift: report the
+partition, not a label.** `runs`, `jobs` and `check-runs` are three different
+partitions of the same work; a figure that names its partition cannot be silently
+compared against a figure from another. Every count in this section now carries
+its noun for that reason.
+
+Recorded here rather than in `docs/ONE_WAY_LEDGER.md`, which is a ledger of
+compiler one-way rules where each row must carry a reproduction against the
+compiler. This is observability methodology and would be a category mismatch
+there.
+
+### What it implies
+
+At 1.1–2.4 checks per minute against ~500 queued, a single pull request of ~55
+checks is **roughly half an hour to an hour from green even with the whole
+machine to itself**, and it never has that. Three of mine together are a
+multi-hour proposition.
+
+The practical consequences for anyone working here:
+
+- **A push is expensive in a way the per-wave levers do not capture.** Rebasing a
+  branch discards its accumulated green checks and re-enters the back of a
+  ~500-deep queue. Freeze pushes while a wave drains, and rebase only when the
+  branch is genuinely unmergeable.
+- **Opening a pull request costs the whole repository, not just its author.** Any
+  change to a root Markdown file triggers the full suite, because `pr-fast.yml`
+  has no path filter. This section was itself held back from being opened as a
+  pull request until a wave landed, for exactly that reason.
+- **The binding constraint is neither the workflows nor the cap.** Levers 1 to 5
+  all cut work per wave, and none of them helps when ten waves are queued. But
+  the cap is not what they are queued behind either — measured concurrency is
+  five against a cap of at least 20. Until the cause of that is identified, both
+  the per-wave levers and the Pro-plan item are optimising the wrong thing.
+- **`pr-fast.yml` has no path filter**, so a change touching only a root Markdown
+  file triggers the full ~55-check suite. At five-way concurrency that is about
+  half an hour of the repository's total throughput spent proving that a document
+  did not break the compiler.
+
+  The obvious objection is the guard scripts that read this workflow, and it does
+  not hold. **15 scripts reference `pr-fast.yml`, and every one of them asserts
+  only that the string `run: just <guard>` appears in it.** None asserts anything
+  about `on:`, `paths:`, or triggers — checked. Adding a path filter leaves every
+  one of those assertions untouched, so the coupling that looks like it makes this
+  lever expensive does not exist.
+
+  That makes this the cheapest unclaimed lever in the document. Written out as an
+  actionable item:
+
+  **Lever 7 — docs-only fast path for `pr-fast.yml`.** *Owner: CI/guard lane.*
+  Add `paths-ignore` for root Markdown (`*.md`) to `pr-fast.yml`'s `pull_request`
+  trigger. **Cost:** one YAML key; no code change; no guard-contract risk, since
+  all 15 scripts that read this workflow assert only on `run: just <guard>` lines.
+  **Buys:** ~55 checks per documentation-only pull request. At the drain rates
+  measured here that is roughly half an hour of whole-repository throughput per
+  such PR, and this document alone has generated several.
+  **Risk:** a documentation change that silently breaks a guard script would no
+  longer be caught by PR Fast. Mitigated by keeping `justfile`, `scripts/**` and
+  `.github/**` outside the ignore list, so only genuinely inert files skip.
+  **Do not** extend it to `TASK*.md` or `GEMINI.md`: guard scripts assert on the
+  contents of those, so they are not inert.
 
 ## Changelog
 
