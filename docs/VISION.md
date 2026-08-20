@@ -687,7 +687,7 @@ random.use
 network.request<host>
 ```
 
-**Effects are declared on every function, without exception.** Earlier drafts permitted inference on private functions; that is withdrawn. Inference exists to save human typing, and no human types. Full annotation makes diffs informative, traces correlatable, and generation more constrained. The only cost is verbosity, and verbosity is free (Part IV).
+**Effects are declared on every function, without exception.** Earlier drafts permitted inference on private functions; that is withdrawn. Full annotation makes diffs informative, traces correlatable, and generation more constrained. The cost is verbosity, and it is worth paying *here* specifically: the effect set is the artifact a reviewer reads (§0.12), so stating it is the point rather than an overhead. This is not the general "verbosity is free" claim, which Part IV withdraws — it is the case that claim was reaching for.
 
 This enables static least privilege, containable agent-generated code, compiler-checked mocks, automatic deployment policies, and auditable authority changes.
 
@@ -1748,7 +1748,7 @@ Not mutually exclusive. The likely answer is a small core of (3) with (1) as the
 
 > **Status: index.** Restates rules from every Part above; each rule inherits its own Part's status. `docs/ONE_WAY_LEDGER.md` records which of them the compiler currently enforces.
 
-1. Gust is built for software written by machines and never read by people.
+1. Gust is built for software written by machines and never read by people — as a market observation about what to build first, not as a licence for ceremony in the language (§0.1).
 2. Humans own intent, authority, and outcomes. The compiler owns everything in between.
 3. Gust delivers containment, not correctness. Never claim otherwise.
 4. No code executes authority it did not declare, and the compiler enforces it.
@@ -1759,7 +1759,7 @@ Not mutually exclusive. The likely answer is a small core of (3) with (1) as the
 9. Untrusted code must cross an explicit, isolated, auditable boundary.
 10. Supplier certification is a service tier; capability enforcement is the guarantee.
 11. Effects are business-level authority, not syscall-level permissions.
-12. Effects are declared on every function. Nothing is inferred; verbosity is free.
+12. Effects are declared on every function. Nothing is inferred, because the effect set is the artifact a reviewer reads. ("Verbosity is free" as a general principle is withdrawn — Part IV.)
 13. Gust owns the full-stack application model rather than assembling third-party frameworks.
 14. PostgreSQL and S3-compatible storage are native platform infrastructure.
 15. Workspace tenancy is resolved before application execution and automatically scopes platform operations.
@@ -1794,3 +1794,17 @@ Not mutually exclusive. The likely answer is a small core of (3) with (1) as the
 44. Agents are service accounts with narrowed authority and their own audit trail.
 45. Conformance checks substitute for reading and must be resourced as such.
 46. Gust says *enforce*, *check*, and *reject*. Gust does not say *prove*.
+
+## Which of these the compiler enforces today
+
+This list is the most quotable part of the document and the easiest to mistake for a description of the compiler. It is a statement of intent. `docs/ONE_WAY_LEDGER.md` carries the per-rule status with a reproduction; the summary, verified 2026-08-20 at `b47d0049`:
+
+**Enforced.** 17 (no inheritance or traits), 18 (no macros or compile-time execution), 22 (references non-null — there is no `null` literal in either lexer), 24 (`str` has no mutation API at all), and enum-match exhaustiveness from §31, which is checked in both compilers and names the missing variant.
+
+**Not implemented at all.** 4 and 5 — the two rules the product claim rests on. There is no `uses` keyword in either lexer and no query layer, so neither undeclared authority nor an unscoped query is currently rejected by anything. Also 11, 13, 14, 15, 19, 20, 29–36, and 38–45: the platform they describe does not exist (ledger E16).
+
+**Partly true, and misleading as stated.** 16 — `Option` exists but `Result` is not a builtin and there is no `?` operator; the working convention is `guard … else` (E2). 26 — resource *opt-in* is explicit, but the move-versus-copy linearity that governs ordinary values is *inferred* structurally and unannotated, so adding a `str` field silently changes a struct's category (E13); the two mechanisms share a word and only one is opt-in. 27 — `defer` parses and scope-exit cleanup is validated, but only for `Resource[T]` and only in the self-hosted compiler (E7 addendum, D-6).
+
+**Violated.** §34's panic scoping, reached from rule 28's neighbourhood: a string bounds failure calls `exit(1)` and terminates the process rather than the request (E3, issue #91). And §32's overflow trapping, which rule 3's "containment, not correctness" does not cover: overflow is undefined behaviour on the default backend rather than a trap (E11, issue #103).
+
+Rule 46 is the discipline that makes this section necessary. A rule stated in the present tense that nothing enforces is the document saying *prove* while meaning *intend*.
