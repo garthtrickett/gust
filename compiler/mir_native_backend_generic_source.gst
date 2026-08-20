@@ -499,6 +499,29 @@ func mir_native_generic_const_fold_entry(
     }
 }
 
+// The Phase 13 scalar-expression owner lowers nested arithmetic AND attaches
+// the phase13_10 source metadata its parity guard checks for. Folding such an
+// entry to a literal would reach the right exit status with an empty metadata
+// record, so the fold stands aside wherever that owner can plan the value.
+func mir_native_generic_entry_is_scalar_expression_owned(
+    statement: ast.Statement[ctx],
+    ctx: &Arena
+) int {
+    unsafe {
+        mut body := ctx[statement.FunctionDecl.body];
+        mut statements: std.Vector[ast.Statement[ctx], ctx] :=
+            ctx[body.statements];
+        if len(statements) != 1 || statements[0].tag != 12 {
+            return 0;
+        }
+        mut plan := scalar_expression.mir_native_scalar_expression_plan(
+            ctx[statements[0].Return.expr],
+            ctx
+        );
+        return plan.represented;
+    }
+}
+
 func mir_native_generic_analyze_single_function(statement: ast.Statement[ctx], source_path: str, ctx: &Arena) MirNativeGenericModel[ctx] {
     mut model := mir_native_generic_empty_model(ctx);
     if mir_native_generic_function_is_zero_argument_int_entry(
@@ -844,7 +867,9 @@ func mir_native_generic_analyze_single_function(statement: ast.Statement[ctx], s
     mut folded: MirNativeGenericConstValue;
     folded.known = 0;
     folded.value = 0;
-    if mir_native_generic_function_is_zero_argument_int_entry(statement, ctx) == 1 {
+    if mir_native_generic_function_is_zero_argument_int_entry(statement, ctx) == 1 &&
+       mir_native_generic_entry_is_scalar_expression_owned(statement, ctx) == 0
+    {
         folded = mir_native_generic_const_fold_entry(statement, ctx);
     }
     if folded.known == 1 {
