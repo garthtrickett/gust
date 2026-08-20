@@ -1491,6 +1491,29 @@ When no policy exists or a decision is ambiguous, access is denied.
 
 # Part XI — Database and Migrations
 
+> **Row 9 of `docs/DEMO_TARGET_PROGRAM.md` — a Postgres capability — is the only row on that list marked "not compiler work". §54.0 below argues that is the least accurate label on the table.**
+
+## 54.0 The Postgres capability — proposed, and its prerequisites are not what the table says
+
+`docs/DEMO_TARGET_PROGRAM.md` ranks this row as platform rather than compiler work, and this lane ranked it last on that basis. Both readings are wrong in the same direction: **it is the row with the most compiler prerequisites, not the fewest.**
+
+**What it must provide.** A connection acquired from a capability, a way to execute what §55.1 derives, transactions, and release on scope exit. Nothing exotic — which is why it looked cheap.
+
+**Prerequisite 1, and the one nobody has connected to it: a database connection must close, and there is no way to declare that it does.** `docs/SHARED_SEMANTIC_ZONE.md` D-4 records that resource *representation*, transfer state, and `defer` are all present, while destructor **declaration** is not: there is one built-in destructor and no source syntax to declare another. That is the gap `TASK_STDLIB.md` CR-5 states, and it is why `MutexGuard` is blocked.
+
+> **A Postgres connection is `MutexGuard` with a socket.** It is a linear resource whose release must be enforced rather than remembered, and it is blocked by exactly the same missing feature. The two have been tracked as unrelated — one a stdlib ergonomics item, the other a platform item — and they are one prerequisite with two consumers. **Whoever unblocks `MutexGuard` unblocks this row**, and that is worth knowing before either is scheduled.
+
+**Prerequisite 2 — effects (row 5).** Without `uses db.read<…>`, acquiring a connection grants ambient database authority, which is §17's failure mode rather than a partial implementation of it.
+
+**Prerequisite 3 — the derivation (row 7).** Something must produce what this executes, and §55.1's three outputs are what a connection is handed.
+
+**Prerequisite 4 — a native boundary, which is Phase 17/18 territory.** Talking to Postgres means either linking a client library or implementing the wire protocol in Gust. Either way it crosses the native boundary the Phase 17 runtime symbol surface and the Phase 18 link-mode and cross-compilation work govern. **That is the sense in which the row is "platform", and it is a small part of it.**
+
+**One choice worth taking deliberately rather than by default.** Linking a C client is the fast path; implementing the wire protocol in Gust is slower and is the first real test of whether this language can write the code it intends to contain. `docs/VISION_RECONCILIATION.md` §7 puts C retirement at the top of the current priority list — that is about the MIR-to-C *backend* rather than a ban on C libraries, so linking a client does not violate it. But choosing the fast path here means the first vendor capability (§98) is a C dependency, and §98's whole argument is about what a dependency costs. **Take it as a decision with that stated, not as an implementation detail.**
+
+**What this row actually is.** The first supplier capability under §98, and therefore the test of that model rather than an application of it. If the shape does not work for Postgres — the easiest, best-understood, most stable vendor surface available — it will not work for the ones that follow.
+
+
 > **Status: COMMITTED (§55–§56) / SPECULATIVE (§54, §57–§62).** Typed query derivation and tenant enforcement are Track A items 3 and 4. Migrations, backfills, and rollout are post-demo.
 
 ## 54. Database source of truth
