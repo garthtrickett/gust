@@ -593,6 +593,12 @@ Gust is a purpose-built language rather than a framework hosted inside another l
 
 The language directly understands client and server execution boundaries, database effects, authentication and authorization, capabilities and permissions, trusted suppliers, secrets, deployment boundaries, memory regions, and ownership.
 
+> **Two of those nine exist.** Verified 2026-08-20 at `b47d0049`. Memory regions and ownership are real and deeply built — not as keywords but through the branded `&Arena` type (`compiler/ast.gst:38`, 519 references in the typechecker), brand-mismatch diagnostics (§25), and structural move tracking (`compiler/typechecker.gst:1761`).
+>
+> The other seven have no representation anywhere — no keyword, no type, no registered name: client and server boundaries, database effects, authentication and authorization, capabilities and permissions, trusted suppliers, secrets, and deployment boundaries. `docs/ONE_WAY_LEDGER.md` E10 and E16.
+>
+> The sentence is the target. Read as present tense it overstates the language by seven of nine, and it is the sentence most likely to be quoted as a summary of what Gust is.
+
 Gust uses explicit ownership and region-based memory built around branded contexts such as `ctx`.
 
 The goal is strong memory safety without garbage collection, unrestricted pointer use, or hiding ownership entirely.
@@ -821,6 +827,10 @@ Copying a view does not extend its lifetime.
 
 Request-branded references cannot enter jobs, durable messages, longer-lived caches, application state, or persistent storage.
 
+> **Enforced in principle, and no stronger than brand identity.** Brands are part of the type, so a value branded to one context is not assignable where another is expected, and the typechecker emits dedicated diagnostics — `[BrandMismatch]` for `Arena.get_ref` and `Arena.Set/Write` (`compiler/typechecker.gst:2661,2668,2676,2709`) and "Brand Nesting. Mismatched nested brand" (`:1716,:1740`). That is real.
+>
+> The qualification is that brand *identity* is currently derived from identifier spelling rather than from the type (`docs/SHARED_SEMANTIC_ZONE.md` D-1, owned by Phase 19). A rule enforced by comparing brands is only as sound as the way brands are identified. The specific prohibitions named here are additionally vacuous today, since jobs, durable messages, and persistent storage do not exist. `docs/ONE_WAY_LEDGER.md` E20.
+
 ## 26. Borrows
 
 Gust has one reference form, `&T[ctx]`. It is context-branded, non-null, and lexical: a borrow cannot outlive its context.
@@ -848,6 +858,10 @@ Shared mutation should instead occur through SAM state ownership, actors, transa
 ## 28. Linear resources
 
 Root resource types opt into resource semantics through explicit linear metadata, a `Resource[...]` representation, and registered destructor metadata.
+
+> **The opt-in half is implemented.** A `#[linear]` layout attribute is parsed alongside `repr(C)` and `packed` (`compiler/parser.gst:869-872`), flows to `StructDecl.is_linear_resource`, and is registered by `env_register_struct_linear_metadata` (`compiler/typechecker.gst:6801`). Registered *destructor* metadata for user-defined types is the part that is missing (`TASK_STDLIB.md` CR-5), which is what blocks `MutexGuard`.
+>
+> Worth stating explicitly because the word is overloaded: this opt-in is separate from the structural linearity that governs move-versus-copy for ordinary values. `str` and slices are automatically linear for move tracking and are *not* automatically resources — which is exactly what the next paragraph claims. `docs/ONE_WAY_LEDGER.md` E20 and E13.
 
 Linearity propagates transitively. Any struct containing a linear field is itself linear. Ordinary strings, slices, collections, and branded structs do not automatically become resources.
 

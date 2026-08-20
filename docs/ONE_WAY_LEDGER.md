@@ -96,8 +96,9 @@ when the backend does.
 | 33 | Channel ownership | Channels transfer ownership of sent values | sender retaining a sent value | **VIOLATED** — E18 |
 | 34 | Host access | Filesystem and process access are never silently available | ambient host authority | **VIOLATED** — E19 |
 | 35 | Visibility | private-to-module by default, then package / application / public | everything visible everywhere | **ABSENT** — E19 |
+| 36 | Cross-context movement | A shorter-lived value enters a longer-lived context only by cloning or explicit transfer | silently extending a lifetime | **PARTIAL** — E20 |
 
-Counts: 9 `HOLDS`, 5 `PARTIAL`, 7 `VIOLATED`, 1 `DEFERRED`, 13 `ABSENT`.
+Counts: 9 `HOLDS`, 6 `PARTIAL`, 7 `VIOLATED`, 1 `DEFERRED`, 13 `ABSENT`.
 
 Row 27 is the one in motion. It is the declared priority and several other rows
 resolve with it — see E17.
@@ -766,6 +767,49 @@ export    gst=0 rs=0
 There is no `private`-by-default and no package or application level, so every
 declaration a module resolves is reachable. `ABSENT` rather than `VIOLATED`:
 nothing claims to enforce it and no mechanism does the opposite.
+
+### E20 — §28's resource opt-in is real; §25's enforcement inherits D-1 (rows 16, 36)
+
+Two Part VII claims that check out better than the surrounding rows, with one
+qualification each.
+
+**§28's opt-in exists.** "Root resource types opt into resource semantics through
+explicit linear metadata." There is a `#[linear]` layout attribute, parsed
+alongside `repr(C)` and `packed` (`compiler/parser.gst:869-872`):
+
+```gust
+} else if std.str_eq(layout_attr_name, "packed") {
+    is_packed_decl = 1;
+} else if std.str_eq(layout_attr_name, "linear") {
+    is_linear_resource_decl = 1;
+```
+
+It flows to `StructDecl.is_linear_resource` (`compiler/parser.gst:1021`,
+`compiler/ast.gst:77`) and is registered by
+`env_register_struct_linear_metadata` (`compiler/typechecker.gst:6801`, called
+from `:8435`). So the mechanism §28 describes is wired end to end.
+
+This also settles a distinction E13 warned about. `is_linear_resource` is
+genuinely **opt-in via attribute**; `is_linear` is **inferred structurally**.
+§28's "ordinary strings, slices, collections, and branded structs do not
+automatically become resources" is therefore true *of resources*, even though
+`str` and slices are automatically linear for move tracking. Same word, two
+mechanisms, and only the resource one is opt-in — exactly as §28 says.
+
+Row 16 stays `PARTIAL` for the reason CR-5 gives, not for this one: the opt-in
+is real, and destructor *declaration* for user-defined types is what is missing.
+
+**§25 is enforced, by a mechanism D-1 undermines.** Brands are part of the type,
+so a value from one context is not assignable where another is expected, and the
+typechecker emits dedicated diagnostics — `[BrandMismatch]` for `Arena.get_ref`
+and `Arena.Set/Write` (`compiler/typechecker.gst:2661,2668,2676,2709`) and
+"Brand Nesting. Mismatched nested brand" (`:1716,:1740`).
+
+That is real enforcement, and it is why row 36 is `PARTIAL` rather than `ABSENT`.
+The qualification is that the whole mechanism rests on brand *identity*, which
+D-1 derives from identifier spelling rather than from the type. A rule enforced
+by comparing brands is only as sound as the way brands are identified, so row 36
+cannot be stronger than row 2 until Phase 19 lands.
 
 ## Maintenance
 
