@@ -858,6 +858,22 @@ Channels may exist as a lower-level primitive. Actors are a library or platform 
 
 **The leaning, not a decision.** Deprecation. §20 already routes durable background work to jobs and unowned work is not permitted in request code, so the use case a bare `std.Spawn` serves is one the design has already declined; keeping it means keeping two spellings for one concept, which is the thing §13 and `docs/ONE_WAY_LEDGER.md` exist to prevent. The argument the other way is real and should be made if anyone holds it: a handle-bearing `std.Spawn` gives the structured layer something to be built *out of*, and a language with no low-level primitive at all has to get the high-level one right on the first attempt.
 
+#### The candidates, ranked
+
+The two options above are the ones stated when OD-11 was opened. Both assume the handle must exist; **what they actually disagree about is whether the low-level primitive is *public*.** Naming that reframes the decision and admits a third answer that neither states.
+
+**1. Deprecate the bare form; the scoped spawn returns a *linear* task handle.** One spelling. The handle must be joined, cancelled, or transferred before scope exit, so §20's "no detached work" is enforced by the move checker rather than by a rule nobody checks — and that machinery is Phase 15's, already built and shipping. This is option 2 done properly: the objection to deletion was that it leaves nothing to build the structured layer out of, and a linear handle *is* the thing it is built out of.
+
+**2. Demote `std.Spawn` to the runtime surface.** It survives with a handle, but stops being application-facing — the structured layer becomes its only caller. This keeps every engineering benefit of option 1 while removing what is actually wrong with it, since the problem was never the handle but the second public spelling. The best available compromise, and the right answer if the scoped layer turns out to need iteration.
+
+**3. Give it a handle, publicly — option 1 as stated.** Sound engineering, and the ranking cost is not technical: two public ways to start a task, permanently, in a language whose premise is one of each. Migration never completes because nothing forces it.
+
+**4. Implicit scope from the arena brand.** No call-site change; a task is owned by the context it allocates in. Elegant, and Gust already has the branding. Ranked below the compromises because it ties task lifetime to *allocation* lifetime, which are genuinely different things — a task can outlive the data that spawned it and often should — and §30's ownership-across-tasks rules do not fall out of it. Clever on the wrong axis.
+
+**5. Retain the bare form under `unsafe` or a privileged capability.** Part XVIII exists for exactly this shape of thing, so it is legitimate rather than absurd. But §20 already routes durable unowned work to jobs, so this adds an escape hatch for a use case the design has declined — an escape hatch nobody has yet asked for.
+
+**Last: change nothing.** Recorded because it is the outcome that happens by default if the decision is not made, not because it is a candidate. It leaves §20 stating a rule the only available primitive violates.
+
 **Owner: the Cranelift lane**, under `docs/SHARED_SEMANTIC_ZONE.md`'s "Fiber scheduling contract" row. Reported as `TASK_STDLIB.md` CR-8 and issue #101. Status owned by §0.15.
 
 ## 21. Suspension model (OD-1, OD-4)
