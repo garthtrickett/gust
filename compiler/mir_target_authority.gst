@@ -1150,3 +1150,122 @@ func mir_optimisation_debug_compatible(decision: MirOptimisationDecision[ctx], d
     result.reason_code = std.Clone(ctx, "ok");
     return result;
 }
+
+// ---- Patch 18.15: reproducible output ----
+//
+// Two builds of the same source, target, level, and debug plan must produce the
+// same bytes in every field declared reproducible. Fields that are not a
+// property of the input -- wall clock, the path the build ran from, where the
+// compiler binary happens to live -- are excluded BY NAME with a reason, rather
+// than being quietly normalised away.
+//
+// Reproducibility is claimed only after a repeated build has actually been
+// compared. A claim made from a single build is a claim about nothing.
+
+type MirReproducibleBuild[ctx] struct {
+    target_id: str,
+    optimisation_level: str,
+    debug_plan: str,
+    reproducible_field_value: str,
+    excluded_field_reason: str,
+    repeated_build_compared: int,
+    embedded_path_form: str,
+    order_source: str
+}
+
+type MirReproducibilityValidation[ctx] struct {
+    valid: int,
+    reason_code: str
+}
+
+// Validates a SINGLE build record before any comparison happens. A build that
+// does not declare the inputs reproducibility is defined over cannot be
+// compared against anything: the optimisation level and the debug plan both
+// change emitted bytes, so a build naming neither has not stated what it is a
+// build OF. That is an undeclared input, not a field that varied -- calling it
+// a variance would make the compiler confidently wrong about why it refused.
+func mir_reproducible_build_validate(build: MirReproducibleBuild[ctx], ctx: &Arena) MirReproducibilityValidation[ctx] {
+    mut result: MirReproducibilityValidation[ctx];
+    result.valid = 0;
+
+    if build.repeated_build_compared == 0 {
+        result.reason_code = std.Clone(ctx, "reproducibility_claimed_without_a_repeated_build");
+        return result;
+    }
+    // Excluding a field without saying why is indistinguishable from hiding a
+    // nondeterminism.
+    if std.str_eq(build.excluded_field_reason, "") == 1 {
+        result.reason_code = std.Clone(ctx, "excluded_field_not_declared");
+        return result;
+    }
+    if std.str_eq(build.optimisation_level, "") == 1 || std.str_eq(build.debug_plan, "") == 1 {
+        result.reason_code = std.Clone(ctx, "reproducibility_input_undeclared");
+        return result;
+    }
+
+    result.valid = 1;
+    result.reason_code = std.Clone(ctx, "ok");
+    return result;
+}
+
+func mir_reproducibility_validate(first: MirReproducibleBuild[ctx], second: MirReproducibleBuild[ctx], ctx: &Arena) MirReproducibilityValidation[ctx] {
+    mut result: MirReproducibilityValidation[ctx];
+    result.valid = 0;
+
+    // A reproducibility claim that never compared a second build is not evidence.
+    if first.repeated_build_compared == 0 || second.repeated_build_compared == 0 {
+        result.reason_code = std.Clone(ctx, "reproducibility_claimed_without_a_repeated_build");
+        return result;
+    }
+    if std.str_eq(first.reproducible_field_value, second.reproducible_field_value) == 0 {
+        result.reason_code = std.Clone(ctx, "reproducible_field_varied_between_builds");
+        return result;
+    }
+
+    result.valid = 1;
+    result.reason_code = std.Clone(ctx, "ok");
+    return result;
+}
+
+// An excluded field must carry the reason it is excluded. Excluding a field
+// without saying why is indistinguishable from hiding a nondeterminism.
+func mir_reproducibility_exclusion_validate(build: MirReproducibleBuild[ctx], ctx: &Arena) MirReproducibilityValidation[ctx] {
+    mut result: MirReproducibilityValidation[ctx];
+    result.valid = 0;
+
+    if std.str_eq(build.excluded_field_reason, "") == 1 {
+        result.reason_code = std.Clone(ctx, "excluded_field_not_declared");
+        return result;
+    }
+
+    result.valid = 1;
+    result.reason_code = std.Clone(ctx, "ok");
+    return result;
+}
+// The remaining two rejections are properties the build must declare rather
+// than properties a consumer could infer from the bytes. Gust has no string
+// prefix helper, and inferring "this path is absolute" from a leading slash
+// would be exactly the kind of consumer-side inference this phase bans: the
+// build states the form it used, and the validator checks that statement
+// against the declared normalisation rules.
+func mir_reproducibility_normalisation_validate(build: MirReproducibleBuild[ctx], ctx: &Arena) MirReproducibilityValidation[ctx] {
+    mut result: MirReproducibilityValidation[ctx];
+    result.valid = 0;
+
+    // Rule: embedded paths are recorded relative to the source root.
+    if std.str_eq(build.embedded_path_form, "relative_to_source_root") == 0 {
+        result.reason_code = std.Clone(ctx, "normalisation_rule_not_applied");
+        return result;
+    }
+
+    // Rule: order in a reproducible field comes from compiler-produced order,
+    // never from a hash table walk or a filesystem listing.
+    if std.str_eq(build.order_source, "compiler_produced_order") == 0 {
+        result.reason_code = std.Clone(ctx, "nondeterministic_order_in_a_reproducible_field");
+        return result;
+    }
+
+    result.valid = 1;
+    result.reason_code = std.Clone(ctx, "ok");
+    return result;
+}

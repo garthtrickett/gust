@@ -1228,3 +1228,67 @@ pub fn lower_optimisation_witness_path(path: &Path) -> Result<String, Box<dyn Er
     let request = fs::read_to_string(path)?;
     Ok(lower_optimisation_witness(&request)?)
 }
+
+// ---- Patch 18.15: reproducible output ----
+
+const REPRODUCIBLE_FORMAT: &str = "gust.compiler_reproducible_build.v1";
+const REPRODUCIBLE_WITNESS_FORMAT: &str = "gust.reproducible_build_witness.v1";
+const PATH_FORM: &str = "relative_to_source_root";
+const ORDER_SOURCE: &str = "compiler_produced_order";
+const COMPARISON: &str = "two_builds_compared_byte_for_byte_over_the_reproducible_fields";
+
+pub fn lower_reproducible_witness(request: &str) -> Result<String, TargetError> {
+    let lines: Vec<&str> = request.lines().collect();
+    if header(&lines, "format")? != REPRODUCIBLE_FORMAT {
+        return Err(error("reproducible_malformed", "unknown request format"));
+    }
+    if header(&lines, "authority")? != AUTHORITY {
+        return Err(error("reproducible_malformed", "unknown target authority"));
+    }
+
+    // Two build rows, because a reproducibility claim made from one build is a
+    // claim about nothing. The worker compares them itself rather than reading
+    // a "reproducible: true" field, which would be the claim, not the evidence.
+    let builds: Vec<&&str> = lines.iter().filter(|l| l.starts_with("build:")).collect();
+    if builds.len() != 2 {
+        return Err(error("reproducibility_claimed_without_a_repeated_build",
+            format!("a reproducibility claim needs two builds, got {}", builds.len())));
+    }
+    let first = row(builds[0], "build:")?;
+    let second = row(builds[1], "build:")?;
+
+    for build in [&first, &second] {
+        if build.get("path_form").map(String::as_str).unwrap_or_default() != PATH_FORM {
+            return Err(error("normalisation_rule_not_applied",
+                "embedded paths are recorded relative to the source root"));
+        }
+        if build.get("order_source").map(String::as_str).unwrap_or_default() != ORDER_SOURCE {
+            return Err(error("nondeterministic_order_in_a_reproducible_field",
+                "order in a reproducible field comes from compiler-produced order"));
+        }
+        if build.get("excluded_reason").map(String::as_str).unwrap_or_default().is_empty() {
+            return Err(error("excluded_field_not_declared",
+                "an excluded field must carry the reason it is excluded"));
+        }
+    }
+
+    // The same inputs must produce the same bytes in every reproducible field.
+    if field(&first, "field_value")? != field(&second, "field_value")? {
+        return Err(error("reproducible_field_varied_between_builds",
+            "a reproducible field differed between two builds of the same input"));
+    }
+
+    let mut witness = String::new();
+    witness.push_str(&format!("format: {REPRODUCIBLE_WITNESS_FORMAT}\n"));
+    witness.push_str(&format!("authority: {AUTHORITY}\n"));
+    witness.push_str(&format!(
+        "reproducible:target_id={};level={};field_value={};path_form={PATH_FORM};order_source={ORDER_SOURCE};comparison={COMPARISON};\n",
+        field(&first, "target_id")?, field(&first, "level")?, field(&first, "field_value")?,
+    ));
+    Ok(witness)
+}
+
+pub fn lower_reproducible_witness_path(path: &Path) -> Result<String, Box<dyn Error>> {
+    let request = fs::read_to_string(path)?;
+    Ok(lower_reproducible_witness(&request)?)
+}
