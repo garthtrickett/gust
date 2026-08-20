@@ -1429,6 +1429,26 @@ The remaining classes, roughly by how much they would cost to close:
 
 **How to run it.** The reviewer's job is to produce a program that compiles and leaks, not to assess whether the design seems sound. One such program resolves OD-8 negatively, which is the outcome §0.11 wants found in month four rather than after publication. A review that produces no counterexample should say which of these classes it actually attempted.
 
+### 56.2 What the analysis must check — proposed
+
+Row 6 and row 8 of `docs/DEMO_TARGET_PROGRAM.md` are both unowned, and nothing states what the analysis checks. The attack list in §56.1 has nothing to attack until it does. This is a proposal, not a decision; the value of writing it now is that §56.1 was written first and can be run against it.
+
+**1. Declaration.** An entity type declares which field carries its scope. The compiler records the pairing; nothing else in the program may assert it.
+
+**2. Obligation.** Every query rooted at a scoped entity carries a scope obligation. A query whose obligations are not all discharged does not compile.
+
+**3. Discharge is by *provenance*, not by syntax — this is the load-bearing rule.** An obligation is discharged only by a predicate whose value flows from a **scope-typed** binding, `Scope[Workspace]`, obtainable only from the request context and not constructible from user input. A `where workspace == <some string>` does not discharge anything, however well-formed it looks. This is what converts the presence claim §56.1 identifies as the weakest point into a provenance claim, and it is the difference between "a scope is present" and "the caller's scope is present". **If exactly one rule here survives review, it should be this one.** It is also the rule most likely to be quietly weakened during implementation, because syntactic matching is far easier and passes the same tests until someone attacks it.
+
+**4. Joins introduce obligations; they do not satisfy them.** Each scoped entity in a query carries its own obligation. Discharging one never discharges another, and an unscoped lookup table joined in carries none — which is correct only if the scoped side cannot be widened through the join, and that is exactly what §56.1's class 2 exists to test.
+
+**5. Nesting is not a boundary.** A subquery, aggregate, or `EXISTS` over a scoped entity carries its own obligation regardless of the enclosing query's.
+
+**6. The cross-tenant path is explicit, capability-gated, and visible at the call site.** Admin tooling and migrations genuinely need it. It is a named marker requiring a capability, spelled at the site rather than configured, so that reading the code shows what it turns off.
+
+**7. Rejection is at compile time, at the query, with the diagnostic in `docs/DEMO_TARGET_PROGRAM.md`.** Not a lint, not a runtime check, not a generated test — those are §79's evidence that the rule holds, not the rule.
+
+**What this proposal does not cover, and knows it.** Caches (§56.1 class 5), non-query reads (class 8), and multi-step flows (class 6) are all outside the query analysis by construction. Naming them here rather than leaving them out is the point: the analysis is sound over queries, and **the claim made externally must be about queries** or it will be broader than the thing that was checked.
+
 > **OD-8 lives here.** §0.15 names this section as where OD-8 is stated in full, and until 2026-08-20 it was not stated here at all — a reader could finish §56 without learning that the soundness of the analysis above is an open, *thesis-invalidating* question. **Is the scoping analysis sound?** One counterexample — one program that carries no tenant scope and compiles anyway — retires the only claim this document makes, which is why §0.11 requires an adversarial review before publication rather than after. Nothing in §56 is weakened by saying so; the claim is exactly as strong as the analysis, and the analysis has not yet been attacked. Status is owned by §0.15.
 
 ## 57. Raw SQL
