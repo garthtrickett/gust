@@ -746,6 +746,20 @@ Fields that are not a property of the input are excluded BY NAME with a reason: 
 
 Reproducibility is claimed only after a repeated build has actually been compared. A claim made from a single build is a claim about nothing, so the request carries both builds and the consumer compares them itself rather than reading a claim field.
 
+## Phase 18 artifact publication plan
+
+- Authority version: `phase18_publication_v1`
+- Status: `ready_for_patch18_17`
+- Publication owner: `phase9g_artifact_planner`
+- Required preconditions: `4`
+- Temporary artifacts with a declared owner: `2`
+
+Patch 18.16 supplies the publication plan and Phase 9G executes it. This patch plans; it does not write, rename, or delete anything. A plan naming Phase 18 as its executor takes artifact ownership an earlier phase already holds, and is a rejection.
+
+Publication is atomic: the bytes are written to a temporary path and renamed over the output in one step, because a partially written executable must never replace a valid one. The four preconditions are checked in the order they occur, so a refusal names the earliest thing that had not happened yet rather than whichever check ran first. The schema pins that order with prefixItems, since the order is the contract -- checking only the set would permit publication to be planned before link success.
+
+Every temporary artifact names the owner that removes it and the rule under which it is removed. A temporary with no owner is what leaves half-written objects behind after a failed build. Existing output survives failure, deferral, and unsupported-target rejection, and the parity guard proves it: a sentinel output is hashed before six refusals and re-hashed after, and must be unchanged.
+
 ## Registry entries
 
 | ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |

@@ -200,6 +200,8 @@ guard-pr-fast-ci-surface:
       'just guard-cranelift-phase18-optimisation-level-contract'
       'Phase 18 reproducible output'
       'just guard-cranelift-phase18-reproducibility-contract'
+      'Phase 18 artifact publication plan'
+      'just guard-cranelift-phase18-publication-contract'
       'Phase 17 cross-feature runtime composition'
       'just guard-cranelift-phase17-composition-contract'
       'phase11-family:'
@@ -15897,6 +15899,25 @@ guard-cranelift-phase18-debug-info-contract:
     python3 scripts/cranelift_test_levels.py level guard-cranelift-phase18-debug-info-contract | grep -F $'guard-cranelift-phase18-debug-info-contract\t1\t' >/dev/null
     just guard-cranelift-phase18-object-format-contract
     python3 scripts/phase18_debug_information.py --check
+
+guard-cranelift-phase18-publication-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 18.16 publication parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase18-publication-parity |
+      grep -F $'guard-cranelift-phase18-publication-parity\t2\t' >/dev/null
+    just guard-cranelift-phase18-publication-contract
+    bash scripts/phase18_publication_parity.sh
+
+guard-cranelift-phase18-publication-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 18.16 artifact publication plan..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase18-publication-contract | grep -F $'guard-cranelift-phase18-publication-contract\t1\t' >/dev/null
+    just guard-cranelift-phase18-reproducibility-contract
+    python3 scripts/phase18_publication.py --check
 
 guard-cranelift-phase18-reproducibility-parity:
     #!/usr/bin/env bash

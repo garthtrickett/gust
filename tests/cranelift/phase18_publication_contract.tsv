@@ -1,0 +1,17 @@
+kind	requirement	evidence	level
+ordering	publication follows object emission	precondition order is frozen	1
+ordering	publication follows relocation validation	precondition order is frozen	1
+ordering	publication follows availability validation	precondition order is frozen	1
+ordering	publication follows link success	precondition order is frozen	1
+ordering	the relocation model really validates before publication	cross-check against the Patch 18.4 validation stage	1
+atomicity	publication writes a temporary path then renames in one step	atomicity method is frozen	1
+atomicity	a partially written executable never replaces a valid one	atomicity reason is frozen	1
+ownership	Phase 9G executes publication and Phase 18 only plans it	ownership policy is frozen	1
+ownership	the Phase 9G artifact ownership guard is present	justfile guard reference	1
+temporary	every temporary artifact names an owner	per-artifact owner check	1
+temporary	every temporary artifact names a cleanup rule	per-artifact cleanup check	1
+temporary	every temporary artifact is owned by Phase 9G	per-artifact ownership check	1
+preservation	existing output survives failure, deferral, and rejection	preservation guarantee is frozen	1
+preservation	a sentinel proves no replacement occurred before a rejection	sentinel policy is frozen	1
+traceability	the host publication rename assumption is owned by this row	Patch 18.0 host assumption ownership	1
+rejection	the rejection class inventory is complete	seven required rejection classes	1

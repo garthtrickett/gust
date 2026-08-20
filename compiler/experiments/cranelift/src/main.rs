@@ -16427,6 +16427,13 @@ fn run() -> Result<(), Box<dyn Error>> {
             print!("{witness}");
             Ok(())
         }
+        "phase18-publication-witness" => {
+            let Some(request_path) = args.next() else { return Err(usage_error().into()); };
+            if args.next().is_some() { return Err(usage_error().into()); }
+            let witness = target_authority::lower_publication_witness_path(Path::new(&request_path))?;
+            print!("{witness}");
+            Ok(())
+        }
         "phase18-reproducible-witness" => {
             let Some(request_path) = args.next() else { return Err(usage_error().into()); };
             if args.next().is_some() { return Err(usage_error().into()); }

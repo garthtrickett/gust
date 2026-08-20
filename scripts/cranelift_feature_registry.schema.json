@@ -35,6 +35,7 @@
     "phase18_source_location",
     "phase18_optimisation_level",
     "phase18_reproducibility",
+    "phase18_publication",
     "phase18_object_inspection",
     "phase18_target_diagnostics",
     "phase18_cross_compilation",
@@ -342,6 +343,9 @@
     },
     "phase18_reproducibility": {
       "$ref": "#/$defs/phase18_reproducibility"
+    },
+    "phase18_publication": {
+      "$ref": "#/$defs/phase18_publication"
     },
     "phase18_object_inspection": {
       "$ref": "#/$defs/phase18_object_inspection"
@@ -1346,6 +1350,119 @@
         },
         "next_patch": {
           "const": "18.16"
+        }
+      }
+    },
+    "phase18_publication": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "status",
+        "authority_owner",
+        "publication_owner",
+        "ownership_policy",
+        "atomicity_method",
+        "atomicity_reason",
+        "required_preconditions",
+        "temporary_artifacts",
+        "preservation_guarantee",
+        "sentinel_policy",
+        "rejection_classes",
+        "next_patch"
+      ],
+      "properties": {
+        "version": {
+          "const": "phase18_publication_v1"
+        },
+        "status": {
+          "const": "ready_for_patch18_17"
+        },
+        "authority_owner": {
+          "const": "compiler/mir_target_authority.gst"
+        },
+        "publication_owner": {
+          "const": "phase9g_artifact_planner"
+        },
+        "ownership_policy": {
+          "const": "phase18_supplies_the_publication_plan_and_phase9g_executes_it"
+        },
+        "atomicity_method": {
+          "const": "write_to_a_temporary_path_then_rename_over_the_output_in_one_step"
+        },
+        "atomicity_reason": {
+          "const": "a_partially_written_executable_must_never_replace_a_valid_one"
+        },
+        "required_preconditions": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "prefixItems": [
+            {
+              "const": "object_emission"
+            },
+            {
+              "const": "relocation_validation"
+            },
+            {
+              "const": "availability_validation"
+            },
+            {
+              "const": "link_success"
+            }
+          ],
+          "items": false
+        },
+        "temporary_artifacts": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "artifact",
+              "owner",
+              "cleanup_rule"
+            ],
+            "properties": {
+              "artifact": {
+                "type": "string",
+                "minLength": 1
+              },
+              "owner": {
+                "const": "phase9g_artifact_planner"
+              },
+              "cleanup_rule": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "preservation_guarantee": {
+          "const": "existing_output_survives_failure_deferral_and_unsupported_target_rejection"
+        },
+        "sentinel_policy": {
+          "const": "a_sentinel_output_proves_no_replacement_occurred_before_a_rejection"
+        },
+        "rejection_classes": {
+          "type": "array",
+          "minItems": 7,
+          "maxItems": 7,
+          "items": {
+            "enum": [
+              "publication_before_object_emission",
+              "publication_before_relocation_validation",
+              "publication_before_availability_validation",
+              "publication_before_link_success",
+              "publication_not_atomic",
+              "publication_executed_by_phase18",
+              "temporary_artifact_without_owner_or_cleanup_rule"
+            ]
+          }
+        },
+        "next_patch": {
+          "const": "18.17"
         }
       }
     },
