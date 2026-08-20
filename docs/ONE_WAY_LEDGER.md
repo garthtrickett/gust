@@ -66,8 +66,10 @@ Evidence section below; row-level citations are `path:line` pinned to that commi
 | 25 | Rendering and state | Lit-style compiled templates; SAM action→model→state→effect | VirtualDOM; ad-hoc stores; two-way binding | **ABSENT** |
 | 26 | Schema | Postgres is source of truth; Gust derives types | ORM-first | **ABSENT** |
 | 27 | Backend | Cranelift native | — (C retained as bootstrap seed and differential oracle) | **PARTIAL** — Phase 18 open |
+| 28 | Integer types | Fixed-width `i32`, `u32`, `i64`, `u64`, `isize`, `usize` | a single unsized integer | **ABSENT** — E11 |
+| 29 | Overflow | Traps by default in all builds; wrapping/saturating/checked are named operations | silent wraparound | **VIOLATED** — E11 |
 
-Counts: 7 `HOLDS`, 4 `PARTIAL`, 4 `VIOLATED`, 1 `DEFERRED`, 11 `ABSENT`.
+Counts: 7 `HOLDS`, 4 `PARTIAL`, 5 `VIOLATED`, 1 `DEFERRED`, 12 `ABSENT`.
 
 | Row | Rule | Status | Owner |
 | --- | --- | --- | --- |
@@ -75,10 +77,11 @@ Counts: 7 `HOLDS`, 4 `PARTIAL`, 4 `VIOLATED`, 1 `DEFERRED`, 11 `ABSENT`.
 | 6 | Panic scope | VIOLATED | `TASK_STDLIB.md` CR-3, issue #91 — unscheduled |
 | 17 | Shared ownership | VIOLATED | `TASK_STDLIB.md` CR-9 — new |
 | 19 | Concurrency | VIOLATED | `TASK_STDLIB.md` CR-8, issue #101 — new |
+| 29 | Overflow | VIOLATED | issue #103 — new |
 | 14 | Mutation | DEFERRED | `TASK_STDLIB.md` CR-6 — rule withdrawn, unscheduled |
 
 Every one has a written owner and none is currently scheduled. That is the
-honest summary: four rules are known to be broken and one was withdrawn, and no
+honest summary: five rules are known to be broken and one was withdrawn, and no
 lane is working on any of them.
 
 ---
@@ -304,6 +307,62 @@ all rest on `uses` clauses. There is no such keyword. This is the differentiator
 in §0.4 and it is unstarted; `docs/VISION.md` §0.6 says so.
 
 ---
+
+### E11 — §32's entire numeric model is absent, and overflow is UB rather than trapping (rows 28, 29)
+
+`docs/VISION.md` §32 makes four claims. None holds.
+
+**Fixed-width integer types.** §32 lists `i32`, `u32`, `i64`, `u64`, `isize`,
+`usize`. None is a type in either lexer:
+
+```
+$ for ty in i32 u32 i64 u64 isize usize; do
+    printf '%-6s rs=%s gst=%s\n' "$ty" \
+      "$(grep -c "\"$ty\"" src/lexer.rs)" "$(grep -c "\"$ty\"" compiler/lexer.gst)"
+  done
+i32    rs=0 gst=0
+u32    rs=0 gst=0
+i64    rs=0 gst=0
+u64    rs=0 gst=0
+isize  rs=0 gst=0
+usize  rs=0 gst=0
+```
+
+There is one integer type, `int`.
+
+**Overflow trapping.** §32: "Integer overflow traps by default in all builds.
+This carries a measurable runtime cost and is accepted deliberately."
+
+```
+$ grep -rin 'overflow' src/codegen.rs src/typechecker/*.rs
+(no matches)
+```
+
+No overflow handling exists anywhere in codegen or the typechecker. The cost is
+not being paid because the check is not there.
+
+It is worse than absent. `Type::Int` lowers to C `int` (`src/codegen.rs:239,443`),
+and **signed overflow in C is undefined behaviour**. So on the default backend
+the behaviour at overflow is not wraparound, which would merely be wrong — it is
+UB, which is the class `README.md`'s two-backends section identifies as the
+reason the Cranelift backend exists. §32 promises a trap and the compiler emits
+the one construct that gives the optimiser licence.
+
+Row 29 is `VIOLATED` rather than `ABSENT` for that reason: the rejected
+behaviour is not just unprevented, it is what the compiler currently produces.
+
+**Named arithmetic operations** (wrapping, saturating, checked) and the
+**compiler-owned numeric and time types** (`Decimal`, `Money[Currency]`,
+`Instant`, `Duration`, `Date`, `LocalTime`, `ZonedDateTime`) are absent:
+
+```
+$ grep -cE 'wrapping|saturating|checked_' docs/STDLIB_SURFACE_INVENTORY.md
+0
+$ grep -cE 'Decimal|Money|Instant|Duration|ZonedDateTime|LocalTime' docs/STDLIB_SURFACE_INVENTORY.md
+0
+```
+
+Filed as issue #103.
 
 ## Maintenance
 

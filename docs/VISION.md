@@ -879,7 +879,7 @@ Durable jobs and messages require fully owned serializable values. They cannot c
 
 # Part VIII — Core Type-System Details
 
-> **Status: COMMITTED.** §34's panic scoping is currently violated: a string bounds failure calls `exit(1)` and takes the process down (`docs/ONE_WAY_LEDGER.md` E3).
+> **Status: COMMITTED (§31, §33) / SPECULATIVE (§32) / COMMITTED-but-violated (§34).** §31 enums and matching, and §33 strings, exist. **§32's numeric model is entirely absent** — none of the six fixed-width integer types, no overflow trapping, no named arithmetic, none of the `Decimal`/`Money`/time types (`docs/ONE_WAY_LEDGER.md` E11). §34's panic scoping is violated: a string bounds failure calls `exit(1)` and takes the process down (E3).
 
 ## 31. Enums and matching
 
@@ -894,6 +894,8 @@ All enum matching must be exhaustive.
 *Rationale: exhaustiveness converts a whole class of generated-code omission into a compile error.*
 
 ## 32. Numbers
+
+> **None of this section is implemented.** Verified 2026-08-20 at `b47d0049`: there is one integer type, `int`, and none of the six fixed-width types below exists in either lexer; there is no overflow handling anywhere in codegen or the typechecker; the named arithmetic operations and every one of the numeric and time types below are absent. `Type::Int` lowers to C `int`, where signed overflow is undefined behaviour — so the current behaviour at overflow is not wraparound but UB, which is the opposite end of the spectrum from the trap this section promises. Reproductions in `docs/ONE_WAY_LEDGER.md` E11; tracked as issue #103. The section is retained as the target, not as a description.
 
 Gust supports compiler-defined fixed-width integer types: `i32`, `u32`, `i64`, `u64`, `isize`, `usize`.
 
