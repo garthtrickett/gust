@@ -556,3 +556,41 @@ func mir_serialize_source_location_request(location: target.MirSourceLocation[ct
 func mir_source_location_mir_to_c_witness(location: target.MirSourceLocation[ctx], ctx: &Arena) str {
     return mir_source_location_body(location, mir_source_location_witness_format(), 1, ctx);
 }
+
+func mir_optimisation_request_format() str { return "gust.compiler_optimisation_level.v1"; }
+func mir_optimisation_witness_format() str { return "gust.optimisation_level_witness.v1"; }
+
+// `include_equivalence` is 0 for the request and 1 for the witness: the
+// equivalence claim is what the Cranelift worker must recompute, so handing it
+// over in the request would turn the parity check into a copy check.
+func mir_optimisation_body(decision: target.MirOptimisationDecision[ctx], header: str, include_equivalence: int, ctx: &Arena) str {
+    mut validation := target.mir_optimisation_decision_validate(decision, ctx);
+    if validation.valid == 0 {
+        mut invalid := "format: invalid\nreason: ";
+        invalid = std.Concat(invalid, validation.reason_code);
+        invalid = std.Concat(invalid, "\n");
+        return std.Clone(ctx, invalid);
+    }
+    mut output := "format: ";
+    output = std.Concat(output, header);
+    output = std.Concat(output, "\nauthority: compiler/mir_target_authority.gst\n");
+    mut row := "optimisation:";
+    row = mir_target_append(row, "target_id", decision.target_id, ctx);
+    row = mir_target_append(row, "level", decision.selected_level, ctx);
+    row = mir_target_append(row, "transformation", decision.transformation, ctx);
+    row = mir_target_append(row, "selected_by", decision.selected_by, ctx);
+    if include_equivalence == 1 {
+        row = mir_target_append(row, "observable_behaviour", "identical_across_declared_levels", ctx);
+    }
+    output = std.Concat(output, row);
+    output = std.Concat(output, "\n");
+    return std.Clone(ctx, output);
+}
+
+func mir_serialize_optimisation_request(decision: target.MirOptimisationDecision[ctx], ctx: &Arena) str {
+    return mir_optimisation_body(decision, mir_optimisation_request_format(), 0, ctx);
+}
+
+func mir_optimisation_mir_to_c_witness(decision: target.MirOptimisationDecision[ctx], ctx: &Arena) str {
+    return mir_optimisation_body(decision, mir_optimisation_witness_format(), 1, ctx);
+}

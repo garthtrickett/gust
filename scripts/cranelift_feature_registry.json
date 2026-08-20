@@ -4436,6 +4436,47 @@
     ],
     "next_patch": "18.14"
   },
+  "phase18_optimisation_level": {
+    "version": "phase18_optimisation_level_v1",
+    "status": "ready_for_patch18_15",
+    "authority_owner": "compiler/mir_target_authority.gst",
+    "declared_levels": [
+      "none",
+      "basic"
+    ],
+    "level_transformations": {
+      "none": [],
+      "basic": [
+        "dead_code_elimination",
+        "constant_folding",
+        "redundant_move_elimination"
+      ]
+    },
+    "selection_policy": "the_compiler_selects_the_level_and_carries_it_in_the_native_request",
+    "equivalence_policy": "observable_program_behaviour_is_identical_across_declared_levels",
+    "observable_behaviour": [
+      "return_value",
+      "stdout",
+      "stderr",
+      "exit_status",
+      "declared_filesystem_effects"
+    ],
+    "permitted_to_vary": [
+      "emitted_instruction_sequence",
+      "code_size",
+      "compile_time",
+      "debug_record_density"
+    ],
+    "debug_compatibility_policy": "a_level_incompatible_with_the_selected_debug_plan_is_rejected",
+    "rejection_classes": [
+      "optimisation_level_unknown",
+      "optimisation_level_transformation_undeclared",
+      "optimisation_level_changed_observable_behaviour",
+      "optimisation_level_incompatible_with_debug_plan",
+      "optimisation_level_selected_by_backend"
+    ],
+    "next_patch": "18.15"
+  },
   "phase18_object_inspection": {
     "version": "phase18_object_inspection_v1",
     "status": "ready_for_patch18_12",

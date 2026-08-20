@@ -196,6 +196,8 @@ guard-pr-fast-ci-surface:
       'just guard-cranelift-phase18-debug-info-contract'
       'Phase 18 source location preservation'
       'just guard-cranelift-phase18-source-location-contract'
+      'Phase 18 optimisation level policy'
+      'just guard-cranelift-phase18-optimisation-level-contract'
       'Phase 17 cross-feature runtime composition'
       'just guard-cranelift-phase17-composition-contract'
       'phase11-family:'
@@ -15893,6 +15895,25 @@ guard-cranelift-phase18-debug-info-contract:
     python3 scripts/cranelift_test_levels.py level guard-cranelift-phase18-debug-info-contract | grep -F $'guard-cranelift-phase18-debug-info-contract\t1\t' >/dev/null
     just guard-cranelift-phase18-object-format-contract
     python3 scripts/phase18_debug_information.py --check
+
+guard-cranelift-phase18-optimisation-level-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 18.14 optimisation level parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase18-optimisation-level-parity |
+      grep -F $'guard-cranelift-phase18-optimisation-level-parity\t2\t' >/dev/null
+    just guard-cranelift-phase18-optimisation-level-contract
+    bash scripts/phase18_optimisation_level_parity.sh
+
+guard-cranelift-phase18-optimisation-level-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 18.14 optimisation level policy..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase18-optimisation-level-contract | grep -F $'guard-cranelift-phase18-optimisation-level-contract\t1\t' >/dev/null
+    just guard-cranelift-phase18-source-location-contract
+    python3 scripts/phase18_optimisation_level.py --check
 
 guard-cranelift-phase18-source-location-parity:
     #!/usr/bin/env bash
