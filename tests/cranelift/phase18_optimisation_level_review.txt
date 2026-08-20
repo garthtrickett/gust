@@ -1,0 +1,19 @@
+Patch 18.14 — Optimisation-Level Policy
+
+declared_levels	2
+observable_behaviour	5
+permitted_to_vary	4
+rejection_classes	5
+
+level	the transformation map covers exactly the declared levels	map key comparison	Level 1
+level	the unoptimised level declares no transformations	none level transformation check	Level 1
+level	no duplicate transformation within a level	uniqueness check per level	Level 1
+level	a level outside the vocabulary is rejected	level membership check	Level 1
+equivalence	observable behaviour is identical across declared levels	equivalence policy is frozen	Level 1
+equivalence	observable behaviour is declared and non-empty	non-empty observable set	Level 1
+equivalence	nothing is both fixed and permitted to vary	disjointness check	Level 1
+selection	the compiler selects the level and carries it in the request	selection policy is frozen	Level 1
+selection	the backend never selects an optimisation level	rejection class inventory	Level 1
+debug	a level incompatible with the debug plan is rejected	debug compatibility policy is frozen	Level 1
+debug	the debug level vocabulary exists to reference	non-empty debug level set	Level 1
+rejection	the rejection class inventory is complete	five required rejection classes	Level 1

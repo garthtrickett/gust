@@ -1168,3 +1168,63 @@ pub fn lower_source_location_witness_path(path: &Path) -> Result<String, Box<dyn
     let request = fs::read_to_string(path)?;
     Ok(lower_source_location_witness(&request)?)
 }
+
+// ---- Patch 18.14: optimisation level policy ----
+
+const OPTIMISATION_FORMAT: &str = "gust.compiler_optimisation_level.v1";
+const OPTIMISATION_WITNESS_FORMAT: &str = "gust.optimisation_level_witness.v1";
+const OPTIMISATION_LEVELS: [&str; 2] = ["none", "basic"];
+const BASIC_TRANSFORMATIONS: [&str; 3] =
+    ["dead_code_elimination", "constant_folding", "redundant_move_elimination"];
+const OPTIMISATION_EQUIVALENCE: &str = "identical_across_declared_levels";
+
+pub fn lower_optimisation_witness(request: &str) -> Result<String, TargetError> {
+    let lines: Vec<&str> = request.lines().collect();
+    if header(&lines, "format")? != OPTIMISATION_FORMAT {
+        return Err(error("optimisation_malformed", "unknown request format"));
+    }
+    if header(&lines, "authority")? != AUTHORITY {
+        return Err(error("optimisation_malformed", "unknown target authority"));
+    }
+
+    let decision_line = lines.iter().find(|l| l.starts_with("optimisation:"))
+        .ok_or_else(|| error("optimisation_malformed", "request declares no optimisation decision"))?;
+    let decision = row(decision_line, "optimisation:")?;
+
+    let level = field(&decision, "level")?;
+    if !OPTIMISATION_LEVELS.contains(&level) {
+        return Err(error("optimisation_level_unknown",
+            format!("{level} is not a declared optimisation level")));
+    }
+    if field(&decision, "selected_by")? != "compiler" {
+        return Err(error("optimisation_level_selected_by_backend",
+            "the compiler selects the optimisation level and the backend never does"));
+    }
+
+    // Read the raw value: `field()` refuses an empty one, and the unoptimised
+    // level legitimately carries no transformation. Patch 18.4 lost
+    // `relocation_symbol_missing` to exactly that helper.
+    let transformation = decision.get("transformation").map(String::as_str).unwrap_or_default();
+    if !transformation.is_empty() {
+        // The unoptimised level carrying a transformation is the case that
+        // quietly destroys the baseline: the anchor build is optimised too.
+        if level == "none" || !BASIC_TRANSFORMATIONS.contains(&transformation) {
+            return Err(error("optimisation_level_transformation_undeclared",
+                format!("{transformation} is not declared under level {level}")));
+        }
+    }
+
+    let mut witness = String::new();
+    witness.push_str(&format!("format: {OPTIMISATION_WITNESS_FORMAT}\n"));
+    witness.push_str(&format!("authority: {AUTHORITY}\n"));
+    witness.push_str(&format!(
+        "optimisation:target_id={};level={level};transformation={transformation};selected_by=compiler;observable_behaviour={OPTIMISATION_EQUIVALENCE};\n",
+        field(&decision, "target_id")?,
+    ));
+    Ok(witness)
+}
+
+pub fn lower_optimisation_witness_path(path: &Path) -> Result<String, Box<dyn Error>> {
+    let request = fs::read_to_string(path)?;
+    Ok(lower_optimisation_witness(&request)?)
+}

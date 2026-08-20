@@ -717,6 +717,20 @@ Inventing a plausible span for code the source did not write is worse than admit
 
 Two of the five rejections are properties of a set rather than of a single record: a location cannot tell on its own whether it duplicates another, and an absent location cannot reject itself. Both are checked by a validator over the whole vector.
 
+## Phase 18 optimisation level policy
+
+- Authority version: `phase18_optimisation_level_v1`
+- Status: `ready_for_patch18_15`
+- Declared levels: `none`, `basic`
+- Transformations under `basic`: `3`
+- Observable behaviour fixed across levels: `5`
+
+Patch 18.14 declares what an optimisation level may and may not change. A level may reshape the emitted instruction sequence, code size, compile time, or debug record density. It may never change observable program behaviour, and a level that did is a rejection rather than a tradeoff.
+
+The unoptimised level declares no transformations at all. That is the point of it: a baseline carrying even one transformation makes every comparison it anchors a comparison between two optimised builds, which proves nothing. A transformation appearing under `none` is therefore rejected.
+
+The compiler selects the level and carries it in the native request. A level the backend chose for itself takes a decision the compiler already owns, and a level incompatible with the selected debug plan is refused rather than silently degrading the line table the plan promises.
+
 ## Registry entries
 
 | ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |

@@ -1057,3 +1057,96 @@ func mir_source_location_set_validate(locations: Index[std.Vector[MirSourceLocat
     result.reason_code = std.Clone(ctx, "ok");
     return result;
 }
+
+// ---- Patch 18.14: optimisation level policy ----
+//
+// A level may change the emitted instruction sequence, code size, compile time,
+// or debug record density. It may never change observable program behaviour.
+// The unoptimised level must actually be unoptimised, or the comparison it
+// anchors is between two optimised builds and proves nothing.
+//
+// The compiler selects the level and carries it in the native request. A level
+// the backend chose for itself is a decision taken from the compiler.
+
+type MirOptimisationDecision[ctx] struct {
+    target_id: str,
+    selected_level: str,
+    transformation: str,
+    selected_by: str,
+    observable_behaviour_changed: int,
+    line_table_preserved: int
+}
+
+type MirOptimisationValidation[ctx] struct {
+    valid: int,
+    reason_code: str
+}
+
+func mir_optimisation_level_is_declared(level: str, ctx: &Arena) int {
+    if std.str_eq(level, "none") == 1 { return 1; }
+    if std.str_eq(level, "basic") == 1 { return 1; }
+    return 0;
+}
+
+// Only the transformations the level declares may appear under it. The
+// unoptimised level declares none at all.
+func mir_optimisation_transformation_is_declared(level: str, transformation: str, ctx: &Arena) int {
+    if std.str_eq(level, "none") == 1 { return 0; }
+    if std.str_eq(transformation, "dead_code_elimination") == 1 { return 1; }
+    if std.str_eq(transformation, "constant_folding") == 1 { return 1; }
+    if std.str_eq(transformation, "redundant_move_elimination") == 1 { return 1; }
+    return 0;
+}
+
+func mir_optimisation_decision_validate(decision: MirOptimisationDecision[ctx], ctx: &Arena) MirOptimisationValidation[ctx] {
+    mut result: MirOptimisationValidation[ctx];
+    result.valid = 0;
+
+    if mir_optimisation_level_is_declared(decision.selected_level, ctx) == 0 {
+        result.reason_code = std.Clone(ctx, "optimisation_level_unknown");
+        return result;
+    }
+    // The compiler selects the level; a backend-selected level takes a decision
+    // the compiler already owns.
+    if std.str_eq(decision.selected_by, "compiler") == 0 {
+        result.reason_code = std.Clone(ctx, "optimisation_level_selected_by_backend");
+        return result;
+    }
+    // The unoptimised level carrying a transformation is the case that quietly
+    // destroys the baseline: the anchor build is optimised and nobody notices.
+    if std.str_eq(decision.transformation, "") == 0 {
+        if mir_optimisation_transformation_is_declared(decision.selected_level, decision.transformation, ctx) == 0 {
+            result.reason_code = std.Clone(ctx, "optimisation_level_transformation_undeclared");
+            return result;
+        }
+    }
+    if decision.observable_behaviour_changed == 1 {
+        result.reason_code = std.Clone(ctx, "optimisation_level_changed_observable_behaviour");
+        return result;
+    }
+
+    result.valid = 1;
+    result.reason_code = std.Clone(ctx, "ok");
+    return result;
+}
+// A level may reshape the instruction sequence, but the debug plan's promises
+// must survive that reshaping. A transformation that moves or removes
+// instructions without updating the line table silently invalidates every
+// record the plan claims to emit, so the decision must carry that evidence
+// rather than let a consumer assume it.
+func mir_optimisation_debug_compatible(decision: MirOptimisationDecision[ctx], debug_level: str, ctx: &Arena) MirOptimisationValidation[ctx] {
+    mut result: MirOptimisationValidation[ctx];
+    result.valid = 0;
+
+    // Only a plan that emits a line table can have one invalidated.
+    if std.str_eq(debug_level, "line_tables_only") == 1 &&
+       std.str_eq(decision.selected_level, "none") == 0 &&
+       decision.line_table_preserved == 0 {
+        result.reason_code = std.Clone(ctx, "optimisation_level_incompatible_with_debug_plan");
+        return result;
+    }
+
+    result.valid = 1;
+    result.reason_code = std.Clone(ctx, "ok");
+    return result;
+}
