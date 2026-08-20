@@ -1366,6 +1366,8 @@ Never silently imported: database access, networking, filesystem access, time, r
 # Part XIV — Testing and Determinism
 
 > **Status: DEFERRED**, except §79's conformance checks, which §79 itself calls the primary defence against plausible-but-wrong output. Nothing here is required for the demo.
+>
+> **The discipline this Part argues for already exists, aimed at the compiler rather than at applications.** Measured 2026-08-20 at `b47d0049`: 260 test programs of which 115 are named negative fixtures (102 `*reject*`), 409 `guard-` recipes, 82 parity/differential guards, and 66 CI workflows — roughly 44% of the corpus asserts programs must *not* compile. None of §75's categories or §79's generated checks exist, because they presuppose the platform. So the remaining work is aiming an existing, sustained practice at a new target, not establishing one. `docs/ONE_WAY_LEDGER.md` E22.
 
 Determinism here is not a testing convenience. It is the property that makes execution traces usable as training signal (Part XX) and the only remaining check on behaviour when nobody reads the code. A non-deterministic run is a contaminated observation.
 

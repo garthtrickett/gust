@@ -99,8 +99,9 @@ when the backend does.
 | 36 | Cross-context movement | A shorter-lived value enters a longer-lived context only by cloning or explicit transfer | silently extending a lifetime | **PARTIAL** — E20 |
 | 37 | Native code | Forbidden by default; only via signed adapter, capability, isolation | ungated native execution | **PARTIAL** — E21 |
 | 38 | Packages | A package is a directory tree with a manifest; lockfiles record provenance | no package identity | **ABSENT** — E21 |
+| 39 | Conformance checking | Generated checks substitute for reading | trusting unread output | **PARTIAL** — E22 |
 
-Counts: 9 `HOLDS`, 7 `PARTIAL`, 7 `VIOLATED`, 1 `DEFERRED`, 14 `ABSENT`.
+Counts: 9 `HOLDS`, 8 `PARTIAL`, 7 `VIOLATED`, 1 `DEFERRED`, 14 `ABSENT`.
 
 Row 27 is the one in motion. It is the declared priority and several other rows
 resolve with it — see E17.
@@ -874,6 +875,48 @@ nothing does the opposite, there is simply no mechanism.
 **Row 37's sibling in §94 holds vacuously.** "Arbitrary networking is forbidden
 by default" is true because there is no networking at all — no socket, no
 `connect`, no `AF_INET` anywhere in `src/runtime/*.c`.
+
+### E22 — Part XIV's categories are absent; the discipline it asks for exists elsewhere (row 39)
+
+This row is `PARTIAL` for an unusual reason, and the reason is the finding.
+
+**None of Part XIV's named surface exists.** §75's categories — RPC, policy,
+migration, browser and component, tenant-isolation, deployment smoke — all
+presuppose the platform (E16). §76's capability fakes require capabilities, which
+do not exist (E10). §77's deterministic test scheduler is not present: the only
+match for a scheduler is a filename,
+`compiler/p15_destructor_scheduling_deferred_source.gst`. §78 needs a database.
+§79's generated checks — RPC serialization, policy coverage, tenant scoping,
+migration manifests, supplier contracts — need all of the above.
+
+**But the discipline §79 argues for is already the strongest thing in the
+repository.** Measured at `b47d0049`:
+
+| | |
+| --- | --- |
+| test programs in `tests/` | 260 |
+| named negative fixtures (`*_rejected`, `*_invalid`, …) | 115, of which 102 are `*reject*` |
+| `guard-` recipes | 409 |
+| parity / differential guards | 82 |
+| CI workflows | 66 |
+
+Roughly **44% of the test corpus is negative** — programs asserted *not* to
+compile, such as `test_arena_get_ref_brand_mismatch_rejected.gst`. Plus a
+differential-oracle regime between MIR-to-C and Cranelift, per-phase closure
+guards, and a registry that pins runtime symbol identity.
+
+§79 says generated checking "is not a testing convenience, it is the mechanism
+that substitutes for reading", and should be resourced accordingly. That
+mechanism exists and is well resourced — it is simply aimed at **the compiler**
+rather than at **applications written in Gust**. Part XIV describes the second
+and the repository has built the first.
+
+That is worth stating precisely rather than scoring the Part as absent, because
+it changes what the remaining work is. The project does not need to learn this
+discipline or be argued into it; it needs to point an existing and demonstrably
+sustained practice at a different target once there is a platform to aim it at.
+
+`PARTIAL` records exactly that: the practice holds, the surface does not.
 
 ## Maintenance
 
