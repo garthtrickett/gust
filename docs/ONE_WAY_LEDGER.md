@@ -2023,6 +2023,34 @@ none of the three wrong readings touched this lane's gate, which consumes
 every field read correctly" but "which fields does a decision actually rest on",
 and those are the ones to corroborate.
 
+### A fifth class, recorded at the strength it actually has
+
+An invariant every lane here holds implicitly — *a PR's run set is fixed by its
+push* — may not hold on this repository. Three PRs on one lane acquired
+`attempt=1` `pull_request` runs whose creation timestamps do not match their last
+push. That is the observation, and it is the whole of it.
+
+**No mechanism is confirmed**, and two lanes checked their own PRs for the same
+shape and did not find it: both this branch's runs and the verify lane's are
+`attempt=1` created inside the same window as their pushes. So the class rests on
+three observations from one lane, with a plausible cause — base movement in a
+stacked chain re-dispatching downstream PRs — that nobody has demonstrated.
+
+It is recorded at that strength deliberately. **A class that grows by lanes
+assuming it applies to them is the drain-trend error in a new costume**: a run of
+consistent observations extrapolated into a property. The correction that trimmed
+this one arrived before it spread, which is the only reason it is one paragraph
+rather than a rule.
+
+**What follows for a gate is real even so, and does not depend on the mechanism.**
+"Total stable across spaced samples" is a claim about a set assumed closed. If a
+PR can acquire a run after its total has been stable, a gate can pass and then be
+wrong — so keep sampling `total` up to the merge call rather than treating an
+established denominator as a fixed one. **Established is not fixed**, even when
+tonight's evidence says it has not moved. That is the same shape as an
+absence-phrased check read as a permanent guarantee rather than a statement about
+one moment.
+
 **Assert that a check found what it was looking for, not merely that it ran.**
 For an edit, compare the file before and after. For a search, assert a non-zero
 match count. A check that cannot fail is not a check.

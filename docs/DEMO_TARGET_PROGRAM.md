@@ -156,6 +156,24 @@ Ordered by dependency. Status verified 2026-08-20; evidence in
 | 9 | A Postgres capability to execute the query against | **ABSENT** | **unowned** — VISION Part XI |
 | 10 | Panic scoped to the request, not the process | **VIOLATED** — ledger E3 | `TASK_STDLIB.md` CR-3, issue #91 — unscheduled |
 
+**OD-2's resolution on 2026-08-20 sharpens the ordering of this table, without
+changing a single row.** With user-written generic functions excluded, every
+typed surface here is compiler work by decision — row 7's query derivation, and
+§44's RPC schemas and §37's templates behind it. None can be prototyped as a
+library, contributed by a lane that does not own the compiler, or deferred to a
+user.
+
+So compiler throughput is the binding constraint on the whole table, and the
+sequencing question becomes sharper than "what is unowned". Rows 5 through 8 are
+Track A; rows 6 to 8 are the lead claim (§56). **If every surface competes for
+one queue, the authority model has to be built before the convenience surfaces,
+or it does not get built** — query derivation is demo scope, but effects are what
+make containment true and are the harder design.
+
+That is not an argument against the decision, which is the right one for reasons
+§14 records. It is the reason these six unowned rows matter more after it than
+before it.
+
 Rows 5 through 8 are `docs/VISION.md` §0.7 Track A verbatim, and **none of them
 has an owning roadmap.** `TASK.md` runs targets, objects, and linkers;
 `TASK_STDLIB.md` runs the safe stdlib surface.
