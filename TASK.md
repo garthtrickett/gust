@@ -46,13 +46,13 @@ is activated separately.
 - [x] Patch 18.10 — Unsupported-Target Detection and Diagnostics — DONE
 - [x] Patch 18.11 — Symbol and Relocation Inspection Evidence — DONE
 - [x] Patch 18.12 — Debug Information Strategy — DONE
-- [ ] Patch 18.13 — Source-Location Preservation
-- [ ] Patch 18.14 — Optimisation-Level Policy
-- [ ] Patch 18.15 — Reproducible Object and Artifact Output
-- [ ] Patch 18.16 — Atomic Executable Publication Under Phase 9G
-- [ ] Patch 18.17 — Cross-Target Composition and Complete Per-Target Evidence
-- [ ] Patch 18.18 — Deferred Residue and Target-Coverage Audit
-- [ ] Patch 18.19 — Phase 18 Closure
+- [x] Patch 18.13 — Source-Location Preservation — DONE
+- [x] Patch 18.14 — Optimisation-Level Policy — DONE
+- [x] Patch 18.15 — Reproducible Object and Artifact Output — DONE
+- [x] Patch 18.16 — Atomic Executable Publication Under Phase 9G — DONE
+- [x] Patch 18.17 — Cross-Target Composition and Complete Per-Target Evidence — DONE
+- [x] Patch 18.18 — Deferred Residue and Target-Coverage Audit — DONE
+- [x] Patch 18.19 — Phase 18 Closure — DONE
 
 ## Immutable Phase 17 Completion Record
 

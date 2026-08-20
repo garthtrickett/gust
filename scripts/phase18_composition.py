@@ -58,7 +58,15 @@ def check() -> None:
 
     # The composition inventory is derived from registry ownership, not
     # hand-written, so a new authority cannot be added and left uncomposed.
-    owned = {k for k in registry if k.startswith("phase18_") and k != "phase18_composition"}
+    # The composition composes CAPABILITY authorities. The composer itself and
+    # the phase closure are not capabilities, so they are excluded -- but the
+    # exclusion is registry-owned data rather than a literal in this guard, so
+    # it can be read, reviewed, and cannot quietly grow to hide a real gap.
+    non_capability = set(authority["non_capability_authorities"])
+    owned = {k for k in registry if k.startswith("phase18_")} - non_capability
+    stale = non_capability - {k for k in registry if k.startswith("phase18_")}
+    if stale:
+        fail(f"non-capability list names authorities that do not exist: {sorted(stale)}")
     cases = authority["composition_cases"]
     participating = {a for case in cases for a in case["participating_authorities"]}
     unknown = participating - owned

@@ -206,6 +206,8 @@ guard-pr-fast-ci-surface:
       'just guard-cranelift-phase18-composition-contract'
       'Phase 18 deferral audit and rejection reachability'
       'just guard-cranelift-phase18-deferral-audit'
+      'Phase 18 target object and linker closure'
+      'just guard-cranelift-phase18-close'
       'Phase 17 cross-feature runtime composition'
       'just guard-cranelift-phase17-composition-contract'
       'phase11-family:'
@@ -15908,6 +15910,15 @@ guard-cranelift-phase18-debug-info-contract:
     python3 scripts/cranelift_test_levels.py level guard-cranelift-phase18-debug-info-contract | grep -F $'guard-cranelift-phase18-debug-info-contract\t1\t' >/dev/null
     just guard-cranelift-phase18-object-format-contract
     python3 scripts/phase18_debug_information.py --check
+
+guard-cranelift-phase18-close:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Closing Phase 18 target, object, and linker hardening..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase18-close | grep -F $'guard-cranelift-phase18-close\t1\t' >/dev/null
+    just guard-cranelift-phase18-deferral-audit
+    python3 scripts/phase18_closure.py --check
 
 guard-cranelift-phase18-deferral-audit:
     #!/usr/bin/env bash
