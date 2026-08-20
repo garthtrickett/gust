@@ -44,6 +44,7 @@ TOP_FIELDS = {
     "phase18_publication",
     "phase18_composition",
     "phase18_deferrals",
+    "phase18_closure",
     "phase18_object_inspection",
     "phase18_target_diagnostics",
     "phase18_cross_compilation",
@@ -11025,6 +11026,23 @@ def phase18_deferrals_summary_lines(registry):
     ]
 
 
+def phase18_closure_summary_lines(registry):
+    authority = registry["phase18_closure"]
+    composition = registry["phase18_composition"]
+    return [
+        "## Phase 18 closure",
+        "",
+        f"- Status: `{authority['status']}`",
+        f"- Declared supported targets with complete evidence: `{len(composition['per_target_evidence'])}`",
+        f"- Explicit non-claims: `{len(authority['non_claims'])}`",
+        "",
+        authority["wording"],
+        "",
+        "The closure view is GENERATED from this block rather than scanned for banned prose. Patch 17.16 tried policing such text by searching it for forbidden phrases, and the scan read the sentence \"does not claim C runtime code has been removed\" as making that very claim. Detection of prose is the wrong tool: an unowned claim cannot appear in a generated view at all, so there is nothing to catch after the fact.",
+        "",
+    ]
+
+
 def phase18_object_inspection_summary_lines(registry):
     authority = registry["phase18_object_inspection"]
     object_format = registry["phase18_object_format"]
@@ -11449,6 +11467,7 @@ def render(registry):
         *phase18_publication_summary_lines(registry),
         *phase18_composition_summary_lines(registry),
         *phase18_deferrals_summary_lines(registry),
+        *phase18_closure_summary_lines(registry),
         "## Registry entries", "",
         "| ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |",
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",

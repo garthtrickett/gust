@@ -4569,6 +4569,10 @@
     "status": "ready_for_patch18_18",
     "authority_owner": "scripts/cranelift_feature_registry.json",
     "inventory_derivation": "composition_inventory_is_derived_from_canonical_registry_ownership_not_a_hand_written_list",
+    "non_capability_authorities": [
+      "phase18_composition",
+      "phase18_closure"
+    ],
     "composition_cases": [
       {
         "case_id": "phase18:identity_and_format",
@@ -5433,6 +5437,29 @@
       }
     ],
     "next_patch": "18.19"
+  },
+  "phase18_closure": {
+    "version": "phase18_closure_v1",
+    "status": "phase18_closed_target_object_and_linker_boundary",
+    "authority_owner": "scripts/cranelift_feature_registry.json",
+    "wording": "The declared Phase 18 target, object, and linker inventory is complete. Every declared supported target holds a complete compiler, runtime, linker, and ABI combination and carries native compile, object inspection, link, execution, diagnostic, and reproducibility evidence, while remaining unsupported targets and capabilities are represented by narrower, explicitly owned future-phase deferrals.",
+    "non_claims": [
+      "Gust supports every platform or architecture.",
+      "Cross-compilation is complete.",
+      "The target triple vocabulary is stable or public.",
+      "Debug information is complete or debugger-ready.",
+      "Optimisation is complete or performance-competitive.",
+      "Link-time or profile-guided optimisation is supported.",
+      "Shared libraries, dynamic loading, or plugins are supported.",
+      "Position-independent executables or hardening are complete.",
+      "Code signing or platform attestation is supported.",
+      "Sysroot management is handled.",
+      "Toolchain distribution is solved.",
+      "The MIR-to-C backend has been retired.",
+      "The experimental backend is production complete.",
+      "The registry JSON Schema is enforced against the registry data: cranelift_registry.py validate checks the schema's shape, not the data against it, so const and enum pins are documentation until a checker lands."
+    ],
+    "view_derivation": "the_closure_view_is_generated_from_this_block_not_scanned_for_banned_prose"
   },
   "phase18_object_inspection": {
     "version": "phase18_object_inspection_v1",

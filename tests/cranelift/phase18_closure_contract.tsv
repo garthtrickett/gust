@@ -1,0 +1,9 @@
+kind	requirement	evidence	level
+closure	no Phase 18 authority still points at an unlanded patch	status chain checked across every phase18 block	1
+closure	the composition authority exists before the phase may close	presence check	1
+closure	the deferral audit exists before the phase may close	presence check	1
+closure	every declared supported target carries complete evidence	evidence recomputed, not read from 18.17's conclusion	1
+closure	at least one target carries complete evidence	non-empty evidence matrix	1
+non_claim	the closure disclaims something	non-empty non-claim list	1
+non_claim	no non-claim is stated twice	uniqueness check	1
+non_claim	the closure view is generated, not scanned for banned prose	view regenerated and compared byte for byte	1

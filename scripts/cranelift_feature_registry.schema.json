@@ -38,6 +38,7 @@
     "phase18_publication",
     "phase18_composition",
     "phase18_deferrals",
+    "phase18_closure",
     "phase18_object_inspection",
     "phase18_target_diagnostics",
     "phase18_cross_compilation",
@@ -354,6 +355,9 @@
     },
     "phase18_deferrals": {
       "$ref": "#/$defs/phase18_deferrals"
+    },
+    "phase18_closure": {
+      "$ref": "#/$defs/phase18_closure"
     },
     "phase18_object_inspection": {
       "$ref": "#/$defs/phase18_object_inspection"
@@ -1482,6 +1486,7 @@
         "status",
         "authority_owner",
         "inventory_derivation",
+        "non_capability_authorities",
         "composition_cases",
         "evidence_kinds",
         "per_target_evidence",
@@ -1499,6 +1504,17 @@
         },
         "authority_owner": {
           "const": "scripts/cranelift_feature_registry.json"
+        },
+        "non_capability_authorities": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "enum": [
+              "phase18_composition",
+              "phase18_closure"
+            ]
+          }
         },
         "inventory_derivation": {
           "const": "composition_inventory_is_derived_from_canonical_registry_ownership_not_a_hand_written_list"
@@ -1773,6 +1789,58 @@
         },
         "next_patch": {
           "const": "18.19"
+        }
+      }
+    },
+    "phase18_closure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "status",
+        "authority_owner",
+        "wording",
+        "non_claims",
+        "view_derivation"
+      ],
+      "properties": {
+        "version": {
+          "const": "phase18_closure_v1"
+        },
+        "status": {
+          "const": "phase18_closed_target_object_and_linker_boundary"
+        },
+        "authority_owner": {
+          "const": "scripts/cranelift_feature_registry.json"
+        },
+        "wording": {
+          "const": "The declared Phase 18 target, object, and linker inventory is complete. Every declared supported target holds a complete compiler, runtime, linker, and ABI combination and carries native compile, object inspection, link, execution, diagnostic, and reproducibility evidence, while remaining unsupported targets and capabilities are represented by narrower, explicitly owned future-phase deferrals."
+        },
+        "non_claims": {
+          "type": "array",
+          "minItems": 14,
+          "maxItems": 14,
+          "items": {
+            "enum": [
+              "Gust supports every platform or architecture.",
+              "Cross-compilation is complete.",
+              "The target triple vocabulary is stable or public.",
+              "Debug information is complete or debugger-ready.",
+              "Optimisation is complete or performance-competitive.",
+              "Link-time or profile-guided optimisation is supported.",
+              "Shared libraries, dynamic loading, or plugins are supported.",
+              "Position-independent executables or hardening are complete.",
+              "Code signing or platform attestation is supported.",
+              "Sysroot management is handled.",
+              "Toolchain distribution is solved.",
+              "The MIR-to-C backend has been retired.",
+              "The experimental backend is production complete.",
+              "The registry JSON Schema is enforced against the registry data: cranelift_registry.py validate checks the schema's shape, not the data against it, so const and enum pins are documentation until a checker lands."
+            ]
+          }
+        },
+        "view_derivation": {
+          "const": "the_closure_view_is_generated_from_this_block_not_scanned_for_banned_prose"
         }
       }
     },

@@ -791,6 +791,16 @@ There is deliberately no bare allowlist. An unreachable class is either made rea
 
 Each deferral names the phase that will carry it, the component that will own the capability, the separate component that will certify it arrived, the prerequisite that blocks it, and the Phase 18 rows it comes from. A deferral attached to no row is an open-ended promise rather than a narrow one.
 
+## Phase 18 closure
+
+- Status: `phase18_closed_target_object_and_linker_boundary`
+- Declared supported targets with complete evidence: `1`
+- Explicit non-claims: `14`
+
+The declared Phase 18 target, object, and linker inventory is complete. Every declared supported target holds a complete compiler, runtime, linker, and ABI combination and carries native compile, object inspection, link, execution, diagnostic, and reproducibility evidence, while remaining unsupported targets and capabilities are represented by narrower, explicitly owned future-phase deferrals.
+
+The closure view is GENERATED from this block rather than scanned for banned prose. Patch 17.16 tried policing such text by searching it for forbidden phrases, and the scan read the sentence "does not claim C runtime code has been removed" as making that very claim. Detection of prose is the wrong tool: an unowned claim cannot appear in a generated view at all, so there is nothing to catch after the fact.
+
 ## Registry entries
 
 | ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |
