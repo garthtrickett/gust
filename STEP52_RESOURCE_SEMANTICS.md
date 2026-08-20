@@ -12,7 +12,7 @@ list below.
 | # | Requirement | Status |
 | --- | --- | --- |
 | 1 | Opt-in metadata | **met** — `is_linear_resource` metadata exists and is registered |
-| 2 | Resource representation | **partly live** — helpers exist; no automatic declaration or assignment; scope-exit cleanup *is* validated for `Resource[T]` on two paths in the self-hosted compiler, and not at all in the Rust one (corrected 2026-08-20) |
+| 2 | Resource representation | **partly live** — helpers exist; no automatic declaration or assignment; scope-exit cleanup *is* validated for `Resource[T]` on two paths in the self-hosted compiler (corrected 2026-08-20) |
 | 3 | Open-resource registry | **met** — `open_linear_resources` is a typed registry |
 | 4 | Destructor identity | **not met for user types** — see below |
 | 5 | Transfer state | **met** — owned, borrowed, moved, closed, destructor_scheduled all represented |
@@ -29,8 +29,6 @@ Two findings matter more than the table.
 What it validates is narrow. It delegates to `env_validate_linear_resource_cleanup_boundary`, and the surrounding machinery keys on the compiler-owned `Resource` generic specifically — `type_is_resource` requires a `Generic` type literally named `Resource` with one argument (`compiler/typechecker.gst:7690`). A directory handle is not a `Resource[T]`, so it is outside the check.
 
 The behavioural finding below is therefore still correct and the mechanism claim was not: a program that opens a directory handle and never closes it compiles clean, because that type is not covered — not because nothing runs.
-
-**The Rust compiler has no equivalent at all.** `grep -rc 'scope_exit_cleanup\|validate_linear_resource' src/ --include=*.rs` returns nothing. The two compilers therefore disagree about whether a function that drops a live `Resource[T]` is valid. Recorded as `docs/SHARED_SEMANTIC_ZONE.md` D-6.
 
 So the framework is further along than the original text says on representation, state, and `defer`, and further behind on enforcement: what exists is a set of helpers with test coverage, not a checker that runs.
 

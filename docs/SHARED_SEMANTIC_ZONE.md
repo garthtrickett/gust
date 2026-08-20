@@ -184,37 +184,6 @@ Still open, confirmed 2026-08-20 at `b47d0049` (`src/runtime/strings.c:20,30`).
 Stated as `TASK_STDLIB.md` CR-3 and filed as issue #91. No phase has scheduled
 it.
 
-### D-6 — The two compilers disagree on resource cleanup validation
-
-The self-hosted compiler validates scope-exit cleanup for `Resource[T]` on two
-real typechecking paths — function exit (`compiler/typechecker.gst:9859`) and
-explicit return (`:10976`), both added by `ce211321` on 2026-06-30. The Rust
-compiler has no equivalent:
-
-```
-$ grep -rc 'scope_exit_cleanup\|validate_linear_resource' src/ --include=*.rs
-(no matches)
-```
-
-So a function that drops a live `Resource[T]` is rejected by one compiler and
-accepted by the other. That is the same shape as D-2 — a semantics divergence
-between the two compilers — though lower stakes, because `src/` is the frozen
-prototype and `gust_v4.c` is the converged self-hosted seed, so the Rust path is
-not in the normal build.
-
-It is recorded rather than fixed because the owning question is not obvious.
-`AGENTS.md` makes MIR-to-C the semantic oracle, and resource semantics are Phase
-15 authority; whether the frozen prototype is required to match the self-hosted
-compiler on a check added after it was frozen is a decision for the Cranelift
-lane, not something either lane should assume.
-
-Found while checking `VISION.md` §29 against the compiler. It also corrected
-`STEP52_RESOURCE_SEMANTICS.md`, which stated that nothing on the real
-typechecking path invoked these functions; two paths had invoked them for seven
-weeks. The document's behavioural finding — a leaked directory handle compiles
-clean — was correct, because a directory handle is not a `Resource[T]` and so
-falls outside the check.
-
 ## Citing evidence
 
 Source citations in this document are `path:line` pinned to the commit that

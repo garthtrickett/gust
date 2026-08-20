@@ -34,6 +34,27 @@ defect, and every `VIOLATED` row names its owner.
 **Verified 2026-08-20 against `b47d0049` (`main`).** Reproductions in the
 Evidence section below; row-level citations are `path:line` pinned to that commit.
 
+### Which compiler a citation refers to
+
+This matters for reading the evidence, because the repository contains more than
+one thing called "the compiler":
+
+| Path | What it is | Weight |
+| --- | --- | --- |
+| `compiler/*.gst` | the self-hosted compiler | **authoritative** — this is the compiler |
+| `gust_v4.c` | the converged bootstrap seed | generated from the above |
+| `src/runtime/*.c` | the runtime | live; linked into every program |
+| `src/*.rs` | the **deprecated** Rust prototype | not authoritative; corroboration only |
+
+`src/*.rs` has not compiled since 2026-06-22 (PR #82) and nothing builds it. A
+claim resting only on it proves nothing about the language. Where both are cited
+below, the self-hosted compiler is the claim and the prototype merely agrees.
+
+Note also that the active direction is retiring the **C backend** in favour of
+Cranelift. Where a finding is a property of C rather than of Gust — E11's
+overflow behaviour is the clearest — that is called out, because those resolve
+when the backend does.
+
 ---
 
 ## The ledger
@@ -132,11 +153,16 @@ there is only the layout.
 ### E2 — `Result` is not a builtin and `?` does not exist (row 4)
 
 ```
-$ grep -rn '"Result"' src/typechecker/types.rs
-(no matches — the sole hit in src/ is std::fmt::Result)
-$ grep -n 'Question' src/lexer.rs
-(no matches)
+$ grep -cE 'register.*"Result"|builtin.*Result' compiler/typechecker.gst
+0
+$ grep -cE '"\?"|Question' compiler/lexer.gst compiler/parser.gst
+compiler/lexer.gst:0
+compiler/parser.gst:0
 ```
+
+The deprecated prototype agrees (`grep -rn '"Result"' src/typechecker/types.rs`
+matches only `std::fmt::Result`), but the self-hosted compiler above is the
+claim.
 
 Tests that need a result type define their own:
 
@@ -178,10 +204,10 @@ it.**
 ### E4 — no macros, no operator overloading (rows 10, 11)
 
 ```
-$ grep -in 'macro' src/parser.rs
-(no matches)
-$ grep -rin 'overload' src/ --include=*.rs
-(no matches)
+$ grep -ci 'macro' compiler/parser.gst
+0
+$ grep -ci 'overload' compiler/typechecker.gst
+0
 ```
 
 These two rows hold by construction: the facility was never added, so there is
@@ -345,8 +371,9 @@ $ grep -rin 'overflow' src/codegen.rs src/typechecker/*.rs
 No overflow handling exists anywhere in codegen or the typechecker. The cost is
 not being paid because the check is not there.
 
-It is worse than absent. `Type::Int` lowers to C `int` (`src/codegen.rs:239,443`),
-and **signed overflow in C is undefined behaviour**. So on the default backend
+It is worse than absent. Gust `int` lowers to C `int` in the self-hosted
+compiler (`compiler/codegen.gst:61-62,1358,1382`; no `long long` or `int64_t`
+appears anywhere in it), and **signed overflow in C is undefined behaviour**. So on the default backend
 the behaviour at overflow is not wraparound, which would merely be wrong — it is
 UB, which is the class `README.md`'s two-backends section identifies as the
 reason the Cranelift backend exists. §32 promises a trap and the compiler emits
@@ -354,6 +381,11 @@ the one construct that gives the optimiser licence.
 
 Row 29 is `VIOLATED` rather than `ABSENT` for that reason: the rejected
 behaviour is not just unprevented, it is what the compiler currently produces.
+
+This half is a property of the **C backend**, not of Gust, so it is one of the
+findings that the Cranelift transition can resolve on its own — Cranelift has no
+signed-overflow latitude to inherit. The other half, that §32's types and named
+arithmetic do not exist, is unaffected by the backend and stays.
 
 **Named arithmetic operations** (wrapping, saturating, checked) and the
 **compiler-owned numeric and time types** (`Decimal`, `Money[Currency]`,
@@ -463,12 +495,8 @@ It is narrow. `type_is_resource` (`compiler/typechecker.gst:7690`) keys on a
 compiler-owned `Resource[T]` values are covered. A directory handle is not one,
 which is why a program that leaks one still compiles clean.
 
-The Rust compiler has no equivalent (`grep -rc
-'scope_exit_cleanup\|validate_linear_resource' src/ --include=*.rs` → nothing),
-so the two compilers disagree on whether dropping a live `Resource[T]` is valid.
-Recorded as `docs/SHARED_SEMANTIC_ZONE.md` D-6, and it corrected
-`STEP52_RESOURCE_SEMANTICS.md`, which had stated that nothing on the real
-typechecking path invoked these functions.
+This check corrected `STEP52_RESOURCE_SEMANTICS.md`, which had stated that
+nothing on the real typechecking path invoked these functions.
 
 Rows 15 and 16 stay `PARTIAL`: destructor declaration and enforcement for
 user-defined types remain absent, which is what blocks `MutexGuard`
