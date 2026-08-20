@@ -102,8 +102,10 @@ when the backend does.
 | 39 | Conformance checking | Generated checks substitute for reading | trusting unread output | **PARTIAL** — E22 |
 | 40 | Machine-readable diagnostics | Structured form with a stable rule identifier and candidate edits | prose-only errors | **PARTIAL** — E23 |
 | 41 | Reproducibility | A run is a clean observation; nondeterministic runs are discarded | averaging over noisy runs | **PARTIAL** — E24 |
+| 42 | Execution traces | Every run emits a structured, versioned, machine-readable trace | logs | **ABSENT** — E25 |
+| 43 | Editions | Source compatibility within an edition; editions are the controlled escape hatch | silent meaning changes | **ABSENT** — E25 |
 
-Counts: 9 `HOLDS`, 10 `PARTIAL`, 7 `VIOLATED`, 1 `DEFERRED`, 14 `ABSENT`.
+Counts: 9 `HOLDS`, 10 `PARTIAL`, 7 `VIOLATED`, 1 `DEFERRED`, 16 `ABSENT`.
 
 Row 27 is the one in motion. It is the declared priority and several other rows
 resolve with it — see E17.
@@ -1037,6 +1039,51 @@ one that has not yet had a second target to apply it to. The counts in this
 ledger measure surface: how many rules the compiler enforces for user programs.
 They do not measure whether the team can build the missing surface, and on the
 evidence of these three rows that is not the open question.
+
+### E25 — traces are a stubbed no-op; editions do not exist (rows 42, 43)
+
+**Row 42.** §108: "Every run emits a structured, machine-readable trace. The
+trace is a first-class artifact with a versioned schema, not a log format. It is
+one of the three things humans actually read (§0.12)."
+
+No run trace exists. The only thing in the compiler named "trace" is a
+**no-op**:
+
+```gust
+// compiler/typechecker.gst:8618-8619
+func typechecker_log_trace(emoji: str, message: str, ctx: &Arena) {
+}
+```
+
+An empty body, with **40 call sites** that all compile to nothing. That is
+compiler debug logging which has been stubbed out, not an execution trace, and it
+records nothing about a *program's* run in any case.
+
+Worth noting what the stub implies rather than only that it is empty: the
+instrumentation *points* exist and are maintained through bootstrap. Turning them
+back on is a body, not a design. That is unrelated to §108 — which needs
+capability sets, exercised effects, denied authority attempts, and query
+predicates, none of which exist (E10, E16) — but it is the difference between an
+absent mechanism and an absent decision.
+
+§108 is the only one of §0.12's three human-read artifacts that could exist
+without the platform. The capability manifest needs effects; the lockfile diff
+needs packages (row 38). A trace of allocation and context lifetimes at region
+granularity, and of typed error propagation, could be emitted today, because
+regions and errors both exist. It is not, and nothing schedules it.
+
+**Row 43.** §99 and §100 promise source compatibility within a language edition,
+editions as the controlled escape hatch, and projects pinning an edition and a
+platform release line.
+
+There is no edition concept anywhere: `edition` and `version` are not keywords in
+the live lexer and `edition` appears in no compiler source file. There is no
+manifest to pin one in (row 38).
+
+`ABSENT` rather than `VIOLATED` in both cases: nothing claims to do the opposite,
+and Part XIX marks itself post-1.0 and not a commitment. Recorded because §103
+calls compiler-assisted migrations "a core product feature", and every migration
+mechanism it describes depends on an edition boundary that has no representation.
 
 ## Maintenance
 

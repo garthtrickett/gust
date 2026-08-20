@@ -1594,6 +1594,8 @@ Every escape hatch requires explicit manifest declaration, human approval, defin
 
 After 1.0, Gust promises strong source compatibility within each language edition.
 
+> **No edition concept exists.** `edition` and `version` are not keywords in the live lexer, `edition` appears in no compiler source file, and there is no manifest to pin one in (§70). Recorded because §103 calls compiler-assisted migrations "a core product feature", and every mechanism it describes — deprecation warnings, automated rewrites, removal at an edition boundary — depends on a boundary that has no representation. `docs/ONE_WAY_LEDGER.md` E25.
+
 Compatibility is the default. Editions are the controlled escape hatch for rare syntax or semantic changes. Different editions must interoperate within the same ecosystem.
 
 ## 100. Version pinning
@@ -1665,6 +1667,10 @@ Iteration count is a quality input, and for an acquirer who serves inference it 
 ## 108. Execution traces
 
 Every run emits a structured, machine-readable trace. The trace is a first-class artifact with a versioned schema, not a log format. It is one of the three things humans actually read (§0.12).
+
+> **No run trace exists.** Verified 2026-08-20 at `b47d0049`. The only thing in the compiler named "trace" is `typechecker_log_trace` (`compiler/typechecker.gst:8618-8619`), whose body is empty — 40 call sites compiling to nothing. That is stubbed compiler debug logging, and it says nothing about a *program's* run regardless.
+>
+> Worth separating from the rest of Part XX: **this is the only one of §0.12's three human-read artifacts that could exist before the platform does.** The capability manifest needs effects; the lockfile diff needs packages. But a trace of allocation and context lifetimes at region granularity, and of typed error values with their propagation path, is expressible today — regions and errors both exist. Nothing schedules it. `docs/ONE_WAY_LEDGER.md` E25.
 
 A trace records:
 
