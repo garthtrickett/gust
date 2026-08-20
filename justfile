@@ -21794,3 +21794,34 @@ guard-stdlib-s1-surface-inventory:
     rg -n -F -e '- `std.str_eq`' "$inventory" >/dev/null
 
     echo "✅ Stdlib surface inventory is generated from the compiler and current."
+
+# Stdlib lane, Phase S1. Appended at the end for the same reason as the other S1
+# guards: several guards extract recipe bodies with sed ranges bounded by the
+# next recipe name.
+guard-stdlib-s1-str-surface:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking the str surface regression suite..."
+    fixture="tests/test_str_surface_regression.gst"
+    if [ ! -f "$fixture" ]; then
+      echo "Missing str surface fixture: $fixture"
+      exit 1
+    fi
+
+    bash scripts/run-gust-file.sh "$fixture" >/dev/null 2>&1
+    rg -n -F 'SUCCESS: str surface regression' to.log >/dev/null
+
+    # The whole output is pinned, not just a success marker. These are the values
+    # the string surface produces today; a change to any of them is a semantic
+    # change to str and must be deliberate. Derived from the operation list in
+    # docs/STDLIB_SURFACE_INVENTORY.md.
+    expected="11 0 104 44 100 0 11 hello world o,w 6 -1 0 padded tight 0 1 0 1 11 8 5 102 11 1 2 hello 5 world 1 0 1 42"
+    actual="$(awk '/RUNNING COMPILED BINARY/,0' to.log | tail -n +2 | rg -v 'SUCCESS: str surface regression' | rg -v '^\s*$' | tr '\n' ' ' | sed 's/ *$//')"
+    if [ "$actual" != "$expected" ]; then
+      echo "str surface output changed."
+      echo "expected: $expected"
+      echo "actual:   $actual"
+      exit 1
+    fi
+
+    echo "✅ str surface regression suite matches the pinned output."
