@@ -1701,6 +1701,7 @@ confident clean pass:
 | A **stalled** unit | A run `queued` for 2h28m with nothing executing repo-wide — the status field reports the run's state correctly and says nothing about whether it will ever run |
 | A **cancelled** wave | Three PRs with 63, 64 and 65 runs, every one `cancelled`, nothing queued or running — zero failures, zero pending, and dead |
 | A **context-calibrated floor** | A gate asserting `len >= 30`, correct for a 34-run wave, refusing a legitimate 2-run wave permanently |
+| A **field that misnames itself** | `run_started_at` on a CI run that has never executed — set at *creation*, so it equals `created_at` and reads as a start time on a run still `queued` |
 | The **same floor, silent** | The watcher armed beside that gate carried `len(r) < 5: exit` — on a 2-run wave it reports nothing, and nothing is what a quiet watcher is meant to report |
 
 The durable fix is not a fifth guard. It is inverting the predicate:
@@ -1947,6 +1948,45 @@ being background, either by being gathered with the same tool that gathers
 findings, or by being labelled as unverified where it is quoted. The rule is not to check more; it is to notice that a figure has
 become evidence the moment an argument rests on it, whatever it was gathered
 for.
+
+### A different mechanism: presentation is not meaning
+
+Most of the artifacts above are **truncation** — a subset presented as the whole,
+defeated by widening the query. One is not, and filing it with the others would
+prescribe the wrong remedy.
+
+`run_started_at` on a GitHub Actions run is set when the run is **created**, not
+when it begins executing. Verified directly on this branch's own runs while both
+sat `queued`:
+
+```
+Heavy Guards | status=queued | created=05:48:28Z | run_started_at=05:48:28Z
+PR Fast      | status=queued | created=05:48:28Z | run_started_at=05:48:28Z
+```
+
+A run that has never executed carries a timestamp that reads as having started.
+**No amount of pagination reaches this** — the full, untruncated record says the
+same thing. The field is not incomplete; it means something other than what its
+name asserts.
+
+So the remedy differs. Against truncation: widen the query. Against this:
+**corroborate the field against a second, independent one that would have to
+agree** — here `run_started_at` against `status`, and both against `created_at`.
+
+The generalisation covering both is narrower than "paginate" and wider than
+either:
+
+> **A datum's presentation is not its meaning.** A name, a format, or a position
+> in a table is a claim by whoever designed the record, and the check is always a
+> second field that would have to agree with it.
+
+**One observation about consequence, which is the useful half.** Reading that
+field wrongly was harmless here for a structural reason rather than by luck: no
+gate in this repository consumes `run_started_at`. The same misreading of a
+*conclusion* field would have merged a PR. **Which readings are load-bearing is
+a property of the gates, not of the data** — so the audit worth doing is not "is
+every field read correctly" but "which fields does a decision actually rest on",
+and those are the ones to corroborate.
 
 **Assert that a check found what it was looking for, not merely that it ran.**
 For an edit, compare the file before and after. For a search, assert a non-zero
