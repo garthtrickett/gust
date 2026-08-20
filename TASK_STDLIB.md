@@ -45,7 +45,7 @@ This is a scheduling fact, not an objection to the two-lane model.
 
 ## Status
 
-- [ ] Patch S1.0 — Opening Inventory and Stdlib Surface Baseline
+- [x] Patch S1.0 — Opening Inventory and Stdlib Surface Baseline — DONE
 - [x] Patch S1.1 — `str` Equality Diagnostic — DONE
 - [ ] Patch S1.2 — String Surface Regression Suite
 - [x] Patch S1.3 — HashMap Methods Through References — DONE

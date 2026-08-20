@@ -1,0 +1,40 @@
+name: Stdlib S1 Surface Inventory
+
+# The inventory is generated from the compiler. This fails if it drifts, so a
+# roadmap cannot describe the stdlib surface from memory again.
+
+on:
+  pull_request:
+    paths:
+      - 'compiler/typechecker.gst'
+      - 'src/runtime/**'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/stdlib_surface_inventory.py'
+      - 'docs/STDLIB_SURFACE_INVENTORY.md'
+      - '.github/workflows/stdlib-s1-surface-inventory.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'compiler/typechecker.gst'
+      - 'src/runtime/**'
+      - 'scripts/stdlib_surface_inventory.py'
+      - 'docs/STDLIB_SURFACE_INVENTORY.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  surface-inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: guard-stdlib-s1-surface-inventory
+        run: just guard-stdlib-s1-surface-inventory
