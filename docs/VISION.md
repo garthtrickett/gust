@@ -1408,6 +1408,27 @@ Authorization predicates are injected into queries where policies can be transla
 
 This is static enforcement backed by generated conformance tests (§79), not formal proof. See §79 for the language Gust is permitted to use externally.
 
+### 56.1 The attack list for OD-8
+
+§0.11 requires that someone adversarial attack the scoping analysis before publication. An instruction to "review it adversarially" with no target list produces a review that confirms what it was shown. This is the target list — the classes a reviewer should try to build a counterexample from, written before the analysis exists so that it cannot be shaped around what the analysis happens to catch.
+
+**The class most likely to succeed, and it is not a bug.** "The unscoped program does not compile" is a **presence** claim: it says a tenant scope is *there*. It does not say the scope is the *caller's* tenant. A program that scopes every query to a tenant id read straight from an attacker-controlled request field satisfies the analysis completely and leaks everything. If that is out of scope, §1 and §79 must say so in the words used externally, because a reader will hear the stronger claim. **Presence is cheap to check and correctness is not** — that asymmetry is the analysis's shape, not an oversight in it, and it is the first thing an honest reviewer will find.
+
+The remaining classes, roughly by how much they would cost to close:
+
+1. **The privileged raw-SQL capability (§57).** A declared escape hatch is not a hole, but it is only sound if possessing it is rare, visible, and non-transitive. Can a library acquire it and re-export a helper that looks ordinary?
+2. **Joins to unscoped tables.** A scoped table joined to a lookup table that carries no tenant column — does scope propagate across the join, or is it satisfied by the scoped side alone?
+3. **Nesting.** Scope in the outer query and an unscoped subquery, aggregate, or `EXISTS` beneath it.
+4. **Queries as values.** A query built in one function, stored in a struct or returned, and scoped by the caller. The analysis must follow it or refuse it.
+5. **The result cache.** A correctly scoped query whose result is cached and served to a different tenant. The analysis covers queries; caches are not queries.
+6. **Multi-step flows.** An id legitimately obtained under tenant A, used in a query correctly scoped to tenant B. Every individual query passes.
+7. **The legitimately cross-tenant path.** Admin tooling and migrations must be able to do this. How is that marked, how visible is the marking, and can it be applied by someone who did not realise what it turns off?
+8. **Non-query reads.** Stored procedures, triggers, a raw connection obtained through a capability, or any supplier surface (§98) that returns rows without passing through the query layer.
+9. **Dynamic shape.** Table or column names computed at runtime.
+10. **Where the tenant value comes from.** The analysis assumes the request context is trustworthy. Whatever establishes that context is inside the trusted base and belongs in the review.
+
+**How to run it.** The reviewer's job is to produce a program that compiles and leaks, not to assess whether the design seems sound. One such program resolves OD-8 negatively, which is the outcome §0.11 wants found in month four rather than after publication. A review that produces no counterexample should say which of these classes it actually attempted.
+
 > **OD-8 lives here.** §0.15 names this section as where OD-8 is stated in full, and until 2026-08-20 it was not stated here at all — a reader could finish §56 without learning that the soundness of the analysis above is an open, *thesis-invalidating* question. **Is the scoping analysis sound?** One counterexample — one program that carries no tenant scope and compiles anyway — retires the only claim this document makes, which is why §0.11 requires an adversarial review before publication rather than after. Nothing in §56 is weakened by saying so; the claim is exactly as strong as the analysis, and the analysis has not yet been attacked. Status is owned by §0.15.
 
 ## 57. Raw SQL
