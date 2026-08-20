@@ -1,0 +1,39 @@
+name: CI Guard Reachability
+
+# Issue #92: 22 guard recipes existed that nothing in CI could reach. This keeps
+# that number from growing, and forces it down as owners wire or delete them.
+
+on:
+  pull_request:
+    paths:
+      - 'justfile'
+      - '.github/workflows/**'
+      - 'scripts/guard_reachability.py'
+      - 'scripts/guard_reachability_allowlist.json'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_test_levels.json'
+  push:
+    branches: [main]
+    paths:
+      - 'justfile'
+      - '.github/workflows/**'
+      - 'scripts/guard_reachability.py'
+      - 'scripts/guard_reachability_allowlist.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  guard-reachability:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: guard-ci-guard-reachability
+        run: just guard-ci-guard-reachability
