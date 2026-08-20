@@ -20,6 +20,18 @@ Nearly every language design decision since the 1970s optimises for human readin
 
 The claim is about **readership**, not authorship. Authorship shifting to machines is the visible change. Readership collapsing is the one that breaks the stack, because review is the trust mechanism everything downstream depends on, and you cannot review what nobody reads.
 
+**What this thesis licenses, and what it does not.** It is a claim about the market and about build order: it says to invest in the artifacts that replace reading — manifests, lockfile diffs, traces, structured diagnostics, conformance checks — ahead of the artifacts that assist reading. It is **not** a licence for ceremony in the language, and it must not be cited as one.
+
+Three reasons it cannot carry that weight. This document contradicts itself if it does: §0.12 lists three artifacts humans *do* read, §58 calls migrations "the one artifact still read by humans", and Part XX exists to produce traces for someone to look at. Humans read code at exactly the moments Gust is sold for — incident response, review of an authority change, security diligence. And it does not hold for the machine either: every redundant token is a token that can be wrong, so OD-9 gets harder as per-function boilerplate grows, not easier.
+
+The operative rule is therefore narrower than "nobody reads it":
+
+> **Explicit exactly where the explicitness is the artifact. Inferred everywhere else.**
+
+Explicit, because someone reads them: authority, ownership, error propagation, resource lifetime. Inferred or desugared, because nobody reads them and a mistake is a compile error anyway: context threading, codec plumbing, dispatch tables.
+
+See `docs/VISION_RECONCILIATION.md` §3.1, which records the conflict between this section and `README.md` and how it resolves.
+
 ## 0.2 The problem: a flood that aggregates nowhere
 
 People build applications by asking an AI. The AI writes the code. Nobody reads it. A meaningful share of those applications ship a bug where every user can see every other user's data — missing tenant scoping, the canonical failure of generated software.
@@ -109,6 +121,19 @@ The memory model, resources, and arenas are the conventional core of a systems l
 The four absent items are different in kind: less code, more design, and design does not compress the way implementation does. Making tenant-scope enforcement *sound* rather than approximately right is where the risk now lives.
 
 The risk profile has shifted, not shrunk: from *can they build a compiler* — answered — to *can they design an effect system and a sound scoping analysis*.
+
+**Measured 2026-08-20 at `b47d0049`.** 711 `.gst` compiler files, 103,789 lines; 260 test programs; Phase 18 at 13 of 20 patches. "Several hundred files" above is 260, and is a count of test programs rather than of assertions.
+
+**One qualification on "everything built is table stakes."** It reads as though the built rows are settled. In `docs/ONE_WAY_LEDGER.md`, four of the design rules they rest on are recorded as violated and one was withdrawn to match the compiler. None of the five is currently scheduled:
+
+- **Brand identity** is inferred from identifier spelling, not from types, and the two compilers use different matching rules for it (D-1, D-2). Until Phase 19 lands, "ownership and region-based memory — working" is true of the design and approximate in the implementation.
+- **Panic scope** (§34): a string bounds failure calls `exit(1)` and takes the process down rather than the request.
+- **Shared ownership** is marked open as OD-3 while `std.Rc` already ships.
+- **Concurrency** is detached `std.Spawn` plus channels — the model §20 rejects.
+- **Integer overflow** is undefined behaviour on the default backend, not the trap §32 promises: `Type::Int` lowers to C `int`, where signed overflow is UB (issue #103).
+- **The borrow model** is the withdrawn one. §26 was corrected on 2026-08-19 to the single mutable reference form that exists — `inout` is not a keyword in either compiler — so there is no longer a rule being violated, only a containment property that nothing delivers.
+
+This does not change the conclusion that the absent items are the product. It changes what "built" is load-bearing for: the memory model is not yet sound enough to be *demonstrated*, which matters because containment is what is being sold (§0.4).
 
 ## 0.7 What to build next
 
@@ -344,13 +369,15 @@ Everything from v1.0 down is specified in this document so that demo-stage decis
 |---|---|---|---|
 | **OD-9** | **Model fluency** — can an agent write Gust well, and how do we get there from no corpus? *Thesis-invalidating. Starts week one.* | Demo | §0.7 |
 | **OD-8** | **Soundness of the tenant-scoping analysis** — adversarial review before publication. *Thesis-invalidating.* | Demo | §56 |
-| OD-1 | Transparent suspension vs coloured async (server) | Demo | §21 |
+| OD-1 | Transparent suspension vs coloured async (server). **Recommendation recorded in §21**; decision owned by the Cranelift lane | Demo | §21 |
 | OD-2 | Generic functions vs compiler-owned query derivation | Demo | §14, §55 |
 | OD-10 | **Distribution for the product path** — currently unanswered | Month 4 | §0.11 |
-| OD-3 | SAM state ownership under linear resources and no interior mutability | v0.5 | §27, §38 |
+| OD-3 | SAM state ownership under linear resources and no interior mutability. **`std.Rc` already ships**, so part of this was decided by implementation — see `TASK_STDLIB.md` CR-9 | v0.5 | §27, §38 |
 | OD-4 | WASM stack-switching support and payload cost | v0.5 | §21, §41 |
 | OD-6 | Form of the intent layer | v1.0 | Part XXI |
 | OD-5 | Supplier certification staffing model | Post-1.0 | Part XVI |
+
+There is no OD-7. The number is unused and nothing in the repository references it; it is recorded here so a reader who notices the gap does not go looking.
 
 ## 0.16 Non-goals
 
@@ -373,7 +400,25 @@ And two hard constraints on how the business is run, not merely things we prefer
 
 **One line:** the fix for AI-generated data leaks is structural, and for the first time in the history of this problem the lever is ten generators instead of ten million developers.
 
+## 0.17 Part status markers
+
+§0.16 defers most of this document, and then the remaining twenty Parts specify the deferred material in the same voice as the committed material. A reader cannot tell them apart, and two readers reach different conclusions about what is being built.
+
+Every Part below therefore carries a status line. The markers are:
+
+| Marker | Meaning |
+| --- | --- |
+| **COMMITTED** | Required for the §0.7 demo, or already built. Work here needs no further justification. |
+| **DEFERRED** | Intended, scheduled after the demo (§0.14). Specified now so that demo-stage decisions do not foreclose it. Do not build yet. |
+| **SPECULATIVE** | Specified so the design is coherent end to end. Not scheduled, and per §0.16 most of it should never be built by us. Treat as a constraint on today's decisions, not as a backlog. |
+
+A status marker is not a quality judgement and does not weaken a Part's authority over its own subject. `SHARED_SEMANTIC_ZONE.md` cites §16, §26, §28, §29, and §34 as authoritative regardless of the marker on their Part.
+
+Where a Part splits, the marker names the split by section. `docs/ONE_WAY_LEDGER.md` records, per rule, whether the compiler currently does what the Part says.
+
 # Part I — Product
+
+> **Status: COMMITTED.** §1–§2 are the claim being demonstrated. §3's platform ownership list is the target state, not the current one.
 
 ## 1. Product vision
 
@@ -462,6 +507,8 @@ Developers — and the agents writing on their behalf — call Gust-owned capabi
 
 # Part II — Trust, Suppliers, and Infrastructure
 
+> **Status: SPECULATIVE.** §0.7 puts suppliers and deployment after the demo. §5's "every application includes PostgreSQL and an S3-compatible store" is a design intent; no database or storage capability exists today.
+
 ## 4. Trusted suppliers
 
 Trusted suppliers operate behind Gust-defined capability interfaces and isolation boundaries rather than shipping unrestricted packages into applications.
@@ -502,6 +549,8 @@ The agent-facing equivalent of this target is the loop latency budget in §107.
 
 # Part III — Organisation, Workspace, and Tenancy
 
+> **Status: COMMITTED (§9 tenancy) / SPECULATIVE (§8 organisation and billing).** Tenant resolution and automatic scoping are the lead claim (§56). The organisation, billing, and multi-workspace administration model is not demo scope.
+
 ## 8. Organisation and workspace model
 
 The **organisation** is the administrative and billing boundary. It owns users and memberships, billing, security policies, trusted-supplier permissions, domains, and deployments.
@@ -528,17 +577,27 @@ The default PostgreSQL isolation model is one schema per workspace. Stronger opt
 
 # Part IV — Language Principles
 
+> **Status: COMMITTED.** Ring 1. Frozen at 1.0 per §99. `docs/ONE_WAY_LEDGER.md` records which of these hold in the compiler today; §11's `Result` and `?` do not yet exist.
+
 Every restriction in this Part serves two ends at once: it narrows the space of programs a human must reason about, and it narrows the space of programs an agent can generate.
 
 Under the readership thesis (§0.1) these restrictions stop needing a defence. Macros, operator overloading, inheritance, and user-level generics are conveniences for a human writing code daily, and are either free or actively harmful to a machine generating it. The austerity is not a trade-off — it is the correct answer once reading is rare.
 
-The corollary: **verbosity is free.** Where a conventional language would infer to save typing, Gust states things explicitly, because the cost of inference is paid by every reader of a diff and the benefit accrues to a typist who no longer exists.
+The corollary, stated carefully: **verbosity is cheap where the verbose thing is the artifact.** Where a conventional language would infer to save typing, Gust states things explicitly *when the explicit form is what a reviewer reads* — authority, ownership, error propagation, resource lifetime. The cost of inference there is paid by every reader of a diff, and the benefit accrues to a typist who no longer exists.
+
+This is not a general licence. An earlier draft of this section read "verbosity is free" without qualification, and that is withdrawn: verbosity in plumbing nobody reads — context threading, codec boilerplate, dispatch tables — buys nothing and costs generation accuracy, because every redundant token is a token that can be wrong. §0.1 states the operative rule and `docs/VISION_RECONCILIATION.md` §3.1 and §3.4 record the reasoning.
 
 ## 10. Language and runtime model
 
 Gust is a purpose-built language rather than a framework hosted inside another language.
 
 The language directly understands client and server execution boundaries, database effects, authentication and authorization, capabilities and permissions, trusted suppliers, secrets, deployment boundaries, memory regions, and ownership.
+
+> **Two of those nine exist.** Verified 2026-08-20 at `b47d0049`. Memory regions and ownership are real and deeply built — not as keywords but through the branded `&Arena` type (`compiler/ast.gst:38`, 519 references in the typechecker), brand-mismatch diagnostics (§25), and structural move tracking (`compiler/typechecker.gst:1761`).
+>
+> The other seven have no representation anywhere — no keyword, no type, no registered name: client and server boundaries, database effects, authentication and authorization, capabilities and permissions, trusted suppliers, secrets, and deployment boundaries. `docs/ONE_WAY_LEDGER.md` E10 and E16.
+>
+> The sentence is the target. Read as present tense it overstates the language by seven of nine, and it is the sentence most likely to be quoted as a summary of what Gust is.
 
 Gust uses explicit ownership and region-based memory built around branded contexts such as `ctx`.
 
@@ -568,6 +627,8 @@ Dynamic polymorphism should be used only where genuinely necessary and must rema
 
 *Rationale: resolution is local. A call site tells you what runs, without whole-program hierarchy search — for a human reviewing a diff or a model predicting a token.*
 
+A concrete design for "small explicit function tables" — a flat behaviour registry indexed by handle, rather than a vtable pointer per object — is recorded in `docs/VISION_RECONCILIATION.md` Appendix B. It is how this section can ban inheritance without giving up open polymorphism.
+
 ## 13. Generics
 
 Gust follows a deliberately restricted Odin/C-style approach.
@@ -587,6 +648,10 @@ This resolves the apparent conflict between §13 and §55: the query builder is 
 It also answers "why not build Gust as a library over an existing austere language" — the differentiating features require compiler support, and any language austere enough to be a good base bans the metaprogramming that would let you add them from outside.
 
 **OD-2 remains open** on one point: whether a restricted form of user-written generic function is required before v0.1 for standard-library collection code, or whether compiler-owned containers cover it.
+
+> **No compiler-owned derivation exists yet**, because everything §14 lists as derived — the query builder, RPC schemas, templates — is itself unbuilt. What the section gets right today is the negative half: user-written generic functions are genuinely unavailable, while generic structs and enums with monomorphisation work (`docs/ONE_WAY_LEDGER.md` E15).
+>
+> One data point for OD-2 from the compiler's own source: `compiler/errors.gst:17` declares `Result[T, ctx]` as an ordinary user-level generic enum. The compiler needed a generic sum type and expressed it with the facilities users have, which suggests generic *types* do cover a good deal without generic *functions*.
 
 ## 15. Compile-time execution
 
@@ -612,9 +677,15 @@ Only obviously lossless widening conversions may be implicit. All other conversi
 
 # Part V — Effects and Capabilities
 
+> **Status: COMMITTED.** The differentiator (§0.4) and Track A item 1. Entirely unimplemented — there is no `uses` keyword in either lexer (`docs/ONE_WAY_LEDGER.md` E10).
+
 ## 17. Effects in function types
 
 A function's type describes both the values it transforms and the authority it requires.
+
+> **None of Part V is implemented.** Verified 2026-08-20 at `b47d0049`: there is no `uses` keyword in either lexer, and no effect is declared, checked, or recorded anywhere. This is the differentiator (§0.4) and Track A item 1, and §0.6 already lists it as absent — annotated here too because every lesser section in this document now carries its status, and the section the product rests on should not be the one that reads as settled. `docs/ONE_WAY_LEDGER.md` E10.
+>
+> Its absence is what makes several other rows unfixable in isolation: §81's `secret.use<…>`, §22's rejection of external effects inside retried transactions, §52's pre-execution authorization, and §108's record of exercised and denied authority all presuppose it.
 
 Functions declare capabilities such as:
 
@@ -631,7 +702,7 @@ random.use
 network.request<host>
 ```
 
-**Effects are declared on every function, without exception.** Earlier drafts permitted inference on private functions; that is withdrawn. Inference exists to save human typing, and no human types. Full annotation makes diffs informative, traces correlatable, and generation more constrained. The only cost is verbosity, and verbosity is free (Part IV).
+**Effects are declared on every function, without exception.** Earlier drafts permitted inference on private functions; that is withdrawn. Full annotation makes diffs informative, traces correlatable, and generation more constrained. The cost is verbosity, and it is worth paying *here* specifically: the effect set is the artifact a reviewer reads (§0.12), so stating it is the point rather than an overhead. This is not the general "verbosity is free" claim, which Part IV withdraws — it is the case that claim was reaching for.
 
 This enables static least privilege, containable agent-generated code, compiler-checked mocks, automatic deployment policies, and auditable authority changes.
 
@@ -672,6 +743,8 @@ Unsafe code must still possess every required effect.
 
 # Part VI — Concurrency, Tasks, and Transactions
 
+> **Status: COMMITTED (§20–§21) / DEFERRED (§22 transactions).** OD-1 must resolve before the demo. What exists today is detached `std.Spawn` plus channels — the model §20 rejects; see §21 and `docs/ONE_WAY_LEDGER.md` E9.
+
 ## 20. Structured concurrency
 
 Normal application concurrency is structured and request-scoped.
@@ -692,7 +765,15 @@ Concurrency remains explicit through task creation, task scopes, joins, cancella
 
 **Open decision.** Transparent suspension implies green threads or effect handlers. Against a WASM browser target (§41) that means stack switching, with real cost in payload size, portability, and toolchain support, and it interacts directly with the ownership-across-tasks rules in §30.
 
-The demo cut (§0.14) is server-only, which splits this cleanly: **OD-1 (server suspension) must resolve before the demo; OD-4 (WASM cost) defers to v0.5.** If transparent suspension proves unworkable on WASM, the fallback is coloured async on the client and transparent suspension on the server — accepting the asymmetry rather than degrading both.
+The demo cut (§0.14) is server-only, which splits this cleanly: **OD-1 (server suspension) must resolve before the demo; OD-4 (WASM cost) defers to v0.5.**
+
+**What exists today (verified 2026-08-20, `b47d0049`).** Neither model. There is no `async`, `await`, `spawn`, or `scope` keyword in either lexer. Concurrency is a library surface over the cooperative fibers in `src/runtime/fiber.c`: `std.Spawn`, `std.Channel`, `std.Mutex`, `std.Yield`. `std.Spawn` starts work that no scope owns, with no join requirement, no cancellation propagation, and no task handle — which is detached spawn plus channels, the model §20 rejects and the only one available. Recorded with reproductions in `docs/ONE_WAY_LEDGER.md` E9 and tracked as `TASK_STDLIB.md` CR-8.
+
+**Recommendation, not a decision.** Take Go's *suspension* model and reject Go's *task* model: transparent suspension with no colouring, over a scheduler that already exists, with every task owned by a lexical scope that cannot exit while a child is live, and task handles as linear resources. Three named concepts — child task, supervisor, durable job — rather than one `spawn` with adjectives. `?` continues to mean "may fail"; suspension needs no keyword because it is always owned.
+
+The fallback above — coloured async on the client, transparent on the server — is recorded here as the worse option. Two concurrency models in a language whose premise is one of everything refutes the premise; if OD-4 makes WASM stack switching unaffordable, restricting client code to event-driven dispatch with no suspension is the better trade, and Part IX's SAM model already implies it.
+
+Ownership: this is a Ring 1 semantic decision. `docs/SHARED_SEMANTIC_ZONE.md` assigns the fiber scheduling contract to the Cranelift lane, so neither lane may act on the recommendation unilaterally. Reasoning in `docs/VISION_RECONCILIATION.md` §3.2.
 
 ## 22. Transactions
 
@@ -706,6 +787,8 @@ transaction db as tx {
 
 Database operations inside the block are statically bound to `tx`. Transaction handles and transaction-bound values cannot escape the transaction scope.
 
+> **Not implemented.** `transaction`, `tx`, and `savepoint` are not keywords in the live lexer. This is platform surface (`docs/ONE_WAY_LEDGER.md` E16) — a transaction block is meaningless without a database, and nothing in it is checkable before one exists.
+
 Nested transactions use explicit savepoints.
 
 Transactions declare isolation level, timeout, and retry policy. Serialization conflicts and retry exhaustion return typed errors.
@@ -718,9 +801,13 @@ Gust provides post-commit hooks and a transactional outbox for reliable external
 
 # Part VII — Resources, Ownership, and Memory
 
+> **Status: COMMITTED.** The most heavily built Part. §26 was corrected 2026-08-19 to the single reference form that exists; §27 is marked OD-3 but `std.Rc` already ships (`docs/ONE_WAY_LEDGER.md` E8).
+
 ## 23. Value categories
 
 **Copy values.** Integers, bytes, booleans, simple enums, IDs and indices, and explicitly copyable structs. A user-defined struct is copyable only when every field is copyable and the type is explicitly marked copyable.
+
+> **Partly implemented.** Verified 2026-08-20 at `b47d0049`: the field-transitivity half holds, but there is no `copyable` marker in either lexer. Copy-versus-move is *inferred* structurally by `is_linear` (`src/typechecker.rs:219-250`) — primitives and indices copy; `Arena`, `RawPointer`, `Slice`, `ByteSlice`, `str`, and generics move; a struct moves iff any field does. The practical consequence is that adding one `str` field to a plain struct silently converts it from copy to move at every use site, with no annotation and no diagnostic — which is the change an explicit marker would catch at the declaration. `docs/ONE_WAY_LEDGER.md` E13.
 
 **Context-bound views.** Non-owning views into storage associated with a branded context: `str`, slices, references. Copying a view copies the view descriptor, not its backing storage. A view cannot outlive its context.
 
@@ -736,6 +823,12 @@ The platform provides well-known context kinds: scratch, temporary lexical, requ
 
 These are compiler/runtime-owned arena classes rather than separate ownership systems.
 
+> **The first sentence of this section holds; the list of kinds does not yet.** Verified 2026-08-20 at `b47d0049`. There is one branded arena mechanism, and that is the load-bearing claim — `os.Arena.New` and `os.ArenaAlloc` are the general form, with a distinct thread-local scratch class (`os.SetThreadScratch`, `os.ScratchAlloc`, `os_ScratchReset` in `src/runtime/scratch.c`).
+>
+> Of the seven kinds named, two exist as distinct mechanisms: scratch, and the general arena that covers "temporary lexical", "application", and "explicitly managed persistent" — those three are not separate classes, they are an arena with a different lifetime. **Request, task, and job-execution contexts do not exist**, and cannot until the platform they belong to does (`docs/ONE_WAY_LEDGER.md` E16).
+>
+> The list is also under-inclusive: `std.GenerationalArena` with `std.GenerationalSwap`, and `std.ThreadLocalContext`, are shipped arena classes this section does not name.
+
 ## 25. Lifetime movement
 
 A value from a shorter-lived context may enter a longer-lived context only through cloning into the destination context, serialization, or explicit ownership transfer.
@@ -743,6 +836,10 @@ A value from a shorter-lived context may enter a longer-lived context only throu
 Copying a view does not extend its lifetime.
 
 Request-branded references cannot enter jobs, durable messages, longer-lived caches, application state, or persistent storage.
+
+> **Enforced in principle, and no stronger than brand identity.** Brands are part of the type, so a value branded to one context is not assignable where another is expected, and the typechecker emits dedicated diagnostics — `[BrandMismatch]` for `Arena.get_ref` and `Arena.Set/Write` (`compiler/typechecker.gst:2661,2668,2676,2709`) and "Brand Nesting. Mismatched nested brand" (`:1716,:1740`). That is real.
+>
+> The qualification is that brand *identity* is currently derived from identifier spelling rather than from the type (`docs/SHARED_SEMANTIC_ZONE.md` D-1, owned by Phase 19). A rule enforced by comparing brands is only as sound as the way brands are identified. The specific prohibitions named here are additionally vacuous today, since jobs, durable messages, and persistent storage do not exist. `docs/ONE_WAY_LEDGER.md` E20.
 
 ## 26. Borrows
 
@@ -771,6 +868,10 @@ Shared mutation should instead occur through SAM state ownership, actors, transa
 ## 28. Linear resources
 
 Root resource types opt into resource semantics through explicit linear metadata, a `Resource[...]` representation, and registered destructor metadata.
+
+> **The opt-in half is implemented.** A `#[linear]` layout attribute is parsed alongside `repr(C)` and `packed` (`compiler/parser.gst:869-872`), flows to `StructDecl.is_linear_resource`, and is registered by `env_register_struct_linear_metadata` (`compiler/typechecker.gst:6801`). Registered *destructor* metadata for user-defined types is the part that is missing (`TASK_STDLIB.md` CR-5), which is what blocks `MutexGuard`.
+>
+> Worth stating explicitly because the word is overloaded: this opt-in is separate from the structural linearity that governs move-versus-copy for ordinary values. `str` and slices are automatically linear for move tracking and are *not* automatically resources — which is exactly what the next paragraph claims. `docs/ONE_WAY_LEDGER.md` E20 and E13.
 
 Linearity propagates transitively. Any struct containing a linear field is itself linear. Ordinary strings, slices, collections, and branded structs do not automatically become resources.
 
@@ -805,6 +906,8 @@ Borrows should not be shared across tasks. This is a design rule, not an enforce
 
 Channels transfer ownership of sent values.
 
+> **Not enforced.** Verified 2026-08-20 at `b47d0049`: `Channel.Send` checks its argument against the element type and returns `Void` (`compiler/typechecker.gst:2823-2841`). No move is recorded at the send site, so the sender retains a usable binding to a value it has handed to another fiber. Together with §20's unenforced task ownership this means the two concurrency primitives that exist — `std.Spawn` and `std.Channel` — provide neither task ownership nor value ownership. `docs/ONE_WAY_LEDGER.md` E18; tracked with issue #101, since the fix is the same OD-1 decision.
+
 Values containing context-bound references may cross into a task only when the receiving task shares a valid parent context.
 
 Durable jobs and messages require fully owned serializable values. They cannot contain references.
@@ -812,6 +915,8 @@ Durable jobs and messages require fully owned serializable values. They cannot c
 ---
 
 # Part VIII — Core Type-System Details
+
+> **Status: COMMITTED (§31, §33) / SPECULATIVE (§32) / COMMITTED-but-violated (§34).** §31 enums and matching, and §33 strings, exist. **§32's numeric model is entirely absent** — none of the six fixed-width integer types, no overflow trapping, no named arithmetic, none of the `Decimal`/`Money`/time types (`docs/ONE_WAY_LEDGER.md` E11). §34's panic scoping is violated: a string bounds failure calls `exit(1)` and takes the process down (E3).
 
 ## 31. Enums and matching
 
@@ -826,6 +931,8 @@ All enum matching must be exhaustive.
 *Rationale: exhaustiveness converts a whole class of generated-code omission into a compile error.*
 
 ## 32. Numbers
+
+> **None of this section is implemented.** Verified 2026-08-20 at `b47d0049`: there is one integer type, `int`, and none of the six fixed-width types below exists in either lexer; there is no overflow handling anywhere in codegen or the typechecker; the named arithmetic operations and every one of the numeric and time types below are absent. `Type::Int` lowers to C `int`, where signed overflow is undefined behaviour — so the current behaviour at overflow is not wraparound but UB, which is the opposite end of the spectrum from the trap this section promises. Reproductions in `docs/ONE_WAY_LEDGER.md` E11; tracked as issue #103. The section is retained as the target, not as a description.
 
 Gust supports compiler-defined fixed-width integer types: `i32`, `u32`, `i64`, `u64`, `isize`, `usize`.
 
@@ -862,6 +969,8 @@ Runtime corruption or unsafe-memory failure may terminate the application proces
 ---
 
 # Part IX — Client, UI, and RPC
+
+> **Status: SPECULATIVE.** No Wasm target, templates, SAM runtime, or RPC layer exists. `full-stack-slice-0.md` is the scoped entry point when this is taken up; per §0.7 it is not now.
 
 *v0.5 (§0.14). Not in the demo.*
 
@@ -914,6 +1023,8 @@ Event handlers dispatch typed SAM actions rather than directly mutating DOM stat
 Local and remote state use the same action model while effects remain explicit.
 
 See §27: the interaction between SAM state ownership, linear resources, and the prohibition on interior mutability is an open decision requiring a worked example before v0.5.
+
+The argument that SAM is the *right* fit for an arena language — model in a long-lived arena, action payloads in a scratch arena, view in a frame-bound arena wiped in constant time, and therefore no cyclic widget graph and no listener leaks — is recorded in `docs/VISION_RECONCILIATION.md` Appendix A.
 
 ## 39. Browser access
 
@@ -987,6 +1098,8 @@ Subscriptions and streams update the same cache and dispatch ordinary SAM action
 ---
 
 # Part X — Authentication and Authorization
+
+> **Status: SPECULATIVE**, except that §52's "enforced in queries" is the same mechanism as §56 and is COMMITTED through it. The demo's `Session` can be a struct handed in by a harness.
 
 *v0.5 (§0.14). The demo ships a stub sufficient to establish tenant identity.*
 
@@ -1065,6 +1178,8 @@ When no policy exists or a decision is ambiguous, access is denied.
 ---
 
 # Part XI — Database and Migrations
+
+> **Status: COMMITTED (§55–§56) / SPECULATIVE (§54, §57–§62).** Typed query derivation and tenant enforcement are Track A items 3 and 4. Migrations, backfills, and rollout are post-demo.
 
 ## 54. Database source of truth
 
@@ -1150,6 +1265,8 @@ Deployment is blocked when application, database, job, and supplier requirements
 
 # Part XII — Jobs, Scheduling, Workflows, and Messaging
 
+> **Status: SPECULATIVE.** §0.7 defers jobs and realtime explicitly.
+
 *v1.0 and post-1.0 (§0.14). Not in the demo.*
 
 ## 63. Jobs
@@ -1206,9 +1323,13 @@ Breaking message changes require a new schema version and a compatibility period
 
 # Part XIII — Packages and Application Structure
 
+> **Status: DEFERRED.** §72's lockfile-and-manifest diff is one of the three artifacts §0.12 says humans actually read, and it is the mechanism behind the guarantee model in `docs/VISION_RECONCILIATION.md` §5. It is not needed to reject an unscoped query.
+
 ## 70. Modules and packages
 
 A module is one source file. A package is one directory tree with a package manifest.
+
+> **The first sentence holds; the second has no mechanism.** `import` resolves one source file at a time, so "a module is one source file" is true de facto. There is no `package`, `module`, or `manifest` keyword in the live lexer and no manifest or lockfile format in the repository — the only `.toml` files belong to the deprecated prototype and to `treefmt`. Package identity, the approved package graph, the capability graph, and §72's lockfile diff have no representation. `docs/ONE_WAY_LEDGER.md` E21.
 
 An application is a root package, its approved package graph, and its capability graph.
 
@@ -1234,6 +1355,8 @@ Cyclic package dependencies are forbidden. Cyclic file imports within a package 
 
 Visibility levels: private to the module by default, package-visible, application-visible, externally public.
 
+> **Not implemented.** No visibility modifier exists in either lexer — `pub`, `private`, `public`, `internal`, and `export` are all absent — so there is no private-by-default and no package or application level. The half of this section that holds is the next paragraph: `import` exists and imports are explicit. `docs/ONE_WAY_LEDGER.md` E19.
+
 Organisation and workspace access are authorization concepts, not source-code visibility levels.
 
 Imports are explicit and deterministic. Wildcard imports, implicit runtime loading, and hidden dependency injection are prohibited.
@@ -1244,9 +1367,17 @@ The default prelude contains only basic types, `Result`, `Option`, core collecti
 
 Never silently imported: database access, networking, filesystem access, time, randomness, supplier capabilities.
 
+> **The opposite is true today.** Verified 2026-08-20 at `b47d0049`: the whole `os.*` surface is available to every program with no import and no declaration — files using `os.ReadFile` and `os.System` import nothing at all. That surface includes `os.WriteFile`, `os.RemoveFile`, `os.ReadDir`, `os.GetEnv`, `os.Args`, `os.RunProcess`, and `os.System`, which spawns `/bin/sh -c` (`src/runtime/file_io.c:573`).
+>
+> Fairly stated, this is not a defect: Gust is a self-hosted toolchain that must invoke `cc`, read sources, and write objects, and no mechanism exists yet to scope that. But it means the current default is maximal ambient authority, which is what §0.4 sells the language as eliminating, and it closes only with the effect system in §0.7 Track A. `docs/ONE_WAY_LEDGER.md` E19.
+
 ---
 
 # Part XIV — Testing and Determinism
+
+> **Status: DEFERRED**, except §79's conformance checks, which §79 itself calls the primary defence against plausible-but-wrong output. Nothing here is required for the demo.
+>
+> **The discipline this Part argues for already exists, aimed at the compiler rather than at applications.** Measured 2026-08-20 at `b47d0049`: 260 test programs of which 115 are named negative fixtures (102 `*reject*`), 409 `guard-` recipes, 82 parity/differential guards, and 66 CI workflows — roughly 44% of the corpus asserts programs must *not* compile. None of §75's categories or §79's generated checks exist, because they presuppose the platform. So the remaining work is aiming an existing, sustained practice at a new target, not establishing one. `docs/ONE_WAY_LEDGER.md` E22.
 
 Determinism here is not a testing convenience. It is the property that makes execution traces usable as training signal (Part XX) and the only remaining check on behaviour when nobody reads the code. A non-deterministic run is a contaminated observation.
 
@@ -1284,6 +1415,8 @@ The compiler generates checks for RPC serialization, policy coverage, tenant sco
 
 # Part XV — Configuration and Secrets
 
+> **Status: SPECULATIVE.**
+
 ## 80. Configuration
 
 Configuration is typed, non-sensitive application input.
@@ -1293,6 +1426,10 @@ It supports defaults, environment-specific overrides, validation, and deployment
 ## 81. Secrets
 
 Secrets are opaque linear values. They have no readable string representation in safe code.
+
+> **Half-mechanised, and the missing half is not blocked on the platform.** The *linear* half has a mechanism: `#[linear]` marks a type as a resource and is wired end to end (§28). The *opaque* half has none — there is no `Secret` type and nothing marks a type as unprintable, unformattable, or unloggable, so `std.Format` and `os.LogStr` accept whatever they are given.
+>
+> Worth separating from the platform sections around it: "this value has no string representation" is a property of the type system, not of the platform. `secret.use<"stripe">` needs effects; refusing to format does not. `docs/ONE_WAY_LEDGER.md` E26.
 
 Secrets cannot be logged, serialized, formatted, returned to clients, or compared except through approved operations.
 
@@ -1311,6 +1448,8 @@ Self-hosted secret providers must implement Gust's provider protocol and be cert
 ---
 
 # Part XVI — Supplier Governance
+
+> **Status: SPECULATIVE.** §2 already says certification is a commercial service layered on the compiler-enforced guarantee, never a substitute for it.
 
 *Post-1.0 commercial service tier (§2), not the core guarantee. Assumes a certification function with real staffing. OD-5 is unresolved; do not commit to supplier certification externally until it is.*
 
@@ -1355,6 +1494,8 @@ Compatibility adapters are owned by Gust or the supplier as part of certificatio
 
 # Part XVII — Deployment and Operations
 
+> **Status: SPECULATIVE.** §0.7 defers the deployment platform. The demo needs one Linux x86-64 host.
+
 ## 87. Deployment unit
 
 The deployment unit is an immutable application release.
@@ -1393,17 +1534,25 @@ Privileged approval is required for destructive migrations, cross-tenant access,
 
 # Part XVIII — Escape Hatches
 
+> **Status: COMMITTED as policy, unimplemented.** §98's guarantee boundaries are load-bearing for the containment claim and are why `general-ecosystem.md` was retired (`docs/VISION_RECONCILIATION.md` §3.3). No escape-hatch machinery exists yet.
+
 ## 93. Native code
 
 Native code is forbidden by default.
 
 Permitted only through a signed adapter, an explicit native-code capability, and strong isolation.
 
+> **A gate exists; the governance does not; and the builtins bypass it.** Verified 2026-08-20 at `b47d0049`. `extern func` declarations parse (`compiler/parser.gst:1169-1199`) and calling one requires an explicit `unsafe` block (`compiler/typechecker.gst:4047`) — that much is real. No signed adapter, native-code capability, isolation, or separate process exists.
+>
+> The asymmetry matters more than the missing governance: the built-in `os.*` surface passes through no gate at all, so `os.System` spawns `/bin/sh` from a four-line program with no `unsafe` and no import (`tests/e2e_os_system.gst`). A *declared* FFI call is gated; *arbitrary shell execution* is not. `docs/ONE_WAY_LEDGER.md` E21, issue #108.
+
 A separate process or sandbox is preferred over in-process execution.
 
 ## 94. Arbitrary networking
 
 Arbitrary networking is forbidden by default.
+
+> **True, vacuously.** There is no networking at all — no socket, `connect`, or `AF_INET` anywhere in `src/runtime/*.c`. Nothing enforces the rule; there is simply nothing to enforce it against, and it becomes testable only when a network capability exists.
 
 Approved capabilities use allowlisted hosts and protocols.
 
@@ -1412,6 +1561,8 @@ Unrestricted outbound networking requires a privileged capability such as `netwo
 ## 95. Files and processes
 
 Application code cannot access arbitrary host files or spawn arbitrary processes.
+
+> **Currently it can do both**, with no import and no declaration: `os.ReadFile`, `os.WriteFile`, `os.RemoveFile`, `os.RunProcess`, and `os.System` (which spawns `/bin/sh -c`) are ambient. See §74 and `docs/ONE_WAY_LEDGER.md` E19. This Part is marked COMMITTED as policy and unimplemented; this is the sharpest instance of that.
 
 Approved filesystem access is sandboxed and path-scoped. Process execution requires an isolated worker capability.
 
@@ -1437,15 +1588,23 @@ Every escape hatch requires explicit manifest declaration, human approval, defin
 
 > Escape hatches are isolated products with explicit loss-of-guarantee boundaries, not ordinary language features.
 
+> **Nothing enforces these boundaries yet, and one of them is inverted.** No escape-hatch machinery exists — no manifest, capability, signed adapter, isolation, or expiry (§97). The one real gate is that `extern` calls require `unsafe` (`compiler/typechecker.gst:4047`), which the built-in `os.*` surface bypasses entirely, so "arbitrary filesystem or process access" is currently the *ungated* path (`docs/ONE_WAY_LEDGER.md` E21, issue #108).
+>
+> This section is nonetheless the most reusable idea in the document: it is the only place that states guarantees weaken *by degree and by named boundary* rather than being binary. `docs/VISION_RECONCILIATION.md` §5 develops it into a proposed `gust guarantees` ledger, which is what would make "loss of guarantee" a thing a reviewer can read rather than a sentence in a specification.
+
 ---
 
 # Part XIX — Versioning and Compatibility
+
+> **Status: SPECULATIVE.** The Part already says post-1.0 and not a commitment.
 
 *Post-1.0 (§0.14). Recorded so demo-stage decisions do not foreclose it. Not a commitment.*
 
 ## 99. Compatibility promise
 
 After 1.0, Gust promises strong source compatibility within each language edition.
+
+> **No edition concept exists.** `edition` and `version` are not keywords in the live lexer, `edition` appears in no compiler source file, and there is no manifest to pin one in (§70). Recorded because §103 calls compiler-assisted migrations "a core product feature", and every mechanism it describes — deprecation warnings, automated rewrites, removal at an edition boundary — depends on a boundary that has no representation. `docs/ONE_WAY_LEDGER.md` E25.
 
 Compatibility is the default. Editions are the controlled escape hatch for rare syntax or semantic changes. Different editions must interoperate within the same ecosystem.
 
@@ -1497,6 +1656,8 @@ After 1.0, Gust must not silently change program meaning, weaken memory-safety g
 
 # Part XX — The Agent Loop
 
+> **Status: DEFERRED (§108–§109 traces and diagnostics) / SPECULATIVE (§110–§114).** The Part already draws this line: traces and structured diagnostics are demo scope, colocation is post-acquisition.
+
 *The product surface of §0.5 layers 1 and 4. Traces and structured diagnostics are demo scope; colocation is post-acquisition.*
 
 ## 107. The loop
@@ -1517,6 +1678,10 @@ Iteration count is a quality input, and for an acquirer who serves inference it 
 
 Every run emits a structured, machine-readable trace. The trace is a first-class artifact with a versioned schema, not a log format. It is one of the three things humans actually read (§0.12).
 
+> **No run trace exists.** Verified 2026-08-20 at `b47d0049`. The only thing in the compiler named "trace" is `typechecker_log_trace` (`compiler/typechecker.gst:8618-8619`), whose body is empty — 40 call sites compiling to nothing. That is stubbed compiler debug logging, and it says nothing about a *program's* run regardless.
+>
+> Worth separating from the rest of Part XX: **this is the only one of §0.12's three human-read artifacts that could exist before the platform does.** The capability manifest needs effects; the lockfile diff needs packages. But a trace of allocation and context lifetimes at region granularity, and of typed error values with their propagation path, is expressible today — regions and errors both exist. Nothing schedules it. `docs/ONE_WAY_LEDGER.md` E25.
+
 A trace records:
 
 - the resolved capability set for the entry point;
@@ -1535,6 +1700,10 @@ Traces are tenant-scoped and subject to the same data-minimization rules as supp
 
 Compiler diagnostics have a structured form alongside the human form. A diagnostic carries the rejected construct, the rule violated, the minimal set of edits that would satisfy the rule, and a stable rule identifier.
 
+> **Half of this exists.** Verified 2026-08-20 at `b47d0049`. `CompilerError` (`compiler/errors.gst:10-15`) carries a `kind`, a `span`, and a `file_path`, so diagnostics are structured values with precise locations and do satisfy the design constraint below. What is absent is identity and machine-readability: there is no error-code or rule-id scheme anywhere, no JSON emission, and no candidate edits — the rule violated exists only as English prose inside `message`.
+>
+> The gap is already being worked around. `guard-stdlib-s1-str-equality-diagnostic` pins diagnostic identity by asserting the *sentence* is byte-identical in both compilers, which is a stable rule identifier implemented as English and cannot be reworded without breaking CI. `docs/ONE_WAY_LEDGER.md` E23.
+
 The design constraint: a diagnostic must be sufficient for correction without re-reading the whole file. Diagnostics that require whole-program context to act on are defects.
 
 ## 110. Sandbox lifecycle
@@ -1548,6 +1717,10 @@ Sandboxes are disposable, content-addressed, and reproducible. Two runs of the s
 ## 111. Reproducibility
 
 Content-addressed builds, no install-time execution (§15), virtualized time and randomness (§76), and deterministic scheduling (§77) combine to make a run a clean observation.
+
+> **One of those four holds; a stronger property is enforced elsewhere.** Verified 2026-08-20 at `b47d0049`. No install-time execution is real (no macros, build scripts, or compile-time execution). Content-addressed builds, virtualized time and randomness, and deterministic scheduling are all absent.
+>
+> What *is* enforced is byte-identical self-compilation: `make bootstrap` fails unless stage 2 and stage 3 are identical, and the converged output becomes the committed seed (`Makefile:199-202`). Object reproducibility has its own guard. That is a demanding determinism property checked on every bootstrap — it is about the compiler's output rather than a program's run. `docs/ONE_WAY_LEDGER.md` E24.
 
 A nondeterministic run is not a weaker signal; it is a contaminated one, and must be discarded rather than averaged.
 
@@ -1597,6 +1770,8 @@ Authority granted to an agent is narrowed, never inherited: an agent operating o
 
 # Part XXI — Intent and Specification (OD-6)
 
+> **Status: SPECULATIVE.** Blocks v1.0, not v0.1 (§0.4). This is the unsolved half — correctness rather than containment — and leading with it is how nothing ships.
+
 *Blocks v0.5, not the demo. Specified as a requirement, not a design — the form is unresolved. This is the difference between containment and correctness (§0.4).*
 
 ## 115. Why this Part exists
@@ -1644,7 +1819,9 @@ Not mutually exclusive. The likely answer is a small core of (3) with (1) as the
 
 # Part XXII — Consolidated Architectural Rules
 
-1. Gust is built for software written by machines and never read by people.
+> **Status: index.** Restates rules from every Part above; each rule inherits its own Part's status. `docs/ONE_WAY_LEDGER.md` records which of them the compiler currently enforces.
+
+1. Gust is built for software written by machines and never read by people — as a market observation about what to build first, not as a licence for ceremony in the language (§0.1).
 2. Humans own intent, authority, and outcomes. The compiler owns everything in between.
 3. Gust delivers containment, not correctness. Never claim otherwise.
 4. No code executes authority it did not declare, and the compiler enforces it.
@@ -1655,7 +1832,7 @@ Not mutually exclusive. The likely answer is a small core of (3) with (1) as the
 9. Untrusted code must cross an explicit, isolated, auditable boundary.
 10. Supplier certification is a service tier; capability enforcement is the guarantee.
 11. Effects are business-level authority, not syscall-level permissions.
-12. Effects are declared on every function. Nothing is inferred; verbosity is free.
+12. Effects are declared on every function. Nothing is inferred, because the effect set is the artifact a reviewer reads. ("Verbosity is free" as a general principle is withdrawn — Part IV.)
 13. Gust owns the full-stack application model rather than assembling third-party frameworks.
 14. PostgreSQL and S3-compatible storage are native platform infrastructure.
 15. Workspace tenancy is resolved before application execution and automatically scopes platform operations.
@@ -1690,3 +1867,17 @@ Not mutually exclusive. The likely answer is a small core of (3) with (1) as the
 44. Agents are service accounts with narrowed authority and their own audit trail.
 45. Conformance checks substitute for reading and must be resourced as such.
 46. Gust says *enforce*, *check*, and *reject*. Gust does not say *prove*.
+
+## Which of these the compiler enforces today
+
+This list is the most quotable part of the document and the easiest to mistake for a description of the compiler. It is a statement of intent. `docs/ONE_WAY_LEDGER.md` carries the per-rule status with a reproduction; the summary, verified 2026-08-20 at `b47d0049`:
+
+**Enforced.** 17 (no inheritance or traits), 18 (no macros or compile-time execution), 22 (references non-null — there is no `null` literal in either lexer), 24 (`str` has no mutation API at all), and enum-match exhaustiveness from §31, which is checked in both compilers and names the missing variant.
+
+**Not implemented at all.** 4 and 5 — the two rules the product claim rests on. There is no `uses` keyword in either lexer and no query layer, so neither undeclared authority nor an unscoped query is currently rejected by anything. Also 11, 13, 14, 15, 19, 20, 29–36, and 38–45: the platform they describe does not exist (ledger E16).
+
+**Partly true, and misleading as stated.** 16 — `Option` exists but `Result` is not a builtin and there is no `?` operator; the working convention is `guard … else` (E2). 26 — resource *opt-in* is explicit, but the move-versus-copy linearity that governs ordinary values is *inferred* structurally and unannotated, so adding a `str` field silently changes a struct's category (E13); the two mechanisms share a word and only one is opt-in. 27 — `defer` parses and scope-exit cleanup is validated, but only for `Resource[T]` and only in the self-hosted compiler (E7 addendum, D-6).
+
+**Violated.** §34's panic scoping, reached from rule 28's neighbourhood: a string bounds failure calls `exit(1)` and terminates the process rather than the request (E3, issue #91). And §32's overflow trapping, which rule 3's "containment, not correctness" does not cover: overflow is undefined behaviour on the default backend rather than a trap (E11, issue #103).
+
+Rule 46 is the discipline that makes this section necessary. A rule stated in the present tense that nothing enforces is the document saying *prove* while meaning *intend*.

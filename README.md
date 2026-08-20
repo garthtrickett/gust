@@ -40,6 +40,8 @@ Being explicit about the boundary is worth more than claiming it is total.
 
 This is a consequence of the design, not its premise. Locality of Behavior, no macros, no indentation sensitivity, and the arena being visible in the type mean the information needed to edit a span is present *in that span*. A model does not have to reconstruct invariants that live three files away — the same property that makes the language readable for a human.
 
+That framing is deliberate and it is the one that survives. `docs/VISION.md` §0.1 argues the stronger position — that Gust targets software "never read by people" — and an earlier draft drew a design licence from it ("verbosity is free"). That licence is withdrawn: the readership claim is a market observation about what to build first, not permission for ceremony in the language. `docs/VISION_RECONCILIATION.md` §3.1 records the conflict and its resolution; the operative rule is *explicit exactly where the explicitness is the artifact, inferred everywhere else*.
+
 ## Two backends, and why
 
 Gust transpiles to clean C99, which is why it builds anywhere a C compiler exists and needs no Rust or LLVM toolchain.

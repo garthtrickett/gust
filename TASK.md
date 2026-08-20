@@ -8,6 +8,12 @@ boundaries and the shared coordination zone are defined in `AGENTS.md` and
 `docs/SHARED_SEMANTIC_ZONE.md`. This document defines only what is specific to
 Phase 18.
 
+`docs/ONE_WAY_LEDGER.md` records, per design rule, whether the compiler
+currently enforces it, with a reproduction per row. Four rules are recorded as
+violated; two of them — brand identity (`TASK_PHASE19.md`) and the borrow model
+(`TASK_STDLIB.md` CR-6) — already have owners, and Phase 18 owns neither. It is
+a status record, not a work queue, and it authorizes nothing here.
+
 The parallel Stdlib lane is described by `TASK_STDLIB.md`. Phase 18 does not
 own, schedule, or validate any work in that roadmap. Where a Stdlib patch
 requires a change to canonical MIR, resource semantics, ABI, layout, the runtime

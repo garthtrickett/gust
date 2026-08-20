@@ -128,6 +128,25 @@ Confirmed defects:
   enforcement, and an AST/typechecker representation for `defer` — are unmet.
   That document was last modified 2026-06-28, before Phase 15 closed.
 
+### Since this snapshot
+
+The list above is a dated baseline and is deliberately not rewritten. Three of
+its confirmed defects have since been closed; an agent reading the baseline as
+current would re-open work that is done.
+
+| Defect in the baseline | State |
+| --- | --- |
+| `str == str` typechecks and emits invalid C | **Closed** by S1.1 (#74). Both compilers now reject `==` and `!=` on `str` with a byte-identical diagnostic naming `std.str_eq`. Making `==` *mean* content equality is still open as CR-1. |
+| A method call on a reference receiver fails resolution | **Closed** by S1.3 (#86). |
+| `defer` has no AST/typechecker representation | **Superseded.** `defer` is an AST node; `STEP52_RESOURCE_SEMANTICS.md` predates that. The remaining gap is destructor declaration and enforcement, re-verified by S1.7 (#87) and stated in CR-5. |
+
+Still open exactly as recorded: the brand-spelling defect (CR-2, owned by
+`TASK_PHASE19.md`) and the `exit(1)` bounds policy (CR-3, unscheduled).
+
+`docs/ONE_WAY_LEDGER.md` carries the current status of each of these against the
+compiler, with reproductions, and is the file to check before assuming a
+baseline entry still holds.
+
 Contracts Phase S1 consumes and must not redefine:
 
 - Phase 14 owns type layout, target layout, and memory-access validation.
@@ -368,6 +387,152 @@ destructor, and no user-defined type can declare one. Building it today would
 require hardcoding `Mutex` into the compiler the way `os_Dir_ctx` is hardcoded to
 `os.CloseDir`, which the paragraph above forbids. `Lock(); defer Unlock();`
 remains the recommended form until CR-5 lands.
+
+### CR-7 — No roadmap owns the demo deliverable
+
+1. **Intended behaviour:** `VISION.md` §0.7 names four Track A items — `uses`
+   clauses, effect checking across the call graph, typed Postgres query
+   derivation, and tenant scope tracked through query construction. They are the
+   stated deliverable and the thing being sold (§0.4).
+2. **Existing limitation:** no roadmap owns any of them. `TASK.md` owns targets,
+   objects, and linkers. This document owns the safe stdlib surface.
+   `TASK_PHASE19.md` owns brand identity. All three are below the demo line, so
+   the demo has no lane and no patch sequence.
+3. **Smallest generic change:** none — this is a scheduling gap, not a semantic
+   one. What is needed is a Track A roadmap, in the form the other lanes already
+   use, with a patch sequence and an exit gate.
+4. **Affected:** roadmap ownership only. `docs/DEMO_TARGET_PROGRAM.md` records
+   the target program, the required diagnostic, and a ten-row prerequisite table
+   with per-row status and owner; six of those rows are marked unowned.
+5. **MIR-to-C:** eventually yes, for effects and query derivation.
+6. **Cranelift:** eventually yes, for the same reasons and for parity.
+7. **Bootstrap:** yes, once `uses` is a keyword in both compilers.
+
+Two prerequisites in that table are not scope creep and are worth pulling
+forward regardless of when Track A is scheduled. CR-2 (brand identity) must land
+because the memory model is approximated by identifier matching until it does.
+And `std.Option` cannot be constructed without `unsafe`
+(`docs/ONE_WAY_LEDGER.md` E1), which means OD-9 — can a model write Gust — would
+currently be measuring whether a model can reproduce a tagged-union layout.
+Testing OD-9 before that is fixed measures the wrong thing.
+
+This CR carries no authorization. It exists so that "the demo is unowned" is
+recorded somewhere a lane will read, rather than rediscovered per agent.
+
+### CR-8 — Concurrency is detached, which is the rejected model
+
+1. **Intended behaviour:** `VISION.md` §20 — spawned tasks belong to a lexical
+   scope; leaving the scope waits for completed children, cancels unfinished
+   ones, and prevents detached work from leaking. "Fire-and-forget work is not
+   permitted in normal request code."
+2. **Existing limitation:** the only primitive available *is* fire-and-forget.
+   There is no `async`, `await`, `spawn`, or `scope` keyword in either lexer.
+   Concurrency is `std.Spawn`, `std.Channel`, `std.Mutex`, and `std.Yield` over
+   the fibers in `src/runtime/fiber.c`. `std.Spawn` starts work no scope owns:
+   no join requirement, no cancellation propagation, and no task handle type, so
+   a spawned task cannot be awaited, cancelled, or transferred, and nothing stops
+   it outliving the context whose data it captured.
+3. **Smallest generic change:** none is small. This is OD-1, a Ring 1 decision.
+   The recommendation recorded in `VISION.md` §21 is transparent suspension over
+   the existing scheduler, with structured scopes and linear task handles —
+   Go's suspension model, not Go's task model. Resource machinery from Phase 15
+   supplies the linear handle; the scheduler already exists.
+4. **Affected:** both lexers and parsers, the typechecker's scope and escape
+   analysis, canonical MIR task operations, `src/runtime/fiber.c`, and every
+   current `std.Spawn` call site.
+5. **MIR-to-C:** yes.
+6. **Cranelift:** yes.
+7. **Bootstrap:** yes.
+
+Filed as issue #101.
+
+**Owner: Cranelift lane.** `docs/SHARED_SEMANTIC_ZONE.md` assigns the fiber
+scheduling contract there, and this changes it. The Stdlib lane must not add a
+scope-like wrapper over `std.Spawn` in the meantime — that would be a
+library-shaped answer to a semantic question, which the shared-zone protocol
+forbids.
+
+This is a report, not a patch. Nothing in Phase S1 is blocked on it. It is filed
+because the gap between §20 and `std.Spawn` is invisible from either roadmap:
+§20 reads as though it describes the implementation, and it does not.
+
+### CR-9 — OD-3 was decided by implementation
+
+1. **Intended behaviour:** `VISION.md` §27 marks shared ownership an open
+   decision (OD-3) and says Gust "may provide" an explicit compiler-owned
+   read-only shared ownership type such as `Rc[T, ctx]`, with safe application
+   code receiving no unrestricted interior mutability.
+2. **Existing limitation:** `std.Rc`, `std.RcNew`, and `std.RcNode` are already
+   registered names (`docs/STDLIB_SURFACE_INVENTORY.md`). An open decision with a
+   shipped implementation is not open, and §27's read-only qualifier is not
+   obviously enforced given CR-6 — the single reference form carries no
+   mutability.
+3. **Smallest generic change:** none required if the answer is documentation.
+   Either §27 is corrected to describe the surface that exists and OD-3 is closed
+   or narrowed, or the existing surface is justified against the open decision
+   and its read-only property is stated and tested.
+4. **Affected:** `docs/VISION.md` §27 and the OD-3 row in §0.15; possibly a
+   compile-fail fixture asserting that `std.Rc` does not yield mutable aliasing.
+5. **MIR-to-C:** no, if resolved as documentation.
+6. **Cranelift:** no, if resolved as documentation.
+7. **Bootstrap:** no.
+
+Precedent: CR-6 was resolved the same way — `VISION.md` §26 described a borrow
+model that was never implemented and was corrected to the one that exists.
+
+### CR-10 — Is an opt-in layout attribute shared-zone work?
+
+Raised because `docs/UNBLOCKED_CONTAINMENT_WORK.md` proposal 1 cannot start until
+it is classified, and classifying it wrongly in either direction is worse than
+asking. This is a **classification question**, not a request to implement.
+
+1. **Intended behaviour:** a type can declare that it has no readable string
+   representation, so passing it to `std.Format` is a compile error. This is the
+   half of `VISION.md` §81 that does not require effects — the §81 rationale is
+   that an agent cannot leak a secret into a log line because the type forbids
+   it.
+2. **Existing limitation:** nothing marks a type unformattable.
+   `grep -ciE 'opaque|no_format|not_formattable' compiler/typechecker.gst`
+   returns 0, and `std.Format` accepts whatever it is given.
+3. **Smallest generic change:** a fourth layout attribute beside `#[linear]`,
+   `#[packed]`, and `#[repr(C)]` — one arm in the attribute chain at
+   `compiler/parser.gst:869-872`, one field on `StructDecl`, one registry map
+   mirroring `struct_linear_resource`, and one check at the formatting dispatch
+   sites `compiler/typechecker.gst:1962-1963` and `:3810`, which already resolve
+   `std_Format` / `std.Format` / `std_FormatInt` by name.
+4. **Affected:** both parsers, both typecheckers, and the bootstrap seed. No MIR,
+   no ABI, no layout computation, no runtime symbol.
+5. **MIR-to-C:** no. The attribute is consumed entirely in the frontend; codegen
+   never sees it, because a program using it either compiles unchanged or is
+   rejected.
+6. **Cranelift:** no, for the same reason.
+7. **Bootstrap:** yes — dual compiler and seed regeneration, since both
+   typecheckers must agree.
+
+**The question.** `docs/SHARED_SEMANTIC_ZONE.md` places outside the zone "a
+diagnostic that **rejects** a program the compiler currently miscompiles,
+provided no accepted program changes meaning". This satisfies the second clause —
+no existing type carries the attribute, so no currently-accepted program changes
+meaning — but not the first: the programs it would reject are not miscompiled
+today, they are correct, and formatting a would-be-secret works fine.
+
+So it is neither clearly in the zone nor clearly out of it. Two readings, both
+defensible:
+
+- **Out of zone / Stdlib.** It adds no semantics to any existing construct, is
+  opt-in, touches no MIR or ABI, and is the same size and shape as S1.1.
+- **In zone / Cranelift.** It adds language surface — a new attribute is a
+  permanent grammar commitment, and `VISION.md` §16 makes the operator and
+  attribute surface compiler-owned.
+
+**Recommendation, weakly held:** treat it as in-zone for the *decision* and
+out-of-zone for the *work* — the owner rules on whether the attribute exists and
+what it is called, and the implementation then proceeds as ordinary Stdlib-lane
+work under that ruling. That matches how CR-1 was handled: `VISION.md` §16 made
+the semantics Cranelift's call while S1.1 shipped the non-semantic half.
+
+Nothing in Phase S1 is blocked on the answer. The proposal is, which is why it is
+recorded here rather than left in a document nobody is assigned to read.
 
 ## Verification Policy
 
