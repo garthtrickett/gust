@@ -66,9 +66,21 @@ Evidence section below; row-level citations are `path:line` pinned to that commi
 | 26 | Schema | Postgres is source of truth; Gust derives types | ORM-first | **ABSENT** |
 | 27 | Backend | Cranelift native | — (C retained as bootstrap seed and differential oracle) | **PARTIAL** — Phase 18 open |
 
-Four rows are `VIOLATED`: **2, 6, 14, 17**. Rows 2 and 14 already have owners.
-Row 6 is `TASK_STDLIB.md` CR-3, written but unscheduled. Row 17 is CR-9, new.
-Row 19's divergence is CR-8, new.
+Counts: 7 `HOLDS`, 4 `PARTIAL`, 5 `VIOLATED`, 11 `ABSENT`.
+
+The five `VIOLATED` rows and their owners:
+
+| Row | Rule | Owner |
+| --- | --- | --- |
+| 2 | Brand identity | Phase 19 (`TASK_PHASE19.md`), staged |
+| 6 | Panic scope | `TASK_STDLIB.md` CR-3 — written, unscheduled |
+| 14 | Mutation | `TASK_STDLIB.md` CR-6 — deferred, unscheduled |
+| 17 | Shared ownership | `TASK_STDLIB.md` CR-9 — new |
+| 19 | Concurrency | `TASK_STDLIB.md` CR-8 — new |
+
+Every one of them has a written owner and none is currently scheduled. That is
+the honest summary: the rules are known to be broken, and no lane is working on
+any of the five.
 
 ---
 
