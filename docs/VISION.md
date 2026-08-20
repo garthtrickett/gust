@@ -375,7 +375,7 @@ second, drifting copy of it.
 |---|---|---|---|---|
 | **OD-9** | **Model fluency** — can an agent write Gust well, and how do we get there from no corpus? *Thesis-invalidating. Starts week one.* | **OPEN** | Demo | §0.7; blocked-on evidence in `TASK_STDLIB.md` CR-6 and `docs/ONE_WAY_LEDGER.md` E1 |
 | **OD-8** | **Soundness of the tenant-scoping analysis** — adversarial review before publication. *Thesis-invalidating.* | **OPEN** | Demo | §56; sequencing in `docs/DEMO_TARGET_PROGRAM.md` |
-| OD-1 | Transparent suspension vs coloured async (server) | **OPEN** — recommendation recorded, decision owned by the Cranelift lane | Demo | §21; evidence in `docs/ONE_WAY_LEDGER.md` E9; escalation as `TASK_STDLIB.md` CR-8 |
+| OD-1 | Transparent suspension vs coloured async (server) | **DIRECTION SET 2026-08-20** — transparent suspension unless a fatal blocker is hit; §21 defines what counts | Demo | §21; evidence in `docs/ONE_WAY_LEDGER.md` E9; escalation as `TASK_STDLIB.md` CR-8 |
 | OD-2 | ~~Generic functions vs compiler-owned query derivation~~ | **RESOLVED 2026-08-20** — compiler-owned derivation; §13's ban stands | — | §14; consequences in §13 and `docs/DEMO_TARGET_PROGRAM.md` |
 | OD-10 | **Distribution for the product path** | **OPEN** — currently unanswered | Month 4 | §0.11 |
 | OD-3 | SAM state ownership under linear resources and no interior mutability | **OPEN, partly decided by implementation** — `std.Rc` already ships | v0.5 | §27, §38; the discrepancy as `TASK_STDLIB.md` CR-9; evidence in `docs/ONE_WAY_LEDGER.md` E8 |
@@ -826,7 +826,7 @@ Unsafe code must still possess every required effect.
 
 # Part VI — Concurrency, Tasks, and Transactions
 
-> **Status: COMMITTED (§20–§21) / DEFERRED (§22 transactions).** OD-1 must resolve before the demo. What exists today is detached `std.Spawn` plus channels — the model §20 rejects; see §21 and `docs/ONE_WAY_LEDGER.md` E9.
+> **Status: COMMITTED (§20–§21) / DEFERRED (§22 transactions).** OD-1 has a **direction set as of 2026-08-20 — transparent suspension unless a fatal blocker is hit** (§21). What exists today is still detached `std.Spawn` plus channels — the model §20 rejects; see §21 and `docs/ONE_WAY_LEDGER.md` E9.
 
 ## 20. Structured concurrency
 
@@ -852,11 +852,21 @@ The demo cut (§0.14) is server-only, which splits this cleanly: **OD-1 (server 
 
 **What exists today (verified 2026-08-20, `b47d0049`).** Neither model. There is no `async`, `await`, `spawn`, or `scope` keyword in either lexer. Concurrency is a library surface over the cooperative fibers in `src/runtime/fiber.c`: `std.Spawn`, `std.Channel`, `std.Mutex`, `std.Yield`. `std.Spawn` starts work that no scope owns, with no join requirement, no cancellation propagation, and no task handle — which is detached spawn plus channels, the model §20 rejects and the only one available. Recorded with reproductions in `docs/ONE_WAY_LEDGER.md` E9 and tracked as `TASK_STDLIB.md` CR-8.
 
-**Recommendation, not a decision.** Take Go's *suspension* model and reject Go's *task* model: transparent suspension with no colouring, over a scheduler that already exists, with every task owned by a lexical scope that cannot exit while a child is live, and task handles as linear resources. Three named concepts — child task, supervisor, durable job — rather than one `spawn` with adjectives. `?` continues to mean "may fail"; suspension needs no keyword because it is always owned.
+**Direction set, 2026-08-20: transparent suspension, unless a fatal blocker is hit.** This is an operator decision on the server question. It is recorded as a direction rather than a closure because it carries an escape hatch, and an escape hatch that is not defined is not a hatch — it is a way to reopen the decision at any time. What follows defines it.
+
+**What counts as a fatal blocker.** Exactly three things, and the burden is on the finding, not on the direction:
+
+1. **A capability call cannot suspend without unwinding a native frame.** The scheduler is cooperative fibers in `src/runtime/fiber.c`, and vendor capabilities (§98) call into native code. If a blocking native call sits on the stack at the suspension point, transparent suspension requires either non-blocking native APIs throughout or an offload pool — and if neither is affordable, suspension cannot be transparent because it cannot happen.
+2. **Ownership across tasks (§30) cannot be made sound without colouring.** If the only way to check that a linear value does not cross a suspension point illegally is to make suspension visible in the type, then the colour is doing load-bearing safety work and the direction is wrong.
+3. **Cranelift cannot emit code compatible with the chosen switching mechanism for the server target.** A backend limitation, not a design preference.
+
+**What explicitly does not count.** *Implementation difficulty* — this was known to be the harder option when it was chosen. *WASM stack-switching cost* — that is OD-4, it defers to v0.5, and §0.14's demo cut is server-only. The strongest available argument against transparent suspension is therefore out of scope for the decision this direction settles, and may not be borrowed back into it.
+
+**The recommendation this direction adopts.** Take Go's *suspension* model and reject Go's *task* model: transparent suspension with no colouring, over a scheduler that already exists, with every task owned by a lexical scope that cannot exit while a child is live, and task handles as linear resources. Three named concepts — child task, supervisor, durable job — rather than one `spawn` with adjectives. `?` continues to mean "may fail"; suspension needs no keyword because it is always owned.
 
 The fallback above — coloured async on the client, transparent on the server — is recorded here as the worse option. Two concurrency models in a language whose premise is one of everything refutes the premise; if OD-4 makes WASM stack switching unaffordable, restricting client code to event-driven dispatch with no suspension is the better trade, and Part IX's SAM model already implies it.
 
-Ownership: this is a Ring 1 semantic decision. `docs/SHARED_SEMANTIC_ZONE.md` assigns the fiber scheduling contract to the Cranelift lane, so neither lane may act on the recommendation unilaterally. Reasoning in `docs/VISION_RECONCILIATION.md` §3.2.
+Ownership: this is a Ring 1 semantic decision. `docs/SHARED_SEMANTIC_ZONE.md` assigns the fiber scheduling contract to the Cranelift lane, so neither lane may act on the direction unilaterally. **A direction sets what to build toward; it does not reassign who builds it, and it does not authorise a patch outside the owning lane.** If a lane hits one of the three blockers above, that is a stop-and-report under the zone protocol, and the finding is recorded against OD-1 in §0.15 — not resolved inside the lane that found it. Reasoning in `docs/VISION_RECONCILIATION.md` §3.2.
 
 ## 22. Transactions
 

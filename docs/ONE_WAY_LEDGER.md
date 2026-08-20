@@ -78,7 +78,7 @@ when the backend does.
 | 15 | Cleanup | `defer`, LIFO, plus registered destructors | manual close; finalizers; fallible destructors | **PARTIAL** — E7 |
 | 16 | Resources | Linear, propagating transitively | ad-hoc handle discipline | **PARTIAL** — E7 |
 | 17 | Shared ownership | Decided case-by-case; open as OD-3 | unrestricted interior mutability | **VIOLATED** — E8 |
-| 18 | Suspension | Transparent; no function colouring | coloured `async`; Promises; raw futures | **ABSENT** — OD-1, E9 |
+| 18 | Suspension | Transparent; no function colouring | coloured `async`; Promises; raw futures | **ABSENT** — OD-1 direction set 2026-08-20, E9 |
 | 19 | Concurrency | Structured scopes, owned tasks, linear handles | detached spawn; actors as universal model | **VIOLATED** — E9 |
 | 20 | Background work | Supervisor (long-lived) / job (durable) | fire-and-forget in request code | **ABSENT** — E16 |
 | 21 | Authority | Declared effects on every function | ambient authority | **ABSENT** — E10 |
@@ -447,6 +447,15 @@ Filed as issue #101. Routed as `TASK_STDLIB.md` CR-8, which is a report rather
 than a patch: the fix
 is a Ring 1 semantic decision (OD-1) owned by the Cranelift lane under
 `docs/SHARED_SEMANTIC_ZONE.md`'s "Fiber scheduling contract" row.
+
+*Direction set 2026-08-20 (`docs/VISION.md` §21): transparent suspension unless
+one of three named fatal blockers is hit.* **The row stays ABSENT.** A direction
+is not an implementation, and this ledger scores the compiler, not the roadmap —
+the same rule that kept row 14 honest when a decision changed underneath it.
+What the direction does change is the *shape* of the eventual fix: E9's detached
+`std.Spawn` is now known to be wrong in both halves rather than one, since §20
+already rejected its task model and §21 now rejects its colouring-agnostic
+suspension too.
 
 ### E10 — effects do not exist (row 21)
 
