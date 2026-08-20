@@ -186,6 +186,65 @@ the reason it is only a candidate — *"creating a language does not automatical
 produce leverage. It can also place you beneath everyone else, maintaining an
 enormous stack for very few users."*
 
+### 6.1 First deployment — proposed, 2026-08-20
+
+**Distinct from OD-10 on purpose.** OD-10 asks who owns distribution for the
+product path. This asks how to ship next month. Conflating them is how a
+convenient first target quietly becomes a strategy.
+
+**Step 1 — a bare Linux VM, before any platform.** `scp` the binary, a systemd
+unit, a one-page runbook. Nothing else. **This is the acceptance test for a claim
+the compiler already makes and nothing has checked outside CI:** Phase 18 built
+static and dynamic linking modes, reproducible object output, and atomic
+executable publication, and the claim implied by all three is that *the artifact
+is self-contained*. If `./gust-app` runs on a clean VM with no toolchain, no
+libraries and no runtime, that claim is true and **every later deployment path is
+a superset of it**. If it does not, the failure should surface on a machine we
+control rather than three layers deep in someone else's build container.
+
+It is also the only baseline that reveals what a platform is actually buying. Until
+it exists, "Railway makes this easy" is untested against an alternative; afterwards
+it is known which parts are convenience and which are load-bearing. Cost: an
+afternoon.
+
+**Step 2 — a managed platform, with a thin shim.** Render for the least
+surprising path (a web service running a binary, managed Postgres, no ceremony);
+Railway for the better CLI to build against, which is what the shim is actually
+built on; Fly is closer to "just run this binary" than either, at the cost of a
+more opinionated networking model to inherit.
+
+**Thin is the operative word.** `gust deploy` emits a static binary plus a small
+manifest and shells out; it does not model the platform's services, environments,
+or variables. **A thick wrapper around someone else's CLI becomes a compatibility
+surface maintained forever** — their breaking changes become ours and their
+concepts leak into the model. Thin means that moving to an appliance later changes
+only the shim.
+
+**Avoid Docker to get started.** A base image reintroduces precisely the
+uncontrolled dependency graph §4 above says Gust does not have. If the static
+linking works, it is unnecessary: `FROM scratch` with one binary, or no container
+at all.
+
+**Step 3 — the capability check, which is the only differentiated part.**
+
+> The deploy step reads the application's **declared capabilities**, checks them
+> against what the target environment actually provides, and **refuses to deploy
+> when they are not satisfied.**
+
+Not *this deploys easily* — everything deploys easily. **"This application
+declares Postgres, SMTP, and a secret named `stripe`; this environment provides
+two of the three; deployment refused."** That is §0.5's capability manifest made
+operational, it is checkable against Railway's and Render's own CLIs today, and it
+is the same shape as the lead product claim in §56: **the unconfigured deployment
+does not deploy.**
+
+**The caution that keeps this from becoming OD-10's answer by default.** The
+perpetual-underclass argument in this review says cloud vendors own distribution.
+Building on a platform's CLI puts distribution in that platform's hands — fine for
+a demo and first users, and **exactly the position OD-10 exists to escape as a
+product path.** Adopt it deliberately, and do not let convenience decide the
+strategic question by attrition.
+
 Two revisions to adopt:
 
 - *"The ultimate language for the age of AI"* → **"The complete application
