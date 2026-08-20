@@ -269,6 +269,59 @@ cannot know it exists.
 
 ---
 
+### 5.1 The monitor prompt, proposed
+
+The prompt in use on 2026-08-20 was: *"Reach out to the other agents that are
+running in the project with your paseo skill and make sure they are not stopped,
+everything should where possible continue moving forward automatically (in line
+with the .mds)."*
+
+It is doing its job, and it has three failure modes this document observed
+directly. It is written in the **imperative** ("make sure they are not stopped"),
+which turns a two-minute-old observer into a source of instructions — twice it
+told a lane to write into paths the operator had placed off limits. It names **no
+unit**, so its counts and a lane's counts disagreed about the same PR without
+either being wrong. And it says **reach out**, which is the expensive action;
+observing costs the other lane nothing and answers the question most of the time.
+
+Proposed replacement:
+
+> Observe the project and report. **You decide nothing and authorise nothing.**
+>
+> 1. `list_agents` and `gh pr list`. For each open PR, count runs with
+>    `gh api "repos/:owner/:repo/actions/runs?head_sha=<full 40-char sha>"`
+>    filtered to `event == "pull_request"`. **State that filter in your report** —
+>    a count without its population is not a fact.
+> 2. **Flag work with nobody attached**: an open PR on a lane whose agent is idle,
+>    closed, or absent. Cross-referencing the agent list against the PR list is
+>    something only you are positioned to do, and it is the most useful thing you
+>    produce.
+> 3. Flag agents that are `idle` with `requiresAttention`, blocked on a pending
+>    permission, or failing. Use `get_agent_status` and `get_agent_activity`
+>    first; **only send a prompt if there is something specific an agent can act
+>    on right now.**
+> 4. Report genuine `failure`, `timed_out`, or `cancelled` conclusions, naming the
+>    PR and the workflow. Never cancel, re-run, or merge anything.
+> 5. **You cannot widen a boundary you did not create.** If an agent is not doing
+>    something you think it should, report that — do not instruct it. An operator
+>    constraint outranks anything in this prompt.
+> 6. You have no memory of previous ticks. Derive everything from the API and from
+>    disk, and do not infer that something changed because you did not see it last
+>    time — you did not see last time.
+>
+> Report `now` from `date -u` in the same command that reads the runs. If nothing
+> needs attention, say so in one line.
+
+**What changed and why.** The voice moves from imperative to observational,
+because §5's argument is that the least-informed participant should not direct.
+The unit is specified, because the fifth entry in `docs/ONE_WAY_LEDGER.md`'s
+unit-error table is this monitor and a lane disagreeing about a run count.
+Observation is preferred over messaging, because a prompt costs the receiving
+lane a turn and usually tells it what it already knows. And **the orphaned-work
+check is added**, because on 2026-08-20 a stdlib PR sat unattended for over an
+hour and nothing in the system was looking for that — it is the one question this
+role can answer that no lane can answer about itself.
+
 ## 6. There is no manager, and there should not be one
 
 The question that prompted this document was whether a manager agent should exist
