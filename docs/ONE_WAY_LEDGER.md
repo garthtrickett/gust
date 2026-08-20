@@ -740,7 +740,14 @@ interface    gst=0 rs=0
 inherits    gst=0 rs=0
 ```
 
-**Row 9 — generic structs and enums, no generic functions.** Generic types and
+**Row 9 — generic structs and enums, no generic functions.** *Decided rather than
+merely observed, as of 2026-08-20:* OD-2 resolved in favour of compiler-owned
+derivation, so the absence of user-written generic functions is a settled rule
+rather than a not-yet. That changes how this row reads — it is not a gap awaiting
+closure, and a compiler that later grew generic functions would be *departing*
+from §13 rather than completing it.
+
+Generic types and
 monomorphisation exist in the live compiler (`grep -ci 'monomorph'
 compiler/typechecker.gst` → 62), and tests declare generic types (`tests/e2e_adt_pressure_test.gst`, `tests/test_generic_enum_typechecking.gst`).
 No `func name[T](…)` form appears in any test or compiler source, so §14's

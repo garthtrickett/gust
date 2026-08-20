@@ -370,7 +370,7 @@ Everything from v1.0 down is specified in this document so that demo-stage decis
 | **OD-9** | **Model fluency** — can an agent write Gust well, and how do we get there from no corpus? *Thesis-invalidating. Starts week one.* | Demo | §0.7 |
 | **OD-8** | **Soundness of the tenant-scoping analysis** — adversarial review before publication. *Thesis-invalidating.* | Demo | §56 |
 | OD-1 | Transparent suspension vs coloured async (server). **Recommendation recorded in §21**; decision owned by the Cranelift lane | Demo | §21 |
-| OD-2 | Generic functions vs compiler-owned query derivation | Demo | §14, §55 |
+| OD-2 | ~~Generic functions vs compiler-owned query derivation~~ — **RESOLVED 2026-08-20: compiler-owned derivation; §13's ban stands** | — | §14 |
 | OD-10 | **Distribution for the product path** — currently unanswered | Month 4 | §0.11 |
 | OD-3 | SAM state ownership under linear resources and no interior mutability. **`std.Rc` already ships**, so part of this was decided by implementation — see `TASK_STDLIB.md` CR-9 | v0.5 | §27, §38 |
 | OD-4 | WASM stack-switching support and payload cost | v0.5 | §21, §41 |
@@ -693,6 +693,8 @@ The initial generic system supports generic structs, generic enums, compiler-own
 
 Gust does not support specialization, higher-kinded types, arbitrary trait bounds, associated-type systems, overlapping implementations, type-level programming, or generic metaprogramming.
 
+> **Confirmed 2026-08-20 by the resolution of OD-2 (§14).** This list is settled rather than provisional: user-written generic *functions* are excluded with the rest, and the surfaces that would otherwise need them are compiler-owned derivations. A feature request that requires generic functions is a request to reopen OD-2, not a request for an exception here.
+
 ## 14. Generic functions and compiler-owned derivation (OD-2)
 
 User-written generic functions are not available initially.
@@ -703,7 +705,17 @@ This resolves the apparent conflict between §13 and §55: the query builder is 
 
 It also answers "why not build Gust as a library over an existing austere language" — the differentiating features require compiler support, and any language austere enough to be a good base bans the metaprogramming that would let you add them from outside.
 
-**OD-2 remains open** on one point: whether a restricted form of user-written generic function is required before v0.1 for standard-library collection code, or whether compiler-owned containers cover it.
+**OD-2 is resolved, 2026-08-20: compiler-owned derivation, and §13's ban on user-written generic functions stands.**
+
+The question was whether a restricted form of user-written generic function is required before v0.1 for standard-library collection code, or whether compiler-owned containers cover it. The decision is that they cover it. Generic *structs* and *enums* remain available; generic *functions* do not, and the derived surfaces — the query builder, RPC schemas, templates — stay compiler features with typed surfaces rather than libraries written in Gust.
+
+What this commits the project to, stated plainly because it is a constraint and not only a simplification:
+
+- **Every collection in the standard library must be expressible without generic functions.** If one is not, that is a reason to reopen this decision, not a reason to add a local exception. §13's value comes from being categorical.
+- **Every derived type surface is compiler work.** There is no path where a library author supplies one, so the cost lands on the compiler team by construction — which is the trade §13 is buying.
+- **The escape hatch is a new compiler-owned derivation, never a user generic.** A request that would be answered by "write it generically" is answered here by adding a derivation or declining the feature.
+
+The evidence for feasibility is the compiler itself: `compiler/errors.gst:17` declares `Result[T, ctx]` as an ordinary generic enum, so a demanding real consumer needed a generic sum type and expressed it with the facilities users already have.
 
 > **No compiler-owned derivation exists yet**, because everything §14 lists as derived — the query builder, RPC schemas, templates — is itself unbuilt. What the section gets right today is the negative half: user-written generic functions are genuinely unavailable, while generic structs and enums with monomorphisation work (`docs/ONE_WAY_LEDGER.md` E15).
 >

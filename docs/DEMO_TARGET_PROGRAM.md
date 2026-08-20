@@ -151,7 +151,7 @@ Ordered by dependency. Status verified 2026-08-20; evidence in
 | 4 | Implicit context in application code (`using ctx`) | **ABSENT** | **unowned** — `compiler-plan.md` Phase 5.3 |
 | 5 | `uses` clauses parsed and checked across the call graph | **ABSENT** — ledger E10, but `FunctionSignature` already carries per-function obligations | **unowned** — VISION §0.7 Track A |
 | 6 | Entity declarations that mark an entity workspace-scoped | **ABSENT** | **unowned** — VISION §56 |
-| 7 | Compiler-owned query derivation (`from`, `.where`, `.all`) | **ABSENT** | **unowned** — VISION §55, OD-2 |
+| 7 | Compiler-owned query derivation (`from`, `.where`, `.all`) | **ABSENT** | **unowned** — VISION §55. OD-2 resolved 2026-08-20: this is compiler work by decision, not a library someone could contribute |
 | 8 | Tenant scope tracked through query construction; unscoped rejected | **ABSENT** | **unowned** — VISION §56, OD-8 |
 | 9 | A Postgres capability to execute the query against | **ABSENT** | **unowned** — VISION Part XI |
 | 10 | Panic scoped to the request, not the process | **VIOLATED** — ledger E3 | `TASK_STDLIB.md` CR-3, issue #91 — unscheduled |
