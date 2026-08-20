@@ -13,6 +13,7 @@ and **whether the compiler actually does it today**.
 
 - A proposal must fit an existing row, or add one with justification.
 - A row's `Status` is a claim about the compiler and must have a reproduction.
+  As of 2026-08-20 every row does; a new row without one is incomplete.
 - `docs/VISION.md` remains authoritative for *what the rule is*. This file is
   authoritative for *whether it holds*.
 
@@ -39,18 +40,18 @@ Evidence section below; row-level citations are `path:line` pinned to that commi
 
 | # | Concern | The one way | Rejected | Status |
 | --- | --- | --- | --- | --- |
-| 1 | Memory | Branded contexts and arenas | GC; malloc/free; refcount by default | **HOLDS** |
+| 1 | Memory | Branded contexts and arenas | GC; malloc/free; refcount by default | **HOLDS** — E15 |
 | 2 | Brand identity | Type-carried context brand | brand by naming convention | **VIOLATED** — D-1 |
 | 3 | Absence | `Option[T]` | null in safe code | **PARTIAL** — E1 |
 | 4 | Failure | `Result[T, E]` with `?` propagation | exceptions; error codes | **ABSENT** — E2 |
-| 5 | Fallible binding | `guard x := … else { … }` | unchecked unwrap | **HOLDS** |
+| 5 | Fallible binding | `guard x := … else { … }` | unchecked unwrap | **HOLDS** — E15 |
 | 6 | Panic scope | Terminates request, task, or job | terminating the process | **VIOLATED** — E3 |
-| 7 | Abstraction | Concrete structs, functions, explicit function tables | inheritance; broad traits; interface hierarchies | **HOLDS** |
+| 7 | Abstraction | Concrete structs, functions, explicit function tables | inheritance; broad traits; interface hierarchies | **HOLDS** — E15 |
 | 8 | Dynamic dispatch | Data-oriented registry indexed by handle | per-object vtable pointers | **ABSENT** — design in `VISION_RECONCILIATION.md` App. B |
-| 9 | Generics | Generic structs and enums; compiler-owned containers | user generic *functions*; HKT; specialization; trait bounds | **HOLDS** |
+| 9 | Generics | Generic structs and enums; compiler-owned containers | user generic *functions*; HKT; specialization; trait bounds | **HOLDS** — E15 |
 | 10 | Derivation | Bounded compiler-owned derivation | user macros; arbitrary compile-time execution; build scripts | **HOLDS** — E4 |
 | 11 | Operators | Compiler-owned operator set | user overloading | **HOLDS** — E4 |
-| 12 | Conversions | Explicit; only lossless widening implicit | implicit narrowing or lossy conversion | **ABSENT** |
+| 12 | Conversions | Explicit; only lossless widening implicit | implicit narrowing or lossy conversion | **ABSENT** — E15, vacuous |
 | 13 | String equality | `std.str_eq` | `==` over `str` | **HOLDS** — E5 |
 | 14 | Mutation | One reference form, `&T[ctx]`, which carries no mutability | *(restricting mutation through references: withdrawn, unscheduled)* | **DEFERRED** — E6 |
 | 15 | Cleanup | `defer`, LIFO, plus registered destructors | manual close; finalizers; fallible destructors | **PARTIAL** — E7 |
@@ -58,13 +59,13 @@ Evidence section below; row-level citations are `path:line` pinned to that commi
 | 17 | Shared ownership | Decided case-by-case; open as OD-3 | unrestricted interior mutability | **VIOLATED** — E8 |
 | 18 | Suspension | Transparent; no function colouring | coloured `async`; Promises; raw futures | **ABSENT** — OD-1, E9 |
 | 19 | Concurrency | Structured scopes, owned tasks, linear handles | detached spawn; actors as universal model | **VIOLATED** — E9 |
-| 20 | Background work | Supervisor (long-lived) / job (durable) | fire-and-forget in request code | **ABSENT** |
+| 20 | Background work | Supervisor (long-lived) / job (durable) | fire-and-forget in request code | **ABSENT** — E16 |
 | 21 | Authority | Declared effects on every function | ambient authority | **ABSENT** — E10 |
-| 22 | Dependencies | Platform / certified provider / vendored source / escape hatch | resolver; transitive graph; registry by default | **ABSENT** |
-| 23 | External services | Gust-owned capability interface | supplier SDK imports; in-process C libraries | **ABSENT** |
-| 24 | Client↔server | Typed gustrpc calls | hand-written clients; duplicated schemas | **ABSENT** |
-| 25 | Rendering and state | Lit-style compiled templates; SAM action→model→state→effect | VirtualDOM; ad-hoc stores; two-way binding | **ABSENT** |
-| 26 | Schema | Postgres is source of truth; Gust derives types | ORM-first | **ABSENT** |
+| 22 | Dependencies | Platform / certified provider / vendored source / escape hatch | resolver; transitive graph; registry by default | **ABSENT** — E16 |
+| 23 | External services | Gust-owned capability interface | supplier SDK imports; in-process C libraries | **ABSENT** — E16 |
+| 24 | Client↔server | Typed gustrpc calls | hand-written clients; duplicated schemas | **ABSENT** — E16 |
+| 25 | Rendering and state | Lit-style compiled templates; SAM action→model→state→effect | VirtualDOM; ad-hoc stores; two-way binding | **ABSENT** — E16 |
+| 26 | Schema | Postgres is source of truth; Gust derives types | ORM-first | **ABSENT** — E16 |
 | 27 | Backend | Cranelift native | — (C retained as bootstrap seed and differential oracle) | **PARTIAL** — Phase 18 open |
 | 28 | Integer types | Fixed-width `i32`, `u32`, `i64`, `u64`, `isize`, `usize` | a single unsized integer | **ABSENT** — E11 |
 | 29 | Overflow | Traps by default in all builds; wrapping/saturating/checked are named operations | silent wraparound | **VIOLATED** — E11 |
@@ -472,6 +473,84 @@ typechecking path invoked these functions.
 Rows 15 and 16 stay `PARTIAL`: destructor declaration and enforcement for
 user-defined types remain absent, which is what blocks `MutexGuard`
 (`TASK_STDLIB.md` CR-5).
+
+### E15 — the four language rows that held, and one that is vacuous (rows 1, 5, 7, 9, 12)
+
+These held on inspection but carried no reproduction, which this file's own rule
+forbids. Recorded together.
+
+**Row 7 — no inheritance, traits, or interfaces.** Holds by construction; none
+of the keywords exists in either lexer:
+
+```
+$ for k in class extends impl trait interface inherits; do
+    printf '%-10s rs=%s gst=%s\n' "$k" \
+      "$(grep -c "\"$k\"" src/lexer.rs)" "$(grep -c "\"$k\"" compiler/lexer.gst)"
+  done
+class      rs=0 gst=0
+extends    rs=0 gst=0
+impl       rs=0 gst=0
+trait      rs=0 gst=0
+interface  rs=0 gst=0
+inherits   rs=0 gst=0
+```
+
+**Row 9 — generic structs and enums, no generic functions.** `Type::Generic` and
+monomorphisation exist (`src/typechecker/monomorphize.rs`), and tests declare
+generic types (`tests/e2e_adt_pressure_test.gst`, `tests/test_generic_enum_typechecking.gst`).
+No `func name[T](…)` form appears in any test or compiler source, so §14's
+"user-written generic functions are not available initially" holds.
+
+**Row 1 — arenas are the memory model.** `Type::Arena` is a first-class type
+(`src/typechecker/types.rs`), and the arena surface is registered and
+runtime-backed (`std.GenerationalSwap`, `src/runtime/arena.c`,
+`src/runtime/scratch.c`). No GC and no user-facing allocator exist.
+
+**Row 5 — `guard … else` is the fallible-binding form.** Implemented and covered
+by seven fixtures (`ls tests/*guard*.gst`), including
+`tests/e2e_fallible_guard_bootstrap.gst` and
+`tests/test_guard_non_wrapper_rhs_rejected.gst`.
+
+**Row 12 — the conversion rule is vacuous, not enforced.** §16 forbids implicit
+narrowing and lossy conversion, and no narrowing, widening, or lossy-conversion
+logic exists anywhere in the typechecker. That is not compliance: with a single
+integer type (E11) there is nothing to narrow *between*. The rule becomes
+testable only once §32's fixed-width types exist, and it should be re-checked
+then rather than read as satisfied now.
+
+### E16 — the platform surface does not exist (rows 20, 22–26)
+
+Recorded once for all six rows rather than repeated. These are `ABSENT` because
+the platform they describe is unbuilt, which `docs/VISION.md`'s Part status
+markers already say — Parts XII, XIII, IX, and XI are DEFERRED or SPECULATIVE.
+The reproduction matters anyway, because four of the nine source documents
+describe this surface in the present tense.
+
+The entire runtime is eight files:
+
+```
+$ ls src/runtime/*.c | xargs -n1 basename
+approved_scalar_imports.c  arena.c  collections.c  fiber.c
+file_io.c  host_io.c  scratch.c  strings.c
+```
+
+No HTTP, sockets, TLS, JSON, SQL, jobs, queues, mail, templates, or RPC. Nor is
+any of it a registered name:
+
+```
+$ for k in Http Sql Postgres Json Rpc Job Queue Mail Route Template Socket Tls; do
+    printf '%-10s %s\n' "$k" "$(grep -ci "$k" docs/STDLIB_SURFACE_INVENTORY.md)"
+  done      # every one returns 0
+```
+
+Nor a language construct — none of `route`, `rpc`, `job`, `task`, `supervisor`,
+`component`, `html`, or `migration` is a keyword in either lexer.
+
+Row 22 (dependencies) is the one worth separating. It is `ABSENT` in a different
+sense: there is no dependency *mechanism* at all — no manifest, no lockfile, no
+resolver — so the rule is neither held nor broken. `docs/VISION_RECONCILIATION.md`
+§5 describes what it should become, and the lockfile-diff artifact there is
+`docs/VISION.md` §72, marked DEFERRED.
 
 ## Maintenance
 
