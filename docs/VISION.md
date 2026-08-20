@@ -124,13 +124,13 @@ The risk profile has shifted, not shrunk: from *can they build a compiler* — a
 
 **Measured 2026-08-20 at `b47d0049`.** 711 `.gst` compiler files, 103,789 lines; 260 test programs; Phase 18 at 13 of 20 patches. "Several hundred files" above is 260, and is a count of test programs rather than of assertions.
 
-**One qualification on "everything built is table stakes."** It reads as though the built rows are settled. Five of the design rules they rest on are recorded as violated in `docs/ONE_WAY_LEDGER.md`, and none is currently scheduled:
+**One qualification on "everything built is table stakes."** It reads as though the built rows are settled. In `docs/ONE_WAY_LEDGER.md`, four of the design rules they rest on are recorded as violated and one was withdrawn to match the compiler. None of the five is currently scheduled:
 
 - **Brand identity** is inferred from identifier spelling, not from types, and the two compilers use different matching rules for it (D-1, D-2). Until Phase 19 lands, "ownership and region-based memory — working" is true of the design and approximate in the implementation.
-- **The borrow model** in §26 was corrected on 2026-08-19 to the single mutable reference form that exists; `inout` is not a keyword in either compiler.
 - **Panic scope** (§34): a string bounds failure calls `exit(1)` and takes the process down rather than the request.
 - **Shared ownership** is marked open as OD-3 while `std.Rc` already ships.
 - **Concurrency** is detached `std.Spawn` plus channels — the model §20 rejects.
+- **The borrow model** is the withdrawn one. §26 was corrected on 2026-08-19 to the single mutable reference form that exists — `inout` is not a keyword in either compiler — so there is no longer a rule being violated, only a containment property that nothing delivers.
 
 This does not change the conclusion that the absent items are the product. It changes what "built" is load-bearing for: the memory model is not yet sound enough to be *demonstrated*, which matters because containment is what is being sold (§0.4).
 

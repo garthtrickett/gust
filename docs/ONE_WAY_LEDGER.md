@@ -24,6 +24,7 @@ and **whether the compiler actually does it today**.
 | **PARTIAL** | Enforced in one direction only, or enforced without the sanctioned replacement existing. |
 | **VIOLATED** | The compiler or runtime does the rejected thing. |
 | **ABSENT** | Not implemented either way; the rule is a design intention with nothing enforcing it. |
+| **DEFERRED** | The rule was withdrawn from `docs/VISION.md` to match the implementation. The property it protected is still wanted and is unscheduled. |
 
 `ABSENT` is not a defect. Most of these are unbuilt platform surface and are
 correctly deferred per `docs/VISION.md` Part status markers. `VIOLATED` is a
@@ -51,7 +52,7 @@ Evidence section below; row-level citations are `path:line` pinned to that commi
 | 11 | Operators | Compiler-owned operator set | user overloading | **HOLDS** — E4 |
 | 12 | Conversions | Explicit; only lossless widening implicit | implicit narrowing or lossy conversion | **ABSENT** |
 | 13 | String equality | `std.str_eq` | `==` over `str` | **HOLDS** — E5 |
-| 14 | Mutation | Exclusive `inout T[ctx]`; `&T[ctx]` shared immutable | shared mutable references; interior mutability | **VIOLATED** — E6 |
+| 14 | Mutation | One reference form, `&T[ctx]`, which carries no mutability | *(restricting mutation through references: withdrawn, unscheduled)* | **DEFERRED** — E6 |
 | 15 | Cleanup | `defer`, LIFO, plus registered destructors | manual close; finalizers; fallible destructors | **PARTIAL** — E7 |
 | 16 | Resources | Linear, propagating transitively | ad-hoc handle discipline | **PARTIAL** — E7 |
 | 17 | Shared ownership | Decided case-by-case; open as OD-3 | unrestricted interior mutability | **VIOLATED** — E8 |
@@ -66,21 +67,19 @@ Evidence section below; row-level citations are `path:line` pinned to that commi
 | 26 | Schema | Postgres is source of truth; Gust derives types | ORM-first | **ABSENT** |
 | 27 | Backend | Cranelift native | — (C retained as bootstrap seed and differential oracle) | **PARTIAL** — Phase 18 open |
 
-Counts: 7 `HOLDS`, 4 `PARTIAL`, 5 `VIOLATED`, 11 `ABSENT`.
+Counts: 7 `HOLDS`, 4 `PARTIAL`, 4 `VIOLATED`, 1 `DEFERRED`, 11 `ABSENT`.
 
-The five `VIOLATED` rows and their owners:
+| Row | Rule | Status | Owner |
+| --- | --- | --- | --- |
+| 2 | Brand identity | VIOLATED | Phase 19 (`TASK_PHASE19.md`), staged |
+| 6 | Panic scope | VIOLATED | `TASK_STDLIB.md` CR-3, issue #91 — unscheduled |
+| 17 | Shared ownership | VIOLATED | `TASK_STDLIB.md` CR-9 — new |
+| 19 | Concurrency | VIOLATED | `TASK_STDLIB.md` CR-8, issue #101 — new |
+| 14 | Mutation | DEFERRED | `TASK_STDLIB.md` CR-6 — rule withdrawn, unscheduled |
 
-| Row | Rule | Owner |
-| --- | --- | --- |
-| 2 | Brand identity | Phase 19 (`TASK_PHASE19.md`), staged |
-| 6 | Panic scope | `TASK_STDLIB.md` CR-3 — written, unscheduled |
-| 14 | Mutation | `TASK_STDLIB.md` CR-6 — deferred, unscheduled |
-| 17 | Shared ownership | `TASK_STDLIB.md` CR-9 — new |
-| 19 | Concurrency | `TASK_STDLIB.md` CR-8 — new |
-
-Every one of them has a written owner and none is currently scheduled. That is
-the honest summary: the rules are known to be broken, and no lane is working on
-any of the five.
+Every one has a written owner and none is currently scheduled. That is the
+honest summary: four rules are known to be broken and one was withdrawn, and no
+lane is working on any of them.
 
 ---
 
@@ -210,9 +209,19 @@ single form that exists. The evidence fixture is committed as
 `tests/test_shared_mutable_aliasing_observed.gst`. Recorded as `TASK_STDLIB.md`
 CR-6; enforcement is deferred and unscheduled.
 
-The row stays `VIOLATED` rather than being rewritten to match the implementation,
-because it is a containment property. `&T[ctx]` must not be cited as an
-immutability guarantee in documentation, review, or a safety argument.
+The row is `DEFERRED`, not `VIOLATED`, and the distinction is deliberate. This
+file is authoritative for whether a rule holds; `docs/VISION.md` is authoritative
+for what the rule *is*. §26 no longer states the two-form model, so there is no
+longer a rule here to violate — it was withdrawn to match the compiler. What
+remains is a wanted containment property with nothing scheduled to deliver it.
+
+An earlier draft of this row marked it `VIOLATED` against the withdrawn rule.
+That was this file overriding `VISION.md` on what the rule is, which is exactly
+the authority split it declares it will not cross.
+
+The practical consequence is unchanged and is worth repeating: `&T[ctx]` must not
+be cited as an immutability guarantee in documentation, in review, or in a safety
+argument.
 
 ### E7 — `defer` parses; automatic resource lifecycle does not (rows 15, 16)
 
