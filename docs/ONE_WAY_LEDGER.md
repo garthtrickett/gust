@@ -1969,9 +1969,35 @@ A run that has never executed carries a timestamp that reads as having started.
 same thing. The field is not incomplete; it means something other than what its
 name asserts.
 
+**The same field family fails in the opposite direction too, and recording only
+one direction is worse than recording neither.** Run-level `status` reported
+`queued` for both of these runs while their `build` job had already completed
+successfully. So one field reads as *falsely started* and another as *falsely
+stalled*, on the same two runs, at the same moment.
+
+A reader who internalises only the first direction learns to distrust
+`run_started_at` and to trust `status` — which is precisely the wrong lesson,
+and worse than distrusting neither.
+
+**Three readings of those two runs were taken within ten minutes and all three
+were wrong.** "Never executed", from `run_started_at == created_at`. "Executing
+now, 61 jobs dispatched", from a jobs query read as running. The truth needed
+`status` *and* `conclusion` per job:
+
+```
+1 completed  success  build Gust and CI surface
+N queued     -        (everything else)
+```
+
+The build job had succeeded and the fan-out was queued behind it, because these
+workflows are `needs: build`. **A large queued count beside one success is the
+normal shape of that structure, not a stall** — which no single field says.
+
 So the remedy differs. Against truncation: widen the query. Against this:
 **corroborate the field against a second, independent one that would have to
-agree** — here `run_started_at` against `status`, and both against `created_at`.
+agree** — here `run_started_at` against `status`, `status` against the jobs view,
+and job `status` against job `conclusion`. Each of those pairs alone still
+misleads; it took all three.
 
 The generalisation covering both is narrower than "paginate" and wider than
 either:
@@ -1984,7 +2010,9 @@ either:
 field wrongly was harmless here for a structural reason rather than by luck: no
 gate in this repository consumes `run_started_at`. The same misreading of a
 *conclusion* field would have merged a PR. **Which readings are load-bearing is
-a property of the gates, not of the data** — so the audit worth doing is not "is
+a property of the gates, not of the data** — confirmed a second time here, since
+none of the three wrong readings touched this lane's gate, which consumes
+`conclusion` and saw `null` throughout — so the audit worth doing is not "is
 every field read correctly" but "which fields does a decision actually rest on",
 and those are the ones to corroborate.
 
