@@ -50,6 +50,64 @@ func descriptor(object_format: str, derived_from: str, max_align: int, first_nam
     return value;
 }
 
+
+// AUDIT (18.18): these four classes were declared and never forced. The
+// descriptor helper above always builds a well-formed list, which is exactly
+// why they had no test. Shaping happens in helpers because `Index[...[ctx]...]`
+// needs the [ctx] generic parameter that func main() does not carry.
+func declared_bindings(ctx: &Arena) std.Vector[str, ctx] {
+    mut values: std.Vector[str, ctx] := std.VectorNew(ctx);
+    values.Push(std.Clone(ctx, "local"));
+    values.Push(std.Clone(ctx, "global"));
+    values.Push(std.Clone(ctx, "weak"));
+    return values;
+}
+
+func shaped(sections: std.Vector[target.MirObjectSection[ctx], ctx], bindings: std.Vector[str, ctx], ctx: &Arena) target.MirObjectFormatDescriptor[ctx] {
+    mut value := descriptor("elf", "operating_system_in_declared_target_identity", 16, ".text", 16, ctx);
+    mut section_index: Index[std.Vector[target.MirObjectSection[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(section_index, sections);
+    value.sections = section_index;
+    mut binding_index: Index[std.Vector[str, ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(binding_index, bindings);
+    value.symbol_bindings = binding_index;
+    return value;
+}
+
+func validate_no_sections(ctx: &Arena) target.MirTargetValidation[ctx] {
+    mut sections: std.Vector[target.MirObjectSection[ctx], ctx] := std.VectorNew(ctx);
+    return target.mir_object_format_validate(shaped(sections, declared_bindings(ctx), ctx), "linux", ctx);
+}
+
+func validate_duplicate_kind(ctx: &Arena) target.MirTargetValidation[ctx] {
+    mut sections: std.Vector[target.MirObjectSection[ctx], ctx] := std.VectorNew(ctx);
+    sections.Push(section("text", ".text", 16, ctx));
+    sections.Push(section("text", ".text2", 16, ctx));
+    return target.mir_object_format_validate(shaped(sections, declared_bindings(ctx), ctx), "linux", ctx);
+}
+
+func one_section(ctx: &Arena) std.Vector[target.MirObjectSection[ctx], ctx] {
+    mut sections: std.Vector[target.MirObjectSection[ctx], ctx] := std.VectorNew(ctx);
+    sections.Push(section("text", ".text", 16, ctx));
+    return sections;
+}
+
+func validate_no_bindings(ctx: &Arena) target.MirTargetValidation[ctx] {
+    mut bindings: std.Vector[str, ctx] := std.VectorNew(ctx);
+    return target.mir_object_format_validate(shaped(one_section(ctx), bindings, ctx), "linux", ctx);
+}
+
+func validate_foreign_binding(ctx: &Arena) target.MirTargetValidation[ctx] {
+    mut bindings: std.Vector[str, ctx] := std.VectorNew(ctx);
+    bindings.Push(std.Clone(ctx, "local"));
+    bindings.Push(std.Clone(ctx, "exported"));
+    return target.mir_object_format_validate(shaped(one_section(ctx), bindings, ctx), "linux", ctx);
+}
+
+func validate_shaped_sentinel(ctx: &Arena) target.MirTargetValidation[ctx] {
+    return target.mir_object_format_validate(shaped(one_section(ctx), declared_bindings(ctx), ctx), "linux", ctx);
+}
+
 func main() {
     mut ctx := os.Arena.New();
     defer ctx.Free();
@@ -95,6 +153,25 @@ func main() {
     mut unnamed := descriptor("elf", "operating_system_in_declared_target_identity", 16, "", 16, &ctx);
     mut unnamed_validation := target.mir_object_format_validate(unnamed, "linux", &ctx);
     if unnamed_validation.valid == 1 || std.str_eq(unnamed_validation.reason_code, "object_section_unnamed") == 0 { os.Exit(14); }
+
+
+    // AUDIT (18.18): four declared classes that no input reached until now.
+    mut sectionless := validate_no_sections(&ctx);
+    if sectionless.valid == 1 || std.str_eq(sectionless.reason_code, "object_format_declares_no_sections") == 0 { os.Exit(15); }
+
+    mut duplicated := validate_duplicate_kind(&ctx);
+    if duplicated.valid == 1 || std.str_eq(duplicated.reason_code, "object_section_kind_duplicated") == 0 { os.Exit(16); }
+
+    mut bindingless := validate_no_bindings(&ctx);
+    if bindingless.valid == 1 || std.str_eq(bindingless.reason_code, "object_format_declares_no_symbol_bindings") == 0 { os.Exit(17); }
+
+    // The helper that answers this question existed from 18.3 and nothing asked it.
+    mut foreign := validate_foreign_binding(&ctx);
+    if foreign.valid == 1 || std.str_eq(foreign.reason_code, "object_symbol_binding_undeclared") == 0 { os.Exit(18); }
+
+    // Sentinel: the same shape with a declared vocabulary is accepted, so the
+    // four refusals came from the mutation and not from the shaping helper.
+    if validate_shaped_sentinel(&ctx).valid == 0 { os.Exit(19); }
 
     os.LogStr("SUCCESS: Phase 18.3 object format smoke passed");
 }

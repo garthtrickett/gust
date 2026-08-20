@@ -204,6 +204,8 @@ guard-pr-fast-ci-surface:
       'just guard-cranelift-phase18-publication-contract'
       'Phase 18 cross-target composition'
       'just guard-cranelift-phase18-composition-contract'
+      'Phase 18 deferral audit and rejection reachability'
+      'just guard-cranelift-phase18-deferral-audit'
       'Phase 17 cross-feature runtime composition'
       'just guard-cranelift-phase17-composition-contract'
       'phase11-family:'
@@ -217,8 +219,13 @@ guard-pr-fast-ci-surface:
       'name: gust-build'
       'if-no-files-found: error'
     )
+    # AUDIT (18.18): this loop used to fail with NO message, so a missing token
+    # surfaced only as "exit code 1" and had to be bisected by hand. Say which.
     for token in "${required_workflow_tokens[@]}"; do
-      rg -n -F "$token" "$workflow" >/dev/null
+      if ! rg -n -F "$token" "$workflow" >/dev/null; then
+        echo "PR Fast workflow is missing a required entry: $token"
+        exit 1
+      fi
     done
 
     if rg -n \
@@ -15901,6 +15908,16 @@ guard-cranelift-phase18-debug-info-contract:
     python3 scripts/cranelift_test_levels.py level guard-cranelift-phase18-debug-info-contract | grep -F $'guard-cranelift-phase18-debug-info-contract\t1\t' >/dev/null
     just guard-cranelift-phase18-object-format-contract
     python3 scripts/phase18_debug_information.py --check
+
+guard-cranelift-phase18-deferral-audit:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Auditing Phase 18 deferrals and rejection reachability..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase18-deferral-audit | grep -F $'guard-cranelift-phase18-deferral-audit\t1\t' >/dev/null
+    just guard-cranelift-phase18-composition-contract
+    python3 scripts/phase18_deferrals.py --check
+    bash scripts/phase18_deferral_smoke.sh
 
 guard-cranelift-phase18-complete-target-evidence:
     #!/usr/bin/env bash

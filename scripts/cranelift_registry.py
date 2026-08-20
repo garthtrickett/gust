@@ -43,6 +43,7 @@ TOP_FIELDS = {
     "phase18_reproducibility",
     "phase18_publication",
     "phase18_composition",
+    "phase18_deferrals",
     "phase18_object_inspection",
     "phase18_target_diagnostics",
     "phase18_cross_compilation",
@@ -10997,6 +10998,33 @@ def phase18_composition_summary_lines(registry):
     ]
 
 
+def phase18_deferrals_summary_lines(registry):
+    authority = registry["phase18_deferrals"]
+    taxonomy = authority["rejection_taxonomy"]
+    kinds = {}
+    for entry in taxonomy:
+        kinds[entry["kind"]] = kinds.get(entry["kind"], 0) + 1
+    ordered = ", ".join(f"`{kind}` {count}" for kind, count in sorted(kinds.items()))
+    return [
+        "## Phase 18 deferral audit and rejection reachability",
+        "",
+        f"- Authority version: `{authority['version']}`",
+        f"- Status: `{authority['status']}`",
+        f"- Narrow deferrals: `{len(authority['deferrals'])}`",
+        f"- Declared rejection classes classified: `{len(taxonomy)}`",
+        f"- By kind: {ordered}",
+        "",
+        "Patch 18.18 audits what Phase 18 declared but never proved. A rejection class that nothing can force is policy in name only, and the phase had accumulated a number of them: classes emitted by an authority module that no negative test exercised, classes declared in a vocabulary that nothing emitted at all, and one class whose name contradicted the condition that raised it.",
+        "",
+        "Every declared class is now one of five things, each carrying its own obligation. An emittable class is emitted at a refusal site and forced by a negative test. A guard-enforced class is a registry-level property no compiler refusal can raise, so a named contract guard raises it and a negative test forces it. An architectural ban is not an input at all and names the guard that enforces it. A diagnostic value is carried by a declared row rather than raised. Vocabulary with no instance among the declared targets must name the deferral that would introduce one.",
+        "",
+        "There is deliberately no bare allowlist. An unreachable class is either made reachable, reclassified with its obligation met, or deleted.",
+        "",
+        "Each deferral names the phase that will carry it, the component that will own the capability, the separate component that will certify it arrived, the prerequisite that blocks it, and the Phase 18 rows it comes from. A deferral attached to no row is an open-ended promise rather than a narrow one.",
+        "",
+    ]
+
+
 def phase18_object_inspection_summary_lines(registry):
     authority = registry["phase18_object_inspection"]
     object_format = registry["phase18_object_format"]
@@ -11420,6 +11448,7 @@ def render(registry):
         *phase18_reproducibility_summary_lines(registry),
         *phase18_publication_summary_lines(registry),
         *phase18_composition_summary_lines(registry),
+        *phase18_deferrals_summary_lines(registry),
         "## Registry entries", "",
         "| ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |",
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",

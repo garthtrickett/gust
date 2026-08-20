@@ -52,4 +52,19 @@ if "$worker" phase18-target-witness "$build_dir/unverified.request" >"$build_dir
 fi
 rg -n -F 'target_layout_disagreement' "$build_dir/unverified.err" >/dev/null
 
-echo "guard-cranelift-phase18-target-authority-parity: ok (byte-identical witness, 3 refusals, Level 2)"
+# AUDIT (18.18): the worker refuses a request carrying no target identity at all.
+# Until now this declared class had no test, so nothing proved the worker would
+# not quietly fall back to a host default.
+stage="reject a request that declares no target identity"
+grep -v '^target_identity:' "$request" >"$build_dir/identityless.request"
+if "$worker" phase18-target-witness "$build_dir/identityless.request" >"$build_dir/identityless.witness" 2>"$build_dir/identityless.err"; then
+  echo "worker accepted a request that declares no target identity" >&2
+  exit 1
+fi
+rg -n -F 'missing_target_identity_in_request' "$build_dir/identityless.err" >/dev/null
+
+# Sentinel: removing that one line is what caused the refusal.
+stage="confirm the unmodified request is still accepted"
+"$worker" phase18-target-witness "$request" >/dev/null
+
+echo "guard-cranelift-phase18-target-authority-parity: ok (byte-identical witness, 4 refusals, Level 2)"

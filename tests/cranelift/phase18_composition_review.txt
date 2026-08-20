@@ -1,7 +1,7 @@
 Patch 18.17 — Cross-Target Composition and Complete Per-Target Evidence
 
-composition_cases	5
-participating_authorities	16
+composition_cases	6
+participating_authorities	17
 evidence_kinds	6
 declared_supported_targets	1
 

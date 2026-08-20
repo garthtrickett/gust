@@ -18,6 +18,19 @@ func observation(symbol: str, binding: str, section: str, kind: str, planned: in
     return value;
 }
 
+
+// AUDIT (18.18): inspection could report a symbol the plan did not contain, but
+// never the reverse. A plan promising a symbol the object does not hold is the
+// more dangerous direction -- the link succeeds and the program is wrong.
+// Absence is a property of the set, so this needs a set of observations.
+func observed_set(ctx: &Arena) Index[std.Vector[target.MirObjectObservation[ctx], ctx], ctx] {
+    mut values: std.Vector[target.MirObjectObservation[ctx], ctx] := std.VectorNew(ctx);
+    values.Push(observation("gust_rt_symbol", "global", "text", "R_X86_64_64", 1, ctx));
+    mut index: Index[std.Vector[target.MirObjectObservation[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(index, values);
+    return index;
+}
+
 func main() {
     mut ctx := os.Arena.New();
     defer ctx.Free();
@@ -57,6 +70,15 @@ func main() {
     mut bad_kind := observation("gust_rt_symbol", "global", "text", "R_X86_64_GOTPCREL", 1, &ctx);
     mut kind_validation := target.mir_object_observation_validate(bad_kind, &ctx);
     if kind_validation.valid == 1 || std.str_eq(kind_validation.reason_code, "inspected_relocation_kind_not_in_model") == 0 { os.Exit(7); }
+
+
+    // AUDIT (18.18): the plan promises a symbol the inspected object does not hold.
+    mut absent := target.mir_object_inspection_expects(observed_set(&ctx), "gust_rt_missing", &ctx);
+    if absent.valid == 1 || std.str_eq(absent.reason_code, "inspected_object_missing_expected_symbol") == 0 { os.Exit(20); }
+
+    // Sentinel: a symbol that IS present is accepted, so the refusal came from
+    // absence rather than from the set being consulted at all.
+    if target.mir_object_inspection_expects(observed_set(&ctx), "gust_rt_symbol", &ctx).valid == 0 { os.Exit(21); }
 
     os.LogStr("SUCCESS: Phase 18.11 object inspection smoke passed");
 }

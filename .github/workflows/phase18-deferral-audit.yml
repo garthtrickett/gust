@@ -1,0 +1,46 @@
+name: Cranelift Phase 18 Deferral Audit
+
+on:
+  pull_request:
+    paths:
+      # The audit reads the authority modules to decide what is emitted at a
+      # refusal site, and the smoke and parity suites to decide what is forced.
+      # A change to any of them can turn a reachable class unreachable.
+      - 'compiler/mir_target_authority.gst'
+      - 'compiler/mir_target_request.gst'
+      - 'compiler/*_smoke_test_entry.gst'
+      - 'compiler/experiments/cranelift/src/target_authority.rs'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/cranelift_registry.py'
+      - 'scripts/phase18_deferrals.py'
+      - 'scripts/phase18_deferral_smoke.sh'
+      - 'scripts/phase18_*_parity.sh'
+      - 'tests/cranelift/phase18_deferral_contract.tsv'
+      - 'tests/cranelift/phase18_deferral_review.txt'
+      - '.github/workflows/phase18-deferral-audit.yml'
+      - 'TASK.md'
+  push:
+    branches: [main]
+    paths:
+      - 'compiler/mir_target_authority.gst'
+      - 'compiler/experiments/cranelift/src/target_authority.rs'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/phase18_deferrals.py'
+      - 'scripts/phase18_deferral_smoke.sh'
+      - 'tests/cranelift/phase18_deferral_contract.tsv'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: guard-cranelift-phase18-deferral-audit
+        run: just guard-cranelift-phase18-deferral-audit

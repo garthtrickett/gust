@@ -280,6 +280,12 @@ func mir_target_element_supported(element: MirTargetSupportElement[ctx], ctx: &A
 
 // Support is a conjunction, never a disjunction. There is no path here that
 // returns supported because one element looked promising.
+func mir_target_support_element_is_attributed(element: MirTargetSupportElement[ctx], ctx: &Arena) int {
+    if std.str_eq(element.owning_authority, "") == 1 { return 0; }
+    if std.str_eq(element.evidence_id, "") == 1 { return 0; }
+    return 1;
+}
+
 func mir_target_tuple_is_complete(tuple: MirTargetSupportTuple[ctx], ctx: &Arena) int {
     if mir_target_element_supported(tuple.compiler_element, ctx) == 0 { return 0; }
     if mir_target_element_supported(tuple.runtime_package_element, ctx) == 0 { return 0; }
@@ -301,6 +307,18 @@ func mir_target_tuple_validate(tuple: MirTargetSupportTuple[ctx], ctx: &Arena) M
        mir_target_tuple_element_order(tuple.linker_element.element_kind, ctx) != 2 ||
        mir_target_tuple_element_order(tuple.abi_element.element_kind, ctx) != 3 {
         result.reason_code = std.Clone(ctx, "target_support_order_drift");
+        return result;
+    }
+
+    // AUDIT (18.18): each of the four elements must name the authority that owns
+    // it and the evidence that proves it. is_complete() judges present and
+    // compatible only, so an unattributed element would otherwise sail through
+    // as "complete" -- the tuple could list all four parts and prove none.
+    if mir_target_support_element_is_attributed(tuple.compiler_element, ctx) == 0 ||
+       mir_target_support_element_is_attributed(tuple.runtime_package_element, ctx) == 0 ||
+       mir_target_support_element_is_attributed(tuple.linker_element, ctx) == 0 ||
+       mir_target_support_element_is_attributed(tuple.abi_element, ctx) == 0 {
+        result.reason_code = std.Clone(ctx, "target_support_element_without_owner_or_evidence");
         return result;
     }
 
@@ -439,6 +457,17 @@ func mir_object_format_validate(descriptor: MirObjectFormatDescriptor[ctx], oper
     if len(bindings) == 0 {
         result.reason_code = std.Clone(ctx, "object_format_declares_no_symbol_bindings");
         return result;
+    }
+    // AUDIT (18.18): mir_object_binding_is_declared existed from 18.3 and nothing
+    // called it, so object_symbol_binding_undeclared was policy no input could
+    // reach. Calling it here makes the declaration true.
+    mut binding_index := 0;
+    while binding_index < len(bindings) {
+        if mir_object_binding_is_declared(bindings[binding_index], ctx) == 0 {
+            result.reason_code = std.Clone(ctx, "object_symbol_binding_undeclared");
+            return result;
+        }
+        binding_index = binding_index + 1;
     }
 
     result.valid = 1;
@@ -653,7 +682,7 @@ func mir_linker_argument_permitted(argument: str, ctx: &Arena) int {
     return 0;
 }
 
-func mir_linker_descriptor_validate(descriptor: MirLinkerDescriptor[ctx], target_format: str, ctx: &Arena) MirTargetValidation[ctx] {
+func mir_linker_descriptor_validate(descriptor: MirLinkerDescriptor[ctx], target_format: str, requested_target_id: str, ctx: &Arena) MirTargetValidation[ctx] {
     mut result: MirTargetValidation[ctx];
     result.valid = 0;
 
@@ -676,7 +705,16 @@ func mir_linker_descriptor_validate(descriptor: MirLinkerDescriptor[ctx], target
         result.reason_code = std.Clone(ctx, "linker_argument_outside_vocabulary");
         return result;
     }
+    // AUDIT (18.18): this emitted linker_target_mismatch when driver_name was
+    // EMPTY. An unnamed driver is not a target mismatch, and a class whose name
+    // contradicts its condition makes the compiler confidently wrong about why
+    // it refused -- worse than an unreachable class. The empty case gets its own
+    // class; the mismatch is now an actual comparison.
     if std.str_eq(descriptor.driver_name, "") == 1 {
+        result.reason_code = std.Clone(ctx, "linker_driver_unnamed");
+        return result;
+    }
+    if std.str_eq(descriptor.target_id, requested_target_id) == 0 {
         result.reason_code = std.Clone(ctx, "linker_target_mismatch");
         return result;
     }
@@ -707,6 +745,16 @@ func mir_link_mode_for_package_form(package_form: str, ctx: &Arena) str {
 func mir_link_mode_validate(decision: MirLinkModeDecision[ctx], ctx: &Arena) MirTargetValidation[ctx] {
     mut result: MirTargetValidation[ctx];
     result.valid = 0;
+
+    // AUDIT (18.18): a decision naming no package form selected its mode without
+    // consulting the package authority at all. This must be checked BEFORE the
+    // lookup below: mir_link_mode_for_package_form("") returns "", so an empty
+    // form would otherwise trip link_mode_package_form_mismatch and leave this
+    // class unreachable.
+    if std.str_eq(decision.required_package_form, "") == 1 {
+        result.reason_code = std.Clone(ctx, "link_mode_selected_without_package_evidence");
+        return result;
+    }
 
     // A package form that provides no mode cannot back any link.
     mut available := mir_link_mode_for_package_form(decision.required_package_form, ctx);
@@ -867,6 +915,30 @@ func mir_object_section_is_declared(section_kind: str, ctx: &Arena) int {
     if std.str_eq(section_kind, "data") == 1 { return 1; }
     if std.str_eq(section_kind, "zero_initialised_data") == 1 { return 1; }
     return 0;
+}
+
+// AUDIT (18.18). Inspection could report a symbol the plan did not contain, but
+// never the reverse. A plan promising a symbol the object does not hold is the
+// more dangerous direction: the link succeeds and the program is wrong, whereas
+// an unplanned extra symbol is caught at once. This checks a whole observation
+// set against one expected symbol, because absence is a property of the set.
+func mir_object_inspection_expects(observations: Index[std.Vector[MirObjectObservation[ctx], ctx], ctx], expected_symbol: str, ctx: &Arena) MirTargetValidation[ctx] {
+    mut result: MirTargetValidation[ctx];
+    result.valid = 0;
+    mut values: std.Vector[MirObjectObservation[ctx], ctx] := ctx[observations];
+
+    mut index := 0;
+    while index < len(values) {
+        if std.str_eq(values[index].symbol_name, expected_symbol) == 1 {
+            result.valid = 1;
+            result.reason_code = std.Clone(ctx, "ok");
+            return result;
+        }
+        index = index + 1;
+    }
+
+    result.reason_code = std.Clone(ctx, "inspected_object_missing_expected_symbol");
+    return result;
 }
 
 func mir_object_observation_validate(observation: MirObjectObservation[ctx], ctx: &Arena) MirTargetValidation[ctx] {

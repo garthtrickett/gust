@@ -320,7 +320,7 @@ func mir_linker_request_format() str { return "gust.compiler_linker_policy.v1"; 
 func mir_linker_witness_format() str { return "gust.linker_policy_witness.v1"; }
 
 func mir_linker_body(descriptor: target.MirLinkerDescriptor[ctx], target_format: str, header: str, ctx: &Arena) str {
-    mut validation := target.mir_linker_descriptor_validate(descriptor, target_format, ctx);
+    mut validation := target.mir_linker_descriptor_validate(descriptor, target_format, descriptor.target_id, ctx);
     if validation.valid == 0 {
         mut invalid := "format: invalid\nreason: ";
         invalid = std.Concat(invalid, validation.reason_code);

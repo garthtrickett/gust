@@ -142,5 +142,26 @@ func main() {
     mut duplicated_validation := target.mir_target_authority_table_validate(duplicated, &ctx);
     if duplicated_validation.valid == 1 || std.str_eq(duplicated_validation.reason_code, "duplicate_declared_triple") == 0 { os.Exit(12); }
 
+
+    // AUDIT (18.18): three declared classes that no negative test forced.
+    // A pointer width the layout authority cannot represent is malformed, not
+    // merely unusual.
+    mut malformed_table := declare(base_table(&ctx), "target:v1:triple=weird",
+        "weird-unknown-linux-gnu", "weird", "unknown", "linux", "gnu", 48, "little", &ctx);
+    mut malformed_validation := target.mir_target_authority_table_validate(malformed_table, &ctx);
+    if malformed_validation.valid == 1 || std.str_eq(malformed_validation.reason_code, "malformed_target_triple") == 0 { os.Exit(13); }
+
+    mut endian_table := declare(base_table(&ctx), "target:v1:triple=middle",
+        "middle-unknown-linux-gnu", "middle", "unknown", "linux", "gnu", 64, "middle", &ctx);
+    mut endian_validation := target.mir_target_authority_table_validate(endian_table, &ctx);
+    if endian_validation.valid == 1 || std.str_eq(endian_validation.reason_code, "malformed_target_triple") == 0 { os.Exit(14); }
+
+    // A selection naming neither an explicit request nor a declared default
+    // leaves the target ambiguous.
+    mut ambiguous_table := select_target(base_table(&ctx), "selection:ambiguous:1",
+        linux_x86_64_id(), "whatever_the_host_looks_like", "x86_64-unknown-linux-gnu", 0, &ctx);
+    mut ambiguous_validation := target.mir_target_authority_table_validate(ambiguous_table, &ctx);
+    if ambiguous_validation.valid == 1 || std.str_eq(ambiguous_validation.reason_code, "ambiguous_target_triple") == 0 { os.Exit(15); }
+
     os.LogStr("SUCCESS: Phase 18.1 target authority smoke passed");
 }

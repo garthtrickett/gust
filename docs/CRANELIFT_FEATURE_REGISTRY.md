@@ -764,7 +764,7 @@ Every temporary artifact names the owner that removes it and the rule under whic
 
 - Authority version: `phase18_composition_v1`
 - Status: `ready_for_patch18_18`
-- Composition cases: `5`
+- Composition cases: `6`
 - Evidence kinds required of every supported target: `6`
 - Declared supported targets: `1`
 - Targets held back for want of a runner: `4`
@@ -774,6 +774,22 @@ Patch 18.17 composes the Phase 18 authorities and states the phase exit gate. Th
 Every declared supported target carries all six evidence kinds -- native compile, object inspection, link, execution, diagnostic, and reproducibility -- and the supported set itself is derived from the target diagnostics rather than asserted a second time. Execution evidence must come from that target's own runner.
 
 A target with no available runner stays undeclared and names the future-phase row that would introduce one. Execution evidence is part of the exit gate, so a target that cannot be run cannot be called supported: four of the five declared triples are held back on exactly that basis, and one is supported.
+
+## Phase 18 deferral audit and rejection reachability
+
+- Authority version: `phase18_deferrals_v1`
+- Status: `ready_for_patch18_19`
+- Narrow deferrals: `9`
+- Declared rejection classes classified: `104`
+- By kind: `architectural_ban` 4, `diagnostic_value` 1, `emittable` 85, `guard_enforced` 5, `vocabulary_only` 9
+
+Patch 18.18 audits what Phase 18 declared but never proved. A rejection class that nothing can force is policy in name only, and the phase had accumulated a number of them: classes emitted by an authority module that no negative test exercised, classes declared in a vocabulary that nothing emitted at all, and one class whose name contradicted the condition that raised it.
+
+Every declared class is now one of five things, each carrying its own obligation. An emittable class is emitted at a refusal site and forced by a negative test. A guard-enforced class is a registry-level property no compiler refusal can raise, so a named contract guard raises it and a negative test forces it. An architectural ban is not an input at all and names the guard that enforces it. A diagnostic value is carried by a declared row rather than raised. Vocabulary with no instance among the declared targets must name the deferral that would introduce one.
+
+There is deliberately no bare allowlist. An unreachable class is either made reachable, reclassified with its obligation met, or deleted.
+
+Each deferral names the phase that will carry it, the component that will own the capability, the separate component that will certify it arrived, the prerequisite that blocks it, and the Phase 18 rows it comes from. A deferral attached to no row is an open-ended promise rather than a narrow one.
 
 ## Registry entries
 

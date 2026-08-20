@@ -7,15 +7,29 @@
 import "mir_target_authority.gst" as target;
 import "mir_target_request.gst" as target_request;
 
+func linker_target_id() str {
+    return "target:v1:triple=x86_64-unknown-linux-gnu:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8";
+}
+
 func descriptor(result: str, supported_format: str, owner: str, argument: str, ctx: &Arena) target.MirLinkerDescriptor[ctx] {
     mut value: target.MirLinkerDescriptor[ctx];
     value.linker_id = std.Clone(ctx, "linker:v1:x86_64-unknown-linux-gnu");
-    value.target_id = std.Clone(ctx, "target:v1:triple=x86_64-unknown-linux-gnu:endian=little:ptr_size=8:ptr_align=8:i32_align=4:i64_align=8:max_align=8");
+    value.target_id = std.Clone(ctx, linker_target_id());
     value.driver_name = std.Clone(ctx, "cc");
     value.discovery_result = std.Clone(ctx, result);
     value.supported_object_format = std.Clone(ctx, supported_format);
     value.invocation_owner = std.Clone(ctx, owner);
     value.probe_argument = std.Clone(ctx, argument);
+    return value;
+}
+
+
+// AUDIT (18.18): linker_target_mismatch used to fire when driver_name was EMPTY,
+// which is not a target mismatch at all. The empty case now has its own class
+// and the mismatch is an actual comparison; both directions are forced here.
+func unnamed_driver(ctx: &Arena) target.MirLinkerDescriptor[ctx] {
+    mut value := descriptor("discovered", "elf", "phase9g_artifact_planner", "-o", ctx);
+    value.driver_name = std.Clone(ctx, "");
     return value;
 }
 
@@ -25,7 +39,7 @@ func main() {
     os.SetThreadScratch(ctx);
 
     mut good := descriptor("discovered", "elf", "phase9g_artifact_planner", "-o", &ctx);
-    mut validation := target.mir_linker_descriptor_validate(good, "elf", &ctx);
+    mut validation := target.mir_linker_descriptor_validate(good, "elf", linker_target_id(), &ctx);
     if validation.valid == 0 { os.LogStr(validation.reason_code); os.Exit(1); }
 
     mut request := target_request.mir_serialize_linker_request(good, "elf", &ctx);
@@ -35,23 +49,34 @@ func main() {
 
     // Rejection: a linker that does not support the target's object format.
     mut wrong_format := descriptor("discovered", "macho", "phase9g_artifact_planner", "-o", &ctx);
-    mut wrong_validation := target.mir_linker_descriptor_validate(wrong_format, "elf", &ctx);
+    mut wrong_validation := target.mir_linker_descriptor_validate(wrong_format, "elf", linker_target_id(), &ctx);
     if wrong_validation.valid == 1 || std.str_eq(wrong_validation.reason_code, "linker_unsupported_object_format") == 0 { os.Exit(3); }
 
     // Rejection: Phase 18 claiming to invoke the linker itself.
     mut self_invoked := descriptor("discovered", "elf", "phase18_target_authority", "-o", &ctx);
-    mut self_validation := target.mir_linker_descriptor_validate(self_invoked, "elf", &ctx);
+    mut self_validation := target.mir_linker_descriptor_validate(self_invoked, "elf", linker_target_id(), &ctx);
     if self_validation.valid == 1 || std.str_eq(self_validation.reason_code, "linker_invoked_by_phase18") == 0 { os.Exit(4); }
 
     // Rejection: an argument outside the declared vocabulary.
     mut bad_argument := descriptor("discovered", "elf", "phase9g_artifact_planner", "--wl,-rpath", &ctx);
-    mut argument_validation := target.mir_linker_descriptor_validate(bad_argument, "elf", &ctx);
+    mut argument_validation := target.mir_linker_descriptor_validate(bad_argument, "elf", linker_target_id(), &ctx);
     if argument_validation.valid == 1 || std.str_eq(argument_validation.reason_code, "linker_argument_outside_vocabulary") == 0 { os.Exit(5); }
 
     // Rejection: an undiscovered linker cannot be used, only reported.
     mut undiscovered := descriptor("undiscovered_no_cross_linker_declared", "elf", "phase9g_artifact_planner", "-o", &ctx);
-    mut undiscovered_validation := target.mir_linker_descriptor_validate(undiscovered, "elf", &ctx);
+    mut undiscovered_validation := target.mir_linker_descriptor_validate(undiscovered, "elf", linker_target_id(), &ctx);
     if undiscovered_validation.valid == 1 || std.str_eq(undiscovered_validation.reason_code, "linker_undiscovered") == 0 { os.Exit(6); }
+
+
+    // AUDIT (18.18): a descriptor naming no driver at all.
+    mut unnamed := target.mir_linker_descriptor_validate(unnamed_driver(&ctx), "elf", linker_target_id(), &ctx);
+    if unnamed.valid == 1 || std.str_eq(unnamed.reason_code, "linker_driver_unnamed") == 0 { os.Exit(20); }
+
+    // AUDIT (18.18): a linker discovered for one target may not link another.
+    mut mismatched := target.mir_linker_descriptor_validate(
+        descriptor("discovered", "elf", "phase9g_artifact_planner", "-o", &ctx),
+        "elf", "target:v1:triple=aarch64-unknown-linux-gnu", &ctx);
+    if mismatched.valid == 1 || std.str_eq(mismatched.reason_code, "linker_target_mismatch") == 0 { os.Exit(21); }
 
     os.LogStr("SUCCESS: Phase 18.7 linker policy smoke passed");
 }
