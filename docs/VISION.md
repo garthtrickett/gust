@@ -696,6 +696,25 @@ Safe references are non-null. Absence is represented with `Option[T]`.
 
 *Rationale: a single total failure convention makes generated error handling mechanically checkable for exhaustiveness rather than stylistically reviewed.*
 
+### 11.1 What `?` must do — proposed
+
+Row 2 of `docs/DEMO_TARGET_PROGRAM.md`. Verified 2026-08-20: **there is no `?` operator** — zero occurrences in `compiler/lexer.gst`. What exists is `Result` itself, hand-rolled by the compiler at `compiler/errors.gst:17`, which is simultaneously the evidence that the language lacks it and the evidence that it is expressible.
+
+**The problem nobody has stated: `?` as everyone knows it depends on a facility §13 bans.** Rust's `?` converts the callee's error into the caller's error type through a generic trait implementation. Gust has no user-written generic functions, and OD-2 settled that it will not get them. So the conversion step has to come from somewhere else, and **that — not the propagation — is the whole design question.** Three ways out:
+
+1. **One error type.** No conversion, because there is nothing to convert. `?` is then pure propagation.
+2. **Compiler-owned conversion**, derived rather than user-written, on the OD-2 precedent.
+3. **Explicit conversion at every `?` site.** Honest, and it defeats the point of having the operator.
+
+**Recommendation: option 1, and the compiler is the evidence.** `compiler/errors.gst` declares a single `CompilerError[ctx]` with a `kind: ErrorKind` discriminant, not an error type per module. The most demanding real consumer of this language, free to structure errors any way it liked, chose one type and a tag. A design that generalises from that is generalising from practice rather than from taste.
+
+**Where the error lives is already answered, and the answer is not the obvious one.** `Err` holds `Index[CompilerError[ctx], ctx]` — an **arena index**, brand-parameterised, not a pointer and not an inline value. That is what makes the type sound under §24: an error cannot outlive the arena it was raised in, because its handle is branded. The consequence for `?` is direct and worth stating before it is discovered: **an error propagating out of a callee must be allocated in an arena that outlives the callee**, so `Result[T, ctx]`'s brand is the caller's, not the callee's scratch. `Result` already carries the brand parameter that makes this expressible.
+
+**Two constraints from elsewhere in this document.**
+
+- **`?` means "may fail" and nothing else (§21).** It must not acquire a suspension meaning, which is what makes the transparent-suspension direction coherent — the operator stays about failure because suspension needs no operator.
+- **It cannot fix absence.** §11's note records that `empty[T]` is the compiler's actual spelling of "no value", used 130 times in the typechecker in preference to `Option[T]`. `?` over `Result` does not touch that, and shipping `?` while two spellings of absence coexist would leave the smaller half of row 2 unfinished. `docs/ONE_WAY_LEDGER.md` E14, rows 32 and 45.
+
 ## 12. Abstraction model
 
 Gust does not support inheritance, broad trait systems, or arbitrary interface hierarchies.
