@@ -1694,6 +1694,8 @@ Four instances, all from this session, all reading as a confident clean pass:
 | A **momentary** zero | A dispatch gap between admissions; two samples 90s apart landed inside the same gap and looked like persistence |
 | A **cancelled** set | A PR with 65 of 65 runs `cancelled` — zero outstanding, zero failures, and no successful evidence whatsoever |
 | A **stalled** unit | A run `queued` for 2h28m with nothing executing repo-wide — the status field reports the run's state correctly and says nothing about whether it will ever run |
+| A **wholly cancelled** wave | Three PRs with 63, 64 and 65 of their runs `cancelled` and nothing queued or running — zero failures, zero pending, and a dead PR |
+| A **context-calibrated floor** | A gate asserting `len >= 30`, correct for a 34-run wave, which refuses a legitimate 2-run wave permanently |
 
 The durable fix is not a fifth guard. It is inverting the predicate:
 
@@ -1732,6 +1734,37 @@ it fails loudly — it is that it passes quietly for as long as nobody looks.
 
 The diagnosis of why that suite is red belongs to the Cranelift lane and is
 already characterised there. What is recorded here is only the gate shape.
+
+**Two further instances, and the second is a fault in the fix rather than in
+what it replaced.**
+
+`cancelled` is neither success nor pending. A gate counting only failures and
+pending runs reads a wholly cancelled wave as clean — and three PRs in this
+repository are in exactly that state, 63, 64 and 65 runs each, all cancelled,
+nothing queued, nothing running. Presence rejects them; absence cannot.
+
+The other is subtler and was self-inflicted. The presence gate carried a
+plausibility floor — assert the run set has at least 30 members, so an empty or
+truncated read is refused. That floor was calibrated on a 34-run wave. The next
+PR from this same lane changes only files under `docs/`, draws a far smaller
+wave, and the assertion refuses it **forever**: not a false pass but a permanent
+false refusal, which is the same fault pointing the other way.
+
+**So a plausibility bound is itself a claim about context, and it rots like any
+other.** The fix is to stop asserting a number and establish the denominator
+empirically, reusing the persistence rule rather than inventing a second
+mechanism:
+
+> **A total is a denominator once it has stopped changing across spaced
+> samples.** Before that it is a reading, and "2 outstanding" is
+> indistinguishable from "2 of 35 registered so far".
+
+Deriving the expected wave from the workflow files instead was tried and
+abandoned: a regex over `.github/workflows/*.yml` reported 11 unfiltered
+workflows where a direct check found 5, because it only recognised a `paths:`
+block directly beneath `pull_request:`. Structured text read as flat text, for
+the third time in this area. The observed total, once stable, is the more
+reliable denominator and needs no parser.
 
 **The fifth instance is the one that tests the inversion, because it was
 discovered after the rule was written.** A run `queued` for two and a half hours,
