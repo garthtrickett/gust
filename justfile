@@ -21911,3 +21911,105 @@ guard-ci-fixture-reachability:
     set -euo pipefail
     echo "🔒 Checking every test fixture is reachable from CI..."
     python3 scripts/fixture_reachability.py
+
+# Stdlib lane, Phase S1. Appended at the end for the same reason as the other S1
+# guards: several guards extract recipe bodies with sed ranges bounded by the
+# next recipe name.
+guard-stdlib-s1-close:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking the Phase S1 closure gate..."
+    roadmap="TASK_STDLIB.md"
+
+    # The closure gate must exist and name its parts. Deleting it to make closure
+    # look reachable is the failure this guards against.
+    for heading in '## Closure gate' '### Outstanding, with owners' \
+                   '### Residue — what a normal program still cannot express safely' \
+                   '### What closure requires'; do
+      if ! rg -n -F -e "$heading" "$roadmap" >/dev/null; then
+        echo "Closure gate section is missing: $heading"
+        exit 1
+      fi
+    done
+
+    # Every Status row must be DONE or listed as outstanding with an owner. A row
+    # that is neither is an unowned deferral.
+    # Search the Outstanding table specifically. Matching anywhere in the file
+    # would let a patch listed under Delivered satisfy this while still not DONE.
+    outstanding_table="$(sed -n '/^### Outstanding, with owners/,/^### Residue/p' "$roadmap")"
+    pending="$(rg -n -e '^- \[ \] Patch S1\.[0-9]+' "$roadmap" | rg -o 'S1\.[0-9]+' || true)"
+    for patch in $pending; do
+      if ! printf '%s\n' "$outstanding_table" | rg -q -e "^\| $patch "; then
+        echo "Patch $patch is not DONE and is not listed in the Outstanding table with an owner."
+        exit 1
+      fi
+    done
+
+    # S1.12 must not be marked DONE while anything is outstanding.
+    # WARNING to anyone adding a clause below this line.
+    #
+    # Everything inside this `if` is gated on S1.12 being DONE, which is false in
+    # normal operation -- S1.12 cannot be DONE while any patch is outstanding, and
+    # patches are outstanding. So a clause added here NEVER EXECUTES during ordinary
+    # runs, and a negative test for it will pass without ever reaching it.
+    #
+    # That is not hypothetical: the Level 3 check below was first written to accept
+    # any run ID, its negative test passed, and it was only caught by asking why.
+    # It would have accepted a *queued* run's ID as evidence of a *result*.
+    #
+    # To test a clause in here, temporarily mark every patch DONE, then restore.
+    # Otherwise the clause is decorative.
+    if rg -n -F -e '- [x] Patch S1.12' "$roadmap" >/dev/null 2>&1; then
+      if [ -n "$(rg -n -e '^- \[ \] Patch S1\.[0-9]+' "$roadmap" | rg -v 'S1\.12' || true)" ]; then
+        echo "S1.12 is marked DONE while other S1 patches are still outstanding:"
+        rg -n -e '^- \[ \] Patch S1\.[0-9]+' "$roadmap" | rg -v 'S1\.12'
+        exit 1
+      fi
+    fi
+
+    # Every coordination request must state a resolution or an owning phase.
+    for cr in CR-1 CR-2 CR-3 CR-4 CR-5 CR-6; do
+      if rg -n -F -e "### $cr " "$roadmap" >/dev/null 2>&1; then
+        body="$(rg -n -A 40 -F -e "### $cr " "$roadmap" || true)"
+        if ! printf '%s\n' "$body" | rg -q -e 'RESOLVED|Resolved|Placement|owner|Phase 19|Cranelift lane|deferred'; then
+          echo "$cr states neither a resolution nor an owning phase."
+          exit 1
+        fi
+      fi
+    done
+
+    # No std_* runtime symbol may lack a Phase 17 row. The inventory is the source
+    # of truth; regenerate it rather than editing the assertion.
+    python3 scripts/stdlib_surface_inventory.py --check >/dev/null
+    unowned="$(rg -n -F -e '| **none**' docs/STDLIB_SURFACE_INVENTORY.md || true)"
+    if [ -n "$unowned" ]; then
+      echo "Runtime symbols without a Phase 17 row (TASK_STDLIB.md CR-4):"
+      printf '%s\n' "$unowned"
+      exit 1
+    fi
+
+    # No stdlib feature may fall back from Cranelift to MIR-to-C.
+    if rg -n -i -e 'fall ?back to mir-to-c' "$roadmap" | rg -v -i -e 'no |never |cannot ' >/dev/null 2>&1; then
+      echo "The roadmap appears to permit a Cranelift fallback."
+      exit 1
+    fi
+
+    outstanding="$(rg -c -e '^- \[ \] Patch S1\.[0-9]+' "$roadmap" || true)"
+    # AGENTS.md: a phase is not closed while its Level 3 owner is failing, and the
+    # completion report must cite the run. Enforced only at the point of closure.
+    if rg -n -e '^- \[x\] Patch S1\.12' "$roadmap" >/dev/null 2>&1; then
+      if ! rg -q -e 'Level 3 owner not failing, cited by run ID' "$roadmap"; then
+        echo "S1.12 is DONE but the closure requirements do not cite the Level 3 owner."
+        exit 1
+      fi
+      # A run ID alone is not evidence -- a queued run has an ID too, and the
+      # first cut of this check passed by matching one. Require an ID stated
+      # together with a conclusion, on the same line.
+      if ! rg -q -e 'conclusion `(failure|success)`' "$roadmap"; then
+        echo "S1.12 is DONE but no Level 3 conclusion is cited. A run ID alone is not evidence:"
+        echo "a queued run has an ID and no result."
+        exit 1
+      fi
+    fi
+
+    echo "✅ Closure gate is accurate: ${outstanding:-0} patch(es) outstanding, each with a named owner, residue recorded."

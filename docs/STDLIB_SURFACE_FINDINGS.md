@@ -192,13 +192,17 @@ new stdlib symbol is a cross-lane transaction.
 
 ## F6 — MutexGuard is blocked by documented, unfinished prerequisites
 
-`STEP52_RESOURCE_SEMANTICS.md:20-27` lists eight required semantic states for
-generalized linear resources. Two are explicitly unmet:
+`STEP52_RESOURCE_SEMANTICS.md` lists eight required semantic states for
+generalized linear resources. This section originally recorded two as unmet.
 
-- item 6: "`defer` must have explicit AST/typechecker representation before it
-  can satisfy cleanup obligations";
-- item 2: the `Resource` machinery is "inert type-shape helpers … but no
-  automatic declaration/assignment/lifecycle enforcement yet".
+**Corrected 2026-08-20**, after checking both against the compiler:
+
+- item 6 — "`defer` must have explicit AST/typechecker representation" — is
+  **met**. `Defer` is an AST node and the typechecker handles it;
+- item 2 — the `Resource` machinery being inert — has **not** been re-verified
+  and stays recorded as open. Note that lifecycle enforcement itself is not
+  inert: it runs and rejects an unclosed directory handle. What is missing is
+  that the obligation is keyed to a hardcoded directory predicate.
 
 `VISION.md` §27 additionally marks shared ownership as **open decision OD-3**.
 

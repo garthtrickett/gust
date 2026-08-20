@@ -354,10 +354,18 @@ without it.
 1. **Intended behaviour:** `guard := mutex.Lock()` yields a move-only value that
    releases the lock exactly once on every scope exit, including early return,
    error return, and across fiber suspension.
-2. **Existing limitation:** `STEP52_RESOURCE_SEMANTICS.md` items 2 and 6 are
-   unmet — resource lifecycle enforcement is inert, and `defer` has no
-   AST/typechecker representation. `VISION.md` §27 marks shared ownership open
-   as OD-3.
+2. **Existing limitation. Corrected 2026-08-20.** This previously said
+   `STEP52_RESOURCE_SEMANTICS.md` items 2 and 6 were both unmet, that resource
+   lifecycle enforcement was inert, and that `defer` had no AST/typechecker
+   representation. Verified against the compiler, two of those are false and the
+   third was contradicted by item 3 below. **Item 6 is met:** `Defer` is an AST
+   node and the typechecker handles it. **Enforcement is not inert:** it runs at
+   function exit and at `Return`, and rejects an unclosed directory handle. What
+   remains is that the obligation is keyed to a hardcoded directory predicate and
+   no user type can declare a destructor, so it cannot attach to a user resource.
+   Item 2, the generic `Resource[ctx, T]` representation, is not re-verified here
+   and is still recorded as open. `VISION.md` §27 marks shared ownership open as
+   OD-3.
 3. **Smallest generic change**, determined by Patch S1.7 on 2026-08-19, is two
    things:
    **(a) a way to declare destructor identity in source for a user-defined type.**
@@ -365,10 +373,16 @@ without it.
    `compiler/typechecker.gst`, both registering `os.CloseDir`, the second gated on
    a directory-handle predicate. No keyword, attribute, or annotation exists in
    either compiler's lexer or parser for a user type to name its destructor.
-   **(b) wiring the existing scope-exit cleanup validator into typechecking.**
-   `env_validate_linear_resource_scope_exit_cleanup` is called only from test
-   entries. A program that opens a directory handle and never closes it compiles
-   clean, so even the one supported resource type is unenforced.
+   **(b) generalising the scope-exit obligation beyond its hardcoded predicate.**
+   **Corrected 2026-08-20.** This item previously said the validator was called
+   only from test entries and that an unclosed directory handle compiled clean.
+   Both were wrong. `env_validate_linear_resource_scope_exit_cleanup` is called
+   from the real typechecking path at function-declaration exit and at `Return`,
+   and an unclosed directory handle is rejected — verified by compiling one. What
+   is actually missing is generality: the obligation that fires is driven by
+   `env_open_directory_resource_requires_cleanup`, a directory-specific
+   predicate, so it cannot attach to a user type. This is smaller than the
+   original item — enforcement need not be built, only widened once (a) exists.
    Representation, transfer state, and `defer` are already present — `defer` in
    particular became an AST node after `STEP52_RESOURCE_SEMANTICS.md` was
    written. The gap is destructor declaration and enforcement, not modelling.
@@ -1017,6 +1031,88 @@ Level 1.
 
 Phase S1 is closed with an explicit residue list, no unowned deferrals, and no
 claim of a complete standard library.
+
+## Closure gate
+
+Phase S1 cannot close yet. This section records exactly what gates it, and
+`guard-stdlib-s1-close` enforces that the record stays accurate — including
+refusing to let S1.12 be marked `DONE` while anything below is outstanding.
+
+### Delivered
+
+| patch | what it delivered |
+| --- | --- |
+| S1.0 | `docs/STDLIB_SURFACE_INVENTORY.md`, generated from the compiler |
+| S1.1 | `str == str` rejected with one diagnostic in both compilers |
+| S1.2 | the string surface pinned, 33 values asserted in order |
+| S1.3 | collection methods resolve through a reference receiver |
+| S1.7 | the resource prerequisites re-verified; CR-5 made concrete |
+
+### Outstanding, with owners
+
+| patch | blocked by | owner |
+| --- | --- | --- |
+| S1.4 branded collection consistency | CR-2 | Phase 19 (`TASK_PHASE19.md`) |
+| S1.5 clone arena destination | CR-2 | Phase 19 |
+| S1.6 composition regression | CR-2 | Phase 19 |
+| S1.8 MutexGuard prototype | CR-5 | Cranelift lane |
+| S1.9 MutexGuard scope tests | CR-5 | Cranelift lane |
+| S1.10 MutexGuard fiber tests | CR-5 | Cranelift lane |
+| S1.11 realistic migration | CR-5 | Cranelift lane |
+| S1.12 closure | all of the above | Stdlib lane |
+
+No deferral here is unowned. CR-2 has a published roadmap; CR-5 has a concrete
+statement of the smallest change required, from S1.7.
+
+### Residue — what a normal program still cannot express safely
+
+Recording this is the point of the phase, not an apology for it.
+
+- **`command == "PING"` does not work.** S1.1 turned the miscompile into a
+  diagnostic, but content equality is CR-1, and operator semantics are
+  compiler-owned (`VISION.md` §16). Users write `std.str_eq(a, b)`.
+- **A variable's name can change generated code.** Arena-ness is inferred from a
+  hardcoded list of identifier spellings, so a local named `a` is treated as an
+  arena. CR-2, Phase 19.
+- **An out-of-range string index kills the process**, not the request, which
+  `VISION.md` §34 forbids. CR-3, and filed as issue #91.
+- **No user type can declare a destructor.** One exists, `os.CloseDir` for
+  directory handles, hardcoded. So no scoped guard of any kind is expressible,
+  `MutexGuard` included. CR-5, from S1.7.
+- **References carry no mutability and are not analysed for aliasing.** Two `&T`
+  arguments may alias one value and both write through it (`VISION.md` §26).
+- **Cleanup is enforced for one built-in type and for nothing else.** A
+  directory handle bound to a local and never closed is a compile error:
+  `Resource leak. Directory resource variable 'd' must be cleanly closed with
+  os.CloseDir before leaving local scope`. `os.Dir` gets the obligation because
+  the compiler hardcodes its destructor, and since no user type can declare one,
+  a user-defined resource carries no obligation at all. The check is also keyed
+  to the *binding* rather than the acquisition: the same leak with no local bound
+  compiles clean and runs — observed, and filed as issue #106. CR-5.
+
+### What closure requires
+
+1. CR-2 resolved by Phase 19, then S1.4, S1.5, S1.6.
+2. CR-5 resolved — source-level destructor declaration plus scope-exit
+   enforcement — then S1.8 through S1.11.
+3. The residue list above re-checked against the compiler, not from memory.
+4. `guard-stdlib-s1-close` passing with S1.12 marked `DONE`.
+5. **The Level 3 owner not failing, cited by run ID and conclusion.**
+   `AGENTS.md` requires that a phase is not closed while its Level 3 owner is
+   failing, and that the completion report cites the run. Phase S1 does not own a
+   Level 3 suite — `Cranelift Historical Full` is the sole owner — so closure
+   inherits its state rather than being independent of it.
+
+   **Observed 2026-08-20:** the most recent *completed* run on `main` is
+   `32243700245`, **conclusion `failure`** (2026-08-19T10:38:56Z); the two before
+   it also failed. A newer run `32330451344` exists but is **`queued`**, not a
+   result. Recording this here rather than asserting the suite is available: a
+   suite that exists and fails satisfies an availability check exactly, which is
+   why the requirement is phrased as *not failing* rather than *present*. The
+   diagnosis belongs to the Cranelift lane; Phase S1 may not close on top of it.
+
+Phase S1 closure will not claim a complete standard library, a text or Unicode
+API, networking, or production readiness.
 
 ## Recommended Implementation Order
 
