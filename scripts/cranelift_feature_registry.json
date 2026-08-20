@@ -4404,6 +4404,38 @@
     ],
     "next_patch": "18.13"
   },
+  "phase18_source_location": {
+    "version": "phase18_source_location_v1",
+    "status": "ready_for_patch18_14",
+    "authority_owner": "compiler/mir_target_authority.gst",
+    "record_fields": [
+      "source_file",
+      "source_span",
+      "canonical_mir_association",
+      "emitted_debug_association"
+    ],
+    "preservation_policy": "a_source_location_produced_by_the_compiler_survives_lowering_wherever_the_debug_plan_requires_it",
+    "production_policy": "canonical_mir_carries_compiler_produced_source_locations_and_never_backend_reconstructed_ones",
+    "required_when": "line_tables_only",
+    "declared_gaps": [
+      {
+        "gap": "compiler_generated_prologue_and_epilogue",
+        "reason": "no_source_span_exists_for_code_the_source_did_not_write"
+      },
+      {
+        "gap": "runtime_package_components",
+        "reason": "runtime_components_are_built_separately_and_carry_their_own_locations"
+      }
+    ],
+    "rejection_classes": [
+      "source_location_lost_in_lowering",
+      "source_location_duplicated_for_one_instruction",
+      "source_location_fabricated_without_a_source_span",
+      "source_location_reconstructed_by_backend",
+      "source_location_missing_where_the_debug_plan_requires_it"
+    ],
+    "next_patch": "18.14"
+  },
   "phase18_object_inspection": {
     "version": "phase18_object_inspection_v1",
     "status": "ready_for_patch18_12",

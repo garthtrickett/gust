@@ -1107,3 +1107,64 @@ pub fn lower_debug_plan_witness_path(path: &Path) -> Result<String, Box<dyn Erro
     let request = fs::read_to_string(path)?;
     Ok(lower_debug_plan_witness(&request)?)
 }
+
+// ---- Patch 18.13: source location preservation ----
+
+const SOURCE_LOCATION_FORMAT: &str = "gust.compiler_source_location.v1";
+const SOURCE_LOCATION_WITNESS_FORMAT: &str = "gust.source_location_witness.v1";
+const SOURCE_LOCATION_PRODUCER: &str = "canonical_mir";
+
+pub fn lower_source_location_witness(request: &str) -> Result<String, TargetError> {
+    let lines: Vec<&str> = request.lines().collect();
+    if header(&lines, "format")? != SOURCE_LOCATION_FORMAT {
+        return Err(error("source_location_malformed", "unknown request format"));
+    }
+    if header(&lines, "authority")? != AUTHORITY {
+        return Err(error("source_location_malformed", "unknown target authority"));
+    }
+
+    let location_line = lines.iter().find(|l| l.starts_with("source_location:"))
+        .ok_or_else(|| error("source_location_missing_where_the_debug_plan_requires_it",
+            "request declares no source location"))?;
+    let location = row(location_line, "source_location:")?;
+
+    // `field()` refuses an empty value before returning it, so reading these
+    // through the raw map is deliberate: the whole point of these three classes
+    // is to distinguish WHICH part is absent. Patch 18.4 lost
+    // `relocation_symbol_missing` to exactly this, where the shared helper
+    // rejected the empty value first and left the declared class unreachable.
+    let file = location.get("file").map(String::as_str).unwrap_or_default();
+    let span = location.get("span").map(String::as_str).unwrap_or_default();
+    let mir = location.get("mir").map(String::as_str).unwrap_or_default();
+    let emitted = location.get("emitted").map(String::as_str).unwrap_or_default();
+
+    // Inventing a plausible span for code the source did not write points a
+    // debugger confidently at the wrong line, which is worse than no line.
+    if file.is_empty() || span.is_empty() {
+        return Err(error("source_location_fabricated_without_a_source_span",
+            "a location must name the source file and span it points at"));
+    }
+    // No canonical MIR association means the backend produced this, not the
+    // compiler, and the production policy forbids reconstructed locations.
+    if mir.is_empty() {
+        return Err(error("source_location_reconstructed_by_backend",
+            "canonical MIR produces source locations and the backend never reconstructs one"));
+    }
+    if emitted.is_empty() {
+        return Err(error("source_location_lost_in_lowering",
+            "a location present in canonical MIR must reach the emitted records"));
+    }
+
+    let mut witness = String::new();
+    witness.push_str(&format!("format: {SOURCE_LOCATION_WITNESS_FORMAT}\n"));
+    witness.push_str(&format!("authority: {AUTHORITY}\n"));
+    witness.push_str(&format!(
+        "source_location:file={file};span={span};mir={mir};emitted={emitted};produced_by={SOURCE_LOCATION_PRODUCER};\n",
+    ));
+    Ok(witness)
+}
+
+pub fn lower_source_location_witness_path(path: &Path) -> Result<String, Box<dyn Error>> {
+    let request = fs::read_to_string(path)?;
+    Ok(lower_source_location_witness(&request)?)
+}

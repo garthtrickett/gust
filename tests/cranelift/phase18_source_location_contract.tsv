@@ -1,0 +1,14 @@
+kind	requirement	evidence	level
+requirement	locations are required at a declared debug level	required_when membership in the debug level vocabulary	1
+requirement	the required level emits a line table	per-plan included record kind check	1
+record	the source location record declares its fields	non-empty record field list	1
+record	every record field is named	non-empty field strings	1
+production	canonical MIR carries compiler-produced locations	production policy is frozen	1
+production	the backend never reconstructs a source location	production policy is frozen	1
+preservation	a location survives lowering where the debug plan requires it	preservation policy is frozen	1
+gap	a phase preserving everything must say so explicitly	non-empty declared gap list	1
+gap	every declared gap names itself and its reason	per-gap name and reason check	1
+rejection	a location lost in lowering is rejected	rejection class inventory	1
+rejection	a location duplicated for one instruction is rejected	rejection class inventory	1
+rejection	a fabricated location without a source span is rejected	rejection class inventory	1
+rejection	the rejection class inventory is complete	five required rejection classes	1
