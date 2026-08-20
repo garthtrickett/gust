@@ -94,8 +94,10 @@ when the backend does.
 | 31 | Copy vs move | A struct is copyable when every field is and the type is *explicitly marked* copyable | inferred copyability | **PARTIAL** — E13 |
 | 32 | Null | Safe references are non-null; absence is `Option[T]` | `null` in safe code | **HOLDS** — E14 |
 | 33 | Channel ownership | Channels transfer ownership of sent values | sender retaining a sent value | **VIOLATED** — E18 |
+| 34 | Host access | Filesystem and process access are never silently available | ambient host authority | **VIOLATED** — E19 |
+| 35 | Visibility | private-to-module by default, then package / application / public | everything visible everywhere | **ABSENT** — E19 |
 
-Counts: 9 `HOLDS`, 5 `PARTIAL`, 6 `VIOLATED`, 1 `DEFERRED`, 12 `ABSENT`.
+Counts: 9 `HOLDS`, 5 `PARTIAL`, 7 `VIOLATED`, 1 `DEFERRED`, 13 `ABSENT`.
 
 Row 27 is the one in motion. It is the declared priority and several other rows
 resolve with it — see E17.
@@ -107,6 +109,7 @@ resolve with it — see E17.
 | 17 | Shared ownership | VIOLATED | `TASK_STDLIB.md` CR-9 — new |
 | 19 | Concurrency | VIOLATED | `TASK_STDLIB.md` CR-8, issue #101 — new |
 | 33 | Channel ownership | VIOLATED | issue #101 — same root cause |
+| 34 | Host access | VIOLATED | unowned — closes with §0.7 Track A |
 | 29 | Overflow | VIOLATED | issue #103 — new |
 | 14 | Mutation | DEFERRED | `TASK_STDLIB.md` CR-6 — rule withdrawn, unscheduled |
 
@@ -691,6 +694,78 @@ no diagnostic, which is the class §0.4 calls containment.
 
 Recorded on issue #101 rather than filed separately, because the fix is the same
 OD-1 decision.
+
+### E19 — host authority is ambient, and there are no visibility levels (rows 34, 35)
+
+**Row 34.** `docs/VISION.md` §74: "Never silently imported: database access,
+networking, **filesystem access**, time, randomness, supplier capabilities."
+§95: "Application code cannot access arbitrary host files or spawn arbitrary
+processes." Consolidated Rule 4: "No code executes authority it did not declare."
+
+The `os.*` surface is available to every program with no import and no
+declaration. Files using it import nothing:
+
+```
+$ for g in $(grep -ln 'os\.\(ReadFile\|System\)' tests/*.gst | head -5); do
+    printf '%-52s imports=%s\n' "$g" "$(grep -c '^import' $g)"
+  done
+tests/e2e_codegen_assertions.gst                     imports=0
+tests/e2e_file_io_evaluation.gst                     imports=0
+tests/e2e_os_system.gst                              imports=0
+tests/e2e_filesystem_ops.gst                         imports=0
+tests/test_runner.gst                                imports=0
+```
+
+The surface includes `os.ReadFile`, `os.WriteFile`, `os.RemoveFile`, `os.OpenDir`,
+`os.ReadDir`, `os.GetEnv`, `os.Args`, `os.ExecutablePath`, `os.RunProcess`, and
+`os.System` — which is arbitrary shell execution
+(`src/runtime/file_io.c:573`):
+
+```c
+int os_System(Slice_unsigned_char cmd) {
+    …
+    char* argv[] = {"/bin/sh", "-c", buf, NULL};
+    …
+    int spawn_status = posix_spawn(&pid, "/bin/sh", NULL, NULL, argv, environ);
+```
+
+So today a Gust program can execute an arbitrary shell command with no import,
+no signature annotation, and no declaration anywhere in the program or its build.
+That is ambient authority in its strongest form, and it is the precise thing
+§0.4 sells the language as eliminating.
+
+**Stated fairly, this is not a defect report.** Gust is a self-hosted compiler
+toolchain: it invokes `cc`, reads sources, and writes objects, so it needs these
+facilities and there is no mechanism yet to scope them. Nobody made a mistake.
+The finding is that the *application-facing* rules in §74 and §95 have no
+enforcement, and that the gap is not merely "effects are unimplemented" (E10)
+but that the current default is maximal ambient authority in the other
+direction.
+
+No issue filed, deliberately. It is not independently actionable — the fix is
+the effect system in §0.7 Track A, which `docs/DEMO_TARGET_PROGRAM.md` already
+tracks as unowned rows 5-8. A separate issue would restate that with more alarm
+and no new action.
+
+**Row 35.** §73's four visibility levels do not exist. No modifier keyword is
+present in either lexer:
+
+```
+$ for k in pub private public internal export; do
+    printf '%-9s gst=%s rs=%s\n' "$k" \
+      "$(grep -c "\"$k\"" compiler/lexer.gst)" "$(grep -c "\"$k\"" src/lexer.rs)"
+  done
+pub       gst=0 rs=0
+private   gst=0 rs=0
+public    gst=0 rs=0
+internal  gst=0 rs=0
+export    gst=0 rs=0
+```
+
+`import` exists and imports are explicit, which is the half of §73 that holds.
+There is no `private`-by-default and no package or application level, so every
+declaration a module resolves is reachable. `ABSENT` rather than `VIOLATED`:
+nothing claims to enforce it and no mechanism does the opposite.
 
 ## Maintenance
 

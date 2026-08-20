@@ -1329,6 +1329,8 @@ Cyclic package dependencies are forbidden. Cyclic file imports within a package 
 
 Visibility levels: private to the module by default, package-visible, application-visible, externally public.
 
+> **Not implemented.** No visibility modifier exists in either lexer — `pub`, `private`, `public`, `internal`, and `export` are all absent — so there is no private-by-default and no package or application level. The half of this section that holds is the next paragraph: `import` exists and imports are explicit. `docs/ONE_WAY_LEDGER.md` E19.
+
 Organisation and workspace access are authorization concepts, not source-code visibility levels.
 
 Imports are explicit and deterministic. Wildcard imports, implicit runtime loading, and hidden dependency injection are prohibited.
@@ -1338,6 +1340,10 @@ Imports are explicit and deterministic. Wildcard imports, implicit runtime loadi
 The default prelude contains only basic types, `Result`, `Option`, core collections, formatting, and core language functions.
 
 Never silently imported: database access, networking, filesystem access, time, randomness, supplier capabilities.
+
+> **The opposite is true today.** Verified 2026-08-20 at `b47d0049`: the whole `os.*` surface is available to every program with no import and no declaration — files using `os.ReadFile` and `os.System` import nothing at all. That surface includes `os.WriteFile`, `os.RemoveFile`, `os.ReadDir`, `os.GetEnv`, `os.Args`, `os.RunProcess`, and `os.System`, which spawns `/bin/sh -c` (`src/runtime/file_io.c:573`).
+>
+> Fairly stated, this is not a defect: Gust is a self-hosted toolchain that must invoke `cc`, read sources, and write objects, and no mechanism exists yet to scope that. But it means the current default is maximal ambient authority, which is what §0.4 sells the language as eliminating, and it closes only with the effect system in §0.7 Track A. `docs/ONE_WAY_LEDGER.md` E19.
 
 ---
 
@@ -1517,6 +1523,8 @@ Unrestricted outbound networking requires a privileged capability such as `netwo
 ## 95. Files and processes
 
 Application code cannot access arbitrary host files or spawn arbitrary processes.
+
+> **Currently it can do both**, with no import and no declaration: `os.ReadFile`, `os.WriteFile`, `os.RemoveFile`, `os.RunProcess`, and `os.System` (which spawns `/bin/sh -c`) are ambient. See §74 and `docs/ONE_WAY_LEDGER.md` E19. This Part is marked COMMITTED as policy and unimplemented; this is the sharpest instance of that.
 
 Approved filesystem access is sandboxed and path-scoped. Process execution requires an isolated worker capability.
 
