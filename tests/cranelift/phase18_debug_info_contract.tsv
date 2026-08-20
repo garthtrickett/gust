@@ -1,0 +1,14 @@
+kind	requirement	evidence	level
+plan	every declared target has exactly one debug plan	plan coverage compared against the declared triple vocabulary	1
+plan	no duplicate debug plan for a target	uniqueness check over plan target ids	1
+plan	every plan target has an object format descriptor	per-target descriptor resolution	1
+derivation	the debug format is derived from the object format	derived_from field is frozen	1
+derivation	the backend never infers a debug plan	selection policy is frozen	1
+level	the debug level is inside the declared vocabulary	level membership check	1
+record	a plan includes at least one record kind	non-empty included kinds	1
+record	a plan states what it does not emit	non-empty excluded kinds	1
+record	included and excluded kinds are disjoint	intersection check	1
+record	only declared record kinds are emitted	emission policy is frozen	1
+fidelity	the fidelity non-claim inventory is complete	five required non-claims	1
+fidelity	every fidelity non-claim is named	non-empty non-claim strings	1
+rejection	the rejection class inventory is complete	five required rejection classes	1

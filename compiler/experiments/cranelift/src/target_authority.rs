@@ -1045,3 +1045,65 @@ pub fn lower_object_inspection_witness_path(path: &Path) -> Result<String, Box<d
     let request = fs::read_to_string(path)?;
     Ok(lower_object_inspection_witness(&request)?)
 }
+
+// ---- Patch 18.12: debug information strategy ----
+
+const DEBUG_PLAN_FORMAT: &str = "gust.compiler_debug_plan.v1";
+const DEBUG_PLAN_WITNESS_FORMAT: &str = "gust.debug_plan_witness.v1";
+const DEBUG_LEVELS: [&str; 2] = ["none", "line_tables_only"];
+const DEBUG_DERIVATION: &str = "object_format_in_the_phase18_object_format_authority";
+
+pub fn lower_debug_plan_witness(request: &str) -> Result<String, TargetError> {
+    let lines: Vec<&str> = request.lines().collect();
+    if header(&lines, "format")? != DEBUG_PLAN_FORMAT {
+        return Err(error("debug_plan_malformed", "unknown request format"));
+    }
+    if header(&lines, "authority")? != AUTHORITY {
+        return Err(error("debug_plan_malformed", "unknown target authority"));
+    }
+
+    let plan_line = lines.iter().find(|l| l.starts_with("debug_plan:"))
+        .ok_or_else(|| error("debug_plan_missing_for_declared_target", "request declares no debug plan"))?;
+    let plan = row(plan_line, "debug_plan:")?;
+
+    // A plan the backend inferred is not a compiler-selected plan.
+    if field(&plan, "derived_from")? != DEBUG_DERIVATION {
+        return Err(error("debug_plan_inferred_by_backend",
+            "the compiler selects the debug plan and the backend never infers one"));
+    }
+    let level = field(&plan, "level")?;
+    if !DEBUG_LEVELS.contains(&level) {
+        return Err(error("debug_level_unknown", format!("{level} is not a declared debug level")));
+    }
+    if field(&plan, "debug_format")? != "dwarf" {
+        return Err(error("debug_format_disagrees_with_object_format",
+            "the declared targets emit DWARF"));
+    }
+
+    let included = field(&plan, "included")?;
+    let excluded = plan.get("excluded").map(String::as_str).unwrap_or_default();
+    // A plan that says nothing about what it omits leaves its gaps implicit,
+    // and a kind both promised and disclaimed is a contradiction.
+    if excluded.is_empty() {
+        return Err(error("debug_record_kind_undeclared",
+            "a debug plan must say what it does not emit"));
+    }
+    if included == excluded {
+        return Err(error("debug_record_kind_undeclared",
+            format!("{included} is both included and excluded")));
+    }
+
+    let mut witness = String::new();
+    witness.push_str(&format!("format: {DEBUG_PLAN_WITNESS_FORMAT}\n"));
+    witness.push_str(&format!("authority: {AUTHORITY}\n"));
+    witness.push_str(&format!(
+        "debug_plan:target_id={};debug_format=dwarf;derived_from={};level={};included={};excluded={};\n",
+        field(&plan, "target_id")?, DEBUG_DERIVATION, level, included, excluded,
+    ));
+    Ok(witness)
+}
+
+pub fn lower_debug_plan_witness_path(path: &Path) -> Result<String, Box<dyn Error>> {
+    let request = fs::read_to_string(path)?;
+    Ok(lower_debug_plan_witness(&request)?)
+}

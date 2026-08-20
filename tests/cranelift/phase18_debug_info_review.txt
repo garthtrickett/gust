@@ -1,0 +1,21 @@
+Patch 18.12 — Debug Information Strategy
+
+debug_plans	5
+debug_levels	2
+included_record_kinds	3
+excluded_record_kinds	4
+fidelity_non_claims	5
+
+plan	every declared target has exactly one debug plan	plan coverage compared against the declared triple vocabulary	Level 1
+plan	no duplicate debug plan for a target	uniqueness check over plan target ids	Level 1
+plan	every plan target has an object format descriptor	per-target descriptor resolution	Level 1
+derivation	the debug format is derived from the object format	derived_from field is frozen	Level 1
+derivation	the backend never infers a debug plan	selection policy is frozen	Level 1
+level	the debug level is inside the declared vocabulary	level membership check	Level 1
+record	a plan includes at least one record kind	non-empty included kinds	Level 1
+record	a plan states what it does not emit	non-empty excluded kinds	Level 1
+record	included and excluded kinds are disjoint	intersection check	Level 1
+record	only declared record kinds are emitted	emission policy is frozen	Level 1
+fidelity	the fidelity non-claim inventory is complete	five required non-claims	Level 1
+fidelity	every fidelity non-claim is named	non-empty non-claim strings	Level 1
+rejection	the rejection class inventory is complete	five required rejection classes	Level 1

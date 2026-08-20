@@ -39,7 +39,7 @@ is activated separately.
 - [x] Patch 18.9 — Cross-Compilation Policy and Host/Target Separation — DONE
 - [x] Patch 18.10 — Unsupported-Target Detection and Diagnostics — DONE
 - [x] Patch 18.11 — Symbol and Relocation Inspection Evidence — DONE
-- [ ] Patch 18.12 — Debug Information Strategy
+- [x] Patch 18.12 — Debug Information Strategy — DONE
 - [ ] Patch 18.13 — Source-Location Preservation
 - [ ] Patch 18.14 — Optimisation-Level Policy
 - [ ] Patch 18.15 — Reproducible Object and Artifact Output
