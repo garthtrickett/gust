@@ -649,6 +649,10 @@ It also answers "why not build Gust as a library over an existing austere langua
 
 **OD-2 remains open** on one point: whether a restricted form of user-written generic function is required before v0.1 for standard-library collection code, or whether compiler-owned containers cover it.
 
+> **No compiler-owned derivation exists yet**, because everything §14 lists as derived — the query builder, RPC schemas, templates — is itself unbuilt. What the section gets right today is the negative half: user-written generic functions are genuinely unavailable, while generic structs and enums with monomorphisation work (`docs/ONE_WAY_LEDGER.md` E15).
+>
+> One data point for OD-2 from the compiler's own source: `compiler/errors.gst:17` declares `Result[T, ctx]` as an ordinary user-level generic enum. The compiler needed a generic sum type and expressed it with the facilities users have, which suggests generic *types* do cover a good deal without generic *functions*.
+
 ## 15. Compile-time execution
 
 Gust bans user-defined macros, arbitrary compile-time execution, programmable syntax transformation, and build scripts capable of arbitrary filesystem or network access.
@@ -1675,6 +1679,10 @@ Traces are tenant-scoped and subject to the same data-minimization rules as supp
 ## 109. Diagnostics as machine input
 
 Compiler diagnostics have a structured form alongside the human form. A diagnostic carries the rejected construct, the rule violated, the minimal set of edits that would satisfy the rule, and a stable rule identifier.
+
+> **Half of this exists.** Verified 2026-08-20 at `b47d0049`. `CompilerError` (`compiler/errors.gst:10-15`) carries a `kind`, a `span`, and a `file_path`, so diagnostics are structured values with precise locations and do satisfy the design constraint below. What is absent is identity and machine-readability: there is no error-code or rule-id scheme anywhere, no JSON emission, and no candidate edits — the rule violated exists only as English prose inside `message`.
+>
+> The gap is already being worked around. `guard-stdlib-s1-str-equality-diagnostic` pins diagnostic identity by asserting the *sentence* is byte-identical in both compilers, which is a stable rule identifier implemented as English and cannot be reworded without breaking CI. `docs/ONE_WAY_LEDGER.md` E23.
 
 The design constraint: a diagnostic must be sufficient for correction without re-reading the whole file. Diagnostics that require whole-program context to act on are defects.
 

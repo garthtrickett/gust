@@ -100,8 +100,9 @@ when the backend does.
 | 37 | Native code | Forbidden by default; only via signed adapter, capability, isolation | ungated native execution | **PARTIAL** — E21 |
 | 38 | Packages | A package is a directory tree with a manifest; lockfiles record provenance | no package identity | **ABSENT** — E21 |
 | 39 | Conformance checking | Generated checks substitute for reading | trusting unread output | **PARTIAL** — E22 |
+| 40 | Machine-readable diagnostics | Structured form with a stable rule identifier and candidate edits | prose-only errors | **PARTIAL** — E23 |
 
-Counts: 9 `HOLDS`, 8 `PARTIAL`, 7 `VIOLATED`, 1 `DEFERRED`, 14 `ABSENT`.
+Counts: 9 `HOLDS`, 9 `PARTIAL`, 7 `VIOLATED`, 1 `DEFERRED`, 14 `ABSENT`.
 
 Row 27 is the one in motion. It is the declared priority and several other rows
 resolve with it — see E17.
@@ -195,6 +196,20 @@ type MyResult[T, E, ctx] enum {
     Err { error: E }
 }
 ```
+
+**So does the compiler.** `compiler/errors.gst:17` declares `Result` as an
+ordinary user-level generic enum, exactly as any application would have to:
+
+```gust
+type Result[T, ctx] enum {
+    Ok { val: T },
+    Err { error: Index[CompilerError[ctx], ctx] }
+}
+```
+
+That is the strongest available evidence for this row. §11 says "the language
+includes `?`-style propagation"; the compiler that implements the language had to
+hand-roll `Result` as a plain enum and propagate by hand.
 
 `docs/VISION.md` §11 and Consolidated Rule 16 describe `Result` and `?` as the
 single failure convention. Neither exists. The convention in use today is
@@ -917,6 +932,58 @@ discipline or be argued into it; it needs to point an existing and demonstrably
 sustained practice at a different target once there is a platform to aim it at.
 
 `PARTIAL` records exactly that: the practice holds, the surface does not.
+
+### E23 — diagnostics carry structure but no identity (row 40)
+
+`docs/VISION.md` §109: "A diagnostic carries the rejected construct, the rule
+violated, the minimal set of edits that would satisfy the rule, and **a stable
+rule identifier**."
+
+**What exists.** `CompilerError` is a real structured value
+(`compiler/errors.gst:10-15`):
+
+```gust
+type CompilerError[ctx] struct {
+    kind: ErrorKind,
+    message: str,
+    span: token.Span,
+    file_path: str
+}
+```
+
+So a diagnostic carries a kind (`ErrorKind`: `ParserError`, …), a source span,
+and a file path. That is more than prose, and it satisfies §109's design
+constraint that a diagnostic be actionable without whole-program context — spans
+are precise.
+
+**What does not exist.** There is no stable rule identifier: no error-code or
+rule-id scheme anywhere in `compiler/errors.gst` or `compiler/typechecker.gst`,
+and no machine-readable emission — no JSON form. The rule violated is encoded
+only in English prose inside `message`, as `"Semantic Error: Brand Nesting
+Restriction violated…"`. There are no candidate edits.
+
+**The project has already felt the absence and worked around it.** Patch S1.1
+needed a way to pin diagnostic identity, and did it by asserting the *prose is
+byte-identical* in both compilers —
+`guard-stdlib-s1-str-equality-diagnostic` (`justfile:21637-21642`) greps for the
+exact sentence. Its own comment explains why:
+
+> Both compilers must reject with the same words. A drift here means one
+> backend's users get a different explanation for the same program.
+
+That is a stable rule identifier implemented as an English sentence. It works,
+and it is brittle in exactly the way an identifier exists to prevent: rewording
+the message for clarity breaks the guard, so the message cannot be improved
+without touching CI.
+
+**Why this row matters more than its size suggests.** §0.5 layer 4 and
+`docs/VISION_RECONCILIATION.md` §4 both name the machine interface as the moat —
+the argument being that syntax is cheap for a model to learn but a compiler that
+exposes structured understanding is not. Structured diagnostics are the most
+basic component of that layer, and `docs/VISION.md` §0.7 lists them as demo
+scope. `PARTIAL` is accurate: the payload has structure and precise spans; what
+is missing is identity and a machine-readable form, which is the half an agent
+needs.
 
 ## Maintenance
 
