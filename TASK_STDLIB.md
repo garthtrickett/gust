@@ -1067,8 +1067,13 @@ Recording this is the point of the phase, not an apology for it.
   `MutexGuard` included. CR-5, from S1.7.
 - **References carry no mutability and are not analysed for aliasing.** Two `&T`
   arguments may alias one value and both write through it (`VISION.md` §26).
-- **Cleanup obligations are not enforced.** An unclosed directory handle — the
-  one supported resource — compiles clean. S1.7.
+- **Cleanup is enforced for one built-in type and for nothing else.** A
+  directory handle bound to a local and never closed is a compile error:
+  `Resource leak. Directory resource variable 'd' must be cleanly closed with
+  os.CloseDir before leaving local scope`. That is the whole of it — `os.Dir`
+  gets the obligation because the compiler hardcodes its destructor, and since
+  no user type can declare one, a user-defined resource carries no obligation
+  at all. CR-5.
 
 ### What closure requires
 
