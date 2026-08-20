@@ -121,11 +121,21 @@ lane is working on any of them.
 Owned by **Phase 19** (`TASK_PHASE19.md`), staged and not yet active. Recorded in
 `docs/SHARED_SEMANTIC_ZONE.md` as D-1/D-2 and in `TASK_STDLIB.md` as CR-2.
 
+In the live compiler:
+
 ```
-$ grep -n 'brand_bases' src/codegen.rs src/typechecker/types.rs
-src/codegen.rs:71:    let brand_bases = ["connCtx", "arena", "ctx", "Any", "a", "main_ctx", "bg_ctx", "file_ctx"];
-src/typechecker/types.rs:61:    let brand_bases = ["connCtx", "arena", "ctx", "Any", "a", "main_ctx", "bg_ctx", "file_ctx"];
+$ grep -n 'connCtx' compiler/codegen.gst
+658:        brand_bases.Push("connCtx");
+762:            if std.str_eq(name, "connCtx") == 1 { is_brand_name = 1; }
+767:            if codegen_ends_with(name, "_connCtx") == 1 { is_brand_name = 1; }
+896:  if std.str_eq(var_name, "ctx") == 1 || … || std.str_eq(var_name, "a") == 1 {
+1101: if std.str_eq(var_name, "ctx") == 1 || … || std.str_eq(var_name, "a") == 1 {
 ```
+
+`docs/STDLIB_SURFACE_FINDINGS.md` F3b lists the full set, including
+`compiler/typechecker.gst:4953,5151`. The deprecated prototype carries the same
+list at `src/codegen.rs:71` and `src/typechecker/types.rs:61`, but the live
+compiler above is the claim.
 
 A local `str` named `a` is emitted as `&a`. Renaming the variable fixes the
 program. Full reproduction: `docs/STDLIB_SURFACE_FINDINGS.md` F3.
@@ -262,9 +272,9 @@ argument.
 ### E7 — `defer` parses; automatic resource lifecycle does not (rows 15, 16)
 
 ```
-$ grep -n 'TokenType::Defer' src/parser.rs
-81:                | TokenType::Defer
-161:            TokenType::Defer => {
+$ grep -cE 'Defer' compiler/parser.gst compiler/ast.gst
+compiler/parser.gst:5
+compiler/ast.gst:4
 ```
 
 `defer` exists in both lexers and parses to a `Statement::Defer`.
@@ -350,15 +360,15 @@ in §0.4 and it is unstarted; `docs/VISION.md` §0.6 says so.
 
 ```
 $ for ty in i32 u32 i64 u64 isize usize; do
-    printf '%-6s rs=%s gst=%s\n' "$ty" \
-      "$(grep -c "\"$ty\"" src/lexer.rs)" "$(grep -c "\"$ty\"" compiler/lexer.gst)"
+    printf '%-6s gst=%s rs=%s\n' "$ty" \
+      "$(grep -c "\"$ty\"" compiler/lexer.gst)" "$(grep -c "\"$ty\"" src/lexer.rs)"
   done
-i32    rs=0 gst=0
-u32    rs=0 gst=0
-i64    rs=0 gst=0
-u64    rs=0 gst=0
-isize  rs=0 gst=0
-usize  rs=0 gst=0
+i32    gst=0 rs=0
+u32    gst=0 rs=0
+i64    gst=0 rs=0
+u64    gst=0 rs=0
+isize    gst=0 rs=0
+usize    gst=0 rs=0
 ```
 
 There is one integer type, `int`.
@@ -367,8 +377,9 @@ There is one integer type, `int`.
 This carries a measurable runtime cost and is accepted deliberately."
 
 ```
-$ grep -rin 'overflow' src/codegen.rs src/typechecker/*.rs
-(no matches)
+$ grep -ci 'overflow' compiler/codegen.gst compiler/typechecker.gst
+compiler/codegen.gst:0
+compiler/typechecker.gst:0
 ```
 
 No overflow handling exists anywhere in codegen or the typechecker. The cost is
@@ -410,14 +421,12 @@ IMMEDIATE ROADMAP still lists "Guarantee exhaustive match/switch checking for
 enums" as outstanding. It is done.
 
 ```
-$ grep -rin 'exhaust' src/typechecker/visitor.rs compiler/typechecker.gst
-src/typechecker/visitor.rs:1949:  // Exhaustiveness check: Ensure all variants are matched
-src/typechecker/visitor.rs:1955:  "Semantic Error: Match on enum '{}' is not exhaustive. Missing variant '{}'"
-compiler/typechecker.gst:10809: // Exhaustiveness check
-compiler/typechecker.gst:10822: msg = std.Concat(msg, "' is not exhaustive. Missing variant '");
+$ grep -rin 'exhaust' compiler/typechecker.gst
+10809: // Exhaustiveness check
+10822: msg = std.Concat(msg, "' is not exhaustive. Missing variant '");
 ```
 
-Both compilers check it and both name the missing variant. §31's rationale —
+The live compiler checks it and names the missing variant. §31's rationale —
 "exhaustiveness converts a whole class of generated-code omission into a compile
 error" — is one of the few containment-shaped claims in the document that the
 compiler actually makes good on today.
@@ -431,15 +440,15 @@ The first half holds. The second half describes a mechanism that does not exist:
 
 ```
 $ for k in copyable Copyable; do
-    printf '%-10s rs=%s gst=%s\n' "$k" \
-      "$(grep -c "\"$k\"" src/lexer.rs)" "$(grep -c "\"$k\"" compiler/lexer.gst)"
+    printf '%-10s gst=%s rs=%s\n' "$k" \
+      "$(grep -c "\"$k\"" compiler/lexer.gst)" "$(grep -c "\"$k\"" src/lexer.rs)"
   done
-copyable   rs=0 gst=0
-Copyable   rs=0 gst=0
+copyable    gst=0 rs=0
+Copyable    gst=0 rs=0
 ```
 
 There is no marker. Copy-versus-move is decided structurally by `is_linear`
-(`src/typechecker.rs:219-250`, mirrored at `compiler/typechecker.gst:1761`):
+(`compiler/typechecker.gst:1761`, `typechecker_is_linear`; the deprecated prototype mirrors it at `src/typechecker.rs:219-250`):
 
 | Type | Linear (moves) |
 | --- | --- |
@@ -469,12 +478,12 @@ the two answer different questions and only one is opt-in.
 
 ```
 $ for k in null nil NULL; do
-    printf '%-6s rs=%s gst=%s\n' "$k" \
-      "$(grep -c "\"$k\"" src/lexer.rs)" "$(grep -c "\"$k\"" compiler/lexer.gst)"
+    printf '%-6s gst=%s rs=%s\n' "$k" \
+      "$(grep -c "\"$k\"" compiler/lexer.gst)" "$(grep -c "\"$k\"" src/lexer.rs)"
   done
-null   rs=0 gst=0
-nil    rs=0 gst=0
-NULL   rs=0 gst=0
+null    gst=0 rs=0
+nil    gst=0 rs=0
+NULL    gst=0 rs=0
 ```
 
 §11's "safe references are non-null" holds by construction: there is no null
@@ -515,25 +524,26 @@ of the keywords exists in either lexer:
 
 ```
 $ for k in class extends impl trait interface inherits; do
-    printf '%-10s rs=%s gst=%s\n' "$k" \
-      "$(grep -c "\"$k\"" src/lexer.rs)" "$(grep -c "\"$k\"" compiler/lexer.gst)"
+    printf '%-10s gst=%s rs=%s\n' "$k" \
+      "$(grep -c "\"$k\"" compiler/lexer.gst)" "$(grep -c "\"$k\"" src/lexer.rs)"
   done
-class      rs=0 gst=0
-extends    rs=0 gst=0
-impl       rs=0 gst=0
-trait      rs=0 gst=0
-interface  rs=0 gst=0
-inherits   rs=0 gst=0
+class    gst=0 rs=0
+extends    gst=0 rs=0
+impl    gst=0 rs=0
+trait    gst=0 rs=0
+interface    gst=0 rs=0
+inherits    gst=0 rs=0
 ```
 
-**Row 9 — generic structs and enums, no generic functions.** `Type::Generic` and
-monomorphisation exist (`src/typechecker/monomorphize.rs`), and tests declare
-generic types (`tests/e2e_adt_pressure_test.gst`, `tests/test_generic_enum_typechecking.gst`).
+**Row 9 — generic structs and enums, no generic functions.** Generic types and
+monomorphisation exist in the live compiler (`grep -ci 'monomorph'
+compiler/typechecker.gst` → 62), and tests declare generic types (`tests/e2e_adt_pressure_test.gst`, `tests/test_generic_enum_typechecking.gst`).
 No `func name[T](…)` form appears in any test or compiler source, so §14's
 "user-written generic functions are not available initially" holds.
 
-**Row 1 — arenas are the memory model.** `Type::Arena` is a first-class type
-(`src/typechecker/types.rs`), and the arena surface is registered and
+**Row 1 — arenas are the memory model.** `Arena` is a first-class AST type in
+the live compiler (`compiler/ast.gst:38`), referenced 519 times in
+`compiler/typechecker.gst`, and the arena surface is registered and
 runtime-backed (`std.GenerationalSwap`, `src/runtime/arena.c`,
 `src/runtime/scratch.c`). No GC and no user-facing allocator exist.
 
@@ -622,6 +632,19 @@ imposes on Gust source, and a native backend has no reason to impose it.
 That matters for OD-9 beyond tidiness: a generator must know the backend
 flattens scopes in order to emit valid Gust, which is exactly what §0.7 Track A0
 disqualifies.
+
+Worth noting that Gust's own model is not the problem. The live typechecker has a
+properly nested scope chain — `Scope[ctx]` with `parent` and `bindings`
+(`compiler/typechecker.gst:695`), inserted at `:4720` and resolved outward at
+`:4731`,`:4744` — which correctly permits shadowing in disjoint blocks. The
+collision is introduced downstream, by the flat `variable_types` map (`:743`) and
+by C's flat function scopes. The language is right and the backend is what
+constrains it.
+
+Filed as issue #105, with an implementation spec for the diagnostic in the
+comments. It is unblocked Stdlib work rather than a coordination request, because
+`docs/SHARED_SEMANTIC_ZONE.md` places "a diagnostic that rejects a program the
+compiler currently miscompiles" outside the shared zone.
 
 **What the transition does not close.** Every row marked `ABSENT` for want of
 design rather than backend: 21 (effects), 4 (`Result` and `?`), 3 (`Option`

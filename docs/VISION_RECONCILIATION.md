@@ -386,7 +386,7 @@ lane/registry/guard governance in `AGENTS.md` and `docs/SHARED_SEMANTIC_ZONE.md`
 | §26 | Two-form borrow model | Corrected in VISION 2026-08-19 (#84): one mutable reference form, no aliasing analysis |
 | §27 | Shared ownership as OD-3 | `std.Rc` already exists — see §3.6 |
 | §34 | Panic terminates request, not deployment | `exit(1)` in `src/runtime/strings.c:20,30` |
-| D-1, D-2 | Brand identity | Inferred from identifier spelling; `src/codegen.rs:71`, `src/typechecker/types.rs:61`. Owned by staged Phase 19 |
+| D-1, D-2 | Brand identity | Inferred from identifier spelling; `compiler/codegen.gst:658,762,896,1101`, `compiler/typechecker.gst:4953,5151`. Owned by staged Phase 19 |
 | §32 | Fixed-width integers, overflow trapping, `Decimal`/`Money`/time types | **All absent.** One integer type, `int`, lowering to C `int` — so overflow is UB, not a trap. Issue #103 |
 | §23 | `copyable` marker | Absent. Copy-versus-move is inferred structurally; adding a `str` field silently changes a struct's category |
 | §29 | Automatic resource cleanup | Runs, but only for `Resource[T]` and only in the self-hosted compiler. The Rust compiler has none — zone defect D-6, issue #104 |
