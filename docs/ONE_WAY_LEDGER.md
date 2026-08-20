@@ -1908,7 +1908,22 @@ readings you do not think of as checks at all:
 
 In that instance the truncated figure produced a "dispatch has gone quiet"
 conclusion and an instruction to investigate it, from a number nobody had treated
-as a finding. The rule is not to check more; it is to notice that a figure has
+as a finding.
+
+**A second instance, five hours later and from a different author, is what makes
+this a rule rather than one person's bad afternoon.** A count of failing runs in
+the repository was asserted as background — "one genuine failure exists" — from
+an un-paginated query. Paginated, it was two failing workflows across four guard
+steps. The rule about pagination had by then been established independently by
+two lanes, written down, and cited in this file. It still did not survive contact
+with a number gathered in passing.
+
+So the failure is not ignorance of the rule and cannot be fixed by restating it.
+Both instances share a shape: the author was reasoning carefully about something
+else, and the defective reading was scenery for that reasoning rather than its
+subject. **Scrutiny follows attention, and attention was elsewhere by
+construction** — which is why "be more careful" is not a remedy and "notice that a
+figure became evidence" is. The rule is not to check more; it is to notice that a figure has
 become evidence the moment an argument rests on it, whatever it was gathered
 for.
 
