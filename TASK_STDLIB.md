@@ -128,6 +128,25 @@ Confirmed defects:
   enforcement, and an AST/typechecker representation for `defer` — are unmet.
   That document was last modified 2026-06-28, before Phase 15 closed.
 
+### Since this snapshot
+
+The list above is a dated baseline and is deliberately not rewritten. Three of
+its confirmed defects have since been closed; an agent reading the baseline as
+current would re-open work that is done.
+
+| Defect in the baseline | State |
+| --- | --- |
+| `str == str` typechecks and emits invalid C | **Closed** by S1.1 (#74). Both compilers now reject `==` and `!=` on `str` with a byte-identical diagnostic naming `std.str_eq`. Making `==` *mean* content equality is still open as CR-1. |
+| A method call on a reference receiver fails resolution | **Closed** by S1.3 (#86). |
+| `defer` has no AST/typechecker representation | **Superseded.** `defer` is an AST node; `STEP52_RESOURCE_SEMANTICS.md` predates that. The remaining gap is destructor declaration and enforcement, re-verified by S1.7 (#87) and stated in CR-5. |
+
+Still open exactly as recorded: the brand-spelling defect (CR-2, owned by
+`TASK_PHASE19.md`) and the `exit(1)` bounds policy (CR-3, unscheduled).
+
+`docs/ONE_WAY_LEDGER.md` carries the current status of each of these against the
+compiler, with reproductions, and is the file to check before assuming a
+baseline entry still holds.
+
 Contracts Phase S1 consumes and must not redefine:
 
 - Phase 14 owns type layout, target layout, and memory-access validation.
@@ -424,6 +443,8 @@ recorded somewhere a lane will read, rather than rediscovered per agent.
 5. **MIR-to-C:** yes.
 6. **Cranelift:** yes.
 7. **Bootstrap:** yes.
+
+Filed as issue #101.
 
 **Owner: Cranelift lane.** `docs/SHARED_SEMANTIC_ZONE.md` assigns the fiber
 scheduling contract there, and this changes it. The Stdlib lane must not add a

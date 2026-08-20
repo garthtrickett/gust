@@ -133,14 +133,14 @@ Ordered by dependency. Status verified 2026-08-20; evidence in
 | --- | --- | --- | --- |
 | 1 | Brand identity carried by type, not identifier spelling | **VIOLATED** — ledger D-1 | Phase 19 (`TASK_PHASE19.md`), staged |
 | 2 | `Result[T, E]` as a builtin, with `?` propagation | **ABSENT** — ledger E2 | **unowned** |
-| 3 | `Option` constructible without `unsafe` | **PARTIAL** — ledger E1 | Stdlib (Track A0 scope) |
+| 3 | `Option` constructible without `unsafe` | **PARTIAL** — ledger E1 | Stdlib (Track A0 scope) — issue #102 |
 | 4 | Implicit context in application code (`using ctx`) | **ABSENT** | **unowned** — `compiler-plan.md` Phase 5.3 |
 | 5 | `uses` clauses parsed and checked across the call graph | **ABSENT** — ledger E10 | **unowned** — VISION §0.7 Track A |
 | 6 | Entity declarations that mark an entity workspace-scoped | **ABSENT** | **unowned** — VISION §56 |
 | 7 | Compiler-owned query derivation (`from`, `.where`, `.all`) | **ABSENT** | **unowned** — VISION §55, OD-2 |
 | 8 | Tenant scope tracked through query construction; unscoped rejected | **ABSENT** | **unowned** — VISION §56, OD-8 |
 | 9 | A Postgres capability to execute the query against | **ABSENT** | **unowned** — VISION Part XI |
-| 10 | Panic scoped to the request, not the process | **VIOLATED** — ledger E3 | written, unscheduled — `TASK_STDLIB.md` CR-3 |
+| 10 | Panic scoped to the request, not the process | **VIOLATED** — ledger E3 | `TASK_STDLIB.md` CR-3, issue #91 — unscheduled |
 
 Rows 5 through 8 are `docs/VISION.md` §0.7 Track A verbatim, and **none of them
 has an owning roadmap.** Both active lanes are working below this line: Phase 18

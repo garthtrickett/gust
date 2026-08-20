@@ -115,7 +115,8 @@ unsafe {
 ```
 
 There is no `Some(42)` constructor. Writing an `Option` requires knowing it is a
-tagged union with a `tag` field, and requires `unsafe` to say so.
+tagged union with a `tag` field, and requires `unsafe` to say so. Filed as
+issue #102.
 
 This is the clearest instance of the representation leakage that `docs/VISION.md`
 §0.7 Track A0 exists to remove, and it is directly relevant to OD-9: a model
@@ -160,7 +161,8 @@ $ grep -n 'exit(1)' src/runtime/strings.c
 
 `std_str_slice` and `std_str_byte_at` call `exit(1)` on out-of-range input.
 `docs/VISION.md` §34 requires a panic to terminate the current request, task, or
-job — not the deployment. From a fiber, `exit(1)` takes the process down.
+job — not the deployment. From a fiber, `exit(1)` takes the process down. Filed
+as issue #91.
 
 Recorded as D-5 in `docs/SHARED_SEMANTIC_ZONE.md` and as `TASK_STDLIB.md` CR-3,
 which states the fix: route bounds failures through the §34 panic path rather
@@ -275,7 +277,8 @@ That is detached spawn plus channels: **the Go concurrency model, which
 request code"; nothing enforces it, and the only primitive available is
 fire-and-forget.
 
-Routed as `TASK_STDLIB.md` CR-8, which is a report rather than a patch: the fix
+Filed as issue #101. Routed as `TASK_STDLIB.md` CR-8, which is a report rather
+than a patch: the fix
 is a Ring 1 semantic decision (OD-1) owned by the Cranelift lane under
 `docs/SHARED_SEMANTIC_ZONE.md`'s "Fiber scheduling contract" row.
 
