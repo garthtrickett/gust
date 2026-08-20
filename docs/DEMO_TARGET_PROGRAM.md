@@ -231,6 +231,46 @@ Neither needs effects, a database, or a native backend. Both are specified in
 `docs/UNBLOCKED_CONTAINMENT_WORK.md`. They do not substitute for this program —
 they are simply the parts of the claim that are reachable now.
 
+## A proposed order for the six unowned rows
+
+Recorded because OD-2 made it necessary: with every typed surface now compiler
+work by decision, these six compete for one queue, and no document says in what
+order. **This is a recommendation, not a decision** — the ordering argument is
+written down so that choosing differently is a choice rather than an accident.
+
+**1. Rows 6 and 8 — workspace-scoped entities, and scope tracked through query
+construction.** These are §56, the lead claim, and OD-8 is thesis-invalidating:
+*is the scoping analysis sound?* §0.11 says one counterexample kills the only
+claim being made, and that someone adversarial must attack it before publication.
+**A soundness question should be answered while the surface is small enough to
+attack.** Every row below adds code the analysis must then hold over.
+
+**2. Row 5 — `uses` clauses and effect checking.** Track A item 1, and the thing
+§81, §22, §52 and §108 each presuppose — one gap seen from four sections. It also
+has the least uncertain path: `FunctionSignature` already carries per-function
+obligations, so this extends a struct with the right shape rather than
+introducing the concept.
+
+**3. Row 2 — `Result` and `?`.** Core language, and unlike the platform rows it
+blocks *writing* the demo rather than running it. The compiler hand-rolls
+`Result` today (`compiler/errors.gst:17`), which is both the evidence it is
+absent and the evidence it is expressible.
+
+**4. Row 7 — query derivation.** Large, and it is the row OD-2 moved decisively
+into the compiler. Worth doing after the analysis it must satisfy exists, not
+before: a builder built first would have to be retrofitted to whatever §56's
+scope tracking turns out to require.
+
+**5. Rows 4 and 9 — implicit context, and a Postgres capability.** Row 4 is
+ergonomic and matters most for OD-9, but it is desugaring and can land any time.
+Row 9 is genuinely platform and the only row here that is not compiler work.
+
+**The single ordering claim worth arguing about:** the authority model belongs
+before the convenience surfaces. If compiler throughput is the binding constraint
+— which OD-2 made true by decision — then anything built before effects and scope
+tracking is code those analyses must later be made to hold over. That is a cost
+that compounds, and it is the one sequencing error that cannot be undone cheaply.
+
 ## What this does not require
 
 Recorded so the table is not read as a licence to build the platform:
