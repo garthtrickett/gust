@@ -12,6 +12,14 @@ Phase 19 exists to resolve **CR-2** from `TASK_STDLIB.md` and **D-1**, **D-2**
 from `docs/SHARED_SEMANTIC_ZONE.md`. It owns brand identity and value
 representation, and nothing else.
 
+It is also the first prerequisite of the demo deliverable. `docs/DEMO_TARGET_PROGRAM.md`
+lists ten things that must be true before `VISION.md` §0.7's artifact compiles,
+and brand identity is row 1 — because until it lands, whether a value is treated
+as an arena depends on what the variable is called, and the memory model the
+demo is meant to demonstrate is approximated by string matching. That does not
+widen Phase 19's boundary; it is recorded so the phase's priority is legible
+from outside the Cranelift lane.
+
 ## Publication status — read first
 
 **This file is staged, not active.** The convention in this repository is that

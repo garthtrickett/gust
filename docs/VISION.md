@@ -20,6 +20,18 @@ Nearly every language design decision since the 1970s optimises for human readin
 
 The claim is about **readership**, not authorship. Authorship shifting to machines is the visible change. Readership collapsing is the one that breaks the stack, because review is the trust mechanism everything downstream depends on, and you cannot review what nobody reads.
 
+**What this thesis licenses, and what it does not.** It is a claim about the market and about build order: it says to invest in the artifacts that replace reading — manifests, lockfile diffs, traces, structured diagnostics, conformance checks — ahead of the artifacts that assist reading. It is **not** a licence for ceremony in the language, and it must not be cited as one.
+
+Three reasons it cannot carry that weight. This document contradicts itself if it does: §0.12 lists three artifacts humans *do* read, §58 calls migrations "the one artifact still read by humans", and Part XX exists to produce traces for someone to look at. Humans read code at exactly the moments Gust is sold for — incident response, review of an authority change, security diligence. And it does not hold for the machine either: every redundant token is a token that can be wrong, so OD-9 gets harder as per-function boilerplate grows, not easier.
+
+The operative rule is therefore narrower than "nobody reads it":
+
+> **Explicit exactly where the explicitness is the artifact. Inferred everywhere else.**
+
+Explicit, because someone reads them: authority, ownership, error propagation, resource lifetime. Inferred or desugared, because nobody reads them and a mistake is a compile error anyway: context threading, codec plumbing, dispatch tables.
+
+See `docs/VISION_RECONCILIATION.md` §3.1, which records the conflict between this section and `README.md` and how it resolves.
+
 ## 0.2 The problem: a flood that aggregates nowhere
 
 People build applications by asking an AI. The AI writes the code. Nobody reads it. A meaningful share of those applications ship a bug where every user can see every other user's data — missing tenant scoping, the canonical failure of generated software.
@@ -344,10 +356,10 @@ Everything from v1.0 down is specified in this document so that demo-stage decis
 |---|---|---|---|
 | **OD-9** | **Model fluency** — can an agent write Gust well, and how do we get there from no corpus? *Thesis-invalidating. Starts week one.* | Demo | §0.7 |
 | **OD-8** | **Soundness of the tenant-scoping analysis** — adversarial review before publication. *Thesis-invalidating.* | Demo | §56 |
-| OD-1 | Transparent suspension vs coloured async (server) | Demo | §21 |
+| OD-1 | Transparent suspension vs coloured async (server). **Recommendation recorded in §21**; decision owned by the Cranelift lane | Demo | §21 |
 | OD-2 | Generic functions vs compiler-owned query derivation | Demo | §14, §55 |
 | OD-10 | **Distribution for the product path** — currently unanswered | Month 4 | §0.11 |
-| OD-3 | SAM state ownership under linear resources and no interior mutability | v0.5 | §27, §38 |
+| OD-3 | SAM state ownership under linear resources and no interior mutability. **`std.Rc` already ships**, so part of this was decided by implementation — see `TASK_STDLIB.md` CR-9 | v0.5 | §27, §38 |
 | OD-4 | WASM stack-switching support and payload cost | v0.5 | §21, §41 |
 | OD-6 | Form of the intent layer | v1.0 | Part XXI |
 | OD-5 | Supplier certification staffing model | Post-1.0 | Part XVI |
@@ -373,7 +385,25 @@ And two hard constraints on how the business is run, not merely things we prefer
 
 **One line:** the fix for AI-generated data leaks is structural, and for the first time in the history of this problem the lever is ten generators instead of ten million developers.
 
+## 0.17 Part status markers
+
+§0.16 defers most of this document, and then the remaining twenty Parts specify the deferred material in the same voice as the committed material. A reader cannot tell them apart, and two readers reach different conclusions about what is being built.
+
+Every Part below therefore carries a status line. The markers are:
+
+| Marker | Meaning |
+| --- | --- |
+| **COMMITTED** | Required for the §0.7 demo, or already built. Work here needs no further justification. |
+| **DEFERRED** | Intended, scheduled after the demo (§0.14). Specified now so that demo-stage decisions do not foreclose it. Do not build yet. |
+| **SPECULATIVE** | Specified so the design is coherent end to end. Not scheduled, and per §0.16 most of it should never be built by us. Treat as a constraint on today's decisions, not as a backlog. |
+
+A status marker is not a quality judgement and does not weaken a Part's authority over its own subject. `SHARED_SEMANTIC_ZONE.md` cites §16, §26, §28, §29, and §34 as authoritative regardless of the marker on their Part.
+
+Where a Part splits, the marker names the split by section. `docs/ONE_WAY_LEDGER.md` records, per rule, whether the compiler currently does what the Part says.
+
 # Part I — Product
+
+> **Status: COMMITTED.** §1–§2 are the claim being demonstrated. §3's platform ownership list is the target state, not the current one.
 
 ## 1. Product vision
 
@@ -462,6 +492,8 @@ Developers — and the agents writing on their behalf — call Gust-owned capabi
 
 # Part II — Trust, Suppliers, and Infrastructure
 
+> **Status: SPECULATIVE.** §0.7 puts suppliers and deployment after the demo. §5's "every application includes PostgreSQL and an S3-compatible store" is a design intent; no database or storage capability exists today.
+
 ## 4. Trusted suppliers
 
 Trusted suppliers operate behind Gust-defined capability interfaces and isolation boundaries rather than shipping unrestricted packages into applications.
@@ -502,6 +534,8 @@ The agent-facing equivalent of this target is the loop latency budget in §107.
 
 # Part III — Organisation, Workspace, and Tenancy
 
+> **Status: COMMITTED (§9 tenancy) / SPECULATIVE (§8 organisation and billing).** Tenant resolution and automatic scoping are the lead claim (§56). The organisation, billing, and multi-workspace administration model is not demo scope.
+
 ## 8. Organisation and workspace model
 
 The **organisation** is the administrative and billing boundary. It owns users and memberships, billing, security policies, trusted-supplier permissions, domains, and deployments.
@@ -528,11 +562,15 @@ The default PostgreSQL isolation model is one schema per workspace. Stronger opt
 
 # Part IV — Language Principles
 
+> **Status: COMMITTED.** Ring 1. Frozen at 1.0 per §99. `docs/ONE_WAY_LEDGER.md` records which of these hold in the compiler today; §11's `Result` and `?` do not yet exist.
+
 Every restriction in this Part serves two ends at once: it narrows the space of programs a human must reason about, and it narrows the space of programs an agent can generate.
 
 Under the readership thesis (§0.1) these restrictions stop needing a defence. Macros, operator overloading, inheritance, and user-level generics are conveniences for a human writing code daily, and are either free or actively harmful to a machine generating it. The austerity is not a trade-off — it is the correct answer once reading is rare.
 
-The corollary: **verbosity is free.** Where a conventional language would infer to save typing, Gust states things explicitly, because the cost of inference is paid by every reader of a diff and the benefit accrues to a typist who no longer exists.
+The corollary, stated carefully: **verbosity is cheap where the verbose thing is the artifact.** Where a conventional language would infer to save typing, Gust states things explicitly *when the explicit form is what a reviewer reads* — authority, ownership, error propagation, resource lifetime. The cost of inference there is paid by every reader of a diff, and the benefit accrues to a typist who no longer exists.
+
+This is not a general licence. An earlier draft of this section read "verbosity is free" without qualification, and that is withdrawn: verbosity in plumbing nobody reads — context threading, codec boilerplate, dispatch tables — buys nothing and costs generation accuracy, because every redundant token is a token that can be wrong. §0.1 states the operative rule and `docs/VISION_RECONCILIATION.md` §3.1 and §3.4 record the reasoning.
 
 ## 10. Language and runtime model
 
@@ -567,6 +605,8 @@ Data is represented as structs and passed into functions.
 Dynamic polymorphism should be used only where genuinely necessary and must remain explicit.
 
 *Rationale: resolution is local. A call site tells you what runs, without whole-program hierarchy search — for a human reviewing a diff or a model predicting a token.*
+
+A concrete design for "small explicit function tables" — a flat behaviour registry indexed by handle, rather than a vtable pointer per object — is recorded in `docs/VISION_RECONCILIATION.md` Appendix B. It is how this section can ban inheritance without giving up open polymorphism.
 
 ## 13. Generics
 
@@ -611,6 +651,8 @@ Only obviously lossless widening conversions may be implicit. All other conversi
 ---
 
 # Part V — Effects and Capabilities
+
+> **Status: COMMITTED.** The differentiator (§0.4) and Track A item 1. Entirely unimplemented — there is no `uses` keyword in either lexer (`docs/ONE_WAY_LEDGER.md` E10).
 
 ## 17. Effects in function types
 
@@ -672,6 +714,8 @@ Unsafe code must still possess every required effect.
 
 # Part VI — Concurrency, Tasks, and Transactions
 
+> **Status: COMMITTED (§20–§21) / DEFERRED (§22 transactions).** OD-1 must resolve before the demo. What exists today is detached `std.Spawn` plus channels — the model §20 rejects; see §21 and `docs/ONE_WAY_LEDGER.md` E9.
+
 ## 20. Structured concurrency
 
 Normal application concurrency is structured and request-scoped.
@@ -692,7 +736,15 @@ Concurrency remains explicit through task creation, task scopes, joins, cancella
 
 **Open decision.** Transparent suspension implies green threads or effect handlers. Against a WASM browser target (§41) that means stack switching, with real cost in payload size, portability, and toolchain support, and it interacts directly with the ownership-across-tasks rules in §30.
 
-The demo cut (§0.14) is server-only, which splits this cleanly: **OD-1 (server suspension) must resolve before the demo; OD-4 (WASM cost) defers to v0.5.** If transparent suspension proves unworkable on WASM, the fallback is coloured async on the client and transparent suspension on the server — accepting the asymmetry rather than degrading both.
+The demo cut (§0.14) is server-only, which splits this cleanly: **OD-1 (server suspension) must resolve before the demo; OD-4 (WASM cost) defers to v0.5.**
+
+**What exists today (verified 2026-08-20, `b47d0049`).** Neither model. There is no `async`, `await`, `spawn`, or `scope` keyword in either lexer. Concurrency is a library surface over the cooperative fibers in `src/runtime/fiber.c`: `std.Spawn`, `std.Channel`, `std.Mutex`, `std.Yield`. `std.Spawn` starts work that no scope owns, with no join requirement, no cancellation propagation, and no task handle — which is detached spawn plus channels, the model §20 rejects and the only one available. Recorded with reproductions in `docs/ONE_WAY_LEDGER.md` E9 and tracked as `TASK_STDLIB.md` CR-8.
+
+**Recommendation, not a decision.** Take Go's *suspension* model and reject Go's *task* model: transparent suspension with no colouring, over a scheduler that already exists, with every task owned by a lexical scope that cannot exit while a child is live, and task handles as linear resources. Three named concepts — child task, supervisor, durable job — rather than one `spawn` with adjectives. `?` continues to mean "may fail"; suspension needs no keyword because it is always owned.
+
+The fallback above — coloured async on the client, transparent on the server — is recorded here as the worse option. Two concurrency models in a language whose premise is one of everything refutes the premise; if OD-4 makes WASM stack switching unaffordable, restricting client code to event-driven dispatch with no suspension is the better trade, and Part IX's SAM model already implies it.
+
+Ownership: this is a Ring 1 semantic decision. `docs/SHARED_SEMANTIC_ZONE.md` assigns the fiber scheduling contract to the Cranelift lane, so neither lane may act on the recommendation unilaterally. Reasoning in `docs/VISION_RECONCILIATION.md` §3.2.
 
 ## 22. Transactions
 
@@ -717,6 +769,8 @@ Gust provides post-commit hooks and a transactional outbox for reliable external
 ---
 
 # Part VII — Resources, Ownership, and Memory
+
+> **Status: COMMITTED.** The most heavily built Part. §26 was corrected 2026-08-19 to the single reference form that exists; §27 is marked OD-3 but `std.Rc` already ships (`docs/ONE_WAY_LEDGER.md` E8).
 
 ## 23. Value categories
 
@@ -813,6 +867,8 @@ Durable jobs and messages require fully owned serializable values. They cannot c
 
 # Part VIII — Core Type-System Details
 
+> **Status: COMMITTED.** §34's panic scoping is currently violated: a string bounds failure calls `exit(1)` and takes the process down (`docs/ONE_WAY_LEDGER.md` E3).
+
 ## 31. Enums and matching
 
 Gust initially supports payload-carrying tagged enums, generic enum templates, and compiler-owned integer-backed enums for FFI where necessary.
@@ -862,6 +918,8 @@ Runtime corruption or unsafe-memory failure may terminate the application proces
 ---
 
 # Part IX — Client, UI, and RPC
+
+> **Status: SPECULATIVE.** No Wasm target, templates, SAM runtime, or RPC layer exists. `full-stack-slice-0.md` is the scoped entry point when this is taken up; per §0.7 it is not now.
 
 *v0.5 (§0.14). Not in the demo.*
 
@@ -914,6 +972,8 @@ Event handlers dispatch typed SAM actions rather than directly mutating DOM stat
 Local and remote state use the same action model while effects remain explicit.
 
 See §27: the interaction between SAM state ownership, linear resources, and the prohibition on interior mutability is an open decision requiring a worked example before v0.5.
+
+The argument that SAM is the *right* fit for an arena language — model in a long-lived arena, action payloads in a scratch arena, view in a frame-bound arena wiped in constant time, and therefore no cyclic widget graph and no listener leaks — is recorded in `docs/VISION_RECONCILIATION.md` Appendix A.
 
 ## 39. Browser access
 
@@ -987,6 +1047,8 @@ Subscriptions and streams update the same cache and dispatch ordinary SAM action
 ---
 
 # Part X — Authentication and Authorization
+
+> **Status: SPECULATIVE**, except that §52's "enforced in queries" is the same mechanism as §56 and is COMMITTED through it. The demo's `Session` can be a struct handed in by a harness.
 
 *v0.5 (§0.14). The demo ships a stub sufficient to establish tenant identity.*
 
@@ -1065,6 +1127,8 @@ When no policy exists or a decision is ambiguous, access is denied.
 ---
 
 # Part XI — Database and Migrations
+
+> **Status: COMMITTED (§55–§56) / SPECULATIVE (§54, §57–§62).** Typed query derivation and tenant enforcement are Track A items 3 and 4. Migrations, backfills, and rollout are post-demo.
 
 ## 54. Database source of truth
 
@@ -1150,6 +1214,8 @@ Deployment is blocked when application, database, job, and supplier requirements
 
 # Part XII — Jobs, Scheduling, Workflows, and Messaging
 
+> **Status: SPECULATIVE.** §0.7 defers jobs and realtime explicitly.
+
 *v1.0 and post-1.0 (§0.14). Not in the demo.*
 
 ## 63. Jobs
@@ -1206,6 +1272,8 @@ Breaking message changes require a new schema version and a compatibility period
 
 # Part XIII — Packages and Application Structure
 
+> **Status: DEFERRED.** §72's lockfile-and-manifest diff is one of the three artifacts §0.12 says humans actually read, and it is the mechanism behind the guarantee model in `docs/VISION_RECONCILIATION.md` §5. It is not needed to reject an unscoped query.
+
 ## 70. Modules and packages
 
 A module is one source file. A package is one directory tree with a package manifest.
@@ -1248,6 +1316,8 @@ Never silently imported: database access, networking, filesystem access, time, r
 
 # Part XIV — Testing and Determinism
 
+> **Status: DEFERRED**, except §79's conformance checks, which §79 itself calls the primary defence against plausible-but-wrong output. Nothing here is required for the demo.
+
 Determinism here is not a testing convenience. It is the property that makes execution traces usable as training signal (Part XX) and the only remaining check on behaviour when nobody reads the code. A non-deterministic run is a contaminated observation.
 
 ## 75. Test categories
@@ -1284,6 +1354,8 @@ The compiler generates checks for RPC serialization, policy coverage, tenant sco
 
 # Part XV — Configuration and Secrets
 
+> **Status: SPECULATIVE.**
+
 ## 80. Configuration
 
 Configuration is typed, non-sensitive application input.
@@ -1311,6 +1383,8 @@ Self-hosted secret providers must implement Gust's provider protocol and be cert
 ---
 
 # Part XVI — Supplier Governance
+
+> **Status: SPECULATIVE.** §2 already says certification is a commercial service layered on the compiler-enforced guarantee, never a substitute for it.
 
 *Post-1.0 commercial service tier (§2), not the core guarantee. Assumes a certification function with real staffing. OD-5 is unresolved; do not commit to supplier certification externally until it is.*
 
@@ -1355,6 +1429,8 @@ Compatibility adapters are owned by Gust or the supplier as part of certificatio
 
 # Part XVII — Deployment and Operations
 
+> **Status: SPECULATIVE.** §0.7 defers the deployment platform. The demo needs one Linux x86-64 host.
+
 ## 87. Deployment unit
 
 The deployment unit is an immutable application release.
@@ -1392,6 +1468,8 @@ Privileged approval is required for destructive migrations, cross-tenant access,
 ---
 
 # Part XVIII — Escape Hatches
+
+> **Status: COMMITTED as policy, unimplemented.** §98's guarantee boundaries are load-bearing for the containment claim and are why `general-ecosystem.md` was retired (`docs/VISION_RECONCILIATION.md` §3.3). No escape-hatch machinery exists yet.
 
 ## 93. Native code
 
@@ -1440,6 +1518,8 @@ Every escape hatch requires explicit manifest declaration, human approval, defin
 ---
 
 # Part XIX — Versioning and Compatibility
+
+> **Status: SPECULATIVE.** The Part already says post-1.0 and not a commitment.
 
 *Post-1.0 (§0.14). Recorded so demo-stage decisions do not foreclose it. Not a commitment.*
 
@@ -1496,6 +1576,8 @@ After 1.0, Gust must not silently change program meaning, weaken memory-safety g
 ---
 
 # Part XX — The Agent Loop
+
+> **Status: DEFERRED (§108–§109 traces and diagnostics) / SPECULATIVE (§110–§114).** The Part already draws this line: traces and structured diagnostics are demo scope, colocation is post-acquisition.
 
 *The product surface of §0.5 layers 1 and 4. Traces and structured diagnostics are demo scope; colocation is post-acquisition.*
 
@@ -1597,6 +1679,8 @@ Authority granted to an agent is narrowed, never inherited: an agent operating o
 
 # Part XXI — Intent and Specification (OD-6)
 
+> **Status: SPECULATIVE.** Blocks v1.0, not v0.1 (§0.4). This is the unsolved half — correctness rather than containment — and leading with it is how nothing ships.
+
 *Blocks v0.5, not the demo. Specified as a requirement, not a design — the form is unresolved. This is the difference between containment and correctness (§0.4).*
 
 ## 115. Why this Part exists
@@ -1643,6 +1727,8 @@ Not mutually exclusive. The likely answer is a small core of (3) with (1) as the
 ---
 
 # Part XXII — Consolidated Architectural Rules
+
+> **Status: index.** Restates rules from every Part above; each rule inherits its own Part's status. `docs/ONE_WAY_LEDGER.md` records which of them the compiler currently enforces.
 
 1. Gust is built for software written by machines and never read by people.
 2. Humans own intent, authority, and outcomes. The compiler owns everything in between.
