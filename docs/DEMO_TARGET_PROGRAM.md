@@ -147,9 +147,9 @@ Ordered by dependency. Status verified 2026-08-20; evidence in
 | --- | --- | --- | --- |
 | 1 | Brand identity carried by type, not identifier spelling | **VIOLATED** — ledger D-1 | Phase 19 (`TASK_PHASE19.md`), staged |
 | 2 | `Result[T, E]` as a builtin, with `?` propagation | **ABSENT** — ledger E2 | **unowned** |
-| 3 | `Option` constructible without `unsafe` | **PARTIAL** — ledger E1 | Stdlib (Track A0 scope) — issue #102 |
+| 3 | A constructor for `Option` — `Some(42)` rather than writing `.tag` and `.Some.val` | **PARTIAL** — ledger E1 | Stdlib (Track A0 scope) — issue #102 |
 | 4 | Implicit context in application code (`using ctx`) | **ABSENT** | **unowned** — `compiler-plan.md` Phase 5.3 |
-| 5 | `uses` clauses parsed and checked across the call graph | **ABSENT** — ledger E10 | **unowned** — VISION §0.7 Track A |
+| 5 | `uses` clauses parsed and checked across the call graph | **ABSENT** — ledger E10, but `FunctionSignature` already carries per-function obligations | **unowned** — VISION §0.7 Track A |
 | 6 | Entity declarations that mark an entity workspace-scoped | **ABSENT** | **unowned** — VISION §56 |
 | 7 | Compiler-owned query derivation (`from`, `.where`, `.all`) | **ABSENT** | **unowned** — VISION §55, OD-2 |
 | 8 | Tenant scope tracked through query construction; unscoped rejected | **ABSENT** | **unowned** — VISION §56, OD-8 |
@@ -173,6 +173,23 @@ owns.
 So this document does not argue for reordering anything. It records what the
 demo needs, so that when the backend work closes, the remaining distance is
 already written down and costed rather than rediscovered.
+
+> **Two rows were restated 2026-08-20 after later findings.**
+>
+> Row 3 read "`Option` constructible without `unsafe`". That framing rested on a
+> claim the ledger has since split: no `Some(42)` constructor exists — which is
+> established and is the substance — while *requiring* `unsafe` to work around it
+> was inferred from every `std.Option` test using one, and none of the six
+> `unsafe`-demanding diagnostics concerns union tags. The row now names the
+> established requirement, because a prerequisite phrased around an unverified
+> claim would send someone to fix the wrong thing.
+>
+> Row 5 keeps its `ABSENT` status and gains what changes its cost.
+> `FunctionSignature` already carries per-function obligations — `is_unsafe`,
+> `is_extern`, `requires_unsafe_call` and two inert `requires_*` fields — so
+> effects extend a struct with the right shape rather than introducing the
+> concept. The status is what to build; the note is what it will take, and a
+> table of unowned work is read for the second more than the first.
 
 Rows 1 and 3 are genuine prerequisites rather than scope creep — row 1 because
 the memory model is approximated by string matching until it lands, row 3 because
