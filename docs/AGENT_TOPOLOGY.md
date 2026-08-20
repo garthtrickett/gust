@@ -186,13 +186,13 @@ What matters for topology:
 
 - **Agents are long-lived processes with a `cwd`,** not jobs. `1a71cf2` has been
   alive for four days. Lane identity is therefore continuous, and a lane's
-  accumulated context is a real asset — which is exactly why §7 insists it must
+  accumulated context is a real asset — which is exactly why §8 insists it must
   never be the *only* copy of anything.
 - **Schedules can target `new-agent`,** which is how the monitor works and why it
   is stateless.
 - **Permission mode is per agent.** All current agents run `bypassPermissions`.
   That makes every boundary in `AGENTS.md` an *honour* boundary enforced by the
-  agent's own judgement, not by the tool layer. §8 is the consequence.
+  agent's own judgement, not by the tool layer. §9 is the consequence.
 - **Agents can enumerate and message each other.** Concretely: `list_agents` for
   discovery (id, title, status, `cwd`, last activity), `send_agent_prompt` to
   deliver a message into another agent's conversation, `get_agent_status` and
@@ -203,7 +203,7 @@ What matters for topology:
   almost always what is wanted, and unlike a prompt it costs the other lane
   nothing.
 
-The last point is the one to be careful with, and §7 states the rule.
+The last point is the one to be careful with, and §8 states the rule.
 
 ---
 
@@ -221,7 +221,7 @@ them moving.
   it can only be wrong once, and the next tick is a fresh reading.
 - It therefore **knows only what is on disk or in the API.** Anything a lane
   worked out and left in its conversation is invisible to it. This is the
-  strongest argument for the write-it-down discipline in §7, and it is a
+  strongest argument for the write-it-down discipline in §8, and it is a
   mechanical argument rather than a stylistic one.
 - It is **cheap to lose.** A monitor that dies mid-tick costs one tick.
 
@@ -304,7 +304,7 @@ what they actually want is a registrar.
 
 ---
 
-## 6.5 Lane lifecycle, and the four-day agent
+## 7. Lane lifecycle, and the four-day agent
 
 Topology is not only how many lanes exist at once; it is how one starts, hands
 over, and ends. Three rules, each from something observed rather than imagined.
@@ -325,9 +325,9 @@ write down — before continuing the work, not after it.
 finished, and it is not obvious from the outside whether that means done, blocked,
 or forgotten. An idle agent is indistinguishable from a stalled one, which costs
 whoever looks next a real investigation. A lane that has finished should record
-its terminal state where §7's durable channel can see it.
+its terminal state where §8's durable channel can see it.
 
-## 7. How lanes communicate
+## 8. How lanes communicate
 
 Three channels, and they are not interchangeable.
 
@@ -367,7 +367,7 @@ Level 3 run costs six hours and is unrecoverable.
 
 ---
 
-## 8. Every boundary here is honour-based
+## 9. Every boundary here is honour-based
 
 All agents run `bypassPermissions`. Nothing in the tool layer stops the docs lane
 from editing `compiler/`, or one lane from force-pushing another's branch. The
@@ -386,7 +386,7 @@ a cross-lane collision is the receiving lane's willingness to say no to it.
 
 ---
 
-## 8.5 What would make this document wrong
+## 10. What would make this document wrong
 
 Written down because a topology document with no falsifier is an opinion with
 section numbers.
@@ -415,7 +415,7 @@ testimony from the lane itself. **Where this document and that lane's experience
 disagree, that lane is more likely right**, and the disagreement should land in
 this file rather than being settled quietly.
 
-## 9. Summary
+## 11. Summary
 
 - **Three working lanes**, because three disjoint ownership domains exist. Not a
   budget; a structural count.
