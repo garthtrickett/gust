@@ -1084,10 +1084,11 @@ Recording this is the point of the phase, not an apology for it.
 - **Cleanup is enforced for one built-in type and for nothing else.** A
   directory handle bound to a local and never closed is a compile error:
   `Resource leak. Directory resource variable 'd' must be cleanly closed with
-  os.CloseDir before leaving local scope`. That is the whole of it — `os.Dir`
-  gets the obligation because the compiler hardcodes its destructor, and since
-  no user type can declare one, a user-defined resource carries no obligation
-  at all. CR-5.
+  os.CloseDir before leaving local scope`. `os.Dir` gets the obligation because
+  the compiler hardcodes its destructor, and since no user type can declare one,
+  a user-defined resource carries no obligation at all. The check is also keyed
+  to the *binding* rather than the acquisition: the same leak with no local bound
+  compiles clean and runs — observed, and filed as issue #106. CR-5.
 
 ### What closure requires
 
