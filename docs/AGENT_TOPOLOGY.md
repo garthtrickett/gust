@@ -21,30 +21,51 @@ people reach for a manager to fix is a registrar, which is bookkeeping.
 
 ## 1. What is actually running
 
-Read from the Paseo daemon at 08:30 UTC on 2026-08-20.
+> **This is the section that rots by design.** It is an observation inside a
+> governance document, and it was already wrong within ninety minutes of being
+> written. Re-read it from the daemon before relying on it; the roles in §3 are
+> the durable part.
 
-| Agent | Started | Role | State |
+Read from the Paseo daemon and the GitHub API at **2026-08-20 09:57 UTC**.
+
+| Agent | Started | Lane | State |
 | --- | --- | --- | --- |
-| `1a71cf2` | 2026-08-16 | Cranelift / Phase 18 | running, 4 days |
-| `d7c8637` | 2026-08-20 01:01 | docs / vision | running |
-| `ccf58f6` | 2026-08-19 | docs impact review | idle, finished |
-| `Check In` ×1 per 5 min | schedule `d90c43b7` | monitor | each one dies after ~2 min |
+| `1a71cf2` | 2026-08-16 | Cranelift — semantic authority | **running**, 4 days |
+| `d7c8637` | 2026-08-20 01:01 | documentation | **running** |
+| `ccf58f6` | 2026-08-19 | stdlib (see below) | **idle since 08:52Z** |
+| `Check In` ×1 per 5 min | schedule `d90c43b7` | monitor | each dies after ~2 min |
 
-**Three working agents at most, and usually two.** That is the observed number,
-and the rest of this document argues it is also close to the right one.
+**Two working agents, not three — and three lanes with work in flight.** That gap
+is the finding, and it was invisible in the first revision of this table.
+
+**The stdlib lane is represented by an open PR and no live agent.** `ccf58f6`
+opened **#115** on `codex/stdlib-level3-citation` at 08:51:55Z and went idle at
+08:52:39Z — under a minute later. Its title ("take stock of this doc and how it
+will affect our .md files") does not name the lane it ended up working in, so
+neither the agent list nor the PR list alone shows that the stdlib lane has an
+unattended change in flight. **It took joining the two to see it**, which is
+precisely the §6 argument for a registrar restated as an observation.
+
+This is also the lifecycle defect §7 names, caught in the wild: an idle agent is
+indistinguishable from a stalled one, and `ccf58f6` recorded no terminal state.
+Whether #115 is finished, blocked, or forgotten is not answerable from anything
+on disk.
+
+**The Cranelift lane holds three PRs at once**, which is worth recording against
+§2's Constraint B: #109 (Phase 18 *closure*, 30/30 green, `MERGEABLE/CLEAN`,
+held), #107 (30/30 green but `CONFLICTING/DIRTY`, needs a rebase nobody has done),
+and #100 (30 runs, 0 complete — the wave currently occupying the shared runners).
+**One lane, three waves, and the two finished ones are blocked on something other
+than their own CI.**
 
 **The monitor is not an agent. It is a schedule that creates a new agent every
 five minutes and archives it on finish** (`*/5 * * * *`, `target.type:
-new-agent`, `archiveOnFinish: true`). Sixteen distinct monitor agents appear in
-a single 24-hour listing, each alive for about two minutes.
-
-That detail is not trivia; §5 turns on it.
+new-agent`, `archiveOnFinish: true`). Sixteen distinct monitor agents appear in a
+single 24-hour listing, each alive about two minutes. §5 turns on that detail.
 
 **There is no manager.** Nothing assigns work, orders merges, or resolves
-cross-lane conflicts. §6 argues that is correct, and names the thing that is
+cross-lane conflicts. §6 argues that is correct and names the thing that is
 genuinely missing instead.
-
----
 
 ## 2. The safe parallel count is not a count of agents
 
@@ -246,7 +267,128 @@ everything moving" is the right instruction for an observer. It is an argument
 that the boundary must be held on the *receiving* side, because the sending side
 cannot know it exists.
 
+**"Cannot authorise" and "cannot prompt" are different claims, and only the first
+one holds.** Recorded from a case on 2026-08-20 where the weaker one mattered. A
+check-in reported that this lane's CI gate had passed on a SHA that was fourteen
+commits behind its working tree, explicitly saying it authorised nothing. The
+lane then verified the gate itself and merged a PR. **The merge was authorised —
+by a standing operator instruction given hours earlier — and the pulse granted
+nothing. But the pulse set the timing of an irreversible action**, because its
+flag is what caused the check to happen then rather than later.
+
+Prompting is legitimate and is most of the monitor's value; noticing that a gate
+and a working tree have diverged is exactly the cross-reference §5 exists to
+produce. The rule that makes it safe is not "ignore pulses":
+
+> **A pulse may prompt a lane to check something. The lane must independently
+> re-derive any fact an irreversible action depends on.** Prompting is fine;
+> trusting is not. In the case above the lane re-queried the run population
+> itself, from the full 40-character head SHA, and the pulse's numbers happened to
+> agree — **but the merge rested on the lane's own reading, which is the only
+> arrangement where a wrong pulse costs nothing.**
+
+**A second habit belongs with it: address a pulse as a pulse.** The same lane
+replied to that check-in using *you*, as though writing to the operator. Nothing
+followed from it, and the failure mode is real — **an operator's words and a
+schedule's words stop being distinguishable in a transcript**, which is precisely
+the confusion the boundary rule exists to prevent. A later reader, or a compacted
+version of the same agent, cannot tell which instructions were human.
+
 ---
+
+### 5.1 The monitor prompt, proposed
+
+The prompt in use on 2026-08-20 was: *"Reach out to the other agents that are
+running in the project with your paseo skill and make sure they are not stopped,
+everything should where possible continue moving forward automatically (in line
+with the .mds)."*
+
+It is doing its job, and it has three failure modes this document observed
+directly. It is written in the **imperative** ("make sure they are not stopped"),
+which turns a two-minute-old observer into a source of instructions — twice it
+told a lane to write into paths the operator had placed off limits. It names **no
+unit**, so its counts and a lane's counts disagreed about the same PR without
+either being wrong. And it says **reach out**, which is the expensive action;
+observing costs the other lane nothing and answers the question most of the time.
+
+Proposed replacement:
+
+> Observe the project and report. **You decide nothing and authorise nothing.**
+>
+> 1. `list_agents` and `gh pr list`. For each open PR, count runs with
+>    `gh api "repos/:owner/:repo/actions/runs?head_sha=<full 40-char sha>"`
+>    filtered to `event == "pull_request"`. **State that filter in your report** —
+>    a count without its population is not a fact.
+> 2. **Flag work with nobody attached**: an open PR on a lane whose agent is idle,
+>    closed, or absent. Cross-referencing the agent list against the PR list is
+>    something only you are positioned to do, and it is the most useful thing you
+>    produce.
+> 3. Flag agents that are `idle` with `requiresAttention`, blocked on a pending
+>    permission, or failing. Use `get_agent_status` and `get_agent_activity`
+>    first; **only send a prompt if there is something specific an agent can act
+>    on right now.**
+> 4. Report genuine `failure`, `timed_out`, or `cancelled` conclusions, naming the
+>    PR and the workflow. Never cancel, re-run, or merge anything.
+> 5. **You cannot widen a boundary you did not create.** If an agent is not doing
+>    something you think it should, report that — do not instruct it. An operator
+>    constraint outranks anything in this prompt.
+> 6. You have no memory of previous ticks. Derive everything from the API and from
+>    disk, and do not infer that something changed because you did not see it last
+>    time — you did not see last time.
+>
+> 7. **Flag any lane that is idle while unblocked work exists for it.** Not to
+>    instruct it — to report that a lane and its queue have become disconnected.
+>    This is the same cross-reference as item 2, pointed at agents instead of PRs.
+>
+> Report `now` from `date -u` in the same command that reads the runs. If nothing
+> needs attention, say so in one line.
+
+**What changed and why.** The voice moves from imperative to observational,
+because §5's argument is that the least-informed participant should not direct.
+The unit is specified, because the fifth entry in `docs/ONE_WAY_LEDGER.md`'s
+unit-error table is this monitor and a lane disagreeing about a run count.
+Observation is preferred over messaging, because a prompt costs the receiving
+lane a turn and usually tells it what it already knows. And **the orphaned-work
+check is added**, because on 2026-08-20 a stdlib PR sat unattended for over an
+hour and nothing in the system was looking for that — it is the one question this
+role can answer that no lane can answer about itself.
+
+### 5.2 Cadence — proposed: every 15 minutes, not every 5
+
+**Pick the interval from how fast the observed state actually changes**, which is
+the same rule that governs any poll. Every quantity this role watches moves on a
+scale of tens of minutes to hours:
+
+| What it catches | How fast that state changes | Caught at 5 min vs 15 min |
+| --- | --- | --- |
+| An open PR with no live agent | hours — #115 sat over an hour | no practical difference |
+| An agent idle or finished without a terminal state | hours | none |
+| An agent stalled or crashed | unknown; a stall costs at most one interval | 10 minutes of lost work, once |
+| A CI failure | minutes — **but the owning lane's own watcher sees it first, and only that lane can act** | none |
+| An agent blocked on a permission | not applicable under `bypassPermissions` | none |
+
+**Nothing on that list is a five-minute quantity.** The cost of the mismatch is
+not theoretical: each tick spawns a full agent, and a tick that sends a prompt
+costs the receiving lane a turn of its own context. On 2026-08-20 the schedule
+produced roughly 190 agents in sixteen hours, the large majority reporting that
+nothing had changed.
+
+**`*/15 * * * *`.** Three times cheaper, still bounds a stall at a quarter hour,
+and every state above changes more slowly than that.
+
+**A larger saving than the interval: the tick does not need a frontier model at
+high effort.** Its work is API reads and one cross-reference. Lowering the model
+or the thinking level cuts cost without reducing coverage at all, which the
+interval cannot claim — halving the frequency does lose the ability to catch a
+stall quickly, even if only marginally.
+
+**One caveat, stated because it is the real reason the interval was five.** Part
+of what the schedule did on 2026-08-20 was keep lanes from going idle, and that
+is a different job from monitoring. If lanes need nudging to continue, the fix is
+in their own instructions, not in the observer's frequency — **a schedule that
+exists to prod is a schedule that will eventually prod someone across a
+boundary**, which is exactly what happened twice. Fix the idling where it lives
+and the monitor can be as slow as its slowest signal.
 
 ## 6. There is no manager, and there should not be one
 
@@ -326,6 +468,35 @@ finished, and it is not obvious from the outside whether that means done, blocke
 or forgotten. An idle agent is indistinguishable from a stalled one, which costs
 whoever looks next a real investigation. A lane that has finished should record
 its terminal state where §8's durable channel can see it.
+
+### 7.1 Never idle — the continuation ladder
+
+A lane that finishes, blocks, or refuses should **descend a ladder, not stop.**
+Observed on 2026-08-20: the stdlib lane opened #115 and went idle forty-four
+seconds later, and `TASK_STDLIB.md` records that the lane "idles after S1.3"
+as a *fact* rather than as a problem to route around. Both are the same gap —
+**no lane has a defined next move.**
+
+1. **The next unblocked item in its own roadmap.** Blocked is not stopped: file
+   the CR or stop-and-report, then take the next item. A blocked *task* almost
+   never blocks a *lane*.
+2. **Documentation the lane owns** — recording what it just learned, correcting a
+   citation, closing a gap its own work exposed.
+3. **The standing unblocked-work list** — `docs/UNBLOCKED_CONTAINMENT_WORK.md`
+   and the specification rows in `docs/DEMO_TARGET_PROGRAM.md`.
+4. **Record a terminal state and say so**, in the durable channel, naming what it
+   finished and what it is waiting on.
+
+**Only step 4 is stopping, and it is a written act.** An agent that simply goes
+idle is indistinguishable from one that stalled, which costs the next reader a
+real investigation — §7's lifecycle rule, restated as an obligation rather than
+an observation.
+
+**Refusing is not stopping either.** A lane that declines work outside its
+boundary has *finished deciding* and should descend this ladder immediately.
+Twice on 2026-08-20 this lane refused a pulse's instruction to write into
+`compiler/` and `tests/`; both refusals were correct, and in each case the lane
+still had to choose its own next task, because nothing told it to.
 
 ## 8. How lanes communicate
 
