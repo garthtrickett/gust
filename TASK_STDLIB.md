@@ -124,7 +124,7 @@ Confirmed defects:
 - `std_str_slice` and `std_str_byte_at` handle out-of-range input with
   `printf` + `exit(1)`, terminating the process rather than the request or task
   as `VISION.md` §34 requires.
-- `STEP52_RESOURCE_SEMANTICS.md:20-27` items 2 and 6 — automatic resource lifecycle
+- `STEP52_RESOURCE_SEMANTICS.md` items 2 and 6 — automatic resource lifecycle
   enforcement, and an AST/typechecker representation for `defer` — are unmet.
   That document was last modified 2026-06-28, before Phase 15 closed.
 
@@ -1104,12 +1104,20 @@ Recording this is the point of the phase, not an apology for it.
    inherits its state rather than being independent of it.
 
    **Observed 2026-08-20:** the most recent *completed* run on `main` is
-   `32243700245`, **conclusion `failure`** (2026-08-19T10:38:56Z); the two before
-   it also failed. A newer run `32330451344` exists but is **`queued`**, not a
-   result. Recording this here rather than asserting the suite is available: a
-   suite that exists and fails satisfies an availability check exactly, which is
-   why the requirement is phrased as *not failing* rather than *present*. The
-   diagnosis belongs to the Cranelift lane; Phase S1 may not close on top of it.
+   `32330451344`, **conclusion `failure`**, terminated 07:23:17Z — its
+   `Level 3 full history` job failed, six sibling jobs succeeded, and
+   `Level 3 declared-target completion` was skipped.
+
+   This is not a stale result or a one-off. Paginating the entire retained
+   window — **34 concluded runs from 2026-07-21 to 2026-08-20, a full month** —
+   gives **32 `failure`, 2 `cancelled`, and zero `success` at any depth**. There
+   is therefore no green Level 3 evidence available to cite, rather than merely
+   an out-of-date one.
+
+   Recorded here rather than asserting the suite is available: a suite that
+   exists and fails satisfies an availability check exactly, which is why the
+   requirement is phrased as *not failing* rather than *present*. The diagnosis
+   belongs to the Cranelift lane; Phase S1 may not close on top of it.
 
 Phase S1 closure will not claim a complete standard library, a text or Unicode
 API, networking, or production readiness.
