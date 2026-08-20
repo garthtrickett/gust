@@ -86,6 +86,40 @@ assigns a default owner to each. Every row defaults to the Cranelift lane. That
 is not a coincidence of staffing; it follows from the invariant, since a backend
 must never independently reconstruct decided semantics.
 
+**The stronger form of this constraint is the bootstrap, not the zone.** The zone
+argument above is about coordination, and coordination arguments can be beaten by
+better discipline. This one cannot:
+
+> Gust compiles itself. A compiler change is not finished when its tests pass —
+> it is finished when `make bootstrap` reaches a fixed point and produces a new
+> seed. **The seed is one artifact, and there is no meaningful merge of two
+> bootstrapped compilers.** Two agents with perfect file-level coordination and
+> zero semantic overlap still serialize there: the second rebases and
+> re-bootstraps regardless.
+
+**The techniques that make self-hosted changes safe assume a single writer.**
+`docs/PHASES_5_AND_6.md` records Step 5.1's A→B→C staging — add the grammar as a
+no-op, wrap the entire codebase under the no-op, then switch enforcement on — and
+that only holds if the codebase is consistent at each step. **A second agent
+editing `compiler/` during step B silently invalidates the wrapping audit**, and
+it surfaces when enforcement turns on and the compiler stops building itself.
+Step 6.1's file-by-file migration with a bootstrap after each file has the same
+shape.
+
+**So the cap is on writers, not on agents.** The test is concrete: **does this
+change require `make bootstrap` to converge?** If yes it belongs to the single
+writer; if no it can parallelize. That leaves real work outside the cap — readers
+and analysts do not collide at all (this lane verified roughly fifteen claims
+against the live compiler on 2026-08-20 and contended with nobody), and test
+corpora and compile-fail fixtures are separate files that do not regenerate the
+seed.
+
+*Stated with its limitation: this lane has not run a bootstrap. The reasoning is
+from the roadmap's own rules — fixed-point convergence, seed regeneration, never
+change the compiler's idiom in one pass — and those rules exist because someone
+hit the failure. The Cranelift lane has direct experience and should be believed
+over this section where they differ.*
+
 The practical reading: **semantic authority is a single lock, held by one lane,
 and it does not shard.** A second lane cannot be given "some of" arena brands or
 "part of" the resource model without producing exactly the divergence D-2
