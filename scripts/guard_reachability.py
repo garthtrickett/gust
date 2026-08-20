@@ -5,6 +5,9 @@ A `guard-*` recipe that no workflow runs looks like coverage and provides none.
 This repository has hit that shape repeatedly, so the check is mechanical here
 rather than a thing anyone has to remember.
 
+The justfile is not one file: it `import`s several fragments, and recipes and
+`just` calls in those fragments count exactly the same as ones in the root.
+
 Reachability has three sources and all three matter. Counting only the first
 reports far too many orphans:
 
@@ -30,35 +33,59 @@ REGISTRIES = (
 )
 ALLOWLIST = ROOT / "scripts" / "guard_reachability_allowlist.json"
 
-RECIPE_HEAD = re.compile(r"^([a-zA-Z0-9_-]+)\s*(?:\+?[a-zA-Z0-9_=\"'\s]*)?:(.*)$")
+IMPORT = re.compile(r"^\s*import\s+\??\s*['\"]([^'\"]+)['\"]", re.M)
+RECIPE_HEAD = re.compile(r"^([a-zA-Z0-9_-]+)([^:]*):(.*)$")
 JUST_CALL = re.compile(r"just\s+(?:--\S+\s+)*([a-zA-Z0-9_-]+)")
 NAME = re.compile(r"[a-zA-Z0-9_-]+")
 
 
+def justfile_sources(path, seen=None):
+    """The root justfile plus every fragment it imports, transitively.
+
+    `just` merges imports into one namespace, so a recipe defined in a fragment
+    and a `just other-recipe` call written inside one are indistinguishable from
+    the same thing in the root file. Reading only the root invents orphans.
+    """
+    seen = seen if seen is not None else []
+    path = path.resolve()
+    if path in [p.resolve() for p in seen] or not path.exists():
+        return []
+    seen.append(path)
+    text = path.read_text()
+    out = [text]
+    for match in IMPORT.finditer(text):
+        out.extend(justfile_sources(path.parent / match.group(1), seen))
+    return out
+
+
 def parse_justfile(text):
-    """Return {recipe: [recipes it can reach directly]}."""
+    """Return ({recipe: [recipes it reaches]}, {recipes that take parameters})."""
     edges = {}
     bodies = {}
+    parameterised = set()
     current = None
     for line in text.split("\n"):
         if line[:1] in (" ", "\t"):
             if current:
                 bodies[current].append(line)
             continue
-        if line.startswith("#") or not line.strip():
+        if line.startswith("#") or not line.strip() or ":=" in line:
             continue
         match = RECIPE_HEAD.match(line)
         if not match:
             continue
         current = match.group(1)
-        edges[current] = [d for d in match.group(2).split() if NAME.fullmatch(d)]
+        # `name args:` declares parameters; `name: dep dep` declares dependencies.
+        if match.group(2).strip():
+            parameterised.add(current)
+        edges[current] = [d for d in match.group(3).split() if NAME.fullmatch(d)]
         bodies[current] = []
     # A recipe may also shell out to `just other-recipe`, which is an edge too.
     for recipe, body in bodies.items():
         for call in JUST_CALL.finditer("\n".join(body)):
             if call.group(1) in edges:
                 edges[recipe].append(call.group(1))
-    return edges
+    return edges, parameterised
 
 
 def workflow_roots(edges):
@@ -95,8 +122,10 @@ def main():
                         help="print the current orphans and exit 0")
     args = parser.parse_args()
 
-    edges = parse_justfile(JUSTFILE.read_text())
-    guards = {r for r in edges if r.startswith("guard-")}
+    edges, parameterised = parse_justfile("\n".join(justfile_sources(JUSTFILE)))
+    # A recipe that takes arguments cannot be a gate on its own -- something has
+    # to supply the arguments -- so only argument-free recipes are checked.
+    guards = {r for r in edges if r.startswith("guard-") and r not in parameterised}
     seen = reachable(edges, workflow_roots(edges))
     unreached = guards - seen
     orphans = sorted(unreached - registry_named(unreached))
