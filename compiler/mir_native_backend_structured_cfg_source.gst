@@ -1977,13 +1977,9 @@ func mir_native_structured_cfg_deferred_reason(
                     );
                 }
                 mut consequence := ctx[statement.If.consequence];
-                mut alternative := ctx[statement.If.alternative];
                 mut then_statements:
                     std.Vector[ast.Statement[ctx], ctx] :=
                         ctx[consequence.statements];
-                mut else_statements:
-                    std.Vector[ast.Statement[ctx], ctx] :=
-                        ctx[alternative.statements];
                 mut nested := mir_native_structured_cfg_deferred_reason(
                     then_statements,
                     ctx
@@ -1991,12 +1987,25 @@ func mir_native_structured_cfg_deferred_reason(
                 if len(nested) > 0 {
                     return std.Clone(ctx, nested);
                 }
-                nested = mir_native_structured_cfg_deferred_reason(
-                    else_statements,
-                    ctx
-                );
-                if len(nested) > 0 {
-                    return std.Clone(ctx, nested);
+                // An `if` with no `else` has an EMPTY alternative index.
+                // Dereferencing it read uninitialised arena memory and crashed
+                // roughly 40% of runs on `if <a> > <b> { ... }` with no else --
+                // nondeterministic, so single runs looked fine. Check first,
+                // as every other alternative access in this codebase does.
+                if statement.If.alternative !=
+                   empty[Index[ast.BlockStatement[ctx], ctx]]
+                {
+                    mut alternative := ctx[statement.If.alternative];
+                    mut else_statements:
+                        std.Vector[ast.Statement[ctx], ctx] :=
+                            ctx[alternative.statements];
+                    nested = mir_native_structured_cfg_deferred_reason(
+                        else_statements,
+                        ctx
+                    );
+                    if len(nested) > 0 {
+                        return std.Clone(ctx, nested);
+                    }
                 }
             }
             if statement.tag == 8 || statement.tag == 9 {
