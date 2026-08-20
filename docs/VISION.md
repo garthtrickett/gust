@@ -441,6 +441,18 @@ A status marker is not a quality judgement and does not weaken a Part's authorit
 
 Where a Part splits, the marker names the split by section. `docs/ONE_WAY_LEDGER.md` records, per rule, whether the compiler currently does what the Part says.
 
+**Numbered subsections carry a second, finer status, and it is not the same scale.** Ten `x.y` subsections were added on 2026-08-20, all of them design work on decisions that were open. A Part marker answers *is this scheduled*; a subsection marker answers *has anyone agreed to it*. A reader who applies the Part's COMMITTED marker to a subsection inside it will read an undecided proposal as settled policy, which is the same confusion §0.17 exists to prevent, one level down.
+
+| Subsection wording | State | Who can change it |
+| --- | --- | --- |
+| **"— proposed"**, **"Recommendation for …"** | This lane's design work. **Nobody has ruled on it.** Written to be argued with. | Anyone with a better argument |
+| **"Proposed leading direction"**, **"Leading proposal"** | The operator has indicated a preference. **Not closed** — the requirement it answers still stands. | The operator |
+| **A decision stated with a date** | Decided. §0.15 carries the status; the subsection carries the reasoning. | The operator, by reopening the OD |
+
+Two subsections fit none of these and should not be read as proposals: **§56.1** is a target list for a review §0.11 already requires, and **§20.1** records a resolved decision.
+
+**The rule that keeps this honest: a subsection may not promote itself.** Rewording "proposed" to "leading" is a status change, and §0.15 is the only place a status changes. If a subsection's wording and the register disagree, the register wins.
+
 ## 0.18 Verification index
 
 Which sections have been checked against the compiler, and where the evidence
