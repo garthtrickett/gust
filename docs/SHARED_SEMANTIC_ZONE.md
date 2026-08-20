@@ -136,24 +136,53 @@ uses a substring search (`compiler/codegen.gst:1854`). The same source can be
 classified differently by the two compilers. This is a semantics divergence
 inside the bootstrap chain.
 
-### D-3 — `str ==` typechecks and emits invalid C
+### D-3 — `str ==` has no defined meaning — **miscompile closed 2026-08-19, semantics still open**
 
-Accepted by the typechecker, lowered to `==` over two `Slice_unsigned_char`
-structs. `VISION.md` §16 makes the operator set compiler-owned, so the fix is
-zone work.
+Originally: accepted by the typechecker and lowered to `==` over two
+`Slice_unsigned_char` structs, which is not valid C, so the failure surfaced
+from the host C compiler against generated code rather than from Gust against
+the user's source.
+
+**The miscompile is closed.** Patch S1.1 (#74) made both compilers reject `==`
+and `!=` when either operand is `str`, with a byte-identical message naming
+`std.str_eq`. Verified 2026-08-20 at `b47d0049`: the string is present in
+`src/typechecker/visitor.rs` and `compiler/typechecker.gst`, and
+`guard-stdlib-s1-str-equality-diagnostic` asserts both, precisely so the two
+backends cannot drift into different explanations of the same program.
+
+**The row stays open** because rejecting an operator is not deciding what it
+means. `VISION.md` §16 makes the operator set compiler-owned, so defining `==`
+on `str` as content equality remains zone work, tracked as `TASK_STDLIB.md`
+CR-1. Until it lands, `std.str_eq(a, b)` is the only spelling.
 
 ### D-4 — Resource semantics prerequisites are unmet and their record is stale
 
 `STEP52_RESOURCE_SEMANTICS.md` items 2 and 6 (lines 20–27) — automatic resource lifecycle
-enforcement, and an AST/typechecker representation for `defer` — are unmet. The
-document was last modified 2026-06-28, before Phase 15 closed. `VISION.md` §27
-marks shared ownership open as OD-3.
+enforcement, and an AST/typechecker representation for `defer` — were recorded as
+unmet. The document was last modified 2026-06-28, before Phase 15 closed.
+`VISION.md` §27 marks shared ownership open as OD-3.
+
+**Re-verified 2026-08-19 by Patch S1.7 (#87).** Item 6 is superseded: `defer` is
+an AST node, and `STEP52_RESOURCE_SEMANTICS.md` predates that. The live gap is
+narrower than the row says — representation, transfer state, and `defer` are
+present; what is missing is destructor *declaration* and enforcement. There is
+one built-in destructor and no source syntax to declare another, which is why
+`MutexGuard` is blocked. Stated in full as `TASK_STDLIB.md` CR-5 and pinned by
+`guard-stdlib-s1-resource-prerequisites`.
+
+One part of the row has since been decided by implementation rather than by
+decision: OD-3 is still marked open in `VISION.md` §27 while `std.Rc`,
+`std.RcNew`, and `std.RcNode` already ship. Tracked as `TASK_STDLIB.md` CR-9.
 
 ### D-5 — String bounds failures terminate the process
 
 `std_str_slice` and `std_str_byte_at` call `exit(1)` on out-of-range input
 (`src/runtime/strings.c:16,27`). `VISION.md` §34 requires a panic to terminate
 the request, task, or job — not the deployment.
+
+Still open, confirmed 2026-08-20 at `b47d0049` (`src/runtime/strings.c:20,30`).
+Stated as `TASK_STDLIB.md` CR-3 and filed as issue #91. No phase has scheduled
+it.
 
 ## Citing evidence
 
@@ -176,3 +205,8 @@ lane found it inconvenient.
 
 Open defects are removed when fixed, and their fix is recorded in the owning
 phase's roadmap.
+
+A defect that is *partly* fixed is narrowed in place rather than deleted, and the
+narrowing states what closed, what remains, and the evidence for each. D-3 is the
+worked example: the miscompile closed and the semantic question did not, and
+deleting the row would have lost the half that is still true.
