@@ -1769,6 +1769,23 @@ mechanism:
 > samples.** Before that it is a reading, and "2 outstanding" is
 > indistinguishable from "2 of 35 registered so far".
 
+**The same floor was in a second instrument, and it would have failed silently.**
+Retiring the watcher armed alongside that gate showed it carried
+`if len(r) < 5: exit` — the identical context-calibrated bound, written at the
+same time, in the tool whose whole job is to report. On a two-run wave it would
+never have fired: no false alarm, no error, just permanent silence
+indistinguishable from "nothing to report".
+
+That is the *check you run in passing* rule with a concrete second instance, and
+it sharpens it. The gate was fixed carefully because it was the thing being
+reasoned about; the watcher kept the bug because it was infrastructure around
+that reasoning. **The defect does not live in the artifact you are examining — it
+lives in the one you built to examine it with.**
+
+It is also the worse direction of the two. A gate with a bad floor refuses
+loudly and gets investigated. A *watcher* with a bad floor reports nothing, and
+nothing is what a quiet watcher is supposed to report.
+
 Deriving the expected wave from the workflow files instead was tried and
 abandoned: a regex over `.github/workflows/*.yml` reported 11 unfiltered
 workflows where a direct check found 5, because it only recognised a `paths:`
