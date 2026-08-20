@@ -367,6 +367,17 @@ func mir_native_generic_const_body(
                 if declared_type.tag != 0 {
                     return outcome;
                 }
+                // A name declared twice is a source-level error. Binding over
+                // the first would quietly give this route an answer for a
+                // program that must be refused, so decline instead.
+                mut shadowed := mir_native_generic_const_lookup(
+                    env,
+                    statement.VarDecl.name,
+                    ctx
+                );
+                if shadowed.known == 1 {
+                    return outcome;
+                }
                 mut initial := mir_native_generic_const_eval(
                     ctx[statement.VarDecl.value],
                     env,
@@ -385,6 +396,16 @@ func mir_native_generic_const_body(
             } else if statement.tag == 5 {
                 mut target := ctx[statement.Assignment.left];
                 if target.tag != 0 {
+                    return outcome;
+                }
+                // Likewise, assigning to a name this evaluator never saw
+                // declared means the shape is not the one claimed here.
+                mut existing := mir_native_generic_const_lookup(
+                    env,
+                    target.Identifier.name,
+                    ctx
+                );
+                if existing.known == 0 {
                     return outcome;
                 }
                 mut assigned := mir_native_generic_const_eval(
