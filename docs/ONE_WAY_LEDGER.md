@@ -448,6 +448,9 @@ than a patch: the fix
 is a Ring 1 semantic decision (OD-1) owned by the Cranelift lane under
 `docs/SHARED_SEMANTIC_ZONE.md`'s "Fiber scheduling contract" row.
 
+The narrower question this row leaves behind — whether `std.Spawn` gains a handle
+or is deprecated — is registered as **OD-11** (`docs/VISION.md` §20.1).
+
 *Direction set 2026-08-20 (`docs/VISION.md` §21): transparent suspension unless
 one of three named fatal blockers is hit.* **The row stays ABSENT.** A direction
 is not an implementation, and this ledger scores the compiler, not the roadmap —

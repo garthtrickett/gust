@@ -191,7 +191,9 @@ now it does not. Under transparent suspension `std.Spawn` cannot be the low-leve
 primitive *as it stands*, because it hands back no handle, and a structured layer
 needs something to own. So the question narrows from "which fate" to "does it
 gain a handle or get deprecated" — a smaller question, and one the Cranelift lane
-can answer without reopening the suspension model.
+can answer without reopening the suspension model. **Registered as OD-11 on
+2026-08-20** and stated in full at `docs/VISION.md` §20.1, so that it is tracked
+in its own right rather than as a residue of the decision it came out of.
 
 ### 3.3 The C library ecosystem — `general-ecosystem.md` is retired
 

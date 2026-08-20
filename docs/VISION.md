@@ -381,9 +381,12 @@ second, drifting copy of it.
 | OD-3 | SAM state ownership under linear resources and no interior mutability | **OPEN, partly decided by implementation** — `std.Rc` already ships | v0.5 | §27, §38; the discrepancy as `TASK_STDLIB.md` CR-9; evidence in `docs/ONE_WAY_LEDGER.md` E8 |
 | OD-4 | WASM stack-switching support and payload cost | **OPEN** | v0.5 | §21, §41 |
 | OD-6 | Form of the intent layer | **OPEN** | v1.0 | Part XXI |
+| OD-11 | **The fate of `std.Spawn`** — does it gain a task handle and become the low-level primitive, or is it deprecated? | **OPEN 2026-08-20** | Demo | §20 |
 | OD-5 | Supplier certification staffing model | **OPEN** | Post-1.0 | Part XVI |
 
 There is no OD-7. The number is unused and nothing in the repository references it; it is recorded here so a reader who notices the gap does not go looking.
+
+**Numbers are append-only and never recycled.** OD-11 was opened on 2026-08-20 with OD-7 sitting vacant, deliberately. A recycled number reads correctly in every new document and silently wrong in every old one, and the failure is invisible precisely because the reference resolves. A permanent gap costs one sentence of explanation; a reused number costs a misreading nobody can see.
 
 **How to cite a status elsewhere.** Attribute it, never assert it: "§27 marks
 this open" is safe, "this is open" is not. An attributed citation is wrong only
@@ -846,6 +849,16 @@ Cancellation propagates from parent tasks to children. Task failures propagate t
 Fire-and-forget work is not permitted in normal request code. Durable background work uses jobs.
 
 Channels may exist as a lower-level primitive. Actors are a library or platform pattern, not the universal concurrency model.
+
+### 20.1 OD-11 — the fate of `std.Spawn`
+
+**The question.** `std.Spawn` starts work that no scope owns, returns no handle, and has no join or cancellation path (`docs/ONE_WAY_LEDGER.md` E9). Either it **gains a task handle** and becomes the low-level primitive beneath the structured layer, the way §20 already permits for channels — or it is **deprecated**, and a scoped spawn is the only spelling. Today it is neither, which is why §20 forbids fire-and-forget in request code while the only primitive available is fire-and-forget.
+
+**Why it is opened now, and why it is small.** This was previously a sub-clause of OD-1: which fate `std.Spawn` deserved depended on whether suspension would be transparent or coloured. **OD-1's direction removed that dependency** (§21). Under transparent suspension, `std.Spawn` cannot be the low-level primitive *as it stands* — it hands back nothing, and a structured layer needs something to own. So the residue is a single binary question that the owning lane can answer without reopening the suspension model. It is registered rather than left implicit because a question that has narrowed enough to be answerable is exactly the kind that gets forgotten inside the larger one it came from.
+
+**The leaning, not a decision.** Deprecation. §20 already routes durable background work to jobs and unowned work is not permitted in request code, so the use case a bare `std.Spawn` serves is one the design has already declined; keeping it means keeping two spellings for one concept, which is the thing §13 and `docs/ONE_WAY_LEDGER.md` exist to prevent. The argument the other way is real and should be made if anyone holds it: a handle-bearing `std.Spawn` gives the structured layer something to be built *out of*, and a language with no low-level primitive at all has to get the high-level one right on the first attempt.
+
+**Owner: the Cranelift lane**, under `docs/SHARED_SEMANTIC_ZONE.md`'s "Fiber scheduling contract" row. Reported as `TASK_STDLIB.md` CR-8 and issue #101. Status owned by §0.15.
 
 ## 21. Suspension model (OD-1, OD-4)
 
