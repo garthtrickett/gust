@@ -1992,6 +1992,14 @@ indistinguishable from a complete one.
   EOF
   ```
 
+  **Assert both sides parsed before believing the result.** "No sections
+  missing" is what a comparison of two empty sets reports, and both sides here
+  are produced by regexes over documents that change. Re-run 2026-08-20 after
+  many ledger edits: 34 sections carried evidence, 35 were indexed, and nothing
+  was missing — a clean result worth trusting only because the two counts were
+  checked first, and because dropping one indexed section was confirmed to make
+  the check fail.
+
   **Two traps, both of which produced false positives the first time this was
   checked.** A naive comparison reported five missing sections and all five were
   artifacts:
