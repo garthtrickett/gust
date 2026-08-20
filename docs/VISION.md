@@ -1501,6 +1501,26 @@ PostgreSQL-specific features are exposed through explicit typed extensions rathe
 
 Query results are strongly typed. Database schema changes regenerate types and produce compile-time errors where application code is no longer compatible.
 
+### 55.1 What the derivation must produce — proposed
+
+Row 7 of `docs/DEMO_TARGET_PROGRAM.md`, and the largest single item on that list. OD-2 settled *who* derives — the compiler, because §13's ban on user-written generic functions stands. Nothing states *what* comes out of the derivation.
+
+**The claim this section makes: a query site derives three things, not one, and they must come out of one derivation rather than three passes.**
+
+At a site such as `from Issue where workspace == scope and state == Open`, the compiler must produce:
+
+1. **The result type.** §55's existing commitment — filters, joins, aggregates, projections and pagination each transform it, computed by the compiler because users cannot express the computation.
+2. **The effect requirement.** The entity determines what authority the query needs: reading `Issue` requires `db.read<Issue>`. The compiler derives the *requirement*; §18.1's rule 1 still applies, so the enclosing function must have **declared** a set that covers it. Derivation never widens a declaration — it only says what the declaration must contain.
+3. **The scope obligation.** §56.2's provenance rule attaches here: which scoped entities the query roots at, and whether each obligation is discharged by a predicate flowing from a `Scope[…]` binding.
+
+**Why one derivation and not three.** These three read the same query structure — the entity set, the join graph, the predicate list. Computed separately they can disagree about it, and the disagreement is silent because each pass individually succeeds. A join that the type derivation treats as one entity and the scope derivation treats as another produces a well-typed query with an unchecked obligation, which is §56.1's attack class 2 arriving through the back door rather than the front. **One walk over one structure, emitting three facts, cannot disagree with itself.**
+
+**What is not derived.** The operator set (§16 is compiler-owned and closed), the predicate language, and any user extension of the builder. PostgreSQL-specific features arrive as explicit typed extensions (§55) rather than as a generic escape hatch, and the escape hatch that does exist is §57's privileged raw SQL — outside the derivation, and therefore outside all three of its guarantees. That is the honest cost of having an escape hatch and the reason §56.1 asks whether holding that capability is non-transitive.
+
+**Where the results live.** Query results allocate, so a query needs a destination arena, and §11.1's finding applies unchanged: the rows must outlive the call that produced them, so the arena is the caller's rather than the callee's scratch. The brand parameter that makes this expressible is the same one `Result[T, ctx]` already carries.
+
+**The sequencing consequence, restated because it is the practical one.** `docs/DEMO_TARGET_PROGRAM.md` places this row after scope soundness deliberately. A builder built before §56.2's obligation model exists would derive one of the three facts and have the other two retrofitted, and retrofitting a scope obligation into a finished derivation is how the presence-versus-provenance distinction gets quietly weakened — the retrofit will be tempted to match on syntax, because the structure it needed was not kept.
+
 ## 56. Tenant and authorization enforcement
 
 **This is the lead product claim (§1) and the whole point of the demo (§0.14).**
