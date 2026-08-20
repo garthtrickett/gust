@@ -365,19 +365,34 @@ Everything from v1.0 down is specified in this document so that demo-stage decis
 
 ## 0.15 Open decisions
 
-| # | Question | Blocks | Reference |
-|---|---|---|---|
-| **OD-9** | **Model fluency** — can an agent write Gust well, and how do we get there from no corpus? *Thesis-invalidating. Starts week one.* | Demo | §0.7 |
-| **OD-8** | **Soundness of the tenant-scoping analysis** — adversarial review before publication. *Thesis-invalidating.* | Demo | §56 |
-| OD-1 | Transparent suspension vs coloured async (server). **Recommendation recorded in §21**; decision owned by the Cranelift lane | Demo | §21 |
-| OD-2 | ~~Generic functions vs compiler-owned query derivation~~ — **RESOLVED 2026-08-20: compiler-owned derivation; §13's ban stands** | — | §14 |
-| OD-10 | **Distribution for the product path** — currently unanswered | Month 4 | §0.11 |
-| OD-3 | SAM state ownership under linear resources and no interior mutability. **`std.Rc` already ships**, so part of this was decided by implementation — see `TASK_STDLIB.md` CR-9 | v0.5 | §27, §38 |
-| OD-4 | WASM stack-switching support and payload cost | v0.5 | §21, §41 |
-| OD-6 | Form of the intent layer | v1.0 | Part XXI |
-| OD-5 | Supplier certification staffing model | Post-1.0 | Part XVI |
+**This table is the register. It is the only place an OD is opened, closed, or
+renumbered.** Other documents may *discuss* an OD and should link back here; none
+of them may change its status. The `Stated in full` column names the one place
+that carries the reasoning, so that this table stays an index and never becomes a
+second, drifting copy of it.
+
+| # | Question | Status | Blocks | Stated in full |
+|---|---|---|---|---|
+| **OD-9** | **Model fluency** — can an agent write Gust well, and how do we get there from no corpus? *Thesis-invalidating. Starts week one.* | **OPEN** | Demo | §0.7; blocked-on evidence in `TASK_STDLIB.md` CR-6 and `docs/ONE_WAY_LEDGER.md` E1 |
+| **OD-8** | **Soundness of the tenant-scoping analysis** — adversarial review before publication. *Thesis-invalidating.* | **OPEN** | Demo | §56; sequencing in `docs/DEMO_TARGET_PROGRAM.md` |
+| OD-1 | Transparent suspension vs coloured async (server) | **OPEN** — recommendation recorded, decision owned by the Cranelift lane | Demo | §21; evidence in `docs/ONE_WAY_LEDGER.md` E9; escalation as `TASK_STDLIB.md` CR-8 |
+| OD-2 | ~~Generic functions vs compiler-owned query derivation~~ | **RESOLVED 2026-08-20** — compiler-owned derivation; §13's ban stands | — | §14; consequences in §13 and `docs/DEMO_TARGET_PROGRAM.md` |
+| OD-10 | **Distribution for the product path** | **OPEN** — currently unanswered | Month 4 | §0.11 |
+| OD-3 | SAM state ownership under linear resources and no interior mutability | **OPEN, partly decided by implementation** — `std.Rc` already ships | v0.5 | §27, §38; the discrepancy as `TASK_STDLIB.md` CR-9; evidence in `docs/ONE_WAY_LEDGER.md` E8 |
+| OD-4 | WASM stack-switching support and payload cost | **OPEN** | v0.5 | §21, §41 |
+| OD-6 | Form of the intent layer | **OPEN** | v1.0 | Part XXI |
+| OD-5 | Supplier certification staffing model | **OPEN** | Post-1.0 | Part XVI |
 
 There is no OD-7. The number is unused and nothing in the repository references it; it is recorded here so a reader who notices the gap does not go looking.
+
+**Why the register is centralised rather than distributed.** An open decision that
+lives only in the document that happened to prompt it inherits that document's
+readership, and the decisions here are exactly the ones that must not be resolved
+by whoever reads the narrowest file. OD-3 is the worked example of the failure
+mode: it was recorded open in §27, and `std.Rc` shipped anyway. Nothing lied —
+the shipping lane simply was not reading §27. A register does not prevent that,
+but it makes the discrepancy findable from one place, which is how CR-9 came to
+be written at all.
 
 ## 0.16 Non-goals
 
