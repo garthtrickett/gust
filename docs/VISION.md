@@ -382,7 +382,7 @@ second, drifting copy of it.
 | OD-4 | WASM stack-switching support and payload cost | **OPEN** — recommendation recorded and then revised on checked support data, 2026-08-20 (§21.1) | v0.5 | §21, §41 |
 | OD-6 | Form of the intent layer | **OPEN** — leading proposal recorded 2026-08-20 (§117.1): contracts on capabilities as the core, examples as the authoring surface, properties for depth | v1.0 | Part XXI |
 | OD-11 | ~~The fate of `std.Spawn`~~ | **RESOLVED 2026-08-20** — bare form deleted; scoped spawn returns a linear task handle | Demo | §20.1 |
-| OD-5 | Supplier certification staffing model | **OPEN** | Post-1.0 | Part XVI |
+| OD-5 | Supplier certification staffing model | **DIRECTION SET 2026-08-20** — split the function: an agent does conformance, the operator does trust and commerce; pricing still open | Post-1.0 | Part XVI |
 
 There is no OD-7. The number is unused and nothing in the repository references it; it is recorded here so a reader who notices the gap does not go looking.
 
@@ -1861,7 +1861,44 @@ Self-hosted secret providers must implement Gust's provider protocol and be cert
 
 > **Status: SPECULATIVE.** §2 already says certification is a commercial service layered on the compiler-enforced guarantee, never a substitute for it.
 
-*Post-1.0 commercial service tier (§2), not the core guarantee. Assumes a certification function with real staffing. OD-5 is unresolved; do not commit to supplier certification externally until it is.*
+*Post-1.0 commercial service tier (§2), not the core guarantee. Assumes a certification function with real staffing. **Do not commit to supplier certification externally until OD-5 is resolved.***
+
+> **Direction set 2026-08-20 — split the function, do not staff it whole.** An
+> agent does the recurring mechanical work; the operator does the human and
+> commercial work. That is the answer to "who does this, forever", and it changes
+> the shape of the cost from a team to a person plus a process.
+>
+> **The dividing line, stated so it survives contact with a hard case: an agent
+> can verify that a contract is well-formed and current. Only a person can decide
+> that a supplier is trustworthy.** Conformance is checkable; trust is a
+> judgement with liability attached, and nothing in §83–§86 makes it otherwise.
+>
+> | Agent — conformance | Operator — trust and commerce |
+> | --- | --- |
+> | Derive and maintain the capability contract from the supplier's API surface | Decide which suppliers are admitted at all |
+> | Detect supplier API changes and flag contract breakage | Negotiate terms, SLAs, and liability |
+> | Verify §84's reliability policy is *declared* — timeout, retry, idempotency, fallback | Decide whether a declared policy is *acceptable* |
+> | Verify §85's data-minimisation declarations match what the contract actually sends | Approve a destination region, a retention period, a purpose |
+> | Regenerate contracts on version bumps and report what moved | **Revoke a supplier, and tell the customers who depend on it** |
+>
+> **This is `docs/AGENT_TOPOLOGY.md` §6's rule one level out.** That section
+> argues mechanical decisions belong in documents and product decisions belong to
+> the operator, with no third category. Supplier certification looked like a third
+> category — an ongoing staffed function that is neither — and it is not one: it
+> splits cleanly along the same seam once *conformance* and *trust* are named as
+> different questions.
+>
+> **A supplier-certification agent would be a legitimate fourth lane** under
+> `AGENT_TOPOLOGY` Constraint C, because it has a genuinely disjoint domain — the
+> supplier contract files — with no shared-semantic-zone dependency. Post-1.0, and
+> noted here so the topology count is known to be extensible rather than fixed at
+> three.
+>
+> **What this does not resolve.** How the tier is priced, and what the guarantee
+> is worth to a buyer, remain open. Those are §2's commercial questions rather
+> than §0.15's design ones, and the warning above still stands: **saying "we
+> certify our suppliers" is cheap, and being it is a commitment** — an agent
+> lowers the recurring cost, it does not remove the promise.
 
 ## 83. Supplier protocol
 
