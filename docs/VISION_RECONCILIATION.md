@@ -46,7 +46,7 @@ named.
 | `compiler-plan.md` | no | FFI/provenance/layout ordering, plus the self-hosting bootstrap discipline. Largely superseded by `TASK.md` phases 13–19. |
 | `mir-to-cranelift.md` | no | Roadmap tail, phases 18–25. Consistent with `TASK.md`. **Its content is now recorded in `docs/ROADMAP_TAIL.md`** — the three citations to it in this document previously pointed at a file that is not in the repository. |
 | `general-ecosystem.md` | no | **Retired.** See §3.3 and Appendices A–B. |
-| `gust-fullstack.md` | no | Full-stack architecture — gustrpc, Reactive SAM, Lit-style templates. Speculative; matches VISION Parts IX and XIII. |
+| `gust-fullstack.md` | no | Full-stack architecture — gustrpc, Reactive SAM, Lit-style templates. Speculative; matches VISION Parts IX and XIII. **Its Slice 0 is now recorded in `docs/WEB_SLICE_0.md`**, which also states where Slice 0 and §0.14 contradict each other. |
 | `full-stack-slice-0.md` | no | Executable spec for the smallest full-stack loop. Speculative but well scoped; use verbatim when Part IX is committed. |
 
 ---
