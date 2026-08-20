@@ -52,7 +52,7 @@ This is a scheduling fact, not an objection to the two-lane model.
 - [ ] Patch S1.4 — Branded Collection Type Consistency
 - [ ] Patch S1.5 — Clone Arena Destination Normalization
 - [ ] Patch S1.6 — Stdlib Composition Regression Program
-- [ ] Patch S1.7 — MutexGuard Prerequisite Audit
+- [x] Patch S1.7 — MutexGuard Prerequisite Audit — DONE
 - [ ] Patch S1.8 — MutexGuard Prototype
 - [ ] Patch S1.9 — MutexGuard Scope and Resource Tests
 - [ ] Patch S1.10 — MutexGuard Fiber Contention Tests
@@ -330,9 +330,20 @@ without it.
    unmet — resource lifecycle enforcement is inert, and `defer` has no
    AST/typechecker representation. `VISION.md` §27 marks shared ownership open
    as OD-3.
-3. **Smallest generic change:** whatever Phase 15's resource authority still
-   lacks to express one non-directory linear resource end to end. Determined by
-   Patch S1.7, which is report-only.
+3. **Smallest generic change**, determined by Patch S1.7 on 2026-08-19, is two
+   things:
+   **(a) a way to declare destructor identity in source for a user-defined type.**
+   `env_register_struct_linear_destructor` is called from exactly two places in
+   `compiler/typechecker.gst`, both registering `os.CloseDir`, the second gated on
+   a directory-handle predicate. No keyword, attribute, or annotation exists in
+   either compiler's lexer or parser for a user type to name its destructor.
+   **(b) wiring the existing scope-exit cleanup validator into typechecking.**
+   `env_validate_linear_resource_scope_exit_cleanup` is called only from test
+   entries. A program that opens a directory handle and never closes it compiles
+   clean, so even the one supported resource type is unenforced.
+   Representation, transfer state, and `defer` are already present — `defer` in
+   particular became an AST node after `STEP52_RESOURCE_SEMANTICS.md` was
+   written. The gap is destructor declaration and enforcement, not modelling.
 4. **Affected:** typechecker resource state, canonical MIR resource values,
    scope-exit cleanup, destructor scheduling, `src/runtime/*` mutex contract.
 5. **MIR-to-C:** yes.
@@ -342,6 +353,12 @@ without it.
 No Mutex-specific compiler support may be added under any circumstances. If the
 generic change is too large, `MutexGuard` is deferred and the `Lock(); defer
 Unlock();` pattern remains the recommended form.
+
+**S1.7 verdict: S1.8 through S1.11 stay blocked.** A `MutexGuard` needs a
+destructor, and no user-defined type can declare one. Building it today would
+require hardcoding `Mutex` into the compiler the way `os_Dir_ctx` is hardcoded to
+`os.CloseDir`, which the paragraph above forbids. `Lock(); defer Unlock();`
+remains the recommended form until CR-5 lands.
 
 ## Verification Policy
 
