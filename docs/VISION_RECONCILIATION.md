@@ -425,6 +425,29 @@ distance is written down and costed rather than rediscovered.
 
 ---
 
+### A pattern worth naming before reading the counts
+
+`docs/ONE_WAY_LEDGER.md` scores 41 rules and most do not hold. Read alone that
+invites the wrong conclusion, so it is worth stating what three of those rows
+found:
+
+| Section | What it asks for | What exists |
+| --- | --- | --- |
+| §79 | Generated checks that substitute for reading | 409 guards, 82 differential, 115 negative fixtures (~44% of the corpus) |
+| §109 | A stable diagnostic identifier | Identity pinned as byte-identical English prose in a CI guard |
+| §111 | A run is a clean observation | Byte-identical fixed-point self-compilation, enforced on every bootstrap |
+
+In each case the *practice* is present, well resourced, and sustained — and
+aimed at the compiler rather than at applications, because there are no
+applications yet.
+
+That distinguishes a project that has not learned a discipline from one that has
+not yet had a second target for it. The ledger measures surface: how many rules
+the compiler enforces for user programs. It does not measure whether the missing
+surface can be built, and on the evidence of these three rows that is not the
+open question. The open questions remain the ones §0.15 already names — OD-8 and
+OD-9.
+
 ## 7. The declared priority: retiring C
 
 None of the nine documents states this as plainly as it needs to be, and it is

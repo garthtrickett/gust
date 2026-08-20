@@ -101,8 +101,9 @@ when the backend does.
 | 38 | Packages | A package is a directory tree with a manifest; lockfiles record provenance | no package identity | **ABSENT** — E21 |
 | 39 | Conformance checking | Generated checks substitute for reading | trusting unread output | **PARTIAL** — E22 |
 | 40 | Machine-readable diagnostics | Structured form with a stable rule identifier and candidate edits | prose-only errors | **PARTIAL** — E23 |
+| 41 | Reproducibility | A run is a clean observation; nondeterministic runs are discarded | averaging over noisy runs | **PARTIAL** — E24 |
 
-Counts: 9 `HOLDS`, 9 `PARTIAL`, 7 `VIOLATED`, 1 `DEFERRED`, 14 `ABSENT`.
+Counts: 9 `HOLDS`, 10 `PARTIAL`, 7 `VIOLATED`, 1 `DEFERRED`, 14 `ABSENT`.
 
 Row 27 is the one in motion. It is the declared priority and several other rows
 resolve with it — see E17.
@@ -984,6 +985,58 @@ basic component of that layer, and `docs/VISION.md` §0.7 lists them as demo
 scope. `PARTIAL` is accurate: the payload has structure and precise spans; what
 is missing is identity and a machine-readable form, which is the half an agent
 needs.
+
+### E24 — reproducibility is enforced, on the compiler rather than on runs (row 41)
+
+§111 names four ingredients. One holds, two are absent, and one is absent for
+now — but the repository enforces a *stronger* property that §111 does not
+mention.
+
+| §111 ingredient | State |
+| --- | --- |
+| No install-time execution (§15) | **Holds** — no macros, no build scripts, no compile-time execution (E4) |
+| Content-addressed builds | Absent — no manifest, lockfile, or content addressing at all (row 38) |
+| Virtualized time and randomness (§76) | Absent — requires capabilities (E10) |
+| Deterministic scheduling (§77) | Absent (E22) |
+
+**What is enforced instead.** `make bootstrap` requires the compiler to be a
+fixed point of itself, byte for byte — `Makefile:199-202`:
+
+```make
+./build/gust_stage2_bin compiler/test_runner_entry.gst … > build/gust_stage3.c
+diff -u build/gust_stage2.c build/gust_stage3.c && echo "✅ Fixed-point bootstrap convergence achieved!"
+cp build/gust_stage3.c gust_v4.c
+```
+
+Stage 2 and stage 3 must be identical or the build fails, and the converged
+output becomes the committed seed. Object-level reproducibility has its own guard
+(`guard-cranelift-phase9g-object-reproducibility`), and Phase 18.15 extends it to
+artifact output.
+
+Byte-identical self-compilation is a demanding determinism property, checked on
+every bootstrap. It is simply about *the compiler's output*, whereas §111 is
+about *a program's run*.
+
+### The recurring pattern — worth reading before concluding anything from the counts
+
+E24 is the third instance of one shape, and it changes how the `ABSENT` and
+`PARTIAL` counts should be read:
+
+| Section | What it asks for | What exists |
+| --- | --- | --- |
+| §79 (E22) | Generated checks that substitute for reading | 409 guards, 82 differential, 115 negative fixtures — aimed at the compiler |
+| §109 (E23) | Stable diagnostic identity | Identity pinned as byte-identical English prose in a guard |
+| §111 (E24) | A run is a clean observation | Byte-identical fixed-point self-compilation, enforced every bootstrap |
+
+In each case the *practice* VISION argues for is present, well resourced, and
+sustained — and pointed at the compiler rather than at applications written in
+Gust, because there are no applications written in Gust yet.
+
+That is the difference between a project that has not learned a discipline and
+one that has not yet had a second target to apply it to. The counts in this
+ledger measure surface: how many rules the compiler enforces for user programs.
+They do not measure whether the team can build the missing surface, and on the
+evidence of these three rows that is not the open question.
 
 ## Maintenance
 

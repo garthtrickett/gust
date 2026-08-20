@@ -1578,6 +1578,10 @@ Every escape hatch requires explicit manifest declaration, human approval, defin
 
 > Escape hatches are isolated products with explicit loss-of-guarantee boundaries, not ordinary language features.
 
+> **Nothing enforces these boundaries yet, and one of them is inverted.** No escape-hatch machinery exists — no manifest, capability, signed adapter, isolation, or expiry (§97). The one real gate is that `extern` calls require `unsafe` (`compiler/typechecker.gst:4047`), which the built-in `os.*` surface bypasses entirely, so "arbitrary filesystem or process access" is currently the *ungated* path (`docs/ONE_WAY_LEDGER.md` E21, issue #108).
+>
+> This section is nonetheless the most reusable idea in the document: it is the only place that states guarantees weaken *by degree and by named boundary* rather than being binary. `docs/VISION_RECONCILIATION.md` §5 develops it into a proposed `gust guarantees` ledger, which is what would make "loss of guarantee" a thing a reviewer can read rather than a sentence in a specification.
+
 ---
 
 # Part XIX — Versioning and Compatibility
@@ -1697,6 +1701,10 @@ Sandboxes are disposable, content-addressed, and reproducible. Two runs of the s
 ## 111. Reproducibility
 
 Content-addressed builds, no install-time execution (§15), virtualized time and randomness (§76), and deterministic scheduling (§77) combine to make a run a clean observation.
+
+> **One of those four holds; a stronger property is enforced elsewhere.** Verified 2026-08-20 at `b47d0049`. No install-time execution is real (no macros, build scripts, or compile-time execution). Content-addressed builds, virtualized time and randomness, and deterministic scheduling are all absent.
+>
+> What *is* enforced is byte-identical self-compilation: `make bootstrap` fails unless stage 2 and stage 3 are identical, and the converged output becomes the committed seed (`Makefile:199-202`). Object reproducibility has its own guard. That is a demanding determinism property checked on every bootstrap — it is about the compiler's output rather than a program's run. `docs/ONE_WAY_LEDGER.md` E24.
 
 A nondeterministic run is not a weaker signal; it is a contaminated one, and must be discarded rather than averaged.
 
