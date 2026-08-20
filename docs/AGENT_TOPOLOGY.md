@@ -21,30 +21,51 @@ people reach for a manager to fix is a registrar, which is bookkeeping.
 
 ## 1. What is actually running
 
-Read from the Paseo daemon at 08:30 UTC on 2026-08-20.
+> **This is the section that rots by design.** It is an observation inside a
+> governance document, and it was already wrong within ninety minutes of being
+> written. Re-read it from the daemon before relying on it; the roles in §3 are
+> the durable part.
 
-| Agent | Started | Role | State |
+Read from the Paseo daemon and the GitHub API at **2026-08-20 09:57 UTC**.
+
+| Agent | Started | Lane | State |
 | --- | --- | --- | --- |
-| `1a71cf2` | 2026-08-16 | Cranelift / Phase 18 | running, 4 days |
-| `d7c8637` | 2026-08-20 01:01 | docs / vision | running |
-| `ccf58f6` | 2026-08-19 | docs impact review | idle, finished |
-| `Check In` ×1 per 5 min | schedule `d90c43b7` | monitor | each one dies after ~2 min |
+| `1a71cf2` | 2026-08-16 | Cranelift — semantic authority | **running**, 4 days |
+| `d7c8637` | 2026-08-20 01:01 | documentation | **running** |
+| `ccf58f6` | 2026-08-19 | stdlib (see below) | **idle since 08:52Z** |
+| `Check In` ×1 per 5 min | schedule `d90c43b7` | monitor | each dies after ~2 min |
 
-**Three working agents at most, and usually two.** That is the observed number,
-and the rest of this document argues it is also close to the right one.
+**Two working agents, not three — and three lanes with work in flight.** That gap
+is the finding, and it was invisible in the first revision of this table.
+
+**The stdlib lane is represented by an open PR and no live agent.** `ccf58f6`
+opened **#115** on `codex/stdlib-level3-citation` at 08:51:55Z and went idle at
+08:52:39Z — under a minute later. Its title ("take stock of this doc and how it
+will affect our .md files") does not name the lane it ended up working in, so
+neither the agent list nor the PR list alone shows that the stdlib lane has an
+unattended change in flight. **It took joining the two to see it**, which is
+precisely the §6 argument for a registrar restated as an observation.
+
+This is also the lifecycle defect §7 names, caught in the wild: an idle agent is
+indistinguishable from a stalled one, and `ccf58f6` recorded no terminal state.
+Whether #115 is finished, blocked, or forgotten is not answerable from anything
+on disk.
+
+**The Cranelift lane holds three PRs at once**, which is worth recording against
+§2's Constraint B: #109 (Phase 18 *closure*, 30/30 green, `MERGEABLE/CLEAN`,
+held), #107 (30/30 green but `CONFLICTING/DIRTY`, needs a rebase nobody has done),
+and #100 (30 runs, 0 complete — the wave currently occupying the shared runners).
+**One lane, three waves, and the two finished ones are blocked on something other
+than their own CI.**
 
 **The monitor is not an agent. It is a schedule that creates a new agent every
 five minutes and archives it on finish** (`*/5 * * * *`, `target.type:
-new-agent`, `archiveOnFinish: true`). Sixteen distinct monitor agents appear in
-a single 24-hour listing, each alive for about two minutes.
-
-That detail is not trivia; §5 turns on it.
+new-agent`, `archiveOnFinish: true`). Sixteen distinct monitor agents appear in a
+single 24-hour listing, each alive about two minutes. §5 turns on that detail.
 
 **There is no manager.** Nothing assigns work, orders merges, or resolves
-cross-lane conflicts. §6 argues that is correct, and names the thing that is
+cross-lane conflicts. §6 argues that is correct and names the thing that is
 genuinely missing instead.
-
----
 
 ## 2. The safe parallel count is not a count of agents
 
