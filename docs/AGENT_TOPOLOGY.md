@@ -322,6 +322,43 @@ check is added**, because on 2026-08-20 a stdlib PR sat unattended for over an
 hour and nothing in the system was looking for that — it is the one question this
 role can answer that no lane can answer about itself.
 
+### 5.2 Cadence — proposed: every 15 minutes, not every 5
+
+**Pick the interval from how fast the observed state actually changes**, which is
+the same rule that governs any poll. Every quantity this role watches moves on a
+scale of tens of minutes to hours:
+
+| What it catches | How fast that state changes | Caught at 5 min vs 15 min |
+| --- | --- | --- |
+| An open PR with no live agent | hours — #115 sat over an hour | no practical difference |
+| An agent idle or finished without a terminal state | hours | none |
+| An agent stalled or crashed | unknown; a stall costs at most one interval | 10 minutes of lost work, once |
+| A CI failure | minutes — **but the owning lane's own watcher sees it first, and only that lane can act** | none |
+| An agent blocked on a permission | not applicable under `bypassPermissions` | none |
+
+**Nothing on that list is a five-minute quantity.** The cost of the mismatch is
+not theoretical: each tick spawns a full agent, and a tick that sends a prompt
+costs the receiving lane a turn of its own context. On 2026-08-20 the schedule
+produced roughly 190 agents in sixteen hours, the large majority reporting that
+nothing had changed.
+
+**`*/15 * * * *`.** Three times cheaper, still bounds a stall at a quarter hour,
+and every state above changes more slowly than that.
+
+**A larger saving than the interval: the tick does not need a frontier model at
+high effort.** Its work is API reads and one cross-reference. Lowering the model
+or the thinking level cuts cost without reducing coverage at all, which the
+interval cannot claim — halving the frequency does lose the ability to catch a
+stall quickly, even if only marginally.
+
+**One caveat, stated because it is the real reason the interval was five.** Part
+of what the schedule did on 2026-08-20 was keep lanes from going idle, and that
+is a different job from monitoring. If lanes need nudging to continue, the fix is
+in their own instructions, not in the observer's frequency — **a schedule that
+exists to prod is a schedule that will eventually prod someone across a
+boundary**, which is exactly what happened twice. Fix the idling where it lives
+and the monitor can be as slow as its slowest signal.
+
 ## 6. There is no manager, and there should not be one
 
 The question that prompted this document was whether a manager agent should exist
