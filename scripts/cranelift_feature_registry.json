@@ -4525,6 +4525,45 @@
     ],
     "next_patch": "18.16"
   },
+  "phase18_publication": {
+    "version": "phase18_publication_v1",
+    "status": "ready_for_patch18_17",
+    "authority_owner": "compiler/mir_target_authority.gst",
+    "publication_owner": "phase9g_artifact_planner",
+    "ownership_policy": "phase18_supplies_the_publication_plan_and_phase9g_executes_it",
+    "atomicity_method": "write_to_a_temporary_path_then_rename_over_the_output_in_one_step",
+    "atomicity_reason": "a_partially_written_executable_must_never_replace_a_valid_one",
+    "required_preconditions": [
+      "object_emission",
+      "relocation_validation",
+      "availability_validation",
+      "link_success"
+    ],
+    "temporary_artifacts": [
+      {
+        "artifact": "program_object",
+        "owner": "phase9g_artifact_planner",
+        "cleanup_rule": "removed_after_link_success_or_failure"
+      },
+      {
+        "artifact": "temporary_output_path",
+        "owner": "phase9g_artifact_planner",
+        "cleanup_rule": "removed_when_publication_fails_before_rename"
+      }
+    ],
+    "preservation_guarantee": "existing_output_survives_failure_deferral_and_unsupported_target_rejection",
+    "sentinel_policy": "a_sentinel_output_proves_no_replacement_occurred_before_a_rejection",
+    "rejection_classes": [
+      "publication_before_object_emission",
+      "publication_before_relocation_validation",
+      "publication_before_availability_validation",
+      "publication_before_link_success",
+      "publication_not_atomic",
+      "publication_executed_by_phase18",
+      "temporary_artifact_without_owner_or_cleanup_rule"
+    ],
+    "next_patch": "18.17"
+  },
   "phase18_object_inspection": {
     "version": "phase18_object_inspection_v1",
     "status": "ready_for_patch18_12",

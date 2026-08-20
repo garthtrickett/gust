@@ -1292,3 +1292,70 @@ pub fn lower_reproducible_witness_path(path: &Path) -> Result<String, Box<dyn Er
     let request = fs::read_to_string(path)?;
     Ok(lower_reproducible_witness(&request)?)
 }
+
+// ---- Patch 18.16: artifact publication plan ----
+
+const PUBLICATION_FORMAT: &str = "gust.compiler_publication_plan.v1";
+const PUBLICATION_WITNESS_FORMAT: &str = "gust.publication_plan_witness.v1";
+const PUBLICATION_EXECUTOR: &str = "phase9g_artifact_planner";
+const PUBLICATION_METHOD: &str = "write_to_a_temporary_path_then_rename_over_the_output_in_one_step";
+// Each precondition is paired with the class raised when it has not happened.
+// The class names are static rather than formatted, both because error() takes a
+// &str and because a formatted class name cannot be grepped for -- which is
+// exactly how declared-but-unreachable classes went unnoticed before.
+const PUBLICATION_PRECONDITIONS: [(&str, &str); 4] = [
+    ("object_emission", "publication_before_object_emission"),
+    ("relocation_validation", "publication_before_relocation_validation"),
+    ("availability_validation", "publication_before_availability_validation"),
+    ("link_success", "publication_before_link_success"),
+];
+
+pub fn lower_publication_witness(request: &str) -> Result<String, TargetError> {
+    let lines: Vec<&str> = request.lines().collect();
+    if header(&lines, "format")? != PUBLICATION_FORMAT {
+        return Err(error("publication_malformed", "unknown request format"));
+    }
+    if header(&lines, "authority")? != AUTHORITY {
+        return Err(error("publication_malformed", "unknown target authority"));
+    }
+
+    let plan_line = lines.iter().find(|l| l.starts_with("publication:"))
+        .ok_or_else(|| error("publication_malformed", "request declares no publication plan"))?;
+    let plan = row(plan_line, "publication:")?;
+
+    // Preconditions are checked in the order they occur, so the reported reason
+    // names the EARLIEST thing that had not happened yet rather than whichever
+    // check happened to run first.
+    for (precondition, rejection) in PUBLICATION_PRECONDITIONS {
+        if plan.get(precondition).map(String::as_str).unwrap_or_default() != "done" {
+            return Err(error(rejection, format!("publication planned before {precondition}")));
+        }
+    }
+    // A non-atomic publication can leave a half-written executable where a
+    // working one used to be. That is the failure this plan exists to prevent.
+    if plan.get("atomic").map(String::as_str).unwrap_or_default() != "1" {
+        return Err(error("publication_not_atomic",
+            "a partially written executable must never replace a valid one"));
+    }
+    // Phase 9G owns execution. Phase 18 publishing anything itself would take
+    // artifact ownership the earlier phase already holds.
+    if field(&plan, "executor")? != PUBLICATION_EXECUTOR {
+        return Err(error("publication_executed_by_phase18",
+            "Phase 18 supplies the publication plan and Phase 9G executes it"));
+    }
+
+    let mut witness = String::new();
+    witness.push_str(&format!("format: {PUBLICATION_WITNESS_FORMAT}\n"));
+    witness.push_str(&format!("authority: {AUTHORITY}\n"));
+    witness.push_str(&format!(
+        "publication:target_id={};executor={PUBLICATION_EXECUTOR};method={PUBLICATION_METHOD};preconditions={};\n",
+        field(&plan, "target_id")?,
+        PUBLICATION_PRECONDITIONS.map(|(name, _)| name).join(","),
+    ));
+    Ok(witness)
+}
+
+pub fn lower_publication_witness_path(path: &Path) -> Result<String, Box<dyn Error>> {
+    let request = fs::read_to_string(path)?;
+    Ok(lower_publication_witness(&request)?)
+}

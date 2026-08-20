@@ -41,6 +41,7 @@ TOP_FIELDS = {
     "phase18_source_location",
     "phase18_optimisation_level",
     "phase18_reproducibility",
+    "phase18_publication",
     "phase18_object_inspection",
     "phase18_target_diagnostics",
     "phase18_cross_compilation",
@@ -10952,6 +10953,27 @@ def phase18_reproducibility_summary_lines(registry):
     ]
 
 
+def phase18_publication_summary_lines(registry):
+    authority = registry["phase18_publication"]
+    preconditions = authority["required_preconditions"]
+    return [
+        "## Phase 18 artifact publication plan",
+        "",
+        f"- Authority version: `{authority['version']}`",
+        f"- Status: `{authority['status']}`",
+        f"- Publication owner: `{authority['publication_owner']}`",
+        f"- Required preconditions: `{len(preconditions)}`",
+        f"- Temporary artifacts with a declared owner: `{len(authority['temporary_artifacts'])}`",
+        "",
+        "Patch 18.16 supplies the publication plan and Phase 9G executes it. This patch plans; it does not write, rename, or delete anything. A plan naming Phase 18 as its executor takes artifact ownership an earlier phase already holds, and is a rejection.",
+        "",
+        "Publication is atomic: the bytes are written to a temporary path and renamed over the output in one step, because a partially written executable must never replace a valid one. The four preconditions are checked in the order they occur, so a refusal names the earliest thing that had not happened yet rather than whichever check ran first. The schema pins that order with prefixItems, since the order is the contract -- checking only the set would permit publication to be planned before link success.",
+        "",
+        "Every temporary artifact names the owner that removes it and the rule under which it is removed. A temporary with no owner is what leaves half-written objects behind after a failed build. Existing output survives failure, deferral, and unsupported-target rejection, and the parity guard proves it: a sentinel output is hashed before six refusals and re-hashed after, and must be unchanged.",
+        "",
+    ]
+
+
 def phase18_object_inspection_summary_lines(registry):
     authority = registry["phase18_object_inspection"]
     object_format = registry["phase18_object_format"]
@@ -11373,6 +11395,7 @@ def render(registry):
         *phase18_source_location_summary_lines(registry),
         *phase18_optimisation_level_summary_lines(registry),
         *phase18_reproducibility_summary_lines(registry),
+        *phase18_publication_summary_lines(registry),
         "## Registry entries", "",
         "| ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |",
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",

@@ -1,0 +1,22 @@
+Patch 18.16 — Atomic Executable Publication
+
+required_preconditions	4
+temporary_artifacts	2
+rejection_classes	7
+
+ordering	publication follows object emission	precondition order is frozen	Level 1
+ordering	publication follows relocation validation	precondition order is frozen	Level 1
+ordering	publication follows availability validation	precondition order is frozen	Level 1
+ordering	publication follows link success	precondition order is frozen	Level 1
+ordering	the relocation model really validates before publication	cross-check against the Patch 18.4 validation stage	Level 1
+atomicity	publication writes a temporary path then renames in one step	atomicity method is frozen	Level 1
+atomicity	a partially written executable never replaces a valid one	atomicity reason is frozen	Level 1
+ownership	Phase 9G executes publication and Phase 18 only plans it	ownership policy is frozen	Level 1
+ownership	the Phase 9G artifact ownership guard is present	justfile guard reference	Level 1
+temporary	every temporary artifact names an owner	per-artifact owner check	Level 1
+temporary	every temporary artifact names a cleanup rule	per-artifact cleanup check	Level 1
+temporary	every temporary artifact is owned by Phase 9G	per-artifact ownership check	Level 1
+preservation	existing output survives failure, deferral, and rejection	preservation guarantee is frozen	Level 1
+preservation	a sentinel proves no replacement occurred before a rejection	sentinel policy is frozen	Level 1
+traceability	the host publication rename assumption is owned by this row	Patch 18.0 host assumption ownership	Level 1
+rejection	the rejection class inventory is complete	seven required rejection classes	Level 1

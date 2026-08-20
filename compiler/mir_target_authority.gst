@@ -1269,3 +1269,98 @@ func mir_reproducibility_normalisation_validate(build: MirReproducibleBuild[ctx]
     result.reason_code = std.Clone(ctx, "ok");
     return result;
 }
+
+// ---- Patch 18.16: artifact publication plan ----
+//
+// Phase 18 supplies the publication plan and Phase 9G executes it. This patch
+// plans; it does not write, rename, or delete anything. A plan that names Phase
+// 18 as its executor takes artifact ownership an earlier phase already holds.
+//
+// Publication is atomic: the bytes are written to a temporary path and renamed
+// over the output in one step, because a partially written executable must
+// never replace a valid one. Every precondition is checked BEFORE the rename,
+// so a failure, a deferral, or an unsupported-target rejection leaves whatever
+// was already there untouched.
+
+type MirPublicationPlan[ctx] struct {
+    target_id: str,
+    after_object_emission: int,
+    after_relocation_validation: int,
+    after_availability_validation: int,
+    after_link_success: int,
+    atomic: int,
+    executor: str
+}
+
+type MirPublicationValidation[ctx] struct {
+    valid: int,
+    reason_code: str
+}
+
+func mir_publication_plan_validate(plan: MirPublicationPlan[ctx], ctx: &Arena) MirPublicationValidation[ctx] {
+    mut result: MirPublicationValidation[ctx];
+    result.valid = 0;
+
+    // The preconditions are checked in the order they occur, so the reported
+    // reason names the earliest thing that had not happened yet.
+    if plan.after_object_emission == 0 {
+        result.reason_code = std.Clone(ctx, "publication_before_object_emission");
+        return result;
+    }
+    if plan.after_relocation_validation == 0 {
+        result.reason_code = std.Clone(ctx, "publication_before_relocation_validation");
+        return result;
+    }
+    if plan.after_availability_validation == 0 {
+        result.reason_code = std.Clone(ctx, "publication_before_availability_validation");
+        return result;
+    }
+    if plan.after_link_success == 0 {
+        result.reason_code = std.Clone(ctx, "publication_before_link_success");
+        return result;
+    }
+    // A non-atomic publication can leave a half-written executable in place of a
+    // working one, which is the failure this whole plan exists to prevent.
+    if plan.atomic == 0 {
+        result.reason_code = std.Clone(ctx, "publication_not_atomic");
+        return result;
+    }
+    if std.str_eq(plan.executor, "phase9g_artifact_planner") == 0 {
+        result.reason_code = std.Clone(ctx, "publication_executed_by_phase18");
+        return result;
+    }
+
+    result.valid = 1;
+    result.reason_code = std.Clone(ctx, "ok");
+    return result;
+}
+// A temporary artifact with no owner is the thing that leaves half-written
+// objects behind after a failed build. Phase 18 does not delete anything: it
+// records who owns each temporary and the rule under which that owner removes
+// it, and Phase 9G executes that rule.
+type MirTemporaryArtifact[ctx] struct {
+    artifact: str,
+    owner: str,
+    cleanup_rule: str
+}
+
+func mir_temporary_artifact_validate(artifact: MirTemporaryArtifact[ctx], ctx: &Arena) MirPublicationValidation[ctx] {
+    mut result: MirPublicationValidation[ctx];
+    result.valid = 0;
+
+    if std.str_eq(artifact.artifact, "") == 1 || std.str_eq(artifact.owner, "") == 1 ||
+       std.str_eq(artifact.cleanup_rule, "") == 1 {
+        result.reason_code = std.Clone(ctx, "temporary_artifact_without_owner_or_cleanup_rule");
+        return result;
+    }
+
+    // Phase 18 plans cleanup; it may not name itself as the owner that performs it.
+    if std.str_eq(artifact.owner, "phase18") == 1 {
+        result.reason_code = std.Clone(ctx, "publication_executed_by_phase18");
+        return result;
+    }
+
+    result.valid = 1;
+    result.reason_code = std.Clone(ctx, "ok");
+    return result;
+}

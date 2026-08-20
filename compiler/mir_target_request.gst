@@ -652,3 +652,55 @@ func mir_reproducibility_mir_to_c_witness(first: target.MirReproducibleBuild[ctx
     output = std.Concat(output, "\n");
     return std.Clone(ctx, output);
 }
+
+func mir_publication_request_format() str { return "gust.compiler_publication_plan.v1"; }
+func mir_publication_witness_format() str { return "gust.publication_plan_witness.v1"; }
+
+func mir_publication_flag(value: int, ctx: &Arena) str {
+    if value == 1 { return std.Clone(ctx, "done"); }
+    return std.Clone(ctx, "pending");
+}
+
+func mir_publication_body(plan: target.MirPublicationPlan[ctx], header: str, is_witness: int, ctx: &Arena) str {
+    mut validation := target.mir_publication_plan_validate(plan, ctx);
+    if validation.valid == 0 {
+        mut invalid := "format: invalid\nreason: ";
+        invalid = std.Concat(invalid, validation.reason_code);
+        invalid = std.Concat(invalid, "\n");
+        return std.Clone(ctx, invalid);
+    }
+    mut output := "format: ";
+    output = std.Concat(output, header);
+    output = std.Concat(output, "\nauthority: compiler/mir_target_authority.gst\n");
+    if is_witness == 1 {
+        // The witness records the method and the precondition order, which the
+        // worker recomputes rather than copies out of the request.
+        mut row := "publication:";
+        row = mir_target_append(row, "target_id", plan.target_id, ctx);
+        row = mir_target_append(row, "executor", "phase9g_artifact_planner", ctx);
+        row = mir_target_append(row, "method", "write_to_a_temporary_path_then_rename_over_the_output_in_one_step", ctx);
+        row = mir_target_append(row, "preconditions", "object_emission,relocation_validation,availability_validation,link_success", ctx);
+        output = std.Concat(output, row);
+        output = std.Concat(output, "\n");
+        return std.Clone(ctx, output);
+    }
+    mut row := "publication:";
+    row = mir_target_append(row, "target_id", plan.target_id, ctx);
+    row = mir_target_append(row, "object_emission", mir_publication_flag(plan.after_object_emission, ctx), ctx);
+    row = mir_target_append(row, "relocation_validation", mir_publication_flag(plan.after_relocation_validation, ctx), ctx);
+    row = mir_target_append(row, "availability_validation", mir_publication_flag(plan.after_availability_validation, ctx), ctx);
+    row = mir_target_append(row, "link_success", mir_publication_flag(plan.after_link_success, ctx), ctx);
+    row = mir_target_append(row, "atomic", "1", ctx);
+    row = mir_target_append(row, "executor", plan.executor, ctx);
+    output = std.Concat(output, row);
+    output = std.Concat(output, "\n");
+    return std.Clone(ctx, output);
+}
+
+func mir_serialize_publication_request(plan: target.MirPublicationPlan[ctx], ctx: &Arena) str {
+    return mir_publication_body(plan, mir_publication_request_format(), 0, ctx);
+}
+
+func mir_publication_mir_to_c_witness(plan: target.MirPublicationPlan[ctx], ctx: &Arena) str {
+    return mir_publication_body(plan, mir_publication_witness_format(), 1, ctx);
+}
