@@ -963,3 +963,97 @@ func mir_debug_plan_validate(plan: MirDebugPlan[ctx], ctx: &Arena) MirTargetVali
     result.reason_code = std.Clone(ctx, "ok");
     return result;
 }
+
+// ---- Patch 18.13: source location preservation ----
+//
+// A source location is produced by the compiler and survives lowering wherever
+// the debug plan requires it. Inventing a plausible span for code the source did
+// not write is worse than admitting the gap: a debugger will then point
+// confidently at the wrong line, which is harder to diagnose than no line at all.
+//
+// Two of the rejections below are properties of a SET of locations rather than
+// of any one location, so they need a validator over the whole vector. A single
+// record cannot tell whether it duplicates another, and an absent location
+// cannot reject itself.
+
+type MirSourceLocation[ctx] struct {
+    source_file: str,
+    source_span: str,
+    canonical_mir_association: str,
+    emitted_debug_association: str,
+    fabricated: int
+}
+
+type MirSourceLocationValidation[ctx] struct {
+    valid: int,
+    reason_code: str
+}
+
+func mir_source_location_validate(location: MirSourceLocation[ctx], ctx: &Arena) MirSourceLocationValidation[ctx] {
+    mut result: MirSourceLocationValidation[ctx];
+    result.valid = 0;
+
+    // A fabricated location, or one carrying no span, has no source to point at.
+    if location.fabricated == 1 || std.str_eq(location.source_span, "") == 1 ||
+       std.str_eq(location.source_file, "") == 1 {
+        result.reason_code = std.Clone(ctx, "source_location_fabricated_without_a_source_span");
+        return result;
+    }
+
+    // No canonical MIR association means the backend produced this, not the
+    // compiler. The production policy forbids backend-reconstructed locations.
+    if std.str_eq(location.canonical_mir_association, "") == 1 {
+        result.reason_code = std.Clone(ctx, "source_location_reconstructed_by_backend");
+        return result;
+    }
+
+    // Present in canonical MIR but absent from the emitted records: lost.
+    if std.str_eq(location.emitted_debug_association, "") == 1 {
+        result.reason_code = std.Clone(ctx, "source_location_lost_in_lowering");
+        return result;
+    }
+
+    result.valid = 1;
+    result.reason_code = std.Clone(ctx, "ok");
+    return result;
+}
+
+// Validates a whole set of locations against what the debug plan requires.
+// `requires_locations` is 1 when the plan for this target emits a line table.
+func mir_source_location_set_validate(locations: Index[std.Vector[MirSourceLocation[ctx], ctx], ctx], requires_locations: int, ctx: &Arena) MirSourceLocationValidation[ctx] {
+    mut result: MirSourceLocationValidation[ctx];
+    result.valid = 0;
+    mut values: std.Vector[MirSourceLocation[ctx], ctx] := ctx[locations];
+
+    // The plan asks for a line table and nothing was produced to fill it.
+    if requires_locations == 1 && len(values) == 0 {
+        result.reason_code = std.Clone(ctx, "source_location_missing_where_the_debug_plan_requires_it");
+        return result;
+    }
+
+    mut index := 0;
+    while index < len(values) {
+        mut single := mir_source_location_validate(values[index], ctx);
+        if single.valid == 0 {
+            result.reason_code = std.Clone(ctx, single.reason_code);
+            return result;
+        }
+
+        // One instruction carries at most one location. Two locations naming the
+        // same canonical MIR instruction make the emitted line table ambiguous.
+        mut probe := 0;
+        while probe < index {
+            if std.str_eq(values[probe].canonical_mir_association,
+                          values[index].canonical_mir_association) == 1 {
+                result.reason_code = std.Clone(ctx, "source_location_duplicated_for_one_instruction");
+                return result;
+            }
+            probe = probe + 1;
+        }
+        index = index + 1;
+    }
+
+    result.valid = 1;
+    result.reason_code = std.Clone(ctx, "ok");
+    return result;
+}

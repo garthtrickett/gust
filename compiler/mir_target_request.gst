@@ -517,3 +517,42 @@ func mir_serialize_debug_plan_request(plan: target.MirDebugPlan[ctx], ctx: &Aren
 func mir_debug_plan_mir_to_c_witness(plan: target.MirDebugPlan[ctx], ctx: &Arena) str {
     return mir_debug_plan_body(plan, mir_debug_plan_witness_format(), ctx);
 }
+
+func mir_source_location_request_format() str { return "gust.compiler_source_location.v1"; }
+func mir_source_location_witness_format() str { return "gust.source_location_witness.v1"; }
+
+// `include_producer` is 0 for the request and 1 for the witness. The request
+// must NOT carry produced_by: that is the field the Cranelift worker has to
+// recompute for itself, and handing it the answer would turn a parity check
+// into a copy check.
+func mir_source_location_body(location: target.MirSourceLocation[ctx], header: str, include_producer: int, ctx: &Arena) str {
+    mut validation := target.mir_source_location_validate(location, ctx);
+    if validation.valid == 0 {
+        mut invalid := "format: invalid\nreason: ";
+        invalid = std.Concat(invalid, validation.reason_code);
+        invalid = std.Concat(invalid, "\n");
+        return std.Clone(ctx, invalid);
+    }
+    mut output := "format: ";
+    output = std.Concat(output, header);
+    output = std.Concat(output, "\nauthority: compiler/mir_target_authority.gst\n");
+    mut row := "source_location:";
+    row = mir_target_append(row, "file", location.source_file, ctx);
+    row = mir_target_append(row, "span", location.source_span, ctx);
+    row = mir_target_append(row, "mir", location.canonical_mir_association, ctx);
+    row = mir_target_append(row, "emitted", location.emitted_debug_association, ctx);
+    if include_producer == 1 {
+        row = mir_target_append(row, "produced_by", "canonical_mir", ctx);
+    }
+    output = std.Concat(output, row);
+    output = std.Concat(output, "\n");
+    return std.Clone(ctx, output);
+}
+
+func mir_serialize_source_location_request(location: target.MirSourceLocation[ctx], ctx: &Arena) str {
+    return mir_source_location_body(location, mir_source_location_request_format(), 0, ctx);
+}
+
+func mir_source_location_mir_to_c_witness(location: target.MirSourceLocation[ctx], ctx: &Arena) str {
+    return mir_source_location_body(location, mir_source_location_witness_format(), 1, ctx);
+}

@@ -38,6 +38,7 @@ TOP_FIELDS = {
     "phase17_availability_authority",
     "phase17_composition_authority",
     "phase18_debug_information",
+    "phase18_source_location",
     "phase18_object_inspection",
     "phase18_target_diagnostics",
     "phase18_cross_compilation",
@@ -10885,6 +10886,27 @@ def phase18_debug_information_summary_lines(registry):
     ]
 
 
+def phase18_source_location_summary_lines(registry):
+    authority = registry["phase18_source_location"]
+    gaps = authority["declared_gaps"]
+    return [
+        "## Phase 18 source location preservation",
+        "",
+        f"- Authority version: `{authority['version']}`",
+        f"- Status: `{authority['status']}`",
+        f"- Record fields: `{len(authority['record_fields'])}`",
+        f"- Required at debug level: `{authority['required_when']}`",
+        f"- Declared preservation gaps: `{len(gaps)}`",
+        "",
+        "Patch 18.13 makes source locations a compiler-owned record that survives lowering wherever the debug plan requires it. Canonical MIR produces the locations; a location the backend reconstructed is rejected rather than accepted as an approximation.",
+        "",
+        "Inventing a plausible span for code the source did not write is worse than admitting the gap, because a debugger will then point confidently at the wrong line, which is harder to diagnose than no line at all. A location with no source span is therefore a rejection, and the two places where no span can exist are declared by name with their reasons.",
+        "",
+        "Two of the five rejections are properties of a set rather than of a single record: a location cannot tell on its own whether it duplicates another, and an absent location cannot reject itself. Both are checked by a validator over the whole vector.",
+        "",
+    ]
+
+
 def phase18_object_inspection_summary_lines(registry):
     authority = registry["phase18_object_inspection"]
     object_format = registry["phase18_object_format"]
@@ -11303,6 +11325,7 @@ def render(registry):
         *phase18_target_diagnostics_summary_lines(registry),
         *phase18_object_inspection_summary_lines(registry),
         *phase18_debug_information_summary_lines(registry),
+        *phase18_source_location_summary_lines(registry),
         "## Registry entries", "",
         "| ID | Origin | Parent | Feature family | CI family | Status | Route owner | Worker owner | Diagnostic owner | Source fixture | Canonical MIR fixture | Differential case | Future phase | Deferral reason | Closure version |",
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
