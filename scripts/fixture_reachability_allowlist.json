@@ -1,0 +1,22 @@
+{
+  "_comment": [
+    "Fixtures that nothing in CI compiles or runs: every recipe naming them is itself",
+    "unreachable. A ratchet, not an exemption -- a new one fails the check, and so does",
+    "an entry here that has since become exercised, so the list can only shrink.",
+    "These correspond to MIR features not yet in compiler/MIR_AST_TO_C_RETIREMENT_MANIFEST.md,",
+    "so they are staged alongside the guards that run them, not forgotten. See issue #92.",
+    "Do NOT compute this as 'referenced only from justfile' -- that reports 51 and is wrong.",
+    "Resolve each reference to its recipe and check that recipe's reachability."
+  ],
+  "recorded": "2026-08-20",
+  "issue": 92,
+  "known_unexercised": {
+    "mir_debug_leaf_smoke_test_entry": "Cranelift lane (MIR); staged pending its feature's migration",
+    "mir_debug_printer_smoke_test_entry": "Cranelift lane (MIR); staged pending its feature's migration",
+    "mir_lower_function_shell_smoke_test_entry": "Cranelift lane (MIR); staged pending its feature's migration",
+    "mir_lower_native_boundary_metadata_smoke_test_entry": "Cranelift lane (MIR); staged pending its feature's migration",
+    "mir_lower_tiny_function_fixture_smoke_test_entry": "Cranelift lane (MIR); staged pending its feature's migration",
+    "mir_to_c_entry_smoke_test_entry": "Cranelift lane (MIR); staged pending its feature's migration",
+    "mir_to_c_function_shell_smoke_test_entry": "Cranelift lane (MIR); staged pending its feature's migration"
+  }
+}

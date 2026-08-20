@@ -1,0 +1,41 @@
+name: CI Fixture Reachability
+
+# Issue #92: 7 test fixtures exist that nothing in CI compiles or runs, because
+# every recipe naming them is itself unreachable. This keeps that number from
+# growing.
+
+on:
+  pull_request:
+    paths:
+      - 'justfile'
+      - '.github/workflows/**'
+      - 'compiler/*_test_entry.gst'
+      - 'scripts/fixture_reachability.py'
+      - 'scripts/fixture_reachability_allowlist.json'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_test_levels.json'
+  push:
+    branches: [main]
+    paths:
+      - 'justfile'
+      - '.github/workflows/**'
+      - 'scripts/fixture_reachability.py'
+      - 'scripts/fixture_reachability_allowlist.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  fixture-reachability:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: guard-ci-fixture-reachability
+        run: just guard-ci-fixture-reachability
