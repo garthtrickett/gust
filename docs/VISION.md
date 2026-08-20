@@ -130,6 +130,7 @@ The risk profile has shifted, not shrunk: from *can they build a compiler* — a
 - **Panic scope** (§34): a string bounds failure calls `exit(1)` and takes the process down rather than the request.
 - **Shared ownership** is marked open as OD-3 while `std.Rc` already ships.
 - **Concurrency** is detached `std.Spawn` plus channels — the model §20 rejects.
+- **Integer overflow** is undefined behaviour on the default backend, not the trap §32 promises: `Type::Int` lowers to C `int`, where signed overflow is UB (issue #103).
 - **The borrow model** is the withdrawn one. §26 was corrected on 2026-08-19 to the single mutable reference form that exists — `inout` is not a keyword in either compiler — so there is no longer a rule being violated, only a containment property that nothing delivers.
 
 This does not change the conclusion that the absent items are the product. It changes what "built" is load-bearing for: the memory model is not yet sound enough to be *demonstrated*, which matters because containment is what is being sold (§0.4).

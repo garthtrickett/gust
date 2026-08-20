@@ -3,7 +3,12 @@
 `docs/VISION.md` is one of nine documents that describe what Gust is. The other
 eight are handoff and critique documents that live outside the repository. They
 do not agree with each other, and in six places they do not agree with
-`docs/VISION.md`.
+`docs/VISION.md`. Those six are §3 below.
+
+They also do not agree with the compiler. That is a separate question with a
+separate answer: `docs/ONE_WAY_LEDGER.md` tracks each design rule against what
+the compiler does, with a reproduction per row. As of 2026-08-20, 9 of 32 rules
+hold; the rest are partial, violated, deferred, or describe unbuilt platform.
 
 This document reconciles them. It records, for each conflict: what each source
 says, which one survives, and why. Where a conflict is a semantic question it
@@ -382,6 +387,19 @@ lane/registry/guard governance in `AGENTS.md` and `docs/SHARED_SEMANTIC_ZONE.md`
 | §27 | Shared ownership as OD-3 | `std.Rc` already exists — see §3.6 |
 | §34 | Panic terminates request, not deployment | `exit(1)` in `src/runtime/strings.c:20,30` |
 | D-1, D-2 | Brand identity | Inferred from identifier spelling; `src/codegen.rs:71`, `src/typechecker/types.rs:61`. Owned by staged Phase 19 |
+| §32 | Fixed-width integers, overflow trapping, `Decimal`/`Money`/time types | **All absent.** One integer type, `int`, lowering to C `int` — so overflow is UB, not a trap. Issue #103 |
+| §23 | `copyable` marker | Absent. Copy-versus-move is inferred structurally; adding a `str` field silently changes a struct's category |
+| §29 | Automatic resource cleanup | Runs, but only for `Resource[T]` and only in the self-hosted compiler. The Rust compiler has none — zone defect D-6, issue #104 |
+
+Found in the same sweep and worth recording as the counterweight — these hold:
+
+| Section | Thing | State |
+| --- | --- | --- |
+| §31 | Enum match exhaustiveness | **Enforced in both compilers**, and both name the missing variant. `compiler-plan.md` still lists this as outstanding; it is done |
+| §11 | Safe references non-null | Holds by construction — no `null`, `nil`, or `NULL` literal exists in either lexer |
+| §12 | No inheritance, traits, or interfaces | Holds by construction — none of the keywords exists |
+| §15 | No macros or compile-time execution | Holds by construction |
+| §33 | `str` immutability | Holds — no mutation API and no element-assignment path |
 
 The standard library is 20 `std_*` runtime symbols and 38 registered `std.*`
 names (`docs/STDLIB_SURFACE_INVENTORY.md`, generated). It is not a place the
