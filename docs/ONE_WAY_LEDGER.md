@@ -70,8 +70,9 @@ Evidence section below; row-level citations are `path:line` pinned to that commi
 | 29 | Overflow | Traps by default in all builds; wrapping/saturating/checked are named operations | silent wraparound | **VIOLATED** — E11 |
 | 30 | Exhaustiveness | All enum matching is exhaustive | unhandled variants | **HOLDS** — E12 |
 | 31 | Copy vs move | A struct is copyable when every field is and the type is *explicitly marked* copyable | inferred copyability | **PARTIAL** — E13 |
+| 32 | Null | Safe references are non-null; absence is `Option[T]` | `null` in safe code | **HOLDS** — E14 |
 
-Counts: 8 `HOLDS`, 5 `PARTIAL`, 5 `VIOLATED`, 1 `DEFERRED`, 12 `ABSENT`.
+Counts: 9 `HOLDS`, 5 `PARTIAL`, 5 `VIOLATED`, 1 `DEFERRED`, 12 `ABSENT`.
 
 | Row | Rule | Status | Owner |
 | --- | --- | --- | --- |
@@ -427,6 +428,50 @@ here drives move tracking; resource semantics use separate `is_linear_resource`
 metadata, which is registered only in the self-hosted compiler
 (`STEP52_RESOURCE_SEMANTICS.md` verified state, item 1). Do not conflate them —
 the two answer different questions and only one is opt-in.
+
+### E14 — `null` does not exist in the language (row 32)
+
+```
+$ for k in null nil NULL; do
+    printf '%-6s rs=%s gst=%s\n' "$k" \
+      "$(grep -c "\"$k\"" src/lexer.rs)" "$(grep -c "\"$k\"" compiler/lexer.gst)"
+  done
+null   rs=0 gst=0
+nil    rs=0 gst=0
+NULL   rs=0 gst=0
+```
+
+§11's "safe references are non-null" holds by construction: there is no null
+literal to write in either compiler. The restriction §11 describes — null
+confined to raw pointers inside `unsafe`, FFI, and compiler-owned runtime
+representations — is satisfied trivially rather than enforced, which is the
+strongest form it could take.
+
+### Addendum to E7 — cleanup validation runs, narrowly, and only in one compiler
+
+E7 said `defer` parses and automatic resource lifecycle does not run. The second
+half was too strong and is corrected here.
+
+The self-hosted compiler invokes `env_validate_linear_resource_scope_exit_cleanup`
+from two real typechecking paths — function exit
+(`compiler/typechecker.gst:9859`, "Step 5.2Q") and explicit return (`:10976`,
+"Step 5.2R") — added by `ce211321` on 2026-06-30.
+
+It is narrow. `type_is_resource` (`compiler/typechecker.gst:7690`) keys on a
+`Generic` type literally named `Resource` with one argument, so only
+compiler-owned `Resource[T]` values are covered. A directory handle is not one,
+which is why a program that leaks one still compiles clean.
+
+The Rust compiler has no equivalent (`grep -rc
+'scope_exit_cleanup\|validate_linear_resource' src/ --include=*.rs` → nothing),
+so the two compilers disagree on whether dropping a live `Resource[T]` is valid.
+Recorded as `docs/SHARED_SEMANTIC_ZONE.md` D-6, and it corrected
+`STEP52_RESOURCE_SEMANTICS.md`, which had stated that nothing on the real
+typechecking path invoked these functions.
+
+Rows 15 and 16 stay `PARTIAL`: destructor declaration and enforcement for
+user-defined types remain absent, which is what blocks `MutexGuard`
+(`TASK_STDLIB.md` CR-5).
 
 ## Maintenance
 

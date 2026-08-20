@@ -34,7 +34,7 @@ named.
 | --- | --- | --- |
 | `docs/VISION.md` | yes | Authoritative for product, language principles, and §-numbered rules cited by `SHARED_SEMANTIC_ZONE.md`. |
 | `README.md` | yes | Authoritative for the failure-mode argument and the two-backends rationale. |
-| `platform-decisions.md` | no | **Duplicate of `docs/VISION.md`** modulo markdown formatting. VISION.md additionally contains §0.7 "Track A0". Do not treat as a second source. |
+| `platform-decisions.md` | no | **Was a duplicate of `docs/VISION.md`** modulo markdown formatting, plus §0.7 "Track A0" which only VISION.md had. That equivalence ended on 2026-08-20: VISION.md now carries the Part status markers (§0.17), the §0.1 and Part IV readership qualifications, the §21 OD-1 record, and the verified notes on §0.6, §23, and §32. Where the two differ, **VISION.md is authoritative and the upload is stale**. Do not treat it as a second source, and do not reconcile VISION.md back toward it. |
 | `escaping-perpetual-underclass.md` | no | Outside critique, strategic. No design authority; several recommendations already adopted. |
 | `advice.md` | no | Outside critique, tactical. Source of the four-ring layer model (§4 below). |
 | `async.md` | no | Async/concurrency proposal. **Conflicts with `VISION.md` §21.** See §3.2. |

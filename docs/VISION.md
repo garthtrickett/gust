@@ -376,6 +376,8 @@ Everything from v1.0 down is specified in this document so that demo-stage decis
 | OD-6 | Form of the intent layer | v1.0 | Part XXI |
 | OD-5 | Supplier certification staffing model | Post-1.0 | Part XVI |
 
+There is no OD-7. The number is unused and nothing in the repository references it; it is recorded here so a reader who notices the gap does not go looking.
+
 ## 0.16 Non-goals
 
 Gust does not attempt to be:

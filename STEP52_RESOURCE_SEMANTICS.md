@@ -12,7 +12,7 @@ list below.
 | # | Requirement | Status |
 | --- | --- | --- |
 | 1 | Opt-in metadata | **met** — `is_linear_resource` metadata exists and is registered |
-| 2 | Resource representation | **inert** — helpers exist; no automatic declaration, assignment, or lifecycle enforcement |
+| 2 | Resource representation | **partly live** — helpers exist; no automatic declaration or assignment; scope-exit cleanup *is* validated for `Resource[T]` on two paths in the self-hosted compiler, and not at all in the Rust one (corrected 2026-08-20) |
 | 3 | Open-resource registry | **met** — `open_linear_resources` is a typed registry |
 | 4 | Destructor identity | **not met for user types** — see below |
 | 5 | Transfer state | **met** — owned, borrowed, moved, closed, destructor_scheduled all represented |
@@ -24,7 +24,13 @@ Two findings matter more than the table.
 
 **There is no way to declare a destructor in source.** `env_register_struct_linear_destructor` is called from exactly two places in `compiler/typechecker.gst`, both registering `os.CloseDir`, and the second is gated on a directory-handle predicate. There is no keyword, attribute, or annotation in `compiler/lexer.gst`, `compiler/parser*.gst`, `src/lexer.rs`, or `src/parser.rs` that lets a user-defined type name its destructor. The framework supports exactly one destructor, for one built-in type.
 
-**Cleanup validation is not wired into typechecking.** `env_validate_linear_resource_scope_exit_cleanup` and `env_validate_linear_resource_cleanup_boundary` are called only from test entries and from each other; nothing on the real typechecking path invokes them. Confirmed by running the compiler: a program that opens a directory handle and never closes it compiles clean. The one resource type the framework does support is not actually enforced.
+**Cleanup validation is wired, but only for `Resource[T]`.** *Corrected 2026-08-20 at `b47d0049` — see the note below.* `env_validate_linear_resource_scope_exit_cleanup` is invoked from two real typechecking paths in the self-hosted compiler: function exit (`compiler/typechecker.gst:9859`, "Step 5.2Q") and explicit return (`:10976`, "Step 5.2R"). Both call sites were added by `ce211321` on 2026-06-30, seven weeks before this audit.
+
+What it validates is narrow. It delegates to `env_validate_linear_resource_cleanup_boundary`, and the surrounding machinery keys on the compiler-owned `Resource` generic specifically — `type_is_resource` requires a `Generic` type literally named `Resource` with one argument (`compiler/typechecker.gst:7690`). A directory handle is not a `Resource[T]`, so it is outside the check.
+
+The behavioural finding below is therefore still correct and the mechanism claim was not: a program that opens a directory handle and never closes it compiles clean, because that type is not covered — not because nothing runs.
+
+**The Rust compiler has no equivalent at all.** `grep -rc 'scope_exit_cleanup\|validate_linear_resource' src/ --include=*.rs` returns nothing. The two compilers therefore disagree about whether a function that drops a live `Resource[T]` is valid. Recorded as `docs/SHARED_SEMANTIC_ZONE.md` D-6.
 
 So the framework is further along than the original text says on representation, state, and `defer`, and further behind on enforcement: what exists is a set of helpers with test coverage, not a checker that runs.
 
