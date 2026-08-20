@@ -380,7 +380,7 @@ second, drifting copy of it.
 | OD-10 | **Distribution for the product path** | **OPEN** — currently unanswered | Month 4 | §0.11 |
 | OD-3 | SAM state ownership under linear resources and no interior mutability | **OPEN** — leading direction proposed 2026-08-20 (§38.1); partly decided by implementation, `std.Rc` already ships | v0.5 | §27, §38; the discrepancy as `TASK_STDLIB.md` CR-9; evidence in `docs/ONE_WAY_LEDGER.md` E8 |
 | OD-4 | WASM stack-switching support and payload cost | **OPEN** — recommendation recorded and then revised on checked support data, 2026-08-20 (§21.1) | v0.5 | §21, §41 |
-| OD-6 | Form of the intent layer | **OPEN** | v1.0 | Part XXI |
+| OD-6 | Form of the intent layer | **OPEN** — leading proposal recorded 2026-08-20 (§117.1): contracts on capabilities as the core, examples as the authoring surface, properties for depth | v1.0 | Part XXI |
 | OD-11 | ~~The fate of `std.Spawn`~~ | **RESOLVED 2026-08-20** — bare form deleted; scoped spawn returns a linear task handle | Demo | §20.1 |
 | OD-5 | Supplier certification staffing model | **OPEN** | Post-1.0 | Part XVI |
 
@@ -2129,7 +2129,21 @@ Unresolved. Three shapes worth prototyping during v0.1, decided before v0.5:
 2. **Property declarations** — invariants over state and effects, checked by generated property tests (extending §79). Strongest coverage, hardest to author, natural fit with existing conformance machinery.
 3. **Behavioural contracts on capability interfaces** — pre- and post-conditions attached to effect declarations. Best composition with Part V, narrowest scope.
 
-Not mutually exclusive. The likely answer is a small core of (3) with (1) as the authoring surface and (2) as the depth option.
+Not mutually exclusive.
+
+### 117.1 Leading proposal for OD-6 — one attachment point, two authoring depths
+
+**Operator proposal, 2026-08-20.** Recorded as the leading answer for OD-6. The candidates above are kept as the record of what was considered; this is the shape to prototype against during v0.1.
+
+**(3) Contracts on capabilities — *where* a check attaches.** A function already declares `uses payments.charge`. The contract hangs off that same declaration: *the amount charged equals the amount on the order*, *never charge the same order twice*. This is the core because effect declarations are a small fixed set of points the compiler already knows about, so **intent lands on exactly the same boundary authority does.** There is nothing new to invent about placement.
+
+**(1) Examples — *who* can author one.** *A £10 order charges £10.* Writable by someone who understands the business and not the codebase. That matters more than it looks: §116 requires human authorship, and **that requirement is worthless if only the system's own authors can satisfy it.** Examples are the surface that keeps a non-programmer inside the trust chain.
+
+**(2) Properties — *how much* a check covers.** *A refund never exceeds the original charge.* One statement standing in for every case, checked by generated tests over §79's existing conformance machinery. Powerful and genuinely hard to write, which is why it is the depth option rather than the front door.
+
+**So: one attachment point, two authoring depths.** A reviewer never picks between an example and a property for the same job — they are a case and its generalisation, not rival spellings. You write the example because it is what you can state; you write the property when you can state something stronger.
+
+**What this proposal decides, and what it leaves open.** It settles placement, which was the part with a defensible answer: intent attaches where authority attaches. It does not settle the language a contract is written in, how a contract composes when one capability calls another, or what a violation costs at runtime versus at build time. Those are prototype questions, and the prototypes now have a fixed attachment point to be prototypes *of* — which is the practical gain from deciding this half early.
 
 **Why that combination, and why it is not three ways to do one thing.** The three candidates answer different questions, which is what makes stacking them legitimate under §13 rather than a violation of it. (3) answers **where a check attaches** — effect declarations, a small fixed set of points the compiler already knows about, so intent lands on the same boundary authority does. (1) answers **who can author one** — an example is writable by someone who understands the business and not the codebase, which matters because §116 requires human authorship and that requirement is worthless if only the system's authors can satisfy it. (2) answers **how much a check covers** — properties generalise a case into a class, over §79's existing conformance machinery.
 
