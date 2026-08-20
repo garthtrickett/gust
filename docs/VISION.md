@@ -824,6 +824,30 @@ Effects may carry restrictions for resource type, operation, secret name, hostna
 
 Function values preserve their effect sets. A function requiring fewer effects may substitute for a function type that permits more effects. Authority may only be delegated by explicitly narrowing an existing capability.
 
+### 18.1 What effect checking must do — proposed
+
+Row 5 of `docs/DEMO_TARGET_PROGRAM.md`, Track A item 1, and the thing §81, §22, §52 and §108 each presuppose. §17 and §18 say what effects *are*; nothing says what the checker *does*. This is a proposal.
+
+**1. The declaration is part of the signature, and it is the whole set.** A function performs an effect only if its own clause names it. There is no ambient authority and no inference at a declaration boundary — §17 already withdrew inference on private functions, and this is the rule that gives that teeth.
+
+**2. Call sites check by subsumption, in the direction §17 states.** A caller's declared set must cover every effect its callees declare. Fewer effects may substitute where more are permitted, never the reverse. This is the only propagation rule; there is no separate inference pass, because the sets are written down.
+
+**3. Restrictions are part of the effect, not commentary on it.** `db.read<User>` and `db.read<Order>` are different effects. So are `secret.use<"stripe">` and `secret.use<"twilio">`, and `network.request<host>` for two hosts. Subsumption compares the restriction, so widening one — a function that read `User` now reading everything — is a signature change and shows up in a diff, which is the property §0.12 and §108 are actually buying.
+
+**4. `main` is where authority enters, and the only place.** The platform grants the root set; every other set is a narrowing of something a caller already held. §17's "authority may only be delegated by explicitly narrowing an existing capability" is the same rule stated from the other end.
+
+**5. `unsafe` grants nothing (§19).** An unsafe block still needs every effect it uses. Worth restating as a checker rule because it is the natural place for an implementation to take a shortcut.
+
+**6. The compiler needs no new carrier.** `FunctionSignature` already states per-function obligations alongside types, with two `requires_*` fields inert. An effect set is another such field, and one of the existing ones — the `extern`-outside-`unsafe` rejection — is already the enforcement shape this needs. **This is why row 5 is cheaper than its position on the list suggests: the concept is new, the plumbing is not.**
+
+**Open sub-questions, stated rather than assumed away.**
+
+- **Do spawned tasks inherit the parent's effect set?** §20.2's `s.Spawn(f())` runs `f` elsewhere, so either the scope's set bounds it or the task carries its own. Inheritance is convenient and makes the spawn site useless for review; an explicit set is verbose at exactly the point where the concurrency is already dense. Not decided here, and it is a real question rather than a detail.
+- **What do function values carry?** §17 says function values preserve their effect sets. That makes the effect set part of the type of a closure, and therefore part of every signature that takes one.
+- **Where do supplier capabilities (§98) sit in the naming scheme?** `payments.charge` is business-level by design, but a supplier boundary is where business-level and vendor-level meet.
+
+**How this composes with §56.2.** They are two obligations on one call, and they are independent. `uses db.read<Issue>` answers *may this function read issues at all*; the scope obligation answers *does this particular query carry the caller's tenant*. Neither implies the other, and a design that collapses them will be wrong in the direction that matters — an authorised read of the wrong tenant's data is the failure mode §56 exists to prevent.
+
 ## 19. Unsafe and authority
 
 `unsafe` is independent from capability authority.
