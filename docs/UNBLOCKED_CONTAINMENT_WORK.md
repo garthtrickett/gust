@@ -17,6 +17,30 @@ change, and the ownership question it raises.
 **Written 2026-08-20 against `b47d0049`.** Every claim about the compiler has a
 citation; none of it was built or benchmarked.
 
+> **Re-verified 2026-08-20 08:33 UTC against `0b96ddff`, and every citation still resolves.**
+> Checked mechanically rather than by re-reading: each cited range was opened and
+> searched for the construct it was cited for, and the construct's true line
+> numbers were listed alongside. All eleven hold — `AddressOriginMetadata` and the
+> nine origin categories at `compiler/typechecker.gst:5-24`, the `std.Format`
+> validation at `:3810`, `return_origins` at `:637` and `variable_origins` at
+> `:748`, `env_register_struct_linear_metadata` at `:6801`, the attribute chain at
+> `compiler/parser.gst:869-872`, `is_linear_resource` at `compiler/ast.gst:77`,
+> `serialize_type` at `:247`, `CompilerError` at `compiler/errors.gst:10`, and
+> `Span` at `compiler/token.gst:60`.
+>
+> The two load-bearing negatives hold too: **there is still no JSON writer
+> anywhere in `compiler/`**, so proposal 2's only genuinely new code is still new;
+> and `typechecker_log_trace` still has exactly **40 callers**, so the correction
+> about those call sites not being a substrate still stands.
+>
+> **Why this check is worth its cost.** A proposal document pinned to a commit
+> invites a reader to discount it without checking, and "written against an old
+> HEAD" is indistinguishable from "stale" at a glance. It was not stale: `main`
+> moved from `b47d0049` to `0b96ddff` and none of the cited structure moved with it.
+> The citations most likely to rot are the ones inside a lane's active phase, and
+> none of these are. Re-run this check before scheduling either proposal, not
+> before reading them.
+
 ---
 
 ## Why these two and not the other thirty-five
