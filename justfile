@@ -21750,3 +21750,25 @@ guard-stdlib-s1-resource-prerequisites:
     rg -n -F 'S1.7 verdict: S1.8 through S1.11 stay blocked' TASK_STDLIB.md >/dev/null
 
     echo "✅ Resource prerequisites unchanged since the S1.7 audit: one built-in destructor, no source syntax to declare one."
+
+# Stdlib lane, Phase S1. Appended at the end for the same reason as the other S1
+# guards: several guards extract recipe bodies with sed ranges bounded by the
+# next recipe name.
+guard-stdlib-s1-surface-inventory:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking the stdlib surface inventory is derived and current..."
+    python3 scripts/stdlib_surface_inventory.py --check
+
+    # The inventory only helps if it is read as authoritative, so pin the two
+    # facts a roadmap has already got wrong from memory.
+    inventory="docs/STDLIB_SURFACE_INVENTORY.md"
+    if rg -n -F -e '- `Contains`' "$inventory" >/dev/null 2>&1; then
+      echo "Contains now appears as a collection method. TASK_STDLIB.md S1.3 records that"
+      echo "it does not exist; update that note before relying on the inventory."
+      exit 1
+    fi
+    rg -n -F -e '- `Get`' "$inventory" >/dev/null
+    rg -n -F -e '- `std.str_eq`' "$inventory" >/dev/null
+
+    echo "✅ Stdlib surface inventory is generated from the compiler and current."
