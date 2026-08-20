@@ -374,6 +374,13 @@ Proposed replacement:
 >    instruct it — to report that a lane and its queue have become disconnected.
 >    This is the same cross-reference as item 2, pointed at agents instead of PRs.
 >
+> 9. **Report bootstrap-seed drift.** Find the last seed commit with
+>    `git log -1 --format='%h %ad' --date=short -- gust_v4.c`, then count commits
+>    since it touching `compiler/lexer.gst`, `compiler/parser.gst`,
+>    `compiler/typechecker.gst`, `compiler/codegen.gst`. Report the count and the
+>    age. **This is a number, not an alarm** — nothing in CI detects seed drift,
+>    and the decision to regenerate belongs to the lane that owns the seed.
+>
 > Report `now` from `date -u` in the same command that reads the runs. If nothing
 > needs attention, say so in one line.
 
@@ -386,6 +393,39 @@ lane a turn and usually tells it what it already knows. And **the orphaned-work
 check is added**, because on 2026-08-20 a stdlib PR sat unattended for over an
 hour and nothing in the system was looking for that — it is the one question this
 role can answer that no lane can answer about itself.
+
+### 5.1.1 Why seed drift is measured rather than checked
+
+`AGENTS.md` says of the bootstrap seed that **nothing in CI detects drift**, and
+that *"a long gap since the last regeneration is a risk to retire deliberately,
+not evidence that all is well."* That sentence carries the whole safeguard and
+has no mechanism behind it. Item 9 above is the mechanism, and its shape is
+deliberate.
+
+**Measure, do not build.** The drift signal needs no compilation: the last seed
+commit and a path-filtered `git log` answer it in under a second. `make
+bootstrap` compiles the compiler three times, and on 2026-08-20 a two-run PR sat
+queued for over an hour behind sixty-run waves — **a recurring heavy job would
+spend the scarcest resource in the system to learn what one `git log` already
+says.**
+
+**Report, do not fail.** Drift is not a defect, so a red check is the wrong
+shape. A failing check that means *consider regenerating soon* is one people
+learn to ignore, and they take the real ones with it.
+
+**Report, do not decide.** `AGENTS.md`'s fourth trigger — drifted far enough that
+the next bootstrap-sensitive patch would carry the backlog — is irreducibly
+judgement, since it depends on what the next patch is, which only the lane
+planning it knows. And a regeneration must be its own commit and PR, so it
+competes with real work for a place in a queue. **The monitor supplies the
+number; the owning lane decides what it means.**
+
+**Baseline reading, 2026-08-20 23:24Z.** Seed last regenerated **2026-08-07**
+(`1e5ba38b`, *"chore: ran make bootstrap"*), **13 days**. Since then **61 commits
+touched `compiler/*.gst`**, of which **2 touched the four files trigger 2 names**.
+Recorded so the first monitor report has something to be a delta from — and worth
+noting that the answer turned out to be *small*, which was not knowable either way
+before it was measured. **An unmeasured risk is not the same as a large one.**
 
 ### 5.2 Cadence — proposed: every 15 minutes, not every 5
 
