@@ -379,7 +379,7 @@ second, drifting copy of it.
 | OD-2 | ~~Generic functions vs compiler-owned query derivation~~ | **RESOLVED 2026-08-20** — compiler-owned derivation; §13's ban stands | — | §14; consequences in §13 and `docs/DEMO_TARGET_PROGRAM.md` |
 | OD-10 | **Distribution for the product path** | **OPEN** — currently unanswered | Month 4 | §0.11 |
 | OD-3 | SAM state ownership under linear resources and no interior mutability | **OPEN** — leading direction proposed 2026-08-20 (§38.1); partly decided by implementation, `std.Rc` already ships | v0.5 | §27, §38; the discrepancy as `TASK_STDLIB.md` CR-9; evidence in `docs/ONE_WAY_LEDGER.md` E8 |
-| OD-4 | WASM stack-switching support and payload cost | **OPEN** | v0.5 | §21, §41 |
+| OD-4 | WASM stack-switching support and payload cost | **OPEN** — recommendation recorded 2026-08-20 (§21.1) | v0.5 | §21, §41 |
 | OD-6 | Form of the intent layer | **OPEN** | v1.0 | Part XXI |
 | OD-11 | ~~The fate of `std.Spawn`~~ | **RESOLVED 2026-08-20** — bare form deleted; scoped spawn returns a linear task handle | Demo | §20.1 |
 | OD-5 | Supplier certification staffing model | **OPEN** | Post-1.0 | Part XVI |
@@ -969,6 +969,18 @@ The demo cut (§0.14) is server-only, which splits this cleanly: **OD-1 (server 
 **What explicitly does not count.** *Implementation difficulty* — this was known to be the harder option when it was chosen. *WASM stack-switching cost* — that is OD-4, it defers to v0.5, and §0.14's demo cut is server-only. The strongest available argument against transparent suspension is therefore out of scope for the decision this direction settles, and may not be borrowed back into it.
 
 **The recommendation this direction adopts.** Take Go's *suspension* model and reject Go's *task* model: transparent suspension with no colouring, over a scheduler that already exists, with every task owned by a lexical scope that cannot exit while a child is live, and task handles as linear resources. Three named concepts — child task, supervisor, durable job — rather than one `spawn` with adjectives. `?` continues to mean "may fail"; suspension needs no keyword because it is always owned.
+
+### 21.1 Recommendation for OD-4 — do not buy the transform
+
+Two ways to make a WASM function pause. **Rewrite the emitted module** so every function saves its own position and locals and can be re-entered later — an off-the-shelf build step, works in every browser today, and roughly doubles the binary. Or **use the platform's own stack switching**, which costs nothing in size and depends on the browser having it.
+
+**Recommendation: the platform feature, with §21's no-client-suspension fallback behind it — and not the transform.**
+
+The reason is the shape of the two costs rather than their size today. **The transform's cost is permanent and paid by every user on every load, forever; the platform feature's cost is temporary and shrinks on its own.** Adopting a standing tax on payload to serve browsers that will have aged out before v0.5 ships is paying permanently for a problem that is expiring, and payload is the one cost a browser user feels before anything appears on screen.
+
+**There is also a real chance the question does not arise.** §21's fallback — client code dispatches actions and returns effects, never awaits — is not a degradation of the SAM model, it is a description of it. SAM already separates effects into a named layer, which is architectural colouring rather than type-level colouring, and the browser's own event loop already handles that boundary. If the only suspension points in client code are effects, the interior never needs to pause, and **neither option gets bought.** That is the first thing to measure once a real client program exists, and it is cheaper to measure than either option is to adopt.
+
+Keep the transform available as a bridge for a specific customer on a specific old browser. That is a deployment decision with a known price, which is a very different thing from making it the default and paying it everywhere.
 
 The fallback above — coloured async on the client, transparent on the server — is recorded here as the worse option. Two concurrency models in a language whose premise is one of everything refutes the premise; if OD-4 makes WASM stack switching unaffordable, restricting client code to event-driven dispatch with no suspension is the better trade, and Part IX's SAM model already implies it.
 
