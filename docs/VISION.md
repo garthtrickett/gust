@@ -2131,6 +2131,10 @@ Unresolved. Three shapes worth prototyping during v0.1, decided before v0.5:
 
 Not mutually exclusive. The likely answer is a small core of (3) with (1) as the authoring surface and (2) as the depth option.
 
+**Why that combination, and why it is not three ways to do one thing.** The three candidates answer different questions, which is what makes stacking them legitimate under §13 rather than a violation of it. (3) answers **where a check attaches** — effect declarations, a small fixed set of points the compiler already knows about, so intent lands on the same boundary authority does. (1) answers **who can author one** — an example is writable by someone who understands the business and not the codebase, which matters because §116 requires human authorship and that requirement is worthless if only the system's authors can satisfy it. (2) answers **how much a check covers** — properties generalise a case into a class, over §79's existing conformance machinery.
+
+One attachment point, two authoring depths. A reviewer never chooses between them for the same job: an example and a property attached to the same contract are not rival spellings, they are a case and its generalisation. **If that stops being true — if the same intent can be stated equally well as either — the combination has become three ways to do one thing and should collapse to one.** Worth checking during the v0.1 prototypes, because it is the failure mode this document's own premise would predict.
+
 ## 118. Relationship to the rest of the document
 
 - **§79 conformance checks** are the closest existing machinery and the natural implementation substrate. They check structural properties today; this Part extends them to domain behaviour.
