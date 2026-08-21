@@ -1,6 +1,6 @@
 # Roadmap tail — Phases 20 to 25
 
-`TASK.md` holds Phase 18 and `TASK_PHASE19.md` holds Phase 19. **Phases 20
+`TASK.md` holds Phase 19. **Phases 20
 through 25 were not in the repository.** `docs/VISION_RECONCILIATION.md` cited
 `mir-to-cranelift.md` three times for "the arc across phases 18–25", and that file
 is not here — it was a source document, never landed. This file closes that gap.

@@ -457,6 +457,293 @@
     }
   },
   "opening_snapshots": {
+    "phase19": {
+      "opening_version": "phase19_opening_inventory_rebased_on_phase18_closure",
+      "inventory_version": "phase19_opening_inventory_v1",
+      "status": "ready_for_patch19_1",
+      "next_patch": "19.1",
+      "predecessor_closure_version": "phase18_closed_target_object_and_linker_boundary",
+      "review_view": "compiler/CRANELIFT_PHASE19_OPENING.md",
+      "immutable_fields": [
+        "id",
+        "parent",
+        "feature_family",
+        "ci_family",
+        "capability_owner",
+        "diagnostic_owner",
+        "target_applicability"
+      ],
+      "entries": [
+        {
+          "id": "p19_brand_identity",
+          "parent": "phase18_closure:phase18_closed_target_object_and_linker_boundary",
+          "feature_family": "brand_identity",
+          "ci_family": "brand-identity",
+          "capability_owner": "compiler_brand_identity_planner",
+          "diagnostic_owner": "compiler_brand_identity_verifier",
+          "target_applicability": "all_declared_phase18_supported_targets",
+          "status": "candidate_deferred",
+          "current_failure_stage": "before_driver_discovery",
+          "source_requirement": "TASK_STDLIB.md CR-2",
+          "positive_future_fixture": "compiler/future/p19_brand_identity_source.gst",
+          "negative_current_fixture": "compiler/p19_brand_identity_deferred_source.gst"
+        },
+        {
+          "id": "p19_container_arena_classification",
+          "parent": "phase19_planning:type_derived_classification",
+          "feature_family": "brand_identity",
+          "ci_family": "brand-identity",
+          "capability_owner": "compiler_container_classification_planner",
+          "diagnostic_owner": "compiler_container_classification_verifier",
+          "target_applicability": "all_declared_phase18_supported_targets",
+          "status": "candidate_deferred",
+          "current_failure_stage": "before_driver_discovery",
+          "source_requirement": "docs/SHARED_SEMANTIC_ZONE.md D-1",
+          "positive_future_fixture": "compiler/future/p19_container_arena_classification_source.gst",
+          "negative_current_fixture": "compiler/p19_container_arena_classification_deferred_source.gst"
+        },
+        {
+          "id": "p19_argument_representation",
+          "parent": "phase19_planning:type_derived_representation",
+          "feature_family": "value_representation",
+          "ci_family": "value-representation",
+          "capability_owner": "compiler_argument_representation_planner",
+          "diagnostic_owner": "compiler_argument_representation_verifier",
+          "target_applicability": "all_declared_phase18_supported_targets",
+          "status": "candidate_deferred",
+          "current_failure_stage": "before_driver_discovery",
+          "source_requirement": "docs/SHARED_SEMANTIC_ZONE.md D-2",
+          "positive_future_fixture": "compiler/future/p19_argument_representation_source.gst",
+          "negative_current_fixture": "compiler/p19_argument_representation_deferred_source.gst"
+        }
+      ],
+      "brand_vocabularies": [
+        {
+          "id": "rust_erasure_bases",
+          "source_path": "src/codegen.rs",
+          "line": 71,
+          "compiler": "rust_host",
+          "names": [
+            "connCtx",
+            "arena",
+            "ctx",
+            "Any",
+            "a",
+            "main_ctx",
+            "bg_ctx",
+            "file_ctx"
+          ]
+        },
+        {
+          "id": "rust_type_bases",
+          "source_path": "src/typechecker/types.rs",
+          "line": 61,
+          "compiler": "rust_host",
+          "names": [
+            "connCtx",
+            "arena",
+            "ctx",
+            "Any",
+            "a",
+            "main_ctx",
+            "bg_ctx",
+            "file_ctx"
+          ]
+        },
+        {
+          "id": "rust_suffix_brands",
+          "source_path": "src/typechecker/types.rs",
+          "line": 439,
+          "compiler": "rust_host",
+          "names": [
+            "ctx",
+            "connCtx",
+            "arena",
+            "a",
+            "Any",
+            "ctx1",
+            "ctx2",
+            "innerCtx",
+            "outerCtx",
+            "current_ctx",
+            "next_ctx",
+            "main_ctx",
+            "bg_ctx",
+            "file_ctx"
+          ]
+        },
+        {
+          "id": "gust_erasure_bases",
+          "source_path": "compiler/codegen.gst",
+          "line": 658,
+          "compiler": "self_hosted",
+          "names": [
+            "connCtx",
+            "arena",
+            "Any",
+            "a",
+            "main_ctx",
+            "bg_ctx",
+            "file_ctx",
+            "ctx"
+          ]
+        },
+        {
+          "id": "gust_suffix_brands",
+          "source_path": "compiler/typechecker.gst",
+          "line": 5172,
+          "compiler": "self_hosted",
+          "names": [
+            "ctx",
+            "connCtx",
+            "arena",
+            "a",
+            "Any",
+            "ctx1",
+            "ctx2",
+            "innerCtx",
+            "outerCtx",
+            "current_ctx",
+            "next_ctx",
+            "main_ctx",
+            "bg_ctx",
+            "file_ctx"
+          ]
+        }
+      ],
+      "host_assumptions": [
+        {
+          "id": "ha_rust_codegen_erasure",
+          "assumption": "brand erasure scans a hardcoded name list, first match wins, restarted until stable",
+          "source_path": "src/codegen.rs",
+          "reachability_area": "brand_resolution",
+          "inventory_owner": "compiler_brand_identity_planner",
+          "diagnostic_owner": "compiler_brand_identity_verifier",
+          "owning_phase19_entry_id": "p19_brand_identity",
+          "initial_classification": "must_change",
+          "target_applicability": "all_declared_phase18_supported_targets"
+        },
+        {
+          "id": "ha_rust_alloc_spelling",
+          "assumption": "allocator-ness is decided by comparing an identifier against \"arena\" and \"ctx\"",
+          "source_path": "src/codegen.rs",
+          "reachability_area": "container_classification",
+          "inventory_owner": "compiler_container_classification_planner",
+          "diagnostic_owner": "compiler_container_classification_verifier",
+          "owning_phase19_entry_id": "p19_container_arena_classification",
+          "initial_classification": "must_change",
+          "target_applicability": "all_declared_phase18_supported_targets"
+        },
+        {
+          "id": "ha_rust_type_brand_bases",
+          "assumption": "type-level brand identity is decided from a hardcoded name list",
+          "source_path": "src/typechecker/types.rs",
+          "reachability_area": "type_naming",
+          "inventory_owner": "compiler_brand_identity_planner",
+          "diagnostic_owner": "compiler_brand_identity_verifier",
+          "owning_phase19_entry_id": "p19_brand_identity",
+          "initial_classification": "must_change",
+          "target_applicability": "all_declared_phase18_supported_targets"
+        },
+        {
+          "id": "ha_rust_parser_brand_name",
+          "assumption": "the parser treats the literal spelling \"Arena\" as a brand name",
+          "source_path": "src/parser.rs",
+          "reachability_area": "type_naming",
+          "inventory_owner": "compiler_brand_identity_planner",
+          "diagnostic_owner": "compiler_brand_identity_verifier",
+          "owning_phase19_entry_id": "p19_brand_identity",
+          "initial_classification": "must_change",
+          "target_applicability": "all_declared_phase18_supported_targets"
+        },
+        {
+          "id": "ha_rust_monomorphize_generic_name",
+          "assumption": "monomorphization substitutes on the generic parameter spelling \"arena\"",
+          "source_path": "src/typechecker/monomorphize.rs",
+          "reachability_area": "argument_representation",
+          "inventory_owner": "compiler_argument_representation_planner",
+          "diagnostic_owner": "compiler_argument_representation_verifier",
+          "owning_phase19_entry_id": "p19_argument_representation",
+          "initial_classification": "must_change",
+          "target_applicability": "all_declared_phase18_supported_targets"
+        },
+        {
+          "id": "ha_rust_typechecker_clean_part",
+          "assumption": "brand membership is tested by comparing a cleaned name part against literal spellings",
+          "source_path": "src/typechecker.rs",
+          "reachability_area": "brand_resolution",
+          "inventory_owner": "compiler_brand_identity_planner",
+          "diagnostic_owner": "compiler_brand_identity_verifier",
+          "owning_phase19_entry_id": "p19_brand_identity",
+          "initial_classification": "must_change",
+          "target_applicability": "all_declared_phase18_supported_targets"
+        },
+        {
+          "id": "ha_gust_codegen_erasure",
+          "assumption": "brand erasure scans a hardcoded name vector, first match wins, restarted until stable",
+          "source_path": "compiler/codegen.gst",
+          "reachability_area": "brand_resolution",
+          "inventory_owner": "compiler_brand_identity_planner",
+          "diagnostic_owner": "compiler_brand_identity_verifier",
+          "owning_phase19_entry_id": "p19_brand_identity",
+          "initial_classification": "must_change",
+          "target_applicability": "all_declared_phase18_supported_targets"
+        },
+        {
+          "id": "ha_gust_alloc_spelling",
+          "assumption": "allocator-ness is decided by comparing an identifier against \"ctx\", \"arena\", \"connCtx\", and \"a\"",
+          "source_path": "compiler/codegen.gst",
+          "reachability_area": "container_classification",
+          "inventory_owner": "compiler_container_classification_planner",
+          "diagnostic_owner": "compiler_container_classification_verifier",
+          "owning_phase19_entry_id": "p19_container_arena_classification",
+          "initial_classification": "must_change",
+          "target_applicability": "all_declared_phase18_supported_targets"
+        },
+        {
+          "id": "ha_gust_typechecker_brands",
+          "assumption": "suffix brand extraction scans a hardcoded name vector",
+          "source_path": "compiler/typechecker.gst",
+          "reachability_area": "type_naming",
+          "inventory_owner": "compiler_brand_identity_planner",
+          "diagnostic_owner": "compiler_brand_identity_verifier",
+          "owning_phase19_entry_id": "p19_brand_identity",
+          "initial_classification": "must_change",
+          "target_applicability": "all_declared_phase18_supported_targets"
+        },
+        {
+          "id": "ha_gust_default_brand",
+          "assumption": "an absent brand defaults to the literal spelling \"arena\"",
+          "source_path": "compiler/typechecker.gst",
+          "reachability_area": "brand_resolution",
+          "inventory_owner": "compiler_brand_identity_planner",
+          "diagnostic_owner": "compiler_brand_identity_verifier",
+          "owning_phase19_entry_id": "p19_brand_identity",
+          "initial_classification": "must_change",
+          "target_applicability": "all_declared_phase18_supported_targets"
+        },
+        {
+          "id": "ha_seed_encodes_behaviour",
+          "assumption": "the committed bootstrap seed encodes the current spelling-derived behaviour",
+          "source_path": "gust_v4.c",
+          "reachability_area": "argument_representation",
+          "inventory_owner": "compiler_argument_representation_planner",
+          "diagnostic_owner": "compiler_argument_representation_verifier",
+          "owning_phase19_entry_id": "p19_argument_representation",
+          "initial_classification": "must_change",
+          "target_applicability": "all_declared_phase18_supported_targets"
+        }
+      ],
+      "phase18_rebase": [
+        {
+          "source_residual_id": "p18_target_authority",
+          "residual_origin": "phase18_closure",
+          "phase19_disposition": "not_selected",
+          "selected_phase19_entry_ids": [],
+          "justification": "Target identity is closed Phase 18 territory and is unaffected by brand resolution."
+        }
+      ]
+    },
     "phase13": {
       "opening_version": "phase13_opening_inventory_rebased_on_phase12_5_framework",
       "inventory_version": "phase13_opening_inventory_v1",

@@ -130,7 +130,8 @@
         "phase15",
         "phase16",
         "phase17",
-        "phase18"
+        "phase18",
+        "phase19"
       ],
       "properties": {
         "phase13": {
@@ -150,6 +151,9 @@
         },
         "phase18": {
           "$ref": "#/$defs/phase18_opening_snapshot"
+        },
+        "phase19": {
+          "$ref": "#/$defs/phase19_opening_snapshot"
         }
       }
     },
@@ -7455,6 +7459,77 @@
         },
         "target_applicability": {
           "const": "all_declared_host_targets_from_phase14_target_authority"
+        }
+      }
+    },
+    "phase19_opening_snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "opening_version",
+        "inventory_version",
+        "status",
+        "next_patch",
+        "predecessor_closure_version",
+        "review_view",
+        "immutable_fields",
+        "entries",
+        "brand_vocabularies",
+        "host_assumptions",
+        "phase18_rebase"
+      ],
+      "properties": {
+        "opening_version": {
+          "const": "phase19_opening_inventory_rebased_on_phase18_closure"
+        },
+        "inventory_version": {
+          "const": "phase19_opening_inventory_v1"
+        },
+        "status": {
+          "const": "ready_for_patch19_1"
+        },
+        "next_patch": {
+          "const": "19.1"
+        },
+        "predecessor_closure_version": {
+          "const": "phase18_closed_target_object_and_linker_boundary"
+        },
+        "review_view": {
+          "const": "compiler/CRANELIFT_PHASE19_OPENING.md"
+        },
+        "immutable_fields": {
+          "type": "array",
+          "minItems": 7,
+          "items": {
+            "type": "string"
+          }
+        },
+        "entries": {
+          "type": "array",
+          "minItems": 3,
+          "items": {
+            "type": "object"
+          }
+        },
+        "brand_vocabularies": {
+          "type": "array",
+          "minItems": 5,
+          "items": {
+            "type": "object"
+          }
+        },
+        "host_assumptions": {
+          "type": "array",
+          "minItems": 11,
+          "items": {
+            "type": "object"
+          }
+        },
+        "phase18_rebase": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
         }
       }
     },

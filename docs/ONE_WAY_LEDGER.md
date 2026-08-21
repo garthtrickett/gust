@@ -114,7 +114,7 @@ resolve with it — see E17.
 
 | Row | Rule | Status | Owner |
 | --- | --- | --- | --- |
-| 2 | Brand identity | VIOLATED | Phase 19 (`TASK_PHASE19.md`), staged |
+| 2 | Brand identity | VIOLATED | Phase 19 (`TASK.md`), active |
 | 6 | Panic scope | VIOLATED | `TASK_STDLIB.md` CR-3, issue #91 — unscheduled |
 | 17 | Shared ownership | VIOLATED | `TASK_STDLIB.md` CR-9 — new |
 | 19 | Concurrency | VIOLATED | `TASK_STDLIB.md` CR-8, issue #101 — new |
@@ -133,7 +133,7 @@ lane is working on any of them.
 
 ### D-1 — brand identity is inferred from identifier spelling (row 2)
 
-Owned by **Phase 19** (`TASK_PHASE19.md`), staged and not yet active. Recorded in
+Owned by **Phase 19** (`TASK.md`), active since 2026-08-20. Recorded in
 `docs/SHARED_SEMANTIC_ZONE.md` as D-1/D-2 and in `TASK_STDLIB.md` as CR-2.
 
 In the live compiler:
