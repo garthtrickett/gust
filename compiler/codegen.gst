@@ -2,6 +2,7 @@ import "ast.gst" as ast;
 import "token.gst" as token;
 import "errors.gst" as errors;
 import "typechecker.gst" as typechecker;
+import "phase19_spelling_rule.gst" as spelling_rule;
 import "mir_function_abi_authority.gst" as function_abi;
 import "mir_function_call.gst" as call_mir;
 
@@ -511,16 +512,7 @@ func codegen_is_brand_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[c
         if t.tag == 8 {
             mut name := t.Struct.struct_name;
             mut is_brand_name := 0;
-            if std.str_eq(name, "ctx") == 1 { is_brand_name = 1; }
-            if std.str_eq(name, "connCtx") == 1 { is_brand_name = 1; }
-            if std.str_eq(name, "arena") == 1 { is_brand_name = 1; }
-            if std.str_eq(name, "a") == 1 { is_brand_name = 1; }
-            if std.str_eq(name, "Any") == 1 { is_brand_name = 1; }
-            if codegen_ends_with(name, "_ctx") == 1 { is_brand_name = 1; }
-            if codegen_ends_with(name, "_connCtx") == 1 { is_brand_name = 1; }
-            if codegen_ends_with(name, "_arena") == 1 { is_brand_name = 1; }
-            if codegen_ends_with(name, "_a") == 1 { is_brand_name = 1; }
-            if codegen_ends_with(name, "_Any") == 1 { is_brand_name = 1; }
+            if len(spelling_rule.phase19_legacy_brand_from_suffix(name, ctx)) > 0 { is_brand_name = 1; }
 
             if is_brand_name == 1 {
                 mut lookup := (*env).struct_registry.get_opt(name);
@@ -1606,16 +1598,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
             mut alloc_str := codegen_generate_expression(alloc_idx, env, ctx);
             mut index_str := codegen_generate_expression(index_idx, env, ctx);
 
-            mut is_name_match := 0;
-            if std.str_eq(alloc_str, "ctx") || std.str_eq(alloc_str, "arena") || std.str_eq(alloc_str, "connCtx") || std.str_eq(alloc_str, "a") {
-                is_name_match = 1;
-            }
-            if std.str_find(alloc_str, ".ctx") != 0 - 1 || std.str_find(alloc_str, ".arena") != 0 - 1 || std.str_find(alloc_str, ".connCtx") != 0 - 1 || std.str_find(alloc_str, ".a") != 0 - 1 {
-                is_name_match = 1;
-            }
-            if std.str_find(alloc_str, "->ctx") != 0 - 1 || std.str_find(alloc_str, "->arena") != 0 - 1 || std.str_find(alloc_str, "->connCtx") != 0 - 1 || std.str_find(alloc_str, "->a") != 0 - 1 {
-                is_name_match = 1;
-            }
+            mut is_name_match := spelling_rule.phase19_legacy_brand_spelling_in_expression(alloc_str, ctx);
 
             if is_name_match == 1 && is_arena == 0 {
                 mut phase19_classification_disagreement := std.Format("Fatal Error: Phase 19 spelling override changed arena classification for %s (resolved tag %d)", alloc_str, resolved_alloc_t.tag);

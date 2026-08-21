@@ -1,0 +1,58 @@
+name: Cranelift Phase 19 Rule Convergence
+
+on:
+  pull_request:
+    paths:
+      - 'compiler/codegen.gst'
+      - 'compiler/typechecker.gst'
+      - 'compiler/phase19_spelling_rule.gst'
+      - 'compiler/CRANELIFT_PHASE19_RULE_CONVERGENCE.md'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/cranelift_registry.py'
+      - 'scripts/cranelift_test_levels.json'
+      - 'scripts/phase19_rule_convergence.py'
+      - 'scripts/phase19_rule_convergence_parity.sh'
+      - '.github/workflows/phase19-rule-convergence.yml'
+      - '.github/workflows/pr-fast.yml'
+      - 'justfile'
+      - 'TASK.md'
+  push:
+    branches: [main]
+    paths:
+      - 'compiler/codegen.gst'
+      - 'compiler/typechecker.gst'
+      - 'compiler/phase19_spelling_rule.gst'
+      - 'compiler/CRANELIFT_PHASE19_RULE_CONVERGENCE.md'
+      - 'scripts/phase19_rule_convergence.py'
+      - 'scripts/phase19_rule_convergence_parity.sh'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: guard-cranelift-phase19-rule-convergence
+        run: just guard-cranelift-phase19-rule-convergence
+
+  parity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - run: make gust
+      - name: guard-cranelift-phase19-rule-convergence-parity
+        run: just guard-cranelift-phase19-rule-convergence-parity

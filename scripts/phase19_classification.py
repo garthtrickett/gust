@@ -161,7 +161,12 @@ def validate() -> dict:
             "typechecker.typechecker_classify_resolved_type(resolved_alloc_t, typechecker.typechecker_classification_arena(), env, ctx)" in generate_body,
             "index arena classification does not consume the resolved allocator type")
     require(assertion in generate_body, "redundancy assertion is missing")
-    require("mut is_name_match := 0;" in generate_body,
+    legacy_override = "mut is_name_match := 0;" in generate_body
+    converged_override = (
+        "mut is_name_match := spelling_rule.phase19_legacy_brand_spelling_in_expression(alloc_str, ctx);"
+        in generate_body
+    )
+    require(legacy_override or converged_override,
             "compatibility spelling override was removed before its retirement patch")
     require(generate_body.find(assertion) < generate_body.find("if is_name_match == 1 {", generate_body.find(assertion)),
             "spelling override is applied before its redundancy assertion")

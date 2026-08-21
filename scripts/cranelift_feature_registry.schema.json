@@ -18,6 +18,7 @@
     "phase19_type_naming",
     "phase19_classification",
     "phase19_representation",
+    "phase19_rule_convergence",
     "phase15_specialized_resource_authority",
     "phase15_failure_cleanup_authority",
     "phase15_resource_composition_authority",
@@ -295,6 +296,57 @@
               "compiler/phase19_argument_representation_a_source.gst",
               "compiler/phase19_argument_representation_b_source.gst"
             ]
+          }
+        }
+      },
+      "phase19_rule_convergence": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["authority_version", "status", "next_patch", "review_view",
+                     "shared_authority", "consumer_policy", "legacy_spellings",
+                     "matching_forms", "cases", "site_dispositions"],
+        "properties": {
+          "authority_version": {"const": "phase19_self_hosted_spelling_rule_v1"},
+          "status": {"const": "ready_for_patch19_7"},
+          "next_patch": {"const": "19.7"},
+          "review_view": {"const": "compiler/CRANELIFT_PHASE19_RULE_CONVERGENCE.md"},
+          "shared_authority": {"const": "compiler/phase19_spelling_rule.gst"},
+          "consumer_policy": {"const": "all_remaining_self_hosted_consumers_delegate_to_one_ordered_case_table"},
+          "legacy_spellings": {
+            "const": ["ctx", "connCtx", "arena", "a", "Any", "ctx1", "ctx2",
+                      "innerCtx", "outerCtx", "current_ctx", "next_ctx", "main_ctx",
+                      "bg_ctx", "file_ctx"]
+          },
+          "matching_forms": {"const": ["exact", "suffix", "expression"]},
+          "cases": {
+            "type": "array",
+            "minItems": 13,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "form", "input", "expected_match", "expected_brand"],
+              "properties": {
+                "id": {"type": "string", "minLength": 1},
+                "form": {"enum": ["exact", "suffix", "expression"]},
+                "input": {"type": "string", "minLength": 1},
+                "expected_match": {"enum": [0, 1]},
+                "expected_brand": {"type": "string"}
+              }
+            }
+          },
+          "site_dispositions": {
+            "type": "array",
+            "minItems": 9,
+            "maxItems": 9,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "disposition"],
+              "properties": {
+                "id": {"type": "string", "minLength": 1},
+                "disposition": {"type": "string", "minLength": 1}
+              }
+            }
           }
         }
       },
