@@ -232,11 +232,28 @@ whether or not CR-1 is scheduled.
 3. **Smallest generic change:** resolve arena-ness and argument representation
    from the type system; delete the name list from both compilers; make the two
    matching rules identical or make the concept unnecessary.
-4. **Affected:** `src/codegen.rs:71,128,1762,1808,1843`,
-   `src/typechecker/types.rs:61,439`, `src/typechecker.rs:135,172`,
-   `src/typechecker/monomorphize.rs:234,254,268,599,722`,
-   `compiler/codegen.gst:658,762,896,1101,1851`,
-   `compiler/typechecker.gst:4953,5151`, `gust_v4.c`.
+4. **Affected — see `compiler/CRANELIFT_PHASE19_OPENING.md`, which supersedes the
+   list that stood here.** Phase 19.0 recomputed the sweep and produced a
+   *generated, validated* inventory: eleven host assumptions across both
+   compilers and four reachability areas, five brand vocabularies recorded
+   verbatim with their locations, and a validator that fails if a cited path does
+   not exist. A hand-maintained list in this file would now be a second answer to
+   the same question, and a worse one.
+
+   **Recording why it was replaced, because the two failure modes are different
+   and only one of them is survivable.** The old list had drifted — by one or two
+   lines throughout, and by roughly twenty in `compiler/typechecker.gst`, mostly
+   from my own S1.1 and S1.3 edits to that file. Drift is anticipated:
+   `docs/SHARED_SEMANTIC_ZONE.md` permits source `path:line` and tells the reader
+   to confirm the construct still exists before acting.
+
+   **It was also incomplete, and that is not survivable the same way.** It omitted
+   `src/parser.rs`, which tests the literal spelling `"Arena"` in five places. No
+   amount of confirming-before-acting surfaces a file that was never listed —
+   the reader has nothing to confirm. I audited these citations on 2026-08-20 and
+   checked only whether the ones present were *accurate*; I never asked whether
+   the list was *complete*, and concluded the convention's mitigation had worked.
+   It had, for drift. It has no coverage for omission.
 5. **MIR-to-C:** yes.
 6. **Cranelift:** yes — argument representation is Phase 16 ABI territory.
 7. **Bootstrap:** yes, and this is the highest-risk element. The seed encodes
