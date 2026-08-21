@@ -383,9 +383,20 @@ without it.
    `env_open_directory_resource_requires_cleanup`, a directory-specific
    predicate, so it cannot attach to a user type. This is smaller than the
    original item — enforcement need not be built, only widened once (a) exists.
+   **(c) a way to make a type's constructor unavailable to user code.**
+   **Added 2026-08-20.** S1.9 requires that constructing a fabricated guard is a
+   compile error. S1.8 forbids compiler knowledge of `Mutex`, so `MutexGuard` is
+   an ordinary struct and any caller can write one literally. Rejecting that
+   needs some notion of a constructor private to the defining module — and
+   **neither compiler has any visibility concept at all**: `internal`, `private`,
+   `public`, `pub` and `protected` appear zero times in `compiler/lexer.gst`,
+   `compiler/parser.gst`, `src/lexer.rs` and `src/parser.rs`, and nothing named
+   `visibility`, `is_public` or `is_private` exists in either parser.
+
    Representation, transfer state, and `defer` are already present — `defer` in
    particular became an AST node after `STEP52_RESOURCE_SEMANTICS.md` was
-   written. The gap is destructor declaration and enforcement, not modelling.
+   written. The gap is destructor declaration, enforcement, and constructor
+   visibility — not modelling.
 4. **Affected:** typechecker resource state, canonical MIR resource values,
    scope-exit cleanup, destructor scheduling, `src/runtime/*` mutex contract.
 5. **MIR-to-C:** yes.
@@ -941,6 +952,13 @@ Validate the guard against control flow, not just the happy path.
   then let the guard release again.
 - Where preventing raw double-unlock would require a broad compiler semantic
   change, document it as a limitation rather than expanding scope.
+- **`construct a fabricated guard` is not satisfiable until CR-5 item 3(c)
+  lands.** No visibility mechanism exists in either compiler, so there is no
+  construct by which that rejection could be expressed. The escape hatch above is
+  scoped to double-unlock and does not cover fabrication. Either 3(c) resolves
+  first, or this bullet is struck and the exit gate is met with a recorded
+  limitation — that is a scoping decision for whoever picks up S1.9, not a
+  silent omission.
 - Add `guard-stdlib-s1-mutex-guard-scope`.
 
 **Test Level**
