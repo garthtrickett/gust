@@ -8,7 +8,7 @@ Report-only. Nothing in Patch 19.1 changes behaviour.
 - Inventory version: `phase19_spelling_inventory_self_hosted_v2`
 - Status: `ready_for_patch19_2`
 - Sites: `9`
-- Compiler scope: `self_hosted` (the deprecated root Rust prototype is retiring)
+- Compiler scope: `self_hosted` (the deprecated root Rust prototype is removed)
 
 ## Regression surface
 

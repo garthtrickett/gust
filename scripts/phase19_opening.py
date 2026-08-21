@@ -46,7 +46,7 @@ REQUIRED_AREAS = {
     "brand_resolution", "type_naming",
     "container_classification", "argument_representation",
 }
-# The deprecated Rust prototype is being retired. Phase 19 now follows the
+# The deprecated Rust prototype is removed. Phase 19 follows the
 # self-hosted compiler that participates in the bootstrap chain.
 REQUIRED_COMPILERS = {"self_hosted"}
 
@@ -179,7 +179,7 @@ def render(snap: dict) -> str:
         f"- Host assumptions: `{len(snap['host_assumptions'])}`",
         f"- Brand vocabularies: `{len(snap['brand_vocabularies'])}`",
         f"- Inherited residuals rebased: `{len(snap['phase18_rebase'])}`",
-        "- Compiler scope: `self_hosted` (the deprecated root Rust prototype is retiring)",
+        "- Compiler scope: `self_hosted` (the deprecated root Rust prototype is removed)",
         "",
         "## Opening rows",
         "",

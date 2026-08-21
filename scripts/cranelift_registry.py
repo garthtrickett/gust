@@ -21,7 +21,7 @@ TOP_FIELDS = {
     "current_phase", "closed_phase_versions", "closure_snapshots",
     "opening_snapshots", "phase19_spelling_inventory", "phase19_brand_authority",
     "phase19_type_naming", "phase19_classification", "phase19_representation",
-    "phase19_rule_convergence",
+    "phase19_rule_convergence", "phase19_retired_prototype_absence",
     "phase15_specialized_resource_authority",
     "phase15_failure_cleanup_authority",
     "phase15_resource_composition_authority",

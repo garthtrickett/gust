@@ -11,7 +11,7 @@ Generated from `scripts/cranelift_feature_registry.json` by
 - Host assumptions: `5`
 - Brand vocabularies: `2`
 - Inherited residuals rebased: `1`
-- Compiler scope: `self_hosted` (the deprecated root Rust prototype is retiring)
+- Compiler scope: `self_hosted` (the deprecated root Rust prototype is removed)
 
 ## Opening rows
 
