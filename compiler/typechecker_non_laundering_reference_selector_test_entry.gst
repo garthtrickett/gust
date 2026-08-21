@@ -45,6 +45,8 @@ func main() {
     typechecker.env_register_struct(&env_refsel_nlaunder, "ReferenceSelectorNlaunderHolder", holder_layout_refsel_nlaunder, ctx);
     typechecker.env_register_struct(&env_refsel_nlaunder, "Vector_ReferenceSelectorNlaunderHolder", vector_layout_refsel_nlaunder, ctx);
     typechecker.env_register_struct(&env_refsel_nlaunder, "HashMap_Int_ReferenceSelectorNlaunderHolder", map_layout_refsel_nlaunder, ctx);
+    typechecker.env_record_struct_container_kind(&env_refsel_nlaunder, "Vector_ReferenceSelectorNlaunderHolder", typechecker.typechecker_container_kind_vector(), ctx);
+    typechecker.env_record_struct_container_kind(&env_refsel_nlaunder, "HashMap_Int_ReferenceSelectorNlaunderHolder", typechecker.typechecker_container_kind_hashmap(), ctx);
 
     typechecker.scope_insert(scope_refsel_nlaunder, "ctx", t_arena_refsel_nlaunder, ctx);
     env_refsel_nlaunder.variable_types.Insert("ctx", t_arena_refsel_nlaunder);

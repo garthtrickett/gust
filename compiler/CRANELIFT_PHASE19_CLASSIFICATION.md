@@ -15,6 +15,8 @@ Generated from `scripts/cranelift_feature_registry.json` by
 now come from one resolved-type classifier. Concrete container kinds are propagated
 from registered templates into a registry keyed beside `struct_registry`; a
 Vector-like user spelling without that metadata remains an ordinary struct.
+Compiler-internal fixtures that synthesize container layouts register their
+container kind explicitly; `Vector_Pretender` remains deliberately unannotated.
 
 Both typechecking and MIR-to-C consume the same classifier. Arena pointer/value
 selection uses the resolved expression type. The remaining Clone brand

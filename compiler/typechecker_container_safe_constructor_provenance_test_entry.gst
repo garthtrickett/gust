@@ -24,6 +24,7 @@ func main() {
     mut env_cont_ctorprov := typechecker.env_new(ctx);
     mut scope_cont_ctorprov := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
     typechecker.env_register_struct(&env_cont_ctorprov, "MockVectorSafeContainerCtorProv", vector_layout_cont_ctorprov, ctx);
+    typechecker.env_record_struct_container_kind(&env_cont_ctorprov, "MockVectorSafeContainerCtorProv", typechecker.typechecker_container_kind_vector(), ctx);
 
     typechecker.scope_insert(scope_cont_ctorprov, "ctx", t_arena_cont_ctorprov, ctx);
     env_cont_ctorprov.variable_types.Insert("ctx", t_arena_cont_ctorprov);

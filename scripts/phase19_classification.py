@@ -3,6 +3,7 @@
 
 import argparse
 import json
+import re
 from pathlib import Path
 
 
@@ -100,6 +101,34 @@ def validate() -> dict:
     require(typechecker.count("env_record_struct_template_container_kind(env,") == 9,
             "Vector/HashMap/Pool template aliases are not completely registered")
 
+    # Compiler-internal fixtures construct synthetic container layouts directly
+    # rather than monomorphizing the std templates. They must register the same
+    # metadata explicitly; their old Vector_/HashMap_ spellings are not authority.
+    synthetic = re.compile(
+        r'env_register_struct\([^\n]*,\s*"((?:Vector_|HashMap_|std_HashMap_|MockVector)[^"]*)"')
+    for fixture_path in sorted(ROOT.joinpath("compiler").glob("*.gst")):
+        fixture_text = fixture_path.read_text(encoding="utf-8")
+        for name in synthetic.findall(fixture_text):
+            if name == "Vector_Pretender":
+                continue
+            expected_kind = "hashmap" if name.startswith(("HashMap_", "std_HashMap_")) else "vector"
+            registrations = len(re.findall(
+                rf'env_register_struct\([^\n]*,\s*"{re.escape(name)}"', fixture_text))
+            metadata = len(re.findall(
+                rf'env_record_struct_container_kind\([^\n]*,\s*"{re.escape(name)}",\s*'
+                rf'typechecker\.typechecker_container_kind_{expected_kind}\(\)', fixture_text))
+            require(metadata == registrations,
+                    f"synthetic container {fixture_path.name}:{name} has {registrations} registrations "
+                    f"but {metadata} explicit {expected_kind} metadata records")
+    raw_sandbox_fixture = ROOT.joinpath(
+        "compiler/typechecker_raw_sandbox_provenance_container_flow_test_entry.gst"
+    ).read_text(encoding="utf-8")
+    require("env_record_struct_container_kind(env, name, typechecker.typechecker_container_kind_vector(), ctx);"
+            in raw_sandbox_fixture and
+            "env_record_struct_container_kind(env, name, typechecker.typechecker_container_kind_hashmap(), ctx);"
+            in raw_sandbox_fixture,
+            "dynamic raw/sandbox container fixture lacks explicit metadata")
+
     codegen = CODEGEN.read_text(encoding="utf-8")
     for name, kind in (
         ("codegen_is_slice_type", "slice"),
@@ -163,6 +192,8 @@ Generated from `scripts/cranelift_feature_registry.json` by
 now come from one resolved-type classifier. Concrete container kinds are propagated
 from registered templates into a registry keyed beside `struct_registry`; a
 Vector-like user spelling without that metadata remains an ordinary struct.
+Compiler-internal fixtures that synthesize container layouts register their
+container kind explicitly; `Vector_Pretender` remains deliberately unannotated.
 
 Both typechecking and MIR-to-C consume the same classifier. Arena pointer/value
 selection uses the resolved expression type. The remaining Clone brand

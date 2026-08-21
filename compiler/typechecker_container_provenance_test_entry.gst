@@ -22,6 +22,7 @@ func main() {
     }
     vector_layout_contprov.fields.Insert("data", t_ptr_str_contprov);
     typechecker.env_register_struct(&env, "MockVectorContProv", vector_layout_contprov, ctx);
+    typechecker.env_record_struct_container_kind(&env, "MockVectorContProv", typechecker.typechecker_container_kind_vector(), ctx);
 
     mut t_vector_contprov := typechecker.make_type_struct("MockVectorContProv", "", ctx);
     typechecker.scope_insert(scope, "values", t_vector_contprov, ctx);

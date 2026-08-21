@@ -34,6 +34,7 @@ func main() {
     mut scope_raw_hgvfield_nlaunder := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
     typechecker.env_register_struct(&env_raw_hgvfield_nlaunder, "HashMapGetValueFieldNlaunderHolder", holder_layout_hgvfield_nlaunder, ctx);
     typechecker.env_register_struct(&env_raw_hgvfield_nlaunder, "HashMap_Int_HashMapGetValueFieldNlaunderHolder", map_layout_hgvfield_nlaunder, ctx);
+    typechecker.env_record_struct_container_kind(&env_raw_hgvfield_nlaunder, "HashMap_Int_HashMapGetValueFieldNlaunderHolder", typechecker.typechecker_container_kind_hashmap(), ctx);
 
     typechecker.scope_insert(scope_raw_hgvfield_nlaunder, "map_raw_hgvfield_nlaunder", t_map_hgvfield_nlaunder, ctx);
     env_raw_hgvfield_nlaunder.variable_types.Insert("map_raw_hgvfield_nlaunder", t_map_hgvfield_nlaunder);
@@ -70,6 +71,7 @@ func main() {
     mut scope_raw_assign_hgvfield_nlaunder := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
     typechecker.env_register_struct(&env_raw_assign_hgvfield_nlaunder, "HashMapGetValueFieldNlaunderHolder", holder_layout_hgvfield_nlaunder, ctx);
     typechecker.env_register_struct(&env_raw_assign_hgvfield_nlaunder, "HashMap_Int_HashMapGetValueFieldNlaunderHolder", map_layout_hgvfield_nlaunder, ctx);
+    typechecker.env_record_struct_container_kind(&env_raw_assign_hgvfield_nlaunder, "HashMap_Int_HashMapGetValueFieldNlaunderHolder", typechecker.typechecker_container_kind_hashmap(), ctx);
 
     typechecker.scope_insert(scope_raw_assign_hgvfield_nlaunder, "map_raw_assign_hgvfield_nlaunder", t_map_hgvfield_nlaunder, ctx);
     env_raw_assign_hgvfield_nlaunder.variable_types.Insert("map_raw_assign_hgvfield_nlaunder", t_map_hgvfield_nlaunder);
@@ -109,6 +111,7 @@ func main() {
     mut scope_sandbox_hgvfield_nlaunder := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
     typechecker.env_register_struct(&env_sandbox_hgvfield_nlaunder, "HashMapGetValueFieldNlaunderHolder", holder_layout_hgvfield_nlaunder, ctx);
     typechecker.env_register_struct(&env_sandbox_hgvfield_nlaunder, "HashMap_Int_HashMapGetValueFieldNlaunderHolder", map_layout_hgvfield_nlaunder, ctx);
+    typechecker.env_record_struct_container_kind(&env_sandbox_hgvfield_nlaunder, "HashMap_Int_HashMapGetValueFieldNlaunderHolder", typechecker.typechecker_container_kind_hashmap(), ctx);
 
     typechecker.scope_insert(scope_sandbox_hgvfield_nlaunder, "map_sandbox_hgvfield_nlaunder", t_map_hgvfield_nlaunder, ctx);
     env_sandbox_hgvfield_nlaunder.variable_types.Insert("map_sandbox_hgvfield_nlaunder", t_map_hgvfield_nlaunder);
@@ -148,6 +151,7 @@ func main() {
     mut scope_safe_hgvfield_nlaunder := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
     typechecker.env_register_struct(&env_safe_hgvfield_nlaunder, "HashMapGetValueFieldNlaunderHolder", holder_layout_hgvfield_nlaunder, ctx);
     typechecker.env_register_struct(&env_safe_hgvfield_nlaunder, "HashMap_Int_HashMapGetValueFieldNlaunderHolder", map_layout_hgvfield_nlaunder, ctx);
+    typechecker.env_record_struct_container_kind(&env_safe_hgvfield_nlaunder, "HashMap_Int_HashMapGetValueFieldNlaunderHolder", typechecker.typechecker_container_kind_hashmap(), ctx);
 
     typechecker.scope_insert(scope_safe_hgvfield_nlaunder, "map_safe_hgvfield_nlaunder", t_map_hgvfield_nlaunder, ctx);
     env_safe_hgvfield_nlaunder.variable_types.Insert("map_safe_hgvfield_nlaunder", t_map_hgvfield_nlaunder);

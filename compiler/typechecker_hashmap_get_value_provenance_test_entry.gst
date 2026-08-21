@@ -25,6 +25,7 @@ func main() {
     mut env_hashgetvalprov := typechecker.env_new(ctx);
     mut scope_hashgetvalprov := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
     typechecker.env_register_struct(&env_hashgetvalprov, "HashMap_Int_HashMapGetValueProvenanceNode", map_layout_hashgetvalprov, ctx);
+    typechecker.env_record_struct_container_kind(&env_hashgetvalprov, "HashMap_Int_HashMapGetValueProvenanceNode", typechecker.typechecker_container_kind_hashmap(), ctx);
 
     typechecker.scope_insert(scope_hashgetvalprov, "map_hashgetvalprov", t_map_hashgetvalprov, ctx);
     env_hashgetvalprov.variable_types.Insert("map_hashgetvalprov", t_map_hashgetvalprov);
