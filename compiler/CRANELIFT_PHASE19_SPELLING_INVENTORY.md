@@ -11,13 +11,22 @@ Report-only. Nothing in Patch 19.1 changes behaviour.
 
 ## Regression surface
 
-Recounted from the tree on every run, so it fails loudly rather than
-ageing quietly into an estimate.
+A dated measurement, not an invariant. `compiler/*.gst` is shared with
+every lane, so these counts move for reasons that have nothing to do
+with Phase 19 and are reported rather than asserted.
 
-- `compiler/*.gst` files scanned: `715`
-- Files declaring `Index[...]`: `155`
-- `Index[...]` occurrences: `1989`
-- Brand-parameterised `Index[T, ctx]` declarations: `260`
+Measured at Phase 19.1, 2026-08-21. Run
+`scripts/phase19_spelling_inventory.py surface` for the live figures;
+they are deliberately not baked in here, because a generated artifact
+holding a live count is checked for staleness and so is just the same
+brittleness one step removed.
+
+| Measure | Count |
+| --- | --- |
+| `compiler/*.gst` files scanned | 715 |
+| Files declaring `Index[...]` | 155 |
+| `Index[...]` occurrences | 1989 |
+| Brand-parameterised `Index[T, ctx]` | 260 |
 
 ## Where the type information already is
 

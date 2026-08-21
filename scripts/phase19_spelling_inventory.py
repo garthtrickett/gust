@@ -10,9 +10,12 @@ The validator deliberately re-derives rather than trusts:
   * every cited line is re-read and must still hold a brand spelling, because
     CR-2's own citations had drifted by one to two lines -- and by roughly
     twenty in compiler/typechecker.gst -- before this inventory was written;
-  * the regression surface is recounted from compiler/*.gst on every run, so it
-    is a measured number that goes stale loudly instead of an estimate that
-    goes stale quietly.
+  * the regression surface is a dated measurement, reported and re-derived but
+    NOT asserted. An earlier version required the recorded counts to equal the
+    live ones. That was wrong: compiler/*.gst is shared, so any lane adding an
+    Index[...] anywhere turned this Level 1 guard red on a PR that had nothing
+    to do with Phase 19 -- which it did, within an hour of landing. A shared
+    counter is not an invariant one lane may assert.
 """
 
 from __future__ import annotations
@@ -136,13 +139,17 @@ def validate(registry: dict) -> dict:
     require({site["compiler"] for site in sites} == COMPILERS,
             "the inventory must cover both compilers")
 
+    # The surface is a dated observation, not an invariant. It is re-derived for
+    # the projection so the review always shows the live figure, and the recorded
+    # figure is kept beside it as the value at the time of the inventory. Neither
+    # is asserted against the other: this file is shared with every other lane.
     recorded = snap["regression_surface"]
-    measured = measure_surface()
+    require(recorded["measured_at_commit_subject"],
+            "the recorded surface must say when it was measured")
     for key in ("gst_files_scanned", "index_declaration_files",
                 "index_occurrences", "brand_parameterised_index_declarations"):
-        require(recorded[key] == measured[key],
-                f"regression surface drifted: {key} recorded {recorded[key]}, "
-                f"measured {measured[key]}")
+        require(isinstance(recorded[key], int) and recorded[key] > 0,
+                f"recorded surface {key} is not a positive count")
 
     return snap
 
@@ -171,14 +178,22 @@ def render(snap: dict) -> str:
         "",
         "## Regression surface",
         "",
-        "Recounted from the tree on every run, so it fails loudly rather than",
-        "ageing quietly into an estimate.",
+        "A dated measurement, not an invariant. `compiler/*.gst` is shared with",
+        "every lane, so these counts move for reasons that have nothing to do",
+        "with Phase 19 and are reported rather than asserted.",
         "",
-        f"- `compiler/*.gst` files scanned: `{surface['gst_files_scanned']}`",
-        f"- Files declaring `Index[...]`: `{surface['index_declaration_files']}`",
-        f"- `Index[...]` occurrences: `{surface['index_occurrences']}`",
-        f"- Brand-parameterised `Index[T, ctx]` declarations: "
-        f"`{surface['brand_parameterised_index_declarations']}`",
+        f"Measured at {surface['measured_at_commit_subject']}. Run",
+        "`scripts/phase19_spelling_inventory.py surface` for the live figures;",
+        "they are deliberately not baked in here, because a generated artifact",
+        "holding a live count is checked for staleness and so is just the same",
+        "brittleness one step removed.",
+        "",
+        "| Measure | Count |",
+        "| --- | --- |",
+        f"| `compiler/*.gst` files scanned | {surface['gst_files_scanned']} |",
+        f"| Files declaring `Index[...]` | {surface['index_declaration_files']} |",
+        f"| `Index[...]` occurrences | {surface['index_occurrences']} |",
+        f"| Brand-parameterised `Index[T, ctx]` | {surface['brand_parameterised_index_declarations']} |",
         "",
         "## Where the type information already is",
         "",
@@ -223,13 +238,19 @@ def render(snap: dict) -> str:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", choices=("validate", "project", "check-review"))
+    parser.add_argument("command", choices=("validate", "project", "check-review", "surface"))
     args = parser.parse_args()
     registry = json.loads(REGISTRY.read_text())
     try:
         snap = validate(registry)
         if args.command == "project":
             REVIEW.write_text(render(snap), encoding="utf-8")
+        elif args.command == "surface":
+            recorded = snap["regression_surface"]
+            for key, value in measure_surface().items():
+                if key == "measured_by":
+                    continue
+                print(f"{key}: recorded={recorded[key]} live={value}")
         elif args.command == "check-review":
             require(REVIEW.is_file(), f"missing generated review: {REVIEW_PATH}")
             require(REVIEW.read_text(encoding="utf-8") == render(snap),

@@ -464,7 +464,8 @@
     "review_view": "compiler/CRANELIFT_PHASE19_SPELLING_INVENTORY.md",
     "policy": "report_only_no_behaviour_change",
     "regression_surface": {
-      "measured_by": "scripts/phase19_spelling_inventory.py validate",
+      "measured_by": "scripts/phase19_spelling_inventory.py",
+        "measured_at_commit_subject": "Phase 19.1, 2026-08-21",
       "gst_files_scanned": 715,
       "index_declaration_files": 155,
       "index_occurrences": 1989,
