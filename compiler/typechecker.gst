@@ -630,6 +630,12 @@ type StructLayout[ctx] struct {
     fields: std.HashMap[str, ast.Type[ctx], ctx]
 }
 
+type BrandIdentity[ctx] struct {
+    brand_origin: str,
+    arena_identity: str,
+    is_arena: int
+}
+
 type FunctionSignature[ctx] struct {
     param_names: std.Vector[str, ctx],
     params: std.Vector[ast.Type[ctx], ctx],
@@ -739,6 +745,7 @@ type TypeEnvironment[ctx] struct {
     struct_templates: std.HashMap[str, StructTemplate[ctx], ctx],
     enum_templates: std.HashMap[str, EnumTemplate[ctx], ctx],
     function_registry: std.HashMap[str, FunctionSignature[ctx], ctx],
+    brand_identities: std.HashMap[str, BrandIdentity[ctx], ctx],
     function_return_provenance: std.HashMap[str, ExpressionProvenance[ctx], ctx],
     variable_types: std.HashMap[str, ast.Type[ctx], ctx],
     resolved_types_nested: std.Vector[PrefixMapEntry[ctx], ctx],
@@ -6598,6 +6605,7 @@ func env_new(ctx: &Arena) TypeEnvironment[ctx] {
         env_ref_new.struct_linear_destructor = std.HashMapNew(ctx);
         env_ref_new.enum_templates = std.HashMapNew(ctx);
         env_ref_new.function_registry = std.HashMapNew(ctx);
+        env_ref_new.brand_identities = std.HashMapNew(ctx);
         env_ref_new.function_return_provenance = std.HashMapNew(ctx);
         env_ref_new.variable_types = std.HashMapNew(ctx);
         env_ref_new.resolved_types_nested = std.VectorNew(ctx);
@@ -8133,7 +8141,7 @@ func typechecker_get_file_stem(path: str, ctx: &Arena) str {
     return std.Clone(ctx, std.str_slice(path, start, end));
 }
 
-func env_resolve_type(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena) ast.Type[ctx] {
+func env_resolve_type_internal(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena) ast.Type[ctx] {
     mut res_idx: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
     unsafe {
         ctx.Set(res_idx, t);
@@ -8402,6 +8410,183 @@ func env_resolve_type(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena)
     }
 }
 
+func brand_identity_make(brand_origin: str, arena_identity: str, is_arena: int, ctx: &Arena) BrandIdentity[ctx] {
+    mut identity: BrandIdentity[ctx];
+    identity.brand_origin = std.Clone(ctx, brand_origin);
+    identity.arena_identity = std.Clone(ctx, arena_identity);
+    identity.is_arena = is_arena;
+    return identity;
+}
+
+func typechecker_explicit_brand_identity(t: ast.Type[ctx], ctx: &Arena) BrandIdentity[ctx] {
+    unsafe {
+        if t.tag == 7 { // Index
+            if t.Index.brand != empty[Index[str, ctx]] {
+                return brand_identity_make("explicit_index", ctx[t.Index.brand], 0, ctx);
+            }
+        }
+        if t.tag == 8 { // Struct
+            if t.Struct.brand != empty[Index[str, ctx]] {
+                return brand_identity_make("explicit_struct", ctx[t.Struct.brand], 0, ctx);
+            }
+        }
+        if t.tag == 11 { // Reference
+            if t.Reference.brand != empty[Index[str, ctx]] {
+                return brand_identity_make("explicit_reference", ctx[t.Reference.brand], 0, ctx);
+            }
+            return typechecker_explicit_brand_identity(ctx[t.Reference.inner], ctx);
+        }
+        if t.tag == 9 { // RawPointer
+            return typechecker_explicit_brand_identity(ctx[t.RawPointer.inner], ctx);
+        }
+        if t.tag == 6 { // Slice
+            return typechecker_explicit_brand_identity(ctx[t.Slice.inner], ctx);
+        }
+        return brand_identity_make("none", "", 0, ctx);
+    }
+}
+
+func typechecker_brand_identity_from_resolved_type(resolved: ast.Type[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) BrandIdentity[ctx] {
+    unsafe {
+        mut is_arena := typechecker_is_arena_value_or_ref(resolved, ctx);
+        mut identity := brand_identity_make("none", "", is_arena, ctx);
+
+        if resolved.tag == 7 { // Index
+            if resolved.Index.brand != empty[Index[str, ctx]] {
+                identity = brand_identity_make("resolved_index", ctx[resolved.Index.brand], is_arena, ctx);
+            }
+        } else if resolved.tag == 8 { // Struct
+            if resolved.Struct.brand != empty[Index[str, ctx]] {
+                identity = brand_identity_make("resolved_struct", ctx[resolved.Struct.brand], is_arena, ctx);
+            } else {
+                mut layout_lookup := (*env).struct_registry.Get(resolved.Struct.struct_name);
+                if layout_lookup.Ok {
+                    mut layout := layout_lookup.Val;
+                    if layout.brand != empty[Index[str, ctx]] {
+                        identity = brand_identity_make("resolved_struct_layout", ctx[layout.brand], is_arena, ctx);
+                    }
+                }
+            }
+        } else if resolved.tag == 11 { // Reference
+            if resolved.Reference.brand != empty[Index[str, ctx]] {
+                identity = brand_identity_make("resolved_reference", ctx[resolved.Reference.brand], is_arena, ctx);
+            } else {
+                mut inner_identity := typechecker_brand_identity_from_resolved_type(ctx[resolved.Reference.inner], env, ctx);
+                if std.str_eq(inner_identity.arena_identity, "") == 0 {
+                    identity = brand_identity_make("resolved_reference_inner", inner_identity.arena_identity, is_arena, ctx);
+                }
+            }
+        } else if resolved.tag == 9 { // RawPointer
+            mut inner_identity := typechecker_brand_identity_from_resolved_type(ctx[resolved.RawPointer.inner], env, ctx);
+            if std.str_eq(inner_identity.arena_identity, "") == 0 {
+                identity = brand_identity_make("resolved_pointer_inner", inner_identity.arena_identity, is_arena, ctx);
+            }
+        } else if resolved.tag == 6 { // Slice
+            mut inner_identity := typechecker_brand_identity_from_resolved_type(ctx[resolved.Slice.inner], env, ctx);
+            if std.str_eq(inner_identity.arena_identity, "") == 0 {
+                identity = brand_identity_make("resolved_slice_inner", inner_identity.arena_identity, is_arena, ctx);
+            }
+        } else if resolved.tag == 10 { // Generic
+            mut resolved_args: std.Vector[ast.Type[ctx], ctx] := ctx[resolved.Generic.args];
+            mut i := 0;
+            while i < len(resolved_args) {
+                mut argument_identity := typechecker_brand_identity_from_resolved_type(resolved_args[i], env, ctx);
+                if std.str_eq(argument_identity.arena_identity, "") == 0 {
+                    identity = brand_identity_make("resolved_generic_argument", argument_identity.arena_identity, is_arena, ctx);
+                    i = len(resolved_args);
+                }
+                i = i + 1;
+            }
+        }
+
+        if identity.is_arena == 1 && std.str_eq(identity.brand_origin, "none") == 1 {
+            identity.brand_origin = std.Clone(ctx, "arena_type");
+        }
+        return identity;
+    }
+}
+
+func brand_identity_key(t: ast.Type[ctx], ctx: &Arena) str {
+    return ast.serialize_type(t, ctx);
+}
+
+func env_record_brand_identity(env: *TypeEnvironment[ctx], resolved: ast.Type[ctx], identity: BrandIdentity[ctx], ctx: &Arena) {
+    unsafe {
+        if std.str_eq(identity.arena_identity, "") == 0 || identity.is_arena == 1 {
+            mut key := brand_identity_key(resolved, ctx);
+            (*env).brand_identities.Insert(std.Clone(ctx, key), identity);
+        }
+    }
+}
+
+func env_get_brand_identity(env: *TypeEnvironment[ctx], resolved: ast.Type[ctx], ctx: &Arena) BrandIdentity[ctx] {
+    unsafe {
+        mut key := brand_identity_key(resolved, ctx);
+        mut lookup := (*env).brand_identities.Get(key);
+        if lookup.Ok {
+            return lookup.Val;
+        }
+        return brand_identity_make("none", "", typechecker_is_arena_value_or_ref(resolved, ctx), ctx);
+    }
+}
+
+func typechecker_source_names_explicit_brand(source: ast.Type[ctx], arena_identity: str, ctx: &Arena) int {
+    mut explicit_identity := typechecker_explicit_brand_identity(source, ctx);
+    if std.str_eq(explicit_identity.arena_identity, arena_identity) == 1 {
+        return 1;
+    }
+    unsafe {
+        if source.tag == 10 { // Generic
+            mut source_args: std.Vector[ast.Type[ctx], ctx] := ctx[source.Generic.args];
+            mut i := 0;
+            while i < len(source_args) {
+                if std.str_eq(get_type_ident(source_args[i], ctx), arena_identity) == 1 {
+                    return 1;
+                }
+                if typechecker_source_names_explicit_brand(source_args[i], arena_identity, ctx) == 1 {
+                    return 1;
+                }
+                i = i + 1;
+            }
+        }
+        if source.tag == 9 { // RawPointer
+            return typechecker_source_names_explicit_brand(ctx[source.RawPointer.inner], arena_identity, ctx);
+        }
+        if source.tag == 6 { // Slice
+            return typechecker_source_names_explicit_brand(ctx[source.Slice.inner], arena_identity, ctx);
+        }
+        if source.tag == 11 { // Reference
+            return typechecker_source_names_explicit_brand(ctx[source.Reference.inner], arena_identity, ctx);
+        }
+    }
+    return 0;
+}
+
+func brand_identity_has_explicit_public_origin(source: ast.Type[ctx], identity: BrandIdentity[ctx], ctx: &Arena) int {
+    if std.str_eq(identity.arena_identity, "") == 1 {
+        return 1;
+    }
+    return typechecker_source_names_explicit_brand(source, identity.arena_identity, ctx);
+}
+
+func env_require_explicit_public_brand(env: *TypeEnvironment[ctx], source: ast.Type[ctx], resolved: ast.Type[ctx], boundary_name: str, span: token.Span, ctx: &Arena) {
+    mut identity := typechecker_brand_identity_from_resolved_type(resolved, env, ctx);
+    if brand_identity_has_explicit_public_origin(source, identity, ctx) == 0 {
+        mut msg := std.Concat("Semantic Error: [ImplicitPublicBrand] Public API boundary '", boundary_name);
+        msg = std.Concat(msg, "' resolves to arena brand '");
+        msg = std.Concat(msg, identity.arena_identity);
+        msg = std.Concat(msg, "' but does not state that brand explicitly");
+        report_error(2, msg, span, env, ctx);
+    }
+}
+
+func env_resolve_type(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena) ast.Type[ctx] {
+    mut resolved := env_resolve_type_internal(env, t, ctx);
+    mut identity := typechecker_brand_identity_from_resolved_type(resolved, env, ctx);
+    env_record_brand_identity(env, resolved, identity, ctx);
+    return resolved;
+}
+
 func env_pre_register_statement(env: *TypeEnvironment[ctx], stmt: ast.Statement[ctx], ctx: &Arena) {
     unsafe {
         if stmt.tag == 0 { // Import
@@ -8567,6 +8752,7 @@ func env_pre_register_statement(env: *TypeEnvironment[ctx], stmt: ast.Statement[
                 sig.param_names.Push(std.Clone(ctx, p.name));
 
                 mut resolved_param_type := env_resolve_type(env, p.param_type, ctx);
+                env_require_explicit_public_brand(env, p.param_type, resolved_param_type, p.name, p.span, ctx);
                 // Standardize direct Arena types to shared reference pointers (&Arena)
                 if resolved_param_type.tag == 4 { // Arena
                     mut t_arena_ptr := make_type_pointer(resolved_param_type, ctx);
@@ -8576,7 +8762,9 @@ func env_pre_register_statement(env: *TypeEnvironment[ctx], stmt: ast.Statement[
 
                 i = i + 1;
             }
-            sig.return_type = env_resolve_type(env, ctx[stmt.FunctionDecl.return_type], ctx);
+            mut source_return_type := ctx[stmt.FunctionDecl.return_type];
+            sig.return_type = env_resolve_type(env, source_return_type, ctx);
+            env_require_explicit_public_brand(env, source_return_type, sig.return_type, namespaced_name, stmt.FunctionDecl.span, ctx);
             sig.return_origins = set_init(ctx);
             sig.is_unsafe = stmt.FunctionDecl.is_unsafe;
             sig.is_extern = stmt.FunctionDecl.is_extern;

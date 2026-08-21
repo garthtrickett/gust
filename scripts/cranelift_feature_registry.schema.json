@@ -14,6 +14,7 @@
     "closure_snapshots",
     "opening_snapshots",
     "phase19_spelling_inventory",
+    "phase19_brand_authority",
     "phase15_specialized_resource_authority",
     "phase15_failure_cleanup_authority",
     "phase15_resource_composition_authority",
@@ -136,6 +137,45 @@
           "policy": {"const": "report_only_no_behaviour_change"},
           "regression_surface": {"type": "object"},
           "sites": {"type": "array", "minItems": 9, "items": {"type": "object"}}
+        }
+      },
+      "phase19_brand_authority": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["authority_version", "status", "next_patch", "review_view",
+                     "codegen_policy", "identity_fields", "public_boundary_policy",
+                     "disagreements"],
+        "properties": {
+          "authority_version": {"const": "phase19_brand_identity_authority_v1"},
+          "status": {"const": "ready_for_patch19_3"},
+          "next_patch": {"const": "19.3"},
+          "review_view": {"const": "compiler/CRANELIFT_PHASE19_BRAND_AUTHORITY.md"},
+          "codegen_policy": {"const": "unchanged_legacy_consumers_remain"},
+          "identity_fields": {
+            "const": ["brand_origin", "arena_identity", "is_arena"]
+          },
+          "public_boundary_policy": {"const": "explicit_brand_required"},
+          "disagreements": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["source_path", "line", "binding", "declared_type",
+                           "spelling_is_arena", "record_is_arena", "reason"],
+              "properties": {
+                "source_path": {"type": "string", "pattern": "^compiler/.*\\.gst$"},
+                "line": {"type": "integer", "minimum": 1},
+                "binding": {"type": "string", "minLength": 1},
+                "declared_type": {"type": "string", "minLength": 1},
+                "spelling_is_arena": {"type": "boolean"},
+                "record_is_arena": {"type": "boolean"},
+                "reason": {
+                  "enum": ["legacy_name_on_non_arena_type", "arena_type_with_non_legacy_name"]
+                }
+              }
+            }
+          }
         }
       },
       "opening_snapshots": {

@@ -16172,6 +16172,26 @@ guard-cranelift-phase19-spelling-inventory:
     python3 scripts/phase19_spelling_inventory.py validate
     python3 scripts/phase19_spelling_inventory.py check-review
 
+guard-cranelift-phase19-brand-authority-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔐 Checking Phase 19 compiler-owned brand identity authority..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase19-brand-authority-contract | grep -F $'guard-cranelift-phase19-brand-authority-contract\t1\t' >/dev/null
+    just guard-cranelift-phase19-spelling-inventory
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase19_brand_authority.py validate
+    python3 scripts/phase19_brand_authority.py check-review
+
+guard-cranelift-phase19-brand-authority-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 19 brand identity semantic parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase19-brand-authority-parity | grep -F $'guard-cranelift-phase19-brand-authority-parity\t2\t' >/dev/null
+    just guard-cranelift-phase19-brand-authority-contract
+    bash scripts/phase19_brand_authority_parity.sh
+
 guard-cranelift-phase19-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail

@@ -1,0 +1,59 @@
+name: Cranelift Phase 19 Brand Authority
+
+on:
+  pull_request:
+    paths:
+      - 'compiler/typechecker.gst'
+      - 'compiler/typechecker_brand_identity_test_entry.gst'
+      - 'compiler/CRANELIFT_PHASE19_BRAND_AUTHORITY.md'
+      - 'compiler/phase19_rename_invariance_brand_source.gst'
+      - 'compiler/phase19_rename_invariance_renamed_source.gst'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/cranelift_registry.py'
+      - 'scripts/cranelift_test_levels.json'
+      - 'scripts/phase19_brand_authority.py'
+      - 'scripts/phase19_brand_authority_parity.sh'
+      - 'scripts/phase19_rename_invariance.sh'
+      - '.github/workflows/phase19-brand-authority.yml'
+      - '.github/workflows/pr-fast.yml'
+      - 'justfile'
+      - 'TASK.md'
+  push:
+    branches: [main]
+    paths:
+      - 'compiler/typechecker.gst'
+      - 'compiler/typechecker_brand_identity_test_entry.gst'
+      - 'compiler/CRANELIFT_PHASE19_BRAND_AUTHORITY.md'
+      - 'scripts/phase19_brand_authority.py'
+      - 'scripts/phase19_brand_authority_parity.sh'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: guard-cranelift-phase19-brand-authority-contract
+        run: just guard-cranelift-phase19-brand-authority-contract
+
+  parity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - run: make gust
+      - name: guard-cranelift-phase19-brand-authority-parity
+        run: just guard-cranelift-phase19-brand-authority-parity

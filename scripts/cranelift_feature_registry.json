@@ -536,7 +536,7 @@
         "id": "gst_typechecker_brand_member",
         "compiler": "self_hosted",
         "source_path": "compiler/typechecker.gst",
-        "line": 4975,
+        "line": 4981,
         "classification": "classification_override",
         "decision": "decide brand membership of a name part",
         "available_type_information": "the name part only",
@@ -546,7 +546,7 @@
         "id": "gst_typechecker_brand_suffixes",
         "compiler": "self_hosted",
         "source_path": "compiler/typechecker.gst",
-        "line": 5172,
+        "line": 5179,
         "classification": "type_name_erasure",
         "decision": "extract a brand from a type-name suffix",
         "available_type_information": "none: operates on the suffix string",
@@ -556,11 +556,134 @@
         "id": "gst_typechecker_any_compat",
         "compiler": "self_hosted",
         "source_path": "compiler/typechecker.gst",
-        "line": 2279,
+        "line": 2286,
         "classification": "classification_override",
         "decision": "treat the brand spelled Any as compatible with every brand",
         "available_type_information": "both brands are in hand as cleaned strings",
         "sufficiency": "available_in_scope"
+      }
+    ]
+  },
+  "phase19_brand_authority": {
+    "authority_version": "phase19_brand_identity_authority_v1",
+    "status": "ready_for_patch19_3",
+    "next_patch": "19.3",
+    "review_view": "compiler/CRANELIFT_PHASE19_BRAND_AUTHORITY.md",
+    "codegen_policy": "unchanged_legacy_consumers_remain",
+    "identity_fields": [
+      "brand_origin",
+      "arena_identity",
+      "is_arena"
+    ],
+    "public_boundary_policy": "explicit_brand_required",
+    "disagreements": [
+      {
+        "source_path": "compiler/mir_array_slice.gst",
+        "line": 875,
+        "binding": "a",
+        "declared_type": "int",
+        "spelling_is_arena": true,
+        "record_is_arena": false,
+        "reason": "legacy_name_on_non_arena_type"
+      },
+      {
+        "source_path": "compiler/mir_array_slice.gst",
+        "line": 883,
+        "binding": "a",
+        "declared_type": "int",
+        "spelling_is_arena": true,
+        "record_is_arena": false,
+        "reason": "legacy_name_on_non_arena_type"
+      },
+      {
+        "source_path": "compiler/mir_array_slice.gst",
+        "line": 891,
+        "binding": "a",
+        "declared_type": "int",
+        "spelling_is_arena": true,
+        "record_is_arena": false,
+        "reason": "legacy_name_on_non_arena_type"
+      },
+      {
+        "source_path": "compiler/mir_array_slice.gst",
+        "line": 899,
+        "binding": "a",
+        "declared_type": "int",
+        "spelling_is_arena": true,
+        "record_is_arena": false,
+        "reason": "legacy_name_on_non_arena_type"
+      },
+      {
+        "source_path": "compiler/mir_enum.gst",
+        "line": 834,
+        "binding": "a",
+        "declared_type": "int",
+        "spelling_is_arena": true,
+        "record_is_arena": false,
+        "reason": "legacy_name_on_non_arena_type"
+      },
+      {
+        "source_path": "compiler/mir_enum.gst",
+        "line": 842,
+        "binding": "a",
+        "declared_type": "int",
+        "spelling_is_arena": true,
+        "record_is_arena": false,
+        "reason": "legacy_name_on_non_arena_type"
+      },
+      {
+        "source_path": "compiler/mir_resource_cfg.gst",
+        "line": 146,
+        "binding": "a",
+        "declared_type": "str",
+        "spelling_is_arena": true,
+        "record_is_arena": false,
+        "reason": "legacy_name_on_non_arena_type"
+      },
+      {
+        "source_path": "compiler/mir_resource_cfg_parity_smoke_test_entry.gst",
+        "line": 9,
+        "binding": "a",
+        "declared_type": "str",
+        "spelling_is_arena": true,
+        "record_is_arena": false,
+        "reason": "legacy_name_on_non_arena_type"
+      },
+      {
+        "source_path": "compiler/mir_scope_exit_cleanup_parity_smoke_test_entry.gst",
+        "line": 164,
+        "binding": "ctx_scope",
+        "declared_type": "inferred Arena.New()",
+        "spelling_is_arena": false,
+        "record_is_arena": true,
+        "reason": "arena_type_with_non_legacy_name"
+      },
+      {
+        "source_path": "compiler/mir_struct_layout.gst",
+        "line": 721,
+        "binding": "a",
+        "declared_type": "int",
+        "spelling_is_arena": true,
+        "record_is_arena": false,
+        "reason": "legacy_name_on_non_arena_type"
+      },
+      {
+        "source_path": "compiler/mir_struct_layout.gst",
+        "line": 729,
+        "binding": "a",
+        "declared_type": "int",
+        "spelling_is_arena": true,
+        "record_is_arena": false,
+        "reason": "legacy_name_on_non_arena_type"
+      },
+      {
+        "source_path": "compiler/phase19_rename_invariance_renamed_source.gst",
+        "line": 14,
+        "binding": "scratch",
+        "declared_type": "&Arena",
+        "spelling_is_arena": false,
+        "record_is_arena": true,
+        "reason": "arena_type_with_non_legacy_name"
       }
     ]
   },
