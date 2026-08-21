@@ -37,9 +37,9 @@ is activated separately.
 
 ## Status
 
-- [ ] Patch 19.0 — Opening Inventory and Phase 18 Residual Rebase
-- [ ] Patch 19.1 — Identifier-Spelling Decision Inventory
-- [ ] Patch 19.2 — Compiler-Owned Brand Identity Authority
+- [x] Patch 19.0 — Opening Inventory and Phase 18 Residual Rebase — DONE
+- [x] Patch 19.1 — Identifier-Spelling Decision Inventory — DONE
+- [x] Patch 19.2 — Compiler-Owned Brand Identity Authority — DONE
 - [ ] Patch 19.3 — Canonical Branded Type Naming Without a Brand Vocabulary
 - [ ] Patch 19.4 — Type-Derived Container and Arena Classification
 - [ ] Patch 19.5 — Argument and Index Representation From the Type System
