@@ -60,6 +60,11 @@ To build, run, and test Gust, **you do not need Rust or Cargo installed on your 
 
 Gust is fully self-hosted, meaning the compiler is written in Gust itself. To break the traditional "chicken-and-egg" bootstrap loop without forcing a Rust dependency on end-users, Gust utilizes a C-based bootstrap pipeline:
 
+The deprecated root Rust prototype compiler has been removed. Rust remains in
+two deliberately separate components: the active Cranelift backend under
+`compiler/experiments/cranelift/` and the Phase 17 runtime crate under
+`src/runtime/rust/`. Neither participates in the default C bootstrap chain.
+
 ```
 [Seed Compiler Source] (gust_v4.c)
         │
@@ -132,13 +137,17 @@ If you prefer a sandboxed, deterministic development environment, a reproducible
     nix develop
 ```
 
-    This automatically loads a shell pre-configured with GCC, GNU Make, Python 3, and the optional Rust prototype compiler toolchains (rustc, cargo, rust-analyzer).
+    This loads GCC, GNU Make, Python 3, and the Rust tools used by the active
+    Cranelift backend and Rust runtime component (`rustc`, `cargo`,
+    `rust-analyzer`, and `rustfmt`).
 
-2.  **Run Rust-based tests (for compiler developers):**
-    If you are modifying the original Rust prototype compiler located in `src/`, you can run the Rust-based test suite inside the Nix shell:
+2.  **Run the repository guards:**
+    Compiler and backend validation is exposed through the `just` recipes and
+    the phase-specific guards documented in `AGENTS.md`. There is no root Cargo
+    package or Rust prototype test suite.
 
 ```bash
-    cargo test
+    just --list
 ```
 
 ---
@@ -149,8 +158,10 @@ If you prefer a sandboxed, deterministic development environment, a reproducible
     *   `test_runner_entry.gst` - The main entry point of the self-hosted compiler.
     *   `lexer.gst`, `parser.gst`, `typechecker.gst`, `codegen.gst` - Core compiler passes.
     *   `resolver.gst` - Recursive module dependency and import graph resolver.
-*   `src/` - The original Rust-based prototype compiler source files (used optionally by compiler developers to generate updated bootstrap seeds).
+    *   `experiments/cranelift/` - The active Rust implementation of the native Cranelift backend.
+*   `src/runtime.c` - The aggregate C runtime source linked into the self-hosted compiler and generated programs.
 *   `src/runtime/` - The standard runtime C library. Contains low-level fiber context switches, the POSIX thread pool, arena allocators, and collections helpers.
+    *   `rust/` - The separately guarded Phase 17 Rust runtime component; not the removed prototype compiler.
 *   `tests/` - The end-to-end and integration tests written in Gust.
 *   `Makefile` - The primary build automation driver.
 *   `gust_v4.c` - The stable, converged self-hosting bootstrap compiler C seed.
