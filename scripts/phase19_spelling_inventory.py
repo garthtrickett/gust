@@ -128,6 +128,15 @@ def validate(registry: dict) -> dict:
                     "env_get_canonical_type_name" in window,
                     "retired codegen erasure site does not cite its canonical lookup")
             continue
+        if name in {"gst_codegen_var_arena", "gst_codegen_var_arena_2"}:
+            classification = registry.get("phase19_classification", {})
+            require(classification.get("type_authority") ==
+                    "resolved_type_plus_struct_registry_metadata",
+                    "retired variable-arena site lacks Patch 19.4 authority")
+            require("func codegen_expression_is_arena_ptr(" in window and
+                    "typechecker_classify_resolved_type" in window,
+                    f"retired variable-arena site {name!r} does not cite its shared classifier")
+            continue
         require(BRAND_SPELLING.search(window) is not None,
                 f"site {name!r} cites {site['source_path']}:{site['line']}, "
                 "which no longer holds a brand spelling -- the citation has drifted")

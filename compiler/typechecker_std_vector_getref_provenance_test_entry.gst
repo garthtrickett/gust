@@ -23,6 +23,7 @@ func main() {
     mut env_stdgetrefprov := typechecker.env_new(ctx);
     mut scope_stdgetrefprov := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
     typechecker.env_register_struct(&env_stdgetrefprov, "Vector_StdVectorGetRefProvenanceNode", vector_layout_stdgetrefprov, ctx);
+    typechecker.env_record_struct_container_kind(&env_stdgetrefprov, "Vector_StdVectorGetRefProvenanceNode", typechecker.typechecker_container_kind_vector(), ctx);
 
     typechecker.scope_insert(scope_stdgetrefprov, "values_stdgetrefprov", t_vector_stdgetrefprov, ctx);
     env_stdgetrefprov.variable_types.Insert("values_stdgetrefprov", t_vector_stdgetrefprov);

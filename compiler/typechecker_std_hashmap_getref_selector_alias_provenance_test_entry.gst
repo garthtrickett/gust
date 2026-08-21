@@ -34,6 +34,7 @@ func main() {
     mut scope_stdhashaliasprov := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
     typechecker.env_register_struct(&env_stdhashaliasprov, "StdHashMapGetRefAliasHolder", holder_layout_stdhashaliasprov, ctx);
     typechecker.env_register_struct(&env_stdhashaliasprov, "HashMap_Int_StdHashMapGetRefAliasHolder", map_layout_stdhashaliasprov, ctx);
+    typechecker.env_record_struct_container_kind(&env_stdhashaliasprov, "HashMap_Int_StdHashMapGetRefAliasHolder", typechecker.typechecker_container_kind_hashmap(), ctx);
 
     typechecker.scope_insert(scope_stdhashaliasprov, "map_stdhashaliasprov", t_map_stdhashaliasprov, ctx);
     env_stdhashaliasprov.variable_types.Insert("map_stdhashaliasprov", t_map_stdhashaliasprov);

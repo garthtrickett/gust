@@ -25,6 +25,7 @@ func main() {
     mut env_stdhashgetrefprov := typechecker.env_new(ctx);
     mut scope_stdhashgetrefprov := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
     typechecker.env_register_struct(&env_stdhashgetrefprov, "HashMap_Int_StdHashMapGetRefProvenanceNode", map_layout_stdhashgetrefprov, ctx);
+    typechecker.env_record_struct_container_kind(&env_stdhashgetrefprov, "HashMap_Int_StdHashMapGetRefProvenanceNode", typechecker.typechecker_container_kind_hashmap(), ctx);
 
     typechecker.scope_insert(scope_stdhashgetrefprov, "map_stdhashgetrefprov", t_map_stdhashgetrefprov, ctx);
     env_stdhashgetrefprov.variable_types.Insert("map_stdhashgetrefprov", t_map_stdhashgetrefprov);

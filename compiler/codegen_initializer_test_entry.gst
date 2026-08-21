@@ -935,6 +935,7 @@ func main() {
     
     map_str_layout.fields.Insert("keys", keys_ptr_type);
     typechecker.env_register_struct(&env, "std_HashMap_str_int_ctx", map_str_layout, ctx);
+    typechecker.env_record_struct_container_kind(&env, "std_HashMap_str_int_ctx", typechecker.typechecker_container_kind_hashmap(), ctx);
     
     os.LogInt(codegen.codegen_is_hashmap_type(t_map_str_test, &env, ctx)); // Expected: 1
     os.LogInt(codegen.codegen_hashmap_is_str_key(t_map_str_test, &env, ctx)); // Expected: 1
@@ -970,6 +971,7 @@ func main() {
     
     map_int_layout.fields.Insert("keys", keys_int_ptr_type);
     typechecker.env_register_struct(&env, "std_HashMap_int_int_ctx", map_int_layout, ctx);
+    typechecker.env_record_struct_container_kind(&env, "std_HashMap_int_int_ctx", typechecker.typechecker_container_kind_hashmap(), ctx);
 
     os.LogInt(codegen.codegen_is_hashmap_type(t_map_int_test, &env, ctx)); // Expected: 1
     os.LogInt(codegen.codegen_hashmap_is_str_key(t_map_int_test, &env, ctx)); // Expected: 0

@@ -24,6 +24,7 @@ func main() {
     mut env_raw_container_nlaunder := typechecker.env_new(ctx);
     mut scope_raw_container_nlaunder := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
     typechecker.env_register_struct(&env_raw_container_nlaunder, "MockVectorIdxContainerNlaunder", vector_idx_layout_container_nlaunder, ctx);
+    typechecker.env_record_struct_container_kind(&env_raw_container_nlaunder, "MockVectorIdxContainerNlaunder", typechecker.typechecker_container_kind_vector(), ctx);
 
     typechecker.scope_insert(scope_raw_container_nlaunder, "values_raw_container", t_vector_idx_container_nlaunder, ctx);
     env_raw_container_nlaunder.variable_types.Insert("values_raw_container", t_vector_idx_container_nlaunder);
@@ -76,6 +77,7 @@ func main() {
     mut env_sandbox_container_nlaunder := typechecker.env_new(ctx);
     mut scope_sandbox_container_nlaunder := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
     typechecker.env_register_struct(&env_sandbox_container_nlaunder, "MockVectorRefContainerNlaunder", vector_ref_layout_container_nlaunder, ctx);
+    typechecker.env_record_struct_container_kind(&env_sandbox_container_nlaunder, "MockVectorRefContainerNlaunder", typechecker.typechecker_container_kind_vector(), ctx);
 
     typechecker.scope_insert(scope_sandbox_container_nlaunder, "values_sandbox_container", t_vector_ref_container_nlaunder, ctx);
     env_sandbox_container_nlaunder.variable_types.Insert("values_sandbox_container", t_vector_ref_container_nlaunder);
@@ -115,6 +117,7 @@ func main() {
     mut env_safe_container_nlaunder := typechecker.env_new(ctx);
     mut scope_safe_container_nlaunder := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
     typechecker.env_register_struct(&env_safe_container_nlaunder, "MockVectorIdxContainerNlaunder", vector_idx_layout_container_nlaunder, ctx);
+    typechecker.env_record_struct_container_kind(&env_safe_container_nlaunder, "MockVectorIdxContainerNlaunder", typechecker.typechecker_container_kind_vector(), ctx);
 
     typechecker.scope_insert(scope_safe_container_nlaunder, "values_safe_container", t_vector_idx_container_nlaunder, ctx);
     env_safe_container_nlaunder.variable_types.Insert("values_safe_container", t_vector_idx_container_nlaunder);

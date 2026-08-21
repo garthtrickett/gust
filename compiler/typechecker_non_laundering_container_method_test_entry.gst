@@ -24,6 +24,7 @@ func main() {
     mut env_raw_method_nlaunder := typechecker.env_new(ctx);
     mut scope_raw_method_nlaunder := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
     typechecker.env_register_struct(&env_raw_method_nlaunder, "Vector_SafeCellContainerMethod", vector_layout_method_nlaunder, ctx);
+    typechecker.env_record_struct_container_kind(&env_raw_method_nlaunder, "Vector_SafeCellContainerMethod", typechecker.typechecker_container_kind_vector(), ctx);
 
     typechecker.scope_insert(scope_raw_method_nlaunder, "values_raw_method", t_vector_method_nlaunder, ctx);
     env_raw_method_nlaunder.variable_types.Insert("values_raw_method", t_vector_method_nlaunder);
@@ -92,6 +93,7 @@ func main() {
     mut env_raw_map_method_nlaunder := typechecker.env_new(ctx);
     mut scope_raw_map_method_nlaunder := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
     typechecker.env_register_struct(&env_raw_map_method_nlaunder, "HashMap_Int_SafeRefContainerMethod", map_layout_method_nlaunder, ctx);
+    typechecker.env_record_struct_container_kind(&env_raw_map_method_nlaunder, "HashMap_Int_SafeRefContainerMethod", typechecker.typechecker_container_kind_hashmap(), ctx);
 
     typechecker.scope_insert(scope_raw_map_method_nlaunder, "map_raw_hash_method", t_map_method_nlaunder, ctx);
     env_raw_map_method_nlaunder.variable_types.Insert("map_raw_hash_method", t_map_method_nlaunder);
@@ -151,6 +153,8 @@ func main() {
     mut scope_sandbox_method_nlaunder := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
     typechecker.env_register_struct(&env_sandbox_method_nlaunder, "Vector_SafeCellContainerMethod", vector_layout_method_nlaunder, ctx);
     typechecker.env_register_struct(&env_sandbox_method_nlaunder, "HashMap_Int_SafeRefContainerMethod", map_layout_method_nlaunder, ctx);
+    typechecker.env_record_struct_container_kind(&env_sandbox_method_nlaunder, "Vector_SafeCellContainerMethod", typechecker.typechecker_container_kind_vector(), ctx);
+    typechecker.env_record_struct_container_kind(&env_sandbox_method_nlaunder, "HashMap_Int_SafeRefContainerMethod", typechecker.typechecker_container_kind_hashmap(), ctx);
 
     typechecker.scope_insert(scope_sandbox_method_nlaunder, "map_sandbox_method", t_map_method_nlaunder, ctx);
     env_sandbox_method_nlaunder.variable_types.Insert("map_sandbox_method", t_map_method_nlaunder);
@@ -262,6 +266,8 @@ func main() {
     mut scope_safe_method_nlaunder := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
     typechecker.env_register_struct(&env_safe_method_nlaunder, "Vector_SafeCellContainerMethod", vector_layout_method_nlaunder, ctx);
     typechecker.env_register_struct(&env_safe_method_nlaunder, "HashMap_Int_SafeRefContainerMethod", map_layout_method_nlaunder, ctx);
+    typechecker.env_record_struct_container_kind(&env_safe_method_nlaunder, "Vector_SafeCellContainerMethod", typechecker.typechecker_container_kind_vector(), ctx);
+    typechecker.env_record_struct_container_kind(&env_safe_method_nlaunder, "HashMap_Int_SafeRefContainerMethod", typechecker.typechecker_container_kind_hashmap(), ctx);
 
     typechecker.scope_insert(scope_safe_method_nlaunder, "values_safe_method", t_vector_method_nlaunder, ctx);
     env_safe_method_nlaunder.variable_types.Insert("values_safe_method", t_vector_method_nlaunder);

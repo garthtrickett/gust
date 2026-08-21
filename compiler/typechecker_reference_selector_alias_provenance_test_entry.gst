@@ -45,6 +45,8 @@ func main() {
     typechecker.env_register_struct(&env_refaliasprov, "ReferenceSelectorAliasHolder", holder_layout_refaliasprov, ctx);
     typechecker.env_register_struct(&env_refaliasprov, "Vector_ReferenceSelectorAliasHolder", vector_layout_refaliasprov, ctx);
     typechecker.env_register_struct(&env_refaliasprov, "HashMap_Int_ReferenceSelectorAliasHolder", map_layout_refaliasprov, ctx);
+    typechecker.env_record_struct_container_kind(&env_refaliasprov, "Vector_ReferenceSelectorAliasHolder", typechecker.typechecker_container_kind_vector(), ctx);
+    typechecker.env_record_struct_container_kind(&env_refaliasprov, "HashMap_Int_ReferenceSelectorAliasHolder", typechecker.typechecker_container_kind_hashmap(), ctx);
 
     typechecker.scope_insert(scope_refaliasprov, "ctx", t_arena_refaliasprov, ctx);
     env_refaliasprov.variable_types.Insert("ctx", t_arena_refaliasprov);

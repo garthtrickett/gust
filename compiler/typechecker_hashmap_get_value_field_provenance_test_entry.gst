@@ -34,6 +34,7 @@ func main() {
     mut scope_hgvfieldprov := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
     typechecker.env_register_struct(&env_hgvfieldprov, "HashMapGetValueFieldHolder", holder_layout_hgvfieldprov, ctx);
     typechecker.env_register_struct(&env_hgvfieldprov, "HashMap_Int_HashMapGetValueFieldHolder", map_layout_hgvfieldprov, ctx);
+    typechecker.env_record_struct_container_kind(&env_hgvfieldprov, "HashMap_Int_HashMapGetValueFieldHolder", typechecker.typechecker_container_kind_hashmap(), ctx);
 
     typechecker.scope_insert(scope_hgvfieldprov, "map_hgvfieldprov", t_map_hgvfieldprov, ctx);
     env_hgvfieldprov.variable_types.Insert("map_hgvfieldprov", t_map_hgvfieldprov);

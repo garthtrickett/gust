@@ -35,6 +35,8 @@ func main() {
     mut scope_methodprov := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
     typechecker.env_register_struct(&env_methodprov, "Vector_SafeMethodProvenanceNode", vector_layout_methodprov, ctx);
     typechecker.env_register_struct(&env_methodprov, "HashMap_Int_SafeMethodProvenanceNode", map_layout_methodprov, ctx);
+    typechecker.env_record_struct_container_kind(&env_methodprov, "Vector_SafeMethodProvenanceNode", typechecker.typechecker_container_kind_vector(), ctx);
+    typechecker.env_record_struct_container_kind(&env_methodprov, "HashMap_Int_SafeMethodProvenanceNode", typechecker.typechecker_container_kind_hashmap(), ctx);
 
     typechecker.scope_insert(scope_methodprov, "ctx", t_arena_methodprov, ctx);
     env_methodprov.variable_types.Insert("ctx", t_arena_methodprov);

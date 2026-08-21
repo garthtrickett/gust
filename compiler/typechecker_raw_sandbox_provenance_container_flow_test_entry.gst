@@ -63,6 +63,7 @@ func register_vector_int_container_flow(env: *typechecker.TypeEnvironment[ctx], 
     }
     vector_layout.fields.Insert("data", t_ptr_int);
     typechecker.env_register_struct(env, name, vector_layout, ctx);
+    typechecker.env_record_struct_container_kind(env, name, typechecker.typechecker_container_kind_vector(), ctx);
     return typechecker.make_type_struct(name, "", ctx);
 }
 
@@ -77,6 +78,7 @@ func register_hashmap_int_int_container_flow(env: *typechecker.TypeEnvironment[c
     map_layout.fields.Insert("keys", t_ptr_int);
     map_layout.fields.Insert("values", t_ptr_int);
     typechecker.env_register_struct(env, name, map_layout, ctx);
+    typechecker.env_record_struct_container_kind(env, name, typechecker.typechecker_container_kind_hashmap(), ctx);
     return typechecker.make_type_struct(name, "", ctx);
 }
 

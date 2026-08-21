@@ -32,6 +32,7 @@ func main() {
     mut scope_stdvecaliasprov := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
     typechecker.env_register_struct(&env_stdvecaliasprov, "StdVectorGetRefAliasHolder", holder_layout_stdvecaliasprov, ctx);
     typechecker.env_register_struct(&env_stdvecaliasprov, "Vector_StdVectorGetRefAliasHolder", vector_layout_stdvecaliasprov, ctx);
+    typechecker.env_record_struct_container_kind(&env_stdvecaliasprov, "Vector_StdVectorGetRefAliasHolder", typechecker.typechecker_container_kind_vector(), ctx);
 
     typechecker.scope_insert(scope_stdvecaliasprov, "values_stdvecaliasprov", t_vector_stdvecaliasprov, ctx);
     env_stdvecaliasprov.variable_types.Insert("values_stdvecaliasprov", t_vector_stdvecaliasprov);
