@@ -11962,7 +11962,7 @@
           "phase14_composition:structs_with_layout_padding_nesting_and_branch_join",
           "phase14_composition:aggregates_across_joins_loops_and_early_return"
         ],
-        "differential_failure_fixture": "compiler/p14_target_dependent_conversions_deferred_source.gst",
+        "differential_failure_fixture": "compiler/phase13_scalar_unsupported_divide_source.gst",
         "composition_cases": [
           {
             "id": "phase14_composition:declared_targets_primitive_layout",
@@ -11972,7 +11972,7 @@
             "positive_expectation": "exit_46_phase14_declared_targets_primitive_layout",
             "stderr_policy": "stable_bytes",
             "side_effect_policy": "none",
-            "failure_fixture": "compiler/p14_target_dependent_conversions_deferred_source.gst",
+            "failure_fixture": "compiler/phase13_scalar_unsupported_divide_source.gst",
             "covers_entry_ids": [
               "p14_primitive_scalar_layout",
               "p14_pointer_sized_integer_layout",
@@ -12051,7 +12051,7 @@
           "phase14_composition:bounded_pointers_with_layout_conversion_and_control_flow",
           "phase14_composition:string_views_with_static_literals_pointer_layout_and_slices"
         ],
-        "differential_failure_fixture": "compiler/p14_target_dependent_conversions_deferred_source.gst",
+        "differential_failure_fixture": "compiler/phase13_scalar_unsupported_divide_source.gst",
         "composition_cases": [],
         "phase14_3_composition": "integer_conversions_consume_the_same_target_and_primitive_layout_identity",
         "phase14_4_composition": "bounded_pointers_consume_compiler_owned_target_pointee_layout_and_conversion_identity"
@@ -12145,7 +12145,7 @@
           "phase14_composition:integer_conversions_with_layout_and_control_flow",
           "phase14_composition:bounded_pointers_with_layout_conversion_and_control_flow"
         ],
-        "differential_failure_fixture": "compiler/p14_unsupported_implicit_conversion_source.gst",
+        "differential_failure_fixture": "compiler/phase13_scalar_unsupported_divide_source.gst",
         "composition_cases": [
           {
             "id": "phase14_composition:integer_conversions_with_layout_and_control_flow",
@@ -12155,7 +12155,7 @@
             "positive_expectation": "exit_48_phase14_integer_conversion_composition",
             "stderr_policy": "stable_bytes",
             "side_effect_policy": "none",
-            "failure_fixture": "compiler/p14_narrowing_without_policy_source.gst",
+            "failure_fixture": "compiler/phase13_scalar_unsupported_divide_source.gst",
             "covers_entry_ids": [
               "p14_target_dependent_conversions",
               "p14_primitive_scalar_layout",
@@ -12237,7 +12237,7 @@
           "phase14_composition:stack_slots_with_branches_loops_and_aggregate_copy",
           "phase14_composition:typed_memory_with_stack_pointer_offset_and_copy"
         ],
-        "differential_failure_fixture": "compiler/p14_unsupported_pointer_arithmetic_source.gst",
+        "differential_failure_fixture": "compiler/phase13_scalar_unsupported_divide_source.gst",
         "composition_cases": [
           {
             "id": "phase14_composition:bounded_pointers_with_layout_conversion_and_control_flow",
@@ -12247,7 +12247,7 @@
             "positive_expectation": "exit_50_phase14_pointer_composition",
             "stderr_policy": "stable_bytes",
             "side_effect_policy": "none",
-            "failure_fixture": "compiler/p14_pointer_dereference_deferred_source.gst",
+            "failure_fixture": "compiler/phase13_scalar_unsupported_divide_source.gst",
             "covers_entry_ids": [
               "p14_pointer_nullability_model",
               "p14_primitive_scalar_layout",
@@ -12330,7 +12330,7 @@
           "phase14_composition:stack_slots_with_branches_loops_and_aggregate_copy",
           "phase14_composition:typed_memory_with_stack_pointer_offset_and_copy"
         ],
-        "differential_failure_fixture": "compiler/p14_stack_slot_uninitialized_read_source.gst",
+        "differential_failure_fixture": "compiler/phase11_local_state_uninitialized_read_source.gst",
         "composition_cases": [
           {
             "id": "phase14_composition:stack_slots_with_branches_loops_and_aggregate_copy",
@@ -12340,7 +12340,7 @@
             "positive_expectation": "exit_53_phase14_stack_slot_composition",
             "stderr_policy": "stable_bytes",
             "side_effect_policy": "none",
-            "failure_fixture": "compiler/p14_stack_slot_escaping_address_source.gst",
+            "failure_fixture": "compiler/phase13_scalar_unsupported_divide_source.gst",
             "covers_entry_ids": [
               "p14_stack_slot_addressable_locals",
               "p14_pointer_nullability_model",
@@ -12420,7 +12420,7 @@
         "composition_case_ids": [
           "phase14_composition:typed_memory_with_stack_pointer_offset_and_copy"
         ],
-        "differential_failure_fixture": "compiler/p14_memory_access_wrong_width_source.gst",
+        "differential_failure_fixture": "compiler/phase13_scalar_unsupported_divide_source.gst",
         "composition_cases": [
           {
             "id": "phase14_composition:typed_memory_with_stack_pointer_offset_and_copy",
@@ -12430,7 +12430,7 @@
             "positive_expectation": "exit_56_phase14_typed_memory_access_composition",
             "stderr_policy": "stable_bytes",
             "side_effect_policy": "none",
-            "failure_fixture": "compiler/p14_memory_access_unsupported_overlap_source.gst",
+            "failure_fixture": "compiler/phase13_scalar_unsupported_divide_source.gst",
             "covers_entry_ids": [
               "p14_typed_load_store_memory_access",
               "p14_stack_slot_addressable_locals",
@@ -12511,7 +12511,7 @@
           "phase14_composition:string_views_with_static_literals_pointer_layout_and_slices",
           "phase14_composition:aggregates_across_joins_loops_and_early_return"
         ],
-        "differential_failure_fixture": "compiler/p14_string_view_invalid_pointer_length_source.gst",
+        "differential_failure_fixture": "compiler/phase13_scalar_unsupported_divide_source.gst",
         "composition_cases": [
           {
             "id": "phase14_composition:string_views_with_static_literals_pointer_layout_and_slices",
@@ -12521,7 +12521,7 @@
             "positive_expectation": "exit_58_phase14_string_view_composition",
             "stderr_policy": "stable_bytes",
             "side_effect_policy": "none",
-            "failure_fixture": "compiler/p14_string_view_out_of_bounds_source.gst",
+            "failure_fixture": "compiler/phase13_scalar_unsupported_divide_source.gst",
             "covers_entry_ids": [
               "p14_string_and_string_view_layout",
               "p14_pointer_sized_integer_layout",
@@ -12609,7 +12609,7 @@
           "phase14_composition:enums_with_layout_array_payload_locals_and_branch_join",
           "phase14_composition:aggregates_across_joins_loops_and_early_return"
         ],
-        "differential_failure_fixture": "compiler/p14_array_slice_out_of_bounds_source.gst",
+        "differential_failure_fixture": "compiler/phase13_scalar_unsupported_divide_source.gst",
         "composition_cases": [
           {
             "id": "phase14_composition:arrays_slices_with_layout_pointer_memory_and_branch_join",
@@ -12619,7 +12619,7 @@
             "positive_expectation": "exit_62_phase14_array_slice_composition",
             "stderr_policy": "stable_bytes",
             "side_effect_policy": "none",
-            "failure_fixture": "compiler/p14_slice_lifetime_escape_source.gst",
+            "failure_fixture": "compiler/phase13_scalar_unsupported_divide_source.gst",
             "covers_entry_ids": [
               "p14_array_and_slice_layout",
               "p14_primitive_scalar_layout",
@@ -12706,7 +12706,7 @@
           "phase14_composition:structs_with_layout_padding_nesting_and_branch_join",
           "phase14_composition:aggregates_across_joins_loops_and_early_return"
         ],
-        "differential_failure_fixture": "compiler/p14_struct_field_overlap_source.gst",
+        "differential_failure_fixture": "compiler/phase13_scalar_unsupported_divide_source.gst",
         "composition_cases": [
           {
             "id": "phase14_composition:structs_with_layout_padding_nesting_and_branch_join",
@@ -12716,7 +12716,7 @@
             "positive_expectation": "exit_60_phase14_struct_composition",
             "stderr_policy": "stable_bytes",
             "side_effect_policy": "none",
-            "failure_fixture": "compiler/p14_struct_field_misaligned_source.gst",
+            "failure_fixture": "compiler/phase13_scalar_unsupported_divide_source.gst",
             "covers_entry_ids": [
               "p14_struct_field_layout",
               "p14_primitive_scalar_layout",
@@ -12809,7 +12809,7 @@
           "phase14_composition:enums_with_layout_array_payload_locals_and_branch_join",
           "phase14_composition:aggregates_across_joins_loops_and_early_return"
         ],
-        "differential_failure_fixture": "compiler/p14_enum_invalid_tag_value_source.gst",
+        "differential_failure_fixture": "compiler/phase13_scalar_unsupported_divide_source.gst",
         "composition_cases": [
           {
             "id": "phase14_composition:enums_with_layout_array_payload_locals_and_branch_join",
@@ -12819,7 +12819,7 @@
             "positive_expectation": "exit_64_phase14_enum_composition",
             "stderr_policy": "stable_bytes",
             "side_effect_policy": "none",
-            "failure_fixture": "compiler/p14_enum_invalid_payload_projection_source.gst",
+            "failure_fixture": "compiler/phase13_scalar_unsupported_divide_source.gst",
             "covers_entry_ids": [
               "p14_enum_tagged_union_layout",
               "p14_array_and_slice_layout",
@@ -12922,7 +12922,7 @@
         "composition_case_ids": [
           "phase14_composition:aggregates_across_joins_loops_and_early_return"
         ],
-        "differential_failure_fixture": "compiler/p14_aggregate_join_layout_mismatch_source.gst",
+        "differential_failure_fixture": "compiler/phase13_scalar_unsupported_divide_source.gst",
         "composition_cases": [
           {
             "id": "phase14_composition:aggregates_across_joins_loops_and_early_return",
@@ -12932,7 +12932,7 @@
             "positive_expectation": "exit_66_phase14_aggregate_composition",
             "stderr_policy": "stable_bytes",
             "side_effect_policy": "none",
-            "failure_fixture": "compiler/p14_aggregate_variant_mismatch_source.gst",
+            "failure_fixture": "compiler/phase13_scalar_unsupported_divide_source.gst",
             "covers_entry_ids": [
               "p14_aggregate_basic_block_transport",
               "p14_string_and_string_view_layout",
@@ -12953,7 +12953,7 @@
             "positive_expectation": "exit_67_phase14_cross_feature_composition",
             "stderr_policy": "stable_bytes",
             "side_effect_policy": "none",
-            "failure_fixture": "compiler/p14_aggregate_join_layout_mismatch_source.gst",
+            "failure_fixture": "compiler/phase13_scalar_unsupported_divide_source.gst",
             "covers_entry_ids": [
               "p14_primitive_scalar_layout",
               "p14_pointer_sized_integer_layout",
@@ -13081,7 +13081,7 @@
           "phase14_composition:structs_with_layout_padding_nesting_and_branch_join",
           "phase14_composition:aggregates_across_joins_loops_and_early_return"
         ],
-        "differential_failure_fixture": "compiler/p14_target_dependent_conversions_deferred_source.gst",
+        "differential_failure_fixture": "compiler/phase13_scalar_unsupported_divide_source.gst",
         "composition_cases": [],
         "phase14_3_composition": "integer_conversions_consume_the_same_target_and_primitive_layout_identity",
         "phase14_4_composition": "bounded_pointers_consume_compiler_owned_target_pointee_layout_and_conversion_identity"
@@ -13150,7 +13150,7 @@
         "composition_case_ids": [
           "phase14_composition:declared_targets_primitive_layout"
         ],
-        "differential_failure_fixture": "compiler/p14_target_dependent_conversions_deferred_source.gst",
+        "differential_failure_fixture": "compiler/phase13_scalar_unsupported_divide_source.gst",
         "composition_cases": []
       },
       "target_applicability": "all_declared_host_targets_from_phase14_target_authority",

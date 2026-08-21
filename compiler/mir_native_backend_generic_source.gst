@@ -214,6 +214,314 @@ func mir_native_generic_function_is_zero_argument_int_entry(statement: ast.State
     }
 }
 
+// ---- Straight-line constant evaluation for the generic route ----
+//
+// Several Phase 14 fixtures are entirely literal-determined: every local is
+// initialised and reassigned from literals, every predicate is decidable at
+// compile time, and the returned expression reduces to one integer. Their
+// declared canonical MIR says so -- e.g.
+// native_backend_phase14_pointer_ingestion.mir is `ReturnI32 49` with no locals
+// and one block. So the route is meant to FOLD them.
+//
+// This evaluator is tried LAST, after every existing shape has declined, so it
+// can never shadow a shape that already has a dedicated emitter. It tracks at
+// most a few int locals and declines the moment it meets anything it cannot
+// prove: a call, a loop, a non-int local, an unknown operator, or any read of a
+// local it has not seen assigned.
+
+type MirNativeGenericConstEnv[ctx] struct {
+    represented: int,
+    names: Index[std.Vector[str, ctx], ctx],
+    values: Index[std.Vector[int, ctx], ctx]
+}
+
+type MirNativeGenericConstValue struct {
+    known: int,
+    value: int
+}
+
+func mir_native_generic_const_lookup(
+    env: MirNativeGenericConstEnv[ctx],
+    name: str,
+    ctx: &Arena
+) MirNativeGenericConstValue {
+    mut found: MirNativeGenericConstValue;
+    found.known = 0;
+    found.value = 0;
+    mut names: std.Vector[str, ctx] := ctx[env.names];
+    mut values: std.Vector[int, ctx] := ctx[env.values];
+    mut index := 0;
+    while index < len(names) {
+        if std.str_eq(names[index], name) == 1 {
+            found.known = 1;
+            found.value = values[index];
+        }
+        index = index + 1;
+    }
+    return found;
+}
+
+func mir_native_generic_const_bind(
+    env: MirNativeGenericConstEnv[ctx],
+    name: str,
+    value: int,
+    ctx: &Arena
+) MirNativeGenericConstEnv[ctx] {
+    unsafe {
+        mut names: std.Vector[str, ctx] := ctx[env.names];
+        mut values: std.Vector[int, ctx] := ctx[env.values];
+        mut index := 0;
+        while index < len(names) {
+            if std.str_eq(names[index], name) == 1 {
+                values[index] = value;
+                ctx.Set(env.values, values);
+                return env;
+            }
+            index = index + 1;
+        }
+        names.Push(std.Clone(ctx, name));
+        values.Push(value);
+        ctx.Set(env.names, names);
+        ctx.Set(env.values, values);
+        return env;
+    }
+}
+
+func mir_native_generic_const_eval(
+    expression: ast.Expression[ctx],
+    env: MirNativeGenericConstEnv[ctx],
+    ctx: &Arena
+) MirNativeGenericConstValue {
+    mut result: MirNativeGenericConstValue;
+    result.known = 0;
+    result.value = 0;
+
+    unsafe {
+        if expression.tag == 1 {
+            result.known = 1;
+            result.value = expression.Integer.val;
+            return result;
+        }
+        if expression.tag == 3 {
+            result.known = 1;
+            result.value = expression.Bool.val;
+            return result;
+        }
+        if expression.tag == 0 {
+            return mir_native_generic_const_lookup(
+                env,
+                expression.Identifier.name,
+                ctx
+            );
+        }
+        if expression.tag == 10 {
+            mut left := mir_native_generic_const_eval(
+                ctx[expression.Binary.left],
+                env,
+                ctx
+            );
+            mut right := mir_native_generic_const_eval(
+                ctx[expression.Binary.right],
+                env,
+                ctx
+            );
+            if left.known == 0 || right.known == 0 {
+                return result;
+            }
+            mut folded := scalar_expression.mir_native_scalar_const_binary(
+                expression.Binary.op,
+                left.value,
+                right.value
+            );
+            if folded.known == 0 {
+                return result;
+            }
+            result.known = 1;
+            result.value = folded.value;
+            return result;
+        }
+        return result;
+    }
+}
+
+// Walks a straight-line body, folding it to the integer it returns. Declines on
+// the first statement it cannot prove, so an unsupported construct anywhere in
+// the function means the whole function is not represented here.
+func mir_native_generic_const_body(
+    statements: std.Vector[ast.Statement[ctx], ctx],
+    env: MirNativeGenericConstEnv[ctx],
+    ctx: &Arena
+) MirNativeGenericConstValue {
+    mut outcome: MirNativeGenericConstValue;
+    outcome.known = 0;
+    outcome.value = 0;
+
+    unsafe {
+        mut index := 0;
+        while index < len(statements) {
+            mut statement := statements[index];
+
+            if statement.tag == 4 {
+                // Only int locals; anything else is outside this evaluator.
+                mut declared_type := ctx[statement.VarDecl.var_type];
+                if declared_type.tag != 0 {
+                    return outcome;
+                }
+                // A name declared twice is a source-level error. Binding over
+                // the first would quietly give this route an answer for a
+                // program that must be refused, so decline instead.
+                mut shadowed := mir_native_generic_const_lookup(
+                    env,
+                    statement.VarDecl.name,
+                    ctx
+                );
+                if shadowed.known == 1 {
+                    return outcome;
+                }
+                mut initial := mir_native_generic_const_eval(
+                    ctx[statement.VarDecl.value],
+                    env,
+                    ctx
+                );
+                if initial.known == 0 {
+                    return outcome;
+                }
+                env = mir_native_generic_const_bind(
+                    env,
+                    statement.VarDecl.name,
+                    initial.value,
+                    ctx
+                );
+                index = index + 1;
+            } else if statement.tag == 5 {
+                mut target := ctx[statement.Assignment.left];
+                if target.tag != 0 {
+                    return outcome;
+                }
+                // Likewise, assigning to a name this evaluator never saw
+                // declared means the shape is not the one claimed here.
+                mut existing := mir_native_generic_const_lookup(
+                    env,
+                    target.Identifier.name,
+                    ctx
+                );
+                if existing.known == 0 {
+                    return outcome;
+                }
+                mut assigned := mir_native_generic_const_eval(
+                    ctx[statement.Assignment.value],
+                    env,
+                    ctx
+                );
+                if assigned.known == 0 {
+                    return outcome;
+                }
+                env = mir_native_generic_const_bind(
+                    env,
+                    target.Identifier.name,
+                    assigned.value,
+                    ctx
+                );
+                index = index + 1;
+            } else if statement.tag == 7 {
+                mut condition := mir_native_generic_const_eval(
+                    ctx[statement.If.condition],
+                    env,
+                    ctx
+                );
+                if condition.known == 0 {
+                    return outcome;
+                }
+                // The predicate is decided here, so exactly one arm is live and
+                // the other cannot affect the result.
+                if condition.value != 0 {
+                    mut consequence := ctx[statement.If.consequence];
+                    mut then_statements: std.Vector[ast.Statement[ctx], ctx] :=
+                        ctx[consequence.statements];
+                    return mir_native_generic_const_body(
+                        then_statements,
+                        env,
+                        ctx
+                    );
+                }
+                if statement.If.alternative !=
+                   empty[Index[ast.BlockStatement[ctx], ctx]] {
+                    mut alternative := ctx[statement.If.alternative];
+                    mut else_statements: std.Vector[ast.Statement[ctx], ctx] :=
+                        ctx[alternative.statements];
+                    mut taken := mir_native_generic_const_body(
+                        else_statements,
+                        env,
+                        ctx
+                    );
+                    if taken.known == 1 {
+                        return taken;
+                    }
+                }
+                index = index + 1;
+            } else if statement.tag == 12 {
+                return mir_native_generic_const_eval(
+                    ctx[statement.Return.expr],
+                    env,
+                    ctx
+                );
+            } else {
+                return outcome;
+            }
+        }
+        return outcome;
+    }
+}
+
+func mir_native_generic_const_fold_entry(
+    statement: ast.Statement[ctx],
+    ctx: &Arena
+) MirNativeGenericConstValue {
+    mut outcome: MirNativeGenericConstValue;
+    outcome.known = 0;
+    outcome.value = 0;
+    unsafe {
+        mut env: MirNativeGenericConstEnv[ctx];
+        mut names: std.Vector[str, ctx] := std.VectorNew(ctx);
+        mut values: std.Vector[int, ctx] := std.VectorNew(ctx);
+        mut name_index: Index[std.Vector[str, ctx], ctx] := os.ArenaAlloc(ctx);
+        mut value_index: Index[std.Vector[int, ctx], ctx] := os.ArenaAlloc(ctx);
+        ctx.Set(name_index, names);
+        ctx.Set(value_index, values);
+        env.represented = 1;
+        env.names = name_index;
+        env.values = value_index;
+
+        mut body := ctx[statement.FunctionDecl.body];
+        mut body_statements: std.Vector[ast.Statement[ctx], ctx] :=
+            ctx[body.statements];
+        return mir_native_generic_const_body(body_statements, env, ctx);
+    }
+}
+
+// The Phase 13 scalar-expression owner lowers nested arithmetic AND attaches
+// the phase13_10 source metadata its parity guard checks for. Folding such an
+// entry to a literal would reach the right exit status with an empty metadata
+// record, so the fold stands aside wherever that owner can plan the value.
+func mir_native_generic_entry_is_scalar_expression_owned(
+    statement: ast.Statement[ctx],
+    ctx: &Arena
+) int {
+    unsafe {
+        mut body := ctx[statement.FunctionDecl.body];
+        mut statements: std.Vector[ast.Statement[ctx], ctx] :=
+            ctx[body.statements];
+        if len(statements) != 1 || statements[0].tag != 12 {
+            return 0;
+        }
+        mut plan := scalar_expression.mir_native_scalar_expression_plan(
+            ctx[statements[0].Return.expr],
+            ctx
+        );
+        return plan.represented;
+    }
+}
+
 func mir_native_generic_analyze_single_function(statement: ast.Statement[ctx], source_path: str, ctx: &Arena) MirNativeGenericModel[ctx] {
     mut model := mir_native_generic_empty_model(ctx);
     if mir_native_generic_function_is_zero_argument_int_entry(
@@ -550,7 +858,223 @@ func mir_native_generic_analyze_single_function(statement: ast.Statement[ctx], s
         }
     }
 
+    // Last resort: the whole entry may be literal-determined. Tried only after
+    // every dedicated shape above has declined, so it cannot shadow one.
+    // Guard the fold explicitly on the entry qualification rather than relying
+    // on the early return above: a fold that claims a non-entry function
+    // produces a bundle the emitter cannot lower, which crashes rather than
+    // declining.
+    mut folded: MirNativeGenericConstValue;
+    folded.known = 0;
+    folded.value = 0;
+    if mir_native_generic_function_is_zero_argument_int_entry(statement, ctx) == 1 &&
+       mir_native_generic_entry_is_scalar_expression_owned(statement, ctx) == 0
+    {
+        folded = mir_native_generic_const_fold_entry(statement, ctx);
+    }
+    if folded.known == 1 {
+        unsafe {
+            model.represented = 1;
+            model.shape.tag = 0;
+            model.source_path = std.Clone(ctx, source_path);
+            model.literal_value = folded.value;
+            return model;
+        }
+    }
+
     return model;
+}
+
+// ---- Phase 14 primitive-layout selector fold ----
+//
+// Recognises a two-function module whose entry calls a pure selector with
+// literal arguments, and folds it to the literal the selector would return:
+//
+//     func choose(flag: bool, left: int, right: int) int {
+//         if flag { return left; } else { return right; }
+//     }
+//     func main() int { return choose(true, 42, 7); }   =>   return 42
+//
+// The declared canonical MIR for this case
+// (compiler/fixtures/native_backend_phase14_primitive_layout_ingestion.mir) is
+// `ReturnI32 42` with no locals and one block, so the route is meant to FOLD
+// here rather than to represent a bool parameter, a parameter branch, or a
+// call. That is why this needs no new terminator kind: it reuses LiteralReturn.
+//
+// Every operand must be a literal. Nothing here evaluates a runtime value, so
+// the fold cannot change observable behaviour -- it either matches exactly and
+// yields the selected literal, or it declines and the route defers as before.
+type MirNativeGenericSelectorFold struct {
+    represented: int,
+    value: int
+}
+
+// Evaluates one arm of the selector to a literal, given the literal arguments
+// bound to the helper's parameters. Handles exactly three forms:
+//   <int param>              -> the literal bound to that parameter
+//   <int literal>            -> itself
+//   <either of the above> <op> <int literal>, for the operators the
+//   Phase 13 scalar-expression owner can resolve at compile time
+// Anything else declines, so the fold declines with it.
+func mir_native_generic_fold_arm(
+    expression: ast.Expression[ctx],
+    parameters: std.Vector[ast.Parameter[ctx], ctx],
+    arguments: std.Vector[ast.Expression[ctx], ctx],
+    ctx: &Arena
+) MirNativeGenericSelectorFold {
+    mut arm: MirNativeGenericSelectorFold;
+    arm.represented = 0;
+    arm.value = 0;
+
+    unsafe {
+
+        if expression.tag == 1 {
+            arm.represented = 1;
+            arm.value = expression.Integer.val;
+            return arm;
+        }
+        if expression.tag == 0 {
+            mut index := 1;
+            while index < len(parameters) {
+                if std.str_eq(
+                    expression.Identifier.name,
+                    parameters[index].name
+                ) == 1 {
+                    arm.represented = 1;
+                    arm.value = arguments[index].Integer.val;
+                    return arm;
+                }
+                index = index + 1;
+            }
+            return arm;
+        }
+        if expression.tag == 10 {
+            mut right := ctx[expression.Binary.right];
+            if right.tag != 1 {
+                return arm;
+            }
+            mut left := ctx[expression.Binary.left];
+            mut left_arm := mir_native_generic_fold_arm(
+                left,
+                parameters,
+                arguments,
+                ctx
+            );
+            if left_arm.represented == 0 {
+                return arm;
+            }
+            mut folded := scalar_expression.mir_native_scalar_const_binary(
+                expression.Binary.op,
+                left_arm.value,
+                right.Integer.val
+            );
+            if folded.known == 0 {
+                return arm;
+            }
+            arm.represented = 1;
+            arm.value = folded.value;
+            return arm;
+        }
+        return arm;
+    }
+}
+
+func mir_native_generic_selector_fold(
+    helper_statement: ast.Statement[ctx],
+    call_expression: ast.Expression[ctx],
+    ctx: &Arena
+) MirNativeGenericSelectorFold {
+    mut fold: MirNativeGenericSelectorFold;
+    fold.represented = 0;
+    fold.value = 0;
+
+    unsafe {
+        mut parameters: std.Vector[ast.Parameter[ctx], ctx] :=
+            ctx[helper_statement.FunctionDecl.params];
+        mut return_type := ctx[helper_statement.FunctionDecl.return_type];
+        // (bool, int) or (bool, int, int) -> int, and nothing else.
+        if len(parameters) < 2 || len(parameters) > 3 ||
+           parameters[0].param_type.tag != 2 ||
+           return_type.tag != 0
+        {
+            return fold;
+        }
+        mut check := 1;
+        while check < len(parameters) {
+            if parameters[check].param_type.tag != 0 {
+                return fold;
+            }
+            check = check + 1;
+        }
+
+        mut helper_body := ctx[helper_statement.FunctionDecl.body];
+        mut helper_statements: std.Vector[ast.Statement[ctx], ctx] :=
+            ctx[helper_body.statements];
+        if len(helper_statements) != 1 || helper_statements[0].tag != 7 {
+            return fold;
+        }
+
+        mut condition := ctx[helper_statements[0].If.condition];
+        // The predicate is the bool parameter itself, unnegated.
+        if condition.tag != 0 ||
+           std.str_eq(condition.Identifier.name, parameters[0].name) == 0
+        {
+            return fold;
+        }
+
+        if helper_statements[0].If.alternative ==
+           empty[Index[ast.BlockStatement[ctx], ctx]]
+        {
+            return fold;
+        }
+        mut consequence := ctx[helper_statements[0].If.consequence];
+        mut alternative := ctx[helper_statements[0].If.alternative];
+        mut then_statements: std.Vector[ast.Statement[ctx], ctx] :=
+            ctx[consequence.statements];
+        mut else_statements: std.Vector[ast.Statement[ctx], ctx] :=
+            ctx[alternative.statements];
+        if len(then_statements) != 1 || then_statements[0].tag != 12 ||
+           len(else_statements) != 1 || else_statements[0].tag != 12
+        {
+            return fold;
+        }
+
+        // Every argument must be a literal, or there is nothing to fold.
+        mut arguments: std.Vector[ast.Expression[ctx], ctx] :=
+            ctx[call_expression.Call.arguments];
+        if len(arguments) != len(parameters) || arguments[0].tag != 3 {
+            return fold;
+        }
+        mut probe := 1;
+        while probe < len(arguments) {
+            if arguments[probe].tag != 1 {
+                return fold;
+            }
+            probe = probe + 1;
+        }
+
+        // The predicate is a literal, so exactly one arm is reachable. Fold
+        // that arm and that arm only: the other is dead code, and evaluating
+        // it would make this route answer questions about expressions the
+        // program never runs.
+        mut selected := ctx[else_statements[0].Return.expr];
+        if arguments[0].Bool.val == 1 {
+            selected = ctx[then_statements[0].Return.expr];
+        }
+        mut arm := mir_native_generic_fold_arm(
+            selected,
+            parameters,
+            arguments,
+            ctx
+        );
+        if arm.represented == 0 {
+            return fold;
+        }
+
+        fold.value = arm.value;
+        fold.represented = 1;
+        return fold;
+    }
 }
 
 func mir_native_generic_analyze_call_module(top_level: std.Vector[ast.Statement[ctx], ctx], source_path: str, ctx: &Arena) MirNativeGenericModel[ctx] {
@@ -591,6 +1115,34 @@ func mir_native_generic_analyze_call_module(top_level: std.Vector[ast.Statement[
         mut call_is_imported := 0;
 
         if companion_statement.FunctionDecl.is_extern == 0 {
+            // Selector fold first: it accepts a three-parameter helper, which
+            // the identity shape below rejects outright on parameter count.
+            if len(main_statements) == 1 && main_statements[0].tag == 12 {
+                mut fold_call := ctx[main_statements[0].Return.expr];
+                if fold_call.tag == 12 {
+                    mut fold_callee := ctx[fold_call.Call.function];
+                    if fold_callee.tag == 0 &&
+                       std.str_eq(
+                           fold_callee.Identifier.name,
+                           companion_statement.FunctionDecl.name
+                       ) == 1
+                    {
+                        mut fold := mir_native_generic_selector_fold(
+                            companion_statement,
+                            fold_call,
+                            ctx
+                        );
+                        if fold.represented == 1 {
+                            model.represented = 1;
+                            model.shape.tag = 0;
+                            model.source_path = std.Clone(ctx, source_path);
+                            model.literal_value = fold.value;
+                            return model;
+                        }
+                    }
+                }
+            }
+
             mut helper_parameters: std.Vector[ast.Parameter[ctx], ctx] :=
                 ctx[companion_statement.FunctionDecl.params];
             mut helper_return_type :=

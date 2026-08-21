@@ -10631,11 +10631,9 @@ guard-cranelift-phase11-scalar-expression-parity:
       cat "$negative_dir/default.compiler.stderr"
       exit 1
     fi
-    cat src/runtime.c "$negative_dir/default.c" >"$negative_dir/final.c"
     cat src/runtime.c "$negative_dir/default.c" >"$negative_dir/default.final.c"
     "$CC_BIN" $CFLAGS_VAL -Isrc \
       "$negative_dir/default.final.c" \
-      "$negative_dir/final.c" \
       -o "$negative_dir/mir-to-c-program"
     execute_and_capture \
       "$negative_dir/mir-to-c-program" \
@@ -10656,7 +10654,6 @@ guard-cranelift-phase11-scalar-expression-parity:
         "$negative_source" \
         >"$negative_dir/native.stdout" \
         2>"$negative_dir/native.stderr"
-        >"$negative_dir/native.stdout" 2>"$negative_dir/native.stderr"
     negative_status="$?"
     set -e
     if [ "$negative_status" = "0" ]; then
@@ -17067,7 +17064,13 @@ guard-cranelift-phase11-close:
     echo "🔒 Validating the Phase 11 closure summary and test-level wiring..."
     registry_doc="compiler/CRANELIFT_FEATURE_PARITY_REGISTRY.md"
     registry_validator="scripts/cranelift_registry.py"
-    differential_harness="scripts/phase11_registry_differential.sh"
+    # d111e39f reduced scripts/phase11_registry_differential.sh to a five-line
+    # `exec` shim and moved the harness into the Phase 13 script. This assertion
+    # has to follow the harness, not the shim, or it checks a file that can no
+    # longer contain what it looks for. Every other guard already points here;
+    # this one was the last straggler.
+    differential_harness="scripts/phase13_registry_differential.sh"
+    differential_shim="scripts/phase11_registry_differential.sh"
     level_runner="scripts/cranelift_test_levels.py"
     historical_workflow=".github/workflows/cranelift-historical-full.yml"
 
@@ -17099,6 +17102,9 @@ guard-cranelift-phase11-close:
     python3 "$registry_validator" verify-phase11-closure
     rg -n -F 'cmp -s "$case_dir/default.c" "$case_dir/explicit.c"' \
       "$differential_harness" >/dev/null
+    # And the shim must still delegate to it, so the wiring cannot rot silently.
+    rg -n -F 'exec bash scripts/phase13_registry_differential.sh' \
+      "$differential_shim" >/dev/null
 
     close_body="$(
       sed -n '/^guard-cranelift-phase11-close:/,/^guard-cranelift-phase11-closure-summary:/p' justfile
