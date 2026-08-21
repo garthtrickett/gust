@@ -241,7 +241,82 @@ The Gust core owns:
 - serialization of state that must survive process death;
 - the set of actions and effects the native host may deliver.
 
-### 5.1 Boundary rules
+### 5.1 SAM across the native boundary
+
+The mobile host does not introduce a second state architecture. The proposed
+contract carries Gust's existing SAM direction across the ABI:
+
+```text
+native event
+    |
+    v
+Swift/Kotlin host packages a typed Action
+    |
+    v
+Gust acceptor validates and applies the transition
+    |
+    v
+Gust presenter derives immutable mobile ViewState
+    |
+    v
+host receives a snapshot (and, later, a keyed patch)
+    |
+    v
+SwiftUI/Compose updates native controls
+```
+
+This preserves the roles already assigned in `docs/VISION.md:1318-1328`: the
+model stores application state, actions describe events, acceptors apply
+transitions, presenters derive view state, and effects remain explicit. The
+native state holder is a read-only mirror of the presented `ViewState`; it is an
+adapter mechanism, not an application store. The host never receives the raw
+Gust model, arena references, linear resources, or capability handles.
+
+The direction is therefore:
+
+- **state down:** Gust presents immutable, boundary-safe values for the native
+  renderer;
+- **actions up:** tap, text, navigation, lifecycle, and capability-result events
+  return as typed actions rather than mutating business state in Swift/Kotlin;
+- **effects through named capabilities:** a transition may request camera,
+  storage, notification, share, or other platform work; the host performs that
+  work and enqueues its typed success, failure, cancellation, or denial as a new
+  action.
+
+For example, a native counter button emits `Increment`; the Gust acceptor changes
+`count` from 4 to 5; the presenter emits `CounterViewState { count_text: "5" }`;
+and the host updates the native text control. A camera request follows the same
+loop: the action produces a `Camera` effect, the host invokes the declared camera
+capability, and `CameraCompleted` or `CameraDenied` comes back as an action. The
+host does not make a re-entrant call into an arbitrary Gust frame.
+
+Some state necessarily remains native and transient: focus, keyboard visibility,
+scroll offset, animation and gesture progress, text composition, and
+scene/activity objects. The dividing rule is behavioural: if a value affects
+business rules, navigation meaning, restoration, synchronization, or a server
+decision, it belongs in Gust and is presented back down; if it exists only to
+operate a platform control, it stays in the host. Process recreation may discard
+and rebuild transient host state, while Gust restores the application state it
+declared durable.
+
+The first renderer slice should send one immutable screen snapshot after each
+completed transition. That is the easiest contract to verify. If profiling later
+shows copying or reconciliation cost, the same schema may add ordered patches
+keyed by stable compiler-owned node IDs, for example `SetText`, `SetEnabled`, or
+`InsertListRow`. A patch is an encoding optimization, not a second mutation
+model: applying it must produce the same presented view as the corresponding
+snapshot. Avoid per-property JNI getters and never send the complete application
+model merely to render one screen.
+
+This section specifies the proposed mobile boundary, not a shipped facility.
+The SAM runtime is absent today (`docs/MOBILE_NATIVE_DEPLOYMENT.md:82-84`), and
+OD-3 remains open pending its worked, reviewed ownership example
+(`docs/VISION.md:1330-1336`). In particular, the proposed confirmed-model plus
+pending-action journal and its optimistic reconciliation rules remain a leading
+direction rather than a decision (`docs/VISION.md:1338-1360`). Mobile must consume
+the outcome of OD-3; it must not decide that ownership question independently.
+
+### 5.2 Boundary rules
 
 The first ABI should be deliberately boring:
 
@@ -270,7 +345,7 @@ The first ABI should be deliberately boring:
    native libraries, Gradle/Xcode toolchain, entitlements/permissions, and symbols
    are locked and auditable together.
 
-### 5.2 iOS artifact
+### 5.3 iOS artifact
 
 The compiler/backend work must produce explicit iOS device and simulator target
 tuples, not reuse `aarch64-apple-darwin`. The build then:
@@ -288,7 +363,7 @@ execute code that introduces or changes functionality, so remote-delivered Gust
 code is not the baseline iOS deployment model. See Apple's current
 [App Review Guidelines](https://developer.apple.com/app-store/review/guidelines/).
 
-### 5.3 Android artifact
+### 5.4 Android artifact
 
 The compiler/backend work must add Android target tuples and runtime/linker
 packages. Android names packaged native ABIs such as `arm64-v8a` and `x86_64`;
@@ -311,7 +386,7 @@ The JNI design follows Android's own advice: minimize marshalling, keep async UI
 updates on the managed side, minimize threads touching JNI, and keep interface
 code in a few identifiable locations.
 
-### 5.4 Local and Gust Forge builds
+### 5.5 Local and Gust Forge builds
 
 The same declared mobile build must work locally and on Gust Forge. Hosted builds
 are a convenience and a custody boundary, not a second architecture:
