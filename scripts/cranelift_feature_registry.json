@@ -939,8 +939,8 @@
     "removed_authority": "compiler/phase19_spelling_rule.gst",
     "decision_policy": "template_role_and_resolved_type_metadata_only",
     "generated_c_diff": {
-      "insertions": 532,
-      "deletions": 435,
+      "insertions": 670,
+      "deletions": 445,
       "categories": [
         {"id": "retired_spelling_authority", "scope": "deletes the generated spelling-table helpers and their calls"},
         {"id": "template_role_metadata", "scope": "adds template brand-position fields, inference helpers, and built-in role initializers"},

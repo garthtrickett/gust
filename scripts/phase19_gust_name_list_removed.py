@@ -16,6 +16,8 @@ REVIEW = ROOT / "compiler/CRANELIFT_PHASE19_GUST_NAME_LIST_REMOVED.md"
 AUTHORITY = ROOT / "compiler/phase19_spelling_rule.gst"
 TYPECHECKER = ROOT / "compiler/typechecker.gst"
 CODEGEN = ROOT / "compiler/codegen.gst"
+RUNNER = ROOT / "compiler/test_runner_entry.gst"
+BOOTSTRAP_RUNNER = ROOT / "compiler/test_runner_bootstrap_bridge_entry.gst"
 GUARD = "guard-cranelift-phase19-gust-name-list-removed"
 
 LEGACY_IDENTIFIERS = (
@@ -81,6 +83,9 @@ def validate() -> dict:
         "func typechecker_infer_struct_template_brand_parameter(",
         "func typechecker_infer_enum_template_brand_parameter(",
         "func env_get_template_brand_parameter_index(",
+        "func env_template_local_name_is_ambiguous(",
+        "func typechecker_complete_flattened_template_arguments(",
+        "func env_pre_register_template_statement(",
         "func env_get_canonical_branded_type_name(",
         "func typechecker_canonicalize_concrete_name(",
     ):
@@ -97,10 +102,21 @@ def validate() -> dict:
         "typechecker.env_get_canonical_branded_type_name(env, name, brand, ctx)" in codegen,
         "codegen does not delegate canonical branded-name lookup",
     )
+    for runner_path in (RUNNER, BOOTSTRAP_RUNNER):
+        runner = runner_path.read_text(encoding="utf-8")
+        require(
+            "typechecker.env_pre_register_template_statement" in runner,
+            f"{runner_path.name} does not discover template metadata before full pre-registration",
+        )
+        require(
+            runner.index("typechecker.env_pre_register_template_statement")
+            < runner.index("typechecker.env_pre_register_statement"),
+            f"{runner_path.name} template discovery does not precede full pre-registration",
+        )
 
     diff = record.get("generated_c_diff")
     require(isinstance(diff, dict), "generated-C difference enumeration missing")
-    require(diff.get("insertions") == 532 and diff.get("deletions") == 435,
+    require(diff.get("insertions") == 670 and diff.get("deletions") == 445,
             "generated-C line counts drifted")
     categories = diff.get("categories")
     require(isinstance(categories, list) and len(categories) == 6,

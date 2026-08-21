@@ -19,8 +19,8 @@ The committed seed compiles the resulting compiler with `make gust`.
 
 ## Generated-C difference enumeration
 
-The compiler C changed by 532 insertions and
-435 deletions. Every hunk belongs to one of:
+The compiler C changed by 670 insertions and
+445 deletions. Every hunk belongs to one of:
 
 - `retired_spelling_authority` — deletes the generated spelling-table helpers and their calls
 - `template_role_metadata` — adds template brand-position fields, inference helpers, and built-in role initializers

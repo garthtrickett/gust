@@ -164,16 +164,6 @@ func main() {
         }
         module_prefixes.Push(prefix);
 
-        // Set current prefix and pre-register statements
-        env.current_prefix = prefix;
-        env.current_file = path;
-        mut statements_vec: std.Vector[ast.Statement[ctx], ctx] := ctx[prog.statements];
-        mut k := 0;
-        while k < len(statements_vec) {
-            typechecker.env_pre_register_statement(&env, statements_vec[k], ctx);
-            k = k + 1;
-        }
-
         i = i + 1;
     }
 
@@ -190,6 +180,37 @@ func main() {
             err_idx = err_idx + 1;
         }
         os.Exit(1);
+    }
+
+    // Discover every generic template before full pre-registration. This makes
+    // same-local-name templates structurally ambiguous from the first module,
+    // independent of resolver order.
+    mut discovery_idx := 0;
+    while discovery_idx < len(programs) {
+        env.current_prefix = module_prefixes[discovery_idx];
+        env.current_file = order[discovery_idx];
+        mut discovery_program := programs[discovery_idx];
+        mut discovery_statements: std.Vector[ast.Statement[ctx], ctx] := ctx[discovery_program.statements];
+        mut discovery_stmt_idx := 0;
+        while discovery_stmt_idx < len(discovery_statements) {
+            typechecker.env_pre_register_template_statement(&env, discovery_statements[discovery_stmt_idx], ctx);
+            discovery_stmt_idx = discovery_stmt_idx + 1;
+        }
+        discovery_idx = discovery_idx + 1;
+    }
+
+    mut preregister_idx := 0;
+    while preregister_idx < len(programs) {
+        env.current_prefix = module_prefixes[preregister_idx];
+        env.current_file = order[preregister_idx];
+        mut preregister_program := programs[preregister_idx];
+        mut preregister_statements: std.Vector[ast.Statement[ctx], ctx] := ctx[preregister_program.statements];
+        mut preregister_stmt_idx := 0;
+        while preregister_stmt_idx < len(preregister_statements) {
+            typechecker.env_pre_register_statement(&env, preregister_statements[preregister_stmt_idx], ctx);
+            preregister_stmt_idx = preregister_stmt_idx + 1;
+        }
+        preregister_idx = preregister_idx + 1;
     }
 
     // 5. Typecheck all programs in Topological Order
