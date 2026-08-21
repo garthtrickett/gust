@@ -96,7 +96,8 @@ Verified 2026-08-19 against `6c94728d`. Evidence and reproductions:
 
 Already present, contrary to the originating handoff document:
 
-- `len(s)` accepts `str` and returns byte length — `src/typechecker/visitor.rs:3084`.
+- `len(s)` accepts one argument and returns `int` —
+  `compiler/typechecker.gst:3458-3471`; codegen reads the slice `.len` field.
   This already satisfies the byte-length requirement and agrees with
   `VISION.md` §33.
 - `std.str_slice(s, start, end)` — `src/runtime/strings.c:16`.
@@ -111,12 +112,11 @@ Confirmed defects:
 
 - `str == str` typechecks and emits `(a == b)` over two C structs, which is not
   valid C. The failure surfaces from the host C compiler.
-- Both compilers infer arena brands from a hardcoded list of identifier
-  spellings — `["connCtx", "arena", "ctx", "Any", "a", "main_ctx", "bg_ctx", "file_ctx"]`
-  at `src/codegen.rs:71` and `src/typechecker/types.rs:61`. A local named `a` has
-  `&` prepended at call sites regardless of its type. The Rust and self-hosted
-  compilers use different matching rules for the same list (`ends_with` versus
-  substring), and the list is present in the committed bootstrap seed.
+- The self-hosted compiler infers arena brands from a hardcoded list of
+  identifier spellings. A local named `a` has `&` prepended at call sites
+  regardless of its type, and the list is present in the committed bootstrap
+  seed. The generated `compiler/CRANELIFT_PHASE19_SPELLING_INVENTORY.md` owns
+  the live site list.
 - A method call on a reference receiver fails resolution:
   `func lookup(m: &std.HashMap[str, int, ctx]) int { return m.Get("k"); }` →
   `Semantic Error: Undefined function 'm.Get'`. `GEMINI.md` §D already records
@@ -139,6 +139,7 @@ current would re-open work that is done.
 | `str == str` typechecks and emits invalid C | **Closed** by S1.1 (#74). Both compilers now reject `==` and `!=` on `str` with a byte-identical diagnostic naming `std.str_eq`. Making `==` *mean* content equality is still open as CR-1. |
 | A method call on a reference receiver fails resolution | **Closed** by S1.3 (#86). |
 | `defer` has no AST/typechecker representation | **Superseded.** `defer` is an AST node; `STEP52_RESOURCE_SEMANTICS.md` predates that. The remaining gap is destructor declaration and enforcement, re-verified by S1.7 (#87) and stated in CR-5. |
+| Rust and self-hosted brand matching diverge | **Closed by deletion.** PR #137 removed the deprecated Rust prototype on 2026-08-21; D-2 is recorded as closed in `docs/SHARED_SEMANTIC_ZONE.md`. The surviving self-hosted spelling defect remains CR-2/D-1. |
 
 Still open exactly as recorded: the brand-spelling defect (CR-2, owned by
 `TASK.md`) and the `exit(1)` bounds policy (CR-3, unscheduled).
@@ -209,12 +210,12 @@ Cranelift lane, not by this roadmap.
    equality in the compiler-owned operator set, lowering to the existing
    `std_str_eq` semantics through canonical MIR. No new operator, no user-level
    overloading.
-4. **Affected:** `src/typechecker/visitor.rs`, `src/codegen.rs`,
-   `compiler/typechecker.gst`, `compiler/codegen.gst`, canonical MIR equality
-   lowering, `src/runtime/strings.c` (unchanged if `std_str_eq` is reused).
+4. **Affected:** `compiler/typechecker.gst`, `compiler/codegen.gst`, canonical
+   MIR equality lowering, and `src/runtime/strings.c` (unchanged if
+   `std_str_eq` is reused).
 5. **MIR-to-C:** yes.
 6. **Cranelift:** yes — parity required, or the feature is deferred in both.
-7. **Bootstrap:** yes — dual compiler and seed.
+7. **Bootstrap:** yes — self-hosted compiler and seed.
 
 `VISION.md` §16 makes the operator set compiler-owned, so this is Cranelift-lane
 work by default even though the motivation is ergonomic. Patch S1.1 delivers the
@@ -226,19 +227,17 @@ whether or not CR-1 is scheduled.
 1. **Intended behaviour:** whether a value is an arena, and whether an argument
    is passed by value or by address, follows from its resolved type. Renaming a
    variable never changes generated code.
-2. **Existing limitation:** both compilers test identifier spelling against a
-   hardcoded brand-name list, and the two compilers use different matching rules
-   for it.
+2. **Existing limitation:** the self-hosted compiler tests identifier spelling
+   against a hardcoded brand-name list at nine generated-inventory sites.
 3. **Smallest generic change:** resolve arena-ness and argument representation
-   from the type system; delete the name list from both compilers; make the two
-   matching rules identical or make the concept unnecessary.
+   from the type system; converge the self-hosted consumers, then delete the
+   name list and make the concept unnecessary.
 4. **Affected — see `compiler/CRANELIFT_PHASE19_OPENING.md`, which supersedes the
    list that stood here.** Phase 19.0 recomputed the sweep and produced a
-   *generated, validated* inventory: eleven host assumptions across both
-   compilers and four reachability areas, five brand vocabularies recorded
-   verbatim with their locations, and a validator that fails if a cited path does
-   not exist. A hand-maintained list in this file would now be a second answer to
-   the same question, and a worse one.
+   *generated, validated* inventory of the live self-hosted implementation: nine
+   decisions across codegen and typechecking, with each vocabulary recorded
+   verbatim at its location. A hand-maintained list in this file would now be a
+   second answer to the same question, and a worse one.
 
    **Recording why it was replaced, because the two failure modes are different
    and only one of them is survivable.** The old list had drifted — by one or two
@@ -247,13 +246,11 @@ whether or not CR-1 is scheduled.
    `docs/SHARED_SEMANTIC_ZONE.md` permits source `path:line` and tells the reader
    to confirm the construct still exists before acting.
 
-   **It was also incomplete, and that is not survivable the same way.** It omitted
-   `src/parser.rs`, which tests the literal spelling `"Arena"` in five places. No
-   amount of confirming-before-acting surfaces a file that was never listed —
-   the reader has nothing to confirm. I audited these citations on 2026-08-20 and
-   checked only whether the ones present were *accurate*; I never asked whether
-   the list was *complete*, and concluded the convention's mitigation had worked.
-   It had, for drift. It has no coverage for omission.
+   **The original dual-compiler sweep was also incomplete, and that is not
+   survivable the same way.** It omitted five literal `"Arena"` tests in the
+   now-removed prototype parser. No amount of confirming-before-acting surfaces
+   a file that was never listed. The generated self-hosted inventory replaces
+   that historical, omission-prone evidence rather than carrying it forward.
 5. **MIR-to-C:** yes.
 6. **Cranelift:** yes — argument representation is Phase 16 ABI territory.
 7. **Bootstrap:** yes, and this is the highest-risk element. The seed encodes
@@ -268,10 +265,10 @@ not attempt it.
 owning brand and argument representation, and nothing else. It is not folded into
 Phase 18, whose boundary is targets, objects, and linkers, and it is not carried
 inside a Stdlib patch. The reasons are that it is bootstrap-sensitive — it
-changes both compilers and requires a seed regeneration — that it reaches into
-Phase 16 ABI territory for argument representation, and that a defect present in
-the committed seed deserves its own boundary and its own evidence rather than
-arriving as a side effect of an ergonomics patch.
+changes the self-hosted compiler and requires a seed regeneration — that it
+reaches into Phase 16 ABI territory for argument representation, and that a
+defect present in the committed seed deserves its own boundary and its own
+evidence rather than arriving as a side effect of an ergonomics patch.
 
 The Phase 19 roadmap is published separately, before any Phase 19 patch, in the
 same way `TASK.md` was published before Patch 18.0.
@@ -302,8 +299,8 @@ reporting a failure.
 
 ### CR-4 — Protocol for adding a `std.*` symbol — **RESOLVED 2026-08-19**
 
-`std.X` resolves to the C symbol `std_X` (`src/typechecker/visitor.rs:1017`), and
-every such symbol is a Phase 17 registry-owned runtime symbol whose registry
+`std.X` resolves through the compiler's registered namespace and every exported
+`std_*` symbol is a Phase 17 registry-owned runtime symbol whose registry
 `AGENTS.md` assigns to the Cranelift lane. The Stdlib lane cannot add a stdlib
 function without touching a Cranelift-owned file.
 
@@ -344,15 +341,15 @@ first patch which does need one already knows the answer.
    is exclusive mutation; shared mutable references are rejected. That is what
    `VISION.md` §26 and Consolidated Rule 25 describe.
 2. **Existing limitation:** one reference form exists and it carries no
-   mutability. `inout` is not a keyword in `compiler/lexer.gst`,
-   `compiler/parser*.gst`, `src/lexer.rs`, or `src/parser.rs`. `&T` resolves to a
+   mutability. `inout` is not a keyword in `compiler/lexer.gst` or
+   `compiler/parser*.gst`. `&T` resolves to a
    `Reference` type; writing through it with `(*r).field = value` is permitted
    with no mutability check and reaches the caller's value. Two `&T` arguments
    may alias one value and both write through it; fixtures doing both compile and
    run.
 3. **Smallest generic change:** restrict mutation through references, by
    reintroducing `inout` or another mechanism, and enforce non-aliasing.
-4. **Affected:** lexer, parser, and typechecker in both compilers; every `&T`
+4. **Affected:** the self-hosted lexer, parser, and typechecker; every `&T`
    signature in `compiler/*.gst` and `tests/*.gst`; the bootstrap seed.
 5. **MIR-to-C:** yes, if mutability becomes a type property.
 6. **Cranelift:** yes, for the same reason.
@@ -389,7 +386,7 @@ without it.
    `env_register_struct_linear_destructor` is called from exactly two places in
    `compiler/typechecker.gst`, both registering `os.CloseDir`, the second gated on
    a directory-handle predicate. No keyword, attribute, or annotation exists in
-   either compiler's lexer or parser for a user type to name its destructor.
+   the self-hosted lexer or parser for a user type to name its destructor.
    **(b) generalising the scope-exit obligation beyond its hardcoded predicate.**
    **Corrected 2026-08-20.** This item previously said the validator was called
    only from test entries and that an unclosed directory handle compiled clean.
@@ -405,10 +402,10 @@ without it.
    compile error. S1.8 forbids compiler knowledge of `Mutex`, so `MutexGuard` is
    an ordinary struct and any caller can write one literally. Rejecting that
    needs some notion of a constructor private to the defining module — and
-   **neither compiler has any visibility concept at all**: `internal`, `private`,
-   `public`, `pub` and `protected` appear zero times in `compiler/lexer.gst`,
-   `compiler/parser.gst`, `src/lexer.rs` and `src/parser.rs`, and nothing named
-   `visibility`, `is_public` or `is_private` exists in either parser.
+   **the compiler has no visibility concept at all**: `internal`, `private`,
+   `public`, `pub` and `protected` appear zero times in `compiler/lexer.gst` and
+   `compiler/parser.gst`, and nothing named `visibility`, `is_public` or
+   `is_private` exists in the parser.
 
    Representation, transfer state, and `defer` are already present — `defer` in
    particular became an AST node after `STEP52_RESOURCE_SEMANTICS.md` was
@@ -448,7 +445,7 @@ remains the recommended form until CR-5 lands.
    with per-row status and owner; six of those rows are marked unowned.
 5. **MIR-to-C:** eventually yes, for effects and query derivation.
 6. **Cranelift:** eventually yes, for the same reasons and for parity.
-7. **Bootstrap:** yes, once `uses` is a keyword in both compilers.
+7. **Bootstrap:** yes, once `uses` is a keyword in the self-hosted compiler.
 
 Two prerequisites in that table are not scope creep and are worth pulling
 forward regardless of when Track A is scheduled. CR-2 (brand identity) must land
@@ -468,7 +465,7 @@ recorded somewhere a lane will read, rather than rediscovered per agent.
    ones, and prevents detached work from leaking. "Fire-and-forget work is not
    permitted in normal request code."
 2. **Existing limitation:** the only primitive available *is* fire-and-forget.
-   There is no `async`, `await`, `spawn`, or `scope` keyword in either lexer.
+   There is no `async`, `await`, `spawn`, or `scope` keyword in the lexer.
    Concurrency is `std.Spawn`, `std.Channel`, `std.Mutex`, and `std.Yield` over
    the fibers in `src/runtime/fiber.c`. `std.Spawn` starts work no scope owns:
    no join requirement, no cancellation propagation, and no task handle type, so
@@ -536,8 +533,8 @@ neither request said so.
 Both are "restrict what user code may do with a type's internals", and the
 language has no such construct at all. Verified against `main`: `pub`, `private`,
 `public`, `internal`, `export` and `protected` each appear **zero** times in
-`compiler/lexer.gst`, `compiler/parser.gst`, `src/lexer.rs` and `src/parser.rs`,
-and no `visibility`, `is_public` or `is_private` concept exists in either parser.
+`compiler/lexer.gst` and `compiler/parser.gst`, and no `visibility`, `is_public`
+or `is_private` concept exists in the parser.
 This is `docs/ONE_WAY_LEDGER.md` row 35.
 
 **Why this is worth stating rather than leaving in two places.** Each request, read
@@ -566,7 +563,7 @@ approve an attribute spelling or an opacity/visibility design.
    `std.Format` already rejects a struct argument, so
    `std.Format("%s", secret)` is not the hole. A public `str` field remains
    readable and formattable as `std.Format("%s", secret.value)`, and every
-   struct field is public because neither compiler has a visibility concept.
+   struct field is public because the compiler has no visibility concept.
 3. **Smallest generic change:** the design owner must choose one general source
    construct that prevents field reads from laundering opacity — either opacity
    propagated through field access or general visibility with an inaccessible
@@ -793,7 +790,7 @@ receivers.
 - **Scope correction, 2026-08-19.** This patch originally required an immutable
   reference to resolve read methods and a mutable one to resolve read and
   mutation methods. That distinction does not exist: `inout` is not a keyword in
-  either compiler, and `&T` resolves to a `Reference` that carries no mutability
+  the compiler, and `&T` resolves to a `Reference` that carries no mutability
   at all. See CR-6 and `VISION.md` §26. The patch therefore delivers resolution
   only, and adds no immutability guarantee.
 - Require that the resolved canonical type and canonical MIR are identical to
@@ -993,7 +990,7 @@ Validate the guard against control flow, not just the happy path.
 - Where preventing raw double-unlock would require a broad compiler semantic
   change, document it as a limitation rather than expanding scope.
 - **`construct a fabricated guard` is not satisfiable until CR-5 item 3(c)
-  lands.** No visibility mechanism exists in either compiler, so there is no
+  lands.** No visibility mechanism exists in the compiler, so there is no
   construct by which that rejection could be expressed. The escape hatch above is
   scoped to double-unlock and does not cover fabrication. Either 3(c) resolves
   first, or this bullet is struck and the exit gate is met with a recorded
@@ -1101,7 +1098,7 @@ refusing to let S1.12 be marked `DONE` while anything below is outstanding.
 | patch | what it delivered |
 | --- | --- |
 | S1.0 | `docs/STDLIB_SURFACE_INVENTORY.md`, generated from the compiler |
-| S1.1 | `str == str` rejected with one diagnostic in both compilers |
+| S1.1 | `str == str` rejected with one self-hosted frontend diagnostic |
 | S1.2 | the string surface pinned, 33 values asserted in order |
 | S1.3 | collection methods resolve through a reference receiver |
 | S1.7 | the resource prerequisites re-verified; CR-5 made concrete |

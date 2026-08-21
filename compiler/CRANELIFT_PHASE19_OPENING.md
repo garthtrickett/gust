@@ -19,7 +19,7 @@ Generated from `scripts/cranelift_feature_registry.json` by
 | --- | --- | --- | --- | --- |
 | `p19_brand_identity` | brand_identity | brand-identity | TASK_STDLIB.md CR-2 | candidate_deferred |
 | `p19_container_arena_classification` | brand_identity | brand-identity | docs/SHARED_SEMANTIC_ZONE.md D-1 | candidate_deferred |
-| `p19_argument_representation` | value_representation | value-representation | docs/SHARED_SEMANTIC_ZONE.md D-2 | candidate_deferred |
+| `p19_argument_representation` | value_representation | value-representation | docs/SHARED_SEMANTIC_ZONE.md D-1 | candidate_deferred |
 
 ## Brand vocabularies
 

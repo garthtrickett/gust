@@ -6,9 +6,12 @@ Verified 2026-08-19 against `6c94728d` (`codex/phase18-4-relocations`) using the
 `gust` binary built at repository root — it is gitignored, not committed. Every
 claim below has a reproduction.
 
-Every file cited here is byte-identical between `6c94728d` and `19ddabde`
+Every file cited here was byte-identical between `6c94728d` and `19ddabde`
 (`main` at the time of writing); Patch 18.4 touched only target and relocation
-files. The findings therefore hold on `main` as well.
+files. **One-compiler amendment, 2026-08-21:** PR #137 removed the deprecated
+root Rust prototype. Current-semantic evidence below now cites the self-hosted
+compiler; the removed implementation survives only where its historical
+divergence explains a closed finding.
 
 The handoff document's stdlib task list rests on four factual premises. Three
 are wrong, and the fourth has a root cause the document does not name. The
@@ -23,7 +26,7 @@ building these. They are present.
 
 | Operation | Status | Evidence |
 | --- | --- | --- |
-| byte length | present | `len(s)` accepts `Type::Str`, returns `Int` — `src/typechecker/visitor.rs:3084-3096` |
+| byte length | present | `len(s)` accepts one argument and returns `int` — `compiler/typechecker.gst:3458-3471`; codegen reads `.len` |
 | byte access | present | `std_str_byte_at` — `src/runtime/strings.c:27` |
 | slicing | present | `std_str_slice` — `src/runtime/strings.c:16` |
 | equality helper | present | `std_str_eq` — `src/runtime/strings.c:10` |
@@ -87,11 +90,13 @@ equality).
 This is the root cause the document does not name. It is shared by Task 3
 (§11, branded collection consistency) and Task 4 (§12, Clone arena references).
 
-Both compilers hardcode a list of identifier names treated as arena brands:
+The self-hosted compiler hardcodes identifier names treated as arena brands.
+The generated inventory owns the exact current vocabularies and locations:
 
-```rust
-// src/codegen.rs:71  and  src/typechecker/types.rs:61
-let brand_bases = ["connCtx", "arena", "ctx", "Any", "a", "main_ctx", "bg_ctx", "file_ctx"];
+```text
+compiler/CRANELIFT_PHASE19_SPELLING_INVENTORY.md
+  five compiler/codegen.gst sites
+  four compiler/typechecker.gst sites
 ```
 
 A variable whose **name** is one of these is treated as an arena and has `&`
@@ -123,27 +128,21 @@ Measured across names: `a` is broken; `b`, `c`, `s`, `x`, `arg`, `val`, `zz`,
 not the type, not the declaration form (`a := …`, `mut a := …`, and
 `mut a: str := …` all fail identically).
 
-### F3a — the two compilers disagree on the matching rule
+### F3a — historical compiler-rule divergence — **closed 2026-08-21**
 
-| Compiler | Rule | Location |
-| --- | --- | --- |
-| Rust | `alloc_str.ends_with(".a")` | `src/codegen.rs:1766` |
-| Self-hosted Gust | `std.str_find(alloc_str, ".a") != -1` (substring) | `compiler/codegen.gst:1854` |
+The removed Rust prototype used an `ends_with(".a")` rule while the self-hosted
+compiler used substring matching. Those were observably different rules. PR
+#137 removed the deprecated prototype, closing shared-zone D-2 by deletion.
+There is now no second compiler frontend whose matching rule can diverge. The
+self-hosted substring rule is still live and remains part of F3/D-1.
 
-`ends_with` versus `contains` are not the same rule. An expression such as
-`node.attrs[i]` is arena-overridden by the self-hosted compiler and not by the
-Rust one. The Gust side additionally matches `->ctx`, `->arena`, `->connCtx`,
-`->a` as substrings (`compiler/codegen.gst:1857`).
+### F3b — the list is duplicated inside the compiler, and it is in the bootstrap seed
 
-### F3b — the list is duplicated, and it is in the bootstrap seed
+The current generated inventory records nine occurrences across
+`compiler/codegen.gst` and `compiler/typechecker.gst`.
 
-Occurrences of the magic-name test found in: `src/codegen.rs:71,128,1762,1808,1843`,
-`src/typechecker/types.rs:61,439`, `src/typechecker.rs:135,172`,
-`src/typechecker/monomorphize.rs:234,254,268,599,722`, `compiler/codegen.gst:658,762,896,1101,1851`,
-`compiler/typechecker.gst:4953,5151`.
-
-Because `gust_v4.c` is the committed converged seed (`README.md:74`), correcting
-this is a dual-compiler, bootstrap-sensitive change.
+Because `gust_v4.c` is the committed converged seed, correcting this is a
+self-hosted, bootstrap-sensitive change.
 
 **Consequence:** the document's §4 grant to the Stdlib Agent of "small
 frontend fixes that preserve existing semantics" would, applied literally,
@@ -174,10 +173,9 @@ their failure behaviour changes the runtime contract — shared zone.
 
 ## F5 — Every `std.*` name is a Phase 17 runtime symbol
 
-`std.X` resolves to the C symbol `std_X` via a fixed import prefix
-(`src/typechecker/visitor.rs:1017`, `src/typechecker/monomorphize.rs:1044`).
-There is no `.gst` standard-library source; the stdlib **is** the runtime's
-public C surface plus compiler builtins.
+`std.X` resolves through the compiler's registered namespace to the exported
+`std_*` surface. There is no `.gst` standard-library source; the stdlib **is**
+the runtime's public C surface plus compiler builtins.
 
 Phase 17 made that surface compiler-owned: `scripts/cranelift_feature_registry.json`
 carries a `symbol_identity` / `reachability` / `owning_phase17_entry_id` row per

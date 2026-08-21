@@ -22,7 +22,7 @@ list below.
 
 Two findings matter more than the table.
 
-**There is no way to declare a destructor in source.** `env_register_struct_linear_destructor` is called from exactly two places in `compiler/typechecker.gst`, both registering `os.CloseDir`, and the second is gated on a directory-handle predicate. There is no keyword, attribute, or annotation in `compiler/lexer.gst`, `compiler/parser*.gst`, `src/lexer.rs`, or `src/parser.rs` that lets a user-defined type name its destructor. The framework supports exactly one destructor, for one built-in type.
+**There is no way to declare a destructor in source.** `env_register_struct_linear_destructor` is called from exactly two places in `compiler/typechecker.gst`, both registering `os.CloseDir`, and the second is gated on a directory-handle predicate. There is no keyword, attribute, or annotation in `compiler/lexer.gst` or `compiler/parser*.gst` that lets a user-defined type name its destructor. The framework supports exactly one destructor, for one built-in type.
 
 **Cleanup validation is wired, and two separate checks are involved.** Both lanes audited this independently and each found half of it.
 

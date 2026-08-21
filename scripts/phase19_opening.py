@@ -55,7 +55,7 @@ REQUIRED_COMPILERS = {"self_hosted"}
 REQUIRED_REQUIREMENTS = {
     "TASK_STDLIB.md CR-2",
     "docs/SHARED_SEMANTIC_ZONE.md D-1",
-    "docs/SHARED_SEMANTIC_ZONE.md D-2",
+    "docs/SHARED_SEMANTIC_ZONE.md D-1",
 }
 
 

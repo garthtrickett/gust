@@ -21851,7 +21851,7 @@ guard-stdlib-s1-str-equality-diagnostic:
     ./gust build/stdlib-s1-str-eq-ok.gst >build/stdlib-s1-str-eq-ok.c 2>&1
     rg -n -F 'std_str_eq' build/stdlib-s1-str-eq-ok.c >/dev/null
 
-    echo "✅ str equality rejected in both compilers with one diagnostic; std.str_eq unchanged."
+    echo "✅ str equality rejected by the self-hosted compiler with one diagnostic; std.str_eq unchanged."
 
 # Stdlib lane, Phase S1. Appended at the end for the same reason as the S1.1
 # guard: several guards extract recipe bodies with sed ranges bounded by the next
