@@ -208,6 +208,8 @@ guard-pr-fast-ci-surface:
       'just guard-cranelift-phase18-deferral-audit'
       'Phase 18 target object and linker closure'
       'just guard-cranelift-phase18-close'
+      'Phase 19 brand identity and value representation opening'
+      'just guard-cranelift-phase19-opening-contract'
       'Phase 17 cross-feature runtime composition'
       'just guard-cranelift-phase17-composition-contract'
       'phase11-family:'
@@ -16153,6 +16155,18 @@ guard-cranelift-phase18-target-authority-parity:
       grep -F $'guard-cranelift-phase18-target-authority-parity\t2\t' >/dev/null
     just guard-cranelift-phase18-target-authority-contract
     bash scripts/phase18_target_authority_parity.sh
+
+guard-cranelift-phase19-opening-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔎 Checking Phase 19 brand identity and value representation opening inventory..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase19-opening-contract | grep -F $'guard-cranelift-phase19-opening-contract\t1\t' >/dev/null
+    just guard-cranelift-registry-schema
+    just guard-cranelift-registry-projection
+    python3 scripts/phase18_closure.py --check
+    python3 scripts/phase19_opening.py validate
+    python3 scripts/phase19_opening.py check-review
 
 guard-cranelift-phase18-opening-contract:
     #!/usr/bin/env bash
