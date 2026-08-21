@@ -2157,6 +2157,67 @@ Everything in this document that constrains the language exists to make one of t
 
 Iteration count is a quality input, and for an acquirer who serves inference it is also a consumption input. A loop two orders of magnitude faster does not produce marginally better output; it makes classes of problem solvable that were previously abandoned at the attempt limit.
 
+### 107.1 Gust Forge — a workspace for humans and remote coding agents
+
+**Operator direction, 2026-08-21. Not demo scope.** When the Gust Forge
+platform is built, it includes a hosted collaborative coding workspace in the
+shape demonstrated by Paseo. A human opens Forge in a browser on their laptop,
+works in the project there, and connects cloud coding agents including Claude
+and Codex to work alongside them. The laptop is a client, not the machine that
+holds the authoritative checkout or runs the agents.
+
+**Deployment model.** Forge provisions a per-project remote workspace on a
+managed VM, VPS or equivalent cloud runner. That workspace holds the checkout,
+agent worktrees, build cache, compiler, sandboxes and durable task state. Forge
+starts and supervises the Claude, Codex or later agent harnesses on those cloud
+runners; their file operations, commands, builds and tests execute against the
+remote workspace. The browser provides the editor, terminal, task view, agent
+controls and streamed results. A user may close the laptop without terminating
+the workspace or its authorized tasks.
+
+The product requirement is the collaboration surface, not a copy of Paseo's
+implementation or interface. Forge provides:
+
+- one durable hosted project view shared through the web by the human and
+  connected agents;
+- remote workspace lifecycle: provision, suspend, resume, snapshot and destroy;
+- a distinct identity, isolated worktree and sandbox for each agent;
+- per-agent permissions and an audit trail for file changes, commands, external
+  actions and handoffs;
+- live state showing which agent owns which task, what is running, and what has
+  reached a terminal state;
+- durable conclusions and artifacts on disk, so a remote session can disappear
+  or be replaced without taking the project's state with it;
+- provider adapters rather than provider semantics in Gust: Claude, Codex and
+  later agents connect through the same task, authority and artifact model.
+
+Forge owns the harness and workspace lifecycle; model providers may still own
+inference. Supporting Claude or Codex means Forge can launch the corresponding
+agent harness in the project runner, authenticate it through a scoped provider
+connection, stream its state to the browser, and recover or replace the session
+without losing the project record. It does not mean either provider's task model
+becomes part of Gust.
+
+The authority boundary is the one in §114. Connecting an agent does not grant it
+the application's capabilities, another agent's credentials, or permission to
+approve its own authority widening. Repository publication, deployment and
+other outward-facing actions remain explicit capabilities with human-visible
+records.
+
+**The browser is not in the warm inner loop.** Checkout, file operations,
+compilation, execution, caches and traces stay together on the Forge runner, so
+no laptop round trip sits between an agent command and its result. A provider-
+hosted Claude or Codex inference call may still cross a public network boundary
+and therefore does not satisfy §107's single-digit platform-overhead target; it
+is the slower outer loop. §113's colocation remains the later optimisation for a
+provider able to host inference and execution together, not a prerequisite for
+Forge to support cloud agent harnesses.
+
+`docs/AGENT_TOPOLOGY.md` §4 records the observed Paseo mechanics this requirement
+draws from: long-lived agents with working directories, per-agent permissions,
+schedules, agent discovery and messaging. That document is evidence for the
+shape, not a dependency or an instruction to reproduce its current governance.
+
 ## 108. Execution traces
 
 Every run emits a structured, machine-readable trace. The trace is a first-class artifact with a versioned schema, not a log format. It is one of the three things humans actually read (§0.12).
