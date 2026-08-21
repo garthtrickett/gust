@@ -11,9 +11,9 @@ is therefore evidence for the later migration, not a codegen switch.
 - Status: `ready_for_patch19_3`
 - Identity fields: `brand_origin, arena_identity, is_arena`
 - Public boundary policy: `explicit_brand_required`
-- Whole-source disagreements: `12`
+- Whole-source disagreements: `16`
 - Legacy spelling only: `10`
-- Resolved arena type only: `2`
+- Resolved arena type only: `6`
 
 ## Authority contract
 
@@ -47,7 +47,11 @@ declarative surface.
 | `compiler/mir_scope_exit_cleanup_parity_smoke_test_entry.gst:164` | `ctx_scope` | `inferred Arena.New()` | `false` | `true` | `arena_type_with_non_legacy_name` |
 | `compiler/mir_struct_layout.gst:721` | `a` | `int` | `true` | `false` | `legacy_name_on_non_arena_type` |
 | `compiler/mir_struct_layout.gst:729` | `a` | `int` | `true` | `false` | `legacy_name_on_non_arena_type` |
-| `compiler/phase19_rename_invariance_renamed_source.gst:14` | `scratch` | `&Arena` | `false` | `true` | `arena_type_with_non_legacy_name` |
+| `compiler/phase19_rename_invariance_renamed_source.gst:16` | `scratch` | `&Arena` | `false` | `true` | `arena_type_with_non_legacy_name` |
+| `compiler/phase19_type_naming_explicit_source.gst:10` | `lib_module__ctx` | `&Arena` | `false` | `true` | `arena_type_with_non_legacy_name` |
+| `compiler/phase19_type_naming_explicit_source.gst:16` | `lib_module__ctx` | `&Arena` | `false` | `true` | `arena_type_with_non_legacy_name` |
+| `compiler/phase19_type_naming_inferred_source.gst:10` | `lib_module__ctx` | `&Arena` | `false` | `true` | `arena_type_with_non_legacy_name` |
+| `compiler/phase19_type_naming_inferred_source.gst:16` | `lib_module__ctx` | `&Arena` | `false` | `true` | `arena_type_with_non_legacy_name` |
 
 The `legacy_name_on_non_arena_type` rows are false positives caused by
 ordinary scalar or view parameters named `a`. The

@@ -265,6 +265,7 @@ func main() {
     // Sub-Step 3.1 Verification: Test codegen_erase_struct_name with namespaced brands
     mut test_brand: Index[str, ctx] := os.ArenaAlloc(ctx);
     ctx.Set(test_brand, "typechecker__ctx");
+    typechecker.env_record_canonical_type_name(&env, "std_HashMap_str_int_typechecker__ctx", "std_HashMap_str_int", ctx);
     mut erased_res := codegen.codegen_erase_struct_name("std_HashMap_str_int_typechecker__ctx", test_brand, &env, ctx);
     os.LogStr(erased_res); // Expected: std_HashMap_str_int
 
@@ -452,4 +453,3 @@ func main() {
         os.LogStr(output_c); // Expected: std_RcGet(rc_ptr)
     }
 }
-

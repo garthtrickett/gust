@@ -15,6 +15,7 @@
     "opening_snapshots",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
+    "phase19_type_naming",
     "phase15_specialized_resource_authority",
     "phase15_failure_cleanup_authority",
     "phase15_resource_composition_authority",
@@ -173,6 +174,57 @@
                 "reason": {
                   "enum": ["legacy_name_on_non_arena_type", "arena_type_with_non_legacy_name"]
                 }
+              }
+            }
+          }
+        }
+      },
+      "phase19_type_naming": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["authority_version", "status", "next_patch", "review_view",
+                     "identity_authority", "construction_policy", "codegen_consumer",
+                     "legacy_suffix_surgery", "paired_sources", "native_abi_aliases",
+                     "enumerated_generated_c_changes"],
+        "properties": {
+          "authority_version": {"const": "phase19_canonical_type_naming_v1"},
+          "status": {"const": "ready_for_patch19_4"},
+          "next_patch": {"const": "19.4"},
+          "review_view": {"const": "compiler/CRANELIFT_PHASE19_TYPE_NAMING.md"},
+          "identity_authority": {"const": "phase19_brand_identity_authority_v1"},
+          "construction_policy": {"const": "template_plus_non_brand_resolved_type_arguments"},
+          "codegen_consumer": {"const": "canonical_type_name_lookup_only"},
+          "legacy_suffix_surgery": {"const": "removed_from_codegen_struct_name_erasure"},
+          "paired_sources": {
+            "const": [
+              "compiler/phase19_type_naming_explicit_source.gst",
+              "compiler/phase19_type_naming_inferred_source.gst"
+            ]
+          },
+          "native_abi_aliases": {
+            "type": "array",
+            "minItems": 4,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["branded_name", "canonical_name"],
+              "properties": {
+                "branded_name": {"type": "string", "minLength": 1},
+                "canonical_name": {"type": "string", "minLength": 1}
+              }
+            }
+          },
+          "enumerated_generated_c_changes": {
+            "type": "array",
+            "minItems": 2,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["old_name", "canonical_name", "reason"],
+              "properties": {
+                "old_name": {"type": "string", "minLength": 1},
+                "canonical_name": {"type": "string", "minLength": 1},
+                "reason": {"type": "string", "minLength": 1}
               }
             }
           }
