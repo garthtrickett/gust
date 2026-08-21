@@ -119,7 +119,9 @@ THE RULES THAT MATTER MOST:
 - A terminal state is true only when written, and resuming work invalidates it.
 
 OUTSTANDING: docs/BUSINESS_STRATEGY.md §1's buyer contradiction (operator's, needs
-customer conversations). The three conflicts recorded in that file and in
+customer conversations). The earlier governance, first-demo, and layer-name
+conflicts were resolved on 2026-08-21; their records are in
+docs/AGENT_TOPOLOGY.md §3, docs/WEB_SLICE_0.md § "Resolved 2026-08-21", and
 docs/STRATEGY_REVIEW.md §1. Nothing is blocked on you.
 ```
 
@@ -127,7 +129,7 @@ docs/STRATEGY_REVIEW.md §1. Nothing is blocked on you.
 
 ## Check-in schedule (monitor)
 
-Use the prompt at `docs/AGENT_TOPOLOGY.md` §5.1 verbatim — nine numbered items,
+Use the prompt at `docs/AGENT_TOPOLOGY.md` §5.1 verbatim — eight numbered items,
 observational rather than imperative. **Cadence `*/15 * * * *`**, and a lower model
 or thinking level: the tick is API reads plus one cross-reference, so reducing it
 costs nothing in coverage. §5.2 records why.
