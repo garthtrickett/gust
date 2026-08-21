@@ -314,6 +314,9 @@ jobs:
       - name: Phase 19 type-derived container and arena classification
         run: just guard-cranelift-phase19-classification-contract
 
+      - name: Phase 19 type-derived argument and index representation
+        run: just guard-cranelift-phase19-representation-contract
+
       - name: Phase 17 cross-feature runtime composition
         run: just guard-cranelift-phase17-composition-contract
 

@@ -38,14 +38,32 @@ func mir_function_call_operation_to_c(operation: call_mir.MirCallOperation[ctx],
     return "/* invalid call operation */";
 }
 
+func mir_function_call_operand_to_c(operand: call_mir.MirCallOperand[ctx], ctx: &Arena) str {
+    mut output := "/* canonical argument ";
+    output = std.Concat(output, operand.operand_id);
+    output = std.Concat(output, " ");
+    output = std.Concat(output, operand.materialization);
+    output = std.Concat(output, " from ");
+    output = std.Concat(output, operand.passing_mode);
+    output = std.Concat(output, " */");
+    return std.Clone(ctx, output);
+}
+
 func mir_function_call_to_c_source(table: call_mir.MirFunctionCallTable[ctx], authority: abi.MirFunctionAbiAuthorityTable[ctx], ctx: &Arena) MirFunctionCallCEmission[ctx] {
     mut validation := call_mir.mir_function_call_table_validate(table, authority, ctx);
     if validation.valid == 0 {
         return mir_function_call_c_emission(0, "", validation.reason_code, ctx);
     }
+    mut operands: std.Vector[call_mir.MirCallOperand[ctx], ctx] := ctx[table.operands];
     mut operations: std.Vector[call_mir.MirCallOperation[ctx], ctx] := ctx[table.operations];
     mut output := "/* canonical function call MIR */\n";
     mut index := 0;
+    while index < len(operands) {
+        output = std.Concat(output, mir_function_call_operand_to_c(operands[index], ctx));
+        output = std.Concat(output, "\n");
+        index = index + 1;
+    }
+    index = 0;
     while index < len(operations) {
         output = std.Concat(output, mir_function_call_operation_to_c(operations[index], ctx));
         output = std.Concat(output, "\n");

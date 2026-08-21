@@ -17,6 +17,7 @@
     "phase19_brand_authority",
     "phase19_type_naming",
     "phase19_classification",
+    "phase19_representation",
     "phase15_specialized_resource_authority",
     "phase15_failure_cleanup_authority",
     "phase15_resource_composition_authority",
@@ -271,6 +272,29 @@
                 "resolution": {"const": "shared_resolved_type_classifier_includes_reference_arena"}
               }
             }
+          }
+        }
+      },
+      "phase19_representation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["authority_version", "status", "next_patch", "review_view",
+                     "source_authority", "mir_record", "backend_policy",
+                     "materializations", "rename_invariance_fixtures"],
+        "properties": {
+          "authority_version": {"const": "phase19_type_derived_argument_representation_v1"},
+          "status": {"const": "ready_for_patch19_6"},
+          "next_patch": {"const": "19.6"},
+          "review_view": {"const": "compiler/CRANELIFT_PHASE19_REPRESENTATION.md"},
+          "source_authority": {"const": "phase16_parameter_and_result_placement_passing_mode"},
+          "mir_record": {"const": "MirCallOperand.passing_mode_plus_materialization"},
+          "backend_policy": {"const": "mir_to_c_and_cranelift_consume_the_record"},
+          "materializations": {"const": ["by_value", "by_address"]},
+          "rename_invariance_fixtures": {
+            "const": [
+              "compiler/phase19_argument_representation_a_source.gst",
+              "compiler/phase19_argument_representation_b_source.gst"
+            ]
           }
         }
       },

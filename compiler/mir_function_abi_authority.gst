@@ -126,6 +126,8 @@ type MirFunctionAbiAuthorityTable[ctx] struct {
 
 type MirFunctionAbiQuery[ctx] struct { found: int, value: MirFunctionAbiIdentity[ctx] }
 type MirAbiClassificationQuery[ctx] struct { found: int, value: MirAbiValueClassification[ctx] }
+type MirAbiParameterPlacementQuery[ctx] struct { found: int, value: MirAbiParameterPlacement[ctx] }
+type MirAbiResultPlacementQuery[ctx] struct { found: int, value: MirAbiResultPlacement[ctx] }
 type MirAbiCallPlanQuery[ctx] struct { found: int, value: MirAbiCallSitePlan[ctx] }
 type MirDynamicFramePlanQuery[ctx] struct { found: int, value: MirDynamicFramePlan[ctx] }
 type MirAbiCompatibilityQuery[ctx] struct { compatible: int, reason_code: str }
@@ -223,6 +225,38 @@ func mir_abi_passing_mode_is_valid(mode: str) int {
     if std.str_eq(mode, "indirect_by_reference") == 1 { return 1; }
     if std.str_eq(mode, "hidden_pointer") == 1 { return 1; }
     return 0;
+}
+
+// Phase 19.5 representation projection. The Phase 16 placement remains the
+// authority; canonical call MIR records this backend-neutral consequence so a
+// backend never re-derives it from source spelling.
+func mir_abi_argument_materialization(mode: str) str {
+    if std.str_eq(mode, "direct") == 1 || std.str_eq(mode, "split") == 1 {
+        return "by_value";
+    }
+    if std.str_eq(mode, "indirect_by_value") == 1 ||
+       std.str_eq(mode, "indirect_by_reference") == 1 ||
+       std.str_eq(mode, "hidden_pointer") == 1
+    {
+        return "by_address";
+    }
+    return "";
+}
+
+// The self-hosted frontend supplies a resolved value class and whether the
+// value already has pointer representation. This is the production projection
+// into the same Phase 16 passing-mode vocabulary used by call MIR.
+func mir_abi_parameter_passing_mode_for_value_class(value_class: str, pointer_like: int) str {
+    if pointer_like == 1 { return "direct"; }
+    if std.str_eq(value_class, "arena") == 1 ||
+       std.str_eq(value_class, "vector") == 1 ||
+       std.str_eq(value_class, "hashmap") == 1 ||
+       std.str_eq(value_class, "pool") == 1 ||
+       std.str_eq(value_class, "reference_receiver") == 1
+    {
+        return "indirect_by_reference";
+    }
+    return "direct";
 }
 
 // Deterministic request-local semantic identities. They derive from compiler
@@ -412,6 +446,38 @@ func mir_abi_classification_by_id(table: MirFunctionAbiAuthorityTable[ctx], clas
     mut index := 0;
     while index < len(values) {
         if std.str_eq(values[index].classification_id, classification_id) == 1 {
+            result.found = 1;
+            result.value = values[index];
+            return result;
+        }
+        index = index + 1;
+    }
+    return result;
+}
+
+func mir_abi_parameter_placement_by_id(table: MirFunctionAbiAuthorityTable[ctx], placement_id: str, ctx: &Arena) MirAbiParameterPlacementQuery[ctx] {
+    mut result: MirAbiParameterPlacementQuery[ctx];
+    result.found = 0;
+    mut values: std.Vector[MirAbiParameterPlacement[ctx], ctx] := ctx[table.parameter_placements];
+    mut index := 0;
+    while index < len(values) {
+        if std.str_eq(values[index].placement_id, placement_id) == 1 {
+            result.found = 1;
+            result.value = values[index];
+            return result;
+        }
+        index = index + 1;
+    }
+    return result;
+}
+
+func mir_abi_result_placement_by_id(table: MirFunctionAbiAuthorityTable[ctx], placement_id: str, ctx: &Arena) MirAbiResultPlacementQuery[ctx] {
+    mut result: MirAbiResultPlacementQuery[ctx];
+    result.found = 0;
+    mut values: std.Vector[MirAbiResultPlacement[ctx], ctx] := ctx[table.result_placements];
+    mut index := 0;
+    while index < len(values) {
+        if std.str_eq(values[index].placement_id, placement_id) == 1 {
             result.found = 1;
             result.value = values[index];
             return result;

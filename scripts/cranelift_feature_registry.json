@@ -496,7 +496,7 @@
         "id": "gst_codegen_var_arena",
         "compiler": "self_hosted",
         "source_path": "compiler/codegen.gst",
-        "line": 638,
+        "line": 640,
         "classification": "classification_override",
         "decision": "formerly decide whether a variable denotes an arena; now classify its resolved expression type",
         "available_type_information": "resolved expression type and shared type classifier",
@@ -506,7 +506,7 @@
         "id": "gst_codegen_var_arena_2",
         "compiler": "self_hosted",
         "source_path": "compiler/codegen.gst",
-        "line": 640,
+        "line": 642,
         "classification": "classification_override",
         "decision": "formerly decide whether a variable denotes an arena at a second site; now share the resolved-type path",
         "available_type_information": "resolved expression type and shared type classifier",
@@ -516,7 +516,7 @@
         "id": "gst_codegen_alloc_override",
         "compiler": "self_hosted",
         "source_path": "compiler/codegen.gst",
-        "line": 1570,
+        "line": 1610,
         "classification": "classification_override",
         "decision": "decide whether an allocator expression denotes an arena",
         "available_type_information": "the allocator spelling only",
@@ -813,6 +813,23 @@
         "root_cause": "arena_type_predicate_omitted_reference",
         "resolution": "shared_resolved_type_classifier_includes_reference_arena"
       }
+    ]
+  },
+  "phase19_representation": {
+    "authority_version": "phase19_type_derived_argument_representation_v1",
+    "status": "ready_for_patch19_6",
+    "next_patch": "19.6",
+    "review_view": "compiler/CRANELIFT_PHASE19_REPRESENTATION.md",
+    "source_authority": "phase16_parameter_and_result_placement_passing_mode",
+    "mir_record": "MirCallOperand.passing_mode_plus_materialization",
+    "backend_policy": "mir_to_c_and_cranelift_consume_the_record",
+    "materializations": [
+      "by_value",
+      "by_address"
+    ],
+    "rename_invariance_fixtures": [
+      "compiler/phase19_argument_representation_a_source.gst",
+      "compiler/phase19_argument_representation_b_source.gst"
     ]
   },
   "opening_snapshots": {

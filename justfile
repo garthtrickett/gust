@@ -16232,6 +16232,27 @@ guard-cranelift-phase19-classification-parity:
     just guard-cranelift-phase19-classification-contract
     bash scripts/phase19_classification_parity.sh
 
+guard-cranelift-phase19-representation-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "📦 Checking Phase 19 type-derived argument and index representation..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase19-representation-contract | grep -F $'guard-cranelift-phase19-representation-contract\t1\t' >/dev/null
+    just guard-cranelift-phase19-classification-contract
+    just guard-cranelift-phase16-call-mir-contract
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase19_representation.py validate
+    python3 scripts/phase19_representation.py check-review
+
+guard-cranelift-phase19-representation-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 19 argument representation and rename parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase19-representation-parity | grep -F $'guard-cranelift-phase19-representation-parity\t2\t' >/dev/null
+    just guard-cranelift-phase19-representation-contract
+    bash scripts/phase19_representation_parity.sh
+
 guard-cranelift-phase19-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail
