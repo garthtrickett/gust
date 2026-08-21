@@ -49,6 +49,17 @@ another through Cranelift.
 | Target, object format, relocation, linker, link mode | Phase 18 authority | Cranelift | `TASK.md` Phase Boundary |
 | Differential oracle status of MIR-to-C | `AGENTS.md`; every phase's Success Criteria | Cranelift | `AGENTS.md` Repository rules |
 | Explicit-Cranelift no-fallback | same | Cranelift | same |
+| The bootstrap seed (`gust_v4.c`) and fixed-point convergence | `AGENTS.md` "Bootstrap seed"; `README.md` "The Non-Rust Bootstrap Chain" | Cranelift | `make bootstrap` asserts stage 2 and stage 3 byte-identical |
+
+**The seed is a serialized resource, not merely a shared one.** Any lane may *run*
+`make bootstrap` to validate its own change — that is ordinary validation and needs
+no coordination. **Regenerating and committing the seed is the Cranelift lane's**,
+in its own commit and pull request per `AGENTS.md`, because there is no meaningful
+merge of two bootstrapped compilers: a second regeneration in flight does not
+conflict textually, it silently supersedes.
+
+A lane whose patch requires a regeneration stops and reports it as item 7 of the
+seven-point format, and continues down the ladder rather than regenerating itself.
 
 ## Not in the zone
 

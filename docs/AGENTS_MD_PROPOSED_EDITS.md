@@ -1,4 +1,15 @@
-# Proposed edits to `AGENTS.md` — drafted, not applied
+# Proposed edits to `AGENTS.md` — **APPLIED 2026-08-21**
+
+> **All three are applied and this file is now a record rather than a proposal.**
+> Edit 1 (routing) and Edit 2 (continuation ladder) are in `AGENTS.md`; Edit 3
+> (the bootstrap-seed row) is in `docs/SHARED_SEMANTIC_ZONE.md`. Edit 2 was
+> applied with one addition not in the draft: **a bound on step 2**, because a
+> continuation ladder can otherwise turn "blocked" into "generates plausible
+> documentation indefinitely" — a failure this lane was a live example of rather
+> than a hypothetical one. Kept for the reasoning; the applied text is
+> authoritative.
+
+# Proposed edits to `AGENTS.md` — as drafted
 
 Two edits so lanes keep working autonomously and stop only at a genuine
 decision-tree node. **Drafted rather than applied**: both change how every agent
