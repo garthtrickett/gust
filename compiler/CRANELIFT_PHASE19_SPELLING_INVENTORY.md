@@ -44,9 +44,9 @@ brittleness one step removed.
 | --- | --- | --- | --- | --- | --- |
 | `gst_codegen_erasure_bases` | self_hosted | `compiler/codegen.gst:500` | type_name_erasure | none: operates on the already-flattened name string | `requires_new_authority` |
 | `gst_codegen_is_brand_name` | self_hosted | `compiler/codegen.gst:513` | classification_override | the name only | `available_after_resolution` |
-| `gst_codegen_var_arena` | self_hosted | `compiler/codegen.gst:638` | classification_override | resolved expression type and shared type classifier | `available_after_resolution` |
-| `gst_codegen_var_arena_2` | self_hosted | `compiler/codegen.gst:640` | classification_override | resolved expression type and shared type classifier | `available_after_resolution` |
-| `gst_codegen_alloc_override` | self_hosted | `compiler/codegen.gst:1570` | classification_override | the allocator spelling only | `available_after_resolution` |
+| `gst_codegen_var_arena` | self_hosted | `compiler/codegen.gst:640` | classification_override | resolved expression type and shared type classifier | `available_after_resolution` |
+| `gst_codegen_var_arena_2` | self_hosted | `compiler/codegen.gst:642` | classification_override | resolved expression type and shared type classifier | `available_after_resolution` |
+| `gst_codegen_alloc_override` | self_hosted | `compiler/codegen.gst:1610` | classification_override | the allocator spelling only | `available_after_resolution` |
 | `gst_typechecker_default_brand` | self_hosted | `compiler/typechecker.gst:159` | classification_override | none at the defaulting point | `requires_new_authority` |
 | `gst_typechecker_brand_member` | self_hosted | `compiler/typechecker.gst:5067` | classification_override | the name part only | `available_after_resolution` |
 | `gst_typechecker_brand_suffixes` | self_hosted | `compiler/typechecker.gst:5265` | type_name_erasure | none: operates on the suffix string | `requires_new_authority` |

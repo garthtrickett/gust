@@ -17,6 +17,18 @@ type MirCallOperationKind enum {
     PostCallNormalization
 }
 
+type MirArgumentRepresentation[ctx] struct {
+    passing_mode: str,
+    materialization: str
+}
+
+func mir_call_argument_representation(passing_mode: str, ctx: &Arena) MirArgumentRepresentation[ctx] {
+    mut value: MirArgumentRepresentation[ctx];
+    value.passing_mode = std.Clone(ctx, passing_mode);
+    value.materialization = std.Clone(ctx, abi.mir_abi_argument_materialization(passing_mode));
+    return value;
+}
+
 type MirFunctionAbiDeclaration[ctx] struct {
     declaration_id: str,
     mir_function_id: str,
@@ -302,6 +314,34 @@ func mir_function_call_table_validate(table: MirFunctionCallTable[ctx], authorit
         {
             return mir_function_call_validation(0, "call_mir_resource_transition_incomplete", ctx);
         }
+        // The migration commit accepts an entirely absent record so existing
+        // producers keep building while every producer and consumer moves.
+        // Any record that is present must already be authoritative.
+        if len(value.passing_mode) != 0 || len(value.materialization) != 0 {
+            if abi.mir_abi_passing_mode_is_valid(value.passing_mode) == 0 ||
+               std.str_eq(value.materialization, abi.mir_abi_argument_materialization(value.passing_mode)) == 0
+            {
+                return mir_function_call_validation(0, "call_mir_representation_mismatch", ctx);
+            }
+            if value.hidden == 0 {
+                mut placement := abi.mir_abi_parameter_placement_by_id(authority, value.abi_value_id, ctx);
+                if placement.found == 0 ||
+                   std.str_eq(placement.value.passing_mode, value.passing_mode) == 0 ||
+                   std.str_eq(placement.value.layout_id, value.layout_id) == 0 ||
+                   placement.value.ordinal != value.ordinal
+                {
+                    return mir_function_call_validation(0, "call_mir_representation_mismatch", ctx);
+                }
+            } else {
+                mut placement := abi.mir_abi_result_placement_by_id(authority, value.abi_value_id, ctx);
+                if placement.found == 0 ||
+                   std.str_eq(placement.value.passing_mode, value.passing_mode) == 0 ||
+                   std.str_eq(placement.value.layout_id, value.layout_id) == 0
+                {
+                    return mir_function_call_validation(0, "call_mir_representation_mismatch", ctx);
+                }
+            }
+        }
         mut duplicate := index + 1;
         while duplicate < len(operands) {
             if std.str_eq(operands[duplicate].operand_id, value.operand_id) == 1 {
@@ -420,6 +460,8 @@ func mir_serialize_function_call_for_request(table: MirFunctionCallTable[ctx], a
         row = mir_call_append_field(row, "value", value.value_id, ctx);
         row = mir_call_append_field(row, "type", value.value_type_id, ctx);
         row = mir_call_append_field(row, "layout", value.layout_id, ctx);
+        row = mir_call_append_field(row, "passing_mode", value.passing_mode, ctx);
+        row = mir_call_append_field(row, "materialization", value.materialization, ctx);
         row = mir_call_append_field(row, "evaluation", std.FormatInt(value.evaluation_order), ctx);
         row = mir_call_append_field(row, "hidden", std.FormatInt(value.hidden), ctx);
         row = mir_call_append_field(row, "resource", value.resource_id, ctx);
@@ -466,6 +508,7 @@ func mir_function_call_witness(table: MirFunctionCallTable[ctx], authority: abi.
     output = std.Concat(output, "target_id: "); output = std.Concat(output, table.target_id); output = std.Concat(output, "\n");
     output = std.Concat(output, "target_triple: "); output = std.Concat(output, table.target_triple); output = std.Concat(output, "\n");
     mut declarations: std.Vector[MirFunctionAbiDeclaration[ctx], ctx] := ctx[table.declarations];
+    mut operands: std.Vector[MirCallOperand[ctx], ctx] := ctx[table.operands];
     mut operations: std.Vector[MirCallOperation[ctx], ctx] := ctx[table.operations];
     mut index := 0;
     while index < len(declarations) {
@@ -474,6 +517,18 @@ func mir_function_call_witness(table: MirFunctionCallTable[ctx], authority: abi.
         row = std.Concat(row, " abi="); row = std.Concat(row, value.abi_id);
         row = std.Concat(row, " signature="); row = std.Concat(row, value.signature_id);
         row = std.Concat(row, " cc="); row = std.Concat(row, value.calling_convention);
+        row = std.Concat(row, "\n"); output = std.Concat(output, row);
+        index = index + 1;
+    }
+    index = 0;
+    while index < len(operands) {
+        mut value := operands[index];
+        mut row := "argument_representation: id="; row = std.Concat(row, value.operand_id);
+        row = std.Concat(row, " abi_value="); row = std.Concat(row, value.abi_value_id);
+        row = std.Concat(row, " passing_mode="); row = std.Concat(row, value.passing_mode);
+        row = std.Concat(row, " materialization="); row = std.Concat(row, value.materialization);
+        row = std.Concat(row, " value_type="); row = std.Concat(row, value.value_type_id);
+        row = std.Concat(row, " layout="); row = std.Concat(row, value.layout_id);
         row = std.Concat(row, "\n"); output = std.Concat(output, row);
         index = index + 1;
     }

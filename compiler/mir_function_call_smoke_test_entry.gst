@@ -43,15 +43,62 @@ func make_declaration(id: str, function_id: str, abi_id: str, signature_id: str,
     return value;
 }
 
-func make_operand(id: str, call_id: str, abi_value_id: str, ordinal: int, value_id: str, evaluation: int, hidden: int, ctx: &Arena) call_mir.MirCallOperand[ctx] {
+func make_classification(id: str, type_id: str, layout_id: str, position: str, value_class: str, register_class: str, size: int, alignment: int, target_id: str, target_triple: str, ctx: &Arena) abi.MirAbiValueClassification[ctx] {
+    mut value: abi.MirAbiValueClassification[ctx];
+    value.classification_id = std.Clone(ctx, id);
+    value.type_id = std.Clone(ctx, type_id);
+    value.layout_id = std.Clone(ctx, layout_id);
+    value.position = std.Clone(ctx, position);
+    value.value_class = std.Clone(ctx, value_class);
+    value.register_class = std.Clone(ctx, register_class);
+    value.size_bytes = size;
+    value.align_bytes = alignment;
+    value.target_id = std.Clone(ctx, target_id);
+    value.target_triple = std.Clone(ctx, target_triple);
+    return value;
+}
+
+func make_parameter_placement(id: str, function_abi: str, parameter_id: str, ordinal: int, classification_id: str, mode: str, layout_id: str, ctx: &Arena) abi.MirAbiParameterPlacement[ctx] {
+    mut value: abi.MirAbiParameterPlacement[ctx];
+    value.placement_id = std.Clone(ctx, id);
+    value.abi_id = std.Clone(ctx, function_abi);
+    value.parameter_id = std.Clone(ctx, parameter_id);
+    value.ordinal = ordinal;
+    value.classification_id = std.Clone(ctx, classification_id);
+    value.passing_mode = std.Clone(ctx, mode);
+    value.location = std.Clone(ctx, "canonical_call_operand");
+    value.layout_id = std.Clone(ctx, layout_id);
+    value.resource_id = std.Clone(ctx, "");
+    value.hidden = 0;
+    return value;
+}
+
+func make_result_placement(id: str, function_abi: str, result_id: str, classification_id: str, mode: str, layout_id: str, ctx: &Arena) abi.MirAbiResultPlacement[ctx] {
+    mut value: abi.MirAbiResultPlacement[ctx];
+    value.placement_id = std.Clone(ctx, id);
+    value.abi_id = std.Clone(ctx, function_abi);
+    value.result_id = std.Clone(ctx, result_id);
+    value.ordinal = 0;
+    value.classification_id = std.Clone(ctx, classification_id);
+    value.passing_mode = std.Clone(ctx, mode);
+    value.location = std.Clone(ctx, "hidden_result_pointer");
+    value.layout_id = std.Clone(ctx, layout_id);
+    value.resource_id = std.Clone(ctx, "");
+    value.hidden = 1;
+    return value;
+}
+
+func make_operand(id: str, call_id: str, abi_value_id: str, ordinal: int, value_id: str, value_type: str, layout_id: str, passing_mode: str, evaluation: int, hidden: int, ctx: &Arena) call_mir.MirCallOperand[ctx] {
     mut value: call_mir.MirCallOperand[ctx];
     value.operand_id = std.Clone(ctx, id);
     value.call_id = std.Clone(ctx, call_id);
     value.abi_value_id = std.Clone(ctx, abi_value_id);
     value.ordinal = ordinal;
     value.value_id = std.Clone(ctx, value_id);
-    value.value_type_id = std.Clone(ctx, "type:gust:int");
-    value.layout_id = std.Clone(ctx, "layout:primitive:int");
+    value.value_type_id = std.Clone(ctx, value_type);
+    value.layout_id = std.Clone(ctx, layout_id);
+    value.passing_mode = std.Clone(ctx, passing_mode);
+    value.materialization = std.Clone(ctx, abi.mir_abi_argument_materialization(passing_mode));
     value.evaluation_order = evaluation;
     value.hidden = hidden;
     value.resource_id = std.Clone(ctx, "");
@@ -99,8 +146,14 @@ func main() {
     mut result_ids := strings(result_zero, "", &ctx);
 
     mut authority := abi.mir_function_abi_make_empty_table(target_id, target_triple, &ctx);
+    authority = abi.mir_function_abi_table_with_classification(authority, make_classification("classification:phase19:str", "type:gust:str", "layout:string_view", "parameter", "string_view", "aggregate", 16, 8, target_id, target_triple, &ctx), &ctx);
+    authority = abi.mir_function_abi_table_with_classification(authority, make_classification("classification:phase19:arena", "type:gust:Arena", "layout:os:Arena", "parameter", "arena", "memory", 32, 8, target_id, target_triple, &ctx), &ctx);
+    authority = abi.mir_function_abi_table_with_classification(authority, make_classification("classification:phase19:int", "type:gust:int", "layout:primitive:int", "hidden_result", "integer", "integer", 4, 4, target_id, target_triple, &ctx), &ctx);
     authority = abi.mir_function_abi_table_with_function(authority, make_function(caller_abi, "mir.function.main", "signature:main:returns_int", strings("", "", &ctx), result_ids, target_id, target_triple, &ctx), &ctx);
     authority = abi.mir_function_abi_table_with_function(authority, make_function(callee_abi, "mir.function.add", "signature:add:int_int_to_int", argument_ids, result_ids, target_id, target_triple, &ctx), &ctx);
+    authority = abi.mir_function_abi_table_with_parameter(authority, make_parameter_placement(parameter_zero, callee_abi, "parameter:phase16:add:0", 0, "classification:phase19:str", "direct", "layout:string_view", &ctx), &ctx);
+    authority = abi.mir_function_abi_table_with_parameter(authority, make_parameter_placement(parameter_one, callee_abi, "parameter:phase16:add:1", 1, "classification:phase19:arena", "indirect_by_reference", "layout:os:Arena", &ctx), &ctx);
+    authority = abi.mir_function_abi_table_with_result(authority, make_result_placement(result_zero, callee_abi, "result:phase16:add:0", "classification:phase19:int", "hidden_pointer", "layout:primitive:int", &ctx), &ctx);
     mut plan: abi.MirAbiCallSitePlan[ctx];
     plan.call_plan_id = plan_id;
     plan.call_site_id = call_id;
@@ -118,9 +171,9 @@ func main() {
     mut table := call_mir.mir_function_call_make_empty_table(target_id, target_triple, &ctx);
     table = call_mir.mir_function_call_table_with_declaration(table, make_declaration("declaration:phase16:main", "mir.function.main", caller_abi, "signature:main:returns_int", strings("", "", &ctx), result_ids, target_id, target_triple, "compiler/phase16_call_mir_source.gst:3:1", &ctx), &ctx);
     table = call_mir.mir_function_call_table_with_declaration(table, make_declaration("declaration:phase16:add", "mir.function.add", callee_abi, "signature:add:int_int_to_int", argument_ids, result_ids, target_id, target_triple, "compiler/phase16_call_mir_source.gst:7:1", &ctx), &ctx);
-    table = call_mir.mir_function_call_table_with_operand(table, make_operand("operand:phase16:add:0", call_id, parameter_zero, 0, "mir.value.literal.19", 0, 0, &ctx), &ctx);
-    table = call_mir.mir_function_call_table_with_operand(table, make_operand("operand:phase16:add:1", call_id, parameter_one, 1, "mir.value.literal.23", 1, 0, &ctx), &ctx);
-    table = call_mir.mir_function_call_table_with_operand(table, make_operand("operand:phase16:hidden-result", call_id, result_zero, 0, "mir.value.hidden.result", 2, 1, &ctx), &ctx);
+    table = call_mir.mir_function_call_table_with_operand(table, make_operand("operand:phase16:add:0", call_id, parameter_zero, 0, "mir.value.local.a", "type:gust:str", "layout:string_view", "direct", 0, 0, &ctx), &ctx);
+    table = call_mir.mir_function_call_table_with_operand(table, make_operand("operand:phase16:add:1", call_id, parameter_one, 1, "mir.value.index.arena", "type:gust:Arena", "layout:os:Arena", "indirect_by_reference", 1, 0, &ctx), &ctx);
+    table = call_mir.mir_function_call_table_with_operand(table, make_operand("operand:phase16:hidden-result", call_id, result_zero, 0, "mir.value.hidden.result", "type:gust:int", "layout:primitive:int", "hidden_pointer", 2, 1, &ctx), &ctx);
 
     table = call_mir.mir_function_call_table_with_operation(table, make_operation("operation:phase16:function-declaration", 0, call_id, caller_abi, callee_abi, plan_id, argument_ids, result_ids, "", "", target_id, target_triple, &ctx), &ctx);
     table = call_mir.mir_function_call_table_with_operation(table, make_operation("operation:phase16:argument-materialization", 1, call_id, caller_abi, callee_abi, plan_id, argument_ids, result_ids, "operand:phase16:add:0", "", target_id, target_triple, &ctx), &ctx);

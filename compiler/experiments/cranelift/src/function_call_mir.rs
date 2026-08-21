@@ -50,6 +50,10 @@ struct CallOperand {
     id: String,
     call: String,
     abi_value: String,
+    value_type: String,
+    layout: String,
+    passing_mode: String,
+    materialization: String,
     ordinal: usize,
     evaluation: usize,
     hidden: bool,
@@ -186,6 +190,10 @@ fn parse_request(contents: &str) -> Result<FunctionCallTable, FunctionCallMirErr
                 id: scalar_field(&fields, "id")?.to_owned(),
                 call: scalar_field(&fields, "call")?.to_owned(),
                 abi_value: scalar_field(&fields, "abi_value")?.to_owned(),
+                value_type: scalar_field(&fields, "type")?.to_owned(),
+                layout: scalar_field(&fields, "layout")?.to_owned(),
+                passing_mode: scalar_field(&fields, "passing_mode")?.to_owned(),
+                materialization: scalar_field(&fields, "materialization")?.to_owned(),
                 ordinal: scalar_field(&fields, "ordinal")?.parse().map_err(|_| {
                     FunctionCallMirError::new(
                         "call_mir_argument_count_or_order_mismatch",
@@ -291,6 +299,24 @@ fn validate(table: &FunctionCallTable) -> Result<(), FunctionCallMirError> {
                 "partial Phase 15 transition annotation",
             ));
         }
+        if !operand.passing_mode.is_empty() || !operand.materialization.is_empty() {
+            let expected = match operand.passing_mode.as_str() {
+                "direct" | "split" => "by_value",
+                "indirect_by_value" | "indirect_by_reference" | "hidden_pointer" => "by_address",
+                _ => {
+                    return Err(FunctionCallMirError::new(
+                        "call_mir_representation_mismatch",
+                        "unknown Phase 16 passing mode",
+                    ))
+                }
+            };
+            if operand.materialization != expected {
+                return Err(FunctionCallMirError::new(
+                    "call_mir_representation_mismatch",
+                    "argument materialization disagrees with passing mode",
+                ));
+            }
+        }
     }
     let allowed: HashSet<&str> = [
         "function_abi_declaration",
@@ -393,6 +419,17 @@ fn lower_for_cranelift(table: &FunctionCallTable) -> Result<String, FunctionCall
         output.push_str(&format!(
             "function_abi: id={} abi={} signature={} cc={}\n",
             declaration.id, declaration.abi, declaration.signature, declaration.cc
+        ));
+    }
+    for operand in &table.operands {
+        output.push_str(&format!(
+            "argument_representation: id={} abi_value={} passing_mode={} materialization={} value_type={} layout={}\n",
+            operand.id,
+            operand.abi_value,
+            operand.passing_mode,
+            operand.materialization,
+            operand.value_type,
+            operand.layout,
         ));
     }
     for operation in &table.operations {
