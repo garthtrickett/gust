@@ -547,66 +547,57 @@ own case and neither would unblock the other, and the repository would then hold
 two bespoke half-mechanisms where one general one was wanted. That is precisely
 the outcome `docs/ONE_WAY_LEDGER.md` exists to prevent: one way to do each thing.
 
-**This does not decide anything.** Whether to build visibility, and at what
-granularity, belongs to whoever owns row 35 — the containment document is
-explicit that choosing between propagating opacity and implementing `VISION.md`
-§73's visibility levels "is a design decision for the owning lane". The only
-claim here is that the two requests are one requirement seen twice, so a lane
-sequencing either should know it is quoting a price for both.
+**This observation does not select a visibility design.** Whether to build
+visibility, and at what granularity, belongs to the shared-zone owner. CR-10
+below now classifies that ownership; it does not choose between propagating
+opacity and implementing `VISION.md` §73's visibility levels.
 
-### CR-10 — Is an opt-in layout attribute shared-zone work?
+### CR-10 — Type-opacity ownership — **RESOLVED 2026-08-21**
 
-Raised because `docs/UNBLOCKED_CONTAINMENT_WORK.md` proposal 1 cannot start until
-it is classified, and classifying it wrongly in either direction is worse than
-asking. This is a **classification question**, not a request to implement.
+Raised because `docs/UNBLOCKED_CONTAINMENT_WORK.md` proposal 1 could not start
+until it was classified. This resolution assigns ownership only. It does not
+approve an attribute spelling or an opacity/visibility design.
 
 1. **Intended behaviour:** a type can declare that it has no readable string
-   representation, so passing it to `std.Format` is a compile error. This is the
-   half of `VISION.md` §81 that does not require effects — the §81 rationale is
-   that an agent cannot leak a secret into a log line because the type forbids
-   it.
-2. **Existing limitation:** nothing marks a type unformattable.
-   `grep -ciE 'opaque|no_format|not_formattable' compiler/typechecker.gst`
-   returns 0, and `std.Format` accepts whatever it is given.
-3. **Smallest generic change:** a fourth layout attribute beside `#[linear]`,
-   `#[packed]`, and `#[repr(C)]` — one arm in the attribute chain at
-   `compiler/parser.gst:869-872`, one field on `StructDecl`, one registry map
-   mirroring `struct_linear_resource`, and one check at the formatting dispatch
-   sites `compiler/typechecker.gst:1962-1963` and `:3810`, which already resolve
-   `std_Format` / `std.Format` / `std_FormatInt` by name.
-4. **Affected:** both parsers, both typecheckers, and the bootstrap seed. No MIR,
-   no ABI, no layout computation, no runtime symbol.
-5. **MIR-to-C:** no. The attribute is consumed entirely in the frontend; codegen
-   never sees it, because a program using it either compiles unchanged or is
-   rejected.
-6. **Cranelift:** no, for the same reason.
-7. **Bootstrap:** yes — dual compiler and seed regeneration, since both
-   typecheckers must agree.
+   representation, and reading one of its fields cannot launder the value into
+   something formattable. This is the half of `VISION.md` §81 that does not
+   require effects.
+2. **Existing limitation:** no opacity or visibility mechanism exists.
+   `std.Format` already rejects a struct argument, so
+   `std.Format("%s", secret)` is not the hole. A public `str` field remains
+   readable and formattable as `std.Format("%s", secret.value)`, and every
+   struct field is public because neither compiler has a visibility concept.
+3. **Smallest generic change:** the design owner must choose one general source
+   construct that prevents field reads from laundering opacity — either opacity
+   propagated through field access or general visibility with an inaccessible
+   field. A formatter-only check and a `Secret`-specific rule are both too
+   narrow. An opt-in attribute may be part of the selected design, but its
+   existence, spelling, and propagation rules are semantic decisions rather
+   than Stdlib implementation details.
+4. **Affected:** both parsers and typecheckers, AST/type-environment metadata,
+   field-access validation or provenance, and the bootstrap seed. No MIR, ABI,
+   layout computation, runtime symbol, or backend lowering is required if the
+   property is consumed entirely by the frontend.
+5. **MIR-to-C:** no; rejected programs do not reach code generation.
+6. **Cranelift:** no backend work, but **the Cranelift lane owns the compiler
+   semantic design and implementation** under the shared-zone default-owner
+   rule.
+7. **Bootstrap:** yes — both compiler implementations and the checked-in seed
+   must agree on the source construct and its enforcement.
 
-**The question.** `docs/SHARED_SEMANTIC_ZONE.md` places outside the zone "a
-diagnostic that **rejects** a program the compiler currently miscompiles,
-provided no accepted program changes meaning". This satisfies the second clause —
-no existing type carries the attribute, so no currently-accepted program changes
-meaning — but not the first: the programs it would reject are not miscompiled
-today, they are correct, and formatting a would-be-secret works fine.
+**Ruling:** this is shared-zone work for both the decision and the compiler
+implementation. It adds permanent source-language and type-system surface, and
+the diagnostic carve-out in `docs/SHARED_SEMANTIC_ZONE.md` does not apply: the
+programs to be rejected are valid under today's semantics, not miscompiled.
+Opt-in status means existing programs need not change, but it does not make the
+new construct non-semantic.
 
-So it is neither clearly in the zone nor clearly out of it. Two readings, both
-defensible:
-
-- **Out of zone / Stdlib.** It adds no semantics to any existing construct, is
-  opt-in, touches no MIR or ABI, and is the same size and shape as S1.1.
-- **In zone / Cranelift.** It adds language surface — a new attribute is a
-  permanent grammar commitment, and `VISION.md` §16 makes the operator and
-  attribute surface compiler-owned.
-
-**Recommendation, weakly held:** treat it as in-zone for the *decision* and
-out-of-zone for the *work* — the owner rules on whether the attribute exists and
-what it is called, and the implementation then proceeds as ordinary Stdlib-lane
-work under that ruling. That matches how CR-1 was handled: `VISION.md` §16 made
-the semantics Cranelift's call while S1.1 shipped the non-semantic half.
-
-Nothing in Phase S1 is blocked on the answer. The proposal is, which is why it is
-recorded here rather than left in a document nobody is assigned to read.
+The Stdlib lane may propose requirements and, after the generic primitive lands,
+owns safe wrappers, compile-fail tests, examples, and documentation. It must not
+add `#[opaque]`, propagate opacity, implement visibility, or special-case
+`std.Format` in the meantime. Nothing in Phase S1 is blocked on this ruling;
+containment proposal 1 and CR-5 item 3(c) remain blocked on the shared generic
+primitive.
 
 ## Verification Policy
 
