@@ -41,6 +41,8 @@ typedef struct LookupResult_ast__Type LookupResult_ast__Type;
 typedef struct LookupResult_int LookupResult_int;
 typedef struct LookupResult_std_Vector_str LookupResult_std_Vector_str;
 typedef struct LookupResult_str LookupResult_str;
+typedef struct typechecker__BrandIdentity typechecker__BrandIdentity;
+typedef struct LookupResult_typechecker__BrandIdentity LookupResult_typechecker__BrandIdentity;
 typedef struct typechecker__EnumTemplate typechecker__EnumTemplate;
 typedef struct LookupResult_typechecker__EnumTemplate LookupResult_typechecker__EnumTemplate;
 typedef struct typechecker__AddressOriginMetadata typechecker__AddressOriginMetadata;
@@ -610,6 +612,7 @@ typedef struct std_HashMap_str_Index_typechecker__OriginSet std_HashMap_str_Inde
 typedef struct std_HashMap_str_int std_HashMap_str_int;
 typedef struct std_HashMap_str_std_Vector_str std_HashMap_str_std_Vector_str;
 typedef struct std_HashMap_str_str std_HashMap_str_str;
+typedef struct std_HashMap_str_typechecker__BrandIdentity std_HashMap_str_typechecker__BrandIdentity;
 typedef struct std_HashMap_str_typechecker__EnumTemplate std_HashMap_str_typechecker__EnumTemplate;
 typedef struct std_HashMap_str_typechecker__ExpressionProvenance std_HashMap_str_typechecker__ExpressionProvenance;
 typedef struct std_HashMap_str_typechecker__FunctionSignature std_HashMap_str_typechecker__FunctionSignature;
@@ -771,6 +774,7 @@ typedef struct CastResult_ast__Type CastResult_ast__Type;
 typedef struct CastResult_os_DirEntry CastResult_os_DirEntry;
 typedef struct CastResult_os_Dir CastResult_os_Dir;
 typedef struct CastResult_std_Vector_str CastResult_std_Vector_str;
+typedef struct CastResult_typechecker__BrandIdentity CastResult_typechecker__BrandIdentity;
 typedef struct CastResult_typechecker__EnumTemplate CastResult_typechecker__EnumTemplate;
 typedef struct CastResult_typechecker__AddressOriginMetadata CastResult_typechecker__AddressOriginMetadata;
 typedef struct CastResult_typechecker__ExpressionProvenance CastResult_typechecker__ExpressionProvenance;
@@ -1335,6 +1339,7 @@ typedef struct CastResult_std_HashMap_str_Index_typechecker__OriginSet CastResul
 typedef struct CastResult_std_HashMap_str_int CastResult_std_HashMap_str_int;
 typedef struct CastResult_std_HashMap_str_std_Vector_str CastResult_std_HashMap_str_std_Vector_str;
 typedef struct CastResult_std_HashMap_str_str CastResult_std_HashMap_str_str;
+typedef struct CastResult_std_HashMap_str_typechecker__BrandIdentity CastResult_std_HashMap_str_typechecker__BrandIdentity;
 typedef struct CastResult_std_HashMap_str_typechecker__EnumTemplate CastResult_std_HashMap_str_typechecker__EnumTemplate;
 typedef struct CastResult_std_HashMap_str_typechecker__ExpressionProvenance CastResult_std_HashMap_str_typechecker__ExpressionProvenance;
 typedef struct CastResult_std_HashMap_str_typechecker__FunctionSignature CastResult_std_HashMap_str_typechecker__FunctionSignature;
@@ -2734,6 +2739,9 @@ typechecker__AddressOriginRecord typechecker__address_origin_record_make_sandbox
 typechecker__AddressOriginRecord typechecker__address_origin_record_make_scratchpad(Slice_unsigned_char label, os_Arena* ctx);
 typechecker__AddressOriginRecord typechecker__address_origin_record_make_scratchpad_allocation(Slice_unsigned_char scratchpad_name, Slice_unsigned_char value_type_name, os_Arena* ctx);
 int typechecker__address_origin_requires_unsafe_boundary(typechecker__AddressOriginMetadata origin);
+int typechecker__brand_identity_has_explicit_public_origin(ast__Type source, typechecker__BrandIdentity identity, os_Arena* ctx);
+Slice_unsigned_char typechecker__brand_identity_key(ast__Type t, os_Arena* ctx);
+typechecker__BrandIdentity typechecker__brand_identity_make(Slice_unsigned_char brand_origin, Slice_unsigned_char arena_identity, int is_arena, os_Arena* ctx);
 ast__Type typechecker__check_expression(int expr_idx, typechecker__TypeEnvironment* env, int scope, os_Arena* ctx);
 ast__Type typechecker__check_expression_internal(int expr_idx, typechecker__TypeEnvironment* env, int scope, os_Arena* ctx);
 typechecker__ExpressionProvenance typechecker__check_expression_with_provenance(int expr_idx, typechecker__TypeEnvironment* env, int scope, os_Arena* ctx);
@@ -2746,6 +2754,7 @@ Slice_unsigned_char typechecker__env_defer_statement_resource_destructor_candida
 int typechecker__env_directory_resource_type_is_legacy_handle(Slice_unsigned_char type_name);
 Slice_unsigned_char typechecker__env_first_open_linear_resource_requiring_cleanup(typechecker__TypeEnvironment* env, os_Arena* ctx);
 int typechecker__env_function_is_directory_close_destructor(Slice_unsigned_char resolved_func);
+typechecker__BrandIdentity typechecker__env_get_brand_identity(typechecker__TypeEnvironment* env, ast__Type resolved, os_Arena* ctx);
 int typechecker__env_is_element_allowed_in_brand(typechecker__TypeEnvironment* env, ast__Type t, Slice_unsigned_char parent_brand, os_Arena* ctx);
 int typechecker__env_linear_resource_missing_cleanup_already_reported(typechecker__TypeEnvironment* env, Slice_unsigned_char name, os_Arena* ctx);
 int typechecker__env_mark_open_linear_resource_borrowed(typechecker__TypeEnvironment* env, Slice_unsigned_char variable_name, os_Arena* ctx);
@@ -2784,6 +2793,7 @@ int typechecker__env_open_linear_resource_transfer_transition_is_allowed(typeche
 Slice_unsigned_char typechecker__env_open_linear_resource_use_diagnostic(typechecker__TypeEnvironment* env, Slice_unsigned_char variable_name, os_Arena* ctx);
 int typechecker__env_open_linear_resources_have_pending_cleanup(typechecker__TypeEnvironment* env, os_Arena* ctx);
 void typechecker__env_pre_register_statement(typechecker__TypeEnvironment* env, ast__Statement stmt, os_Arena* ctx);
+void typechecker__env_record_brand_identity(typechecker__TypeEnvironment* env, ast__Type resolved, typechecker__BrandIdentity identity, os_Arena* ctx);
 void typechecker__env_record_container_provenance(typechecker__TypeEnvironment* env, Slice_unsigned_char container_key, typechecker__ExpressionProvenance prov, os_Arena* ctx);
 void typechecker__env_record_field_provenance(typechecker__TypeEnvironment* env, Slice_unsigned_char field_key, typechecker__ExpressionProvenance prov, os_Arena* ctx);
 void typechecker__env_record_function_return_provenance(typechecker__TypeEnvironment* env, Slice_unsigned_char name, typechecker__ExpressionProvenance prov, os_Arena* ctx);
@@ -2817,10 +2827,12 @@ int typechecker__env_report_linear_resource_reassignment_requires_terminal(typec
 int typechecker__env_report_linear_resource_schedule_transition_rejected(typechecker__TypeEnvironment* env, Slice_unsigned_char name, token__Span span, os_Arena* ctx);
 void typechecker__env_report_linear_resource_use_after_move(typechecker__TypeEnvironment* env, Slice_unsigned_char name, token__Span span, os_Arena* ctx);
 void typechecker__env_report_non_laundering_safe_brand_target(typechecker__TypeEnvironment* env, ast__Type target_t, typechecker__ExpressionProvenance prov, token__Span span, Slice_unsigned_char context_nonlaunder, os_Arena* ctx);
+void typechecker__env_require_explicit_public_brand(typechecker__TypeEnvironment* env, ast__Type source, ast__Type resolved, Slice_unsigned_char boundary_name, token__Span span, os_Arena* ctx);
 ast__Type typechecker__env_resolve_index_storage_target_type(typechecker__TypeEnvironment* env, int index_idx_nlaunder, int scope, os_Arena* ctx);
 Slice_unsigned_char typechecker__env_resolve_namespaced_ident(typechecker__TypeEnvironment* env, Slice_unsigned_char name, os_Arena* ctx);
 ast__Type typechecker__env_resolve_selector_storage_target_type(typechecker__TypeEnvironment* env, int selector_idx_nlaunder, int scope, os_Arena* ctx);
 ast__Type typechecker__env_resolve_type(typechecker__TypeEnvironment* env, ast__Type t, os_Arena* ctx);
+ast__Type typechecker__env_resolve_type_internal(typechecker__TypeEnvironment* env, ast__Type t, os_Arena* ctx);
 int typechecker__env_resource_assignment_is_tracking_eligible(typechecker__TypeEnvironment* env, Slice_unsigned_char variable_name, ast__Type assigned_resource_type, os_Arena* ctx);
 int typechecker__env_resource_assignment_type_matches_declaration(typechecker__TypeEnvironment* env, Slice_unsigned_char variable_name, ast__Type assigned_resource_type, os_Arena* ctx);
 int typechecker__env_resource_destructor_call_is_applicable(typechecker__TypeEnvironment* env, Slice_unsigned_char resolved_func, int arguments_idx, int scope, os_Arena* ctx);
@@ -2983,12 +2995,14 @@ int typechecker__step51g_type_is_internal_metadata_safe_brand_target(ast__Type t
 Slice_unsigned_char typechecker__strip_brand_prefix(Slice_unsigned_char brand, os_Arena* ctx);
 ast__Type typechecker__substitute_generics(typechecker__TypeEnvironment* env, ast__Type t, std_HashMap_str_ast__Type map, os_Arena* ctx);
 int typechecker__type_is_resource(ast__Type t, os_Arena* ctx);
+typechecker__BrandIdentity typechecker__typechecker_brand_identity_from_resolved_type(ast__Type resolved, typechecker__TypeEnvironment* env, os_Arena* ctx);
 Slice_unsigned_char typechecker__typechecker_clean_monomorphized_name(Slice_unsigned_char name, os_Arena* ctx);
 std_HashMap_str_int typechecker__typechecker_clone_int_map(std_HashMap_str_int src, os_Arena* ctx);
 std_HashMap_str_typechecker__LinearResourceRecord typechecker__typechecker_clone_linear_resource_map(std_HashMap_str_typechecker__LinearResourceRecord src, os_Arena* ctx);
 int typechecker__typechecker_clone_origin_set(int src, os_Arena* ctx);
 std_HashMap_str_Index_typechecker__OriginSet typechecker__typechecker_clone_origins(std_HashMap_str_Index_typechecker__OriginSet src, os_Arena* ctx);
 int typechecker__typechecker_ends_with(Slice_unsigned_char s, Slice_unsigned_char suffix);
+typechecker__BrandIdentity typechecker__typechecker_explicit_brand_identity(ast__Type t, os_Arena* ctx);
 Slice_unsigned_char typechecker__typechecker_extract_brand_from_suffix(Slice_unsigned_char suffix, os_Arena* ctx);
 void typechecker__typechecker_extract_ok_checked_variables(int expr_idx, std_HashMap_str_int* checked_map, os_Arena* ctx);
 Slice_unsigned_char typechecker__typechecker_get_file_stem(Slice_unsigned_char path, os_Arena* ctx);
@@ -3017,6 +3031,7 @@ Slice_unsigned_char typechecker__typechecker_serialize_structures(typechecker__T
 Slice_unsigned_char typechecker__typechecker_serialize_type_environment(typechecker__TypeEnvironment* env, os_Arena* ctx);
 Slice_unsigned_char typechecker__typechecker_serialize_variables(typechecker__TypeEnvironment* env, os_Arena* ctx);
 void typechecker__typechecker_sort_vector_str(std_Vector_str* vec, os_Arena* ctx);
+int typechecker__typechecker_source_names_explicit_brand(ast__Type source, Slice_unsigned_char arena_identity, os_Arena* ctx);
 int typechecker__typechecker_starts_with(Slice_unsigned_char s, Slice_unsigned_char prefix);
 int typechecker__typechecker_str_compare(Slice_unsigned_char s1, Slice_unsigned_char s2);
 Slice_unsigned_char typechecker__typechecker_strip_module_prefix(Slice_unsigned_char name, os_Arena* ctx);
@@ -3225,6 +3240,17 @@ struct LookupResult_std_Vector_str {
 struct LookupResult_str {
     unsigned char Ok;
     Slice_unsigned_char Val;
+};
+
+struct typechecker__BrandIdentity {
+    Slice_unsigned_char arena_identity;
+    Slice_unsigned_char brand_origin;
+    int is_arena;
+};
+
+struct LookupResult_typechecker__BrandIdentity {
+    unsigned char Ok;
+    typechecker__BrandIdentity Val;
 };
 
 struct typechecker__EnumTemplate {
@@ -7811,6 +7837,15 @@ struct std_HashMap_str_str {
     Slice_unsigned_char* values;
 };
 
+struct std_HashMap_str_typechecker__BrandIdentity {
+    os_Arena* arena;
+    int capacity;
+    Slice_unsigned_char* keys;
+    int len;
+    int* occupied;
+    typechecker__BrandIdentity* values;
+};
+
 struct std_HashMap_str_typechecker__EnumTemplate {
     os_Arena* arena;
     int capacity;
@@ -8725,6 +8760,7 @@ struct typechecker__Scope {
 
 struct typechecker__TypeEnvironment {
     std_HashMap_str_int active_monomorphizations;
+    std_HashMap_str_typechecker__BrandIdentity brand_identities;
     std_HashMap_str_int checked_results;
     std_HashMap_str_typechecker__ExpressionProvenance container_provenance;
     Slice_unsigned_char current_alloc_struct;
@@ -18631,6 +18667,7 @@ typechecker__TypeEnvironment typechecker__env_new(os_Arena* ctx) {
     env_ref_new->struct_linear_destructor = ((struct std_HashMap_str_str){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx });
     env_ref_new->enum_templates = ((struct std_HashMap_str_typechecker__EnumTemplate){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx });
     env_ref_new->function_registry = ((struct std_HashMap_str_typechecker__FunctionSignature){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx });
+    env_ref_new->brand_identities = ((struct std_HashMap_str_typechecker__BrandIdentity){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx });
     env_ref_new->function_return_provenance = ((struct std_HashMap_str_typechecker__ExpressionProvenance){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx });
     env_ref_new->variable_types = ((struct std_HashMap_str_ast__Type){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx });
     env_ref_new->resolved_types_nested = ((struct std_Vector_typechecker__PrefixMapEntry){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx });
@@ -20213,8 +20250,7 @@ Slice_unsigned_char typechecker__typechecker_get_file_stem(Slice_unsigned_char p
     return std_Clone_str(ctx, std_str_slice(path, start, end));
 }
 
-ast__Type typechecker__env_resolve_type(typechecker__TypeEnvironment* env, ast__Type t, os_Arena* ctx) {
-    if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+ast__Type typechecker__env_resolve_type_internal(typechecker__TypeEnvironment* env, ast__Type t, os_Arena* ctx) {
     int res_idx = os_ArenaAlloc(ctx, sizeof(ast__Type));
     {
     ({ *((ast__Type*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(res_idx))) = t; });
@@ -20463,6 +20499,196 @@ ast__Type typechecker__env_resolve_type(typechecker__TypeEnvironment* env, ast__
     }
 }
 
+typechecker__BrandIdentity typechecker__brand_identity_make(Slice_unsigned_char brand_origin, Slice_unsigned_char arena_identity, int is_arena, os_Arena* ctx) {
+    typechecker__BrandIdentity identity = ((typechecker__BrandIdentity){ .arena_identity = ((Slice_unsigned_char){ NULL, 0 }), .brand_origin = ((Slice_unsigned_char){ NULL, 0 }), .is_arena = 0 });
+    identity.brand_origin = std_Clone_str(ctx, brand_origin);
+    identity.arena_identity = std_Clone_str(ctx, arena_identity);
+    identity.is_arena = is_arena;
+    return identity;
+}
+
+typechecker__BrandIdentity typechecker__typechecker_explicit_brand_identity(ast__Type t, os_Arena* ctx) {
+    if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    {
+    if ((t.tag == 7)) {
+    if ((t.Index.brand != 0xFFFFFFFF)) {
+    return typechecker__brand_identity_make(((Slice_unsigned_char){ (unsigned char*)"explicit_index", 14 }), (*((Slice_unsigned_char*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(t.Index.brand)))), 0, ctx);
+    }
+    }
+    if ((t.tag == 8)) {
+    if ((t.Struct.brand != 0xFFFFFFFF)) {
+    return typechecker__brand_identity_make(((Slice_unsigned_char){ (unsigned char*)"explicit_struct", 15 }), (*((Slice_unsigned_char*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(t.Struct.brand)))), 0, ctx);
+    }
+    }
+    if ((t.tag == 11)) {
+    if ((t.Reference.brand != 0xFFFFFFFF)) {
+    return typechecker__brand_identity_make(((Slice_unsigned_char){ (unsigned char*)"explicit_reference", 18 }), (*((Slice_unsigned_char*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(t.Reference.brand)))), 0, ctx);
+    }
+    return typechecker__typechecker_explicit_brand_identity((*((ast__Type*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(t.Reference.inner)))), ctx);
+    }
+    if ((t.tag == 9)) {
+    return typechecker__typechecker_explicit_brand_identity((*((ast__Type*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(t.RawPointer.inner)))), ctx);
+    }
+    if ((t.tag == 6)) {
+    return typechecker__typechecker_explicit_brand_identity((*((ast__Type*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(t.Slice.inner)))), ctx);
+    }
+    return typechecker__brand_identity_make(((Slice_unsigned_char){ (unsigned char*)"none", 4 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), 0, ctx);
+    }
+}
+
+typechecker__BrandIdentity typechecker__typechecker_brand_identity_from_resolved_type(ast__Type resolved, typechecker__TypeEnvironment* env, os_Arena* ctx) {
+    if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    {
+    int is_arena = typechecker__typechecker_is_arena_value_or_ref(resolved, ctx);
+    typechecker__BrandIdentity identity = typechecker__brand_identity_make(((Slice_unsigned_char){ (unsigned char*)"none", 4 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), is_arena, ctx);
+    if ((resolved.tag == 7)) {
+    if ((resolved.Index.brand != 0xFFFFFFFF)) {
+    identity = typechecker__brand_identity_make(((Slice_unsigned_char){ (unsigned char*)"resolved_index", 14 }), (*((Slice_unsigned_char*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(resolved.Index.brand)))), is_arena, ctx);
+    }
+    } else {
+    if ((resolved.tag == 8)) {
+    if ((resolved.Struct.brand != 0xFFFFFFFF)) {
+    identity = typechecker__brand_identity_make(((Slice_unsigned_char){ (unsigned char*)"resolved_struct", 15 }), (*((Slice_unsigned_char*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(resolved.Struct.brand)))), is_arena, ctx);
+    } else {
+    LookupResult_typechecker__StructLayout layout_lookup = ({ LookupResult_typechecker__StructLayout res = {0}; res.Ok = os_HashMapContains(&(*(env)).struct_registry, resolved.Struct.struct_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).struct_registry, resolved.Struct.struct_name, 1); } res; });
+    if (layout_lookup.Ok) {
+    typechecker__StructLayout layout = layout_lookup.Val;
+    if ((layout.brand != 0xFFFFFFFF)) {
+    identity = typechecker__brand_identity_make(((Slice_unsigned_char){ (unsigned char*)"resolved_struct_layout", 22 }), (*((Slice_unsigned_char*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(layout.brand)))), is_arena, ctx);
+    }
+    }
+    }
+    } else {
+    if ((resolved.tag == 11)) {
+    if ((resolved.Reference.brand != 0xFFFFFFFF)) {
+    identity = typechecker__brand_identity_make(((Slice_unsigned_char){ (unsigned char*)"resolved_reference", 18 }), (*((Slice_unsigned_char*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(resolved.Reference.brand)))), is_arena, ctx);
+    } else {
+    typechecker__BrandIdentity inner_identity = typechecker__typechecker_brand_identity_from_resolved_type((*((ast__Type*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(resolved.Reference.inner)))), env, ctx);
+    if ((std_str_eq(inner_identity.arena_identity, ((Slice_unsigned_char){ (unsigned char*)"", 0 })) == 0)) {
+    identity = typechecker__brand_identity_make(((Slice_unsigned_char){ (unsigned char*)"resolved_reference_inner", 24 }), inner_identity.arena_identity, is_arena, ctx);
+    }
+    }
+    } else {
+    if ((resolved.tag == 9)) {
+    typechecker__BrandIdentity inner_identity = typechecker__typechecker_brand_identity_from_resolved_type((*((ast__Type*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(resolved.RawPointer.inner)))), env, ctx);
+    if ((std_str_eq(inner_identity.arena_identity, ((Slice_unsigned_char){ (unsigned char*)"", 0 })) == 0)) {
+    identity = typechecker__brand_identity_make(((Slice_unsigned_char){ (unsigned char*)"resolved_pointer_inner", 22 }), inner_identity.arena_identity, is_arena, ctx);
+    }
+    } else {
+    if ((resolved.tag == 6)) {
+    typechecker__BrandIdentity inner_identity = typechecker__typechecker_brand_identity_from_resolved_type((*((ast__Type*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(resolved.Slice.inner)))), env, ctx);
+    if ((std_str_eq(inner_identity.arena_identity, ((Slice_unsigned_char){ (unsigned char*)"", 0 })) == 0)) {
+    identity = typechecker__brand_identity_make(((Slice_unsigned_char){ (unsigned char*)"resolved_slice_inner", 20 }), inner_identity.arena_identity, is_arena, ctx);
+    }
+    } else {
+    if ((resolved.tag == 10)) {
+    std_Vector_ast__Type resolved_args = (*((std_Vector_ast__Type*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(resolved.Generic.args))));
+    int i = 0;
+    while ((i < resolved_args.len)) {
+        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    typechecker__BrandIdentity argument_identity = typechecker__typechecker_brand_identity_from_resolved_type((*({ if (i < 0 || i >= resolved_args.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(resolved_args.data[i]); })), env, ctx);
+    if ((std_str_eq(argument_identity.arena_identity, ((Slice_unsigned_char){ (unsigned char*)"", 0 })) == 0)) {
+    identity = typechecker__brand_identity_make(((Slice_unsigned_char){ (unsigned char*)"resolved_generic_argument", 25 }), argument_identity.arena_identity, is_arena, ctx);
+    i = resolved_args.len;
+    }
+    i = (i + 1);
+    }
+    }
+    }
+    }
+    }
+    }
+    }
+    if (((identity.is_arena == 1) && (std_str_eq(identity.brand_origin, ((Slice_unsigned_char){ (unsigned char*)"none", 4 })) == 1))) {
+    identity.brand_origin = std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"arena_type", 10 }));
+    }
+    return identity;
+    }
+}
+
+Slice_unsigned_char typechecker__brand_identity_key(ast__Type t, os_Arena* ctx) {
+    return ast__serialize_type(t, ctx);
+}
+
+void typechecker__env_record_brand_identity(typechecker__TypeEnvironment* env, ast__Type resolved, typechecker__BrandIdentity identity, os_Arena* ctx) {
+    {
+    if (((std_str_eq(identity.arena_identity, ((Slice_unsigned_char){ (unsigned char*)"", 0 })) == 0) || (identity.is_arena == 1))) {
+    Slice_unsigned_char key = typechecker__brand_identity_key(resolved, ctx);
+    *os_HashMapRef(&(*(env)).brand_identities, std_Clone_str(ctx, key), 1) = identity;
+    }
+    }
+}
+
+typechecker__BrandIdentity typechecker__env_get_brand_identity(typechecker__TypeEnvironment* env, ast__Type resolved, os_Arena* ctx) {
+    {
+    Slice_unsigned_char key = typechecker__brand_identity_key(resolved, ctx);
+    LookupResult_typechecker__BrandIdentity lookup = ({ LookupResult_typechecker__BrandIdentity res = {0}; res.Ok = os_HashMapContains(&(*(env)).brand_identities, key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).brand_identities, key, 1); } res; });
+    if (lookup.Ok) {
+    return lookup.Val;
+    }
+    return typechecker__brand_identity_make(((Slice_unsigned_char){ (unsigned char*)"none", 4 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), typechecker__typechecker_is_arena_value_or_ref(resolved, ctx), ctx);
+    }
+}
+
+int typechecker__typechecker_source_names_explicit_brand(ast__Type source, Slice_unsigned_char arena_identity, os_Arena* ctx) {
+    if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    typechecker__BrandIdentity explicit_identity = typechecker__typechecker_explicit_brand_identity(source, ctx);
+    if ((std_str_eq(explicit_identity.arena_identity, arena_identity) == 1)) {
+    return 1;
+    }
+    {
+    if ((source.tag == 10)) {
+    std_Vector_ast__Type source_args = (*((std_Vector_ast__Type*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(source.Generic.args))));
+    int i = 0;
+    while ((i < source_args.len)) {
+        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    if ((std_str_eq(typechecker__get_type_ident((*({ if (i < 0 || i >= source_args.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(source_args.data[i]); })), ctx), arena_identity) == 1)) {
+    return 1;
+    }
+    if ((typechecker__typechecker_source_names_explicit_brand((*({ if (i < 0 || i >= source_args.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(source_args.data[i]); })), arena_identity, ctx) == 1)) {
+    return 1;
+    }
+    i = (i + 1);
+    }
+    }
+    if ((source.tag == 9)) {
+    return typechecker__typechecker_source_names_explicit_brand((*((ast__Type*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(source.RawPointer.inner)))), arena_identity, ctx);
+    }
+    if ((source.tag == 6)) {
+    return typechecker__typechecker_source_names_explicit_brand((*((ast__Type*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(source.Slice.inner)))), arena_identity, ctx);
+    }
+    if ((source.tag == 11)) {
+    return typechecker__typechecker_source_names_explicit_brand((*((ast__Type*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(source.Reference.inner)))), arena_identity, ctx);
+    }
+    }
+    return 0;
+}
+
+int typechecker__brand_identity_has_explicit_public_origin(ast__Type source, typechecker__BrandIdentity identity, os_Arena* ctx) {
+    if ((std_str_eq(identity.arena_identity, ((Slice_unsigned_char){ (unsigned char*)"", 0 })) == 1)) {
+    return 1;
+    }
+    return typechecker__typechecker_source_names_explicit_brand(source, identity.arena_identity, ctx);
+}
+
+void typechecker__env_require_explicit_public_brand(typechecker__TypeEnvironment* env, ast__Type source, ast__Type resolved, Slice_unsigned_char boundary_name, token__Span span, os_Arena* ctx) {
+    typechecker__BrandIdentity identity = typechecker__typechecker_brand_identity_from_resolved_type(resolved, env, ctx);
+    if ((typechecker__brand_identity_has_explicit_public_origin(source, identity, ctx) == 0)) {
+    Slice_unsigned_char msg = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: [ImplicitPublicBrand] Public API boundary '", 59 }); Slice_unsigned_char _s2 = boundary_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"' resolves to arena brand '", 27 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = identity.arena_identity; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"' but does not state that brand explicitly", 42 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    typechecker__report_error(2, msg, span, env, ctx);
+    }
+}
+
+ast__Type typechecker__env_resolve_type(typechecker__TypeEnvironment* env, ast__Type t, os_Arena* ctx) {
+    ast__Type resolved = typechecker__env_resolve_type_internal(env, t, ctx);
+    typechecker__BrandIdentity identity = typechecker__typechecker_brand_identity_from_resolved_type(resolved, env, ctx);
+    typechecker__env_record_brand_identity(env, resolved, identity, ctx);
+    return resolved;
+}
+
 void typechecker__env_pre_register_statement(typechecker__TypeEnvironment* env, ast__Statement stmt, os_Arena* ctx) {
     {
     if ((stmt.tag == 0)) {
@@ -20616,6 +20842,7 @@ void typechecker__env_pre_register_statement(typechecker__TypeEnvironment* env, 
     ast__Parameter p = (*({ if (i < 0 || i >= params_vec_function_decl.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(params_vec_function_decl.data[i]); }));
     os_VectorPush(&sig.param_names, std_Clone_str(ctx, p.name));
     ast__Type resolved_param_type = typechecker__env_resolve_type(env, p.param_type, ctx);
+    typechecker__env_require_explicit_public_brand(env, p.param_type, resolved_param_type, p.name, p.span, ctx);
     if ((resolved_param_type.tag == 4)) {
     ast__Type t_arena_ptr = typechecker__make_type_pointer(resolved_param_type, ctx);
     resolved_param_type = t_arena_ptr;
@@ -20623,7 +20850,9 @@ void typechecker__env_pre_register_statement(typechecker__TypeEnvironment* env, 
     os_VectorPush(&sig.params, resolved_param_type);
     i = (i + 1);
     }
-    sig.return_type = typechecker__env_resolve_type(env, (*((ast__Type*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(stmt.FunctionDecl.return_type)))), ctx);
+    ast__Type source_return_type = (*((ast__Type*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(stmt.FunctionDecl.return_type))));
+    sig.return_type = typechecker__env_resolve_type(env, source_return_type, ctx);
+    typechecker__env_require_explicit_public_brand(env, source_return_type, sig.return_type, namespaced_name, stmt.FunctionDecl.span, ctx);
     sig.return_origins = typechecker__set_init(ctx);
     sig.is_unsafe = stmt.FunctionDecl.is_unsafe;
     sig.is_extern = stmt.FunctionDecl.is_extern;
@@ -21961,22 +22190,22 @@ errors__Result_int typechecker__check_statement_impl(int stmt_idx, typechecker__
     }
     typechecker__scope_insert(scope, std_Clone_str(ctx, name), resolved_explicit, ctx);
     *os_HashMapRef(&(*(env)).variable_types, std_Clone_str(ctx, name), 1) = resolved_explicit;
-    LookupResult_ast__Type _guard_res_lookup_type_explicit_9960_17 = {0};
-    _guard_res_lookup_type_explicit_9960_17 = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&(*(env)).variable_types, name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).variable_types, name, 1); } res; });
-    if (!_guard_res_lookup_type_explicit_9960_17.Ok) {
+    LookupResult_ast__Type _guard_res_lookup_type_explicit_10148_17 = {0};
+    _guard_res_lookup_type_explicit_10148_17 = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&(*(env)).variable_types, name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).variable_types, name, 1); } res; });
+    if (!_guard_res_lookup_type_explicit_10148_17.Ok) {
         return res;
     }
-    ast__Type lookup_type_explicit = _guard_res_lookup_type_explicit_9960_17.Val;
+    ast__Type lookup_type_explicit = _guard_res_lookup_type_explicit_10148_17.Val;
     val_type = lookup_type_explicit;
     } else {
     typechecker__scope_insert(scope, std_Clone_str(ctx, name), val_type, ctx);
     *os_HashMapRef(&(*(env)).variable_types, std_Clone_str(ctx, name), 1) = val_type;
-    LookupResult_ast__Type _guard_res_lookup_type_9967_17 = {0};
-    _guard_res_lookup_type_9967_17 = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&(*(env)).variable_types, name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).variable_types, name, 1); } res; });
-    if (!_guard_res_lookup_type_9967_17.Ok) {
+    LookupResult_ast__Type _guard_res_lookup_type_10155_17 = {0};
+    _guard_res_lookup_type_10155_17 = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&(*(env)).variable_types, name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(*(env)).variable_types, name, 1); } res; });
+    if (!_guard_res_lookup_type_10155_17.Ok) {
         return res;
     }
-    ast__Type lookup_type = _guard_res_lookup_type_9967_17.Val;
+    ast__Type lookup_type = _guard_res_lookup_type_10155_17.Val;
     val_type = lookup_type;
     }
     if ((val_type.tag == 8)) {
