@@ -16155,6 +16155,13 @@ guard-cranelift-phase18-target-authority-parity:
     just guard-cranelift-phase18-target-authority-contract
     bash scripts/phase18_target_authority_parity.sh
 
+guard-cranelift-phase19-rename-invariance:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase19-rename-invariance | grep -F $'guard-cranelift-phase19-rename-invariance\t3\t' >/dev/null
+    bash scripts/phase19_rename_invariance.sh
+
 guard-cranelift-phase19-spelling-inventory:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -16995,6 +17002,7 @@ guard-cranelift-historical-full:
     fi
 
     just guard-cranelift-phase11-generic-canonical-mir-route
+    just guard-cranelift-phase19-rename-invariance
     just guard-cranelift-phase11-close
 
     echo "✅ Level 3 full Cranelift history passed."
