@@ -22292,7 +22292,7 @@ guard-stdlib-s1-close:
     fi
 
     # Every coordination request must state a resolution or an owning phase.
-    for cr in CR-1 CR-2 CR-3 CR-4 CR-5 CR-6 CR-7 CR-8 CR-9 CR-10 CR-11 CR-12 CR-13; do
+    for cr in CR-1 CR-2 CR-3 CR-4 CR-5 CR-6 CR-7 CR-8 CR-9 CR-10 CR-11 CR-12 CR-13 CR-14; do
       if rg -n -F -e "### $cr " "$roadmap" >/dev/null 2>&1; then
         body="$(rg -n -A 40 -F -e "### $cr " "$roadmap" || true)"
         if ! printf '%s\n' "$body" | rg -q -e 'RESOLVED|Resolved|Placement|owner|Phase 19|Cranelift lane|deferred'; then

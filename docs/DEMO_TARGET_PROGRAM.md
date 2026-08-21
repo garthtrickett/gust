@@ -147,7 +147,7 @@ Ordered by dependency. Status verified 2026-08-20; evidence in
 | --- | --- | --- | --- |
 | 1 | Brand identity carried by type, not identifier spelling | **VIOLATED** — ledger D-1 | Phase 19 (`TASK.md`), active |
 | 2 | `Result[T, E]` as a builtin, with `?` propagation | **ABSENT** — ledger E2 | **unowned** — spec proposed at VISION **§11.1** |
-| 3 | A constructor for `Option` — `Some(42)` rather than writing `.tag` and `.Some.val` | **PARTIAL** — ledger E1 | Stdlib (Track A0 scope) — issue #102 |
+| 3 | A constructor for `Option` — `Some(42)` rather than writing `.tag` and `.Some.val` | **PARTIAL** — ledger E1 | Cranelift lane — CR-14 / PR #128; generic enum construction, not an `Option` special case |
 | 4 | Implicit context in application code (`using ctx`) | **ABSENT** | **NOT A DEMO PREREQUISITE** as of the 2026-08-20 placement directive — Phase 5.3 sits after C deprecation; see `docs/UNSAFE_FFI_SEQUENCE.md` §4. Spec at VISION **§24.1** |
 | 5 | `uses` clauses parsed and checked across the call graph | **ABSENT** — ledger E10, but `FunctionSignature` already carries per-function obligations | **unowned** — VISION §0.7 Track A; spec proposed at **§18.1** |
 | 6 | Entity declarations that mark an entity workspace-scoped | **ABSENT** | **unowned** — VISION §56; spec proposed at **§56.2** rule 1 |
