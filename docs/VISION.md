@@ -385,6 +385,7 @@ second, drifting copy of it.
 | OD-6 | Form of the intent layer | **OPEN** — leading proposal recorded 2026-08-20 (§117.1): contracts on capabilities as the core, examples as the authoring surface, properties for depth | v1.0 | Part XXI |
 | OD-11 | ~~The fate of `std.Spawn`~~ | **RESOLVED 2026-08-20** — bare form deleted; scoped spawn returns a linear task handle | Demo | §20.1 |
 | OD-5 | Supplier certification staffing model | **DIRECTION SET 2026-08-20** — split the function: an agent does conformance, the operator does trust and commerce; pricing still open | Post-1.0 | Part XVI |
+| OD-12 | **Mobile execution boundary** — should mobile apps remain Gust-only above compiler-owned Swift/Kotlin hosts, or may application authors mix Swift/Kotlin into the normal source model? | **OPEN** — recommendation recorded 2026-08-21: AOT Gust core plus generated native hosts; application-authored native code only as an explicit escape hatch | Post-demo mobile | `docs/MOBILE_NATIVE_DEPLOYMENT.md` |
 
 There is no OD-7. The number is unused and nothing in the repository references it; it is recorded here so a reader who notices the gap does not go looking.
 
@@ -2071,7 +2072,7 @@ Every escape hatch requires explicit manifest declaration, human approval, defin
 
 > Escape hatches are isolated products with explicit loss-of-guarantee boundaries, not ordinary language features.
 
-> **Nothing enforces these boundaries yet, and one of them is inverted.** No escape-hatch machinery exists — no manifest, capability, signed adapter, isolation, or expiry (§97). The one real gate is that `extern` calls require `unsafe` (`compiler/typechecker.gst:4047`), which the built-in `os.*` surface bypasses entirely, so "arbitrary filesystem or process access" is currently the *ungated* path (`docs/ONE_WAY_LEDGER.md` E21, issue #108).
+> **Nothing enforces these boundaries yet, and one of them is inverted.** No escape-hatch machinery exists — no manifest, capability, signed adapter, isolation, or expiry (§97). The one real gate is that `extern` calls require `unsafe` (`compiler/typechecker.gst:4044`), which the built-in `os.*` surface bypasses entirely, so "arbitrary filesystem or process access" is currently the *ungated* path (`docs/ONE_WAY_LEDGER.md` E21, issue #108).
 >
 > This section is nonetheless the most reusable idea in the document: it is the only place that states guarantees weaken *by degree and by named boundary* rather than being binary. `docs/VISION_RECONCILIATION.md` §5 develops it into a proposed `gust guarantees` ledger, which is what would make "loss of guarantee" a thing a reviewer can read rather than a sentence in a specification.
 
