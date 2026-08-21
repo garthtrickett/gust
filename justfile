@@ -21802,9 +21802,14 @@ guard-stdlib-s1-str-equality-diagnostic:
     echo "🔒 Checking str equality rejection..."
     expected="Semantic Error: str does not support '==' or '!='. Use std.str_eq(a, b) to compare text."
 
-    # Both compilers must reject with the same words. A drift here means one
-    # backend's users get a different explanation for the same program.
-    rg -n -F "$expected" src/typechecker/visitor.rs >/dev/null
+    # The self-hosted compiler must reject with these words.
+    #
+    # This used to assert the same string in src/typechecker/visitor.rs as well,
+    # under the heading "both compilers must reject with the same words". That
+    # was never what it checked: it grepped both files for a literal, and no
+    # workflow ever built the Rust prototype, so the arm could only ever have
+    # confirmed that two files contained the same text. The prototype is being
+    # removed, and the assertion follows the compiler that is actually built.
     rg -n -F "$expected" compiler/typechecker.gst >/dev/null
 
     mkdir -p build
@@ -21925,7 +21930,11 @@ guard-stdlib-s1-resource-prerequisites:
 
     # (b) No source syntax for declaring a destructor. If one appears, CR-5 (a)
     # may be satisfied and MutexGuard becomes possible.
-    for f in compiler/lexer.gst src/lexer.rs src/parser.rs; do
+    # src/lexer.rs and src/parser.rs were in this list. They are removed with
+    # the Rust prototype. Note the loop guards on [ -f "$f" ], so deleting them
+    # would have left this silently checking less rather than failing -- which
+    # is exactly why they come out of the list explicitly instead.
+    for f in compiler/lexer.gst; do
       if [ -f "$f" ] && rg -q -i -e '"drop_func"' -e '"destructor"' "$f"; then
         echo "A destructor keyword or attribute appeared in $f."
         echo "Re-verify STEP52_RESOURCE_SEMANTICS.md and TASK_STDLIB.md CR-5."
