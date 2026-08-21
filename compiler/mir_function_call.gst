@@ -314,32 +314,30 @@ func mir_function_call_table_validate(table: MirFunctionCallTable[ctx], authorit
         {
             return mir_function_call_validation(0, "call_mir_resource_transition_incomplete", ctx);
         }
-        // The migration commit accepts an entirely absent record so existing
-        // producers keep building while every producer and consumer moves.
-        // Any record that is present must already be authoritative.
-        if len(value.passing_mode) != 0 || len(value.materialization) != 0 {
-            if abi.mir_abi_passing_mode_is_valid(value.passing_mode) == 0 ||
-               std.str_eq(value.materialization, abi.mir_abi_argument_materialization(value.passing_mode)) == 0
+        if len(value.passing_mode) == 0 || len(value.materialization) == 0 {
+            return mir_function_call_validation(0, "call_mir_representation_missing", ctx);
+        }
+        if abi.mir_abi_passing_mode_is_valid(value.passing_mode) == 0 ||
+           std.str_eq(value.materialization, abi.mir_abi_argument_materialization(value.passing_mode)) == 0
+        {
+            return mir_function_call_validation(0, "call_mir_representation_mismatch", ctx);
+        }
+        if value.hidden == 0 {
+            mut placement := abi.mir_abi_parameter_placement_by_id(authority, value.abi_value_id, ctx);
+            if placement.found == 0 ||
+               std.str_eq(placement.value.passing_mode, value.passing_mode) == 0 ||
+               std.str_eq(placement.value.layout_id, value.layout_id) == 0 ||
+               placement.value.ordinal != value.ordinal
             {
                 return mir_function_call_validation(0, "call_mir_representation_mismatch", ctx);
             }
-            if value.hidden == 0 {
-                mut placement := abi.mir_abi_parameter_placement_by_id(authority, value.abi_value_id, ctx);
-                if placement.found == 0 ||
-                   std.str_eq(placement.value.passing_mode, value.passing_mode) == 0 ||
-                   std.str_eq(placement.value.layout_id, value.layout_id) == 0 ||
-                   placement.value.ordinal != value.ordinal
-                {
-                    return mir_function_call_validation(0, "call_mir_representation_mismatch", ctx);
-                }
-            } else {
-                mut placement := abi.mir_abi_result_placement_by_id(authority, value.abi_value_id, ctx);
-                if placement.found == 0 ||
-                   std.str_eq(placement.value.passing_mode, value.passing_mode) == 0 ||
-                   std.str_eq(placement.value.layout_id, value.layout_id) == 0
-                {
-                    return mir_function_call_validation(0, "call_mir_representation_mismatch", ctx);
-                }
+        } else {
+            mut placement := abi.mir_abi_result_placement_by_id(authority, value.abi_value_id, ctx);
+            if placement.found == 0 ||
+               std.str_eq(placement.value.passing_mode, value.passing_mode) == 0 ||
+               std.str_eq(placement.value.layout_id, value.layout_id) == 0
+            {
+                return mir_function_call_validation(0, "call_mir_representation_mismatch", ctx);
             }
         }
         mut duplicate := index + 1;

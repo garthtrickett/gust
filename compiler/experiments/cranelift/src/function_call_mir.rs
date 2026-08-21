@@ -299,7 +299,13 @@ fn validate(table: &FunctionCallTable) -> Result<(), FunctionCallMirError> {
                 "partial Phase 15 transition annotation",
             ));
         }
-        if !operand.passing_mode.is_empty() || !operand.materialization.is_empty() {
+        if operand.passing_mode.is_empty() || operand.materialization.is_empty() {
+            return Err(FunctionCallMirError::new(
+                "call_mir_representation_missing",
+                "canonical argument representation is absent",
+            ));
+        }
+        {
             let expected = match operand.passing_mode.as_str() {
                 "direct" | "split" => "by_value",
                 "indirect_by_value" | "indirect_by_reference" | "hidden_pointer" => "by_address",
