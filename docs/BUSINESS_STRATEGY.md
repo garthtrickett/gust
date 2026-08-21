@@ -235,9 +235,10 @@ technical audience and one optimised for an acquirer differ in specific ways.
 **What must exist, and what is optional.** The compiler-enforced rejection with
 its diagnostic is required — that is the artifact. The statistic is required, and
 has the longest lead time of anything in this document. **The full-stack loop is
-optional and is a demo aid**, which is a real argument in `WEB_SLICE_0.md` §4's
-open question: Slice 0 is more *legible*, and legibility is worth less to an
-acquirer than to a conference audience.
+optional and is a demo aid**, which was one of the arguments weighed when
+`WEB_SLICE_0.md`'s first-demo question was resolved on 2026-08-21: Slice 0 is
+more *legible*, and legibility is worth less to an acquirer than to a conference
+audience.
 
 **One dynamic worth planning for.** §0.10 prices acquisition on *"competitive
 tension between bidders."* Tension requires bidders, plural, which argues for
@@ -395,7 +396,7 @@ move that looks like progress and spends the four months §0.14 is protecting.
 | Staff the counting programme (§0.9) | Operator | Now — longest lead time |
 | Which revenue line to test | Operator, after §1 | Month 4 |
 | OD-10 distribution | Operator; first candidate at `STRATEGY_REVIEW.md` §6 | Month 4 |
-| Whether the demo is containment or Slice 0 | Operator; stated at `WEB_SLICE_0.md` §4 | Before the demo cut |
+| ~~Whether the demo is containment or Slice 0~~ | **Decided 2026-08-21** — containment first; Slice 0 follows. Recorded at `WEB_SLICE_0.md` § "Resolved 2026-08-21" | — |
 | OD-5 certification staffing | **Decided 2026-08-20** — split agent/operator | — |
 
 **Nothing in this document is a decision.** Sections 1, 2, and 3 are findings;

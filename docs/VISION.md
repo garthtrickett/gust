@@ -2,7 +2,7 @@
 
 **Product, Language, Runtime, and Platform Decisions**
 
-> **What this document is.** A well-specified hypothesis with nine open questions. Two of them — **OD-9** (can a model write Gust) and **OD-8** (is the scoping analysis sound) — can invalidate the thesis outright, and both resolve inside the next four months. The prose is confident because vague prose cannot be attacked; the uncertainty is real and lives in §0.15. Read that table before treating any of this as settled.
+> **What this document is.** A well-specified hypothesis with ten registered decisions: six open, two direction-set, and two resolved (§0.15). Two of the open decisions — **OD-9** (can a model write Gust) and **OD-8** (is the scoping analysis sound) — can invalidate the thesis outright, and both resolve inside the next four months. The prose is confident because vague prose cannot be attacked; the uncertainty is real and lives in §0.15. Read that table before treating any of this as settled.
 >
 > **The plan is four months long.** Build the demo (§0.7). Do not pick a business until it exists (§0.8). Everything past §0.16 is a specification of a system that is deliberately *not* being built yet — it exists so that demo-stage decisions do not foreclose it, and most of it should never be built by us.
 
@@ -88,7 +88,7 @@ Three consequences: the demo sells containment and must say containment; the int
 
 ## 0.5 The four layers
 
-**1. Language — agent-writable, machine-verifiable.** Explicit effects, no ambient authority, one canonical way to express intent. Small surface, minimal idiom drift. Verbosity is free when no human types or reads it, so everything is explicit and nothing is inferred.
+**1. Language — agent-writable, machine-verifiable.** Explicit effects, no ambient authority, one canonical way to express intent. Small surface, minimal idiom drift. Explicit exactly where the explicitness is the artifact; inferred everywhere else (§0.1).
 
 **2. Runtime — verifiable execution substrate.** Capability manifests, no install-time execution, content-addressed reproducible builds. Determinism is the precondition for everything above and below it.
 

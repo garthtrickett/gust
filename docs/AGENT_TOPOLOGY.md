@@ -205,18 +205,14 @@ this lane keeps discovering that a library problem is a semantics problem. Its
 correct behaviour when blocked is to **file a CR and switch tasks**, not to
 implement a narrower version inside the lane. `MutexGuard` is the worked example.
 
-> **The documentation lane is not in `AGENTS.md`.** That file's Lanes table names
-> two — Cranelift and Stdlib — and a docs/vision lane has been running for a full
-> day and holds thirty-plus unpushed commits. This is a live inconsistency in the
-> file that defines lane routing, and it has a practical edge: `AGENTS.md` says
-> "if the requested work does not clearly belong to one lane, stop and ask", and
-> with only two lanes listed, every documentation task is formally ambiguous.
->
-> **Recorded here rather than fixed here.** Adding a row to that table changes how
-> every agent routes work, which is exactly the class of change the zone protocol
-> says one participant does not make alone. It needs the operator, or the lane
-> that owns `AGENTS.md`. Flagged as the first thing to resolve after this document
-> is read.
+> **Resolved 2026-08-21: the documentation lane is now in `AGENTS.md`.** The
+> operator-directed governance change added the Docs/vision row at `AGENTS.md:14`
+> and replaced the ambiguous stop-and-ask rule with ownership routing at
+> `AGENTS.md:20-29`. Two surrounding descriptions remain stale: `AGENTS.md:7`
+> still says two roadmaps are active and `AGENTS.md:16` still says the file
+> applies to "both lanes". This lane cannot edit that root file; the discrepancy
+> is recorded here for its owner rather than silently treated as resolved in
+> full.
 
 **Documentation lane — one, currently `d7c8637`.**
 Owns `docs/` and nothing else. Structurally the cheapest lane: it never needs the
@@ -374,7 +370,7 @@ Proposed replacement:
 >    instruct it — to report that a lane and its queue have become disconnected.
 >    This is the same cross-reference as item 2, pointed at agents instead of PRs.
 >
-> 9. **Report bootstrap-seed drift.** Find the last seed commit with
+> 8. **Report bootstrap-seed drift.** Find the last seed commit with
 >    `git log -1 --format='%h %ad' --date=short -- gust_v4.c`, then count commits
 >    since it touching `compiler/lexer.gst`, `compiler/parser.gst`,
 >    `compiler/typechecker.gst`, `compiler/codegen.gst`. Report the count and the

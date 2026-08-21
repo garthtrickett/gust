@@ -12,9 +12,9 @@ raises with the readership thesis**.
 
 ---
 
-## 1. Broken — four layer models, and two of them use "Platform" differently
+## 1. Resolved — four layer models used "Platform" differently
 
-This is the finding that needs acting on before anything else here is adopted.
+This was the finding that needed acting on before anything else here was adopted.
 
 | This review | `docs/VISION.md` §0.5 | `VISION_RECONCILIATION.md` | The five-layer list (`REFINEMENTS_REVIEW.md` §4) |
 | --- | --- | --- | --- |
