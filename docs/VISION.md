@@ -94,9 +94,11 @@ Three consequences: the demo sells containment and must say containment; the int
 
 **3. Framework — the full-stack surface.** So agents have a canonical target and a buyer has something recognisable to adopt.
 
-**4. Platform — the loop.** Generate, compile, run, trace, revise. Structured traces are the artifact; iteration count is a quality input.
+**4. Machine Interface — the loop.** Generate, compile, run, trace, revise. Structured traces are the artifact; iteration count is a quality input.
 
 Only layers 1 and 2 matter before the demo. Layers 3 and 4 are how an acquirer productises it.
+
+> **Layer 4 was renamed from "Platform" on 2026-08-21.** Its content is unchanged. The old name collided: `docs/STRATEGY_REVIEW.md` §1 uses "Platform" for HTTP, SQL and auth — this document's *layer 3* — so a reader who knew one document and met the other was wrong with no error signal, because the sentence still parses. "Machine Interface" describes its contents; "Platform" for the loop did not. `docs/STRATEGY_REVIEW.md` §1 holds the mapping across all four layer models in circulation.
 
 ## 0.6 Where it stands today
 

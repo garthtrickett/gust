@@ -285,7 +285,7 @@ that compounds, and it is the one sequencing error that cannot be undone cheaply
 Recorded so the table is not read as a licence to build the platform:
 
 - No HTTP server. The handler can be driven from a test harness.
-- No Wasm, no frontend, no templates, no SAM, no gustrpc.
+- No Wasm, no frontend, no templates, no SAM, no gustrpc. **Confirmed as the first demo 2026-08-21** — the alternative, `docs/WEB_SLICE_0.md`'s full-stack loop, is sequenced after, because only this demo resolves OD-8 and OD-9. Reasoning at `WEB_SLICE_0.md` §4.
 - No jobs, cache, realtime, or supplier system.
 - No deployment platform, and no second target — one Linux x86-64 host is enough.
 - No auth implementation; `Session` can be a struct handed in by the harness.

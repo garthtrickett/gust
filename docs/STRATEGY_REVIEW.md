@@ -30,7 +30,9 @@ This is the finding that needs acting on before anything else here is adopted.
 > and auth. A reader who knows one document and encounters the other will be
 > wrong in a way that produces no error signal — the sentence still parses.
 
-**Recommendation: adopt this review's four names, because they are the only set
+**Adopted 2026-08-21 — §0.5's layer 4 is renamed "Machine Interface".** Its content was already right; only the name collided. The four names below are the set in use.
+
+**Recommendation as originally written: adopt this review's four names, because they are the only set
 where each name describes its contents.** "Machine Interface" says what Ring 4
 is; "Platform" for the loop does not. §0.5's *content* is right and its **layer 4
 should be renamed**. That is a documentation change, and it is the cheapest of

@@ -120,8 +120,54 @@ handler* whose lead claim is §56 — the unscoped program does not compile. **S
 "this contract is one language end to end". Neither is a subset of the other. The
 containment demo needs no browser; Slice 0 needs no tenant scoping.
 
-**This is not resolved here, and it should not be resolved by whichever document
-is read first.** Recorded as the question:
+### Resolved 2026-08-21 — the containment demo goes first
+
+**Operator decision. The first demo is §0.14's agent-generated multi-tenant
+handler, not Slice 0.** Slice 0 is not cancelled; it is sequenced after.
+
+**Three reasons, in the order they carried weight.**
+
+**OD-8 and OD-9 are thesis-invalidating and only the containment demo resolves
+them.** §0.11 puts both at the month-four decision point, and a demo that does not
+exercise tenant scoping or force a model to write real Gust leaves the two
+questions that can kill the project unanswered while consuming the months
+allocated to answering them. **A demo that cannot fail is not a test.**
+
+**§0.4 makes containment the differentiator and correctness the roadmap.** Slice 0
+proves the unified-contract claim, which is real and is also the claim an
+incumbent could match — `docs/BUSINESS_STRATEGY.md` §3 records that risk. §56 is
+the claim nothing else in the market makes.
+
+**An acquirer is buying a liability removed, not legibility.**
+`docs/BUSINESS_STRATEGY.md` §4 works this through: the question in the room is how
+many incidents this prevents and what one is worth. A full-stack loop is the more
+*showable* artifact, and showable is worth less to that audience than to a
+conference one.
+
+**The cost, stated rather than discovered later.** The containment demo is a
+compile error. It is thirty seconds of nothing happening, and it **needs a
+narrator** in a way a clicking button does not. Anyone presenting it must be able
+to make the row-level-security comparison unprompted (`BUSINESS_STRATEGY.md` §2),
+because the diagnostic alone does not explain why the alternative is insufficient.
+
+**The dissent, recorded because it is a good argument.**
+`docs/REFINEMENTS_REVIEW.md` §5 puts a full-stack loop second, immediately after
+the core language, on the principle that a vertical slice proves a complete value
+proposition and a horizontal one does not. **That argument is not defeated, it is
+outranked** — by the fact that one of the two demos resolves the thesis-invalidating
+questions and the other does not.
+
+**What this does not cost.** The two share almost no prerequisites: containment
+needs effects, scope tracking and query derivation; Slice 0 needs `Result`, HTTP,
+Wasm and codecs. **Deferring Slice 0 does not idle anyone**, and the work it needs
+is not work the containment demo competes for.
+
+---
+
+*The question as originally recorded, kept because the reasoning above should be
+readable against it:*
+
+
 
 > **Which claim does the first public demo make — containment, or the unified
 > contract?** They need different work, and §0.14's four-month plan currently
