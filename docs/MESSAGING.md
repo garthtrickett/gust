@@ -134,8 +134,12 @@ buyer is a claim their engineer disproves in the room.**
   target; the analysis is specified (§56.2) and unbuilt.
 - **What is real today** is the compiler, the arena and brand model, the resource
   and move semantics, the native backend work, and a self-hosted bootstrap.
-- **Check the ledger before the meeting, not this list.** These counts move, and
-  this sentence is the reason this document does not restate them anywhere else.
+- **Regenerate the counts before the meeting rather than trusting the line
+  above.** They move, and a stale number here would be exactly the kind of
+  unchecked fact this document warns against. Count rows in
+  `docs/ONE_WAY_LEDGER.md` whose status cell contains `**HOLDS**`, `**PARTIAL**`,
+  `**VIOLATED**`, `**DEFERRED**` or `**ABSENT**` — one status per table row — and
+  use those numbers instead of these.
 
 **The honest frame for a demo-stage conversation:** *this is a well-specified
 hypothesis with a working compiler underneath it and two questions that can kill
@@ -144,6 +148,24 @@ polished overclaim, **and it is the frame the ledger makes available and almost
 nobody else can offer.**
 
 ---
+
+## 5.1 What to show
+
+**The artifact is the rejection diagnostic**, not a running application. A compile
+error is thirty seconds of nothing happening and it needs a narrator — that cost is
+recorded and accepted at `docs/WEB_SLICE_0.md` §4, where the demo question was
+decided. **Plan the narration; do not hope the error speaks for itself.**
+
+**Bring the ledger.** `docs/BUSINESS_STRATEGY.md` §4 argues it is the diligence
+asset, and it is the one thing here a competitor cannot cheaply imitate:
+
+> A project that scores its own claims against its own compiler and publishes where
+> it falls short is making a credibility claim no pitch deck can make. **It converts
+> *we believe* into *we checked, and here is where we were wrong*.**
+
+**Do not show the full-stack loop.** It is more legible and it proves the weaker
+claim, and legibility is worth less to someone assessing a liability than to a
+conference audience. It is sequenced after the demo, deliberately.
 
 ## 6. What not to say
 

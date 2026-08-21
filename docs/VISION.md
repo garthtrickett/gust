@@ -581,6 +581,8 @@ When untrusted code is correctly isolated, the guarantees continue to apply outs
 
 ## 2. Market positioning
 
+> **For a meeting, read `docs/MESSAGING.md`** — it indexes this section with `docs/STRATEGY_REVIEW.md` §6 and `docs/BUSINESS_STRATEGY.md`, and carries §79's external-language rule alongside what the ledger says can honestly be claimed today.
+
 ### The lever is the generator
 
 Ending a bug class has always meant changing millions of developers, one codebase at a time — which is why it has always taken a decade (§0.3). Code production is now centralising into roughly ten generators. Change what they emit and millions of applications change in a release.

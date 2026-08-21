@@ -173,6 +173,8 @@ appears rather than in the abstract.
 
 ---
 
+> **The lines below are indexed, with the objections they have to survive, at `docs/MESSAGING.md`.**
+
 ## 6. Positioning — and a candidate answer to OD-10
 
 The review proposes a wedge:

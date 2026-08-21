@@ -11,6 +11,8 @@ that can answer structured questions about a whole deployed application**, which
 is the part that cannot be reproduced in a quarter. No business model is chosen
 yet, deliberately, and §0 says why.
 
+> **Going into a meeting? Read `docs/MESSAGING.md` first.** It indexes this document, `docs/STRATEGY_REVIEW.md` §6 and `docs/VISION.md` §2 into the lines, the three questions you will be asked, and what can honestly be claimed today.
+
 ## 0. What this document is
 
 **Not a business plan.** `docs/VISION.md` §0.10 withdrew three of those —
