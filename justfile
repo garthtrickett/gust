@@ -16253,6 +16253,26 @@ guard-cranelift-phase19-representation-parity:
     just guard-cranelift-phase19-representation-contract
     bash scripts/phase19_representation_parity.sh
 
+guard-cranelift-phase19-rule-convergence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔗 Checking Phase 19 self-hosted spelling-rule convergence..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase19-rule-convergence | grep -F $'guard-cranelift-phase19-rule-convergence\t1\t' >/dev/null
+    just guard-cranelift-phase19-representation-contract
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase19_rule_convergence.py validate
+    python3 scripts/phase19_rule_convergence.py check-review
+
+guard-cranelift-phase19-rule-convergence-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 19 self-hosted spelling-rule case parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase19-rule-convergence-parity | grep -F $'guard-cranelift-phase19-rule-convergence-parity\t2\t' >/dev/null
+    just guard-cranelift-phase19-rule-convergence
+    bash scripts/phase19_rule_convergence_parity.sh
+
 guard-cranelift-phase19-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail

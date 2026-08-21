@@ -1,6 +1,7 @@
 import "ast.gst" as ast;
 import "token.gst" as token;
 import "errors.gst" as errors;
+import "phase19_spelling_rule.gst" as spelling_rule;
 
 type OriginSet[ctx] struct {
     map: std.HashMap[str, int, ctx]
@@ -5060,18 +5061,7 @@ func parse_one_type_from_parts(env: *TypeEnvironment[ctx], parts: std.Vector[str
             mut brand_name := "";
             if *start_idx < len(parts) {
                 mut next_part := parts[*start_idx];
-                mut is_b := 0;
-                if std.str_eq(next_part, "ctx") == 1 { is_b = 1; }
-                if std.str_eq(next_part, "connCtx") == 1 { is_b = 1; }
-                if std.str_eq(next_part, "arena") == 1 { is_b = 1; }
-                if std.str_eq(next_part, "a") == 1 { is_b = 1; }
-                if std.str_eq(next_part, "Any") == 1 { is_b = 1; }
-                if std.str_eq(next_part, "ctx1") == 1 { is_b = 1; }
-                if std.str_eq(next_part, "ctx2") == 1 { is_b = 1; }
-                if std.str_eq(next_part, "innerCtx") == 1 { is_b = 1; }
-                if std.str_eq(next_part, "outerCtx") == 1 { is_b = 1; }
-                if std.str_eq(next_part, "current_ctx") == 1 { is_b = 1; }
-                if std.str_eq(next_part, "next_ctx") == 1 { is_b = 1; }
+                mut is_b := spelling_rule.phase19_legacy_brand_spelling_is_exact(next_part, ctx);
                 
                 if is_b == 1 {
                     brand_name = next_part;
@@ -5258,44 +5248,7 @@ func typechecker_matches_template_prefix(name: str, template_name: str) int {
 }
 
 func typechecker_extract_brand_from_suffix(suffix: str, ctx: &Arena) str {
-    mut brands: std.Vector[str, ctx] := std.VectorNew(ctx);
-    brands.Push("ctx");
-    brands.Push("connCtx");
-    brands.Push("arena");
-    brands.Push("a");
-    brands.Push("Any");
-    brands.Push("ctx1");
-    brands.Push("ctx2");
-    brands.Push("innerCtx");
-    brands.Push("outerCtx");
-    brands.Push("current_ctx");
-    brands.Push("next_ctx");
-    brands.Push("main_ctx");
-    brands.Push("bg_ctx");
-    brands.Push("file_ctx");
-
-    mut i := 0;
-    while i < len(brands) {
-        if std.str_eq(suffix, brands[i]) {
-            return std.Clone(ctx, brands[i]);
-        }
-        i = i + 1;
-    }
-
-    mut j := 0;
-    while j < len(brands) {
-        mut b := brands[j];
-        mut p1 := std.Concat("_", b);
-        mut p2 := std.Concat("__", b);
-        if typechecker_ends_with(suffix, p1) == 1 {
-            return std.Clone(ctx, b);
-        }
-        if typechecker_ends_with(suffix, p2) == 1 {
-            return std.Clone(ctx, b);
-        }
-        j = j + 1;
-    }
-    return "";
+    return spelling_rule.phase19_legacy_brand_from_suffix(suffix, ctx);
 }
 
 func typechecker_parse_type_from_string(target_struct: str, ctx: &Arena) ast.Type[ctx] {
@@ -5716,7 +5669,7 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
             mut j := 0;
             while j < len(generics_vec_enum_template) {
                 mut g_name := generics_vec_enum_template[j];
-                if std.str_eq(g_name, "ctx") || std.str_eq(g_name, "connCtx") || std.str_eq(g_name, "arena") || std.str_eq(g_name, "a") {
+                if spelling_rule.phase19_legacy_brand_spelling_is_exact(g_name, ctx) == 1 {
                     mut arg := args[j];
                     if arg.tag == 8 { // Struct
                         brand = os.ArenaAlloc(ctx) as Index[str, ctx];
@@ -5880,7 +5833,7 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
             mut j := 0;
             while j < len(generics_vec_struct_template) {
                 mut g_name := generics_vec_struct_template[j];
-                if std.str_eq(g_name, "ctx") || std.str_eq(g_name, "connCtx") || std.str_eq(g_name, "arena") || std.str_eq(g_name, "a") {
+                if spelling_rule.phase19_legacy_brand_spelling_is_exact(g_name, ctx) == 1 {
                     mut arg := args[j];
                     if arg.tag == 8 { // Struct
                         brand = os.ArenaAlloc(ctx) as Index[str, ctx];
@@ -6846,10 +6799,7 @@ func env_resolve_namespaced_ident(env: *TypeEnvironment[ctx], name: str, ctx: &A
                                 if std.str_eq(part, "Channel_Any") { is_primitive = 1; }
                                 if std.str_eq(part, "ThreadLocalContext_Any") { is_primitive = 1; }
                                 if std.str_eq(part, "std_ThreadLocalContext_Any") { is_primitive = 1; }
-                                if std.str_eq(part, "ctx") { is_primitive = 1; }
-                                if std.str_eq(part, "connCtx") { is_primitive = 1; }
-                                if std.str_eq(part, "arena") { is_primitive = 1; }
-                                if std.str_eq(part, "a") { is_primitive = 1; }
+                                if spelling_rule.phase19_legacy_brand_spelling_is_exact(part, ctx) == 1 { is_primitive = 1; }
 
                                 if is_primitive == 0 {
                                     temp_resolved = std.Concat(active_prefix, part);
@@ -6900,8 +6850,7 @@ func env_resolve_namespaced_ident(env: *TypeEnvironment[ctx], name: str, ctx: &A
                std.str_eq(name, "Vector_Any") || std.str_eq(name, "HashMap_Any") ||
                std.str_eq(name, "Pool_Any") || std.str_eq(name, "Mutex_Any") || std.str_eq(name, "Channel_Any") ||
                std.str_eq(name, "ThreadLocalContext_Any") ||
-               std.str_eq(name, "ctx") || std.str_eq(name, "connCtx") ||
-               std.str_eq(name, "arena") || std.str_eq(name, "a") {
+               spelling_rule.phase19_legacy_brand_spelling_is_exact(name, ctx) == 1 {
                 return name;
             }
 

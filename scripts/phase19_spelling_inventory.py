@@ -99,6 +99,11 @@ def validate(registry: dict) -> dict:
             "Phase 19 spelling inventory does not trace to the Phase 19 opening")
 
     sites = snap["sites"]
+    convergence = registry.get("phase19_rule_convergence", {})
+    convergence_dispositions = {
+        row.get("id"): row.get("disposition")
+        for row in convergence.get("site_dispositions", [])
+    }
     require(sites, "Phase 19 spelling inventory records no sites")
     ids = set()
     for site in sites:
@@ -136,6 +141,39 @@ def validate(registry: dict) -> dict:
             require("func codegen_expression_is_arena_ptr(" in window and
                     "typechecker_classify_resolved_type" in window,
                     f"retired variable-arena site {name!r} does not cite its shared classifier")
+            continue
+        converged_markers = {
+            "gst_codegen_is_brand_name": (
+                "delegates_shared_suffix_rule",
+                "spelling_rule.phase19_legacy_brand_from_suffix",
+            ),
+            "gst_codegen_alloc_override": (
+                "delegates_shared_expression_rule",
+                "spelling_rule.phase19_legacy_brand_spelling_in_expression",
+            ),
+            "gst_typechecker_brand_member": (
+                "delegates_shared_exact_rule",
+                "spelling_rule.phase19_legacy_brand_spelling_is_exact",
+            ),
+            "gst_typechecker_brand_suffixes": (
+                "delegates_shared_suffix_rule",
+                "spelling_rule.phase19_legacy_brand_from_suffix",
+            ),
+        }
+        if name in converged_markers:
+            disposition, marker = converged_markers[name]
+            require(convergence_dispositions.get(name) == disposition,
+                    f"converged site {name!r} lacks its Patch 19.6 disposition")
+            require(marker in window,
+                    f"converged site {name!r} does not cite the shared rule")
+            continue
+        if name == "gst_typechecker_default_brand":
+            require(convergence_dispositions.get(name) ==
+                    "retired_by_explicit_brand_identity_authority",
+                    "retired default-brand site lacks its Patch 19.6 disposition")
+            require(registry.get("phase19_brand_authority", {}).get("public_boundary_policy") ==
+                    "explicit_brand_required",
+                    "retired default-brand site lacks explicit brand authority")
             continue
         require(BRAND_SPELLING.search(window) is not None,
                 f"site {name!r} cites {site['source_path']}:{site['line']}, "
