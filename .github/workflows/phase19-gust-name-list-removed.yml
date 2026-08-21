@@ -1,0 +1,66 @@
+name: Cranelift Phase 19 Gust Name-List Removal
+
+on:
+  pull_request:
+    paths:
+      - 'compiler/codegen.gst'
+      - 'compiler/typechecker.gst'
+      - 'compiler/typechecker_templates_test_entry.gst'
+      - 'compiler/phase19_spelling_rule.gst'
+      - 'compiler/phase19_name_list_removed_*_source.gst'
+      - 'compiler/CRANELIFT_PHASE19_GUST_NAME_LIST_REMOVED.md'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/cranelift_registry.py'
+      - 'scripts/cranelift_test_levels.json'
+      - 'scripts/phase19_gust_name_list_removed.py'
+      - 'scripts/phase19_gust_name_list_removed_parity.sh'
+      - 'scripts/phase19_retired_prototype_absence.py'
+      - 'scripts/phase19_rule_convergence.py'
+      - 'scripts/phase19_rule_convergence_parity.sh'
+      - 'docs/SHARED_SEMANTIC_ZONE.md'
+      - 'TASK.md'
+      - 'justfile'
+      - '.github/workflows/pr-fast.yml'
+      - '.github/workflows/phase19-gust-name-list-removed.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'compiler/codegen.gst'
+      - 'compiler/typechecker.gst'
+      - 'compiler/typechecker_templates_test_entry.gst'
+      - 'compiler/phase19_spelling_rule.gst'
+      - 'compiler/phase19_name_list_removed_*_source.gst'
+      - 'compiler/CRANELIFT_PHASE19_GUST_NAME_LIST_REMOVED.md'
+      - 'scripts/phase19_gust_name_list_removed.py'
+      - 'scripts/phase19_gust_name_list_removed_parity.sh'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: guard-cranelift-phase19-gust-name-list-removed
+        run: just guard-cranelift-phase19-gust-name-list-removed
+
+  parity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - run: make gust
+      - name: guard-cranelift-phase19-gust-name-list-removed-parity
+        run: just guard-cranelift-phase19-gust-name-list-removed-parity

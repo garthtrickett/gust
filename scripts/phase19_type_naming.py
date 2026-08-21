@@ -81,7 +81,7 @@ def validate() -> dict:
 
     codegen = CODEGEN.read_text(encoding="utf-8")
     erase_body = function_body(codegen, "codegen_erase_struct_name")
-    require("typechecker.env_get_canonical_type_name" in erase_body,
+    require("typechecker.env_get_canonical_branded_type_name" in erase_body,
             "codegen erasure does not consume canonical naming metadata")
     for forbidden in ("brand_bases", "codegen_ends_with", "std.str_slice", "codegen_strip_brand_prefix"):
         require(forbidden not in erase_body,

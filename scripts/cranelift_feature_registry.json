@@ -926,9 +926,34 @@
       "compiler/CRANELIFT_PHASE19_TYPE_NAMING.md",
       "compiler/CRANELIFT_PHASE19_CLASSIFICATION.md",
       "compiler/CRANELIFT_PHASE19_REPRESENTATION.md",
-      "compiler/CRANELIFT_PHASE19_RULE_CONVERGENCE.md"
+      "compiler/CRANELIFT_PHASE19_RULE_CONVERGENCE.md",
+      "compiler/CRANELIFT_PHASE19_GUST_NAME_LIST_REMOVED.md"
     ],
     "historical_citation_exception": "docs/RUST_PROTOTYPE_REMOVAL.md"
+  },
+  "phase19_gust_name_list_removed": {
+    "contract_version": "phase19_gust_name_list_removed_v1",
+    "status": "ready_for_patch19_9",
+    "next_patch": "19.9",
+    "review_view": "compiler/CRANELIFT_PHASE19_GUST_NAME_LIST_REMOVED.md",
+    "removed_authority": "compiler/phase19_spelling_rule.gst",
+    "decision_policy": "template_role_and_resolved_type_metadata_only",
+    "generated_c_diff": {
+      "insertions": 670,
+      "deletions": 445,
+      "categories": [
+        {"id": "retired_spelling_authority", "scope": "deletes the generated spelling-table helpers and their calls"},
+        {"id": "template_role_metadata", "scope": "adds template brand-position fields, inference helpers, and built-in role initializers"},
+        {"id": "structural_brand_markers", "scope": "adds and consumes AST brand markers during resolution and monomorphization"},
+        {"id": "flattened_name_recovery", "scope": "uses template metadata for flattened generic, Index, namespace, and enclosing-brand recovery"},
+        {"id": "canonical_name_normalization", "scope": "replaces hardcoded cleanup names with symmetric metadata-driven identity and separator normalization"},
+        {"id": "codegen_metadata_consumers", "scope": "uses canonical type records and template roles for type erasure and arena classification"}
+      ]
+    },
+    "parity_fixtures": [
+      "compiler/phase19_name_list_removed_ctx_source.gst",
+      "compiler/phase19_name_list_removed_region_source.gst"
+    ]
   },
   "opening_snapshots": {
     "phase19": {

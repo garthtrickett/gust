@@ -2,7 +2,6 @@ import "ast.gst" as ast;
 import "token.gst" as token;
 import "errors.gst" as errors;
 import "typechecker.gst" as typechecker;
-import "phase19_spelling_rule.gst" as spelling_rule;
 import "mir_function_abi_authority.gst" as function_abi;
 import "mir_function_call.gst" as call_mir;
 
@@ -482,55 +481,17 @@ func codegen_rfind_char(s: str, ch: int, end_idx: int) int {
     return 0 - 1;
 }
 
-func codegen_strip_brand_prefix(brand: str, ctx: &Arena) str {
-    mut last_double_underscore := 0 - 1;
-    mut i := 0;
-    while i < len(brand) - 1 {
-        mut b1 := std.str_byte_at(brand, i);
-        mut b2 := std.str_byte_at(brand, i + 1);
-        if b1 == 95 && b2 == 95 {
-            last_double_underscore = i;
-        }
-        i = i + 1;
-    }
-    if last_double_underscore == 0 - 1 {
-        return std.Clone(ctx, brand);
-    }
-    return std.Clone(ctx, std.str_slice(brand, last_double_underscore + 2, len(brand)));
-}
-
 func codegen_erase_struct_name(name: str, brand: Index[str, ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) str {
-    mut canonical_name := typechecker.env_get_canonical_type_name(env, name, ctx);
+    mut canonical_name := typechecker.env_get_canonical_branded_type_name(env, name, brand, ctx);
     if std.str_eq(canonical_name, "") == 0 {
-        return canonical_name;
+        return std.Clone(ctx, canonical_name);
     }
-    return std.Clone(ctx, name);
+    mut resolved_name := typechecker.env_resolve_namespaced_ident(env, name, ctx);
+    return std.Clone(ctx, resolved_name);
 }
 
 func codegen_is_brand_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) int {
-    unsafe {
-        if t.tag == 8 {
-            mut name := t.Struct.struct_name;
-            mut is_brand_name := 0;
-            if len(spelling_rule.phase19_legacy_brand_from_suffix(name, ctx)) > 0 { is_brand_name = 1; }
-
-            if is_brand_name == 1 {
-                mut lookup := (*env).struct_registry.get_opt(name);
-                mut has_lookup := 0;
-                match lookup {
-                    Some { val } => {
-                        has_lookup = 1;
-                    }
-                    None => {
-                    }
-                }
-                if has_lookup == 0 {
-                    return 1;
-                }
-            }
-        }
-    }
-    return 0;
+    return typechecker.typechecker_type_is_brand_marker(t, ctx);
 }
 
 
@@ -579,11 +540,12 @@ func codegen_erase_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx]
             mut name := t.Generic.name;
             mut args_vec_erase_type_generic: std.Vector[ast.Type[ctx], ctx] := ctx[t.Generic.args];
             mut erased_args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+            mut brand_parameter_index := typechecker.env_get_template_brand_parameter_index(env, name);
 
             mut i := 0;
             while i < len(args_vec_erase_type_generic) {
                 mut arg := args_vec_erase_type_generic[i];
-                if codegen_is_brand_type(arg, env, ctx) == 0 {
+                if i != brand_parameter_index && codegen_is_brand_type(arg, env, ctx) == 0 {
                     mut erased_arg := codegen_erase_type(arg, env, ctx);
                     erased_args.Push(erased_arg);
                 }
@@ -1597,18 +1559,6 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
 
             mut alloc_str := codegen_generate_expression(alloc_idx, env, ctx);
             mut index_str := codegen_generate_expression(index_idx, env, ctx);
-
-            mut is_name_match := spelling_rule.phase19_legacy_brand_spelling_in_expression(alloc_str, ctx);
-
-            if is_name_match == 1 && is_arena == 0 {
-                mut phase19_classification_disagreement := std.Format("Fatal Error: Phase 19 spelling override changed arena classification for %s (resolved tag %d)", alloc_str, resolved_alloc_t.tag);
-                os.LogStr(phase19_classification_disagreement);
-                os.Exit(1);
-            }
-            
-            if is_name_match == 1 {
-                is_arena = 1;
-            }
 
             if is_arena == 1 {
                 mut target_struct := "SessionNode";

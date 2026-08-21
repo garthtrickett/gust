@@ -99,6 +99,7 @@ def validate(registry: dict) -> dict:
             "Phase 19 spelling inventory does not trace to the Phase 19 opening")
 
     sites = snap["sites"]
+    successor = registry.get("phase19_gust_name_list_removed")
     convergence = registry.get("phase19_rule_convergence", {})
     convergence_dispositions = {
         row.get("id"): row.get("disposition")
@@ -115,6 +116,12 @@ def validate(registry: dict) -> dict:
         require(site["classification"] in CLASSIFICATIONS,
                 f"site {name!r} has an unknown classification")
         require(site["sufficiency"] in SUFFICIENCY, f"site {name!r} has an unknown sufficiency")
+
+        # Patch 19.8 removes every inventoried site. Once its registry record
+        # exists, retain validation of the historical inventory itself without
+        # requiring deleted implementation lines to remain live forever.
+        if isinstance(successor, dict):
+            continue
 
         # Re-read the cited line. Citations rot; this is how we find out.
         path = ROOT / site["source_path"]

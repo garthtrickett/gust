@@ -20,6 +20,7 @@
     "phase19_representation",
     "phase19_rule_convergence",
     "phase19_retired_prototype_absence",
+    "phase19_gust_name_list_removed",
     "phase15_specialized_resource_authority",
     "phase15_failure_cleanup_authority",
     "phase15_resource_composition_authority",
@@ -386,10 +387,55 @@
               "compiler/CRANELIFT_PHASE19_TYPE_NAMING.md",
               "compiler/CRANELIFT_PHASE19_CLASSIFICATION.md",
               "compiler/CRANELIFT_PHASE19_REPRESENTATION.md",
-              "compiler/CRANELIFT_PHASE19_RULE_CONVERGENCE.md"
+              "compiler/CRANELIFT_PHASE19_RULE_CONVERGENCE.md",
+              "compiler/CRANELIFT_PHASE19_GUST_NAME_LIST_REMOVED.md"
             ]
           },
           "historical_citation_exception": {"const": "docs/RUST_PROTOTYPE_REMOVAL.md"}
+        }
+      },
+      "phase19_gust_name_list_removed": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["contract_version", "status", "next_patch", "review_view",
+                     "removed_authority", "decision_policy",
+                     "generated_c_diff", "parity_fixtures"],
+        "properties": {
+          "contract_version": {"const": "phase19_gust_name_list_removed_v1"},
+          "status": {"const": "ready_for_patch19_9"},
+          "next_patch": {"const": "19.9"},
+          "review_view": {"const": "compiler/CRANELIFT_PHASE19_GUST_NAME_LIST_REMOVED.md"},
+          "removed_authority": {"const": "compiler/phase19_spelling_rule.gst"},
+          "decision_policy": {"const": "template_role_and_resolved_type_metadata_only"},
+          "generated_c_diff": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["insertions", "deletions", "categories"],
+            "properties": {
+              "insertions": {"const": 532},
+              "deletions": {"const": 435},
+              "categories": {
+                "type": "array",
+                "minItems": 6,
+                "maxItems": 6,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["id", "scope"],
+                  "properties": {
+                    "id": {"type": "string", "minLength": 1},
+                    "scope": {"type": "string", "minLength": 1}
+                  }
+                }
+              }
+            }
+          },
+          "parity_fixtures": {
+            "const": [
+              "compiler/phase19_name_list_removed_ctx_source.gst",
+              "compiler/phase19_name_list_removed_region_source.gst"
+            ]
+          }
         }
       },
       "opening_snapshots": {

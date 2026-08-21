@@ -121,6 +121,23 @@ def validate() -> dict:
     require(set(disposition_ids) == inventory_ids,
             "every Patch 19.1 spelling site must terminate exactly once")
 
+    successor = registry.get("phase19_gust_name_list_removed")
+    if isinstance(successor, dict):
+        require(successor.get("removed_authority") == "compiler/phase19_spelling_rule.gst",
+                "Patch 19.8 does not identify the superseded spelling authority")
+        require(not AUTHORITY.exists(), "superseded spelling authority returned")
+        compiler_sources = TYPECHECKER.read_text(encoding="utf-8") + CODEGEN.read_text(
+            encoding="utf-8"
+        )
+        require('import "phase19_spelling_rule.gst"' not in compiler_sources,
+                "superseded spelling authority is still imported")
+        require("phase19_legacy_brand_" not in compiler_sources,
+                "superseded spelling consumer returned")
+        require("- [x] Patch 19.6 — Self-Hosted Rule Convergence — DONE"
+                in TASK.read_text(encoding="utf-8"),
+                "TASK.md does not mark Patch 19.6 DONE")
+        return record
+
     authority = AUTHORITY.read_text(encoding="utf-8")
     table_body = function_body(authority, "phase19_legacy_brand_spellings")
     pushes = []

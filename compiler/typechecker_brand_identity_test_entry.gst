@@ -56,15 +56,15 @@ func main() {
         os.Exit(1);
     }
 
-    // The record deliberately disagrees with the compatibility spelling rule:
-    // a suffix alone is not semantic brand evidence.
+    // A suffix alone is not semantic brand evidence. Patch 19.8 removed the
+    // compatibility spelling rule, so both APIs report no brand here.
     mut suffix_t := typechecker.make_type_struct("LegacyNode_ctx", "", ctx);
     mut suffix_resolved := typechecker.env_resolve_type(&env, suffix_t, ctx);
     mut suffix_identity := typechecker.env_get_brand_identity(&env, suffix_resolved, ctx);
-    mut legacy_suffix_brand := typechecker.get_type_brand(suffix_resolved, &env, ctx);
+    mut suffix_brand := typechecker.get_type_brand(suffix_resolved, &env, ctx);
     if std.str_eq(suffix_identity.arena_identity, "") == 0 ||
-       std.str_eq(legacy_suffix_brand, "ctx") == 0 {
-        os.LogStr("Error: semantic record and legacy suffix comparison drifted");
+       std.str_eq(suffix_brand, "") == 0 {
+        os.LogStr("Error: identifier suffix was treated as brand evidence");
         os.Exit(1);
     }
 

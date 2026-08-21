@@ -4,6 +4,12 @@ set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$root"
 
+if [ ! -f compiler/phase19_spelling_rule.gst ]; then
+  bash scripts/phase19_gust_name_list_removed_parity.sh
+  echo "guard-cranelift-phase19-rule-convergence-parity: ok (superseded by Patch 19.8 Level 2)"
+  exit 0
+fi
+
 build_dir="build/guards/phase19_rule_convergence"
 source_path="$build_dir/cases.gst"
 
