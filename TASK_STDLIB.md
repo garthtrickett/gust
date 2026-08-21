@@ -505,6 +505,38 @@ because the gap between §20 and `std.Spawn` is invisible from either roadmap:
 Precedent: CR-6 was resolved the same way — `VISION.md` §26 described a borrow
 model that was never implemented and was corrected to the one that exists.
 
+### CR-5 and CR-10 are blocked on the same absent primitive
+
+**Recorded 2026-08-20.** These were raised separately, for unrelated features, by
+different lanes. They reduce to one missing piece of language surface, and
+neither request said so.
+
+| | needs | so that |
+| --- | --- | --- |
+| **CR-5** item 3(c) | a constructor user code cannot call | a `MutexGuard` cannot be fabricated (S1.9) |
+| **CR-10** / containment proposal 1 | a field user code cannot read | `std.Format(secret.value)` cannot sidestep `#[opaque]` on `Secret` |
+
+Both are "restrict what user code may do with a type's internals", and the
+language has no such construct at all. Verified against `main`: `pub`, `private`,
+`public`, `internal`, `export` and `protected` each appear **zero** times in
+`compiler/lexer.gst`, `compiler/parser.gst`, `src/lexer.rs` and `src/parser.rs`,
+and no `visibility`, `is_public` or `is_private` concept exists in either parser.
+This is `docs/ONE_WAY_LEDGER.md` row 35.
+
+**Why this is worth stating rather than leaving in two places.** Each request, read
+alone, invites its own narrow workaround — constructor-only privacy for CR-5,
+opacity that propagates through field reads for CR-10. Either would unblock its
+own case and neither would unblock the other, and the repository would then hold
+two bespoke half-mechanisms where one general one was wanted. That is precisely
+the outcome `docs/ONE_WAY_LEDGER.md` exists to prevent: one way to do each thing.
+
+**This does not decide anything.** Whether to build visibility, and at what
+granularity, belongs to whoever owns row 35 — the containment document is
+explicit that choosing between propagating opacity and implementing `VISION.md`
+§73's visibility levels "is a design decision for the owning lane". The only
+claim here is that the two requests are one requirement seen twice, so a lane
+sequencing either should know it is quoting a price for both.
+
 ### CR-10 — Is an opt-in layout attribute shared-zone work?
 
 Raised because `docs/UNBLOCKED_CONTAINMENT_WORK.md` proposal 1 cannot start until
