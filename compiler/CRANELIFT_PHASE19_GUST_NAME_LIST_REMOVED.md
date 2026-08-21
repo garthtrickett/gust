@@ -8,8 +8,6 @@ Generated from `scripts/cranelift_feature_registry.json` by
 - Next patch: `19.9`
 - Decision policy: `template_role_and_resolved_type_metadata_only`
 - Removed authority: `compiler/phase19_spelling_rule.gst`
-- Baseline generated C SHA-256: `3d5a969d8228486f242bd30efd2f41886eb3b18a9cea7d8119ce02eda181c0b1`
-- Current generated C SHA-256: `0c950d953ee6ed7f3fcf77dae301cfed64d2704d0f620fb1a0e4a441ab187f07`
 
 ## Result
 

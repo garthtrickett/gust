@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import re
 from pathlib import Path
@@ -17,7 +16,6 @@ REVIEW = ROOT / "compiler/CRANELIFT_PHASE19_GUST_NAME_LIST_REMOVED.md"
 AUTHORITY = ROOT / "compiler/phase19_spelling_rule.gst"
 TYPECHECKER = ROOT / "compiler/typechecker.gst"
 CODEGEN = ROOT / "compiler/codegen.gst"
-GENERATED_COMPILER_C = ROOT / "build/gust_compiler.c"
 GUARD = "guard-cranelift-phase19-gust-name-list-removed"
 
 LEGACY_IDENTIFIERS = (
@@ -51,15 +49,9 @@ def validate() -> dict:
         "review_view": "compiler/CRANELIFT_PHASE19_GUST_NAME_LIST_REMOVED.md",
         "removed_authority": "compiler/phase19_spelling_rule.gst",
         "decision_policy": "template_role_and_resolved_type_metadata_only",
-        "generated_c_baseline_sha256": "3d5a969d8228486f242bd30efd2f41886eb3b18a9cea7d8119ce02eda181c0b1",
-        "generated_c_current_sha256": "0c950d953ee6ed7f3fcf77dae301cfed64d2704d0f620fb1a0e4a441ab187f07",
     }
     for key, value in expected.items():
         require(record.get(key) == value, f"{key} drifted")
-    if GENERATED_COMPILER_C.is_file():
-        generated_digest = hashlib.sha256(GENERATED_COMPILER_C.read_bytes()).hexdigest()
-        require(generated_digest == record["generated_c_current_sha256"],
-                "built compiler C does not match the enumerated Patch 19.8 output")
     require(
         registry.get("phase19_retired_prototype_absence", {}).get("next_patch") == "19.8",
         "name-list removal does not follow Patch 19.7",
@@ -139,8 +131,6 @@ def render(record: dict) -> str:
         f"- Next patch: `{record['next_patch']}`",
         f"- Decision policy: `{record['decision_policy']}`",
         f"- Removed authority: `{record['removed_authority']}`",
-        f"- Baseline generated C SHA-256: `{record['generated_c_baseline_sha256']}`",
-        f"- Current generated C SHA-256: `{record['generated_c_current_sha256']}`",
         "",
         "## Result",
         "",

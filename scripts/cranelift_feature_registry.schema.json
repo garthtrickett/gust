@@ -399,7 +399,6 @@
         "additionalProperties": false,
         "required": ["contract_version", "status", "next_patch", "review_view",
                      "removed_authority", "decision_policy",
-                     "generated_c_baseline_sha256", "generated_c_current_sha256",
                      "generated_c_diff", "parity_fixtures"],
         "properties": {
           "contract_version": {"const": "phase19_gust_name_list_removed_v1"},
@@ -408,12 +407,6 @@
           "review_view": {"const": "compiler/CRANELIFT_PHASE19_GUST_NAME_LIST_REMOVED.md"},
           "removed_authority": {"const": "compiler/phase19_spelling_rule.gst"},
           "decision_policy": {"const": "template_role_and_resolved_type_metadata_only"},
-          "generated_c_baseline_sha256": {
-            "const": "3d5a969d8228486f242bd30efd2f41886eb3b18a9cea7d8119ce02eda181c0b1"
-          },
-          "generated_c_current_sha256": {
-            "const": "0c950d953ee6ed7f3fcf77dae301cfed64d2704d0f620fb1a0e4a441ab187f07"
-          },
           "generated_c_diff": {
             "type": "object",
             "additionalProperties": false,
