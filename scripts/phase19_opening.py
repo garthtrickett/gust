@@ -2,9 +2,9 @@
 """Validate and project the Patch 19.0 Phase 19 opening inventory.
 
 Phase 19 owns brand identity and value representation. Its opening inventory
-records where the two compilers decide those things from an identifier's
-spelling, so that later patches remove those decisions against a written list
-rather than against memory.
+records where the active self-hosted compiler decides those things from an
+identifier's spelling, so that later patches remove those decisions against a
+written list rather than against memory.
 
 The inventory is registry-derived: the review view under compiler/ is generated
 from the snapshot, never hand-edited, and `check-review` fails if the two drift.
@@ -46,9 +46,9 @@ REQUIRED_AREAS = {
     "brand_resolution", "type_naming",
     "container_classification", "argument_representation",
 }
-# Both compilers must be inventoried. Fixing one and not the other is how the
-# two rule sets diverged in the first place.
-REQUIRED_COMPILERS = {"rust_host", "self_hosted"}
+# The deprecated Rust prototype is being retired. Phase 19 now follows the
+# self-hosted compiler that participates in the bootstrap chain.
+REQUIRED_COMPILERS = {"self_hosted"}
 
 # CR-2's own text is the source requirement for the phase; these are the rows
 # that must exist for it and for the two shared-zone decisions.
@@ -79,7 +79,7 @@ def validate(registry: dict) -> dict:
 
     require(snap["opening_version"] == "phase19_opening_inventory_rebased_on_phase18_closure",
             "Phase 19 opening version drifted")
-    require(snap["inventory_version"] == "phase19_opening_inventory_v1",
+    require(snap["inventory_version"] == "phase19_opening_inventory_self_hosted_v2",
             "Phase 19 inventory version drifted")
     require(snap["status"] == "ready_for_patch19_1", "Phase 19 opening status drifted")
     require(snap["next_patch"] == "19.1", "Phase 19 next patch drifted")
@@ -164,24 +164,6 @@ def validate(registry: dict) -> dict:
     return snap
 
 
-def divergences(snap: dict) -> list[tuple[str, str, str]]:
-    """Vocabulary pairs that hold the same names in a different order.
-
-    Both compilers scan their list first-match-wins and restart until stable,
-    so a shared set in a different order is not cosmetic: it is a candidate
-    behavioural divergence. Patch 19.1 decides whether each one is observable;
-    this only records that it exists.
-    """
-    found = []
-    for i, left in enumerate(snap["brand_vocabularies"]):
-        for right in snap["brand_vocabularies"][i + 1:]:
-            if left["compiler"] == right["compiler"]:
-                continue
-            if set(left["names"]) == set(right["names"]) and left["names"] != right["names"]:
-                found.append((left["id"], right["id"], "same set, different scan order"))
-    return found
-
-
 def render(snap: dict) -> str:
     lines = [
         "# Cranelift Phase 19 Opening Inventory",
@@ -197,6 +179,7 @@ def render(snap: dict) -> str:
         f"- Host assumptions: `{len(snap['host_assumptions'])}`",
         f"- Brand vocabularies: `{len(snap['brand_vocabularies'])}`",
         f"- Inherited residuals rebased: `{len(snap['phase18_rebase'])}`",
+        "- Compiler scope: `self_hosted` (the deprecated root Rust prototype is retiring)",
         "",
         "## Opening rows",
         "",
@@ -208,25 +191,14 @@ def render(snap: dict) -> str:
                      f"| {entry['source_requirement']} | {entry['status']} |")
 
     lines += ["", "## Brand vocabularies", "",
-              "Every list a compiler consults to decide brand identity from a spelling.",
-              "Both compilers scan first-match-wins and restart until stable, so the",
-              "order of a list is part of its behaviour, not presentation.",
+              "Every list the self-hosted compiler consults to decide brand identity",
+              "from a spelling. The compiler scans first-match-wins and restarts until",
+              "stable, so the order of a list is part of its behaviour, not presentation.",
               "", "| ID | Compiler | Source | Names |", "| --- | --- | --- | --- |"]
     for vocab in snap["brand_vocabularies"]:
         names = ", ".join(f"`{n}`" for n in vocab["names"])
         lines.append(f"| `{vocab['id']}` | {vocab['compiler']} "
                      f"| `{vocab['source_path']}:{vocab['line']}` | {names} |")
-
-    pairs = divergences(snap)
-    lines += ["", "### Cross-compiler order divergence", ""]
-    if pairs:
-        lines += ["| Rust host | Self-hosted | Divergence |", "| --- | --- | --- |"]
-        for left, right, note in pairs:
-            lines.append(f"| `{left}` | `{right}` | {note} |")
-        lines += ["", "Whether each divergence is observable is Patch 19.1's question.",
-                  "This inventory records only that the two compilers can disagree."]
-    else:
-        lines.append("None recorded.")
 
     lines += ["", "## Host assumptions", "",
               "| ID | Reachability area | Owning row | Source | Classification |",

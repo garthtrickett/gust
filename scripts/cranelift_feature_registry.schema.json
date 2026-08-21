@@ -128,14 +128,14 @@
         "required": ["inventory_version","status","next_patch","opening_version",
                      "review_view","policy","regression_surface","sites"],
         "properties": {
-          "inventory_version": {"const": "phase19_spelling_inventory_v1"},
+          "inventory_version": {"const": "phase19_spelling_inventory_self_hosted_v2"},
           "status": {"const": "ready_for_patch19_2"},
           "next_patch": {"const": "19.2"},
           "opening_version": {"const": "phase19_opening_inventory_rebased_on_phase18_closure"},
           "review_view": {"const": "compiler/CRANELIFT_PHASE19_SPELLING_INVENTORY.md"},
           "policy": {"const": "report_only_no_behaviour_change"},
           "regression_surface": {"type": "object"},
-          "sites": {"type": "array", "minItems": 22, "items": {"type": "object"}}
+          "sites": {"type": "array", "minItems": 9, "items": {"type": "object"}}
         }
       },
       "opening_snapshots": {
@@ -7500,7 +7500,7 @@
           "const": "phase19_opening_inventory_rebased_on_phase18_closure"
         },
         "inventory_version": {
-          "const": "phase19_opening_inventory_v1"
+          "const": "phase19_opening_inventory_self_hosted_v2"
         },
         "status": {
           "const": "ready_for_patch19_1"
@@ -7530,14 +7530,14 @@
         },
         "brand_vocabularies": {
           "type": "array",
-          "minItems": 5,
+          "minItems": 2,
           "items": {
             "type": "object"
           }
         },
         "host_assumptions": {
           "type": "array",
-          "minItems": 11,
+          "minItems": 5,
           "items": {
             "type": "object"
           }

@@ -199,18 +199,23 @@ def validate_compiler_and_package_surface() -> None:
         "source route must not call MIR-to-C code generation",
     )
 
-    root_cargo = read(ROOT_CARGO)
-    for dependency in (
-        "cranelift-codegen",
-        "cranelift-frontend",
-        "cranelift-module",
-        "cranelift-native",
-        "cranelift-object",
-    ):
-        require(
-            dependency not in root_cargo,
-            f"root Cargo manifest must not own experimental dependency {dependency}",
-        )
+    # The root Cargo manifest belongs to the deprecated Rust prototype, not to
+    # the active Cranelift worker. Keep validating its isolation while it is
+    # present, but do not make the architecture contract require that retired
+    # prototype to exist.
+    if ROOT_CARGO.is_file():
+        root_cargo = read(ROOT_CARGO)
+        for dependency in (
+            "cranelift-codegen",
+            "cranelift-frontend",
+            "cranelift-module",
+            "cranelift-native",
+            "cranelift-object",
+        ):
+            require(
+                dependency not in root_cargo,
+                f"root Cargo manifest must not own experimental dependency {dependency}",
+            )
 
     experiment_cargo = read(EXPERIMENT_CARGO)
     for dependency in (
