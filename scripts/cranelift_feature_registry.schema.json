@@ -13,6 +13,7 @@
     "closed_phase_versions",
     "closure_snapshots",
     "opening_snapshots",
+    "phase19_spelling_inventory",
     "phase15_specialized_resource_authority",
     "phase15_failure_cleanup_authority",
     "phase15_resource_composition_authority",
@@ -121,7 +122,23 @@
         }
       }
     },
-    "opening_snapshots": {
+    "phase19_spelling_inventory": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["inventory_version","status","next_patch","opening_version",
+                     "review_view","policy","regression_surface","sites"],
+        "properties": {
+          "inventory_version": {"const": "phase19_spelling_inventory_v1"},
+          "status": {"const": "ready_for_patch19_2"},
+          "next_patch": {"const": "19.2"},
+          "opening_version": {"const": "phase19_opening_inventory_rebased_on_phase18_closure"},
+          "review_view": {"const": "compiler/CRANELIFT_PHASE19_SPELLING_INVENTORY.md"},
+          "policy": {"const": "report_only_no_behaviour_change"},
+          "regression_surface": {"type": "object"},
+          "sites": {"type": "array", "minItems": 22, "items": {"type": "object"}}
+        }
+      },
+      "opening_snapshots": {
       "type": "object",
       "additionalProperties": false,
       "required": [

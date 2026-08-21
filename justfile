@@ -210,6 +210,8 @@ guard-pr-fast-ci-surface:
       'just guard-cranelift-phase18-close'
       'Phase 19 brand identity and value representation opening'
       'just guard-cranelift-phase19-opening-contract'
+      'Phase 19 identifier-spelling decision inventory'
+      'just guard-cranelift-phase19-spelling-inventory'
       'Phase 17 cross-feature runtime composition'
       'just guard-cranelift-phase17-composition-contract'
       'phase11-family:'
@@ -16155,6 +16157,16 @@ guard-cranelift-phase18-target-authority-parity:
       grep -F $'guard-cranelift-phase18-target-authority-parity\t2\t' >/dev/null
     just guard-cranelift-phase18-target-authority-contract
     bash scripts/phase18_target_authority_parity.sh
+
+guard-cranelift-phase19-spelling-inventory:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔎 Checking Phase 19 identifier-spelling decision inventory..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase19-spelling-inventory | grep -F $'guard-cranelift-phase19-spelling-inventory\t1\t' >/dev/null
+    just guard-cranelift-phase19-opening-contract
+    python3 scripts/phase19_spelling_inventory.py validate
+    python3 scripts/phase19_spelling_inventory.py check-review
 
 guard-cranelift-phase19-opening-contract:
     #!/usr/bin/env bash
