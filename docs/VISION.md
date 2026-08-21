@@ -2160,14 +2160,27 @@ Iteration count is a quality input, and for an acquirer who serves inference it 
 ### 107.1 Gust Forge — a workspace for humans and remote coding agents
 
 **Operator direction, 2026-08-21. Not demo scope.** When the Gust Forge
-platform is built, it includes a collaborative coding workspace in the shape
-demonstrated by Paseo: a human can work in the project directly and can connect
-remote coding agents, including Claude and Codex, to work alongside them.
+platform is built, it includes a hosted collaborative coding workspace in the
+shape demonstrated by Paseo. A human opens Forge in a browser on their laptop,
+works in the project there, and connects cloud coding agents including Claude
+and Codex to work alongside them. The laptop is a client, not the machine that
+holds the authoritative checkout or runs the agents.
+
+**Deployment model.** Forge provisions a per-project remote workspace on a
+managed VM, VPS or equivalent cloud runner. That workspace holds the checkout,
+agent worktrees, build cache, compiler, sandboxes and durable task state. Forge
+starts and supervises the Claude, Codex or later agent harnesses on those cloud
+runners; their file operations, commands, builds and tests execute against the
+remote workspace. The browser provides the editor, terminal, task view, agent
+controls and streamed results. A user may close the laptop without terminating
+the workspace or its authorized tasks.
 
 The product requirement is the collaboration surface, not a copy of Paseo's
 implementation or interface. Forge provides:
 
-- one durable project view shared by the human and connected agents;
+- one durable hosted project view shared through the web by the human and
+  connected agents;
+- remote workspace lifecycle: provision, suspend, resume, snapshot and destroy;
 - a distinct identity, isolated worktree and sandbox for each agent;
 - per-agent permissions and an audit trail for file changes, commands, external
   actions and handoffs;
@@ -2178,19 +2191,27 @@ implementation or interface. Forge provides:
 - provider adapters rather than provider semantics in Gust: Claude, Codex and
   later agents connect through the same task, authority and artifact model.
 
+Forge owns the harness and workspace lifecycle; model providers may still own
+inference. Supporting Claude or Codex means Forge can launch the corresponding
+agent harness in the project runner, authenticate it through a scoped provider
+connection, stream its state to the browser, and recover or replace the session
+without losing the project record. It does not mean either provider's task model
+becomes part of Gust.
+
 The authority boundary is the one in §114. Connecting an agent does not grant it
 the application's capabilities, another agent's credentials, or permission to
 approve its own authority widening. Repository publication, deployment and
 other outward-facing actions remain explicit capabilities with human-visible
 records.
 
-**Remote orchestration does not satisfy the warm-loop latency claim above.** A
-Claude or Codex call crosses a public network boundary and therefore forfeits
-§107's single-digit platform-overhead target. Forge keeps checkout, compilation,
-execution, caches and traces near the workspace; the remote model round trip is
-the slower outer loop. §113's colocation remains the later optimisation for a
+**The browser is not in the warm inner loop.** Checkout, file operations,
+compilation, execution, caches and traces stay together on the Forge runner, so
+no laptop round trip sits between an agent command and its result. A provider-
+hosted Claude or Codex inference call may still cross a public network boundary
+and therefore does not satisfy §107's single-digit platform-overhead target; it
+is the slower outer loop. §113's colocation remains the later optimisation for a
 provider able to host inference and execution together, not a prerequisite for
-Forge to support remote agents.
+Forge to support cloud agent harnesses.
 
 `docs/AGENT_TOPOLOGY.md` §4 records the observed Paseo mechanics this requirement
 draws from: long-lived agents with working directories, per-agent permissions,
