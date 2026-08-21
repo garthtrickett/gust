@@ -2,6 +2,12 @@
 
 **Operator direction, 2026-08-21: do this, scheduled after Phase 19.1.**
 
+**Status: completed 2026-08-21.** PR #132 made the prototype removable, PR
+#136 projected Phase 19 onto the self-hosted compiler, PR #137 deleted the root
+package, and PRs #138, #139, and #141 updated the architecture guidance. This
+file is retained as the historical removal record; its deleted-path citations
+are not evidence for current compiler semantics.
+
 Investigated by the docs/vision lane. **This is `src/`, `scripts/`, `.github/`
 and `justfile` work — not this lane's to execute.** The plan is here so the lane
 that owns it starts from an inventory rather than a search.

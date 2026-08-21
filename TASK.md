@@ -44,7 +44,7 @@ is activated separately.
 - [x] Patch 19.4 — Type-Derived Container and Arena Classification — DONE
 - [x] Patch 19.5 — Argument and Index Representation From the Type System — DONE
 - [x] Patch 19.6 — Self-Hosted Rule Convergence — DONE
-- [ ] Patch 19.7 — Retired Prototype Absence Contract
+- [x] Patch 19.7 — Retired Prototype Absence Contract — DONE
 - [ ] Patch 19.8 — Name-List Removal From the Self-Hosted Compiler
 - [ ] Patch 19.9 — Seed Regeneration and Fixed-Point Convergence
 - [ ] Patch 19.10 — Generated-C Equivalence Over the Compiler's Own Sources

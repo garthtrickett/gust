@@ -16273,6 +16273,17 @@ guard-cranelift-phase19-rule-convergence-parity:
     just guard-cranelift-phase19-rule-convergence
     bash scripts/phase19_rule_convergence_parity.sh
 
+guard-cranelift-phase19-retired-prototype-absent:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🚫 Checking Phase 19 retired Rust prototype absence contract..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase19-retired-prototype-absent | grep -F $'guard-cranelift-phase19-retired-prototype-absent\t1\t' >/dev/null
+    just guard-cranelift-phase19-rule-convergence
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase19_retired_prototype_absence.py validate
+    python3 scripts/phase19_retired_prototype_absence.py check-review
+
 guard-cranelift-phase19-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail

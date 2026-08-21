@@ -1,0 +1,57 @@
+name: Cranelift Phase 19 Retired Prototype Absence
+
+on:
+  pull_request:
+    paths:
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'src/*.rs'
+      - 'src/typechecker/**'
+      - 'src/runtime.c'
+      - 'src/runtime/**'
+      - 'compiler/experiments/cranelift/**'
+      - 'compiler/CRANELIFT_PHASE19_*.md'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/cranelift_registry.py'
+      - 'scripts/cranelift_test_levels.json'
+      - 'scripts/phase19_*.py'
+      - 'docs/SHARED_SEMANTIC_ZONE.md'
+      - 'docs/VISION.md'
+      - 'docs/RUST_PROTOTYPE_REMOVAL.md'
+      - 'TASK.md'
+      - 'justfile'
+      - '.github/workflows/pr-fast.yml'
+      - '.github/workflows/phase19-retired-prototype-absence.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'src/*.rs'
+      - 'src/typechecker/**'
+      - 'src/runtime.c'
+      - 'src/runtime/**'
+      - 'compiler/experiments/cranelift/**'
+      - 'compiler/CRANELIFT_PHASE19_*.md'
+      - 'scripts/phase19_retired_prototype_absence.py'
+      - 'docs/VISION.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: guard-cranelift-phase19-retired-prototype-absent
+        run: just guard-cranelift-phase19-retired-prototype-absent

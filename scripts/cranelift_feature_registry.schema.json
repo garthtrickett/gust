@@ -19,6 +19,7 @@
     "phase19_classification",
     "phase19_representation",
     "phase19_rule_convergence",
+    "phase19_retired_prototype_absence",
     "phase15_specialized_resource_authority",
     "phase15_failure_cleanup_authority",
     "phase15_resource_composition_authority",
@@ -348,6 +349,47 @@
               }
             }
           }
+        }
+      },
+      "phase19_retired_prototype_absence": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["contract_version", "status", "next_patch", "review_view",
+                     "live_compiler_scope", "retired_root_package",
+                     "preserved_boundaries", "current_semantics_documents",
+                     "historical_citation_exception"],
+        "properties": {
+          "contract_version": {"const": "phase19_retired_prototype_absence_v1"},
+          "status": {"const": "ready_for_patch19_8"},
+          "next_patch": {"const": "19.8"},
+          "review_view": {"const": "compiler/CRANELIFT_PHASE19_RETIRED_PROTOTYPE_ABSENCE.md"},
+          "live_compiler_scope": {"const": "self_hosted_compiler_only"},
+          "retired_root_package": {
+            "const": [
+              "Cargo.toml", "Cargo.lock", "src/ast.rs", "src/codegen.rs",
+              "src/codegen_runtime.rs", "src/lexer.rs", "src/lib.rs",
+              "src/main.rs", "src/parser.rs", "src/resolver.rs", "src/token.rs",
+              "src/typechecker.rs", "src/typechecker/monomorphize.rs",
+              "src/typechecker/types.rs", "src/typechecker/visitor.rs"
+            ]
+          },
+          "preserved_boundaries": {
+            "const": ["src/runtime.c", "src/runtime/*.c", "src/runtime/rust/",
+                      "compiler/experiments/cranelift/"]
+          },
+          "current_semantics_documents": {
+            "const": [
+              "TASK.md", "docs/SHARED_SEMANTIC_ZONE.md", "docs/VISION.md",
+              "compiler/CRANELIFT_PHASE19_OPENING.md",
+              "compiler/CRANELIFT_PHASE19_SPELLING_INVENTORY.md",
+              "compiler/CRANELIFT_PHASE19_BRAND_AUTHORITY.md",
+              "compiler/CRANELIFT_PHASE19_TYPE_NAMING.md",
+              "compiler/CRANELIFT_PHASE19_CLASSIFICATION.md",
+              "compiler/CRANELIFT_PHASE19_REPRESENTATION.md",
+              "compiler/CRANELIFT_PHASE19_RULE_CONVERGENCE.md"
+            ]
+          },
+          "historical_citation_exception": {"const": "docs/RUST_PROTOTYPE_REMOVAL.md"}
         }
       },
       "opening_snapshots": {

@@ -218,7 +218,7 @@ def render(snap: dict) -> str:
         f"- Inventory version: `{snap['inventory_version']}`",
         f"- Status: `{snap['status']}`",
         f"- Sites: `{len(sites)}`",
-        "- Compiler scope: `self_hosted` (the deprecated root Rust prototype is retiring)",
+        "- Compiler scope: `self_hosted` (the deprecated root Rust prototype is removed)",
         "",
         "## Regression surface",
         "",
