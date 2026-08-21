@@ -47,6 +47,8 @@ def load_record() -> dict:
 
 def validate() -> dict:
     record = load_record()
+    registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
+    successor = registry.get("phase19_gust_name_list_removed")
     expected = {
         "authority_version": "phase19_type_derived_classification_v1",
         "status": "ready_for_patch19_5",
@@ -160,16 +162,22 @@ def validate() -> dict:
     require("mut resolved_alloc_t := typechecker.env_resolve_type(env, alloc_t, ctx);" in generate_body and
             "typechecker.typechecker_classify_resolved_type(resolved_alloc_t, typechecker.typechecker_classification_arena(), env, ctx)" in generate_body,
             "index arena classification does not consume the resolved allocator type")
-    require(assertion in generate_body, "redundancy assertion is missing")
-    legacy_override = "mut is_name_match := 0;" in generate_body
-    converged_override = (
-        "mut is_name_match := spelling_rule.phase19_legacy_brand_spelling_in_expression(alloc_str, ctx);"
-        in generate_body
-    )
-    require(legacy_override or converged_override,
-            "compatibility spelling override was removed before its retirement patch")
-    require(generate_body.find(assertion) < generate_body.find("if is_name_match == 1 {", generate_body.find(assertion)),
-            "spelling override is applied before its redundancy assertion")
+    if isinstance(successor, dict):
+        require(assertion not in generate_body and "is_name_match" not in generate_body,
+                "Patch 19.8 left the retired compatibility override live")
+        require('import "phase19_spelling_rule.gst"' not in codegen,
+                "Patch 19.8 left the retired spelling authority imported")
+    else:
+        require(assertion in generate_body, "redundancy assertion is missing")
+        legacy_override = "mut is_name_match := 0;" in generate_body
+        converged_override = (
+            "mut is_name_match := spelling_rule.phase19_legacy_brand_spelling_in_expression(alloc_str, ctx);"
+            in generate_body
+        )
+        require(legacy_override or converged_override,
+                "compatibility spelling override was removed before its retirement patch")
+        require(generate_body.find(assertion) < generate_body.find("if is_name_match == 1 {", generate_body.find(assertion)),
+                "spelling override is applied before its redundancy assertion")
 
     for fixture in record["fixtures"]:
         require((ROOT / fixture).is_file(), f"classification fixture missing: {fixture}")

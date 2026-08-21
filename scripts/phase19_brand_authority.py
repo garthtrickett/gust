@@ -120,6 +120,13 @@ def validate(registry: dict) -> dict:
     require(FIXTURE.is_file(), "brand identity semantic fixture missing")
 
     expected = authority.get("disagreements")
+    if isinstance(registry.get("phase19_gust_name_list_removed"), dict):
+        require(isinstance(expected, list) and expected,
+                "historical brand/spelling disagreement inventory is empty")
+        require({row["reason"] for row in expected} == {
+            "legacy_name_on_non_arena_type", "arena_type_with_non_legacy_name"
+        }, "historical brand/spelling comparison lost one disagreement direction")
+        return authority
     actual = scan_disagreements()
     require(expected == actual,
             "brand/spelling disagreement inventory drifted; run phase19_brand_authority.py scan")

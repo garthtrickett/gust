@@ -16284,6 +16284,27 @@ guard-cranelift-phase19-retired-prototype-absent:
     python3 scripts/phase19_retired_prototype_absence.py validate
     python3 scripts/phase19_retired_prototype_absence.py check-review
 
+guard-cranelift-phase19-gust-name-list-removed:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧭 Checking Phase 19 self-hosted name-list removal..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase19-gust-name-list-removed | grep -F $'guard-cranelift-phase19-gust-name-list-removed\t1\t' >/dev/null
+    python3 scripts/phase19_retired_prototype_absence.py validate
+    python3 scripts/phase19_retired_prototype_absence.py check-review
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase19_gust_name_list_removed.py validate
+    python3 scripts/phase19_gust_name_list_removed.py check-review
+
+guard-cranelift-phase19-gust-name-list-removed-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 19 spelling-independent template-role parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase19-gust-name-list-removed-parity | grep -F $'guard-cranelift-phase19-gust-name-list-removed-parity\t2\t' >/dev/null
+    just guard-cranelift-phase19-gust-name-list-removed
+    bash scripts/phase19_gust_name_list_removed_parity.sh
+
 guard-cranelift-phase19-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail

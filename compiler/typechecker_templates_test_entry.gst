@@ -149,12 +149,12 @@ func main() {
     mut mono_name := typechecker.get_monomorphized_name("std.Vector", mono_args_idx, ctx);
     os.LogStr(mono_name); // Should print: std_Vector_lib_module__ctx_MyNode
 
-    // Test 7: Verify typechecker_clean_monomorphized_name alignment
-    os.LogStr(typechecker.typechecker_clean_monomorphized_name("MyNode_ctx", ctx)); // Expected: MyNode
-    os.LogStr(typechecker.typechecker_clean_monomorphized_name("lib_module__ctx", ctx)); // Expected: lib
-    os.LogStr(typechecker.typechecker_clean_monomorphized_name("lib_module__MyNode_ctx", ctx)); // Expected: lib_module__MyNode
-    os.LogStr(typechecker.typechecker_clean_monomorphized_name("std_Vector_lib_module__ctx_MyNode", ctx)); // Expected: std_Vector_lib_MyNode
-    os.LogStr(typechecker.typechecker_clean_monomorphized_name("std_Vector_ctx_MyNode", ctx)); // Expected: std_Vector_MyNode
+    // Test 7: Verify explicit brand metadata drives concrete-name normalization.
+    os.LogStr(typechecker.typechecker_canonicalize_concrete_name("MyNode_ctx", "ctx", ctx));
+    os.LogStr(typechecker.typechecker_canonicalize_concrete_name("lib_module__ctx", "ctx", ctx));
+    os.LogStr(typechecker.typechecker_canonicalize_concrete_name("lib_module__MyNode_ctx", "ctx", ctx));
+    os.LogStr(typechecker.typechecker_canonicalize_concrete_name("std_Vector_lib_module__ctx_MyNode", "ctx", ctx));
+    os.LogStr(typechecker.typechecker_canonicalize_concrete_name("std_Vector_ctx_MyNode", "ctx", ctx));
 
     // Test 8: Verify recursive generic type matching
     mut inner_args_int: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);

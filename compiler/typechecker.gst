@@ -1,7 +1,6 @@
 import "ast.gst" as ast;
 import "token.gst" as token;
 import "errors.gst" as errors;
-import "phase19_spelling_rule.gst" as spelling_rule;
 
 type OriginSet[ctx] struct {
     map: std.HashMap[str, int, ctx]
@@ -706,12 +705,14 @@ type Scope[ctx] struct {
 
 type StructTemplate[ctx] struct {
     generics: Index[std.Vector[str, ctx], ctx],
-    fields: Index[std.Vector[ast.FieldDef[ctx], ctx], ctx]
+    fields: Index[std.Vector[ast.FieldDef[ctx], ctx], ctx],
+    brand_parameter_index: int
 }
 
 type EnumTemplate[ctx] struct {
     generics: Index[std.Vector[str, ctx], ctx],
-    variants: Index[std.Vector[ast.VariantDef[ctx], ctx], ctx]
+    variants: Index[std.Vector[ast.VariantDef[ctx], ctx], ctx],
+    brand_parameter_index: int
 }
 
 type ResolvedTypeEntry[ctx] struct {
@@ -746,6 +747,7 @@ type TypeEnvironment[ctx] struct {
     struct_templates: std.HashMap[str, StructTemplate[ctx], ctx],
     struct_container_kinds: std.HashMap[str, int, ctx],
     enum_templates: std.HashMap[str, EnumTemplate[ctx], ctx],
+    template_local_names: std.HashMap[str, str, ctx],
     function_registry: std.HashMap[str, FunctionSignature[ctx], ctx],
     brand_identities: std.HashMap[str, BrandIdentity[ctx], ctx],
     canonical_type_names: std.HashMap[str, str, ctx],
@@ -1184,19 +1186,11 @@ func env_type_is_safe_parameter_origin(t: ast.Type[ctx], ctx: &Arena) int {
             if t.Struct.brand != empty[Index[str, ctx]] {
                 return 1;
             }
-            mut struct_suffix_brand_param_origin := typechecker_extract_brand_from_suffix(t.Struct.struct_name, ctx);
-            if len(struct_suffix_brand_param_origin) > 0 {
-                return 1;
-            }
         }
         if t.tag == 9 { // RawPointer
             mut raw_pointer_inner_param_origin := ctx[t.RawPointer.inner];
             if raw_pointer_inner_param_origin.tag == 8 { // Struct
                 if raw_pointer_inner_param_origin.Struct.brand != empty[Index[str, ctx]] {
-                    return 1;
-                }
-                mut raw_pointer_struct_suffix_brand_param_origin := typechecker_extract_brand_from_suffix(raw_pointer_inner_param_origin.Struct.struct_name, ctx);
-                if len(raw_pointer_struct_suffix_brand_param_origin) > 0 {
                     return 1;
                 }
             }
@@ -4933,6 +4927,180 @@ func typechecker_classify_type(t: ast.Type[ctx], classification: int, env: *Type
     return typechecker_classify_resolved_type(resolved, classification, env, ctx);
 }
 
+func env_get_template_brand_parameter_index(env: *TypeEnvironment[ctx], template_name: str) int {
+    unsafe {
+        mut struct_lookup := (*env).struct_templates.Get(template_name);
+        if struct_lookup.Ok {
+            return struct_lookup.Val.brand_parameter_index;
+        }
+        mut enum_lookup := (*env).enum_templates.Get(template_name);
+        if enum_lookup.Ok {
+            return enum_lookup.Val.brand_parameter_index;
+        }
+    }
+    return 0 - 1;
+}
+
+func typechecker_template_local_name(template_name: str, ctx: &Arena) str {
+    mut local_start := 0;
+    mut i := 0;
+    while i < len(template_name) {
+        if i + 1 < len(template_name) && std.str_byte_at(template_name, i) == 95 && std.str_byte_at(template_name, i + 1) == 95 {
+            local_start = i + 2;
+            i = i + 1;
+        } else if std.str_byte_at(template_name, i) == 46 {
+            local_start = i + 1;
+        }
+        i = i + 1;
+    }
+    return std.Clone(ctx, std.str_slice(template_name, local_start, len(template_name)));
+}
+
+func env_record_template_local_name(env: *TypeEnvironment[ctx], template_name: str, ctx: &Arena) {
+    unsafe {
+        mut local_name := typechecker_template_local_name(template_name, ctx);
+        mut existing := (*env).template_local_names.Get(local_name);
+        if existing.Ok {
+            if std.str_eq(existing.Val, template_name) == 0 {
+                (*env).template_local_names.Insert(std.Clone(ctx, local_name), std.Clone(ctx, ""));
+            }
+        } else {
+            (*env).template_local_names.Insert(std.Clone(ctx, local_name), std.Clone(ctx, template_name));
+        }
+    }
+}
+
+func env_get_template_by_local_name(env: *TypeEnvironment[ctx], local_name: str, ctx: &Arena) str {
+    unsafe {
+        mut lookup := (*env).template_local_names.Get(local_name);
+        if lookup.Ok {
+            return std.Clone(ctx, lookup.Val);
+        }
+    }
+    return "";
+}
+
+func typechecker_name_contains_generic_component(name: str, generic_name: str, ctx: &Arena) int {
+    if std.str_eq(name, generic_name) == 1 {
+        return 1;
+    }
+    mut parts := std.str_split(name, "_", ctx);
+    mut i := 0;
+    while i < len(parts) {
+        if std.str_eq(parts[i], generic_name) == 1 {
+            return 1;
+        }
+        i = i + 1;
+    }
+    return 0;
+}
+
+func typechecker_name_without_explicit_brand(name: str, brand_name: str, ctx: &Arena) str {
+    mut local_brand := strip_brand_prefix(brand_name, ctx);
+    mut suffix := std.Concat("_", local_brand);
+    if typechecker_ends_with(name, suffix) == 1 {
+        return std.Clone(ctx, std.str_slice(name, 0, len(name) - len(suffix)));
+    }
+    return std.Clone(ctx, name);
+}
+
+func typechecker_type_uses_generic_as_value(t: ast.Type[ctx], generic_name: str, current_template_name: str, candidate_brand_index: int, env: *TypeEnvironment[ctx], ctx: &Arena) int {
+    unsafe {
+        if t.tag == 8 { // Struct
+            mut value_name := t.Struct.struct_name;
+            if t.Struct.brand != empty[Index[str, ctx]] {
+                mut explicit_brand := ctx[t.Struct.brand];
+                if std.str_eq(strip_brand_prefix(explicit_brand, ctx), generic_name) == 1 {
+                    value_name = typechecker_name_without_explicit_brand(value_name, explicit_brand, ctx);
+                }
+            }
+            return typechecker_name_contains_generic_component(value_name, generic_name, ctx);
+        }
+        if t.tag == 7 { // Index target; the explicit brand slot is not a value type.
+            mut value_name := t.Index.struct_name;
+            if t.Index.brand != empty[Index[str, ctx]] {
+                mut explicit_brand := ctx[t.Index.brand];
+                if std.str_eq(strip_brand_prefix(explicit_brand, ctx), generic_name) == 1 {
+                    value_name = typechecker_name_without_explicit_brand(value_name, explicit_brand, ctx);
+                }
+            }
+            return typechecker_name_contains_generic_component(value_name, generic_name, ctx);
+        }
+        if t.tag == 6 {
+            return typechecker_type_uses_generic_as_value(ctx[t.Slice.inner], generic_name, current_template_name, candidate_brand_index, env, ctx);
+        }
+        if t.tag == 9 {
+            return typechecker_type_uses_generic_as_value(ctx[t.RawPointer.inner], generic_name, current_template_name, candidate_brand_index, env, ctx);
+        }
+        if t.tag == 11 {
+            return typechecker_type_uses_generic_as_value(ctx[t.Reference.inner], generic_name, current_template_name, candidate_brand_index, env, ctx);
+        }
+        if t.tag == 10 { // Generic
+            mut nested_name := env_resolve_namespaced_ident(env, t.Generic.name, ctx);
+            mut nested_brand_index := env_get_template_brand_parameter_index(env, nested_name);
+            if std.str_eq(nested_name, current_template_name) == 1 {
+                nested_brand_index = candidate_brand_index;
+            }
+            mut nested_args: std.Vector[ast.Type[ctx], ctx] := ctx[t.Generic.args];
+            mut i := 0;
+            while i < len(nested_args) {
+                if i != nested_brand_index {
+                    if typechecker_type_uses_generic_as_value(nested_args[i], generic_name, current_template_name, candidate_brand_index, env, ctx) == 1 {
+                        return 1;
+                    }
+                }
+                i = i + 1;
+            }
+        }
+    }
+    return 0;
+}
+
+func typechecker_infer_struct_template_brand_parameter(template_name: str, generics: std.Vector[str, ctx], fields: std.Vector[ast.FieldDef[ctx], ctx], env: *TypeEnvironment[ctx], ctx: &Arena) int {
+    mut brand_parameter_index := 0 - 1;
+    mut i := 0;
+    while i < len(generics) {
+        mut used_as_value := 0;
+        mut f := 0;
+        while f < len(fields) {
+            if typechecker_type_uses_generic_as_value(fields[f].field_type, generics[i], template_name, i, env, ctx) == 1 {
+                used_as_value = 1;
+            }
+            f = f + 1;
+        }
+        if used_as_value == 0 {
+            brand_parameter_index = i;
+        }
+        i = i + 1;
+    }
+    return brand_parameter_index;
+}
+
+func typechecker_infer_enum_template_brand_parameter(template_name: str, generics: std.Vector[str, ctx], variants: std.Vector[ast.VariantDef[ctx], ctx], env: *TypeEnvironment[ctx], ctx: &Arena) int {
+    mut brand_parameter_index := 0 - 1;
+    mut i := 0;
+    while i < len(generics) {
+        mut used_as_value := 0;
+        mut v := 0;
+        while v < len(variants) {
+            mut fields: std.Vector[ast.FieldDef[ctx], ctx] := ctx[variants[v].fields];
+            mut f := 0;
+            while f < len(fields) {
+                if typechecker_type_uses_generic_as_value(fields[f].field_type, generics[i], template_name, i, env, ctx) == 1 {
+                    used_as_value = 1;
+                }
+                f = f + 1;
+            }
+            v = v + 1;
+        }
+        if used_as_value == 0 {
+            brand_parameter_index = i;
+        }
+        i = i + 1;
+    }
+    return brand_parameter_index;
+}
+
 func typechecker_get_index_element_type(idx_t: ast.Type[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) ast.Type[ctx] {
     unsafe {
         mut index_struct_name := idx_t.Index.struct_name;
@@ -4980,6 +5148,19 @@ func make_type_struct(name: str, brand_name: str, ctx: &Arena) ast.Type[ctx] {
         }
     }
     return t;
+}
+
+func make_type_brand_marker(name: str, ctx: &Arena) ast.Type[ctx] {
+    return make_type_struct(name, name, ctx);
+}
+
+func typechecker_type_is_brand_marker(t: ast.Type[ctx], ctx: &Arena) int {
+    unsafe {
+        if t.tag == 8 && t.Struct.brand != empty[Index[str, ctx]] {
+            return std.str_eq(t.Struct.struct_name, ctx[t.Struct.brand]);
+        }
+    }
+    return 0;
 }
 
 func make_type_index(struct_name: str, brand_name: str, ctx: &Arena) ast.Type[ctx] {
@@ -5060,12 +5241,18 @@ func parse_one_type_from_parts(env: *TypeEnvironment[ctx], parts: std.Vector[str
             mut target_name := get_type_ident(target, ctx);
             mut brand_name := "";
             if *start_idx < len(parts) {
-                mut next_part := parts[*start_idx];
-                mut is_b := spelling_rule.phase19_legacy_brand_spelling_is_exact(next_part, ctx);
-                
-                if is_b == 1 {
-                    brand_name = next_part;
-                    *start_idx = *start_idx + 1; 
+                brand_name = parts[*start_idx];
+                *start_idx = *start_idx + 1;
+            } else {
+                if target.tag == 10 {
+                    mut target_brand_parameter_index := env_get_template_brand_parameter_index(env, target.Generic.name);
+                    mut target_args: std.Vector[ast.Type[ctx], ctx] := ctx[target.Generic.args];
+                    if target_brand_parameter_index >= 0 && target_brand_parameter_index < len(target_args) {
+                        mut target_brand_arg := target_args[target_brand_parameter_index];
+                        if typechecker_type_is_brand_marker(target_brand_arg, ctx) == 1 {
+                            brand_name = target_brand_arg.Struct.struct_name;
+                        }
+                    }
                 }
             }
             return make_type_index(target_name, brand_name, ctx);
@@ -5158,6 +5345,9 @@ func parse_one_type_from_parts(env: *TypeEnvironment[ctx], parts: std.Vector[str
             mut i := 0;
             while i < num_args {
                 mut arg := parse_one_type_from_parts(env, parts, start_idx, ctx);
+                if i == tmpl.brand_parameter_index && arg.tag == 8 {
+                    arg = make_type_brand_marker(arg.Struct.struct_name, ctx);
+                }
                 args.Push(arg);
                 i = i + 1;
             }
@@ -5171,14 +5361,20 @@ func parse_one_type_from_parts(env: *TypeEnvironment[ctx], parts: std.Vector[str
             mut i := 0;
             while i < num_args {
                 mut arg := parse_one_type_from_parts(env, parts, start_idx, ctx);
+                if i == tmpl.brand_parameter_index && arg.tag == 8 {
+                    arg = make_type_brand_marker(arg.Struct.struct_name, ctx);
+                }
                 args.Push(arg);
                 i = i + 1;
             }
             return make_type_generic(normalized_template_name, args, ctx);
         }
 
-        mut brand_name := typechecker_extract_brand_from_suffix(part, ctx);
-        return make_type_struct(part, brand_name, ctx);
+        mut registered_template_name := env_get_template_by_local_name(env, part, ctx);
+        if std.str_eq(registered_template_name, "") == 0 {
+            return make_type_struct(registered_template_name, "", ctx);
+        }
+        return make_type_struct(part, "", ctx);
     }
 }
 
@@ -5247,10 +5443,6 @@ func typechecker_matches_template_prefix(name: str, template_name: str) int {
     return 1;
 }
 
-func typechecker_extract_brand_from_suffix(suffix: str, ctx: &Arena) str {
-    return spelling_rule.phase19_legacy_brand_from_suffix(suffix, ctx);
-}
-
 func typechecker_parse_type_from_string(target_struct: str, ctx: &Arena) ast.Type[ctx] {
     unsafe {
         if std.str_eq(target_struct, "int") {
@@ -5276,12 +5468,10 @@ func typechecker_parse_type_from_string(target_struct: str, ctx: &Arena) ast.Typ
 
         if typechecker_starts_with(target_struct, "Index_") == 1 {
             mut suffix := std.str_slice(target_struct, 6, len(target_struct));
-            mut brand_name := typechecker_extract_brand_from_suffix(suffix, ctx);
-            return make_type_index(suffix, brand_name, ctx);
+            return make_type_index(suffix, "", ctx);
         }
 
-        mut brand_name := typechecker_extract_brand_from_suffix(target_struct, ctx);
-        return make_type_struct(target_struct, brand_name, ctx);
+        return make_type_struct(target_struct, "", ctx);
     }
 }
 
@@ -5668,13 +5858,10 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
             mut brand: Index[str, ctx] := empty[Index[str, ctx]];
             mut j := 0;
             while j < len(generics_vec_enum_template) {
-                mut g_name := generics_vec_enum_template[j];
-                if spelling_rule.phase19_legacy_brand_spelling_is_exact(g_name, ctx) == 1 {
-                    mut arg := args[j];
-                    if arg.tag == 8 { // Struct
-                        brand = os.ArenaAlloc(ctx) as Index[str, ctx];
-                        ctx.Set(brand, std.Clone(ctx, arg.Struct.struct_name));
-                    }
+                mut arg := args[j];
+                if typechecker_type_is_brand_marker(arg, ctx) == 1 {
+                    brand = os.ArenaAlloc(ctx) as Index[str, ctx];
+                    ctx.Set(brand, std.Clone(ctx, arg.Struct.struct_name));
                 }
                 j = j + 1;
             }
@@ -5832,13 +6019,10 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
             mut brand: Index[str, ctx] := empty[Index[str, ctx]];
             mut j := 0;
             while j < len(generics_vec_struct_template) {
-                mut g_name := generics_vec_struct_template[j];
-                if spelling_rule.phase19_legacy_brand_spelling_is_exact(g_name, ctx) == 1 {
-                    mut arg := args[j];
-                    if arg.tag == 8 { // Struct
-                        brand = os.ArenaAlloc(ctx) as Index[str, ctx];
-                        ctx.Set(brand, std.Clone(ctx, arg.Struct.struct_name));
-                    }
+                mut arg := args[j];
+                if typechecker_type_is_brand_marker(arg, ctx) == 1 {
+                    brand = os.ArenaAlloc(ctx) as Index[str, ctx];
+                    ctx.Set(brand, std.Clone(ctx, arg.Struct.struct_name));
                 }
                 j = j + 1;
             }
@@ -5990,6 +6174,7 @@ func env_register_std_templates(env: *TypeEnvironment[ctx], ctx: &Arena) {
         mut vec_tmpl: StructTemplate[ctx];
         vec_tmpl.generics = vec_gen_idx;
         vec_tmpl.fields = vec_fields_idx;
+        vec_tmpl.brand_parameter_index = 1;
 
         (*env).struct_templates.Insert(std.Clone(ctx, "std_Vector"), vec_tmpl);
         (*env).struct_templates.Insert(std.Clone(ctx, "std.Vector"), vec_tmpl);
@@ -6020,6 +6205,7 @@ func env_register_std_templates(env: *TypeEnvironment[ctx], ctx: &Arena) {
         mut map_tmpl: StructTemplate[ctx];
         map_tmpl.generics = map_gen_idx;
         map_tmpl.fields = map_fields_idx;
+        map_tmpl.brand_parameter_index = 2;
 
         (*env).struct_templates.Insert(std.Clone(ctx, "std_HashMap"), map_tmpl);
         (*env).struct_templates.Insert(std.Clone(ctx, "std.HashMap"), map_tmpl);
@@ -6063,6 +6249,7 @@ func env_register_std_templates(env: *TypeEnvironment[ctx], ctx: &Arena) {
         mut opt_tmpl: EnumTemplate[ctx];
         opt_tmpl.generics = opt_gen_idx;
         opt_tmpl.variants = opt_variants_idx;
+        opt_tmpl.brand_parameter_index = 1;
 
         (*env).enum_templates.Insert(std.Clone(ctx, "std_Option"), opt_tmpl);
         (*env).enum_templates.Insert(std.Clone(ctx, "std.Option"), opt_tmpl);
@@ -6090,6 +6277,7 @@ func env_register_std_templates(env: *TypeEnvironment[ctx], ctx: &Arena) {
         mut pool_tmpl: StructTemplate[ctx];
         pool_tmpl.generics = pool_gen_idx;
         pool_tmpl.fields = pool_fields_idx;
+        pool_tmpl.brand_parameter_index = 1;
 
         (*env).struct_templates.Insert(std.Clone(ctx, "std_Pool"), pool_tmpl);
         (*env).struct_templates.Insert(std.Clone(ctx, "std.Pool"), pool_tmpl);
@@ -6114,6 +6302,7 @@ func env_register_std_templates(env: *TypeEnvironment[ctx], ctx: &Arena) {
         mut rcnode_tmpl: StructTemplate[ctx];
         rcnode_tmpl.generics = rcnode_gen_idx;
         rcnode_tmpl.fields = rcnode_fields_idx;
+        rcnode_tmpl.brand_parameter_index = 0 - 1;
 
         (*env).struct_templates.Insert(std.Clone(ctx, "std_RcNode"), rcnode_tmpl);
         (*env).struct_templates.Insert(std.Clone(ctx, "std.RcNode"), rcnode_tmpl);
@@ -6129,7 +6318,7 @@ func env_register_std_templates(env: *TypeEnvironment[ctx], ctx: &Arena) {
 
         mut pool_args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
         pool_args.Push(make_type_struct("std_RcNode_T", "", ctx));
-        pool_args.Push(make_type_struct("ctx", "", ctx));
+        pool_args.Push(make_type_brand_marker("ctx", ctx));
         rc_fields.Push(make_field("pool", make_type_pointer(make_type_generic("std.Pool", pool_args, ctx), ctx), ctx));
 
         mut rc_gen_idx: Index[std.Vector[str, ctx], ctx] := os.ArenaAlloc(ctx);
@@ -6140,6 +6329,7 @@ func env_register_std_templates(env: *TypeEnvironment[ctx], ctx: &Arena) {
         mut rc_tmpl: StructTemplate[ctx];
         rc_tmpl.generics = rc_gen_idx;
         rc_tmpl.fields = rc_fields_idx;
+        rc_tmpl.brand_parameter_index = 1;
 
         (*env).struct_templates.Insert(std.Clone(ctx, "std_Rc"), rc_tmpl);
         (*env).struct_templates.Insert(std.Clone(ctx, "std.Rc"), rc_tmpl);
@@ -6155,7 +6345,7 @@ func env_register_std_templates(env: *TypeEnvironment[ctx], ctx: &Arena) {
 
         mut vec_args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
         vec_args.Push(t_int);
-        vec_args.Push(make_type_struct("ctx", "", ctx));
+        vec_args.Push(make_type_brand_marker("ctx", ctx));
         gnode_fields.Push(make_field("edges", make_type_generic("std.Vector", vec_args, ctx), ctx));
 
         mut gnode_gen_idx: Index[std.Vector[str, ctx], ctx] := os.ArenaAlloc(ctx);
@@ -6166,6 +6356,7 @@ func env_register_std_templates(env: *TypeEnvironment[ctx], ctx: &Arena) {
         mut gnode_tmpl: StructTemplate[ctx];
         gnode_tmpl.generics = gnode_gen_idx;
         gnode_tmpl.fields = gnode_fields_idx;
+        gnode_tmpl.brand_parameter_index = 1;
 
         (*env).struct_templates.Insert(std.Clone(ctx, "std_GraphNode"), gnode_tmpl);
         (*env).struct_templates.Insert(std.Clone(ctx, "std.GraphNode"), gnode_tmpl);
@@ -6180,7 +6371,7 @@ func env_register_std_templates(env: *TypeEnvironment[ctx], ctx: &Arena) {
 
         mut pool_args_g: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
         pool_args_g.Push(make_type_struct("std_GraphNode_T_ctx", "", ctx));
-        pool_args_g.Push(make_type_struct("ctx", "", ctx));
+        pool_args_g.Push(make_type_brand_marker("ctx", ctx));
         graph_fields.Push(make_field("nodes", make_type_generic("std.Pool", pool_args_g, ctx), ctx));
 
         mut graph_gen_idx: Index[std.Vector[str, ctx], ctx] := os.ArenaAlloc(ctx);
@@ -6191,6 +6382,7 @@ func env_register_std_templates(env: *TypeEnvironment[ctx], ctx: &Arena) {
         mut graph_tmpl: StructTemplate[ctx];
         graph_tmpl.generics = graph_gen_idx;
         graph_tmpl.fields = graph_fields_idx;
+        graph_tmpl.brand_parameter_index = 1;
 
         (*env).struct_templates.Insert(std.Clone(ctx, "std_Graph"), graph_tmpl);
         (*env).struct_templates.Insert(std.Clone(ctx, "std.Graph"), graph_tmpl);
@@ -6213,6 +6405,7 @@ func env_register_std_templates(env: *TypeEnvironment[ctx], ctx: &Arena) {
         mut mutex_tmpl: StructTemplate[ctx];
         mutex_tmpl.generics = mutex_gen_idx;
         mutex_tmpl.fields = mutex_fields_idx;
+        mutex_tmpl.brand_parameter_index = 1;
 
         (*env).struct_templates.Insert(std.Clone(ctx, "std_Mutex"), mutex_tmpl);
         (*env).struct_templates.Insert(std.Clone(ctx, "std.Mutex"), mutex_tmpl);
@@ -6236,6 +6429,7 @@ func env_register_std_templates(env: *TypeEnvironment[ctx], ctx: &Arena) {
         mut chan_tmpl: StructTemplate[ctx];
         chan_tmpl.generics = chan_gen_idx;
         chan_tmpl.fields = chan_fields_idx;
+        chan_tmpl.brand_parameter_index = 1;
 
         (*env).struct_templates.Insert(std.Clone(ctx, "std_Channel"), chan_tmpl);
         (*env).struct_templates.Insert(std.Clone(ctx, "std.Channel"), chan_tmpl);
@@ -6259,6 +6453,7 @@ func env_register_std_templates(env: *TypeEnvironment[ctx], ctx: &Arena) {
         mut gena_tmpl: StructTemplate[ctx];
         gena_tmpl.generics = gena_gen_idx;
         gena_tmpl.fields = gena_fields_idx;
+        gena_tmpl.brand_parameter_index = 1;
 
         (*env).struct_templates.Insert(std.Clone(ctx, "std_GenerationalArena"), gena_tmpl);
         (*env).struct_templates.Insert(std.Clone(ctx, "std.GenerationalArena"), gena_tmpl);
@@ -6279,6 +6474,7 @@ func env_register_std_templates(env: *TypeEnvironment[ctx], ctx: &Arena) {
         mut dir_tmpl: StructTemplate[ctx];
         dir_tmpl.generics = dir_gen_idx;
         dir_tmpl.fields = dir_fields_idx;
+        dir_tmpl.brand_parameter_index = 0;
 
         (*env).struct_templates.Insert(std.Clone(ctx, "os_Dir"), dir_tmpl);
         (*env).struct_templates.Insert(std.Clone(ctx, "os.Dir"), dir_tmpl);
@@ -6299,6 +6495,7 @@ func env_register_std_templates(env: *TypeEnvironment[ctx], ctx: &Arena) {
         mut dire_tmpl: StructTemplate[ctx];
         dire_tmpl.generics = dire_gen_idx;
         dire_tmpl.fields = dire_fields_idx;
+        dire_tmpl.brand_parameter_index = 0;
 
         (*env).struct_templates.Insert(std.Clone(ctx, "os_DirEntry"), dire_tmpl);
         (*env).struct_templates.Insert(std.Clone(ctx, "os.DirEntry"), dire_tmpl);
@@ -6324,6 +6521,7 @@ func env_register_std_templates(env: *TypeEnvironment[ctx], ctx: &Arena) {
         mut process_result_tmpl: StructTemplate[ctx];
         process_result_tmpl.generics = process_result_gen_idx;
         process_result_tmpl.fields = process_result_fields_idx;
+        process_result_tmpl.brand_parameter_index = 0;
 
         (*env).struct_templates.Insert(
             std.Clone(ctx, "os_ProcessResult"),
@@ -6340,7 +6538,7 @@ func env_register_std_templates(env: *TypeEnvironment[ctx], ctx: &Arena) {
 
         mut tlc_fields: std.Vector[ast.FieldDef[ctx], ctx] := std.VectorNew(ctx);
         tlc_fields.Push(make_field("arena", make_type_pointer(t_arena, ctx), ctx));
-        tlc_fields.Push(make_field("_phantom", make_type_pointer(make_type_struct("ctx", "", ctx), ctx), ctx));
+        tlc_fields.Push(make_field("_phantom", make_type_pointer(make_type_brand_marker("ctx", ctx), ctx), ctx));
 
         mut tlc_gen_idx: Index[std.Vector[str, ctx], ctx] := os.ArenaAlloc(ctx);
         mut tlc_fields_idx: Index[std.Vector[ast.FieldDef[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
@@ -6350,6 +6548,7 @@ func env_register_std_templates(env: *TypeEnvironment[ctx], ctx: &Arena) {
         mut tlc_tmpl: StructTemplate[ctx];
         tlc_tmpl.generics = tlc_gen_idx;
         tlc_tmpl.fields = tlc_fields_idx;
+        tlc_tmpl.brand_parameter_index = 0;
 
         (*env).struct_templates.Insert(std.Clone(ctx, "std_ThreadLocalContext"), tlc_tmpl);
         (*env).struct_templates.Insert(std.Clone(ctx, "std.ThreadLocalContext"), tlc_tmpl);
@@ -6477,7 +6676,7 @@ func register_fn(env: *TypeEnvironment[ctx], name: str, params: std.Vector[ast.T
             // Vector generic helper for return type signatures
             mut vec_args_str: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
             vec_args_str.Push(t_str);
-            vec_args_str.Push(make_type_struct("ctx", "", ctx));
+            vec_args_str.Push(make_type_brand_marker("ctx", ctx));
 
             // --- FFI Registration Mapping ---
 
@@ -6538,7 +6737,7 @@ func register_fn(env: *TypeEnvironment[ctx], name: str, params: std.Vector[ast.T
             // Register std.RcNew & std_RcNew using Any to allow simple template type-matching
             mut p_rc_new: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
             p_rc_new.Push(make_type_pointer(make_type_struct("std_Pool_Any", "ctx", ctx), ctx));
-            p_rc_new.Push(make_type_struct("Any", "", ctx));
+            p_rc_new.Push(make_type_brand_marker("Any", ctx));
             mut t_rc_ret := make_type_struct("std_Rc_Any", "ctx", ctx);
 
             register_fn(env, "std.RcNew", p_rc_new, t_rc_ret, ctx);
@@ -6685,6 +6884,7 @@ func env_new(ctx: &Arena) TypeEnvironment[ctx] {
         env_ref_new.struct_linear_resource = std.HashMapNew(ctx);
         env_ref_new.struct_linear_destructor = std.HashMapNew(ctx);
         env_ref_new.enum_templates = std.HashMapNew(ctx);
+        env_ref_new.template_local_names = std.HashMapNew(ctx);
         env_ref_new.function_registry = std.HashMapNew(ctx);
         env_ref_new.brand_identities = std.HashMapNew(ctx);
         env_ref_new.canonical_type_names = std.HashMapNew(ctx);
@@ -6727,6 +6927,92 @@ func env_new(ctx: &Arena) TypeEnvironment[ctx] {
 
 
 
+func env_resolve_flattened_import_aliases(env: *TypeEnvironment[ctx], name: str, ctx: &Arena) str {
+    unsafe {
+        if std.str_find(name, "__") != 0 - 1 {
+            return std.Clone(ctx, name);
+        }
+        mut resolved := std.Clone(ctx, name);
+        mut aliases := (*env).imports.Keys(ctx);
+        mut alias_idx := 0;
+        while alias_idx < len(aliases) {
+            mut alias := aliases[alias_idx];
+            mut prefix_lookup := (*env).imports.Get(alias);
+            if prefix_lookup.Ok && len(alias) > 0 {
+                mut position := 0;
+                while position + len(alias) <= len(resolved) {
+                    mut candidate := std.str_slice(resolved, position, position + len(alias));
+                    if std.str_eq(candidate, alias) == 1 {
+                        mut left_boundary := 0;
+                        mut right_boundary := 0;
+                        if position == 0 || std.str_byte_at(resolved, position - 1) == 95 {
+                            left_boundary = 1;
+                        }
+                        if position + len(alias) == len(resolved) || std.str_byte_at(resolved, position + len(alias)) == 95 {
+                            right_boundary = 1;
+                        }
+                        mut resolves_registered_type := 0;
+                        mut alias_is_registered_namespace := 0;
+                        if left_boundary == 1 && right_boundary == 1 && position + len(alias) < len(resolved) {
+                            mut local_start := position + len(alias) + 1;
+                            mut local_end := local_start;
+                            mut local_name := "";
+                            while local_end < len(resolved) {
+                                if std.str_byte_at(resolved, local_end) == 95 {
+                                    if std.str_eq(local_name, "") == 0 {
+                                        local_name = std.Concat(local_name, "_");
+                                    }
+                                } else {
+                                    local_name = std.Concat(local_name, std.str_slice(resolved, local_end, local_end + 1));
+                                    mut registered_name := std.Concat(prefix_lookup.Val, local_name);
+                                    mut struct_template_lookup := (*env).struct_templates.Get(registered_name);
+                                    mut enum_template_lookup := (*env).enum_templates.Get(registered_name);
+                                    if struct_template_lookup.Ok || enum_template_lookup.Ok {
+                                        resolves_registered_type = 1;
+                                    }
+                                    mut flattened_namespace_name := std.Concat(std.Concat(alias, "_"), local_name);
+                                    mut flattened_struct_template := (*env).struct_templates.Get(flattened_namespace_name);
+                                    mut flattened_enum_template := (*env).enum_templates.Get(flattened_namespace_name);
+                                    if flattened_struct_template.Ok || flattened_enum_template.Ok {
+                                        alias_is_registered_namespace = 1;
+                                    }
+                                }
+                                local_end = local_end + 1;
+                            }
+                        }
+                        if resolves_registered_type == 1 && alias_is_registered_namespace == 0 {
+                            mut protected_prefix := prefix_lookup.Val;
+                            if typechecker_ends_with(protected_prefix, "__") == 1 {
+                                protected_prefix = std.Concat(
+                                    std.str_slice(protected_prefix, 0, len(protected_prefix) - 2),
+                                    "@"
+                                );
+                            }
+                            mut left := std.str_slice(resolved, 0, position);
+                            mut right := std.str_slice(resolved, position + len(alias), len(resolved));
+                            resolved = std.Concat(std.Concat(left, protected_prefix), right);
+                            position = position + len(protected_prefix);
+                        } else {
+                            position = position + 1;
+                        }
+                    } else {
+                        position = position + 1;
+                    }
+                }
+            }
+            alias_idx = alias_idx + 1;
+        }
+        mut protected_idx := std.str_find(resolved, "@");
+        while protected_idx != 0 - 1 {
+            mut left := std.str_slice(resolved, 0, protected_idx);
+            mut right := std.str_slice(resolved, protected_idx + 1, len(resolved));
+            resolved = std.Concat(std.Concat(left, "__"), right);
+            protected_idx = std.str_find(resolved, "@");
+        }
+        return std.Clone(ctx, resolved);
+    }
+}
+
 func env_resolve_namespaced_ident(env: *TypeEnvironment[ctx], name: str, ctx: &Arena) str {
     // 1. Handle LookupResult_ and CastResult_ prefixes
     if len(name) >= 13 && std.str_eq(std.str_slice(name, 0, 13), "LookupResult_") {
@@ -6762,66 +7048,20 @@ func env_resolve_namespaced_ident(env: *TypeEnvironment[ctx], name: str, ctx: &A
         mut prefix := prefixes[p];
         if len(name) >= len(prefix) {
             if std.str_eq(std.str_slice(name, 0, len(prefix)), prefix) {
+                // parse_types_from_suffix resolves each component using the
+                // registered template role. Resolve import aliases only in the
+                // argument suffix so the outer std/os template stays intact.
                 mut suffix := std.str_slice(name, len(prefix), len(name));
-                if std.str_find(suffix, "__") != 0 - 1 {
-                    return std.Clone(ctx, name);
+                mut resolved_suffix := env_resolve_flattened_import_aliases(env, suffix, ctx);
+                mut resolved_name := std.Concat(prefix, resolved_suffix);
+                mut triple_idx := std.str_find(resolved_name, "___");
+                while triple_idx != 0 - 1 {
+                    mut left := std.str_slice(resolved_name, 0, triple_idx);
+                    mut right := std.str_slice(resolved_name, triple_idx + 1, len(resolved_name));
+                    resolved_name = std.Concat(left, right);
+                    triple_idx = std.str_find(resolved_name, "___");
                 }
-                    unsafe {
-                        mut parts := std.str_split(suffix, "_", ctx);
-                        mut resolved_parts: std.Vector[str, ctx] := std.VectorNew(ctx);
-                        mut active_prefix := (*env).current_prefix;
-
-                        mut i := 0;
-                        while i < len(parts) {
-                            mut part := parts[i];
-                            mut lookup := (*env).imports.Get(part);
-                            if lookup.Ok {
-                                active_prefix = lookup.Val;
-                            } else {
-                                mut temp_resolved := part;
-                                mut is_primitive := 0;
-                                if std.str_eq(part, "len") { is_primitive = 1; }
-                                if std.str_eq(part, "int") { is_primitive = 1; }
-                                if std.str_eq(part, "byte") { is_primitive = 1; }
-                                if std.str_eq(part, "bool") { is_primitive = 1; }
-                                if std.str_eq(part, "str") { is_primitive = 1; }
-                                if std.str_eq(part, "Arena") { is_primitive = 1; }
-                                if std.str_eq(part, "os_Arena") { is_primitive = 1; }
-                                if std.str_eq(part, "os.Arena") { is_primitive = 1; }
-                                if std.str_eq(part, "void") { is_primitive = 1; }
-                                if std.str_eq(part, "Any") { is_primitive = 1; }
-                                if std.str_eq(part, "SessionNode") { is_primitive = 1; }
-                                if std.str_eq(part, "APIRequest") { is_primitive = 1; }
-                                if std.str_eq(part, "Vector_Any") { is_primitive = 1; }
-                                if std.str_eq(part, "HashMap_Any") { is_primitive = 1; }
-                                if std.str_eq(part, "Pool_Any") { is_primitive = 1; }
-                                if std.str_eq(part, "Mutex_Any") { is_primitive = 1; }
-                                if std.str_eq(part, "Channel_Any") { is_primitive = 1; }
-                                if std.str_eq(part, "ThreadLocalContext_Any") { is_primitive = 1; }
-                                if std.str_eq(part, "std_ThreadLocalContext_Any") { is_primitive = 1; }
-                                if spelling_rule.phase19_legacy_brand_spelling_is_exact(part, ctx) == 1 { is_primitive = 1; }
-
-                                if is_primitive == 0 {
-                                    temp_resolved = std.Concat(active_prefix, part);
-                                }
-                                resolved_parts.Push(temp_resolved);
-                                active_prefix = (*env).current_prefix;
-                            }
-                            i = i + 1;
-                        }
-
-                        mut joined := ast.ast_join_strings(resolved_parts, "_", ctx);
-                        mut res := std.Concat(prefix, joined);
-
-                        mut triple_idx := std.str_find(res, "___");
-                        while triple_idx != 0 - 1 {
-                            mut left := std.str_slice(res, 0, triple_idx);
-                            mut right := std.str_slice(res, triple_idx + 1, len(res));
-                            res = std.Concat(left, right);
-                            triple_idx = std.str_find(res, "___");
-                        }
-                        return std.Clone(ctx, res);
-                    }
+                return std.Clone(ctx, resolved_name);
             }
         }
         p = p + 1;
@@ -6849,8 +7089,7 @@ func env_resolve_namespaced_ident(env: *TypeEnvironment[ctx], name: str, ctx: &A
                std.str_eq(name, "Any") || std.str_eq(name, "SessionNode") || std.str_eq(name, "APIRequest") ||
                std.str_eq(name, "Vector_Any") || std.str_eq(name, "HashMap_Any") ||
                std.str_eq(name, "Pool_Any") || std.str_eq(name, "Mutex_Any") || std.str_eq(name, "Channel_Any") ||
-               std.str_eq(name, "ThreadLocalContext_Any") ||
-               spelling_rule.phase19_legacy_brand_spelling_is_exact(name, ctx) == 1 {
+               std.str_eq(name, "ThreadLocalContext_Any") {
                 return name;
             }
 
@@ -8247,6 +8486,9 @@ func env_resolve_type_internal(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx
             }
         } else {
             if t.tag == 8 { // Struct
+                if typechecker_type_is_brand_marker(t, ctx) == 1 {
+                    return t;
+                }
                 mut namespaced_name := env_resolve_namespaced_ident(env, t.Struct.struct_name, ctx);
                 res_ref_env_resolve_type.Struct.struct_name = namespaced_name;
                 
@@ -8329,7 +8571,23 @@ func env_resolve_type_internal(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx
                     if typechecker_matches_template_prefix(clean_namespaced_name, tmpl_name) == 1 {
                         mut suffix := std.str_slice(clean_namespaced_name, len(tmpl_name) + 1, len(clean_namespaced_name));
                         mut parsed_args := parse_types_from_suffix(env, suffix, ctx);
-                        mut mono_res := monomorphize(env, tmpl_name, parsed_args, ctx);
+                        mut resolved_parsed_args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+                        mut parsed_brand_parameter_index := env_get_template_brand_parameter_index(env, tmpl_name);
+                        mut parsed_arg_index := 0;
+                        while parsed_arg_index < len(parsed_args) {
+                            mut parsed_arg := parsed_args[parsed_arg_index];
+                            if parsed_arg_index == parsed_brand_parameter_index && parsed_arg.tag == 8 {
+                                parsed_arg = make_type_brand_marker(parsed_arg.Struct.struct_name, ctx);
+                            } else if parsed_arg.tag == 8 && parsed_arg.Struct.brand == empty[Index[str, ctx]] && t.Struct.brand != empty[Index[str, ctx]] {
+                                mut nested_brand_parameter_index := env_get_template_brand_parameter_index(env, parsed_arg.Struct.struct_name);
+                                if nested_brand_parameter_index >= 0 {
+                                    parsed_arg = make_type_struct(parsed_arg.Struct.struct_name, brand_name, ctx);
+                                }
+                            }
+                            resolved_parsed_args.Push(env_resolve_type(env, parsed_arg, ctx));
+                            parsed_arg_index = parsed_arg_index + 1;
+                        }
+                        mut mono_res := monomorphize(env, tmpl_name, resolved_parsed_args, ctx);
                         if mono_res.tag == 0 { // Ok
                             matched_val = mono_res.Ok.val;
                             matched = 1;
@@ -8346,7 +8604,23 @@ func env_resolve_type_internal(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx
                         if typechecker_matches_template_prefix(clean_namespaced_name, tmpl_name) == 1 {
                             mut suffix := std.str_slice(clean_namespaced_name, len(tmpl_name) + 1, len(clean_namespaced_name));
                             mut parsed_args := parse_types_from_suffix(env, suffix, ctx);
-                            mut mono_res := monomorphize(env, tmpl_name, parsed_args, ctx);
+                            mut resolved_parsed_args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+                            mut parsed_brand_parameter_index := env_get_template_brand_parameter_index(env, tmpl_name);
+                            mut parsed_arg_index := 0;
+                            while parsed_arg_index < len(parsed_args) {
+                                mut parsed_arg := parsed_args[parsed_arg_index];
+                                if parsed_arg_index == parsed_brand_parameter_index && parsed_arg.tag == 8 {
+                                    parsed_arg = make_type_brand_marker(parsed_arg.Struct.struct_name, ctx);
+                                } else if parsed_arg.tag == 8 && parsed_arg.Struct.brand == empty[Index[str, ctx]] && t.Struct.brand != empty[Index[str, ctx]] {
+                                    mut nested_brand_parameter_index := env_get_template_brand_parameter_index(env, parsed_arg.Struct.struct_name);
+                                    if nested_brand_parameter_index >= 0 {
+                                        parsed_arg = make_type_struct(parsed_arg.Struct.struct_name, brand_name, ctx);
+                                    }
+                                }
+                                resolved_parsed_args.Push(env_resolve_type(env, parsed_arg, ctx));
+                                parsed_arg_index = parsed_arg_index + 1;
+                            }
+                            mut mono_res := monomorphize(env, tmpl_name, resolved_parsed_args, ctx);
                             if mono_res.tag == 0 { // Ok
                                 matched_val = mono_res.Ok.val;
                                 matched = 1;
@@ -8391,7 +8665,7 @@ func env_resolve_type_internal(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx
                     typechecker_log_trace('🔍', 'env_resolve_type: determined has_template', ctx);
                     if has_template == 1 {
                         mut args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
-                        args.Push(make_type_struct(brand_name, "", ctx));
+                        args.Push(make_type_brand_marker(brand_name, ctx));
                         
                         mut mono_res := monomorphize(env, namespaced_name, args, ctx);
                         if mono_res.tag == 0 { // Ok
@@ -8460,11 +8734,14 @@ func env_resolve_type_internal(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx
                             
                             mut log_msg := std.Format('env_resolve_type Generic: name=%s', name);
                             typechecker_log_trace('📥', log_msg, ctx);
-                            
+                            mut brand_parameter_index := env_get_template_brand_parameter_index(env, name);
                             mut new_args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
                             mut i := 0;
                             while i < len(args_vec_env_resolve_generic) {
                                 mut arg := args_vec_env_resolve_generic[i];
+                                if i == brand_parameter_index && arg.tag == 8 {
+                                    arg = make_type_brand_marker(arg.Struct.struct_name, ctx);
+                                }
                                 new_args.Push(env_resolve_type(env, arg, ctx));
                                 i = i + 1;
                             }
@@ -8626,6 +8903,8 @@ func typechecker_normalize_canonical_type_name(name: str, ctx: &Arena) str {
 func env_record_canonical_type_name(env: *TypeEnvironment[ctx], concrete_name: str, canonical_name: str, ctx: &Arena) {
     unsafe {
         (*env).canonical_type_names.Insert(std.Clone(ctx, concrete_name), std.Clone(ctx, canonical_name));
+        mut parser_encoded_name := typechecker_strip_module_prefix(concrete_name, ctx);
+        (*env).canonical_type_names.Insert(std.Clone(ctx, parser_encoded_name), std.Clone(ctx, canonical_name));
     }
 }
 
@@ -8634,6 +8913,31 @@ func env_get_canonical_type_name(env: *TypeEnvironment[ctx], concrete_name: str,
         mut lookup := (*env).canonical_type_names.Get(concrete_name);
         if lookup.Ok {
             return std.Clone(ctx, lookup.Val);
+        }
+    }
+    return "";
+}
+
+func env_get_canonical_branded_type_name(env: *TypeEnvironment[ctx], name: str, brand: Index[str, ctx], ctx: &Arena) str {
+    mut canonical_name := env_get_canonical_type_name(env, name, ctx);
+    if std.str_eq(canonical_name, "") == 0 {
+        return std.Clone(ctx, canonical_name);
+    }
+    mut resolved_name := env_resolve_namespaced_ident(env, name, ctx);
+    canonical_name = env_get_canonical_type_name(env, resolved_name, ctx);
+    if std.str_eq(canonical_name, "") == 0 {
+        return std.Clone(ctx, canonical_name);
+    }
+    if brand != empty[Index[str, ctx]] {
+        mut brand_name := ctx[brand];
+        mut concrete_name := resolved_name;
+        mut brand_suffix := std.Concat("_", strip_brand_prefix(brand_name, ctx));
+        if typechecker_ends_with(concrete_name, brand_suffix) == 0 {
+            concrete_name = std.Concat(concrete_name, brand_suffix);
+        }
+        canonical_name = env_get_canonical_type_name(env, concrete_name, ctx);
+        if std.str_eq(canonical_name, "") == 0 {
+            return std.Clone(ctx, canonical_name);
         }
     }
     return "";
@@ -8841,7 +9145,15 @@ func env_pre_register_statement(env: *TypeEnvironment[ctx], stmt: ast.Statement[
                 mut template: StructTemplate[ctx];
                 template.generics = stmt.StructDecl.generics;
                 template.fields = stmt.StructDecl.fields;
+                template.brand_parameter_index = typechecker_infer_struct_template_brand_parameter(
+                    namespaced_name,
+                    ctx[stmt.StructDecl.generics],
+                    ctx[stmt.StructDecl.fields],
+                    env,
+                    ctx
+                );
                 (*env).struct_templates.Insert(std.Clone(ctx, namespaced_name), template);
+                env_record_template_local_name(env, namespaced_name, ctx);
             } else {
                 mut layout: StructLayout[ctx];
                 layout.brand = empty[Index[str, ctx]];
@@ -8885,7 +9197,15 @@ func env_pre_register_statement(env: *TypeEnvironment[ctx], stmt: ast.Statement[
                 mut template: EnumTemplate[ctx];
                 template.generics = stmt.EnumDecl.generics;
                 template.variants = stmt.EnumDecl.variants;
+                template.brand_parameter_index = typechecker_infer_enum_template_brand_parameter(
+                    namespaced_name,
+                    ctx[stmt.EnumDecl.generics],
+                    ctx[stmt.EnumDecl.variants],
+                    env,
+                    ctx
+                );
                 (*env).enum_templates.Insert(std.Clone(ctx, namespaced_name), template);
+                env_record_template_local_name(env, namespaced_name, ctx);
             } else {
                 mut enum_layout: StructLayout[ctx];
                 enum_layout.brand = empty[Index[str, ctx]];
@@ -9339,7 +9659,7 @@ func typechecker_extract_ok_checked_variables(expr_idx: Index[ast.Expression[ctx
     }
 }
 
-// get_type_brand retrieves the brand string of a type, supporting struct registry lookups and suffix fallbacks.
+// get_type_brand retrieves explicit or registered brand metadata.
 func get_type_brand(t: ast.Type[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) str { 
     unsafe {
         if t.tag == 7 { // Index
@@ -9347,7 +9667,7 @@ func get_type_brand(t: ast.Type[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) s
                 mut brand_name_index: str := ctx[t.Index.brand];
                 return brand_name_index;
             }
-            return typechecker_extract_brand_from_suffix(t.Index.struct_name, ctx);
+            return "";
         }
         if t.tag == 8 { // Struct
             if t.Struct.brand != empty[Index[str, ctx]] {
@@ -9364,7 +9684,7 @@ func get_type_brand(t: ast.Type[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) s
                     }
                 }
             }
-            return typechecker_extract_brand_from_suffix(t.Struct.struct_name, ctx);
+            return "";
         }
         if t.tag == 9 { // RawPointer
             return get_type_brand(ctx[t.RawPointer.inner], env, ctx);
@@ -9386,113 +9706,47 @@ func get_type_brand(t: ast.Type[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) s
 func typechecker_strip_module_prefix(name: str, ctx: &Arena) str {
     mut clean := name;
     mut d_idx := std.str_find(clean, "__");
-    if d_idx != 0 - 1 {
-        mut s_idx := std.str_find(clean, "_");
-        if s_idx == d_idx {
-            clean = std.str_slice(clean, d_idx + 2, len(clean));
-        }
-    }
-    
-    mut prefixes: std.Vector[str, ctx] := std.VectorNew(ctx);
-    prefixes.Push("ast_");
-    prefixes.Push("lexer_");
-    prefixes.Push("parser_");
-    prefixes.Push("errors_");
-    prefixes.Push("token_");
-    
-    mut i := 0;
-    while i < len(prefixes) {
-        mut prefix := prefixes[i];
-        mut pos := std.str_find(clean, prefix);
-        while pos != 0 - 1 {
-            mut left := std.str_slice(clean, 0, pos);
-            mut right := std.str_slice(clean, pos + len(prefix), len(clean));
-            clean = std.Concat(left, right);
-            pos = std.str_find(clean, prefix);
-        }
-        i = i + 1;
+    while d_idx != 0 - 1 {
+        mut left := std.str_slice(clean, 0, d_idx);
+        mut right := std.str_slice(clean, d_idx + 2, len(clean));
+        clean = std.Concat(std.Concat(left, "_"), right);
+        d_idx = std.str_find(clean, "__");
     }
     return std.Clone(ctx, clean);
 }
 
-func typechecker_rfind_char(s: str, ch: int, end_idx: int) int {
-    mut j := end_idx - 1;
-    while j >= 0 {
-        if std.str_byte_at(s, j) == ch {
-            return j;
-        }
-        j = j - 1;
+func typechecker_remove_flattened_identity(name: str, identity: str, ctx: &Arena) str {
+    if std.str_eq(identity, "") == 1 {
+        return std.Clone(ctx, name);
     }
-    return 0 - 1;
-}
-
-func typechecker_clean_monomorphized_name(name: str, ctx: &Arena) str {
-    mut erased := name;
+    mut normalized := name;
+    mut token := std.Concat("_", identity);
+    mut middle := std.Concat(token, "_");
     mut changed := 1;
     while changed == 1 {
         changed = 0;
-        mut brand_bases: std.Vector[str, ctx] := std.VectorNew(ctx);
-        brand_bases.Push("connCtx");
-        brand_bases.Push("arena");
-        brand_bases.Push("Any");
-        brand_bases.Push("a");
-        brand_bases.Push("main_ctx");
-        brand_bases.Push("bg_ctx");
-        brand_bases.Push("file_ctx");
-        brand_bases.Push("ctx");
-
-        mut i := 0;
-        while i < len(brand_bases) {
-            mut base := brand_bases[i];
-            mut ns_suffix := std.Concat("__", base);
-            mut ns_mid := std.Concat(ns_suffix, "_");
-            mut flat_suffix := std.Concat("_", base);
-            mut flat_mid := std.Concat(flat_suffix, "_");
-
-            if typechecker_ends_with(erased, ns_suffix) == 1 {
-                mut pos := len(erased) - len(ns_suffix);
-                mut start_pos := typechecker_rfind_char(erased, 95, pos);
-                if start_pos != 0 - 1 {
-                    if typechecker_ends_with(std.str_slice(erased, 0, pos), "__") == 0 {
-                        erased = std.str_slice(erased, 0, start_pos);
-                        changed = 1;
-                        i = len(brand_bases); // break inner loop
-                    }
-                }
-            } else {
-                mut pos := std.str_find(erased, ns_mid);
-                if pos != 0 - 1 {
-                    mut start_pos := typechecker_rfind_char(erased, 95, pos);
-                    if start_pos != 0 - 1 {
-                        if typechecker_ends_with(std.str_slice(erased, 0, pos), "__") == 0 {
-                            mut left := std.str_slice(erased, 0, start_pos);
-                            mut right := std.str_slice(erased, pos + len(ns_mid) - 1, len(erased));
-                            erased = std.Concat(left, right);
-                            changed = 1;
-                            i = len(brand_bases); // break inner loop
-                        }
-                    }
-                } else if typechecker_ends_with(erased, flat_suffix) == 1 {
-                    erased = std.str_slice(erased, 0, len(erased) - len(flat_suffix));
-                    changed = 1;
-                    i = len(brand_bases); // break inner loop
-                } else {
-                    mut pos2 := std.str_find(erased, flat_mid);
-                    if pos2 != 0 - 1 {
-                        mut left := std.str_slice(erased, 0, pos2);
-                        mut right := std.str_slice(erased, pos2 + len(flat_mid) - 1, len(erased));
-                        erased = std.Concat(left, right);
-                        changed = 1;
-                        i = len(brand_bases); // break inner loop
-                    }
-                }
-            }
-            i = i + 1;
+        mut middle_pos := std.str_find(normalized, middle);
+        if middle_pos != 0 - 1 {
+            mut left := std.str_slice(normalized, 0, middle_pos);
+            mut right := std.str_slice(normalized, middle_pos + len(token), len(normalized));
+            normalized = std.Concat(left, right);
+            changed = 1;
+        } else if typechecker_ends_with(normalized, token) == 1 {
+            normalized = std.str_slice(normalized, 0, len(normalized) - len(token));
+            changed = 1;
         }
     }
-    return std.Clone(ctx, erased);
+    return std.Clone(ctx, normalized);
 }
 
+func typechecker_canonicalize_concrete_name(name: str, brand: str, ctx: &Arena) str {
+    mut canonical := typechecker_remove_flattened_identity(name, brand, ctx);
+    mut local_brand := strip_brand_prefix(brand, ctx);
+    if std.str_eq(local_brand, brand) == 0 {
+        canonical = typechecker_remove_flattened_identity(canonical, local_brand, ctx);
+    }
+    return canonical;
+}
 
 func typechecker_substitute_brand(t: ast.Type[ctx], new_brand: Index[str, ctx], ctx: &Arena) ast.Type[ctx] {
     unsafe {
@@ -9952,8 +10206,12 @@ func types_match(expected: ast.Type[ctx], actual: ast.Type[ctx], ctx: &Arena) in
             mut name2 := actual.Index.struct_name;
             name1 = typechecker_strip_module_prefix(name1, ctx);
             name2 = typechecker_strip_module_prefix(name2, ctx);
-            name1 = typechecker_clean_monomorphized_name(name1, ctx);
-            name2 = typechecker_clean_monomorphized_name(name2, ctx);
+            mut expected_brand := get_type_brand(expected, empty[*TypeEnvironment[ctx]], ctx);
+            mut actual_brand := get_type_brand(actual, empty[*TypeEnvironment[ctx]], ctx);
+            name1 = typechecker_canonicalize_concrete_name(name1, expected_brand, ctx);
+            name1 = typechecker_canonicalize_concrete_name(name1, actual_brand, ctx);
+            name2 = typechecker_canonicalize_concrete_name(name2, expected_brand, ctx);
+            name2 = typechecker_canonicalize_concrete_name(name2, actual_brand, ctx);
             if std.str_eq(name1, name2) || std.str_eq(name1, "Any") || std.str_eq(name2, "Any") {
                 return 1;
             }
@@ -9980,9 +10238,14 @@ func types_match(expected: ast.Type[ctx], actual: ast.Type[ctx], ctx: &Arena) in
 
             name1 = typechecker_strip_module_prefix(name1, ctx);
             name2 = typechecker_strip_module_prefix(name2, ctx);
-
-            name1 = typechecker_clean_monomorphized_name(name1, ctx);
-            name2 = typechecker_clean_monomorphized_name(name2, ctx);
+            mut expected_brand := get_type_brand(expected, empty[*TypeEnvironment[ctx]], ctx);
+            mut actual_brand := get_type_brand(actual, empty[*TypeEnvironment[ctx]], ctx);
+            name1 = typechecker_canonicalize_concrete_name(name1, expected_brand, ctx);
+            name1 = typechecker_canonicalize_concrete_name(name1, actual_brand, ctx);
+            name2 = typechecker_canonicalize_concrete_name(name2, expected_brand, ctx);
+            name2 = typechecker_canonicalize_concrete_name(name2, actual_brand, ctx);
+            name1 = typechecker_remove_flattened_identity(name1, "Any", ctx);
+            name2 = typechecker_remove_flattened_identity(name2, "Any", ctx);
 
             if std.str_eq(name1, name2) {
                 return 1;
@@ -10278,7 +10541,6 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             (*env).current_function_inout_params = old_inout_params;
             (*env).current_function_local_vars = old_local_vars;
             (*env).in_unsafe_block = old_in_unsafe_func_body;
-
             return res;
         }
 
@@ -10481,13 +10743,6 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             if left.tag == 0 { // Identifier
                 mut name := left.Identifier.name;
 
-                // Enforce immutability on shared allocator reference variables
-                if std.str_eq(name, "ctx") == 1 || std.str_eq(name, "arena") == 1 {
-                    mut msg := std.Concat("Semantic Error: Reassignment of immutable shared allocator reference '", name);
-                    msg = std.Concat(msg, "' is strictly prohibited");
-                    report_error(2, msg, left.Identifier.span, env, ctx);
-                }
-
                 mut resolved_name := name;
                 mut is_local := scope_contains(scope, name, ctx);
                 if is_local == 0 {
@@ -10500,6 +10755,12 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                     msg = std.Concat(msg, "' in assignment LHS");
                     report_error(2, msg, left.Identifier.span, env, ctx);
                 } else {
+                    mut resolved_left_type := env_resolve_type(env, left_type, ctx);
+                    if typechecker_is_arena_value_or_ref(resolved_left_type, ctx) == 1 {
+                        mut msg := std.Concat("Semantic Error: Reassignment of immutable allocator binding '", name);
+                        msg = std.Concat(msg, "' is strictly prohibited");
+                        report_error(2, msg, left.Identifier.span, env, ctx);
+                    }
                     mut final_span := left.Identifier.span;
                     mut prefix := (*env).current_prefix;
 

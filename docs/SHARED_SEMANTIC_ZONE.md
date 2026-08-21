@@ -31,8 +31,8 @@ another through Cranelift.
 | --- | --- | --- | --- |
 | Type representation and canonical type identity | `TASK.md` Phase 14 record; `compiler/typechecker.gst` | Cranelift | `TASK.md` Starting State |
 | Aggregate layout | Phase 14 layout authority | Cranelift | `compiler/CRANELIFT_PHASE14_LAYOUT_AUTHORITY.md` |
-| Arena and brand semantics | `GEMINI.md` §A–§B; Phase 14 | Cranelift | see **Open defect D-1** |
-| Argument representation (by value vs by address) | Phase 16 ABI authority | Cranelift | `TASK.md` Phase 16 record; see **D-1** |
+| Arena and brand semantics | `GEMINI.md` §A–§B; Phase 14 | Cranelift | `TASK.md` Phase 19.8; see closed defect D-1 |
+| Argument representation (by value vs by address) | Phase 16 ABI authority | Cranelift | `TASK.md` Phase 16 record and Phase 19.5 |
 | Resource ownership and identity | Phase 15 authority; `STEP52_RESOURCE_SEMANTICS.md`; `VISION.md` §28 | Cranelift | `TASK.md` "Immutable Phase 15 Completion Record"; see **D-4** |
 | Scope-exit and drop semantics | Phase 15; `VISION.md` §29 | Cranelift | `VISION.md` §29 |
 | Move semantics | Phase 15 (Patch 15.3 move state) | Cranelift | `TASK.md` "Immutable Phase 15 Completion Record", Patch 15.3 |
@@ -122,29 +122,6 @@ support, ever.
 Known, verified breaches of the invariant. Evidence and reproductions:
 `docs/STDLIB_SURFACE_FINDINGS.md`.
 
-### D-1 — Brand identity is inferred from identifier spelling
-
-**Owner: Phase 19** (decided 2026-08-19). A narrow phase covering brand and
-argument representation and nothing else. Not Phase 18, whose boundary is
-targets, objects, and linkers; not a Stdlib patch, because it changes compiler
-semantics and requires a seed regeneration.
-
-The self-hosted compiler hardcodes
-`["connCtx", "arena", "ctx", "Any", "a", "main_ctx", "bg_ctx", "file_ctx"]`
-as arena brand names and prepend `&` at call sites for any matching identifier,
-regardless of type. The generated
-`compiler/CRANELIFT_PHASE19_SPELLING_INVENTORY.md` is the authoritative site
-list: five decisions in `compiler/codegen.gst` and four in
-`compiler/typechecker.gst`.
-
-*Citations re-verified 2026-08-20 at `b47d0049`. The previous pair
-`typechecker.gst:4953,5151` had drifted — `:4953` is now a Void-return path and
-`:5151` is `typechecker_matches_template_prefix`. The defect is unchanged; only
-the line numbers moved.*
-
-A local `str` named `a` is emitted as `&a` and fails to compile in C. Renaming it
-fixes the program.
-
 ### D-3 — `str ==` has no defined meaning — **miscompile closed 2026-08-19, semantics still open**
 
 Originally: accepted by the typechecker and lowered to `==` over two
@@ -227,6 +204,7 @@ Still open, confirmed 2026-08-20 at `b47d0049` (`src/runtime/strings.c:20,30`).
 Stated as `TASK_STDLIB.md` CR-3 and filed as issue #91. No phase has scheduled
 it.
 
+
 ## Citing evidence
 
 Source citations in this document are `path:line` pinned to the commit that
@@ -273,8 +251,22 @@ lowering. In each case the grep was accurate and the conclusion was not.
   removed the deprecated root Rust prototype compiler (merge
   `7e82494c8eeeca772530ba2eae699fbed978d87f`). With one compiler frontend there
   is no second matching implementation and therefore no cross-compiler
-  divergence. D-1 remains open because the self-hosted compiler still infers
-  brand identity from spelling.
+  divergence.
+
+- **D-1 — Brand identity inferred from identifier spelling — closed by Phase
+  19.8 on 2026-08-21.** The legacy exact, suffix, substring, and generated-code
+  spelling authority is absent from `compiler/*.gst`. Template role metadata,
+  resolved AST brand markers, and canonical type records now decide brand
+  identity and argument representation. The focused rename-parity family proves
+  that `ctx` and an arbitrary `region` spelling behave identically; `make gust`
+  proves the committed seed can compile the corrected self-hosted compiler.
+
+- **D-6 — Generic brand arguments lacked declaration-level role metadata —
+  closed by Phase 19.8 on 2026-08-21.** Struct and enum templates now record a
+  `brand_parameter_index`; built-ins declare it explicitly and user templates
+  infer it structurally from field and variant-payload use. Resolution and
+  monomorphization consume that role through existing AST brand metadata. No
+  syntax, MIR, layout, ABI, runtime symbol, or backend-specific rule changed.
 
 A row is added here when a change is found to have two owners, or none. A row is
 removed only when the concept genuinely leaves the shared surface — not because a

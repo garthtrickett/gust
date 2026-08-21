@@ -323,6 +323,9 @@ jobs:
       - name: Phase 19 retired Rust prototype absence
         run: just guard-cranelift-phase19-retired-prototype-absent
 
+      - name: Phase 19 self-hosted name-list removal
+        run: just guard-cranelift-phase19-gust-name-list-removed
+
       - name: Phase 17 cross-feature runtime composition
         run: just guard-cranelift-phase17-composition-contract
 
