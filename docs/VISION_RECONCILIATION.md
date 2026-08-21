@@ -207,9 +207,11 @@ library, on the argument that C already did that work correctly.
 **It is retired, and it is retired because it is load-bearing in the wrong
 direction, not because it is unambitious.**
 
-- `VISION.md` §93: "Native code is forbidden by default."
-- `VISION.md` §98: "In-process native code weakens memory-safety and
-  process-integrity guarantees **for the entire application instance**."
+- `VISION.md` §93: application-authored and third-party native code is forbidden
+  by default.
+- `VISION.md` §98: application-authored or third-party in-process native code
+  weakens memory-safety and process-integrity guarantees **for the entire
+  application instance**.
 - `README.md`: the entire stated rationale for the Cranelift backend is that C's
   abstract machine — pointer provenance, effective types, signed-overflow
   latitude — is hostile to the arena-and-index model.
@@ -220,6 +222,14 @@ The contradiction is not a matter of degree. If an application links OpenSSL
 in-process, the sentence "no code executes authority it did not declare" is false
 for that application, by `VISION.md` §98's own terms. The containment thesis and
 the C-ecosystem plan cannot both be true, and containment is the one being sold.
+
+OD-12 does not reopen this ecosystem plan. Its narrow exception is a
+compiler-owned mobile host and adapter that is versioned, conformance-tested,
+signed, and pinned as part of a supported platform release. That code enlarges
+the trusted computing base; it does not turn arbitrary application or third-party
+native libraries into platform code. The distinction is now explicit in
+`VISION.md` §93 and §98 and specified in
+`docs/MOBILE_NATIVE_DEPLOYMENT.md` §10.
 
 What replaces the library table, in one sentence: *a Gust-owned capability
 interface may be implemented by a certified adapter, out-of-process by default;
@@ -346,10 +356,10 @@ uncontrolled dependency graph*"), `VISION.md` §98 supplies the mechanism
 
 | Category | Example | Resolution | Guarantee |
 | --- | --- | --- | --- |
-| **Platform** | `use web`, `use sql.postgres`, `use jobs` | none — pinned by platform release | Full. |
+| **Platform** | `use web`, `use sql.postgres`, `use jobs`; compiler-owned mobile host/adapter | none — pinned by platform release | Full at the declared platform boundary. A native target adapter is inside the trusted computing base, so its provenance and conformance evidence are part of the guarantee. |
 | **Certified capability provider** | `storage` → S3 / R2 / MinIO; `payments` → Stripe | named interface, certified implementation, out-of-process | Full in-process. Egress narrows to declared purpose (§85). Revocable (§86). |
 | **Vendored Gust source** | pinned revision, no transitive resolution, no build scripts, no network at build time | hash-pinned | Memory safety and containment hold; capabilities still enforced (§71). No support or migration assistance. |
-| **Escape hatch** | in-process native code, `network.unrestricted`, arbitrary fs or process | signed adapter, human approval, expiry (§97) | **The named guarantee is forfeit, and the compiler says which.** |
+| **Escape hatch** | application-authored or third-party in-process native code, `network.unrestricted`, arbitrary fs or process | signed adapter, human approval, expiry (§97) | **The named guarantee is forfeit, and the compiler says which.** |
 
 ### The mechanism that makes "forfeit" mean something
 

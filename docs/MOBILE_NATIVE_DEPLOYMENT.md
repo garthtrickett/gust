@@ -1,13 +1,13 @@
 # Mobile native deployment — Gust, Swift, and Kotlin
 
-Status: **PROPOSAL for OD-12, not an implementation claim or semantic decision**
+Status: **OD-12 RESOLVED — architecture adopted; implementation remains absent**
 
 Written: 2026-08-21
 
 Scope: iOS and Android application deployment; server and browser targets appear
 only where they constrain the mobile design.
 
-## 1. Recommendation
+## 1. Decision
 
 Compile the Gust application ahead of time to device machine code and package it
 inside an ordinary iOS or Android application. Let a small, generated host use the
@@ -29,8 +29,10 @@ declared native escape hatch for a platform facility Gust does not expose. It
 must not be the routine answer to a missing widget or device API, and it cannot
 inherit the guarantee of an out-of-process supplier.
 
-This recommendation is recorded as **OPEN**, not adopted. `docs/VISION.md` §0.15
-is the authoritative status register and now names the question as OD-12.
+The operator adopted this architecture on 2026-08-21. `docs/VISION.md` §0.15 is
+the authoritative status register and records OD-12 as **RESOLVED**. Adoption
+sets the application and trust boundaries; it does not claim that a mobile
+target, host generator, adapter, SAM runtime, or packaging pipeline exists.
 
 ### The short answer to “like S3?”
 
@@ -59,13 +61,13 @@ not in the supplier category.
    representative devices: cold start, warm start, p50/p95 frame time, missed
    frames, memory, binary size, boundary calls, and copied bytes.
 
-The existing backend rationale must not be rewritten to fit this proposal.
+The existing backend rationale must not be rewritten to fit this decision.
 `README.md:45-53` says Cranelift exists to preserve Gust's memory model rather than
 as a performance play. AOT device code is still the right mobile deployment
 shape, but no document should promise that it is faster than Swift or Kotlin
 without measurements.
 
-## 3. Ground truth checked before proposing a design
+## 3. Ground truth checked before adoption
 
 ### 3.1 What the vision already requires
 
@@ -78,20 +80,23 @@ without measurements.
   in-process only when strictly necessary (`docs/VISION.md:638-650`).
 - S3-compatible storage is platform infrastructure behind a Gust-owned API
   (`docs/VISION.md:652-658`).
-- The currently proposed client model is browser-only and is explicitly
-  speculative: no Wasm target, templates, SAM runtime, or RPC layer exists
-  (`docs/VISION.md:1276-1292`).
+- Before OD-12, the client model was browser-only. Part IX now names browser and
+  supported mobile targets while remaining explicitly speculative: no Wasm or
+  mobile target, templates, SAM runtime, or RPC layer exists
+  (`docs/VISION.md:1276-1300`).
 - The intended UI is a compiler-owned typed template plus SAM actions and effects
-  (`docs/VISION.md:1294-1330`).
-- In-process native code weakens memory-safety and process-integrity guarantees
-  for the application instance (`docs/VISION.md:2065-2073`).
+  (`docs/VISION.md:1302-1353`).
+- Application-authored or third-party in-process native code weakens memory-safety
+  and process-integrity guarantees for the application instance
+  (`docs/VISION.md:2122-2131`).
 - The dependency reconciliation gives the pinned platform its full guarantee,
   puts S3 behind an out-of-process certified capability, and places in-process
   native code in the escape-hatch category
-  (`docs/VISION_RECONCILIATION.md:336-352`).
+  (`docs/VISION_RECONCILIATION.md:350-362`).
 
-Those facts support a Gust-owned mobile adapter, but they do not already decide
-it.
+Those facts supported a Gust-owned mobile adapter but did not decide it. The
+operator's 2026-08-21 adoption supplied that authority; it did not change the
+implementation evidence in §3.2.
 
 ### 3.2 What the compiler supports today
 
@@ -116,29 +121,33 @@ The only directly relevant language boundary already enforced is narrower:
 direct external/native calls require `unsafe`
 (`compiler/typechecker.gst:4042-4048`). The broader signed-adapter, capability,
 isolation, provenance, and guarantee-ledger machinery does not exist; the vision
-records that absence at `docs/VISION.md:2059-2077`.
+records that absence at `docs/VISION.md:2068-2088`.
 
 The credibility ledger is equally direct: authority, dependencies, external
 services, client/server RPC, and rendering are absent; the backend is partial;
 native-code governance is partial (`docs/ONE_WAY_LEDGER.md:82-101`). This report
 does not upgrade any of those scores.
 
-### 3.3 Two document conflicts this proposal exposes
+### 3.3 Two document conflicts OD-12 resolves
 
-Do not silently resolve either conflict:
+Before adoption, the documents disagreed in two places. OD-12 made both changes
+explicit rather than silently choosing one side:
 
-1. `docs/VISION.md:1286-1290` fixes client functions to the browser. A mobile
-   client execution location would amend that model; it is not an implementation
-   detail under the existing words.
-2. `docs/VISION_RECONCILIATION.md:347-352` gives platform code the full guarantee,
-   while `docs/VISION.md:2065-2071` says in-process native code weakens the whole
-   instance. A Gust-owned Swift/Kotlin adapter is both platform code and
-   in-process native code unless the trusted platform base is defined explicitly.
+1. Part IX now names browser and supported mobile execution locations
+   (`docs/VISION.md:1289-1300`). Adding mobile was a vision amendment, not an
+   implementation detail.
+2. The guarantee account now puts the compiler-owned target adapter inside the
+   pinned platform trusted computing base while keeping application and
+   third-party native code outside it (`docs/VISION.md:2072-2084` and
+   `docs/VISION.md:2122-2131`; `docs/VISION_RECONCILIATION.md:357-362`).
 
-The proposed resolution is to make the reviewed, version-pinned Gust mobile
-adapter part of the platform trusted computing base, while any application-owned
-or third-party native module remains an escape hatch. That resolution belongs to
-OD-12 and requires operator authority.
+OD-12 resolves both explicitly. Part IX now names browser and supported mobile
+clients under one canonical state, action, `View`, RPC, and capability model.
+`docs/VISION.md` §93 and §98 and `docs/VISION_RECONCILIATION.md` §3.3 and §5 now
+make the reviewed, version-pinned Gust mobile adapter part of the platform trusted
+computing base, while any application-owned or third-party native module remains
+an escape hatch. That distinction is an adopted architecture decision, not
+evidence that its enforcement exists.
 
 ## 4. Why Swift and Kotlin belong in the host
 
@@ -243,8 +252,8 @@ The Gust core owns:
 
 ### 5.1 SAM across the native boundary
 
-The mobile host does not introduce a second state architecture. The proposed
-contract carries Gust's existing SAM direction across the ABI:
+The mobile host does not introduce a second state architecture. The adopted
+OD-12 contract carries Gust's existing SAM direction across the ABI:
 
 ```text
 native event
@@ -265,7 +274,7 @@ host receives a snapshot (and, later, a keyed patch)
 SwiftUI/Compose updates native controls
 ```
 
-This preserves the roles already assigned in `docs/VISION.md:1318-1328`: the
+This preserves the roles already assigned in `docs/VISION.md:1340-1353`: the
 model stores application state, actions describe events, acceptors apply
 transitions, presenters derive view state, and effects remain explicit. The
 native state holder is a read-only mirror of the presented `ViewState`; it is an
@@ -308,12 +317,12 @@ model: applying it must produce the same presented view as the corresponding
 snapshot. Avoid per-property JNI getters and never send the complete application
 model merely to render one screen.
 
-This section specifies the proposed mobile boundary, not a shipped facility.
-The SAM runtime is absent today (`docs/MOBILE_NATIVE_DEPLOYMENT.md:82-84`), and
+This section specifies the adopted mobile boundary, not a shipped facility.
+The SAM runtime is absent today (`docs/VISION.md:1276-1281`), and
 OD-3 remains open pending its worked, reviewed ownership example
-(`docs/VISION.md:1330-1336`). In particular, the proposed confirmed-model plus
+(`docs/VISION.md:1355-1361`). In particular, the proposed confirmed-model plus
 pending-action journal and its optimistic reconciliation rules remain a leading
-direction rather than a decision (`docs/VISION.md:1338-1360`). Mobile must consume
+direction rather than a decision (`docs/VISION.md:1359-1385`). Mobile must consume
 the outcome of OD-3; it must not decide that ownership question independently.
 
 ### 5.2 Boundary rules
@@ -518,9 +527,10 @@ Target, ABI, linker, runtime, MIR, and native-boundary work belongs to the
 Cranelift/semantic owner. UI surface and safe capability wrappers need an explicit
 ownership split before implementation.
 
-### M0 — decision and two throwaway packaging spikes
+### M0 — two throwaway packaging spikes
 
-- Resolve OD-12's trusted-platform/escape-hatch distinction.
+- Treat OD-12's trusted-platform/escape-hatch distinction as fixed input; do not
+  reopen it inside a packaging spike.
 - Build one iOS Simulator and one Android Emulator counter with a manually tiny C
   ABI, native host UI, and no new Gust language surface.
 - Record cold/warm start, frame time, memory, binary size, bridge calls and copied
@@ -628,7 +638,7 @@ The first fallback is a constrained handwritten native-view boundary for the
 affected surface. It is not unrestricted mixing and not a reason to transpile the
 whole language.
 
-## 10. Proposed OD-12 answer
+## 10. Adopted OD-12 answer
 
 > Gust mobile applications are written in Gust and ahead-of-time compiled to
 > each supported mobile target. Gust generates a thin Swift or Kotlin host and
@@ -641,11 +651,13 @@ whole language.
 > introduce an uncontrolled dependency graph. The compiler and release artifact
 > make that loss visible.
 
-If adopted, Part IX must be amended from “client means browser” to an explicit
-set of client targets with one canonical state, action, `View`, RPC, and
-capability model. The guarantee documents must also define the Gust mobile
-adapter as part of the pinned platform trusted computing base. Until the operator
-sets that direction in the OD register, this remains a ranked proposal.
+Adopted by the operator on 2026-08-21 and recorded as **RESOLVED** in
+`docs/VISION.md` §0.15. Part IX now names an explicit set of client targets with
+one canonical state, action, `View`, RPC, and capability model. `docs/VISION.md`
+§93 and §98 and `docs/VISION_RECONCILIATION.md` §3.3 and §5 define the Gust mobile
+adapter as part of the pinned platform trusted computing base and preserve the
+loss-of-guarantee boundary for application-authored or third-party native code.
+All delivery milestones in §8 remain future work.
 
 ## 11. Official external references checked
 

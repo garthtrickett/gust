@@ -98,7 +98,7 @@ when the backend does.
 | 34 | Host access | Filesystem and process access are never silently available | ambient host authority | **VIOLATED** — E19 |
 | 35 | Visibility | private-to-module by default, then package / application / public | everything visible everywhere | **ABSENT** — E19 |
 | 36 | Cross-context movement | A shorter-lived value enters a longer-lived context only by cloning or explicit transfer | silently extending a lifetime | **PARTIAL** — E20 |
-| 37 | Native code | Forbidden by default; only via signed adapter, capability, isolation | ungated native execution | **PARTIAL** — E21 |
+| 37 | Application native code | Forbidden by default; only via signed adapter, capability, isolation | ungated application native execution | **PARTIAL** — E21 |
 | 38 | Packages | A package is a directory tree with a manifest; lockfiles record provenance | no package identity | **ABSENT** — E21 |
 | 39 | Conformance checking | Generated checks substitute for reading | trusting unread output | **ABSENT** — E22 |
 | 40 | Machine-readable diagnostics | Structured form with a stable rule identifier and candidate edits | prose-only errors | **PARTIAL** — E23 |
@@ -1130,14 +1130,17 @@ cannot be stronger than row 2 until Phase 19 lands.
 
 **Row 37 — there is a real gate, and it is inverted.**
 
-`docs/VISION.md` §93: "Native code is forbidden by default. Permitted only
-through a signed adapter, an explicit native-code capability, and strong
-isolation."
+`docs/VISION.md` §93 now distinguishes two categories after OD-12.
+Application-authored and third-party native code is forbidden by default and is
+permitted only through a signed adapter, an explicit native-code capability, and
+strong isolation. A compiler-owned adapter for a supported target instead joins
+the pinned platform trusted computing base. That exception does not apply to an
+application's ordinary `extern` declaration and does not change this score.
 
 Part of this holds, and it is worth crediting. `extern` is a keyword in the live
 lexer, `extern func` declarations parse (`compiler/parser.gst:1169-1199`), and
 **calling one requires an explicit `unsafe` block** —
-`compiler/typechecker.gst:4047`:
+`compiler/typechecker.gst:4044`:
 
 ```
 Semantic Error: Direct external/native function calls require an explicit 'unsafe' block

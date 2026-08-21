@@ -385,7 +385,7 @@ second, drifting copy of it.
 | OD-6 | Form of the intent layer | **OPEN** — leading proposal recorded 2026-08-20 (§117.1): contracts on capabilities as the core, examples as the authoring surface, properties for depth | v1.0 | Part XXI |
 | OD-11 | ~~The fate of `std.Spawn`~~ | **RESOLVED 2026-08-20** — bare form deleted; scoped spawn returns a linear task handle | Demo | §20.1 |
 | OD-5 | Supplier certification staffing model | **DIRECTION SET 2026-08-20** — split the function: an agent does conformance, the operator does trust and commerce; pricing still open | Post-1.0 | Part XVI |
-| OD-12 | **Mobile execution boundary** — should mobile apps remain Gust-only above compiler-owned Swift/Kotlin hosts, or may application authors mix Swift/Kotlin into the normal source model? | **OPEN** — recommendation recorded 2026-08-21: AOT Gust core plus generated native hosts; application-authored native code only as an explicit escape hatch | Post-demo mobile | `docs/MOBILE_NATIVE_DEPLOYMENT.md` |
+| OD-12 | ~~**Mobile execution boundary** — should mobile apps remain Gust-only above compiler-owned Swift/Kotlin hosts, or may application authors mix Swift/Kotlin into the normal source model?~~ | **RESOLVED 2026-08-21** — AOT Gust core plus generated, pinned Swift/Kotlin hosts; application-authored native code is only an explicit in-process escape hatch and forfeits the named process-integrity guarantee | — | `docs/MOBILE_NATIVE_DEPLOYMENT.md` §10; client consequences in Part IX; guarantee boundary in §93 and §98 |
 
 There is no OD-7. The number is unused and nothing in the repository references it; it is recorded here so a reader who notices the gap does not go looking.
 
@@ -1275,7 +1275,10 @@ Runtime corruption or unsafe-memory failure may terminate the application proces
 
 # Part IX — Client, UI, and RPC
 
-> **Status: SPECULATIVE.** No Wasm target, templates, SAM runtime, or RPC layer exists. `full-stack-slice-0.md` is the scoped entry point when this is taken up; per §0.7 it is not now.
+> **Status: SPECULATIVE.** No Wasm target, mobile target, templates, SAM runtime,
+> or RPC layer exists. `docs/WEB_SLICE_0.md` is the browser-scoped entry point
+> when this is taken up; per §0.7 it is not now. OD-12 decides the mobile
+> application boundary, not its implementation status.
 
 *v0.5 (§0.14). Not in the demo.*
 
@@ -1285,17 +1288,35 @@ Gust begins as a client-rendered application platform with typed RPC. The model 
 
 Execution locations are explicit and fixed:
 
-- client functions run in the browser;
+- client functions run in a declared browser or supported mobile target;
 - server functions run in the server runtime;
 - shared code must be pure, serializable, and capability-free.
 
-Server functions generate typed client calls. The compiler rejects server-only capabilities in client code.
+Browser client code compiles for the browser runtime. Mobile client code compiles
+ahead of time for its declared device target and runs behind a generated,
+platform-pinned Swift or Kotlin host. Server functions generate the same typed
+client calls for either client class. The compiler rejects server-only
+capabilities in client code and rejects target capabilities unavailable on the
+declared client target.
 
 ## 36. UI component model
 
-Gust provides a typed, compiled implementation of the lit-html template model.
+Gust provides one typed, compiler-owned `View` and component model across client
+targets. Application state, actions, presenters, RPC, and capability requests do
+not change when the renderer changes.
 
-Components are ordinary functions returning `View`. Templates use typed HTML expressions and incremental DOM-part updates rather than a virtual DOM. Components compose by calling other component functions.
+In the browser, the renderer is a compiled implementation of the lit-html
+template model. On mobile, the compiler-generated host maps the same canonical
+`View` plan and action IDs to versioned, conformance-tested SwiftUI/UIKit or
+Compose/Android Views adapters. Swift and Kotlin are platform implementation
+languages below the application boundary, not normal application source
+languages. The exact target-neutral template surface is unimplemented and must
+be settled before a shared renderer is claimed.
+
+Components are ordinary functions returning `View` and compose by calling other
+component functions. Browser templates use typed HTML expressions and
+incremental DOM-part updates rather than a virtual DOM. The sketch below is the
+existing browser illustration, not a settled cross-target source surface.
 
 ```
 component Counter(model: CounterModel) View {
@@ -1311,7 +1332,10 @@ There is no virtual DOM, no JSX transformer, no runtime reflection, and no user-
 
 ## 37. Typed templates
 
-Template type checking is a compiler-owned derivation (§14). Attribute types, event handler signatures, and interpolation types are checked against the component's model type at compile time.
+Template type checking is a compiler-owned derivation (§14). Browser attribute
+types and cross-target view-property types, event handler signatures, and
+interpolation types are checked against the component's model type at compile
+time.
 
 ## 38. SAM state model (OD-3)
 
@@ -1323,7 +1347,8 @@ The standard library includes a SAM-based state model.
 - **Presenters** derive view state.
 - **Effects** perform RPC, timers, storage, and subscriptions.
 
-Event handlers dispatch typed SAM actions rather than directly mutating DOM state.
+Event handlers dispatch typed SAM actions rather than directly mutating rendered
+application state.
 
 Local and remote state use the same action model while effects remain explicit.
 
@@ -1387,19 +1412,27 @@ That is likely the actual answer to the question §38 asks. "SAM state ownership
 
 Build the shadow arena to produce the §27 artifact and clear the "before client work begins" gate; design toward the pending journal as the shipping model; hold `Store[T, ctx]` as the escape hatch, and pay for the §26 work only if something forces it.
 
-## 39. Browser access
+## 39. Client capabilities
 
-Client code may use UI primitives, local state, SAM state machines, typed RPC clients, serializable values, pure shared functions, and approved browser capabilities.
+Client code may use UI primitives, local state, SAM state machines, typed RPC
+clients, serializable values, pure shared functions, and capabilities approved
+for its declared target.
 
 Client code may not directly use databases, server secrets, payments, server email, server object storage, unrestricted filesystems, unrestricted networking, or server resources and references.
 
-Direct DOM access and unrestricted browser APIs require explicit browser capabilities.
+Direct DOM access and unrestricted browser APIs require explicit browser
+capabilities. Camera, notifications, secure storage, biometrics, and other mobile
+facilities cross named Gust capabilities implemented by the pinned native host;
+native framework objects never become application state.
 
 ## 40. Forms, accessibility, and styling
 
 Forms are typed, schema-validated, integrated with RPC validation, and accessibility-aware.
 
-Styling uses compiler-owned scoped CSS. Global styles require explicit declaration.
+Browser styling uses compiler-owned scoped CSS. Global styles require explicit
+declaration. Mobile styling lowers through the canonical `View` model to the
+pinned native adapter; application-authored SwiftUI, UIKit, Compose, or Android
+Views styling is not part of the normal source model.
 
 ## 41. Browser compilation target
 
@@ -1412,6 +1445,22 @@ It does not ship a package loader, supplier SDKs, runtime reflection, unused sta
 Ahead-of-time compilation and tree shaking should make payload size proportional to used features. The design target for a basic application is tens of compressed kilobytes rather than hundreds.
 
 See OD-4: the suspension model (§21) may impose payload cost on this target.
+
+### 41.1 Mobile compilation targets (OD-12)
+
+Gust mobile applications are written in Gust and ahead-of-time compiled to each
+supported mobile target. Gust generates a thin Swift or Kotlin host and ships
+versioned, conformance-tested native UI and capability adapters as part of the
+pinned platform. The complete target tuple includes the compiler, ABI, runtime,
+linker, adapter, SDK/toolchain, packaging, signing, and runner evidence; knowing
+the device instruction set is not target support.
+
+Application-authored Swift or Kotlin is a separately declared in-process native
+escape hatch. It is not a second normal application language: its complete
+dependency closure is pinned and visible, and using it forfeits the named
+process-integrity guarantee for the application instance. The compiler and
+release artifact must make that loss visible. `docs/MOBILE_NATIVE_DEPLOYMENT.md`
+defines the architecture and delivery gates; none is implemented today.
 
 ## 42. Routing and code splitting
 
@@ -2022,11 +2071,19 @@ Privileged approval is required for destructive migrations, cross-tenant access,
 
 ## 93. Native code
 
-Native code is forbidden by default.
+Application-authored and third-party native code is forbidden by default.
 
 Permitted only through a signed adapter, an explicit native-code capability, and strong isolation.
 
-> **A gate exists; the governance does not; and the builtins bypass it.** Verified 2026-08-20 at `b47d0049`. `extern func` declarations parse (`compiler/parser.gst:1169-1199`) and calling one requires an explicit `unsafe` block (`compiler/typechecker.gst:4047`) — that much is real. No signed adapter, native-code capability, isolation, or separate process exists.
+A compiler-owned native adapter that implements a supported target is different:
+it is versioned, conformance-tested, signed, provenance-locked platform code and
+therefore part of that platform release's trusted computing base. Its use does
+not by itself forfeit a named guarantee, but it enlarges the code on which that
+guarantee depends. Application-authored Swift/Kotlin is not platform code and
+cannot acquire this status merely by using the same ABI or build pipeline
+(OD-12).
+
+> **A gate exists; the governance does not; and the builtins bypass it.** Verified 2026-08-20 at `b47d0049`. `extern func` declarations parse (`compiler/parser.gst:1169-1199`) and calling one requires an explicit `unsafe` block (`compiler/typechecker.gst:4044`) — that much is real. No signed adapter, native-code capability, isolation, or separate process exists.
 >
 > The asymmetry matters more than the missing governance: the built-in `os.*` surface passes through no gate at all, so `os.System` spawns `/bin/sh` from a four-line program with no `unsafe` and no import (`tests/e2e_os_system.gst`). A *declared* FFI call is gated; *arbitrary shell execution* is not. `docs/ONE_WAY_LEDGER.md` E21, issue #108.
 
@@ -2067,7 +2124,10 @@ Every escape hatch requires explicit manifest declaration, human approval, defin
 - A sandboxed external adapter weakens guarantees only inside the adapter and the data explicitly exposed to it.
 - An unrestricted network capability weakens supplier and data-egress guarantees for the holder.
 - Arbitrary filesystem or process access weakens host-isolation guarantees.
-- In-process native code weakens memory-safety and process-integrity guarantees for the entire application instance.
+- Application-authored or third-party in-process native code weakens memory-safety and process-integrity guarantees for the entire application instance.
+- A pinned compiler-owned target adapter is inside the platform trusted computing
+  base: its use preserves the declared platform guarantee, while a defect in it
+  is a defect in that guarantee rather than an isolated application failure.
 - Any mechanism that can bypass Gust isolation invalidates the wider guarantee for that runtime boundary.
 
 > Escape hatches are isolated products with explicit loss-of-guarantee boundaries, not ordinary language features.
