@@ -235,9 +235,13 @@ This document covers Gust and Rust *style*: how to write code that the
 typechecker, the transpiler, and the bootstrap seed will accept. Read `AGENTS.md`
 for how to work; read this for what to write.
 
-# Rust Style Guide: Sovereign Core & Gust Compiler
+# Rust Style Guide: Live Rust Components
 
-This document defines the architectural patterns, coding standards, and style guidelines for Rust development within this project. It is heavily inspired by our functional TypeScript and Kotlin Gatekeeper style guides—focusing on minimal abstraction, locality of behavior, strict expression-based flow, and robust error handling without exception/panic mechanics.
+This document defines the architectural patterns, coding standards, and style
+guidelines for the two live Rust components: the Cranelift backend under
+`compiler/experiments/cranelift/` and the Phase 17 runtime crate under
+`src/runtime/rust/`. The deprecated root Rust prototype compiler has been
+removed; there is no root Cargo manifest.
 
 ---
 
@@ -413,79 +417,26 @@ let resolved_args: Result<Vec<Type>, TypeError> = args
 
 ## 7. Logging & Debugging Standards
 
-We use structured logging with high visibility. All major logical branch transitions (especially inside core calculations) should be logged. We employ an emoji-guided schema to enable rapid parsing of terminal traces.
+The live Rust crates do not share the removed prototype's `tracing` setup or a
+global logging initializer. Keep diagnostic output local to the owning command
+or guard, preserve deterministic output where a test compares it, and do not
+add a logging dependency without explicit approval.
 
-Instead of trying to guess why a complex monomorphization failed, we can write localized, diagnostic-heavy tracing::debug! calls that dump the entire local variable table, the expected vs. actual type layouts, and active memory origin sets at the precise boundary of failure.
-By executing the tests with RUST_LOG=debug cargo test -- --nocapture, we will get a complete step-by-step diagnostic trace leading right up to the panic or failure.
-
-### How to Enable Tracing
-The `tracing` and `tracing-subscriber` frameworks are fully integrated. To view structured logs during compilation or testing:
-1. Set the `RUST_LOG` environment variable (e.g. `export RUST_LOG=debug` or `export RUST_LOG=info`).
-2. Run your cargo commands:
-   * **Run tests with logs**: `RUST_LOG=debug cargo test -- --nocapture`
-   * **Run compiler with logs**: `RUST_LOG=debug cargo run -- input.gst`
-
-### Logging Initialization
-Logging is initialized globally via `gust_lexer::init_logging()`. In test suites and binary entry-points, this is called safely (preventing multiple registrations via `try_init()`).
-
-### Emoji Legend
-* `📥` **Action Dispatched:** Event incoming to Worker/Engine boundary.
-* `🔄` **State Changed:** State transitions or monomorphization resolutions.
-* `⚙️` **Execution:** Side effects (file writes, arena growth allocations).
-* `🗄️` **Memory / Registry:** Type additions to registry tables or variable scoping modifications.
-* `✅` **Verification:** Successful verification, parser compliance, or compile completion.
-* `❌` **Error:** Caught compile validation or runtime issues.
-* `👁️` **Tracing:** Localized diagnostics.
-
-**Example Implementation Pattern:**
-```rust
-pub fn check_program(&mut self, program: &Program) -> Result<(), TypeError> {
-    tracing::debug!("📥 Starting validation pass for program structure.");
-    for stmt in &program.statements {
-        self.check_statement(stmt).map_err(|e| {
-            tracing::error!("❌ Validation failed: {}", e.message);
-            e
-        })?;
-    }
-    tracing::info!("✅ Program validation complete. System is safe.");
-    Ok(())
-}
-```
+Run Cargo against an explicit live manifest; a root-level `cargo test` or
+`cargo run` is an error because no root package exists.
 
 ---
 
 ## 8. Testing Standards
 
-Maintain a multi-layered testing topology:
+Maintain a multi-layered testing topology inside each live crate:
 
-* **Layer 1: Unit Tests (`cargo test`):** Put unit tests in the same file as the tested components using a `tests` module block with `#[cfg(test)]`. Target pure calculations and lexer/parser invariants.
-* **Layer 2: Integration / E2E Tests:** Keep integration and end-to-end user flows inside a separate `/tests` directory (e.g., `tests/compile_tests.rs`, `tests/e2e_tests.rs`).
+* **Layer 1: Unit Tests:** Put unit tests in the same file as the tested
+  components using a `tests` module block with `#[cfg(test)]`.
+* **Layer 2: Integration / E2E Tests:** Keep crate integration tests under that
+  crate's `tests/` directory. Gust-language end-to-end programs remain in the
+  repository's root `tests/` directory and run through repository guards.
 * **Strict Assertion of Invariants:** Use `assert_eq!`, `assert!`, and `matches!` pattern testing directly rather than mock structures. Avoid mocking libraries unless strictly testing I/O boundaries.
 
----
-
-## 9. Diagnostic CLI Flags
-
-The Rust prototype compiler in `src/` provides two diagnostic flags. They were
-built to give the self-hosted parser and typechecker a ground truth to diff
-against; self-hosting is complete, but the flags remain useful for the same
-reason — they are an independent implementation of the same pipeline.
-
-These are `cargo run --` flags on the Rust compiler. The self-hosted `./gust`
-binary does not accept them; its options are `--backend`, `-o`, and `-h`.
-
-### `--dump-ast`
-* **Purpose**: Intercepts the pipeline directly after parsing.
-* **Behavior**: Walking the parsed Abstract Syntax Tree (AST), this flag serializes it into a highly deterministic, stable, human-readable indented text structure. Volatile spans are stripped so the output stays perfectly diffable against the self-hosted parser.
-* **Usage**:
-  ```bash
-  cargo run -- --dump-ast src/main.gst
-  ```
-
-### `--dump-types`
-* **Purpose**: Intercepts the pipeline directly after typechecking.
-* **Behavior**: Extracts the populated type checking databases (including resolved variable types, alphabetically sorted struct layouts, enum variant listings, and alphabetically sorted function signatures) and serializes them. This acts as a semantic ground-truth reference database for the self-hosted typechecker.
-* **Usage**:
-  ```bash
-  cargo run -- --dump-types src/main.gst
-  ```
+Use the owning `just` guard for backend and runtime validation. Direct crate
+commands, when needed, must name one of the two live manifests explicitly.
