@@ -10,8 +10,6 @@ on:
     paths:
       - 'compiler/typechecker.gst'
       - 'compiler/lexer.gst'
-      - 'src/lexer.rs'
-      - 'src/parser.rs'
       - 'STEP52_RESOURCE_SEMANTICS.md'
       - 'TASK_STDLIB.md'
       - '.github/workflows/stdlib-s1-resource-prerequisites.yml'
