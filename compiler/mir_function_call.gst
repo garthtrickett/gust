@@ -38,6 +38,10 @@ type MirCallOperand[ctx] struct {
     value_id: str,
     value_type_id: str,
     layout_id: str,
+    // Patch 19.5 migration field. Empty remains accepted until every producer
+    // and backend consumer has moved to the Phase 16 representation record.
+    passing_mode: str,
+    materialization: str,
     evaluation_order: int,
     hidden: int,
     resource_id: str,
