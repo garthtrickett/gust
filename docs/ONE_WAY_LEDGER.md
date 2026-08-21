@@ -44,11 +44,11 @@ one thing called "the compiler":
 | `compiler/*.gst` | the self-hosted compiler | **authoritative** — this is the compiler |
 | `gust_v4.c` | the converged bootstrap seed | generated from the above |
 | `src/runtime/*.c` | the runtime | live; linked into every program |
-| `src/*.rs` | the **deprecated** Rust prototype | not authoritative; corroboration only |
+| root `src/*.rs` prototype | **removed 2026-08-21** by PR #137 | historical only; not part of the repository now |
 
-`src/*.rs` has not compiled since 2026-06-22 (PR #82) and nothing builds it. A
-claim resting only on it proves nothing about the language. Where both are cited
-below, the self-hosted compiler is the claim and the prototype merely agrees.
+The root Rust prototype had not compiled since 2026-06-22 (PR #82) and nothing
+built it. PR #137 removed it on 2026-08-21. Current claims therefore cite the
+self-hosted compiler; historical prototype agreement is not live evidence.
 
 Note also that the active direction is retiring the **C backend** in favour of
 Cranelift. Where a finding is a property of C rather than of Gust — E11's
@@ -134,7 +134,8 @@ lane is working on any of them.
 ### D-1 — brand identity is inferred from identifier spelling (row 2)
 
 Owned by **Phase 19** (`TASK.md`), active since 2026-08-20. Recorded in
-`docs/SHARED_SEMANTIC_ZONE.md` as D-1/D-2 and in `TASK_STDLIB.md` as CR-2.
+`docs/SHARED_SEMANTIC_ZONE.md` as D-1 and in `TASK_STDLIB.md` as CR-2. D-2,
+the former Rust/self-hosted divergence, closed when the prototype was removed.
 
 In the live compiler:
 
@@ -147,10 +148,10 @@ $ grep -n 'connCtx' compiler/codegen.gst
 1101: if std.str_eq(var_name, "ctx") == 1 || … || std.str_eq(var_name, "a") == 1 {
 ```
 
-The typechecker carries the same list at `compiler/typechecker.gst:4975,5173`
-and applies it at `:5629,5778,6713`. The deprecated prototype has it too
-(`src/codegen.rs:71`, `src/typechecker/types.rs:61`), but the live compiler above
-is the claim.
+The typechecker carries the same list at `compiler/typechecker.gst:4975,5172`
+and applies it at `:5629,5778,6713`. The generated
+`compiler/CRANELIFT_PHASE19_SPELLING_INVENTORY.md` is the authoritative current
+site list.
 
 > **Citation correction, 2026-08-20.** An earlier revision of this row cited
 > `compiler/typechecker.gst:4953,5151`, inherited from
@@ -229,10 +230,6 @@ compiler/lexer.gst:0
 compiler/parser.gst:0
 ```
 
-The deprecated prototype agrees (`grep -rn '"Result"' src/typechecker/types.rs`
-matches only `std::fmt::Result`), but the self-hosted compiler above is the
-claim.
-
 Tests that need a result type define their own:
 
 ```gust
@@ -299,8 +296,8 @@ compliance and is easy to lose later.
 
 ### E5 — `str ==` is rejected with a diagnostic (row 13)
 
-Landed by `354ff513` (#74). Both typecheckers reject `==` and `!=` when either
-operand is `str`, with a byte-identical message naming `std.str_eq`.
+Landed by `354ff513` (#74). The self-hosted typechecker rejects `==` and `!=`
+when either operand is `str`, with a stable message naming `std.str_eq`.
 
 This row was `VIOLATED` when the reconciliation was drafted — codegen emitted C
 `==` over two `Slice_unsigned_char` structs, which is not valid C. It is now
@@ -310,12 +307,11 @@ This row was `VIOLATED` when the reconciliation was drafted — codegen emitted 
 ### E6 — one reference form, and it is mutable (row 14)
 
 ```
-$ grep -c '"inout"' compiler/lexer.gst src/lexer.rs
+$ grep -c '"inout"' compiler/lexer.gst
 compiler/lexer.gst:0
-src/lexer.rs:0
 ```
 
-`inout` is not a keyword in either lexer. `&T` resolves to a `Reference` type
+`inout` is not a keyword in the lexer. `&T` resolves to a `Reference` type
 carrying no mutability: writing through it with `(*r).field = value` is permitted
 with no check and reaches the caller's value, and two `&T` arguments may alias
 one value and both write through it.
@@ -406,12 +402,11 @@ decision. Routed as `TASK_STDLIB.md` CR-9.
 ### E9 — the implemented concurrency model is the rejected one (rows 18, 19)
 
 ```
-$ grep -c '"async"\|"await"\|"spawn"\|"scope"' compiler/lexer.gst src/lexer.rs
+$ grep -c '"async"\|"await"\|"spawn"\|"scope"' compiler/lexer.gst
 compiler/lexer.gst:0
-src/lexer.rs:0
 ```
 
-No suspension or task keyword exists in either lexer. Concurrency is a library
+No suspension or task keyword exists in the lexer. Concurrency is a library
 surface over the cooperative fibers in `src/runtime/fiber.c`:
 
 ```
@@ -466,9 +461,8 @@ suspension too.
 ### E10 — effects do not exist (row 21)
 
 ```
-$ grep -c '"uses"' compiler/lexer.gst src/lexer.rs
+$ grep -c '"uses"' compiler/lexer.gst
 compiler/lexer.gst:0
-src/lexer.rs:0
 ```
 
 `docs/VISION.md` §17, §18, Consolidated Rules 4 and 12, and §0.7 Track A item 1
@@ -523,19 +517,18 @@ declared or checked. What changes is the estimate of what starting would cost.
 `docs/VISION.md` §32 makes four claims. None holds.
 
 **Fixed-width integer types.** §32 lists `i32`, `u32`, `i64`, `u64`, `isize`,
-`usize`. None is a type in either lexer:
+`usize`. None is a type in the lexer:
 
 ```
 $ for ty in i32 u32 i64 u64 isize usize; do
-    printf '%-6s gst=%s rs=%s\n' "$ty" \
-      "$(grep -c "\"$ty\"" compiler/lexer.gst)" "$(grep -c "\"$ty\"" src/lexer.rs)"
+    printf '%-6s gst=%s\n' "$ty" "$(grep -c "\"$ty\"" compiler/lexer.gst)"
   done
-i32    gst=0 rs=0
-u32    gst=0 rs=0
-i64    gst=0 rs=0
-u64    gst=0 rs=0
-isize    gst=0 rs=0
-usize    gst=0 rs=0
+i32    gst=0
+u32    gst=0
+i64    gst=0
+u64    gst=0
+isize  gst=0
+usize  gst=0
 ```
 
 There are two integer-ish scalars, `int` and `byte`, and neither is sized in
@@ -588,7 +581,7 @@ $ grep -cE 'Decimal|Money|Instant|Duration|ZonedDateTime|LocalTime' docs/STDLIB_
 
 Filed as issue #103.
 
-### E12 — match exhaustiveness is enforced, in both compilers (row 30)
+### E12 — match exhaustiveness is enforced (row 30)
 
 Good news, recorded because a stale plan says otherwise. `compiler-plan.md`'s
 IMMEDIATE ROADMAP still lists "Guarantee exhaustive match/switch checking for
@@ -614,15 +607,14 @@ The first half holds. The second half describes a mechanism that does not exist:
 
 ```
 $ for k in copyable Copyable; do
-    printf '%-10s gst=%s rs=%s\n' "$k" \
-      "$(grep -c "\"$k\"" compiler/lexer.gst)" "$(grep -c "\"$k\"" src/lexer.rs)"
+    printf '%-10s gst=%s\n' "$k" "$(grep -c "\"$k\"" compiler/lexer.gst)"
   done
-copyable    gst=0 rs=0
-Copyable    gst=0 rs=0
+copyable   gst=0
+Copyable   gst=0
 ```
 
 There is no marker. Copy-versus-move is decided structurally by `is_linear`
-(`compiler/typechecker.gst:1761`, `typechecker_is_linear`; the deprecated prototype mirrors it at `src/typechecker.rs:219-250`):
+(`compiler/typechecker.gst:1761`, `typechecker_is_linear`):
 
 | Type | Linear (moves) |
 | --- | --- |
@@ -652,16 +644,15 @@ the two answer different questions and only one is opt-in.
 
 ```
 $ for k in null nil NULL; do
-    printf '%-6s gst=%s rs=%s\n' "$k" \
-      "$(grep -c "\"$k\"" compiler/lexer.gst)" "$(grep -c "\"$k\"" src/lexer.rs)"
+    printf '%-6s gst=%s\n' "$k" "$(grep -c "\"$k\"" compiler/lexer.gst)"
   done
-null    gst=0 rs=0
-nil    gst=0 rs=0
-NULL    gst=0 rs=0
+null   gst=0
+nil    gst=0
+NULL   gst=0
 ```
 
 §11's "safe references are non-null" holds for *references*: there is no null
-literal to write in either compiler.
+literal to write in the compiler.
 
 **Corrected 2026-08-20 — the count did not support the whole claim.** An earlier
 revision of this block concluded that the restriction is "satisfied trivially
@@ -744,15 +735,14 @@ The keywords are absent as expected:
 
 ```
 $ for k in class extends impl trait interface inherits; do
-    printf '%-10s gst=%s rs=%s\n' "$k" \
-      "$(grep -c "\"$k\"" compiler/lexer.gst)" "$(grep -c "\"$k\"" src/lexer.rs)"
+    printf '%-10s gst=%s\n' "$k" "$(grep -c "\"$k\"" compiler/lexer.gst)"
   done
-class    gst=0 rs=0
-extends    gst=0 rs=0
-impl    gst=0 rs=0
-trait    gst=0 rs=0
-interface    gst=0 rs=0
-inherits    gst=0 rs=0
+class       gst=0
+extends     gst=0
+impl        gst=0
+trait       gst=0
+interface   gst=0
+inherits    gst=0
 ```
 
 **Row 9 — generic structs and enums, no generic functions.** *Decided rather than
@@ -812,7 +802,7 @@ $ for k in Http Sql Postgres Json Rpc Job Queue Mail Route Template Socket Tls; 
 ```
 
 Nor a language construct — none of `route`, `rpc`, `job`, `task`, `supervisor`,
-`component`, `html`, or `migration` is a keyword in either lexer.
+`component`, `html`, or `migration` is a keyword in the lexer.
 
 Row 22 (dependencies) is the one worth separating. It is `ABSENT` in a different
 sense: there is no dependency *mechanism* at all — no manifest, no lockfile, no
@@ -1050,18 +1040,17 @@ tracks as unowned rows 5-8. A separate issue would restate that with more alarm
 and no new action.
 
 **Row 35.** §73's four visibility levels do not exist. No modifier keyword is
-present in either lexer:
+present in the lexer:
 
 ```
 $ for k in pub private public internal export; do
-    printf '%-9s gst=%s rs=%s\n' "$k" \
-      "$(grep -c "\"$k\"" compiler/lexer.gst)" "$(grep -c "\"$k\"" src/lexer.rs)"
+    printf '%-9s gst=%s\n' "$k" "$(grep -c "\"$k\"" compiler/lexer.gst)"
   done
-pub       gst=0 rs=0
-private   gst=0 rs=0
-public    gst=0 rs=0
-internal  gst=0 rs=0
-export    gst=0 rs=0
+pub       gst=0
+private   gst=0
+public    gst=0
+internal  gst=0
+export    gst=0
 ```
 
 `import` exists and imports are explicit, which is the half of §73 that holds.
@@ -1297,13 +1286,9 @@ only in English prose inside `message`, as `"Semantic Error: Brand Nesting
 Restriction violated…"`. There are no candidate edits.
 
 **The project has already felt the absence and worked around it.** Patch S1.1
-needed a way to pin diagnostic identity, and did it by asserting the *prose is
-byte-identical* in both compilers —
-`guard-stdlib-s1-str-equality-diagnostic` (`justfile:21637-21642`) greps for the
-exact sentence. Its own comment explains why:
-
-> Both compilers must reject with the same words. A drift here means one
-> backend's users get a different explanation for the same program.
+needed a way to pin diagnostic identity, and did it by asserting the exact prose
+in the self-hosted typechecker. `guard-stdlib-s1-str-equality-diagnostic` greps
+for the sentence.
 
 That is a stable rule identifier implemented as an English sentence. It works,
 and it is brittle in exactly the way an identifier exists to prevent: rewording
@@ -1534,7 +1519,7 @@ and the difference matters when the compiler moves under them.
 
 | Shape | Fails when the compiler changes? | Example |
 | --- | --- | --- |
-| **A committed guard** | Yes, in CI | `guard-stdlib-s1-str-equality-diagnostic` pins the `str ==` message in both compilers (E5) |
+| **A committed guard** | Yes, in CI | `guard-stdlib-s1-str-equality-diagnostic` pins the self-hosted `str ==` message (E5) |
 | **A committed fixture** | Yes, on the next run | `test_shared_mutable_aliasing_observed.gst` compiles and prints 111 (E6); `test_arena_moved_through_channel_invalid_rejected.gst` (E18) |
 | **A quoted construct** | No — but a reader can check it | `type Scope[ctx]` at `compiler/typechecker.gst:695` (E17) |
 | **A grep count** | No, and it silently rots | `grep -c '"uses"'` → 0 (E10) |
@@ -1551,7 +1536,7 @@ E14 (`empty[T]` is a second spelling of absence), E10 (`FunctionSignature`
 already carries per-function obligations), E11 (`byte` is a second integer-ish
 scalar). Six confirmed, three of them after a real attempt to break them:
 
-- **E12** — exhaustiveness is checked in both compilers.
+- **E12** — exhaustiveness is checked by the self-hosted compiler.
 - **E15** — no method-receiver syntax exists, so traits and operator overloading
   are impossible rather than unspelled.
 - **E23** — `report_error`'s leading integer is a `kind_tag`, a category, not a
@@ -1580,7 +1565,7 @@ reached past the count and were corrected — E26 (`std.Format` is strongly type
 E18 (`move` exists and transfer is enforced), E14 (`empty[T]` is a second
 spelling of absence), E10 (`FunctionSignature` already carries per-function
 obligations). Two were confirmed and came out *stronger* than the count showed —
-E12 (exhaustiveness is checked in both compilers) and E15 (users cannot define
+E12 (exhaustiveness is checked by the self-hosted compiler) and E15 (users cannot define
 methods at all, so traits and operator overloading are impossible rather than
 unspelled).
 

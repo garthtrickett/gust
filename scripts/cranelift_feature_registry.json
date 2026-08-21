@@ -620,7 +620,7 @@
           "target_applicability": "all_declared_phase18_supported_targets",
           "status": "candidate_deferred",
           "current_failure_stage": "before_driver_discovery",
-          "source_requirement": "docs/SHARED_SEMANTIC_ZONE.md D-2",
+          "source_requirement": "docs/SHARED_SEMANTIC_ZONE.md D-1",
           "positive_future_fixture": "compiler/future/p19_argument_representation_source.gst",
           "negative_current_fixture": "compiler/p19_argument_representation_deferred_source.gst"
         }

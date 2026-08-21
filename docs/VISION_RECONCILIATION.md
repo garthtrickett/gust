@@ -132,12 +132,12 @@ qualification. Nothing else changed.
 **What actually exists, verified:**
 
 ```
-$ grep -c '"async"\|"await"\|"spawn"\|"scope"' compiler/lexer.gst src/lexer.rs
+$ grep -c '"async"\|"await"\|"spawn"\|"scope"' compiler/lexer.gst
 0
 $ grep -n 'std\.Spawn\|std\.Channel\|std\.Yield' docs/STDLIB_SURFACE_INVENTORY.md
 ```
 
-There are no async, await, spawn, or scope keywords in either lexer. Concurrency
+There are no async, await, spawn, or scope keywords in the lexer. Concurrency
 is a library surface: `std.Spawn`, `std.Channel`, `std.ChannelNew`, `std.Mutex`,
 `std.Yield`, over the cooperative fibers in `src/runtime/fiber.c`.
 
@@ -401,7 +401,7 @@ lane/registry/guard governance in `AGENTS.md` and `docs/SHARED_SEMANTIC_ZONE.md`
 
 | Required by | Thing | State |
 | --- | --- | --- |
-| §17, §18 | Effects in function types — *the differentiator* | No `uses` keyword in either lexer. But `FunctionSignature` already carries per-function obligations, so adding effects extends a struct with the right shape. Ledger E10 |
+| §17, §18 | Effects in function types — *the differentiator* | No `uses` keyword in the lexer. But `FunctionSignature` already carries per-function obligations, so adding effects extends a struct with the right shape. Ledger E10 |
 | §56 | Static tenant scoping — *the lead claim* | Absent |
 | §55 | Typed Postgres derivation | Absent |
 | OD-9 | Model fluency | Untested |
@@ -410,7 +410,7 @@ lane/registry/guard governance in `AGENTS.md` and `docs/SHARED_SEMANTIC_ZONE.md`
 | §26 | Two-form borrow model | Corrected in VISION 2026-08-19 (#84): one mutable reference form, no aliasing analysis |
 | §27 | Shared ownership as OD-3 | `std.Rc` already exists — see §3.6 |
 | §34 | Panic terminates request, not deployment | `exit(1)` in `src/runtime/strings.c:20,30` |
-| D-1, D-2 | Brand identity | Inferred from identifier spelling; `compiler/codegen.gst:658,762,896,1101`, `compiler/typechecker.gst:4975,5173`. Owned by staged Phase 19 |
+| D-1 | Brand identity | Inferred from identifier spelling; the generated Phase 19 spelling inventory records nine live sites. Owned by staged Phase 19. D-2 closed when PR #137 removed the deprecated prototype |
 | §32 | Fixed-width integers, overflow trapping, `Decimal`/`Money`/time types | **All absent.** Two integer-ish scalars, `int` and `byte`; `int` lowers to C `int`, so overflow is UB rather than a trap. Issue #103 |
 | §23 | `copyable` marker | Absent. Copy-versus-move is inferred structurally; adding a `str` field silently changes a struct's category |
 | §29 | Automatic resource cleanup | Runs, but only for `Resource[T]`: `type_is_resource` keys on a `Generic` named `Resource`, so a directory handle falls outside it. Ledger E7 |
@@ -427,8 +427,8 @@ Found in the same sweep and worth recording as the counterweight — these hold:
 
 | Section | Thing | State |
 | --- | --- | --- |
-| §31 | Enum match exhaustiveness | **Enforced in both compilers**, and both name the missing variant. `compiler-plan.md` still lists this as outstanding; it is done |
-| §11 | Safe references non-null | Holds for *references* — no `null`, `nil`, or `NULL` literal in either lexer. But `empty[T]` is a second spelling of absence for handles, used in safe code. Ledger E14 |
+| §31 | Enum match exhaustiveness | **Enforced by the self-hosted compiler**, which names the missing variant. `compiler-plan.md` still lists this as outstanding; it is done |
+| §11 | Safe references non-null | Holds for *references* — no `null`, `nil`, or `NULL` literal in the lexer. But `empty[T]` is a second spelling of absence for handles, used in safe code. Ledger E14 |
 | §12 | No inheritance, traits, or interfaces | Holds by construction — none of the keywords exists |
 | §15 | No macros or compile-time execution | Holds by construction |
 | §33 | `str` immutability | Holds — no mutation API and no element-assignment path |

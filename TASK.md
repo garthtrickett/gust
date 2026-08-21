@@ -8,9 +8,10 @@ boundaries and the shared coordination zone are defined in `AGENTS.md` and
 `docs/SHARED_SEMANTIC_ZONE.md`. This document defines only what is specific to
 Phase 19.
 
-Phase 19 exists to resolve **CR-2** from `TASK_STDLIB.md` and **D-1**, **D-2**
-from `docs/SHARED_SEMANTIC_ZONE.md`. It owns brand identity and value
-representation, and nothing else.
+Phase 19 exists to resolve **CR-2** from `TASK_STDLIB.md` and **D-1** from
+`docs/SHARED_SEMANTIC_ZONE.md`. D-2 was an opening input but closed when the
+deprecated Rust prototype was removed; Phase 19 owns the surviving brand
+identity and value-representation defect, and nothing else.
 
 It is also the first prerequisite of the demo deliverable. `docs/DEMO_TARGET_PROGRAM.md`
 lists ten things that must be true before `VISION.md` §0.7's artifact compiles,
@@ -42,8 +43,8 @@ is activated separately.
 - [ ] Patch 19.3 — Canonical Branded Type Naming Without a Brand Vocabulary
 - [ ] Patch 19.4 — Type-Derived Container and Arena Classification
 - [ ] Patch 19.5 — Argument and Index Representation From the Type System
-- [ ] Patch 19.6 — Rule Convergence Between the Two Compilers
-- [ ] Patch 19.7 — Name-List Removal From the Rust Compiler
+- [ ] Patch 19.6 — Self-Hosted Rule Convergence
+- [ ] Patch 19.7 — Retired Prototype Absence Contract
 - [ ] Patch 19.8 — Name-List Removal From the Self-Hosted Compiler
 - [ ] Patch 19.9 — Seed Regeneration and Fixed-Point Convergence
 - [ ] Patch 19.10 — Generated-C Equivalence Over the Compiler's Own Sources
@@ -150,12 +151,13 @@ The Phase 16 closure guard consumes this historical record transitively. These r
 Phase 19 makes brand identity and value representation follow from the type
 system rather than from how a variable happens to be spelled.
 
-Today both compilers carry a hardcoded list of identifier names treated as arena
-brands:
+Today the self-hosted compiler carries a hardcoded list of identifier names
+treated as arena brands. The generated inventory is authoritative; representative
+sites are:
 
-```rust
-// src/codegen.rs:71 and src/typechecker/types.rs:61
-let brand_bases = ["connCtx", "arena", "ctx", "Any", "a", "main_ctx", "bg_ctx", "file_ctx"];
+```text
+compiler/codegen.gst:658,762,896,1101,1851
+compiler/typechecker.gst:159,2279,4975,5172
 ```
 
 The list serves two distinct purposes, and the phase must separate them before it
@@ -170,7 +172,7 @@ surgery on a fixed vocabulary.
 `is_slice`, `is_ptr`, `is_vector`, `is_hashmap`, and `is_pool` from the resolved
 type and the struct registry — and then `is_arena_override`, computed purely
 from the identifier's spelling, forcibly clears all five
-(`src/codegen.rs:1770-1776`).
+(`compiler/codegen.gst:1851-1863`).
 
 That second one is the important discovery. **The type system already computes
 the classification; a name check overrules it.** The override exists because the
@@ -194,17 +196,12 @@ Renaming `a` to `b` fixes the program. Nothing about the type changed.
 Verified 2026-08-19. Evidence: `docs/STDLIB_SURFACE_FINDINGS.md`, findings F3,
 F3a, F3b.
 
-- The name list appears at `src/codegen.rs:71,128,1762,1808,1843`,
-  `src/typechecker/types.rs:61,439`, `src/typechecker.rs:135,172`,
-  `src/typechecker/monomorphize.rs:234,254,268,599,722`,
-  `compiler/codegen.gst:658,762,896,1101,1851`, and
-  `compiler/typechecker.gst:4953,5151`.
-- **The two compilers apply different matching rules to the same list.** The Rust
-  compiler uses `alloc_str.ends_with(".a")` (`src/codegen.rs:1766`); the
-  self-hosted compiler uses a substring search (`compiler/codegen.gst:1854`) and
-  additionally matches `->ctx`, `->arena`, `->connCtx`, `->a` as substrings. The
-  same source can be classified differently by the two compilers. This is a
-  semantics divergence inside the bootstrap chain.
+- The generated `compiler/CRANELIFT_PHASE19_SPELLING_INVENTORY.md` records nine
+  live decision sites: five in `compiler/codegen.gst` and four in
+  `compiler/typechecker.gst`.
+- The former Rust/self-hosted rule divergence was D-2. It closed on 2026-08-21
+  when the deprecated Rust prototype was removed; it is historical evidence,
+  not a second implementation Phase 19 must preserve or reconcile.
 - **The blast radius is the compiler itself.** `compiler/*.gst` contains roughly
   2,312 declarations named `ctx`, `arena`, `a`, or `connCtx`, and roughly 2,183
   `ctx[...]` index sites. Every one is currently classified by name. A
@@ -237,8 +234,9 @@ Phase 19 may implement:
 - type-derived container and arena classification sufficient to retire the
   spelling override;
 - argument and index representation decisions sourced from Phase 16;
-- a single matching rule shared by both compilers, or the removal of the concept;
-- removal of the hardcoded name list from both compilers;
+- convergence of the self-hosted compiler's spelling consumers on one rule
+  before the rule is removed;
+- removal of the hardcoded name list from the self-hosted compiler;
 - a seed regeneration proving fixed-point convergence under the new rules;
 - byte-level generated-C equivalence evidence over the compiler's own sources.
 
@@ -271,7 +269,8 @@ Phase 19 must not silently absorb:
 ## Architectural Invariants
 
 - Renaming a local variable never changes generated code.
-- The Rust and self-hosted compilers apply identical classification rules.
+- Every self-hosted spelling consumer applies one classification rule until the
+  spelling rule is removed.
 - No component decides arena-ness, container kind, or argument representation
   from an identifier spelling, a substring, or a generated expression's text.
 - Canonical MIR carries the representation decision; codegen consumes it.
@@ -293,7 +292,7 @@ Level 1 guards may validate:
 - absence of any spelling-derived classification override;
 - brand identity record schemas;
 - canonical branded type identity for paired inferred and explicit programs;
-- agreement between the two compilers' classification rules;
+- agreement among the self-hosted compiler's classification consumers;
 - representation decisions present in canonical MIR;
 - generated projection freshness.
 
@@ -322,7 +321,7 @@ it does not create a second historical suite.
 
 - The supported source shape is precisely bounded.
 - The decision it changes is sourced from a resolved type, never a spelling.
-- Both compilers agree, and a guard proves they agree.
+- The self-hosted type authority and both backends agree, and a guard proves it.
 - Canonical MIR carries the decision where the decision is semantic.
 - Paired programs differing only in variable names produce byte-identical C.
 - Paired inferred-type and explicit-type programs produce the same canonical
@@ -353,7 +352,8 @@ changing behaviour.
 - Preserve parent traceability to Phase 18 migrated and deferred rows.
 - Inventory every host assumption reachable from brand resolution, type naming,
   container classification, and argument representation.
-- Record CR-2, D-1, and D-2 as owned rows.
+- Record CR-2 and D-1 as owned rows, with D-2 retained as historical opening
+  evidence until its removal closure is recorded.
 - Add `guard-cranelift-phase19-opening-contract`.
 
 **Test Level**
@@ -374,11 +374,12 @@ them. Report-only.
 
 **Steps**
 
-- Enumerate each site in both compilers, classified as type-name erasure or
-  classification override.
+- Enumerate each site in the self-hosted compiler, classified as type-name
+  erasure or classification override.
 - For each, record what type information is available at that point and whether
   it is sufficient.
-- Record the Rust/self-hosted rule divergence per site.
+- Record the historical Rust/self-hosted divergence separately from the live
+  self-hosted inventory.
 - Count affected declarations and index sites in `compiler/*.gst` so the
   regression surface is a measured number, not an estimate.
 - Add the `rename-invariance` Level 2 family and record its current failures as
@@ -500,19 +501,19 @@ Level 1, with a Level 2 parity family.
 Argument and index representation is carried in canonical MIR and consumed by
 both backends. `rename-invariance` passes for every fixture in the family.
 
-### Patch 19.6 — Rule Convergence Between the Two Compilers
+### Patch 19.6 — Self-Hosted Rule Convergence
 
 **Purpose**
 
-Eliminate the divergence in the bootstrap chain before removing the rule.
+Eliminate disagreement among the self-hosted spelling consumers before removing
+the rule.
 
 **Steps**
 
-- Make the Rust and self-hosted classification rules identical, or prove the
-  concept is unnecessary in both.
-- Add a guard comparing the two implementations against a shared case table,
-  including the `ends_with` versus substring cases that currently differ, and
-  the `->ctx` and `->a` substring forms.
+- Make the self-hosted codegen and typechecker consumers identical, or prove the
+  concept is unnecessary at every site.
+- Add a guard comparing every consumer against a shared case table, including
+  suffix, substring, `->ctx`, and `->a` forms.
 - Add `guard-cranelift-phase19-rule-convergence`.
 
 **Test Level**
@@ -521,31 +522,32 @@ Level 1, with a Level 2 parity family.
 
 **Exit Gate**
 
-Both compilers classify every case in the shared table identically, including
-every case where they currently differ.
+Every live consumer classifies every case in the shared table identically.
 
-### Patch 19.7 — Name-List Removal From the Rust Compiler
+### Patch 19.7 — Retired Prototype Absence Contract
 
 **Purpose**
 
-Delete the list from `src/`.
+Make the one-compiler repository shape an enforced input to the remaining phase.
 
 **Steps**
 
-- Remove `brand_bases` and every spelling test that consumes it.
-- Require MIR-to-C output byte-identical to the pre-removal output across the
-  full fixture corpus, or enumerate each difference.
-- Add a guard asserting the list cannot return.
-- Add `guard-cranelift-phase19-rust-name-list-removed`.
+- Assert the removed root Rust package and its thirteen prototype compiler
+  sources cannot return.
+- Explicitly preserve `src/runtime.c`, `src/runtime/*.c`, `src/runtime/rust/`,
+  and `compiler/experiments/cranelift/`.
+- Require Phase 19 projections and documentation to cite only live compiler
+  sources for current semantics.
+- Add `guard-cranelift-phase19-retired-prototype-absent`.
 
 **Test Level**
 
-Level 1, with a Level 2 parity family.
+Level 1.
 
 **Exit Gate**
 
-No spelling-derived brand or classification decision remains in `src/`, and
-generated C is unchanged or every change is enumerated.
+The deprecated prototype cannot silently return, and the active runtime and
+Cranelift Rust crates remain explicitly outside the removal boundary.
 
 ### Patch 19.8 — Name-List Removal From the Self-Hosted Compiler
 
@@ -652,9 +654,10 @@ Close brand identity and value representation.
 **Steps**
 
 - Confirm every Status row is `DONE` or explicitly deferred with an owner.
-- Confirm no spelling-derived decision remains in either compiler.
+- Confirm no spelling-derived decision remains in the self-hosted compiler.
 - Confirm `rename-invariance` passes for every family.
-- Remove D-1 and D-2 from `docs/SHARED_SEMANTIC_ZONE.md` and record the fix.
+- Remove D-1 from `docs/SHARED_SEMANTIC_ZONE.md` and record the fix; preserve the
+  earlier D-2 closure record.
 - Mark CR-2 resolved in `TASK_STDLIB.md`, unblocking S1.4, S1.5, and S1.6.
 - Record the residue.
 - Add `guard-cranelift-phase19-close`.
@@ -676,8 +679,8 @@ Patch 19.0 opening inventory
 → 19.3 canonical branded type naming
 → 19.4 type-derived classification
 → 19.5 argument and index representation
-→ 19.6 rule convergence
-→ 19.7 Rust name-list removal
+→ 19.6 self-hosted rule convergence
+→ 19.7 retired-prototype absence contract
 → 19.8 self-hosted name-list removal
 → 19.9 seed regeneration
 → 19.10 self-compilation differential
@@ -698,13 +701,15 @@ Phase 19 succeeds when:
   backend.
 - Container classification is type-derived with no override.
 - Argument representation is a Phase 16 decision recorded in canonical MIR.
-- Both compilers apply identical rules, and a guard proves it.
+- The self-hosted type authority and both backends apply the same decided rule,
+  and a guard proves it.
 - The bootstrap seed reaches a three-stage fixed point under the new rules.
 - Generated C for the compiler's own sources has no unexplained difference.
 - MIR-to-C remains an independent differential oracle, and Cranelift has no
   fallback.
 - CR-2 is resolved and `TASK_STDLIB.md` S1.4, S1.5, and S1.6 are unblocked.
-- D-1 and D-2 are removed from the shared semantic zone.
+- D-1 is removed from the shared semantic zone; D-2 remains recorded as closed
+  by prototype removal.
 
 Phase 19 closure does not claim a general lifetime system, a brand algebra, or
 any expansion of what brands can express. It claims only that the existing model
