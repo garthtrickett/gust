@@ -476,7 +476,7 @@
         "id": "gst_codegen_erasure_bases",
         "compiler": "self_hosted",
         "source_path": "compiler/codegen.gst",
-        "line": 598,
+        "line": 500,
         "classification": "type_name_erasure",
         "decision": "strip a brand suffix from a generated type name",
         "available_type_information": "none: operates on the already-flattened name string",
@@ -486,7 +486,7 @@
         "id": "gst_codegen_is_brand_name",
         "compiler": "self_hosted",
         "source_path": "compiler/codegen.gst",
-        "line": 611,
+        "line": 513,
         "classification": "classification_override",
         "decision": "decide whether a name is a brand",
         "available_type_information": "the name only",
@@ -496,27 +496,27 @@
         "id": "gst_codegen_var_arena",
         "compiler": "self_hosted",
         "source_path": "compiler/codegen.gst",
-        "line": 746,
+        "line": 638,
         "classification": "classification_override",
-        "decision": "decide whether a variable denotes an arena",
-        "available_type_information": "the variable name only at this site",
+        "decision": "formerly decide whether a variable denotes an arena; now classify its resolved expression type",
+        "available_type_information": "resolved expression type and shared type classifier",
         "sufficiency": "available_after_resolution"
       },
       {
         "id": "gst_codegen_var_arena_2",
         "compiler": "self_hosted",
         "source_path": "compiler/codegen.gst",
-        "line": 951,
+        "line": 640,
         "classification": "classification_override",
-        "decision": "decide whether a variable denotes an arena (second site)",
-        "available_type_information": "the variable name only at this site",
+        "decision": "formerly decide whether a variable denotes an arena at a second site; now share the resolved-type path",
+        "available_type_information": "resolved expression type and shared type classifier",
         "sufficiency": "available_after_resolution"
       },
       {
         "id": "gst_codegen_alloc_override",
         "compiler": "self_hosted",
         "source_path": "compiler/codegen.gst",
-        "line": 1701,
+        "line": 1570,
         "classification": "classification_override",
         "decision": "decide whether an allocator expression denotes an arena",
         "available_type_information": "the allocator spelling only",
@@ -536,7 +536,7 @@
         "id": "gst_typechecker_brand_member",
         "compiler": "self_hosted",
         "source_path": "compiler/typechecker.gst",
-        "line": 4981,
+        "line": 5067,
         "classification": "classification_override",
         "decision": "decide brand membership of a name part",
         "available_type_information": "the name part only",
@@ -546,7 +546,7 @@
         "id": "gst_typechecker_brand_suffixes",
         "compiler": "self_hosted",
         "source_path": "compiler/typechecker.gst",
-        "line": 5179,
+        "line": 5265,
         "classification": "type_name_erasure",
         "decision": "extract a brand from a type-name suffix",
         "available_type_information": "none: operates on the suffix string",
@@ -556,7 +556,7 @@
         "id": "gst_typechecker_any_compat",
         "compiler": "self_hosted",
         "source_path": "compiler/typechecker.gst",
-        "line": 2286,
+        "line": 2287,
         "classification": "classification_override",
         "decision": "treat the brand spelled Any as compatible with every brand",
         "available_type_information": "both brands are in hand as cleaned strings",
@@ -677,6 +677,24 @@
         "reason": "legacy_name_on_non_arena_type"
       },
       {
+        "source_path": "compiler/phase19_classification_source.gst",
+        "line": 1,
+        "binding": "scratch",
+        "declared_type": "&Arena",
+        "spelling_is_arena": false,
+        "record_is_arena": true,
+        "reason": "arena_type_with_non_legacy_name"
+      },
+      {
+        "source_path": "compiler/phase19_classification_source.gst",
+        "line": 23,
+        "binding": "storage",
+        "declared_type": "inferred Arena.New()",
+        "spelling_is_arena": false,
+        "record_is_arena": true,
+        "reason": "arena_type_with_non_legacy_name"
+      },
+      {
         "source_path": "compiler/phase19_rename_invariance_renamed_source.gst",
         "line": 16,
         "binding": "scratch",
@@ -764,6 +782,36 @@
         "old_name": "CastResult_NamingHolder_lib",
         "canonical_name": "CastResult_NamingHolder",
         "reason": "synthetic wrappers consume the canonical payload name"
+      }
+    ]
+  },
+  "phase19_classification": {
+    "authority_version": "phase19_type_derived_classification_v1",
+    "status": "ready_for_patch19_5",
+    "next_patch": "19.5",
+    "review_view": "compiler/CRANELIFT_PHASE19_CLASSIFICATION.md",
+    "type_authority": "resolved_type_plus_struct_registry_metadata",
+    "override_policy": "retained_and_asserted_redundant",
+    "classifications": [
+      "slice",
+      "pointer",
+      "vector",
+      "hashmap",
+      "pool",
+      "arena"
+    ],
+    "fixtures": [
+      "compiler/phase19_classification_test_entry.gst",
+      "compiler/phase19_classification_source.gst",
+      "compiler/test_runner_entry.gst"
+    ],
+    "measured_override_disagreements": [
+      {
+        "resolved_shape": "Reference(Arena)",
+        "legacy_spelling": "ctx",
+        "occurrences": 1597,
+        "root_cause": "arena_type_predicate_omitted_reference",
+        "resolution": "shared_resolved_type_classifier_includes_reference_arena"
       }
     ]
   },

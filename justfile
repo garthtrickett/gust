@@ -16212,6 +16212,26 @@ guard-cranelift-phase19-type-naming-parity:
     just guard-cranelift-phase19-type-naming-contract
     bash scripts/phase19_type_naming_parity.sh
 
+guard-cranelift-phase19-classification-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧭 Checking Phase 19 type-derived container and arena classification..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase19-classification-contract | grep -F $'guard-cranelift-phase19-classification-contract\t1\t' >/dev/null
+    just guard-cranelift-phase19-type-naming-contract
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase19_classification.py validate
+    python3 scripts/phase19_classification.py check-review
+
+guard-cranelift-phase19-classification-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 19 type-derived classification parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase19-classification-parity | grep -F $'guard-cranelift-phase19-classification-parity\t2\t' >/dev/null
+    just guard-cranelift-phase19-classification-contract
+    bash scripts/phase19_classification_parity.sh
+
 guard-cranelift-phase19-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail

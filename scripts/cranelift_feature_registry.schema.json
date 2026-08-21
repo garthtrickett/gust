@@ -16,6 +16,7 @@
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
+    "phase19_classification",
     "phase15_specialized_resource_authority",
     "phase15_failure_cleanup_authority",
     "phase15_resource_composition_authority",
@@ -225,6 +226,49 @@
                 "old_name": {"type": "string", "minLength": 1},
                 "canonical_name": {"type": "string", "minLength": 1},
                 "reason": {"type": "string", "minLength": 1}
+              }
+            }
+          }
+        }
+      },
+      "phase19_classification": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["authority_version", "status", "next_patch", "review_view",
+                     "type_authority", "override_policy", "classifications",
+                     "fixtures", "measured_override_disagreements"],
+        "properties": {
+          "authority_version": {"const": "phase19_type_derived_classification_v1"},
+          "status": {"const": "ready_for_patch19_5"},
+          "next_patch": {"const": "19.5"},
+          "review_view": {"const": "compiler/CRANELIFT_PHASE19_CLASSIFICATION.md"},
+          "type_authority": {"const": "resolved_type_plus_struct_registry_metadata"},
+          "override_policy": {"const": "retained_and_asserted_redundant"},
+          "classifications": {
+            "const": ["slice", "pointer", "vector", "hashmap", "pool", "arena"]
+          },
+          "fixtures": {
+            "const": [
+              "compiler/phase19_classification_test_entry.gst",
+              "compiler/phase19_classification_source.gst",
+              "compiler/test_runner_entry.gst"
+            ]
+          },
+          "measured_override_disagreements": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["resolved_shape", "legacy_spelling", "occurrences",
+                           "root_cause", "resolution"],
+              "properties": {
+                "resolved_shape": {"const": "Reference(Arena)"},
+                "legacy_spelling": {"const": "ctx"},
+                "occurrences": {"const": 1597},
+                "root_cause": {"const": "arena_type_predicate_omitted_reference"},
+                "resolution": {"const": "shared_resolved_type_classifier_includes_reference_arena"}
               }
             }
           }

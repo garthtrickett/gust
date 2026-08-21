@@ -322,123 +322,24 @@ func codegen_ends_with(s: str, suffix: str) int {
     return 0;
 }
 
-func codegen_is_slice_type(t: ast.Type[ctx]) int {
-    if t.tag == 6 { // Slice
-        return 1;
-    }
-    if t.tag == 5 { // Str
-        return 1;
-    }
-    return 0;
+func codegen_is_slice_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) int {
+    return typechecker.typechecker_classify_type(t, typechecker.typechecker_classification_slice(), env, ctx);
 }
 
 func codegen_is_ptr_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) int {
-    unsafe {
-        if t.tag == 9 { // RawPointer
-            mut inner := ctx[t.RawPointer.inner];
-            if inner.tag != 4 { // NOT Arena
-                return 1;
-            }
-        }
-        if t.tag == 11 { // Reference
-            mut inner := ctx[t.Reference.inner];
-            if inner.tag != 4 { // NOT Arena
-                return 1;
-            }
-        }
-    }
-    return 0;
+    return typechecker.typechecker_classify_type(t, typechecker.typechecker_classification_pointer(), env, ctx);
 }
 
 func codegen_is_vector_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) int { 
-    unsafe { 
-        mut curr := t;
-        while curr.tag == 9 || curr.tag == 11 { // RawPointer or Reference
-            if curr.tag == 9 {
-                curr = ctx[curr.RawPointer.inner];
-            } else {
-                curr = ctx[curr.Reference.inner];
-            }
-        }
-        if curr.tag == 8 { // Struct
-            mut name := curr.Struct.struct_name;
-            mut erased_name := codegen_get_erased_struct_name(name, env, ctx);
-            
-            mut idx_vector := std.str_find(erased_name, "Vector_");
-            mut idx_std_vector := std.str_find(erased_name, "std_Vector_");
-
-            if idx_vector == 0 {
-                return 1;
-            }
-            if idx_std_vector == 0 {
-                return 1;
-            }
-        }
-        if curr.tag == 10 { // Generic
-            mut name := curr.Generic.name;
-            if std.str_eq(name, "Vector") == 1 || std.str_eq(name, "std.Vector") == 1 || std.str_eq(name, "std_Vector") == 1 { 
-                return 1;
-            }
-        }
-    }
-    return 0;
+    return typechecker.typechecker_classify_type(t, typechecker.typechecker_classification_vector(), env, ctx);
 }
 
 func codegen_is_pool_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) int {
-    unsafe {
-        mut curr := t;
-        while curr.tag == 9 || curr.tag == 11 { // RawPointer or Reference
-            if curr.tag == 9 {
-                curr = ctx[curr.RawPointer.inner];
-            } else {
-                curr = ctx[curr.Reference.inner];
-            }
-        }
-        if curr.tag == 8 { // Struct
-            mut name := curr.Struct.struct_name;
-            mut erased_name := codegen_get_erased_struct_name(name, env, ctx);
-            if std.str_find(erased_name, "Pool_") == 0 {
-                return 1;
-            }
-            if std.str_find(erased_name, "std_Pool_") == 0 {
-                return 1;
-            }
-        }
-        if curr.tag == 10 { // Generic
-            mut name := curr.Generic.name;
-            if std.str_eq(name, "Pool") == 1 || std.str_eq(name, "std.Pool") == 1 || std.str_eq(name, "std_Pool") == 1 {
-                return 1;
-            }
-        }
-    }
-    return 0;
+    return typechecker.typechecker_classify_type(t, typechecker.typechecker_classification_pool(), env, ctx);
 }
 
 func codegen_is_hashmap_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) int {
-    unsafe {
-        mut curr := t;
-        while curr.tag == 9 || curr.tag == 11 { // RawPointer or Reference
-            if curr.tag == 9 {
-                curr = ctx[curr.RawPointer.inner];
-            } else {
-                curr = ctx[curr.Reference.inner];
-            }
-        }
-        if curr.tag == 8 { // Struct
-            mut name := curr.Struct.struct_name;
-            mut erased_name := codegen_get_erased_struct_name(name, env, ctx);
-            if std.str_find(erased_name, "HashMap_") == 0 || std.str_find(erased_name, "std_HashMap_") == 0 { 
-                return 1;
-            }
-        }
-        if curr.tag == 10 { // Generic
-            mut name := curr.Generic.name;
-            if std.str_eq(name, "HashMap") == 1 || std.str_eq(name, "std.HashMap") == 1 || std.str_eq(name, "std_HashMap") == 1 { 
-                return 1;
-            }
-        }
-    }
-    return 0;
+    return typechecker.typechecker_classify_type(t, typechecker.typechecker_classification_hashmap(), env, ctx);
 }
 
 func codegen_is_rc_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) int {
@@ -734,27 +635,33 @@ func codegen_find_original_struct_name(erased_name: str, env: &typechecker.TypeE
 }
 
 
-func codegen_is_arena_ptr(var_name: str, env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) int {
+func codegen_expression_is_arena_ptr(expr_idx: Index[ast.Expression[ctx], ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) int {
+    mut t := typechecker.env_resolve_type(env, codegen_get_expression_type(expr_idx, env, ctx), ctx);
+    mut is_arena := typechecker.typechecker_classify_resolved_type(t, typechecker.typechecker_classification_arena(), env, ctx);
+    if is_arena == 1 && (t.tag == 9 || t.tag == 11) { // RawPointer or Reference
+        return 1;
+    }
+    return 0;
+}
+
+// Clone currently carries only the source arena identity string into this
+// lowering path. Patch 19.5 replaces that residual representation lookup with
+// the Phase 16 ABI decision in MIR. Arena classification itself is already
+// decided by BrandIdentity before this helper is reached.
+func codegen_brand_representation_is_pointer(brand_name: str, env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) int {
     unsafe {
         mut i := 0;
         while i < len((*env).current_params) {
-            if std.str_eq((*env).current_params[i], var_name) {
+            if std.str_eq((*env).current_params[i], brand_name) == 1 {
                 return 1;
             }
             i = i + 1;
         }
-        if std.str_eq(var_name, "ctx") == 1 || std.str_eq(var_name, "arena") == 1 || std.str_eq(var_name, "connCtx") == 1 || std.str_eq(var_name, "a") == 1 {
-            return 0;
-        }
-        mut lookup := (*env).variable_types.get_opt(var_name);
-        match lookup {
-            Some { val } => {
-                mut t := *val;
-                if t.tag == 9 { // RawPointer
-                    return 1;
-                }
-            }
-            None => {
+        mut lookup := (*env).variable_types.Get(brand_name);
+        if lookup.Ok {
+            mut resolved := typechecker.env_resolve_type(env, lookup.Val, ctx);
+            if resolved.tag == 9 || resolved.tag == 11 { // RawPointer or Reference
+                return 1;
             }
         }
     }
@@ -937,33 +844,6 @@ func codegen_gen_function_fwd_decl(name: str, sig: typechecker.FunctionSignature
         res = std.Concat(res, ");\n");
         return std.Clone(ctx, res);
     }
-}
-
-func codegen_is_arena_val(var_name: str, env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) int {
-    unsafe {
-        mut i := 0;
-        while i < len((*env).current_params) {
-            if std.str_eq((*env).current_params[i], var_name) {
-                return 0;
-            }
-            i = i + 1;
-        }
-        if std.str_eq(var_name, "ctx") == 1 || std.str_eq(var_name, "arena") == 1 || std.str_eq(var_name, "connCtx") == 1 || std.str_eq(var_name, "a") == 1 {
-            return 1;
-        }
-        mut lookup := (*env).variable_types.get_opt(var_name);
-        match lookup {
-            Some { val } => {
-                mut t := *val;
-                if t.tag == 4 { // Arena
-                    return 1;
-                }
-            }
-            None => {
-            }
-        }
-    }
-    return 0;
 }
 
 func codegen_get_by_value_dependencies_recursive(t: ast.Type[ctx], deps: *std.HashMap[str, int, ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) {
@@ -1682,17 +1562,8 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
             mut alloc_t := codegen_get_expression_type(alloc_idx, env, ctx);
             mut idx_t := codegen_get_expression_type(index_idx, env, ctx);
 
-            mut is_arena := 0;
-            if alloc_t.tag == 4 { // Arena
-                is_arena = 1;
-            } else {
-                if alloc_t.tag == 9 { // RawPointer
-                    mut inner := ctx[alloc_t.RawPointer.inner];
-                    if inner.tag == 4 { // Arena
-                        is_arena = 1;
-                    }
-                }
-            }
+            mut resolved_alloc_t := typechecker.env_resolve_type(env, alloc_t, ctx);
+            mut is_arena := typechecker.typechecker_classify_resolved_type(resolved_alloc_t, typechecker.typechecker_classification_arena(), env, ctx);
 
             mut alloc_str := codegen_generate_expression(alloc_idx, env, ctx);
             mut index_str := codegen_generate_expression(index_idx, env, ctx);
@@ -1706,6 +1577,12 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
             }
             if std.str_find(alloc_str, "->ctx") != 0 - 1 || std.str_find(alloc_str, "->arena") != 0 - 1 || std.str_find(alloc_str, "->connCtx") != 0 - 1 || std.str_find(alloc_str, "->a") != 0 - 1 {
                 is_name_match = 1;
+            }
+
+            if is_name_match == 1 && is_arena == 0 {
+                mut phase19_classification_disagreement := std.Format("Fatal Error: Phase 19 spelling override changed arena classification for %s (resolved tag %d)", alloc_str, resolved_alloc_t.tag);
+                os.LogStr(phase19_classification_disagreement);
+                os.Exit(1);
             }
             
             if is_name_match == 1 {
@@ -1750,12 +1627,6 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 mut arrow_or_dot := ".";
                 if alloc_t.tag == 9 || alloc_t.tag == 11 { // RawPointer or Reference
                     arrow_or_dot = "->";
-                } else {
-                    if codegen_is_arena_ptr(alloc_str, env, ctx) == 1 {
-                        arrow_or_dot = "->";
-                    } else {
-                        arrow_or_dot = ".";
-                    }
                 }
 
                 mut res := std.Concat("(*((", c_target);
@@ -1771,7 +1642,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 return std.Clone(ctx, res);
             }
 
-            if codegen_is_slice_type(alloc_t) == 1 {
+            if codegen_is_slice_type(alloc_t, env, ctx) == 1 {
                 mut res := std.Concat("(*({ if (", index_str);
                 res = std.Concat(res, " < 0 || ");
                 res = std.Concat(res, index_str);
@@ -1976,6 +1847,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 mut left_expr_idx := func_expr.Selector.left;
                 mut right_name := func_expr.Selector.right;
                 mut left_type := codegen_get_expression_type(left_expr_idx, env, ctx);
+                mut resolved_left_type := typechecker.env_resolve_type(env, left_type, ctx);
                 mut is_ptr := 0;
                 if left_type.tag == 9 { // RawPointer
                     left_type = ctx[left_type.RawPointer.inner];
@@ -1984,15 +1856,12 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                     left_type = ctx[left_type.Reference.inner];
                     is_ptr = 1;
                 }
-                mut is_arena := 0;
-                if left_type.tag == 4 { // Arena
-                    is_arena = 1;
-                }
+                mut is_arena := typechecker.typechecker_classify_resolved_type(resolved_left_type, typechecker.typechecker_classification_arena(), env, ctx);
                 mut is_mutex := 0;
                 mut is_channel := 0;
-                mut is_vec := 0;
-                mut is_map := 0;
-                mut is_pool := 0;
+                mut is_vec := typechecker.typechecker_classify_resolved_type(resolved_left_type, typechecker.typechecker_classification_vector(), env, ctx);
+                mut is_map := typechecker.typechecker_classify_resolved_type(resolved_left_type, typechecker.typechecker_classification_hashmap(), env, ctx);
+                mut is_pool := typechecker.typechecker_classify_resolved_type(resolved_left_type, typechecker.typechecker_classification_pool(), env, ctx);
                 mut is_rc := 0;
                 mut is_graph := 0;
                 mut is_gen_arena := 0;
@@ -2005,15 +1874,6 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                     }
                     if std.str_find(clean, "Channel_") == 0 || std.str_find(clean, "std_Channel_") == 0 { 
                         is_channel = 1;
-                    }
-                    if std.str_find(clean, "Vector_") == 0 || std.str_find(clean, "std_Vector_") == 0 { 
-                        is_vec = 1;
-                    }
-                    if std.str_find(clean, "HashMap_") == 0 || std.str_find(clean, "std_HashMap_") == 0 { 
-                        is_map = 1;
-                    }
-                    if std.str_find(clean, "Pool_") == 0 || std.str_find(clean, "std_Pool_") == 0 { 
-                        is_pool = 1;
                     }
                     if std.str_find(clean, "Rc_") == 0 || std.str_find(clean, "std_Rc_") == 0 { 
                         is_rc = 1;
@@ -2479,12 +2339,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
 
                     
                         
-                        mut is_ctx_ptr := 0;
-                        mut arg0_expr := ctx[arg0_idx];
-                        if arg0_expr.tag == 0 { // Identifier
-                            mut arg0_name := arg0_expr.Identifier.name;
-                            is_ctx_ptr = codegen_is_arena_ptr(arg0_name, env, ctx);
-                        }
+                        mut is_ctx_ptr := codegen_expression_is_arena_ptr(arg0_idx, env, ctx);
                         
                         mut arena_expr := std.Concat("&", ctx_str);
                         if is_ctx_ptr == 1 { 
@@ -2875,12 +2730,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                     vec_type_str = codegen_get_c_type(expr_type, env, ctx);
                 }
 
-                mut is_ctx_ptr := 0;
-                mut arg2_expr := ctx[arg2_idx];
-                if arg2_expr.tag == 0 { // Identifier
-                    mut arg2_name := arg2_expr.Identifier.name;
-                    is_ctx_ptr = codegen_is_arena_ptr(arg2_name, env, ctx);
-                }
+                mut is_ctx_ptr := codegen_expression_is_arena_ptr(arg2_idx, env, ctx);
                 
                 mut arena_expr := std.Concat("&", ctx_expr);
                 if is_ctx_ptr == 1 { 
@@ -2926,12 +2776,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                     vec_type_str = codegen_get_c_type(expr_type, env, ctx);
                 }
 
-                mut is_ctx_ptr := 0;
-                mut arg0_expr := ctx[arg0_idx];
-                if arg0_expr.tag == 0 { // Identifier
-                    mut arg0_name := arg0_expr.Identifier.name;
-                    is_ctx_ptr = codegen_is_arena_ptr(arg0_name, env, ctx);
-                }
+                mut is_ctx_ptr := codegen_expression_is_arena_ptr(arg0_idx, env, ctx);
                 
                 mut arena_expr := std.Concat("&", ctx_expr);
                 if is_ctx_ptr == 1 { 
@@ -3128,12 +2973,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                     type_str = (*env).current_alloc_struct;
                 }
 
-                mut is_ptr := 0;
-                mut arg0_expr := ctx[arg0_idx];
-                if arg0_expr.tag == 0 { // Identifier
-                    mut arg0_name := arg0_expr.Identifier.name;
-                    is_ptr = codegen_is_arena_ptr(arg0_name, env, ctx);
-                }
+                mut is_ptr := codegen_expression_is_arena_ptr(arg0_idx, env, ctx);
 
                 mut arena_expr := std.Concat("&", arg_str);
                 if is_ptr == 1 { 
@@ -3218,12 +3058,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                     type_str = (*env).current_alloc_struct;
                 }
 
-                mut is_ptr := 0;
-                mut arg0_expr := ctx[arg0_idx];
-                if arg0_expr.tag == 0 { // Identifier
-                    mut arg0_name := arg0_expr.Identifier.name;
-                    is_ptr = codegen_is_arena_ptr(arg0_name, env, ctx);
-                }
+                mut is_ptr := codegen_expression_is_arena_ptr(arg0_idx, env, ctx);
 
                 mut arena_expr := std.Concat("&", arg_str);
                 if is_ptr == 1 { 
@@ -3250,12 +3085,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                     type_str = (*env).current_alloc_struct;
                 }
 
-                mut is_ptr := 0;
-                mut arg0_expr := ctx[arg0_idx];
-                if arg0_expr.tag == 0 { // Identifier
-                    mut arg0_name := arg0_expr.Identifier.name;
-                    is_ptr = codegen_is_arena_ptr(arg0_name, env, ctx);
-                }
+                mut is_ptr := codegen_expression_is_arena_ptr(arg0_idx, env, ctx);
 
                 mut arena_expr := std.Concat("&", arg_str);
                 if is_ptr == 1 { 
@@ -3306,12 +3136,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                     type_str = (*env).current_alloc_struct;
                 }
 
-                mut is_ptr := 0;
-                mut arg0_expr := ctx[arg0_idx];
-                if arg0_expr.tag == 0 { // Identifier
-                    mut arg0_name := arg0_expr.Identifier.name;
-                    is_ptr = codegen_is_arena_ptr(arg0_name, env, ctx);
-                }
+                mut is_ptr := codegen_expression_is_arena_ptr(arg0_idx, env, ctx);
 
                 mut arena_expr := std.Concat("&", arg_str);
                 if is_ptr == 1 { 
@@ -3336,12 +3161,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 ctx.Set(arg1_idx, args_vec_std_clone[1]);
                 mut src_arg_str := codegen_generate_expression(arg1_idx, env, ctx);
                 
-                mut dest_is_ptr := 0;
-                mut arg0_expr := ctx[arg0_idx];
-                if arg0_expr.tag == 0 { // Identifier
-                    mut name := arg0_expr.Identifier.name;
-                    dest_is_ptr = codegen_is_arena_ptr(name, env, ctx);
-                }
+                mut dest_is_ptr := codegen_expression_is_arena_ptr(arg0_idx, env, ctx);
                 
                 mut dest_arena_expr := std.Concat("&", dest_arg_str);
                 if dest_is_ptr == 1 { 
@@ -3367,7 +3187,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 }
                 
                 if found == 1 { 
-                    mut src_is_ptr := codegen_is_arena_ptr(src_brand, env, ctx);
+                    mut src_is_ptr := codegen_brand_representation_is_pointer(src_brand, env, ctx);
                     
                     mut src_base := std.Concat(src_brand, ".BaseAddress");
                     if src_is_ptr == 1 {
@@ -3438,8 +3258,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                     is_ptr = 1;
                 }
                 if arg_expr.tag == 0 { // Identifier
-                    mut var_name := arg_expr.Identifier.name;
-                    is_ptr = codegen_is_arena_ptr(var_name, env, ctx);
+                    is_ptr = codegen_expression_is_arena_ptr(task_arg_expr_idx, env, ctx);
                 }
                 
                 mut cast_expr := "";
@@ -3483,12 +3302,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 ctx.Set(arg1_idx, args_vec_os_read_file[1]);
                 mut arg_path := codegen_generate_expression(arg1_idx, env, ctx);
 
-                mut is_ptr := 0;
-                mut arg0_expr := ctx[arg0_idx];
-                if arg0_expr.tag == 0 { // Identifier
-                    mut name := arg0_expr.Identifier.name;
-                    is_ptr = codegen_is_arena_ptr(name, env, ctx);
-                }
+                mut is_ptr := codegen_expression_is_arena_ptr(arg0_idx, env, ctx);
 
                 mut arena_expr := std.Concat("&", arg_arena);
                 if is_ptr == 1 { 
@@ -3531,12 +3345,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 ctx.Set(arg1_idx, args_vec_os_open_dir[1]);
                 mut arg_path := codegen_generate_expression(arg1_idx, env, ctx);
 
-                mut is_ptr := 0;
-                mut arg0_expr := ctx[arg0_idx];
-                if arg0_expr.tag == 0 { // Identifier
-                    mut name := arg0_expr.Identifier.name;
-                    is_ptr = codegen_is_arena_ptr(name, env, ctx);
-                }
+                mut is_ptr := codegen_expression_is_arena_ptr(arg0_idx, env, ctx);
 
                 mut arena_expr := std.Concat("&", arg_arena);
                 if is_ptr == 1 { 
@@ -3561,12 +3370,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 ctx.Set(arg1_idx, args_vec_os_read_dir[1]);
                 mut arg_dir := codegen_generate_expression(arg1_idx, env, ctx);
 
-                mut is_ptr := 0;
-                mut arg0_expr := ctx[arg0_idx];
-                if arg0_expr.tag == 0 { // Identifier
-                    mut name := arg0_expr.Identifier.name;
-                    is_ptr = codegen_is_arena_ptr(name, env, ctx);
-                }
+                mut is_ptr := codegen_expression_is_arena_ptr(arg0_idx, env, ctx);
 
                 mut arena_expr := std.Concat("&", arg_arena);
                 if is_ptr == 1 { 
@@ -3599,12 +3403,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 ctx.Set(arg0_idx, args_vec_os_arena_alloc[0]);
                 mut arg_arena := codegen_generate_expression(arg0_idx, env, ctx);
 
-                mut is_ptr := 0;
-                mut arg0_expr := ctx[arg0_idx];
-                if arg0_expr.tag == 0 { // Identifier
-                    mut name := arg0_expr.Identifier.name;
-                    is_ptr = codegen_is_arena_ptr(name, env, ctx);
-                }
+                mut is_ptr := codegen_expression_is_arena_ptr(arg0_idx, env, ctx);
 
                 mut arena_expr := std.Concat("&", arg_arena);
                 if is_ptr == 1 { 
@@ -3630,12 +3429,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 ctx.Set(arg0_idx, args_vec_os_arena_validate[0]);
                 mut arg_arena := codegen_generate_expression(arg0_idx, env, ctx);
 
-                mut is_ptr := 0;
-                mut arg0_expr := ctx[arg0_idx];
-                if arg0_expr.tag == 0 { // Identifier
-                    mut name := arg0_expr.Identifier.name;
-                    is_ptr = codegen_is_arena_ptr(name, env, ctx);
-                }
+                mut is_ptr := codegen_expression_is_arena_ptr(arg0_idx, env, ctx);
 
                 mut arena_expr := std.Concat("&", arg_arena);
                 if is_ptr == 1 { 
@@ -3662,12 +3456,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 ctx.Set(arg2_idx, args_vec_os_path_join[2]);
                 mut arg2 := codegen_generate_expression(arg2_idx, env, ctx);
 
-                mut is_ptr := 0;
-                mut arg2_expr := ctx[arg2_idx];
-                if arg2_expr.tag == 0 { // Identifier
-                    mut name := arg2_expr.Identifier.name;
-                    is_ptr = codegen_is_arena_ptr(name, env, ctx);
-                }
+                mut is_ptr := codegen_expression_is_arena_ptr(arg2_idx, env, ctx);
 
                 mut arena_expr := std.Concat("&", arg2);
                 if is_ptr == 1 { 
@@ -3719,11 +3508,10 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                     ctx.Set(arg_idx, args_vec_generic_call_tail[j]);
                     mut arg_str := codegen_generate_expression(arg_idx, env, ctx);
 
+                    mut arg_type := typechecker.env_resolve_type(env, codegen_get_expression_type(arg_idx, env, ctx), ctx);
                     mut is_arena := 0;
-                    mut arg_expr := ctx[arg_idx];
-                    if arg_expr.tag == 0 { // Identifier
-                        mut var_name := arg_expr.Identifier.name;
-                        is_arena = codegen_is_arena_val(var_name, env, ctx);
+                    if typechecker.typechecker_classify_resolved_type(arg_type, typechecker.typechecker_classification_arena(), env, ctx) == 1 && arg_type.tag == 4 { // Arena value
+                        is_arena = 1;
                     }
                     if (is_arena == 1) {
                         arg_str = std.Concat("&", arg_str);

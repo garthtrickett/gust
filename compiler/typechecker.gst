@@ -743,6 +743,7 @@ type TypeEnvironment[ctx] struct {
     struct_linear_resource: std.HashMap[str, int, ctx],
     struct_linear_destructor: std.HashMap[str, str, ctx],
     struct_templates: std.HashMap[str, StructTemplate[ctx], ctx],
+    struct_container_kinds: std.HashMap[str, int, ctx],
     enum_templates: std.HashMap[str, EnumTemplate[ctx], ctx],
     function_registry: std.HashMap[str, FunctionSignature[ctx], ctx],
     brand_identities: std.HashMap[str, BrandIdentity[ctx], ctx],
@@ -2629,6 +2630,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 mut left_expr_idx := func_expr.Selector.left;
                 mut right_name := func_expr.Selector.right;
                 mut left_type := check_expression(left_expr_idx, env, scope, ctx);
+                mut resolved_left_type := env_resolve_type(env, left_type, ctx);
                 mut is_ptr := 0;
                 if left_type.tag == 9 { // RawPointer
                     left_type = ctx[left_type.RawPointer.inner];
@@ -2776,9 +2778,9 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 
                 mut is_mutex := 0;
                 mut is_channel := 0;
-                mut is_vec := 0;
-                mut is_map := 0;
-                mut is_pool := 0;
+                mut is_vec := typechecker_classify_resolved_type(resolved_left_type, typechecker_classification_vector(), env, ctx);
+                mut is_map := typechecker_classify_resolved_type(resolved_left_type, typechecker_classification_hashmap(), env, ctx);
+                mut is_pool := typechecker_classify_resolved_type(resolved_left_type, typechecker_classification_pool(), env, ctx);
                 mut is_rc := 0;
                 mut is_graph := 0;
                 mut is_gen_arena := 0;
@@ -2790,12 +2792,6 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         is_mutex = 1;
                     } else if std.str_find(clean, "Channel_") == 0 || std.str_find(clean, "std_Channel_") == 0 {
                         is_channel = 1;
-                    } else if std.str_find(clean, "Vector_") == 0 || std.str_find(clean, "std_Vector_") == 0 {
-                        is_vec = 1;
-                    } else if std.str_find(clean, "HashMap_") == 0 || std.str_find(clean, "std_HashMap_") == 0 {
-                        is_map = 1;
-                    } else if std.str_find(clean, "Pool_") == 0 || std.str_find(clean, "std_Pool_") == 0 {
-                        is_pool = 1;
                     } else if std.str_find(clean, "Rc_") == 0 || std.str_find(clean, "std_Rc_") == 0 {
                         is_rc = 1;
                     } else if std.str_find(clean, "Graph_") == 0 || std.str_find(clean, "std_Graph_") == 0 {
@@ -3498,14 +3494,10 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     vec_receiver_type_vector_getref_alias = ctx[vec_receiver_type_vector_getref_alias.Reference.inner];
                 }
 
-                mut is_vec_vector_getref_alias := 0;
+                mut is_vec_vector_getref_alias := typechecker_classify_resolved_type(vec_arg_type_vector_getref_alias, typechecker_classification_vector(), env, ctx);
                 mut s_name_vector_getref_alias := "";
                 if vec_receiver_type_vector_getref_alias.tag == 8 { // Struct
                     s_name_vector_getref_alias = vec_receiver_type_vector_getref_alias.Struct.struct_name;
-                    mut clean_vector_getref_alias := typechecker_strip_module_prefix(s_name_vector_getref_alias, ctx);
-                    if std.str_find(clean_vector_getref_alias, "Vector_") == 0 || std.str_find(clean_vector_getref_alias, "std_Vector_") == 0 {
-                        is_vec_vector_getref_alias = 1;
-                    }
                 }
 
                 if is_vec_vector_getref_alias == 0 {
@@ -3553,14 +3545,10 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     map_receiver_type_hashmap_getref_alias = ctx[map_receiver_type_hashmap_getref_alias.Reference.inner];
                 }
 
-                mut is_map_hashmap_getref_alias := 0;
+                mut is_map_hashmap_getref_alias := typechecker_classify_resolved_type(map_arg_type_hashmap_getref_alias, typechecker_classification_hashmap(), env, ctx);
                 mut s_name_hashmap_getref_alias := "";
                 if map_receiver_type_hashmap_getref_alias.tag == 8 { // Struct
                     s_name_hashmap_getref_alias = map_receiver_type_hashmap_getref_alias.Struct.struct_name;
-                    mut clean_hashmap_getref_alias := typechecker_strip_module_prefix(s_name_hashmap_getref_alias, ctx);
-                    if std.str_find(clean_hashmap_getref_alias, "HashMap_") == 0 || std.str_find(clean_hashmap_getref_alias, "std_HashMap_") == 0 {
-                        is_map_hashmap_getref_alias = 1;
-                    }
                 }
 
                 if is_map_hashmap_getref_alias == 0 {
@@ -4496,16 +4484,13 @@ func check_expression_with_provenance(expr_idx: Index[ast.Expression[ctx], ctx],
                     if std.str_eq(pool_alloc_func_expr_prov.Selector.right, "Alloc") == 1 {
                         mut pool_alloc_receiver_type_prov := check_expression(pool_alloc_func_expr_prov.Selector.left, env, scope, ctx);
                         pool_alloc_receiver_type_prov = env_resolve_type(env, pool_alloc_receiver_type_prov, ctx);
-                        if pool_alloc_receiver_type_prov.tag == 8 { // Struct
-                            mut pool_alloc_receiver_name_prov := typechecker_strip_module_prefix(pool_alloc_receiver_type_prov.Struct.struct_name, ctx);
-                            if std.str_find(pool_alloc_receiver_name_prov, "Pool_") == 0 || std.str_find(pool_alloc_receiver_name_prov, "std_Pool_") == 0 {
-                                mut pool_alloc_result_type_prov := env_resolve_type(env, t, ctx);
-                                if pool_alloc_result_type_prov.tag == 7 { // Index
-                                    mut pool_alloc_constructed_prov := expression_provenance_safe_arena(t, ctx);
-                                    pool_alloc_constructed_prov.legacy_origins = legacy_origins;
-                                    set_add(pool_alloc_constructed_prov.legacy_origins, "Pool.Alloc", ctx);
-                                    return pool_alloc_constructed_prov;
-                                }
+                        if typechecker_classify_resolved_type(pool_alloc_receiver_type_prov, typechecker_classification_pool(), env, ctx) == 1 {
+                            mut pool_alloc_result_type_prov := env_resolve_type(env, t, ctx);
+                            if pool_alloc_result_type_prov.tag == 7 { // Index
+                                mut pool_alloc_constructed_prov := expression_provenance_safe_arena(t, ctx);
+                                pool_alloc_constructed_prov.legacy_origins = legacy_origins;
+                                set_add(pool_alloc_constructed_prov.legacy_origins, "Pool.Alloc", ctx);
+                                return pool_alloc_constructed_prov;
                             }
                         }
                     }
@@ -4829,6 +4814,55 @@ func make_type_reference(inner: ast.Type[ctx], brand_name: str, ctx: &Arena) ast
     return t;
 }
 
+func typechecker_container_kind_none() int { return 0; }
+func typechecker_container_kind_vector() int { return 1; }
+func typechecker_container_kind_hashmap() int { return 2; }
+func typechecker_container_kind_pool() int { return 3; }
+
+func typechecker_classification_slice() int { return 1; }
+func typechecker_classification_pointer() int { return 2; }
+func typechecker_classification_vector() int { return 3; }
+func typechecker_classification_hashmap() int { return 4; }
+func typechecker_classification_pool() int { return 5; }
+func typechecker_classification_arena() int { return 6; }
+
+func env_record_struct_template_container_kind(env: *TypeEnvironment[ctx], template_name: str, kind: int, ctx: &Arena) {
+    unsafe {
+        (*env).struct_container_kinds.Insert(std.Clone(ctx, template_name), kind);
+    }
+}
+
+func env_get_struct_template_container_kind(env: *TypeEnvironment[ctx], template_name: str) int {
+    unsafe {
+        mut lookup := (*env).struct_container_kinds.Get(template_name);
+        if lookup.Ok {
+            return lookup.Val;
+        }
+    }
+    return typechecker_container_kind_none();
+}
+
+func env_record_struct_container_kind(env: *TypeEnvironment[ctx], struct_name: str, kind: int, ctx: &Arena) {
+    unsafe {
+        if kind != typechecker_container_kind_none() {
+            (*env).struct_container_kinds.Insert(std.Clone(ctx, struct_name), kind);
+        }
+    }
+}
+
+func env_get_struct_container_kind(env: *TypeEnvironment[ctx], struct_name: str) int {
+    unsafe {
+        mut struct_lookup := (*env).struct_registry.Get(struct_name);
+        if struct_lookup.Ok {
+            mut kind_lookup := (*env).struct_container_kinds.Get(struct_name);
+            if kind_lookup.Ok {
+                return kind_lookup.Val;
+            }
+        }
+    }
+    return typechecker_container_kind_none();
+}
+
 func typechecker_is_arena_value_or_ref(t: ast.Type[ctx], ctx: &Arena) int {
     unsafe {
         if t.tag == 4 { // Arena
@@ -4848,6 +4882,54 @@ func typechecker_is_arena_value_or_ref(t: ast.Type[ctx], ctx: &Arena) int {
         }
     }
     return 0;
+}
+
+func typechecker_classify_resolved_type(resolved: ast.Type[ctx], classification: int, env: *TypeEnvironment[ctx], ctx: &Arena) int {
+    mut is_arena := typechecker_is_arena_value_or_ref(resolved, ctx);
+    if classification == typechecker_classification_arena() {
+        return is_arena;
+    }
+    if classification == typechecker_classification_slice() {
+        if resolved.tag == 5 || resolved.tag == 6 { // Str or Slice
+            return 1;
+        }
+        return 0;
+    }
+    if classification == typechecker_classification_pointer() {
+        if (resolved.tag == 9 || resolved.tag == 11) && is_arena == 0 { // RawPointer or Reference
+            return 1;
+        }
+        return 0;
+    }
+
+    unsafe {
+        mut base := resolved;
+        while base.tag == 9 || base.tag == 11 { // RawPointer or Reference
+            if base.tag == 9 {
+                base = ctx[base.RawPointer.inner];
+            } else {
+                base = ctx[base.Reference.inner];
+            }
+        }
+        if base.tag == 8 { // Struct
+            mut kind := env_get_struct_container_kind(env, base.Struct.struct_name);
+            if classification == typechecker_classification_vector() && kind == typechecker_container_kind_vector() {
+                return 1;
+            }
+            if classification == typechecker_classification_hashmap() && kind == typechecker_container_kind_hashmap() {
+                return 1;
+            }
+            if classification == typechecker_classification_pool() && kind == typechecker_container_kind_pool() {
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
+func typechecker_classify_type(t: ast.Type[ctx], classification: int, env: *TypeEnvironment[ctx], ctx: &Arena) int {
+    mut resolved := env_resolve_type(env, t, ctx);
+    return typechecker_classify_resolved_type(resolved, classification, env, ctx);
 }
 
 func typechecker_get_index_element_type(idx_t: ast.Type[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) ast.Type[ctx] {
@@ -5816,6 +5898,8 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
             mut elided_struct_name := typechecker_construct_brand_argument_elided_name(template_name, args, struct_identity, ctx);
             env_record_canonical_type_name(env, concrete_name, canonical_struct_name, ctx);
             env_record_canonical_type_name(env, elided_struct_name, canonical_struct_name, ctx);
+            mut concrete_container_kind := env_get_struct_template_container_kind(env, template_name);
+            env_record_struct_container_kind(env, concrete_name, concrete_container_kind, ctx);
 
             mut existing := (*env).struct_registry.Get(concrete_name);
             mut has_existing := 0;
@@ -5825,7 +5909,7 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
             if has_existing == 0 {
                 mut placeholder: StructLayout[ctx];
                 placeholder.brand = brand;
-                placeholder.fields = std.HashMapNew(ctx); 
+                placeholder.fields = std.HashMapNew(ctx);
                 (*env).struct_registry.Insert(std.Clone(ctx, concrete_name), placeholder);
 
 
@@ -5957,6 +6041,9 @@ func env_register_std_templates(env: *TypeEnvironment[ctx], ctx: &Arena) {
         (*env).struct_templates.Insert(std.Clone(ctx, "std_Vector"), vec_tmpl);
         (*env).struct_templates.Insert(std.Clone(ctx, "std.Vector"), vec_tmpl);
         (*env).struct_templates.Insert(std.Clone(ctx, "Vector"), vec_tmpl);
+        env_record_struct_template_container_kind(env, "std_Vector", typechecker_container_kind_vector(), ctx);
+        env_record_struct_template_container_kind(env, "std.Vector", typechecker_container_kind_vector(), ctx);
+        env_record_struct_template_container_kind(env, "Vector", typechecker_container_kind_vector(), ctx);
 
         // 2. HashMap[K, V, ctx]
         mut map_gen: std.Vector[str, ctx] := std.VectorNew(ctx);
@@ -5984,6 +6071,9 @@ func env_register_std_templates(env: *TypeEnvironment[ctx], ctx: &Arena) {
         (*env).struct_templates.Insert(std.Clone(ctx, "std_HashMap"), map_tmpl);
         (*env).struct_templates.Insert(std.Clone(ctx, "std.HashMap"), map_tmpl);
         (*env).struct_templates.Insert(std.Clone(ctx, "HashMap"), map_tmpl);
+        env_record_struct_template_container_kind(env, "std_HashMap", typechecker_container_kind_hashmap(), ctx);
+        env_record_struct_template_container_kind(env, "std.HashMap", typechecker_container_kind_hashmap(), ctx);
+        env_record_struct_template_container_kind(env, "HashMap", typechecker_container_kind_hashmap(), ctx);
 
         // 3. Option[T, ctx]
         mut opt_gen: std.Vector[str, ctx] := std.VectorNew(ctx);
@@ -6051,6 +6141,9 @@ func env_register_std_templates(env: *TypeEnvironment[ctx], ctx: &Arena) {
         (*env).struct_templates.Insert(std.Clone(ctx, "std_Pool"), pool_tmpl);
         (*env).struct_templates.Insert(std.Clone(ctx, "std.Pool"), pool_tmpl);
         (*env).struct_templates.Insert(std.Clone(ctx, "Pool"), pool_tmpl);
+        env_record_struct_template_container_kind(env, "std_Pool", typechecker_container_kind_pool(), ctx);
+        env_record_struct_template_container_kind(env, "std.Pool", typechecker_container_kind_pool(), ctx);
+        env_record_struct_template_container_kind(env, "Pool", typechecker_container_kind_pool(), ctx);
 
         // 4. RcNode[T]
         mut rcnode_gen: std.Vector[str, ctx] := std.VectorNew(ctx);
@@ -6632,6 +6725,7 @@ func env_new(ctx: &Arena) TypeEnvironment[ctx] {
         mut env_ref_new := ctx.get_ref(env_idx);
         env_ref_new.struct_registry = std.HashMapNew(ctx);
         env_ref_new.struct_templates = std.HashMapNew(ctx);
+        env_ref_new.struct_container_kinds = std.HashMapNew(ctx);
         env_ref_new.struct_layout_repr_c = std.HashMapNew(ctx);
         env_ref_new.struct_layout_packed = std.HashMapNew(ctx);
         env_ref_new.struct_layout_abi = std.HashMapNew(ctx);
