@@ -1,4 +1,4 @@
-# Phase 18 — Target, Object, and Linker Hardening
+# Phase 19 — Brand Identity and Value Representation
 
 **Lane:** Cranelift. Branches follow the existing `codex/phase<N>-<patch>-<slug>` pattern.
 
@@ -6,32 +6,57 @@ Workflow, Monitoring, Merge, Phase Completion, Runner, and Git Authorization
 policies are defined once in `AGENTS.md` and apply to both lanes. Ownership
 boundaries and the shared coordination zone are defined in `AGENTS.md` and
 `docs/SHARED_SEMANTIC_ZONE.md`. This document defines only what is specific to
-Phase 18.
+Phase 19.
 
-`docs/ONE_WAY_LEDGER.md` records, per design rule, whether the compiler
-currently enforces it, with a reproduction per row. Four rules are recorded as
-violated; two of them — brand identity (`TASK_PHASE19.md`) and the borrow model
-(`TASK_STDLIB.md` CR-6) — already have owners, and Phase 18 owns neither. It is
-a status record, not a work queue, and it authorizes nothing here.
+Phase 19 exists to resolve **CR-2** from `TASK_STDLIB.md` and **D-1**, **D-2**
+from `docs/SHARED_SEMANTIC_ZONE.md`. It owns brand identity and value
+representation, and nothing else.
 
-The parallel Stdlib lane is described by `TASK_STDLIB.md`. Phase 18 does not
-own, schedule, or validate any work in that roadmap. Where a Stdlib patch
-requires a change to canonical MIR, resource semantics, ABI, layout, the runtime
-symbol surface, or operator semantics, it arrives here as a coordination request
-and must be scheduled as an explicit Phase 18 patch or deferred to a later phase
-— never absorbed into an existing patch.
+It is also the first prerequisite of the demo deliverable. `docs/DEMO_TARGET_PROGRAM.md`
+lists ten things that must be true before `VISION.md` §0.7's artifact compiles,
+and brand identity is row 1 — because until it lands, whether a value is treated
+as an arena depends on what the variable is called, and the memory model the
+demo is meant to demonstrate is approximated by string matching. That does not
+widen Phase 19's boundary; it is recorded so the phase's priority is legible
+from outside the Cranelift lane.
 
 ## Roadmap Activation
 
-Phase 18 implementation begins only after an explicit operator request to start
-Phase 18. Once activated, the Phase Completion Loop in `AGENTS.md` authorizes
-autonomous work through Patch 18.19, subject to the patch boundaries, validation
-requirements, and stop conditions in this document.
+Phase 18 closed on 2026-08-20 — Patch 18.19 merged as `ccacc1db` — and the
+operator activated Phase 19 the same day. The Phase Completion Loop in
+`AGENTS.md` authorizes autonomous work through Patch 19.12, subject to the
+patch boundaries, validation requirements, and stop conditions below.
 
-Activating Phase 18 does not activate the Stdlib lane, and vice versa. Each lane
+Phase 19 did not begin while Phase 18 was open. Both change the compiler, both
+are bootstrap-sensitive, and interleaving them would have made a bootstrap
+failure ambiguous between two causes.
+
+Activating Phase 19 does not activate the Stdlib lane, and vice versa. Each lane
 is activated separately.
 
 ## Status
+
+- [ ] Patch 19.0 — Opening Inventory and Phase 18 Residual Rebase
+- [ ] Patch 19.1 — Identifier-Spelling Decision Inventory
+- [ ] Patch 19.2 — Compiler-Owned Brand Identity Authority
+- [ ] Patch 19.3 — Canonical Branded Type Naming Without a Brand Vocabulary
+- [ ] Patch 19.4 — Type-Derived Container and Arena Classification
+- [ ] Patch 19.5 — Argument and Index Representation From the Type System
+- [ ] Patch 19.6 — Rule Convergence Between the Two Compilers
+- [ ] Patch 19.7 — Name-List Removal From the Rust Compiler
+- [ ] Patch 19.8 — Name-List Removal From the Self-Hosted Compiler
+- [ ] Patch 19.9 — Seed Regeneration and Fixed-Point Convergence
+- [ ] Patch 19.10 — Generated-C Equivalence Over the Compiler's Own Sources
+- [ ] Patch 19.11 — Cross-Feature Composition and Complete Differential
+- [ ] Patch 19.12 — Phase 19 Closure
+
+Status rows are machine-parsed in the same form the Phase 15–18 close guards
+parse `TASK.md`. Keep each row as `- [ ] Patch 19.N — <Title>` or
+`- [x] Patch 19.N — <Title> — DONE`, with no trailing annotation.
+
+## Immutable Phase 18 Completion Record
+
+The Phase 19 opening and closure guards consume this historical record. These rows describe the already-closed parent phase and are not active Phase 19 work.
 
 - [x] Patch 18.0 — Opening Inventory and Phase 17 Residual Rebase — DONE
 - [x] Patch 18.1 — Compiler-Owned Target Authority and Declared Target Triples — DONE
@@ -122,481 +147,214 @@ The Phase 16 closure guard consumes this historical record transitively. These r
 
 ## Purpose
 
-Phase 18 turns the host-only native path into a supported compiler backend.
+Phase 19 makes brand identity and value representation follow from the type
+system rather than from how a variable happens to be spelled.
 
-Phase 17 proved that a migrated program can be compiled to native objects and linked against an explicit runtime package without generated C glue. It proved this on the host. Phase 18 makes target support an explicit, declared, and evidenced property rather than an accident of the machine the compiler happens to run on.
+Today both compilers carry a hardcoded list of identifier names treated as arena
+brands:
 
-The central rule of this phase is that **a target is not supported because Cranelift can emit code for its architecture**. A declared supported target requires the complete combination of:
+```rust
+// src/codegen.rs:71 and src/typechecker/types.rs:61
+let brand_bases = ["connCtx", "arena", "ctx", "Any", "a", "main_ctx", "bg_ctx", "file_ctx"];
+```
 
-- a compiler able to produce correct native objects for the target;
-- a runtime package built for and compatible with the target;
-- a linker that can be discovered and invoked for the target;
-- an ABI selection valid for the target.
+The list serves two distinct purposes, and the phase must separate them before it
+can remove either:
 
-All four must hold simultaneously, be validated together, and carry evidence together. Any target missing any element is unsupported and must be diagnosed as unsupported rather than attempted.
+**Type-name erasure.** Generated C type names such as
+`std_Vector_lib_module__ctx` are reduced to a canonical form by stripping known
+brand suffixes. This is canonical type identity expressed through string
+surgery on a fixed vocabulary.
 
-The phase covers the declared inventory for:
+**Classification override.** At index and call sites, the compiler derives
+`is_slice`, `is_ptr`, `is_vector`, `is_hashmap`, and `is_pool` from the resolved
+type and the struct registry — and then `is_arena_override`, computed purely
+from the identifier's spelling, forcibly clears all five
+(`src/codegen.rs:1770-1776`).
 
-- explicit target selection and declared architecture and operating-system triples;
-- object-format handling, section naming, and symbol binding;
-- relocation model selection and relocation validation;
-- target-specific ABI selection consuming the Phase 16 authority;
-- target-specific runtime package selection consuming the Phase 17 authority;
-- linker discovery, selection, and invocation policy;
-- static versus dynamic runtime linking;
-- reproducible object and artifact output;
-- atomic executable publication under existing Phase 9G ownership;
-- cross-compilation policy and host/target separation;
-- unsupported-target detection and stable diagnostics;
-- symbol and relocation inspection evidence;
-- debug information strategy;
-- source-location preservation;
-- optimisation-level policy.
+That second one is the important discovery. **The type system already computes
+the classification; a name check overrules it.** The override exists because the
+type-derived path is not trusted in some cases. Making it trustworthy is the
+work of this phase; deleting the override is the consequence.
 
-The initial declared supported target set must remain narrow and explicit. Breadth is not a goal of this phase; a small number of completely supported targets is the goal. Adding a target is a deliberate, evidenced act, not a consequence of a backend capability table.
+The user-visible defect this produces:
 
-Phase 18 closes only the declared target, object, and linker inventory. It does not claim complete platform coverage, complete cross-compilation, complete debug-information fidelity, complete optimisation support, a stable public target-triple vocabulary, distribution or packaging policy, retirement of the MIR-to-C oracle, or production readiness.
+```gust
+func probe(s: str) int { return std.str_byte_at(s, 0); }
+func main() {
+    mut a: str := "PING";      // name is in brand_bases
+    os.LogInt(probe(a));       // emits probe(&a) — rejected by cc
+}
+```
+
+Renaming `a` to `b` fixes the program. Nothing about the type changed.
 
 ## Starting State
 
-The expected starting state is:
+Verified 2026-08-19. Evidence: `docs/STDLIB_SURFACE_FINDINGS.md`, findings F3,
+F3a, F3b.
 
-- Phase 17 is closed with status `phase17_closed_native_runtime_boundary`.
-- The canonical feature registry remains the only active feature-state authority.
-- The Phase 17 semantic closure snapshot remains immutable.
-- The Phase 17 deferred residue snapshot contains concrete capabilities assigned to later phases.
-- Phase 14 remains the compiler-owned authority for type layout, target layout, and memory-access validation.
-- Phase 15 remains the compiler-owned authority for resource identity, move state, cleanup obligations, and destruction.
-- Phase 16 remains the compiler-owned authority for signatures, parameter and result placement, call plans, frame plans, and compatibility.
-- Phase 17 remains the compiler-owned authority for runtime ABI identity, helper classification, runtime symbol identity and version, runtime components, runtime packages, runtime requirements, and pre-link availability and compatibility decisions.
-- MIR-to-C remains the default backend and differential oracle unless a later explicit roadmap patch changes that ownership.
+- The name list appears at `src/codegen.rs:71,128,1762,1808,1843`,
+  `src/typechecker/types.rs:61,439`, `src/typechecker.rs:135,172`,
+  `src/typechecker/monomorphize.rs:234,254,268,599,722`,
+  `compiler/codegen.gst:658,762,896,1101,1851`, and
+  `compiler/typechecker.gst:4953,5151`.
+- **The two compilers apply different matching rules to the same list.** The Rust
+  compiler uses `alloc_str.ends_with(".a")` (`src/codegen.rs:1766`); the
+  self-hosted compiler uses a substring search (`compiler/codegen.gst:1854`) and
+  additionally matches `->ctx`, `->arena`, `->connCtx`, `->a` as substrings. The
+  same source can be classified differently by the two compilers. This is a
+  semantics divergence inside the bootstrap chain.
+- **The blast radius is the compiler itself.** `compiler/*.gst` contains roughly
+  2,312 declarations named `ctx`, `arena`, `a`, or `connCtx`, and roughly 2,183
+  `ctx[...]` index sites. Every one is currently classified by name. A
+  type-derived replacement must produce identical output for all of them or the
+  compiler will not bootstrap.
+- `gust_v4.c` encodes the current behaviour. Phase 19 cannot land without a seed
+  regeneration.
+- A converged seed regeneration was performed 2026-08-19 and is append-only
+  relative to the committed seed (1,920 insertions, 0 deletions), confirming the
+  bootstrap chain is healthy before this phase begins.
+
+Contracts Phase 19 consumes and must not redefine:
+
+- Phase 14 owns type layout, target layout, and memory-access validation.
+- Phase 15 owns resource identity, move state, cleanup, destruction.
+- Phase 16 owns signatures, parameter and result placement, and call plans.
+  **Argument representation is Phase 16 territory**; Phase 19 makes the compiler
+  ask Phase 16 rather than guess from a name.
+- Phase 17 owns runtime ABI and symbol identity.
+- Phase 18 owns target, object format, relocation, linker, and link mode.
+- MIR-to-C remains the default backend and differential oracle.
 - Explicit Cranelift selection has no fallback.
-- The compiler owns source interpretation and canonical MIR production.
-- The worker receives only request data, canonical MIR, and compiler-produced layout, resource, ABI, and runtime metadata.
-- Phase 9G owns object handling, linking, cleanup of owned temporary artifacts, and atomic publication.
-- Registry-derived CI families own focused differential evidence.
-- Cranelift Historical Full remains the sole Level 3 historical owner.
-
-Phase 18 must consume those contracts rather than recreate them. In particular, Phase 18 selects an ABI for a target; it does not define ABI semantics. It selects a runtime package for a target; it does not define runtime symbol identity. It plans and validates a link; it does not take link execution or publication ownership from Phase 9G.
 
 ## Phase Boundary
 
-Phase 18 may implement:
+Phase 19 may implement:
 
-- a compiler-owned target authority and declared target triple vocabulary;
-- explicit target selection from the request and from a declared default;
-- the complete target support tuple and its support decision;
-- object-format descriptors covering section naming, symbol binding, and visibility;
-- relocation kind vocabularies per target and object format;
-- relocation validation before object publication;
-- target-specific ABI selection consuming Phase 16 records;
-- target-specific runtime package selection consuming Phase 17 records;
-- linker discovery, selection, and a declared invocation policy;
-- static and dynamic runtime link modes;
-- deterministic and reproducible object and artifact bytes;
-- atomic executable publication integrated with Phase 9G ownership;
-- host and target separation for cross-compilation;
-- unsupported-target detection with stable diagnostics at a declared early stage;
-- symbol table and relocation inspection witnesses;
-- a declared debug-information strategy and level;
-- source-location preservation from source through canonical MIR to emitted debug records;
-- a declared optimisation-level vocabulary and its effect on emitted code.
+- a compiler-owned brand identity record derived from resolved types;
+- canonical branded type naming that does not depend on a brand-word vocabulary;
+- type-derived container and arena classification sufficient to retire the
+  spelling override;
+- argument and index representation decisions sourced from Phase 16;
+- a single matching rule shared by both compilers, or the removal of the concept;
+- removal of the hardcoded name list from both compilers;
+- a seed regeneration proving fixed-point convergence under the new rules;
+- byte-level generated-C equivalence evidence over the compiler's own sources.
 
-Phase 18 must not silently absorb:
+Phase 19 must not silently absorb:
 
-- complete platform or architecture coverage;
-- a stable, publicly committed target-triple vocabulary;
-- complete cross-compilation including sysroot acquisition and management;
-- toolchain distribution, installation, or package-manager design;
-- complete debug-information fidelity or debugger integration;
-- complete optimisation pipelines or performance guarantees;
-- profile-guided or link-time optimisation;
-- position-independent executable, address-space-layout, or hardening policy unless separately selected;
-- code signing, notarisation, or platform attestation;
-- shared-library authoring or plugin loading;
-- dynamic loader design;
-- removal of MIR-to-C as the default differential oracle;
-- linker implementation;
-- object-format writing beyond what the declared targets require;
-- arbitrary foreign-function interfaces;
-- capabilities already deferred by Phase 17 to later phases;
-- full Gust language parity or production readiness.
+- new lifetime syntax, lifetime relations, or lifetime casts;
+- arbitrary brand relationships, brand casts, or brand escape hatches;
+- new ABI classification rules — Phase 19 selects, Phase 16 defines;
+- new MIR operations, or changed meaning for existing ones;
+- resource, drop, or move semantics changes;
+- changes to layout or the runtime ABI;
+- stdlib API design — that is `TASK_STDLIB.md`;
+- renaming variables in `compiler/*.gst` to work around the defect;
+- any change that makes the compiler's generated C differ without an explained,
+  evidenced reason.
 
-Out-of-scope Phase 17 residual rows must remain deferred, be reassigned to a later phase, or be split into narrower rows. They must not be marked migrated merely because Phase 18 introduces a target, object format, or linker policy.
+## Compiler-Owned Brand and Representation Authority
 
-## Compiler-Owned Target and Artifact Authority
-
-Phase 18 must establish one compiler-owned target service with semantic records equivalent to the following concepts. No backend, worker, linker driver, or diagnostic path may derive these independently.
-
-### Target Identity
-
-- stable target ID;
-- architecture;
-- vendor;
-- operating system;
-- environment or ABI suffix where the target requires one;
-- pointer width;
-- endianness;
-- declared source of the triple.
-
-Target identity is the only authority for what a target is. A backend capability table is not a target identity.
-
-### Complete Target Support Tuple
-
-- target ID;
-- compiler support record;
-- runtime package support record;
-- linker support record;
-- ABI support record;
-- resulting support decision.
-
-A target is declared supported only when all four support records are present, mutually compatible, and evidenced. The tuple is the phase's central invariant.
-
-### Object Format Descriptor
-
-- object format;
-- section naming rules;
-- symbol binding vocabulary;
-- symbol visibility vocabulary;
-- alignment requirements;
-- permitted section kinds.
-
-### Relocation Model
-
-- relocation kind vocabulary for the target and object format;
-- permitted relocation kinds per section kind;
-- addend policy;
-- validation rules applied before an object is published.
-
-### Target ABI Selection
-
-- target ID;
-- selected Phase 16 ABI identity;
-- selection reason;
-- compatibility decision.
-
-Phase 18 selects an existing ABI. It does not define ABI placement, classification, or transport.
-
-### Target Runtime Package Selection
-
-- target ID;
-- selected Phase 17 runtime package identity;
-- link mode;
-- compatibility decision.
-
-Phase 18 selects an existing package. It does not define runtime symbol identity or version.
-
-### Linker Descriptor
-
-- linker ID;
-- discovery method;
-- discovery result;
-- invocation policy;
-- permitted argument vocabulary;
-- supported object formats;
-- supported targets.
-
-### Link Mode Decision
-
-- target ID;
-- static or dynamic runtime linking;
-- decision reason;
-- required runtime package form;
-- rejection reason where the requested mode is unavailable.
-
-### Reproducibility Contract
-
-- declared reproducible fields;
-- excluded non-deterministic inputs;
-- normalisation rules for paths, timestamps, and ordering;
-- comparison method for repeated builds.
-
-### Publication Plan
-
-- temporary artifact ownership;
-- publication order;
-- atomicity method;
-- preservation guarantee on failure and deferral.
-
-Publication remains owned by Phase 9G. Phase 18 supplies the plan; it does not perform or reassign publication.
-
-### Host and Target Separation
-
-- host identity;
-- target identity;
-- whether the build is native or cross;
-- permitted host-dependent inputs;
-- rejection rules for host leakage into target artifacts.
-
-### Debug Information Plan
-
-- debug information format;
-- debug level;
-- included record kinds;
-- excluded record kinds;
-- target applicability.
-
-### Source Location Record
-
-- source file identity;
-- source span;
-- canonical MIR association;
-- emitted debug association;
-- preservation guarantee through lowering.
-
-### Optimisation Level Decision
-
-- declared optimisation level vocabulary;
-- selected level;
-- permitted transformations at that level;
-- guarantees preserved across levels;
-- observable-behaviour equivalence requirement.
-
-### Target Support Decision
-
-- target ID;
-- supported or unsupported;
-- missing tuple elements where unsupported;
-- stable diagnostic reason code;
-- declared failure stage.
-
-## Request and MIR Ownership
-
-- The compiler selects the target and produces the target identity, support decision, ABI selection, runtime package selection, link mode, debug plan, and optimisation level.
-- The native request carries the selected target identity and the compiler-produced target records it depends on.
-- Canonical MIR references compiler-produced target and source-location identities rather than backend-inferred ones.
-- The worker receives only request data, canonical MIR, and compiler-produced layout, resource, ABI, runtime, and target metadata.
-- Request validation rejects missing, duplicate, conflicting, unknown, or target-incompatible target metadata.
-- The worker does not choose a target, an object format, a relocation kind, a linker, a link mode, a debug level, or an optimisation level.
+- The compiler produces a brand identity record for every branded type: brand
+  origin, arena identity, and whether the value denotes an arena.
+- Arena-ness is a property of the resolved type. It is never inferred from an
+  identifier, a field name, or a substring of a generated expression.
+- Canonical branded type identity is produced once by type resolution and
+  consumed unchanged by both backends. Neither backend reconstructs branding.
+- Container classification is produced from the resolved type and the struct
+  registry, with no spelling-derived override.
+- Argument representation — by value or by address — is a Phase 16 ABI decision
+  recorded in canonical MIR, not a codegen-time string transformation.
 
 ## Architectural Invariants
 
-- A target is supported only as a complete compiler, runtime, linker, and ABI combination.
-- The declared supported target set is explicit, narrow, and registry-owned.
-- Backend architecture capability is necessary but never sufficient for target support.
-- No component infers a target from the host environment when an explicit target is selected.
-- No component infers an object format, relocation kind, or linker from an unresolved symbol, a file extension, or a probe of the output.
-- Unsupported targets stop at a declared early failure stage before native driver access, object creation, linker invocation, or output replacement.
-- Object bytes for a fixed input, target, and level are reproducible.
-- Existing output is preserved on failure and deferral.
-- Phase 9G retains object handling, linking, temporary cleanup, and atomic publication ownership.
-- Phase 14, 15, 16, and 17 authorities remain the owners of layout, resource, ABI, and runtime decisions respectively.
-- MIR-to-C remains an independent default differential oracle and never acts as an implementation intermediary for a native artifact.
-- Explicit Cranelift has no fallback to MIR-to-C.
-- Source locations survive lowering wherever the declared debug plan requires them.
-- Optimisation level changes emitted code but never observable program behaviour where the contract requires equivalence.
-- No exact-source, fixture-name, object-output, archive-output, linker-output, or debug-output recognizer exists.
-- No exact target, format, relocation, or linker count is treated as backend correctness.
+- Renaming a local variable never changes generated code.
+- The Rust and self-hosted compilers apply identical classification rules.
+- No component decides arena-ness, container kind, or argument representation
+  from an identifier spelling, a substring, or a generated expression's text.
+- Canonical MIR carries the representation decision; codegen consumes it.
+- The bootstrap seed compiles the post-change compiler sources, and the compiler
+  reaches a three-stage fixed point.
+- MIR-to-C remains an independent differential oracle.
+- Explicit Cranelift has no fallback.
+- No exact-source, fixture-name, or identifier-name recognizer is introduced to
+  replace the one being removed.
 
 ## Verification Policy
 
-### Level 1 — Fast Contracts
+### Level 1 — Fast contracts
 
 Level 1 guards may validate:
 
-- Phase 17 semantic closure availability;
-- Phase 18 opening and parent traceability;
-- canonical registry schema and semantic state;
-- compiler-owned target identity and triple vocabulary;
-- complete target support tuple records and support decisions;
-- object format descriptor schemas;
-- relocation kind vocabularies and validation rules;
-- target ABI selection records consuming Phase 16;
-- target runtime package selection records consuming Phase 17;
-- linker descriptor and invocation policy schemas;
-- link mode decisions;
-- reproducibility contract declarations;
-- publication plan handoff to Phase 9G;
-- host and target separation rules;
-- unsupported-target diagnostics;
-- debug information plan schemas;
-- source-location record ownership in canonical MIR;
-- optimisation level vocabularies and permitted transformations;
-- generated projection freshness;
-- no backend-local target, format, relocation, linker, or level selector;
-- no host inference when an explicit target is selected;
-- no fallback;
-- worker isolation;
-- early deferral;
-- output preservation;
-- manifest and route architecture;
-- CI-family projection;
-- test-level and workflow ownership;
-- residue and closure summaries.
+- the Phase 18 closure record and Phase 19 opening traceability;
+- absence of the brand-name list in each compiler as its removal patch lands;
+- absence of any spelling-derived classification override;
+- brand identity record schemas;
+- canonical branded type identity for paired inferred and explicit programs;
+- agreement between the two compilers' classification rules;
+- representation decisions present in canonical MIR;
+- generated projection freshness.
 
-Level 1 guards must not build every declared target, invoke every linker, produce every object, run every target runner, inspect every emitted artifact, or execute the full historical suite.
+### Level 2 — Focused differential families
 
-### Level 2 — Focused Differential Families
+Proposed family vocabulary:
 
-Level 2 evidence validates bounded migrated behavior on the primary PR host through registry-derived families.
+- `brand-identity`;
+- `branded-type-naming`;
+- `container-classification`;
+- `argument-representation`;
+- `rename-invariance`.
 
-A proposed initial family vocabulary is:
+`rename-invariance` is the family that would have caught this defect. For a
+fixture, compile it, rename every local to a fresh name, compile again, and
+require byte-identical generated C. Add it early — Patch 19.1 — so it is
+measuring throughout the phase rather than confirming at the end.
 
-- `target-identity`;
-- `target-support-tuple`;
-- `object-format`;
-- `relocations`;
-- `target-abi-selection`;
-- `target-runtime-packages`;
-- `linker-policy`;
-- `link-modes`;
-- `reproducibility`;
-- `publication`;
-- `cross-compilation`;
-- `target-diagnostics`;
-- `object-inspection`;
-- `debug-info`;
-- `source-locations`;
-- `optimisation-levels`.
+### Level 3 — Historical and complete evidence
 
-The active family set and count must be derived from the canonical registry. The workflow must not hard-code one matrix row per patch, target, object format, relocation kind, linker, or level.
+Cranelift Historical Full remains the sole Level 3 owner. Phase 19 adds the
+compiler-self-compilation differential described in Patch 19.10 to that suite;
+it does not create a second historical suite.
 
-For each applicable case, Level 2 should compare:
-
-- default MIR-to-C;
-- explicit MIR-to-C;
-- explicit Cranelift using native program objects and an explicit runtime package;
-- runtime values;
-- stdout and stderr where declared stable;
-- exit status;
-- target identity and support decision witnesses;
-- object format and section witnesses;
-- relocation validation witnesses;
-- selected ABI and runtime package witnesses;
-- linker discovery and invocation-plan witnesses;
-- link mode witnesses;
-- repeated-build byte comparison for reproducible outputs;
-- symbol table and relocation inspection witnesses;
-- debug record presence and source-location association where declared;
-- stable unsupported-target diagnostics;
-- preservation of sentinel output on failure.
-
-Default and explicit MIR-to-C output should remain byte-identical for the same target and source where the existing differential contract requires it. Level 2 runs on the primary PR host; it validates target decisions and plans for non-host targets rather than executing non-host binaries.
-
-### Level 3 — Historical and Complete Target Evidence
-
-Cranelift Historical Full remains the sole Level 3 owner.
-
-It owns:
-
-- complete Phase 9–18 historical replay;
-- the complete registry-derived Phase 18 differential inventory;
-- native compile, object inspection, link, execution, diagnostic, and reproducibility evidence for every declared supported target;
-- cross-compilation evidence for every declared cross pair;
-- linker discovery and invocation evidence per target;
-- static and dynamic link mode evidence where both are declared;
-- repeated-build reproducibility evidence;
-- debug information and source-location evidence where declared;
-- optimisation-level equivalence evidence;
-- unsupported-target diagnostic matrices;
-- complete object, link, cleanup, and publication failure matrices owned by Phase 9G;
-- all historical native fixtures.
-
-Phase 18 opening and closure guards validate that the Level 3 suite remains available, registry-derived, and separately runnable. They do not execute it.
-
-## Standard Definition of Done for Every Phase 18 Capability Patch
-
-A Phase 18 capability is migrated only when all of the following are true:
+## Standard Definition of Done for Every Phase 19 Capability Patch
 
 - The supported source shape is precisely bounded.
-- The supported canonical-MIR shape is precisely bounded.
-- The owning canonical registry row is identified.
-- The owning declared target set is explicit or derived.
-- Every declared supported target has a complete support tuple.
-- Every support tuple element names its owning authority.
-- Every target has a compiler-owned target identity.
-- Every emitted object has a compiler-selected object format and section plan.
-- Every emitted relocation is a declared kind permitted for its section.
-- Every target names a selected Phase 16 ABI and a compatibility decision.
-- Every target names a selected Phase 17 runtime package, link mode, and compatibility decision.
-- Every link names a discovered linker and a declared invocation policy.
-- A real source fixture lowers through the generic producer.
-- A compiler-owned canonical-MIR fixture exists where applicable.
-- The compiler target service returns the required identity, tuple, format, relocation, ABI, package, linker, mode, debug, and level records.
-- The compiler layout, resource, ABI, and runtime services return the required dependent records.
-- Canonical MIR references compiler-produced target and source-location identities rather than backend guesses.
-- The native request carries the required deduplicated target metadata.
-- Request validation rejects missing, duplicate, conflicting, unknown, or target-incompatible target metadata.
-- Explicit Cranelift emits for the compiler-selected target using the compiler-selected format, ABI, and level.
-- The explicit native link path uses native program objects plus an explicit runtime package for the selected target.
-- No component infers the target, format, relocation kind, linker, mode, or level from the host or from output inspection.
-- Repeated builds of the same input, target, and level produce identical declared reproducible bytes.
-- Diagnostics report the same target support and compatibility decisions used by lowering and linking.
-- Unsupported targets are diagnosed as unsupported and never attempted.
-- Default and explicit MIR-to-C remain equivalent where the existing contract applies.
-- MIR-to-C and explicit Cranelift native behavior are compared.
-- Target, format, relocation, ABI, package, linker, mode, debug, and level witnesses are compared where observable.
-- Malformed and unsupported cases have stable diagnostics.
-- Unsupported cases remain explicitly deferred.
-- Deferred and invalid cases stop at their declared early failure stage before prohibited native-driver, object, linker, or artifact access.
-- Missing or incompatible targets, packages, or linkers stop before linker invocation and output replacement.
-- Existing output survives deferral and failure.
-- Phase 9G still owns object handling, linking, temporary cleanup, and atomic publication.
-- The worker still receives only request data, canonical MIR, and compiler-produced layout, resource, ABI, runtime, and target metadata.
-- The registry row is updated using the existing status vocabulary.
-- Generated projections are refreshed.
+- The decision it changes is sourced from a resolved type, never a spelling.
+- Both compilers agree, and a guard proves they agree.
+- Canonical MIR carries the decision where the decision is semantic.
+- Paired programs differing only in variable names produce byte-identical C.
+- Paired inferred-type and explicit-type programs produce the same canonical
+  type, ABI, layout, and behaviour.
+- MIR-to-C output is byte-identical to the pre-patch output, or every difference
+  is enumerated with a reason.
+- Cranelift behaviour is compared where the feature is in the supported cohort,
+  and explicitly deferred where it is not.
+- `make bootstrap` reaches a three-stage fixed point.
+- The seed is regenerated only by Patch 19.9, never as a side effect.
+- Brand misuse is still rejected: wrong arena, moved arena, incompatible region.
+- No identifier-, fixture-, or substring-based recognizer was introduced.
 - The owning CI family contains focused evidence.
-- At least one appropriate composition relationship exists.
-- No exact-source, fixture-name, object-output, archive-output, linker-output, or debug-output recognizer was introduced.
-- No exact target, format, relocation, or linker count is treated as backend correctness.
-- Explicit Cranelift still cannot fall back to MIR-to-C.
-- The new guards are assigned to the correct test level.
+- New guards are assigned to the correct test level.
 
 ## Patch Sequence
 
-### Patch 18.0 — Opening Inventory and Phase 17 Residual Rebase
+### Patch 19.0 — Opening Inventory and Phase 18 Residual Rebase
 
 **Purpose**
 
-Establish the exact Phase 18 input from the closed Phase 17 state without changing compiler, backend, runtime, object, linker, or artifact behavior.
+Establish the exact Phase 19 input from the closed Phase 18 state without
+changing behaviour.
 
 **Steps**
 
-- Add a semantic Phase 18 opening snapshot to the canonical registry.
-- Preserve parent traceability to:
-  - Phase 17 migrated target-related and package-related rows;
-  - Phase 17 narrow deferred rows assigned to a later phase;
-  - explicit Phase 18 planning categories.
-- Inventory every existing host assumption reachable from compiler target selection, Cranelift lowering, object emission, runtime package selection, link planning, and publication.
-- Select only target, object-format, relocation, linker, link-mode, reproducibility, cross-compilation, diagnostic, debug, source-location, and optimisation rows owned by this phase.
-- Split broad residuals where one Phase 17 row contains both:
-  - target, object, or linker work owned by Phase 18; and
-  - runtime capability work owned by a later phase.
-- Keep out-of-scope rows deferred and explicitly assign their destination phases.
-- Add stable Phase 18 rows for:
-  - target authority and declared triples;
-  - complete target support tuple;
-  - object format and section binding;
-  - relocation model and validation;
-  - target ABI selection;
-  - target runtime package selection;
-  - linker discovery and invocation policy;
-  - static and dynamic link modes;
-  - reproducible object output;
-  - atomic executable publication;
-  - cross-compilation policy;
-  - unsupported-target diagnostics;
-  - symbol and relocation inspection;
-  - debug information strategy;
-  - source-location preservation;
-  - optimisation-level policy;
-  - complete per-target evidence.
-- Require each opening row to contain:
-  - stable ID;
-  - parent;
-  - feature family;
-  - CI family;
-  - capability owner;
-  - diagnostic owner;
-  - target applicability;
-  - status;
-  - current failure stage;
-  - positive future fixture;
-  - negative current fixture.
-- Declare the initial candidate target set and mark every candidate unsupported until its tuple is proven.
-- Freeze the initial registry-derived Phase 18 CI-family projection.
-- Generate the Phase 18 opening review view.
-- Add `guard-cranelift-phase18-opening-contract`.
+- Add a semantic Phase 19 opening snapshot to the canonical registry.
+- Preserve parent traceability to Phase 18 migrated and deferred rows.
+- Inventory every host assumption reachable from brand resolution, type naming,
+  container classification, and argument representation.
+- Record CR-2, D-1, and D-2 as owned rows.
+- Add `guard-cranelift-phase19-opening-contract`.
 
 **Test Level**
 
@@ -604,26 +362,55 @@ Level 1.
 
 **Exit Gate**
 
-Every declared Phase 18 row has a stable parent, owner, target scope, failure stage, fixture pair, and initial disposition. Every host assumption has an inventory owner. Every candidate target is recorded as unsupported pending tuple evidence, and non-target Phase 17 residuals remain explicitly outside Phase 18.
+The opening snapshot exists, is registry-derived, and traces to Phase 18
+closure. No behaviour changes.
 
-### Patch 18.1 — Compiler-Owned Target Authority and Declared Target Triples
+### Patch 19.1 — Identifier-Spelling Decision Inventory
 
 **Purpose**
 
-Create the single target-identity decision path consumed by canonical MIR, Cranelift, runtime package selection, link planning, diagnostics, and Phase 9G publication.
+Enumerate every decision currently made from a spelling, before changing any of
+them. Report-only.
 
 **Steps**
 
-- Add a compiler-owned target authority module.
-- Define the target identity record: stable ID, architecture, vendor, operating system, environment, pointer width, endianness, and declared triple source.
-- Define the declared triple vocabulary and reject any triple outside it.
-- Make target selection explicit: a requested target, or a declared default when none is requested.
-- Forbid inferring a target from the host environment when an explicit target is selected.
-- Require the target identity to agree with the Phase 14 target layout authority for pointer width and endianness.
-- Reject unknown, malformed, ambiguous, and duplicate triples with stable reasons.
-- Add the target identity to the native request and validate it.
-- Generate the target authority review view.
-- Add `guard-cranelift-phase18-target-authority-contract`.
+- Enumerate each site in both compilers, classified as type-name erasure or
+  classification override.
+- For each, record what type information is available at that point and whether
+  it is sufficient.
+- Record the Rust/self-hosted rule divergence per site.
+- Count affected declarations and index sites in `compiler/*.gst` so the
+  regression surface is a measured number, not an estimate.
+- Add the `rename-invariance` Level 2 family and record its current failures as
+  the phase's baseline.
+- Add `guard-cranelift-phase19-spelling-inventory`.
+
+**Test Level**
+
+Level 1, with a Level 2 family.
+
+**Exit Gate**
+
+A generated inventory names every spelling-derived decision, states whether type
+information suffices to replace it, and `rename-invariance` runs with its
+current failures recorded as a baseline. No behaviour changes.
+
+### Patch 19.2 — Compiler-Owned Brand Identity Authority
+
+**Purpose**
+
+Give the compiler one authoritative answer to "is this value an arena, and which
+one?", derived from the resolved type.
+
+**Steps**
+
+- Add the brand identity record: brand origin, arena identity, arena-ness.
+- Populate it during type resolution for every branded type.
+- Require public API boundaries to carry explicit brands, per `VISION.md` §26.
+- Compare the record against the existing spelling rule on the whole compiler
+  source and enumerate every disagreement.
+- Change no codegen yet.
+- Add `guard-cranelift-phase19-brand-authority-contract`.
 
 **Test Level**
 
@@ -631,27 +418,25 @@ Level 1, with a Level 2 parity family.
 
 **Exit Gate**
 
-Exactly one compiler-owned authority produces target identity. Every declared triple is registry-owned and agrees with the Phase 14 target layout authority. No consumer infers a target independently, and unknown or malformed triples are rejected with stable diagnostics.
+Every branded type has a brand identity record, and the disagreements between
+the record and the spelling rule are enumerated with a reason for each. Behaviour
+is unchanged.
 
-### Patch 18.2 — Complete Target Support Tuple and Support Decisions
+### Patch 19.3 — Canonical Branded Type Naming Without a Brand Vocabulary
 
 **Purpose**
 
-Make target support mean the complete compiler, runtime, linker, and ABI combination rather than backend architecture capability.
+Produce canonical branded type names from the brand identity record rather than
+by stripping known brand words from a string.
 
 **Steps**
 
-- Add the complete target support tuple record: target ID plus compiler, runtime package, linker, and ABI support records.
-- Require every element to name its owning authority and its evidence.
-- Produce a support decision that is supported only when all four elements are present, mutually compatible, and evidenced.
-- Record missing elements explicitly when the decision is unsupported.
-- Reject any attempt to declare a target supported from backend architecture capability alone.
-- Forbid a partial tuple from reaching lowering, object emission, or link planning.
-- Require the declared supported target set to remain narrow and registry-derived.
-- Freeze the ordering of tuple validation so a partial or reordered sequence is rejected.
-- Accept that the declared supported set may be empty at this patch, because the ABI, runtime package, and linker elements are not supplied until Patch 18.5, Patch 18.6, and Patch 18.7. A target becomes supported only as later patches supply its elements.
-- Generate the target support review view.
-- Add `guard-cranelift-phase18-target-support-contract`.
+- Replace suffix-stripping with construction from the record.
+- Preserve the existing generated names exactly, or enumerate each change.
+- Cover the namespaced forms the current code special-cases, such as
+  `std_Vector_lib_module__ctx`.
+- Require paired inferred and explicit programs to produce the same name.
+- Add `guard-cranelift-phase19-type-naming-contract`.
 
 **Test Level**
 
@@ -659,25 +444,26 @@ Level 1, with a Level 2 parity family.
 
 **Exit Gate**
 
-The tuple record, its validation order, and the support decision rule exist and are registry-owned. Backend architecture capability alone never yields support, and every unsupported target names its missing tuple elements. The declared supported set may still be empty at this patch; it becomes non-empty only as later patches supply ABI, runtime package, and linker elements.
+Canonical branded type names are constructed from brand identity, not string
+surgery, and generated C type names are byte-identical or every change is
+enumerated.
 
-### Patch 18.3 — Object Format, Section, and Symbol Binding Authority
+### Patch 19.4 — Type-Derived Container and Arena Classification
 
 **Purpose**
 
-Give each declared target one compiler-owned object format plan covering sections, symbol binding, and visibility.
+Make the type-derived classification correct enough that the spelling override
+becomes redundant. This is the load-bearing patch of the phase.
 
 **Steps**
 
-- Add the object format descriptor record for each declared target.
-- Define the permitted section kinds, section naming rules, and alignment requirements.
-- Define the symbol binding and visibility vocabularies.
-- Select the object format from the target identity, never from a file extension, probe, or host default.
-- Require emitted program objects to use only declared section kinds and symbol bindings.
-- Reject unknown formats, unknown sections, unknown bindings, and misaligned sections with stable reasons.
-- Compare emitted section and symbol plans against the compiler-produced descriptor.
-- Generate the object format review view.
-- Add `guard-cranelift-phase18-object-format-contract`.
+- Establish that `is_slice`, `is_ptr`, `is_vector`, `is_hashmap`, `is_pool`, and
+  arena-ness are decided from the resolved type and the struct registry.
+- For every case where the override currently changes the answer, determine why
+  the type-derived path was wrong and fix the type-derived path.
+- Keep the override in place and assert it never fires — a guard that fails if
+  the override would have changed a classification.
+- Add `guard-cranelift-phase19-classification-contract`.
 
 **Test Level**
 
@@ -685,25 +471,25 @@ Level 1, with a Level 2 parity family.
 
 **Exit Gate**
 
-Every declared target has exactly one compiler-owned object format descriptor. Emitted objects use only declared sections, bindings, and visibilities, and no consumer infers the format from the host or from output inspection.
+The spelling override is provably redundant: across the compiler's own sources
+and every fixture, it never changes a classification. It is still present, and
+still asserted never to fire.
 
-### Patch 18.4 — Relocation Model and Validation
+### Patch 19.5 — Argument and Index Representation From the Type System
 
 **Purpose**
 
-Make relocations a validated compiler-owned decision rather than an emitted side effect.
+Make by-value versus by-address a recorded decision rather than a codegen-time
+string edit.
 
 **Steps**
 
-- Add the relocation model record: relocation kind vocabulary per target and object format.
-- Declare which relocation kinds are permitted per section kind.
-- Declare the addend policy.
-- Validate every emitted relocation against the model before the object is published.
-- Reject unknown relocation kinds, relocations in disallowed sections, and malformed addends with stable reasons.
-- Ensure relocation validation runs before object publication and before linker invocation.
-- Preserve existing output when relocation validation fails.
-- Generate the relocation review view.
-- Add `guard-cranelift-phase18-relocation-contract`.
+- Source the decision from the Phase 16 ABI authority.
+- Record it in canonical MIR.
+- Forbid codegen from prepending an address-of to a source expression.
+- Cover the failing case directly: a local `str` named `a` passed to a by-value
+  `str` parameter must compile and behave identically to one named `b`.
+- Add `guard-cranelift-phase19-representation-contract`.
 
 **Test Level**
 
@@ -711,24 +497,23 @@ Level 1, with a Level 2 parity family.
 
 **Exit Gate**
 
-Every emitted relocation is a declared kind permitted for its section and target. Invalid relocations are rejected before object publication and before linker invocation, with existing output preserved.
+Argument and index representation is carried in canonical MIR and consumed by
+both backends. `rename-invariance` passes for every fixture in the family.
 
-### Patch 18.5 — Target-Specific ABI Selection
+### Patch 19.6 — Rule Convergence Between the Two Compilers
 
 **Purpose**
 
-Select an existing Phase 16 ABI per target without redefining ABI semantics.
+Eliminate the divergence in the bootstrap chain before removing the rule.
 
 **Steps**
 
-- Add the target ABI selection record: target ID, selected Phase 16 ABI identity, selection reason, and compatibility decision.
-- Consume the Phase 16 function ABI authority as the sole owner of placement, classification, and transport.
-- Reject a target whose required ABI is undeclared or incompatible.
-- Forbid Phase 18 from introducing new ABI classification rules.
-- Require the selected ABI to appear in the native request and in link planning.
-- Compare selected ABI witnesses against the Phase 16 authority records.
-- Generate the target ABI selection review view.
-- Add `guard-cranelift-phase18-target-abi-contract`.
+- Make the Rust and self-hosted classification rules identical, or prove the
+  concept is unnecessary in both.
+- Add a guard comparing the two implementations against a shared case table,
+  including the `ends_with` versus substring cases that currently differ, and
+  the `->ctx` and `->a` substring forms.
+- Add `guard-cranelift-phase19-rule-convergence`.
 
 **Test Level**
 
@@ -736,24 +521,22 @@ Level 1, with a Level 2 parity family.
 
 **Exit Gate**
 
-Every declared supported target names exactly one selected Phase 16 ABI with a compatibility decision. Phase 18 selects but never defines ABI semantics, and an undeclared or incompatible ABI makes the target unsupported.
+Both compilers classify every case in the shared table identically, including
+every case where they currently differ.
 
-### Patch 18.6 — Target-Specific Runtime Package Selection
+### Patch 19.7 — Name-List Removal From the Rust Compiler
 
 **Purpose**
 
-Select an existing Phase 17 runtime package per target without redefining runtime symbol identity.
+Delete the list from `src/`.
 
 **Steps**
 
-- Add the target runtime package selection record: target ID, selected Phase 17 package identity, link mode, and compatibility decision.
-- Consume the Phase 17 runtime package authority as the sole owner of component and symbol identity.
-- Require the selected package to be built for the selected target.
-- Reject a target whose runtime package is missing, unbuilt, or incompatible, before linker invocation.
-- Forbid Phase 18 from introducing new runtime symbols, versions, or components.
-- Compare selected package witnesses against the Phase 17 authority records.
-- Generate the target runtime package review view.
-- Add `guard-cranelift-phase18-target-package-contract`.
+- Remove `brand_bases` and every spelling test that consumes it.
+- Require MIR-to-C output byte-identical to the pre-removal output across the
+  full fixture corpus, or enumerate each difference.
+- Add a guard asserting the list cannot return.
+- Add `guard-cranelift-phase19-rust-name-list-removed`.
 
 **Test Level**
 
@@ -761,25 +544,23 @@ Level 1, with a Level 2 parity family.
 
 **Exit Gate**
 
-Every declared supported target names exactly one compatible Phase 17 runtime package built for that target. Missing or incompatible packages make the target unsupported and stop before linker invocation and output replacement.
+No spelling-derived brand or classification decision remains in `src/`, and
+generated C is unchanged or every change is enumerated.
 
-### Patch 18.7 — Linker Discovery, Selection, and Invocation Policy
+### Patch 19.8 — Name-List Removal From the Self-Hosted Compiler
 
 **Purpose**
 
-Make linker choice and invocation an explicit compiler-owned policy rather than an environment accident.
+Delete the list from `compiler/*.gst`.
 
 **Steps**
 
-- Add the linker descriptor record: linker ID, discovery method, discovery result, invocation policy, permitted argument vocabulary, supported object formats, and supported targets.
-- Declare the discovery order and make it deterministic.
-- Select a linker from the target identity and the descriptor, never from an unvalidated environment variable alone.
-- Restrict invocation arguments to the declared vocabulary.
-- Reject a target whose linker is undiscovered, unsupported, or incompatible with the object format, before invocation.
-- Record the planned invocation as a witness without executing it at Level 1.
-- Keep linker execution under Phase 9G ownership.
-- Generate the linker policy review view.
-- Add `guard-cranelift-phase18-linker-policy-contract`.
+- Remove the list and its consumers, including the substring forms.
+- Compile the compiler with the committed seed and require success — this is the
+  bootstrap-safety gate.
+- Require generated C for the compiler's own sources to be byte-identical to the
+  pre-removal output, or enumerate each difference.
+- Add `guard-cranelift-phase19-gust-name-list-removed`.
 
 **Test Level**
 
@@ -787,311 +568,24 @@ Level 1, with a Level 2 parity family.
 
 **Exit Gate**
 
-Every declared supported target names a discovered linker and a declared invocation policy using only permitted arguments. An undiscovered or incompatible linker makes the target unsupported, and Phase 9G still executes the link.
+No spelling-derived decision remains in `compiler/*.gst`, the committed seed
+still compiles the compiler, and generated C is unchanged or every change is
+enumerated.
 
-### Patch 18.8 — Static and Dynamic Runtime Linking Modes
-
-**Purpose**
-
-Make the runtime link mode an explicit per-target decision with declared consequences.
-
-**Steps**
-
-- Add the link mode decision record: target ID, static or dynamic, reason, required runtime package form, and rejection reason where unavailable.
-- Declare which modes each target supports.
-- Require the selected mode to match a runtime package form that actually exists for the target.
-- Reject a requested mode that the target or package does not provide, before linker invocation.
-- Record the resulting link plan differences between modes as witnesses.
-- Forbid silently substituting one mode for another.
-- Generate the link mode review view.
-- Add `guard-cranelift-phase18-link-mode-contract`.
-
-**Test Level**
-
-Level 1, with a Level 2 parity family.
-
-**Exit Gate**
-
-Every declared supported target declares its available link modes, and the selected mode matches an existing runtime package form. An unavailable mode is rejected with a stable diagnostic and is never silently substituted.
-
-### Patch 18.9 — Cross-Compilation Policy and Host/Target Separation
+### Patch 19.9 — Seed Regeneration and Fixed-Point Convergence
 
 **Purpose**
 
-Separate host identity from target identity so a cross build never absorbs host state.
+Move the corrected behaviour into the bootstrap seed, in its own commit, per the
+Bootstrap seed rule in `AGENTS.md`.
 
 **Steps**
 
-- Add the host and target separation record: host identity, target identity, native or cross classification, permitted host-dependent inputs, and host leakage rejection rules.
-- Declare which cross pairs are supported, and keep the set narrow.
-- Forbid host paths, host libraries, host headers, and host runtime packages from entering a cross artifact.
-- Require a cross build to select the target runtime package and linker for the target, never for the host.
-- Reject a cross pair whose target support tuple is incomplete.
-- Record native and cross classification as a witness.
-- Generate the cross-compilation review view.
-- Add `guard-cranelift-phase18-cross-compilation-contract`.
-
-**Test Level**
-
-Level 1, with a Level 2 parity family.
-
-**Exit Gate**
-
-Host and target identities are distinct and explicit. Declared cross pairs are narrow and registry-owned, host state cannot leak into a cross artifact, and an incomplete tuple rejects the cross pair.
-
-### Patch 18.10 — Unsupported-Target Detection and Diagnostics
-
-**Purpose**
-
-Make an unsupported target a stable, early, diagnosed outcome rather than a late failure.
-
-**Steps**
-
-- Add the target support decision diagnostic path.
-- Emit a stable diagnostic naming the target and every missing tuple element.
-- Declare the failure stage and require rejection before native driver access, object creation, linker invocation, and output replacement.
-- Freeze the rejection class vocabulary for unknown triple, unsupported architecture, missing runtime package, missing linker, incompatible ABI, unavailable link mode, and incomplete tuple.
-- Require diagnostics to consume the same support decision used by lowering and linking.
-- Forbid attempting an unsupported target and failing later.
-- Prove sentinel output preservation for every rejection class.
-- Generate the target diagnostic review view.
-- Add `guard-cranelift-phase18-target-diagnostic-contract`.
-
-**Test Level**
-
-Level 1, with a Level 2 parity family.
-
-**Exit Gate**
-
-Every unsupported target is diagnosed early with a stable reason naming its missing tuple elements. No unsupported target is attempted, and sentinel output survives every rejection class.
-
-### Patch 18.11 — Symbol and Relocation Inspection Evidence
-
-**Purpose**
-
-Make emitted objects inspectable so target evidence is observed rather than assumed.
-
-**Steps**
-
-- Add an object inspection witness covering the symbol table and relocation table.
-- Record symbol names, bindings, visibilities, and section associations.
-- Record relocation kinds, offsets, and targets.
-- Compare inspected symbols against the compiler-produced runtime symbol and ABI records.
-- Compare inspected relocations against the declared relocation model.
-- Reject an object whose inspected contents disagree with the compiler-produced plan.
-- Forbid inspection from becoming a semantic authority; it observes and compares, and never decides.
-- Generate the object inspection review view.
-- Add `guard-cranelift-phase18-object-inspection-contract`.
-
-**Test Level**
-
-Level 1, with a Level 2 parity family.
-
-**Exit Gate**
-
-Every declared supported target has symbol and relocation inspection evidence that agrees with the compiler-produced plan. Inspection compares and rejects but never decides, and disagreement fails the build.
-
-### Patch 18.12 — Debug Information Strategy
-
-**Purpose**
-
-Declare what debug information the native path emits, for which targets, at which level.
-
-**Steps**
-
-- Add the debug information plan record: format, level, included record kinds, excluded record kinds, and target applicability.
-- Declare the debug format per target and object format.
-- Declare the debug levels and what each includes.
-- Emit only declared record kinds, and reject undeclared ones.
-- Require debug emission to be selected by the compiler, never inferred by the backend.
-- Record the emitted debug plan as a witness.
-- Declare explicitly what debug fidelity this phase does not claim.
-- Generate the debug information review view.
-- Add `guard-cranelift-phase18-debug-info-contract`.
-
-**Test Level**
-
-Level 1, with a Level 2 parity family.
-
-**Exit Gate**
-
-Every declared supported target has a compiler-owned debug information plan naming its format, level, and record kinds. Only declared records are emitted, and the phase's fidelity limits are explicit.
-
-### Patch 18.13 — Source-Location Preservation
-
-**Purpose**
-
-Preserve source locations from source through canonical MIR to emitted debug records.
-
-**Steps**
-
-- Add the source location record: source file identity, source span, canonical MIR association, and emitted debug association.
-- Require canonical MIR to carry compiler-produced source locations rather than backend-reconstructed ones.
-- Require lowering to preserve the association through to emitted debug records where the debug plan requires it.
-- Reject a lost, duplicated, or fabricated source association with a stable reason.
-- Compare emitted source locations against the compiler-produced records.
-- Declare where source locations are deliberately not preserved.
-- Generate the source location review view.
-- Add `guard-cranelift-phase18-source-location-contract`.
-
-**Test Level**
-
-Level 1, with a Level 2 parity family.
-
-**Exit Gate**
-
-Source locations survive from source through canonical MIR to emitted debug records wherever the debug plan requires. Lost, duplicated, or fabricated associations are rejected, and deliberate gaps are declared.
-
-### Patch 18.14 — Optimisation-Level Policy
-
-**Purpose**
-
-Declare optimisation levels and bound what they may change.
-
-**Steps**
-
-- Add the optimisation level decision record: declared level vocabulary, selected level, permitted transformations, and preserved guarantees.
-- Declare the level vocabulary and reject any level outside it.
-- Select the level in the compiler and carry it in the native request.
-- Declare which transformations each level permits.
-- Require observable program behaviour to remain equivalent across levels where the contract applies.
-- Compare program results across declared levels for representative programs.
-- Declare where a level may change resource usage, code size, or debug fidelity but not observable behaviour.
-- Reject an undeclared level and a level incompatible with the selected debug plan.
-- Generate the optimisation level review view.
-- Add `guard-cranelift-phase18-optimisation-level-contract`.
-
-**Test Level**
-
-Level 1, with a Level 2 parity family.
-
-**Exit Gate**
-
-Every declared level is registry-owned with declared permitted transformations. Observable behaviour is equivalent across levels where the contract applies, and undeclared or debug-incompatible levels are rejected.
-
-### Patch 18.15 — Reproducible Object and Artifact Output
-
-**Purpose**
-
-Make emitted objects and artifacts byte-reproducible for a fixed input, target, and level.
-
-**Steps**
-
-- Add the reproducibility contract record: declared reproducible fields, excluded non-deterministic inputs, and normalisation rules.
-- Normalise embedded paths, timestamps, symbol ordering, and section ordering.
-- Exclude host-specific and time-specific inputs from declared reproducible bytes.
-- Compare two builds of the same input, target, and level byte-for-byte.
-- Reject non-determinism in declared reproducible fields with a stable reason.
-- Record which fields are deliberately excluded from the guarantee.
-- Generate the reproducibility review view.
-- Add `guard-cranelift-phase18-reproducibility-contract`.
-
-**Test Level**
-
-Level 1, with a Level 2 parity family.
-
-**Exit Gate**
-
-Repeated builds of the same input, target, and level produce identical declared reproducible bytes. Every excluded field is declared, and non-determinism in a guaranteed field is rejected rather than tolerated.
-
-### Patch 18.16 — Atomic Executable Publication Under Phase 9G
-
-**Purpose**
-
-Give publication an explicit compiler-owned plan while leaving execution and ownership with Phase 9G.
-
-**Steps**
-
-- Add the publication plan record: temporary artifact ownership, publication order, atomicity method, and preservation guarantee.
-- Require publication to be atomic so a partially written executable never replaces a valid one.
-- Require every temporary artifact to have a declared owner and cleanup rule.
-- Require existing output to survive failure, deferral, and unsupported-target rejection.
-- Validate that publication occurs only after object emission, relocation validation, availability validation, and link success.
-- Keep publication execution, temporary cleanup, and artifact ownership with Phase 9G.
-- Prove with a sentinel that no output is replaced before a rejection.
-- Generate the publication review view.
-- Add `guard-cranelift-phase18-publication-contract`.
-
-**Test Level**
-
-Level 1, with a Level 2 parity family.
-
-**Exit Gate**
-
-Publication is atomic, ordered after every validation stage, and owned by Phase 9G. Sentinel output survives every failure, deferral, and unsupported-target rejection.
-
-### Patch 18.17 — Cross-Target Composition and Complete Per-Target Evidence
-
-**Purpose**
-
-Prove that the migrated Phase 18 capabilities compose, and that every declared supported target carries the complete evidence set.
-
-**Steps**
-
-- Add cross-target composition cases combining target identity, object format, relocations, ABI selection, package selection, linker policy, link mode, reproducibility, debug plan, and optimisation level.
-- Derive the composition inventory from canonical registry ownership rather than a hand-written list.
-- Require every Phase 18 authority with migrated rows to participate in at least one composition case.
-- Require every declared supported target to carry all six evidence kinds: native compile, object inspection, link, execution, diagnostic, and reproducibility.
-- Derive the per-target evidence matrix from the declared supported target set.
-- Require execution evidence for a target to come from that target's own runner.
-- Require a target with no available runner to remain undeclared rather than supported, because execution evidence is part of the phase exit gate. Such a target stays a narrow deferred row naming the missing runner.
-- Prove that a target missing any evidence kind is not declared supported.
-- Add `guard-cranelift-phase18-composition-contract` at Level 1.
-- Add `guard-cranelift-phase18-composition-differential` at Level 2.
-- Add `guard-cranelift-phase18-complete-target-evidence` at Level 3, owned solely by Cranelift Historical Full.
-
-**Test Level**
-
-Level 1 contract, Level 2 differential, Level 3 complete evidence.
-
-**Exit Gate**
-
-Every Phase 18 authority participates in at least one composition case, and every declared supported target carries native compile, object inspection, link, execution, diagnostic, and reproducibility evidence from its own runner. A target missing any evidence kind, including a target with no available runner, is not declared supported.
-
-### Patch 18.18 — Deferred Residue and Target-Coverage Audit
-
-**Purpose**
-
-Eliminate broad or ambiguous target, object, linker, debug, and optimisation deferrals before Phase 18 closure.
-
-**Steps**
-
-- Audit every Phase 18 opening row and every inventoried host assumption.
-- Require every row and assumption to finish as one of:
-  - migrated under exactly one Phase 18 classification;
-  - explicitly excluded;
-  - removed as obsolete;
-  - replaced by one or more narrower deferred rows.
-- Reject broad residual descriptions such as more targets, more platforms, more formats, more linkers, better debug info, more optimisation, or cross-compilation later.
-- Replace broad residue with concrete capabilities such as:
-  - named additional target triples;
-  - shared library and dynamic loader support;
-  - position-independent executable and hardening policy;
-  - link-time and profile-guided optimisation;
-  - complete debug-information fidelity and debugger integration;
-  - sysroot acquisition and management;
-  - code signing and platform attestation;
-  - toolchain distribution and installation.
-- Require every remaining deferred row to contain:
-  - stable ID;
-  - specific capability owner;
-  - diagnostic owner;
-  - concrete reason;
-  - destination phase;
-  - prerequisite capability;
-  - current failure stage;
-  - target applicability;
-  - positive future fixture;
-  - negative current fixture;
-  - stable diagnostic reason code;
-  - source Phase 18 row IDs.
-- Confirm no Phase 17 residual assigned to Phase 18 remains unchanged and ambiguous.
-- Confirm every candidate target from Patch 18.0 is either declared supported with a complete tuple, or explicitly deferred with the missing elements named.
-- Confirm no declared supported target depends on an undeclared host assumption.
-- Derive final totals from the registry.
-- Generate the final Phase 18 review view.
-- Freeze the residual inventory semantically as input to later phases.
-- Add `guard-cranelift-phase18-deferred-residue-audit`.
+- Run `make bootstrap` and require the three-stage fixed point.
+- Commit `gust_v4.c` with no other change in the same commit.
+- Record the diff size and confirm every change is explained by Patches 19.3
+  through 19.8.
+- Add `guard-cranelift-phase19-seed-convergence`.
 
 **Test Level**
 
@@ -1099,196 +593,119 @@ Level 1.
 
 **Exit Gate**
 
-Every Phase 18 row and inventoried host assumption has migrated, been excluded or removed with justification, or become a smaller actionable future-phase entry. Every candidate target is either supported with a complete tuple or deferred with its missing elements named.
+`make bootstrap` reports fixed-point convergence, the seed is committed alone,
+and its diff is accounted for.
 
-### Patch 18.19 — Phase 18 Closure
+### Patch 19.10 — Generated-C Equivalence Over the Compiler's Own Sources
 
 **Purpose**
 
-Close only the declared Phase 18 target, object, and linker inventory.
+Prove the change is safe at the scale that matters: roughly 2,183 index sites in
+the compiler itself.
 
-The closure must not claim complete platform coverage, complete cross-compilation, complete debug fidelity, complete optimisation support, a stable public target vocabulary, or production readiness.
+**Steps**
 
-**Closure Guard**
+- Compile every `compiler/*.gst` before and after and compare generated C.
+- Enumerate every difference with the patch that caused it.
+- Require zero unexplained differences.
+- Hand this evidence to Cranelift Historical Full as the Level 3 owner.
+- Add `guard-cranelift-phase19-self-compilation-differential`.
 
-Add `guard-cranelift-phase18-close` and register it as a Level 1 guard.
+**Test Level**
 
-**Required Contracts**
+Level 3, invoked by Historical Full.
 
-The closure guard must require:
+**Exit Gate**
 
-- the semantic Phase 17 closure summary;
-- the Phase 18 opening contract;
-- the canonical registry schema;
-- the canonical registry projection guard;
-- the Phase 18 parent-traceability contract;
-- the compiler-owned target authority contract;
-- the complete target support tuple contract;
-- the object format, section, and symbol binding contract;
-- the relocation model and validation contract;
-- the target-specific ABI selection contract;
-- the target-specific runtime package selection contract;
-- the linker discovery and invocation policy contract;
-- the static and dynamic link mode contract;
-- the cross-compilation and host/target separation contract;
-- the unsupported-target diagnostic contract;
-- the symbol and relocation inspection contract;
-- the debug information contract;
-- the source-location preservation contract;
-- the optimisation-level contract;
-- the reproducibility contract;
-- the atomic publication contract;
-- the cross-target composition contract;
-- the deferred residue audit;
-- the registry-derived Phase 18 CI-family projection;
-- the semantic route architecture contract;
-- the reduced manifest architecture contract through its canonical validator;
-- the three-level test mapping and workflow ownership checks;
-- the Phase 18 generated-view projection;
-- the Phase 18 registry differential wiring;
-- the separately runnable Level 3 historical and complete target suite;
-- the Phase 14 layout ownership contract;
-- the Phase 15 resource ownership contract;
-- the Phase 16 function ABI ownership contract;
-- the Phase 17 runtime boundary ownership contract;
-- the Phase 9G artifact ownership contract;
-- MIR-to-C default ownership;
-- explicit Cranelift no-fallback policy;
-- worker request isolation;
-- early deferral and output-preservation contracts.
+Generated C for the compiler's own sources has no unexplained difference, and
+the evidence lives in the Level 3 suite.
 
-**Closure Assertions**
+### Patch 19.11 — Cross-Feature Composition and Complete Differential
 
-The closure guard must prove:
+**Purpose**
 
-- every Phase 18 opening row has a valid final disposition;
-- every inventoried host assumption has exactly one final disposition;
-- every declared supported target has a complete support tuple;
-- no target is declared supported from backend architecture capability alone;
-- every declared supported target has native compile, object inspection, link, execution, diagnostic, and reproducibility evidence;
-- every emitted object uses a compiler-selected format, section plan, and symbol binding;
-- every emitted relocation is validated against the declared model before publication;
-- every target names a selected Phase 16 ABI and a compatibility decision;
-- every target names a selected Phase 17 runtime package, link mode, and compatibility decision;
-- every link names a discovered linker and a declared invocation policy;
-- declared reproducible bytes are identical across repeated builds;
-- publication is atomic and owned by Phase 9G;
-- host state cannot leak into a cross artifact;
-- unsupported targets are diagnosed early and never attempted;
-- source locations survive lowering where the debug plan requires;
-- observable behaviour is equivalent across declared optimisation levels where the contract applies;
-- no component infers target, format, relocation, linker, mode, or level from the host or from output inspection;
-- no backend-local target, format, relocation, linker, or level authority exists;
-- explicit Cranelift cannot fall back to MIR-to-C;
-- MIR-to-C remains the default oracle and is not part of the explicit Cranelift link path;
-- unsupported cases stop at their declared early failure stage;
-- existing output is preserved on failure and deferral;
-- the worker receives only request data, canonical MIR, and compiler-produced metadata;
-- Phase 9G still owns object handling, linking, temporary cleanup, and publication;
-- active totals, targets, formats, relocations, linkers, modes, and families are registry-derived;
-- generated views are current;
-- CI families remain registry-derived;
-- no raw registry, object, archive, linker-command, debug-output, or Markdown hash contract exists;
-- no exact target, format, relocation, linker, or matrix total is treated as backend correctness;
-- Cranelift Historical Full remains separately runnable and owns complete historical and per-target evidence.
+Prove brands, containers, resources, ABI, and targets still compose.
 
-**What the Closure Guard Must Not Run**
+**Steps**
 
-It must not directly replay every Phase 18 differential family, every target build, every target runner, every linker invocation, the full Phase 9–18 historical suite, complete object or link failure matrices, complete reproducibility matrices, or cross-compilation matrices. It validates ownership and wiring for those suites.
+- Compose branded collections, arena clones, references, resources, and calls in
+  one fixture.
+- Compare MIR-to-C and explicit Cranelift.
+- Confirm Phase 14–18 authorities are unaffected.
+- Add `guard-cranelift-phase19-composition-contract`.
 
-**CI Wiring**
+**Test Level**
 
-- Replace the direct PR Fast invocation of the preceding Phase 18 Level 1 owner with `guard-cranelift-phase18-close`.
-- Invoke the closure guard exactly once as the Level 1 phase-closure owner.
-- Keep registry-derived Level 2 family jobs unchanged.
-- Keep Heavy Guards focused on expensive primary-host native, object, link, and artifact evidence.
-- Keep Cranelift Historical Full as the sole Level 3 historical and complete-target owner.
-- Do not introduce a Phase 18 closure matrix family.
-- Do not hard-code an exact target, format, relocation, linker, mode, level, or family count as a correctness claim.
+Level 1, with a Level 2 parity family.
 
-**Suggested Status**
+**Exit Gate**
 
-`phase18_closed_target_object_and_linker_boundary`
+The composition fixture behaves identically on both backends, or the Cranelift
+half is explicitly deferred.
 
-**Suggested Closure Wording**
+### Patch 19.12 — Phase 19 Closure
 
-The declared Phase 18 target, object, and linker inventory is complete. Every declared supported target holds a complete compiler, runtime, linker, and ABI combination and carries native compile, object inspection, link, execution, diagnostic, and reproducibility evidence, while remaining unsupported targets and capabilities are represented by narrower, explicitly owned future-phase deferrals.
+**Purpose**
 
-**It Must Not Say**
+Close brand identity and value representation.
 
-- Gust supports every platform or architecture.
-- Cross-compilation is complete.
-- The target triple vocabulary is stable or public.
-- Debug information is complete or debugger-ready.
-- Optimisation is complete or performance-competitive.
-- Link-time or profile-guided optimisation is supported.
-- Shared libraries, dynamic loading, or plugins are supported.
-- Position-independent executables or hardening are complete.
-- Code signing or platform attestation is supported.
-- Sysroot management is handled.
-- Toolchain distribution is solved.
-- The MIR-to-C backend has been retired.
-- The experimental backend is production complete.
+**Steps**
 
-**Final Exit Gate**
+- Confirm every Status row is `DONE` or explicitly deferred with an owner.
+- Confirm no spelling-derived decision remains in either compiler.
+- Confirm `rename-invariance` passes for every family.
+- Remove D-1 and D-2 from `docs/SHARED_SEMANTIC_ZONE.md` and record the fix.
+- Mark CR-2 resolved in `TASK_STDLIB.md`, unblocking S1.4, S1.5, and S1.6.
+- Record the residue.
+- Add `guard-cranelift-phase19-close`.
 
-Phase 18 is closed when every declared Phase 18 row and inventoried host assumption has migrated, been explicitly excluded or removed with justification, or been replaced by narrower deferred rows assigned to later phases; and every declared supported target holds a complete compiler, runtime, linker, and ABI combination with native compile, object inspection, link, execution, diagnostic, and reproducibility evidence.
+**Test Level**
+
+Level 1.
+
+**Exit Gate**
+
+Phase 19 is closed, CR-2 is resolved, the Stdlib lane's blocked patches are
+released, and the shared-zone defects are removed rather than merely documented.
 
 ## Recommended Implementation Order
 
-Patch 18.0 opening inventory and Phase 17 residual rebase
-→ Patch 18.1 compiler-owned target authority and declared triples
-→ Patch 18.2 complete target support tuple and support decisions
-→ Patch 18.3 object format, section, and symbol binding authority
-→ Patch 18.4 relocation model and validation
-→ Patch 18.5 target-specific ABI selection
-→ Patch 18.6 target-specific runtime package selection
-→ Patch 18.7 linker discovery, selection, and invocation policy
-→ Patch 18.8 static and dynamic runtime linking modes
-→ Patch 18.9 cross-compilation policy and host/target separation
-→ Patch 18.10 unsupported-target detection and diagnostics
-→ Patch 18.11 symbol and relocation inspection evidence
-→ Patch 18.12 debug information strategy
-→ Patch 18.13 source-location preservation
-→ Patch 18.14 optimisation-level policy
-→ Patch 18.15 reproducible object and artifact output
-→ Patch 18.16 atomic executable publication under Phase 9G
-→ Patch 18.17 cross-target composition and complete per-target evidence
-→ Patch 18.18 deferred residue and target-coverage audit
-→ Patch 18.19 closure.
+Patch 19.0 opening inventory
+→ 19.1 spelling inventory and the `rename-invariance` baseline
+→ 19.2 brand identity authority
+→ 19.3 canonical branded type naming
+→ 19.4 type-derived classification
+→ 19.5 argument and index representation
+→ 19.6 rule convergence
+→ 19.7 Rust name-list removal
+→ 19.8 self-hosted name-list removal
+→ 19.9 seed regeneration
+→ 19.10 self-compilation differential
+→ 19.11 cross-feature composition
+→ 19.12 closure.
 
-## Phase 18 Success Criteria
+19.4 is the load-bearing patch. If the type-derived classification cannot be made
+correct without new lifetime or brand machinery, stop there and report — that is
+a shared-zone escalation, not a licence to expand the phase.
 
-Phase 18 succeeds when:
+## Phase 19 Success Criteria
 
-- Target selection is explicit and compiler-owned.
-- Declared target triples are registry-owned and agree with the Phase 14 target layout authority.
-- A target is supported only as a complete compiler, runtime, linker, and ABI combination.
-- The declared supported target set is narrow, explicit, and registry-derived.
-- Backend architecture capability is never sufficient for target support.
-- Every emitted object uses a compiler-selected format, section plan, symbol binding, and visibility.
-- Every emitted relocation is a declared kind permitted for its section and is validated before publication.
-- Every target selects an existing Phase 16 ABI without redefining ABI semantics.
-- Every target selects an existing Phase 17 runtime package without redefining runtime symbol identity.
-- Every link uses a discovered linker under a declared invocation policy.
-- Static and dynamic link modes are declared per target and never silently substituted.
-- Declared reproducible bytes are identical across repeated builds of the same input, target, and level.
-- Executable publication is atomic and remains owned by Phase 9G.
-- Host and target identities are separate, and host state cannot leak into a cross artifact.
-- Unsupported targets are diagnosed early with stable reasons naming the missing tuple elements.
-- Unsupported targets are never attempted.
-- Symbol and relocation inspection evidence agrees with the compiler-produced plan.
-- Debug information is emitted under a declared per-target plan.
-- Source locations survive from source through canonical MIR to emitted debug records where required.
-- Observable behaviour is equivalent across declared optimisation levels where the contract applies.
-- Deferred input stops before prohibited native-driver, object, linker, and artifact access.
-- Existing output is preserved on failure and deferral.
-- Phase 9G retains object, link, temporary cleanup, and publication ownership.
-- Phase 14, 15, 16, and 17 authorities remain the owners of layout, resource, ABI, and runtime decisions.
-- MIR-to-C remains an independent default differential oracle and is never an implementation intermediary.
-- No explicit Cranelift fallback exists.
-- Registry-derived Level 2 families own focused differential evidence.
-- Cranelift Historical Full remains the sole Level 3 owner.
-- Every declared supported target has native compile, object inspection, link, execution, diagnostic, and reproducibility evidence.
-- Every residual deferral is narrow, actionable, target-scoped where necessary, and assigned to a later phase.
-- Phase 18 closure does not claim complete platform coverage, complete cross-compilation, complete debug fidelity, complete optimisation support, a stable public target vocabulary, or production readiness.
+Phase 19 succeeds when:
+
+- Renaming a local variable cannot change generated code.
+- Arena-ness follows from the resolved type, never from a spelling.
+- Canonical branded type identity is produced once and reconstructed by neither
+  backend.
+- Container classification is type-derived with no override.
+- Argument representation is a Phase 16 decision recorded in canonical MIR.
+- Both compilers apply identical rules, and a guard proves it.
+- The bootstrap seed reaches a three-stage fixed point under the new rules.
+- Generated C for the compiler's own sources has no unexplained difference.
+- MIR-to-C remains an independent differential oracle, and Cranelift has no
+  fallback.
+- CR-2 is resolved and `TASK_STDLIB.md` S1.4, S1.5, and S1.6 are unblocked.
+- D-1 and D-2 are removed from the shared semantic zone.
+
+Phase 19 closure does not claim a general lifetime system, a brand algebra, or
+any expansion of what brands can express. It claims only that the existing model
+is decided by types instead of by names.

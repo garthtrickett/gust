@@ -141,7 +141,7 @@ current would re-open work that is done.
 | `defer` has no AST/typechecker representation | **Superseded.** `defer` is an AST node; `STEP52_RESOURCE_SEMANTICS.md` predates that. The remaining gap is destructor declaration and enforcement, re-verified by S1.7 (#87) and stated in CR-5. |
 
 Still open exactly as recorded: the brand-spelling defect (CR-2, owned by
-`TASK_PHASE19.md`) and the `exit(1)` bounds policy (CR-3, unscheduled).
+`TASK.md`) and the `exit(1)` bounds policy (CR-3, unscheduled).
 
 `docs/ONE_WAY_LEDGER.md` carries the current status of each of these against the
 compiler, with reproductions, and is the file to check before assuming a
@@ -421,7 +421,7 @@ remains the recommended form until CR-5 lands.
    stated deliverable and the thing being sold (§0.4).
 2. **Existing limitation:** no roadmap owns any of them. `TASK.md` owns targets,
    objects, and linkers. This document owns the safe stdlib surface.
-   `TASK_PHASE19.md` owns brand identity. All three are below the demo line, so
+   `TASK.md` owns brand identity. All three are below the demo line, so
    the demo has no lane and no patch sequence.
 3. **Smallest generic change:** none — this is a scheduling gap, not a semantic
    one. What is needed is a Track A roadmap, in the form the other lanes already
@@ -1102,7 +1102,7 @@ refusing to let S1.12 be marked `DONE` while anything below is outstanding.
 
 | patch | blocked by | owner |
 | --- | --- | --- |
-| S1.4 branded collection consistency | CR-2 | Phase 19 (`TASK_PHASE19.md`) |
+| S1.4 branded collection consistency | CR-2 | Phase 19 (`TASK.md`) |
 | S1.5 clone arena destination | CR-2 | Phase 19 |
 | S1.6 composition regression | CR-2 | Phase 19 |
 | S1.8 MutexGuard prototype | CR-5 | Cranelift lane |
