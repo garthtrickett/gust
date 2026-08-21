@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
-# Phase 19.1 rename-invariance baseline.
+# Phase 19 rename-invariance transition evidence.
 #
-# Two sources that differ only in the spelling of one arena parameter. Under
-# D-1 they would emit equivalent C. They do not, and this records exactly how
-# they differ so Phase 19.2 onward has a before picture.
+# Two sources differ only in one arena-parameter spelling. Patch 19.1 recorded
+# that the renamed arm emitted an undeclared canonical allocation target and
+# failed in C. Patch 19.3 makes each arm internally consistent: both compile,
+# while the custom `scratch` identity still remains in its C type name. Later
+# classification/convergence patches own eliminating that remaining rename
+# difference.
 #
-# This guard asserts the CURRENT, DEFECTIVE behaviour. That is deliberate: it
-# is a baseline, not a contract. When brand identity stops depending on
-# spelling, this guard FAILS, and the patch that fixes it is expected to
-# replace the baseline with an equality assertion. A silently passing guard
-# after the fix would be worse than a failing one.
+# The guard must change again when both normalized arms become equal. A silent
+# pass after that later transition would hide the point where D-1 actually
+# closes.
 set -euo pipefail
 
 brand_source="compiler/phase19_rename_invariance_brand_source.gst"
@@ -61,7 +62,7 @@ for arm in brand renamed; do
   cat src/runtime.c "$build_dir/$arm.c" >"$build_dir/$arm.final.c"
 done
 
-# Both arms compile with Gust. Only the branded arm survives the C compiler.
+# Both arms compile with Gust and must now survive the C compiler.
 set +e
 "$CC_BIN" $CFLAGS_VAL -Isrc "$build_dir/brand.final.c" -o "$build_dir/brand-program" \
   2>"$build_dir/brand.cc.stderr"
@@ -77,29 +78,32 @@ if [ "$brand_status" != "0" ]; then
   exit 1
 fi
 
-if [ "$renamed_status" = "0" ]; then
-  echo "Baseline superseded: the renamed arm now compiles."
-  echo "Brand identity no longer depends on the arena parameter spelling for this shape."
-  echo "That is the Phase 19 goal. Replace this baseline with an equality assertion."
+if [ "$renamed_status" != "0" ]; then
+  echo "Patch 19.3 regression: the renamed arm no longer compiles with its constructed type name."
+  cat "$build_dir/renamed.cc.stderr"
   exit 1
 fi
 
-# Pin the mechanism, not just the failure: the struct keeps its unerased brand
-# suffix while the allocation site still casts to the erased name.
+# Patch 19.3 removes the declaration/allocation disagreement but does not yet
+# remove custom brand identities from canonical names.
 if ! rg -n -F 'Holder_scratch' "$build_dir/renamed.c" >/dev/null; then
-  echo "Baseline drift: the renamed arm no longer emits an unerased Holder_scratch."
+  echo "Transition drift: the renamed arm no longer records Holder_scratch."
   exit 1
 fi
-if ! rg -n -F '(Holder*)' "$build_dir/renamed.c" >/dev/null; then
-  echo "Baseline drift: the renamed arm no longer casts to the erased Holder*."
+if ! rg -n -F '(Holder_scratch*)' "$build_dir/renamed.c" >/dev/null; then
+  echo "Transition drift: the renamed allocation does not use Holder_scratch*."
   exit 1
 fi
-if rg -n -x -F 'typedef struct Holder Holder;' "$build_dir/renamed.c" >/dev/null; then
-  echo "Baseline drift: the renamed arm now declares Holder, so the cast resolves."
+if ! rg -n -x -F 'typedef struct Holder_scratch Holder_scratch;' "$build_dir/renamed.c" >/dev/null; then
+  echo "Transition drift: the renamed arm does not declare Holder_scratch."
+  exit 1
+fi
+if diff -u "$build_dir/brand.c" "$build_dir/renamed.c" >/dev/null; then
+  echo "Transition superseded: the two raw C outputs are now equal."
+  echo "Update this guard to the final normalized rename-invariance assertion."
   exit 1
 fi
 
-echo "✅ Phase 19 rename-invariance baseline recorded: renaming the arena parameter from a"
-echo "   brand-list name to any other name emits a struct as Holder_scratch while still"
-echo "   casting to the erased Holder, which no translation unit declares, so the C"
-echo "   compiler rejects it. Arm A compiles; arm B does not. This is the before picture."
+echo "✅ Phase 19.3 rename transition verified: both arms compile with internally"
+echo "   consistent type names; custom scratch branding remains visible for the"
+echo "   later type-derived classification and convergence patches."

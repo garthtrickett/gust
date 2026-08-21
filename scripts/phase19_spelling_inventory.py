@@ -119,6 +119,15 @@ def validate(registry: dict) -> dict:
         require(0 <= index < len(lines),
                 f"site {name!r} cites line {site['line']} beyond {site['source_path']}")
         window = "\n".join(lines[max(0, index - 2):index + 3])
+        if name == "gst_codegen_erasure_bases":
+            naming = registry.get("phase19_type_naming", {})
+            require(naming.get("legacy_suffix_surgery") ==
+                    "removed_from_codegen_struct_name_erasure",
+                    "retired codegen erasure site lacks Patch 19.3 authority")
+            require("func codegen_erase_struct_name(" in window and
+                    "env_get_canonical_type_name" in window,
+                    "retired codegen erasure site does not cite its canonical lookup")
+            continue
         require(BRAND_SPELLING.search(window) is not None,
                 f"site {name!r} cites {site['source_path']}:{site['line']}, "
                 "which no longer holds a brand spelling -- the citation has drifted")

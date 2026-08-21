@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Patch 19.2 focused semantic parity: exercise the new record while proving
-# that the Patch 19.1 codegen baseline remains unchanged.
+# Phase 19 brand-authority parity: exercise the Patch 19.2 record and the
+# current rename-invariance transition owned by the active naming patch.
 set -euo pipefail
 
 just guard-positive \
@@ -9,4 +9,4 @@ just guard-positive \
 
 bash scripts/phase19_rename_invariance.sh
 
-echo "guard-cranelift-phase19-brand-authority-parity: ok (record semantics and unchanged codegen baseline, Level 2)"
+echo "guard-cranelift-phase19-brand-authority-parity: ok (record semantics and rename transition, Level 2)"

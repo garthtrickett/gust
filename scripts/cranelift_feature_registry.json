@@ -476,7 +476,7 @@
         "id": "gst_codegen_erasure_bases",
         "compiler": "self_hosted",
         "source_path": "compiler/codegen.gst",
-        "line": 658,
+        "line": 598,
         "classification": "type_name_erasure",
         "decision": "strip a brand suffix from a generated type name",
         "available_type_information": "none: operates on the already-flattened name string",
@@ -486,7 +486,7 @@
         "id": "gst_codegen_is_brand_name",
         "compiler": "self_hosted",
         "source_path": "compiler/codegen.gst",
-        "line": 762,
+        "line": 611,
         "classification": "classification_override",
         "decision": "decide whether a name is a brand",
         "available_type_information": "the name only",
@@ -496,7 +496,7 @@
         "id": "gst_codegen_var_arena",
         "compiler": "self_hosted",
         "source_path": "compiler/codegen.gst",
-        "line": 896,
+        "line": 746,
         "classification": "classification_override",
         "decision": "decide whether a variable denotes an arena",
         "available_type_information": "the variable name only at this site",
@@ -506,7 +506,7 @@
         "id": "gst_codegen_var_arena_2",
         "compiler": "self_hosted",
         "source_path": "compiler/codegen.gst",
-        "line": 1101,
+        "line": 951,
         "classification": "classification_override",
         "decision": "decide whether a variable denotes an arena (second site)",
         "available_type_information": "the variable name only at this site",
@@ -516,7 +516,7 @@
         "id": "gst_codegen_alloc_override",
         "compiler": "self_hosted",
         "source_path": "compiler/codegen.gst",
-        "line": 1851,
+        "line": 1701,
         "classification": "classification_override",
         "decision": "decide whether an allocator expression denotes an arena",
         "available_type_information": "the allocator spelling only",
@@ -678,12 +678,92 @@
       },
       {
         "source_path": "compiler/phase19_rename_invariance_renamed_source.gst",
-        "line": 14,
+        "line": 16,
         "binding": "scratch",
         "declared_type": "&Arena",
         "spelling_is_arena": false,
         "record_is_arena": true,
         "reason": "arena_type_with_non_legacy_name"
+      },
+      {
+        "source_path": "compiler/phase19_type_naming_explicit_source.gst",
+        "line": 10,
+        "binding": "lib_module__ctx",
+        "declared_type": "&Arena",
+        "spelling_is_arena": false,
+        "record_is_arena": true,
+        "reason": "arena_type_with_non_legacy_name"
+      },
+      {
+        "source_path": "compiler/phase19_type_naming_explicit_source.gst",
+        "line": 16,
+        "binding": "lib_module__ctx",
+        "declared_type": "&Arena",
+        "spelling_is_arena": false,
+        "record_is_arena": true,
+        "reason": "arena_type_with_non_legacy_name"
+      },
+      {
+        "source_path": "compiler/phase19_type_naming_inferred_source.gst",
+        "line": 10,
+        "binding": "lib_module__ctx",
+        "declared_type": "&Arena",
+        "spelling_is_arena": false,
+        "record_is_arena": true,
+        "reason": "arena_type_with_non_legacy_name"
+      },
+      {
+        "source_path": "compiler/phase19_type_naming_inferred_source.gst",
+        "line": 16,
+        "binding": "lib_module__ctx",
+        "declared_type": "&Arena",
+        "spelling_is_arena": false,
+        "record_is_arena": true,
+        "reason": "arena_type_with_non_legacy_name"
+      }
+    ]
+  },
+  "phase19_type_naming": {
+    "authority_version": "phase19_canonical_type_naming_v1",
+    "status": "ready_for_patch19_4",
+    "next_patch": "19.4",
+    "review_view": "compiler/CRANELIFT_PHASE19_TYPE_NAMING.md",
+    "identity_authority": "phase19_brand_identity_authority_v1",
+    "construction_policy": "template_plus_non_brand_resolved_type_arguments",
+    "codegen_consumer": "canonical_type_name_lookup_only",
+    "legacy_suffix_surgery": "removed_from_codegen_struct_name_erasure",
+    "paired_sources": [
+      "compiler/phase19_type_naming_explicit_source.gst",
+      "compiler/phase19_type_naming_inferred_source.gst"
+    ],
+    "native_abi_aliases": [
+      {
+        "branded_name": "os_Dir_ctx",
+        "canonical_name": "os_Dir"
+      },
+      {
+        "branded_name": "os_DirEntry_ctx",
+        "canonical_name": "os_DirEntry"
+      },
+      {
+        "branded_name": "LookupResult_os_Dir_ctx",
+        "canonical_name": "LookupResult_os_Dir"
+      },
+      {
+        "branded_name": "LookupResult_os_DirEntry_ctx",
+        "canonical_name": "LookupResult_os_DirEntry"
+      }
+    ],
+    "enumerated_generated_c_changes": [
+      {
+        "old_name": "NamingHolder_lib",
+        "canonical_name": "NamingHolder",
+        "reason": "the legacy suffix path removed only module__ctx from lib_module__ctx"
+      },
+      {
+        "old_name": "CastResult_NamingHolder_lib",
+        "canonical_name": "CastResult_NamingHolder",
+        "reason": "synthetic wrappers consume the canonical payload name"
       }
     ]
   },

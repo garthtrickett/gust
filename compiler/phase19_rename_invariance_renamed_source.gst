@@ -1,12 +1,14 @@
 // Phase 19.1 rename-invariance baseline, arm B.
 //
 // The arena parameter is spelled `scratch`, which does NOT appear in the hardcoded brand
-// vocabulary at src/codegen.rs:71 and compiler/codegen.gst:658. Brand erasure
-// therefore strips the suffix and the emitted struct is named `Holder`.
+// vocabulary formerly used by compiler/codegen.gst. Patch 19.3 constructs a
+// consistent `Holder_scratch` declaration and allocation without suffix
+// surgery, so this arm now compiles.
 //
 // Arm A is this file with the parameter spelled `ctx`.
-// Under D-1 the two arms would emit the same C. They do not: see
-// compiler/CRANELIFT_PHASE19_SPELLING_INVENTORY.md.
+// Under D-1 the two arms would emit the same normalized C. They still do not;
+// later Phase 19 type-derived classification and convergence patches own the
+// remaining rename difference.
 type Holder[scratch] struct {
     values: std.Vector[int, scratch]
 }

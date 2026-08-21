@@ -308,6 +308,9 @@ jobs:
       - name: Phase 19 compiler-owned brand identity authority
         run: just guard-cranelift-phase19-brand-authority-contract
 
+      - name: Phase 19 canonical branded type naming
+        run: just guard-cranelift-phase19-type-naming-contract
+
       - name: Phase 17 cross-feature runtime composition
         run: just guard-cranelift-phase17-composition-contract
 

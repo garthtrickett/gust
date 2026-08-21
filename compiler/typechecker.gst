@@ -746,6 +746,7 @@ type TypeEnvironment[ctx] struct {
     enum_templates: std.HashMap[str, EnumTemplate[ctx], ctx],
     function_registry: std.HashMap[str, FunctionSignature[ctx], ctx],
     brand_identities: std.HashMap[str, BrandIdentity[ctx], ctx],
+    canonical_type_names: std.HashMap[str, str, ctx],
     function_return_provenance: std.HashMap[str, ExpressionProvenance[ctx], ctx],
     variable_types: std.HashMap[str, ast.Type[ctx], ctx],
     resolved_types_nested: std.Vector[PrefixMapEntry[ctx], ctx],
@@ -3054,7 +3055,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         }
 
                         mut v_type := typechecker_get_template_elem_type(s_name, "values", env, ctx);
-                        mut val_type_ident := get_type_ident(v_type, ctx);
+                        mut val_type_ident := typechecker_canonical_type_ident(env, v_type, ctx);
                         mut lookup_struct_name := std.Concat("LookupResult_", val_type_ident);
 
                         unsafe {
@@ -5643,6 +5644,15 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
                 j = j + 1;
             }
 
+            mut enum_identity := brand_identity_make("none", "", 0, ctx);
+            if brand != empty[Index[str, ctx]] {
+                enum_identity = brand_identity_make("resolved_struct", ctx[brand], 0, ctx);
+            }
+            mut canonical_enum_name := typechecker_construct_canonical_monomorphized_name(env, template_name, args, enum_identity, ctx);
+            mut elided_enum_name := typechecker_construct_brand_argument_elided_name(template_name, args, enum_identity, ctx);
+            env_record_canonical_type_name(env, concrete_name, canonical_enum_name, ctx);
+            env_record_canonical_type_name(env, elided_enum_name, canonical_enum_name, ctx);
+
             mut existing := (*env).struct_registry.Get(concrete_name);
             mut has_existing := 0;
             if existing.Ok {
@@ -5667,6 +5677,12 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
                     concrete_variants.Push(std.Clone(ctx, variant.name));
                     mut concrete_variant_struct_name := std.Concat(concrete_name, "_");
                     concrete_variant_struct_name = std.Concat(concrete_variant_struct_name, variant.name);
+                    mut canonical_variant_struct_name := std.Concat(canonical_enum_name, "_");
+                    canonical_variant_struct_name = std.Concat(canonical_variant_struct_name, variant.name);
+                    mut elided_variant_struct_name := std.Concat(elided_enum_name, "_");
+                    elided_variant_struct_name = std.Concat(elided_variant_struct_name, variant.name);
+                    env_record_canonical_type_name(env, concrete_variant_struct_name, canonical_variant_struct_name, ctx);
+                    env_record_canonical_type_name(env, elided_variant_struct_name, canonical_variant_struct_name, ctx);
 
                     mut variant_fields: std.HashMap[str, ast.Type[ctx], ctx] := std.HashMapNew(ctx);
                     mut vfields_vec_enum_template: std.Vector[ast.FieldDef[ctx], ctx] := ctx[variant.fields];
@@ -5791,6 +5807,15 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
                 }
                 j = j + 1;
             }
+
+            mut struct_identity := brand_identity_make("none", "", 0, ctx);
+            if brand != empty[Index[str, ctx]] {
+                struct_identity = brand_identity_make("resolved_struct", ctx[brand], 0, ctx);
+            }
+            mut canonical_struct_name := typechecker_construct_canonical_monomorphized_name(env, template_name, args, struct_identity, ctx);
+            mut elided_struct_name := typechecker_construct_brand_argument_elided_name(template_name, args, struct_identity, ctx);
+            env_record_canonical_type_name(env, concrete_name, canonical_struct_name, ctx);
+            env_record_canonical_type_name(env, elided_struct_name, canonical_struct_name, ctx);
 
             mut existing := (*env).struct_registry.Get(concrete_name);
             mut has_existing := 0;
@@ -6335,6 +6360,15 @@ func register_fn(env: *TypeEnvironment[ctx], name: str, params: std.Vector[ast.T
 
  func env_register_std_functions(env: *TypeEnvironment[ctx], ctx: &Arena) {
         unsafe {
+            // These native ABI structs are registered directly rather than
+            // instantiated from Gust templates. Record their canonical C
+            // spellings at the boundary where the branded signature names
+            // are introduced.
+            env_record_canonical_type_name(env, "os_Dir_ctx", "os_Dir", ctx);
+            env_record_canonical_type_name(env, "os_DirEntry_ctx", "os_DirEntry", ctx);
+            env_record_canonical_type_name(env, "LookupResult_os_Dir_ctx", "LookupResult_os_Dir", ctx);
+            env_record_canonical_type_name(env, "LookupResult_os_DirEntry_ctx", "LookupResult_os_DirEntry", ctx);
+
             mut t_int := make_type_int();
             mut t_byte := make_type_byte();
             mut t_bool := make_type_bool();
@@ -6606,6 +6640,7 @@ func env_new(ctx: &Arena) TypeEnvironment[ctx] {
         env_ref_new.enum_templates = std.HashMapNew(ctx);
         env_ref_new.function_registry = std.HashMapNew(ctx);
         env_ref_new.brand_identities = std.HashMapNew(ctx);
+        env_ref_new.canonical_type_names = std.HashMapNew(ctx);
         env_ref_new.function_return_provenance = std.HashMapNew(ctx);
         env_ref_new.variable_types = std.HashMapNew(ctx);
         env_ref_new.resolved_types_nested = std.VectorNew(ctx);
@@ -8528,6 +8563,146 @@ func env_get_brand_identity(env: *TypeEnvironment[ctx], resolved: ast.Type[ctx],
         }
         return brand_identity_make("none", "", typechecker_is_arena_value_or_ref(resolved, ctx), ctx);
     }
+}
+
+func typechecker_normalize_canonical_type_name(name: str, ctx: &Arena) str {
+    mut normalized := "";
+    mut i := 0;
+    while i < len(name) {
+        mut b := std.str_byte_at(name, i);
+        if b == 46 { // '.'
+            normalized = std.Concat(normalized, "_");
+        } else {
+            normalized = std.Concat(normalized, std.str_slice(name, i, i + 1));
+        }
+        i = i + 1;
+    }
+    return std.Clone(ctx, normalized);
+}
+
+func env_record_canonical_type_name(env: *TypeEnvironment[ctx], concrete_name: str, canonical_name: str, ctx: &Arena) {
+    unsafe {
+        (*env).canonical_type_names.Insert(std.Clone(ctx, concrete_name), std.Clone(ctx, canonical_name));
+    }
+}
+
+func env_get_canonical_type_name(env: *TypeEnvironment[ctx], concrete_name: str, ctx: &Arena) str {
+    unsafe {
+        mut lookup := (*env).canonical_type_names.Get(concrete_name);
+        if lookup.Ok {
+            return std.Clone(ctx, lookup.Val);
+        }
+    }
+    return "";
+}
+
+func typechecker_canonical_type_ident(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena) str {
+    unsafe {
+        if t.tag == 0 { return "int"; }
+        if t.tag == 1 { return "byte"; }
+        if t.tag == 2 { return "bool"; }
+        if t.tag == 3 { return "void"; }
+        if t.tag == 4 { return "Arena"; }
+        if t.tag == 5 { return "str"; }
+        if t.tag == 6 { // Slice
+            return std.Clone(ctx, std.Concat("Slice_", typechecker_canonical_type_ident(env, ctx[t.Slice.inner], ctx)));
+        }
+        if t.tag == 7 { // Index
+            mut index_target := env_get_canonical_type_name(env, t.Index.struct_name, ctx);
+            if std.str_eq(index_target, "") == 1 {
+                index_target = typechecker_normalize_canonical_type_name(t.Index.struct_name, ctx);
+            }
+            return std.Clone(ctx, std.Concat("Index_", index_target));
+        }
+        if t.tag == 8 { // Struct
+            mut canonical_struct := env_get_canonical_type_name(env, t.Struct.struct_name, ctx);
+            if std.str_eq(canonical_struct, "") == 0 {
+                return canonical_struct;
+            }
+            return typechecker_normalize_canonical_type_name(t.Struct.struct_name, ctx);
+        }
+        if t.tag == 9 { // RawPointer
+            mut pointer_inner := typechecker_canonical_type_ident(env, ctx[t.RawPointer.inner], ctx);
+            return std.Clone(ctx, std.Concat(pointer_inner, "_ptr"));
+        }
+        if t.tag == 11 { // Reference
+            mut reference_inner := typechecker_canonical_type_ident(env, ctx[t.Reference.inner], ctx);
+            return std.Clone(ctx, std.Concat(reference_inner, "_ptr"));
+        }
+        if t.tag == 10 { // Generic
+            mut generic_args: std.Vector[ast.Type[ctx], ctx] := ctx[t.Generic.args];
+            mut generic_name := typechecker_normalize_canonical_type_name(t.Generic.name, ctx);
+            mut i := 0;
+            while i < len(generic_args) {
+                generic_name = std.Concat(generic_name, "_");
+                generic_name = std.Concat(generic_name, typechecker_canonical_type_ident(env, generic_args[i], ctx));
+                i = i + 1;
+            }
+            return std.Clone(ctx, generic_name);
+        }
+    }
+    return "unknown";
+}
+
+func typechecker_type_matches_brand_identity_argument(t: ast.Type[ctx], identity: BrandIdentity[ctx], ctx: &Arena) int {
+    if std.str_eq(identity.arena_identity, "") == 1 {
+        return 0;
+    }
+    unsafe {
+        if t.tag == 8 { // Struct brand marker
+            if std.str_eq(t.Struct.struct_name, identity.arena_identity) == 1 {
+                return 1;
+            }
+            mut normalized_name := typechecker_normalize_canonical_type_name(t.Struct.struct_name, ctx);
+            mut normalized_identity := typechecker_normalize_canonical_type_name(identity.arena_identity, ctx);
+            if std.str_eq(normalized_name, normalized_identity) == 1 {
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
+func typechecker_find_brand_identity_argument(args: std.Vector[ast.Type[ctx], ctx], identity: BrandIdentity[ctx], ctx: &Arena) int {
+    mut brand_argument := 0 - 1;
+    mut find_idx := len(args) - 1;
+    while find_idx >= 0 {
+        if typechecker_type_matches_brand_identity_argument(args[find_idx], identity, ctx) == 1 {
+            brand_argument = find_idx;
+            find_idx = 0 - 1;
+        } else {
+            find_idx = find_idx - 1;
+        }
+    }
+    return brand_argument;
+}
+
+func typechecker_construct_canonical_monomorphized_name(env: *TypeEnvironment[ctx], template_name: str, args: std.Vector[ast.Type[ctx], ctx], identity: BrandIdentity[ctx], ctx: &Arena) str {
+    mut brand_argument := typechecker_find_brand_identity_argument(args, identity, ctx);
+    mut canonical_name := typechecker_normalize_canonical_type_name(template_name, ctx);
+    mut i := 0;
+    while i < len(args) {
+        if i != brand_argument {
+            canonical_name = std.Concat(canonical_name, "_");
+            canonical_name = std.Concat(canonical_name, typechecker_canonical_type_ident(env, args[i], ctx));
+        }
+        i = i + 1;
+    }
+    return std.Clone(ctx, canonical_name);
+}
+
+func typechecker_construct_brand_argument_elided_name(template_name: str, args: std.Vector[ast.Type[ctx], ctx], identity: BrandIdentity[ctx], ctx: &Arena) str {
+    mut brand_argument := typechecker_find_brand_identity_argument(args, identity, ctx);
+    mut elided_name := typechecker_normalize_canonical_type_name(template_name, ctx);
+    mut i := 0;
+    while i < len(args) {
+        if i != brand_argument {
+            elided_name = std.Concat(elided_name, "_");
+            elided_name = std.Concat(elided_name, get_type_ident(args[i], ctx));
+        }
+        i = i + 1;
+    }
+    return std.Clone(ctx, elided_name);
 }
 
 func typechecker_source_names_explicit_brand(source: ast.Type[ctx], arena_identity: str, ctx: &Arena) int {
