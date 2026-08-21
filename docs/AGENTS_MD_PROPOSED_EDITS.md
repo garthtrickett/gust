@@ -82,6 +82,44 @@ than as a problem to route around. **A blocked task almost never blocks a lane.*
 
 ---
 
+## Edit 3 — a bootstrap-seed row for `docs/SHARED_SEMANTIC_ZONE.md`
+
+**Why.** The zone table has twenty rows and **none of them is the bootstrap
+seed** — the one artifact that is unambiguously singular, that cannot be merged,
+and that two lanes provably both reach. `TASK_STDLIB.md` records "yes — dual
+compiler and seed regeneration" on three separate CRs, so the Stdlib lane already
+knows it touches the seed; nothing tells it what that obliges.
+
+`AGENTS.md` documents the seed well — four regeneration triggers, its own commit
+and PR, never hand-edited, never folded into a capability patch. **What is
+missing is an owner.** Validation says run `make bootstrap` for
+bootstrap-sensitive changes, which is whoever made the change; the seven-point
+report asks *whether* a change affects bootstrap, which is a flag rather than an
+assignment. Two lanes can therefore both be mid-bootstrap on different changes
+with no rule broken.
+
+**Add to the zone table:**
+
+> | The bootstrap seed (`gust_v4.c`) and fixed-point convergence | `AGENTS.md` "Bootstrap seed"; `README.md` "The Non-Rust Bootstrap Chain" | Cranelift | `make bootstrap` asserts stage 2 and stage 3 byte-identical |
+
+**And below the table:**
+
+> **The seed is a serialized resource, not merely a shared one.** Any lane may
+> *run* `make bootstrap` to validate its own change — that is ordinary validation
+> and needs no coordination. **Regenerating and committing the seed is the
+> Cranelift lane's**, in its own commit and PR per `AGENTS.md`, because there is
+> no meaningful merge of two bootstrapped compilers: a second regeneration in
+> flight does not conflict textually, it silently supersedes.
+>
+> A lane whose patch requires a regeneration stops and reports it as item 7 of the
+> seven-point format, and **continues down the ladder** rather than regenerating
+> itself.
+
+**Why Cranelift rather than "whoever needs it".** It already owns every semantic
+row the seed encodes, and a regeneration is the observable consequence of those
+semantics changing. Assigning it elsewhere would put the artifact and its causes
+in different lanes.
+
 ## What these do not change
 
 - **The stop conditions themselves.** All nine are real escalations, all are
