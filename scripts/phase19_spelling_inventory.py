@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Validate and project the Patch 19.1 identifier-spelling decision inventory.
 
-Report-only. Nothing here changes behaviour; it records every place the two
-compilers decide brand identity, arena-ness, or argument representation from an
-identifier's spelling, so Patch 19.2 onward works from a list.
+Report-only. Nothing here changes behaviour; it records every place the active
+self-hosted compiler decides brand identity, arena-ness, or argument
+representation from an identifier's spelling, so Patch 19.2 onward works from
+a list.
 
 The validator deliberately re-derives rather than trusts:
 
@@ -34,9 +35,9 @@ REVIEW_PATH = "compiler/CRANELIFT_PHASE19_SPELLING_INVENTORY.md"
 
 SITE_FIELDS = {
     "id", "compiler", "source_path", "line", "classification", "decision",
-    "available_type_information", "sufficiency", "counterpart", "divergence",
+    "available_type_information", "sufficiency",
 }
-COMPILERS = {"rust_host", "self_hosted"}
+COMPILERS = {"self_hosted"}
 CLASSIFICATIONS = {"type_name_erasure", "classification_override"}
 # Ordered least to most work: an inventory that classified everything as the
 # cheapest option would be suspicious, so the projection reports the spread.
@@ -46,8 +47,6 @@ SUFFICIENCY = {
     "requires_new_authority",
     "unavailable_at_this_stage",
 }
-DIVERGENCES = {"none", "scan_order", "suffix_set", "absent_in_counterpart"}
-
 BRAND_SPELLING = re.compile(r'"(arena|ctx|connCtx|Arena|Any|a|os_Arena|main_ctx)"')
 
 
@@ -86,7 +85,7 @@ def validate(registry: dict) -> dict:
     snap = registry.get("phase19_spelling_inventory")
     require(isinstance(snap, dict), "Phase 19 spelling inventory missing")
 
-    require(snap["inventory_version"] == "phase19_spelling_inventory_v1",
+    require(snap["inventory_version"] == "phase19_spelling_inventory_self_hosted_v2",
             "Phase 19 spelling inventory version drifted")
     require(snap["status"] == "ready_for_patch19_2", "Phase 19 spelling inventory status drifted")
     require(snap["next_patch"] == "19.2", "Phase 19 spelling inventory next patch drifted")
@@ -111,7 +110,6 @@ def validate(registry: dict) -> dict:
         require(site["classification"] in CLASSIFICATIONS,
                 f"site {name!r} has an unknown classification")
         require(site["sufficiency"] in SUFFICIENCY, f"site {name!r} has an unknown sufficiency")
-        require(site["divergence"] in DIVERGENCES, f"site {name!r} has an unknown divergence")
 
         # Re-read the cited line. Citations rot; this is how we find out.
         path = ROOT / site["source_path"]
@@ -125,19 +123,8 @@ def validate(registry: dict) -> dict:
                 f"site {name!r} cites {site['source_path']}:{site['line']}, "
                 "which no longer holds a brand spelling -- the citation has drifted")
 
-    for site in sites:
-        counterpart = site["counterpart"]
-        if counterpart is None:
-            require(site["divergence"] == "absent_in_counterpart",
-                    f"site {site['id']!r} has no counterpart but does not say so")
-            continue
-        require(counterpart in ids, f"site {site['id']!r} names unknown counterpart {counterpart!r}")
-        other = next(s for s in sites if s["id"] == counterpart)
-        require(other["compiler"] != site["compiler"],
-                f"site {site['id']!r} names a counterpart in its own compiler")
-
     require({site["compiler"] for site in sites} == COMPILERS,
-            "the inventory must cover both compilers")
+            "the inventory must cover the self-hosted compiler")
 
     # The surface is a dated observation, not an invariant. It is re-derived for
     # the projection so the review always shows the live figure, and the recorded
@@ -175,6 +162,7 @@ def render(snap: dict) -> str:
         f"- Inventory version: `{snap['inventory_version']}`",
         f"- Status: `{snap['status']}`",
         f"- Sites: `{len(sites)}`",
+        "- Compiler scope: `self_hosted` (the deprecated root Rust prototype is retiring)",
         "",
         "## Regression surface",
         "",
@@ -211,27 +199,15 @@ def render(snap: dict) -> str:
                 "requires_new_authority", "unavailable_at_this_stage"):
         lines.append(f"| `{key}` | {counts.get(key, 0)} | {meaning[key]} |")
 
-    lines += ["", "## Cross-compiler divergence", "",
-              "| Divergence | Sites | Meaning |", "| --- | --- | --- |"]
-    dmeaning = {
-        "none": "the two compilers make this decision the same way",
-        "scan_order": "same names, different scan order, and both scan first-match-wins",
-        "suffix_set": "the two sites accept different suffix sets",
-        "absent_in_counterpart": "one compiler makes this decision and the other does not",
-    }
-    dcounts = tally("divergence")
-    for key in ("none", "scan_order", "suffix_set", "absent_in_counterpart"):
-        lines.append(f"| `{key}` | {dcounts.get(key, 0)} | {dmeaning[key]} |")
-
     lines += ["", "## Sites", "",
-              "| ID | Compiler | Source | Kind | Type information available | Sufficiency | Divergence |",
-              "| --- | --- | --- | --- | --- | --- | --- |"]
+              "| ID | Compiler | Source | Kind | Type information available | Sufficiency |",
+              "| --- | --- | --- | --- | --- | --- |"]
     for site in sites:
         lines.append(
             f"| `{site['id']}` | {site['compiler']} "
             f"| `{site['source_path']}:{site['line']}` | {site['classification']} "
             f"| {site['available_type_information']} | `{site['sufficiency']}` "
-            f"| `{site['divergence']}` |")
+            "|")
     lines.append("")
     return "\n".join(lines)
 

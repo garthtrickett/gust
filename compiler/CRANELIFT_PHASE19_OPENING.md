@@ -4,13 +4,14 @@ Generated from `scripts/cranelift_feature_registry.json` by
 `scripts/phase19_opening.py project`. Do not edit by hand.
 
 - Opening version: `phase19_opening_inventory_rebased_on_phase18_closure`
-- Inventory version: `phase19_opening_inventory_v1`
+- Inventory version: `phase19_opening_inventory_self_hosted_v2`
 - Status: `ready_for_patch19_1`
 - Predecessor closure: `phase18_closed_target_object_and_linker_boundary`
 - Opening rows: `3`
-- Host assumptions: `11`
-- Brand vocabularies: `5`
+- Host assumptions: `5`
+- Brand vocabularies: `2`
 - Inherited residuals rebased: `1`
+- Compiler scope: `self_hosted` (the deprecated root Rust prototype is retiring)
 
 ## Opening rows
 
@@ -22,38 +23,19 @@ Generated from `scripts/cranelift_feature_registry.json` by
 
 ## Brand vocabularies
 
-Every list a compiler consults to decide brand identity from a spelling.
-Both compilers scan first-match-wins and restart until stable, so the
-order of a list is part of its behaviour, not presentation.
+Every list the self-hosted compiler consults to decide brand identity
+from a spelling. The compiler scans first-match-wins and restarts until
+stable, so the order of a list is part of its behaviour, not presentation.
 
 | ID | Compiler | Source | Names |
 | --- | --- | --- | --- |
-| `rust_erasure_bases` | rust_host | `src/codegen.rs:71` | `connCtx`, `arena`, `ctx`, `Any`, `a`, `main_ctx`, `bg_ctx`, `file_ctx` |
-| `rust_type_bases` | rust_host | `src/typechecker/types.rs:61` | `connCtx`, `arena`, `ctx`, `Any`, `a`, `main_ctx`, `bg_ctx`, `file_ctx` |
-| `rust_suffix_brands` | rust_host | `src/typechecker/types.rs:439` | `ctx`, `connCtx`, `arena`, `a`, `Any`, `ctx1`, `ctx2`, `innerCtx`, `outerCtx`, `current_ctx`, `next_ctx`, `main_ctx`, `bg_ctx`, `file_ctx` |
 | `gust_erasure_bases` | self_hosted | `compiler/codegen.gst:658` | `connCtx`, `arena`, `Any`, `a`, `main_ctx`, `bg_ctx`, `file_ctx`, `ctx` |
 | `gust_suffix_brands` | self_hosted | `compiler/typechecker.gst:5172` | `ctx`, `connCtx`, `arena`, `a`, `Any`, `ctx1`, `ctx2`, `innerCtx`, `outerCtx`, `current_ctx`, `next_ctx`, `main_ctx`, `bg_ctx`, `file_ctx` |
-
-### Cross-compiler order divergence
-
-| Rust host | Self-hosted | Divergence |
-| --- | --- | --- |
-| `rust_erasure_bases` | `gust_erasure_bases` | same set, different scan order |
-| `rust_type_bases` | `gust_erasure_bases` | same set, different scan order |
-
-Whether each divergence is observable is Patch 19.1's question.
-This inventory records only that the two compilers can disagree.
 
 ## Host assumptions
 
 | ID | Reachability area | Owning row | Source | Classification |
 | --- | --- | --- | --- | --- |
-| `ha_rust_codegen_erasure` | brand_resolution | `p19_brand_identity` | `src/codegen.rs` | must_change |
-| `ha_rust_alloc_spelling` | container_classification | `p19_container_arena_classification` | `src/codegen.rs` | must_change |
-| `ha_rust_type_brand_bases` | type_naming | `p19_brand_identity` | `src/typechecker/types.rs` | must_change |
-| `ha_rust_parser_brand_name` | type_naming | `p19_brand_identity` | `src/parser.rs` | must_change |
-| `ha_rust_monomorphize_generic_name` | argument_representation | `p19_argument_representation` | `src/typechecker/monomorphize.rs` | must_change |
-| `ha_rust_typechecker_clean_part` | brand_resolution | `p19_brand_identity` | `src/typechecker.rs` | must_change |
 | `ha_gust_codegen_erasure` | brand_resolution | `p19_brand_identity` | `compiler/codegen.gst` | must_change |
 | `ha_gust_alloc_spelling` | container_classification | `p19_container_arena_classification` | `compiler/codegen.gst` | must_change |
 | `ha_gust_typechecker_brands` | type_naming | `p19_brand_identity` | `compiler/typechecker.gst` | must_change |

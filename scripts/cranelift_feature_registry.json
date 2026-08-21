@@ -457,7 +457,7 @@
     }
   },
   "phase19_spelling_inventory": {
-    "inventory_version": "phase19_spelling_inventory_v1",
+    "inventory_version": "phase19_spelling_inventory_self_hosted_v2",
     "status": "ready_for_patch19_2",
     "next_patch": "19.2",
     "opening_version": "phase19_opening_inventory_rebased_on_phase18_closure",
@@ -473,162 +473,6 @@
     },
     "sites": [
       {
-        "id": "rs_codegen_erasure_bases",
-        "compiler": "rust_host",
-        "source_path": "src/codegen.rs",
-        "line": 71,
-        "classification": "type_name_erasure",
-        "decision": "strip a brand suffix from a generated type name",
-        "available_type_information": "none: operates on the already-flattened name string",
-        "sufficiency": "requires_new_authority",
-        "counterpart": "gst_codegen_erasure_bases",
-        "divergence": "scan_order"
-      },
-      {
-        "id": "rs_codegen_is_brand_type",
-        "compiler": "rust_host",
-        "source_path": "src/codegen.rs",
-        "line": 125,
-        "classification": "classification_override",
-        "decision": "decide whether a struct type is a brand",
-        "available_type_information": "the resolved Type and the struct-layout registry are both parameters",
-        "sufficiency": "available_in_scope",
-        "counterpart": "gst_codegen_is_brand_name",
-        "divergence": "none"
-      },
-      {
-        "id": "rs_codegen_arena_override",
-        "compiler": "rust_host",
-        "source_path": "src/codegen.rs",
-        "line": 1759,
-        "classification": "classification_override",
-        "decision": "decide whether an allocator expression denotes an arena",
-        "available_type_information": "alloc_type is matched against Type::Arena on the immediately preceding line",
-        "sufficiency": "available_in_scope",
-        "counterpart": "gst_codegen_alloc_override",
-        "divergence": "suffix_set"
-      },
-      {
-        "id": "rs_typechecker_clean_part",
-        "compiler": "rust_host",
-        "source_path": "src/typechecker.rs",
-        "line": 118,
-        "classification": "classification_override",
-        "decision": "decide brand membership of a cleaned name part",
-        "available_type_information": "the name part only; the owning type is not threaded here",
-        "sufficiency": "available_after_resolution",
-        "counterpart": "gst_typechecker_brand_member",
-        "divergence": "none"
-      },
-      {
-        "id": "rs_typechecker_name_member",
-        "compiler": "rust_host",
-        "source_path": "src/typechecker.rs",
-        "line": 155,
-        "classification": "classification_override",
-        "decision": "decide brand membership of a bare name",
-        "available_type_information": "the name only",
-        "sufficiency": "available_after_resolution",
-        "counterpart": null,
-        "divergence": "absent_in_counterpart"
-      },
-      {
-        "id": "rs_types_brand_bases",
-        "compiler": "rust_host",
-        "source_path": "src/typechecker/types.rs",
-        "line": 61,
-        "classification": "type_name_erasure",
-        "decision": "strip a brand suffix during type-name normalisation",
-        "available_type_information": "none: operates on the name string",
-        "sufficiency": "requires_new_authority",
-        "counterpart": "gst_typechecker_brand_suffixes",
-        "divergence": "none"
-      },
-      {
-        "id": "rs_types_suffix_brands",
-        "compiler": "rust_host",
-        "source_path": "src/typechecker/types.rs",
-        "line": 438,
-        "classification": "type_name_erasure",
-        "decision": "extract a brand from a type-name suffix",
-        "available_type_information": "none: operates on the suffix string",
-        "sufficiency": "requires_new_authority",
-        "counterpart": "gst_typechecker_brand_suffixes",
-        "divergence": "none"
-      },
-      {
-        "id": "rs_types_any_compat",
-        "compiler": "rust_host",
-        "source_path": "src/typechecker/types.rs",
-        "line": 199,
-        "classification": "classification_override",
-        "decision": "treat the brand spelled Any as compatible with every brand",
-        "available_type_information": "both resolved brands are in hand as Option<String>",
-        "sufficiency": "available_in_scope",
-        "counterpart": "gst_typechecker_any_compat",
-        "divergence": "none"
-      },
-      {
-        "id": "rs_mono_generic_is_arena",
-        "compiler": "rust_host",
-        "source_path": "src/typechecker/monomorphize.rs",
-        "line": 596,
-        "classification": "classification_override",
-        "decision": "decide that a generic parameter is the arena parameter",
-        "available_type_information": "the argument is a resolved Type, but the parameter carries no declared kind",
-        "sufficiency": "requires_new_authority",
-        "counterpart": null,
-        "divergence": "absent_in_counterpart"
-      },
-      {
-        "id": "rs_mono_generic_is_arena_2",
-        "compiler": "rust_host",
-        "source_path": "src/typechecker/monomorphize.rs",
-        "line": 719,
-        "classification": "classification_override",
-        "decision": "decide that a generic parameter is the arena parameter (second site)",
-        "available_type_information": "the argument is a resolved Type, but the parameter carries no declared kind",
-        "sufficiency": "requires_new_authority",
-        "counterpart": null,
-        "divergence": "absent_in_counterpart"
-      },
-      {
-        "id": "rs_mono_default_arena",
-        "compiler": "rust_host",
-        "source_path": "src/typechecker/monomorphize.rs",
-        "line": 232,
-        "classification": "classification_override",
-        "decision": "default an absent brand to the spelling arena",
-        "available_type_information": "none at the defaulting point",
-        "sufficiency": "requires_new_authority",
-        "counterpart": "gst_typechecker_default_brand",
-        "divergence": "none"
-      },
-      {
-        "id": "rs_parser_brand_name",
-        "compiler": "rust_host",
-        "source_path": "src/parser.rs",
-        "line": 732,
-        "classification": "classification_override",
-        "decision": "decide a brand argument is a concrete type rather than a brand",
-        "available_type_information": "none: the parser runs before type resolution",
-        "sufficiency": "unavailable_at_this_stage",
-        "counterpart": null,
-        "divergence": "absent_in_counterpart"
-      },
-      {
-        "id": "rs_parser_arena_spelling",
-        "compiler": "rust_host",
-        "source_path": "src/parser.rs",
-        "line": 751,
-        "classification": "type_name_erasure",
-        "decision": "resolve the spellings Arena, os_Arena and os.Arena to Type::Arena",
-        "available_type_information": "none: the parser runs before type resolution",
-        "sufficiency": "unavailable_at_this_stage",
-        "counterpart": null,
-        "divergence": "absent_in_counterpart"
-      },
-      {
         "id": "gst_codegen_erasure_bases",
         "compiler": "self_hosted",
         "source_path": "compiler/codegen.gst",
@@ -636,9 +480,7 @@
         "classification": "type_name_erasure",
         "decision": "strip a brand suffix from a generated type name",
         "available_type_information": "none: operates on the already-flattened name string",
-        "sufficiency": "requires_new_authority",
-        "counterpart": "rs_codegen_erasure_bases",
-        "divergence": "scan_order"
+        "sufficiency": "requires_new_authority"
       },
       {
         "id": "gst_codegen_is_brand_name",
@@ -648,9 +490,7 @@
         "classification": "classification_override",
         "decision": "decide whether a name is a brand",
         "available_type_information": "the name only",
-        "sufficiency": "available_after_resolution",
-        "counterpart": "rs_codegen_is_brand_type",
-        "divergence": "none"
+        "sufficiency": "available_after_resolution"
       },
       {
         "id": "gst_codegen_var_arena",
@@ -660,9 +500,7 @@
         "classification": "classification_override",
         "decision": "decide whether a variable denotes an arena",
         "available_type_information": "the variable name only at this site",
-        "sufficiency": "available_after_resolution",
-        "counterpart": "rs_codegen_arena_override",
-        "divergence": "suffix_set"
+        "sufficiency": "available_after_resolution"
       },
       {
         "id": "gst_codegen_var_arena_2",
@@ -672,9 +510,7 @@
         "classification": "classification_override",
         "decision": "decide whether a variable denotes an arena (second site)",
         "available_type_information": "the variable name only at this site",
-        "sufficiency": "available_after_resolution",
-        "counterpart": null,
-        "divergence": "absent_in_counterpart"
+        "sufficiency": "available_after_resolution"
       },
       {
         "id": "gst_codegen_alloc_override",
@@ -684,9 +520,7 @@
         "classification": "classification_override",
         "decision": "decide whether an allocator expression denotes an arena",
         "available_type_information": "the allocator spelling only",
-        "sufficiency": "available_after_resolution",
-        "counterpart": "rs_codegen_arena_override",
-        "divergence": "suffix_set"
+        "sufficiency": "available_after_resolution"
       },
       {
         "id": "gst_typechecker_default_brand",
@@ -696,9 +530,7 @@
         "classification": "classification_override",
         "decision": "default an absent brand to the spelling arena",
         "available_type_information": "none at the defaulting point",
-        "sufficiency": "requires_new_authority",
-        "counterpart": "rs_mono_default_arena",
-        "divergence": "none"
+        "sufficiency": "requires_new_authority"
       },
       {
         "id": "gst_typechecker_brand_member",
@@ -708,9 +540,7 @@
         "classification": "classification_override",
         "decision": "decide brand membership of a name part",
         "available_type_information": "the name part only",
-        "sufficiency": "available_after_resolution",
-        "counterpart": "rs_typechecker_clean_part",
-        "divergence": "none"
+        "sufficiency": "available_after_resolution"
       },
       {
         "id": "gst_typechecker_brand_suffixes",
@@ -720,9 +550,7 @@
         "classification": "type_name_erasure",
         "decision": "extract a brand from a type-name suffix",
         "available_type_information": "none: operates on the suffix string",
-        "sufficiency": "requires_new_authority",
-        "counterpart": "rs_types_suffix_brands",
-        "divergence": "none"
+        "sufficiency": "requires_new_authority"
       },
       {
         "id": "gst_typechecker_any_compat",
@@ -732,16 +560,14 @@
         "classification": "classification_override",
         "decision": "treat the brand spelled Any as compatible with every brand",
         "available_type_information": "both brands are in hand as cleaned strings",
-        "sufficiency": "available_in_scope",
-        "counterpart": "rs_types_any_compat",
-        "divergence": "none"
+        "sufficiency": "available_in_scope"
       }
     ]
   },
   "opening_snapshots": {
     "phase19": {
       "opening_version": "phase19_opening_inventory_rebased_on_phase18_closure",
-      "inventory_version": "phase19_opening_inventory_v1",
+      "inventory_version": "phase19_opening_inventory_self_hosted_v2",
       "status": "ready_for_patch19_1",
       "next_patch": "19.1",
       "predecessor_closure_version": "phase18_closed_target_object_and_linker_boundary",
@@ -801,60 +627,6 @@
       ],
       "brand_vocabularies": [
         {
-          "id": "rust_erasure_bases",
-          "source_path": "src/codegen.rs",
-          "line": 71,
-          "compiler": "rust_host",
-          "names": [
-            "connCtx",
-            "arena",
-            "ctx",
-            "Any",
-            "a",
-            "main_ctx",
-            "bg_ctx",
-            "file_ctx"
-          ]
-        },
-        {
-          "id": "rust_type_bases",
-          "source_path": "src/typechecker/types.rs",
-          "line": 61,
-          "compiler": "rust_host",
-          "names": [
-            "connCtx",
-            "arena",
-            "ctx",
-            "Any",
-            "a",
-            "main_ctx",
-            "bg_ctx",
-            "file_ctx"
-          ]
-        },
-        {
-          "id": "rust_suffix_brands",
-          "source_path": "src/typechecker/types.rs",
-          "line": 439,
-          "compiler": "rust_host",
-          "names": [
-            "ctx",
-            "connCtx",
-            "arena",
-            "a",
-            "Any",
-            "ctx1",
-            "ctx2",
-            "innerCtx",
-            "outerCtx",
-            "current_ctx",
-            "next_ctx",
-            "main_ctx",
-            "bg_ctx",
-            "file_ctx"
-          ]
-        },
-        {
           "id": "gust_erasure_bases",
           "source_path": "compiler/codegen.gst",
           "line": 658,
@@ -894,72 +666,6 @@
         }
       ],
       "host_assumptions": [
-        {
-          "id": "ha_rust_codegen_erasure",
-          "assumption": "brand erasure scans a hardcoded name list, first match wins, restarted until stable",
-          "source_path": "src/codegen.rs",
-          "reachability_area": "brand_resolution",
-          "inventory_owner": "compiler_brand_identity_planner",
-          "diagnostic_owner": "compiler_brand_identity_verifier",
-          "owning_phase19_entry_id": "p19_brand_identity",
-          "initial_classification": "must_change",
-          "target_applicability": "all_declared_phase18_supported_targets"
-        },
-        {
-          "id": "ha_rust_alloc_spelling",
-          "assumption": "allocator-ness is decided by comparing an identifier against \"arena\" and \"ctx\"",
-          "source_path": "src/codegen.rs",
-          "reachability_area": "container_classification",
-          "inventory_owner": "compiler_container_classification_planner",
-          "diagnostic_owner": "compiler_container_classification_verifier",
-          "owning_phase19_entry_id": "p19_container_arena_classification",
-          "initial_classification": "must_change",
-          "target_applicability": "all_declared_phase18_supported_targets"
-        },
-        {
-          "id": "ha_rust_type_brand_bases",
-          "assumption": "type-level brand identity is decided from a hardcoded name list",
-          "source_path": "src/typechecker/types.rs",
-          "reachability_area": "type_naming",
-          "inventory_owner": "compiler_brand_identity_planner",
-          "diagnostic_owner": "compiler_brand_identity_verifier",
-          "owning_phase19_entry_id": "p19_brand_identity",
-          "initial_classification": "must_change",
-          "target_applicability": "all_declared_phase18_supported_targets"
-        },
-        {
-          "id": "ha_rust_parser_brand_name",
-          "assumption": "the parser treats the literal spelling \"Arena\" as a brand name",
-          "source_path": "src/parser.rs",
-          "reachability_area": "type_naming",
-          "inventory_owner": "compiler_brand_identity_planner",
-          "diagnostic_owner": "compiler_brand_identity_verifier",
-          "owning_phase19_entry_id": "p19_brand_identity",
-          "initial_classification": "must_change",
-          "target_applicability": "all_declared_phase18_supported_targets"
-        },
-        {
-          "id": "ha_rust_monomorphize_generic_name",
-          "assumption": "monomorphization substitutes on the generic parameter spelling \"arena\"",
-          "source_path": "src/typechecker/monomorphize.rs",
-          "reachability_area": "argument_representation",
-          "inventory_owner": "compiler_argument_representation_planner",
-          "diagnostic_owner": "compiler_argument_representation_verifier",
-          "owning_phase19_entry_id": "p19_argument_representation",
-          "initial_classification": "must_change",
-          "target_applicability": "all_declared_phase18_supported_targets"
-        },
-        {
-          "id": "ha_rust_typechecker_clean_part",
-          "assumption": "brand membership is tested by comparing a cleaned name part against literal spellings",
-          "source_path": "src/typechecker.rs",
-          "reachability_area": "brand_resolution",
-          "inventory_owner": "compiler_brand_identity_planner",
-          "diagnostic_owner": "compiler_brand_identity_verifier",
-          "owning_phase19_entry_id": "p19_brand_identity",
-          "initial_classification": "must_change",
-          "target_applicability": "all_declared_phase18_supported_targets"
-        },
         {
           "id": "ha_gust_codegen_erasure",
           "assumption": "brand erasure scans a hardcoded name vector, first match wins, restarted until stable",
