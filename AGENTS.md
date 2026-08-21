@@ -11,13 +11,30 @@ exactly one roadmap.
 | --- | --- | --- | --- |
 | Cranelift | `TASK.md` | `codex/phase<N>-<patch>-<slug>` | canonical MIR, native lowering, backend parity, target/object/linker authority |
 | Stdlib | `TASK_STDLIB.md` | `codex/stdlib-` | safe stdlib surface, ergonomics, stdlib tests, examples, documentation |
+| Docs/vision | `docs/VISION.md` and the `docs/` set | `codex/docs-` | `docs/` only — the OD register, specifications, evidence, and governance records. Owns no code and holds no semantic authority. |
 
 Everything in this file applies to both lanes. Where it says *the active
 roadmap*, read `TASK.md` in the Cranelift lane and `TASK_STDLIB.md` in the
 Stdlib lane.
 
-If the requested work does not clearly belong to one lane, stop and ask. Do not
-pick a lane by convenience.
+If the requested work does not clearly belong to one lane, do not pick a lane by
+convenience. Route it by ownership: the file it changes, and the authority it
+needs. `docs/SHARED_SEMANTIC_ZONE.md`'s default-owner column settles most cases in
+one read, and `docs/AGENT_TOPOLOGY.md` §3 describes what each lane owns.
+
+Stop and ask the operator only when the question is one of **authority**, not of
+difficulty. `docs/VISION.md` §0.15 is the test: an open decision is a
+decision-tree node, and everything else is lane work. Escalate when an OD's status
+would change, when an action is irreversible and outward-facing, when it spends
+money or promises a third party, or when it crosses a boundary the operator set.
+
+A new question of OD size is **registered, not escalated** — add the row, record a
+proposal marked as a proposal, and continue on other work. Where two designs both
+satisfy every stated constraint, pick one, record why, and note what would falsify
+the choice.
+
+**When two lanes both believe they own something, stop — and do not split it.**
+Each lane implementing the half it can see is how defect D-2 happened.
 
 For how many lanes may run at once, what runs them, how they communicate, and why
 there is no manager agent, see `docs/AGENT_TOPOLOGY.md`. That document is
@@ -352,6 +369,27 @@ Stop and report, rather than improvising, on any of:
 - a large unrelated compiler refactor.
 
 Use the seven-point report format from the Shared coordination zone section.
+
+**Stopping the task is not stopping the lane.** Having filed the report, continue
+down this ladder without waiting:
+
+1. the next unblocked item in the active roadmap;
+2. documentation the lane owns — including recording what the blocked attempt
+   established. **Bounded: this is for writing down what was just learned, not for
+   generating documentation to stay busy.** If the next item on this rung is not
+   something a reader would act on, go to 3;
+3. the standing unblocked work: `docs/UNBLOCKED_CONTAINMENT_WORK.md`, and the
+   specification rows in `docs/DEMO_TARGET_PROGRAM.md`;
+4. if none applies, **record a terminal state** in `GUST_LANE_STATE.md`, naming
+   what was finished and what is being waited on.
+
+Only step 4 is stopping, and it is a written act. An agent that goes idle without
+it is indistinguishable from one that stalled. **A terminal state is true only when
+written — resuming work invalidates it, and the resumption is the moment to say
+so.**
+
+**Refusing is not stopping either.** A lane that declines work outside its
+boundary has finished deciding, and descends the same ladder immediately.
 
 ## Validation
 
