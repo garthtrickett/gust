@@ -31,7 +31,7 @@ another through Cranelift.
 | --- | --- | --- | --- |
 | Type representation and canonical type identity | `TASK.md` Phase 14 record; `compiler/typechecker.gst` | Cranelift | `TASK.md` Starting State |
 | Aggregate layout | Phase 14 layout authority | Cranelift | `compiler/CRANELIFT_PHASE14_LAYOUT_AUTHORITY.md` |
-| Arena and brand semantics | `GEMINI.md` §A–§B; Phase 14 | Cranelift | `TASK.md` Phase 19.8; see closed defect D-1 |
+| Arena and brand semantics | `GEMINI.md` §A–§B; Phase 14 | Cranelift | `TASK.md` Phase 19 closure record |
 | Argument representation (by value vs by address) | Phase 16 ABI authority | Cranelift | `TASK.md` Phase 16 record and Phase 19.5 |
 | Resource ownership and identity | Phase 15 authority; `STEP52_RESOURCE_SEMANTICS.md`; `VISION.md` §28 | Cranelift | `TASK.md` "Immutable Phase 15 Completion Record"; see **D-4** |
 | Scope-exit and drop semantics | Phase 15; `VISION.md` §29 | Cranelift | `VISION.md` §29 |
@@ -226,13 +226,13 @@ it.
 
 **Confirm a citation before *copying* it, not only before acting on it.** The
 rule above says to confirm a construct still exists before acting on a citation.
-That is necessary and not sufficient. D-1's `compiler/typechecker.gst` line
-numbers were copied from `docs/STDLIB_SURFACE_FINDINGS.md` — correct when pinned
-at `6c94728d` — into this document and two others. By 2026-08-20 both lines had
-moved to unrelated code, and every document agreed with every other document,
-which is precisely why nobody noticed. A citation inherited from another document
-is not evidence; it is a claim about evidence, and it decays at the same rate as
-the code.
+That is necessary and not sufficient. The former brand-identity defect's
+`compiler/typechecker.gst` line numbers were copied from
+`docs/STDLIB_SURFACE_FINDINGS.md` — correct when pinned at `6c94728d` — into this
+document and two others. By 2026-08-20 both lines had moved to unrelated code,
+and every document agreed with every other document, which is precisely why
+nobody noticed. A citation inherited from another document is not evidence; it
+is a claim about evidence, and it decays at the same rate as the code.
 
 **Read the block, not the matching line.** A `grep` hit tells you a word appears,
 not what the code does. Four separate claims in this repository's documents were
@@ -252,14 +252,6 @@ lowering. In each case the grep was accurate and the conclusion was not.
   `7e82494c8eeeca772530ba2eae699fbed978d87f`). With one compiler frontend there
   is no second matching implementation and therefore no cross-compiler
   divergence.
-
-- **D-1 — Brand identity inferred from identifier spelling — closed by Phase
-  19.8 on 2026-08-21.** The legacy exact, suffix, substring, and generated-code
-  spelling authority is absent from `compiler/*.gst`. Template role metadata,
-  resolved AST brand markers, and canonical type records now decide brand
-  identity and argument representation. The focused rename-parity family proves
-  that `ctx` and an arbitrary `region` spelling behave identically; `make gust`
-  proves the committed seed can compile the corrected self-hosted compiler.
 
 - **D-6 — Generic brand arguments lacked declaration-level role metadata —
   closed by Phase 19.8 on 2026-08-21.** Struct and enum templates now record a

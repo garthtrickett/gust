@@ -1,0 +1,8 @@
+kind	requirement	evidence	level
+closure	every Phase 19 status row is DONE	TASK.md Status rows 19.0 through 19.12	1
+semantics	identifier spelling is absent from compiler semantic decisions	legacy authority and spelling comparisons re-derived from compiler sources	1
+rename_invariance	every rename-invariance family has registered evidence	five registry-owned fixture families and guard levels	1
+shared_zone	D-1 is absent while the D-2 closure record remains	docs/SHARED_SEMANTIC_ZONE.md re-derived	1
+stdlib_release	CR-2 is resolved and S1.4 through S1.6 are unblocked	Stdlib-owned roadmap sections re-derived	1
+residue	the generic-source Cranelift deferral remains explicit without fallback	composition capability owner and reason code	1
+non_claim	the closure view is generated from registry authority	view regenerated and compared byte for byte	1

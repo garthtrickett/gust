@@ -332,6 +332,9 @@ jobs:
       - name: Phase 19 cross-feature composition
         run: just guard-cranelift-phase19-composition-contract
 
+      - name: Phase 19 brand identity and value representation closure
+        run: just guard-cranelift-phase19-close
+
       - name: Phase 17 cross-feature runtime composition
         run: just guard-cranelift-phase17-composition-contract
 

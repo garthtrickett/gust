@@ -214,6 +214,8 @@ guard-pr-fast-ci-surface:
       'just guard-cranelift-phase19-spelling-inventory'
       'Phase 19 cross-feature composition'
       'just guard-cranelift-phase19-composition-contract'
+      'Phase 19 brand identity and value representation closure'
+      'just guard-cranelift-phase19-close'
       'Phase 17 cross-feature runtime composition'
       'just guard-cranelift-phase17-composition-contract'
       'phase11-family:'
@@ -16350,6 +16352,16 @@ guard-cranelift-phase19-composition-parity:
     python3 scripts/cranelift_test_levels.py level guard-cranelift-phase19-composition-parity | grep -F $'guard-cranelift-phase19-composition-parity\t2\t' >/dev/null
     just guard-cranelift-phase19-composition-contract
     bash scripts/phase19_composition_parity.sh
+
+guard-cranelift-phase19-close:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Closing Phase 19 brand identity and value representation..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase19-close | grep -F $'guard-cranelift-phase19-close\t1\t' >/dev/null
+    just guard-cranelift-phase19-composition-contract
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase19_closure.py --check
 
 guard-cranelift-phase19-opening-contract:
     #!/usr/bin/env bash

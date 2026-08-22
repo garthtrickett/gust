@@ -49,7 +49,7 @@ is activated separately.
 - [x] Patch 19.9 — Seed Regeneration and Fixed-Point Convergence — DONE
 - [x] Patch 19.10 — Generated-C Equivalence Over the Compiler's Own Sources — DONE
 - [x] Patch 19.11 — Cross-Feature Composition and Complete Differential — DONE
-- [ ] Patch 19.12 — Phase 19 Closure
+- [x] Patch 19.12 — Phase 19 Closure — DONE
 
 Status rows are machine-parsed in the same form the Phase 15–18 close guards
 parse `TASK.md`. Keep each row as `- [ ] Patch 19.N — <Title>` or
@@ -714,3 +714,23 @@ Phase 19 succeeds when:
 Phase 19 closure does not claim a general lifetime system, a brand algebra, or
 any expansion of what brands can express. It claims only that the existing model
 is decided by types instead of by names.
+
+## Phase 19 Closure Record
+
+- D-1 fix: identifier spelling is no longer semantic authority. Canonical
+  branded identity, arena and container classification, and call argument
+  representation follow compiler-owned type records. The defect row is removed
+  from `docs/SHARED_SEMANTIC_ZONE.md`; the historical D-2 closure record remains.
+- CR-2 release: the compiler prerequisite is resolved, and the Stdlib-owned
+  roadmap records S1.4, S1.5, and S1.6 as unblocked.
+- Rename invariance is registered across brand identity, canonical type naming,
+  type-derived classification, argument representation, and name-list removal.
+  The broad brand-identity pair remains Level 3 evidence owned by Cranelift
+  Historical Full.
+- Residue: explicit Cranelift lowering of the generic-source composition fixture
+  remains owned by `phase13_generic_source_to_mir`, deferred before driver
+  discovery with reason
+  `deferred_p13_parameter_argument_target_dependent_abi`. There is no C fallback.
+- Phase 19 adds no lifetime syntax, brand algebra, MIR operation, ABI or layout
+  meaning, runtime symbol, target policy, linker policy, or backend-specific
+  semantics.
