@@ -76,14 +76,14 @@ jobs:
       matrix:
         shard:
           - phase9-core
+          - phase19
+          - phase18
           - phase9g
-          - phase10
-          - phase11
           - phase15
           - phase16
+          - phase10
+          - phase11
           - phase17
-          - phase18
-          - phase19
     steps:
       - name: Checkout
         uses: actions/checkout@v4
