@@ -74,7 +74,11 @@ TRIPLE_EOF
   stage="execution evidence for $target"
   printf 'int main(void) { return 7; }\n' >"$build_dir/exec.c"
   cc "$build_dir/exec.c" -o "$build_dir/exec"
-  set +e; "$build_dir/exec"; actual=$?; set -e
+  if "$build_dir/exec"; then
+    actual=0
+  else
+    actual=$?
+  fi
   if [ "$actual" -ne 7 ]; then
     echo "execution evidence for $target returned $actual, expected 7" >&2; exit 1
   fi
