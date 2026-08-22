@@ -1,41 +1,75 @@
-# Phase 19 — Brand Identity and Value Representation
+# Phase 20 — Whole-Program Differential Qualification
 
 **Lane:** Cranelift. Branches follow the existing `codex/phase<N>-<patch>-<slug>` pattern.
 
 Workflow, Monitoring, Merge, Phase Completion, Runner, and Git Authorization
-policies are defined once in `AGENTS.md` and apply to both lanes. Ownership
-boundaries and the shared coordination zone are defined in `AGENTS.md` and
+policies are defined once in `AGENTS.md`. Ownership boundaries and the shared
+coordination zone are defined in `AGENTS.md` and
 `docs/SHARED_SEMANTIC_ZONE.md`. This document defines only what is specific to
-Phase 19.
+Phase 20.
 
-Phase 19 exists to resolve **CR-2** from `TASK_STDLIB.md` and **D-1** from
-`docs/SHARED_SEMANTIC_ZONE.md`. D-2 was an opening input but closed when the
-deprecated Rust prototype was removed; Phase 19 owns the surviving brand
-identity and value-representation defect, and nothing else.
+Phase 20 closes the known compiler-owned semantic blockers that prevent a
+representative whole program from entering the differential cohort, then
+qualifies that cohort through MIR-to-C and Cranelift. The prerequisites are
+bounded to CR-11/#158, CR-12/#159, CR-13/#160, and the generic
+resource/destructor/scope/construction requirements represented by CR-5 and
+#106. They come before qualification because a corpus that cannot express safe
+library resources, or whose meaning changes with a brand annotation, is not
+representative evidence.
 
-It is also the first prerequisite of the demo deliverable. `docs/DEMO_TARGET_PROGRAM.md`
-lists ten things that must be true before `VISION.md` §0.7's artifact compiles,
-and brand identity is row 1 — because until it lands, whether a value is treated
-as an arena depends on what the variable is called, and the memory model the
-demo is meant to demonstrate is approximated by string matching. That does not
-widen Phase 19's boundary; it is recorded so the phase's priority is legible
-from outside the Cranelift lane.
+The phase does not adopt a general lifetime algebra, arbitrary brand
+relationships, async destructors, fallible implicit cleanup, a complete
+package/application visibility system, new smart-pointer families, or any
+backend-specific stdlib rule. It does not change a stdlib API. Those remain
+separate decisions and separate lane work.
 
 ## Roadmap Activation
 
-Phase 18 closed on 2026-08-20 — Patch 18.19 merged as `ccacc1db` — and the
-operator activated Phase 19 the same day. The Phase Completion Loop in
-`AGENTS.md` authorizes autonomous work through Patch 19.12, subject to the
-patch boundaries, validation requirements, and stop conditions below.
+Phase 19 is fully closed. Its authoritative Historical Full run was
+`32586399260`, event `workflow_dispatch`, completed `success` with 17/17 jobs on
+exact merged `main` `a95e40d8f1cd4e6d31212e98105026d38b488c9b`. The generated
+closure record correction subsequently merged, and the operator independently
+verified `origin/main` at
+`f9c1cf412f9705519fe78ac8fea174c7e75c3bc2`, with no open pull request.
 
-Phase 19 did not begin while Phase 18 was open. Both change the compiler, both
-are bootstrap-sensitive, and interleaving them would have made a bootstrap
-failure ambiguous between two causes.
+On 2026-08-22 the operator explicitly activated this Phase 20 roadmap and its
+implementation loop. After the roadmap pull request merges, the Phase
+Completion Loop in `AGENTS.md` authorizes autonomous work through Patch 20.17,
+subject to the patch boundaries, validation requirements, shared-zone rules,
+and stop conditions below.
 
-Activating Phase 19 does not activate the Stdlib lane, and vice versa. Each lane
-is activated separately.
+Activation is Cranelift-only. It does not authorize edits to `TASK_STDLIB.md`,
+does not activate another lane, and does not authorize Phase 21.
 
 ## Status
+
+- [ ] Patch 20.0 — Opening Evidence and Qualification Authority
+- [ ] Patch 20.1 — Canonical Brand-Matching Primitives
+- [ ] Patch 20.2 — Nested Brand Annotation Correction (CR-11/#158)
+- [ ] Patch 20.3 — Exact Branded Assignment and Annotation (CR-12/#159)
+- [ ] Patch 20.4 — Arena Lifecycle State Authority
+- [ ] Patch 20.5 — Arena.Free Receiver Invalidation (CR-13/#160)
+- [ ] Patch 20.6 — Inert Resource Declaration and Visibility Surface
+- [ ] Patch 20.7 — Resource Declaration Migration Under the No-op
+- [ ] Patch 20.8 — Resource Declaration and Construction Enforcement
+- [ ] Patch 20.9 — Acquisition-Site Resource Obligations (#106)
+- [ ] Patch 20.10 — Generic Scope and Destructor Enforcement (CR-5)
+- [ ] Patch 20.11 — Bootstrap Seed Regeneration and Fixed-Point Convergence
+- [ ] Patch 20.12 — Whole-Program Corpus and Observable Contract
+- [ ] Patch 20.13 — Stdlib and Runtime Component Differential
+- [ ] Patch 20.14 — Generated-MIR, Scale, and Resource-Use Qualification
+- [ ] Patch 20.15 — Long-Lived and Concurrent Resource Differential
+- [ ] Patch 20.16 — Cross-Feature Qualification and Residue Audit
+- [ ] Patch 20.17 — Phase 20 Closure
+
+Status rows are machine-parsed in the same form the Phase 15–19 close guards
+parse `TASK.md`. Keep each row as `- [ ] Patch 20.N — <Title>` or
+`- [x] Patch 20.N — <Title> — DONE`, with no trailing annotation.
+
+## Immutable Phase 19 Completion Record
+
+These rows describe the closed parent phase and are not active Phase 20 work.
+They remain in `TASK.md` because historical guards consume them.
 
 - [x] Patch 19.0 — Opening Inventory and Phase 18 Residual Rebase — DONE
 - [x] Patch 19.1 — Identifier-Spelling Decision Inventory — DONE
@@ -50,10 +84,6 @@ is activated separately.
 - [x] Patch 19.10 — Generated-C Equivalence Over the Compiler's Own Sources — DONE
 - [x] Patch 19.11 — Cross-Feature Composition and Complete Differential — DONE
 - [x] Patch 19.12 — Phase 19 Closure — DONE
-
-Status rows are machine-parsed in the same form the Phase 15–18 close guards
-parse `TASK.md`. Keep each row as `- [ ] Patch 19.N — <Title>` or
-`- [x] Patch 19.N — <Title> — DONE`, with no trailing annotation.
 
 ## Immutable Phase 18 Completion Record
 
@@ -147,6 +177,683 @@ The Phase 16 closure guard consumes this historical record transitively. These r
 ---
 
 ## Purpose
+
+Phase 20 turns backend parity from a collection of feature witnesses into a
+qualification claim about representative Gust software. It first removes the
+five known compiler-owned reasons that the required corpus cannot yet be
+expressed faithfully:
+
+- CR-11/#158: explicit Graph annotations use spelling-derived nesting checks,
+  reject valid nested brands, and lose the intended type after the diagnostic;
+- CR-12/#159: assignment and annotation matching erase exact brand identity, so
+  a destination branded for one arena can accept a value from another;
+- CR-13/#160: `Arena.Free` returns `Void` but does not invalidate the live arena
+  identity, so later allocation into the freed receiver type-checks;
+- CR-5: user-defined linear resources lack source-declared destructor identity,
+  general construction opacity, and complete generic scope enforcement; and
+- #106: resource obligations begin at a named binding rather than at the
+  acquisition expression, so an ignored `os.OpenDir(...)` leaks without a
+  diagnostic.
+
+The phase then exercises multi-file programs, existing stdlib and runtime
+components, nested and mixed features, generated canonical MIR, large
+functions/modules, long-lived processes, and concurrent resource use. For each
+supported cohort, MIR-to-C remains the semantic oracle and Cranelift remains an
+explicit no-fallback backend.
+
+## Live Starting State
+
+The roadmap was derived from exact `main`
+`f9c1cf412f9705519fe78ac8fea174c7e75c3bc2`, not from issue summaries alone.
+Focused compiler-backed probes on 2026-08-22 established:
+
+- the CR-11 fixture exits 1 with three `Brand Nesting Restriction` diagnostics
+  followed by the secondary `Declared Void` annotation mismatch;
+- the CR-12 wrong-brand Clone destination exits 0;
+- the CR-13 allocation through a freed arena receiver exits 0;
+- an ignored `os.OpenDir(...)` acquisition exits 0; and
+- the same directory value assigned to a local exits 1 with the existing
+  resource-leak diagnostic.
+
+The compiler already has canonical `BrandIdentity` records, but
+`env_check_brand_nesting`, `env_is_element_allowed_in_brand`, and portions of
+`types_match` still reconstruct identity through stripped type-name strings.
+`Arena.Free` has no live-state transition. The Step 5.1 status matrix confirms
+that compiler-backed provenance and focused non-laundering coverage are green.
+The Step 5.2 matrix confirms real Resource declaration/assignment registration,
+move transitions, defer scheduling, cleanup-boundary validation, and directory
+parity routing; its own report still classifies generalized lifecycle
+enforcement as deferred. Phase 20 extends those paths rather than creating a
+second resource system.
+
+## Semantic Decisions Made by This Roadmap
+
+These are Cranelift-lane decisions under `docs/VISION.md` §0.15. They are
+recorded here so implementation does not reopen them patch by patch.
+
+### Exact brands
+
+Brand equality and legal nesting compare resolved `BrandIdentity` values.
+Canonical printed type names remain diagnostics/code-generation material, not
+semantic keys. A failed match preserves both resolved operand types so later
+diagnostics cannot convert the expression to an unrelated `Void` mismatch.
+
+### Arena liveness
+
+Arena liveness belongs to the resolved arena identity, not a local spelling.
+`Arena.Free` consumes that live identity. Every alias and field path resolving
+to it observes the same terminal state. A second free and an allocation, clone,
+or write through a freed identity are rejected before backend selection.
+
+### User-declared resources
+
+The additive source surface is:
+
+```gust
+#[linear]
+#[destructor(close_guard)]
+#[opaque]
+type Guard {
+    token: int,
+}
+
+#[private]
+func close_guard(value: Guard) Void {
+    // synchronous, infallible cleanup
+}
+```
+
+`#[destructor(name)]` registers one same-module destructor for a linear type.
+It must accept exactly one owned value of that type and return `Void`; it cannot
+be extern, unsafe, generic over a different resource, asynchronous, or fallible.
+`#[opaque]` makes construction and direct representation access module-owned.
+`#[private]` makes a declaration callable only from its defining module, except
+for the compiler's validated cleanup invocation. These are opt-in module
+boundaries, not a default-visibility change and not the full package/application
+visibility system described elsewhere.
+
+The syntax lands inert, every compiler-owned in-scope declaration and use is
+migrated under that no-op, and only then does enforcement turn on. No patch may
+combine those three stages.
+
+### Acquisition and cleanup
+
+A resource obligation begins when a tracking-eligible value is acquired, even
+if it is never bound. Binding, assignment, return, aggregate transport, and
+payload extraction transfer the same obligation; they do not create an
+unrelated one. A discarded temporary must be consumed or scheduled by the end
+of its full expression. Lexical automatic cleanup is synchronous and
+infallible, runs once in reverse declaration order, and recursively cleans
+resource fields in reverse field order. Existing explicit close, move, defer,
+return, and failure policies remain authoritative.
+
+## Scope Boundary
+
+Included:
+
+- exact brand nesting/matching and diagnostic type preservation for CR-11;
+- exact branded assignment/annotation/call boundaries for CR-12;
+- identity-keyed arena liveness and `Arena.Free` invalidation for CR-13;
+- the inert/migrate/enforce sequence for destructor declaration, type opacity,
+  and private cleanup declarations;
+- acquisition-time resource identity, generic transfer, lexical scope cleanup,
+  and nested resource-field destruction for CR-5/#106;
+- representative multi-file, stdlib/runtime, generated-MIR, scale,
+  long-lived, concurrent, and cross-feature differential qualification; and
+- explicit registry decisions for every selected, deferred, or unsupported
+  cohort, with zero unexplained divergence.
+
+Excluded:
+
+- edits to `TASK_STDLIB.md` or implementation of a stdlib-owned patch;
+- general lifetime syntax, brand algebra, arbitrary casts, or escape hatches;
+- async or fallible implicit destructors;
+- default-private modules or package/application visibility tiers;
+- a new MIR instruction or a change to existing MIR meaning;
+- ABI, layout, runtime-symbol, target, or linker changes not forced by a
+  separately registered decision; and
+- Phase 21 self-hosting work.
+
+If implementation proves that one of the included behaviours requires an
+excluded semantic expansion, register the decision-tree node and follow the
+shared-zone authority process. Difficulty or patch size alone is not a stop
+condition.
+
+## Validation Model
+
+- Level 1 guards validate source authority, registry/schema consistency,
+  diagnostic identity, deterministic fixtures, and absence of fallback.
+- Level 2 differentials compile the same canonical MIR through MIR-to-C and
+  Cranelift and compare the observables selected by each patch.
+- Level 3 remains `Cranelift Historical Full`; it is run separately and is
+  required green on exact merged `main` before Phase 20 closure.
+- Bootstrap-sensitive patches run `make gust` and the focused semantic tests.
+  Patch 20.11 alone owns the generated `gust_v4.c` seed update and proves the
+  three-stage fixed point with `make bootstrap`.
+- Local validation uses focused guards. The broad historical suite is not a
+  substitute for exact-head pull-request CI and is not run locally by default.
+
+Each new guard must be registered at its real test level. Level 1 and selected
+Level 2 guards enter normal pull-request workflows. Costly stress, generated
+corpus, and long-lived cases remain Level 3 where the registry says so; no
+closure text may claim that merely being runnable means they pass.
+
+---
+
+## Patch 20.0 — Opening Evidence and Qualification Authority
+
+**Purpose**
+
+Freeze the verified starting state and define one compiler-owned manifest for
+the Phase 20 qualification cohort before changing semantics.
+
+**Steps**
+
+- Add a Phase 20 opening guard and registry/schema rows.
+- Encode the five focused starting probes above as stable negative/positive
+  evidence without altering their current verdicts.
+- Inventory every existing whole-program, composition, deferred-source, and
+  Historical Full pair by feature owner and test level.
+- Define the qualification-observable vocabulary: compile result, exit status,
+  stdout, stderr/diagnostic code and span, resource terminal state, and
+  sandboxed filesystem effects.
+- Record selected, deferred, and unsupported cohorts with owner, reason, and
+  falsifier; no unnamed bucket is permitted.
+
+**Test Level:** Level 1.
+
+**Exit Gate**
+
+The live baseline is reproducible, the qualification cohort is generated from
+one authority, and this patch changes no Gust program meaning.
+
+## Patch 20.1 — Canonical Brand-Matching Primitives
+
+**Purpose**
+
+Provide one resolved-identity comparison path before changing CR-11 or CR-12
+behaviour.
+
+**Steps**
+
+- Centralize equality, nesting-membership, and mismatch-description operations
+  over `BrandIdentity`.
+- Route shadow/instrumentation checks through the new operations while leaving
+  current acceptance and diagnostics authoritative.
+- Prove nested identities, distinct same-shaped arenas, fields, aliases, and
+  generic substitutions retain their identity through resolution.
+- Freeze the remaining string-cleaning callers so later patches remove rather
+  than duplicate them.
+
+**Test Level:** Level 1.
+
+**Exit Gate**
+
+All inputs needed by CR-11 and CR-12 have a canonical identity comparison, and
+the patch is behaviour-neutral.
+
+## Patch 20.2 — Nested Brand Annotation Correction (CR-11/#158)
+
+**Purpose**
+
+Make explicit nested Graph annotations use the same resolved brand identities
+as inference.
+
+**Steps**
+
+- Replace spelling/stripping decisions in brand nesting with Patch 20.1
+  identity operations.
+- Preserve the resolved expression and declared types after a primary nesting
+  diagnostic; do not synthesize the secondary `Void` mismatch.
+- Cover two and three nested brands, explicit and inferred declarations,
+  aliases, fields, and a genuinely illegal escape.
+- Run the same accepted program through MIR-to-C and Cranelift.
+
+**Test Level:** Levels 1 and 2.
+
+**Exit Gate**
+
+Issue #158's valid explicit Graph annotation compiles with the same meaning as
+the inferred form; invalid nesting still fails once with the intended code.
+
+## Patch 20.3 — Exact Branded Assignment and Annotation (CR-12/#159)
+
+**Purpose**
+
+Reject values whose structure matches but whose resolved brand identity does
+not.
+
+**Steps**
+
+- Make assignment, annotation, argument, return, and relevant generic matching
+  compare exact identities after normal substitution.
+- Keep wildcard/unbranded compatibility only where the existing type rule
+  explicitly authorizes it.
+- Add the wrong-brand Clone destination from #159 plus direct assignment,
+  Index, field, alias, and call-boundary variants.
+- Do not special-case Clone, Index, Graph, or an individual stdlib type.
+
+**Test Level:** Levels 1 and 2.
+
+**Exit Gate**
+
+The #159 program is rejected by the generic type boundary, same-brand programs
+remain accepted, and both backends receive identical canonical MIR.
+
+## Patch 20.4 — Arena Lifecycle State Authority
+
+**Purpose**
+
+Represent arena liveness by canonical identity before rejecting new programs.
+
+**Steps**
+
+- Add live/freed lifecycle state keyed by resolved arena identity.
+- Propagate the identity through locals, aliases, fields, parameters, and
+  generic substitutions.
+- Instrument allocation, clone, write, and free sites against the state while
+  preserving current acceptance.
+- Prove two distinct arenas and multiple aliases do not collapse into one
+  spelling-derived state.
+
+**Test Level:** Level 1.
+
+**Exit Gate**
+
+Every CR-13 operation resolves to one arena identity and lifecycle state, with
+no behavioural enforcement yet.
+
+## Patch 20.5 — Arena.Free Receiver Invalidation (CR-13/#160)
+
+**Purpose**
+
+Make `Arena.Free` consume the receiver's live arena identity.
+
+**Steps**
+
+- Transition the Patch 20.4 identity to freed on `Arena.Free`.
+- Reject later allocation, Clone destination use, write, and repeated Free
+  through any alias or field resolving to that identity.
+- Preserve other independently live arenas.
+- Emit one stable semantic diagnostic before either backend and add accepted
+  and rejected differential fixtures.
+
+**Test Level:** Levels 1 and 2.
+
+**Exit Gate**
+
+Issue #160 is rejected, alias laundering cannot revive the receiver, and the
+accepted live-arena cohort remains backend-identical.
+
+## Patch 20.6 — Inert Resource Declaration and Visibility Surface
+
+**Purpose**
+
+Add the source vocabulary required for user resources without changing any
+program's permissions or cleanup behaviour.
+
+**Steps**
+
+- Parse and preserve `#[destructor(name)]`, `#[opaque]`, and `#[private]`.
+- Store the declarations in AST and type metadata, but deliberately do not
+  enforce signature, access, construction, or cleanup rules.
+- Add parser round-trip, malformed-attribute, duplicate/conflict, and metadata
+  tests.
+- Add a guard proving all three attributes are still semantic no-ops in this
+  patch.
+
+**Test Level:** Level 1 plus `make gust`.
+
+**Exit Gate**
+
+The checked-in seed can compile the extended self-hosted parser/typechecker,
+the new surface is inert, and no enforcement is enabled early.
+
+## Patch 20.7 — Resource Declaration Migration Under the No-op
+
+**Purpose**
+
+Migrate the complete compiler-owned in-scope resource cohort while the new
+surface remains inert.
+
+**Steps**
+
+- Annotate compiler-owned linear-resource fixtures with their destructor,
+  opacity, and private cleanup declarations.
+- Represent the directory parity resource through the same canonical metadata
+  bridge while preserving its existing source compatibility and diagnostics.
+- Update every compiler-owned construction, field access, explicit close, and
+  defer site that enforcement will affect.
+- Add an inventory guard proving no in-scope declaration or use remains on an
+  unclassified migration path.
+
+**Test Level:** Level 1 plus `make gust` and focused existing Resource guards.
+
+**Exit Gate**
+
+The entire compiler-owned cohort builds under the no-op syntax and behaviour is
+unchanged. Enforcement is still off.
+
+## Patch 20.8 — Resource Declaration and Construction Enforcement
+
+**Purpose**
+
+Enable the declaration, destructor-signature, opacity, and private-call rules
+only after the migration is complete.
+
+**Steps**
+
+- Validate destructor existence, same-module ownership, exact owned parameter,
+  `Void` result, and synchronous/infallible/non-extern status.
+- Reject construction or direct representation access to an opaque type outside
+  its defining module.
+- Reject ordinary calls/references to private declarations outside that module,
+  while allowing the compiler's validated cleanup invocation.
+- Cover same-module success, cross-module construction/field/call failures,
+  forged resource rejection, and backend-neutral diagnostics.
+
+**Test Level:** Levels 1 and 2 plus `make gust`.
+
+**Exit Gate**
+
+A library can expose an acquirer and safe methods without exposing a forgeable
+constructor or cleanup primitive, using generic type/module rules.
+
+## Patch 20.9 — Acquisition-Site Resource Obligations (#106)
+
+**Purpose**
+
+Attach linear-resource ownership to acquisition rather than to a later local
+binding.
+
+**Steps**
+
+- Allocate a stable expression/resource identity when a tracking-eligible
+  acquisition succeeds.
+- Transfer that identity through binding, assignment, return, aggregate
+  transport, and payload extraction.
+- Require an ignored temporary acquisition to be consumed or scheduled by the
+  end of its full expression.
+- Cover both #106 variants, conditional acquisition, returned resources,
+  payloads, aliases, and a non-resource temporary control.
+- Use the same path for directory and user-declared resources.
+
+**Test Level:** Levels 1 and 2.
+
+**Exit Gate**
+
+Both bound and unbound leaking acquisitions fail through one generic obligation
+path, while valid transfers do not acquire duplicate obligations.
+
+## Patch 20.10 — Generic Scope and Destructor Enforcement (CR-5)
+
+**Purpose**
+
+Complete generic exactly-once resource cleanup across lexical scopes and
+resource-bearing aggregates.
+
+**Steps**
+
+- Invoke registered destructors for owned resources on normal scope exit and
+  preserve the established return, structured-exit, and failure policies.
+- Run cleanup in reverse declaration order and resource-field cleanup in reverse
+  field order.
+- Preserve explicit close/defer interactions, move terminal states,
+  reassignment rules, and diagnostic deduplication.
+- Generalize directory parity fully; retain compatibility storage only where a
+  guard proves it has no enforcement read.
+- Add nested scopes, branches, loops, early returns, aggregates, manual close,
+  scheduled cleanup, double close, use-after-move, and constructor-opacity
+  composition fixtures through both backends.
+
+**Test Level:** Levels 1 and 2 plus focused Resource suites.
+
+**Exit Gate**
+
+CR-5's compiler prerequisites are available generically: source-declared
+destructor identity, non-forgeable construction, acquisition-time ownership,
+scope cleanup, and exactly-once destruction all agree through MIR-to-C and
+Cranelift.
+
+## Patch 20.11 — Bootstrap Seed Regeneration and Fixed-Point Convergence
+
+**Purpose**
+
+Regenerate the C bootstrap seed after the self-hosted semantic cluster, in an
+isolated seed-only patch.
+
+**Steps**
+
+- Start from merged Patch 20.10.
+- Run `make bootstrap` and require stage 2 and stage 3 byte identity.
+- Commit only the generated `gust_v4.c` change and seed-specific authority.
+- Re-run the focused Phase 20 semantic guards with the converged seed.
+
+**Test Level:** Level 1 plus bootstrap convergence.
+
+**Exit Gate**
+
+The seed is generated, not hand-edited; the patch contains no capability
+change; and the three-stage compiler is at a fixed point.
+
+## Patch 20.12 — Whole-Program Corpus and Observable Contract
+
+**Purpose**
+
+Define representative programs and a reproducible comparison contract before
+claiming whole-program parity.
+
+**Steps**
+
+- Add selected multi-file programs combining modules, generics, brands,
+  resources, aggregates, control flow, I/O, and failure diagnostics.
+- Capture compile result, process exit status, stdout, stderr/diagnostics,
+  resource terminal state, and sandboxed filesystem effects.
+- Normalize only explicitly declared environmental noise; never normalize a
+  semantic difference.
+- Run each selected program from the same canonical MIR through MIR-to-C and
+  Cranelift with no fallback.
+
+**Test Level:** Level 2, with costly cases registered Level 3.
+
+**Exit Gate**
+
+The corpus and observable contract are registry-derived, deterministic, and
+produce no unexplained difference for the selected initial cohort.
+
+## Patch 20.13 — Stdlib and Runtime Component Differential
+
+**Purpose**
+
+Qualify existing safe library and runtime components as program building blocks
+without changing their APIs.
+
+**Steps**
+
+- Select currently implemented collection, string, filesystem, allocation,
+  threading/synchronization, and runtime-boundary components whose Cranelift
+  routes are declared supported.
+- Exercise them across module boundaries and in resource-bearing programs.
+- Compare outputs, status, cleanup, filesystem effects, and diagnostics.
+- Declare every excluded component with its existing owner/reason/falsifier;
+  do not silently shrink the cohort or use C fallback.
+
+**Test Level:** Levels 2 and 3 according to cost.
+
+**Exit Gate**
+
+Every selected component has a whole-program differential, and every excluded
+component is an explicit registry decision rather than an unexplained hole.
+
+## Patch 20.14 — Generated-MIR, Scale, and Resource-Use Qualification
+
+**Purpose**
+
+Test canonical MIR combinations and compiler scale beyond hand-written source
+fixtures.
+
+**Steps**
+
+- Add a deterministic, dependency-free generator for valid canonical MIR
+  combinations within declared feature constraints.
+- Compare both backends over a recorded seed set and preserve minimized failing
+  cases as fixtures.
+- Add large-function and large-module cohorts.
+- Record compile time and peak memory with a reproducible measurement protocol,
+  baseline, sample count, and explicit threshold policy.
+
+**Test Level:** Level 2 for small deterministic samples; Level 3 for the full
+generated and scale cohorts.
+
+**Exit Gate**
+
+The bounded generated set has zero unexplained divergence, stress cases finish
+inside their declared resource budgets, and no threshold can drift silently.
+
+## Patch 20.15 — Long-Lived and Concurrent Resource Differential
+
+**Purpose**
+
+Qualify lifecycle semantics where bugs appear only after repetition or across
+threads.
+
+**Steps**
+
+- Exercise repeated acquire/transfer/close cycles, nested resource aggregates,
+  and bounded long-lived allocation.
+- Exercise selected threading and synchronization paths with deterministic
+  invariants rather than scheduler-order output.
+- Compare exactly-once cleanup, terminal states, exit status, and externally
+  visible effects across both backends.
+- Keep unsupported concurrency/resource combinations explicit and diagnostic;
+  do not weaken them into backend-specific behaviour.
+
+**Test Level:** Level 3, with small deterministic smoke cases at Level 2.
+
+**Exit Gate**
+
+The selected long-lived and concurrent cohort completes without leak,
+double-destruction, deadlock, fallback, or unexplained backend divergence.
+
+## Patch 20.16 — Cross-Feature Qualification and Residue Audit
+
+**Purpose**
+
+Compose the full Phase 20 cohort and make every remaining difference explicit.
+
+**Steps**
+
+- Run brand identity/liveness, user resources, modules, stdlib/runtime, scale,
+  and concurrency in mixed programs.
+- Audit source-to-MIR and canonical-MIR-to-backend registries for stale,
+  duplicated, orphaned, or unowned rows.
+- Resolve every selected-cohort divergence or register a bounded deferral with
+  owner, reason, diagnostic, and falsifier.
+- Prove no selected route falls back from Cranelift to generated C.
+- Generate the Phase 20 readiness record from its compiler-owned source.
+
+**Test Level:** Levels 1, 2, and the registered Level 3 composition cohort.
+
+**Exit Gate**
+
+All selected pairs pass, all exclusions are explained and owned, there are zero
+unexplained divergences, and the generated record says Phase 20 is ready for an
+authoritative Historical Full run.
+
+## Patch 20.17 — Phase 20 Closure
+
+**Purpose**
+
+Close the phase only after exact merged-main authoritative evidence exists.
+
+**Steps**
+
+- Confirm every Phase 20 Status row is `DONE` and every criterion below is met.
+- Confirm all compiler-owned issue scenarios are resolved by focused guards;
+  issue/coordination bookkeeping follows its owning lane and is not simulated by
+  editing `TASK_STDLIB.md`.
+- Run `Cranelift Historical Full` against the exact merged `main` containing
+  Patch 20.16.
+- Require the full run to complete successfully, cite run ID, event, exact
+  40-character head SHA, and job population, then update the generated closure
+  source and artifact coherently.
+- Add and pass the Phase 20 closure guard and record terminal lane state.
+
+**Test Level:** Level 1 closure guard plus authoritative Level 3.
+
+**Exit Gate**
+
+The most recent applicable Historical Full run on exact merged `main` is green,
+the generated closure record agrees with the terminal record, all review
+conversations are resolved, and Phase 20 is closed. A merely available or still
+running Level 3 suite does not satisfy this gate.
+
+## Recommended Implementation Order
+
+20.0 evidence/authority
+→ 20.1 inert brand primitives
+→ 20.2 CR-11
+→ 20.3 CR-12
+→ 20.4 inert arena lifecycle authority
+→ 20.5 CR-13
+→ 20.6 inert declaration surface
+→ 20.7 full no-op migration
+→ 20.8 declaration/visibility enforcement
+→ 20.9 acquisition identity
+→ 20.10 generic cleanup
+→ 20.11 seed convergence
+→ 20.12 observable corpus
+→ 20.13 stdlib/runtime components
+→ 20.14 generated MIR and scale
+→ 20.15 long-lived/concurrent resources
+→ 20.16 complete qualification
+→ 20.17 closure.
+
+The no-op boundaries at 20.1/20.2, 20.4/20.5, and especially
+20.6/20.7/20.8 are load-bearing. They prevent the self-hosted compiler from
+having to understand and enforce a new idiom in the same bootstrap step.
+
+## Phase 20 Success Criteria
+
+Phase 20 succeeds when:
+
+- explicit and inferred nested brand forms have identical meaning;
+- wrong-brand assignments, annotations, arguments, and returns are rejected by
+  exact resolved identity rather than by callee-specific checks;
+- `Arena.Free` invalidates its canonical receiver identity through all aliases;
+- user-defined linear resources declare a validated destructor and can keep
+  construction, representation, and cleanup authority inside their module;
+- resource obligations begin at acquisition and transfer exactly once through
+  binding, aggregates, returns, close, defer, and lexical cleanup;
+- automatic cleanup is synchronous, infallible, deterministic, reverse-order,
+  and backend-identical;
+- representative multi-file software and selected existing stdlib/runtime
+  components match in outputs, status, diagnostics, resource state, and
+  sandboxed filesystem effects;
+- generated canonical MIR, large functions/modules, and bounded resource-use
+  cohorts pass their declared budgets;
+- long-lived and concurrent selected programs have deterministic invariants and
+  no leak, double destruction, deadlock, fallback, or unexplained divergence;
+- every unsupported or deferred cohort is registry-owned with a reason and
+  falsifier, and the selected cohort has zero unexplained differences;
+- the bootstrap seed is regenerated alone and reaches a three-stage fixed
+  point; and
+- an authoritative `Cranelift Historical Full` run completes successfully on
+  the exact merged Phase 20 head and is cited in both closure and terminal
+  records.
+
+Phase 20 does not claim universal language coverage or Phase 21 self-hosting.
+It claims that the declared representative cohort is semantically coherent,
+fully explained, and differentially qualified.
+
+---
+
+## Immutable Phase 19 Detailed Record
+
+The remaining sections are the detailed record of the closed parent phase.
+They are retained because Phase 19 guards consume its exact closure evidence.
+
+## Phase 19 Purpose
 
 Phase 19 makes brand identity and value representation follow from the type
 system rather than from how a variable happens to be spelled.
@@ -676,7 +1383,7 @@ removed rather than merely documented. Authoritative Historical Full run
 **a95e40d8f1cd4e6d31212e98105026d38b488c9b**, with **17/17** jobs completed
 successfully; Phase 19 is closed.
 
-## Recommended Implementation Order
+## Phase 19 Recommended Implementation Order
 
 Patch 19.0 opening inventory
 → 19.1 spelling inventory and the `rename-invariance` baseline
