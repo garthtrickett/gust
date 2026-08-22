@@ -31,8 +31,12 @@ and **whether the compiler actually does it today**.
 correctly deferred per `docs/VISION.md` Part status markers. `VIOLATED` is a
 defect, and every `VIOLATED` row names its owner.
 
-**Verified 2026-08-20 against `b47d0049` (`main`).** Reproductions in the
-Evidence section below; row-level citations are `path:line` pinned to that commit.
+**Ledger-wide evidence was verified 2026-08-20 against `b47d0049` (`main`).**
+D-1 and the resulting counts were refreshed 2026-08-22 against
+`f9c1cf412f9705519fe78ac8fea174c7e75c3bc2`; the Phase 19 closure claim is at
+`docs/PHASE19_CLOSURE.md:6-17`. Other row-level citations remain pinned to the
+commit named in their evidence block rather than being silently presented as a
+new full-ledger audit.
 
 ### Which compiler a citation refers to
 
@@ -62,7 +66,7 @@ when the backend does.
 | # | Concern | The one way | Rejected | Status |
 | --- | --- | --- | --- | --- |
 | 1 | Memory | Branded contexts and arenas | GC; malloc/free; refcount by default | **HOLDS** — E15 |
-| 2 | Brand identity | Type-carried context brand | brand by naming convention | **VIOLATED** — D-1 |
+| 2 | Brand identity | Type-carried context brand | brand by naming convention | **HOLDS** — D-1 closure record |
 | 3 | Absence | `Option[T]` | null in safe code | **PARTIAL** — E1 |
 | 4 | Failure | `Result[T, E]` with `?` propagation | exceptions; error codes | **ABSENT** — E2 |
 | 5 | Fallible binding | `guard x := … else { … }` | unchecked unwrap | **HOLDS** — E15 |
@@ -107,63 +111,49 @@ when the backend does.
 | 43 | Editions | Source compatibility within an edition; editions are the controlled escape hatch | silent meaning changes | **ABSENT** — E25 |
 | 44 | Opacity | A value can be made unprintable and unloggable by its type | secrets leaking into logs and errors | **ABSENT** — E26 |
 
-Counts: 9 `HOLDS`, 9 `PARTIAL`, 8 `VIOLATED`, 1 `DEFERRED`, 18 `ABSENT`.
+Counts: 10 `HOLDS`, 9 `PARTIAL`, 7 `VIOLATED`, 1 `DEFERRED`, 18 `ABSENT`.
 
-Row 27 is the one in motion. It is the declared priority and several other rows
-resolve with it — see E17.
+Row 27 remains the declared implementation priority. Phase 20's draft roadmap
+continues that backend work and separately schedules the CR-11 and CR-12 defects
+that limit row 36; a draft roadmap is direction, not completed evidence.
 
 | Row | Rule | Status | Owner |
 | --- | --- | --- | --- |
-| 2 | Brand identity | VIOLATED | Phase 19 (`TASK.md`), active |
 | 6 | Panic scope | VIOLATED | `TASK_STDLIB.md` CR-3, issue #91 — unscheduled |
 | 17 | Shared ownership | VIOLATED | `TASK_STDLIB.md` CR-9 — new |
 | 19 | Concurrency | VIOLATED | `TASK_STDLIB.md` CR-8, issue #101 — new |
 | 33 | Channel ownership | VIOLATED | issue #101 — same root cause |
 | 34 | Host access | VIOLATED | unowned — closes with §0.7 Track A |
 | 29 | Overflow | VIOLATED | issue #103 — new |
+| 45 | One spelling of absence | VIOLATED | `docs/PHASES_5_AND_6.md` Phase 6.2 — after C deprecation, unscheduled |
 | 14 | Mutation | DEFERRED | `TASK_STDLIB.md` CR-6 — rule withdrawn, unscheduled |
 
-Every one has a written owner and none is currently scheduled. That is the
-honest summary: five rules are known to be broken and one was withdrawn, and no
-lane is working on any of them.
+Six of the seven violations have a written coordination owner; host access is
+unowned, and mutation was withdrawn rather than left as an unowned violation.
+None of those rows is currently scheduled. Brand identity is no longer in this
+table: Phase 19 closed D-1, while the narrower CR-11 and CR-12 defects remain
+captured by row 36's `PARTIAL` score.
 
 ---
 
 ## Evidence
 
-### D-1 — brand identity is inferred from identifier spelling (row 2)
+### D-1 — resolved: brand identity is type-carried (row 2)
 
-Owned by **Phase 19** (`TASK.md`), active since 2026-08-20. Recorded in
-`docs/SHARED_SEMANTIC_ZONE.md` as D-1 and in `TASK_STDLIB.md` as CR-2. D-2,
-the former Rust/self-hosted divergence, closed when the prototype was removed.
+Phase 19 removed identifier spelling as semantic authority. The generated
+closure record at `docs/PHASE19_CLOSURE.md:3-17` is derived from the Cranelift
+feature registry and records five rename-invariance families at
+`docs/PHASE19_CLOSURE.md:24-30`. Its authoritative
+Historical Full run `32586399260`, event `workflow_dispatch`, completed
+`success` with 17/17 jobs on exact merged `main`
+`a95e40d8f1cd4e6d31212e98105026d38b488c9b`.
 
-In the live compiler:
-
-```
-$ grep -n 'connCtx' compiler/codegen.gst
-658:        brand_bases.Push("connCtx");
-762:            if std.str_eq(name, "connCtx") == 1 { is_brand_name = 1; }
-767:            if codegen_ends_with(name, "_connCtx") == 1 { is_brand_name = 1; }
-896:  if std.str_eq(var_name, "ctx") == 1 || … || std.str_eq(var_name, "a") == 1 {
-1101: if std.str_eq(var_name, "ctx") == 1 || … || std.str_eq(var_name, "a") == 1 {
-```
-
-The typechecker carries the same list at `compiler/typechecker.gst:4975,5172`
-and applies it at `:5629,5778,6713`. The generated
-`compiler/CRANELIFT_PHASE19_SPELLING_INVENTORY.md` is the authoritative current
-site list.
-
-> **Citation correction, 2026-08-20.** An earlier revision of this row cited
-> `compiler/typechecker.gst:4953,5151`, inherited from
-> `docs/STDLIB_SURFACE_FINDINGS.md` F3b, which is pinned to `6c94728d`. Those
-> lines have since drifted: `:4953` is now inside a Void-return path and `:5151`
-> is `typechecker_matches_template_prefix`. Neither is brand matching. The
-> defect is unchanged and the codegen citations were always correct — only the
-> typechecker line numbers were stale, and they were propagated here without
-> being re-read.
-
-A local `str` named `a` is emitted as `&a`. Renaming the variable fixes the
-program. Full reproduction: `docs/STDLIB_SURFACE_FINDINGS.md` F3.
+The closed rule is narrower than "all brand operations are correct." CR-11/#158
+records a nested explicit-annotation path that disagrees with inference, and
+CR-12/#159 records assignment that loses exact Clone-result brand identity.
+Those defects do not restore spelling as identity authority, so row 2 is
+`HOLDS`; they limit the cross-context enforcement claim in row 36, which remains
+`PARTIAL`.
 
 ### E1 — `Option` exists, but constructing one requires `unsafe` (row 3)
 
@@ -1058,7 +1048,7 @@ There is no `private`-by-default and no package or application level, so every
 declaration a module resolves is reachable. `ABSENT` rather than `VIOLATED`:
 nothing claims to enforce it and no mechanism does the opposite.
 
-### E20 — §28's resource opt-in is real; §25's enforcement inherits D-1 (rows 16, 36)
+### E20 — §28's resource opt-in is real; §25 has narrower matching defects (rows 16, 36)
 
 Two Part VII claims that check out better than the surrounding rows, with one
 qualification each.
@@ -1114,17 +1104,17 @@ does not compose.**
 "propagating transitively" is the half that does not hold, alongside CR-5's
 missing destructor declaration for user-defined types.
 
-**§25 is enforced, by a mechanism D-1 undermines.** Brands are part of the type,
-so a value from one context is not assignable where another is expected, and the
-typechecker emits dedicated diagnostics — `[BrandMismatch]` for `Arena.get_ref`
-and `Arena.Set/Write` (`compiler/typechecker.gst:2661,2668,2676,2709`) and
-"Brand Nesting. Mismatched nested brand" (`:1716,:1740`).
+**§25 is enforced, and Phase 19 repaired its identity authority.** Brands are
+part of the type, so a value from one context is not assignable where another is
+expected, and the typechecker emits dedicated diagnostics — `[BrandMismatch]`
+for `Arena.get_ref` and `Arena.Set/Write`, plus a brand-nesting diagnostic.
 
-That is real enforcement, and it is why row 36 is `PARTIAL` rather than `ABSENT`.
-The qualification is that the whole mechanism rests on brand *identity*, which
-D-1 derives from identifier spelling rather than from the type. A rule enforced
-by comparing brands is only as sound as the way brands are identified, so row 36
-cannot be stronger than row 2 until Phase 19 lands.
+That is real enforcement, and it is why row 36 is `PARTIAL` rather than
+`ABSENT`. Phase 19 removed the former spelling-derived foundation, but two
+narrower paths remain live: CR-11/#158 makes an explicit nested annotation
+disagree with the equivalent inferred type, and CR-12/#159 permits a Clone
+result to be assigned to the source brand. Row 36 cannot be `HOLDS` until those
+exact matching boundaries are corrected and re-qualified.
 
 ### E21 — the FFI gate exists and the builtins bypass it (rows 37, 38)
 
@@ -1351,7 +1341,7 @@ All ten `PARTIAL` rows were re-tested against the question that moved row 39:
 | 27 Backend | Kept, **evidence upgraded**: from a roadmap's status line to `--backend` in the driver |
 | 3 Absence | Kept, **claim split**: no `Some(42)` constructor is established; "requires `unsafe`" was inferred |
 | 41 Reproducibility | Kept — **and the reasoning tested, not assumed.** See below |
-| 31, 36, 37, 40 | Kept. Each states a conjunction where part is enforced for the thing the rule governs: field-transitivity without the `copyable` marker (E13); brand diagnostics capped by D-1 (E20); `extern` gated by `unsafe` without §93's governance (E21); a structured `CompilerError` without identity or a machine form (E23) |
+| 31, 36, 37, 40 | Kept. Each states a conjunction where part is enforced for the thing the rule governs: field-transitivity without the `copyable` marker (E13); brand diagnostics limited by CR-11/CR-12 exact-matching defects after D-1 closed (E20); `extern` gated by `unsafe` without §93's governance (E21); a structured `CompilerError` without identity or a machine form (E23) |
 
 **Row 41 deserves its own note, because I used it as the contrast case when
 correcting row 39 and had not applied the test to it.** The worry is that it

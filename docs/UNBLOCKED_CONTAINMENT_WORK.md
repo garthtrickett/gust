@@ -1,6 +1,6 @@
 # Containment Work That Does Not Wait on the Platform
 
-`docs/ONE_WAY_LEDGER.md` records 44 design rules, of which 9 hold. Most of the
+`docs/ONE_WAY_LEDGER.md` records 45 design rules, of which 10 hold. Most of the
 rest are absent because the platform they describe is unbuilt, and correctly
 deferred.
 
@@ -343,11 +343,12 @@ Three properties matter more than the exact field names:
    `local_stack`, `arena`, `scratchpad`, `ffi`, `sandbox`, `raw_unknown`,
    `borrowed_field`, `container_element` — not invented for the trace. The
    compiler already computes them, so the schema reports rather than derives.
-2. **`brand` is nullable and is the honest field.** Brand identity is currently
-   derived from identifier spelling (D-1, row 2), so a trace that reports brands
-   is reporting that defect faithfully. That is a feature: it makes D-1
-   *visible in an artifact* instead of only in a ledger row, and it gives Phase
-   19 a before/after diff.
+2. **`brand` is nullable and is the honest field.** Phase 19 closed D-1 and
+   removed identifier spelling as brand authority. A trace must therefore emit
+   the compiler's canonical type-carried brand, not reconstruct one from source
+   names. CR-11/#158 and CR-12/#159 still limit exact matching at two boundaries;
+   the trace must expose those values faithfully rather than claiming the wider
+   cross-context rule already holds.
 3. **`schema` is a version string, not a hash.** Consumers pin the major; the
    emitter may add fields within it.
 
