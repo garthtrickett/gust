@@ -671,8 +671,10 @@ Level 1.
 
 The repository closure artifacts are complete, CR-2 is resolved, the Stdlib
 patches are released specifically from CR-2, and the shared-zone defects are
-removed rather than merely documented. Phase 19 remains non-closed until the
-authoritative Historical Full on merged `main` has passed.
+removed rather than merely documented. Authoritative Historical Full run
+**32586399260** passed on exact merged `main`
+**a95e40d8f1cd4e6d31212e98105026d38b488c9b**, with **17/17** jobs completed
+successfully; Phase 19 is closed.
 
 ## Recommended Implementation Order
 
@@ -714,6 +716,8 @@ Phase 19 succeeds when:
   from CR-2; their current CR-11, CR-12, and CR-13 blockers are preserved.
 - D-1 is removed from the shared semantic zone; D-2 remains recorded as closed
   by prototype removal.
+- Authoritative Historical Full run **32586399260** passes all **17/17** jobs on
+  exact merged `main` **a95e40d8f1cd4e6d31212e98105026d38b488c9b**.
 
 Phase 19 closure does not claim a general lifetime system, a brand algebra, or
 any expansion of what brands can express. It claims only that the existing model
@@ -740,6 +744,7 @@ is decided by types instead of by names.
 - Phase 19 adds no lifetime syntax, brand algebra, MIR operation, ABI or layout
   meaning, runtime symbol, target policy, linker policy, or backend-specific
   semantics.
-- This repository record is a closure candidate. Phase 19 is not closed until
-  the authoritative Historical Full on the merged `main` commit succeeds and
-  its run ID and conclusion are recorded in `GUST_LANE_STATE.md`.
+- The authoritative closure gate is satisfied: Historical Full run
+  **32586399260**, event `workflow_dispatch`, completed `success` on exact merged
+  `main` **a95e40d8f1cd4e6d31212e98105026d38b488c9b**, with **17/17** successful
+  jobs. The matching terminal state is recorded in `GUST_LANE_STATE.md`.
