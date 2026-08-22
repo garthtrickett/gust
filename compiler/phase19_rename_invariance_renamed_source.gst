@@ -1,14 +1,13 @@
 // Phase 19.1 rename-invariance baseline, arm B.
 //
-// The arena parameter is spelled `scratch`, which does NOT appear in the hardcoded brand
-// vocabulary formerly used by compiler/codegen.gst. Patch 19.3 constructs a
-// consistent `Holder_scratch` declaration and allocation without suffix
-// surgery, so this arm now compiles.
+// The arena parameter is spelled `scratch`, which did not appear in the
+// hardcoded brand vocabulary formerly used by compiler/codegen.gst. The final
+// type-derived authority must not incorporate that spelling into the emitted
+// `Holder` type identity.
 //
 // Arm A is this file with the parameter spelled `ctx`.
-// Under D-1 the two arms would emit the same normalized C. They still do not;
-// later Phase 19 type-derived classification and convergence patches own the
-// remaining rename difference.
+// Both arms must emit byte-identical C after normalizing the deliberately
+// renamed source local.
 type Holder[scratch] struct {
     values: std.Vector[int, scratch]
 }

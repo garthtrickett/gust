@@ -22,6 +22,7 @@
     "phase19_retired_prototype_absence",
     "phase19_gust_name_list_removed",
     "phase19_seed_convergence",
+    "phase19_self_compilation_differential",
     "phase15_specialized_resource_authority",
     "phase15_failure_cleanup_authority",
     "phase15_resource_composition_authority",
@@ -479,6 +480,50 @@
               }
             }
           }
+        }
+      },
+      "phase19_self_compilation_differential": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["contract_version", "status", "next_patch", "review_view",
+                     "baseline_policy", "current_policy", "full_diff",
+                     "patch_boundaries", "level3_owner"],
+        "properties": {
+          "contract_version": {"const": "phase19_self_compilation_differential_v1"},
+          "status": {"const": "ready_for_patch19_11"},
+          "next_patch": {"const": "19.11"},
+          "review_view": {"const": "compiler/CRANELIFT_PHASE19_SELF_COMPILATION_DIFFERENTIAL.md"},
+          "baseline_policy": {"const": "previous_committed_converged_seed_before_patch19_3"},
+          "current_policy": {"const": "latest_committed_converged_seed_after_patch19_8"},
+          "full_diff": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["insertions", "deletions", "unexplained_differences"],
+            "properties": {
+              "insertions": {"const": 15016},
+              "deletions": {"const": 14678},
+              "unexplained_differences": {"const": 0}
+            }
+          },
+          "patch_boundaries": {
+            "type": "array",
+            "minItems": 6,
+            "maxItems": 6,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["patch", "pull_request", "compiler_commit_subjects"],
+              "properties": {
+                "patch": {"enum": ["19.3", "19.4", "19.5", "19.6", "19.7", "19.8"]},
+                "pull_request": {"enum": [144, 145, 146, 147, 148, 149]},
+                "compiler_commit_subjects": {
+                  "type": "array",
+                  "items": {"type": "string", "minLength": 1}
+                }
+              }
+            }
+          },
+          "level3_owner": {"const": "Cranelift Historical Full"}
         }
       },
       "opening_snapshots": {

@@ -1,14 +1,11 @@
 // Phase 19.1 rename-invariance baseline, arm A.
 //
-// The arena parameter is spelled `ctx`, which the remaining self-hosted
-// classification path recognizes. Patch 19.3 constructs the emitted struct
-// name as `Holder` from its brand identity metadata.
+// The arena parameter is spelled `ctx`. The final type-derived authority must
+// not incorporate that spelling into the emitted `Holder` type identity.
 //
 // Arm B is this file with the parameter renamed and nothing else changed.
-// Patch 19.3 keeps this arm internally consistent as Holder. The paired
-// scratch arm is now also internally consistent, but still names its type
-// Holder_scratch; later Phase 19 convergence patches own that remaining D-1
-// difference.
+// Both arms must emit byte-identical C after normalizing the deliberately
+// renamed source local.
 type Holder[ctx] struct {
     values: std.Vector[int, ctx]
 }

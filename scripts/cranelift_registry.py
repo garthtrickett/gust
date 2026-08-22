@@ -23,6 +23,7 @@ TOP_FIELDS = {
     "phase19_type_naming", "phase19_classification", "phase19_representation",
     "phase19_rule_convergence", "phase19_retired_prototype_absence",
     "phase19_gust_name_list_removed", "phase19_seed_convergence",
+    "phase19_self_compilation_differential",
     "phase15_specialized_resource_authority",
     "phase15_failure_cleanup_authority",
     "phase15_resource_composition_authority",
