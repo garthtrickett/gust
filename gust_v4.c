@@ -18960,6 +18960,10 @@ void typechecker__env_register_std_functions(typechecker__TypeEnvironment* env, 
     typechecker__env_record_canonical_type_name(env, ((Slice_unsigned_char){ (unsigned char*)"os_DirEntry_ctx", 15 }), ((Slice_unsigned_char){ (unsigned char*)"os_DirEntry", 11 }), ctx);
     typechecker__env_record_canonical_type_name(env, ((Slice_unsigned_char){ (unsigned char*)"LookupResult_os_Dir_ctx", 23 }), ((Slice_unsigned_char){ (unsigned char*)"LookupResult_os_Dir", 19 }), ctx);
     typechecker__env_record_canonical_type_name(env, ((Slice_unsigned_char){ (unsigned char*)"LookupResult_os_DirEntry_ctx", 28 }), ((Slice_unsigned_char){ (unsigned char*)"LookupResult_os_DirEntry", 24 }), ctx);
+    typechecker__env_record_canonical_type_name(env, ((Slice_unsigned_char){ (unsigned char*)"os_Dir", 6 }), ((Slice_unsigned_char){ (unsigned char*)"os_Dir", 6 }), ctx);
+    typechecker__env_record_canonical_type_name(env, ((Slice_unsigned_char){ (unsigned char*)"os_DirEntry", 11 }), ((Slice_unsigned_char){ (unsigned char*)"os_DirEntry", 11 }), ctx);
+    typechecker__env_record_canonical_type_name(env, ((Slice_unsigned_char){ (unsigned char*)"LookupResult_os_Dir", 19 }), ((Slice_unsigned_char){ (unsigned char*)"LookupResult_os_Dir", 19 }), ctx);
+    typechecker__env_record_canonical_type_name(env, ((Slice_unsigned_char){ (unsigned char*)"LookupResult_os_DirEntry", 24 }), ((Slice_unsigned_char){ (unsigned char*)"LookupResult_os_DirEntry", 24 }), ctx);
     ast__Type t_int = typechecker__make_type_int();
     ast__Type t_byte = typechecker__make_type_byte();
     ast__Type t_bool = typechecker__make_type_bool();
@@ -20809,7 +20813,7 @@ ast__Type typechecker__env_resolve_type_internal(typechecker__TypeEnvironment* e
     *os_HashMapRef(&(fields), ((Slice_unsigned_char){ (unsigned char*)"Ok", 2 }), 1) = t_bool;
     *os_HashMapRef(&(fields), ((Slice_unsigned_char){ (unsigned char*)"Val", 3 }), 1) = resolved_v_type;
     typechecker__StructLayout layout = ((typechecker__StructLayout){ .brand = 0xFFFFFFFF, .fields = ((std_HashMap_str_ast__Type){ .arena = NULL, .capacity = 0, .keys = NULL, .len = 0, .occupied = NULL, .values = NULL }) });
-    layout.brand = 0xFFFFFFFF;
+    layout.brand = t.Struct.brand;
     layout.fields = fields;
     typechecker__env_register_struct(env, namespaced_name, layout, ctx);
     has_exists = 1;
@@ -21223,6 +21227,11 @@ Slice_unsigned_char typechecker__env_get_canonical_branded_type_name(typechecker
     }
     if ((brand != 0xFFFFFFFF)) {
     Slice_unsigned_char brand_name = (*((Slice_unsigned_char*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(brand))));
+    Slice_unsigned_char elided_name = typechecker__typechecker_canonicalize_concrete_name(resolved_name, brand_name, ctx);
+    canonical_name = typechecker__env_get_canonical_type_name(env, elided_name, ctx);
+    if ((std_str_eq(canonical_name, ((Slice_unsigned_char){ (unsigned char*)"", 0 })) == 0)) {
+    return std_Clone_str(ctx, canonical_name);
+    }
     Slice_unsigned_char concrete_name = resolved_name;
     Slice_unsigned_char brand_suffix = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); Slice_unsigned_char _s2 = typechecker__strip_brand_prefix(brand_name, ctx); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     if ((typechecker__typechecker_ends_with(concrete_name, brand_suffix) == 0)) {
@@ -22894,22 +22903,22 @@ errors__Result_int typechecker__check_statement_impl(int stmt_idx, typechecker__
     }
     typechecker__scope_insert(scope, std_Clone_str(ctx, name), resolved_explicit, ctx);
     *os_HashMapRef(&((*(env)).variable_types), std_Clone_str(ctx, name), 1) = resolved_explicit;
-    LookupResult_ast__Type _guard_res_lookup_type_explicit_10749_17 = {0};
-    _guard_res_lookup_type_explicit_10749_17 = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&((*(env)).variable_types), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).variable_types), name, 1); } res; });
-    if (!_guard_res_lookup_type_explicit_10749_17.Ok) {
+    LookupResult_ast__Type _guard_res_lookup_type_explicit_10758_17 = {0};
+    _guard_res_lookup_type_explicit_10758_17 = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&((*(env)).variable_types), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).variable_types), name, 1); } res; });
+    if (!_guard_res_lookup_type_explicit_10758_17.Ok) {
         return res;
     }
-    ast__Type lookup_type_explicit = _guard_res_lookup_type_explicit_10749_17.Val;
+    ast__Type lookup_type_explicit = _guard_res_lookup_type_explicit_10758_17.Val;
     val_type = lookup_type_explicit;
     } else {
     typechecker__scope_insert(scope, std_Clone_str(ctx, name), val_type, ctx);
     *os_HashMapRef(&((*(env)).variable_types), std_Clone_str(ctx, name), 1) = val_type;
-    LookupResult_ast__Type _guard_res_lookup_type_10756_17 = {0};
-    _guard_res_lookup_type_10756_17 = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&((*(env)).variable_types), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).variable_types), name, 1); } res; });
-    if (!_guard_res_lookup_type_10756_17.Ok) {
+    LookupResult_ast__Type _guard_res_lookup_type_10765_17 = {0};
+    _guard_res_lookup_type_10765_17 = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&((*(env)).variable_types), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).variable_types), name, 1); } res; });
+    if (!_guard_res_lookup_type_10765_17.Ok) {
         return res;
     }
-    ast__Type lookup_type = _guard_res_lookup_type_10756_17.Val;
+    ast__Type lookup_type = _guard_res_lookup_type_10765_17.Val;
     val_type = lookup_type;
     }
     if ((val_type.tag == 8)) {

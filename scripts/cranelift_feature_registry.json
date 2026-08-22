@@ -956,27 +956,22 @@
     ]
   },
   "phase19_seed_convergence": {
-    "contract_version": "phase19_seed_convergence_v1",
-    "status": "ready_for_patch19_10",
-    "next_patch": "19.10",
+    "contract_version": "phase19_seed_convergence_v2",
+    "status": "ready_for_patch19_12",
+    "next_patch": "19.12",
     "review_view": "compiler/CRANELIFT_PHASE19_SEED_CONVERGENCE.md",
     "seed_path": "gust_v4.c",
-    "seed_pull_request": 151,
+    "seed_pull_request": 157,
     "fixed_point_policy": "make_bootstrap_stage2_stage3_byte_identity",
     "generated_seed_diff": {
-      "previous_lines": 57013,
-      "current_lines": 57351,
-      "insertions": 15016,
-      "deletions": 14678,
-      "line_delta": 338
+      "previous_lines": 57351,
+      "current_lines": 57360,
+      "insertions": 18,
+      "deletions": 9,
+      "line_delta": 9
     },
     "accounted_patches": [
-      {"patch": "19.3", "scope": "canonical branded type naming and generated helper identity"},
-      {"patch": "19.4", "scope": "resolved-type container and arena classification"},
-      {"patch": "19.5", "scope": "canonical call argument and index representation"},
-      {"patch": "19.6", "scope": "self-hosted spelling-rule convergence before retirement"},
-      {"patch": "19.7", "scope": "retired prototype absence; no compiler-source seed delta"},
-      {"patch": "19.8", "scope": "spelling-list removal, structural template roles, and order-independent template discovery"}
+      {"patch": "19.11", "scope": "canonical runtime-owned resource result identities in branded composition"}
     ]
   },
   "phase19_self_compilation_differential": {
@@ -1000,6 +995,39 @@
       {"patch": "19.8", "pull_request": 149, "compiler_commit_subjects": ["phase19: remove self-hosted brand name list", "fix: resolve ambiguous flattened template brands"]}
     ],
     "level3_owner": "Cranelift Historical Full"
+  },
+  "phase19_composition": {
+    "contract_version": "phase19_cross_feature_composition_v1",
+    "status": "ready_for_patch19_12",
+    "next_patch": "19.12",
+    "review_view": "compiler/CRANELIFT_PHASE19_COMPOSITION.md",
+    "source_fixture": "compiler/phase19_cross_feature_composition_source.gst",
+    "expected_exit_status": 91,
+    "composed_features": [
+      "branded_collection",
+      "cross_arena_clone",
+      "branded_reference",
+      "linear_directory_resource",
+      "direct_function_call"
+    ],
+    "mir_to_c_policy": "default_and_explicit_byte_identical_then_execute",
+    "cranelift_disposition": "explicitly_deferred_without_c_fallback",
+    "cranelift_capability": "phase13_generic_source_to_mir",
+    "cranelift_reason_code": "deferred_p13_parameter_argument_target_dependent_abi",
+    "cranelift_failure_stage": "before_driver_discovery",
+    "canonical_native_abi_types": [
+      "os_Dir",
+      "os_DirEntry",
+      "LookupResult_os_Dir",
+      "LookupResult_os_DirEntry"
+    ],
+    "unaffected_authorities": [
+      "phase14_layout_authority",
+      "phase15_resource_composition_authority",
+      "phase16_abi_composition_authority",
+      "phase17_composition_authority",
+      "phase18_composition"
+    ]
   },
   "opening_snapshots": {
     "phase19": {

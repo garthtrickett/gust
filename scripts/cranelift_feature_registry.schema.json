@@ -23,6 +23,7 @@
     "phase19_gust_name_list_removed",
     "phase19_seed_convergence",
     "phase19_self_compilation_differential",
+    "phase19_composition",
     "phase15_specialized_resource_authority",
     "phase15_failure_cleanup_authority",
     "phase15_resource_composition_authority",
@@ -447,35 +448,35 @@
                      "seed_path", "seed_pull_request", "fixed_point_policy",
                      "generated_seed_diff", "accounted_patches"],
         "properties": {
-          "contract_version": {"const": "phase19_seed_convergence_v1"},
-          "status": {"const": "ready_for_patch19_10"},
-          "next_patch": {"const": "19.10"},
+          "contract_version": {"const": "phase19_seed_convergence_v2"},
+          "status": {"const": "ready_for_patch19_12"},
+          "next_patch": {"const": "19.12"},
           "review_view": {"const": "compiler/CRANELIFT_PHASE19_SEED_CONVERGENCE.md"},
           "seed_path": {"const": "gust_v4.c"},
-          "seed_pull_request": {"const": 151},
+          "seed_pull_request": {"const": 157},
           "fixed_point_policy": {"const": "make_bootstrap_stage2_stage3_byte_identity"},
           "generated_seed_diff": {
             "type": "object",
             "additionalProperties": false,
             "required": ["previous_lines", "current_lines", "insertions", "deletions", "line_delta"],
             "properties": {
-              "previous_lines": {"const": 57013},
-              "current_lines": {"const": 57351},
-              "insertions": {"const": 15016},
-              "deletions": {"const": 14678},
-              "line_delta": {"const": 338}
+              "previous_lines": {"const": 57351},
+              "current_lines": {"const": 57360},
+              "insertions": {"const": 18},
+              "deletions": {"const": 9},
+              "line_delta": {"const": 9}
             }
           },
           "accounted_patches": {
             "type": "array",
-            "minItems": 6,
-            "maxItems": 6,
+            "minItems": 1,
+            "maxItems": 1,
             "items": {
               "type": "object",
               "additionalProperties": false,
               "required": ["patch", "scope"],
               "properties": {
-                "patch": {"enum": ["19.3", "19.4", "19.5", "19.6", "19.7", "19.8"]},
+                "patch": {"const": "19.11"},
                 "scope": {"type": "string", "minLength": 1}
               }
             }
@@ -524,6 +525,56 @@
             }
           },
           "level3_owner": {"const": "Cranelift Historical Full"}
+        }
+      },
+      "phase19_composition": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "contract_version", "status", "next_patch", "review_view",
+          "source_fixture", "expected_exit_status", "composed_features",
+          "mir_to_c_policy", "cranelift_disposition", "cranelift_capability",
+          "cranelift_reason_code", "cranelift_failure_stage",
+          "canonical_native_abi_types", "unaffected_authorities"
+        ],
+        "properties": {
+          "contract_version": {"const": "phase19_cross_feature_composition_v1"},
+          "status": {"const": "ready_for_patch19_12"},
+          "next_patch": {"const": "19.12"},
+          "review_view": {"const": "compiler/CRANELIFT_PHASE19_COMPOSITION.md"},
+          "source_fixture": {"const": "compiler/phase19_cross_feature_composition_source.gst"},
+          "expected_exit_status": {"const": 91},
+          "composed_features": {
+            "const": [
+              "branded_collection",
+              "cross_arena_clone",
+              "branded_reference",
+              "linear_directory_resource",
+              "direct_function_call"
+            ]
+          },
+          "mir_to_c_policy": {"const": "default_and_explicit_byte_identical_then_execute"},
+          "cranelift_disposition": {"const": "explicitly_deferred_without_c_fallback"},
+          "cranelift_capability": {"const": "phase13_generic_source_to_mir"},
+          "cranelift_reason_code": {"const": "deferred_p13_parameter_argument_target_dependent_abi"},
+          "cranelift_failure_stage": {"const": "before_driver_discovery"},
+          "canonical_native_abi_types": {
+            "const": [
+              "os_Dir",
+              "os_DirEntry",
+              "LookupResult_os_Dir",
+              "LookupResult_os_DirEntry"
+            ]
+          },
+          "unaffected_authorities": {
+            "const": [
+              "phase14_layout_authority",
+              "phase15_resource_composition_authority",
+              "phase16_abi_composition_authority",
+              "phase17_composition_authority",
+              "phase18_composition"
+            ]
+          }
         }
       },
       "opening_snapshots": {
