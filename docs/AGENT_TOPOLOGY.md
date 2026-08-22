@@ -372,13 +372,13 @@ running in the project with your paseo skill and make sure they are not stopped,
 everything should where possible continue moving forward automatically (in line
 with the .mds)."*
 
-It had three failure modes this document observed
-directly. It is written in the **imperative** ("make sure they are not stopped"),
-which turns a two-minute-old observer into a source of instructions — twice it
-told a lane to write into paths the operator had placed off limits. It names **no
-unit**, so its counts and a lane's counts disagreed about the same PR without
-either being wrong. And it says **reach out**, which is the expensive action;
-observing costs the other lane nothing and answers the question most of the time.
+It had three failure modes this document observed directly. It was written in
+the **imperative** ("make sure they are not stopped"), which turned a
+two-minute-old observer into a source of instructions — twice it told a lane to
+write into paths the operator had placed off limits. It named **no unit**, so its
+counts and a lane's counts disagreed about the same PR without either being
+wrong. And it said **reach out**, which is the expensive action; observing costs
+the other lane nothing and answers the question most of the time.
 
 Those findings now govern the docs/vision heartbeat:
 
