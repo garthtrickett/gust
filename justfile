@@ -16305,6 +16305,17 @@ guard-cranelift-phase19-gust-name-list-removed-parity:
     just guard-cranelift-phase19-gust-name-list-removed
     bash scripts/phase19_gust_name_list_removed_parity.sh
 
+guard-cranelift-phase19-seed-convergence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🌱 Checking Phase 19 bootstrap seed convergence contract..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase19-seed-convergence | grep -F $'guard-cranelift-phase19-seed-convergence\t1\t' >/dev/null
+    just guard-cranelift-phase19-gust-name-list-removed
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase19_seed_convergence.py validate
+    python3 scripts/phase19_seed_convergence.py check-review
+
 guard-cranelift-phase19-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail

@@ -46,7 +46,7 @@ is activated separately.
 - [x] Patch 19.6 — Self-Hosted Rule Convergence — DONE
 - [x] Patch 19.7 — Retired Prototype Absence Contract — DONE
 - [x] Patch 19.8 — Name-List Removal From the Self-Hosted Compiler — DONE
-- [ ] Patch 19.9 — Seed Regeneration and Fixed-Point Convergence
+- [x] Patch 19.9 — Seed Regeneration and Fixed-Point Convergence — DONE
 - [ ] Patch 19.10 — Generated-C Equivalence Over the Compiler's Own Sources
 - [ ] Patch 19.11 — Cross-Feature Composition and Complete Differential
 - [ ] Patch 19.12 — Phase 19 Closure
