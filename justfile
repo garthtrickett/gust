@@ -212,6 +212,8 @@ guard-pr-fast-ci-surface:
       'just guard-cranelift-phase19-opening-contract'
       'Phase 19 identifier-spelling decision inventory'
       'just guard-cranelift-phase19-spelling-inventory'
+      'Phase 19 cross-feature composition'
+      'just guard-cranelift-phase19-composition-contract'
       'Phase 17 cross-feature runtime composition'
       'just guard-cranelift-phase17-composition-contract'
       'phase11-family:'
@@ -16326,6 +16328,28 @@ guard-cranelift-phase19-self-compilation-differential:
     python3 scripts/phase19_self_compilation.py validate
     python3 scripts/phase19_self_compilation.py check-review
     bash scripts/phase19_self_compilation_differential.sh
+
+guard-cranelift-phase19-composition-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧩 Checking Phase 19 cross-feature composition contract..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase19-composition-contract | grep -F $'guard-cranelift-phase19-composition-contract\t1\t' >/dev/null
+    just guard-cranelift-phase19-seed-convergence
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase19_self_compilation.py validate
+    python3 scripts/phase19_self_compilation.py check-review
+    python3 scripts/phase19_composition.py validate
+    python3 scripts/phase19_composition.py check-review
+
+guard-cranelift-phase19-composition-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running Phase 19 cross-feature composition parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase19-composition-parity | grep -F $'guard-cranelift-phase19-composition-parity\t2\t' >/dev/null
+    just guard-cranelift-phase19-composition-contract
+    bash scripts/phase19_composition_parity.sh
 
 guard-cranelift-phase19-opening-contract:
     #!/usr/bin/env bash

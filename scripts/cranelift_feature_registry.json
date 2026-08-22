@@ -1001,6 +1001,39 @@
     ],
     "level3_owner": "Cranelift Historical Full"
   },
+  "phase19_composition": {
+    "contract_version": "phase19_cross_feature_composition_v1",
+    "status": "ready_for_patch19_12",
+    "next_patch": "19.12",
+    "review_view": "compiler/CRANELIFT_PHASE19_COMPOSITION.md",
+    "source_fixture": "compiler/phase19_cross_feature_composition_source.gst",
+    "expected_exit_status": 91,
+    "composed_features": [
+      "branded_collection",
+      "cross_arena_clone",
+      "branded_reference",
+      "linear_directory_resource",
+      "direct_function_call"
+    ],
+    "mir_to_c_policy": "default_and_explicit_byte_identical_then_execute",
+    "cranelift_disposition": "explicitly_deferred_without_c_fallback",
+    "cranelift_capability": "phase13_generic_source_to_mir",
+    "cranelift_reason_code": "deferred_p13_parameter_argument_target_dependent_abi",
+    "cranelift_failure_stage": "before_driver_discovery",
+    "canonical_native_abi_types": [
+      "os_Dir",
+      "os_DirEntry",
+      "LookupResult_os_Dir",
+      "LookupResult_os_DirEntry"
+    ],
+    "unaffected_authorities": [
+      "phase14_layout_authority",
+      "phase15_resource_composition_authority",
+      "phase16_abi_composition_authority",
+      "phase17_composition_authority",
+      "phase18_composition"
+    ]
+  },
   "opening_snapshots": {
     "phase19": {
       "opening_version": "phase19_opening_inventory_rebased_on_phase18_closure",

@@ -6692,6 +6692,10 @@ func register_fn(env: *TypeEnvironment[ctx], name: str, params: std.Vector[ast.T
             env_record_canonical_type_name(env, "os_DirEntry_ctx", "os_DirEntry", ctx);
             env_record_canonical_type_name(env, "LookupResult_os_Dir_ctx", "LookupResult_os_Dir", ctx);
             env_record_canonical_type_name(env, "LookupResult_os_DirEntry_ctx", "LookupResult_os_DirEntry", ctx);
+            env_record_canonical_type_name(env, "os_Dir", "os_Dir", ctx);
+            env_record_canonical_type_name(env, "os_DirEntry", "os_DirEntry", ctx);
+            env_record_canonical_type_name(env, "LookupResult_os_Dir", "LookupResult_os_Dir", ctx);
+            env_record_canonical_type_name(env, "LookupResult_os_DirEntry", "LookupResult_os_DirEntry", ctx);
 
             mut t_int := make_type_int();
             mut t_byte := make_type_byte();
@@ -8604,7 +8608,7 @@ func env_resolve_type_internal(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx
                         fields.Insert("Val", resolved_v_type);
                         
                         mut layout: StructLayout[ctx];
-                        layout.brand = empty[Index[str, ctx]];
+                        layout.brand = t.Struct.brand;
                         layout.fields = fields;
                         
                         env_register_struct(env, namespaced_name, layout, ctx);
@@ -9029,6 +9033,11 @@ func env_get_canonical_branded_type_name(env: *TypeEnvironment[ctx], name: str, 
     }
     if brand != empty[Index[str, ctx]] {
         mut brand_name := ctx[brand];
+        mut elided_name := typechecker_canonicalize_concrete_name(resolved_name, brand_name, ctx);
+        canonical_name = env_get_canonical_type_name(env, elided_name, ctx);
+        if std.str_eq(canonical_name, "") == 0 {
+            return std.Clone(ctx, canonical_name);
+        }
         mut concrete_name := resolved_name;
         mut brand_suffix := std.Concat("_", strip_brand_prefix(brand_name, ctx));
         if typechecker_ends_with(concrete_name, brand_suffix) == 0 {

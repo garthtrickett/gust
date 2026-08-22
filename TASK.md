@@ -48,7 +48,7 @@ is activated separately.
 - [x] Patch 19.8 — Name-List Removal From the Self-Hosted Compiler — DONE
 - [x] Patch 19.9 — Seed Regeneration and Fixed-Point Convergence — DONE
 - [x] Patch 19.10 — Generated-C Equivalence Over the Compiler's Own Sources — DONE
-- [ ] Patch 19.11 — Cross-Feature Composition and Complete Differential
+- [x] Patch 19.11 — Cross-Feature Composition and Complete Differential — DONE
 - [ ] Patch 19.12 — Phase 19 Closure
 
 Status rows are machine-parsed in the same form the Phase 15–18 close guards
