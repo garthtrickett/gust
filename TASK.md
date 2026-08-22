@@ -658,7 +658,8 @@ Close brand identity and value representation.
 - Confirm `rename-invariance` passes for every family.
 - Remove D-1 from `docs/SHARED_SEMANTIC_ZONE.md` and record the fix; preserve the
   earlier D-2 closure record.
-- Mark CR-2 resolved in `TASK_STDLIB.md`, unblocking S1.4, S1.5, and S1.6.
+- Mark CR-2 resolved in `TASK_STDLIB.md`, releasing S1.4, S1.5, and S1.6
+  specifically from CR-2 while preserving any newer blockers.
 - Record the residue.
 - Add `guard-cranelift-phase19-close`.
 
@@ -668,8 +669,10 @@ Level 1.
 
 **Exit Gate**
 
-Phase 19 is closed, CR-2 is resolved, the Stdlib lane's blocked patches are
-released, and the shared-zone defects are removed rather than merely documented.
+The repository closure artifacts are complete, CR-2 is resolved, the Stdlib
+patches are released specifically from CR-2, and the shared-zone defects are
+removed rather than merely documented. Phase 19 remains non-closed until the
+authoritative Historical Full on merged `main` has passed.
 
 ## Recommended Implementation Order
 
@@ -707,7 +710,8 @@ Phase 19 succeeds when:
 - Generated C for the compiler's own sources has no unexplained difference.
 - MIR-to-C remains an independent differential oracle, and Cranelift has no
   fallback.
-- CR-2 is resolved and `TASK_STDLIB.md` S1.4, S1.5, and S1.6 are unblocked.
+- CR-2 is resolved and `TASK_STDLIB.md` records S1.4, S1.5, and S1.6 as released
+  from CR-2; their current CR-11, CR-12, and CR-13 blockers are preserved.
 - D-1 is removed from the shared semantic zone; D-2 remains recorded as closed
   by prototype removal.
 
@@ -722,7 +726,9 @@ is decided by types instead of by names.
   representation follow compiler-owned type records. The defect row is removed
   from `docs/SHARED_SEMANTIC_ZONE.md`; the historical D-2 closure record remains.
 - CR-2 release: the compiler prerequisite is resolved, and the Stdlib-owned
-  roadmap records S1.4, S1.5, and S1.6 as unblocked.
+  roadmap records S1.4, S1.5, and S1.6 as released specifically from CR-2.
+  S1.4 remains blocked by CR-11, S1.5 remains blocked by CR-12 and CR-13, and
+  S1.6 has been delivered.
 - Rename invariance is registered across brand identity, canonical type naming,
   type-derived classification, argument representation, and name-list removal.
   The broad brand-identity pair remains Level 3 evidence owned by Cranelift
@@ -734,3 +740,6 @@ is decided by types instead of by names.
 - Phase 19 adds no lifetime syntax, brand algebra, MIR operation, ABI or layout
   meaning, runtime symbol, target policy, linker policy, or backend-specific
   semantics.
+- This repository record is a closure candidate. Phase 19 is not closed until
+  the authoritative Historical Full on the merged `main` commit succeeds and
+  its run ID and conclusion are recorded in `GUST_LANE_STATE.md`.

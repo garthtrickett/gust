@@ -588,7 +588,7 @@
         ],
         "properties": {
           "version": {"const": "phase19_closure_v1"},
-          "status": {"const": "phase19_closed_brand_identity_and_value_representation"},
+          "status": {"const": "phase19_ready_for_authoritative_historical_full"},
           "authority_owner": {"const": "scripts/cranelift_feature_registry.json"},
           "wording": {"type": "string", "minLength": 1},
           "resolved_defects": {

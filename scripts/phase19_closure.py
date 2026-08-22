@@ -102,7 +102,7 @@ def check() -> None:
     require(isinstance(closure, dict), "closure authority missing")
     require(closure.get("version") == "phase19_closure_v1", "closure version drifted")
     require(
-        closure.get("status") == "phase19_closed_brand_identity_and_value_representation",
+        closure.get("status") == "phase19_ready_for_authoritative_historical_full",
         "closure status drifted",
     )
 
@@ -117,6 +117,9 @@ def check() -> None:
     require("## Phase 19 Closure Record" in task, "TASK.md does not record the closure fix")
     require("D-1 fix: identifier spelling is no longer semantic authority" in task,
             "TASK.md does not record the D-1 fix")
+    require("Phase 19 is not closed until" in task and
+            "Historical Full on the merged `main` commit succeeds" in task,
+            "TASK.md does not retain the authoritative post-merge closure gate")
 
     for key, successor in EXPECTED_SUCCESSORS.items():
         authority = registry.get(key)
@@ -211,7 +214,8 @@ def check() -> None:
         "identifier spelling is absent from compiler semantic decisions",
         "every rename-invariance family has registered evidence",
         "D-1 is absent while the D-2 closure record remains",
-        "CR-2 is resolved and S1.4 through S1.6 are unblocked",
+        "CR-2 is resolved and S1.4 through S1.6 are released from CR-2",
+        "Phase 19 remains non-closed pending authoritative Historical Full",
         "the generic-source Cranelift deferral remains explicit without fallback",
     ):
         require(requirement in contract, f"closure contract omits {requirement!r}")
