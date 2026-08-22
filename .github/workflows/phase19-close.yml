@@ -1,0 +1,56 @@
+name: Cranelift Phase 19 Closure
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/cranelift_registry.py'
+      - 'scripts/cranelift_test_levels.json'
+      - 'scripts/phase19_closure.py'
+      - 'scripts/phase19_self_compilation.py'
+      - 'scripts/phase19_self_compilation_differential.sh'
+      - 'compiler/CRANELIFT_PHASE19_SELF_COMPILATION_DIFFERENTIAL.md'
+      - 'tests/cranelift/phase19_closure_contract.tsv'
+      - 'docs/PHASE19_CLOSURE.md'
+      - 'docs/SHARED_SEMANTIC_ZONE.md'
+      - '.github/workflows/phase19-close.yml'
+      - '.github/workflows/pr-fast.yml'
+      - 'justfile'
+      - 'TASK.md'
+      - 'TASK_STDLIB.md'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/phase19_closure.py'
+      - 'scripts/phase19_self_compilation.py'
+      - 'scripts/phase19_self_compilation_differential.sh'
+      - 'compiler/CRANELIFT_PHASE19_SELF_COMPILATION_DIFFERENTIAL.md'
+      - 'tests/cranelift/phase19_closure_contract.tsv'
+      - 'docs/PHASE19_CLOSURE.md'
+      - 'docs/SHARED_SEMANTIC_ZONE.md'
+      - '.github/workflows/phase19-close.yml'
+      - '.github/workflows/pr-fast.yml'
+      - 'justfile'
+      - 'TASK.md'
+      - 'TASK_STDLIB.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  close:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: guard-cranelift-phase19-close
+        run: just guard-cranelift-phase19-close

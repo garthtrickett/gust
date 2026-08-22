@@ -35,6 +35,10 @@ EXPECTED_BOUNDARIES = [
         "phase19: remove self-hosted brand name list",
         "fix: resolve ambiguous flattened template brands",
     ]),
+    ("19.11", 156, [
+        "fix: finalize phase19 rename invariance evidence",
+        "phase19: add cross-feature composition evidence",
+    ]),
 ]
 
 
@@ -53,19 +57,19 @@ def load_record() -> dict:
 def validate() -> dict:
     record = load_record()
     expected = {
-        "contract_version": "phase19_self_compilation_differential_v1",
-        "status": "ready_for_patch19_11",
-        "next_patch": "19.11",
+        "contract_version": "phase19_self_compilation_differential_v2",
+        "status": "ready_for_patch19_12",
+        "next_patch": "19.12",
         "review_view": "compiler/CRANELIFT_PHASE19_SELF_COMPILATION_DIFFERENTIAL.md",
         "baseline_policy": "previous_committed_converged_seed_before_patch19_3",
-        "current_policy": "latest_committed_converged_seed_after_patch19_8",
+        "current_policy": "latest_committed_converged_seed_after_patch19_11",
         "level3_owner": "Cranelift Historical Full",
     }
     for key, value in expected.items():
         require(record.get(key) == value, f"{key} drifted")
     require(record.get("full_diff") == {
-        "insertions": 15016,
-        "deletions": 14678,
+        "insertions": 15019,
+        "deletions": 14672,
         "unexplained_differences": 0,
     }, "full compiler-C differential accounting drifted")
 
@@ -106,7 +110,7 @@ def render(record: dict) -> str:
         "## Complete compiler-source differential",
         "",
         "Historical Full rebuilds the self-hosted compiler at the converged Phase 19.2",
-        "baseline and at every Phase 19.3–19.8 merge boundary. Each transition writes",
+        "baseline and at every compiler-changing Phase 19.3–19.11 merge boundary. Each transition writes",
         "a complete unified C diff named for its owning patch. The guard also rejects",
         "any compiler-source commit whose subject is not assigned to that transition,",
         "requires the baseline build to reproduce its seed, and requires the final",

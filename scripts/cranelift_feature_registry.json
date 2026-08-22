@@ -975,15 +975,15 @@
     ]
   },
   "phase19_self_compilation_differential": {
-    "contract_version": "phase19_self_compilation_differential_v1",
-    "status": "ready_for_patch19_11",
-    "next_patch": "19.11",
+    "contract_version": "phase19_self_compilation_differential_v2",
+    "status": "ready_for_patch19_12",
+    "next_patch": "19.12",
     "review_view": "compiler/CRANELIFT_PHASE19_SELF_COMPILATION_DIFFERENTIAL.md",
     "baseline_policy": "previous_committed_converged_seed_before_patch19_3",
-    "current_policy": "latest_committed_converged_seed_after_patch19_8",
+    "current_policy": "latest_committed_converged_seed_after_patch19_11",
     "full_diff": {
-      "insertions": 15016,
-      "deletions": 14678,
+      "insertions": 15019,
+      "deletions": 14672,
       "unexplained_differences": 0
     },
     "patch_boundaries": [
@@ -992,7 +992,8 @@
       {"patch": "19.5", "pull_request": 146, "compiler_commit_subjects": ["phase19: add inert call representation fields", "phase19: migrate argument representation consumers", "phase19: enforce canonical argument representation", "fix: preserve reference argument representation"]},
       {"patch": "19.6", "pull_request": 147, "compiler_commit_subjects": ["feat: converge self-hosted spelling rules"]},
       {"patch": "19.7", "pull_request": 148, "compiler_commit_subjects": []},
-      {"patch": "19.8", "pull_request": 149, "compiler_commit_subjects": ["phase19: remove self-hosted brand name list", "fix: resolve ambiguous flattened template brands"]}
+      {"patch": "19.8", "pull_request": 149, "compiler_commit_subjects": ["phase19: remove self-hosted brand name list", "fix: resolve ambiguous flattened template brands"]},
+      {"patch": "19.11", "pull_request": 156, "compiler_commit_subjects": ["fix: finalize phase19 rename invariance evidence", "phase19: add cross-feature composition evidence"]}
     ],
     "level3_owner": "Cranelift Historical Full"
   },
@@ -1028,6 +1029,84 @@
       "phase17_composition_authority",
       "phase18_composition"
     ]
+  },
+  "phase19_closure": {
+    "version": "phase19_closure_v1",
+    "status": "phase19_ready_for_authoritative_historical_full",
+    "authority_owner": "scripts/cranelift_feature_registry.json",
+    "wording": "Phase 19 is ready to close identifier-spelling authority over brand identity and value representation, pending an authoritative Historical Full success on merged main. Canonical branded identity, arena and container classification, and call argument representation now follow compiler-owned type records; the converged seed and compiler self-compilation differential account for every compiler-source change.",
+    "resolved_defects": [
+      {
+        "id": "D-1",
+        "disposition": "removed_from_shared_semantic_zone_and_recorded_in_task"
+      },
+      {
+        "id": "CR-2",
+        "disposition": "compiler_semantics_resolved_and_stdlib_patches_released_from_cr2_with_current_blockers_preserved"
+      }
+    ],
+    "rename_invariance_families": [
+      {
+        "id": "brand_identity",
+        "guard": "guard-cranelift-phase19-rename-invariance",
+        "level": 3,
+        "fixtures": [
+          "compiler/phase19_rename_invariance_brand_source.gst",
+          "compiler/phase19_rename_invariance_renamed_source.gst"
+        ]
+      },
+      {
+        "id": "canonical_type_naming",
+        "guard": "guard-cranelift-phase19-type-naming-parity",
+        "level": 2,
+        "fixtures": [
+          "compiler/phase19_type_naming_explicit_source.gst",
+          "compiler/phase19_type_naming_inferred_source.gst"
+        ]
+      },
+      {
+        "id": "type_derived_classification",
+        "guard": "guard-cranelift-phase19-classification-parity",
+        "level": 2,
+        "fixtures": [
+          "compiler/phase19_classification_test_entry.gst",
+          "compiler/phase19_classification_source.gst"
+        ]
+      },
+      {
+        "id": "argument_representation",
+        "guard": "guard-cranelift-phase19-representation-parity",
+        "level": 2,
+        "fixtures": [
+          "compiler/phase19_argument_representation_a_source.gst",
+          "compiler/phase19_argument_representation_b_source.gst"
+        ]
+      },
+      {
+        "id": "name_list_removal",
+        "guard": "guard-cranelift-phase19-gust-name-list-removed-parity",
+        "level": 2,
+        "fixtures": [
+          "compiler/phase19_name_list_removed_ctx_source.gst",
+          "compiler/phase19_name_list_removed_region_source.gst"
+        ]
+      }
+    ],
+    "residue": [
+      {
+        "id": "generic_source_cranelift_parameter_argument_abi",
+        "owner": "phase13_generic_source_to_mir",
+        "disposition": "explicitly_deferred_before_driver_discovery_without_c_fallback",
+        "reason_code": "deferred_p13_parameter_argument_target_dependent_abi"
+      }
+    ],
+    "non_claims": [
+      "Phase 19 provides a general lifetime system.",
+      "Phase 19 provides arbitrary brand algebra or new brand syntax.",
+      "The generic-source composition fixture is supported by Cranelift.",
+      "The MIR-to-C semantic oracle or explicit Cranelift no-fallback policy has been retired."
+    ],
+    "view_derivation": "the_closure_view_is_generated_from_this_block"
   },
   "opening_snapshots": {
     "phase19": {

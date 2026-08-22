@@ -34,7 +34,7 @@ resolve_seed_commit() {
 }
 
 baseline_commit="$(resolve_seed_commit 'bootstrap: regenerate seed after phase 19.2')"
-current_seed_commit="$(resolve_seed_commit 'bootstrap: regenerate seed after phase 19 name removal')"
+current_seed_commit="$(resolve_seed_commit 'bootstrap: regenerate Phase 19.11 seed')"
 
 resolve_pr_merge() {
   local pr="$1"
@@ -70,6 +70,7 @@ fi
 previous_commit="$baseline_commit"
 previous_output="${outputs[baseline]}"
 last_boundary=""
+last_compiler_commit="$baseline_commit"
 
 while IFS=$'\t' read -r patch pr; do
   boundary_commit="$(resolve_pr_merge "$pr")"
@@ -86,6 +87,12 @@ while IFS=$'\t' read -r patch pr; do
   mapfile -t actual_subjects < <(
     git log --reverse --format='%s' "$previous_commit..$boundary_commit" -- 'compiler/*.gst'
   )
+  boundary_compiler_commit="$(
+    git log -1 --format='%H' "$previous_commit..$boundary_commit" -- 'compiler/*.gst'
+  )"
+  if [ -n "$boundary_compiler_commit" ]; then
+    last_compiler_commit="$boundary_compiler_commit"
+  fi
   if ! diff -u \
       <(printf '%s\n' "${expected_subjects[@]}") \
       <(printf '%s\n' "${actual_subjects[@]}") >/dev/null; then
@@ -126,21 +133,21 @@ done < <(
 if ! git diff --quiet "$last_boundary" HEAD -- 'compiler/*.gst'; then
   compile_revision post-boundary HEAD
   if ! cmp -s "$previous_output" "${outputs[post-boundary]}"; then
-    echo "Compiler sources changed after Patch 19.8 and changed generated compiler C." >&2
+    echo "Compiler sources changed after the final accounted Phase 19 boundary and changed generated compiler C." >&2
     git diff --stat "$last_boundary" HEAD -- 'compiler/*.gst' >&2
     git log --format='%H %s' "$last_boundary..HEAD" -- 'compiler/*.gst' >&2
     diff -u --label before-post-boundary.c --label after-post-boundary.c \
       "$previous_output" "${outputs[post-boundary]}" >"$evidence_dir/post-boundary.diff" || true
     exit 1
   fi
-  echo "Post-19.8 compiler-source maintenance | 0 generated-C difference"
+  echo "Post-boundary compiler-source maintenance | 0 generated-C difference"
 fi
-if ! git merge-base --is-ancestor "$last_boundary" "$current_seed_commit"; then
-  echo "The current seed predates the final accounted compiler boundary." >&2
+if ! git merge-base --is-ancestor "$last_compiler_commit" "$current_seed_commit"; then
+  echo "The current seed predates the final accounted compiler-source change." >&2
   exit 1
 fi
 if ! cmp -s "$previous_output" gust_v4.c; then
-  echo "Final Patch 19.8 compiler build does not reproduce the current converged seed." >&2
+  echo "Final accounted Phase 19 compiler build does not reproduce the current converged seed." >&2
   exit 1
 fi
 
