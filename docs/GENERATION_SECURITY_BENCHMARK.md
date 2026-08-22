@@ -221,7 +221,7 @@ on 2026-08-22:
   `compiler/typechecker.gst:9474-9475` has an empty body and is a compiler
   debugging stub, not a program trace.
 
-The Phase 20 roadmap draft qualifies brand, arena, resource, and whole-program
+The active Phase 20 roadmap qualifies brand, arena, resource, and whole-program
 differential behaviour. It does not own the four Track A items above. Therefore
 Stage 0 is actionable now, the counting programme is independently actionable,
 and Stages 1–4 wait on the named demo prerequisites and their owning roadmap.
