@@ -22292,7 +22292,7 @@ guard-stdlib-s1-close:
     fi
 
     # Every coordination request must state a resolution or an owning phase.
-    for cr in CR-1 CR-2 CR-3 CR-4 CR-5 CR-6; do
+    for cr in CR-1 CR-2 CR-3 CR-4 CR-5 CR-6 CR-7 CR-8 CR-9 CR-10 CR-11 CR-12 CR-13; do
       if rg -n -F -e "### $cr " "$roadmap" >/dev/null 2>&1; then
         body="$(rg -n -A 40 -F -e "### $cr " "$roadmap" || true)"
         if ! printf '%s\n' "$body" | rg -q -e 'RESOLVED|Resolved|Placement|owner|Phase 19|Cranelift lane|deferred'; then
@@ -22337,3 +22337,13 @@ guard-stdlib-s1-close:
     fi
 
     echo "✅ Closure gate is accurate: ${outstanding:-0} patch(es) outstanding, each with a named owner, residue recorded."
+
+# Stdlib lane, Phase S1. Appended at the end so existing recipe-body extraction
+# remains stable.
+guard-stdlib-s1-composition:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking the application-shaped S1 stdlib composition..."
+    mkdir -p build
+    make gust >build/stdlib-s1-composition.build.log 2>&1
+    bash scripts/stdlib_s1_composition_parity.sh

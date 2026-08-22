@@ -18,14 +18,14 @@ plan does not know it has.
 | 1.1 `str` equality | **S1.1** | **DONE (#74)** — but see below, it is not what the plan asks for |
 | 1.1 `str` length, byte access, slicing | **S1.2** | **DONE** |
 | 1.2 HashMap methods through references | **S1.3** | **DONE** |
-| 1.3 Branded collection type consistency | **S1.4** | **blocked on CR-2** |
-| 1.4 `Clone` with arena references | **S1.5** | **blocked on CR-2** |
-| Tests proving all five compose | **S1.6** | **blocked on CR-2** |
+| 1.3 Branded collection type consistency | **S1.4** | **blocked on CR-11 / issue #158** |
+| 1.4 `Clone` with arena references | **S1.5** | **blocked on CR-12 and CR-13 / issues #159 and #160** |
+| Tests proving all five compose | **S1.6** | **DONE** |
 | 2.x scoped mutex guard | **S1.7** | **audit DONE; guard blocked on CR-5** |
 
-`TASK_STDLIB.md` already records that the lane **idles after S1.3** unless CR-2 is
-sequenced into the Cranelift roadmap. This plan does not know that, and it is the
-single most useful thing to tell whoever picks it up.
+Phase 19 delivered CR-2. Verification exposed narrower shared-zone defects for
+S1.4 and S1.5, each now filed with a minimal witness. The lane did not idle: the
+independent S1.6 composition program proceeded and is done.
 
 ### 1.1 is done, and it did not do what this plan wants
 
