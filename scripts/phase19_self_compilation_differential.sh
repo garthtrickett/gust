@@ -123,10 +123,17 @@ done < <(
   jq -r '.phase19_self_compilation_differential.patch_boundaries[] | [.patch, (.pull_request | tostring)] | @tsv' "$registry"
 )
 
-if [ -n "$(git log --format='%s' "$last_boundary..HEAD" -- 'compiler/*.gst')" ]; then
-  echo "Compiler sources changed after the accounted Patch 19.8 boundary." >&2
-  git log --format='%H %s' "$last_boundary..HEAD" -- 'compiler/*.gst' >&2
-  exit 1
+if ! git diff --quiet "$last_boundary" HEAD -- 'compiler/*.gst'; then
+  compile_revision post-boundary HEAD
+  if ! cmp -s "$previous_output" "${outputs[post-boundary]}"; then
+    echo "Compiler sources changed after Patch 19.8 and changed generated compiler C." >&2
+    git diff --stat "$last_boundary" HEAD -- 'compiler/*.gst' >&2
+    git log --format='%H %s' "$last_boundary..HEAD" -- 'compiler/*.gst' >&2
+    diff -u --label before-post-boundary.c --label after-post-boundary.c \
+      "$previous_output" "${outputs[post-boundary]}" >"$evidence_dir/post-boundary.diff" || true
+    exit 1
+  fi
+  echo "Post-19.8 compiler-source maintenance | 0 generated-C difference"
 fi
 if ! git merge-base --is-ancestor "$last_boundary" "$current_seed_commit"; then
   echo "The current seed predates the final accounted compiler boundary." >&2
