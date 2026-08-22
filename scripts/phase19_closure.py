@@ -44,6 +44,18 @@ EXPECTED_SUCCESSORS = {
     "phase19_composition": "19.12",
 }
 
+EXPECTED_HISTORICAL_FULL = {
+    "workflow": "Cranelift Historical Full",
+    "run_id": 32586399260,
+    "event": "workflow_dispatch",
+    "head_branch": "main",
+    "head_sha": "a95e40d8f1cd4e6d31212e98105026d38b488c9b",
+    "status": "completed",
+    "conclusion": "success",
+    "successful_jobs": 17,
+    "total_jobs": 17,
+}
+
 
 def fail(message: str) -> None:
     raise SystemExit(f"{GUARD}: {message}")
@@ -71,6 +83,16 @@ def render(closure: dict) -> str:
         f"Status: `{closure['status']}`",
         "",
         closure["wording"],
+        "",
+        "## Authoritative closure gate",
+        "",
+        f"- Workflow: `{closure['authoritative_historical_full']['workflow']}`",
+        f"- Run: `{closure['authoritative_historical_full']['run_id']}`",
+        f"- Event: `{closure['authoritative_historical_full']['event']}`",
+        f"- Exact merged main: `{closure['authoritative_historical_full']['head_sha']}`",
+        f"- Conclusion: `{closure['authoritative_historical_full']['conclusion']}`",
+        f"- Jobs: `{closure['authoritative_historical_full']['successful_jobs']}/"
+        f"{closure['authoritative_historical_full']['total_jobs']}` successful",
         "",
         "## Resolved defects",
         "",
@@ -102,9 +124,11 @@ def check() -> None:
     require(isinstance(closure, dict), "closure authority missing")
     require(closure.get("version") == "phase19_closure_v1", "closure version drifted")
     require(
-        closure.get("status") == "phase19_ready_for_authoritative_historical_full",
+        closure.get("status") == "phase19_closed_brand_identity_and_value_representation",
         "closure status drifted",
     )
+    require(closure.get("authoritative_historical_full") == EXPECTED_HISTORICAL_FULL,
+            "authoritative Historical Full evidence drifted")
 
     task = TASK.read_text(encoding="utf-8")
     status = task.split("## Status", 1)[1].split("## Immutable Phase 18", 1)[0]
@@ -117,9 +141,11 @@ def check() -> None:
     require("## Phase 19 Closure Record" in task, "TASK.md does not record the closure fix")
     require("D-1 fix: identifier spelling is no longer semantic authority" in task,
             "TASK.md does not record the D-1 fix")
-    require("Phase 19 is not closed until" in task and
-            "Historical Full on the merged `main` commit succeeds" in task,
-            "TASK.md does not retain the authoritative post-merge closure gate")
+    task_flat = " ".join(task.split())
+    require("Historical Full run **32586399260**" in task_flat and
+            "a95e40d8f1cd4e6d31212e98105026d38b488c9b" in task_flat and
+            "**17/17** jobs completed successfully" in task_flat,
+            "TASK.md does not record the satisfied authoritative closure gate")
 
     for key, successor in EXPECTED_SUCCESSORS.items():
         authority = registry.get(key)
@@ -215,7 +241,7 @@ def check() -> None:
         "every rename-invariance family has registered evidence",
         "D-1 is absent while the D-2 closure record remains",
         "CR-2 is resolved and S1.4 through S1.6 are released from CR-2",
-        "Phase 19 remains non-closed pending authoritative Historical Full",
+        "Phase 19 authoritative Historical Full gate is satisfied",
         "the generic-source Cranelift deferral remains explicit without fallback",
     ):
         require(requirement in contract, f"closure contract omits {requirement!r}")

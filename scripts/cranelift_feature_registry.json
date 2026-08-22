@@ -1032,9 +1032,20 @@
   },
   "phase19_closure": {
     "version": "phase19_closure_v1",
-    "status": "phase19_ready_for_authoritative_historical_full",
+    "status": "phase19_closed_brand_identity_and_value_representation",
     "authority_owner": "scripts/cranelift_feature_registry.json",
-    "wording": "Phase 19 is ready to close identifier-spelling authority over brand identity and value representation, pending an authoritative Historical Full success on merged main. Canonical branded identity, arena and container classification, and call argument representation now follow compiler-owned type records; the converged seed and compiler self-compilation differential account for every compiler-source change.",
+    "wording": "Phase 19 closes identifier-spelling authority over brand identity and value representation. Canonical branded identity, arena and container classification, and call argument representation now follow compiler-owned type records; the converged seed and compiler self-compilation differential account for every compiler-source change. Authoritative Historical Full run 32586399260 completed successfully on the exact merged main commit.",
+    "authoritative_historical_full": {
+      "workflow": "Cranelift Historical Full",
+      "run_id": 32586399260,
+      "event": "workflow_dispatch",
+      "head_branch": "main",
+      "head_sha": "a95e40d8f1cd4e6d31212e98105026d38b488c9b",
+      "status": "completed",
+      "conclusion": "success",
+      "successful_jobs": 17,
+      "total_jobs": 17
+    },
     "resolved_defects": [
       {
         "id": "D-1",
