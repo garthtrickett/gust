@@ -1,23 +1,21 @@
 #!/usr/bin/env bash
-# Phase 19 rename-invariance transition evidence.
+# Phase 19 rename-invariance evidence.
 #
 # Two sources differ only in one arena-parameter spelling. Patch 19.1 recorded
 # that the renamed arm emitted an undeclared canonical allocation target and
 # failed in C. Patch 19.3 makes each arm internally consistent: both compile,
-# while the custom `scratch` identity still remains in its C type name. Later
-# classification/convergence patches own eliminating that remaining rename
-# difference.
-#
-# The guard must change again when both normalized arms become equal. A silent
-# pass after that later transition would hide the point where D-1 actually
-# closes.
+# while the custom `scratch` identity still remained in its C type name. The
+# later type-derived convergence and name-list removal patches eliminated that
+# remaining semantic difference. This final guard requires canonical type names
+# and byte-identical generated C after normalizing the deliberately renamed
+# source local.
 set -euo pipefail
 
 brand_source="compiler/phase19_rename_invariance_brand_source.gst"
 renamed_source="compiler/phase19_rename_invariance_renamed_source.gst"
 build_dir="build/guards/cranelift_phase19_rename_invariance"
 
-echo "🔒 Recording the Phase 19 rename-invariance baseline..."
+echo "🔒 Verifying Phase 19 rename invariance..."
 
 if [ ! -x ./gust ]; then
   echo "Phase 19 rename-invariance guard requires the rebuilt ./gust compiler."
@@ -33,14 +31,14 @@ CFLAGS_VAL="${CFLAGS:--O0 -w -pthread}"
 # The two sources must differ only in the arena parameter spelling. If someone
 # edits one arm, the baseline stops meaning anything, so prove it first.
 # Comments explain each arm and are expected to differ; the code must not.
-normalise() {
+normalise_source() {
   grep -v '^[[:space:]]*//' "$1" | sed "s/\\b$2\\b/BRAND/g"
 }
-if ! diff <(normalise "$brand_source" ctx) \
-          <(normalise "$renamed_source" scratch) >/dev/null; then
+if ! diff <(normalise_source "$brand_source" ctx) \
+          <(normalise_source "$renamed_source" scratch) >/dev/null; then
   echo "The two rename-invariance arms differ by more than the arena spelling."
-  diff -u <(normalise "$brand_source" ctx) \
-          <(normalise "$renamed_source" scratch) || true
+  diff -u <(normalise_source "$brand_source" ctx) \
+          <(normalise_source "$renamed_source" scratch) || true
   exit 1
 fi
 
@@ -84,26 +82,27 @@ if [ "$renamed_status" != "0" ]; then
   exit 1
 fi
 
-# Patch 19.3 removes the declaration/allocation disagreement but does not yet
-# remove custom brand identities from canonical names.
-if ! rg -n -F 'Holder_scratch' "$build_dir/renamed.c" >/dev/null; then
-  echo "Transition drift: the renamed arm no longer records Holder_scratch."
+# The arena parameter spelling must not participate in the canonical C type
+# identity. Keep explicit negative checks so a normalization step cannot hide a
+# regression in the type name itself.
+if rg -n -e 'Holder_(ctx|scratch)' \
+    "$build_dir/brand.c" "$build_dir/renamed.c" >/dev/null; then
+  echo "Rename regression: an arena parameter spelling escaped into Holder's C type identity."
   exit 1
 fi
-if ! rg -n -F '(Holder_scratch*)' "$build_dir/renamed.c" >/dev/null; then
-  echo "Transition drift: the renamed allocation does not use Holder_scratch*."
-  exit 1
-fi
-if ! rg -n -x -F 'typedef struct Holder_scratch Holder_scratch;' "$build_dir/renamed.c" >/dev/null; then
-  echo "Transition drift: the renamed arm does not declare Holder_scratch."
-  exit 1
-fi
-if diff -u "$build_dir/brand.c" "$build_dir/renamed.c" >/dev/null; then
-  echo "Transition superseded: the two raw C outputs are now equal."
-  echo "Update this guard to the final normalized rename-invariance assertion."
+for arm in brand renamed; do
+  rg -n -x -F 'typedef struct Holder Holder;' "$build_dir/$arm.c" >/dev/null
+  rg -n -F 'sizeof(Holder)' "$build_dir/$arm.c" >/dev/null
+done
+
+sed 's/\bctx\b/BRAND/g' "$build_dir/brand.c" >"$build_dir/brand.normalized.c"
+sed 's/\bscratch\b/BRAND/g' "$build_dir/renamed.c" >"$build_dir/renamed.normalized.c"
+if ! cmp -s "$build_dir/brand.normalized.c" "$build_dir/renamed.normalized.c"; then
+  echo "Rename regression: normalized generated C differs between the two arms."
+  diff -u "$build_dir/brand.normalized.c" \
+          "$build_dir/renamed.normalized.c" || true
   exit 1
 fi
 
-echo "✅ Phase 19.3 rename transition verified: both arms compile with internally"
-echo "   consistent type names; custom scratch branding remains visible for the"
-echo "   later type-derived classification and convergence patches."
+echo "✅ Phase 19 rename invariance verified: both arms compile, both use the"
+echo "   canonical Holder type identity, and normalized generated C is byte-identical."
