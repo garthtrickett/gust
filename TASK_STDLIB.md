@@ -28,18 +28,17 @@ Activating Phase S1 does not activate the Cranelift lane, and vice versa.
 ## Parallelism Warning — read before activating
 
 Phase S1 was scoped after checking its premises against the compiler
-(`docs/STDLIB_SURFACE_FINDINGS.md`, verified 2026-08-19). Five of the thirteen patches are
-unblocked today. The rest depend on coordination requests that only the
-Cranelift lane can land.
+(`docs/STDLIB_SURFACE_FINDINGS.md`, verified 2026-08-19). Phase 19 has since
+landed the CR-2 authority, and S1.6 can consume it. S1.4 and S1.5 verification
+found narrower shared-zone defects, now filed separately.
 
-| Unblocked now (5) | Blocked (7) | Depends on the rest (1) |
+| Delivered (6) | Blocked (6) | Depends on the rest (1) |
 | --- | --- | --- |
-| S1.0, S1.1, S1.2, S1.3, S1.7 | S1.4, S1.5, S1.6 — CR-2 · S1.8, S1.9, S1.10, S1.11 — CR-5 | S1.12 closure |
+| S1.0, S1.1, S1.2, S1.3, S1.6, S1.7 | S1.4 — CR-11 · S1.5 — CR-12 and CR-13 · S1.8, S1.9, S1.10, S1.11 — CR-5 | S1.12 closure |
 
-Activating both lanes on day one therefore does **not** produce two independent
-streams of work. It produces roughly one PR-week of stdlib work followed by a
-block. Either sequence CR-2 into the Cranelift roadmap first, or accept that the
-Stdlib lane idles after S1.3.
+The lane does not idle at a blocked patch. It records the shared-zone defect and
+takes the next independent item. That is why S1.6 can be delivered while S1.4
+and S1.5 remain open.
 
 This is a scheduling fact, not an objection to the two-lane model.
 
@@ -51,7 +50,7 @@ This is a scheduling fact, not an objection to the two-lane model.
 - [x] Patch S1.3 — HashMap Methods Through References — DONE
 - [ ] Patch S1.4 — Branded Collection Type Consistency
 - [ ] Patch S1.5 — Clone Arena Destination Normalization
-- [ ] Patch S1.6 — Stdlib Composition Regression Program
+- [x] Patch S1.6 — Stdlib Composition Regression Program — DONE
 - [x] Patch S1.7 — MutexGuard Prerequisite Audit — DONE
 - [ ] Patch S1.8 — MutexGuard Prototype
 - [ ] Patch S1.9 — MutexGuard Scope and Resource Tests
@@ -139,10 +138,10 @@ current would re-open work that is done.
 | `str == str` typechecks and emits invalid C | **Closed** by S1.1 (#74). Both compilers now reject `==` and `!=` on `str` with a byte-identical diagnostic naming `std.str_eq`. Making `==` *mean* content equality is still open as CR-1. |
 | A method call on a reference receiver fails resolution | **Closed** by S1.3 (#86). |
 | `defer` has no AST/typechecker representation | **Superseded.** `defer` is an AST node; `STEP52_RESOURCE_SEMANTICS.md` predates that. The remaining gap is destructor declaration and enforcement, re-verified by S1.7 (#87) and stated in CR-5. |
-| Rust and self-hosted brand matching diverge | **Closed by deletion.** PR #137 removed the deprecated Rust prototype on 2026-08-21; D-2 is recorded as closed in `docs/SHARED_SEMANTIC_ZONE.md`. The surviving self-hosted spelling defect remains CR-2/D-1. |
+| Rust and self-hosted brand matching diverge | **Closed by deletion.** PR #137 removed the deprecated Rust prototype on 2026-08-21; D-2 is recorded as closed in `docs/SHARED_SEMANTIC_ZONE.md`. Phase 19 subsequently closed CR-2/D-1. |
 
-Still open exactly as recorded: the brand-spelling defect (CR-2, owned by
-`TASK.md`) and the `exit(1)` bounds policy (CR-3, unscheduled).
+Still open from that baseline: the `exit(1)` bounds policy (CR-3, unscheduled).
+S1 verification after CR-2 landed found the narrower CR-11 through CR-13 gaps.
 
 `docs/ONE_WAY_LEDGER.md` carries the current status of each of these against the
 compiler, with reproductions, and is the file to check before assuming a
@@ -272,6 +271,13 @@ evidence rather than arriving as a side effect of an ergonomics patch.
 
 The Phase 19 roadmap is published separately, before any Phase 19 patch, in the
 same way `TASK.md` was published before Patch 18.0.
+
+**Resolved 2026-08-22:** Phase 19 removed the spelling authority and made
+resolved types authoritative for brand identity, canonical naming, layout, and
+argument representation. S1 verification then found two narrower defects that
+the Phase 19 fixtures did not cover: nested `Graph` annotation consistency
+(CR-11) and exact Clone-result brand matching (CR-12). Arena invalidation after
+`Free` is the separate resource-semantic CR-13.
 
 ### CR-3 — String bounds-failure policy
 
@@ -447,10 +453,10 @@ remains the recommended form until CR-5 lands.
 6. **Cranelift:** eventually yes, for the same reasons and for parity.
 7. **Bootstrap:** yes, once `uses` is a keyword in the self-hosted compiler.
 
-Two prerequisites in that table are not scope creep and are worth pulling
-forward regardless of when Track A is scheduled. CR-2 (brand identity) must land
-because the memory model is approximated by identifier matching until it does.
-And `std.Option` cannot be constructed without `unsafe`
+Two prerequisites in that table are not scope creep and were worth pulling
+forward regardless of when Track A is scheduled. CR-2 (brand identity) has
+landed, removing identifier matching as memory-model authority. `std.Option`
+still cannot be constructed without `unsafe`
 (`docs/ONE_WAY_LEDGER.md` E1), which means OD-9 — can a model write Gust — would
 currently be measuring whether a model can reproduce a tagged-union layout.
 Testing OD-9 before that is fixed measures the wrong thing.
@@ -595,6 +601,34 @@ add `#[opaque]`, propagate opacity, implement visibility, or special-case
 `std.Format` in the meantime. Nothing in Phase S1 is blocked on this ruling;
 containment proposal 1 and CR-5 item 3(c) remain blocked on the shared generic
 primitive.
+
+### CR-11 — Explicit `Graph` annotation changes nested brand resolution — **FILED 2026-08-22**
+
+[Issue #158](https://github.com/garthtrickett/gust/issues/158) contains the
+seven-point shared-zone report and minimal witness. An inferred graph returned
+from a helper compiles, while adding the equivalent explicit annotation reports
+a brand-nesting violation and degrades the declared type to `Void`. The smallest
+generic change is for nested monomorphized brand validation to consume resolved
+`BrandIdentity` metadata rather than cleaned flattened names. This blocks S1.4.
+**Owner:** Cranelift lane.
+
+### CR-12 — Clone result brand is not enforced — **FILED 2026-08-22**
+
+[Issue #159](https://github.com/garthtrickett/gust/issues/159) contains the
+seven-point shared-zone report and minimal witness. A value cloned into a second
+arena can currently be assigned to an `Index` explicitly branded for the source
+arena. Exact resolved brand identity must survive assignment and annotation
+matching. This blocks S1.5.
+**Owner:** Cranelift lane.
+
+### CR-13 — `Arena.Free` does not invalidate later allocation — **FILED 2026-08-22**
+
+[Issue #160](https://github.com/garthtrickett/gust/issues/160) contains the
+seven-point shared-zone report and minimal witness. A directly freed arena is
+still accepted as a `std.Clone` destination. Fixing it changes resource/move
+semantics, so the Stdlib lane stopped rather than adding a Clone-only check.
+This blocks S1.5.
+**Owner:** Cranelift lane.
 
 ## Verification Policy
 
@@ -819,7 +853,7 @@ new mutation capability — it makes an existing one reachable.
 
 ### Patch S1.4 — Branded Collection Type Consistency
 
-*Blocked by CR-2.*
+*Blocked by CR-11 (issue #158), discovered after CR-2 landed.*
 
 **Purpose**
 
@@ -851,7 +885,8 @@ brand identity, or backend behaviour for any covered position.
 
 ### Patch S1.5 — Clone Arena Destination Normalization
 
-*Blocked by CR-2.*
+*Blocked by CR-12 and CR-13 (issues #159 and #160), discovered after CR-2
+landed.*
 
 **Purpose**
 
@@ -884,7 +919,7 @@ and moved-arena destinations are still rejected.
 
 ### Patch S1.6 — Stdlib Composition Regression Program
 
-*Blocked by CR-2.*
+*Delivered after the Phase 19 CR-2 authority landed.*
 
 **Purpose**
 
@@ -1101,23 +1136,24 @@ refusing to let S1.12 be marked `DONE` while anything below is outstanding.
 | S1.1 | `str == str` rejected with one self-hosted frontend diagnostic |
 | S1.2 | the string surface pinned, 33 values asserted in order |
 | S1.3 | collection methods resolve through a reference receiver |
+| S1.6 | application-shaped `Vector`/`HashMap`/`Clone` composition, with explicit native deferral |
 | S1.7 | the resource prerequisites re-verified; CR-5 made concrete |
 
 ### Outstanding, with owners
 
 | patch | blocked by | owner |
 | --- | --- | --- |
-| S1.4 branded collection consistency | CR-2 | Phase 19 (`TASK.md`) |
-| S1.5 clone arena destination | CR-2 | Phase 19 |
-| S1.6 composition regression | CR-2 | Phase 19 |
+| S1.4 branded collection consistency | CR-11 / issue #158 | Cranelift lane |
+| S1.5 clone arena destination | CR-12 and CR-13 / issues #159 and #160 | Cranelift lane |
 | S1.8 MutexGuard prototype | CR-5 | Cranelift lane |
 | S1.9 MutexGuard scope tests | CR-5 | Cranelift lane |
 | S1.10 MutexGuard fiber tests | CR-5 | Cranelift lane |
 | S1.11 realistic migration | CR-5 | Cranelift lane |
 | S1.12 closure | all of the above | Stdlib lane |
 
-No deferral here is unowned. CR-2 has a published roadmap; CR-5 has a concrete
-statement of the smallest change required, from S1.7.
+No deferral here is unowned. CR-11 through CR-13 have seven-point reports and
+minimal witnesses; CR-5 has a concrete statement of the smallest change
+required, from S1.7.
 
 ### Residue — what a normal program still cannot express safely
 
@@ -1126,9 +1162,12 @@ Recording this is the point of the phase, not an apology for it.
 - **`command == "PING"` does not work.** S1.1 turned the miscompile into a
   diagnostic, but content equality is CR-1, and operator semantics are
   compiler-owned (`VISION.md` §16). Users write `std.str_eq(a, b)`.
-- **A variable's name can change generated code.** Arena-ness is inferred from a
-  hardcoded list of identifier spellings, so a local named `a` is treated as an
-  arena. CR-2, Phase 19.
+- **An explicit `Graph` annotation can reject an inferred type that compiles.**
+  Nested brand validation still disagrees with Phase 19's resolved identity
+  authority. CR-11, issue #158.
+- **Clone destination safety is incomplete.** A destination-branded clone can
+  be assigned back to the source brand, and a directly freed arena remains a
+  valid destination. CR-12 and CR-13, issues #159 and #160.
 - **An out-of-range string index kills the process**, not the request, which
   `VISION.md` §34 forbids. CR-3, and filed as issue #91.
 - **No user type can declare a destructor.** One exists, `os.CloseDir` for
@@ -1147,7 +1186,7 @@ Recording this is the point of the phase, not an apology for it.
 
 ### What closure requires
 
-1. CR-2 resolved by Phase 19, then S1.4, S1.5, S1.6.
+1. CR-11 resolved, then S1.4; CR-12 and CR-13 resolved, then S1.5. S1.6 is done.
 2. CR-5 resolved — source-level destructor declaration plus scope-exit
    enforcement — then S1.8 through S1.11.
 3. The residue list above re-checked against the compiler, not from memory.
@@ -1195,9 +1234,9 @@ Patch S1.0 opening inventory and surface baseline
 → Patch S1.11 realistic example migration
 → Patch S1.12 closure.
 
-S1.7 is placed early on purpose. It is report-only, it is unblocked, and its
-output is what makes CR-5 actionable. Running it before the block is reached
-turns idle time into the information the other lane needs.
+S1.7 was placed early on purpose. It is report-only, it was unblocked, and its
+output made CR-5 actionable. S1.6 then proceeded independently when S1.4 and
+S1.5 verification found CR-11 through CR-13.
 
 ## Phase S1 Success Criteria
 
