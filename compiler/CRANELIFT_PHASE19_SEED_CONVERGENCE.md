@@ -3,11 +3,11 @@
 Generated from `scripts/cranelift_feature_registry.json` by
 `scripts/phase19_seed_convergence.py project`. Do not edit by hand.
 
-- Contract: `phase19_seed_convergence_v1`
-- Status: `ready_for_patch19_10`
-- Next patch: `19.10`
+- Contract: `phase19_seed_convergence_v2`
+- Status: `ready_for_patch19_12`
+- Next patch: `19.12`
 - Seed: `gust_v4.c`
-- Seed-only pull request: `#151`
+- Seed-only pull request: `#157`
 - Fixed-point policy: `make_bootstrap_stage2_stage3_byte_identity`
 
 ## Fixed point
@@ -19,21 +19,14 @@ difference between the regenerated output and `gust_v4.c`.
 
 ## Generated seed diff
 
-- Previous lines: 57013
-- Current lines: 57351
-- Insertions: 15016
-- Deletions: 14678
-- Net line delta: 338
+- Previous lines: 57351
+- Current lines: 57360
+- Insertions: 18
+- Deletions: 9
+- Net line delta: 9
 
 Every compiler-source change since the preceding seed belongs to:
 
-- Patch 19.3 — canonical branded type naming and generated helper identity
-- Patch 19.4 — resolved-type container and arena classification
-- Patch 19.5 — canonical call argument and index representation
-- Patch 19.6 — self-hosted spelling-rule convergence before retirement
-- Patch 19.7 — retired prototype absence; no compiler-source seed delta
-- Patch 19.8 — spelling-list removal, structural template roles, and order-independent template discovery
+- Patch 19.11 — canonical runtime-owned resource result identities in branded composition
 
 No unrelated compiler-source commit is included in this regeneration.
-Patch 19.7 contributes no generated seed delta because it only guards the
-already-removed prototype boundary.

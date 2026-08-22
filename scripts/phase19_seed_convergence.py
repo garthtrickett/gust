@@ -33,12 +33,12 @@ def load_record() -> dict:
 def validate() -> dict:
     record = load_record()
     expected = {
-        "contract_version": "phase19_seed_convergence_v1",
-        "status": "ready_for_patch19_10",
-        "next_patch": "19.10",
+        "contract_version": "phase19_seed_convergence_v2",
+        "status": "ready_for_patch19_12",
+        "next_patch": "19.12",
         "review_view": "compiler/CRANELIFT_PHASE19_SEED_CONVERGENCE.md",
         "seed_path": "gust_v4.c",
-        "seed_pull_request": 151,
+        "seed_pull_request": 157,
         "fixed_point_policy": "make_bootstrap_stage2_stage3_byte_identity",
     }
     for key, value in expected.items():
@@ -47,11 +47,11 @@ def validate() -> dict:
     diff = record.get("generated_seed_diff")
     require(isinstance(diff, dict), "generated seed diff is missing")
     expected_diff = {
-        "previous_lines": 57013,
-        "current_lines": 57351,
-        "insertions": 15016,
-        "deletions": 14678,
-        "line_delta": 338,
+        "previous_lines": 57351,
+        "current_lines": 57360,
+        "insertions": 18,
+        "deletions": 9,
+        "line_delta": 9,
     }
     require(diff == expected_diff, "generated seed diff accounting drifted")
     require(diff["current_lines"] - diff["previous_lines"] == diff["line_delta"],
@@ -61,9 +61,8 @@ def validate() -> dict:
 
     accounted = record.get("accounted_patches")
     require(isinstance(accounted, list), "accounted patch list is missing")
-    require([row.get("patch") for row in accounted] ==
-            ["19.3", "19.4", "19.5", "19.6", "19.7", "19.8"],
-            "seed changes are not accounted to Patches 19.3 through 19.8")
+    require([row.get("patch") for row in accounted] == ["19.11"],
+            "seed changes are not accounted to Patch 19.11")
     require(all(set(row) == {"patch", "scope"} and row["scope"] for row in accounted),
             "seed accounting row shape drifted")
 
@@ -138,8 +137,6 @@ def render(record: dict) -> str:
     lines += [
         "",
         "No unrelated compiler-source commit is included in this regeneration.",
-        "Patch 19.7 contributes no generated seed delta because it only guards the",
-        "already-removed prototype boundary.",
         "",
     ]
     return "\n".join(lines)
