@@ -21,6 +21,7 @@
     "phase19_rule_convergence",
     "phase19_retired_prototype_absence",
     "phase19_gust_name_list_removed",
+    "phase19_seed_convergence",
     "phase15_specialized_resource_authority",
     "phase15_failure_cleanup_authority",
     "phase15_resource_composition_authority",
@@ -412,8 +413,8 @@
             "additionalProperties": false,
             "required": ["insertions", "deletions", "categories"],
             "properties": {
-              "insertions": {"const": 532},
-              "deletions": {"const": 435},
+              "insertions": {"const": 670},
+              "deletions": {"const": 445},
               "categories": {
                 "type": "array",
                 "minItems": 6,
@@ -435,6 +436,48 @@
               "compiler/phase19_name_list_removed_ctx_source.gst",
               "compiler/phase19_name_list_removed_region_source.gst"
             ]
+          }
+        }
+      },
+      "phase19_seed_convergence": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["contract_version", "status", "next_patch", "review_view",
+                     "seed_path", "seed_pull_request", "fixed_point_policy",
+                     "generated_seed_diff", "accounted_patches"],
+        "properties": {
+          "contract_version": {"const": "phase19_seed_convergence_v1"},
+          "status": {"const": "ready_for_patch19_10"},
+          "next_patch": {"const": "19.10"},
+          "review_view": {"const": "compiler/CRANELIFT_PHASE19_SEED_CONVERGENCE.md"},
+          "seed_path": {"const": "gust_v4.c"},
+          "seed_pull_request": {"const": 151},
+          "fixed_point_policy": {"const": "make_bootstrap_stage2_stage3_byte_identity"},
+          "generated_seed_diff": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["previous_lines", "current_lines", "insertions", "deletions", "line_delta"],
+            "properties": {
+              "previous_lines": {"const": 57013},
+              "current_lines": {"const": 57351},
+              "insertions": {"const": 15016},
+              "deletions": {"const": 14678},
+              "line_delta": {"const": 338}
+            }
+          },
+          "accounted_patches": {
+            "type": "array",
+            "minItems": 6,
+            "maxItems": 6,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["patch", "scope"],
+              "properties": {
+                "patch": {"enum": ["19.3", "19.4", "19.5", "19.6", "19.7", "19.8"]},
+                "scope": {"type": "string", "minLength": 1}
+              }
+            }
           }
         }
       },

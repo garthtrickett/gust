@@ -955,6 +955,30 @@
       "compiler/phase19_name_list_removed_region_source.gst"
     ]
   },
+  "phase19_seed_convergence": {
+    "contract_version": "phase19_seed_convergence_v1",
+    "status": "ready_for_patch19_10",
+    "next_patch": "19.10",
+    "review_view": "compiler/CRANELIFT_PHASE19_SEED_CONVERGENCE.md",
+    "seed_path": "gust_v4.c",
+    "seed_pull_request": 151,
+    "fixed_point_policy": "make_bootstrap_stage2_stage3_byte_identity",
+    "generated_seed_diff": {
+      "previous_lines": 57013,
+      "current_lines": 57351,
+      "insertions": 15016,
+      "deletions": 14678,
+      "line_delta": 338
+    },
+    "accounted_patches": [
+      {"patch": "19.3", "scope": "canonical branded type naming and generated helper identity"},
+      {"patch": "19.4", "scope": "resolved-type container and arena classification"},
+      {"patch": "19.5", "scope": "canonical call argument and index representation"},
+      {"patch": "19.6", "scope": "self-hosted spelling-rule convergence before retirement"},
+      {"patch": "19.7", "scope": "retired prototype absence; no compiler-source seed delta"},
+      {"patch": "19.8", "scope": "spelling-list removal, structural template roles, and order-independent template discovery"}
+    ]
+  },
   "opening_snapshots": {
     "phase19": {
       "opening_version": "phase19_opening_inventory_rebased_on_phase18_closure",

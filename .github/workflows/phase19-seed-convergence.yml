@@ -1,0 +1,62 @@
+name: Cranelift Phase 19 Seed Convergence
+
+on:
+  pull_request:
+    paths:
+      - 'gust_v4.c'
+      - 'compiler/CRANELIFT_PHASE19_SEED_CONVERGENCE.md'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/cranelift_registry.py'
+      - 'scripts/cranelift_test_levels.json'
+      - 'scripts/phase19_seed_convergence.py'
+      - 'TASK.md'
+      - 'justfile'
+      - '.github/workflows/pr-fast.yml'
+      - '.github/workflows/phase19-seed-convergence.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'compiler/*.gst'
+      - 'gust_v4.c'
+      - 'compiler/CRANELIFT_PHASE19_SEED_CONVERGENCE.md'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/cranelift_test_levels.json'
+      - 'scripts/phase19_seed_convergence.py'
+      - 'TASK.md'
+      - 'justfile'
+      - '.github/workflows/pr-fast.yml'
+      - '.github/workflows/phase19-seed-convergence.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: guard-cranelift-phase19-seed-convergence
+        run: just guard-cranelift-phase19-seed-convergence
+
+  fixed-point:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - name: Three-stage bootstrap convergence
+        run: CC=cc CFLAGS="-O0 -w -pthread" make bootstrap
+      - name: Stage 2 and stage 3 are byte-identical
+        run: cmp build/gust_stage2.c build/gust_stage3.c
+      - name: Regeneration leaves the committed seed unchanged
+        run: git diff --exit-code -- gust_v4.c
