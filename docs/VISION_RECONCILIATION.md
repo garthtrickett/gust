@@ -7,8 +7,9 @@ do not agree with each other, and in six places they do not agree with
 
 They also do not agree with the compiler. That is a separate question with a
 separate answer: `docs/ONE_WAY_LEDGER.md` tracks each design rule against what
-the compiler does, with a reproduction per row. As of 2026-08-20, 9 of 32 rules
-hold; the rest are partial, violated, deferred, or describe unbuilt platform.
+the compiler does, with a reproduction per row. Its current register contains
+45 rules: 10 hold; the rest are partial, violated, deferred, or describe
+unbuilt platform.
 
 This document reconciles them. It records, for each conflict: what each source
 says, which one survives, and why. Where a conflict is a semantic question it
@@ -20,9 +21,11 @@ read the most recent handoff document, and two agents reading different subsets
 reach different designs. A conflict that is written down once is cheaper than a
 conflict rediscovered per lane.
 
-**Verified 2026-08-20 against `b47d0049` (`main`).** Every claim about the
-implementation below has a command that reproduces it. Claims about the
-*documents* cite the document.
+**Originally verified 2026-08-20 against `b47d0049` (`main`); D-1 and the ledger
+count refreshed 2026-08-22 against
+`f9c1cf412f9705519fe78ac8fea174c7e75c3bc2`.** The remaining implementation
+claims stay pinned to the original verification rather than being silently
+re-dated. Claims about the *documents* cite the document.
 
 ## Status of this document
 
@@ -420,7 +423,7 @@ lane/registry/guard governance in `AGENTS.md` and `docs/SHARED_SEMANTIC_ZONE.md`
 | §26 | Two-form borrow model | Corrected in VISION 2026-08-19 (#84): one mutable reference form, no aliasing analysis |
 | §27 | Shared ownership as OD-3 | `std.Rc` already exists — see §3.6 |
 | §34 | Panic terminates request, not deployment | `exit(1)` in `src/runtime/strings.c:20,30` |
-| D-1 | Brand identity | Inferred from identifier spelling; the generated Phase 19 spelling inventory records nine live sites. Owned by staged Phase 19. D-2 closed when PR #137 removed the deprecated prototype |
+| D-1 | Brand identity | **Resolved.** Phase 19 removed identifier spelling as semantic authority; `docs/PHASE19_CLOSURE.md:6-17` cites Historical Full run `32586399260`, success on exact merged `main` `a95e40d8f1cd4e6d31212e98105026d38b488c9b`. CR-11/#158 and CR-12/#159 remain narrower exact-matching defects, recorded against ledger row 36 rather than D-1. D-2 closed when PR #137 removed the deprecated prototype |
 | §32 | Fixed-width integers, overflow trapping, `Decimal`/`Money`/time types | **All absent.** Two integer-ish scalars, `int` and `byte`; `int` lowers to C `int`, so overflow is UB rather than a trap. Issue #103 |
 | §23 | `copyable` marker | Absent. Copy-versus-move is inferred structurally; adding a `str` field silently changes a struct's category |
 | §29 | Automatic resource cleanup | Runs, but only for `Resource[T]`: `type_is_resource` keys on a `Generic` named `Resource`, so a directory handle falls outside it. Ledger E7 |

@@ -126,7 +126,9 @@ during builds, no mutable registry state.**
 buyer is a claim their engineer disproves in the room.**
 
 `docs/ONE_WAY_LEDGER.md` scores 45 design rules against the compiler as of
-2026-08-21: **9 HOLDS, 9 PARTIAL, 8 VIOLATED, 1 DEFERRED, 18 ABSENT.**
+2026-08-22: **10 HOLDS, 9 PARTIAL, 7 VIOLATED, 1 DEFERRED, 18 ABSENT.** Phase
+19 moved brand identity from `VIOLATED` to `HOLDS`; the narrower CR-11 and CR-12
+matching defects keep cross-context movement `PARTIAL`.
 
 - **Do not describe the effect system in the present tense.** There is no `uses`
   keyword in either lexer.
@@ -166,6 +168,25 @@ asset, and it is the one thing here a competitor cannot cheaply imitate:
 **Do not show the full-stack loop.** It is more legible and it proves the weaker
 claim, and legibility is worth less to someone assessing a liability than to a
 conference audience. It is sequenced after the demo, deliberately.
+
+## 5.2 What to measure after the demo
+
+The first side-by-side is a selected mechanism demonstration. Call it that. Do
+not turn one chosen TypeScript failure into a prevalence claim or say it proves
+Gust beats a production-strength generator stack.
+
+The next evidence artifact is `docs/GENERATION_SECURITY_BENCHMARK.md`: the same
+frontier agent builds realistic multi-tenant applications against conventional
+Next.js/Postgres, a hardened RLS-and-security-gate baseline, and Gust. Lead with
+**secure functional completion under a fixed agent budget**, then show the
+separate security, task-completion, iteration, token, latency, and human-repair
+results.
+
+**Do not say the benchmark exists today.** Its protocol is adopted; its Gust arm
+still waits on effects, typed queries, tenant analysis, a Postgres capability,
+and traces. The benchmark must also be allowed to show that the hardened
+TypeScript arm is good enough or that Gust is too costly for a model to use. If
+it cannot hurt the thesis, it cannot help the pitch.
 
 ## 6. What not to say
 

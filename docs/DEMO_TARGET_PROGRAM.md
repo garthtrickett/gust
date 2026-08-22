@@ -140,12 +140,12 @@ impossible. A rule with no escape hatch gets routed around.
 
 ## What must be true for this to compile
 
-Ordered by dependency. Status verified 2026-08-20; evidence in
+Ordered by dependency. Status re-verified 2026-08-22; evidence in
 `docs/ONE_WAY_LEDGER.md`.
 
 | # | Requirement | Status | Owner |
 | --- | --- | --- | --- |
-| 1 | Brand identity carried by type, not identifier spelling | **VIOLATED** — ledger D-1 | Phase 19 (`TASK.md`), active |
+| 1 | Brand identity carried by type, not identifier spelling | **HOLDS** — Phase 19 closed D-1; `docs/PHASE19_CLOSURE.md:6-17` records the generated closure and Historical Full run `32586399260` | **delivered** — Phase 19 / PR #163, closure registrar PR #164 |
 | 2 | `Result[T, E]` as a builtin, with `?` propagation | **ABSENT** — ledger E2 | **unowned** — spec proposed at VISION **§11.1** |
 | 3 | A constructor for `Option` — `Some(42)` rather than writing `.tag` and `.Some.val` | **PARTIAL** — ledger E1 | Cranelift lane — CR-14 / PR #128; generic enum construction, not an `Option` special case |
 | 4 | Implicit context in application code (`using ctx`) | **ABSENT** | **NOT A DEMO PREREQUISITE** as of the 2026-08-20 placement directive — Phase 5.3 sits after C deprecation; see `docs/UNSAFE_FFI_SEQUENCE.md` §4. Spec at VISION **§24.1** |
@@ -209,10 +209,11 @@ already written down and costed rather than rediscovered.
 > concept. The status is what to build; the note is what it will take, and a
 > table of unowned work is read for the second more than the first.
 
-Rows 1 and 3 are genuine prerequisites rather than scope creep — row 1 because
-the memory model is approximated by string matching until it lands, row 3 because
-OD-9 cannot be tested against a surface that requires `unsafe` to construct an
-`Option`.
+Rows 1 and 3 are genuine prerequisites rather than scope creep. Row 1 is now
+delivered: Phase 19 removed identifier spelling as brand authority, and the
+authoritative Historical Full run passed 17/17 jobs. Row 3 remains open because
+OD-9 cannot be tested fairly against a surface that exposes `Option`'s layout
+instead of providing a constructor.
 
 ## Two things that could ship before any of the above
 
@@ -236,9 +237,9 @@ they are simply the parts of the claim that are reachable now.
 > schedule, and none of these rows moved status because someone described them.
 > What changed is that the next person to pick one starts from a stated design
 > and its open questions rather than from a blank row. Two of the six also came
-> back with their difficulty revised, in opposite directions: **row 4 is harder
-> than it looked** (it depends on Phase 19), and **row 5 is easier**
-> (`FunctionSignature` already carries the shape).
+> back with their difficulty revised: **row 4's former Phase 19 dependency is
+> now resolved**, while **row 5 is easier than it looked** because
+> `FunctionSignature` already carries the required shape.
 
 ## A proposed order for the six unowned rows
 

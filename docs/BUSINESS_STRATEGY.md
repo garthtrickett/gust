@@ -165,6 +165,34 @@ must be able to make the RLS comparison unprompted and concede its strengths**,
 because the first competent buyer will raise it, and a pitch that has not
 metabolised it will not survive that meeting.
 
+### 2.2 Make the answer empirical
+
+The single demo in `VISION.md` section 0.7 shows the mechanism and is allowed to
+select a failure that makes the distinction visible. It is not evidence that
+Gust beats the alternative above across realistic generated applications.
+
+After that demo holds, run `docs/GENERATION_SECURITY_BENCHMARK.md`. The comparison
+has three arms: conventional Next.js/Postgres, a **hardened**
+Next.js/Postgres-or-Supabase stack with RLS and current security gates, and Gust.
+Give each the same application requirements, frontier model, harness, tool and
+repair budget, acceptance tests, and adversarial traffic. The primary endpoint
+is secure functional completion; publish security findings, iterations, tokens,
+latency, and human intervention separately.
+
+The hardened arm is the commercial test. Beating a stack with no RLS or publish
+gate answers an objection nobody competent will make. If the hardened arm
+captures most of Gust's security advantage at materially lower generation cost,
+the wedge is weak even if the compiler works exactly as designed. If Gust remains
+materially safer but the model cannot finish applications within the
+preregistered budget, OD-9 fails in the form the buyer cares about.
+
+This benchmark does **not** resolve section 1's buyer contradiction. A security
+result cannot reveal who owns a budget or what an incident cost. It also does not
+establish that traces improve model training; that needs a separate controlled
+learning experiment after traces exist. Keep technical evidence, customer
+evidence, and training evidence separate so success in one cannot be used to
+smuggle in the other two.
+
 ---
 
 ## 3. The commercial risk that is not in §0.11
@@ -269,9 +297,11 @@ are not serial, and one of them has a longer lead time than the build.**
 | --- | --- | --- |
 | **Now** | Start the counting programme (§0.9) | Longest lead time of anything here; independent of compiler progress; §0.10 already funds it as a separate person |
 | **Now** | Resolve §1's buyer contradiction by talking to five of the fifteen prospects | Costs time, not money; every other decision depends on it; a *no* now is worth more than a *no* at month 4 |
+| **Now** | Preregister the security-adjusted generation benchmark | Task format, threat model, budgets, metrics and audit method can be fixed before results exist without competing for Track A implementation capacity |
 | **Month 1–2** | Write the RLS comparison as a document, and have someone hostile attack it | The first competent buyer raises it; §2 must survive it |
 | **Month 3** | Second conversation with the same five, showing the rejection diagnostic | The diagnostic is the artifact; a promise at month 0 and a demo at month 3 is a credible arc |
 | **Month 4** | §0.14's decision point, **with commercial evidence alongside technical** | OD-8 and OD-9 resolve here; the buyer question should resolve here too |
+| **After the demo holds** | Five-application harness pilot, then 30–50 applications and an independent audit | Turns one selected mechanism demonstration into evidence against the strongest TypeScript alternative; scale only after the pilot fixes the instrument |
 
 **The asymmetry to exploit:** the counting programme and the buyer conversations
 are the only work in this document that **does not depend on the compiler working
@@ -379,6 +409,14 @@ move that looks like progress and spends the four months §0.14 is protecting.
   engineer can show the gap is narrower than claimed, §56 is not a wedge and §3's
   Ring 4 argument has to carry the whole position immediately rather than
   eventually.
+- **The hardened arm of the generation benchmark captures the same security
+  outcome more cheaply.** If RLS, current publish gates, and model repair achieve
+  comparable secure functional completion with materially less agent cost, the
+  deterministic distinction exists but is not a sufficient adoption wedge.
+- **Gust wins the audit and loses generation.** If secure applications require
+  materially more turns, tokens, latency, human repair, or outright task failure
+  than the preregistered limit, OD-9 has failed commercially even if the type
+  system is sound.
 - **An incumbent ships containment first.** §3's risk lands. The response is
   already known — Ring 4 — but the timeline compresses hard.
 - **The counting programme produces a small number.** If generated code does not

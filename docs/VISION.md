@@ -126,16 +126,28 @@ The risk profile has shifted, not shrunk: from *can they build a compiler* — a
 
 **Measured 2026-08-20 at `b47d0049`.** 711 `.gst` compiler files, 103,789 lines; 260 test programs; Phase 18 at 13 of 20 patches. "Several hundred files" above is 260, and is a count of test programs rather than of assertions.
 
-**One qualification on "everything built is table stakes."** It reads as though the built rows are settled. In `docs/ONE_WAY_LEDGER.md`, four of the design rules they rest on are recorded as violated and one was withdrawn to match the compiler. None of the five is currently scheduled:
+**One qualification on "everything built is table stakes."** It reads as though
+the built rows are settled. They are not. Phase 19 repaired one former
+violation, while `docs/ONE_WAY_LEDGER.md` still records four relevant rules as
+violated and one as withdrawn to match the compiler. None of those five is
+currently scheduled:
 
-- **Brand identity** is inferred from identifier spelling, not from types, and the two compilers use different matching rules for it (D-1, D-2). Until Phase 19 lands, "ownership and region-based memory — working" is true of the design and approximate in the implementation.
+- **Brand identity is now type-carried.** Phase 19 closed D-1 and retired
+  identifier spelling as semantic authority; its authoritative Historical Full
+  run passed 17/17 jobs (`docs/PHASE19_CLOSURE.md:12-17`). Exact matching at nested
+  annotation and assignment boundaries still has known defects, CR-11 and
+  CR-12, so cross-context enforcement remains `PARTIAL` in the ledger rather
+  than being treated as finished.
 - **Panic scope** (§34): a string bounds failure calls `exit(1)` and takes the process down rather than the request.
 - **Shared ownership** is marked open as OD-3 while `std.Rc` already ships.
 - **Concurrency** is detached `std.Spawn` plus channels — the model §20 rejects.
 - **Integer overflow** is undefined behaviour on the default backend, not the trap §32 promises: `Type::Int` lowers to C `int`, where signed overflow is UB (issue #103).
 - **The borrow model** is the withdrawn one. §26 was corrected on 2026-08-19 to the single mutable reference form that exists — `inout` is not a keyword in either compiler — so there is no longer a rule being violated, only a containment property that nothing delivers.
 
-This does not change the conclusion that the absent items are the product. It changes what "built" is load-bearing for: the memory model is not yet sound enough to be *demonstrated*, which matters because containment is what is being sold (§0.4).
+This does not change the conclusion that the absent items are the product. It
+changes what "built" is load-bearing for: the memory model is not yet fully
+qualified for the containment demonstration, which matters because containment
+is what is being sold (§0.4).
 
 ## 0.7 What to build next
 
@@ -164,9 +176,41 @@ Bootstrapping through the demo is worth real sacrifice, for two reasons. Arrivin
 
 ### The deliverable
 
-A published, third-party-reproducible side-by-side. The same specification handed to an agent targeting TypeScript and Postgres, and to an agent targeting Gust. The first reproduces the cross-tenant data leak. The second does not compile until it is fixed. Complete traces published: every capability declared, every one exercised, every authority attempt rejected.
+A published, third-party-reproducible side-by-side. The same specification
+handed to an agent targeting TypeScript and Postgres, and to an agent targeting
+Gust. The selected conventional example reproduces the cross-tenant data leak;
+the Gust example does not compile until it is fixed. Complete traces published:
+every capability declared, every one exercised, every authority attempt
+rejected.
 
 That artifact is the entire asset at this stage. Everything else is scaffolding around it.
+
+This first side-by-side is a **mechanism demonstration**, not a benchmark: its
+failure is selected deliberately to make the control visible. It must not be
+presented as evidence that Gust beats a hardened TypeScript stack across a
+distribution of applications.
+
+### The evidence programme after the demo
+
+If the first artifact holds, expand it into the staged protocol in
+`docs/GENERATION_SECURITY_BENCHMARK.md`: a five-application harness pilot, then
+30–50 applications across conventional TypeScript, hardened
+Next.js/Postgres-or-Supabase with RLS and current security gates, and Gust. The
+primary endpoint is **secure functional completion under a fixed agent budget**.
+Publish functional success, exploitable findings, detection stage, iterations,
+tokens, latency, and human intervention separately.
+
+The hardened arm is load-bearing. Gust's real competitor is a fluent model plus
+RLS, scanners, repair loops, and a controlled runtime — not careless TypeScript.
+The benchmark must be able to find that Gust is safer but too difficult for an
+agent, or that the hardened baseline captures the advantage cheaply. Either
+result is evidence against the thesis, not a benchmark failure.
+
+Design and preregistration may begin alongside Track B without consuming Track
+A capacity. The full run waits until the demo surface exists. It does not replace
+the independent counting programme (§0.9), customer conversations
+(`docs/BUSINESS_STRATEGY.md` §1), or a later controlled test of whether traces
+improve model learning.
 
 ### Track A0 — the floor under both tracks
 
@@ -349,6 +393,12 @@ Almost every component exists somewhere. The composition does not. Stating the d
 ## 0.14 Sequencing
 
 **Months 0–4 — the demo.** §0.7, two tracks in parallel. Track A: effects, scoping, typed queries. Track B: model fluency. Then one agent-generated multi-tenant application. Publish.
+
+**Months 0–4 — benchmark protocol, not benchmark results.** Preregister the
+arms, tasks, threat model, budgets, metrics, and audit method in parallel where
+that does not consume Track A capacity. After the demo holds, run the
+five-application harness pilot; scale to 30–50 only after the pilot fixes the
+instrument. `docs/GENERATION_SECURITY_BENCHMARK.md` is the protocol.
 
 **Months 0–3 — the counting, in parallel.** §0.9. Independent of compiler progress, done by someone who is not on Track A or B.
 
@@ -1120,9 +1170,13 @@ Row 4 of `docs/DEMO_TARGET_PROGRAM.md`. Every function that allocates threads a 
 
 **Why this is safe where implicit *authority* would not be.** §17 forbids ambient authority, and an implicit parameter looks like exactly the thing that rule prohibits. It is not, and the distinction is worth stating precisely: **an arena is a destination, not a permission.** It says where a value goes, never what a function may do. Effects stay explicit and stay declared, and no `using` clause may make one implicit. If a future proposal tries to bind a capability the same way, the argument here does not extend to it.
 
-**The dependency nobody has noted.** `docs/SHARED_SEMANTIC_ZONE.md` D-1 records that both compilers infer brand identity from **identifier spelling** — a hardcoded list including `ctx`, `arena`, and `a` — and prepend `&` for anything matching, regardless of type. Implicit context makes that heuristic load-bearing in a way it currently is not: if the context is not written at the call site, the compiler must resolve which context is meant **by type and scope rather than by name**, and there is nothing left to pattern-match on.
-
-> **Row 4 therefore depends on Phase 19**, which owns D-1, and the demo table does not say so. Built first, it would either entrench the spelling heuristic at more sites or require a brand resolution that is itself the Phase 19 work. That moves row 4 from "desugaring, can land any time" — which is how `docs/DEMO_TARGET_PROGRAM.md` ranks it — to *cheap, but not before Phase 19*. The ranking there should be read with this attached.
+**The former dependency is resolved.** D-1 recorded that both compilers inferred
+brand identity from identifier spelling, which would have made an omitted
+context parameter depend on a name no longer present at the call site. Phase 19
+closed D-1 and made resolved type metadata authoritative
+(`docs/PHASE19_CLOSURE.md`). Implicit context is therefore no longer blocked on
+Phase 19. It remains outside the first demo by the 2026-08-20 placement decision;
+that is sequencing, not an unresolved brand prerequisite.
 
 **One rule to fix now while it is free.** `using` binds exactly one context per scope and nested `using` shadows rather than merges. Two implicit contexts in scope would reintroduce by ambiguity precisely the question the explicit parameter answered by construction, and an ambiguity rule written after the feature ships is written under pressure to accept existing code.
 
@@ -1136,7 +1190,12 @@ Request-branded references cannot enter jobs, durable messages, longer-lived cac
 
 > **Enforced in principle, and no stronger than brand identity.** Brands are part of the type, so a value branded to one context is not assignable where another is expected, and the typechecker emits dedicated diagnostics — `[BrandMismatch]` for `Arena.get_ref` and `Arena.Set/Write` (`compiler/typechecker.gst:2661,2668,2676,2709`) and "Brand Nesting. Mismatched nested brand" (`:1716,:1740`). That is real.
 >
-> The qualification is that brand *identity* is currently derived from identifier spelling rather than from the type (`docs/SHARED_SEMANTIC_ZONE.md` D-1, owned by Phase 19). A rule enforced by comparing brands is only as sound as the way brands are identified. The specific prohibitions named here are additionally vacuous today, since jobs, durable messages, and persistent storage do not exist. `docs/ONE_WAY_LEDGER.md` E20.
+> Phase 19 removed identifier spelling as brand authority. The remaining
+> qualification is narrower and live: CR-11 records a nested annotation path
+> that disagrees with inferred brand resolution, and CR-12 records an assignment
+> path that does not preserve exact brand identity. The specific prohibitions
+> named here are additionally vacuous today, since jobs, durable messages, and
+> persistent storage do not exist. `docs/ONE_WAY_LEDGER.md` E20.
 
 ## 26. Borrows
 
