@@ -9,13 +9,20 @@ Written 2026-08-20 by the docs/vision lane, from the arrangement actually
 running that morning rather than from a proposed one. Section 1 is
 observation, sections 2 onward are argument.
 
+Updated 2026-08-22 after the operator retired the separate `Check In` monitor
+role. The durable topology is now **three persistent lane agents only**:
+Cranelift, Stdlib, and docs/vision. The docs/vision agent performs registrar
+checks when its Paseo heartbeat resumes it every fifteen minutes. The heartbeat
+is a trigger attached to that existing agent; it is not a fourth agent and
+grants no authority.
+
 **The short answers, for a reader who wants them before the reasoning.** Three
 working lanes, because three disjoint ownership domains exist. One of them holds
 semantic authority and that one does not shard. During a heavy CI wave, one lane
-pushes and the others work without pushing. There is one monitor, it is a
-schedule rather than an agent, it is stateless by construction, and it decides
-nothing. **There is no manager and there should not be one** — §6. The thing
-people reach for a manager to fix is a registrar, which is bookkeeping.
+pushes and the others work without pushing. Monitoring is a duty of the
+docs/vision lane, triggered by its heartbeat, and decides nothing. **There is no
+manager and there should not be one** — §6. The thing people reach for a manager
+to fix is a registrar, which is bookkeeping.
 
 ---
 
@@ -26,14 +33,16 @@ people reach for a manager to fix is a registrar, which is bookkeeping.
 > written. Re-read it from the daemon before relying on it; the roles in §3 are
 > the durable part.
 
-Read from the Paseo daemon and the GitHub API at **2026-08-20 09:57 UTC**.
+The following table is a **superseded historical observation**, read from the
+Paseo daemon and the GitHub API at **2026-08-20 09:57 UTC**. It explains the
+failures that shaped the policy below; it does not describe the active topology.
 
 | Agent | Started | Lane | State |
 | --- | --- | --- | --- |
 | `1a71cf2` | 2026-08-16 | Cranelift — semantic authority | **running**, 4 days |
 | `d7c8637` | 2026-08-20 01:01 | documentation | **running** |
 | `ccf58f6` | 2026-08-19 | stdlib (see below) | **idle since 08:52Z** |
-| `Check In` ×1 per 5 min | schedule `d90c43b7` | monitor | each dies after ~2 min |
+| `Check In` ×1 per 5 min | schedule `d90c43b7` | retired monitor | each died after ~2 min |
 
 **Two working agents, not three — and three lanes with work in flight.** That gap
 is the finding, and it was invisible in the first revision of this table.
@@ -58,10 +67,20 @@ and #100 (30 runs, 0 complete — the wave currently occupying the shared runner
 **One lane, three waves, and the two finished ones are blocked on something other
 than their own CI.**
 
-**The monitor is not an agent. It is a schedule that creates a new agent every
-five minutes and archives it on finish** (`*/5 * * * *`, `target.type:
-new-agent`, `archiveOnFinish: true`). Sixteen distinct monitor agents appear in a
-single 24-hour listing, each alive about two minutes. §5 turns on that detail.
+**The former monitor was a schedule that created a new agent every five minutes
+and archived it on finish** (`*/5 * * * *`, `target.type: new-agent`,
+`archiveOnFinish: true`). Sixteen distinct monitor agents appeared in a single
+24-hour listing, each alive about two minutes. That arrangement is retained here
+as evidence, not recommendation.
+
+At **2026-08-22**, the operator replaced that arrangement with one fifteen-minute
+heartbeat attached to the persistent docs/vision agent. The old `Check In`
+schedule is paused. At 14:08 UTC, Paseo reported heartbeat `b780add9` active as
+`Gust lane registrar`, with cadence `*/15 * * * *` in `Etc/UTC`, targeting the
+docs/vision agent. It resumes that same agent to perform the checks in §5, so the
+active topology contains no separate monitor process or monitor lane.
+Completed `Check In` records may remain visible in Paseo's agent history; their
+presence does not make them active lane agents.
 
 **There is no manager.** Nothing assigns work, orders merges, or resolves
 cross-lane conflicts. §6 argues that is correct and names the thing that is
@@ -172,11 +191,12 @@ another agent.
 ### The resulting rule
 
 ```
-working lanes      ≤ number of disjoint ownership domains        (today: 3)
-semantic lanes     = 1                                            (a lock)
-pushing lanes      ≤ CI concurrency ÷ heaviest runs-per-push      (today: ~1)
-monitors           = 1 schedule, any number of ephemeral agents   (§5)
-managers           = 0                                            (§6)
+working lanes      ≤ number of disjoint ownership domains      (today: 3)
+semantic lanes     = 1                                          (a lock)
+pushing lanes      ≤ CI concurrency ÷ heaviest runs-per-push    (today: ~1)
+monitor agents     = 0                                          (§5)
+monitoring duty    = docs/vision, resumed by one heartbeat      (§5)
+managers           = 0                                          (§6)
 ```
 
 Three working lanes is therefore not a budget decision. It is the number of
@@ -190,7 +210,7 @@ level.
 Ordered by how much of the zone each one needs, because that is what determines
 how often it blocks.
 
-**Semantic authority lane — one, currently Cranelift `1a71cf2`.**
+**Semantic authority lane — one, Cranelift.**
 Owns every row in the shared semantic zone: type identity, layout, brands, ABI,
 resource and move semantics, MIR operation meaning, the runtime symbol surface,
 target and link policy. It is the only lane that may change decided semantics,
@@ -214,14 +234,16 @@ implement a narrower version inside the lane. `MutexGuard` is the worked example
 > is recorded here for its owner rather than silently treated as resolved in
 > full.
 
-**Documentation lane — one, currently `d7c8637`.**
+**Documentation lane — one, docs/vision.**
 Owns `docs/` and nothing else. Structurally the cheapest lane: it never needs the
 zone lock, and it costs 2 CI runs per push against the compiler lane's tens.
 **It is the lane that can always make progress**, which makes it the right place
 to park work when CI is saturated — and the wrong place to put anything urgent,
-because it holds no authority over code.
-
-**Monitor — one schedule, unlimited ephemeral agents.** §5.
+because it holds no authority over code. It also owns the registrar duty in §5:
+its Paseo heartbeat prompts it to observe the other lanes, reconcile live state
+with the roadmaps and terminal record, and report actionable drift. That duty
+does not widen its file ownership or give it semantic, merge, or managerial
+authority.
 
 **Manager — none.** §6.
 
@@ -230,8 +252,8 @@ because it holds no authority over code.
 ## 4. Paseo's part
 
 Paseo is the substrate: it creates the agents, holds their working directories,
-sets their permission mode, and runs the schedule. Everything above is a *policy*
-statement; Paseo is what makes it a running arrangement.
+sets their permission mode, and runs the heartbeat. Everything above is a
+*policy* statement; Paseo is what makes it a running arrangement.
 
 What matters for topology:
 
@@ -239,32 +261,50 @@ What matters for topology:
   alive for four days. Lane identity is therefore continuous, and a lane's
   accumulated context is a real asset — which is exactly why §8 insists it must
   never be the *only* copy of anything.
-- **Schedules can target `new-agent`,** which is how the monitor works and why it
-  is stateless.
-- **Permission mode is per agent.** All current agents run `bypassPermissions`.
-  That makes every boundary in `AGENTS.md` an *honour* boundary enforced by the
-  agent's own judgement, not by the tool layer. §9 is the consequence.
-- **Agents can enumerate and message each other.** Concretely: `list_agents` for
-  discovery (id, title, status, `cwd`, last activity), `send_agent_prompt` to
-  deliver a message into another agent's conversation, `get_agent_status` and
-  `get_agent_activity` to observe one without interrupting it, and
-  `list_pending_permissions` to see whether an agent is blocked rather than
-  merely quiet. Every lane has all of them, against every other lane. **Prefer the
-  observing calls to the messaging one**: knowing whether a lane is blocked is
-  almost always what is wanted, and unlike a prompt it costs the other lane
-  nothing.
+- **A heartbeat can resume an existing agent.** The active registrar heartbeat
+  resumes docs/vision every fifteen minutes. It creates no fourth agent. Because
+  that agent has continuity, every check must deliberately re-derive its claims
+  from disk and the relevant API rather than trusting conversational memory.
+- **Permission mode is per agent.** Regardless of the mode currently selected,
+  the ownership boundaries in `AGENTS.md` are obligations the agent must hold;
+  a permissive tool layer must not be mistaken for wider authority. §9 is the
+  consequence.
+- **Agents can enumerate, inspect, and message each other through Paseo.** The
+  registrar uses the live agent listing and inspection before considering a
+  direct message. **Prefer observation to messaging**: knowing whether a lane is
+  blocked is almost always what is wanted, and unlike a prompt it costs the
+  other lane nothing.
 
 The last point is the one to be careful with, and §8 states the rule.
 
 ---
 
-## 5. The monitor, and why statelessness is a feature
+## 5. The docs/vision registrar heartbeat
 
-The Check In schedule fires every five minutes, creates a fresh agent, and
-archives it when it finishes. Its prompt is to contact the other agents and keep
-them moving.
+There is no monitor agent. Paseo resumes the existing docs/vision lane every
+fifteen minutes, and that lane performs the registrar check before continuing
+its documentation work. The check observes Cranelift and Stdlib, their active
+worktrees and PRs, and the roadmaps that govern them. It reports meaningful
+changes and uses a direct Paseo message only when a lane is stopped or claims to
+be blocked and specific, verified context can help it continue.
 
-**Consequences of a new agent each tick:**
+The heartbeat changes *when* docs/vision looks; it changes neither ownership nor
+authority. Docs/vision may not edit another lane's files, decide semantics,
+cancel or merge another lane's work, or treat a heartbeat as authorisation. A
+lane receiving a registrar message independently re-derives every gate before
+an irreversible action.
+
+The persistent agent does have memory of earlier checks. That is useful context,
+but it also permits a stale conclusion to persist. Therefore every heartbeat
+must re-read live agent state, the relevant roadmap, the last terminal state,
+and GitHub state. CI counts use the PR's full 40-character head SHA and include
+only runs whose `event == "pull_request"`. Conversation is never evidence.
+
+The following is retained as historical evidence for those constraints. The
+retired `Check In` schedule fired every five minutes, created a fresh agent, and
+archived it when it finished.
+
+**Consequences of the former new-agent design:**
 
 - It has **no memory of the previous tick.** It cannot accumulate a belief, drift,
   or carry yesterday's conclusion into today. Every tick re-derives state from
@@ -276,10 +316,10 @@ them moving.
   mechanical argument rather than a stylistic one.
 - It is **cheap to lose.** A monitor that dies mid-tick costs one tick.
 
-**What the monitor must not be given:** decision authority. It is the least
-informed participant by construction — two minutes of context, no history — and
-it fires on a timer rather than on an event. A design that lets the
-least-informed participant decide is inverted.
+**What no registrar check may be given:** decision authority. The former monitor
+was the least-informed participant by construction — two minutes of context, no
+history — and fired on a timer rather than on an event. The persistent
+docs/vision agent has more context, but no more authority.
 
 **An observed failure, recorded because it will recur.** Twice on 2026-08-20 a
 monitor tick instructed the docs lane to write into `compiler/` and `tests/`,
@@ -292,10 +332,9 @@ both times, and both refusals were upheld.
 > did not create. A lane that treats a timer-driven message as authorisation has
 > effectively let a cron expression amend its instructions.
 
-This is not a criticism of the monitor's prompt, which is doing its job — "keep
-everything moving" is the right instruction for an observer. It is an argument
-that the boundary must be held on the *receiving* side, because the sending side
-cannot know it exists.
+This was not a criticism of the former monitor's intent. It is evidence that the
+boundary must be held on the *receiving* side as well as by docs/vision, because
+a heartbeat cannot know every instruction in another lane's conversation.
 
 **"Cannot authorise" and "cannot prompt" are different claims, and only the first
 one holds.** Recorded from a case on 2026-08-20 where the weaker one mattered. A
@@ -306,7 +345,7 @@ by a standing operator instruction given hours earlier — and the pulse granted
 nothing. But the pulse set the timing of an irreversible action**, because its
 flag is what caused the check to happen then rather than later.
 
-Prompting is legitimate and is most of the monitor's value; noticing that a gate
+Prompting is legitimate and is most of the registrar's value; noticing that a gate
 and a working tree have diverged is exactly the cross-reference §5 exists to
 produce. The rule that makes it safe is not "ignore pulses":
 
@@ -326,14 +365,14 @@ version of the same agent, cannot tell which instructions were human.
 
 ---
 
-### 5.1 The monitor prompt, proposed
+### 5.1 The retired prompt and the active check
 
-The prompt in use on 2026-08-20 was: *"Reach out to the other agents that are
+The retired prompt in use on 2026-08-20 was: *"Reach out to the other agents that are
 running in the project with your paseo skill and make sure they are not stopped,
 everything should where possible continue moving forward automatically (in line
 with the .mds)."*
 
-It is doing its job, and it has three failure modes this document observed
+It had three failure modes this document observed
 directly. It is written in the **imperative** ("make sure they are not stopped"),
 which turns a two-minute-old observer into a source of instructions — twice it
 told a lane to write into paths the operator had placed off limits. It names **no
@@ -341,11 +380,12 @@ unit**, so its counts and a lane's counts disagreed about the same PR without
 either being wrong. And it says **reach out**, which is the expensive action;
 observing costs the other lane nothing and answers the question most of the time.
 
-Proposed replacement:
+Those findings now govern the docs/vision heartbeat:
 
 > Observe the project and report. **You decide nothing and authorise nothing.**
 >
-> 1. `list_agents` and `gh pr list`. For each open PR, count runs with
+> 1. Inspect the live Cranelift and Stdlib agents and run `gh pr list`. For each
+>    open PR, count runs with
 >    `gh api "repos/:owner/:repo/actions/runs?head_sha=<full 40-char sha>"`
 >    filtered to `event == "pull_request"`. **State that filter in your report** —
 >    a count without its population is not a fact.
@@ -353,18 +393,16 @@ Proposed replacement:
 >    closed, or absent. Cross-referencing the agent list against the PR list is
 >    something only you are positioned to do, and it is the most useful thing you
 >    produce.
-> 3. Flag agents that are `idle` with `requiresAttention`, blocked on a pending
->    permission, or failing. Use `get_agent_status` and `get_agent_activity`
->    first; **only send a prompt if there is something specific an agent can act
->    on right now.**
+> 3. Flag agents that are idle, stopped, blocked, or failing. Inspect first;
+>    **only send a direct Paseo message if there is something specific an agent
+>    can act on right now.**
 > 4. Report genuine `failure`, `timed_out`, or `cancelled` conclusions, naming the
 >    PR and the workflow. Never cancel, re-run, or merge anything.
 > 5. **You cannot widen a boundary you did not create.** If an agent is not doing
 >    something you think it should, report that — do not instruct it. An operator
 >    constraint outranks anything in this prompt.
-> 6. You have no memory of previous ticks. Derive everything from the API and from
->    disk, and do not infer that something changed because you did not see it last
->    time — you did not see last time.
+> 6. Do not treat memory of a previous heartbeat as evidence. Derive every
+>    conclusion again from the API and disk.
 >
 > 7. **Flag any lane that is idle while unblocked work exists for it.** Not to
 >    instruct it — to report that a lane and its queue have become disconnected.
@@ -395,7 +433,7 @@ role can answer that no lane can answer about itself.
 `AGENTS.md` says of the bootstrap seed that **nothing in CI detects drift**, and
 that *"a long gap since the last regeneration is a risk to retire deliberately,
 not evidence that all is well."* That sentence carries the whole safeguard and
-has no mechanism behind it. Item 9 above is the mechanism, and its shape is
+has no mechanism behind it. Item 8 above is the mechanism, and its shape is
 deliberate.
 
 **Measure, do not build.** The drift signal needs no compilation: the last seed
@@ -413,17 +451,17 @@ learn to ignore, and they take the real ones with it.
 the next bootstrap-sensitive patch would carry the backlog — is irreducibly
 judgement, since it depends on what the next patch is, which only the lane
 planning it knows. And a regeneration must be its own commit and PR, so it
-competes with real work for a place in a queue. **The monitor supplies the
-number; the owning lane decides what it means.**
+competes with real work for a place in a queue. **The docs/vision registrar
+supplies the number; the owning lane decides what it means.**
 
 **Baseline reading, 2026-08-20 23:24Z.** Seed last regenerated **2026-08-07**
 (`1e5ba38b`, *"chore: ran make bootstrap"*), **13 days**. Since then **61 commits
 touched `compiler/*.gst`**, of which **2 touched the four files trigger 2 names**.
-Recorded so the first monitor report has something to be a delta from — and worth
+Recorded so the first registrar report has something to be a delta from — and worth
 noting that the answer turned out to be *small*, which was not knowable either way
 before it was measured. **An unmeasured risk is not the same as a large one.**
 
-### 5.2 Cadence — proposed: every 15 minutes, not every 5
+### 5.2 Cadence — adopted: every 15 minutes, not every 5
 
 **Pick the interval from how fast the observed state actually changes**, which is
 the same rule that governs any poll. Every quantity this role watches moves on a
@@ -435,35 +473,29 @@ scale of tens of minutes to hours:
 | An agent idle or finished without a terminal state | hours | none |
 | An agent stalled or crashed | unknown; a stall costs at most one interval | 10 minutes of lost work, once |
 | A CI failure | minutes — **but the owning lane's own watcher sees it first, and only that lane can act** | none |
-| An agent blocked on a permission | not applicable under `bypassPermissions` | none |
+| An agent blocked on a permission | configuration-dependent; inspect live state | none |
 
-**Nothing on that list is a five-minute quantity.** The cost of the mismatch is
-not theoretical: each tick spawns a full agent, and a tick that sends a prompt
-costs the receiving lane a turn of its own context. On 2026-08-20 the schedule
-produced roughly 190 agents in sixteen hours, the large majority reporting that
-nothing had changed.
+**Nothing on that list is a five-minute quantity.** Under the retired design,
+each tick spawned a full agent, and a tick that sent a prompt cost the receiving
+lane a turn of its own context. On 2026-08-20 the schedule produced roughly 190
+agents in sixteen hours, the large majority reporting that nothing had changed.
+The current heartbeat creates no agent and should not produce user-visible
+chatter when nothing meaningful changed.
 
-**`*/15 * * * *`.** Three times cheaper, still bounds a stall at a quarter hour,
-and every state above changes more slowly than that.
+**`*/15 * * * *`.** This bounds a stall at a quarter hour, and every state above
+changes more slowly than that. It resumes the persistent docs/vision agent.
 
-**A larger saving than the interval: the tick does not need a frontier model at
-high effort.** Its work is API reads and one cross-reference. Lowering the model
-or the thinking level cuts cost without reducing coverage at all, which the
-interval cannot claim — halving the frequency does lose the ability to catch a
-stall quickly, even if only marginally.
-
-**One caveat, stated because it is the real reason the interval was five.** Part
-of what the schedule did on 2026-08-20 was keep lanes from going idle, and that
-is a different job from monitoring. If lanes need nudging to continue, the fix is
-in their own instructions, not in the observer's frequency — **a schedule that
-exists to prod is a schedule that will eventually prod someone across a
-boundary**, which is exactly what happened twice. Fix the idling where it lives
-and the monitor can be as slow as its slowest signal.
+Part of what the old schedule did was keep lanes from going idle, which is a
+different job from monitoring. The current registrar may pass verified context
+that removes a concrete block, but it does not issue generic prods. Continuation
+remains governed by each lane's roadmap and lifecycle rules.
 
 ## 6. There is no manager, and there should not be one
 
-The question that prompted this document was whether a manager agent should exist
-alongside the check-in schedule. The answer is no, and the reasoning generalises.
+The question that prompted this document was whether a manager agent should
+exist alongside the lanes. The answer is no, and the reasoning generalises. A
+docs/vision heartbeat does not change that answer because it observes and
+records; it does not allocate work or decide.
 
 Sort everything a manager would do:
 
@@ -576,7 +608,7 @@ Three channels, and they are not interchangeable.
 | --- | --- | --- | --- |
 | A file in the repo | yes | yes | anything another lane must act on |
 | Shared state file | yes | yes, if findable | handoffs, current position |
-| `send_agent_prompt` | no | no | time-sensitive nudges only |
+| Direct Paseo message | no | no | time-sensitive, verified context only |
 
 **The rule: a decision is not communicated until it is on disk.** A message
 delivers a decision to one agent, in one conversation, which is then compacted
@@ -608,12 +640,12 @@ Level 3 run costs six hours and is unrecoverable.
 
 ---
 
-## 9. Every boundary here is honour-based
+## 9. Every boundary here must be held by the receiving lane
 
-All agents run `bypassPermissions`. Nothing in the tool layer stops the docs lane
-from editing `compiler/`, or one lane from force-pushing another's branch. The
-boundaries in `AGENTS.md` and in this document are held by agents choosing to
-hold them.
+Permission mode is configuration, not authority. A mode may permit the docs
+lane to edit `compiler/`, or one lane to alter another's branch, while the
+project rules forbid both. The boundaries in `AGENTS.md` and in this document
+remain binding even when the tool layer is more permissive.
 
 That is worth stating plainly rather than leaving implicit, because it changes
 what "safe parallelism" means. The number in §2 is not the number of agents the
@@ -621,9 +653,9 @@ tooling can keep apart — **the tooling keeps nothing apart.** It is the number
 agents that can each independently know what they own, and decline the work that
 is not theirs.
 
-Which is why §5's rule is the load-bearing one in this document. Under
-`bypassPermissions`, the only thing standing between a plausible instruction and
-a cross-lane collision is the receiving lane's willingness to say no to it.
+Which is why §5's rule is load-bearing. The docs/vision heartbeat cannot widen a
+boundary, and the receiving lane must independently reject any plausible message
+that conflicts with its instructions.
 
 ---
 
@@ -644,9 +676,10 @@ section numbers.
   recurring decision that is neither a rule a document can carry nor the
   operator's to make. §6 tests the hardest candidate found so far and it does not
   qualify. A real one belongs in §6 as a counterexample.
-- **The registrar may not need to be an agent at all.** §6 proposes bookkeeping,
-  not autonomy, and bookkeeping is often a file plus a habit. If the habit holds
-  for a week without one, it does not need one.
+- **The registrar does not require a separate agent.** The adopted arrangement
+  assigns the duty to docs/vision and uses a heartbeat only to set its cadence.
+  If that duty grows into authority or requires a fourth ownership domain, this
+  document must be reconsidered before the topology changes.
 
 **The limitation to state plainly:** this was written by the documentation lane,
 about lanes it does not own, from the outside. The Cranelift lane's four days of
@@ -663,15 +696,15 @@ this file rather than being settled quietly.
 - **One semantic-authority lane**, because the zone is a lock that does not shard.
 - **One pushing lane during a heavy CI wave**, because the real unit is runs, not
   agents. Other lanes work and hold commits.
-- **One monitor schedule**, stateless by construction, with no decision authority
-  and no power to widen a boundary.
+- **No fourth monitor agent.** The persistent docs/vision lane performs registrar
+  checks when its fifteen-minute Paseo heartbeat resumes it.
 - **No manager.** Mechanical decisions become documents; product decisions go to
   the operator; there is no third kind.
-- **A registrar is the genuine gap** — bookkeeping over shared state, deciding
-  nothing.
+- **Registrar work remains bookkeeping**, deciding nothing and granting no
+  authority over another lane.
 - **Disk is the only real channel.** Messages are advisory and do not survive.
 - **A lane must be re-derivable from disk at any moment**, because compaction and
   four-day sessions arrive without warning.
-- **Every boundary here is honour-based**, since all agents run
-  `bypassPermissions`. The count in §2 is not what the tooling can keep apart —
+- **Every lane must hold its boundary**, regardless of what its permission mode
+  technically permits. The count in §2 is not what the tooling can keep apart —
   it is what the lanes can decline.
