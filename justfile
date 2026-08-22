@@ -16316,6 +16316,17 @@ guard-cranelift-phase19-seed-convergence:
     python3 scripts/phase19_seed_convergence.py validate
     python3 scripts/phase19_seed_convergence.py check-review
 
+guard-cranelift-phase19-self-compilation-differential:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧬 Running Phase 19 compiler self-compilation differential (Level 3)..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase19-self-compilation-differential | grep -F $'guard-cranelift-phase19-self-compilation-differential\t3\t' >/dev/null
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase19_self_compilation.py validate
+    python3 scripts/phase19_self_compilation.py check-review
+    bash scripts/phase19_self_compilation_differential.sh
+
 guard-cranelift-phase19-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail

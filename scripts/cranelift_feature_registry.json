@@ -979,6 +979,28 @@
       {"patch": "19.8", "scope": "spelling-list removal, structural template roles, and order-independent template discovery"}
     ]
   },
+  "phase19_self_compilation_differential": {
+    "contract_version": "phase19_self_compilation_differential_v1",
+    "status": "ready_for_patch19_11",
+    "next_patch": "19.11",
+    "review_view": "compiler/CRANELIFT_PHASE19_SELF_COMPILATION_DIFFERENTIAL.md",
+    "baseline_policy": "previous_committed_converged_seed_before_patch19_3",
+    "current_policy": "latest_committed_converged_seed_after_patch19_8",
+    "full_diff": {
+      "insertions": 15016,
+      "deletions": 14678,
+      "unexplained_differences": 0
+    },
+    "patch_boundaries": [
+      {"patch": "19.3", "pull_request": 144, "compiler_commit_subjects": ["phase19: construct canonical branded type names"]},
+      {"patch": "19.4", "pull_request": 145, "compiler_commit_subjects": ["Phase 19.4 derive classification from resolved types", "Register synthetic container fixture metadata"]},
+      {"patch": "19.5", "pull_request": 146, "compiler_commit_subjects": ["phase19: add inert call representation fields", "phase19: migrate argument representation consumers", "phase19: enforce canonical argument representation", "fix: preserve reference argument representation"]},
+      {"patch": "19.6", "pull_request": 147, "compiler_commit_subjects": ["feat: converge self-hosted spelling rules"]},
+      {"patch": "19.7", "pull_request": 148, "compiler_commit_subjects": []},
+      {"patch": "19.8", "pull_request": 149, "compiler_commit_subjects": ["phase19: remove self-hosted brand name list", "fix: resolve ambiguous flattened template brands"]}
+    ],
+    "level3_owner": "Cranelift Historical Full"
+  },
   "opening_snapshots": {
     "phase19": {
       "opening_version": "phase19_opening_inventory_rebased_on_phase18_closure",
