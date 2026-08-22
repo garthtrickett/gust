@@ -172,7 +172,7 @@ def validate_schema(schema: dict) -> None:
     opening = properties.get("opening_snapshots", {})
     require(
         set(opening.get("required", []))
-        == {"phase13", "phase14", "phase15", "phase16", "phase17", "phase18", "phase19"},
+        == {"phase13", "phase14", "phase15", "phase16", "phase17", "phase18", "phase19", "phase20"},
         "schema opening snapshot keys drifted",
     )
     require(
@@ -225,7 +225,7 @@ def validate() -> dict:
     require(
         isinstance(snapshots, dict)
         and set(snapshots)
-        == {"phase13", "phase14", "phase15", "phase16", "phase17", "phase18", "phase19"},
+        == {"phase13", "phase14", "phase15", "phase16", "phase17", "phase18", "phase19", "phase20"},
         "opening snapshots must contain Phase 13 through Phase 19",
     )
     snapshot = snapshots["phase16"]

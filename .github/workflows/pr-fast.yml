@@ -302,6 +302,9 @@ jobs:
       - name: Phase 19 brand identity and value representation opening
         run: just guard-cranelift-phase19-opening-contract
 
+      - name: Phase 20 opening evidence and qualification authority
+        run: just guard-cranelift-phase20-opening-contract
+
       - name: Phase 19 identifier-spelling decision inventory
         run: just guard-cranelift-phase19-spelling-inventory
 

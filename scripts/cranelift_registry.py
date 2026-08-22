@@ -1723,8 +1723,8 @@ def validate_phase13_opening_snapshot_structure(registry):
     require(
         isinstance(snapshots, dict)
         and set(snapshots)
-        == {"phase13", "phase14", "phase15", "phase16", "phase17", "phase18", "phase19"},
-        "opening_snapshots must contain exactly phase13 through phase19",
+        == {"phase13", "phase14", "phase15", "phase16", "phase17", "phase18", "phase19", "phase20"},
+        "opening_snapshots must contain exactly phase13 through phase20",
     )
     snapshot = snapshots["phase13"]
     require(
@@ -4236,7 +4236,7 @@ def validate():
     opening_schema = schema.get("properties", {}).get("opening_snapshots", {})
     require(
         set(opening_schema.get("required", []))
-        == {"phase13", "phase14", "phase15", "phase16", "phase17", "phase18", "phase19"},
+        == {"phase13", "phase14", "phase15", "phase16", "phase17", "phase18", "phase19", "phase20"},
         "schema opening snapshot keys drifted",
     )
     phase13_snapshot_schema = definitions.get("phase13_opening_snapshot", {})

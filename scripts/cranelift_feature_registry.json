@@ -1120,6 +1120,166 @@
     "view_derivation": "the_closure_view_is_generated_from_this_block"
   },
   "opening_snapshots": {
+    "phase20": {
+      "opening_version": "phase20_opening_evidence_and_qualification_authority_v1",
+      "status": "ready_for_patch20_1",
+      "next_patch": "20.1",
+      "predecessor_closure_status": "phase19_closed_brand_identity_and_value_representation",
+      "roadmap_merge_sha": "1cfab1344b24ffefc72b4d752ead3eb17c6719c6",
+      "review_view": "compiler/CRANELIFT_PHASE20_OPENING.md",
+      "baseline_probes": [
+        {
+          "id": "cr11_explicit_graph_annotation",
+          "source_requirement": "CR-11/#158",
+          "fixture": "compiler/future/p20_cr11_explicit_graph_annotation_current.gst",
+          "compile_exit": 1,
+          "current_verdict": "rejects_valid_program_with_three_brand_nesting_restrictions_and_secondary_void_mismatch",
+          "diagnostic_substrings": [
+            "Brand Nesting Restriction",
+            "Declared Void"
+          ],
+          "semantic_owner": "compiler_brand_identity_verifier",
+          "next_patch": "20.2",
+          "fix_enabled": false
+        },
+        {
+          "id": "cr12_wrong_brand_clone_destination",
+          "source_requirement": "CR-12/#159",
+          "fixture": "compiler/future/p20_cr12_wrong_brand_clone_current.gst",
+          "compile_exit": 0,
+          "current_verdict": "incorrectly_accepts_distinct_destination_brand",
+          "diagnostic_substrings": [],
+          "semantic_owner": "compiler_brand_identity_verifier",
+          "next_patch": "20.3",
+          "fix_enabled": false
+        },
+        {
+          "id": "cr13_freed_receiver_reuse",
+          "source_requirement": "CR-13/#160",
+          "fixture": "compiler/future/p20_cr13_free_receiver_reuse_current.gst",
+          "compile_exit": 0,
+          "current_verdict": "incorrectly_accepts_clone_through_freed_arena_receiver",
+          "diagnostic_substrings": [],
+          "semantic_owner": "compiler_arena_lifecycle_verifier",
+          "next_patch": "20.5",
+          "fix_enabled": false
+        },
+        {
+          "id": "issue106_unbound_directory_payload",
+          "source_requirement": "CR-5/#106",
+          "fixture": "compiler/future/p20_issue106_unbound_directory_current.gst",
+          "compile_exit": 0,
+          "current_verdict": "incorrectly_accepts_unextracted_open_directory_payload",
+          "diagnostic_substrings": [],
+          "semantic_owner": "compiler_linear_resource_verifier",
+          "next_patch": "20.9",
+          "fix_enabled": false
+        },
+        {
+          "id": "issue106_bound_directory_control",
+          "source_requirement": "CR-5/#106",
+          "fixture": "compiler/future/p20_issue106_bound_directory_current.gst",
+          "compile_exit": 1,
+          "current_verdict": "rejects_named_open_directory_with_existing_resource_leak_diagnostic",
+          "diagnostic_substrings": [
+            "Resource leak"
+          ],
+          "semantic_owner": "compiler_linear_resource_verifier",
+          "next_patch": "20.9",
+          "fix_enabled": false
+        }
+      ],
+      "qualification_projection": {
+        "registry_path": "scripts/cranelift_feature_registry.json",
+        "test_levels_path": "scripts/cranelift_test_levels.json",
+        "historical_workflow_path": ".github/workflows/cranelift-historical-full.yml",
+        "entry_status_decisions": {
+          "migrated": "selected",
+          "candidate_deferred": "deferred",
+          "deferred": "deferred",
+          "replaced": "unsupported_historical_replaced"
+        },
+        "required_entry_owner_fields": [
+          "route_owner",
+          "worker_capability_owner",
+          "diagnostic_owner"
+        ],
+        "source_pair_fields": [
+          "source_fixture",
+          "differential_case_id"
+        ],
+        "composition_field": "evidence.composition_case_ids",
+        "deferred_fixture_fields": [
+          "evidence.deferred_fixture",
+          "negative_current_fixture"
+        ],
+        "level3_selection": "every guard assigned integer level 3",
+        "projection_policy": "derive_complete_counts_and_rows_from_canonical_sources_never_copy_a_partial_list"
+      },
+      "observables": [
+        {
+          "id": "compile_result",
+          "comparison": "exact_success_or_failure",
+          "owner": "compiler_frontend"
+        },
+        {
+          "id": "process_exit_status",
+          "comparison": "exact_integer",
+          "owner": "native_driver"
+        },
+        {
+          "id": "stdout",
+          "comparison": "exact_bytes_unless_case_declares_environment_normalization",
+          "owner": "differential_harness"
+        },
+        {
+          "id": "stderr",
+          "comparison": "exact_bytes_unless_case_declares_environment_normalization",
+          "owner": "differential_harness"
+        },
+        {
+          "id": "diagnostic_code_and_span",
+          "comparison": "exact_semantic_code_and_source_span",
+          "owner": "compiler_diagnostic_verifier"
+        },
+        {
+          "id": "resource_terminal_state",
+          "comparison": "exact_owned_moved_closed_or_destructor_scheduled_state",
+          "owner": "compiler_linear_resource_verifier"
+        },
+        {
+          "id": "sandboxed_filesystem_effects",
+          "comparison": "exact_relative_tree_kind_and_bytes",
+          "owner": "differential_harness"
+        }
+      ],
+      "cohort_requirements": [
+        {
+          "decision": "selected",
+          "owner_policy": "entry_route_worker_and_diagnostic_owners",
+          "reason_policy": "entry_is_migrated_with_declared_differential_evidence",
+          "falsifier": "any_selected_observable_diverges_or_route_falls_back"
+        },
+        {
+          "decision": "deferred",
+          "owner_policy": "entry_future_destination_and_diagnostic_owner",
+          "reason_policy": "entry_deferral_reason_and_expected_failure_stage",
+          "falsifier": "declared_route_becomes_supported_and_its_differential_passes"
+        },
+        {
+          "decision": "unsupported_historical_replaced",
+          "owner_policy": "replacement_entry_and_historical_registry_owner",
+          "reason_policy": "entry_status_is_replaced_and_successor_is_registered",
+          "falsifier": "replacement_or_successor_traceability_is_absent"
+        }
+      ],
+      "non_claims": [
+        "Patch 20.0 changes a Gust program's meaning.",
+        "A recorded baseline verdict is the desired final verdict.",
+        "A Level 3 guard being registered means it passes.",
+        "A deferred or replaced entry may fall back from Cranelift to generated C."
+      ]
+    },
     "phase19": {
       "opening_version": "phase19_opening_inventory_rebased_on_phase18_closure",
       "inventory_version": "phase19_opening_inventory_self_hosted_v2",

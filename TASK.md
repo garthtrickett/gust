@@ -43,7 +43,7 @@ does not activate another lane, and does not authorize Phase 21.
 
 ## Status
 
-- [ ] Patch 20.0 — Opening Evidence and Qualification Authority
+- [x] Patch 20.0 — Opening Evidence and Qualification Authority — DONE
 - [ ] Patch 20.1 — Canonical Brand-Matching Primitives
 - [ ] Patch 20.2 — Nested Brand Annotation Correction (CR-11/#158)
 - [ ] Patch 20.3 — Exact Branded Assignment and Annotation (CR-12/#159)
