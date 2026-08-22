@@ -113,9 +113,10 @@ when the backend does.
 
 Counts: 10 `HOLDS`, 9 `PARTIAL`, 7 `VIOLATED`, 1 `DEFERRED`, 18 `ABSENT`.
 
-Row 27 remains the declared implementation priority. Phase 20's draft roadmap
-continues that backend work and separately schedules the CR-11 and CR-12 defects
-that limit row 36; a draft roadmap is direction, not completed evidence.
+Row 27 remains the declared implementation priority. The active Phase 20
+roadmap continues that backend work and separately schedules the CR-11 and CR-12
+defects that limit row 36; an activated roadmap is direction, not completed
+evidence.
 
 | Row | Rule | Status | Owner |
 | --- | --- | --- | --- |
