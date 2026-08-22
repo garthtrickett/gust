@@ -630,6 +630,65 @@ semantics, so the Stdlib lane stopped rather than adding a Clone-only check.
 This blocks S1.5.
 **Owner:** Cranelift lane.
 
+### CR-14 — Enum variant construction, and who owns it
+
+Raised because `docs/DEMO_TARGET_PROGRAM.md` row 3 assigns "a constructor for
+`Option` — `Some(42)`" to **Stdlib (Track A0 scope)**, and investigating it
+shows that label is wrong. Filed in the stop-and-report format so the ownership
+question is answerable rather than assumed.
+
+1. **Intended behaviour:** `Some(42)` constructs an `Option`, and the equivalent
+   for any enum variant, without `unsafe`.
+2. **Existing limitation:** there is **no variant-construction syntax at all**,
+   and no struct-literal syntax either. Every enum value is built by writing the
+   discriminant and payload by hand, and both writes require `unsafe` because
+   direct variant access is rejected in safe code:
+
+   ```gust
+   unsafe { o1.tag = 0; o1.Some.val = r1; }   // tests/e2e_adt_pressure_test.gst
+   ```
+
+   `Some(42)` resolves through ordinary function lookup and fails with
+   `Semantic Error: Undefined function 'Some'` — verified by compiling it. So
+   there is no existing construct to normalise; this would introduce a new
+   expression form.
+3. **Smallest generic change — and it is not an `Option` constructor.**
+   `docs/SHARED_SEMANTIC_ZONE.md` says "prefer the smallest generic semantic
+   improvement; never a special case for one library type". `Option` is a
+   synthesised enum template registered beside user enums, and user enums have
+   exactly the same problem. **The generic change is enum variant construction
+   for all enums**; an `Option`-only constructor is precisely the special case
+   that rule forbids. Row 3 states the symptom, not the change.
+4. **Affected:** both parsers (a new expression form), both typecheckers
+   (resolution and the `T` → `Enum[T]` inference), both codegens, and the
+   bootstrap seed.
+5. **MIR-to-C:** yes.
+6. **Cranelift:** yes.
+7. **Bootstrap:** yes. The seed cannot compile a construct it does not know, so
+   this needs the regeneration sequence, not a plain rebuild.
+
+**Why this is not Stdlib work, despite row 3.** The default owner rule is "a
+semantic, compiler, or MIR change belongs to Cranelift; a pure library or API
+change belongs to Stdlib". There is no library-shaped path available: there is
+no `.gst`-level stdlib module, `std.*` functions are C functions recognised by
+name in the typechecker, and a generic `Some` cannot be a C function because C
+has no generics. Every route is a compiler change.
+
+Nor does the S1.3 precedent apply. That was accepted as Stdlib work because it
+was pure frontend *resolution* producing identical canonical MIR to an existing
+form. This has no existing form to be identical to — it makes programs compile
+that are currently rejected, which is the opposite direction from the zone's
+carve-out for diagnostics that *reject* what is currently miscompiled.
+
+**What is asked:** a ruling on ownership, and if it is Cranelift's, sequencing —
+the same shape as CR-5's. Nothing here proposes a syntax; that is the owning
+lane's design decision.
+
+**Not blocking anything today.** No S1 patch depends on it. It is recorded
+because row 3 names the Stdlib lane as owner and the Stdlib lane cannot do it,
+and a demo prerequisite assigned to a lane that cannot execute it will sit
+untouched while appearing owned.
+
 ## Verification Policy
 
 ### Level 1 — Fast contracts
