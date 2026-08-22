@@ -28,8 +28,8 @@ jobs:
         id: phase14_targets
         run: echo "matrix=$(python3 scripts/phase14_composition.py target-matrix-json)" >> "$GITHUB_OUTPUT"
 
-  historical-full:
-    name: Level 3 full history
+  build:
+    name: Build shared Gust artifact
     runs-on: ubuntu-latest
     timeout-minutes: 180
     needs: inventory
@@ -38,6 +38,73 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Install system dependencies
+        run: |
+          bash scripts/install-native-deps-ci.sh build-essential curl ripgrep gcc clang
+
+      - name: Install just
+        run: |
+          bash scripts/install-just-ci.sh "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Build Gust
+        run: make gust
+
+      - name: Archive shared Gust build
+        run: |
+          tar -czf "$RUNNER_TEMP/gust-historical-build.tar.gz" \
+            gust \
+            gust_bootstrap \
+            build
+
+      - name: Upload shared Gust build
+        uses: actions/upload-artifact@v4
+        with:
+          name: gust-historical-build
+          path: ${{ runner.temp }}/gust-historical-build.tar.gz
+          retention-days: 1
+
+  historical-shard:
+    name: Level 3 history / ${{ matrix.shard }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    needs: [inventory, build]
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        shard:
+          - phase9-core
+          - phase9g
+          - phase10
+          - phase11
+          - phase15
+          - phase16
+          - phase17
+          - phase18
+          - phase19
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download shared Gust build
+        uses: actions/download-artifact@v4
+        with:
+          name: gust-historical-build
+          path: ${{ runner.temp }}/gust-historical-build
+
+      - name: Restore shared Gust build
+        run: |
+          tar -xzf "$RUNNER_TEMP/gust-historical-build/gust-historical-build.tar.gz"
+          touch \
+            gust_bootstrap \
+            build/gust_stage1_compiler.c \
+            build/gust_stage1_bin \
+            build/gust_compiler.c \
+            gust
 
       - name: Cache cargo registry and build outputs
         uses: actions/cache@v4
@@ -54,6 +121,7 @@ jobs:
           key: cargo-${{ runner.os }}-${{ github.workflow }}-${{ hashFiles('compiler/experiments/cranelift/Cargo.lock') }}
           restore-keys: |
             cargo-${{ runner.os }}-${{ github.workflow }}-
+
       - name: Install system dependencies
         run: |
           bash scripts/install-native-deps-ci.sh build-essential curl ripgrep gcc clang
@@ -63,31 +131,54 @@ jobs:
           bash scripts/install-just-ci.sh "$HOME/.local/bin"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
-      - name: Build Gust
-        run: make gust
-
-      - name: Run full history outside the external Phase 14 target matrix
+      - name: Run isolated Level 3 history shard
+        env:
+          HISTORICAL_SHARD: ${{ matrix.shard }}
         run: |
-          PHASE14_HISTORICAL_EXTERNAL_MATRIX=1 just guard-cranelift-historical-full
-          just guard-cranelift-phase15-complete-resource-evidence
-          just guard-cranelift-phase16-complete-abi-evidence
-          just guard-cranelift-phase17-complete-runtime-evidence
-          just guard-cranelift-phase18-complete-target-evidence
-          just guard-cranelift-phase19-self-compilation-differential
+          case "$HISTORICAL_SHARD" in
+            phase9-core|phase9g|phase10|phase11)
+              CRANELIFT_HISTORICAL_SHARD="$HISTORICAL_SHARD" \
+                PHASE14_HISTORICAL_EXTERNAL_MATRIX=1 \
+                just guard-cranelift-historical-full
+              ;;
+            phase15) just guard-cranelift-phase15-complete-resource-evidence ;;
+            phase16) just guard-cranelift-phase16-complete-abi-evidence ;;
+            phase17) just guard-cranelift-phase17-complete-runtime-evidence ;;
+            phase18) just guard-cranelift-phase18-complete-target-evidence ;;
+            phase19) just guard-cranelift-phase19-self-compilation-differential ;;
+            *) echo "Unknown historical shard: $HISTORICAL_SHARD" >&2; exit 2 ;;
+          esac
 
   phase14-target:
     name: Phase 14 target / ${{ matrix.target }}
     runs-on: ubuntu-latest
     timeout-minutes: 180
-    needs: inventory
+    needs: [inventory, build]
     strategy:
       fail-fast: false
+      max-parallel: 3
       matrix:
         target: ${{ fromJSON(needs.inventory.outputs.phase14_targets) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Download shared Gust build
+        uses: actions/download-artifact@v4
+        with:
+          name: gust-historical-build
+          path: ${{ runner.temp }}/gust-historical-build
+
+      - name: Restore shared Gust build
+        run: |
+          tar -xzf "$RUNNER_TEMP/gust-historical-build/gust-historical-build.tar.gz"
+          touch \
+            gust_bootstrap \
+            build/gust_stage1_compiler.c \
+            build/gust_stage1_bin \
+            build/gust_compiler.c \
+            gust
+
       - name: Install system dependencies
         run: |
           bash scripts/install-native-deps-ci.sh build-essential curl ripgrep gcc clang
@@ -96,9 +187,6 @@ jobs:
         run: |
           bash scripts/install-just-ci.sh "$HOME/.local/bin"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-
-      - name: Build Gust
-        run: make gust
 
       - name: Run representative Phase 14 composition for declared target
         run: |
@@ -109,7 +197,7 @@ jobs:
     name: Level 3 declared-target completion
     runs-on: ubuntu-latest
     timeout-minutes: 180
-    needs: [historical-full, phase14-target]
+    needs: [historical-shard, phase14-target]
     steps:
       - name: Confirm full history and target matrix
-        run: echo "Full history and all registry-derived Phase 14 target jobs passed."
+        run: echo "All isolated history shards and registry-derived Phase 14 target jobs passed."

@@ -230,6 +230,39 @@ def check_historical_workflow(policy: dict) -> None:
         "historical workflow must invoke the Phase 14 declared-target guard exactly once",
     )
     require(
+        "historical-shard:" in text and "historical-full:" not in text,
+        "historical workflow must isolate Level 3 history in shard jobs",
+    )
+    require(
+        "name: Build shared Gust artifact" in text
+        and text.count("run: make gust") == 1
+        and text.count("name: gust-historical-build") == 3,
+        "historical workflow must build Gust once and share that exact artifact",
+    )
+    for shard in (
+        "phase9-core",
+        "phase9g",
+        "phase10",
+        "phase11",
+        "phase15",
+        "phase16",
+        "phase17",
+        "phase18",
+        "phase19",
+    ):
+        require(
+            f"          - {shard}" in text,
+            f"historical workflow is missing isolated shard {shard}",
+        )
+    require(
+        "max-parallel: 4" in text,
+        "historical workflow must cap concurrent history shards",
+    )
+    require(
+        "needs: [historical-shard, phase14-target]" in text,
+        "historical final job must fan in every history shard and declared target",
+    )
+    require(
         "target: ${{ fromJSON(needs.inventory.outputs.phase14_targets) }}" in text,
         "historical workflow Phase 14 target matrix must consume projected targets",
     )

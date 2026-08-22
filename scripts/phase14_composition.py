@@ -338,7 +338,7 @@ def check_historical_workflow(registry: dict, path: Path) -> None:
         "target: ${{ fromJSON(needs.inventory.outputs.phase14_targets) }}",
         'PHASE14_TARGET="${{ matrix.target }}"',
         "just guard-cranelift-phase14-all-target-composition",
-        "needs: [historical-full, phase14-target]",
+        "needs: [historical-shard, phase14-target]",
     )
     for token in required_tokens:
         require(token in text, f"{path.relative_to(ROOT)} is missing {token!r}")

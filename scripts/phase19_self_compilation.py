@@ -82,7 +82,7 @@ def validate() -> dict:
     historical = HISTORICAL.read_text(encoding="utf-8")
     require(historical.count(f"just {GUARD}") == 1,
             "Cranelift Historical Full must invoke the differential exactly once")
-    historical_job = historical.split("  historical-full:", 1)[1].split("  phase14-target:", 1)[0]
+    historical_job = historical.split("  historical-shard:", 1)[1].split("  phase14-target:", 1)[0]
     require("fetch-depth: 0" in historical_job,
             "Historical Full must fetch the compiler baseline history")
     require("- [x] Patch 19.10 — Generated-C Equivalence Over the Compiler's Own Sources — DONE"

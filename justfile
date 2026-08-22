@@ -17099,68 +17099,93 @@ guard-cranelift-phase17-close:
 guard-cranelift-historical-full:
     #!/usr/bin/env bash
     set -euo pipefail
-    echo "🕰️ Running Level 3 full Cranelift history..."
+    shard="${CRANELIFT_HISTORICAL_SHARD:-all}"
+    echo "🕰️ Running Level 3 Cranelift history shard: $shard"
     python3 scripts/cranelift_test_levels.py validate
     python3 scripts/cranelift_test_levels.py check-historical-workflow
 
-    just guard-cranelift-experimental-backend-suite
-    just guard-cranelift-phase9c-differential-ladder-native-smoke
-    just guard-cranelift-phase9d-close
-    just guard-cranelift-phase9e-close
-    just guard-cranelift-phase9f-close
+    run_phase9_core() {
+      just guard-cranelift-experimental-backend-suite
+      just guard-cranelift-phase9c-differential-ladder-native-smoke
+      just guard-cranelift-phase9d-close
+      just guard-cranelift-phase9e-close
+      just guard-cranelift-phase9f-close
+    }
 
-    PHASE9G_SKIP_PREREQUISITES=1 just guard-cranelift-phase9g-opening-contract
-    PHASE9G_SKIP_PREREQUISITES=1 just guard-cranelift-phase9g-object-artifact-contract
-    PHASE9G_SKIP_PREREQUISITES=1 just guard-cranelift-phase9g-target-relocation-contract
-    PHASE9G_SKIP_PREREQUISITES=1 just guard-cranelift-phase9g-object-inspection-contract
-    PHASE9G_SKIP_PREREQUISITES=1 just guard-cranelift-phase9g-object-reproducibility
-    PHASE9G_SKIP_PREREQUISITES=1 just guard-cranelift-phase9g-link-driver-contract
-    PHASE9G_SKIP_PREREQUISITES=1 just guard-cranelift-phase9g-pipeline-failure-classification
-    PHASE9G_SKIP_PREREQUISITES=1 PHASE9G_SKIP_DYNAMIC_EVIDENCE=1 \
-      just guard-cranelift-phase9g-phase9c-phase9e-link-migration
-    PHASE9G_SKIP_PREREQUISITES=1 PHASE9G_SKIP_DYNAMIC_EVIDENCE=1 \
-      just guard-cranelift-phase9g-link-bypass-retirement
-    for driver in cc gcc clang; do
-      CC="$driver" PHASE9G_SKIP_PREREQUISITES=1 \
-        just guard-cranelift-phase9g-positive-link-matrix
-      CC="$driver" PHASE9G_SKIP_PREREQUISITES=1 \
-        just guard-cranelift-phase9g-negative-link-matrix
-    done
+    run_phase9g() {
+      PHASE9G_SKIP_PREREQUISITES=1 just guard-cranelift-phase9g-opening-contract
+      PHASE9G_SKIP_PREREQUISITES=1 just guard-cranelift-phase9g-object-artifact-contract
+      PHASE9G_SKIP_PREREQUISITES=1 just guard-cranelift-phase9g-target-relocation-contract
+      PHASE9G_SKIP_PREREQUISITES=1 just guard-cranelift-phase9g-object-inspection-contract
+      PHASE9G_SKIP_PREREQUISITES=1 just guard-cranelift-phase9g-object-reproducibility
+      PHASE9G_SKIP_PREREQUISITES=1 just guard-cranelift-phase9g-link-driver-contract
+      PHASE9G_SKIP_PREREQUISITES=1 just guard-cranelift-phase9g-pipeline-failure-classification
+      PHASE9G_SKIP_PREREQUISITES=1 PHASE9G_SKIP_DYNAMIC_EVIDENCE=1 \
+        just guard-cranelift-phase9g-phase9c-phase9e-link-migration
+      PHASE9G_SKIP_PREREQUISITES=1 PHASE9G_SKIP_DYNAMIC_EVIDENCE=1 \
+        just guard-cranelift-phase9g-link-bypass-retirement
+      for driver in cc gcc clang; do
+        CC="$driver" PHASE9G_SKIP_PREREQUISITES=1 \
+          just guard-cranelift-phase9g-positive-link-matrix
+        CC="$driver" PHASE9G_SKIP_PREREQUISITES=1 \
+          just guard-cranelift-phase9g-negative-link-matrix
+      done
+      just guard-cranelift-phase9g-close
+    }
 
-    just guard-cranelift-phase9g-close
+    run_phase10() {
+      just guard-cranelift-phase10-opening-contract
+      just guard-cranelift-phase10-backend-selection-contract
+      just guard-cranelift-phase10-output-contract
+      just guard-cranelift-phase10-program-mir-contract
+      just guard-cranelift-phase10-capability-contract
+      just guard-cranelift-phase10-driver-handshake-contract
+      just guard-cranelift-phase10-backend-request-contract
+      just guard-cranelift-phase10-scalar-source-route
+      just guard-cranelift-phase10-cfg-block-parameter-source-route
+      just guard-cranelift-phase10-call-import-runtime-source-route
+      just guard-cranelift-phase10-packaging-help-ci
+      just guard-cranelift-phase10-close
+    }
 
-    just guard-cranelift-phase10-opening-contract
-    just guard-cranelift-phase10-backend-selection-contract
-    just guard-cranelift-phase10-output-contract
-    just guard-cranelift-phase10-program-mir-contract
-    just guard-cranelift-phase10-capability-contract
-    just guard-cranelift-phase10-driver-handshake-contract
-    just guard-cranelift-phase10-backend-request-contract
-    just guard-cranelift-phase10-scalar-source-route
-    just guard-cranelift-phase10-cfg-block-parameter-source-route
-    just guard-cranelift-phase10-call-import-runtime-source-route
-    just guard-cranelift-phase10-packaging-help-ci
-    just guard-cranelift-phase10-close
+    run_phase11() {
+      while IFS= read -r family; do
+        [ -n "$family" ] || continue
+        if python3 scripts/phase14_composition.py validate-family "$family" \
+            >/dev/null 2>&1
+        then
+          continue
+        fi
+        just guard-cranelift-differential-family "$family"
+      done < <(python3 scripts/cranelift_ci_family.py families)
 
-    while IFS= read -r family; do
-      [ -n "$family" ] || continue
-      if python3 scripts/phase14_composition.py validate-family "$family" \
-          >/dev/null 2>&1
-      then
-        continue
+      if [ "${PHASE14_HISTORICAL_EXTERNAL_MATRIX:-0}" != "1" ]; then
+        PHASE14_ALL_TARGETS=1 just guard-cranelift-phase14-all-target-composition
       fi
-      just guard-cranelift-differential-family "$family"
-    done < <(python3 scripts/cranelift_ci_family.py families)
 
-    if [ "${PHASE14_HISTORICAL_EXTERNAL_MATRIX:-0}" != "1" ]; then
-      PHASE14_ALL_TARGETS=1 just guard-cranelift-phase14-all-target-composition
-    fi
+      just guard-cranelift-phase11-generic-canonical-mir-route
+      just guard-cranelift-phase19-rename-invariance
+      just guard-cranelift-phase11-close
+    }
 
-    just guard-cranelift-phase11-generic-canonical-mir-route
-    just guard-cranelift-phase19-rename-invariance
-    just guard-cranelift-phase11-close
+    case "$shard" in
+      all)
+        run_phase9_core
+        run_phase9g
+        run_phase10
+        run_phase11
+        ;;
+      phase9-core) run_phase9_core ;;
+      phase9g) run_phase9g ;;
+      phase10) run_phase10 ;;
+      phase11) run_phase11 ;;
+      *)
+        echo "Unknown Level 3 historical shard: $shard" >&2
+        exit 2
+        ;;
+    esac
 
-    echo "✅ Level 3 full Cranelift history passed."
+    echo "✅ Level 3 Cranelift history shard passed: $shard"
 
 
 

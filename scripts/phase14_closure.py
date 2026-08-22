@@ -426,7 +426,7 @@ def validate_workflow_and_wiring(registry: dict) -> None:
         'matrix=$(python3 scripts/phase14_composition.py target-matrix-json)',
         "target: ${{ fromJSON(needs.inventory.outputs.phase14_targets) }}",
         'PHASE14_TARGET="${{ matrix.target }}"',
-        "needs: [historical-full, phase14-target]",
+        "needs: [historical-shard, phase14-target]",
     ):
         require(token in historical, f"historical workflow is missing {token!r}")
 
