@@ -21648,15 +21648,14 @@ guard_step52_defer_function_body_scheduled_terminal:
 guard_step52_open_directories_legacy_freeze:
     #!/usr/bin/env bash
     set -euo pipefail
-    echo "🔒 Checking Step 5.2 legacy open_directories behavior freeze..."
+    echo "🔒 Checking Step 5.2 open_directories compatibility-storage freeze..."
     rg -n -F 'open_directories' compiler/typechecker.gst compiler/typechecker_open_directories_legacy_freeze_test_entry.gst >/dev/null
     rg -n -F 'Directory resource variable' compiler/typechecker.gst compiler/typechecker_open_directories_legacy_freeze_test_entry.gst >/dev/null
-    rg -n -F 'must be cleanly closed with os.CloseDir before leaving local scope' compiler/typechecker.gst compiler/typechecker_open_directories_legacy_freeze_test_entry.gst >/dev/null
-    rg -n -F 'legacy os.CloseDir should clear open_directories entry' compiler/typechecker_open_directories_legacy_freeze_test_entry.gst >/dev/null
-    rg -n -F 'legacy open_directories move-open-directory diagnostic drifted' compiler/typechecker_open_directories_legacy_freeze_test_entry.gst >/dev/null
-    rg -n -F 'legacy open_directories function-exit leak diagnostic drifted' compiler/typechecker_open_directories_legacy_freeze_test_entry.gst >/dev/null
+    rg -n -F 'write-only open_directories storage became an enforcement source' compiler/typechecker_open_directories_legacy_freeze_test_entry.gst >/dev/null
+    rg -n -F 'compatibility CloseDir should clear write-only open_directories storage' compiler/typechecker_open_directories_legacy_freeze_test_entry.gst >/dev/null
+    rg -n -F 'canonical directory Resource move-open diagnostic drifted' compiler/typechecker_open_directories_legacy_freeze_test_entry.gst >/dev/null
     just guard-positive compiler/typechecker_open_directories_legacy_freeze_test_entry.gst step52_open_directories_legacy_freeze
-    echo "✅ Step 5.2 legacy open_directories behavior freeze guard passed."
+    echo "✅ Step 5.2 open_directories compatibility-storage freeze guard passed."
 
 guard_step52_directory_resource_parity_metadata:
     #!/usr/bin/env bash
@@ -21693,10 +21692,9 @@ guard_step52_directory_resource_cleanup_boundary_routing:
     echo "🔒 Checking Step 5.2 directory Resource cleanup-boundary routing..."
     rg -n -F 'env_open_directory_resource_requires_cleanup' compiler/typechecker.gst >/dev/null
     rg -n -F 'env_open_linear_resource_should_emit_generic_cleanup_diagnostic' compiler/typechecker.gst >/dev/null
-    rg -n -F 'env_open_directory_resource_requires_cleanup(env, local_var, ctx)' compiler/typechecker.gst >/dev/null
     rg -n -F 'directory shadow should reuse Resource cleanup-required transition predicate' compiler/typechecker_directory_resource_cleanup_boundary_routing_test_entry.gst >/dev/null
-    rg -n -F 'generic Resource cleanup boundary should skip directory shadow records' compiler/typechecker_directory_resource_cleanup_boundary_routing_test_entry.gst >/dev/null
-    rg -n -F 'routed directory cleanup boundary should preserve legacy CloseDir diagnostic' compiler/typechecker_directory_resource_cleanup_boundary_routing_test_entry.gst >/dev/null
+    rg -n -F 'historical generic diagnostic boundary should skip directory shadow records' compiler/typechecker_directory_resource_cleanup_boundary_routing_test_entry.gst >/dev/null
+    rg -n -F 'write-only compatibility storage entered the cleanup boundary' compiler/typechecker_directory_resource_cleanup_boundary_routing_test_entry.gst >/dev/null
     just guard-positive compiler/typechecker_directory_resource_cleanup_boundary_routing_test_entry.gst step52_directory_resource_cleanup_boundary_routing
     echo "✅ Step 5.2 directory Resource cleanup-boundary routing guard passed."
 
@@ -21716,12 +21714,15 @@ guard_step52_directory_resource_source_of_truth_flip:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Checking Step 5.2 directory Resource source-of-truth flip..."
-    rg -n -F 'env_open_directory_resource_compatibility_sync_from_open_directories' compiler/typechecker.gst >/dev/null
+    if rg -n -F 'env_open_directory_resource_compatibility_sync_from_open_directories' compiler/typechecker.gst >/dev/null; then
+      echo "Retired open_directories-to-Resource synchronization helper returned."
+      exit 1
+    fi
     rg -n -F 'env_open_directory_resource_compatibility_mark_open' compiler/typechecker.gst >/dev/null
     rg -n -F 'env_open_directory_resource_compatibility_mark_closed' compiler/typechecker.gst >/dev/null
     rg -n -F 'env_open_directory_resource_compatibility_mark_moved' compiler/typechecker.gst >/dev/null
     rg -n -F 'directory move-open diagnostic should read Resource source of truth without open_directories shim state' compiler/typechecker_directory_resource_source_of_truth_flip_test_entry.gst >/dev/null
-    rg -n -F 'open_directories compatibility shim should sync into Resource cleanup source of truth' compiler/typechecker_directory_resource_source_of_truth_flip_test_entry.gst >/dev/null
+    rg -n -F 'write-only open_directories storage became a cleanup enforcement source' compiler/typechecker_directory_resource_source_of_truth_flip_test_entry.gst >/dev/null
     rg -n -F 'real directory declaration should still mirror into open_directories compatibility shim' compiler/typechecker_directory_resource_source_of_truth_flip_test_entry.gst >/dev/null
     just guard-positive compiler/typechecker_directory_resource_source_of_truth_flip_test_entry.gst step52_directory_resource_source_of_truth_flip
     echo "✅ Step 5.2 directory Resource source-of-truth flip guard passed."
@@ -21734,13 +21735,15 @@ guard_step52_directory_resource_no_open_directories_enforcement_reads:
     direct_reads_file="build/guards/step52_directory_resource_no_open_directories_enforcement_reads/open_directories_get_reads.txt"
     rg -n -F 'open_directories.Get' compiler/typechecker.gst > "$direct_reads_file" || true
     read_count="$(wc -l < "$direct_reads_file" | tr -d '[:space:]')"
-    if [ "$read_count" != "1" ]; then
-      echo "Expected exactly one compiler/typechecker.gst open_directories.Get read, owned by the compatibility sync shim. Found $read_count:"
+    if [ "$read_count" != "0" ]; then
+      echo "Expected no compiler/typechecker.gst open_directories.Get enforcement reads. Found $read_count:"
       cat "$direct_reads_file"
       exit 1
     fi
-    rg -n -F 'env_open_directory_resource_compatibility_sync_from_open_directories' compiler/typechecker.gst >/dev/null
-    rg -n -F '(*env).open_directories.Get(variable_name).Ok == false' compiler/typechecker.gst >/dev/null
+    if rg -n -F 'env_open_directory_resource_compatibility_sync_from_open_directories' compiler/typechecker.gst >/dev/null; then
+      echo "Retired open_directories-to-Resource synchronization helper returned."
+      exit 1
+    fi
     echo "✅ Step 5.2 directory Resource no open_directories enforcement-read drift guard passed."
 
 # Command-only Step 4.4/4.5 guard implementations live in imported justfile-step44/justfile-step45.
