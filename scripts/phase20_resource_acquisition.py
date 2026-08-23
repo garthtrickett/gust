@@ -20,14 +20,16 @@ GUARD_L1 = "guard-cranelift-phase20-resource-acquisition-contract"
 GUARD_L2 = "guard-cranelift-phase20-resource-acquisition-parity"
 
 NEGATIVES = [
-    "compiler/future/p20_issue106_bound_directory_current.gst",
-    "compiler/future/p20_issue106_unbound_directory_current.gst",
-    "compiler/phase20_resource_acquisition_user_bound_invalid.gst",
     "compiler/phase20_resource_acquisition_user_discarded_invalid.gst",
     "compiler/phase20_resource_acquisition_directory_discarded_invalid.gst",
     "compiler/phase20_resource_acquisition_conditional_close_invalid.gst",
     "compiler/phase20_resource_acquisition_loop_close_invalid.gst",
     "compiler/phase20_resource_acquisition_match_close_invalid.gst",
+]
+AUTOMATIC_CLEANUP = [
+    "compiler/future/p20_issue106_bound_directory_current.gst",
+    "compiler/future/p20_issue106_unbound_directory_current.gst",
+    "compiler/phase20_resource_acquisition_user_bound_invalid.gst",
     "compiler/phase20_resource_acquisition_callee_drop_invalid.gst",
 ]
 DIAGNOSTICS = ["ResourceAcquisitionLeak", "ResourceAcquisitionDiscarded"]
@@ -47,15 +49,17 @@ def validate() -> dict:
     authority = registry.get("phase20_resource_acquisition_obligations")
     require(isinstance(authority, dict), "Patch 20.9 authority is missing")
     require(authority.get("authority_version") ==
-            "phase20_resource_acquisition_obligations_v2",
+            "phase20_resource_acquisition_obligations_v3",
             "Patch 20.9 authority version drifted")
-    require(authority.get("status") == "patch20_9a_complete" and
-            authority.get("next_patch") == "20.10",
+    require(authority.get("status") == "patch20_10_complete" and
+            authority.get("next_patch") == "20.11",
             "Patch 20.9 status or successor drifted")
     require(authority.get("issue") == "CR-5/#106",
             "Patch 20.9 issue ownership drifted")
     require(authority.get("negative_fixtures") == NEGATIVES,
             "Patch 20.9 negative matrix drifted")
+    require(authority.get("automatic_cleanup_fixtures") == AUTOMATIC_CLEANUP,
+            "Patch 20.10 automatic cleanup matrix drifted")
     require(authority.get("diagnostics") == DIAGNOSTICS,
             "Patch 20.9 diagnostic matrix drifted")
     require(authority.get("enforcement_enabled") is True,
@@ -68,6 +72,9 @@ def validate() -> dict:
     for path in NEGATIVES:
         require((ROOT / path).is_file(),
                 f"Patch 20.9 negative fixture is missing: {path}")
+    for path in AUTOMATIC_CLEANUP:
+        require((ROOT / path).is_file(),
+                f"Patch 20.10 cleanup fixture is missing: {path}")
 
     source = TYPECHECKER.read_text(encoding="utf-8")
     for evidence in (
@@ -123,17 +130,17 @@ def validate() -> dict:
             "path join or callee transfer positive drifted")
 
     opening = registry.get("opening_snapshots", {}).get("phase20", {})
-    require(opening.get("status") == "ready_for_patch20_10" and
-            opening.get("next_patch") == "20.10",
+    require(opening.get("status") == "ready_for_patch20_11" and
+            opening.get("next_patch") == "20.11",
             "Phase 20 opening successor did not advance to Patch 20.10")
     probes = {probe["id"]: probe for probe in opening.get("baseline_probes", [])}
     for probe_id in ("issue106_bound_directory_control",
                      "issue106_unbound_directory_payload"):
         probe = probes.get(probe_id, {})
-        require(probe.get("compile_exit") == 1 and
+        require(probe.get("compile_exit") == 0 and
                 probe.get("fix_enabled") is True and
-                "[ResourceAcquisitionLeak]" in probe.get("diagnostic_substrings", []),
-                f"Patch 20.9 opening probe did not flip: {probe_id}")
+                probe.get("diagnostic_substrings") == [],
+                f"Patch 20.10 opening probe did not flip: {probe_id}")
 
     require("- [x] Patch 20.9 — Acquisition-Site Resource Obligations (#106) — DONE" in
             TASK.read_text(encoding="utf-8"),
@@ -185,17 +192,18 @@ def render(authority: dict) -> str:
         "destructor is the terminal operation and does not recursively acquire",
         "another obligation.",
         "",
-        "Both #106 directory shapes and a user-declared bound leak now reject",
-        "with `ResourceAcquisitionLeak`. Ignored directory and user-resource",
+        "Patch 20.10 consumes stored obligations with automatic cleanup.",
+        "Both #106 directory shapes, a user-declared bound owner, and an",
+        "otherwise empty by-value callee now compile with exactly-once cleanup.",
+        "Ignored directory and user-resource",
         "calls reject at full-expression end with",
         "`ResourceAcquisitionDiscarded`. A non-resource call remains accepted.",
         "",
-        "## Patch boundary",
+        "## Scope cleanup successor",
         "",
-        "Patch 20.9 establishes ownership and transfer only. Patch 20.10 still",
-        "owns automatic destructor invocation, reverse lexical/field order, and",
-        "nested resource-field cleanup. No MIR, ABI, runtime-symbol, or backend",
-        "meaning changes here.",
+        "Patch 20.10 uses these identities as the inputs to compiler-owned",
+        "structured cleanup plans. Mixed live/terminal joins still reject,",
+        "while stored fallible acquisitions clean `.Val` only when `.Ok`.",
         "",
     ])
 

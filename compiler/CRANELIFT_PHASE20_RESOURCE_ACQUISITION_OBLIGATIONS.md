@@ -3,9 +3,9 @@
 Generated from `scripts/cranelift_feature_registry.json` by
 `scripts/phase20_resource_acquisition.py project`. Do not edit by hand.
 
-- Authority version: `phase20_resource_acquisition_obligations_v2`
-- Status: `patch20_9a_complete`
-- Next patch: `20.10`
+- Authority version: `phase20_resource_acquisition_obligations_v3`
+- Status: `patch20_10_complete`
+- Next patch: `20.11`
 - Issue: `CR-5/#106`
 - Enforcement enabled: `true`
 
@@ -27,14 +27,15 @@ a pending obligation for the callee parameter. The validated
 destructor is the terminal operation and does not recursively acquire
 another obligation.
 
-Both #106 directory shapes and a user-declared bound leak now reject
-with `ResourceAcquisitionLeak`. Ignored directory and user-resource
+Patch 20.10 consumes stored obligations with automatic cleanup.
+Both #106 directory shapes, a user-declared bound owner, and an
+otherwise empty by-value callee now compile with exactly-once cleanup.
+Ignored directory and user-resource
 calls reject at full-expression end with
 `ResourceAcquisitionDiscarded`. A non-resource call remains accepted.
 
-## Patch boundary
+## Scope cleanup successor
 
-Patch 20.9 establishes ownership and transfer only. Patch 20.10 still
-owns automatic destructor invocation, reverse lexical/field order, and
-nested resource-field cleanup. No MIR, ABI, runtime-symbol, or backend
-meaning changes here.
+Patch 20.10 uses these identities as the inputs to compiler-owned
+structured cleanup plans. Mixed live/terminal joins still reject,
+while stored fallible acquisitions clean `.Val` only when `.Ok`.

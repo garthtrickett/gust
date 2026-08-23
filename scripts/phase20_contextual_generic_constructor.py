@@ -109,8 +109,8 @@ def validate() -> dict:
     require("block_0_terminator_value: 31" in mir and "expected_exit: 31" in mir,
             "Patch 20.3a canonical MIR projection drifted")
     opening = registry.get("opening_snapshots", {}).get("phase20", {})
-    require(opening.get("status") == "ready_for_patch20_10" and
-            opening.get("next_patch") == "20.10",
+    require(opening.get("status") == "ready_for_patch20_11" and
+            opening.get("next_patch") == "20.11",
             "Phase 20 opening successor did not advance")
     require("- [x] Patch 20.3a — Contextual Generic Constructor Result Authority — DONE" in
             TASK.read_text(encoding="utf-8"),

@@ -29,6 +29,7 @@ SOURCE_DECLARATIONS = [
 
 ENFORCEMENT_LINEAR_FIXTURES = [
     "compiler/phase20_resource_enforcement_module.gst",
+    "compiler/phase20_resource_scope_cleanup_module.gst",
     "compiler/phase20_resource_destructor_missing_invalid.gst",
     "compiler/phase20_resource_destructor_borrowed_invalid.gst",
     "compiler/phase20_resource_destructor_wrong_type_invalid.gst",
@@ -206,9 +207,11 @@ def validate() -> dict:
     enforcement = registry.get("phase20_resource_declaration_enforcement", {})
     enforcement_files = [enforcement.get("module_fixture", "")]
     enforcement_files += enforcement.get("negative_fixtures", [])
+    cleanup = registry.get("phase20_resource_scope_cleanup", {})
+    enforcement_files.append(cleanup.get("module_fixture", ""))
     require(all(path in enforcement_files
                 for path in ENFORCEMENT_LINEAR_FIXTURES),
-            "Patch 20.8 linear fixtures are not classified by their authority")
+            "Phase 20 linear fixtures are not classified by their authority")
 
     for source_path, (type_name, destructor_name) in SOURCE_DESTRUCTORS.items():
         source = (ROOT / source_path).read_text(encoding="utf-8")
@@ -266,8 +269,8 @@ def validate() -> dict:
                 f"Phase 13 declaration-only route evidence missing: {evidence}")
 
     opening = registry.get("opening_snapshots", {}).get("phase20", {})
-    require(opening.get("status") == "ready_for_patch20_10" and
-            opening.get("next_patch") == "20.10",
+    require(opening.get("status") == "ready_for_patch20_11" and
+            opening.get("next_patch") == "20.11",
             "Phase 20 opening successor did not advance")
     require("- [x] Patch 20.7 — Resource Declaration Migration Under the No-op — DONE" in
             TASK.read_text(encoding="utf-8"),

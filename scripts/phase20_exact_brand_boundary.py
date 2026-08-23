@@ -98,8 +98,8 @@ def validate() -> dict:
     probes = opening.get("baseline_probes", [])
     cr12 = next((probe for probe in probes
                  if probe.get("id") == "cr12_wrong_brand_clone_destination"), {})
-    require(opening.get("status") == "ready_for_patch20_10" and
-            opening.get("next_patch") == "20.10",
+    require(opening.get("status") == "ready_for_patch20_11" and
+            opening.get("next_patch") == "20.11",
             "Phase 20 opening successor did not advance")
     require(cr12.get("compile_exit") == 1 and cr12.get("fix_enabled") is True and
             cr12.get("diagnostic_substrings") ==

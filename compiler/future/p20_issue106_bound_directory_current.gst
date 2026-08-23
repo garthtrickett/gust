@@ -1,7 +1,7 @@
-// Patch 20.9 issue #106 evidence: a bound successful acquisition retains the
-// acquisition identity and rejects if no consumer receives it.
-// current_result: rejects_bound_directory_through_acquisition_identity
-// fixed_by: 20.9
+// Patch 20.10 issue #106 evidence: a bound successful acquisition transports
+// its identity to the payload and is destroyed at the payload's scope exit.
+// current_result: accepts_bound_directory_with_payload_scope_cleanup
+// fixed_by: 20.10
 
 func main() {
     mut ctx := os.Arena.New();

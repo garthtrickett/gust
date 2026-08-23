@@ -53,44 +53,44 @@ func main() {
         os.Exit(1);
     }
 
-    mut env_legacy_shim_sync := typechecker.env_new(ctx);
-    env_legacy_shim_sync.current_prefix = "main__";
-    env_legacy_shim_sync.variable_types.Insert("legacy_shim_sync_dir", dir_type_source_flip);
-    env_legacy_shim_sync.open_directories.Insert("legacy_shim_sync_dir", 1);
+    mut env_legacy_storage_only := typechecker.env_new(ctx);
+    env_legacy_storage_only.current_prefix = "main__";
+    env_legacy_storage_only.variable_types.Insert("legacy_storage_only_dir", dir_type_source_flip);
+    env_legacy_storage_only.open_directories.Insert("legacy_storage_only_dir", 1);
 
-    if typechecker.env_open_linear_resource_is_directory_shadow(&env_legacy_shim_sync, "legacy_shim_sync_dir", ctx) != 0 {
-        os.LogStr("Error: legacy shim sync fixture should start without Resource directory state");
+    if typechecker.env_open_linear_resource_is_directory_shadow(&env_legacy_storage_only, "legacy_storage_only_dir", ctx) != 0 {
+        os.LogStr("Error: legacy compatibility storage should not create Resource directory state");
         os.Exit(1);
     }
-    if typechecker.env_open_directory_resource_requires_cleanup(&env_legacy_shim_sync, "legacy_shim_sync_dir", ctx) != 1 {
-        os.LogStr("Error: open_directories compatibility shim should sync into Resource cleanup source of truth");
+    if typechecker.env_open_directory_resource_requires_cleanup(&env_legacy_storage_only, "legacy_storage_only_dir", ctx) != 0 {
+        os.LogStr("Error: write-only open_directories storage became a cleanup enforcement source");
         os.Exit(1);
     }
-    if typechecker.env_open_linear_resource_is_directory_shadow(&env_legacy_shim_sync, "legacy_shim_sync_dir", ctx) != 1 {
-        os.LogStr("Error: open_directories compatibility shim should materialize Resource directory shadow state");
+    if typechecker.env_open_linear_resource_is_directory_shadow(&env_legacy_storage_only, "legacy_storage_only_dir", ctx) != 0 {
+        os.LogStr("Error: cleanup query materialized Resource state from compatibility storage");
         os.Exit(1);
     }
 
-    mut env_legacy_shim_close := typechecker.env_new(ctx);
-    env_legacy_shim_close.current_prefix = "main__";
-    mut scope_legacy_shim_close := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
-    typechecker.scope_insert(scope_legacy_shim_close, "legacy_shim_close_dir", dir_type_source_flip, ctx);
-    env_legacy_shim_close.variable_types.Insert("legacy_shim_close_dir", dir_type_source_flip);
-    env_legacy_shim_close.open_directories.Insert("legacy_shim_close_dir", 1);
+    mut env_legacy_storage_close := typechecker.env_new(ctx);
+    env_legacy_storage_close.current_prefix = "main__";
+    mut scope_legacy_storage_close := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
+    typechecker.scope_insert(scope_legacy_storage_close, "legacy_storage_close_dir", dir_type_source_flip, ctx);
+    env_legacy_storage_close.variable_types.Insert("legacy_storage_close_dir", dir_type_source_flip);
+    env_legacy_storage_close.open_directories.Insert("legacy_storage_close_dir", 1);
 
-    mut lex_legacy_shim_close: lexer.Lexer[ctx];
-    lexer.init_lexer(&lex_legacy_shim_close, "os.CloseDir(legacy_shim_close_dir)");
-    mut parser_legacy_shim_close: parser.Parser[ctx];
-    parser.init_parser(&parser_legacy_shim_close, &lex_legacy_shim_close, ctx);
-    mut expr_legacy_shim_close := parser.parse_expression(&parser_legacy_shim_close, 1, ctx);
-    typechecker.check_expression(expr_legacy_shim_close, &env_legacy_shim_close, scope_legacy_shim_close, ctx);
+    mut lex_legacy_storage_close: lexer.Lexer[ctx];
+    lexer.init_lexer(&lex_legacy_storage_close, "os.CloseDir(legacy_storage_close_dir)");
+    mut parser_legacy_storage_close: parser.Parser[ctx];
+    parser.init_parser(&parser_legacy_storage_close, &lex_legacy_storage_close, ctx);
+    mut expr_legacy_storage_close := parser.parse_expression(&parser_legacy_storage_close, 1, ctx);
+    typechecker.check_expression(expr_legacy_storage_close, &env_legacy_storage_close, scope_legacy_storage_close, ctx);
 
-    if env_legacy_shim_close.open_directories.Get("legacy_shim_close_dir").Ok {
-        os.LogStr("Error: open_directories compatibility shim should still clear after CloseDir");
+    if env_legacy_storage_close.open_directories.Get("legacy_storage_close_dir").Ok {
+        os.LogStr("Error: write-only open_directories storage should still clear after CloseDir");
         os.Exit(1);
     }
-    if typechecker.env_open_linear_resource_is_closed(&env_legacy_shim_close, "legacy_shim_close_dir", ctx) != 1 {
-        os.LogStr("Error: CloseDir should sync legacy shim state into Resource source of truth before closing");
+    if typechecker.env_open_linear_resource_is_closed(&env_legacy_storage_close, "legacy_storage_close_dir", ctx) != 0 {
+        os.LogStr("Error: CloseDir synthesized canonical Resource state from compatibility storage");
         os.Exit(1);
     }
 
@@ -122,5 +122,5 @@ func main() {
         os.Exit(1);
     }
 
-    os.LogStr("SUCCESS: directory Resource source of truth flipped with open_directories compatibility shim!");
+    os.LogStr("SUCCESS: directory Resource source of truth excludes write-only open_directories storage!");
 }

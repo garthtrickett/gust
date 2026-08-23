@@ -28,8 +28,8 @@ REQUIRED_PROBES = {
     "cr11_explicit_graph_annotation": ("CR-11/#158", 0, "20.2"),
     "cr12_wrong_brand_clone_destination": ("CR-12/#159", 1, "20.3"),
     "cr13_freed_receiver_reuse": ("CR-13/#160", 1, "20.5"),
-    "issue106_unbound_directory_payload": ("CR-5/#106", 1, "20.9"),
-    "issue106_bound_directory_control": ("CR-5/#106", 1, "20.9"),
+    "issue106_unbound_directory_payload": ("CR-5/#106", 0, "20.10"),
+    "issue106_bound_directory_control": ("CR-5/#106", 0, "20.10"),
 }
 REQUIRED_OBSERVABLES = {
     "compile_result", "process_exit_status", "stdout", "stderr",
@@ -80,9 +80,9 @@ def validate() -> tuple[dict, list[dict], list[tuple[str, str]], list[tuple[str,
     require(snap.get("opening_version") ==
             "phase20_opening_evidence_and_qualification_authority_v1",
             "Phase 20 opening version drifted")
-    require(snap.get("status") == "ready_for_patch20_10",
+    require(snap.get("status") == "ready_for_patch20_11",
             "Phase 20 opening status drifted")
-    require(snap.get("next_patch") == "20.10", "Phase 20 successor drifted")
+    require(snap.get("next_patch") == "20.11", "Phase 20 successor drifted")
     require(snap.get("roadmap_merge_sha") ==
             "1cfab1344b24ffefc72b4d752ead3eb17c6719c6",
             "Phase 20 roadmap merge drifted")

@@ -100,8 +100,8 @@ def validate() -> dict:
 
     opening = registry.get("opening_snapshots", {}).get("phase20", {})
     probes = opening.get("baseline_probes", [])
-    require(opening.get("status") == "ready_for_patch20_10" and
-            opening.get("next_patch") == "20.10",
+    require(opening.get("status") == "ready_for_patch20_11" and
+            opening.get("next_patch") == "20.11",
             "Phase 20 opening successor did not advance")
     require(probes and probes[0].get("compile_exit") == 0 and
             probes[0].get("fix_enabled") is True and

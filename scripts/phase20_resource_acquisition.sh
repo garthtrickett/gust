@@ -6,23 +6,15 @@ user_positive="compiler/phase20_resource_acquisition_source.gst"
 directory_positive="compiler/phase20_resource_acquisition_directory_source.gst"
 path_transfer_positive="compiler/phase20_resource_acquisition_path_transfer_source.gst"
 negatives=(
-  compiler/future/p20_issue106_bound_directory_current.gst
-  compiler/future/p20_issue106_unbound_directory_current.gst
-  compiler/phase20_resource_acquisition_user_bound_invalid.gst
   compiler/phase20_resource_acquisition_user_discarded_invalid.gst
   compiler/phase20_resource_acquisition_directory_discarded_invalid.gst
   compiler/phase20_resource_acquisition_conditional_close_invalid.gst
   compiler/phase20_resource_acquisition_loop_close_invalid.gst
   compiler/phase20_resource_acquisition_match_close_invalid.gst
-  compiler/phase20_resource_acquisition_callee_drop_invalid.gst
 )
 expected=(
-  ResourceAcquisitionLeak
-  ResourceAcquisitionLeak
-  ResourceAcquisitionLeak
   ResourceAcquisitionDiscarded
   ResourceAcquisitionDiscarded
-  ResourceAcquisitionLeak
   ResourceAcquisitionLeak
   ResourceAcquisitionLeak
   ResourceAcquisitionLeak
