@@ -16653,6 +16653,26 @@ guard-cranelift-phase20-seed-convergence:
     python3 scripts/phase20_seed_convergence.py validate
     python3 scripts/phase20_seed_convergence.py check-review
 
+guard-cranelift-phase20-whole-program-corpus-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "📚 Checking Phase 20 whole-program corpus and observable contract..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase20-whole-program-corpus-contract | grep -F $'guard-cranelift-phase20-whole-program-corpus-contract\t1\t' >/dev/null
+    just guard-cranelift-phase20-seed-convergence
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase20_whole_program_corpus.py validate
+    python3 scripts/phase20_whole_program_corpus.py check-review
+
+guard-cranelift-phase20-whole-program-corpus-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "⚖️ Checking Phase 20 whole-program initial corpus parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase20-whole-program-corpus-parity | grep -F $'guard-cranelift-phase20-whole-program-corpus-parity\t2\t' >/dev/null
+    just guard-cranelift-phase20-whole-program-corpus-contract
+    scripts/phase20_whole_program_corpus.sh
+
 guard-cranelift-phase18-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail

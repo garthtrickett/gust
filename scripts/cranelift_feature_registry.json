@@ -972,6 +972,119 @@
       {"patch": "20.11", "scope": "seed-preflight diagnostic construction correction"}
     ]
   },
+  "phase20_whole_program_corpus": {
+    "contract_version": "phase20_whole_program_corpus_v1",
+    "status": "patch20_12_complete",
+    "next_patch": "20.13",
+    "review_view": "compiler/CRANELIFT_PHASE20_WHOLE_PROGRAM_CORPUS.md",
+    "harness": "scripts/phase20_whole_program_corpus.sh",
+    "canonical_mir_policy": "one_registry_case_owns_one_source_route_and_successful_cranelift_compilation_must_publish_and_consume_its_captured_compiler_owned_canonical_mir_bundle",
+    "no_fallback_policy": "explicit_cranelift_runs_with_mir_to_c_poisoned_and_must_not_fall_back",
+    "normalization_policy": "none_in_the_initial_cohort",
+    "observables": [
+      {"id": "compile_result", "comparison": "exact_integer_status"},
+      {"id": "process_exit_status", "comparison": "exact_integer_status_for_successful_compilation"},
+      {"id": "stdout", "comparison": "exact_bytes"},
+      {"id": "stderr_diagnostics", "comparison": "exact_bytes_and_required_semantic_code"},
+      {"id": "resource_terminal_state", "comparison": "registry_declared_terminal_state_for_each_case"},
+      {"id": "sandboxed_filesystem_effects", "comparison": "exact_relative_tree_kind_and_bytes"}
+    ],
+    "selected_cases": [
+      {
+        "id": "p20_multi_module_runtime_scalar",
+        "kind": "runtime_success",
+        "source_fixture": "compiler/phase20_whole_program_scalar_source.gst",
+        "companion_fixtures": ["compiler/phase20_whole_program_scalar_helper.gst"],
+        "expected_compile_status": 0,
+        "expected_exit_status": 49,
+        "diagnostic_substring": "none",
+        "resource_terminal_state": "not_applicable_no_resource",
+        "side_effect_policy": "none",
+        "normalization": "none",
+        "level": 2,
+        "feature_claims": ["modules", "direct_calls", "runtime_import"]
+      },
+      {
+        "id": "p20_structured_control_flow",
+        "kind": "runtime_success",
+        "source_fixture": "compiler/phase13_composition_cfg_source.gst",
+        "companion_fixtures": [],
+        "expected_compile_status": 0,
+        "expected_exit_status": 14,
+        "diagnostic_substring": "none",
+        "resource_terminal_state": "not_applicable_no_resource",
+        "side_effect_policy": "none",
+        "normalization": "none",
+        "level": 2,
+        "feature_claims": ["control_flow", "nested_branches", "locals"]
+      },
+      {
+        "id": "p20_local_call_and_assignment",
+        "kind": "runtime_success",
+        "source_fixture": "compiler/phase13_composition_locals_source.gst",
+        "companion_fixtures": [],
+        "expected_compile_status": 0,
+        "expected_exit_status": 15,
+        "diagnostic_substring": "none",
+        "resource_terminal_state": "not_applicable_no_resource",
+        "side_effect_policy": "none",
+        "normalization": "none",
+        "level": 2,
+        "feature_claims": ["direct_calls", "assignments", "locals"]
+      },
+      {
+        "id": "p20_generic_brand_aggregate_rejection",
+        "kind": "compile_failure",
+        "source_fixture": "compiler/phase20_contextual_generic_constructor_wrong_brand_invalid.gst",
+        "companion_fixtures": [],
+        "expected_compile_status": 1,
+        "expected_exit_status": "none",
+        "diagnostic_substring": "TypeMismatch",
+        "resource_terminal_state": "rejected_before_runtime_no_live_owner",
+        "side_effect_policy": "none",
+        "normalization": "none",
+        "level": 2,
+        "feature_claims": ["generics", "brands", "aggregates", "failure_diagnostics"]
+      },
+      {
+        "id": "p20_resource_path_rejection",
+        "kind": "compile_failure",
+        "source_fixture": "compiler/phase20_resource_acquisition_conditional_close_invalid.gst",
+        "companion_fixtures": [],
+        "expected_compile_status": 1,
+        "expected_exit_status": "none",
+        "diagnostic_substring": "ResourceAcquisitionLeak",
+        "resource_terminal_state": "rejected_before_runtime_no_live_owner",
+        "side_effect_policy": "none",
+        "normalization": "none",
+        "level": 2,
+        "feature_claims": ["resources", "control_flow", "failure_diagnostics"]
+      }
+    ],
+    "explicit_exclusions": [
+      {
+        "id": "successful_generic_brand_resource_source_route",
+        "owner": "phase13_generic_source_to_mir",
+        "next_patch": "20.13",
+        "reason": "successful generic branded Resource programs remain explicit pre-driver source-route rejections and cannot be counted as native whole-program parity",
+        "falsifier": "the direct source route compiles a representative generic branded Resource program with MIR-to-C poisoned and its full observable differential passes"
+      },
+      {
+        "id": "observable_runtime_io_and_filesystem",
+        "owner": "phase17_io_runtime_authority",
+        "next_patch": "20.13",
+        "reason": "the initial connected source cohort has no selected runtime I/O or filesystem helper route",
+        "falsifier": "a registry-selected runtime component case produces matching nonempty I/O or filesystem effects through both backends"
+      },
+      {
+        "id": "costly_whole_program_cases",
+        "owner": "phase20_generated_mir_and_scale",
+        "next_patch": "20.14",
+        "reason": "the deterministic initial cohort is bounded and has no case whose measured cost warrants Level 3",
+        "falsifier": "a selected whole-program case exceeds the Level 2 cost policy and is registered in Cranelift Historical Full"
+      }
+    ]
+  },
   "phase19_brand_authority": {
     "authority_version": "phase19_brand_identity_authority_v1",
     "status": "ready_for_patch19_3",

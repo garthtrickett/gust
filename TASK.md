@@ -74,7 +74,7 @@ does not activate another lane, and does not authorize Phase 21.
 - [x] Patch 20.9a — Obligation Path Join and Callee Ownership Correction — DONE
 - [x] Patch 20.10 — Generic Scope and Destructor Enforcement (CR-5) — DONE
 - [x] Patch 20.11 — Bootstrap Seed Regeneration and Fixed-Point Convergence — DONE
-- [ ] Patch 20.12 — Whole-Program Corpus and Observable Contract
+- [x] Patch 20.12 — Whole-Program Corpus and Observable Contract — DONE
 - [ ] Patch 20.13 — Stdlib and Runtime Component Differential
 - [ ] Patch 20.14 — Generated-MIR, Scale, and Resource-Use Qualification
 - [ ] Patch 20.15 — Long-Lived and Concurrent Resource Differential
