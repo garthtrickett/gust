@@ -24,6 +24,7 @@
     "phase20_resource_declaration_enforcement",
     "phase20_resource_acquisition_obligations",
     "phase20_resource_scope_cleanup",
+    "phase20_seed_convergence",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -504,6 +505,54 @@
           "directory_policy": {"const": "open_directories_is_compatibility_storage_only_and_has_no_enforcement_read"},
           "backend_policy": {"const": "mir_to_c_emits_the_shared_compiler_plan_and_phase15_canonical_resource_parity_keeps_mir_to_c_and_cranelift_cleanup_consumers_in_agreement"},
           "enforcement_enabled": {"const": true}
+        }
+      },
+      "phase20_seed_convergence": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["contract_version", "status", "next_patch", "review_view",
+                     "seed_path", "seed_pull_request", "preflight_pull_request",
+                     "fixed_point_policy", "seed_only_policy",
+                     "predecessor_authority", "converged_sha256",
+                     "generated_seed_diff", "accounted_patches"],
+        "properties": {
+          "contract_version": {"const": "phase20_seed_convergence_v1"},
+          "status": {"const": "patch20_11_complete"},
+          "next_patch": {"const": "20.12"},
+          "review_view": {"const": "compiler/CRANELIFT_PHASE20_SEED_CONVERGENCE.md"},
+          "seed_path": {"const": "gust_v4.c"},
+          "seed_pull_request": {"const": 188},
+          "preflight_pull_request": {"const": 187},
+          "fixed_point_policy": {"const": "make_bootstrap_stage2_stage3_byte_identity"},
+          "seed_only_policy": {"const": "generated_gust_v4_c_only_on_seed_pull_request"},
+          "predecessor_authority": {"const": "phase19_seed_convergence_v3"},
+          "converged_sha256": {"const": "2ab814e8d5564c6ab0c8ab26a21a8f8da88bfc89c7e1556adb26cda0be3c9af5"},
+          "generated_seed_diff": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["previous_lines", "current_lines", "insertions", "deletions", "line_delta"],
+            "properties": {
+              "previous_lines": {"const": 57360},
+              "current_lines": {"const": 59502},
+              "insertions": {"const": 2410},
+              "deletions": {"const": 268},
+              "line_delta": {"const": 2142}
+            }
+          },
+          "accounted_patches": {
+            "type": "array",
+            "minItems": 14,
+            "maxItems": 14,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["patch", "scope"],
+              "properties": {
+                "patch": {"enum": ["20.0", "20.1", "20.2", "20.3", "20.3a", "20.4", "20.5", "20.6", "20.7", "20.8", "20.9", "20.9a", "20.10", "20.11"]},
+                "scope": {"type": "string", "minLength": 1}
+              }
+            }
+          }
         }
       },
       "phase19_brand_authority": {

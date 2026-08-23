@@ -16642,6 +16642,17 @@ guard-cranelift-phase20-resource-scope-cleanup-parity:
     just guard-cranelift-phase15-resource-cfg-parity
     just guard-cranelift-phase15-specialized-resource-parity
 
+guard-cranelift-phase20-seed-convergence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🌱 Checking Phase 20 bootstrap seed convergence contract..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase20-seed-convergence | grep -F $'guard-cranelift-phase20-seed-convergence\t1\t' >/dev/null
+    just guard-cranelift-phase19-seed-convergence
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase20_seed_convergence.py validate
+    python3 scripts/phase20_seed_convergence.py check-review
+
 guard-cranelift-phase18-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail

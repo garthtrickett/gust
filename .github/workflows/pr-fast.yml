@@ -365,6 +365,9 @@ jobs:
       - name: Phase 19 bootstrap seed convergence
         run: just guard-cranelift-phase19-seed-convergence
 
+      - name: Phase 20 bootstrap seed convergence
+        run: just guard-cranelift-phase20-seed-convergence
+
       - name: Phase 19 cross-feature composition
         run: just guard-cranelift-phase19-composition-contract
 

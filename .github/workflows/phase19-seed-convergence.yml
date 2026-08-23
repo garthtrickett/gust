@@ -5,11 +5,13 @@ on:
     paths:
       - 'gust_v4.c'
       - 'compiler/CRANELIFT_PHASE19_SEED_CONVERGENCE.md'
+      - 'compiler/CRANELIFT_PHASE20_SEED_CONVERGENCE.md'
       - 'scripts/cranelift_feature_registry.json'
       - 'scripts/cranelift_feature_registry.schema.json'
       - 'scripts/cranelift_registry.py'
       - 'scripts/cranelift_test_levels.json'
       - 'scripts/phase19_seed_convergence.py'
+      - 'scripts/phase20_seed_convergence.py'
       - 'TASK.md'
       - 'justfile'
       - '.github/workflows/pr-fast.yml'
@@ -20,10 +22,12 @@ on:
       - 'compiler/*.gst'
       - 'gust_v4.c'
       - 'compiler/CRANELIFT_PHASE19_SEED_CONVERGENCE.md'
+      - 'compiler/CRANELIFT_PHASE20_SEED_CONVERGENCE.md'
       - 'scripts/cranelift_feature_registry.json'
       - 'scripts/cranelift_feature_registry.schema.json'
       - 'scripts/cranelift_test_levels.json'
       - 'scripts/phase19_seed_convergence.py'
+      - 'scripts/phase20_seed_convergence.py'
       - 'TASK.md'
       - 'justfile'
       - '.github/workflows/pr-fast.yml'
@@ -47,6 +51,8 @@ jobs:
       - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: guard-cranelift-phase19-seed-convergence
         run: just guard-cranelift-phase19-seed-convergence
+      - name: guard-cranelift-phase20-seed-convergence
+        run: just guard-cranelift-phase20-seed-convergence
 
   fixed-point:
     runs-on: ubuntu-latest
@@ -67,7 +73,9 @@ jobs:
           elif git diff --quiet "$BASE_SHA" "$HEAD_SHA" -- \
             gust_v4.c \
             compiler/CRANELIFT_PHASE19_SEED_CONVERGENCE.md \
-            scripts/phase19_seed_convergence.py; then
+            compiler/CRANELIFT_PHASE20_SEED_CONVERGENCE.md \
+            scripts/phase19_seed_convergence.py \
+            scripts/phase20_seed_convergence.py; then
             echo "required=false" >> "$GITHUB_OUTPUT"
           else
             echo "required=true" >> "$GITHUB_OUTPUT"
