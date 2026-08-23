@@ -311,6 +311,9 @@ jobs:
       - name: Phase 20 nested brand annotation
         run: just guard-cranelift-phase20-nested-brand-annotation-contract
 
+      - name: Phase 20 exact branded boundary
+        run: just guard-cranelift-phase20-exact-brand-boundary-contract
+
       - name: Phase 19 identifier-spelling decision inventory
         run: just guard-cranelift-phase19-spelling-inventory
 
@@ -441,6 +444,9 @@ jobs:
 
       - name: Phase 20 nested brand annotation parity
         run: just guard-cranelift-phase20-nested-brand-annotation-parity
+
+      - name: Phase 20 exact branded boundary parity
+        run: just guard-cranelift-phase20-exact-brand-boundary-parity
 
   final:
     name: final diff check

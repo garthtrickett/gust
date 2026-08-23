@@ -219,6 +219,9 @@ guard-pr-fast-ci-surface:
       'just guard-cranelift-phase20-nested-brand-annotation-parity'
       'phase20-nested-brand-annotation:'
       'Phase 20 nested brand annotation parity'
+      'Phase 20 exact branded boundary'
+      'just guard-cranelift-phase20-exact-brand-boundary-contract'
+      'just guard-cranelift-phase20-exact-brand-boundary-parity'
       'Phase 19 identifier-spelling decision inventory'
       'just guard-cranelift-phase19-spelling-inventory'
       'Phase 19 cross-feature composition'
@@ -16426,6 +16429,26 @@ guard-cranelift-phase20-nested-brand-annotation-parity:
     python3 scripts/cranelift_test_levels.py validate
     python3 scripts/cranelift_test_levels.py level guard-cranelift-phase20-nested-brand-annotation-parity | grep -F $'guard-cranelift-phase20-nested-brand-annotation-parity\t2\t' >/dev/null
     scripts/phase20_nested_brand_annotation.sh
+
+guard-cranelift-phase20-exact-brand-boundary-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔐 Checking Phase 20 exact branded boundary..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase20-exact-brand-boundary-contract | grep -F $'guard-cranelift-phase20-exact-brand-boundary-contract\t1\t' >/dev/null
+    just guard-cranelift-phase20-nested-brand-annotation-contract
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase20_exact_brand_boundary.py validate
+    python3 scripts/phase20_exact_brand_boundary.py check-review
+    just guard-positive compiler/typechecker_phase20_exact_brand_boundary_test_entry.gst phase20_exact_brand_boundary
+
+guard-cranelift-phase20-exact-brand-boundary-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "⚖️ Checking Phase 20 exact branded boundary parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase20-exact-brand-boundary-parity | grep -F $'guard-cranelift-phase20-exact-brand-boundary-parity\t2\t' >/dev/null
+    scripts/phase20_exact_brand_boundary.sh
 
 guard-cranelift-phase18-opening-contract:
     #!/usr/bin/env bash

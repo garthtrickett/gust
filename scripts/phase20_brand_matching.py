@@ -46,11 +46,11 @@ def validate() -> dict:
     registry = load_registry()
     authority = registry.get("phase20_brand_matching")
     require(isinstance(authority, dict), "Phase 20 brand-matching authority is missing")
-    require(authority.get("authority_version") == "phase20_canonical_brand_matching_v2",
+    require(authority.get("authority_version") == "phase20_canonical_brand_matching_v3",
             "Phase 20 brand-matching authority version drifted")
-    require(authority.get("status") == "patch20_2_nesting_acceptance_enabled",
+    require(authority.get("status") == "patch20_3_exact_boundaries_enabled",
             "Phase 20 brand-matching status drifted")
-    require(authority.get("next_patch") == "20.3",
+    require(authority.get("next_patch") == "20.4",
             "Phase 20 brand-matching successor drifted")
     require(authority.get("identity_authority") == "phase19_brand_identity_authority_v1",
             "Phase 20 brand matching lost its Phase 19 identity authority")
@@ -67,8 +67,8 @@ def validate() -> dict:
             "compiler/typechecker_phase20_brand_matching_test_entry.gst",
             "Phase 20 brand-matching fixture drifted")
     require(authority.get("behavior_policy") ==
-            "resolved_identity_authoritative_for_brand_nesting_with_legacy_shadow_observation_only",
-            "Patch 20.2 canonical nesting policy drifted")
+            "resolved_identity_authoritative_for_brand_nesting_and_typed_value_boundaries_with_legacy_shadow_observation_only",
+            "Patch 20.3 canonical boundary policy drifted")
     require(authority.get("opening_probe_fixes_enabled") is True,
             "Patch 20.2 must enable the CR-11 opening defect fix")
 
@@ -76,8 +76,10 @@ def validate() -> dict:
     probes = opening.get("baseline_probes", [])
     require(len(probes) == 5 and probes[0].get("id") == "cr11_explicit_graph_annotation" and
             probes[0].get("fix_enabled") is True and
-            all(probe.get("fix_enabled") is False for probe in probes[1:]),
-            "Patch 20.2 must enable only the CR-11 opening probe fix")
+            probes[1].get("id") == "cr12_wrong_brand_clone_destination" and
+            probes[1].get("fix_enabled") is True and
+            all(probe.get("fix_enabled") is False for probe in probes[2:]),
+            "Patch 20.3 must enable exactly the CR-11 and CR-12 opening fixes")
 
     source = TYPECHECKER.read_text(encoding="utf-8")
     for operation in OPERATIONS:

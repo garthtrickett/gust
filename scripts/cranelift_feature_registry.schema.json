@@ -15,6 +15,7 @@
     "opening_snapshots",
     "phase20_brand_matching",
     "phase20_nested_brand_annotation",
+    "phase20_exact_brand_boundary",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -161,9 +162,9 @@
                      "frozen_string_cleaner_owner_files",
                      "semantic_fixture", "behavior_policy", "opening_probe_fixes_enabled"],
         "properties": {
-          "authority_version": {"const": "phase20_canonical_brand_matching_v2"},
-          "status": {"const": "patch20_2_nesting_acceptance_enabled"},
-          "next_patch": {"const": "20.3"},
+          "authority_version": {"const": "phase20_canonical_brand_matching_v3"},
+          "status": {"const": "patch20_3_exact_boundaries_enabled"},
+          "next_patch": {"const": "20.4"},
           "review_view": {"const": "compiler/CRANELIFT_PHASE20_BRAND_MATCHING.md"},
           "identity_authority": {"const": "phase19_brand_identity_authority_v1"},
           "operations": {
@@ -182,7 +183,7 @@
             "const": ["compiler/codegen.gst", "compiler/typechecker.gst"]
           },
           "semantic_fixture": {"const": "compiler/typechecker_phase20_brand_matching_test_entry.gst"},
-          "behavior_policy": {"const": "resolved_identity_authoritative_for_brand_nesting_with_legacy_shadow_observation_only"},
+          "behavior_policy": {"const": "resolved_identity_authoritative_for_brand_nesting_and_typed_value_boundaries_with_legacy_shadow_observation_only"},
           "opening_probe_fixes_enabled": {"const": true}
         }
       },
@@ -209,6 +210,41 @@
           "diagnostic_policy": {"const": "one_primary_brand_nesting_diagnostic_preserves_the_constructed_type_without_secondary_void_mismatch"},
           "coverage": {"const": ["two_nested_brands", "three_nested_brands", "explicit_declaration", "inferred_declaration", "import_alias", "field_brand", "illegal_escape"]},
           "mir_projection_policy": {"const": "the_frontend_validates_the_full_program_and_the_unreachable_type_annotation_probes_project_to_the_selected_main_return_20_canonical_mir"},
+          "direct_cranelift_source_route": {"const": "explicit_source_or_type_failure_before_driver_discovery_until_patch20_12_without_c_fallback"},
+          "opening_probe_fix_enabled": {"const": true}
+        }
+      },
+      "phase20_exact_brand_boundary": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["authority_version", "status", "next_patch", "issue", "review_view",
+                     "semantic_fixture", "positive_fixture", "positive_import_fixture",
+                     "issue_fixture", "negative_fixtures", "canonical_mir_fixture",
+                     "matching_policy", "unbranded_policy", "coverage",
+                     "mir_projection_policy", "direct_cranelift_source_route",
+                     "opening_probe_fix_enabled"],
+        "properties": {
+          "authority_version": {"const": "phase20_exact_brand_boundary_v1"},
+          "status": {"const": "patch20_3_complete"},
+          "next_patch": {"const": "20.4"},
+          "issue": {"const": "CR-12/#159"},
+          "review_view": {"const": "compiler/CRANELIFT_PHASE20_EXACT_BRAND_BOUNDARY.md"},
+          "semantic_fixture": {"const": "compiler/typechecker_phase20_exact_brand_boundary_test_entry.gst"},
+          "positive_fixture": {"const": "compiler/phase20_exact_brand_boundary_source.gst"},
+          "positive_import_fixture": {"const": "compiler/phase20_exact_brand_boundary_import.gst"},
+          "issue_fixture": {"const": "compiler/future/p20_cr12_wrong_brand_clone_current.gst"},
+          "negative_fixtures": {"const": [
+            "compiler/phase20_exact_brand_assignment_invalid.gst",
+            "compiler/phase20_exact_brand_call_invalid.gst",
+            "compiler/phase20_exact_brand_return_invalid.gst",
+            "compiler/phase20_exact_brand_field_invalid.gst",
+            "compiler/phase20_exact_brand_alias_invalid.gst"
+          ]},
+          "canonical_mir_fixture": {"const": "compiler/fixtures/native_backend_phase20_exact_brand_boundary.mir"},
+          "matching_policy": {"const": "after_normal_substitution_two_resolved_brand_identities_must_match_exactly_or_satisfy_the_existing_Any_nesting_rule"},
+          "unbranded_policy": {"const": "existing_structural_compatibility_is_preserved_when_either_side_has_no_resolved_identity"},
+          "coverage": {"const": ["explicit_annotation", "direct_assignment", "function_argument", "function_return", "Index", "field", "import_alias", "generic_substitution"]},
+          "mir_projection_policy": {"const": "the_frontend_validates_the_full_same_brand_program_and_projects_its_selected_main_return_23_to_canonical_mir_for_both_backends"},
           "direct_cranelift_source_route": {"const": "explicit_source_or_type_failure_before_driver_discovery_until_patch20_12_without_c_fallback"},
           "opening_probe_fix_enabled": {"const": true}
         }

@@ -2752,7 +2752,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     mut elem_type_arena_write := typechecker_get_index_element_type(idx_type_arena_write, env, ctx);
                     elem_type_arena_write = env_resolve_type(env, elem_type_arena_write, ctx);
                     env_report_non_laundering_safe_brand_target(env, idx_type_arena_write, value_prov_arena_write_nlaunder, get_expression_span(value_arg_arena_write, ctx), "Passing raw-derived or sandbox-derived value to Arena.Set/Write", ctx);
-                    if types_match(elem_type_arena_write, value_type_arena_write, ctx) == 0 {
+                    if env_types_match_at_brand_boundary(env, elem_type_arena_write, value_type_arena_write, ctx) == 0 {
                         mut msg_value_arena_write := std.Concat("Semantic Error: Arena.Set/Write value type mismatch. Expected ", ast.serialize_type(elem_type_arena_write, ctx));
                         msg_value_arena_write = std.Concat(msg_value_arena_write, " but got ");
                         msg_value_arena_write = std.Concat(msg_value_arena_write, ast.serialize_type(value_type_arena_write, ctx));
@@ -2838,7 +2838,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                             mut arg_type := check_expression(arg0_idx, env, scope, ctx);
 
                             mut elem_type := typechecker_get_template_elem_type(s_name, "_phantom", env, ctx);
-                            if types_match(elem_type, arg_type, ctx) == 0 { 
+                            if env_types_match_at_brand_boundary(env, elem_type, arg_type, ctx) == 0 {
                                 mut msg := std.Concat("Semantic Error: Argument type mismatch for Channel.Send. Expected ", ast.serialize_type(elem_type, ctx));
                                 msg = std.Concat(msg, " but got ");
                                 msg = std.Concat(msg, ast.serialize_type(arg_type, ctx));
@@ -2867,7 +2867,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                             mut elem_type := typechecker_get_template_elem_type(s_name, "data", env, ctx);
                             elem_type = env_resolve_type(env, elem_type, ctx);
                             env_report_non_laundering_safe_brand_target(env, elem_type, arg_prov_vector_push_nlaunder, get_expression_span(arg0_idx, ctx), "Passing raw-derived or sandbox-derived value to Vector.Push", ctx);
-                            if types_match(elem_type, arg_type, ctx) == 0 { 
+                            if env_types_match_at_brand_boundary(env, elem_type, arg_type, ctx) == 0 {
                                 mut msg := std.Concat("Semantic Error: Argument type mismatch for Vector.Push. Expected ", ast.serialize_type(elem_type, ctx));
                                 msg = std.Concat(msg, " but got ");
                                 msg = std.Concat(msg, ast.serialize_type(arg_type, ctx));
@@ -2905,7 +2905,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         mut elem_type_vector_set := typechecker_get_template_elem_type(s_name, "data", env, ctx);
                         elem_type_vector_set = env_resolve_type(env, elem_type_vector_set, ctx);
                         env_report_non_laundering_safe_brand_target(env, elem_type_vector_set, value_arg_prov_vector_set_nlaunder, get_expression_span(value_arg_idx_vector_set, ctx), "Passing raw-derived or sandbox-derived value to Vector.Set", ctx);
-                        if types_match(elem_type_vector_set, value_arg_type_vector_set, ctx) == 0 {
+                        if env_types_match_at_brand_boundary(env, elem_type_vector_set, value_arg_type_vector_set, ctx) == 0 {
                             mut msg_vector_set_value := std.Concat("Semantic Error: Vector.Set value type mismatch. Expected ", ast.serialize_type(elem_type_vector_set, ctx));
                             msg_vector_set_value = std.Concat(msg_vector_set_value, " but got ");
                             msg_vector_set_value = std.Concat(msg_vector_set_value, ast.serialize_type(value_arg_type_vector_set, ctx));
@@ -3014,13 +3014,13 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                             v_type = env_resolve_type(env, v_type, ctx);
                             env_report_non_laundering_safe_brand_target(env, v_type, v_arg_prov_map_insert_nlaunder, get_expression_span(arg1_idx, ctx), "Passing raw-derived or sandbox-derived value to HashMap.Insert/Set", ctx);
 
-                            if types_match(k_type, k_arg, ctx) == 0 {
+                            if env_types_match_at_brand_boundary(env, k_type, k_arg, ctx) == 0 {
                                 mut msg := std.Concat("Semantic Error: Key type mismatch for HashMap.Insert/Set. Expected ", ast.serialize_type(k_type, ctx));
                                 msg = std.Concat(msg, " but got ");
                                 msg = std.Concat(msg, ast.serialize_type(k_arg, ctx));
                                 report_error(2, msg, get_expression_span(arg0_idx, ctx), env, ctx);
                             }
-                            if types_match(v_type, v_arg, ctx) == 0 {
+                            if env_types_match_at_brand_boundary(env, v_type, v_arg, ctx) == 0 {
                                 mut msg := std.Concat("Semantic Error: Value type mismatch for HashMap.Insert/Set. Expected ", ast.serialize_type(v_type, ctx));
                                 msg = std.Concat(msg, " but got ");
                                 msg = std.Concat(msg, ast.serialize_type(v_arg, ctx));
@@ -3046,7 +3046,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                             mut k_arg := check_expression(arg0_idx, env, scope, ctx);
 
                             mut k_type := typechecker_get_template_elem_type(s_name, "keys", env, ctx);
-                            if types_match(k_type, k_arg, ctx) == 0 {
+                            if env_types_match_at_brand_boundary(env, k_type, k_arg, ctx) == 0 {
                                 mut msg := std.Concat("Semantic Error: Key type mismatch for HashMap.Get. Expected ", ast.serialize_type(k_type, ctx));
                                 msg = std.Concat(msg, " but got ");
                                 msg = std.Concat(msg, ast.serialize_type(k_arg, ctx));
@@ -3093,7 +3093,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
 
                         mut k_type_getref_map := typechecker_get_template_elem_type(s_name, "keys", env, ctx);
                         k_type_getref_map = env_resolve_type(env, k_type_getref_map, ctx);
-                        if types_match(k_type_getref_map, k_arg_getref_map, ctx) == 0 {
+                        if env_types_match_at_brand_boundary(env, k_type_getref_map, k_arg_getref_map, ctx) == 0 {
                             mut msg_getref_map_type := std.Concat("Semantic Error: Key type mismatch for HashMap.GetRef. Expected ", ast.serialize_type(k_type_getref_map, ctx));
                             msg_getref_map_type = std.Concat(msg_getref_map_type, " but got ");
                             msg_getref_map_type = std.Concat(msg_getref_map_type, ast.serialize_type(k_arg_getref_map, ctx));
@@ -3123,7 +3123,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
 
                         mut k_type_getopt_map := typechecker_get_template_elem_type(s_name, "keys", env, ctx);
                         k_type_getopt_map = env_resolve_type(env, k_type_getopt_map, ctx);
-                        if types_match(k_type_getopt_map, k_arg_getopt_map, ctx) == 0 {
+                        if env_types_match_at_brand_boundary(env, k_type_getopt_map, k_arg_getopt_map, ctx) == 0 {
                             mut msg_getopt_map_type := std.Concat("Semantic Error: Key type mismatch for HashMap.get_opt. Expected ", ast.serialize_type(k_type_getopt_map, ctx));
                             msg_getopt_map_type = std.Concat(msg_getopt_map_type, " but got ");
                             msg_getopt_map_type = std.Concat(msg_getopt_map_type, ast.serialize_type(k_arg_getopt_map, ctx));
@@ -3151,7 +3151,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                             mut k_arg := check_expression(arg0_idx, env, scope, ctx);
 
                             mut k_type := typechecker_get_template_elem_type(s_name, "keys", env, ctx);
-                            if types_match(k_type, k_arg, ctx) == 0 {
+                            if env_types_match_at_brand_boundary(env, k_type, k_arg, ctx) == 0 {
                                 mut msg := std.Concat("Semantic Error: Key type mismatch for HashMap.Remove. Expected ", ast.serialize_type(k_type, ctx));
                                 msg = std.Concat(msg, " but got ");
                                 msg = std.Concat(msg, ast.serialize_type(k_arg, ctx));
@@ -3221,7 +3221,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                             mut arg_type := check_expression(arg0_idx, env, scope, ctx);
 
                             mut elem_type := typechecker_get_template_elem_type(s_name, "data", env, ctx);
-                            if types_match(elem_type, arg_type, ctx) == 0 {
+                            if env_types_match_at_brand_boundary(env, elem_type, arg_type, ctx) == 0 {
                                 mut msg := std.Concat("Semantic Error: Argument type mismatch for Pool.Alloc. Expected ", ast.serialize_type(elem_type, ctx));
                                 msg = std.Concat(msg, " but got ");
                                 msg = std.Concat(msg, ast.serialize_type(arg_type, ctx));
@@ -3259,7 +3259,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                                 elem_struct_name = elem_type.Struct.struct_name;
                             }
                             mut expected_index_type := typechecker_substitute_brand(make_type_index(elem_struct_name, "", ctx), brand_name, ctx);
-                            if types_match(expected_index_type, arg_type, ctx) == 0 {
+                            if env_types_match_at_brand_boundary(env, expected_index_type, arg_type, ctx) == 0 {
                                 mut msg := std.Concat("Semantic Error: Argument type mismatch for Pool.Free. Expected ", ast.serialize_type(expected_index_type, ctx));
                                 msg = std.Concat(msg, " but got ");
                                 msg = std.Concat(msg, ast.serialize_type(arg_type, ctx));
@@ -3337,7 +3337,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                                     }
                                 }
                             }
-                            if t_type.tag != 3 && types_match(t_type, arg_type, ctx) == 0 {
+                            if t_type.tag != 3 && env_types_match_at_brand_boundary(env, t_type, arg_type, ctx) == 0 {
                                 mut msg := std.Concat("Semantic Error: Graph.AddNode value type mismatch. Expected ", ast.serialize_type(t_type, ctx));
                                 msg = std.Concat(msg, " but got ");
                                 msg = std.Concat(msg, ast.serialize_type(arg_type, ctx));
@@ -3568,7 +3568,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
 
                 mut key_type_hashmap_getref_alias := typechecker_get_template_elem_type(s_name_hashmap_getref_alias, "keys", env, ctx);
                 key_type_hashmap_getref_alias = env_resolve_type(env, key_type_hashmap_getref_alias, ctx);
-                if types_match(key_type_hashmap_getref_alias, key_arg_type_hashmap_getref_alias, ctx) == 0 {
+                if env_types_match_at_brand_boundary(env, key_type_hashmap_getref_alias, key_arg_type_hashmap_getref_alias, ctx) == 0 {
                     mut msg_hashmap_getref_alias_key := std.Concat("Semantic Error: std.HashMapGetRef key type mismatch. Expected ", ast.serialize_type(key_type_hashmap_getref_alias, ctx));
                     msg_hashmap_getref_alias_key = std.Concat(msg_hashmap_getref_alias_key, " but got ");
                     msg_hashmap_getref_alias_key = std.Concat(msg_hashmap_getref_alias_key, ast.serialize_type(key_arg_type_hashmap_getref_alias, ctx));
@@ -3726,7 +3726,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     mut arg_type := check_expression(task_arg_idx, env, scope, ctx);
                     mut resolved_arg := env_resolve_type(env, arg_type, ctx);
 
-                    if types_match(first_param_type, resolved_arg, ctx) == 0 {
+                    if env_types_match_at_brand_boundary(env, first_param_type, resolved_arg, ctx) == 0 {
                         mut msg := std.Concat("Semantic Error: Thread spawn argument type mismatch. Expected ", ast.serialize_type(first_param_type, ctx));
                         msg = std.Concat(msg, " but got ");
                         msg = std.Concat(msg, ast.serialize_type(resolved_arg, ctx));
@@ -3983,7 +3983,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     mut arg_type := check_expression(arg0_idx, env, scope, ctx);
                     mut resolved_arg := env_resolve_type(env, arg_type, ctx);
                     mut t_str: ast.Type[ctx]; t_str.tag = 5; // Str
-                    if types_match(t_str, resolved_arg, ctx) == 0 {
+                    if env_types_match_at_brand_boundary(env, t_str, resolved_arg, ctx) == 0 {
                         mut msg := std.Format("Semantic Error: os.LogStr expects a Str argument, but got %s", ast.serialize_type(resolved_arg, ctx));
                         report_error(2, msg, expr.Call.span, env, ctx);
                     }
@@ -4084,6 +4084,11 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         if inner.tag == 4 {
                             is_arena_ptr = 1;
                         }
+                    } else if param_type.tag == 11 {
+                        mut inner := ctx[param_type.Reference.inner];
+                        if inner.tag == 4 {
+                            is_arena_ptr = 1;
+                        }
                     }
                     if param_type.tag == 4 || is_arena_ptr == 1 {
                         mut arg_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
@@ -4128,7 +4133,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     mut arg_prov_check_call_nlaunder := evaluated_arg_provenances_call_nlaunder[k];
                     env_report_non_laundering_safe_brand_target(env, expected_type, arg_prov_check_call_nlaunder, arg_span_call_nlaunder, "Passing raw-derived or sandbox-derived argument", ctx);
 
-                    if types_match(expected_type, resolved_arg, ctx) == 0 {
+                    if env_types_match_at_brand_boundary(env, expected_type, resolved_arg, ctx) == 0 {
                         mut msg := std.Format("Semantic Error: Argument type mismatch for function '%s'. Expected %s but got %s",
                             resolved_func,
                             ast.serialize_type(expected_type, ctx),
@@ -8283,7 +8288,7 @@ func env_resource_assignment_type_matches_declaration(env: *TypeEnvironment[ctx]
     if type_is_resource(assigned_resource_type, ctx) == 0 {
         return 0;
     }
-    return types_match(declared_type_resource_assignment, assigned_resource_type, ctx);
+    return env_types_match_at_brand_boundary(env, declared_type_resource_assignment, assigned_resource_type, ctx);
 }
 
 func env_resource_assignment_is_tracking_eligible(env: *TypeEnvironment[ctx], variable_name: str, assigned_resource_type: ast.Type[ctx], ctx: &Arena) int {
@@ -10592,6 +10597,30 @@ func types_match(expected: ast.Type[ctx], actual: ast.Type[ctx], ctx: &Arena) in
     }
 }
 
+func env_types_match_at_brand_boundary(env: *TypeEnvironment[ctx], expected: ast.Type[ctx], actual: ast.Type[ctx], ctx: &Arena) int {
+    if types_match(expected, actual, ctx) == 0 {
+        return 0;
+    }
+
+    mut expected_identity := env_get_brand_identity(env, expected, ctx);
+    if brand_identity_has_identity(expected_identity) == 0 {
+        expected_identity = typechecker_brand_identity_from_resolved_type(expected, env, ctx);
+    }
+    mut actual_identity := env_get_brand_identity(env, actual, ctx);
+    if brand_identity_has_identity(actual_identity) == 0 {
+        actual_identity = typechecker_brand_identity_from_resolved_type(actual, env, ctx);
+    }
+
+    // Preserve existing wildcard and explicitly unbranded compatibility. Once
+    // both sides carry resolved identities, structural or canonical-name
+    // equivalence cannot erase a distinct arena.
+    if brand_identity_has_identity(expected_identity) == 0 ||
+       brand_identity_has_identity(actual_identity) == 0 {
+        return 1;
+    }
+    return brand_identity_nesting_membership(expected_identity, actual_identity);
+}
+
 func check_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEnvironment[ctx], scope: Index[Scope[ctx], ctx], ctx: &Arena) errors.Result[int, ctx] {
     unsafe {
         mut res: errors.Result[int, ctx];
@@ -10864,7 +10893,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             }
 
             if var_type_idx != empty[Index[ast.Type[ctx], ctx]] {
-                if types_match(resolved_explicit, val_type, ctx) == 0 {
+                if env_types_match_at_brand_boundary(env, resolved_explicit, val_type, ctx) == 0 {
                     mut msg := "Semantic Error: [TypeMismatch] Explicit Type Annotation Mismatch. Declared ";
                     msg = std.Concat(msg, ast.serialize_type(resolved_explicit, ctx));
                     msg = std.Concat(msg, " but got value ");
@@ -11064,7 +11093,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 assignment_rhs_resource_name_step52h = std.Clone(ctx, rhs_name_step52h);
             }
 
-            if types_match(left_type, val_type, ctx) == 0 {
+            if env_types_match_at_brand_boundary(env, left_type, val_type, ctx) == 0 {
                 mut msg := "Semantic Error: [TypeMismatch] Mismatched types in assignment. Cannot assign ";
                 msg = std.Concat(msg, ast.serialize_type(val_type, ctx));
                 msg = std.Concat(msg, " to ");
@@ -11870,7 +11899,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
 
             if (*env).expected_return_type != empty[Index[ast.Type[ctx], ctx]] {
                 mut expected_t := ctx[(*env).expected_return_type];
-                if types_match(expected_t, actual_return, ctx) == 0 {
+                if env_types_match_at_brand_boundary(env, expected_t, actual_return, ctx) == 0 {
                     mut msg := "Semantic Error: [TypeMismatch] Return type mismatch. Expected ";
                     msg = std.Concat(msg, ast.serialize_type(expected_t, ctx));
                     msg = std.Concat(msg, " but got ");

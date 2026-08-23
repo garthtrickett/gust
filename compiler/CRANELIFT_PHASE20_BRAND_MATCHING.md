@@ -3,11 +3,11 @@
 Generated from `scripts/cranelift_feature_registry.json` by
 `scripts/phase20_brand_matching.py project`. Do not edit by hand.
 
-- Authority version: `phase20_canonical_brand_matching_v2`
-- Status: `patch20_2_nesting_acceptance_enabled`
-- Next patch: `20.3`
+- Authority version: `phase20_canonical_brand_matching_v3`
+- Status: `patch20_3_exact_boundaries_enabled`
+- Next patch: `20.4`
 - Identity authority: `phase19_brand_identity_authority_v1`
-- Behaviour policy: `resolved_identity_authoritative_for_brand_nesting_with_legacy_shadow_observation_only`
+- Behaviour policy: `resolved_identity_authoritative_for_brand_nesting_and_typed_value_boundaries_with_legacy_shadow_observation_only`
 
 ## Canonical operations
 
