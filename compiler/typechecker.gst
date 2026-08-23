@@ -8652,6 +8652,35 @@ func env_register_resource_acquisition(env: *TypeEnvironment[ctx], expr_idx: Ind
     }
 }
 
+func env_register_resource_parameter_obligation(env: *TypeEnvironment[ctx], function_name: str, parameter_name: str, parameter_type: ast.Type[ctx], ctx: &Arena) int {
+    mut resolved_parameter := env_resolve_type(env, parameter_type, ctx);
+    if resolved_parameter.tag == 11 || resolved_parameter.tag == 9 { // Reference or raw pointer
+        return 0;
+    }
+    mut type_name := env_tracking_resource_type_name(env, resolved_parameter, ctx);
+    if len(type_name) == 0 {
+        return 0;
+    }
+
+    mut identity := std.Concat("parameter:", function_name);
+    identity = std.Concat(identity, ":");
+    identity = std.Concat(identity, parameter_name);
+    mut obligation: ResourceAcquisitionObligation[ctx];
+    obligation.identity = std.Clone(ctx, identity);
+    obligation.type_name = std.Clone(ctx, type_name);
+    obligation.destructor_name = env_struct_linear_destructor_name(
+        env, type_name, ctx
+    );
+    obligation.state = 0;
+    unsafe {
+        (*env).resource_acquisition_obligations.Insert(
+            std.Clone(ctx, identity), obligation
+        );
+    }
+    env_bind_resource_identity(env, parameter_name, identity, ctx);
+    return 1;
+}
+
 func env_resource_identity_for_expression(env: *TypeEnvironment[ctx], expr_idx: Index[ast.Expression[ctx], ctx], ctx: &Arena) str {
     unsafe {
         if expr_idx == empty[Index[ast.Expression[ctx], ctx]] {
@@ -11778,6 +11807,21 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 (*env).variable_origins.Insert(std.Clone(ctx, param.name), param_origins);
                 env_record_safe_parameter_provenance(env, param.name, resolved_param_type, ctx);
 
+                // A by-value resource parameter is the callee's live owner.
+                // The validated destructor itself is the terminal operation,
+                // so its owned parameter does not recursively owe destruction.
+                if env_function_is_validated_resource_destructor(
+                    env, function_name_return_prov, ctx
+                ) == 0 {
+                    env_register_resource_parameter_obligation(
+                        env,
+                        function_name_return_prov,
+                        param.name,
+                        resolved_param_type,
+                        ctx
+                    );
+                }
+
                 i = i + 1;
             }
 
@@ -12592,6 +12636,12 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
 
             mut parent_moved := typechecker_clone_int_map((*env).moved_vars, ctx);
             mut parent_origins := typechecker_clone_origins((*env).variable_origins, ctx);
+            mut parent_resource_obligations_while := typechecker_clone_resource_acquisition_obligation_map(
+                (*env).resource_acquisition_obligations, ctx
+            );
+            mut parent_resource_values_while := typechecker_clone_string_map(
+                (*env).resource_value_identities, ctx
+            );
 
             if body_idx != empty[Index[ast.BlockStatement[ctx], ctx]] {
                 mut body := ctx[body_idx];
@@ -12604,6 +12654,25 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                     j = j + 1;
                 }
             }
+
+            mut body_resource_obligations_while := typechecker_clone_resource_acquisition_obligation_map(
+                (*env).resource_acquisition_obligations, ctx
+            );
+            mut body_resource_values_while := typechecker_clone_string_map(
+                (*env).resource_value_identities, ctx
+            );
+            (*env).resource_acquisition_obligations =
+                typechecker_join_resource_acquisition_obligation_maps(
+                    parent_resource_obligations_while,
+                    body_resource_obligations_while,
+                    ctx
+                );
+            (*env).resource_value_identities =
+                typechecker_join_resource_value_identity_maps(
+                    parent_resource_values_while,
+                    body_resource_values_while,
+                    ctx
+                );
 
             (*env).moved_vars = parent_moved;
             (*env).variable_origins = parent_origins;
@@ -12625,6 +12694,16 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             mut pre_origins := typechecker_clone_origins((*env).variable_origins, ctx);
             mut pre_moved := typechecker_clone_int_map((*env).moved_vars, ctx);
             mut pre_checked := typechecker_clone_int_map((*env).checked_results, ctx);
+            mut pre_resource_obligations_if := typechecker_clone_resource_acquisition_obligation_map(
+                (*env).resource_acquisition_obligations, ctx
+            );
+            mut pre_resource_values_if := typechecker_clone_string_map(
+                (*env).resource_value_identities, ctx
+            );
+            mut resource_success_identity_if :=
+                typechecker_resource_success_condition_identity(
+                    cond_idx, env, ctx
+                );
 
             typechecker_extract_ok_checked_variables(cond_idx, &(*env).checked_results, ctx);
 
@@ -12643,12 +12722,39 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
 
             mut consequence_origins := (*env).variable_origins;
             mut consequence_moved := (*env).moved_vars;
+            mut consequence_resource_obligations_if := typechecker_clone_resource_acquisition_obligation_map(
+                (*env).resource_acquisition_obligations, ctx
+            );
+            mut consequence_resource_values_if := typechecker_clone_string_map(
+                (*env).resource_value_identities, ctx
+            );
+            mut alternative_resource_obligations_if := typechecker_clone_resource_acquisition_obligation_map(
+                pre_resource_obligations_if, ctx
+            );
+            if len(resource_success_identity_if) > 0 {
+                alternative_resource_obligations_if =
+                    typechecker_resource_failure_path_obligation_map(
+                        alternative_resource_obligations_if,
+                        resource_success_identity_if,
+                        ctx
+                    );
+            }
+            mut alternative_resource_values_if := typechecker_clone_string_map(
+                pre_resource_values_if, ctx
+            );
 
             if alt_idx != empty[Index[ast.BlockStatement[ctx], ctx]] {
                 // Reset to pre-if state for alternative branch evaluation
                 (*env).variable_origins = pre_origins;
                 (*env).moved_vars = pre_moved;
                 (*env).checked_results = pre_checked;
+                (*env).resource_acquisition_obligations =
+                    typechecker_clone_resource_acquisition_obligation_map(
+                        alternative_resource_obligations_if, ctx
+                    );
+                (*env).resource_value_identities = typechecker_clone_string_map(
+                    pre_resource_values_if, ctx
+                );
 
                 mut alt := ctx[alt_idx];
                 mut statements_vec_if_alternative: std.Vector[ast.Statement[ctx], ctx] := ctx[alt.statements];
@@ -12662,6 +12768,13 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
 
                 mut alternative_origins := (*env).variable_origins;
                 mut alternative_moved := (*env).moved_vars;
+                alternative_resource_obligations_if =
+                    typechecker_clone_resource_acquisition_obligation_map(
+                        (*env).resource_acquisition_obligations, ctx
+                    );
+                alternative_resource_values_if = typechecker_clone_string_map(
+                    (*env).resource_value_identities, ctx
+                );
 
                 // Join consequence and alternative
                 mut merged_origins := pre_origins;
@@ -12772,6 +12885,18 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
 
             // Restore checked results
             (*env).checked_results = pre_checked;
+            (*env).resource_acquisition_obligations =
+                typechecker_join_resource_acquisition_obligation_maps(
+                    consequence_resource_obligations_if,
+                    alternative_resource_obligations_if,
+                    ctx
+                );
+            (*env).resource_value_identities =
+                typechecker_join_resource_value_identity_maps(
+                    consequence_resource_values_if,
+                    alternative_resource_values_if,
+                    ctx
+                );
 
             return res;
         }
@@ -12781,6 +12906,19 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             mut cases_vec_match_stmt: std.Vector[ast.MatchCase[ctx], ctx] := ctx[stmt.Match.cases];
 
             mut expr_type := check_expression(expr_idx, env, scope, ctx);
+            mut pre_resource_obligations_match := typechecker_clone_resource_acquisition_obligation_map(
+                (*env).resource_acquisition_obligations, ctx
+            );
+            mut pre_resource_values_match := typechecker_clone_string_map(
+                (*env).resource_value_identities, ctx
+            );
+            mut merged_resource_obligations_match := typechecker_clone_resource_acquisition_obligation_map(
+                pre_resource_obligations_match, ctx
+            );
+            mut merged_resource_values_match := typechecker_clone_string_map(
+                pre_resource_values_match, ctx
+            );
+            mut has_resource_obligation_case_match := 0;
             mut real_struct_type := expr_type;
             if real_struct_type.tag == 9 { // RawPointer
                 real_struct_type = ctx[real_struct_type.RawPointer.inner];
@@ -12794,6 +12932,13 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
 
                 mut i := 0;
                 while i < len(cases_vec_match_stmt) {
+                    (*env).resource_acquisition_obligations =
+                        typechecker_clone_resource_acquisition_obligation_map(
+                            pre_resource_obligations_match, ctx
+                        );
+                    (*env).resource_value_identities = typechecker_clone_string_map(
+                        pre_resource_values_match, ctx
+                    );
                     mut m_case := cases_vec_match_stmt[i];
                     mut variant_name := m_case.variant_name;
 
@@ -12880,6 +13025,32 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                         f_cleanup = f_cleanup + 1;
                     }
 
+                    mut case_resource_obligations_match := typechecker_clone_resource_acquisition_obligation_map(
+                        (*env).resource_acquisition_obligations, ctx
+                    );
+                    mut case_resource_values_match := typechecker_clone_string_map(
+                        (*env).resource_value_identities, ctx
+                    );
+                    if has_resource_obligation_case_match == 0 {
+                        merged_resource_obligations_match =
+                            case_resource_obligations_match;
+                        merged_resource_values_match = case_resource_values_match;
+                        has_resource_obligation_case_match = 1;
+                    } else {
+                        merged_resource_obligations_match =
+                            typechecker_join_resource_acquisition_obligation_maps(
+                                merged_resource_obligations_match,
+                                case_resource_obligations_match,
+                                ctx
+                            );
+                        merged_resource_values_match =
+                            typechecker_join_resource_value_identity_maps(
+                                merged_resource_values_match,
+                                case_resource_values_match,
+                                ctx
+                            );
+                    }
+
                     i = i + 1;
                 }
 
@@ -12905,6 +13076,10 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                     } 
                 }
             }
+
+            (*env).resource_acquisition_obligations =
+                merged_resource_obligations_match;
+            (*env).resource_value_identities = merged_resource_values_match;
 
             return res;
         }
@@ -13616,6 +13791,155 @@ func typechecker_clone_resource_acquisition_obligation_map(src: std.HashMap[str,
         i = i + 1;
     }
     return dest;
+}
+
+func typechecker_resource_success_condition_identity(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvironment[ctx], ctx: &Arena) str {
+    unsafe {
+        if expr_idx == empty[Index[ast.Expression[ctx], ctx]] {
+            return "";
+        }
+        mut expr := ctx[expr_idx];
+        if expr.tag == 11 { // Selector
+            if std.str_eq(expr.Selector.right, "Ok") == 1 {
+                mut identity := env_resource_identity_for_expression(
+                    env, expr.Selector.left, ctx
+                );
+                return std.Clone(ctx, identity);
+            }
+            return "";
+        }
+        if expr.tag == 10 && std.str_eq(expr.Binary.op, "==") == 1 {
+            mut left := ctx[expr.Binary.left];
+            mut right := ctx[expr.Binary.right];
+            if left.tag == 11 && right.tag == 1 && right.Integer.val == 1 {
+                if std.str_eq(left.Selector.right, "Ok") == 1 {
+                    mut identity := env_resource_identity_for_expression(
+                        env, left.Selector.left, ctx
+                    );
+                    return std.Clone(ctx, identity);
+                }
+            }
+            if right.tag == 11 && left.tag == 1 && left.Integer.val == 1 {
+                if std.str_eq(right.Selector.right, "Ok") == 1 {
+                    mut identity := env_resource_identity_for_expression(
+                        env, right.Selector.left, ctx
+                    );
+                    return std.Clone(ctx, identity);
+                }
+            }
+        }
+        return "";
+    }
+}
+
+func typechecker_resource_failure_path_obligation_map(src: std.HashMap[str, ResourceAcquisitionObligation[ctx], ctx], identity: str, ctx: &Arena) std.HashMap[str, ResourceAcquisitionObligation[ctx], ctx] {
+    mut dest := typechecker_clone_resource_acquisition_obligation_map(src, ctx);
+    mut lookup := dest.Get(identity);
+    if lookup.Ok {
+        mut record := resource_acquisition_obligation_clone(lookup.Val, ctx);
+        record.state = 2;
+        dest.Insert(std.Clone(ctx, identity), record);
+    }
+    return dest;
+}
+
+func resource_acquisition_obligation_join_state(left: int, right: int) int {
+    // A diagnostic already emitted on either path remains terminal for
+    // deduplication. Otherwise any reachable pending path keeps the joined
+    // obligation pending; distinct terminal transfers remain terminal.
+    if left == 3 || right == 3 {
+        return 3;
+    }
+    if left == 0 || right == 0 {
+        return 0;
+    }
+    if left == right {
+        return left;
+    }
+    return 2;
+}
+
+func typechecker_join_resource_acquisition_obligation_maps(left: std.HashMap[str, ResourceAcquisitionObligation[ctx], ctx], right: std.HashMap[str, ResourceAcquisitionObligation[ctx], ctx], ctx: &Arena) std.HashMap[str, ResourceAcquisitionObligation[ctx], ctx] {
+    mut joined: std.HashMap[str, ResourceAcquisitionObligation[ctx], ctx] := std.HashMapNew(ctx);
+    mut left_keys := left.Keys(ctx);
+    mut i := 0;
+    while i < len(left_keys) {
+        mut key := left_keys[i];
+        mut left_lookup := left.Get(key);
+        if left_lookup.Ok {
+            mut record := resource_acquisition_obligation_clone(
+                left_lookup.Val, ctx
+            );
+            mut right_lookup := right.Get(key);
+            if right_lookup.Ok {
+                record.state = resource_acquisition_obligation_join_state(
+                    record.state, right_lookup.Val.state
+                );
+            }
+            joined.Insert(std.Clone(ctx, key), record);
+        }
+        i = i + 1;
+    }
+
+    mut right_keys := right.Keys(ctx);
+    mut j := 0;
+    while j < len(right_keys) {
+        mut key := right_keys[j];
+        if joined.Get(key).Ok == false {
+            mut right_lookup := right.Get(key);
+            if right_lookup.Ok {
+                joined.Insert(
+                    std.Clone(ctx, key),
+                    resource_acquisition_obligation_clone(right_lookup.Val, ctx)
+                );
+            }
+        }
+        j = j + 1;
+    }
+    return joined;
+}
+
+func typechecker_join_resource_value_identity_maps(left: std.HashMap[str, str, ctx], right: std.HashMap[str, str, ctx], ctx: &Arena) std.HashMap[str, str, ctx] {
+    mut joined: std.HashMap[str, str, ctx] := std.HashMapNew(ctx);
+    mut left_keys := left.Keys(ctx);
+    mut i := 0;
+    while i < len(left_keys) {
+        mut key := left_keys[i];
+        mut left_lookup := left.Get(key);
+        if left_lookup.Ok {
+            mut right_lookup := right.Get(key);
+            mut keep_identity := 0;
+            if right_lookup.Ok {
+                if std.str_eq(left_lookup.Val, right_lookup.Val) == 1 {
+                    keep_identity = 1;
+                }
+            } else {
+                keep_identity = 1;
+            }
+            if keep_identity == 1 {
+                joined.Insert(
+                    std.Clone(ctx, key), std.Clone(ctx, left_lookup.Val)
+                );
+            }
+        }
+        i = i + 1;
+    }
+
+    mut right_keys := right.Keys(ctx);
+    mut j := 0;
+    while j < len(right_keys) {
+        mut key := right_keys[j];
+        if joined.Get(key).Ok == false && left.Get(key).Ok == false {
+            mut right_lookup := right.Get(key);
+            if right_lookup.Ok {
+                joined.Insert(
+                    std.Clone(ctx, key), std.Clone(ctx, right_lookup.Val)
+                );
+            }
+        }
+        j = j + 1;
+    }
+    return joined;
 }
 
 func typechecker_has_boolean_fields_recursive(t: ast.Type[ctx], env: *TypeEnvironment[ctx], visited: *std.HashMap[str, int, ctx], ctx: &Arena) int {
