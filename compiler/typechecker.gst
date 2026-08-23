@@ -750,6 +750,9 @@ type TypeEnvironment[ctx] struct {
     template_local_names: std.HashMap[str, str, ctx],
     function_registry: std.HashMap[str, FunctionSignature[ctx], ctx],
     brand_identities: std.HashMap[str, BrandIdentity[ctx], ctx],
+    brand_match_shadow_checks: int,
+    brand_match_shadow_agreements: int,
+    brand_match_shadow_disagreements: int,
     canonical_type_names: std.HashMap[str, str, ctx],
     function_return_provenance: std.HashMap[str, ExpressionProvenance[ctx], ctx],
     variable_types: std.HashMap[str, ast.Type[ctx], ctx],
@@ -1835,12 +1838,25 @@ func env_is_element_allowed_in_brand(env: *TypeEnvironment[ctx], t: ast.Type[ctx
         if std.str_eq(ib, "") == 0 {
             mut clean_ib := strip_brand_prefix(ib, ctx);
             mut clean_ob := strip_brand_prefix(parent_brand, ctx);
-            if std.str_eq(clean_ib, clean_ob) == 1 {
+            mut legacy_match := 0;
+            if std.str_eq(clean_ib, clean_ob) == 1 ||
+               std.str_eq(clean_ib, "Any") == 1 ||
+               std.str_eq(clean_ob, "Any") == 1 {
+                legacy_match = 1;
+            }
+
+            // Patch 20.1 observes the resolved-identity answer without making
+            // it authoritative. Patch 20.2 owns the acceptance switch.
+            mut parent_identity := brand_identity_make("nesting_parent", parent_brand, 0, ctx);
+            mut element_identity := typechecker_brand_identity_from_resolved_type(t, env, ctx);
+            env_record_brand_match_shadow(
+                env,
+                brand_identity_nesting_membership(parent_identity, element_identity),
+                legacy_match
+            );
+            if legacy_match == 1 {
                 return 1;
-            } 
-            if std.str_eq(clean_ib, "Any") == 1 || std.str_eq(clean_ob, "Any") == 1 {
-                return 1;
-            } 
+            }
         }
         return 0;
     }
@@ -6970,6 +6986,9 @@ func env_new(ctx: &Arena) TypeEnvironment[ctx] {
         env_ref_new.template_local_names = std.HashMapNew(ctx);
         env_ref_new.function_registry = std.HashMapNew(ctx);
         env_ref_new.brand_identities = std.HashMapNew(ctx);
+        env_ref_new.brand_match_shadow_checks = 0;
+        env_ref_new.brand_match_shadow_agreements = 0;
+        env_ref_new.brand_match_shadow_disagreements = 0;
         env_ref_new.canonical_type_names = std.HashMapNew(ctx);
         env_ref_new.function_return_provenance = std.HashMapNew(ctx);
         env_ref_new.variable_types = std.HashMapNew(ctx);
@@ -8874,6 +8893,57 @@ func brand_identity_make(brand_origin: str, arena_identity: str, is_arena: int, 
     identity.arena_identity = std.Clone(ctx, arena_identity);
     identity.is_arena = is_arena;
     return identity;
+}
+
+func brand_identity_has_identity(identity: BrandIdentity[ctx]) int {
+    if std.str_eq(identity.arena_identity, "") == 1 {
+        return 0;
+    }
+    return 1;
+}
+
+func brand_identity_exact_match(expected: BrandIdentity[ctx], actual: BrandIdentity[ctx]) int {
+    if brand_identity_has_identity(expected) == 0 || brand_identity_has_identity(actual) == 0 {
+        return 0;
+    }
+    return std.str_eq(expected.arena_identity, actual.arena_identity);
+}
+
+func brand_identity_nesting_membership(parent: BrandIdentity[ctx], element: BrandIdentity[ctx]) int {
+    if brand_identity_exact_match(parent, element) == 1 {
+        return 1;
+    }
+    if std.str_eq(parent.arena_identity, "Any") == 1 ||
+       std.str_eq(element.arena_identity, "Any") == 1 {
+        return 1;
+    }
+    return 0;
+}
+
+func brand_identity_description(identity: BrandIdentity[ctx], ctx: &Arena) str {
+    if brand_identity_has_identity(identity) == 0 {
+        return std.Clone(ctx, "<unbranded>");
+    }
+    return std.Clone(ctx, identity.arena_identity);
+}
+
+func brand_identity_mismatch_description(expected: BrandIdentity[ctx], actual: BrandIdentity[ctx], ctx: &Arena) str {
+    mut message := std.Concat("expected arena identity '", brand_identity_description(expected, ctx));
+    message = std.Concat(message, "' but found '");
+    message = std.Concat(message, brand_identity_description(actual, ctx));
+    message = std.Concat(message, "'");
+    return std.Clone(ctx, message);
+}
+
+func env_record_brand_match_shadow(env: *TypeEnvironment[ctx], resolved_match: int, legacy_match: int) {
+    unsafe {
+        (*env).brand_match_shadow_checks = (*env).brand_match_shadow_checks + 1;
+        if resolved_match == legacy_match {
+            (*env).brand_match_shadow_agreements = (*env).brand_match_shadow_agreements + 1;
+        } else {
+            (*env).brand_match_shadow_disagreements = (*env).brand_match_shadow_disagreements + 1;
+        }
+    }
 }
 
 func typechecker_explicit_brand_identity(t: ast.Type[ctx], ctx: &Arena) BrandIdentity[ctx] {

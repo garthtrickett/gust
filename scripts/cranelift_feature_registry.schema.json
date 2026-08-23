@@ -13,6 +13,7 @@
     "closed_phase_versions",
     "closure_snapshots",
     "opening_snapshots",
+    "phase20_brand_matching",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -147,6 +148,41 @@
           "policy": {"const": "report_only_no_behaviour_change"},
           "regression_surface": {"type": "object"},
           "sites": {"type": "array", "minItems": 9, "items": {"type": "object"}}
+        }
+      },
+      "phase20_brand_matching": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["authority_version", "status", "next_patch", "review_view",
+                     "identity_authority", "operations", "shadow_fields",
+                     "legacy_acceptance_function", "legacy_string_cleaner",
+                     "frozen_string_cleaner_occurrences", "frozen_string_cleaner_callers",
+                     "frozen_string_cleaner_owner_files",
+                     "semantic_fixture", "behavior_policy", "opening_probe_fixes_enabled"],
+        "properties": {
+          "authority_version": {"const": "phase20_canonical_brand_matching_v1"},
+          "status": {"const": "ready_for_patch20_2"},
+          "next_patch": {"const": "20.2"},
+          "review_view": {"const": "compiler/CRANELIFT_PHASE20_BRAND_MATCHING.md"},
+          "identity_authority": {"const": "phase19_brand_identity_authority_v1"},
+          "operations": {
+            "const": ["brand_identity_exact_match", "brand_identity_nesting_membership",
+                      "brand_identity_mismatch_description"]
+          },
+          "shadow_fields": {
+            "const": ["brand_match_shadow_checks", "brand_match_shadow_agreements",
+                      "brand_match_shadow_disagreements"]
+          },
+          "legacy_acceptance_function": {"const": "env_is_element_allowed_in_brand"},
+          "legacy_string_cleaner": {"const": "strip_brand_prefix"},
+          "frozen_string_cleaner_occurrences": {"const": 50},
+          "frozen_string_cleaner_callers": {"const": 49},
+          "frozen_string_cleaner_owner_files": {
+            "const": ["compiler/codegen.gst", "compiler/typechecker.gst"]
+          },
+          "semantic_fixture": {"const": "compiler/typechecker_phase20_brand_matching_test_entry.gst"},
+          "behavior_policy": {"const": "resolved_identity_shadow_only_legacy_acceptance_and_diagnostics_unchanged"},
+          "opening_probe_fixes_enabled": {"const": false}
         }
       },
       "phase19_brand_authority": {

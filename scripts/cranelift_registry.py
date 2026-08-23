@@ -19,7 +19,8 @@ AMBIGUOUS = {"", "unknown", "tbd", "ownerless", "ambiguous"}
 TOP_FIELDS = {
     "schema", "schema_version", "registry_version", "registry_status",
     "current_phase", "closed_phase_versions", "closure_snapshots",
-    "opening_snapshots", "phase19_spelling_inventory", "phase19_brand_authority",
+    "opening_snapshots", "phase20_brand_matching", "phase19_spelling_inventory",
+    "phase19_brand_authority",
     "phase19_type_naming", "phase19_classification", "phase19_representation",
     "phase19_rule_convergence", "phase19_retired_prototype_absence",
     "phase19_gust_name_list_removed", "phase19_seed_convergence",
