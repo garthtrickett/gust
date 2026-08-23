@@ -70,7 +70,18 @@ def validate() -> dict:
             "seed accounting row shape drifted")
 
     seed = SEED.read_text(encoding="utf-8")
-    require(len(seed.splitlines()) == diff["current_lines"], "committed seed line count drifted")
+    live_seed_lines = diff["current_lines"]
+    successor = json.loads(REGISTRY.read_text(encoding="utf-8")).get(
+        "phase20_seed_convergence"
+    )
+    if successor is not None:
+        require(successor.get("predecessor_authority") == record["contract_version"],
+                "Phase 20 seed authority does not name this predecessor")
+        successor_diff = successor.get("generated_seed_diff")
+        require(isinstance(successor_diff, dict),
+                "Phase 20 seed authority omits generated diff accounting")
+        live_seed_lines = successor_diff.get("current_lines")
+    require(len(seed.splitlines()) == live_seed_lines, "committed seed line count drifted")
     for symbol in (
         "typechecker__env_get_canonical_branded_type_name",
         "typechecker__typechecker_is_arena_value_or_ref",

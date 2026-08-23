@@ -937,6 +937,41 @@
     "backend_policy": "mir_to_c_emits_the_shared_compiler_plan_and_phase15_canonical_resource_parity_keeps_mir_to_c_and_cranelift_cleanup_consumers_in_agreement",
     "enforcement_enabled": true
   },
+  "phase20_seed_convergence": {
+    "contract_version": "phase20_seed_convergence_v1",
+    "status": "patch20_11_complete",
+    "next_patch": "20.12",
+    "review_view": "compiler/CRANELIFT_PHASE20_SEED_CONVERGENCE.md",
+    "seed_path": "gust_v4.c",
+    "seed_pull_request": 188,
+    "preflight_pull_request": 187,
+    "fixed_point_policy": "make_bootstrap_stage2_stage3_byte_identity",
+    "seed_only_policy": "generated_gust_v4_c_only_on_seed_pull_request",
+    "predecessor_authority": "phase19_seed_convergence_v3",
+    "generated_seed_diff": {
+      "previous_lines": 57360,
+      "current_lines": 59502,
+      "insertions": 2410,
+      "deletions": 268,
+      "line_delta": 2142
+    },
+    "accounted_patches": [
+      {"patch": "20.0", "scope": "Phase 20 opening qualification evidence and compiler-owned fixtures"},
+      {"patch": "20.1", "scope": "canonical brand-matching primitives"},
+      {"patch": "20.2", "scope": "nested brand annotation correction"},
+      {"patch": "20.3", "scope": "exact branded boundaries and call-brand normalization corrections"},
+      {"patch": "20.3a", "scope": "contextual generic constructor result authority"},
+      {"patch": "20.4", "scope": "arena lifecycle observation authority"},
+      {"patch": "20.5", "scope": "Arena.Free receiver invalidation"},
+      {"patch": "20.6", "scope": "inert Resource declaration and visibility surface"},
+      {"patch": "20.7", "scope": "Resource declaration migration and metadata parity correction"},
+      {"patch": "20.8", "scope": "Resource declaration and construction enforcement"},
+      {"patch": "20.9", "scope": "acquisition-site Resource obligations"},
+      {"patch": "20.9a", "scope": "obligation path joins and callee ownership"},
+      {"patch": "20.10", "scope": "generic scope cleanup, direct-return preservation, and legacy directory guard migration"},
+      {"patch": "20.11", "scope": "seed-preflight diagnostic construction correction"}
+    ]
+  },
   "phase19_brand_authority": {
     "authority_version": "phase19_brand_identity_authority_v1",
     "status": "ready_for_patch19_3",
