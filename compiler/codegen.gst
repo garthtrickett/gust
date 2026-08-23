@@ -3633,39 +3633,37 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
         if tag == 12 { // Return
             mut expr_str := "";
             mut res := "";
+            mut active_defers := codegen_generate_active_defers(env, 0, ctx);
+            mut resource_cleanup := codegen_generate_resource_cleanup_plan(
+                "return", ctx[stmt_idx].Return.span, env, ctx
+            );
             if ctx[stmt_idx].Return.expr != empty[Index[ast.Expression[ctx], ctx]] {
                 expr_str = codegen_generate_expression(ctx[stmt_idx].Return.expr, env, ctx);
-                mut return_type := codegen_get_expression_type(
-                    ctx[stmt_idx].Return.expr, env, ctx
-                );
-                mut return_c_type := codegen_get_c_type(return_type, env, ctx);
-                mut return_temp := std.Concat(
-                    "_gust_return_",
-                    std.FormatInt(ctx[stmt_idx].Return.span.start.line)
-                );
-                return_temp = std.Concat(return_temp, "_");
-                return_temp = std.Concat(
-                    return_temp,
-                    std.FormatInt(ctx[stmt_idx].Return.span.start.column)
-                );
-                res = std.Concat("    ", return_c_type);
-                res = std.Concat(res, " ");
-                res = std.Concat(res, return_temp);
-                res = std.Concat(res, " = ");
-                res = std.Concat(res, expr_str);
-                res = std.Concat(res, ";\n");
-                expr_str = return_temp;
+                if len(active_defers) > 0 || len(resource_cleanup) > 0 {
+                    mut return_type := codegen_get_expression_type(
+                        ctx[stmt_idx].Return.expr, env, ctx
+                    );
+                    mut return_c_type := codegen_get_c_type(return_type, env, ctx);
+                    mut return_temp := std.Concat(
+                        "_gust_return_",
+                        std.FormatInt(ctx[stmt_idx].Return.span.start.line)
+                    );
+                    return_temp = std.Concat(return_temp, "_");
+                    return_temp = std.Concat(
+                        return_temp,
+                        std.FormatInt(ctx[stmt_idx].Return.span.start.column)
+                    );
+                    res = std.Concat("    ", return_c_type);
+                    res = std.Concat(res, " ");
+                    res = std.Concat(res, return_temp);
+                    res = std.Concat(res, " = ");
+                    res = std.Concat(res, expr_str);
+                    res = std.Concat(res, ";\n");
+                    expr_str = return_temp;
+                }
             }
-            res = std.Concat(
-                res,
-                codegen_generate_active_defers(env, 0, ctx)
-            );
-            res = std.Concat(
-                res,
-                codegen_generate_resource_cleanup_plan(
-                    "return", ctx[stmt_idx].Return.span, env, ctx
-                )
-            );
+            res = std.Concat(res, active_defers);
+            res = std.Concat(res, resource_cleanup);
             res = std.Concat(res, "    return ");
             res = std.Concat(res, expr_str);
             res = std.Concat(res, ";\n");
