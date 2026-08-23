@@ -12,6 +12,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 REGISTRY = ROOT / "scripts/cranelift_feature_registry.json"
 TYPECHECKER = ROOT / "compiler/typechecker.gst"
+METADATA_ROUTE = ROOT / "compiler/mir_native_backend_metadata_source.gst"
 TASK = ROOT / "TASK.md"
 REVIEW = ROOT / "compiler/CRANELIFT_PHASE20_RESOURCE_DECLARATION_MIGRATION.md"
 PR_FAST = ROOT / ".github/workflows/pr-fast.yml"
@@ -164,6 +165,17 @@ def validate() -> dict:
         '"os.CloseDir", ctx);') == 1,
         "directory parity live Phase 15 destructor authority drifted")
 
+    metadata_route = METADATA_ROUTE.read_text(encoding="utf-8")
+    for evidence in (
+        "linear_struct_destructor_name",
+        "inert_cleanup_declaration_count",
+        "statement.FunctionDecl.is_private == 1",
+        "statement.StructDecl.declared_destructor_name",
+        "len(statements) != 2 + inert_cleanup_declaration_count",
+    ):
+        require(evidence in metadata_route,
+                f"Phase 13 declaration-only route evidence missing: {evidence}")
+
     opening = registry.get("opening_snapshots", {}).get("phase20", {})
     require(opening.get("status") == "ready_for_patch20_8" and
             opening.get("next_patch") == "20.8",
@@ -206,6 +218,8 @@ def render(authority: dict) -> str:
         "representation, a destructor name, and a same-module private cleanup",
         "function with an owned resource parameter. The attributes remain inert",
         "under Patch 20.6, so the existing programs retain their behavior.",
+        "The Phase 13 metadata route counts that matching private cleanup as a",
+        "declaration-only companion, preserving its established native parity.",
         "",
         "## Directory metadata bridge",
         "",

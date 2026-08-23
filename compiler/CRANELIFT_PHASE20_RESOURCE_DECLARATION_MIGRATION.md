@@ -20,6 +20,8 @@ Every compiler-owned `#[linear]` structure now declares an opaque
 representation, a destructor name, and a same-module private cleanup
 function with an owned resource parameter. The attributes remain inert
 under Patch 20.6, so the existing programs retain their behavior.
+The Phase 13 metadata route counts that matching private cleanup as a
+declaration-only companion, preserving its established native parity.
 
 ## Directory metadata bridge
 

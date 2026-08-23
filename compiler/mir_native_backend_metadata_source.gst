@@ -265,6 +265,7 @@ func mir_native_metadata_source_lower(
         ctx[program.statements];
     mut linear_struct_count := 0;
     mut linear_struct_name := std.Clone(ctx, "");
+    mut linear_struct_destructor_name := std.Clone(ctx, "");
     mut linear_struct_line := 0;
     mut linear_struct_column := 0;
     mut main_value := 0 - 1;
@@ -279,6 +280,10 @@ func mir_native_metadata_source_lower(
                 linear_struct_name = std.Clone(
                     ctx,
                     statement.StructDecl.name
+                );
+                linear_struct_destructor_name = std.Clone(
+                    ctx,
+                    statement.StructDecl.declared_destructor_name
                 );
                 linear_struct_line = statement.StructDecl.span.start.line;
                 linear_struct_column =
@@ -299,8 +304,27 @@ func mir_native_metadata_source_lower(
     if linear_struct_count == 0 {
         return result;
     }
+    mut inert_cleanup_declaration_count := 0;
+    statement_index = 0;
+    while statement_index < len(statements) {
+        mut statement := statements[statement_index];
+        unsafe {
+            if statement.tag == 3 &&
+               statement.FunctionDecl.is_private == 1 &&
+               len(linear_struct_destructor_name) > 0 &&
+               std.str_eq(
+                   statement.FunctionDecl.name,
+                   linear_struct_destructor_name
+               ) == 1
+            {
+                inert_cleanup_declaration_count =
+                    inert_cleanup_declaration_count + 1;
+            }
+        }
+        statement_index = statement_index + 1;
+    }
     if linear_struct_count != 1 ||
-       len(statements) != 2 ||
+       len(statements) != 2 + inert_cleanup_declaration_count ||
        main_value < 0
     {
         return mir_native_metadata_deferred_result(
