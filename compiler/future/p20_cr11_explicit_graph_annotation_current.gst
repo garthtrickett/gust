@@ -1,6 +1,6 @@
-// Phase 20.0 baseline for CR-11/#158.
-// current_result: rejects_valid_program_with_three_brand_nesting_restrictions_and_secondary_void_mismatch
-// next_patch: 20.2
+// Phase 20.2 resolved probe for CR-11/#158.
+// current_result: accepts_explicit_graph_annotation_with_resolved_nested_brand_identity
+// fixed_by: 20.2
 
 type S1GraphNode struct { value: int }
 

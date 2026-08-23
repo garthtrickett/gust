@@ -3,11 +3,11 @@
 Generated from `scripts/cranelift_feature_registry.json` by
 `scripts/phase20_brand_matching.py project`. Do not edit by hand.
 
-- Authority version: `phase20_canonical_brand_matching_v1`
-- Status: `ready_for_patch20_2`
-- Next patch: `20.2`
+- Authority version: `phase20_canonical_brand_matching_v2`
+- Status: `patch20_2_nesting_acceptance_enabled`
+- Next patch: `20.3`
 - Identity authority: `phase19_brand_identity_authority_v1`
-- Behaviour policy: `resolved_identity_shadow_only_legacy_acceptance_and_diagnostics_unchanged`
+- Behaviour policy: `resolved_identity_authoritative_for_brand_nesting_with_legacy_shadow_observation_only`
 
 ## Canonical operations
 
@@ -21,12 +21,11 @@ wildcard policy. Mismatch text is produced from the same identities.
 
 ## Behaviour-neutral shadow
 
-`env_is_element_allowed_in_brand` still owns acceptance and still uses
-`strip_brand_prefix`. Its branded comparison now records whether the
-resolved-identity answer agrees with that legacy result. No shadow result
-is used to accept, reject, or construct a diagnostic in Patch 20.1.
+`env_is_element_allowed_in_brand` owns nesting acceptance and now returns
+the resolved-identity answer. The previous `strip_brand_prefix` result is
+retained only as a disagreement counter and cannot accept or reject source.
 
-The frozen source contains `49`
+The frozen source contains `47`
 legacy cleaner calls (plus the function definition). Later patches must
 remove those callers from this baseline rather than adding parallel rules.
 

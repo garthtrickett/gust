@@ -25,7 +25,7 @@ PROBE_FIELDS = {
 OBSERVABLE_FIELDS = {"id", "comparison", "owner"}
 COHORT_FIELDS = {"decision", "owner_policy", "reason_policy", "falsifier"}
 REQUIRED_PROBES = {
-    "cr11_explicit_graph_annotation": ("CR-11/#158", 1, "20.2"),
+    "cr11_explicit_graph_annotation": ("CR-11/#158", 0, "20.2"),
     "cr12_wrong_brand_clone_destination": ("CR-12/#159", 0, "20.3"),
     "cr13_freed_receiver_reuse": ("CR-13/#160", 0, "20.5"),
     "issue106_unbound_directory_payload": ("CR-5/#106", 0, "20.9"),
@@ -80,9 +80,9 @@ def validate() -> tuple[dict, list[dict], list[tuple[str, str]], list[tuple[str,
     require(snap.get("opening_version") ==
             "phase20_opening_evidence_and_qualification_authority_v1",
             "Phase 20 opening version drifted")
-    require(snap.get("status") == "ready_for_patch20_1",
+    require(snap.get("status") == "ready_for_patch20_3",
             "Phase 20 opening status drifted")
-    require(snap.get("next_patch") == "20.1", "Phase 20 successor drifted")
+    require(snap.get("next_patch") == "20.3", "Phase 20 successor drifted")
     require(snap.get("roadmap_merge_sha") ==
             "1cfab1344b24ffefc72b4d752ead3eb17c6719c6",
             "Phase 20 roadmap merge drifted")
@@ -114,8 +114,9 @@ def validate() -> tuple[dict, list[dict], list[tuple[str, str]], list[tuple[str,
         require((probe["source_requirement"], probe["compile_exit"], probe["next_patch"]) ==
                 (requirement, exit_code, next_patch),
                 f"probe {probe_id!r} verdict or owner patch drifted")
-        require(probe["fix_enabled"] is False,
-                f"Patch 20.0 must not enable the fix for {probe_id!r}")
+        expected_fix = probe_id == "cr11_explicit_graph_annotation"
+        require(probe["fix_enabled"] is expected_fix,
+                f"probe {probe_id!r} fix state drifted")
         require(probe["current_verdict"], f"probe {probe_id!r} lacks a verdict")
         require(probe["semantic_owner"].startswith("compiler_"),
                 f"probe {probe_id!r} is not compiler-owned")
@@ -124,8 +125,11 @@ def validate() -> tuple[dict, list[dict], list[tuple[str, str]], list[tuple[str,
         source = fixture.read_text(encoding="utf-8")
         require(f"current_result: {probe['current_verdict']}" in source,
                 f"probe {probe_id!r} fixture verdict marker drifted")
-        require(f"next_patch: {probe['next_patch']}" in source,
-                f"probe {probe_id!r} fixture successor marker drifted")
+        owner_marker = f"next_patch: {probe['next_patch']}"
+        if expected_fix:
+            owner_marker = f"fixed_by: {probe['next_patch']}"
+        require(owner_marker in source,
+                f"probe {probe_id!r} fixture owner marker drifted")
     require(seen == set(REQUIRED_PROBES), "Phase 20 probe population is incomplete")
 
     projection = snap.get("qualification_projection")
@@ -250,8 +254,8 @@ def render(snap: dict, entries: list[dict], composition_links: list[tuple[str, s
 
     lines += [
         "",
-        "The current verdict is evidence, not the desired result. Every probe has",
-        "`fix_enabled: false`; later owner patches change one verdict at a time.",
+        "The current verdict is evidence. CR-11 is enabled by Patch 20.2; the",
+        "remaining probes stay disabled until their named owner patches.",
         "",
         "## Qualification decisions",
         "",

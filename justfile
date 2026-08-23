@@ -86,8 +86,8 @@ guard-pr-fast-ci-surface:
       fi
     done
 
-    if [ "$(rg -c -F 'bash scripts/install-just-ci.sh "$HOME/.local/bin"' "$workflow")" != "4" ]; then
-      echo "PR Fast must install pinned just in its build, Level 1, static guard, and family jobs."
+    if [ "$(rg -c -F 'bash scripts/install-just-ci.sh "$HOME/.local/bin"' "$workflow")" != "5" ]; then
+      echo "PR Fast must install pinned just in its build, Level 1, static guard, family, and Phase 20 parity jobs."
       exit 1
     fi
 
@@ -214,6 +214,11 @@ guard-pr-fast-ci-surface:
       'just guard-cranelift-phase20-opening-contract'
       'Phase 20 canonical brand matching'
       'just guard-cranelift-phase20-brand-matching-contract'
+      'Phase 20 nested brand annotation'
+      'just guard-cranelift-phase20-nested-brand-annotation-contract'
+      'just guard-cranelift-phase20-nested-brand-annotation-parity'
+      'phase20-nested-brand-annotation:'
+      'Phase 20 nested brand annotation parity'
       'Phase 19 identifier-spelling decision inventory'
       'just guard-cranelift-phase19-spelling-inventory'
       'Phase 19 cross-feature composition'
@@ -227,7 +232,7 @@ guard-pr-fast-ci-surface:
       'matrix.family'
       'Run Level 2 differential family'
       'just guard-cranelift-differential-family'
-      'needs: [guard, level1, phase11-family]'
+      'needs: [guard, level1, phase11-family, phase20-nested-brand-annotation]'
       'actions/upload-artifact@v4'
       'actions/download-artifact@v4'
       'name: gust-build'
@@ -16402,6 +16407,25 @@ guard-cranelift-phase20-brand-matching-contract:
     python3 scripts/phase20_brand_matching.py validate
     python3 scripts/phase20_brand_matching.py check-review
     just guard-positive compiler/typechecker_phase20_brand_matching_test_entry.gst phase20_brand_matching_primitives
+
+guard-cranelift-phase20-nested-brand-annotation-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔐 Checking Phase 20 nested brand annotation correction..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase20-nested-brand-annotation-contract | grep -F $'guard-cranelift-phase20-nested-brand-annotation-contract\t1\t' >/dev/null
+    just guard-cranelift-phase20-brand-matching-contract
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase20_nested_brand_annotation.py validate
+    python3 scripts/phase20_nested_brand_annotation.py check-review
+
+guard-cranelift-phase20-nested-brand-annotation-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "⚖️ Checking Phase 20 nested brand annotation parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase20-nested-brand-annotation-parity | grep -F $'guard-cranelift-phase20-nested-brand-annotation-parity\t2\t' >/dev/null
+    scripts/phase20_nested_brand_annotation.sh
 
 guard-cranelift-phase18-opening-contract:
     #!/usr/bin/env bash
