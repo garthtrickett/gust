@@ -64,6 +64,9 @@ def validate() -> dict:
     source = TYPECHECKER.read_text(encoding="utf-8")
     for evidence in (
         "func env_types_match_at_brand_boundary(",
+        "func typechecker_apply_brand_substitutions(",
+        "func typechecker_substitute_call_brand_identity(",
+        "mut call_brand_substitutions: std.HashMap[str, str, ctx]",
         "brand_identity_nesting_membership(expected_identity, actual_identity)",
         "env_types_match_at_brand_boundary(env, resolved_explicit, val_type, ctx)",
         "env_types_match_at_brand_boundary(env, left_type, val_type, ctx)",
@@ -76,7 +79,7 @@ def validate() -> dict:
     for evidence in (
         "legacy structural observation", "distinct identities", "same identity",
         "authorized Any wildcard", "existing unbranded compatibility",
-        "import alias", "generic substitution",
+        "import alias", "generic substitution", "per-formal call substitution",
     ):
         require(evidence in semantic, f"semantic fixture coverage missing: {evidence}")
     positive = (ROOT / authority["positive_fixture"]).read_text(encoding="utf-8")

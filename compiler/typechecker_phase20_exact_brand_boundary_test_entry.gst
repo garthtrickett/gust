@@ -64,5 +64,26 @@ func main() {
     mut substituted_resolved := typechecker.env_resolve_type(&env, substituted, ctx);
     assert_match(typechecker.env_types_match_at_brand_boundary(&env, imported_alpha, substituted_resolved, ctx), 1, "generic substitution");
 
+    // Call substitution maps each formal brand independently and changes the
+    // identity field without inventing a new flattened layout name.
+    mut call_substitutions: std.HashMap[str, str, ctx] := std.HashMapNew(ctx);
+    call_substitutions.Insert(std.Clone(ctx, "formal_ctx"), std.Clone(ctx, "alpha"));
+    mut formal_call_type := typechecker.make_type_index("Node_formal_ctx", "formal_ctx", ctx);
+    mut instantiated_call_type := typechecker.typechecker_apply_brand_substitutions(
+        formal_call_type, &call_substitutions, ctx
+    );
+    mut instantiated_call_serialized := ast.serialize_type(instantiated_call_type, ctx);
+    if std.str_eq(instantiated_call_serialized, "Index(\"Node_formal_ctx\", Some(\"alpha\"))") == 0 {
+        os.LogStr("Error: call substitution rewrote the registered layout name");
+        os.Exit(1);
+    }
+    mut instantiated_call_identity := typechecker.typechecker_brand_identity_from_resolved_type(
+        instantiated_call_type, &env, ctx
+    );
+    if std.str_eq(instantiated_call_identity.arena_identity, "alpha") == 0 {
+        os.LogStr("Error: per-formal call substitution lost the actual identity");
+        os.Exit(1);
+    }
+
     os.LogStr("SUCCESS: Phase 20 exact branded boundary verified");
 }

@@ -4074,53 +4074,63 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     return dummy;
                 }
 
-                mut new_brand := empty[Index[str, ctx]];
+                mut call_brand_substitutions: std.HashMap[str, str, ctx] := std.HashMapNew(ctx);
                 mut j := 0;
                 while j < len(sig.params) {
                     mut param_type := sig.params[j];
-                    mut is_arena_ptr := 0;
+                    mut is_arena_parameter := 0;
+                    if param_type.tag == 4 {
+                        is_arena_parameter = 1;
+                    }
                     if param_type.tag == 9 {
                         mut inner := ctx[param_type.RawPointer.inner];
                         if inner.tag == 4 {
-                            is_arena_ptr = 1;
+                            is_arena_parameter = 1;
                         }
                     }
-                    if param_type.tag == 4 || is_arena_ptr == 1 {
-                        mut arg_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                        ctx.Set(arg_idx, args_vec_valid_call[j]);
-                        mut actual_name := get_root_variable(arg_idx, ctx);
-                        if std.str_eq(actual_name, "") == 0 {
-                            new_brand = os.ArenaAlloc(ctx) as Index[str, ctx];
-                            ctx.Set(new_brand, std.Clone(ctx, actual_name));
+                    if param_type.tag == 11 {
+                        mut inner := ctx[param_type.Reference.inner];
+                        if inner.tag == 4 {
+                            is_arena_parameter = 1;
                         }
-                        j = len(sig.params);
-                    } else {
-                        mut p_brand := get_type_brand(param_type, env, ctx);
-                    if std.str_eq(p_brand, "") == 0 {
+                    }
+
+                    mut formal_brand := get_type_brand(param_type, env, ctx);
+                    if is_arena_parameter == 1 && j < len(sig.param_names) {
+                        formal_brand = sig.param_names[j];
+                    }
+                    mut actual_brand := "";
+                    if is_arena_parameter == 1 {
                         mut arg_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                         ctx.Set(arg_idx, args_vec_valid_call[j]);
-                        mut arg_type := check_expression(arg_idx, env, scope, ctx);
-                        mut a_brand := get_type_brand(arg_type, env, ctx);
-                        if std.str_eq(a_brand, "") == 0 {
-                                new_brand = os.ArenaAlloc(ctx) as Index[str, ctx];
-                                ctx.Set(new_brand, std.Clone(ctx, strip_brand_prefix(a_brand, ctx)));
-                                j = len(sig.params);
-                            } else {
-                                j = j + 1;
-                            }
+                        actual_brand = get_root_variable(arg_idx, ctx);
+                    } else if std.str_eq(formal_brand, "") == 0 {
+                        actual_brand = get_type_brand(evaluated_args[j], env, ctx);
+                        actual_brand = strip_brand_prefix(actual_brand, ctx);
+                    }
+
+                    if std.str_eq(formal_brand, "") == 0 &&
+                       std.str_eq(actual_brand, "") == 0 {
+                        mut existing_substitution := call_brand_substitutions.Get(formal_brand);
+                        if existing_substitution.Ok {
+                            // The first argument carrying a formal brand anchors
+                            // all later arguments that share that formal identity.
                         } else {
-                            j = j + 1;
+                            call_brand_substitutions.Insert(
+                                std.Clone(ctx, formal_brand),
+                                std.Clone(ctx, actual_brand)
+                            );
                         }
                     }
+                    j = j + 1;
                 }
 
                 mut k := 0;
                 while k < len(evaluated_args) {
                     mut resolved_arg := evaluated_args[k];
-                    mut expected_type := sig.params[k];
-                    if new_brand != empty[Index[str, ctx]] {
-                        expected_type = typechecker_substitute_brand(expected_type, new_brand, ctx);
-                    }
+                    mut expected_type := typechecker_apply_brand_substitutions(
+                        sig.params[k], &call_brand_substitutions, ctx
+                    );
 
                     mut arg_idx_check_call_nlaunder: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                     ctx.Set(arg_idx_check_call_nlaunder, args_vec_valid_call[k]);
@@ -4146,10 +4156,9 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     env_track_resource_destructor_call_if_applicable(env, resolved_func, expr.Call.arguments, scope, ctx);
                 }
 
-                mut resolved_return := sig.return_type;
-                if new_brand != empty[Index[str, ctx]] {
-                    resolved_return = typechecker_substitute_brand(resolved_return, new_brand, ctx);
-                }
+                mut resolved_return := typechecker_apply_brand_substitutions(
+                    sig.return_type, &call_brand_substitutions, ctx
+                );
                 resolved_return = env_resolve_type(env, resolved_return, ctx);
                 return resolved_return;
             }
@@ -10233,10 +10242,90 @@ func typechecker_substitute_brand_names(t: ast.Type[ctx], old_brand: str, new_br
     }
 }
 
+func typechecker_apply_brand_substitutions(t: ast.Type[ctx], substitutions: *std.HashMap[str, str, ctx], ctx: &Arena) ast.Type[ctx] {
+    unsafe {
+        mut result := t;
+        mut formal_brands := (*substitutions).Keys(ctx);
+        mut i := 0;
+        while i < len(formal_brands) {
+            mut formal_brand := formal_brands[i];
+            mut actual_lookup := (*substitutions).Get(formal_brand);
+            if actual_lookup.Ok {
+                result = typechecker_substitute_call_brand_identity(
+                    result,
+                    formal_brand,
+                    actual_lookup.Val,
+                    ctx
+                );
+            }
+            i = i + 1;
+        }
+        return result;
+    }
+}
 
-
-
-
+func typechecker_substitute_call_brand_identity(t: ast.Type[ctx], old_brand: str, new_brand: str, ctx: &Arena) ast.Type[ctx] {
+    unsafe {
+        mut result := t;
+        if t.tag == 7 { // Index
+            if t.Index.brand != empty[Index[str, ctx]] &&
+               std.str_eq(ctx[t.Index.brand], old_brand) == 1 {
+                result.Index.brand = os.ArenaAlloc(ctx) as Index[str, ctx];
+                ctx.Set(result.Index.brand, std.Clone(ctx, new_brand));
+            }
+            return result;
+        }
+        if t.tag == 8 { // Struct
+            if t.Struct.brand != empty[Index[str, ctx]] &&
+               std.str_eq(ctx[t.Struct.brand], old_brand) == 1 {
+                result.Struct.brand = os.ArenaAlloc(ctx) as Index[str, ctx];
+                ctx.Set(result.Struct.brand, std.Clone(ctx, new_brand));
+            }
+            return result;
+        }
+        if t.tag == 9 { // RawPointer
+            result.RawPointer.inner = os.ArenaAlloc(ctx);
+            ctx.Set(result.RawPointer.inner, typechecker_substitute_call_brand_identity(
+                ctx[t.RawPointer.inner], old_brand, new_brand, ctx
+            ));
+            return result;
+        }
+        if t.tag == 6 { // Slice
+            result.Slice.inner = os.ArenaAlloc(ctx);
+            ctx.Set(result.Slice.inner, typechecker_substitute_call_brand_identity(
+                ctx[t.Slice.inner], old_brand, new_brand, ctx
+            ));
+            return result;
+        }
+        if t.tag == 11 { // Reference
+            if t.Reference.brand != empty[Index[str, ctx]] &&
+               std.str_eq(ctx[t.Reference.brand], old_brand) == 1 {
+                result.Reference.brand = os.ArenaAlloc(ctx) as Index[str, ctx];
+                ctx.Set(result.Reference.brand, std.Clone(ctx, new_brand));
+            }
+            result.Reference.inner = os.ArenaAlloc(ctx);
+            ctx.Set(result.Reference.inner, typechecker_substitute_call_brand_identity(
+                ctx[t.Reference.inner], old_brand, new_brand, ctx
+            ));
+            return result;
+        }
+        if t.tag == 10 { // Generic
+            mut args: std.Vector[ast.Type[ctx], ctx] := ctx[t.Generic.args];
+            mut updated_args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+            mut i := 0;
+            while i < len(args) {
+                updated_args.Push(typechecker_substitute_call_brand_identity(
+                    args[i], old_brand, new_brand, ctx
+                ));
+                i = i + 1;
+            }
+            result.Generic.args = os.ArenaAlloc(ctx);
+            ctx.Set(result.Generic.args, updated_args);
+            return result;
+        }
+        return result;
+    }
+}
 
 func typechecker_substitute_field_brand(t: ast.Type[ctx], struct_brand: Index[str, ctx], parent_path: str, layout: StructLayout[ctx], ctx: &Arena) ast.Type[ctx] {
     unsafe {
@@ -10594,7 +10683,14 @@ func types_match(expected: ast.Type[ctx], actual: ast.Type[ctx], ctx: &Arena) in
 
 func env_types_match_at_brand_boundary(env: *TypeEnvironment[ctx], expected: ast.Type[ctx], actual: ast.Type[ctx], ctx: &Arena) int {
     if types_match(expected, actual, ctx) == 0 {
-        return 0;
+        if expected.tag != actual.tag {
+            return 0;
+        }
+        mut expected_canonical := typechecker_canonical_type_ident(env, expected, ctx);
+        mut actual_canonical := typechecker_canonical_type_ident(env, actual, ctx);
+        if std.str_eq(expected_canonical, actual_canonical) == 0 {
+            return 0;
+        }
     }
 
     mut expected_identity := env_get_brand_identity(env, expected, ctx);
