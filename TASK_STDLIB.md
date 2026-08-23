@@ -32,14 +32,16 @@ Phase S1 was scoped after checking its premises against the compiler
 landed the CR-2 authority, and S1.6 can consume it. S1.4 and S1.5 verification
 found narrower shared-zone defects, filed separately. The generic constructor
 authority for CR-11 then landed in Cranelift Patch 20.3a, unblocking S1.4.
+Cranelift Patches 20.3 and 20.5 subsequently resolved CR-12 and CR-13,
+unblocking S1.5.
 
-| Delivered (7) | Blocked (5) | Depends on the rest (1) |
+| Delivered (8) | Blocked (4) | Depends on the rest (1) |
 | --- | --- | --- |
-| S1.0, S1.1, S1.2, S1.3, S1.4, S1.6, S1.7 | S1.5 — CR-12 and CR-13 · S1.8, S1.9, S1.10, S1.11 — CR-5 | S1.12 closure |
+| S1.0, S1.1, S1.2, S1.3, S1.4, S1.5, S1.6, S1.7 | S1.8, S1.9, S1.10, S1.11 — CR-5 | S1.12 closure |
 
 The lane does not idle at a blocked patch. It records the shared-zone defect and
 takes the next independent item. That is why S1.6 was delivered while S1.4 and
-S1.5 were blocked; S1.4 then resumed when its generic authority landed.
+S1.5 were blocked; each then resumed when its owning Cranelift authority landed.
 
 This is a scheduling fact, not an objection to the two-lane model.
 
@@ -50,7 +52,7 @@ This is a scheduling fact, not an objection to the two-lane model.
 - [x] Patch S1.2 — String Surface Regression Suite — DONE
 - [x] Patch S1.3 — HashMap Methods Through References — DONE
 - [x] Patch S1.4 — Branded Collection Type Consistency — DONE
-- [ ] Patch S1.5 — Clone Arena Destination Normalization
+- [x] Patch S1.5 — Clone Arena Destination Normalization — DONE
 - [x] Patch S1.6 — Stdlib Composition Regression Program — DONE
 - [x] Patch S1.7 — MutexGuard Prerequisite Audit — DONE
 - [ ] Patch S1.8 — MutexGuard Prototype
@@ -617,23 +619,29 @@ authority without changing compiler semantics. Issue #158 remained open when
 S1.4 resumed; that registrar discrepancy does not change the landed technical
 state. **Owner:** Cranelift lane (resolved); Stdlib validation delivered by S1.4.
 
-### CR-12 — Clone result brand is not enforced — **FILED 2026-08-22**
+### CR-12 — Clone result brand is not enforced — **RESOLVED 2026-08-23**
 
 [Issue #159](https://github.com/garthtrickett/gust/issues/159) contains the
 seven-point shared-zone report and minimal witness. A value cloned into a second
 arena can currently be assigned to an `Index` explicitly branded for the source
 arena. Exact resolved brand identity must survive assignment and annotation
-matching. This blocks S1.5.
-**Owner:** Cranelift lane.
+matching. Cranelift Patch 20.3 landed exact brand matching across assignment,
+call, return, field, and alias boundaries before S1.5 resumed. Issue #159
+remained open at delivery time; that registrar discrepancy does not change the
+landed technical state. **Owner:** Cranelift lane (resolved); Stdlib validation
+delivered by S1.5.
 
-### CR-13 — `Arena.Free` does not invalidate later allocation — **FILED 2026-08-22**
+### CR-13 — `Arena.Free` does not invalidate later allocation — **RESOLVED 2026-08-23**
 
 [Issue #160](https://github.com/garthtrickett/gust/issues/160) contains the
 seven-point shared-zone report and minimal witness. A directly freed arena is
 still accepted as a `std.Clone` destination. Fixing it changes resource/move
 semantics, so the Stdlib lane stopped rather than adding a Clone-only check.
-This blocks S1.5.
-**Owner:** Cranelift lane.
+Cranelift Patch 20.5 / PR #178 now rejects post-Free allocation, Clone
+destination use, writes, repeated Free, and alias/field/parameter reuse before
+backend selection. Issue #160 remained open at delivery time; that registrar
+discrepancy does not change the landed technical state. **Owner:** Cranelift
+lane (resolved); Stdlib validation delivered by S1.5.
 
 ### CR-14 — Enum variant construction, and who owns it
 
@@ -969,8 +977,10 @@ brand identity, or backend behaviour for any covered position.
 
 ### Patch S1.5 — Clone Arena Destination Normalization
 
-*Blocked by CR-12 and CR-13 (issues #159 and #160), discovered after CR-2
-landed.*
+*Unblocked from its original dependency after CR-2 landed in Phase 19, then
+delivered after Cranelift Patches 20.3 and 20.5 resolved CR-12 and CR-13.
+Issues #159 and #160 were still open when delivery resumed; their registrar
+state is recorded without reinterpreting the landed authority.*
 
 **Purpose**
 
@@ -994,6 +1004,23 @@ how the arena is represented.
 **Test Level**
 
 Level 1, with a Level 2 parity family.
+
+**Delivered surface**
+
+- Paired inferred and explicit fixtures cover `Clone(local_arena, string)`,
+  `Clone(&local_arena, string)`, a destination stored in a struct field, a
+  reference to that field, and Clone through a helper taking `&Arena`.
+- The pair emits byte-identical C. Owned and referenced source spellings lower
+  to the same `os_Arena*` destination call; the helper consumes its already
+  resolved parameter directly rather than producing an `Arena**`-shaped call.
+- Both MIR-to-C programs return exit 65 with identical empty stdout/stderr.
+  Generic direct source-to-MIR remains explicitly deferred before driver
+  discovery for both halves, with no C fallback or native artifact.
+- Focused compile-fail fixtures pin wrong destination brand, moved destination,
+  and post-Free destination rejection. Patch 20.5's owning guard retains the
+  broader repeated-Free and alias/field/parameter invalidation matrix.
+- No raw pointer, lifetime conversion, brand cast, `unsafe` workaround, new
+  runtime symbol, canonical MIR change, or backend-specific rule was added.
 
 **Exit Gate**
 
@@ -1221,6 +1248,7 @@ refusing to let S1.12 be marked `DONE` while anything below is outstanding.
 | S1.2 | the string surface pinned, 33 values asserted in order |
 | S1.3 | collection methods resolve through a reference receiver |
 | S1.4 | inferred and explicit branded collections emit byte-identical canonical C and behaviour |
+| S1.5 | owned, referenced, field, and helper Clone destinations normalize without representation leakage |
 | S1.6 | application-shaped `Vector`/`HashMap`/`Clone` composition, with explicit native deferral |
 | S1.7 | the resource prerequisites re-verified; CR-5 made concrete |
 
@@ -1228,7 +1256,6 @@ refusing to let S1.12 be marked `DONE` while anything below is outstanding.
 
 | patch | blocked by | owner |
 | --- | --- | --- |
-| S1.5 clone arena destination | CR-12 and CR-13 / issues #159 and #160 | Cranelift lane |
 | S1.8 MutexGuard prototype | CR-5 | Cranelift lane |
 | S1.9 MutexGuard scope tests | CR-5 | Cranelift lane |
 | S1.10 MutexGuard fiber tests | CR-5 | Cranelift lane |
@@ -1246,9 +1273,6 @@ Recording this is the point of the phase, not an apology for it.
 - **`command == "PING"` does not work.** S1.1 turned the miscompile into a
   diagnostic, but content equality is CR-1, and operator semantics are
   compiler-owned (`VISION.md` §16). Users write `std.str_eq(a, b)`.
-- **Clone destination safety is incomplete.** A destination-branded clone can
-  be assigned back to the source brand, and a directly freed arena remains a
-  valid destination. CR-12 and CR-13, issues #159 and #160.
 - **An out-of-range string index kills the process**, not the request, which
   `VISION.md` §34 forbids. CR-3, and filed as issue #91.
 - **No user type can declare a destructor.** One exists, `os.CloseDir` for
@@ -1267,7 +1291,7 @@ Recording this is the point of the phase, not an apology for it.
 
 ### What closure requires
 
-1. S1.4 and S1.6 are done. CR-12 and CR-13 must resolve before S1.5.
+1. S1.4, S1.5, and S1.6 are done.
 2. CR-5 resolved — source-level destructor declaration plus scope-exit
    enforcement — then S1.8 through S1.11.
 3. The residue list above re-checked against the compiler, not from memory.

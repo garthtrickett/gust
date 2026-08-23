@@ -22519,3 +22519,13 @@ guard-stdlib-s1-branded-collections:
     mkdir -p build
     make gust >build/stdlib-s1-branded-collections.build.log 2>&1
     bash scripts/stdlib_s1_branded_collections_parity.sh
+
+# Stdlib lane, Phase S1. Appended at the end so existing recipe-body extraction
+# remains stable.
+guard-stdlib-s1-clone-destination:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking owned and referenced Clone destination normalization..."
+    mkdir -p build
+    make gust >build/stdlib-s1-clone-destination.build.log 2>&1
+    bash scripts/stdlib_s1_clone_destination_parity.sh
