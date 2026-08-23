@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate and project Patch 19.9 bootstrap seed convergence evidence."""
+"""Validate and project the canonical bootstrap seed convergence evidence."""
 
 from __future__ import annotations
 
@@ -33,16 +33,16 @@ def load_record() -> dict:
 def validate() -> dict:
     record = load_record()
     expected = {
-        "contract_version": "phase19_seed_convergence_v3",
-        "status": "ready_for_patch19_12",
-        "next_patch": "19.12",
+        "contract_version": "phase19_seed_convergence_v4",
+        "status": "ready_for_patch20_12",
+        "next_patch": "20.12",
         "review_view": "compiler/CRANELIFT_PHASE19_SEED_CONVERGENCE.md",
         "seed_path": "gust_v4.c",
-        "seed_pull_request": 157,
+        "seed_pull_request": 188,
         "fixed_point_policy": "make_bootstrap_stage2_stage3_byte_identity",
         "pull_request_scope_policy": "seed_owned_changes_only_capability_pr_seed_deferred",
         "main_push_scope_policy": "all_compiler_changes_require_fixed_point",
-        "active_deferred_seed_patch": "20.11",
+        "active_deferred_seed_patch": "none",
     }
     for key, value in expected.items():
         require(record.get(key) == value, f"{key} drifted")
@@ -50,11 +50,11 @@ def validate() -> dict:
     diff = record.get("generated_seed_diff")
     require(isinstance(diff, dict), "generated seed diff is missing")
     expected_diff = {
-        "previous_lines": 57351,
-        "current_lines": 57360,
-        "insertions": 18,
-        "deletions": 9,
-        "line_delta": 9,
+        "previous_lines": 57360,
+        "current_lines": 59502,
+        "insertions": 2410,
+        "deletions": 268,
+        "line_delta": 2142,
     }
     require(diff == expected_diff, "generated seed diff accounting drifted")
     require(diff["current_lines"] - diff["previous_lines"] == diff["line_delta"],
@@ -64,8 +64,11 @@ def validate() -> dict:
 
     accounted = record.get("accounted_patches")
     require(isinstance(accounted, list), "accounted patch list is missing")
-    require([row.get("patch") for row in accounted] == ["19.11"],
-            "seed changes are not accounted to Patch 19.11")
+    require([row.get("patch") for row in accounted] == [
+        "20.0", "20.1", "20.2", "20.3", "20.3a", "20.4", "20.5",
+        "20.6", "20.7", "20.8", "20.9", "20.9a", "20.10", "20.11",
+    ],
+            "seed changes are not accounted through Patch 20.11")
     require(all(set(row) == {"patch", "scope"} and row["scope"] for row in accounted),
             "seed accounting row shape drifted")
 
@@ -118,15 +121,15 @@ def validate() -> dict:
             in PR_FAST.read_text(encoding="utf-8"),
             "PR Fast does not own the Level 1 seed convergence contract")
 
-    require("- [x] Patch 19.9 — Seed Regeneration and Fixed-Point Convergence — DONE"
-            in TASK.read_text(encoding="utf-8"), "TASK.md does not mark Patch 19.9 DONE")
+    require("- [x] Patch 20.11 — Bootstrap Seed Regeneration and Fixed-Point Convergence — DONE"
+            in TASK.read_text(encoding="utf-8"), "TASK.md does not mark Patch 20.11 DONE")
     return record
 
 
 def render(record: dict) -> str:
     diff = record["generated_seed_diff"]
     lines = [
-        "# Cranelift Phase 19 Seed Convergence",
+        "# Cranelift Bootstrap Seed Convergence",
         "",
         "Generated from `scripts/cranelift_feature_registry.json` by",
         "`scripts/phase19_seed_convergence.py project`. Do not edit by hand.",

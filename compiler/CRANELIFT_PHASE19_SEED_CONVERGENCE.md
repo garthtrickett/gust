@@ -1,17 +1,17 @@
-# Cranelift Phase 19 Seed Convergence
+# Cranelift Bootstrap Seed Convergence
 
 Generated from `scripts/cranelift_feature_registry.json` by
 `scripts/phase19_seed_convergence.py project`. Do not edit by hand.
 
-- Contract: `phase19_seed_convergence_v3`
-- Status: `ready_for_patch19_12`
-- Next patch: `19.12`
+- Contract: `phase19_seed_convergence_v4`
+- Status: `ready_for_patch20_12`
+- Next patch: `20.12`
 - Seed: `gust_v4.c`
-- Seed-only pull request: `#157`
+- Seed-only pull request: `#188`
 - Fixed-point policy: `make_bootstrap_stage2_stage3_byte_identity`
 - Pull-request scope: `seed_owned_changes_only_capability_pr_seed_deferred`
 - Main-push scope: `all_compiler_changes_require_fixed_point`
-- Active deferred seed patch: `20.11`
+- Active deferred seed patch: `none`
 
 ## Fixed point
 
@@ -24,14 +24,27 @@ patch; metadata files cannot accidentally force it into a capability PR.
 
 ## Generated seed diff
 
-- Previous lines: 57351
-- Current lines: 57360
-- Insertions: 18
-- Deletions: 9
-- Net line delta: 9
+- Previous lines: 57360
+- Current lines: 59502
+- Insertions: 2410
+- Deletions: 268
+- Net line delta: 2142
 
 Every compiler-source change since the preceding seed belongs to:
 
-- Patch 19.11 — canonical runtime-owned resource result identities in branded composition
+- Patch 20.0 — Phase 20 opening qualification evidence and compiler-owned fixtures
+- Patch 20.1 — canonical brand-matching primitives
+- Patch 20.2 — nested brand annotation correction
+- Patch 20.3 — exact branded boundaries and call-brand normalization corrections
+- Patch 20.3a — contextual generic constructor result authority
+- Patch 20.4 — arena lifecycle observation authority
+- Patch 20.5 — Arena.Free receiver invalidation
+- Patch 20.6 — inert Resource declaration and visibility surface
+- Patch 20.7 — Resource declaration migration and metadata parity correction
+- Patch 20.8 — Resource declaration and construction enforcement
+- Patch 20.9 — acquisition-site Resource obligations
+- Patch 20.9a — obligation path joins and callee ownership
+- Patch 20.10 — generic scope cleanup, direct-return preservation, and legacy directory guard migration
+- Patch 20.11 — seed-preflight diagnostic construction correction
 
 No unrelated compiler-source commit is included in this regeneration.
