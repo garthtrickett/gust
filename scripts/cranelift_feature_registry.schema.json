@@ -17,6 +17,7 @@
     "phase20_nested_brand_annotation",
     "phase20_exact_brand_boundary",
     "phase20_contextual_generic_constructor",
+    "phase20_arena_lifecycle",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -278,6 +279,31 @@
           "mir_projection_policy": {"const": "the_frontend_validates_the_paired_source_programs_and_projects_selected_main_return_31_to_supported_canonical_mir_for_both_backends"},
           "direct_cranelift_source_route": {"const": "explicit_deferred_capability_before_driver_discovery_until_patch20_12_without_c_fallback"},
           "bootstrap_policy": {"const": "compiler_change_is_bootstrap_sensitive_but_seed_publication_is_deferred_to_isolated_patch20_11"}
+        }
+      },
+      "phase20_arena_lifecycle": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["authority_version", "status", "next_patch", "issue",
+                     "review_view", "semantic_fixture", "issue_fixture",
+                     "lifecycle_states", "observed_operations", "identity_flows",
+                     "identity_policy", "observation_policy", "transition_policy",
+                     "opening_probe_fix_enabled"],
+        "properties": {
+          "authority_version": {"const": "phase20_arena_lifecycle_observation_v1"},
+          "status": {"const": "patch20_4_complete_observation_only"},
+          "next_patch": {"const": "20.5"},
+          "issue": {"const": "CR-13/#160"},
+          "review_view": {"const": "compiler/CRANELIFT_PHASE20_ARENA_LIFECYCLE.md"},
+          "semantic_fixture": {"const": "compiler/typechecker_phase20_arena_lifecycle_test_entry.gst"},
+          "issue_fixture": {"const": "compiler/future/p20_cr13_free_receiver_reuse_current.gst"},
+          "lifecycle_states": {"const": ["live", "freed"]},
+          "observed_operations": {"const": ["allocation", "clone_destination", "write", "free"]},
+          "identity_flows": {"const": ["local", "alias", "field", "parameter", "generic_substitution"]},
+          "identity_policy": {"const": "function_scoped_bindings_and_resolved_brand_substitutions_map_to_one_canonical_arena_identity_without_spelling_collapse"},
+          "observation_policy": {"const": "all_four_cr13_operations_increment_their_canonical_identity_record_without_changing_program_acceptance"},
+          "transition_policy": {"const": "free_is_observed_but_state_remains_live_until_patch20_5"},
+          "opening_probe_fix_enabled": {"const": false}
         }
       },
       "phase19_brand_authority": {
@@ -8178,10 +8204,10 @@
           "const": "phase20_opening_evidence_and_qualification_authority_v1"
         },
         "status": {
-          "const": "ready_for_patch20_4"
+          "const": "ready_for_patch20_5"
         },
         "next_patch": {
-          "const": "20.4"
+          "const": "20.5"
         },
         "predecessor_closure_status": {
           "const": "phase19_closed_brand_identity_and_value_representation"

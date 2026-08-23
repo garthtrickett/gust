@@ -636,6 +636,15 @@ type BrandIdentity[ctx] struct {
     is_arena: int
 }
 
+type ArenaLifecycleState[ctx] struct {
+    arena_identity: str,
+    state: int,
+    allocation_observations: int,
+    clone_destination_observations: int,
+    write_observations: int,
+    free_observations: int
+}
+
 type FunctionSignature[ctx] struct {
     param_names: std.Vector[str, ctx],
     params: std.Vector[ast.Type[ctx], ctx],
@@ -750,6 +759,9 @@ type TypeEnvironment[ctx] struct {
     template_local_names: std.HashMap[str, str, ctx],
     function_registry: std.HashMap[str, FunctionSignature[ctx], ctx],
     brand_identities: std.HashMap[str, BrandIdentity[ctx], ctx],
+    arena_lifecycle_states: std.HashMap[str, ArenaLifecycleState[ctx], ctx],
+    arena_lifecycle_bindings: std.HashMap[str, str, ctx],
+    current_function_identity_scope: str,
     brand_match_shadow_checks: int,
     brand_match_shadow_agreements: int,
     brand_match_shadow_disagreements: int,
@@ -2766,6 +2778,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     arena_write_cell_key_prov = std.Concat(arena_write_cell_key_prov, arena_write_index_key_prov);
                     arena_write_cell_key_prov = std.Concat(arena_write_cell_key_prov, "]");
                     env_record_container_provenance(env, arena_write_cell_key_prov, value_prov_arena_write_nlaunder, ctx);
+                    env_arena_lifecycle_observe_expression(env, left_expr_idx, "write", ctx);
 
                     mut t_void_arena_write: ast.Type[ctx];
                     t_void_arena_write.tag = 3; // Void
@@ -2774,6 +2787,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
 
                 if left_type.tag == 4 { // Arena
                     if std.str_eq(right_name, "Free") {
+                        env_arena_lifecycle_observe_expression(env, left_expr_idx, "free", ctx);
                         mut t_void: ast.Type[ctx];
                         t_void.tag = 3; // Void
                         return t_void;
@@ -3593,6 +3607,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                 ctx.Set(arg0_idx, args_vec_arena_alloc_call[0]);
                 mut arg_type := check_expression(arg0_idx, env, scope, ctx);
+                env_arena_lifecycle_observe_expression(env, arg0_idx, "allocation", ctx);
                 mut brand_name := get_root_variable(arg0_idx, ctx);
                 return make_type_index("Any", brand_name, ctx);
             }
@@ -3790,6 +3805,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         mut dest_expr_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                         ctx.Set(dest_expr_idx, args_vec_clone_call[0]);
                         check_expression(dest_expr_idx, env, scope, ctx);
+                        env_arena_lifecycle_observe_expression(env, dest_expr_idx, "clone_destination", ctx);
 
                         mut val_expr_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                         ctx.Set(val_expr_idx, args_vec_clone_call[1]);
@@ -7118,6 +7134,9 @@ func env_new(ctx: &Arena) TypeEnvironment[ctx] {
         env_ref_new.template_local_names = std.HashMapNew(ctx);
         env_ref_new.function_registry = std.HashMapNew(ctx);
         env_ref_new.brand_identities = std.HashMapNew(ctx);
+        env_ref_new.arena_lifecycle_states = std.HashMapNew(ctx);
+        env_ref_new.arena_lifecycle_bindings = std.HashMapNew(ctx);
+        env_ref_new.current_function_identity_scope = "module";
         env_ref_new.brand_match_shadow_checks = 0;
         env_ref_new.brand_match_shadow_agreements = 0;
         env_ref_new.brand_match_shadow_disagreements = 0;
@@ -9195,6 +9214,147 @@ func env_get_brand_identity(env: *TypeEnvironment[ctx], resolved: ast.Type[ctx],
     }
 }
 
+func arena_lifecycle_state_live() int {
+    return 0;
+}
+
+func arena_lifecycle_state_freed() int {
+    return 1;
+}
+
+func arena_lifecycle_binding_key(env: *TypeEnvironment[ctx], binding: str, ctx: &Arena) str {
+    unsafe {
+        mut key := std.Concat((*env).current_function_identity_scope, "::");
+        key = std.Concat(key, binding);
+        return std.Clone(ctx, key);
+    }
+}
+
+func arena_lifecycle_identity_for_binding(env: *TypeEnvironment[ctx], binding: str, ctx: &Arena) str {
+    return arena_lifecycle_binding_key(env, binding, ctx);
+}
+
+func env_arena_lifecycle_ensure(env: *TypeEnvironment[ctx], identity: str, ctx: &Arena) {
+    unsafe {
+        if std.str_eq(identity, "") == 1 {
+            return;
+        }
+        mut existing := (*env).arena_lifecycle_states.Get(identity);
+        if existing.Ok {
+            return;
+        } else {
+            mut state: ArenaLifecycleState[ctx];
+            state.arena_identity = std.Clone(ctx, identity);
+            state.state = arena_lifecycle_state_live();
+            state.allocation_observations = 0;
+            state.clone_destination_observations = 0;
+            state.write_observations = 0;
+            state.free_observations = 0;
+            (*env).arena_lifecycle_states.Insert(std.Clone(ctx, identity), state);
+        }
+    }
+}
+
+func env_arena_lifecycle_record_binding(env: *TypeEnvironment[ctx], binding: str, identity: str, ctx: &Arena) {
+    unsafe {
+        if std.str_eq(binding, "") == 1 || std.str_eq(identity, "") == 1 {
+            return;
+        }
+        env_arena_lifecycle_ensure(env, identity, ctx);
+        mut key := arena_lifecycle_binding_key(env, binding, ctx);
+        (*env).arena_lifecycle_bindings.Insert(std.Clone(ctx, key), std.Clone(ctx, identity));
+    }
+}
+
+func env_arena_lifecycle_lookup_binding(env: *TypeEnvironment[ctx], binding: str, ctx: &Arena) str {
+    unsafe {
+        if std.str_eq(binding, "") == 1 {
+            return std.Clone(ctx, "");
+        }
+        mut key := arena_lifecycle_binding_key(env, binding, ctx);
+        mut lookup := (*env).arena_lifecycle_bindings.Get(key);
+        if lookup.Ok {
+            return std.Clone(ctx, lookup.Val);
+        }
+        return std.Clone(ctx, "");
+    }
+}
+
+func env_arena_lifecycle_identity_from_type(env: *TypeEnvironment[ctx], resolved: ast.Type[ctx], fallback_binding: str, ctx: &Arena) str {
+    mut brand_identity := typechecker_brand_identity_from_resolved_type(resolved, env, ctx);
+    if brand_identity_has_identity(brand_identity) == 1 {
+        mut substituted_identity := env_arena_lifecycle_lookup_binding(env, brand_identity.arena_identity, ctx);
+        if std.str_eq(substituted_identity, "") == 0 {
+            return std.Clone(ctx, substituted_identity);
+        }
+    }
+    if brand_identity.is_arena == 1 && std.str_eq(fallback_binding, "") == 0 {
+        return arena_lifecycle_identity_for_binding(env, fallback_binding, ctx);
+    }
+    if brand_identity_has_identity(brand_identity) == 1 {
+        mut brand_name := std.Clone(ctx, brand_identity.arena_identity);
+        return arena_lifecycle_identity_for_binding(env, brand_name, ctx);
+    }
+    return std.Clone(ctx, "");
+}
+
+func env_arena_lifecycle_resolve_expression_identity(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvironment[ctx], ctx: &Arena) str {
+    mut expression_key := expression_to_string(expr_idx, ctx);
+    mut identity := env_arena_lifecycle_lookup_binding(env, expression_key, ctx);
+    if std.str_eq(identity, "") == 0 {
+        return identity;
+    }
+    mut root_binding := get_root_variable(expr_idx, ctx);
+    return env_arena_lifecycle_lookup_binding(env, root_binding, ctx);
+}
+
+func env_arena_lifecycle_observe_identity(env: *TypeEnvironment[ctx], identity: str, operation: str, ctx: &Arena) {
+    unsafe {
+        if std.str_eq(identity, "") == 1 {
+            return;
+        }
+        env_arena_lifecycle_ensure(env, identity, ctx);
+        mut lookup := (*env).arena_lifecycle_states.Get(identity);
+        if lookup.Ok {
+            mut state := lookup.Val;
+            if std.str_eq(operation, "allocation") == 1 {
+                state.allocation_observations = state.allocation_observations + 1;
+            } else if std.str_eq(operation, "clone_destination") == 1 {
+                state.clone_destination_observations = state.clone_destination_observations + 1;
+            } else if std.str_eq(operation, "write") == 1 {
+                state.write_observations = state.write_observations + 1;
+            } else if std.str_eq(operation, "free") == 1 {
+                state.free_observations = state.free_observations + 1;
+            }
+            // Patch 20.4 observes Free but deliberately leaves the state live.
+            // Patch 20.5 owns the first transition to freed and all rejection.
+            (*env).arena_lifecycle_states.Insert(std.Clone(ctx, identity), state);
+        }
+    }
+}
+
+func env_arena_lifecycle_observe_expression(env: *TypeEnvironment[ctx], expr_idx: Index[ast.Expression[ctx], ctx], operation: str, ctx: &Arena) {
+    mut identity := env_arena_lifecycle_resolve_expression_identity(expr_idx, env, ctx);
+    env_arena_lifecycle_observe_identity(env, identity, operation, ctx);
+}
+
+func env_arena_lifecycle_get_state(env: *TypeEnvironment[ctx], identity: str, ctx: &Arena) ArenaLifecycleState[ctx] {
+    unsafe {
+        mut lookup := (*env).arena_lifecycle_states.Get(identity);
+        if lookup.Ok {
+            return lookup.Val;
+        }
+        mut absent: ArenaLifecycleState[ctx];
+        absent.arena_identity = std.Clone(ctx, "");
+        absent.state = arena_lifecycle_state_live();
+        absent.allocation_observations = 0;
+        absent.clone_destination_observations = 0;
+        absent.write_observations = 0;
+        absent.free_observations = 0;
+        return absent;
+    }
+}
+
 func typechecker_normalize_canonical_type_name(name: str, ctx: &Arena) str {
     mut normalized := "";
     mut i := 0;
@@ -10838,6 +10998,8 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             mut parent_open_dirs := typechecker_clone_int_map((*env).open_directories, ctx);
             mut parent_open_linear_resources_function_decl := typechecker_clone_linear_resource_map((*env).open_linear_resources, ctx);
             mut parent_origins := typechecker_clone_origins((*env).variable_origins, ctx);
+            mut parent_arena_lifecycle_bindings := typechecker_clone_string_map((*env).arena_lifecycle_bindings, ctx);
+            mut parent_function_identity_scope := std.Clone(ctx, (*env).current_function_identity_scope);
 
             // Clear states
             (*env).moved_vars = std.HashMapNew(ctx);
@@ -10845,6 +11007,8 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             (*env).open_directories = std.HashMapNew(ctx);
             (*env).open_linear_resources = std.HashMapNew(ctx);
             (*env).variable_origins = std.HashMapNew(ctx);
+            (*env).arena_lifecycle_bindings = std.HashMapNew(ctx);
+            (*env).current_function_identity_scope = std.Clone(ctx, function_name_return_prov);
 
             mut child_scope := scope_new(scope, ctx);
 
@@ -10875,6 +11039,13 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
 
                 scope_insert(child_scope, param.name, resolved_param_type, ctx);
                 (*env).variable_types.Insert(std.Clone(ctx, param.name), resolved_param_type);
+
+                mut param_arena_identity := env_arena_lifecycle_identity_from_type(
+                    env, resolved_param_type, param.name, ctx
+                );
+                if std.str_eq(param_arena_identity, "") == 0 {
+                    env_arena_lifecycle_record_binding(env, param.name, param_arena_identity, ctx);
+                }
 
                 mut param_origins := set_init(ctx);
                 set_add(param_origins, param.name, ctx);
@@ -10983,6 +11154,8 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             (*env).open_directories = parent_open_dirs;
             (*env).open_linear_resources = parent_open_linear_resources_function_decl;
             (*env).variable_origins = parent_origins;
+            (*env).arena_lifecycle_bindings = parent_arena_lifecycle_bindings;
+            (*env).current_function_identity_scope = parent_function_identity_scope;
             (*env).expected_return_type = old_expected;
             (*env).current_function_return_origins = old_return_origins;
             (*env).current_function_return_provenance = old_return_provenance;
@@ -11090,6 +11263,21 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                     return res;
                 }
                 val_type = lookup_type;
+            }
+
+            mut declaration_arena_identity := "";
+            if val_idx != empty[Index[ast.Expression[ctx], ctx]] {
+                declaration_arena_identity = env_arena_lifecycle_resolve_expression_identity(
+                    val_idx, env, ctx
+                );
+            }
+            if std.str_eq(declaration_arena_identity, "") == 1 {
+                declaration_arena_identity = env_arena_lifecycle_identity_from_type(
+                    env, val_type, name, ctx
+                );
+            }
+            if std.str_eq(declaration_arena_identity, "") == 0 {
+                env_arena_lifecycle_record_binding(env, name, declaration_arena_identity, ctx);
             }
 
             if val_type.tag == 8 { // Struct
@@ -11271,6 +11459,21 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 msg = std.Concat(msg, " to ");
                 msg = std.Concat(msg, ast.serialize_type(left_type, ctx));
                 report_error(2, msg, get_expression_span(val_idx, ctx), env, ctx);
+            }
+
+            mut assignment_arena_identity := env_arena_lifecycle_resolve_expression_identity(
+                val_idx, env, ctx
+            );
+            if std.str_eq(assignment_arena_identity, "") == 1 {
+                assignment_arena_identity = env_arena_lifecycle_identity_from_type(
+                    env, val_type, "", ctx
+                );
+            }
+            if std.str_eq(assignment_arena_identity, "") == 0 {
+                mut assignment_lifecycle_binding := expression_to_string(left_idx, ctx);
+                env_arena_lifecycle_record_binding(
+                    env, assignment_lifecycle_binding, assignment_arena_identity, ctx
+                );
             }
 
             if len(assignment_lhs_resource_name_step52g) > 0 {
@@ -12561,6 +12764,21 @@ func typechecker_clone_int_map(src: std.HashMap[str, int, ctx], ctx: &Arena) std
         mut lookup := src.Get(key);
         if lookup.Ok {
             dest.Insert(std.Clone(ctx, key), lookup.Val);
+        }
+        i = i + 1;
+    }
+    return dest;
+}
+
+func typechecker_clone_string_map(src: std.HashMap[str, str, ctx], ctx: &Arena) std.HashMap[str, str, ctx] {
+    mut dest: std.HashMap[str, str, ctx] := std.HashMapNew(ctx);
+    mut keys := src.Keys(ctx);
+    mut i := 0;
+    while i < len(keys) {
+        mut key := keys[i];
+        mut lookup := src.Get(key);
+        if lookup.Ok {
+            dest.Insert(std.Clone(ctx, key), std.Clone(ctx, lookup.Val));
         }
         i = i + 1;
     }
