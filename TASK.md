@@ -61,7 +61,7 @@ does not activate another lane, and does not authorize Phase 21.
 - [x] Patch 20.4 — Arena Lifecycle State Authority — DONE
 - [x] Patch 20.5 — Arena.Free Receiver Invalidation (CR-13/#160) — DONE
 - [x] Patch 20.6 — Inert Resource Declaration and Visibility Surface — DONE
-- [ ] Patch 20.7 — Resource Declaration Migration Under the No-op
+- [x] Patch 20.7 — Resource Declaration Migration Under the No-op — DONE
 - [ ] Patch 20.8 — Resource Declaration and Construction Enforcement
 - [ ] Patch 20.9 — Acquisition-Site Resource Obligations (#106)
 - [ ] Patch 20.10 — Generic Scope and Destructor Enforcement (CR-5)

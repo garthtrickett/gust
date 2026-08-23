@@ -5,7 +5,7 @@ Generated from `scripts/cranelift_feature_registry.json` and
 Do not edit by hand.
 
 - Opening version: `phase20_opening_evidence_and_qualification_authority_v1`
-- Status: `ready_for_patch20_7`
+- Status: `ready_for_patch20_8`
 - Roadmap merge: `1cfab1344b24ffefc72b4d752ead3eb17c6719c6`
 - Baseline probes: `5`
 - Canonical feature entries: `95`
@@ -23,8 +23,9 @@ Do not edit by hand.
 | `issue106_unbound_directory_payload` | CR-5/#106 | `compiler/future/p20_issue106_unbound_directory_current.gst` | 0 | incorrectly_accepts_unextracted_open_directory_payload | 20.9 |
 | `issue106_bound_directory_control` | CR-5/#106 | `compiler/future/p20_issue106_bound_directory_current.gst` | 1 | rejects_named_open_directory_with_existing_resource_leak_diagnostic | 20.9 |
 
-The current verdict is evidence. CR-11 is enabled by Patch 20.2; the
-remaining probes stay disabled until their named owner patches.
+The current verdict is evidence. CR-11, CR-12, and CR-13 are enabled
+by Patches 20.2, 20.3, and 20.5. The two #106 probes stay disabled
+until their named owner Patch 20.9.
 
 ## Qualification decisions
 

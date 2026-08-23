@@ -7129,6 +7129,7 @@ func register_fn(env: *TypeEnvironment[ctx], name: str, params: std.Vector[ast.T
 func env_register_directory_resource_parity_metadata(env: *TypeEnvironment[ctx], ctx: &Arena) {
     env_register_struct_linear_metadata(env, "os_Dir_ctx", 1, ctx);
     env_register_struct_linear_destructor(env, "os_Dir_ctx", "os.CloseDir", ctx);
+    env_register_inert_resource_declaration_metadata(env, "os_Dir_ctx", "os.CloseDir", 1, ctx);
     env_register_directory_resource_parity_type(env, "os_Dir_ctx", ctx);
 }
 
@@ -7520,6 +7521,7 @@ func env_register_directory_resource_parity_type(env: *TypeEnvironment[ctx], typ
     }
     env_register_struct_linear_metadata(env, type_name, 1, ctx);
     env_register_struct_linear_destructor(env, type_name, "os.CloseDir", ctx);
+    env_register_inert_resource_declaration_metadata(env, type_name, "os.CloseDir", 1, ctx);
     return 1;
 }
 

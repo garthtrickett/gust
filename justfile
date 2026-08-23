@@ -16525,6 +16525,21 @@ guard-cranelift-phase20-inert-resource-surface-contract:
     python3 scripts/phase20_inert_resource_surface.py check-review
     scripts/phase20_inert_resource_surface.sh
 
+guard-cranelift-phase20-resource-declaration-migration-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "📦 Checking Phase 20 resource declaration migration..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase20-resource-declaration-migration-contract | grep -F $'guard-cranelift-phase20-resource-declaration-migration-contract\t1\t' >/dev/null
+    just guard-cranelift-phase20-inert-resource-surface-contract
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase20_resource_declaration_migration.py validate
+    python3 scripts/phase20_resource_declaration_migration.py check-review
+    scripts/phase20_resource_declaration_migration.sh
+    just guard-cranelift-phase13-source-metadata-contract
+    just guard-cranelift-phase15-resource-metadata-contract
+    just guard-cranelift-phase15-specialized-resource-contract
+
 guard-cranelift-phase18-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail

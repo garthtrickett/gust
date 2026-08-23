@@ -80,9 +80,9 @@ def validate() -> tuple[dict, list[dict], list[tuple[str, str]], list[tuple[str,
     require(snap.get("opening_version") ==
             "phase20_opening_evidence_and_qualification_authority_v1",
             "Phase 20 opening version drifted")
-    require(snap.get("status") == "ready_for_patch20_7",
+    require(snap.get("status") == "ready_for_patch20_8",
             "Phase 20 opening status drifted")
-    require(snap.get("next_patch") == "20.7", "Phase 20 successor drifted")
+    require(snap.get("next_patch") == "20.8", "Phase 20 successor drifted")
     require(snap.get("roadmap_merge_sha") ==
             "1cfab1344b24ffefc72b4d752ead3eb17c6719c6",
             "Phase 20 roadmap merge drifted")
@@ -258,8 +258,9 @@ def render(snap: dict, entries: list[dict], composition_links: list[tuple[str, s
 
     lines += [
         "",
-        "The current verdict is evidence. CR-11 is enabled by Patch 20.2; the",
-        "remaining probes stay disabled until their named owner patches.",
+        "The current verdict is evidence. CR-11, CR-12, and CR-13 are enabled",
+        "by Patches 20.2, 20.3, and 20.5. The two #106 probes stay disabled",
+        "until their named owner Patch 20.9.",
         "",
         "## Qualification decisions",
         "",
