@@ -812,6 +812,9 @@ func parse_struct_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], c
         mut is_packed_decl := 0;
         mut layout_abi_decl := "";
         mut is_linear_resource_decl := 0;
+        mut declared_destructor_name_decl := "";
+        mut is_opaque_decl := 0;
+        mut is_private_decl := 0;
 
         while cur_token_is(p, 49) { // Hash = 49
             next_token(p); // consume '#'
@@ -870,6 +873,63 @@ func parse_struct_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], c
                 is_packed_decl = 1;
             } else if std.str_eq(layout_attr_name, "linear") {
                 is_linear_resource_decl = 1;
+            } else if std.str_eq(layout_attr_name, "destructor") {
+                if len(declared_destructor_name_decl) > 0 {
+                    mut err_destructor_duplicate: errors.CompilerError[Any];
+                    err_destructor_duplicate.kind.tag = 1; // ParserError
+                    err_destructor_duplicate.message = "Duplicate destructor declaration attribute";
+                    err_destructor_duplicate.span = (*p).cur_token.span;
+                    (*p).errors.Push(err_destructor_duplicate);
+                    return empty[Index[ast.Statement[ctx], ctx]];
+                }
+                if cur_token_is(p, 11) == false { // LParen = 11
+                    mut err_destructor_lparen: errors.CompilerError[Any];
+                    err_destructor_lparen.kind.tag = 1; // ParserError
+                    err_destructor_lparen.message = "Expected '(' after destructor attribute";
+                    err_destructor_lparen.span = (*p).cur_token.span;
+                    (*p).errors.Push(err_destructor_lparen);
+                    return empty[Index[ast.Statement[ctx], ctx]];
+                }
+                next_token(p); // consume '('
+                if cur_token_is(p, 2) == false { // Ident = 2
+                    mut err_destructor_name: errors.CompilerError[Any];
+                    err_destructor_name.kind.tag = 1; // ParserError
+                    err_destructor_name.message = "Expected function name in destructor attribute";
+                    err_destructor_name.span = (*p).cur_token.span;
+                    (*p).errors.Push(err_destructor_name);
+                    return empty[Index[ast.Statement[ctx], ctx]];
+                }
+                declared_destructor_name_decl = std.Clone(*ctx, (*p).cur_token.literal);
+                next_token(p); // consume destructor function name
+                if cur_token_is(p, 12) == false { // RParen = 12
+                    mut err_destructor_rparen: errors.CompilerError[Any];
+                    err_destructor_rparen.kind.tag = 1; // ParserError
+                    err_destructor_rparen.message = "Expected ')' after destructor function name";
+                    err_destructor_rparen.span = (*p).cur_token.span;
+                    (*p).errors.Push(err_destructor_rparen);
+                    return empty[Index[ast.Statement[ctx], ctx]];
+                }
+                next_token(p); // consume ')'
+            } else if std.str_eq(layout_attr_name, "opaque") {
+                if is_opaque_decl == 1 {
+                    mut err_opaque_duplicate: errors.CompilerError[Any];
+                    err_opaque_duplicate.kind.tag = 1; // ParserError
+                    err_opaque_duplicate.message = "Duplicate opaque declaration attribute";
+                    err_opaque_duplicate.span = (*p).cur_token.span;
+                    (*p).errors.Push(err_opaque_duplicate);
+                    return empty[Index[ast.Statement[ctx], ctx]];
+                }
+                is_opaque_decl = 1;
+            } else if std.str_eq(layout_attr_name, "private") {
+                if is_private_decl == 1 {
+                    mut err_private_duplicate: errors.CompilerError[Any];
+                    err_private_duplicate.kind.tag = 1; // ParserError
+                    err_private_duplicate.message = "Duplicate private declaration attribute";
+                    err_private_duplicate.span = (*p).cur_token.span;
+                    (*p).errors.Push(err_private_duplicate);
+                    return empty[Index[ast.Statement[ctx], ctx]];
+                }
+                is_private_decl = 1;
             } else {
                 mut err_layout_unsupported: errors.CompilerError[Any];
                 err_layout_unsupported.kind.tag = 1; // ParserError
@@ -888,6 +948,40 @@ func parse_struct_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], c
                 return empty[Index[ast.Statement[ctx], ctx]];
             }
             next_token(p); // consume ']'
+        }
+
+        if is_private_decl == 1 {
+            if is_repr_c_decl == 1 || is_packed_decl == 1 ||
+               is_linear_resource_decl == 1 ||
+               len(declared_destructor_name_decl) > 0 || is_opaque_decl == 1
+            {
+                mut err_attribute_conflict: errors.CompilerError[Any];
+                err_attribute_conflict.kind.tag = 1; // ParserError
+                err_attribute_conflict.message = "Private function attribute conflicts with type declaration attributes";
+                err_attribute_conflict.span = (*p).cur_token.span;
+                (*p).errors.Push(err_attribute_conflict);
+                return empty[Index[ast.Statement[ctx], ctx]];
+            }
+            if cur_token_is(p, 30) || cur_token_is(p, 38) || cur_token_is(p, 48) { // Func, Unsafe, Extern
+                return parse_function_decl_with_private(p, 1, start_span, ctx);
+            }
+            mut err_private_target: errors.CompilerError[Any];
+            err_private_target.kind.tag = 1; // ParserError
+            err_private_target.message = "Expected function declaration after private attribute";
+            err_private_target.span = (*p).cur_token.span;
+            (*p).errors.Push(err_private_target);
+            return empty[Index[ast.Statement[ctx], ctx]];
+        }
+
+        if (len(declared_destructor_name_decl) > 0 || is_opaque_decl == 1) &&
+           (cur_token_is(p, 30) || cur_token_is(p, 38) || cur_token_is(p, 48))
+        {
+            mut err_resource_attribute_target: errors.CompilerError[Any];
+            err_resource_attribute_target.kind.tag = 1; // ParserError
+            err_resource_attribute_target.message = "Resource declaration attributes require a type declaration";
+            err_resource_attribute_target.span = (*p).cur_token.span;
+            (*p).errors.Push(err_resource_attribute_target);
+            return empty[Index[ast.Statement[ctx], ctx]];
         }
 
         if cur_token_is(p, 39) == false { // Type = 39
@@ -1019,11 +1113,21 @@ func parse_struct_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], c
             stmt_struct_parse.StructDecl.is_packed = is_packed_decl;
             stmt_struct_parse.StructDecl.layout_abi = layout_abi_decl;
             stmt_struct_parse.StructDecl.is_linear_resource = is_linear_resource_decl;
+            stmt_struct_parse.StructDecl.declared_destructor_name = declared_destructor_name_decl;
+            stmt_struct_parse.StructDecl.is_opaque = is_opaque_decl;
 
             stmt_struct_parse.StructDecl.span = merge_spans(start_span, end_span);
             ctx.Set(stmt_idx, stmt_struct_parse);
             return stmt_idx;
         } else if cur_token_is(p, 41) { // Enum = 41
+            if len(declared_destructor_name_decl) > 0 || is_opaque_decl == 1 {
+                mut err_resource_enum_target: errors.CompilerError[Any];
+                err_resource_enum_target.kind.tag = 1; // ParserError
+                err_resource_enum_target.message = "Resource declaration attributes require a struct type";
+                err_resource_enum_target.span = (*p).cur_token.span;
+                (*p).errors.Push(err_resource_enum_target);
+                return empty[Index[ast.Statement[ctx], ctx]];
+            }
             next_token(p); // consume 'enum'
 
             if cur_token_is(p, 13) == false { // LBrace = 13
@@ -1162,9 +1266,15 @@ func parse_struct_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], c
     }
 }
 
-func parse_function_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], ctx] { 
+func parse_function_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], ctx] {
     unsafe {
         mut start_span := (*p).cur_token.span;
+        return parse_function_decl_with_private(p, 0, start_span, ctx);
+    }
+}
+
+func parse_function_decl_with_private(p: *Parser[ctx], is_private_decl: int, start_span: token.Span, ctx: &Arena) Index[ast.Statement[ctx], ctx] {
+    unsafe {
         mut is_unsafe_decl := 0;
         mut is_extern_decl := 0;
         if cur_token_is(p, 48) { // Extern = 48
@@ -1324,6 +1434,7 @@ func parse_function_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx],
         stmt_function_parse.FunctionDecl.requires_unsafe_call = requires_unsafe_call_decl;
         stmt_function_parse.FunctionDecl.requires_layout_metadata = 0;
         stmt_function_parse.FunctionDecl.requires_sandbox_arena = 0;
+        stmt_function_parse.FunctionDecl.is_private = is_private_decl;
 
         stmt_function_parse.FunctionDecl.params = function_params_idx_parse;
         ctx.Set(function_params_idx_parse, params_vec);

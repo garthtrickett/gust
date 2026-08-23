@@ -75,6 +75,8 @@ type Statement[ctx] enum {
         is_packed: int,
         layout_abi: str,
         is_linear_resource: int,
+        declared_destructor_name: str,
+        is_opaque: int,
         span: token.Span
     },
     EnumDecl {
@@ -92,6 +94,7 @@ type Statement[ctx] enum {
         requires_unsafe_call: int,
         requires_layout_metadata: int,
         requires_sandbox_arena: int,
+        is_private: int,
         params: Index[std.Vector[Parameter[ctx], ctx], ctx],
         return_type: Index[Type[ctx], ctx],
         body: Index[BlockStatement[ctx], ctx],
@@ -602,7 +605,16 @@ func serialize_statement(stmt_idx: Index[Statement[ctx], ctx], indent: int, ctx:
             res = std.Concat(res, stmt.StructDecl.name);
             res = std.Concat(res, " <");
             res = std.Concat(res, joined_generics);
-            res = std.Concat(res, ">\n");
+            res = std.Concat(res, ">");
+            if len(stmt.StructDecl.declared_destructor_name) > 0 {
+                res = std.Concat(res, " #[destructor(");
+                res = std.Concat(res, stmt.StructDecl.declared_destructor_name);
+                res = std.Concat(res, ")]");
+            }
+            if stmt.StructDecl.is_opaque == 1 {
+                res = std.Concat(res, " #[opaque]");
+            }
+            res = std.Concat(res, "\n");
             
             mut fields_vec: std.Vector[FieldDef[ctx], ctx] := ctx[stmt.StructDecl.fields];
             mut fields_str := ast_join_fields(fields_vec, indent + 1, ctx);
@@ -633,6 +645,9 @@ func serialize_statement(stmt_idx: Index[Statement[ctx], ctx], indent: int, ctx:
             res = std.Concat(res, stmt.FunctionDecl.name);
             res = std.Concat(res, " -> ");
             res = std.Concat(res, return_type_str);
+            if stmt.FunctionDecl.is_private == 1 {
+                res = std.Concat(res, " #[private]");
+            }
             res = std.Concat(res, "\n");
             
             mut params_vec: std.Vector[Parameter[ctx], ctx] := ctx[stmt.FunctionDecl.params];

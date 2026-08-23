@@ -16513,6 +16513,18 @@ guard-cranelift-phase20-arena-free-parity:
     python3 scripts/cranelift_test_levels.py level guard-cranelift-phase20-arena-free-parity | grep -F $'guard-cranelift-phase20-arena-free-parity\t2\t' >/dev/null
     scripts/phase20_arena_free.sh
 
+guard-cranelift-phase20-inert-resource-surface-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔐 Checking Phase 20 inert resource declaration surface..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase20-inert-resource-surface-contract | grep -F $'guard-cranelift-phase20-inert-resource-surface-contract\t1\t' >/dev/null
+    just guard-cranelift-phase20-arena-free-contract
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase20_inert_resource_surface.py validate
+    python3 scripts/phase20_inert_resource_surface.py check-review
+    scripts/phase20_inert_resource_surface.sh
+
 guard-cranelift-phase18-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail

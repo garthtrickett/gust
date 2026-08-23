@@ -323,6 +323,9 @@ jobs:
       - name: Phase 20 Arena.Free receiver invalidation
         run: just guard-cranelift-phase20-arena-free-contract
 
+      - name: Phase 20 inert resource declaration surface
+        run: just guard-cranelift-phase20-inert-resource-surface-contract
+
       - name: Phase 19 identifier-spelling decision inventory
         run: just guard-cranelift-phase19-spelling-inventory
 

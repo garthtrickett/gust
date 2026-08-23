@@ -656,7 +656,8 @@ type FunctionSignature[ctx] struct {
     extern_abi: str,
     requires_unsafe_call: int,
     requires_layout_metadata: int,
-    requires_sandbox_arena: int
+    requires_sandbox_arena: int,
+    is_private: int
 }
 
 func init_function_signature_ffi_defaults(sig: *FunctionSignature[ctx]) {
@@ -667,6 +668,7 @@ func init_function_signature_ffi_defaults(sig: *FunctionSignature[ctx]) {
         (*sig).requires_unsafe_call = 0;
         (*sig).requires_layout_metadata = 0;
         (*sig).requires_sandbox_arena = 0;
+        (*sig).is_private = 0;
     }
 }
 
@@ -753,6 +755,8 @@ type TypeEnvironment[ctx] struct {
     struct_layout_abi: std.HashMap[str, str, ctx],
     struct_linear_resource: std.HashMap[str, int, ctx],
     struct_linear_destructor: std.HashMap[str, str, ctx],
+    struct_declared_destructor: std.HashMap[str, str, ctx],
+    struct_declared_opaque: std.HashMap[str, int, ctx],
     struct_templates: std.HashMap[str, StructTemplate[ctx], ctx],
     struct_container_kinds: std.HashMap[str, int, ctx],
     enum_templates: std.HashMap[str, EnumTemplate[ctx], ctx],
@@ -7140,6 +7144,8 @@ func env_new(ctx: &Arena) TypeEnvironment[ctx] {
         env_ref_new.struct_layout_abi = std.HashMapNew(ctx);
         env_ref_new.struct_linear_resource = std.HashMapNew(ctx);
         env_ref_new.struct_linear_destructor = std.HashMapNew(ctx);
+        env_ref_new.struct_declared_destructor = std.HashMapNew(ctx);
+        env_ref_new.struct_declared_opaque = std.HashMapNew(ctx);
         env_ref_new.enum_templates = std.HashMapNew(ctx);
         env_ref_new.template_local_names = std.HashMapNew(ctx);
         env_ref_new.function_registry = std.HashMapNew(ctx);
@@ -7394,6 +7400,35 @@ func env_register_struct_linear_metadata(env: *TypeEnvironment[ctx], name: str, 
     }
     mut msg := std.Format("env_register_struct_linear_metadata: registered linear metadata for '%s'", name);
     typechecker_log_trace("🗄️", msg, ctx);
+}
+
+func env_register_inert_resource_declaration_metadata(env: *TypeEnvironment[ctx], name: str, destructor_name: str, is_opaque: int, ctx: &Arena) {
+    unsafe {
+        (*env).struct_declared_destructor.Insert(std.Clone(ctx, name), std.Clone(ctx, destructor_name));
+        (*env).struct_declared_opaque.Insert(std.Clone(ctx, name), is_opaque);
+    }
+    mut msg := std.Format("env_register_inert_resource_declaration_metadata: registered inert metadata for '%s'", name);
+    typechecker_log_trace("🗄️", msg, ctx);
+}
+
+func env_struct_declared_destructor_name(env: *TypeEnvironment[ctx], name: str, ctx: &Arena) str {
+    unsafe {
+        mut lookup := (*env).struct_declared_destructor.Get(name);
+        if lookup.Ok {
+            return std.Clone(ctx, lookup.Val);
+        }
+        return "";
+    }
+}
+
+func env_struct_is_declared_opaque(env: *TypeEnvironment[ctx], name: str, ctx: &Arena) int {
+    unsafe {
+        mut lookup := (*env).struct_declared_opaque.Get(name);
+        if lookup.Ok {
+            return lookup.Val;
+        }
+        return 0;
+    }
 }
 
 func env_struct_is_linear_resource(env: *TypeEnvironment[ctx], name: str, ctx: &Arena) int {
@@ -9712,6 +9747,13 @@ func env_pre_register_statement(env: *TypeEnvironment[ctx], stmt: ast.Statement[
 
             env_register_struct_layout_metadata(env, namespaced_name, stmt.StructDecl.is_repr_c, stmt.StructDecl.is_packed, stmt.StructDecl.layout_abi, ctx);
             env_register_struct_linear_metadata(env, namespaced_name, stmt.StructDecl.is_linear_resource, ctx);
+            env_register_inert_resource_declaration_metadata(
+                env,
+                namespaced_name,
+                stmt.StructDecl.declared_destructor_name,
+                stmt.StructDecl.is_opaque,
+                ctx
+            );
 
             if is_generic == 1 {
                 mut template: StructTemplate[ctx];
@@ -9883,6 +9925,7 @@ func env_pre_register_statement(env: *TypeEnvironment[ctx], stmt: ast.Statement[
             sig.requires_unsafe_call = stmt.FunctionDecl.requires_unsafe_call;
             sig.requires_layout_metadata = stmt.FunctionDecl.requires_layout_metadata;
             sig.requires_sandbox_arena = stmt.FunctionDecl.requires_sandbox_arena;
+            sig.is_private = stmt.FunctionDecl.is_private;
 
             env_register_function(env, namespaced_name, sig, ctx);
         }
