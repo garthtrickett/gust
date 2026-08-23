@@ -24,6 +24,7 @@ TOP_FIELDS = {
     "phase20_arena_lifecycle", "phase20_arena_free_invalidation",
     "phase20_inert_resource_surface",
     "phase20_resource_declaration_migration",
+    "phase20_resource_declaration_enforcement",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming", "phase19_classification", "phase19_representation",

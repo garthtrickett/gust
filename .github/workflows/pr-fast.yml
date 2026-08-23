@@ -329,6 +329,9 @@ jobs:
       - name: Phase 20 resource declaration migration
         run: just guard-cranelift-phase20-resource-declaration-migration-contract
 
+      - name: Phase 20 resource declaration enforcement
+        run: just guard-cranelift-phase20-resource-enforcement-contract
+
       - name: Phase 19 identifier-spelling decision inventory
         run: just guard-cranelift-phase19-spelling-inventory
 

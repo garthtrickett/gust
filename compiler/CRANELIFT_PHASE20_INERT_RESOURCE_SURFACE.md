@@ -17,12 +17,15 @@ registering a live linear destructor or applying access restrictions.
 Malformed, duplicate, and conflicting spellings have stable parser
 diagnostics.
 
-## No-op boundary
+## No-op boundary and enforcement transition
 
-A two-module witness directly constructs and accesses the declared
-opaque representation and calls the declared private function, returning
-42 exactly as the same unannotated program would. Patch 20.7 owns
-migration under this no-op; Patch 20.8 alone owns enforcement.
+At Patch 20.6, a two-module witness directly constructed and accessed
+the declared opaque representation and called the declared private
+function, returning 42 exactly as the same unannotated program would.
+Patch 20.7 completed migration under that no-op. The current Patch 20.8
+guard reuses the witness as a transition negative and requires exactly
+one OpaqueConstruction, OpaqueRepresentationAccess, and
+PrivateDeclarationAccess diagnostic before backend selection.
 
 The checked-in bootstrap seed compiles the extended self-hosted compiler
 and remains unpublished until the isolated Patch 20.11 seed update.

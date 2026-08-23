@@ -5,7 +5,7 @@ Generated from `scripts/cranelift_feature_registry.json` and
 Do not edit by hand.
 
 - Opening version: `phase20_opening_evidence_and_qualification_authority_v1`
-- Status: `ready_for_patch20_8`
+- Status: `ready_for_patch20_9`
 - Roadmap merge: `1cfab1344b24ffefc72b4d752ead3eb17c6719c6`
 - Baseline probes: `5`
 - Canonical feature entries: `95`

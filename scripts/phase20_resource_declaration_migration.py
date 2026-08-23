@@ -27,6 +27,18 @@ SOURCE_DECLARATIONS = [
     "compiler/future/phase14_resource_cleanup_source.gst",
 ]
 
+ENFORCEMENT_LINEAR_FIXTURES = [
+    "compiler/phase20_resource_enforcement_module.gst",
+    "compiler/phase20_resource_destructor_missing_invalid.gst",
+    "compiler/phase20_resource_destructor_borrowed_invalid.gst",
+    "compiler/phase20_resource_destructor_wrong_type_invalid.gst",
+    "compiler/phase20_resource_destructor_arity_invalid.gst",
+    "compiler/phase20_resource_destructor_result_invalid.gst",
+    "compiler/phase20_resource_destructor_unsafe_invalid.gst",
+    "compiler/phase20_resource_destructor_extern_invalid.gst",
+    "compiler/phase20_resource_destructor_owner_invalid.gst",
+]
+
 SOURCE_DESTRUCTORS = {
     SOURCE_DECLARATIONS[0]: (
         "Phase13CompositionResourceMetadata",
@@ -57,6 +69,8 @@ DIRECTORY_VOCABULARY_FILES = [
     "compiler/mir_specialized_resource.gst",
     "compiler/mir_specialized_resource_parity_smoke_test_entry.gst",
     "compiler/phase19_cross_feature_composition_source.gst",
+    "compiler/phase20_directory_external_construction_invalid.gst",
+    "compiler/phase20_directory_external_field_invalid.gst",
     "compiler/resolver.gst",
     "compiler/test_directory_leak_violation.gst",
     "compiler/typechecker.gst",
@@ -182,9 +196,17 @@ def validate() -> dict:
         source = path.read_text(encoding="utf-8")
         if has_linear_attribute(source):
             actual_linear.append(relative(path))
-    require(actual_linear == sorted(SOURCE_DECLARATIONS),
+    expected_linear = sorted(SOURCE_DECLARATIONS + ENFORCEMENT_LINEAR_FIXTURES)
+    require(actual_linear == expected_linear,
             "compiler-owned #[linear] declaration inventory drifted: " +
             repr(actual_linear))
+
+    enforcement = registry.get("phase20_resource_declaration_enforcement", {})
+    enforcement_files = [enforcement.get("module_fixture", "")]
+    enforcement_files += enforcement.get("negative_fixtures", [])
+    require(all(path in enforcement_files
+                for path in ENFORCEMENT_LINEAR_FIXTURES),
+            "Patch 20.8 linear fixtures are not classified by their authority")
 
     for source_path, (type_name, destructor_name) in SOURCE_DESTRUCTORS.items():
         source = (ROOT / source_path).read_text(encoding="utf-8")
@@ -242,8 +264,8 @@ def validate() -> dict:
                 f"Phase 13 declaration-only route evidence missing: {evidence}")
 
     opening = registry.get("opening_snapshots", {}).get("phase20", {})
-    require(opening.get("status") == "ready_for_patch20_8" and
-            opening.get("next_patch") == "20.8",
+    require(opening.get("status") == "ready_for_patch20_9" and
+            opening.get("next_patch") == "20.9",
             "Phase 20 opening successor did not advance")
     require("- [x] Patch 20.7 — Resource Declaration Migration Under the No-op — DONE" in
             TASK.read_text(encoding="utf-8"),
@@ -300,6 +322,9 @@ def render(authority: dict) -> str:
         "",
         "Patch 20.8 alone owns enforcement of declaration, construction,",
         "representation-access, and private-call rules.",
+        "Its positive module and intentional invalid declaration fixtures are",
+        "classified separately by the Patch 20.8 authority while remaining in",
+        "this exact compiler-owned `#[linear]` inventory.",
         "",
     ]
     return "\n".join(lines)

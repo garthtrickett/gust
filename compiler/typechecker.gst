@@ -757,6 +757,9 @@ type TypeEnvironment[ctx] struct {
     struct_linear_destructor: std.HashMap[str, str, ctx],
     struct_declared_destructor: std.HashMap[str, str, ctx],
     struct_declared_opaque: std.HashMap[str, int, ctx],
+    struct_declaration_module: std.HashMap[str, str, ctx],
+    function_declaration_module: std.HashMap[str, str, ctx],
+    struct_validated_destructor: std.HashMap[str, str, ctx],
     struct_templates: std.HashMap[str, StructTemplate[ctx], ctx],
     struct_container_kinds: std.HashMap[str, int, ctx],
     enum_templates: std.HashMap[str, EnumTemplate[ctx], ctx],
@@ -2079,6 +2082,9 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
             mut is_local := scope_contains(scope, name, ctx);
             if is_local == 0 {
                 resolved_name = env_resolve_namespaced_ident(env, name, ctx);
+                env_report_private_function_access(
+                    env, resolved_name, expr.Identifier.span, 0, ctx
+                );
             }
             mut t := scope_lookup(scope, resolved_name, ctx);
 
@@ -2481,6 +2487,13 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 left_t = ctx[left_t.Reference.inner];
             }
             mut left_str := expression_to_string(expr.Selector.left, ctx);
+            mut selector_name := expression_to_string(expr_idx, ctx);
+            mut resolved_selector_name := env_resolve_namespaced_ident(
+                env, selector_name, ctx
+            );
+            env_report_private_function_access(
+                env, resolved_selector_name, expr.Selector.span, 0, ctx
+            );
             if left_t.tag == 8 { // Struct
                 mut struct_name := left_t.Struct.struct_name;
                 
@@ -2514,6 +2527,13 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 if lookup_struct.Ok {
                     mut field_lookup := lookup_struct.Val.fields.Get(expr.Selector.right);
                     if field_lookup.Ok {
+                        env_report_opaque_representation_access(
+                            env,
+                            struct_name,
+                            expr.Selector.right,
+                            expr.Selector.span,
+                            ctx
+                        );
                         mut field_type := field_lookup.Val;
                         mut substituted := typechecker_substitute_field_brand(field_type, left_t.Struct.brand, left_str, lookup_struct.Val, ctx);
                         mut resolved := env_resolve_type(env, substituted, ctx);
@@ -3486,6 +3506,9 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
 
             mut func_name := expression_to_string(expr.Call.function, ctx);
             mut resolved_func := env_resolve_namespaced_ident(env, func_name, ctx);
+            env_report_private_function_access(
+                env, resolved_func, expr.Call.span, 0, ctx
+            );
 
             if std.str_eq(resolved_func, "len") {
                 mut args_vec_len_call: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
@@ -3737,6 +3760,9 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     }
                 }
                 mut resolved_task_func := env_resolve_namespaced_ident(env, task_func_name, ctx);
+                env_report_private_function_access(
+                    env, resolved_task_func, task_func_span, 0, ctx
+                );
                 mut sig_lookup := (*env).function_registry.Get(resolved_task_func);
                 if sig_lookup.Ok {
                     mut sig := sig_lookup.Val;
@@ -4211,7 +4237,11 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
             return t;
         }
         if expr.tag == 13 { // Empty
-            return env_resolve_type(env, ctx[expr.Empty.target_type], ctx);
+            mut empty_target := env_resolve_type(env, ctx[expr.Empty.target_type], ctx);
+            env_report_opaque_construction(
+                env, empty_target, expr.Empty.span, ctx
+            );
+            return empty_target;
         }
         return dummy;
     }
@@ -7130,6 +7160,10 @@ func env_register_directory_resource_parity_metadata(env: *TypeEnvironment[ctx],
     env_register_struct_linear_metadata(env, "os_Dir_ctx", 1, ctx);
     env_register_struct_linear_destructor(env, "os_Dir_ctx", "os.CloseDir", ctx);
     env_register_inert_resource_declaration_metadata(env, "os_Dir_ctx", "os.CloseDir", 1, ctx);
+    env_register_struct_declaration_module(env, "os_Dir_ctx", "os_", ctx);
+    env_register_function_declaration_module(env, "os.CloseDir", "os_", ctx);
+    env_register_function_declaration_module(env, "os_CloseDir", "os_", ctx);
+    env_register_validated_resource_destructor(env, "os_Dir_ctx", "os.CloseDir", ctx);
     env_register_directory_resource_parity_type(env, "os_Dir_ctx", ctx);
 }
 
@@ -7147,6 +7181,9 @@ func env_new(ctx: &Arena) TypeEnvironment[ctx] {
         env_ref_new.struct_linear_destructor = std.HashMapNew(ctx);
         env_ref_new.struct_declared_destructor = std.HashMapNew(ctx);
         env_ref_new.struct_declared_opaque = std.HashMapNew(ctx);
+        env_ref_new.struct_declaration_module = std.HashMapNew(ctx);
+        env_ref_new.function_declaration_module = std.HashMapNew(ctx);
+        env_ref_new.struct_validated_destructor = std.HashMapNew(ctx);
         env_ref_new.enum_templates = std.HashMapNew(ctx);
         env_ref_new.template_local_names = std.HashMapNew(ctx);
         env_ref_new.function_registry = std.HashMapNew(ctx);
@@ -7412,6 +7449,99 @@ func env_register_inert_resource_declaration_metadata(env: *TypeEnvironment[ctx]
     typechecker_log_trace("🗄️", msg, ctx);
 }
 
+func env_register_struct_declaration_module(env: *TypeEnvironment[ctx], name: str, module_prefix: str, ctx: &Arena) {
+    unsafe {
+        (*env).struct_declaration_module.Insert(std.Clone(ctx, name), std.Clone(ctx, module_prefix));
+    }
+}
+
+func env_register_function_declaration_module(env: *TypeEnvironment[ctx], name: str, module_prefix: str, ctx: &Arena) {
+    unsafe {
+        (*env).function_declaration_module.Insert(std.Clone(ctx, name), std.Clone(ctx, module_prefix));
+    }
+}
+
+func env_register_validated_resource_destructor(env: *TypeEnvironment[ctx], type_name: str, destructor_name: str, ctx: &Arena) {
+    unsafe {
+        (*env).struct_validated_destructor.Insert(std.Clone(ctx, type_name), std.Clone(ctx, destructor_name));
+    }
+}
+
+func env_struct_declaration_module_name(env: *TypeEnvironment[ctx], name: str, ctx: &Arena) str {
+    unsafe {
+        mut lookup := (*env).struct_declaration_module.Get(name);
+        if lookup.Ok {
+            return std.Clone(ctx, lookup.Val);
+        }
+        mut keys := (*env).struct_declaration_module.Keys(ctx);
+        mut i := 0;
+        while i < len(keys) {
+            mut template_name := keys[i];
+            if typechecker_matches_template_prefix(name, template_name) == 1 {
+                mut template_lookup := (*env).struct_declaration_module.Get(template_name);
+                if template_lookup.Ok {
+                    return std.Clone(ctx, template_lookup.Val);
+                }
+            }
+            i = i + 1;
+        }
+        return "";
+    }
+}
+
+func env_struct_representation_access_allowed(env: *TypeEnvironment[ctx], name: str, ctx: &Arena) int {
+    if env_struct_is_declared_opaque(env, name, ctx) == 0 {
+        return 1;
+    }
+    mut owner := env_struct_declaration_module_name(env, name, ctx);
+    unsafe {
+        if std.str_eq(owner, (*env).current_prefix) == 1 {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+func env_function_is_validated_resource_destructor(env: *TypeEnvironment[ctx], name: str, ctx: &Arena) int {
+    unsafe {
+        mut keys := (*env).struct_validated_destructor.Keys(ctx);
+        mut i := 0;
+        while i < len(keys) {
+            mut lookup := (*env).struct_validated_destructor.Get(keys[i]);
+            if lookup.Ok {
+                mut resolved := env_resolve_namespaced_ident(env, lookup.Val, ctx);
+                if std.str_eq(lookup.Val, name) == 1 || std.str_eq(resolved, name) == 1 {
+                    return 1;
+                }
+            }
+            i = i + 1;
+        }
+        return 0;
+    }
+}
+
+func env_private_function_access_allowed(env: *TypeEnvironment[ctx], name: str, compiler_cleanup_invocation: int, ctx: &Arena) int {
+    unsafe {
+        guard sig := (*env).function_registry.Get(name) else {
+            return 1;
+        }
+        if sig.is_private == 0 {
+            return 1;
+        }
+        guard owner := (*env).function_declaration_module.Get(name) else {
+            return 0;
+        }
+        if std.str_eq(owner, (*env).current_prefix) == 1 {
+            return 1;
+        }
+        if compiler_cleanup_invocation == 1 &&
+           env_function_is_validated_resource_destructor(env, name, ctx) == 1 {
+            return 1;
+        }
+        return 0;
+    }
+}
+
 func env_struct_declared_destructor_name(env: *TypeEnvironment[ctx], name: str, ctx: &Arena) str {
     unsafe {
         mut lookup := (*env).struct_declared_destructor.Get(name);
@@ -7427,6 +7557,18 @@ func env_struct_is_declared_opaque(env: *TypeEnvironment[ctx], name: str, ctx: &
         mut lookup := (*env).struct_declared_opaque.Get(name);
         if lookup.Ok {
             return lookup.Val;
+        }
+        mut keys := (*env).struct_declared_opaque.Keys(ctx);
+        mut i := 0;
+        while i < len(keys) {
+            mut template_name := keys[i];
+            if typechecker_matches_template_prefix(name, template_name) == 1 {
+                mut template_lookup := (*env).struct_declared_opaque.Get(template_name);
+                if template_lookup.Ok {
+                    return template_lookup.Val;
+                }
+            }
+            i = i + 1;
         }
         return 0;
     }
@@ -7522,6 +7664,8 @@ func env_register_directory_resource_parity_type(env: *TypeEnvironment[ctx], typ
     env_register_struct_linear_metadata(env, type_name, 1, ctx);
     env_register_struct_linear_destructor(env, type_name, "os.CloseDir", ctx);
     env_register_inert_resource_declaration_metadata(env, type_name, "os.CloseDir", 1, ctx);
+    env_register_struct_declaration_module(env, type_name, "os_", ctx);
+    env_register_validated_resource_destructor(env, type_name, "os.CloseDir", ctx);
     return 1;
 }
 
@@ -9756,6 +9900,9 @@ func env_pre_register_statement(env: *TypeEnvironment[ctx], stmt: ast.Statement[
                 stmt.StructDecl.is_opaque,
                 ctx
             );
+            env_register_struct_declaration_module(
+                env, namespaced_name, (*env).current_prefix, ctx
+            );
 
             if is_generic == 1 {
                 mut template: StructTemplate[ctx];
@@ -9930,6 +10077,9 @@ func env_pre_register_statement(env: *TypeEnvironment[ctx], stmt: ast.Statement[
             sig.is_private = stmt.FunctionDecl.is_private;
 
             env_register_function(env, namespaced_name, sig, ctx);
+            env_register_function_declaration_module(
+                env, namespaced_name, (*env).current_prefix, ctx
+            );
         }
     }
 }
@@ -9955,6 +10105,129 @@ func report_error(kind_tag: int, message: str, span: token.Span, env: *TypeEnvir
         err.span = span;
         err.file_path = std.Clone(ctx, current_file);
         (*env).errors.Push(err);
+    }
+}
+
+func env_report_private_function_access(env: *TypeEnvironment[ctx], name: str, span: token.Span, compiler_cleanup_invocation: int, ctx: &Arena) int {
+    if env_private_function_access_allowed(env, name, compiler_cleanup_invocation, ctx) == 1 {
+        return 0;
+    }
+    mut msg := std.Concat("Semantic Error: [PrivateDeclarationAccess] Private function '", name);
+    msg = std.Concat(msg, "' is accessible only inside its defining module");
+    report_error(2, msg, span, env, ctx);
+    return 1;
+}
+
+func env_report_opaque_construction(env: *TypeEnvironment[ctx], t: ast.Type[ctx], span: token.Span, ctx: &Arena) int {
+    mut resolved := env_resolve_type(env, t, ctx);
+    if resolved.tag != 8 { // Struct
+        return 0;
+    }
+    unsafe {
+        mut name := resolved.Struct.struct_name;
+        if env_struct_representation_access_allowed(env, name, ctx) == 1 {
+            return 0;
+        }
+        mut msg := std.Concat("Semantic Error: [OpaqueConstruction] Opaque type '", name);
+        msg = std.Concat(msg, "' can be constructed only inside its defining module");
+        report_error(2, msg, span, env, ctx);
+        return 1;
+    }
+}
+
+func env_report_opaque_representation_access(env: *TypeEnvironment[ctx], name: str, field_name: str, span: token.Span, ctx: &Arena) int {
+    if env_struct_representation_access_allowed(env, name, ctx) == 1 {
+        return 0;
+    }
+    mut msg := std.Concat("Semantic Error: [OpaqueRepresentationAccess] Field '", field_name);
+    msg = std.Concat(msg, "' belongs to opaque type '");
+    msg = std.Concat(msg, name);
+    msg = std.Concat(msg, "' and is accessible only inside its defining module");
+    report_error(2, msg, span, env, ctx);
+    return 1;
+}
+
+func env_validate_resource_declaration(env: *TypeEnvironment[ctx], stmt: ast.Statement[ctx], ctx: &Arena) int {
+    unsafe {
+        if stmt.tag != 1 { // StructDecl
+            return 1;
+        }
+        mut declared_destructor := stmt.StructDecl.declared_destructor_name;
+        if len(declared_destructor) == 0 {
+            return 1;
+        }
+
+        mut type_name := env_resolve_namespaced_ident(env, stmt.StructDecl.name, ctx);
+        mut destructor_name := env_resolve_namespaced_ident(env, declared_destructor, ctx);
+        guard sig := (*env).function_registry.Get(destructor_name) else {
+            mut missing_msg := std.Concat("Semantic Error: [ResourceDestructorMissing] Declared destructor '", declared_destructor);
+            missing_msg = std.Concat(missing_msg, "' for resource type '");
+            missing_msg = std.Concat(missing_msg, type_name);
+            missing_msg = std.Concat(missing_msg, "' does not exist");
+            report_error(2, missing_msg, stmt.StructDecl.span, env, ctx);
+            return 0;
+        }
+
+        guard type_owner := (*env).struct_declaration_module.Get(type_name) else {
+            mut owner_msg := std.Concat("Semantic Error: [ResourceDestructorModuleMismatch] Destructor '", destructor_name);
+            owner_msg = std.Concat(owner_msg, "' must be declared in the same module as resource type '");
+            owner_msg = std.Concat(owner_msg, type_name);
+            owner_msg = std.Concat(owner_msg, "'");
+            report_error(2, owner_msg, stmt.StructDecl.span, env, ctx);
+            return 0;
+        }
+        guard destructor_owner := (*env).function_declaration_module.Get(destructor_name) else {
+            mut missing_owner_msg := std.Concat("Semantic Error: [ResourceDestructorModuleMismatch] Destructor '", destructor_name);
+            missing_owner_msg = std.Concat(missing_owner_msg, "' must be declared in the same module as resource type '");
+            missing_owner_msg = std.Concat(missing_owner_msg, type_name);
+            missing_owner_msg = std.Concat(missing_owner_msg, "'");
+            report_error(2, missing_owner_msg, stmt.StructDecl.span, env, ctx);
+            return 0;
+        }
+        if std.str_eq(type_owner, destructor_owner) == 0 {
+            mut different_owner_msg := std.Concat("Semantic Error: [ResourceDestructorModuleMismatch] Destructor '", destructor_name);
+            different_owner_msg = std.Concat(different_owner_msg, "' must be declared in the same module as resource type '");
+            different_owner_msg = std.Concat(different_owner_msg, type_name);
+            different_owner_msg = std.Concat(different_owner_msg, "'");
+            report_error(2, different_owner_msg, stmt.StructDecl.span, env, ctx);
+            return 0;
+        }
+
+        mut owned_parameter_matches := 0;
+        if len(sig.params) == 1 {
+            mut parameter_type := sig.params[0];
+            if parameter_type.tag == 8 &&
+               std.str_eq(parameter_type.Struct.struct_name, type_name) == 1 {
+                owned_parameter_matches = 1;
+            }
+        }
+        if owned_parameter_matches == 0 {
+            mut parameter_msg := std.Concat("Semantic Error: [ResourceDestructorSignature] Destructor '", destructor_name);
+            parameter_msg = std.Concat(parameter_msg, "' must take exactly one owned parameter of type '");
+            parameter_msg = std.Concat(parameter_msg, type_name);
+            parameter_msg = std.Concat(parameter_msg, "'");
+            report_error(2, parameter_msg, stmt.StructDecl.span, env, ctx);
+            return 0;
+        }
+
+        if sig.return_type.tag != 3 { // Void
+            mut return_msg := std.Concat("Semantic Error: [ResourceDestructorSignature] Destructor '", destructor_name);
+            return_msg = std.Concat(return_msg, "' must return Void");
+            report_error(2, return_msg, stmt.StructDecl.span, env, ctx);
+            return 0;
+        }
+
+        if sig.is_unsafe == 1 || sig.is_extern == 1 ||
+           sig.requires_unsafe_call == 1 || sig.requires_layout_metadata == 1 ||
+           sig.requires_sandbox_arena == 1 {
+            mut status_msg := std.Concat("Semantic Error: [ResourceDestructorStatus] Destructor '", destructor_name);
+            status_msg = std.Concat(status_msg, "' must be synchronous, infallible, non-extern, and safe for compiler cleanup");
+            report_error(2, status_msg, stmt.StructDecl.span, env, ctx);
+            return 0;
+        }
+
+        env_register_validated_resource_destructor(env, type_name, destructor_name, ctx);
+        return 1;
     }
 }
 
@@ -11102,7 +11375,12 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
 
         mut stmt := ctx[stmt_idx];
 
-        if stmt.tag == 0 || stmt.tag == 1 || stmt.tag == 2 {
+        if stmt.tag == 1 { // StructDecl
+            env_validate_resource_declaration(env, stmt, ctx);
+            return res;
+        }
+
+        if stmt.tag == 0 || stmt.tag == 2 {
             return res;
         }
 
@@ -11332,6 +11610,9 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 env_record_variable_provenance(env, name, val_prov_decl, ctx);
             } else {
                 if var_type_idx != empty[Index[ast.Type[ctx], ctx]] { 
+                    env_report_opaque_construction(
+                        env, resolved_explicit, stmt.VarDecl.span, ctx
+                    );
                     mut origs := set_init(ctx);
                     val_type = resolved_explicit;
                     set_add(origs, std.Clone(ctx, name), ctx);

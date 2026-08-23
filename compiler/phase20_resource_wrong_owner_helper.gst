@@ -1,0 +1,2 @@
+func destroy(resource: int) {
+}

@@ -21,6 +21,7 @@
     "phase20_arena_free_invalidation",
     "phase20_inert_resource_surface",
     "phase20_resource_declaration_migration",
+    "phase20_resource_declaration_enforcement",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -408,6 +409,35 @@
           "use_site_policy": {"const": "all_compiler_owned_directory_construction_read_close_defer_and_diagnostic_vocabulary_is_classified_by_exact_file"},
           "behavior_policy": {"const": "migration_occurs_under_patch20_6_noop_and_preserves_existing_acceptance_diagnostics_runtime_behavior_and_backend_policy"},
           "enforcement_enabled": {"const": false}
+        }
+      },
+      "phase20_resource_declaration_enforcement": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["authority_version", "status", "next_patch", "issue",
+                     "review_view", "positive_fixture", "module_fixture",
+                     "transition_fixture", "negative_fixtures", "diagnostics",
+                     "declaration_policy", "opacity_policy", "privacy_policy",
+                     "cleanup_invocation_policy", "backend_policy",
+                     "deferred_policy", "enforcement_enabled"],
+        "properties": {
+          "authority_version": {"const": "phase20_resource_declaration_enforcement_v1"},
+          "status": {"const": "patch20_8_complete"},
+          "next_patch": {"const": "20.9"},
+          "issue": {"const": "CR-5/#106"},
+          "review_view": {"const": "compiler/CRANELIFT_PHASE20_RESOURCE_DECLARATION_ENFORCEMENT.md"},
+          "positive_fixture": {"const": "compiler/phase20_resource_enforcement_source.gst"},
+          "module_fixture": {"const": "compiler/phase20_resource_enforcement_module.gst"},
+          "transition_fixture": {"const": "compiler/phase20_inert_resource_surface_source.gst"},
+          "negative_fixtures": {"type": "array", "minItems": 15, "maxItems": 15, "uniqueItems": true, "items": {"type": "string"}},
+          "diagnostics": {"const": ["OpaqueConstruction", "OpaqueRepresentationAccess", "PrivateDeclarationAccess", "ResourceDestructorMissing", "ResourceDestructorModuleMismatch", "ResourceDestructorSignature", "ResourceDestructorStatus"]},
+          "declaration_policy": {"const": "a_declared_destructor_exists_in_the_resource_module_takes_exactly_one_owned_resource_returns_Void_and_is_safe_non_extern_and_infallible"},
+          "opacity_policy": {"const": "opaque_construction_empty_forging_and_direct_field_access_are_rejected_outside_the_defining_module"},
+          "privacy_policy": {"const": "ordinary_private_function_calls_and_references_are_rejected_outside_the_defining_module"},
+          "cleanup_invocation_policy": {"const": "only_a_compiler_cleanup_invocation_matching_a_validated_resource_destructor_identity_may_bypass_private_visibility"},
+          "backend_policy": {"const": "all_rejections_are_shared_frontend_diagnostics_identical_for_default_mir_to_c_explicit_mir_to_c_and_explicit_cranelift_before_backend_selection"},
+          "deferred_policy": {"const": "acquisition_site_obligations_and_generic_scope_exit_destructor_invocation_remain_exclusively_patch20_9_and_patch20_10"},
+          "enforcement_enabled": {"const": true}
         }
       },
       "phase19_brand_authority": {
@@ -8308,10 +8338,10 @@
           "const": "phase20_opening_evidence_and_qualification_authority_v1"
         },
         "status": {
-          "const": "ready_for_patch20_8"
+          "const": "ready_for_patch20_9"
         },
         "next_patch": {
-          "const": "20.8"
+          "const": "20.9"
         },
         "predecessor_closure_status": {
           "const": "phase19_closed_brand_identity_and_value_representation"
