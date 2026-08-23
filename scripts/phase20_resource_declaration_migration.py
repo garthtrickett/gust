@@ -85,6 +85,59 @@ def relative(path: Path) -> str:
     return path.relative_to(ROOT).as_posix()
 
 
+def gust_code_without_comments_or_literals(source: str) -> str:
+    """Preserve Gust tokens while masking comments and quoted literals."""
+    result = list(source)
+    index = 0
+    while index < len(source):
+        if source.startswith("//", index):
+            result[index] = " "
+            result[index + 1] = " "
+            index += 2
+            while index < len(source) and source[index] != "\n":
+                result[index] = " "
+                index += 1
+            continue
+        if source.startswith("/*", index):
+            result[index] = " "
+            result[index + 1] = " "
+            index += 2
+            while index < len(source) and not source.startswith("*/", index):
+                if source[index] != "\n":
+                    result[index] = " "
+                index += 1
+            if index < len(source):
+                result[index] = " "
+                result[index + 1] = " "
+                index += 2
+            continue
+        if source[index] in ('"', "'"):
+            quote = source[index]
+            result[index] = " "
+            index += 1
+            while index < len(source):
+                if source[index] == "\\" and index + 1 < len(source):
+                    result[index] = " "
+                    result[index + 1] = " "
+                    index += 2
+                    continue
+                if source[index] == quote:
+                    result[index] = " "
+                    index += 1
+                    break
+                if source[index] != "\n":
+                    result[index] = " "
+                index += 1
+            continue
+        index += 1
+    return "".join(result)
+
+
+def has_linear_attribute(source: str) -> bool:
+    code = gust_code_without_comments_or_literals(source)
+    return re.search(r"#\s*\[\s*linear\s*\]", code) is not None
+
+
 def validate() -> dict:
     registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
     authority = registry.get("phase20_resource_declaration_migration")
@@ -112,10 +165,22 @@ def validate() -> dict:
     require(authority.get("enforcement_enabled") is False,
             "Patch 20.7 must leave enforcement disabled")
 
+    parser_valid_linear_spellings = (
+        "#[linear] #[destructor(close)] type Guard struct { token: int }",
+        "    #[linear]\ntype Guard struct { token: int }",
+        "#[opaque] #[linear] type Guard struct { token: int }",
+    )
+    require(all(has_linear_attribute(source)
+                for source in parser_valid_linear_spellings),
+            "linear inventory does not cover parser-valid attribute placement")
+    require(not has_linear_attribute(
+                '// #[linear]\nmut text := "#[linear]";'),
+            "linear inventory counts comments or string literals")
+
     actual_linear = []
     for path in compiler_gst_files():
         source = path.read_text(encoding="utf-8")
-        if re.search(r"(?m)^#\[linear\]\s*$", source):
+        if has_linear_attribute(source):
             actual_linear.append(relative(path))
     require(actual_linear == sorted(SOURCE_DECLARATIONS),
             "compiler-owned #[linear] declaration inventory drifted: " +
