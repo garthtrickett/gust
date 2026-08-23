@@ -114,8 +114,8 @@ def validate() -> dict:
                 f"Patch 20.6 module attribute missing: {evidence}")
 
     opening = registry.get("opening_snapshots", {}).get("phase20", {})
-    require(opening.get("status") == "ready_for_patch20_9" and
-            opening.get("next_patch") == "20.9",
+    require(opening.get("status") == "ready_for_patch20_10" and
+            opening.get("next_patch") == "20.10",
             "Phase 20 opening successor did not advance")
     require("- [x] Patch 20.6 — Inert Resource Declaration and Visibility Surface — DONE" in
             TASK.read_text(encoding="utf-8"),

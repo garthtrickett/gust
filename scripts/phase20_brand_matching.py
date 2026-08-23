@@ -79,9 +79,13 @@ def validate() -> dict:
             probes[1].get("id") == "cr12_wrong_brand_clone_destination" and
             probes[1].get("fix_enabled") is True and
             probes[2].get("id") == "cr13_freed_receiver_reuse" and
-            probes[2].get("fix_enabled") is True and
-            all(probe.get("fix_enabled") is False for probe in probes[3:]),
-            "Patch 20.5 must enable exactly the CR-11, CR-12, and CR-13 opening fixes")
+            probes[2].get("fix_enabled") is True,
+            "Patch 20.5 must keep the CR-11, CR-12, and CR-13 opening fixes enabled")
+    require(probes[3].get("id") == "issue106_unbound_directory_payload" and
+            probes[3].get("fix_enabled") is True and
+            probes[4].get("id") == "issue106_bound_directory_control" and
+            probes[4].get("fix_enabled") is True,
+            "Patch 20.9 must enable both #106 opening fixes")
 
     source = TYPECHECKER.read_text(encoding="utf-8")
     for operation in OPERATIONS:

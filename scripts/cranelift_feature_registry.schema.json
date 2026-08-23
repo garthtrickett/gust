@@ -22,6 +22,7 @@
     "phase20_inert_resource_surface",
     "phase20_resource_declaration_migration",
     "phase20_resource_declaration_enforcement",
+    "phase20_resource_acquisition_obligations",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -403,7 +404,7 @@
           "directory_bridge_owner": {"const": "compiler/typechecker.gst"},
           "directory_resource_type": {"const": "os_Dir_ctx"},
           "directory_destructor": {"const": "os.CloseDir"},
-          "directory_vocabulary_files": {"type": "array", "minItems": 18, "maxItems": 18, "uniqueItems": true, "items": {"type": "string"}},
+          "directory_vocabulary_files": {"type": "array", "minItems": 22, "maxItems": 22, "uniqueItems": true, "items": {"type": "string"}},
           "source_policy": {"const": "every_compiler_owned_linear_struct_declares_destructor_opacity_and_a_same_module_private_owned_cleanup_function"},
           "directory_policy": {"const": "the_synthesized_directory_resource_records_the_same_inert_destructor_and_opacity_metadata_without_changing_live_phase15_cleanup_authority"},
           "use_site_policy": {"const": "all_compiler_owned_directory_construction_read_close_defer_and_diagnostic_vocabulary_is_classified_by_exact_file"},
@@ -437,6 +438,37 @@
           "cleanup_invocation_policy": {"const": "only_a_compiler_cleanup_invocation_matching_a_validated_resource_destructor_identity_may_bypass_private_visibility"},
           "backend_policy": {"const": "all_rejections_are_shared_frontend_diagnostics_identical_for_default_mir_to_c_explicit_mir_to_c_and_explicit_cranelift_before_backend_selection"},
           "deferred_policy": {"const": "acquisition_site_obligations_and_generic_scope_exit_destructor_invocation_remain_exclusively_patch20_9_and_patch20_10"},
+          "enforcement_enabled": {"const": true}
+        }
+      },
+      "phase20_resource_acquisition_obligations": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["authority_version", "status", "next_patch", "issue",
+                     "review_view", "user_positive_fixture",
+                     "directory_positive_fixture", "module_fixture",
+                     "negative_fixtures", "diagnostics", "identity_policy",
+                     "transfer_policy", "conditional_policy", "temporary_policy",
+                     "directory_policy", "backend_policy", "deferred_policy",
+                     "enforcement_enabled"],
+        "properties": {
+          "authority_version": {"const": "phase20_resource_acquisition_obligations_v1"},
+          "status": {"const": "patch20_9_complete"},
+          "next_patch": {"const": "20.10"},
+          "issue": {"const": "CR-5/#106"},
+          "review_view": {"const": "compiler/CRANELIFT_PHASE20_RESOURCE_ACQUISITION_OBLIGATIONS.md"},
+          "user_positive_fixture": {"const": "compiler/phase20_resource_acquisition_source.gst"},
+          "directory_positive_fixture": {"const": "compiler/phase20_resource_acquisition_directory_source.gst"},
+          "module_fixture": {"const": "compiler/phase20_resource_enforcement_module.gst"},
+          "negative_fixtures": {"type": "array", "minItems": 5, "maxItems": 5, "uniqueItems": true, "items": {"type": "string"}},
+          "diagnostics": {"const": ["ResourceAcquisitionLeak", "ResourceAcquisitionDiscarded"]},
+          "identity_policy": {"const": "a_tracking_eligible_call_expression_gets_one_stable_source_span_identity_independent_of_later_binding"},
+          "transfer_policy": {"const": "binding_assignment_return_aggregate_payload_guard_alias_and_owned_argument_transport_the_same_identity_without_duplicate_obligations"},
+          "conditional_policy": {"const": "a_fallible_guard_failure_branch_has_no_successful_acquisition_obligation_and_the_success_payload_inherits_the_pending_identity"},
+          "temporary_policy": {"const": "an_ignored_tracking_eligible_call_must_transfer_or_consume_its_identity_by_full_expression_end"},
+          "directory_policy": {"const": "directory_and_source_declared_resources_use_the_same_acquisition_obligation_map_while_unidentified_legacy_directory_values_retain_compatibility_checks"},
+          "backend_policy": {"const": "accepted_mir_to_c_observables_and_all_shared_frontend_rejections_are_backend_neutral_without_fallback"},
+          "deferred_policy": {"const": "automatic_scope_exit_destructor_invocation_reverse_order_and_nested_resource_field_cleanup_remain_exclusively_patch20_10"},
           "enforcement_enabled": {"const": true}
         }
       },
@@ -8338,10 +8370,10 @@
           "const": "phase20_opening_evidence_and_qualification_authority_v1"
         },
         "status": {
-          "const": "ready_for_patch20_9"
+          "const": "ready_for_patch20_10"
         },
         "next_patch": {
-          "const": "20.9"
+          "const": "20.10"
         },
         "predecessor_closure_status": {
           "const": "phase19_closed_brand_identity_and_value_representation"

@@ -71,6 +71,8 @@ DIRECTORY_VOCABULARY_FILES = [
     "compiler/phase19_cross_feature_composition_source.gst",
     "compiler/phase20_directory_external_construction_invalid.gst",
     "compiler/phase20_directory_external_field_invalid.gst",
+    "compiler/phase20_resource_acquisition_directory_discarded_invalid.gst",
+    "compiler/phase20_resource_acquisition_directory_source.gst",
     "compiler/resolver.gst",
     "compiler/test_directory_leak_violation.gst",
     "compiler/typechecker.gst",
@@ -264,8 +266,8 @@ def validate() -> dict:
                 f"Phase 13 declaration-only route evidence missing: {evidence}")
 
     opening = registry.get("opening_snapshots", {}).get("phase20", {})
-    require(opening.get("status") == "ready_for_patch20_9" and
-            opening.get("next_patch") == "20.9",
+    require(opening.get("status") == "ready_for_patch20_10" and
+            opening.get("next_patch") == "20.10",
             "Phase 20 opening successor did not advance")
     require("- [x] Patch 20.7 — Resource Declaration Migration Under the No-op — DONE" in
             TASK.read_text(encoding="utf-8"),

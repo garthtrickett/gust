@@ -29,5 +29,6 @@ for default MIR-to-C, explicit MIR-to-C, and explicit Cranelift before
 backend selection. The Patch 20.6 no-op witness is reclassified and now
 produces exactly the three construction, field, and private-call errors.
 
-Patch 20.9 still owns acquisition-site obligations; Patch 20.10 still
-owns generic scope-exit cleanup and destructor invocation.
+Patch 20.9 attaches ownership at acquisition and preserves it through
+transfer. Patch 20.10 still owns generic scope-exit cleanup and actual
+destructor invocation.
