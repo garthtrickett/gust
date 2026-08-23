@@ -16473,6 +16473,19 @@ guard-cranelift-phase20-contextual-generic-constructor-parity:
     python3 scripts/cranelift_test_levels.py level guard-cranelift-phase20-contextual-generic-constructor-parity | grep -F $'guard-cranelift-phase20-contextual-generic-constructor-parity\t2\t' >/dev/null
     scripts/phase20_contextual_generic_constructor.sh
 
+guard-cranelift-phase20-arena-lifecycle-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔐 Checking Phase 20 arena lifecycle observation authority..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase20-arena-lifecycle-contract | grep -F $'guard-cranelift-phase20-arena-lifecycle-contract\t1\t' >/dev/null
+    just guard-cranelift-phase20-contextual-generic-constructor-contract
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase20_arena_lifecycle.py validate
+    python3 scripts/phase20_arena_lifecycle.py check-review
+    just guard-positive compiler/typechecker_phase20_arena_lifecycle_test_entry.gst phase20_arena_lifecycle
+    just guard-compile-pass compiler/future/p20_cr13_free_receiver_reuse_current.gst phase20_cr13_observation_only
+
 guard-cranelift-phase18-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail
