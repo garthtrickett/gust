@@ -14,7 +14,7 @@ func record_setting(
 func setting_keys(
     settings: &std.HashMap[str, int, ctx],
     destination: &Arena
-) std.Vector[str, ctx] {
+) std.Vector[str, destination] {
     return settings.Keys(destination);
 }
 
