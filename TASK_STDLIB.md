@@ -30,15 +30,16 @@ Activating Phase S1 does not activate the Cranelift lane, and vice versa.
 Phase S1 was scoped after checking its premises against the compiler
 (`docs/STDLIB_SURFACE_FINDINGS.md`, verified 2026-08-19). Phase 19 has since
 landed the CR-2 authority, and S1.6 can consume it. S1.4 and S1.5 verification
-found narrower shared-zone defects, now filed separately.
+found narrower shared-zone defects, filed separately. The generic constructor
+authority for CR-11 then landed in Cranelift Patch 20.3a, unblocking S1.4.
 
-| Delivered (6) | Blocked (6) | Depends on the rest (1) |
+| Delivered (7) | Blocked (5) | Depends on the rest (1) |
 | --- | --- | --- |
-| S1.0, S1.1, S1.2, S1.3, S1.6, S1.7 | S1.4 — CR-11 · S1.5 — CR-12 and CR-13 · S1.8, S1.9, S1.10, S1.11 — CR-5 | S1.12 closure |
+| S1.0, S1.1, S1.2, S1.3, S1.4, S1.6, S1.7 | S1.5 — CR-12 and CR-13 · S1.8, S1.9, S1.10, S1.11 — CR-5 | S1.12 closure |
 
 The lane does not idle at a blocked patch. It records the shared-zone defect and
-takes the next independent item. That is why S1.6 can be delivered while S1.4
-and S1.5 remain open.
+takes the next independent item. That is why S1.6 was delivered while S1.4 and
+S1.5 were blocked; S1.4 then resumed when its generic authority landed.
 
 This is a scheduling fact, not an objection to the two-lane model.
 
@@ -48,7 +49,7 @@ This is a scheduling fact, not an objection to the two-lane model.
 - [x] Patch S1.1 — `str` Equality Diagnostic — DONE
 - [x] Patch S1.2 — String Surface Regression Suite — DONE
 - [x] Patch S1.3 — HashMap Methods Through References — DONE
-- [ ] Patch S1.4 — Branded Collection Type Consistency
+- [x] Patch S1.4 — Branded Collection Type Consistency — DONE
 - [ ] Patch S1.5 — Clone Arena Destination Normalization
 - [x] Patch S1.6 — Stdlib Composition Regression Program — DONE
 - [x] Patch S1.7 — MutexGuard Prerequisite Audit — DONE
@@ -602,15 +603,19 @@ add `#[opaque]`, propagate opacity, implement visibility, or special-case
 containment proposal 1 and CR-5 item 3(c) remain blocked on the shared generic
 primitive.
 
-### CR-11 — Explicit `Graph` annotation changes nested brand resolution — **FILED 2026-08-22**
+### CR-11 — Explicit `Graph` annotation changes nested brand resolution — **RESOLVED 2026-08-23**
 
 [Issue #158](https://github.com/garthtrickett/gust/issues/158) contains the
 seven-point shared-zone report and minimal witness. An inferred graph returned
 from a helper compiles, while adding the equivalent explicit annotation reports
 a brand-nesting violation and degrades the declared type to `Void`. The smallest
 generic change is for nested monomorphized brand validation to consume resolved
-`BrandIdentity` metadata rather than cleaned flattened names. This blocks S1.4.
-**Owner:** Cranelift lane.
+`BrandIdentity` metadata rather than cleaned flattened names. Cranelift Patch
+20.3a / PR #175 landed the generic contextual constructor-result authority for
+Vector, HashMap, Pool, Mutex, Channel, and Graph. Patch S1.4 consumes that
+authority without changing compiler semantics. Issue #158 remained open when
+S1.4 resumed; that registrar discrepancy does not change the landed technical
+state. **Owner:** Cranelift lane (resolved); Stdlib validation delivered by S1.4.
 
 ### CR-12 — Clone result brand is not enforced — **FILED 2026-08-22**
 
@@ -912,7 +917,10 @@ new mutation capability — it makes an existing one reachable.
 
 ### Patch S1.4 — Branded Collection Type Consistency
 
-*Blocked by CR-11 (issue #158), discovered after CR-2 landed.*
+*Unblocked from its original dependency after CR-2 landed in Phase 19, then
+delivered after Cranelift Patch 20.3a resolved the narrower CR-11 generically.
+Issue #158 was still open when delivery resumed, a registrar-status discrepancy
+recorded without reinterpreting the landed authority.*
 
 **Purpose**
 
@@ -936,6 +944,23 @@ Make an explicit type annotation semantically invisible.
 **Test Level**
 
 Level 1, with a Level 2 parity family.
+
+**Delivered surface**
+
+- The paired fixtures cover the six contextual branded constructor families:
+  `Vector`, `HashMap`, `Pool`, `Graph`, `Mutex`, and `Channel`.
+- Gust's live slice spelling is `[]T`, not `Slice[T, arena]`; `[]byte` is covered
+  as a local and branded-struct field and lowers identically to
+  `Slice_unsigned_char` in both halves.
+- Gust has one `&T` reference form and it permits mutation. The pair covers both
+  read and mutation positions through that form; it does not invent or claim an
+  immutable-reference type that the language lacks.
+- Nested `Vector` supplies the generic-use position, and `HashMap.Keys` supplies
+  the collection-returned-by-stdlib-helper position.
+- The inferred and explicitly annotated programs emit byte-identical C, compile
+  and run with the same exit status, reject wrong-arena, moved, and
+  incompatible-region values with pinned diagnostics, and require the same
+  explicit Cranelift deferral before driver discovery without fallback.
 
 **Exit Gate**
 
@@ -1195,6 +1220,7 @@ refusing to let S1.12 be marked `DONE` while anything below is outstanding.
 | S1.1 | `str == str` rejected with one self-hosted frontend diagnostic |
 | S1.2 | the string surface pinned, 33 values asserted in order |
 | S1.3 | collection methods resolve through a reference receiver |
+| S1.4 | inferred and explicit branded collections emit byte-identical canonical C and behaviour |
 | S1.6 | application-shaped `Vector`/`HashMap`/`Clone` composition, with explicit native deferral |
 | S1.7 | the resource prerequisites re-verified; CR-5 made concrete |
 
@@ -1202,7 +1228,6 @@ refusing to let S1.12 be marked `DONE` while anything below is outstanding.
 
 | patch | blocked by | owner |
 | --- | --- | --- |
-| S1.4 branded collection consistency | CR-11 / issue #158 | Cranelift lane |
 | S1.5 clone arena destination | CR-12 and CR-13 / issues #159 and #160 | Cranelift lane |
 | S1.8 MutexGuard prototype | CR-5 | Cranelift lane |
 | S1.9 MutexGuard scope tests | CR-5 | Cranelift lane |
@@ -1221,9 +1246,6 @@ Recording this is the point of the phase, not an apology for it.
 - **`command == "PING"` does not work.** S1.1 turned the miscompile into a
   diagnostic, but content equality is CR-1, and operator semantics are
   compiler-owned (`VISION.md` §16). Users write `std.str_eq(a, b)`.
-- **An explicit `Graph` annotation can reject an inferred type that compiles.**
-  Nested brand validation still disagrees with Phase 19's resolved identity
-  authority. CR-11, issue #158.
 - **Clone destination safety is incomplete.** A destination-branded clone can
   be assigned back to the source brand, and a directly freed arena remains a
   valid destination. CR-12 and CR-13, issues #159 and #160.
@@ -1245,7 +1267,7 @@ Recording this is the point of the phase, not an apology for it.
 
 ### What closure requires
 
-1. CR-11 resolved, then S1.4; CR-12 and CR-13 resolved, then S1.5. S1.6 is done.
+1. S1.4 and S1.6 are done. CR-12 and CR-13 must resolve before S1.5.
 2. CR-5 resolved — source-level destructor declaration plus scope-exit
    enforcement — then S1.8 through S1.11.
 3. The residue list above re-checked against the compiler, not from memory.

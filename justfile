@@ -22470,3 +22470,13 @@ guard-stdlib-s1-composition:
     mkdir -p build
     make gust >build/stdlib-s1-composition.build.log 2>&1
     bash scripts/stdlib_s1_composition_parity.sh
+
+# Stdlib lane, Phase S1. Appended at the end so existing recipe-body extraction
+# remains stable.
+guard-stdlib-s1-branded-collections:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking inferred and explicit branded collection consistency..."
+    mkdir -p build
+    make gust >build/stdlib-s1-branded-collections.build.log 2>&1
+    bash scripts/stdlib_s1_branded_collections_parity.sh
