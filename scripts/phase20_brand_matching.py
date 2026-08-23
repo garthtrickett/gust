@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate and project the Patch 20.1 canonical brand-matching authority."""
+"""Validate and project the canonical brand-matching authority through Patch 20.2."""
 
 from __future__ import annotations
 
@@ -46,11 +46,11 @@ def validate() -> dict:
     registry = load_registry()
     authority = registry.get("phase20_brand_matching")
     require(isinstance(authority, dict), "Phase 20 brand-matching authority is missing")
-    require(authority.get("authority_version") == "phase20_canonical_brand_matching_v1",
+    require(authority.get("authority_version") == "phase20_canonical_brand_matching_v2",
             "Phase 20 brand-matching authority version drifted")
-    require(authority.get("status") == "ready_for_patch20_2",
+    require(authority.get("status") == "patch20_2_nesting_acceptance_enabled",
             "Phase 20 brand-matching status drifted")
-    require(authority.get("next_patch") == "20.2",
+    require(authority.get("next_patch") == "20.3",
             "Phase 20 brand-matching successor drifted")
     require(authority.get("identity_authority") == "phase19_brand_identity_authority_v1",
             "Phase 20 brand matching lost its Phase 19 identity authority")
@@ -67,15 +67,17 @@ def validate() -> dict:
             "compiler/typechecker_phase20_brand_matching_test_entry.gst",
             "Phase 20 brand-matching fixture drifted")
     require(authority.get("behavior_policy") ==
-            "resolved_identity_shadow_only_legacy_acceptance_and_diagnostics_unchanged",
-            "Patch 20.1 behaviour-neutral policy drifted")
-    require(authority.get("opening_probe_fixes_enabled") is False,
-            "Patch 20.1 must not enable an opening defect fix")
+            "resolved_identity_authoritative_for_brand_nesting_with_legacy_shadow_observation_only",
+            "Patch 20.2 canonical nesting policy drifted")
+    require(authority.get("opening_probe_fixes_enabled") is True,
+            "Patch 20.2 must enable the CR-11 opening defect fix")
 
     opening = registry.get("opening_snapshots", {}).get("phase20", {})
     probes = opening.get("baseline_probes", [])
-    require(len(probes) == 5 and all(probe.get("fix_enabled") is False for probe in probes),
-            "Patch 20.1 must leave all five opening probe fixes disabled")
+    require(len(probes) == 5 and probes[0].get("id") == "cr11_explicit_graph_annotation" and
+            probes[0].get("fix_enabled") is True and
+            all(probe.get("fix_enabled") is False for probe in probes[1:]),
+            "Patch 20.2 must enable only the CR-11 opening probe fix")
 
     source = TYPECHECKER.read_text(encoding="utf-8")
     for operation in OPERATIONS:
@@ -90,10 +92,8 @@ def validate() -> dict:
             "brand shadow recorder is missing")
     require("brand_identity_nesting_membership(parent_identity, element_identity)" in source,
             "legacy nesting path does not observe the canonical decision")
-    require("if legacy_match == 1" in source,
-            "legacy nesting result is no longer authoritative")
-    require("Patch 20.2 owns the acceptance switch" in source,
-            "shadow-to-enforcement ownership marker is missing")
+    require("if resolved_match == 1" in source,
+            "resolved nesting result is not authoritative")
 
     cleaner_files = []
     occurrence_count = 0
@@ -103,7 +103,7 @@ def validate() -> dict:
             cleaner_files.append(path.relative_to(ROOT).as_posix())
             occurrence_count += count
     require(occurrence_count == authority.get("frozen_string_cleaner_occurrences"),
-            "legacy string-cleaner inventory drifted; Patch 20.1 freezes 50 occurrences")
+            "legacy string-cleaner inventory drifted; Patch 20.2 freezes 48 occurrences")
     require(occurrence_count - 1 == authority.get("frozen_string_cleaner_callers"),
             "legacy string-cleaner caller count drifted")
     require(cleaner_files == authority.get("frozen_string_cleaner_owner_files"),
@@ -157,10 +157,9 @@ def render(authority: dict) -> str:
         "",
         "## Behaviour-neutral shadow",
         "",
-        "`env_is_element_allowed_in_brand` still owns acceptance and still uses",
-        "`strip_brand_prefix`. Its branded comparison now records whether the",
-        "resolved-identity answer agrees with that legacy result. No shadow result",
-        "is used to accept, reject, or construct a diagnostic in Patch 20.1.",
+        "`env_is_element_allowed_in_brand` owns nesting acceptance and now returns",
+        "the resolved-identity answer. The previous `strip_brand_prefix` result is",
+        "retained only as a disagreement counter and cannot accept or reject source.",
         "",
         f"The frozen source contains `{authority['frozen_string_cleaner_callers']}`",
         "legacy cleaner calls (plus the function definition). Later patches must",

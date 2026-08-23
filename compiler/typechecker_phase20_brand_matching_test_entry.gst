@@ -116,13 +116,13 @@ func main() {
         os.Exit(1);
     }
 
-    // The old string cleaner remains authoritative in Patch 20.1. These two
-    // observations prove both agreement and disagreement are recorded without
-    // changing the old return value.
+    // Patch 20.2 makes the resolved identity authoritative for nesting. These
+    // two observations retain the shadow evidence for the retired spelling
+    // answer while proving that a prefixed, distinct identity is not collapsed.
     mut prefixed_alpha_t := typechecker.make_type_struct("Node", "module__alpha", ctx);
-    if typechecker.env_is_element_allowed_in_brand(&env, prefixed_alpha_t, "alpha", ctx) != 1 ||
+    if typechecker.env_is_element_allowed_in_brand(&env, prefixed_alpha_t, "alpha", ctx) != 0 ||
        typechecker.env_is_element_allowed_in_brand(&env, alpha_t, "alpha", ctx) != 1 {
-        os.LogStr("Error: Patch 20.1 changed legacy brand nesting acceptance");
+        os.LogStr("Error: canonical brand nesting acceptance drifted");
         os.Exit(1);
     }
     if env.brand_match_shadow_checks != 2 ||

@@ -1705,27 +1705,20 @@ func env_check_brand_nesting(env: *TypeEnvironment[ctx], t: ast.Type[ctx], paren
         if t.tag == 8 { // Struct
             if parent_brand != empty[Index[str, ctx]] {
                 mut ob := ctx[parent_brand];
-                mut name := t.Struct.struct_name;
-                mut clean_name := strip_brand_prefix(name, ctx);
-                mut clean_ob := strip_brand_prefix(ob, ctx);
-                if std.str_eq(clean_name, clean_ob) == 0 {
-                    if env_is_element_allowed_in_brand(env, t, ob, ctx) == 0 {
-                        mut ib := get_type_brand(t, env, ctx);
-                        if std.str_eq(ib, "") == 1 {
-                            mut msg := std.Concat("Semantic Error: Brand Nesting Restriction violation. Element '", t.Struct.struct_name);
-                            msg = std.Concat(msg, "' inside collection branded with '");
-                            msg = std.Concat(msg, ob);
-                            msg = std.Concat(msg, "' must be copyable POD or branded with identical brand '");
-                            msg = std.Concat(msg, ob);
-                            msg = std.Concat(msg, "'");
-                            report_error(2, msg, span, env, ctx);
-                        } else {
-                            mut msg := std.Concat("Semantic Error: Brand Nesting. Mismatched nested brand '", ib);
-                            msg = std.Concat(msg, "' inside parent brand '");
-                            msg = std.Concat(msg, ob);
-                            msg = std.Concat(msg, "'");
-                            report_error(2, msg, span, env, ctx);
-                        }
+                if env_is_element_allowed_in_brand(env, t, ob, ctx) == 0 {
+                    mut element_identity := typechecker_brand_identity_from_resolved_type(t, env, ctx);
+                    if brand_identity_has_identity(element_identity) == 0 {
+                        mut msg := std.Concat("Semantic Error: Brand Nesting Restriction violation. Element '", t.Struct.struct_name);
+                        msg = std.Concat(msg, "' inside collection branded with '");
+                        msg = std.Concat(msg, ob);
+                        msg = std.Concat(msg, "' must be copyable POD or branded with identical brand '");
+                        msg = std.Concat(msg, ob);
+                        msg = std.Concat(msg, "'");
+                        report_error(2, msg, span, env, ctx);
+                    } else {
+                        mut parent_identity := brand_identity_make("nesting_parent", ob, 0, ctx);
+                        mut msg := std.Concat("Semantic Error: Brand Nesting. ", brand_identity_mismatch_description(parent_identity, element_identity, ctx));
+                        report_error(2, msg, span, env, ctx);
                     }
                 }
             }
@@ -1734,8 +1727,8 @@ func env_check_brand_nesting(env: *TypeEnvironment[ctx], t: ast.Type[ctx], paren
             if parent_brand != empty[Index[str, ctx]] {
                 mut ob := ctx[parent_brand];
                 if env_is_element_allowed_in_brand(env, t, ob, ctx) == 0 {
-                    mut ib := get_type_brand(t, env, ctx);
-                    if std.str_eq(ib, "") == 1 {
+                    mut element_identity := typechecker_brand_identity_from_resolved_type(t, env, ctx);
+                    if brand_identity_has_identity(element_identity) == 0 {
                         mut msg := std.Concat("Semantic Error: Brand Nesting Restriction violation. Element '", t.Index.struct_name);
                         msg = std.Concat(msg, "' inside collection branded with '");
                         msg = std.Concat(msg, ob);
@@ -1744,10 +1737,8 @@ func env_check_brand_nesting(env: *TypeEnvironment[ctx], t: ast.Type[ctx], paren
                         msg = std.Concat(msg, "'");
                         report_error(2, msg, span, env, ctx);
                     } else {
-                        mut msg := std.Concat("Semantic Error: Brand Nesting. Mismatched nested brand '", ib);
-                        msg = std.Concat(msg, "' inside parent brand '");
-                        msg = std.Concat(msg, ob);
-                        msg = std.Concat(msg, "'");
+                        mut parent_identity := brand_identity_make("nesting_parent", ob, 0, ctx);
+                        mut msg := std.Concat("Semantic Error: Brand Nesting. ", brand_identity_mismatch_description(parent_identity, element_identity, ctx));
                         report_error(2, msg, span, env, ctx);
                     }
                 }
@@ -1834,8 +1825,12 @@ func env_is_element_allowed_in_brand(env: *TypeEnvironment[ctx], t: ast.Type[ctx
                 return 1;
             } 
         }
-        mut ib := get_type_brand(t, env, ctx);
-        if std.str_eq(ib, "") == 0 {
+        mut element_identity := env_get_brand_identity(env, t, ctx);
+        if brand_identity_has_identity(element_identity) == 0 {
+            element_identity = typechecker_brand_identity_from_resolved_type(t, env, ctx);
+        }
+        if brand_identity_has_identity(element_identity) == 1 {
+            mut ib := element_identity.arena_identity;
             mut clean_ib := strip_brand_prefix(ib, ctx);
             mut clean_ob := strip_brand_prefix(parent_brand, ctx);
             mut legacy_match := 0;
@@ -1845,16 +1840,14 @@ func env_is_element_allowed_in_brand(env: *TypeEnvironment[ctx], t: ast.Type[ctx
                 legacy_match = 1;
             }
 
-            // Patch 20.1 observes the resolved-identity answer without making
-            // it authoritative. Patch 20.2 owns the acceptance switch.
             mut parent_identity := brand_identity_make("nesting_parent", parent_brand, 0, ctx);
-            mut element_identity := typechecker_brand_identity_from_resolved_type(t, env, ctx);
+            mut resolved_match := brand_identity_nesting_membership(parent_identity, element_identity);
             env_record_brand_match_shadow(
                 env,
-                brand_identity_nesting_membership(parent_identity, element_identity),
+                resolved_match,
                 legacy_match
             );
-            if legacy_match == 1 {
+            if resolved_match == 1 {
                 return 1;
             }
         }
@@ -5685,9 +5678,64 @@ func substitute_generics(env: *TypeEnvironment[ctx], t: ast.Type[ctx], map: std.
             mut joined_keys := ast.ast_join_strings(map_keys, ', ', ctx);
             mut log_msg := std.Format('substitute_generics Struct: name=%s, map_keys=[%s]', name, joined_keys);
             typechecker_log_trace('👁', log_msg, ctx);
-            
+
+            // Some built-in template fields use the historical flattened
+            // placeholder form (for example std_GraphNode_T_ctx). Resolve
+            // those placeholders while the substitution map is still typed;
+            // reparsing the eventual concrete spelling cannot distinguish an
+            // identity such as application_arena from two type arguments.
+            mut resolved_nested_template := 0;
+            mut template_keys := typechecker_get_sorted_keys_struct_template(&(*env).struct_templates, ctx);
+            mut template_idx := 0;
+            while template_idx < len(template_keys) && resolved_nested_template == 0 {
+                mut nested_template_name := template_keys[template_idx];
+                mut nested_template_lookup := (*env).struct_templates.Get(nested_template_name);
+                if nested_template_lookup.Ok {
+                    mut nested_template := nested_template_lookup.Val;
+                    mut nested_generics: std.Vector[str, ctx] := ctx[nested_template.generics];
+                    mut placeholder_args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+                    mut nested_arg_idx := 0;
+                    while nested_arg_idx < len(nested_generics) {
+                        if nested_arg_idx == nested_template.brand_parameter_index {
+                            placeholder_args.Push(make_type_brand_marker(nested_generics[nested_arg_idx], ctx));
+                        } else {
+                            placeholder_args.Push(make_type_struct(nested_generics[nested_arg_idx], "", ctx));
+                        }
+                        nested_arg_idx = nested_arg_idx + 1;
+                    }
+                    mut placeholder_args_idx: Index[std.Vector[ast.Type[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+                    ctx.Set(placeholder_args_idx, placeholder_args);
+                    mut placeholder_name := get_monomorphized_name(nested_template_name, placeholder_args_idx, ctx);
+                    if std.str_eq(name, placeholder_name) == 1 {
+                        mut substituted_args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+                        mut all_arguments_available := 1;
+                        nested_arg_idx = 0;
+                        while nested_arg_idx < len(nested_generics) {
+                            mut argument_lookup := map.Get(nested_generics[nested_arg_idx]);
+                            if argument_lookup.Ok {
+                                substituted_args.Push(argument_lookup.Val);
+                            } else {
+                                all_arguments_available = 0;
+                            }
+                            nested_arg_idx = nested_arg_idx + 1;
+                        }
+                        if all_arguments_available == 1 {
+                            mut nested_result := monomorphize(env, nested_template_name, substituted_args, ctx);
+                            if nested_result.tag == 0 { // Ok
+                                res_type = nested_result.Ok.val;
+                                resolved_nested_template = 1;
+                            }
+                        }
+                    }
+                }
+                template_idx = template_idx + 1;
+            }
+
             mut lookup := map.Get(name);
-            if lookup.Ok {
+            if resolved_nested_template == 1 {
+                // res_type already carries the nested template's resolved
+                // brand identity.
+            } else if lookup.Ok {
                 res_type = lookup.Val;
                 mut before_str := name;
                 mut after_str := ast.serialize_type(res_type, ctx);
@@ -5904,6 +5952,7 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
         res.tag = 0; // Ok
 
         mut start_err_len := len((*env).errors);
+        mut preserved_nesting_error_count := 0;
 
         mut lookup_active := (*env).active_monomorphizations.Get(template_name);
         if lookup_active.Ok {
@@ -6159,7 +6208,9 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
                            concrete_fields.Insert(std.Clone(ctx, field.name), field_type);
 
                            if brand != empty[Index[str, ctx]] {
+                               mut nesting_err_len_before := len((*env).errors);
                                env_check_brand_nesting(env, field_type, brand, field.span, ctx);
+                               preserved_nesting_error_count = preserved_nesting_error_count + len((*env).errors) - nesting_err_len_before;
                            }
 
                            mut log_end := std.Format('monomorphize_impl field: %s - end', field.name);
@@ -6219,7 +6270,7 @@ func monomorphize_impl(env: *TypeEnvironment[ctx], template_name: str, args: std
             res.Ok.val.Struct.brand = brand;
             (*env).active_monomorphizations.Remove(template_name);
 
-            if len((*env).errors) > start_err_len {
+            if len((*env).errors) > start_err_len + preserved_nesting_error_count {
                 res.tag = 1; // Err
                 mut err_idx := len((*env).errors) - 1;
                 mut err_idx_arena: Index[errors.CompilerError[ctx], ctx] := os.ArenaAlloc(ctx);
@@ -8753,7 +8804,12 @@ func env_resolve_type_internal(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx
                 }
                     
                     if matched == 1 {
-                        matched_val.Struct.brand = t.Struct.brand;
+                        // A flattened nested generic has already resolved its
+                        // brand argument. Do not erase that identity merely
+                        // because the outer spelling did not repeat it.
+                        if t.Struct.brand != empty[Index[str, ctx]] {
+                            matched_val.Struct.brand = t.Struct.brand;
+                        }
                         return matched_val;
                     }
                 }
