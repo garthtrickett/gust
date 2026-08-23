@@ -1329,38 +1329,25 @@
     ]
   },
   "phase19_seed_convergence": {
-    "contract_version": "phase19_seed_convergence_v4",
-    "status": "ready_for_patch20_12",
-    "next_patch": "20.12",
+    "contract_version": "phase19_seed_convergence_v3",
+    "status": "ready_for_patch19_12",
+    "next_patch": "19.12",
     "review_view": "compiler/CRANELIFT_PHASE19_SEED_CONVERGENCE.md",
     "seed_path": "gust_v4.c",
-    "seed_pull_request": 188,
+    "seed_pull_request": 157,
     "fixed_point_policy": "make_bootstrap_stage2_stage3_byte_identity",
     "pull_request_scope_policy": "seed_owned_changes_only_capability_pr_seed_deferred",
     "main_push_scope_policy": "all_compiler_changes_require_fixed_point",
-    "active_deferred_seed_patch": "none",
+    "active_deferred_seed_patch": "20.11",
     "generated_seed_diff": {
-      "previous_lines": 57360,
-      "current_lines": 59502,
-      "insertions": 2410,
-      "deletions": 268,
-      "line_delta": 2142
+      "previous_lines": 57351,
+      "current_lines": 57360,
+      "insertions": 18,
+      "deletions": 9,
+      "line_delta": 9
     },
     "accounted_patches": [
-      {"patch": "20.0", "scope": "Phase 20 opening qualification evidence and compiler-owned fixtures"},
-      {"patch": "20.1", "scope": "canonical brand-matching primitives"},
-      {"patch": "20.2", "scope": "nested brand annotation correction"},
-      {"patch": "20.3", "scope": "exact branded boundaries and call-brand normalization corrections"},
-      {"patch": "20.3a", "scope": "contextual generic constructor result authority"},
-      {"patch": "20.4", "scope": "arena lifecycle observation authority"},
-      {"patch": "20.5", "scope": "Arena.Free receiver invalidation"},
-      {"patch": "20.6", "scope": "inert Resource declaration and visibility surface"},
-      {"patch": "20.7", "scope": "Resource declaration migration and metadata parity correction"},
-      {"patch": "20.8", "scope": "Resource declaration and construction enforcement"},
-      {"patch": "20.9", "scope": "acquisition-site Resource obligations"},
-      {"patch": "20.9a", "scope": "obligation path joins and callee ownership"},
-      {"patch": "20.10", "scope": "generic scope cleanup, direct-return preservation, and legacy directory guard migration"},
-      {"patch": "20.11", "scope": "seed-preflight diagnostic construction correction"}
+      {"patch": "19.11", "scope": "canonical runtime-owned resource result identities in branded composition"}
     ]
   },
   "phase19_self_compilation_differential": {
