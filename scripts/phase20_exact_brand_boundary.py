@@ -35,7 +35,7 @@ def validate() -> dict:
             "Patch 20.3 authority version drifted")
     require(authority.get("status") == "patch20_3_complete",
             "Patch 20.3 status drifted")
-    require(authority.get("next_patch") == "20.4",
+    require(authority.get("next_patch") == "20.3a",
             "Patch 20.3 successor drifted")
     require(authority.get("issue") == "CR-12/#159",
             "Patch 20.3 issue ownership drifted")
@@ -98,8 +98,8 @@ def validate() -> dict:
     probes = opening.get("baseline_probes", [])
     cr12 = next((probe for probe in probes
                  if probe.get("id") == "cr12_wrong_brand_clone_destination"), {})
-    require(opening.get("status") == "ready_for_patch20_4" and
-            opening.get("next_patch") == "20.4",
+    require(opening.get("status") == "ready_for_patch20_3a" and
+            opening.get("next_patch") == "20.3a",
             "Phase 20 opening successor did not advance")
     require(cr12.get("compile_exit") == 1 and cr12.get("fix_enabled") is True and
             cr12.get("diagnostic_substrings") ==

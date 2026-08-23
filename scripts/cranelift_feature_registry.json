@@ -567,7 +567,7 @@
   "phase20_brand_matching": {
     "authority_version": "phase20_canonical_brand_matching_v3",
     "status": "patch20_3_exact_boundaries_enabled",
-    "next_patch": "20.4",
+    "next_patch": "20.3a",
     "review_view": "compiler/CRANELIFT_PHASE20_BRAND_MATCHING.md",
     "identity_authority": "phase19_brand_identity_authority_v1",
     "operations": [
@@ -621,7 +621,7 @@
   "phase20_exact_brand_boundary": {
     "authority_version": "phase20_exact_brand_boundary_v1",
     "status": "patch20_3_complete",
-    "next_patch": "20.4",
+    "next_patch": "20.3a",
     "issue": "CR-12/#159",
     "review_view": "compiler/CRANELIFT_PHASE20_EXACT_BRAND_BOUNDARY.md",
     "semantic_fixture": "compiler/typechecker_phase20_exact_brand_boundary_test_entry.gst",
@@ -1213,8 +1213,8 @@
   "opening_snapshots": {
     "phase20": {
       "opening_version": "phase20_opening_evidence_and_qualification_authority_v1",
-      "status": "ready_for_patch20_4",
-      "next_patch": "20.4",
+      "status": "ready_for_patch20_3a",
+      "next_patch": "20.3a",
       "predecessor_closure_status": "phase19_closed_brand_identity_and_value_representation",
       "roadmap_merge_sha": "1cfab1344b24ffefc72b4d752ead3eb17c6719c6",
       "review_view": "compiler/CRANELIFT_PHASE20_OPENING.md",
