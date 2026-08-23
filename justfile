@@ -212,6 +212,8 @@ guard-pr-fast-ci-surface:
       'just guard-cranelift-phase19-opening-contract'
       'Phase 20 opening evidence and qualification authority'
       'just guard-cranelift-phase20-opening-contract'
+      'Phase 20 canonical brand matching'
+      'just guard-cranelift-phase20-brand-matching-contract'
       'Phase 19 identifier-spelling decision inventory'
       'just guard-cranelift-phase19-spelling-inventory'
       'Phase 19 cross-feature composition'
@@ -16388,6 +16390,18 @@ guard-cranelift-phase20-opening-contract:
     python3 scripts/phase19_closure.py --check
     python3 scripts/phase20_opening.py validate
     python3 scripts/phase20_opening.py check-review
+
+guard-cranelift-phase20-brand-matching-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔐 Checking Phase 20 canonical brand-matching primitives..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase20-brand-matching-contract | grep -F $'guard-cranelift-phase20-brand-matching-contract\t1\t' >/dev/null
+    just guard-cranelift-phase20-opening-contract
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase20_brand_matching.py validate
+    python3 scripts/phase20_brand_matching.py check-review
+    just guard-positive compiler/typechecker_phase20_brand_matching_test_entry.gst phase20_brand_matching_primitives
 
 guard-cranelift-phase18-opening-contract:
     #!/usr/bin/env bash

@@ -564,6 +564,34 @@
       }
     ]
   },
+  "phase20_brand_matching": {
+    "authority_version": "phase20_canonical_brand_matching_v1",
+    "status": "ready_for_patch20_2",
+    "next_patch": "20.2",
+    "review_view": "compiler/CRANELIFT_PHASE20_BRAND_MATCHING.md",
+    "identity_authority": "phase19_brand_identity_authority_v1",
+    "operations": [
+      "brand_identity_exact_match",
+      "brand_identity_nesting_membership",
+      "brand_identity_mismatch_description"
+    ],
+    "shadow_fields": [
+      "brand_match_shadow_checks",
+      "brand_match_shadow_agreements",
+      "brand_match_shadow_disagreements"
+    ],
+    "legacy_acceptance_function": "env_is_element_allowed_in_brand",
+    "legacy_string_cleaner": "strip_brand_prefix",
+    "frozen_string_cleaner_occurrences": 50,
+    "frozen_string_cleaner_callers": 49,
+    "frozen_string_cleaner_owner_files": [
+      "compiler/codegen.gst",
+      "compiler/typechecker.gst"
+    ],
+    "semantic_fixture": "compiler/typechecker_phase20_brand_matching_test_entry.gst",
+    "behavior_policy": "resolved_identity_shadow_only_legacy_acceptance_and_diagnostics_unchanged",
+    "opening_probe_fixes_enabled": false
+  },
   "phase19_brand_authority": {
     "authority_version": "phase19_brand_identity_authority_v1",
     "status": "ready_for_patch19_3",
