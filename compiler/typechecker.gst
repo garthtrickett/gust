@@ -4084,11 +4084,6 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         if inner.tag == 4 {
                             is_arena_ptr = 1;
                         }
-                    } else if param_type.tag == 11 {
-                        mut inner := ctx[param_type.Reference.inner];
-                        if inner.tag == 4 {
-                            is_arena_ptr = 1;
-                        }
                     }
                     if param_type.tag == 4 || is_arena_ptr == 1 {
                         mut arg_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);

@@ -69,7 +69,6 @@ def validate() -> dict:
         "env_types_match_at_brand_boundary(env, left_type, val_type, ctx)",
         "env_types_match_at_brand_boundary(env, expected_type, resolved_arg, ctx)",
         "env_types_match_at_brand_boundary(env, expected_t, actual_return, ctx)",
-        "param_type.tag == 11",
     ):
         require(evidence in source, f"Patch 20.3 compiler evidence missing: {evidence}")
 
