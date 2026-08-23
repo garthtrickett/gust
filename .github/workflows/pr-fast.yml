@@ -368,6 +368,9 @@ jobs:
       - name: Phase 20 bootstrap seed convergence
         run: just guard-cranelift-phase20-seed-convergence
 
+      - name: Phase 20 whole-program corpus and observable contract
+        run: just guard-cranelift-phase20-whole-program-corpus-contract
+
       - name: Phase 19 cross-feature composition
         run: just guard-cranelift-phase19-composition-contract
 
@@ -480,6 +483,9 @@ jobs:
 
       - name: Phase 20 Arena.Free receiver invalidation parity
         run: just guard-cranelift-phase20-arena-free-parity
+
+      - name: Phase 20 whole-program initial corpus parity
+        run: just guard-cranelift-phase20-whole-program-corpus-parity
 
   final:
     name: final diff check
