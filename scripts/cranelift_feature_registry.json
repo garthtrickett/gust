@@ -752,6 +752,48 @@
     "direct_cranelift_source_route": "rejected_programs_fail_identically_before_backend_selection_and_accepted_generic_source_remains_explicitly_deferred_without_C_fallback",
     "opening_probe_fix_enabled": true
   },
+  "phase20_inert_resource_surface": {
+    "authority_version": "phase20_inert_resource_surface_v1",
+    "status": "patch20_6_complete",
+    "next_patch": "20.7",
+    "issue": "CR-5/#106",
+    "review_view": "compiler/CRANELIFT_PHASE20_INERT_RESOURCE_SURFACE.md",
+    "parser_fixture": "compiler/parser_phase20_inert_resource_surface_test_entry.gst",
+    "noop_fixture": "compiler/phase20_inert_resource_surface_source.gst",
+    "module_fixture": "compiler/phase20_inert_resource_surface_module.gst",
+    "attributes": [
+      "destructor(name)",
+      "opaque",
+      "private"
+    ],
+    "ast_metadata": [
+      "StructDecl.declared_destructor_name",
+      "StructDecl.is_opaque",
+      "FunctionDecl.is_private"
+    ],
+    "type_metadata": [
+      "TypeEnvironment.struct_declared_destructor",
+      "TypeEnvironment.struct_declared_opaque",
+      "FunctionSignature.is_private"
+    ],
+    "malformed_diagnostics": [
+      "Expected '(' after destructor attribute",
+      "Expected function name in destructor attribute",
+      "Expected closing ']' after layout attribute"
+    ],
+    "duplicate_diagnostics": [
+      "Duplicate destructor declaration attribute",
+      "Duplicate opaque declaration attribute",
+      "Duplicate private declaration attribute"
+    ],
+    "conflict_diagnostic": "Private function attribute conflicts with type declaration attributes",
+    "parser_policy": "stacked_attributes_are_preserved_on_their_declaration_and_malformed_duplicate_or_conflicting_forms_are_rejected",
+    "metadata_policy": "declared_destructor_opacity_and_private_visibility_are_registered_separately_from_live_enforcement_metadata",
+    "noop_policy": "external_construction_direct_field_access_and_private_function_calls_retain_pre_attribute_permissions_until_patch20_8",
+    "cleanup_policy": "declared_destructor_metadata_does_not_register_a_live_linear_destructor_or_schedule_cleanup",
+    "bootstrap_policy": "the_checked_in_seed_compiles_the_extended_self_hosted_parser_ast_and_typechecker_without_seed_publication",
+    "enforcement_enabled": false
+  },
   "phase19_brand_authority": {
     "authority_version": "phase19_brand_identity_authority_v1",
     "status": "ready_for_patch19_3",
@@ -1313,8 +1355,8 @@
   "opening_snapshots": {
     "phase20": {
       "opening_version": "phase20_opening_evidence_and_qualification_authority_v1",
-      "status": "ready_for_patch20_6",
-      "next_patch": "20.6",
+      "status": "ready_for_patch20_7",
+      "next_patch": "20.7",
       "predecessor_closure_status": "phase19_closed_brand_identity_and_value_representation",
       "roadmap_merge_sha": "1cfab1344b24ffefc72b4d752ead3eb17c6719c6",
       "review_view": "compiler/CRANELIFT_PHASE20_OPENING.md",

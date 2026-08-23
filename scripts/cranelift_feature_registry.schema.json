@@ -19,6 +19,7 @@
     "phase20_contextual_generic_constructor",
     "phase20_arena_lifecycle",
     "phase20_arena_free_invalidation",
+    "phase20_inert_resource_surface",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -345,6 +346,40 @@
           "mir_projection_policy": {"const": "the_accepted_live_arena_source_returns_37_and_projects_to_supported_canonical_MIR_for_both_backends"},
           "direct_cranelift_source_route": {"const": "rejected_programs_fail_identically_before_backend_selection_and_accepted_generic_source_remains_explicitly_deferred_without_C_fallback"},
           "opening_probe_fix_enabled": {"const": true}
+        }
+      },
+      "phase20_inert_resource_surface": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["authority_version", "status", "next_patch", "issue",
+                     "review_view", "parser_fixture", "noop_fixture",
+                     "module_fixture", "attributes", "ast_metadata",
+                     "type_metadata", "malformed_diagnostics",
+                     "duplicate_diagnostics", "conflict_diagnostic",
+                     "parser_policy", "metadata_policy", "noop_policy",
+                     "cleanup_policy", "bootstrap_policy",
+                     "enforcement_enabled"],
+        "properties": {
+          "authority_version": {"const": "phase20_inert_resource_surface_v1"},
+          "status": {"const": "patch20_6_complete"},
+          "next_patch": {"const": "20.7"},
+          "issue": {"const": "CR-5/#106"},
+          "review_view": {"const": "compiler/CRANELIFT_PHASE20_INERT_RESOURCE_SURFACE.md"},
+          "parser_fixture": {"const": "compiler/parser_phase20_inert_resource_surface_test_entry.gst"},
+          "noop_fixture": {"const": "compiler/phase20_inert_resource_surface_source.gst"},
+          "module_fixture": {"const": "compiler/phase20_inert_resource_surface_module.gst"},
+          "attributes": {"const": ["destructor(name)", "opaque", "private"]},
+          "ast_metadata": {"const": ["StructDecl.declared_destructor_name", "StructDecl.is_opaque", "FunctionDecl.is_private"]},
+          "type_metadata": {"const": ["TypeEnvironment.struct_declared_destructor", "TypeEnvironment.struct_declared_opaque", "FunctionSignature.is_private"]},
+          "malformed_diagnostics": {"const": ["Expected '(' after destructor attribute", "Expected function name in destructor attribute", "Expected closing ']' after layout attribute"]},
+          "duplicate_diagnostics": {"const": ["Duplicate destructor declaration attribute", "Duplicate opaque declaration attribute", "Duplicate private declaration attribute"]},
+          "conflict_diagnostic": {"const": "Private function attribute conflicts with type declaration attributes"},
+          "parser_policy": {"const": "stacked_attributes_are_preserved_on_their_declaration_and_malformed_duplicate_or_conflicting_forms_are_rejected"},
+          "metadata_policy": {"const": "declared_destructor_opacity_and_private_visibility_are_registered_separately_from_live_enforcement_metadata"},
+          "noop_policy": {"const": "external_construction_direct_field_access_and_private_function_calls_retain_pre_attribute_permissions_until_patch20_8"},
+          "cleanup_policy": {"const": "declared_destructor_metadata_does_not_register_a_live_linear_destructor_or_schedule_cleanup"},
+          "bootstrap_policy": {"const": "the_checked_in_seed_compiles_the_extended_self_hosted_parser_ast_and_typechecker_without_seed_publication"},
+          "enforcement_enabled": {"const": false}
         }
       },
       "phase19_brand_authority": {
@@ -8245,10 +8280,10 @@
           "const": "phase20_opening_evidence_and_qualification_authority_v1"
         },
         "status": {
-          "const": "ready_for_patch20_6"
+          "const": "ready_for_patch20_7"
         },
         "next_patch": {
-          "const": "20.6"
+          "const": "20.7"
         },
         "predecessor_closure_status": {
           "const": "phase19_closed_brand_identity_and_value_representation"
