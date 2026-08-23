@@ -7511,7 +7511,8 @@ func env_register_inert_resource_declaration_metadata(env: *TypeEnvironment[ctx]
         (*env).struct_declared_destructor.Insert(std.Clone(ctx, name), std.Clone(ctx, destructor_name));
         (*env).struct_declared_opaque.Insert(std.Clone(ctx, name), is_opaque);
     }
-    mut msg := std.Format("env_register_inert_resource_declaration_metadata: registered inert metadata for '%s'", name);
+    mut msg := std.Concat("env_register_inert_resource_declaration_metadata: registered inert metadata for '", name);
+    msg = std.Concat(msg, "'");
     typechecker_log_trace("🗄️", msg, ctx);
 }
 
