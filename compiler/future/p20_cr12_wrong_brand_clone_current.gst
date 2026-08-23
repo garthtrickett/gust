@@ -1,6 +1,6 @@
 // Phase 20.0 baseline for CR-12/#159.
-// current_result: incorrectly_accepts_distinct_destination_brand
-// next_patch: 20.3
+// current_result: rejects_distinct_destination_brand_at_generic_type_boundary
+// fixed_by: 20.3
 
 type Node[ctx] struct { value: int }
 

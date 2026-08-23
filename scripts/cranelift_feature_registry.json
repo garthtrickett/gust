@@ -565,9 +565,9 @@
     ]
   },
   "phase20_brand_matching": {
-    "authority_version": "phase20_canonical_brand_matching_v2",
-    "status": "patch20_2_nesting_acceptance_enabled",
-    "next_patch": "20.3",
+    "authority_version": "phase20_canonical_brand_matching_v3",
+    "status": "patch20_3_exact_boundaries_enabled",
+    "next_patch": "20.4",
     "review_view": "compiler/CRANELIFT_PHASE20_BRAND_MATCHING.md",
     "identity_authority": "phase19_brand_identity_authority_v1",
     "operations": [
@@ -589,7 +589,7 @@
       "compiler/typechecker.gst"
     ],
     "semantic_fixture": "compiler/typechecker_phase20_brand_matching_test_entry.gst",
-    "behavior_policy": "resolved_identity_authoritative_for_brand_nesting_with_legacy_shadow_observation_only",
+    "behavior_policy": "resolved_identity_authoritative_for_brand_nesting_and_typed_value_boundaries_with_legacy_shadow_observation_only",
     "opening_probe_fixes_enabled": true
   },
   "phase20_nested_brand_annotation": {
@@ -615,6 +615,40 @@
       "illegal_escape"
     ],
     "mir_projection_policy": "the_frontend_validates_the_full_program_and_the_unreachable_type_annotation_probes_project_to_the_selected_main_return_20_canonical_mir",
+    "direct_cranelift_source_route": "explicit_source_or_type_failure_before_driver_discovery_until_patch20_12_without_c_fallback",
+    "opening_probe_fix_enabled": true
+  },
+  "phase20_exact_brand_boundary": {
+    "authority_version": "phase20_exact_brand_boundary_v1",
+    "status": "patch20_3_complete",
+    "next_patch": "20.4",
+    "issue": "CR-12/#159",
+    "review_view": "compiler/CRANELIFT_PHASE20_EXACT_BRAND_BOUNDARY.md",
+    "semantic_fixture": "compiler/typechecker_phase20_exact_brand_boundary_test_entry.gst",
+    "positive_fixture": "compiler/phase20_exact_brand_boundary_source.gst",
+    "positive_import_fixture": "compiler/phase20_exact_brand_boundary_import.gst",
+    "issue_fixture": "compiler/future/p20_cr12_wrong_brand_clone_current.gst",
+    "negative_fixtures": [
+      "compiler/phase20_exact_brand_assignment_invalid.gst",
+      "compiler/phase20_exact_brand_call_invalid.gst",
+      "compiler/phase20_exact_brand_return_invalid.gst",
+      "compiler/phase20_exact_brand_field_invalid.gst",
+      "compiler/phase20_exact_brand_alias_invalid.gst"
+    ],
+    "canonical_mir_fixture": "compiler/fixtures/native_backend_phase20_exact_brand_boundary.mir",
+    "matching_policy": "after_normal_substitution_two_resolved_brand_identities_must_match_exactly_or_satisfy_the_existing_Any_nesting_rule",
+    "unbranded_policy": "existing_structural_compatibility_is_preserved_when_either_side_has_no_resolved_identity",
+    "coverage": [
+      "explicit_annotation",
+      "direct_assignment",
+      "function_argument",
+      "function_return",
+      "Index",
+      "field",
+      "import_alias",
+      "generic_substitution"
+    ],
+    "mir_projection_policy": "the_frontend_validates_the_full_same_brand_program_and_projects_its_selected_main_return_23_to_canonical_mir_for_both_backends",
     "direct_cranelift_source_route": "explicit_source_or_type_failure_before_driver_discovery_until_patch20_12_without_c_fallback",
     "opening_probe_fix_enabled": true
   },
@@ -1179,8 +1213,8 @@
   "opening_snapshots": {
     "phase20": {
       "opening_version": "phase20_opening_evidence_and_qualification_authority_v1",
-      "status": "ready_for_patch20_3",
-      "next_patch": "20.3",
+      "status": "ready_for_patch20_4",
+      "next_patch": "20.4",
       "predecessor_closure_status": "phase19_closed_brand_identity_and_value_representation",
       "roadmap_merge_sha": "1cfab1344b24ffefc72b4d752ead3eb17c6719c6",
       "review_view": "compiler/CRANELIFT_PHASE20_OPENING.md",
@@ -1200,12 +1234,14 @@
           "id": "cr12_wrong_brand_clone_destination",
           "source_requirement": "CR-12/#159",
           "fixture": "compiler/future/p20_cr12_wrong_brand_clone_current.gst",
-          "compile_exit": 0,
-          "current_verdict": "incorrectly_accepts_distinct_destination_brand",
-          "diagnostic_substrings": [],
+          "compile_exit": 1,
+          "current_verdict": "rejects_distinct_destination_brand_at_generic_type_boundary",
+          "diagnostic_substrings": [
+            "[TypeMismatch] Explicit Type Annotation Mismatch"
+          ],
           "semantic_owner": "compiler_brand_identity_verifier",
           "next_patch": "20.3",
-          "fix_enabled": false
+          "fix_enabled": true
         },
         {
           "id": "cr13_freed_receiver_reuse",

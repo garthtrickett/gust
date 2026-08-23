@@ -204,7 +204,7 @@ func main() {
     mut cleanup_function_second := authority.mir_cleanup_obligation_id(resource_function_second, scope_function_exit_id, 5, ctx_scope);
 
     mut authority_table_scope_pre := authority.mir_resource_make_empty_table(target_query_scope.target.target_id, target_triple_scope, ctx_scope);
-    mut destructor_scope: authority.MirDestructorIdentity[ctx];
+    mut destructor_scope: authority.MirDestructorIdentity[ctx_scope];
     destructor_scope.destructor_id = std.Clone(ctx_scope, "destructor:phase15:scope_exit_resource");
     destructor_scope.resource_type_id = std.Clone(ctx_scope, "type:gust:Phase15ScopeExitResource");
     destructor_scope.runtime_symbol = std.Clone(ctx_scope, "gust_phase15_scope_exit_resource_destroy");
@@ -213,7 +213,7 @@ func main() {
     destructor_scope.target_triple = std.Clone(ctx_scope, target_triple_scope);
     authority_table_scope_pre = authority.mir_resource_table_with_destructor(authority_table_scope_pre, destructor_scope, ctx_scope);
 
-    mut close_scope: authority.MirCloseCapability[ctx];
+    mut close_scope: authority.MirCloseCapability[ctx_scope];
     close_scope.close_capability_id = std.Clone(ctx_scope, "close:phase15:scope_exit_resource");
     close_scope.resource_type_id = std.Clone(ctx_scope, "type:gust:Phase15ScopeExitResource");
     close_scope.runtime_symbol = std.Clone(ctx_scope, "gust_phase15_scope_exit_resource_close");
