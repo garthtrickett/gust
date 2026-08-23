@@ -4,12 +4,17 @@ set -euo pipefail
 build_root="build/guards/phase20_resource_acquisition"
 user_positive="compiler/phase20_resource_acquisition_source.gst"
 directory_positive="compiler/phase20_resource_acquisition_directory_source.gst"
+path_transfer_positive="compiler/phase20_resource_acquisition_path_transfer_source.gst"
 negatives=(
   compiler/future/p20_issue106_bound_directory_current.gst
   compiler/future/p20_issue106_unbound_directory_current.gst
   compiler/phase20_resource_acquisition_user_bound_invalid.gst
   compiler/phase20_resource_acquisition_user_discarded_invalid.gst
   compiler/phase20_resource_acquisition_directory_discarded_invalid.gst
+  compiler/phase20_resource_acquisition_conditional_close_invalid.gst
+  compiler/phase20_resource_acquisition_loop_close_invalid.gst
+  compiler/phase20_resource_acquisition_match_close_invalid.gst
+  compiler/phase20_resource_acquisition_callee_drop_invalid.gst
 )
 expected=(
   ResourceAcquisitionLeak
@@ -17,6 +22,10 @@ expected=(
   ResourceAcquisitionLeak
   ResourceAcquisitionDiscarded
   ResourceAcquisitionDiscarded
+  ResourceAcquisitionLeak
+  ResourceAcquisitionLeak
+  ResourceAcquisitionLeak
+  ResourceAcquisitionLeak
 )
 
 python3 scripts/phase20_resource_acquisition.py validate
@@ -52,6 +61,7 @@ run_mir_to_c_positive() {
 
 run_mir_to_c_positive "$user_positive" user 168
 run_mir_to_c_positive "$directory_positive" directory 0
+run_mir_to_c_positive "$path_transfer_positive" path_transfer 42
 
 index=0
 for negative in "${negatives[@]}"; do

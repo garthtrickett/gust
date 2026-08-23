@@ -25,6 +25,10 @@ NEGATIVES = [
     "compiler/phase20_resource_acquisition_user_bound_invalid.gst",
     "compiler/phase20_resource_acquisition_user_discarded_invalid.gst",
     "compiler/phase20_resource_acquisition_directory_discarded_invalid.gst",
+    "compiler/phase20_resource_acquisition_conditional_close_invalid.gst",
+    "compiler/phase20_resource_acquisition_loop_close_invalid.gst",
+    "compiler/phase20_resource_acquisition_match_close_invalid.gst",
+    "compiler/phase20_resource_acquisition_callee_drop_invalid.gst",
 ]
 DIAGNOSTICS = ["ResourceAcquisitionLeak", "ResourceAcquisitionDiscarded"]
 
@@ -43,9 +47,9 @@ def validate() -> dict:
     authority = registry.get("phase20_resource_acquisition_obligations")
     require(isinstance(authority, dict), "Patch 20.9 authority is missing")
     require(authority.get("authority_version") ==
-            "phase20_resource_acquisition_obligations_v1",
+            "phase20_resource_acquisition_obligations_v2",
             "Patch 20.9 authority version drifted")
-    require(authority.get("status") == "patch20_9_complete" and
+    require(authority.get("status") == "patch20_9a_complete" and
             authority.get("next_patch") == "20.10",
             "Patch 20.9 status or successor drifted")
     require(authority.get("issue") == "CR-5/#106",
@@ -58,7 +62,7 @@ def validate() -> dict:
             "Patch 20.9 enforcement is not enabled")
 
     for key in ("user_positive_fixture", "directory_positive_fixture",
-                "module_fixture"):
+                "path_transfer_positive_fixture", "module_fixture"):
         require((ROOT / authority[key]).is_file(),
                 f"Patch 20.9 fixture is missing: {authority[key]}")
     for path in NEGATIVES:
@@ -71,6 +75,7 @@ def validate() -> dict:
         "resource_acquisition_obligations: std.HashMap",
         "resource_value_identities: std.HashMap",
         "func env_register_resource_acquisition(",
+        "func env_register_resource_parameter_obligation(",
         "func env_resource_identity_for_expression(",
         "func env_bind_resource_expression(",
         "func env_transfer_resource_return_expression(",
@@ -78,6 +83,9 @@ def validate() -> dict:
         "func env_consume_resource_destructor_call(",
         "func env_report_discarded_resource_acquisition(",
         "func env_report_pending_resource_acquisitions(",
+        "func typechecker_join_resource_acquisition_obligation_maps(",
+        "func typechecker_join_resource_value_identity_maps(",
+        "func typechecker_resource_success_condition_identity(",
         "fallible guard's else branch is the acquisition-failure path",
         "[ResourceAcquisitionLeak]",
         "[ResourceAcquisitionDiscarded]",
@@ -105,6 +113,14 @@ def validate() -> dict:
     require("guard directory := os.OpenDir" in directory_positive and
             "os.CloseDir(directory);" in directory_positive,
             "conditional directory transfer positive drifted")
+    path_transfer_positive = (ROOT / authority["path_transfer_positive_fixture"]).read_text(
+        encoding="utf-8")
+    require("func pass_through(handle: resource.Handle) resource.Handle" in
+            path_transfer_positive and
+            path_transfer_positive.count("resource.consume(branch_handle);") == 2 and
+            path_transfer_positive.count("resource.consume(match_handle);") == 2 and
+            "pass_through(resource.acquire())" in path_transfer_positive,
+            "path join or callee transfer positive drifted")
 
     opening = registry.get("opening_snapshots", {}).get("phase20", {})
     require(opening.get("status") == "ready_for_patch20_10" and
@@ -122,6 +138,9 @@ def validate() -> dict:
     require("- [x] Patch 20.9 — Acquisition-Site Resource Obligations (#106) — DONE" in
             TASK.read_text(encoding="utf-8"),
             "TASK.md does not mark Patch 20.9 DONE")
+    require("- [x] Patch 20.9a — Obligation Path Join and Callee Ownership Correction — DONE" in
+            TASK.read_text(encoding="utf-8"),
+            "TASK.md does not mark Patch 20.9a DONE")
     levels = json.loads(LEVELS.read_text(encoding="utf-8"))["guards"]
     require(levels.get(GUARD_L1) == 1 and levels.get(GUARD_L2) == 2,
             "Patch 20.9 guard levels drifted")
@@ -154,8 +173,17 @@ def render(authority: dict) -> str:
         "identity from its source location. Binding, assignment, aliases,",
         "aggregate storage, payload extraction, guards, owned arguments, and",
         "returns transport that identity instead of creating binding-local",
-        "copies. A fallible guard's else branch carries no successful",
-        "acquisition; its success payload inherits the pending identity.",
+        "copies. A fallible guard or direct success-flag failure path carries",
+        "no successful acquisition; its success payload inherits the pending",
+        "identity.",
+        "Ordinary branch and loop exits conservatively join pending and",
+        "terminal states, so consumption on one reachable path cannot",
+        "discharge another path.",
+        "",
+        "An owned resource argument transfers the caller identity and creates",
+        "a pending obligation for the callee parameter. The validated",
+        "destructor is the terminal operation and does not recursively acquire",
+        "another obligation.",
         "",
         "Both #106 directory shapes and a user-declared bound leak now reject",
         "with `ResourceAcquisitionLeak`. Ignored directory and user-resource",

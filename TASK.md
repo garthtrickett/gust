@@ -48,6 +48,13 @@ using the established lettered-patch convention and leaving every untouched
 20.4–20.17 identity unchanged; the existing Phase 20 activation and completion
 loop continue through closure.
 
+Later on 2026-08-23, two P1 review threads filed after Patch 20.9 had already
+merged demonstrated that conditional obligation state was not joined and that
+by-value transfer did not establish the callee's obligation. The operator
+directed Cranelift to verify and correct both findings before Patch 20.10. This
+amendment inserts Patch 20.9a without widening it into the automatic cleanup
+work reserved for Patch 20.10.
+
 Activation is Cranelift-only. It does not authorize edits to `TASK_STDLIB.md`,
 does not activate another lane, and does not authorize Phase 21.
 
@@ -64,6 +71,7 @@ does not activate another lane, and does not authorize Phase 21.
 - [x] Patch 20.7 — Resource Declaration Migration Under the No-op — DONE
 - [x] Patch 20.8 — Resource Declaration and Construction Enforcement — DONE
 - [x] Patch 20.9 — Acquisition-Site Resource Obligations (#106) — DONE
+- [x] Patch 20.9a — Obligation Path Join and Callee Ownership Correction — DONE
 - [ ] Patch 20.10 — Generic Scope and Destructor Enforcement (CR-5)
 - [ ] Patch 20.11 — Bootstrap Seed Regeneration and Fixed-Point Convergence
 - [ ] Patch 20.12 — Whole-Program Corpus and Observable Contract
@@ -645,6 +653,33 @@ binding.
 Both bound and unbound leaking acquisitions fail through one generic obligation
 path, while valid transfers do not acquire duplicate obligations.
 
+## Patch 20.9a — Obligation Path Join and Callee Ownership Correction
+
+**Purpose**
+
+Correct the two post-merge Patch 20.9 ownership gaps before automatic cleanup
+is introduced.
+
+**Steps**
+
+- Join acquisition-obligation terminal state across `if`, `match`, and
+  zero-iteration loop paths so one consuming branch cannot discharge another
+  reachable path.
+- Establish a pending callee obligation for every owned resource parameter,
+  while treating the validated destructor itself as the terminal operation.
+- Preserve valid all-path consumption, by-value pass-through, return transfer,
+  diagnostic deduplication, and backend-neutral rejection.
+- Do not insert destructor calls or change cleanup order; those remain Patch
+  20.10.
+
+**Test Level:** Levels 1 and 2 plus `make gust`.
+
+**Exit Gate**
+
+A one-branch or loop-only close and an empty by-value callee reject through the
+generic acquisition-obligation path, while all-path close and callee return or
+consumption remain accepted.
+
 ## Patch 20.10 — Generic Scope and Destructor Enforcement (CR-5)
 
 **Purpose**
@@ -861,6 +896,7 @@ running Level 3 suite does not satisfy this gate.
 → 20.7 full no-op migration
 → 20.8 declaration/visibility enforcement
 → 20.9 acquisition identity
+→ 20.9a path join and callee ownership correction
 → 20.10 generic cleanup
 → 20.11 seed convergence
 → 20.12 observable corpus

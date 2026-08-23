@@ -883,28 +883,34 @@
     "enforcement_enabled": true
   },
   "phase20_resource_acquisition_obligations": {
-    "authority_version": "phase20_resource_acquisition_obligations_v1",
-    "status": "patch20_9_complete",
+    "authority_version": "phase20_resource_acquisition_obligations_v2",
+    "status": "patch20_9a_complete",
     "next_patch": "20.10",
     "issue": "CR-5/#106",
     "review_view": "compiler/CRANELIFT_PHASE20_RESOURCE_ACQUISITION_OBLIGATIONS.md",
     "user_positive_fixture": "compiler/phase20_resource_acquisition_source.gst",
     "directory_positive_fixture": "compiler/phase20_resource_acquisition_directory_source.gst",
+    "path_transfer_positive_fixture": "compiler/phase20_resource_acquisition_path_transfer_source.gst",
     "module_fixture": "compiler/phase20_resource_enforcement_module.gst",
     "negative_fixtures": [
       "compiler/future/p20_issue106_bound_directory_current.gst",
       "compiler/future/p20_issue106_unbound_directory_current.gst",
       "compiler/phase20_resource_acquisition_user_bound_invalid.gst",
       "compiler/phase20_resource_acquisition_user_discarded_invalid.gst",
-      "compiler/phase20_resource_acquisition_directory_discarded_invalid.gst"
+      "compiler/phase20_resource_acquisition_directory_discarded_invalid.gst",
+      "compiler/phase20_resource_acquisition_conditional_close_invalid.gst",
+      "compiler/phase20_resource_acquisition_loop_close_invalid.gst",
+      "compiler/phase20_resource_acquisition_match_close_invalid.gst",
+      "compiler/phase20_resource_acquisition_callee_drop_invalid.gst"
     ],
     "diagnostics": [
       "ResourceAcquisitionLeak",
       "ResourceAcquisitionDiscarded"
     ],
     "identity_policy": "a_tracking_eligible_call_expression_gets_one_stable_source_span_identity_independent_of_later_binding",
-    "transfer_policy": "binding_assignment_return_aggregate_payload_guard_alias_and_owned_argument_transport_the_same_identity_without_duplicate_obligations",
-    "conditional_policy": "a_fallible_guard_failure_branch_has_no_successful_acquisition_obligation_and_the_success_payload_inherits_the_pending_identity",
+    "transfer_policy": "binding_assignment_return_aggregate_payload_guard_alias_and_owned_argument_transport_the_same_identity_without_duplicate_obligations_and_an_owned_resource_parameter_establishes_the_callee_obligation",
+    "conditional_policy": "a_fallible_guard_or_direct_success_flag_failure_path_has_no_successful_acquisition_obligation_and_the_success_payload_inherits_the_pending_identity_while_if_match_and_loop_paths_join_pending_and_terminal_state_conservatively",
+    "callee_policy": "a_by_value_resource_parameter_is_pending_in_the_callee_until_consumed_or_returned_except_inside_its_validated_destructor_which_is_the_terminal_operation",
     "temporary_policy": "an_ignored_tracking_eligible_call_must_transfer_or_consume_its_identity_by_full_expression_end",
     "directory_policy": "directory_and_source_declared_resources_use_the_same_acquisition_obligation_map_while_unidentified_legacy_directory_values_retain_compatibility_checks",
     "backend_policy": "accepted_mir_to_c_observables_and_all_shared_frontend_rejections_are_backend_neutral_without_fallback",

@@ -16588,11 +16588,16 @@ guard-cranelift-phase20-resource-acquisition-contract:
     python3 scripts/phase20_resource_acquisition.py check-review
     just guard-compile-pass compiler/phase20_resource_acquisition_source.gst phase20_resource_acquisition_user_positive
     just guard-compile-pass compiler/phase20_resource_acquisition_directory_source.gst phase20_resource_acquisition_directory_positive
+    just guard-compile-pass compiler/phase20_resource_acquisition_path_transfer_source.gst phase20_resource_acquisition_path_transfer_positive
     just guard-compile-fail compiler/future/p20_issue106_bound_directory_current.gst ResourceAcquisitionLeak phase20_resource_acquisition_bound_directory
     just guard-compile-fail compiler/future/p20_issue106_unbound_directory_current.gst ResourceAcquisitionLeak phase20_resource_acquisition_unbound_directory
     just guard-compile-fail compiler/phase20_resource_acquisition_user_bound_invalid.gst ResourceAcquisitionLeak phase20_resource_acquisition_user_bound
     just guard-compile-fail compiler/phase20_resource_acquisition_user_discarded_invalid.gst ResourceAcquisitionDiscarded phase20_resource_acquisition_user_discarded
     just guard-compile-fail compiler/phase20_resource_acquisition_directory_discarded_invalid.gst ResourceAcquisitionDiscarded phase20_resource_acquisition_directory_discarded
+    just guard-compile-fail compiler/phase20_resource_acquisition_conditional_close_invalid.gst ResourceAcquisitionLeak phase20_resource_acquisition_conditional_close
+    just guard-compile-fail compiler/phase20_resource_acquisition_loop_close_invalid.gst ResourceAcquisitionLeak phase20_resource_acquisition_loop_close
+    just guard-compile-fail compiler/phase20_resource_acquisition_match_close_invalid.gst ResourceAcquisitionLeak phase20_resource_acquisition_match_close
+    just guard-compile-fail compiler/phase20_resource_acquisition_callee_drop_invalid.gst ResourceAcquisitionLeak phase20_resource_acquisition_callee_drop
 
 guard-cranelift-phase20-resource-acquisition-parity:
     #!/usr/bin/env bash
