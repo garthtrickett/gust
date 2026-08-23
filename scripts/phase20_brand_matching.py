@@ -78,8 +78,10 @@ def validate() -> dict:
             probes[0].get("fix_enabled") is True and
             probes[1].get("id") == "cr12_wrong_brand_clone_destination" and
             probes[1].get("fix_enabled") is True and
-            all(probe.get("fix_enabled") is False for probe in probes[2:]),
-            "Patch 20.3 must enable exactly the CR-11 and CR-12 opening fixes")
+            probes[2].get("id") == "cr13_freed_receiver_reuse" and
+            probes[2].get("fix_enabled") is True and
+            all(probe.get("fix_enabled") is False for probe in probes[3:]),
+            "Patch 20.5 must enable exactly the CR-11, CR-12, and CR-13 opening fixes")
 
     source = TYPECHECKER.read_text(encoding="utf-8")
     for operation in OPERATIONS:

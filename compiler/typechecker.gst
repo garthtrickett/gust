@@ -761,7 +761,9 @@ type TypeEnvironment[ctx] struct {
     brand_identities: std.HashMap[str, BrandIdentity[ctx], ctx],
     arena_lifecycle_states: std.HashMap[str, ArenaLifecycleState[ctx], ctx],
     arena_lifecycle_bindings: std.HashMap[str, str, ctx],
+    arena_lifecycle_deferred_frees: std.HashMap[str, int, ctx],
     current_function_identity_scope: str,
+    in_defer_expression: int,
     brand_match_shadow_checks: int,
     brand_match_shadow_agreements: int,
     brand_match_shadow_disagreements: int,
@@ -2778,7 +2780,9 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     arena_write_cell_key_prov = std.Concat(arena_write_cell_key_prov, arena_write_index_key_prov);
                     arena_write_cell_key_prov = std.Concat(arena_write_cell_key_prov, "]");
                     env_record_container_provenance(env, arena_write_cell_key_prov, value_prov_arena_write_nlaunder, ctx);
-                    env_arena_lifecycle_observe_expression(env, left_expr_idx, "write", ctx);
+                    env_arena_lifecycle_apply_expression(
+                        env, left_expr_idx, "write", expr.Call.span, ctx
+                    );
 
                     mut t_void_arena_write: ast.Type[ctx];
                     t_void_arena_write.tag = 3; // Void
@@ -2787,7 +2791,9 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
 
                 if left_type.tag == 4 { // Arena
                     if std.str_eq(right_name, "Free") {
-                        env_arena_lifecycle_observe_expression(env, left_expr_idx, "free", ctx);
+                        env_arena_lifecycle_apply_expression(
+                            env, left_expr_idx, "free", expr.Call.span, ctx
+                        );
                         mut t_void: ast.Type[ctx];
                         t_void.tag = 3; // Void
                         return t_void;
@@ -3607,7 +3613,9 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                 ctx.Set(arg0_idx, args_vec_arena_alloc_call[0]);
                 mut arg_type := check_expression(arg0_idx, env, scope, ctx);
-                env_arena_lifecycle_observe_expression(env, arg0_idx, "allocation", ctx);
+                env_arena_lifecycle_apply_expression(
+                    env, arg0_idx, "allocation", expr.Call.span, ctx
+                );
                 mut brand_name := get_root_variable(arg0_idx, ctx);
                 return make_type_index("Any", brand_name, ctx);
             }
@@ -3805,7 +3813,9 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         mut dest_expr_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                         ctx.Set(dest_expr_idx, args_vec_clone_call[0]);
                         check_expression(dest_expr_idx, env, scope, ctx);
-                        env_arena_lifecycle_observe_expression(env, dest_expr_idx, "clone_destination", ctx);
+                        env_arena_lifecycle_apply_expression(
+                            env, dest_expr_idx, "clone_destination", expr.Call.span, ctx
+                        );
 
                         mut val_expr_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                         ctx.Set(val_expr_idx, args_vec_clone_call[1]);
@@ -7136,7 +7146,9 @@ func env_new(ctx: &Arena) TypeEnvironment[ctx] {
         env_ref_new.brand_identities = std.HashMapNew(ctx);
         env_ref_new.arena_lifecycle_states = std.HashMapNew(ctx);
         env_ref_new.arena_lifecycle_bindings = std.HashMapNew(ctx);
+        env_ref_new.arena_lifecycle_deferred_frees = std.HashMapNew(ctx);
         env_ref_new.current_function_identity_scope = "module";
+        env_ref_new.in_defer_expression = 0;
         env_ref_new.brand_match_shadow_checks = 0;
         env_ref_new.brand_match_shadow_agreements = 0;
         env_ref_new.brand_match_shadow_disagreements = 0;
@@ -9326,8 +9338,8 @@ func env_arena_lifecycle_observe_identity(env: *TypeEnvironment[ctx], identity: 
             } else if std.str_eq(operation, "free") == 1 {
                 state.free_observations = state.free_observations + 1;
             }
-            // Patch 20.4 observes Free but deliberately leaves the state live.
-            // Patch 20.5 owns the first transition to freed and all rejection.
+            // The Patch 20.4 primitive remains an inert observation helper.
+            // Patch 20.5 enforcement is isolated in apply_expression below.
             (*env).arena_lifecycle_states.Insert(std.Clone(ctx, identity), state);
         }
     }
@@ -9336,6 +9348,69 @@ func env_arena_lifecycle_observe_identity(env: *TypeEnvironment[ctx], identity: 
 func env_arena_lifecycle_observe_expression(env: *TypeEnvironment[ctx], expr_idx: Index[ast.Expression[ctx], ctx], operation: str, ctx: &Arena) {
     mut identity := env_arena_lifecycle_resolve_expression_identity(expr_idx, env, ctx);
     env_arena_lifecycle_observe_identity(env, identity, operation, ctx);
+}
+
+func arena_lifecycle_operation_description(operation: str, ctx: &Arena) str {
+    if std.str_eq(operation, "allocation") == 1 {
+        return std.Clone(ctx, "allocation");
+    }
+    if std.str_eq(operation, "clone_destination") == 1 {
+        return std.Clone(ctx, "Clone destination use");
+    }
+    if std.str_eq(operation, "write") == 1 {
+        return std.Clone(ctx, "write");
+    }
+    return std.Clone(ctx, "repeated Free");
+}
+
+func env_arena_lifecycle_apply_expression(env: *TypeEnvironment[ctx], expr_idx: Index[ast.Expression[ctx], ctx], operation: str, span: token.Span, ctx: &Arena) int {
+    unsafe {
+        mut identity := env_arena_lifecycle_resolve_expression_identity(expr_idx, env, ctx);
+        if std.str_eq(identity, "") == 1 {
+            return 1;
+        }
+        env_arena_lifecycle_ensure(env, identity, ctx);
+        mut lookup := (*env).arena_lifecycle_states.Get(identity);
+        if lookup.Ok {
+            mut state := lookup.Val;
+            if state.state == arena_lifecycle_state_freed() {
+                mut message := "Semantic Error: [ArenaUseAfterFree] Arena identity '";
+                message = std.Concat(message, identity);
+                message = std.Concat(message, "' is already freed; rejected ");
+                message = std.Concat(message, arena_lifecycle_operation_description(operation, ctx));
+                report_error(2, message, span, env, ctx);
+                return 0;
+            }
+
+            if std.str_eq(operation, "free") == 1 {
+                mut pending_deferred_free := (*env).arena_lifecycle_deferred_frees.Get(identity);
+                if pending_deferred_free.Ok {
+                    mut message_deferred_repeat := "Semantic Error: [ArenaUseAfterFree] Arena identity '";
+                    message_deferred_repeat = std.Concat(message_deferred_repeat, identity);
+                    message_deferred_repeat = std.Concat(message_deferred_repeat, "' already has a deferred Free; rejected repeated Free");
+                    report_error(2, message_deferred_repeat, span, env, ctx);
+                    return 0;
+                }
+            }
+
+            if std.str_eq(operation, "allocation") == 1 {
+                state.allocation_observations = state.allocation_observations + 1;
+            } else if std.str_eq(operation, "clone_destination") == 1 {
+                state.clone_destination_observations = state.clone_destination_observations + 1;
+            } else if std.str_eq(operation, "write") == 1 {
+                state.write_observations = state.write_observations + 1;
+            } else if std.str_eq(operation, "free") == 1 {
+                state.free_observations = state.free_observations + 1;
+                if (*env).in_defer_expression == 0 {
+                    state.state = arena_lifecycle_state_freed();
+                } else {
+                    (*env).arena_lifecycle_deferred_frees.Insert(std.Clone(ctx, identity), 1);
+                }
+            }
+            (*env).arena_lifecycle_states.Insert(std.Clone(ctx, identity), state);
+        }
+        return 1;
+    }
 }
 
 func env_arena_lifecycle_get_state(env: *TypeEnvironment[ctx], identity: str, ctx: &Arena) ArenaLifecycleState[ctx] {
@@ -10999,6 +11074,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             mut parent_open_linear_resources_function_decl := typechecker_clone_linear_resource_map((*env).open_linear_resources, ctx);
             mut parent_origins := typechecker_clone_origins((*env).variable_origins, ctx);
             mut parent_arena_lifecycle_bindings := typechecker_clone_string_map((*env).arena_lifecycle_bindings, ctx);
+            mut parent_arena_lifecycle_deferred_frees := typechecker_clone_int_map((*env).arena_lifecycle_deferred_frees, ctx);
             mut parent_function_identity_scope := std.Clone(ctx, (*env).current_function_identity_scope);
 
             // Clear states
@@ -11008,6 +11084,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             (*env).open_linear_resources = std.HashMapNew(ctx);
             (*env).variable_origins = std.HashMapNew(ctx);
             (*env).arena_lifecycle_bindings = std.HashMapNew(ctx);
+            (*env).arena_lifecycle_deferred_frees = std.HashMapNew(ctx);
             (*env).current_function_identity_scope = std.Clone(ctx, function_name_return_prov);
 
             mut child_scope := scope_new(scope, ctx);
@@ -11155,6 +11232,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             (*env).open_linear_resources = parent_open_linear_resources_function_decl;
             (*env).variable_origins = parent_origins;
             (*env).arena_lifecycle_bindings = parent_arena_lifecycle_bindings;
+            (*env).arena_lifecycle_deferred_frees = parent_arena_lifecycle_deferred_frees;
             (*env).current_function_identity_scope = parent_function_identity_scope;
             (*env).expected_return_type = old_expected;
             (*env).current_function_return_origins = old_return_origins;
@@ -12192,7 +12270,10 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             }
 
             mut expr_idx := stmt.Defer.expr;
+            mut old_in_defer_expression := (*env).in_defer_expression;
+            (*env).in_defer_expression = 1;
             check_expression(expr_idx, env, scope, ctx);
+            (*env).in_defer_expression = old_in_defer_expression;
 
             return res;
         }
