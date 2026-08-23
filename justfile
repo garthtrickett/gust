@@ -16540,6 +16540,42 @@ guard-cranelift-phase20-resource-declaration-migration-contract:
     just guard-cranelift-phase15-resource-metadata-contract
     just guard-cranelift-phase15-specialized-resource-contract
 
+guard-cranelift-phase20-resource-enforcement-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 20 resource declaration enforcement..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase20-resource-enforcement-contract | grep -F $'guard-cranelift-phase20-resource-enforcement-contract\t1\t' >/dev/null
+    just guard-cranelift-phase20-resource-declaration-migration-contract
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase20_resource_enforcement.py validate
+    python3 scripts/phase20_resource_enforcement.py check-review
+    just guard-compile-pass compiler/phase20_resource_enforcement_source.gst phase20_resource_enforcement_positive
+    just guard-compile-fail compiler/phase20_resource_external_construction_invalid.gst OpaqueConstruction phase20_resource_external_construction
+    just guard-compile-fail compiler/phase20_resource_empty_forge_invalid.gst OpaqueConstruction phase20_resource_empty_forge
+    just guard-compile-fail compiler/phase20_resource_external_field_invalid.gst OpaqueRepresentationAccess phase20_resource_external_field
+    just guard-compile-fail compiler/phase20_directory_external_construction_invalid.gst OpaqueConstruction phase20_directory_external_construction
+    just guard-compile-fail compiler/phase20_directory_external_field_invalid.gst OpaqueRepresentationAccess phase20_directory_external_field
+    just guard-compile-fail compiler/phase20_resource_private_call_invalid.gst PrivateDeclarationAccess phase20_resource_private_call
+    just guard-compile-fail compiler/phase20_resource_private_reference_invalid.gst PrivateDeclarationAccess phase20_resource_private_reference
+    just guard-compile-fail compiler/phase20_resource_destructor_missing_invalid.gst ResourceDestructorMissing phase20_resource_destructor_missing
+    just guard-compile-fail compiler/phase20_resource_destructor_borrowed_invalid.gst ResourceDestructorSignature phase20_resource_destructor_borrowed
+    just guard-compile-fail compiler/phase20_resource_destructor_wrong_type_invalid.gst ResourceDestructorSignature phase20_resource_destructor_wrong_type
+    just guard-compile-fail compiler/phase20_resource_destructor_arity_invalid.gst ResourceDestructorSignature phase20_resource_destructor_arity
+    just guard-compile-fail compiler/phase20_resource_destructor_result_invalid.gst ResourceDestructorSignature phase20_resource_destructor_result
+    just guard-compile-fail compiler/phase20_resource_destructor_unsafe_invalid.gst ResourceDestructorStatus phase20_resource_destructor_unsafe
+    just guard-compile-fail compiler/phase20_resource_destructor_extern_invalid.gst ResourceDestructorStatus phase20_resource_destructor_extern
+    just guard-compile-fail compiler/phase20_resource_destructor_owner_invalid.gst ResourceDestructorModuleMismatch phase20_resource_destructor_owner
+
+guard-cranelift-phase20-resource-enforcement-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "⚖️ Checking Phase 20 resource declaration enforcement parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase20-resource-enforcement-parity | grep -F $'guard-cranelift-phase20-resource-enforcement-parity\t2\t' >/dev/null
+    just guard-cranelift-phase20-resource-enforcement-contract
+    scripts/phase20_resource_enforcement.sh
+
 guard-cranelift-phase18-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail

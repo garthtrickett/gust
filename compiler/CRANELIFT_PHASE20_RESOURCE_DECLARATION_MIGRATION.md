@@ -30,9 +30,12 @@ The synthesized `os_Dir_ctx` resource records inert destructor
 linear/destructor metadata. Its source compatibility, explicit close
 behavior, cleanup scheduling, and diagnostics are unchanged.
 
-The exact directory vocabulary cohort contains 18 compiler files. The
+The exact directory vocabulary cohort contains 20 compiler files. The
 inventory guard derives both cohorts from live compiler sources and
 rejects any unclassified declaration or directory use site.
 
 Patch 20.8 alone owns enforcement of declaration, construction,
 representation-access, and private-call rules.
+Its positive module and intentional invalid declaration fixtures are
+classified separately by the Patch 20.8 authority while remaining in
+this exact compiler-owned `#[linear]` inventory.
