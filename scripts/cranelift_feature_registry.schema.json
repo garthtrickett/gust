@@ -164,7 +164,7 @@
         "properties": {
           "authority_version": {"const": "phase20_canonical_brand_matching_v3"},
           "status": {"const": "patch20_3_exact_boundaries_enabled"},
-          "next_patch": {"const": "20.4"},
+          "next_patch": {"const": "20.3a"},
           "review_view": {"const": "compiler/CRANELIFT_PHASE20_BRAND_MATCHING.md"},
           "identity_authority": {"const": "phase19_brand_identity_authority_v1"},
           "operations": {
@@ -226,7 +226,7 @@
         "properties": {
           "authority_version": {"const": "phase20_exact_brand_boundary_v1"},
           "status": {"const": "patch20_3_complete"},
-          "next_patch": {"const": "20.4"},
+          "next_patch": {"const": "20.3a"},
           "issue": {"const": "CR-12/#159"},
           "review_view": {"const": "compiler/CRANELIFT_PHASE20_EXACT_BRAND_BOUNDARY.md"},
           "semantic_fixture": {"const": "compiler/typechecker_phase20_exact_brand_boundary_test_entry.gst"},

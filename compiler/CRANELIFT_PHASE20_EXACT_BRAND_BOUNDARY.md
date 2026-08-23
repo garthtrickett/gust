@@ -5,7 +5,7 @@ Generated from `scripts/cranelift_feature_registry.json` by
 
 - Authority version: `phase20_exact_brand_boundary_v1`
 - Status: `patch20_3_complete`
-- Next patch: `20.4`
+- Next patch: `20.3a`
 - Issue: `CR-12/#159`
 
 ## Semantic correction

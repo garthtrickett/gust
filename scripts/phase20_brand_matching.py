@@ -50,7 +50,7 @@ def validate() -> dict:
             "Phase 20 brand-matching authority version drifted")
     require(authority.get("status") == "patch20_3_exact_boundaries_enabled",
             "Phase 20 brand-matching status drifted")
-    require(authority.get("next_patch") == "20.4",
+    require(authority.get("next_patch") == "20.3a",
             "Phase 20 brand-matching successor drifted")
     require(authority.get("identity_authority") == "phase19_brand_identity_authority_v1",
             "Phase 20 brand matching lost its Phase 19 identity authority")

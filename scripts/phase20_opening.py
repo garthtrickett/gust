@@ -80,9 +80,9 @@ def validate() -> tuple[dict, list[dict], list[tuple[str, str]], list[tuple[str,
     require(snap.get("opening_version") ==
             "phase20_opening_evidence_and_qualification_authority_v1",
             "Phase 20 opening version drifted")
-    require(snap.get("status") == "ready_for_patch20_4",
+    require(snap.get("status") == "ready_for_patch20_3a",
             "Phase 20 opening status drifted")
-    require(snap.get("next_patch") == "20.4", "Phase 20 successor drifted")
+    require(snap.get("next_patch") == "20.3a", "Phase 20 successor drifted")
     require(snap.get("roadmap_merge_sha") ==
             "1cfab1344b24ffefc72b4d752ead3eb17c6719c6",
             "Phase 20 roadmap merge drifted")

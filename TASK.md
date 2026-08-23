@@ -11,11 +11,12 @@ Phase 20.
 Phase 20 closes the known compiler-owned semantic blockers that prevent a
 representative whole program from entering the differential cohort, then
 qualifies that cohort through MIR-to-C and Cranelift. The prerequisites are
-bounded to CR-11/#158, CR-12/#159, CR-13/#160, and the generic
+bounded to CR-11/#158, CR-12/#159, CR-13/#160, the checked contextual generic
+constructor-result gap blocking Stdlib S1.4, and the generic
 resource/destructor/scope/construction requirements represented by CR-5 and
 #106. They come before qualification because a corpus that cannot express safe
-library resources, or whose meaning changes with a brand annotation, is not
-representative evidence.
+library resources, whose constructor changes type at a contextual boundary, or
+whose meaning changes with a brand annotation is not representative evidence.
 
 The phase does not adopt a general lifetime algebra, arbitrary brand
 relationships, async destructors, fallible implicit cleanup, a complete
@@ -38,6 +39,15 @@ Completion Loop in `AGENTS.md` authorizes autonomous work through Patch 20.17,
 subject to the patch boundaries, validation requirements, shared-zone rules,
 and stop conditions below.
 
+On 2026-08-23, after Patch 20.3 merged as
+`3aa27d4fd6618293ecd3942f251f0e8b576e5280`, a checked Stdlib S1.4 seven-point
+report established a new compiler-owned contextual generic constructor-result
+gap. The operator directed Cranelift to triage it at this clean patch boundary
+without folding it into Patch 20.3. This amendment inserts it as Patch 20.3a,
+using the established lettered-patch convention and leaving every untouched
+20.4–20.17 identity unchanged; the existing Phase 20 activation and completion
+loop continue through closure.
+
 Activation is Cranelift-only. It does not authorize edits to `TASK_STDLIB.md`,
 does not activate another lane, and does not authorize Phase 21.
 
@@ -47,6 +57,7 @@ does not activate another lane, and does not authorize Phase 21.
 - [x] Patch 20.1 — Canonical Brand-Matching Primitives — DONE
 - [x] Patch 20.2 — Nested Brand Annotation Correction (CR-11/#158) — DONE
 - [x] Patch 20.3 — Exact Branded Assignment and Annotation (CR-12/#159) — DONE
+- [ ] Patch 20.3a — Contextual Generic Constructor Result Authority
 - [ ] Patch 20.4 — Arena Lifecycle State Authority
 - [ ] Patch 20.5 — Arena.Free Receiver Invalidation (CR-13/#160)
 - [ ] Patch 20.6 — Inert Resource Declaration and Visibility Surface
@@ -64,7 +75,8 @@ does not activate another lane, and does not authorize Phase 21.
 
 Status rows are machine-parsed in the same form the Phase 15–19 close guards
 parse `TASK.md`. Keep each row as `- [ ] Patch 20.N — <Title>` or
-`- [x] Patch 20.N — <Title> — DONE`, with no trailing annotation.
+`- [x] Patch 20.N — <Title> — DONE`, with no trailing annotation. An inserted
+amendment may append one lowercase letter to `N`, as Patch 20.3a does here.
 
 ## Immutable Phase 19 Completion Record
 
@@ -180,13 +192,16 @@ The Phase 16 closure guard consumes this historical record transitively. These r
 
 Phase 20 turns backend parity from a collection of feature witnesses into a
 qualification claim about representative Gust software. It first removes the
-five known compiler-owned reasons that the required corpus cannot yet be
+six known compiler-owned reasons that the required corpus cannot yet be
 expressed faithfully:
 
 - CR-11/#158: explicit Graph annotations use spelling-derived nesting checks,
   reject valid nested brands, and lose the intended type after the diagnostic;
 - CR-12/#159: assignment and annotation matching erase exact brand identity, so
   a destination branded for one arena can accept a value from another;
+- the Stdlib S1.4 constructor-result gap: a contextual generic constructor can
+  typecheck as its declared result while MIR-to-C reconstructs an `_Any`
+  aggregate from the constructor spelling;
 - CR-13/#160: `Arena.Free` returns `Void` but does not invalidate the live arena
   identity, so later allocation into the freed receiver type-checks;
 - CR-5: user-defined linear resources lack source-declared destructor identity,
@@ -210,6 +225,9 @@ Focused compiler-backed probes on 2026-08-22 established:
 - the CR-11 fixture exits 1 with three `Brand Nesting Restriction` diagnostics
   followed by the secondary `Declared Void` annotation mismatch;
 - the CR-12 wrong-brand Clone destination exits 0;
+- paired inferred and explicit Stdlib S1.4 witnesses typecheck and emit
+  byte-identical MIR-to-C, but host C rejects `std_Channel_Any` returned from a
+  helper whose canonical signature is `std_Channel_int`;
 - the CR-13 allocation through a freed arena receiver exits 0;
 - an ignored `os.OpenDir(...)` acquisition exits 0; and
 - the same directory value assigned to a local exits 1 with the existing
@@ -237,6 +255,15 @@ Brand equality and legal nesting compare resolved `BrandIdentity` values.
 Canonical printed type names remain diagnostics/code-generation material, not
 semantic keys. A failed match preserves both resolved operand types so later
 diagnostics cannot convert the expression to an unrelated `Void` mismatch.
+
+### Contextual generic constructors
+
+A generic constructor expression uses an already-resolved, structurally
+compatible contextual result type at annotation, assignment, argument, and
+return boundaries. That resolved semantic type is the single authority for
+MIR-to-C and Cranelift lowering; a backend may not reconstruct a different
+`Any` specialization from the constructor spelling. Context does not permit a
+cross-template conversion, a brand cast, or a type-specific constructor rule.
 
 ### Arena liveness
 
@@ -293,6 +320,8 @@ Included:
 
 - exact brand nesting/matching and diagnostic type preservation for CR-11;
 - exact branded assignment/annotation/call boundaries for CR-12;
+- generic contextual constructor results across annotations, assignments,
+  arguments, and returns, including the checked S1.4 helper witness;
 - identity-keyed arena liveness and `Arena.Free` invalidation for CR-13;
 - the inert/migrate/enforce sequence for destructor declaration, type opacity,
   and private cleanup declarations;
@@ -439,6 +468,37 @@ not.
 
 The #159 program is rejected by the generic type boundary, same-brand programs
 remain accepted, and both backends receive identical canonical MIR.
+
+## Patch 20.3a — Contextual Generic Constructor Result Authority
+
+**Purpose**
+
+Make a generic constructor consume the already-resolved contextual result type
+instead of allowing code generation to reconstruct an unrelated `Any`
+specialization.
+
+**Steps**
+
+- Carry expected result context generically through annotation, assignment,
+  argument, and return expression checking without a Channel-specific branch.
+- Accept context only when normal template, payload, and brand compatibility
+  holds; do not introduce a cast or relax Patch 20.3 exact-brand boundaries.
+- Preserve the resolved constructor result for MIR-to-C lowering so emitted
+  expression type, function ABI, and registered aggregate layout agree.
+- Add inferred/explicit paired witnesses, including a helper return and at
+  least one non-Channel generic constructor control.
+- Keep the direct Cranelift source route as an explicit pre-driver deferral with
+  no C fallback, and compare supported canonical MIR through both backends.
+- Treat the compiler change as bootstrap-sensitive, but leave generated seed
+  publication to the isolated Patch 20.11 seed patch.
+
+**Test Level:** Levels 1 and 2 plus `make gust`.
+
+**Exit Gate**
+
+The checked S1.4 helper emits host-compilable MIR-to-C with one canonical
+constructor/result type, inferred and explicit forms agree, no individual
+stdlib type is special-cased, and backend policy remains explicit.
 
 ## Patch 20.4 — Arena Lifecycle State Authority
 
@@ -794,6 +854,7 @@ running Level 3 suite does not satisfy this gate.
 → 20.1 inert brand primitives
 → 20.2 CR-11
 → 20.3 CR-12
+→ 20.3a contextual generic constructor results
 → 20.4 inert arena lifecycle authority
 → 20.5 CR-13
 → 20.6 inert declaration surface
@@ -820,6 +881,8 @@ Phase 20 succeeds when:
 - explicit and inferred nested brand forms have identical meaning;
 - wrong-brand assignments, annotations, arguments, and returns are rejected by
   exact resolved identity rather than by callee-specific checks;
+- contextual generic constructors retain one resolved type through typechecking,
+  MIR-to-C, and supported Cranelift lowering without an `_Any` reconstruction;
 - `Arena.Free` invalidates its canonical receiver identity through all aliases;
 - user-defined linear resources declare a validated destructor and can keep
   construction, representation, and cleanup authority inside their module;
