@@ -97,8 +97,8 @@ def validate() -> dict:
             "CR-13 successor witness drifted")
 
     opening = registry.get("opening_snapshots", {}).get("phase20", {})
-    require(opening.get("status") == "ready_for_patch20_9" and
-            opening.get("next_patch") == "20.9",
+    require(opening.get("status") == "ready_for_patch20_10" and
+            opening.get("next_patch") == "20.10",
             "Phase 20 opening successor did not advance")
     probes = opening.get("baseline_probes", [])
     cr13 = next((probe for probe in probes

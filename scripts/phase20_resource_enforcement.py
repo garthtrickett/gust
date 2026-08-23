@@ -121,7 +121,8 @@ def validate() -> dict:
         encoding="utf-8")
     for evidence in (
         "resource.same_module_success()", "resource.acquire()",
-        "resource.read(&handle)", "return observed + local_result;",
+        "resource.read(&handle)", "resource.consume(handle)",
+        "return observed + local_result;",
     ):
         require(evidence in positive,
                 f"external safe API evidence missing: {evidence}")
@@ -136,9 +137,9 @@ def validate() -> dict:
                 f"Patch 20.6 transition evidence missing: {evidence}")
 
     opening = registry.get("opening_snapshots", {}).get("phase20", {})
-    require(opening.get("status") == "ready_for_patch20_9" and
-            opening.get("next_patch") == "20.9",
-            "Phase 20 opening successor did not advance to Patch 20.9")
+    require(opening.get("status") == "ready_for_patch20_10" and
+            opening.get("next_patch") == "20.10",
+            "Phase 20 opening successor did not advance to Patch 20.10")
     require("- [x] Patch 20.8 — Resource Declaration and Construction Enforcement — DONE" in
             TASK.read_text(encoding="utf-8"),
             "TASK.md does not mark Patch 20.8 DONE")
@@ -189,8 +190,9 @@ def render(authority: dict) -> str:
         "backend selection. The Patch 20.6 no-op witness is reclassified and now",
         "produces exactly the three construction, field, and private-call errors.",
         "",
-        "Patch 20.9 still owns acquisition-site obligations; Patch 20.10 still",
-        "owns generic scope-exit cleanup and destructor invocation.",
+        "Patch 20.9 attaches ownership at acquisition and preserves it through",
+        "transfer. Patch 20.10 still owns generic scope-exit cleanup and actual",
+        "destructor invocation.",
         "",
     ]
     return "\n".join(lines)

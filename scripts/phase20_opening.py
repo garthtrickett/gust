@@ -28,7 +28,7 @@ REQUIRED_PROBES = {
     "cr11_explicit_graph_annotation": ("CR-11/#158", 0, "20.2"),
     "cr12_wrong_brand_clone_destination": ("CR-12/#159", 1, "20.3"),
     "cr13_freed_receiver_reuse": ("CR-13/#160", 1, "20.5"),
-    "issue106_unbound_directory_payload": ("CR-5/#106", 0, "20.9"),
+    "issue106_unbound_directory_payload": ("CR-5/#106", 1, "20.9"),
     "issue106_bound_directory_control": ("CR-5/#106", 1, "20.9"),
 }
 REQUIRED_OBSERVABLES = {
@@ -80,9 +80,9 @@ def validate() -> tuple[dict, list[dict], list[tuple[str, str]], list[tuple[str,
     require(snap.get("opening_version") ==
             "phase20_opening_evidence_and_qualification_authority_v1",
             "Phase 20 opening version drifted")
-    require(snap.get("status") == "ready_for_patch20_9",
+    require(snap.get("status") == "ready_for_patch20_10",
             "Phase 20 opening status drifted")
-    require(snap.get("next_patch") == "20.9", "Phase 20 successor drifted")
+    require(snap.get("next_patch") == "20.10", "Phase 20 successor drifted")
     require(snap.get("roadmap_merge_sha") ==
             "1cfab1344b24ffefc72b4d752ead3eb17c6719c6",
             "Phase 20 roadmap merge drifted")
@@ -118,6 +118,8 @@ def validate() -> tuple[dict, list[dict], list[tuple[str, str]], list[tuple[str,
             "cr11_explicit_graph_annotation",
             "cr12_wrong_brand_clone_destination",
             "cr13_freed_receiver_reuse",
+            "issue106_unbound_directory_payload",
+            "issue106_bound_directory_control",
         }
         require(probe["fix_enabled"] is expected_fix,
                 f"probe {probe_id!r} fix state drifted")
@@ -258,9 +260,9 @@ def render(snap: dict, entries: list[dict], composition_links: list[tuple[str, s
 
     lines += [
         "",
-        "The current verdict is evidence. CR-11, CR-12, and CR-13 are enabled",
-        "by Patches 20.2, 20.3, and 20.5. The two #106 probes stay disabled",
-        "until their named owner Patch 20.9.",
+        "The current verdict is evidence. CR-11, CR-12, CR-13, and the two",
+        "#106 acquisition probes are enabled by Patches 20.2, 20.3, 20.5,",
+        "and 20.9 respectively.",
         "",
         "## Qualification decisions",
         "",

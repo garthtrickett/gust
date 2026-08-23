@@ -822,6 +822,8 @@
       "compiler/phase19_cross_feature_composition_source.gst",
       "compiler/phase20_directory_external_construction_invalid.gst",
       "compiler/phase20_directory_external_field_invalid.gst",
+      "compiler/phase20_resource_acquisition_directory_discarded_invalid.gst",
+      "compiler/phase20_resource_acquisition_directory_source.gst",
       "compiler/resolver.gst",
       "compiler/test_directory_leak_violation.gst",
       "compiler/typechecker.gst",
@@ -878,6 +880,35 @@
     "cleanup_invocation_policy": "only_a_compiler_cleanup_invocation_matching_a_validated_resource_destructor_identity_may_bypass_private_visibility",
     "backend_policy": "all_rejections_are_shared_frontend_diagnostics_identical_for_default_mir_to_c_explicit_mir_to_c_and_explicit_cranelift_before_backend_selection",
     "deferred_policy": "acquisition_site_obligations_and_generic_scope_exit_destructor_invocation_remain_exclusively_patch20_9_and_patch20_10",
+    "enforcement_enabled": true
+  },
+  "phase20_resource_acquisition_obligations": {
+    "authority_version": "phase20_resource_acquisition_obligations_v1",
+    "status": "patch20_9_complete",
+    "next_patch": "20.10",
+    "issue": "CR-5/#106",
+    "review_view": "compiler/CRANELIFT_PHASE20_RESOURCE_ACQUISITION_OBLIGATIONS.md",
+    "user_positive_fixture": "compiler/phase20_resource_acquisition_source.gst",
+    "directory_positive_fixture": "compiler/phase20_resource_acquisition_directory_source.gst",
+    "module_fixture": "compiler/phase20_resource_enforcement_module.gst",
+    "negative_fixtures": [
+      "compiler/future/p20_issue106_bound_directory_current.gst",
+      "compiler/future/p20_issue106_unbound_directory_current.gst",
+      "compiler/phase20_resource_acquisition_user_bound_invalid.gst",
+      "compiler/phase20_resource_acquisition_user_discarded_invalid.gst",
+      "compiler/phase20_resource_acquisition_directory_discarded_invalid.gst"
+    ],
+    "diagnostics": [
+      "ResourceAcquisitionLeak",
+      "ResourceAcquisitionDiscarded"
+    ],
+    "identity_policy": "a_tracking_eligible_call_expression_gets_one_stable_source_span_identity_independent_of_later_binding",
+    "transfer_policy": "binding_assignment_return_aggregate_payload_guard_alias_and_owned_argument_transport_the_same_identity_without_duplicate_obligations",
+    "conditional_policy": "a_fallible_guard_failure_branch_has_no_successful_acquisition_obligation_and_the_success_payload_inherits_the_pending_identity",
+    "temporary_policy": "an_ignored_tracking_eligible_call_must_transfer_or_consume_its_identity_by_full_expression_end",
+    "directory_policy": "directory_and_source_declared_resources_use_the_same_acquisition_obligation_map_while_unidentified_legacy_directory_values_retain_compatibility_checks",
+    "backend_policy": "accepted_mir_to_c_observables_and_all_shared_frontend_rejections_are_backend_neutral_without_fallback",
+    "deferred_policy": "automatic_scope_exit_destructor_invocation_reverse_order_and_nested_resource_field_cleanup_remain_exclusively_patch20_10",
     "enforcement_enabled": true
   },
   "phase19_brand_authority": {
@@ -1441,8 +1472,8 @@
   "opening_snapshots": {
     "phase20": {
       "opening_version": "phase20_opening_evidence_and_qualification_authority_v1",
-      "status": "ready_for_patch20_9",
-      "next_patch": "20.9",
+      "status": "ready_for_patch20_10",
+      "next_patch": "20.10",
       "predecessor_closure_status": "phase19_closed_brand_identity_and_value_representation",
       "roadmap_merge_sha": "1cfab1344b24ffefc72b4d752ead3eb17c6719c6",
       "review_view": "compiler/CRANELIFT_PHASE20_OPENING.md",
@@ -1488,25 +1519,27 @@
           "id": "issue106_unbound_directory_payload",
           "source_requirement": "CR-5/#106",
           "fixture": "compiler/future/p20_issue106_unbound_directory_current.gst",
-          "compile_exit": 0,
-          "current_verdict": "incorrectly_accepts_unextracted_open_directory_payload",
-          "diagnostic_substrings": [],
+          "compile_exit": 1,
+          "current_verdict": "rejects_unbound_directory_through_acquisition_identity",
+          "diagnostic_substrings": [
+            "[ResourceAcquisitionLeak]"
+          ],
           "semantic_owner": "compiler_linear_resource_verifier",
           "next_patch": "20.9",
-          "fix_enabled": false
+          "fix_enabled": true
         },
         {
           "id": "issue106_bound_directory_control",
           "source_requirement": "CR-5/#106",
           "fixture": "compiler/future/p20_issue106_bound_directory_current.gst",
           "compile_exit": 1,
-          "current_verdict": "rejects_named_open_directory_with_existing_resource_leak_diagnostic",
+          "current_verdict": "rejects_bound_directory_through_acquisition_identity",
           "diagnostic_substrings": [
-            "Resource leak"
+            "[ResourceAcquisitionLeak]"
           ],
           "semantic_owner": "compiler_linear_resource_verifier",
           "next_patch": "20.9",
-          "fix_enabled": false
+          "fix_enabled": true
         }
       ],
       "qualification_projection": {

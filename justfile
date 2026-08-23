@@ -16576,6 +16576,33 @@ guard-cranelift-phase20-resource-enforcement-parity:
     just guard-cranelift-phase20-resource-enforcement-contract
     scripts/phase20_resource_enforcement.sh
 
+guard-cranelift-phase20-resource-acquisition-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔗 Checking Phase 20 acquisition-site resource obligations..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase20-resource-acquisition-contract | grep -F $'guard-cranelift-phase20-resource-acquisition-contract\t1\t' >/dev/null
+    just guard-cranelift-phase20-resource-enforcement-contract
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase20_resource_acquisition.py validate
+    python3 scripts/phase20_resource_acquisition.py check-review
+    just guard-compile-pass compiler/phase20_resource_acquisition_source.gst phase20_resource_acquisition_user_positive
+    just guard-compile-pass compiler/phase20_resource_acquisition_directory_source.gst phase20_resource_acquisition_directory_positive
+    just guard-compile-fail compiler/future/p20_issue106_bound_directory_current.gst ResourceAcquisitionLeak phase20_resource_acquisition_bound_directory
+    just guard-compile-fail compiler/future/p20_issue106_unbound_directory_current.gst ResourceAcquisitionLeak phase20_resource_acquisition_unbound_directory
+    just guard-compile-fail compiler/phase20_resource_acquisition_user_bound_invalid.gst ResourceAcquisitionLeak phase20_resource_acquisition_user_bound
+    just guard-compile-fail compiler/phase20_resource_acquisition_user_discarded_invalid.gst ResourceAcquisitionDiscarded phase20_resource_acquisition_user_discarded
+    just guard-compile-fail compiler/phase20_resource_acquisition_directory_discarded_invalid.gst ResourceAcquisitionDiscarded phase20_resource_acquisition_directory_discarded
+
+guard-cranelift-phase20-resource-acquisition-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "⚖️ Checking Phase 20 acquisition-site resource parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase20-resource-acquisition-parity | grep -F $'guard-cranelift-phase20-resource-acquisition-parity\t2\t' >/dev/null
+    just guard-cranelift-phase20-resource-acquisition-contract
+    scripts/phase20_resource_acquisition.sh
+
 guard-cranelift-phase18-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail

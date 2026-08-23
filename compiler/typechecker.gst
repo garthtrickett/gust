@@ -748,6 +748,13 @@ type LinearResourceRecord[ctx] struct {
     is_destructor_scheduled: int
 }
 
+type ResourceAcquisitionObligation[ctx] struct {
+    identity: str,
+    type_name: str,
+    destructor_name: str,
+    state: int
+}
+
 type TypeEnvironment[ctx] struct {
     struct_registry: std.HashMap[str, StructLayout[ctx], ctx],
     struct_layout_repr_c: std.HashMap[str, int, ctx],
@@ -788,6 +795,8 @@ type TypeEnvironment[ctx] struct {
     moved_vars: std.HashMap[str, int, ctx],
     open_directories: std.HashMap[str, int, ctx],
     open_linear_resources: std.HashMap[str, LinearResourceRecord[ctx], ctx],
+    resource_acquisition_obligations: std.HashMap[str, ResourceAcquisitionObligation[ctx], ctx],
+    resource_value_identities: std.HashMap[str, str, ctx],
     errors: std.Vector[errors.CompilerError[ctx], ctx],
     expected_return_type: Index[ast.Type[ctx], ctx],
     current_function_return_origins: Index[OriginSet[ctx], ctx],
@@ -3785,6 +3794,9 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         msg = std.Concat(msg, ast.serialize_type(resolved_arg, ctx));
                         report_error(2, msg, get_expression_span(task_arg_idx, ctx), env, ctx);
                     }
+                    env_transfer_owned_resource_argument(
+                        env, task_arg_idx, first_param_type, ctx
+                    );
 
                     mut is_tl_context := 0;
                     if resolved_arg.tag == 8 { // Struct
@@ -4214,11 +4226,33 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 if skip_directory_shadow_destructor_tracking_step52dir == 0 {
                     env_track_resource_destructor_call_if_applicable(env, resolved_func, expr.Call.arguments, scope, ctx);
                 }
+                env_consume_resource_destructor_call(
+                    env, resolved_func, expr.Call.arguments, ctx
+                );
+
+                mut resource_argument_index_phase20_9 := 0;
+                while resource_argument_index_phase20_9 < len(args_vec_valid_call) {
+                    mut resource_argument_idx_phase20_9: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                    ctx.Set(
+                        resource_argument_idx_phase20_9,
+                        args_vec_valid_call[resource_argument_index_phase20_9]
+                    );
+                    env_transfer_owned_resource_argument(
+                        env,
+                        resource_argument_idx_phase20_9,
+                        sig.params[resource_argument_index_phase20_9],
+                        ctx
+                    );
+                    resource_argument_index_phase20_9 = resource_argument_index_phase20_9 + 1;
+                }
 
                 mut resolved_return := typechecker_apply_brand_substitutions(
                     sig.return_type, &call_brand_substitutions, ctx
                 );
                 resolved_return = env_resolve_type(env, resolved_return, ctx);
+                env_register_resource_acquisition(
+                    env, expr_idx, resolved_return, ctx
+                );
                 return resolved_return;
             }
             if env_resource_destructor_call_is_applicable(env, resolved_func, expr.Call.arguments, scope, ctx) == 1 {
@@ -7212,6 +7246,8 @@ func env_new(ctx: &Arena) TypeEnvironment[ctx] {
         env_ref_new.moved_vars = std.HashMapNew(ctx);
         env_ref_new.open_directories = std.HashMapNew(ctx);
         env_ref_new.open_linear_resources = std.HashMapNew(ctx);
+        env_ref_new.resource_acquisition_obligations = std.HashMapNew(ctx);
+        env_ref_new.resource_value_identities = std.HashMapNew(ctx);
         env_ref_new.errors = std.VectorNew(ctx);
         env_ref_new.expected_return_type = empty[Index[ast.Type[ctx], ctx]];
         env_ref_new.current_function_return_origins = empty[Index[OriginSet[ctx], ctx]];
@@ -8522,6 +8558,292 @@ func resource_type_payload_is_resource_tracking_eligible(env: *TypeEnvironment[c
         return 0;
     }
     return env_struct_has_resource_tracking_metadata(env, payload_struct_name_resource_eligible, ctx);
+}
+
+func env_tracking_resource_type_name_recursive(env: *TypeEnvironment[ctx], t: ast.Type[ctx], visited: *std.HashMap[str, int, ctx], ctx: &Arena) str {
+    unsafe {
+        mut resolved := env_resolve_type(env, t, ctx);
+        if type_is_resource(resolved, ctx) == 1 {
+            mut payload_name := resource_type_payload_struct_name(resolved, ctx);
+            if len(payload_name) > 0 {
+                env_register_directory_resource_parity_type(env, payload_name, ctx);
+                if env_struct_has_resource_tracking_metadata(env, payload_name, ctx) == 1 {
+                    return std.Clone(ctx, payload_name);
+                }
+            }
+            return "";
+        }
+        if resolved.tag != 8 { // Struct
+            return "";
+        }
+
+        mut name := resolved.Struct.struct_name;
+        env_register_directory_resource_parity_type(env, name, ctx);
+        if env_struct_has_resource_tracking_metadata(env, name, ctx) == 1 {
+            return std.Clone(ctx, name);
+        }
+        if (*visited).Get(name).Ok {
+            return "";
+        }
+        (*visited).Insert(std.Clone(ctx, name), 1);
+
+        mut layout_lookup := (*env).struct_registry.Get(name);
+        if layout_lookup.Ok {
+            mut layout := layout_lookup.Val;
+            mut field_names := typechecker_get_sorted_keys_type(&layout.fields, ctx);
+            mut i := 0;
+            while i < len(field_names) {
+                mut field_lookup := layout.fields.Get(field_names[i]);
+                if field_lookup.Ok {
+                    mut nested_name := env_tracking_resource_type_name_recursive(
+                        env, field_lookup.Val, visited, ctx
+                    );
+                    if len(nested_name) > 0 {
+                        return std.Clone(ctx, nested_name);
+                    }
+                }
+                i = i + 1;
+            }
+        }
+        return "";
+    }
+}
+
+func env_tracking_resource_type_name(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena) str {
+    unsafe {
+        mut visited: std.HashMap[str, int, ctx] := std.HashMapNew(ctx);
+        mut resource_name := env_tracking_resource_type_name_recursive(
+            env, t, &visited, ctx
+        );
+        return std.Clone(ctx, resource_name);
+    }
+}
+
+func env_resource_acquisition_identity(env: *TypeEnvironment[ctx], span: token.Span, ctx: &Arena) str {
+    unsafe {
+        mut identity := std.Concat("acquisition:", (*env).current_file);
+        identity = std.Concat(identity, ":");
+        identity = std.Concat(identity, std.FormatInt(span.start.offset));
+        identity = std.Concat(identity, ":");
+        identity = std.Concat(identity, std.FormatInt(span.end.offset));
+        return std.Clone(ctx, identity);
+    }
+}
+
+func env_register_resource_acquisition(env: *TypeEnvironment[ctx], expr_idx: Index[ast.Expression[ctx], ctx], acquired_type: ast.Type[ctx], ctx: &Arena) str {
+    unsafe {
+        mut type_name := env_tracking_resource_type_name(env, acquired_type, ctx);
+        if len(type_name) == 0 {
+            return "";
+        }
+        mut span := get_expression_span(expr_idx, ctx);
+        mut identity := env_resource_acquisition_identity(env, span, ctx);
+        if (*env).resource_acquisition_obligations.Get(identity).Ok == false {
+            mut obligation: ResourceAcquisitionObligation[ctx];
+            obligation.identity = std.Clone(ctx, identity);
+            obligation.type_name = std.Clone(ctx, type_name);
+            obligation.destructor_name = env_struct_linear_destructor_name(env, type_name, ctx);
+            obligation.state = 0; // pending ownership
+            (*env).resource_acquisition_obligations.Insert(
+                std.Clone(ctx, identity), obligation
+            );
+        }
+        return std.Clone(ctx, identity);
+    }
+}
+
+func env_resource_identity_for_expression(env: *TypeEnvironment[ctx], expr_idx: Index[ast.Expression[ctx], ctx], ctx: &Arena) str {
+    unsafe {
+        if expr_idx == empty[Index[ast.Expression[ctx], ctx]] {
+            return "";
+        }
+        mut expression_key := expression_to_string(expr_idx, ctx);
+        mut storage_lookup := (*env).resource_value_identities.Get(expression_key);
+        if storage_lookup.Ok {
+            return std.Clone(ctx, storage_lookup.Val);
+        }
+
+        mut expr := ctx[expr_idx];
+        if expr.tag == 0 { // Identifier
+            mut resolved_name := env_resolve_namespaced_ident(env, expr.Identifier.name, ctx);
+            mut resolved_lookup := (*env).resource_value_identities.Get(resolved_name);
+            if resolved_lookup.Ok {
+                return std.Clone(ctx, resolved_lookup.Val);
+            }
+            return "";
+        }
+        if expr.tag == 4 { // Move
+            mut moved_identity := env_resource_identity_for_expression(env, expr.Move.expr, ctx);
+            return std.Clone(ctx, moved_identity);
+        }
+        if expr.tag == 5 { // Take
+            mut taken_identity := env_resource_identity_for_expression(env, expr.Take.expr, ctx);
+            return std.Clone(ctx, taken_identity);
+        }
+        if expr.tag == 9 { // AsCast
+            mut cast_identity := env_resource_identity_for_expression(env, expr.AsCast.left, ctx);
+            return std.Clone(ctx, cast_identity);
+        }
+        if expr.tag == 11 { // Selector
+            mut selector_identity := env_resource_identity_for_expression(env, expr.Selector.left, ctx);
+            return std.Clone(ctx, selector_identity);
+        }
+        if expr.tag == 12 { // Call
+            mut identity := env_resource_acquisition_identity(env, expr.Call.span, ctx);
+            if (*env).resource_acquisition_obligations.Get(identity).Ok {
+                return std.Clone(ctx, identity);
+            }
+        }
+        return "";
+    }
+}
+
+func env_bind_resource_identity(env: *TypeEnvironment[ctx], storage_name: str, identity: str, ctx: &Arena) int {
+    unsafe {
+        if len(storage_name) == 0 || len(identity) == 0 {
+            return 0;
+        }
+        if (*env).resource_acquisition_obligations.Get(identity).Ok == false {
+            return 0;
+        }
+        (*env).resource_value_identities.Insert(
+            std.Clone(ctx, storage_name), std.Clone(ctx, identity)
+        );
+        return 1;
+    }
+}
+
+func env_bind_resource_expression(env: *TypeEnvironment[ctx], storage_name: str, expr_idx: Index[ast.Expression[ctx], ctx], ctx: &Arena) int {
+    mut identity := env_resource_identity_for_expression(env, expr_idx, ctx);
+    return env_bind_resource_identity(env, storage_name, identity, ctx);
+}
+
+func env_resource_obligation_set_state(env: *TypeEnvironment[ctx], identity: str, state: int, ctx: &Arena) int {
+    unsafe {
+        guard lookup := (*env).resource_acquisition_obligations.Get(identity) else {
+            return 0;
+        };
+        mut obligation := lookup;
+        obligation.state = state;
+        (*env).resource_acquisition_obligations.Insert(
+            std.Clone(ctx, identity), obligation
+        );
+        return 1;
+    }
+}
+
+func env_resource_obligation_is_pending(env: *TypeEnvironment[ctx], identity: str, ctx: &Arena) int {
+    unsafe {
+        mut lookup := (*env).resource_acquisition_obligations.Get(identity);
+        if lookup.Ok {
+            if lookup.Val.state == 0 {
+                return 1;
+            }
+        }
+        return 0;
+    }
+}
+
+func env_transfer_resource_return_expression(env: *TypeEnvironment[ctx], expr_idx: Index[ast.Expression[ctx], ctx], ctx: &Arena) int {
+    mut identity := env_resource_identity_for_expression(env, expr_idx, ctx);
+    if len(identity) == 0 || env_resource_obligation_is_pending(env, identity, ctx) == 0 {
+        return 0;
+    }
+    return env_resource_obligation_set_state(env, identity, 2, ctx);
+}
+
+func env_resource_destructor_matches_obligation(env: *TypeEnvironment[ctx], resolved_func: str, identity: str, ctx: &Arena) int {
+    unsafe {
+        guard lookup := (*env).resource_acquisition_obligations.Get(identity) else {
+            return 0;
+        };
+        mut destructor_name := lookup.destructor_name;
+        if len(destructor_name) == 0 {
+            return 0;
+        }
+        if std.str_eq(destructor_name, resolved_func) == 1 {
+            return 1;
+        }
+        mut resolved_destructor := env_resolve_namespaced_ident(env, destructor_name, ctx);
+        if std.str_eq(resolved_destructor, resolved_func) == 1 {
+            return 1;
+        }
+        if env_function_is_directory_close_destructor(resolved_func) == 1 &&
+           env_directory_resource_type_is_legacy_handle(lookup.type_name) == 1 {
+            return 1;
+        }
+        return 0;
+    }
+}
+
+func env_consume_resource_destructor_call(env: *TypeEnvironment[ctx], resolved_func: str, arguments_idx: Index[std.Vector[ast.Expression[ctx], ctx], ctx], ctx: &Arena) int {
+    if arguments_idx == empty[Index[std.Vector[ast.Expression[ctx], ctx], ctx]] {
+        return 0;
+    }
+    mut arguments: std.Vector[ast.Expression[ctx], ctx] := ctx[arguments_idx];
+    if len(arguments) != 1 {
+        return 0;
+    }
+    mut argument_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(argument_idx, arguments[0]);
+    mut identity := env_resource_identity_for_expression(env, argument_idx, ctx);
+    if len(identity) == 0 {
+        return 0;
+    }
+    if env_resource_destructor_matches_obligation(env, resolved_func, identity, ctx) == 0 {
+        return 0;
+    }
+    return env_resource_obligation_set_state(env, identity, 1, ctx);
+}
+
+func env_transfer_owned_resource_argument(env: *TypeEnvironment[ctx], argument_idx: Index[ast.Expression[ctx], ctx], parameter_type: ast.Type[ctx], ctx: &Arena) int {
+    mut resolved_parameter := env_resolve_type(env, parameter_type, ctx);
+    if resolved_parameter.tag == 11 || resolved_parameter.tag == 9 { // Reference or raw pointer
+        return 0;
+    }
+    mut parameter_resource := env_tracking_resource_type_name(env, resolved_parameter, ctx);
+    if len(parameter_resource) == 0 {
+        return 0;
+    }
+    mut identity := env_resource_identity_for_expression(env, argument_idx, ctx);
+    if len(identity) == 0 || env_resource_obligation_is_pending(env, identity, ctx) == 0 {
+        return 0;
+    }
+    return env_resource_obligation_set_state(env, identity, 2, ctx);
+}
+
+func env_report_discarded_resource_acquisition(env: *TypeEnvironment[ctx], expr_idx: Index[ast.Expression[ctx], ctx], span: token.Span, ctx: &Arena) int {
+    mut identity := env_resource_identity_for_expression(env, expr_idx, ctx);
+    if len(identity) == 0 || env_resource_obligation_is_pending(env, identity, ctx) == 0 {
+        return 0;
+    }
+    mut msg := "Semantic Error: [ResourceAcquisitionDiscarded] Resource acquisition temporary must be consumed, returned, stored, or scheduled by the end of its full expression";
+    report_error(2, msg, span, env, ctx);
+    env_resource_obligation_set_state(env, identity, 3, ctx);
+    return 1;
+}
+
+func env_report_pending_resource_acquisitions(env: *TypeEnvironment[ctx], span: token.Span, ctx: &Arena) int {
+    mut reported := 0;
+    unsafe {
+        mut identities := (*env).resource_acquisition_obligations.Keys(ctx);
+        mut i := 0;
+        while i < len(identities) {
+            mut identity := identities[i];
+            mut lookup := (*env).resource_acquisition_obligations.Get(identity);
+            if lookup.Ok {
+                if lookup.Val.state == 0 {
+                    mut msg := std.Concat("Semantic Error: [ResourceAcquisitionLeak] Resource acquisition of '", lookup.Val.type_name);
+                    msg = std.Concat(msg, "' must be consumed, returned, or scheduled before leaving the function");
+                    report_error(2, msg, span, env, ctx);
+                    env_resource_obligation_set_state(env, identity, 3, ctx);
+                    reported = reported + 1;
+                }
+            }
+            i = i + 1;
+        }
+    }
+    return reported;
 }
 
 func env_register_open_resource_value(env: *TypeEnvironment[ctx], variable_name: str, resource_type: ast.Type[ctx], ctx: &Arena) int {
@@ -11395,6 +11717,8 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             mut parent_checked := typechecker_clone_int_map((*env).checked_results, ctx);
             mut parent_open_dirs := typechecker_clone_int_map((*env).open_directories, ctx);
             mut parent_open_linear_resources_function_decl := typechecker_clone_linear_resource_map((*env).open_linear_resources, ctx);
+            mut parent_resource_acquisition_obligations := typechecker_clone_resource_acquisition_obligation_map((*env).resource_acquisition_obligations, ctx);
+            mut parent_resource_value_identities := typechecker_clone_string_map((*env).resource_value_identities, ctx);
             mut parent_origins := typechecker_clone_origins((*env).variable_origins, ctx);
             mut parent_arena_lifecycle_bindings := typechecker_clone_string_map((*env).arena_lifecycle_bindings, ctx);
             mut parent_arena_lifecycle_deferred_frees := typechecker_clone_int_map((*env).arena_lifecycle_deferred_frees, ctx);
@@ -11405,6 +11729,8 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             (*env).checked_results = std.HashMapNew(ctx);
             (*env).open_directories = std.HashMapNew(ctx);
             (*env).open_linear_resources = std.HashMapNew(ctx);
+            (*env).resource_acquisition_obligations = std.HashMapNew(ctx);
+            (*env).resource_value_identities = std.HashMapNew(ctx);
             (*env).variable_origins = std.HashMapNew(ctx);
             (*env).arena_lifecycle_bindings = std.HashMapNew(ctx);
             (*env).arena_lifecycle_deferred_frees = std.HashMapNew(ctx);
@@ -11503,13 +11829,21 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 k = k + 1;
             }
 
+            // Acquisition-time resource ownership is the canonical Patch 20.9
+            // path. Legacy binding-keyed directory checks remain only for
+            // values that have no acquisition identity.
+            env_report_pending_resource_acquisitions(
+                env, stmt.FunctionDecl.span, ctx
+            );
+
             // Resource leak checking
             mut local_vars := (*env).current_function_local_vars;
             mut local_var_keys := ctx[local_vars].map.Keys(ctx);
             mut m := 0;
             while m < len(local_var_keys) {
                 mut local_var := local_var_keys[m];
-                if env_open_directory_resource_requires_cleanup(env, local_var, ctx) == 1 {
+                if env_open_directory_resource_requires_cleanup(env, local_var, ctx) == 1 &&
+                   (*env).resource_value_identities.Get(local_var).Ok == false {
                     mut msg := std.Concat("Semantic Error: Resource leak. Directory resource variable '", local_var);
                     msg = std.Concat(msg, "' must be cleanly closed with os.CloseDir before leaving local scope");
                     report_error(2, msg, stmt.FunctionDecl.span, env, ctx);
@@ -11553,6 +11887,8 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             (*env).checked_results = parent_checked;
             (*env).open_directories = parent_open_dirs;
             (*env).open_linear_resources = parent_open_linear_resources_function_decl;
+            (*env).resource_acquisition_obligations = parent_resource_acquisition_obligations;
+            (*env).resource_value_identities = parent_resource_value_identities;
             (*env).variable_origins = parent_origins;
             (*env).arena_lifecycle_bindings = parent_arena_lifecycle_bindings;
             (*env).arena_lifecycle_deferred_frees = parent_arena_lifecycle_deferred_frees;
@@ -11692,6 +12028,9 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             }
 
             env_track_resource_declaration_if_applicable(env, name, ctx);
+            if val_idx != empty[Index[ast.Expression[ctx], ctx]] {
+                env_bind_resource_expression(env, name, val_idx, ctx);
+            }
 
             if (*env).current_function_local_vars != empty[Index[OriginSet[ctx], ctx]] {
                 mut local_vars := (*env).current_function_local_vars;
@@ -11900,6 +12239,13 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                     }
                 }
             }
+
+            mut assignment_resource_storage_phase20_9 := expression_to_string(
+                left_idx, ctx
+            );
+            env_bind_resource_expression(
+                env, assignment_resource_storage_phase20_9, val_idx, ctx
+            );
 
             mut assignment_span_nlaunder := get_expression_span(val_idx, ctx);
             env_report_non_laundering_safe_brand_target(env, left_type, val_prov_assignment, assignment_span_nlaunder, "Assigning raw-derived or sandbox-derived value", ctx);
@@ -12712,6 +13058,11 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 report_error(2, msg, stmt.Return.span, env, ctx);
             }
 
+            if expr_idx != empty[Index[ast.Expression[ctx], ctx]] {
+                env_transfer_resource_return_expression(env, expr_idx, ctx);
+            }
+            env_report_pending_resource_acquisitions(env, stmt.Return.span, ctx);
+
             // Step 5.2R: narrow compiler-backed Resource cleanup validation on explicit return paths.
             env_validate_linear_resource_scope_exit_cleanup(env, stmt.Return.span, ctx);
 
@@ -12721,6 +13072,9 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
         if stmt.tag == 13 { // Expression
             mut expr_idx := stmt.Expression.expr;
             check_expression(expr_idx, env, scope, ctx);
+            env_report_discarded_resource_acquisition(
+                env, expr_idx, stmt.Expression.span, ctx
+            );
 
             return res;
         }
@@ -12766,7 +13120,21 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             mut parent_moved := typechecker_clone_int_map((*env).moved_vars, ctx);
             mut parent_open_dirs := typechecker_clone_int_map((*env).open_directories, ctx);
             mut parent_open_linear_resources_guard_else := typechecker_clone_linear_resource_map((*env).open_linear_resources, ctx);
+            mut parent_resource_acquisition_obligations_guard_else := typechecker_clone_resource_acquisition_obligation_map((*env).resource_acquisition_obligations, ctx);
+            mut parent_resource_value_identities_guard_else := typechecker_clone_string_map((*env).resource_value_identities, ctx);
             mut parent_origins := typechecker_clone_origins((*env).variable_origins, ctx);
+
+            // A fallible guard's else branch is the acquisition-failure path.
+            // Check that branch without a live ownership obligation, then
+            // restore the pending identity for the successful payload binding.
+            mut guard_value_resource_identity := env_resource_identity_for_expression(
+                env, value, ctx
+            );
+            if len(guard_value_resource_identity) > 0 {
+                env_resource_obligation_set_state(
+                    env, guard_value_resource_identity, 2, ctx
+                );
+            }
 
             mut child_scope := scope_new(scope, ctx);
             
@@ -12790,9 +13158,12 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             (*env).moved_vars = parent_moved;
             (*env).open_directories = parent_open_dirs;
             (*env).open_linear_resources = parent_open_linear_resources_guard_else;
+            (*env).resource_acquisition_obligations = parent_resource_acquisition_obligations_guard_else;
+            (*env).resource_value_identities = parent_resource_value_identities_guard_else;
 
             scope_insert(scope, std.Clone(ctx, name), payload_type, ctx);
             (*env).variable_types.Insert(std.Clone(ctx, name), payload_type);
+            env_bind_resource_expression(env, name, value, ctx);
 
             if payload_type.tag == 8 { // Struct
                 mut guard_struct_name := payload_type.Struct.struct_name;
@@ -13219,6 +13590,32 @@ func typechecker_clone_linear_resource_map(src: std.HashMap[str, LinearResourceR
         i_linear_resource_map = i_linear_resource_map + 1;
     }
     return dest_linear_resource_map;
+}
+
+func resource_acquisition_obligation_clone(record: ResourceAcquisitionObligation[ctx], ctx: &Arena) ResourceAcquisitionObligation[ctx] {
+    mut cloned: ResourceAcquisitionObligation[ctx];
+    cloned.identity = std.Clone(ctx, record.identity);
+    cloned.type_name = std.Clone(ctx, record.type_name);
+    cloned.destructor_name = std.Clone(ctx, record.destructor_name);
+    cloned.state = record.state;
+    return cloned;
+}
+
+func typechecker_clone_resource_acquisition_obligation_map(src: std.HashMap[str, ResourceAcquisitionObligation[ctx], ctx], ctx: &Arena) std.HashMap[str, ResourceAcquisitionObligation[ctx], ctx] {
+    mut dest: std.HashMap[str, ResourceAcquisitionObligation[ctx], ctx] := std.HashMapNew(ctx);
+    mut keys := src.Keys(ctx);
+    mut i := 0;
+    while i < len(keys) {
+        mut lookup := src.Get(keys[i]);
+        if lookup.Ok {
+            dest.Insert(
+                std.Clone(ctx, keys[i]),
+                resource_acquisition_obligation_clone(lookup.Val, ctx)
+            );
+        }
+        i = i + 1;
+    }
+    return dest;
 }
 
 func typechecker_has_boolean_fields_recursive(t: ast.Type[ctx], env: *TypeEnvironment[ctx], visited: *std.HashMap[str, int, ctx], ctx: &Arena) int {

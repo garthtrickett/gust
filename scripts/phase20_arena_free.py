@@ -121,8 +121,8 @@ def validate() -> dict:
     probes = opening.get("baseline_probes", [])
     cr13 = next((probe for probe in probes
                  if probe.get("id") == "cr13_freed_receiver_reuse"), {})
-    require(opening.get("status") == "ready_for_patch20_9" and
-            opening.get("next_patch") == "20.9",
+    require(opening.get("status") == "ready_for_patch20_10" and
+            opening.get("next_patch") == "20.10",
             "Phase 20 opening successor did not advance")
     require(cr13.get("compile_exit") == 1 and cr13.get("fix_enabled") is True and
             cr13.get("diagnostic_substrings") == ["[ArenaUseAfterFree]"] and
