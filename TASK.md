@@ -57,7 +57,7 @@ does not activate another lane, and does not authorize Phase 21.
 - [x] Patch 20.1 — Canonical Brand-Matching Primitives — DONE
 - [x] Patch 20.2 — Nested Brand Annotation Correction (CR-11/#158) — DONE
 - [x] Patch 20.3 — Exact Branded Assignment and Annotation (CR-12/#159) — DONE
-- [ ] Patch 20.3a — Contextual Generic Constructor Result Authority
+- [x] Patch 20.3a — Contextual Generic Constructor Result Authority — DONE
 - [ ] Patch 20.4 — Arena Lifecycle State Authority
 - [ ] Patch 20.5 — Arena.Free Receiver Invalidation (CR-13/#160)
 - [ ] Patch 20.6 — Inert Resource Declaration and Visibility Surface

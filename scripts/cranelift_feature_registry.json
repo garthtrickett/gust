@@ -652,6 +652,38 @@
     "direct_cranelift_source_route": "explicit_source_or_type_failure_before_driver_discovery_until_patch20_12_without_c_fallback",
     "opening_probe_fix_enabled": true
   },
+  "phase20_contextual_generic_constructor": {
+    "authority_version": "phase20_contextual_generic_constructor_result_v1",
+    "status": "patch20_3a_complete",
+    "next_patch": "20.4",
+    "review_view": "compiler/CRANELIFT_PHASE20_CONTEXTUAL_GENERIC_CONSTRUCTOR.md",
+    "inferred_fixture": "compiler/phase20_contextual_generic_constructor_inferred.gst",
+    "explicit_fixture": "compiler/phase20_contextual_generic_constructor_explicit.gst",
+    "negative_fixtures": [
+      "compiler/phase20_contextual_generic_constructor_cross_template_invalid.gst",
+      "compiler/phase20_contextual_generic_constructor_wrong_brand_invalid.gst"
+    ],
+    "canonical_mir_fixture": "compiler/fixtures/native_backend_phase20_contextual_generic_constructor.mir",
+    "context_boundaries": [
+      "explicit_annotation",
+      "direct_assignment",
+      "function_argument",
+      "function_return"
+    ],
+    "constructor_families": [
+      "Vector",
+      "HashMap",
+      "Pool",
+      "Mutex",
+      "Channel",
+      "Graph"
+    ],
+    "semantic_policy": "an_already_resolved_compatible_context_is_the_constructor_result_authority_without_cross_template_conversion_or_brand_cast",
+    "mir_to_c_policy": "constructor_expression_codegen_consumes_the_recorded_resolved_type_and_does_not_reconstruct_an_Any_specialization",
+    "mir_projection_policy": "the_frontend_validates_the_paired_source_programs_and_projects_selected_main_return_31_to_supported_canonical_mir_for_both_backends",
+    "direct_cranelift_source_route": "explicit_deferred_capability_before_driver_discovery_until_patch20_12_without_c_fallback",
+    "bootstrap_policy": "compiler_change_is_bootstrap_sensitive_but_seed_publication_is_deferred_to_isolated_patch20_11"
+  },
   "phase19_brand_authority": {
     "authority_version": "phase19_brand_identity_authority_v1",
     "status": "ready_for_patch19_3",
@@ -1213,8 +1245,8 @@
   "opening_snapshots": {
     "phase20": {
       "opening_version": "phase20_opening_evidence_and_qualification_authority_v1",
-      "status": "ready_for_patch20_3a",
-      "next_patch": "20.3a",
+      "status": "ready_for_patch20_4",
+      "next_patch": "20.4",
       "predecessor_closure_status": "phase19_closed_brand_identity_and_value_representation",
       "roadmap_merge_sha": "1cfab1344b24ffefc72b4d752ead3eb17c6719c6",
       "review_view": "compiler/CRANELIFT_PHASE20_OPENING.md",

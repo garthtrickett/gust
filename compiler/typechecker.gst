@@ -3924,12 +3924,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 return t_str;
             }
 
-            if std.str_eq(resolved_func, "std_ChannelNew") || std.str_eq(resolved_func, "std.ChannelNew") ||
-               std.str_eq(resolved_func, "std_MutexNew") || std.str_eq(resolved_func, "std_MutexNew") ||
-               std.str_eq(resolved_func, "std_VectorNew") || std.str_eq(resolved_func, "std.VectorNew") ||
-               std.str_eq(resolved_func, "std_HashMapNew") || std.str_eq(resolved_func, "std.HashMapNew") ||
-               std.str_eq(resolved_func, "std_PoolNew") || std.str_eq(resolved_func, "std.PoolNew") ||
-               std.str_eq(resolved_func, "std_GraphNew") || std.str_eq(resolved_func, "std.GraphNew") {
+            if typechecker_is_contextual_generic_constructor_name(resolved_func) == 1 {
                 mut args_vec_container_new: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
                 if len(args_vec_container_new) == 1 {
                     mut arg0_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
@@ -3940,13 +3935,17 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     mut ret_name := "std_Channel_Any";
                     if std.str_eq(resolved_func, "std_MutexNew") || std.str_eq(resolved_func, "std.MutexNew") {
                         ret_name = "std_Mutex_Any";
-                    } else if std.str_eq(resolved_func, "std_VectorNew") || std.str_eq(resolved_func, "std.VectorNew") {
+                    } else if std.str_eq(resolved_func, "std_VectorNew") || std.str_eq(resolved_func, "std.VectorNew") ||
+                              std.str_eq(resolved_func, "os_VectorNew") || std.str_eq(resolved_func, "os.VectorNew") {
                         ret_name = "Vector_Any";
-                    } else if std.str_eq(resolved_func, "std_HashMapNew") || std.str_eq(resolved_func, "std.HashMapNew") {
+                    } else if std.str_eq(resolved_func, "std_HashMapNew") || std.str_eq(resolved_func, "std.HashMapNew") ||
+                              std.str_eq(resolved_func, "os_HashMapNew") || std.str_eq(resolved_func, "os.HashMapNew") {
                         ret_name = "HashMap_Any";
-                    } else if std.str_eq(resolved_func, "std_PoolNew") || std.str_eq(resolved_func, "std.PoolNew") {
+                    } else if std.str_eq(resolved_func, "std_PoolNew") || std.str_eq(resolved_func, "std.PoolNew") ||
+                              std.str_eq(resolved_func, "os_PoolNew") || std.str_eq(resolved_func, "os.PoolNew") {
                         ret_name = "Pool_Any";
-                    } else if std.str_eq(resolved_func, "std_GraphNew") || std.str_eq(resolved_func, "std.GraphNew") {
+                    } else if std.str_eq(resolved_func, "std_GraphNew") || std.str_eq(resolved_func, "std.GraphNew") ||
+                              std.str_eq(resolved_func, "os_GraphNew") || std.str_eq(resolved_func, "os.GraphNew") {
                         ret_name = "std_Graph_Any";
                     }
                     return make_type_struct(ret_name, brand_name, ctx);
@@ -4134,8 +4133,12 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
 
                     mut arg_idx_check_call_nlaunder: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                     ctx.Set(arg_idx_check_call_nlaunder, args_vec_valid_call[k]);
+                    resolved_arg = typechecker_contextualize_generic_constructor_result(
+                        arg_idx_check_call_nlaunder, expected_type, resolved_arg, env, ctx
+                    );
                     mut arg_span_call_nlaunder := get_expression_span(arg_idx_check_call_nlaunder, ctx);
                     mut arg_prov_check_call_nlaunder := evaluated_arg_provenances_call_nlaunder[k];
+                    arg_prov_check_call_nlaunder.resolved_type = resolved_arg;
                     env_report_non_laundering_safe_brand_target(env, expected_type, arg_prov_check_call_nlaunder, arg_span_call_nlaunder, "Passing raw-derived or sandbox-derived argument", ctx);
 
                     if env_types_match_at_brand_boundary(env, expected_type, resolved_arg, ctx) == 0 {
@@ -4219,6 +4222,75 @@ func check_expression(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvir
         (*entry_ref).types.Push(type_entry);
     }
     return t;
+}
+
+func typechecker_is_contextual_generic_constructor_name(name: str) int {
+    if std.str_eq(name, "std_ChannelNew") || std.str_eq(name, "std.ChannelNew") ||
+       std.str_eq(name, "std_MutexNew") || std.str_eq(name, "std.MutexNew") ||
+       std.str_eq(name, "std_VectorNew") || std.str_eq(name, "std.VectorNew") ||
+       std.str_eq(name, "os_VectorNew") || std.str_eq(name, "os.VectorNew") ||
+       std.str_eq(name, "std_HashMapNew") || std.str_eq(name, "std.HashMapNew") ||
+       std.str_eq(name, "os_HashMapNew") || std.str_eq(name, "os.HashMapNew") ||
+       std.str_eq(name, "std_PoolNew") || std.str_eq(name, "std.PoolNew") ||
+       std.str_eq(name, "os_PoolNew") || std.str_eq(name, "os.PoolNew") ||
+       std.str_eq(name, "std_GraphNew") || std.str_eq(name, "std.GraphNew") ||
+       std.str_eq(name, "os_GraphNew") || std.str_eq(name, "os.GraphNew") {
+        return 1;
+    }
+    return 0;
+}
+
+func typechecker_record_contextual_expression_type(expr_idx: Index[ast.Expression[ctx], ctx], resolved_type: ast.Type[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) {
+    unsafe {
+        mut span := get_expression_span(expr_idx, ctx);
+        mut prefix := (*env).current_prefix;
+        mut i := 0;
+        while i < len((*env).resolved_types_nested) {
+            mut entry := (*env).resolved_types_nested[i];
+            if std.str_eq(entry.prefix, prefix) == 1 {
+                mut entry_ref := &(*env).resolved_types_nested[i];
+                mut j := 0;
+                while j < len((*entry_ref).types) {
+                    mut type_entry := (*entry_ref).types[j];
+                    if type_entry.start_offset == span.start.offset &&
+                       type_entry.end_offset == span.end.offset {
+                        type_entry.val_type = resolved_type;
+                        (*entry_ref).types[j] = type_entry;
+                    }
+                    j = j + 1;
+                }
+            }
+            i = i + 1;
+        }
+    }
+}
+
+func typechecker_contextualize_generic_constructor_result(expr_idx: Index[ast.Expression[ctx], ctx], expected_type: ast.Type[ctx], actual_type: ast.Type[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) ast.Type[ctx] {
+    unsafe {
+        mut resolved_actual := env_resolve_type(env, actual_type, ctx);
+        if expr_idx == empty[Index[ast.Expression[ctx], ctx]] {
+            return resolved_actual;
+        }
+
+        mut expr := ctx[expr_idx];
+        if expr.tag != 12 { // Call
+            return resolved_actual;
+        }
+
+        mut func_name := expression_to_string(expr.Call.function, ctx);
+        mut resolved_func := env_resolve_namespaced_ident(env, func_name, ctx);
+        if typechecker_is_contextual_generic_constructor_name(resolved_func) == 0 {
+            return resolved_actual;
+        }
+
+        mut resolved_expected := env_resolve_type(env, expected_type, ctx);
+        if env_types_match_at_brand_boundary(env, resolved_expected, resolved_actual, ctx) == 0 {
+            return resolved_actual;
+        }
+
+        typechecker_record_contextual_expression_type(expr_idx, resolved_expected, env, ctx);
+        return resolved_expected;
+    }
 }
 
 func step51g_expression_provenance_lookup_without_rechecking(expr_idx: Index[ast.Expression[ctx], ctx], resolved_t: ast.Type[ctx], env: *TypeEnvironment[ctx], scope: Index[Scope[ctx], ctx], ctx: &Arena) ExpressionProvenance[ctx] {
@@ -10938,6 +11010,12 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             if val_idx != empty[Index[ast.Expression[ctx], ctx]] {
                 mut val_prov_decl := check_expression_with_provenance(val_idx, env, scope, ctx);
                 val_type = env_resolve_type(env, val_prov_decl.resolved_type, ctx);
+                if var_type_idx != empty[Index[ast.Type[ctx], ctx]] {
+                    val_type = typechecker_contextualize_generic_constructor_result(
+                        val_idx, resolved_explicit, val_type, env, ctx
+                    );
+                    val_prov_decl.resolved_type = val_type;
+                }
 
                 mut origs := set_init(ctx);
                 mut should_inherit_local_flow_origins := env_type_is_ephemeral_view(val_type, ctx);
@@ -11172,6 +11250,9 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
 
             mut val_prov_assignment := check_expression_with_provenance(val_idx, env, scope, ctx);
             mut val_type := env_resolve_type(env, val_prov_assignment.resolved_type, ctx);
+            val_type = typechecker_contextualize_generic_constructor_result(
+                val_idx, left_type, val_type, env, ctx
+            );
             val_prov_assignment.resolved_type = val_type;
 
             mut assignment_value_expr_step52h := ctx[val_idx];
@@ -11938,6 +12019,12 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             if expr_idx != empty[Index[ast.Expression[ctx], ctx]] {
                 mut return_prov_stmt := check_expression_with_provenance(expr_idx, env, scope, ctx);
                 actual_return = env_resolve_type(env, return_prov_stmt.resolved_type, ctx);
+                if (*env).expected_return_type != empty[Index[ast.Type[ctx], ctx]] {
+                    actual_return = typechecker_contextualize_generic_constructor_result(
+                        expr_idx, ctx[(*env).expected_return_type], actual_return, env, ctx
+                    );
+                    return_prov_stmt.resolved_type = actual_return;
+                }
 
                 mut expr_origins := typechecker_clone_origin_set(return_prov_stmt.legacy_origins, ctx);
                 return_prov_stmt = step51g_expression_provenance_return_boundary_preserving_raw_sandbox(return_prov_stmt, actual_return, expr_origins, ctx);

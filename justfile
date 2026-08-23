@@ -16450,6 +16450,29 @@ guard-cranelift-phase20-exact-brand-boundary-parity:
     python3 scripts/cranelift_test_levels.py level guard-cranelift-phase20-exact-brand-boundary-parity | grep -F $'guard-cranelift-phase20-exact-brand-boundary-parity\t2\t' >/dev/null
     scripts/phase20_exact_brand_boundary.sh
 
+guard-cranelift-phase20-contextual-generic-constructor-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔐 Checking Phase 20 contextual generic constructor authority..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase20-contextual-generic-constructor-contract | grep -F $'guard-cranelift-phase20-contextual-generic-constructor-contract\t1\t' >/dev/null
+    just guard-cranelift-phase20-exact-brand-boundary-contract
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase20_contextual_generic_constructor.py validate
+    python3 scripts/phase20_contextual_generic_constructor.py check-review
+    just guard-compile-pass compiler/phase20_contextual_generic_constructor_inferred.gst phase20_contextual_constructor_inferred
+    just guard-compile-pass compiler/phase20_contextual_generic_constructor_explicit.gst phase20_contextual_constructor_explicit
+    just guard-compile-fail compiler/phase20_contextual_generic_constructor_cross_template_invalid.gst TypeMismatch phase20_contextual_constructor_cross_template
+    just guard-compile-fail compiler/phase20_contextual_generic_constructor_wrong_brand_invalid.gst TypeMismatch phase20_contextual_constructor_wrong_brand
+
+guard-cranelift-phase20-contextual-generic-constructor-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "⚖️ Checking Phase 20 contextual generic constructor parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase20-contextual-generic-constructor-parity | grep -F $'guard-cranelift-phase20-contextual-generic-constructor-parity\t2\t' >/dev/null
+    scripts/phase20_contextual_generic_constructor.sh
+
 guard-cranelift-phase18-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail

@@ -16,6 +16,7 @@
     "phase20_brand_matching",
     "phase20_nested_brand_annotation",
     "phase20_exact_brand_boundary",
+    "phase20_contextual_generic_constructor",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -247,6 +248,36 @@
           "mir_projection_policy": {"const": "the_frontend_validates_the_full_same_brand_program_and_projects_its_selected_main_return_23_to_canonical_mir_for_both_backends"},
           "direct_cranelift_source_route": {"const": "explicit_source_or_type_failure_before_driver_discovery_until_patch20_12_without_c_fallback"},
           "opening_probe_fix_enabled": {"const": true}
+        }
+      },
+      "phase20_contextual_generic_constructor": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["authority_version", "status", "next_patch", "review_view",
+                     "inferred_fixture", "explicit_fixture", "negative_fixtures",
+                     "canonical_mir_fixture", "context_boundaries",
+                     "constructor_families", "semantic_policy", "mir_to_c_policy",
+                     "mir_projection_policy", "direct_cranelift_source_route",
+                     "bootstrap_policy"],
+        "properties": {
+          "authority_version": {"const": "phase20_contextual_generic_constructor_result_v1"},
+          "status": {"const": "patch20_3a_complete"},
+          "next_patch": {"const": "20.4"},
+          "review_view": {"const": "compiler/CRANELIFT_PHASE20_CONTEXTUAL_GENERIC_CONSTRUCTOR.md"},
+          "inferred_fixture": {"const": "compiler/phase20_contextual_generic_constructor_inferred.gst"},
+          "explicit_fixture": {"const": "compiler/phase20_contextual_generic_constructor_explicit.gst"},
+          "negative_fixtures": {"const": [
+            "compiler/phase20_contextual_generic_constructor_cross_template_invalid.gst",
+            "compiler/phase20_contextual_generic_constructor_wrong_brand_invalid.gst"
+          ]},
+          "canonical_mir_fixture": {"const": "compiler/fixtures/native_backend_phase20_contextual_generic_constructor.mir"},
+          "context_boundaries": {"const": ["explicit_annotation", "direct_assignment", "function_argument", "function_return"]},
+          "constructor_families": {"const": ["Vector", "HashMap", "Pool", "Mutex", "Channel", "Graph"]},
+          "semantic_policy": {"const": "an_already_resolved_compatible_context_is_the_constructor_result_authority_without_cross_template_conversion_or_brand_cast"},
+          "mir_to_c_policy": {"const": "constructor_expression_codegen_consumes_the_recorded_resolved_type_and_does_not_reconstruct_an_Any_specialization"},
+          "mir_projection_policy": {"const": "the_frontend_validates_the_paired_source_programs_and_projects_selected_main_return_31_to_supported_canonical_mir_for_both_backends"},
+          "direct_cranelift_source_route": {"const": "explicit_deferred_capability_before_driver_discovery_until_patch20_12_without_c_fallback"},
+          "bootstrap_policy": {"const": "compiler_change_is_bootstrap_sensitive_but_seed_publication_is_deferred_to_isolated_patch20_11"}
         }
       },
       "phase19_brand_authority": {
@@ -8147,10 +8178,10 @@
           "const": "phase20_opening_evidence_and_qualification_authority_v1"
         },
         "status": {
-          "const": "ready_for_patch20_1"
+          "const": "ready_for_patch20_4"
         },
         "next_patch": {
-          "const": "20.1"
+          "const": "20.4"
         },
         "predecessor_closure_status": {
           "const": "phase19_closed_brand_identity_and_value_representation"

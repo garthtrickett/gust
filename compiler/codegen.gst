@@ -1069,6 +1069,27 @@ func codegen_get_expression_type(expr_idx: Index[ast.Expression[ctx], ctx], env:
     }
 }
 
+func codegen_contextual_constructor_struct_name(expr_idx: Index[ast.Expression[ctx], ctx], fallback: str, env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) str {
+    unsafe {
+        mut selected := fallback;
+        if std.str_eq((*env).current_alloc_struct, "") == 0 {
+            selected = (*env).current_alloc_struct;
+        }
+
+        mut expression_type := codegen_get_expression_type(expr_idx, env, ctx);
+        expression_type = typechecker.env_resolve_type(env, expression_type, ctx);
+        if expression_type.tag == 8 { // Struct
+            mut recorded := codegen_get_erased_struct_name(
+                expression_type.Struct.struct_name, env, ctx
+            );
+            if codegen_ends_with(recorded, "_Any") == 0 {
+                selected = recorded;
+            }
+        }
+        return std.Clone(ctx, selected);
+    }
+}
+
 func codegen_get_c_type(t: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) str { 
     unsafe {
         mut resolved_t := typechecker.env_resolve_type(env, t, ctx);
@@ -2881,10 +2902,9 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 ctx.Set(arg0_idx, args_vec_vector_new[0]);
                 mut arg_str := codegen_generate_expression(arg0_idx, env, ctx);
 
-                mut type_str := "std_Vector_int";
-                if std.str_eq((*env).current_alloc_struct, "") == 0 {
-                    type_str = (*env).current_alloc_struct;
-                }
+                mut type_str := codegen_contextual_constructor_struct_name(
+                    expr_idx, "std_Vector_int", env, ctx
+                );
 
                 mut arena_representation := codegen_plan_argument_representation(arg0_idx, env, ctx);
                 mut arena_expr := codegen_emit_argument_representation(arg_str, arena_representation, ctx);
@@ -2962,10 +2982,9 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 ctx.Set(arg0_idx, args_vec_hashmap_new[0]);
                 mut arg_str := codegen_generate_expression(arg0_idx, env, ctx);
 
-                mut type_str := "std_HashMap_int_int";
-                if std.str_eq((*env).current_alloc_struct, "") == 0 {
-                    type_str = (*env).current_alloc_struct;
-                }
+                mut type_str := codegen_contextual_constructor_struct_name(
+                    expr_idx, "std_HashMap_int_int", env, ctx
+                );
 
                 mut arena_representation := codegen_plan_argument_representation(arg0_idx, env, ctx);
                 mut arena_expr := codegen_emit_argument_representation(arg_str, arena_representation, ctx);
@@ -2985,10 +3004,9 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 ctx.Set(arg0_idx, args_vec_pool_new[0]);
                 mut arg_str := codegen_generate_expression(arg0_idx, env, ctx);
 
-                mut type_str := "std_Pool_int";
-                if std.str_eq((*env).current_alloc_struct, "") == 0 {
-                    type_str = (*env).current_alloc_struct;
-                }
+                mut type_str := codegen_contextual_constructor_struct_name(
+                    expr_idx, "std_Pool_int", env, ctx
+                );
 
                 mut arena_representation := codegen_plan_argument_representation(arg0_idx, env, ctx);
                 mut arena_expr := codegen_emit_argument_representation(arg_str, arena_representation, ctx);
@@ -3002,10 +3020,9 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
 
             if std.str_eq(func_str, "std.MutexNew") || std.str_eq(func_str, "std_MutexNew") {
                 codegen_log_trace("👁️", "codegen_generate_expression: transpiling MutexNew FFI override", ctx);
-                mut type_str := "std_Mutex_Any";
-                if std.str_eq((*env).current_alloc_struct, "") == 0 {
-                    type_str = (*env).current_alloc_struct;
-                }
+                mut type_str := codegen_contextual_constructor_struct_name(
+                    expr_idx, "std_Mutex_Any", env, ctx
+                );
                 mut res := std.Concat("((struct ", type_str);
                 res = std.Concat(res, "){ .lock_state = std_Mutex_Alloc() })");
                 return std.Clone(ctx, res);
@@ -3013,10 +3030,9 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
 
             if std.str_eq(func_str, "std.ChannelNew") || std.str_eq(func_str, "std_ChannelNew") {
                 codegen_log_trace("👁️", "codegen_generate_expression: transpiling ChannelNew FFI override", ctx);
-                mut type_str := "std_Channel_Any";
-                if std.str_eq((*env).current_alloc_struct, "") == 0 {
-                    type_str = (*env).current_alloc_struct;
-                }
+                mut type_str := codegen_contextual_constructor_struct_name(
+                    expr_idx, "std_Channel_Any", env, ctx
+                );
                 mut res := std.Concat("((struct ", type_str);
                 res = std.Concat(res, "){ .capacity = std_Channel_Alloc(16, sizeof(*(((struct ");
                 res = std.Concat(res, type_str);
@@ -3032,10 +3048,9 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 ctx.Set(arg0_idx, args_vec_graph_new[0]);
                 mut arg_str := codegen_generate_expression(arg0_idx, env, ctx);
 
-                mut type_str := "std_Graph_Any";
-                if std.str_eq((*env).current_alloc_struct, "") == 0 {
-                    type_str = (*env).current_alloc_struct;
-                }
+                mut type_str := codegen_contextual_constructor_struct_name(
+                    expr_idx, "std_Graph_Any", env, ctx
+                );
 
                 mut arena_representation := codegen_plan_argument_representation(arg0_idx, env, ctx);
                 mut arena_expr := codegen_emit_argument_representation(arg_str, arena_representation, ctx);
