@@ -20,6 +20,7 @@
     "phase20_arena_lifecycle",
     "phase20_arena_free_invalidation",
     "phase20_inert_resource_surface",
+    "phase20_resource_declaration_migration",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -379,6 +380,33 @@
           "noop_policy": {"const": "external_construction_direct_field_access_and_private_function_calls_retain_pre_attribute_permissions_until_patch20_8"},
           "cleanup_policy": {"const": "declared_destructor_metadata_does_not_register_a_live_linear_destructor_or_schedule_cleanup"},
           "bootstrap_policy": {"const": "the_checked_in_seed_compiles_the_extended_self_hosted_parser_ast_and_typechecker_without_seed_publication"},
+          "enforcement_enabled": {"const": false}
+        }
+      },
+      "phase20_resource_declaration_migration": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["authority_version", "status", "next_patch", "issue",
+                     "review_view", "source_declarations",
+                     "directory_bridge_owner", "directory_resource_type",
+                     "directory_destructor", "directory_vocabulary_files",
+                     "source_policy", "directory_policy", "use_site_policy",
+                     "behavior_policy", "enforcement_enabled"],
+        "properties": {
+          "authority_version": {"const": "phase20_resource_declaration_migration_v1"},
+          "status": {"const": "patch20_7_complete"},
+          "next_patch": {"const": "20.8"},
+          "issue": {"const": "CR-5/#106"},
+          "review_view": {"const": "compiler/CRANELIFT_PHASE20_RESOURCE_DECLARATION_MIGRATION.md"},
+          "source_declarations": {"const": ["compiler/phase13_composition_resource_metadata_source.gst", "compiler/phase13_source_resource_metadata_source.gst", "compiler/phase13_resource_cleanup_deferred_source.gst", "compiler/future/phase14_resource_cleanup_source.gst"]},
+          "directory_bridge_owner": {"const": "compiler/typechecker.gst"},
+          "directory_resource_type": {"const": "os_Dir_ctx"},
+          "directory_destructor": {"const": "os.CloseDir"},
+          "directory_vocabulary_files": {"type": "array", "minItems": 18, "maxItems": 18, "uniqueItems": true, "items": {"type": "string"}},
+          "source_policy": {"const": "every_compiler_owned_linear_struct_declares_destructor_opacity_and_a_same_module_private_owned_cleanup_function"},
+          "directory_policy": {"const": "the_synthesized_directory_resource_records_the_same_inert_destructor_and_opacity_metadata_without_changing_live_phase15_cleanup_authority"},
+          "use_site_policy": {"const": "all_compiler_owned_directory_construction_read_close_defer_and_diagnostic_vocabulary_is_classified_by_exact_file"},
+          "behavior_policy": {"const": "migration_occurs_under_patch20_6_noop_and_preserves_existing_acceptance_diagnostics_runtime_behavior_and_backend_policy"},
           "enforcement_enabled": {"const": false}
         }
       },
@@ -8280,10 +8308,10 @@
           "const": "phase20_opening_evidence_and_qualification_authority_v1"
         },
         "status": {
-          "const": "ready_for_patch20_7"
+          "const": "ready_for_patch20_8"
         },
         "next_patch": {
-          "const": "20.7"
+          "const": "20.8"
         },
         "predecessor_closure_status": {
           "const": "phase19_closed_brand_identity_and_value_representation"

@@ -794,6 +794,47 @@
     "bootstrap_policy": "the_checked_in_seed_compiles_the_extended_self_hosted_parser_ast_and_typechecker_without_seed_publication",
     "enforcement_enabled": false
   },
+  "phase20_resource_declaration_migration": {
+    "authority_version": "phase20_resource_declaration_migration_v1",
+    "status": "patch20_7_complete",
+    "next_patch": "20.8",
+    "issue": "CR-5/#106",
+    "review_view": "compiler/CRANELIFT_PHASE20_RESOURCE_DECLARATION_MIGRATION.md",
+    "source_declarations": [
+      "compiler/phase13_composition_resource_metadata_source.gst",
+      "compiler/phase13_source_resource_metadata_source.gst",
+      "compiler/phase13_resource_cleanup_deferred_source.gst",
+      "compiler/future/phase14_resource_cleanup_source.gst"
+    ],
+    "directory_bridge_owner": "compiler/typechecker.gst",
+    "directory_resource_type": "os_Dir_ctx",
+    "directory_destructor": "os.CloseDir",
+    "directory_vocabulary_files": [
+      "compiler/codegen.gst",
+      "compiler/e2e_complex_bootstrap_target.gst",
+      "compiler/future/p15_complete_resource_differential_source.gst",
+      "compiler/future/p15_directory_resources_source.gst",
+      "compiler/future/p15_selected_failure_cleanup_source.gst",
+      "compiler/future/p20_issue106_bound_directory_current.gst",
+      "compiler/future/p20_issue106_unbound_directory_current.gst",
+      "compiler/mir_specialized_resource.gst",
+      "compiler/mir_specialized_resource_parity_smoke_test_entry.gst",
+      "compiler/phase19_cross_feature_composition_source.gst",
+      "compiler/resolver.gst",
+      "compiler/test_directory_leak_violation.gst",
+      "compiler/typechecker.gst",
+      "compiler/typechecker_directory_resource_cleanup_boundary_routing_test_entry.gst",
+      "compiler/typechecker_directory_resource_parity_metadata_test_entry.gst",
+      "compiler/typechecker_directory_resource_shadow_tracking_test_entry.gst",
+      "compiler/typechecker_directory_resource_source_of_truth_flip_test_entry.gst",
+      "compiler/typechecker_open_directories_legacy_freeze_test_entry.gst"
+    ],
+    "source_policy": "every_compiler_owned_linear_struct_declares_destructor_opacity_and_a_same_module_private_owned_cleanup_function",
+    "directory_policy": "the_synthesized_directory_resource_records_the_same_inert_destructor_and_opacity_metadata_without_changing_live_phase15_cleanup_authority",
+    "use_site_policy": "all_compiler_owned_directory_construction_read_close_defer_and_diagnostic_vocabulary_is_classified_by_exact_file",
+    "behavior_policy": "migration_occurs_under_patch20_6_noop_and_preserves_existing_acceptance_diagnostics_runtime_behavior_and_backend_policy",
+    "enforcement_enabled": false
+  },
   "phase19_brand_authority": {
     "authority_version": "phase19_brand_identity_authority_v1",
     "status": "ready_for_patch19_3",
@@ -1355,8 +1396,8 @@
   "opening_snapshots": {
     "phase20": {
       "opening_version": "phase20_opening_evidence_and_qualification_authority_v1",
-      "status": "ready_for_patch20_7",
-      "next_patch": "20.7",
+      "status": "ready_for_patch20_8",
+      "next_patch": "20.8",
       "predecessor_closure_status": "phase19_closed_brand_identity_and_value_representation",
       "roadmap_merge_sha": "1cfab1344b24ffefc72b4d752ead3eb17c6719c6",
       "review_view": "compiler/CRANELIFT_PHASE20_OPENING.md",
