@@ -20,7 +20,7 @@ TOP_FIELDS = {
     "schema", "schema_version", "registry_version", "registry_status",
     "current_phase", "closed_phase_versions", "closure_snapshots",
     "opening_snapshots", "phase20_brand_matching", "phase20_nested_brand_annotation",
-    "phase20_exact_brand_boundary",
+    "phase20_exact_brand_boundary", "phase20_contextual_generic_constructor",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming", "phase19_classification", "phase19_representation",
