@@ -956,13 +956,16 @@
     ]
   },
   "phase19_seed_convergence": {
-    "contract_version": "phase19_seed_convergence_v2",
+    "contract_version": "phase19_seed_convergence_v3",
     "status": "ready_for_patch19_12",
     "next_patch": "19.12",
     "review_view": "compiler/CRANELIFT_PHASE19_SEED_CONVERGENCE.md",
     "seed_path": "gust_v4.c",
     "seed_pull_request": 157,
     "fixed_point_policy": "make_bootstrap_stage2_stage3_byte_identity",
+    "pull_request_scope_policy": "seed_owned_changes_only_capability_pr_seed_deferred",
+    "main_push_scope_policy": "all_compiler_changes_require_fixed_point",
+    "active_deferred_seed_patch": "20.11",
     "generated_seed_diff": {
       "previous_lines": 57351,
       "current_lines": 57360,
