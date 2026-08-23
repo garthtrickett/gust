@@ -320,6 +320,9 @@ jobs:
       - name: Phase 20 arena lifecycle observation authority
         run: just guard-cranelift-phase20-arena-lifecycle-contract
 
+      - name: Phase 20 Arena.Free receiver invalidation
+        run: just guard-cranelift-phase20-arena-free-contract
+
       - name: Phase 19 identifier-spelling decision inventory
         run: just guard-cranelift-phase19-spelling-inventory
 
@@ -456,6 +459,9 @@ jobs:
 
       - name: Phase 20 contextual generic constructor parity
         run: just guard-cranelift-phase20-contextual-generic-constructor-parity
+
+      - name: Phase 20 Arena.Free receiver invalidation parity
+        run: just guard-cranelift-phase20-arena-free-parity
 
   final:
     name: final diff check

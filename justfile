@@ -16484,7 +16484,34 @@ guard-cranelift-phase20-arena-lifecycle-contract:
     python3 scripts/phase20_arena_lifecycle.py validate
     python3 scripts/phase20_arena_lifecycle.py check-review
     just guard-positive compiler/typechecker_phase20_arena_lifecycle_test_entry.gst phase20_arena_lifecycle
-    just guard-compile-pass compiler/future/p20_cr13_free_receiver_reuse_current.gst phase20_cr13_observation_only
+
+guard-cranelift-phase20-arena-free-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔐 Checking Phase 20 Arena.Free receiver invalidation..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase20-arena-free-contract | grep -F $'guard-cranelift-phase20-arena-free-contract\t1\t' >/dev/null
+    just guard-cranelift-phase20-arena-lifecycle-contract
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase20_arena_free.py validate
+    python3 scripts/phase20_arena_free.py check-review
+    just guard-compile-pass compiler/phase20_arena_free_live_source.gst phase20_arena_free_live
+    just guard-compile-fail compiler/future/p20_cr13_free_receiver_reuse_current.gst ArenaUseAfterFree phase20_cr13_free_receiver
+    just guard-compile-fail compiler/phase20_arena_free_allocation_invalid.gst ArenaUseAfterFree phase20_arena_free_allocation
+    just guard-compile-fail compiler/phase20_arena_free_write_invalid.gst ArenaUseAfterFree phase20_arena_free_write
+    just guard-compile-fail compiler/phase20_arena_free_repeat_invalid.gst ArenaUseAfterFree phase20_arena_free_repeat
+    just guard-compile-fail compiler/phase20_arena_free_deferred_repeat_invalid.gst ArenaUseAfterFree phase20_arena_free_deferred_repeat
+    just guard-compile-fail compiler/phase20_arena_free_alias_invalid.gst ArenaUseAfterFree phase20_arena_free_alias
+    just guard-compile-fail compiler/phase20_arena_free_field_invalid.gst ArenaUseAfterFree phase20_arena_free_field
+    just guard-compile-fail compiler/phase20_arena_free_parameter_invalid.gst ArenaUseAfterFree phase20_arena_free_parameter
+
+guard-cranelift-phase20-arena-free-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "⚖️ Checking Phase 20 Arena.Free invalidation parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase20-arena-free-parity | grep -F $'guard-cranelift-phase20-arena-free-parity\t2\t' >/dev/null
+    scripts/phase20_arena_free.sh
 
 guard-cranelift-phase18-opening-contract:
     #!/usr/bin/env bash

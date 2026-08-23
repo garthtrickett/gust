@@ -65,20 +65,19 @@ def validate() -> dict:
         "env_arena_lifecycle_record_binding(env, param.name, param_arena_identity, ctx)",
         "env_arena_lifecycle_record_binding(env, name, declaration_arena_identity, ctx)",
         "env, assignment_lifecycle_binding, assignment_arena_identity, ctx",
-        'env_arena_lifecycle_observe_expression(env, arg0_idx, "allocation", ctx)',
-        'env_arena_lifecycle_observe_expression(env, dest_expr_idx, "clone_destination", ctx)',
-        'env_arena_lifecycle_observe_expression(env, left_expr_idx, "write", ctx)',
-        'env_arena_lifecycle_observe_expression(env, left_expr_idx, "free", ctx)',
-        "Patch 20.5 owns the first transition to freed and all rejection.",
+        "func env_arena_lifecycle_observe_identity(",
+        "func env_arena_lifecycle_observe_expression(",
+        "The Patch 20.4 primitive remains an inert observation helper.",
     ):
         require(evidence in source,
                 f"arena lifecycle compiler evidence missing: {evidence}")
-    require("state.state = arena_lifecycle_state_freed()" not in source,
-            "Patch 20.4 enabled the Patch 20.5 freed transition early")
-    require("report_error" not in source[
-        source.index("func env_arena_lifecycle_ensure("):
-        source.index("func typechecker_normalize_canonical_type_name(")
-    ], "arena lifecycle observation helpers must not reject programs")
+    inert_observer = source[
+        source.index("func env_arena_lifecycle_observe_identity("):
+        source.index("func env_arena_lifecycle_observe_expression(")
+    ]
+    require("state.state = arena_lifecycle_state_freed()" not in inert_observer and
+            "report_error" not in inert_observer,
+            "Patch 20.4 inert observation primitive changed meaning")
 
     semantic = (ROOT / authority["semantic_fixture"]).read_text(encoding="utf-8")
     for evidence in (
@@ -91,22 +90,22 @@ def validate() -> dict:
                 f"arena lifecycle semantic fixture coverage missing: {evidence}")
 
     issue = (ROOT / authority["issue_fixture"]).read_text(encoding="utf-8")
-    require("current_result: incorrectly_accepts_clone_through_freed_arena_receiver" in issue and
-            "next_patch: 20.5" in issue and
+    require("current_result: rejects_clone_through_freed_arena_receiver" in issue and
+            "fixed_by: 20.5" in issue and
             "destination.Free();" in issue and
             'std.Clone(destination, "freed")' in issue,
-            "CR-13 acceptance witness drifted before Patch 20.5")
+            "CR-13 successor witness drifted")
 
     opening = registry.get("opening_snapshots", {}).get("phase20", {})
-    require(opening.get("status") == "ready_for_patch20_5" and
-            opening.get("next_patch") == "20.5",
+    require(opening.get("status") == "ready_for_patch20_6" and
+            opening.get("next_patch") == "20.6",
             "Phase 20 opening successor did not advance")
     probes = opening.get("baseline_probes", [])
     cr13 = next((probe for probe in probes
                  if probe.get("id") == "cr13_freed_receiver_reuse"), None)
-    require(isinstance(cr13, dict) and cr13.get("compile_exit") == 0 and
-            cr13.get("fix_enabled") is False and cr13.get("next_patch") == "20.5",
-            "CR-13 opening probe was enforced during observation-only Patch 20.4")
+    require(isinstance(cr13, dict) and cr13.get("compile_exit") == 1 and
+            cr13.get("fix_enabled") is True and cr13.get("next_patch") == "20.5",
+            "CR-13 successor probe does not record Patch 20.5 enforcement")
 
     require("- [x] Patch 20.4 — Arena Lifecycle State Authority — DONE" in
             TASK.read_text(encoding="utf-8"),

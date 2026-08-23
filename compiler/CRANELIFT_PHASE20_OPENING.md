@@ -5,7 +5,7 @@ Generated from `scripts/cranelift_feature_registry.json` and
 Do not edit by hand.
 
 - Opening version: `phase20_opening_evidence_and_qualification_authority_v1`
-- Status: `ready_for_patch20_5`
+- Status: `ready_for_patch20_6`
 - Roadmap merge: `1cfab1344b24ffefc72b4d752ead3eb17c6719c6`
 - Baseline probes: `5`
 - Canonical feature entries: `95`
@@ -19,7 +19,7 @@ Do not edit by hand.
 | --- | --- | --- | ---: | --- | --- |
 | `cr11_explicit_graph_annotation` | CR-11/#158 | `compiler/future/p20_cr11_explicit_graph_annotation_current.gst` | 0 | accepts_explicit_graph_annotation_with_resolved_nested_brand_identity | 20.2 |
 | `cr12_wrong_brand_clone_destination` | CR-12/#159 | `compiler/future/p20_cr12_wrong_brand_clone_current.gst` | 1 | rejects_distinct_destination_brand_at_generic_type_boundary | 20.3 |
-| `cr13_freed_receiver_reuse` | CR-13/#160 | `compiler/future/p20_cr13_free_receiver_reuse_current.gst` | 0 | incorrectly_accepts_clone_through_freed_arena_receiver | 20.5 |
+| `cr13_freed_receiver_reuse` | CR-13/#160 | `compiler/future/p20_cr13_free_receiver_reuse_current.gst` | 1 | rejects_clone_through_freed_arena_receiver | 20.5 |
 | `issue106_unbound_directory_payload` | CR-5/#106 | `compiler/future/p20_issue106_unbound_directory_current.gst` | 0 | incorrectly_accepts_unextracted_open_directory_payload | 20.9 |
 | `issue106_bound_directory_control` | CR-5/#106 | `compiler/future/p20_issue106_bound_directory_current.gst` | 1 | rejects_named_open_directory_with_existing_resource_leak_diagnostic | 20.9 |
 
