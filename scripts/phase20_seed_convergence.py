@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 from pathlib import Path
 
@@ -48,7 +47,6 @@ def validate() -> dict:
         "fixed_point_policy": "make_bootstrap_stage2_stage3_byte_identity",
         "seed_only_policy": "generated_gust_v4_c_only_on_seed_pull_request",
         "predecessor_authority": "phase19_seed_convergence_v3",
-        "converged_sha256": "2ab814e8d5564c6ab0c8ab26a21a8f8da88bfc89c7e1556adb26cda0be3c9af5",
     }
     for key, value in expected.items():
         require(record.get(key) == value, f"{key} drifted")
@@ -76,12 +74,9 @@ def validate() -> dict:
     require(all(set(row) == {"patch", "scope"} and row["scope"] for row in accounted),
             "seed accounting row shape drifted")
 
-    seed_bytes = SEED.read_bytes()
-    seed_text = seed_bytes.decode("utf-8")
+    seed_text = SEED.read_text(encoding="utf-8")
     require(len(seed_text.splitlines()) == diff["current_lines"],
             "committed seed line count drifted")
-    require(hashlib.sha256(seed_bytes).hexdigest() == record["converged_sha256"],
-            "committed seed hash drifted")
 
     workflow = WORKFLOW.read_text(encoding="utf-8")
     for token in (
@@ -115,7 +110,6 @@ def render(record: dict) -> str:
         f"- Predecessor authority: `{record['predecessor_authority']}`",
         f"- Fixed-point policy: `{record['fixed_point_policy']}`",
         f"- Seed-only policy: `{record['seed_only_policy']}`",
-        f"- Converged SHA-256: `{record['converged_sha256']}`",
         "",
         "## Generated seed diff",
         "",

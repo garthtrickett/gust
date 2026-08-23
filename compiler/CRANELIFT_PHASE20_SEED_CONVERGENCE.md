@@ -12,7 +12,6 @@ Generated from `scripts/cranelift_feature_registry.json` by
 - Predecessor authority: `phase19_seed_convergence_v3`
 - Fixed-point policy: `make_bootstrap_stage2_stage3_byte_identity`
 - Seed-only policy: `generated_gust_v4_c_only_on_seed_pull_request`
-- Converged SHA-256: `2ab814e8d5564c6ab0c8ab26a21a8f8da88bfc89c7e1556adb26cda0be3c9af5`
 
 ## Generated seed diff
 

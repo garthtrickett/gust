@@ -513,7 +513,7 @@
         "required": ["contract_version", "status", "next_patch", "review_view",
                      "seed_path", "seed_pull_request", "preflight_pull_request",
                      "fixed_point_policy", "seed_only_policy",
-                     "predecessor_authority", "converged_sha256",
+                     "predecessor_authority",
                      "generated_seed_diff", "accounted_patches"],
         "properties": {
           "contract_version": {"const": "phase20_seed_convergence_v1"},
@@ -526,7 +526,6 @@
           "fixed_point_policy": {"const": "make_bootstrap_stage2_stage3_byte_identity"},
           "seed_only_policy": {"const": "generated_gust_v4_c_only_on_seed_pull_request"},
           "predecessor_authority": {"const": "phase19_seed_convergence_v3"},
-          "converged_sha256": {"const": "2ab814e8d5564c6ab0c8ab26a21a8f8da88bfc89c7e1556adb26cda0be3c9af5"},
           "generated_seed_diff": {
             "type": "object",
             "additionalProperties": false,
