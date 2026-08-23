@@ -1,7 +1,7 @@
-// Patch 20.9 issue #106 evidence: the successful acquisition obligation exists
-// even when its payload is never extracted into a later local binding.
-// current_result: rejects_unbound_directory_through_acquisition_identity
-// fixed_by: 20.9
+// Patch 20.10 issue #106 evidence: an unbound successful acquisition is
+// conditionally destroyed at scope exit through its stored fallible wrapper.
+// current_result: accepts_unbound_directory_with_conditional_scope_cleanup
+// fixed_by: 20.10
 
 func main() {
     mut ctx := os.Arena.New();

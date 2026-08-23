@@ -335,6 +335,9 @@ jobs:
       - name: Phase 20 resource acquisition obligations
         run: just guard-cranelift-phase20-resource-acquisition-contract
 
+      - name: Phase 20 generic resource scope cleanup
+        run: just guard-cranelift-phase20-resource-scope-cleanup-contract
+
       - name: Phase 19 identifier-spelling decision inventory
         run: just guard-cranelift-phase19-spelling-inventory
 

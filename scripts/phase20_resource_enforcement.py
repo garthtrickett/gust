@@ -137,8 +137,8 @@ def validate() -> dict:
                 f"Patch 20.6 transition evidence missing: {evidence}")
 
     opening = registry.get("opening_snapshots", {}).get("phase20", {})
-    require(opening.get("status") == "ready_for_patch20_10" and
-            opening.get("next_patch") == "20.10",
+    require(opening.get("status") == "ready_for_patch20_11" and
+            opening.get("next_patch") == "20.11",
             "Phase 20 opening successor did not advance to Patch 20.10")
     require("- [x] Patch 20.8 — Resource Declaration and Construction Enforcement — DONE" in
             TASK.read_text(encoding="utf-8"),

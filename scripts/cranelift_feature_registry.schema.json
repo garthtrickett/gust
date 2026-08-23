@@ -23,6 +23,7 @@
     "phase20_resource_declaration_migration",
     "phase20_resource_declaration_enforcement",
     "phase20_resource_acquisition_obligations",
+    "phase20_resource_scope_cleanup",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -447,32 +448,61 @@
         "required": ["authority_version", "status", "next_patch", "issue",
                      "review_view", "user_positive_fixture",
                      "directory_positive_fixture", "path_transfer_positive_fixture",
-                     "module_fixture",
+                     "module_fixture", "automatic_cleanup_fixtures",
                      "negative_fixtures", "diagnostics", "identity_policy",
                      "transfer_policy", "conditional_policy", "callee_policy",
                      "temporary_policy",
                      "directory_policy", "backend_policy", "deferred_policy",
                      "enforcement_enabled"],
         "properties": {
-          "authority_version": {"const": "phase20_resource_acquisition_obligations_v2"},
-          "status": {"const": "patch20_9a_complete"},
-          "next_patch": {"const": "20.10"},
+          "authority_version": {"const": "phase20_resource_acquisition_obligations_v3"},
+          "status": {"const": "patch20_10_complete"},
+          "next_patch": {"const": "20.11"},
           "issue": {"const": "CR-5/#106"},
           "review_view": {"const": "compiler/CRANELIFT_PHASE20_RESOURCE_ACQUISITION_OBLIGATIONS.md"},
           "user_positive_fixture": {"const": "compiler/phase20_resource_acquisition_source.gst"},
           "directory_positive_fixture": {"const": "compiler/phase20_resource_acquisition_directory_source.gst"},
           "path_transfer_positive_fixture": {"const": "compiler/phase20_resource_acquisition_path_transfer_source.gst"},
           "module_fixture": {"const": "compiler/phase20_resource_enforcement_module.gst"},
-          "negative_fixtures": {"type": "array", "minItems": 9, "maxItems": 9, "uniqueItems": true, "items": {"type": "string"}},
+          "automatic_cleanup_fixtures": {"type": "array", "minItems": 4, "maxItems": 4, "uniqueItems": true, "items": {"type": "string"}},
+          "negative_fixtures": {"type": "array", "minItems": 5, "maxItems": 5, "uniqueItems": true, "items": {"type": "string"}},
           "diagnostics": {"const": ["ResourceAcquisitionLeak", "ResourceAcquisitionDiscarded"]},
           "identity_policy": {"const": "a_tracking_eligible_call_expression_gets_one_stable_source_span_identity_independent_of_later_binding"},
           "transfer_policy": {"const": "binding_assignment_return_aggregate_payload_guard_alias_and_owned_argument_transport_the_same_identity_without_duplicate_obligations_and_an_owned_resource_parameter_establishes_the_callee_obligation"},
-          "conditional_policy": {"const": "a_fallible_guard_or_direct_success_flag_failure_path_has_no_successful_acquisition_obligation_and_the_success_payload_inherits_the_pending_identity_while_if_match_and_loop_paths_join_pending_and_terminal_state_conservatively"},
-          "callee_policy": {"const": "a_by_value_resource_parameter_is_pending_in_the_callee_until_consumed_or_returned_except_inside_its_validated_destructor_which_is_the_terminal_operation"},
+          "conditional_policy": {"const": "a_fallible_guard_or_direct_success_flag_failure_path_has_no_successful_acquisition_obligation_the_success_payload_inherits_the_pending_identity_and_unbound_fallible_storage_is_cleaned_conditionally_while_mixed_live_and_terminal_if_match_and_loop_paths_reject"},
+          "callee_policy": {"const": "a_by_value_resource_parameter_is_pending_in_the_callee_until_consumed_returned_or_automatically_destroyed_except_inside_its_validated_destructor_which_is_the_terminal_operation"},
           "temporary_policy": {"const": "an_ignored_tracking_eligible_call_must_transfer_or_consume_its_identity_by_full_expression_end"},
-          "directory_policy": {"const": "directory_and_source_declared_resources_use_the_same_acquisition_obligation_map_while_unidentified_legacy_directory_values_retain_compatibility_checks"},
+          "directory_policy": {"const": "directory_and_source_declared_resources_use_the_same_acquisition_obligation_and_cleanup_plan_while_open_directories_is_write_only_compatibility_storage_with_no_enforcement_read"},
           "backend_policy": {"const": "accepted_mir_to_c_observables_and_all_shared_frontend_rejections_are_backend_neutral_without_fallback"},
-          "deferred_policy": {"const": "automatic_scope_exit_destructor_invocation_reverse_order_and_nested_resource_field_cleanup_remain_exclusively_patch20_10"},
+          "deferred_policy": {"const": "patch20_10_automatically_invokes_validated_destructors_in_reverse_lexical_and_resource_field_order_without_double_running_manual_or_deferred_cleanup"},
+          "enforcement_enabled": {"const": true}
+        }
+      },
+      "phase20_resource_scope_cleanup": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["authority_version", "status", "next_patch", "issue",
+                     "review_view", "module_fixture", "source_fixture",
+                     "cleanup_policy", "order_policy", "return_policy",
+                     "fallible_policy", "path_policy", "interaction_policy",
+                     "directory_policy", "backend_policy",
+                     "enforcement_enabled"],
+        "properties": {
+          "authority_version": {"const": "phase20_resource_scope_cleanup_v1"},
+          "status": {"const": "patch20_10_complete"},
+          "next_patch": {"const": "20.11"},
+          "issue": {"const": "CR-5/#106"},
+          "review_view": {"const": "compiler/CRANELIFT_PHASE20_RESOURCE_SCOPE_CLEANUP.md"},
+          "module_fixture": {"const": "compiler/phase20_resource_scope_cleanup_module.gst"},
+          "source_fixture": {"const": "compiler/phase20_resource_scope_cleanup_source.gst"},
+          "cleanup_policy": {"const": "the_typechecker_produces_structured_cleanup_actions_and_codegen_consumes_them_without_replanning"},
+          "order_policy": {"const": "inner_scopes_precede_outer_scopes_declarations_are_reversed_and_resource_fields_are_reversed_by_declared_field_order"},
+          "return_policy": {"const": "the_return_value_is_evaluated_and_transferred_before_active_defers_and_remaining_live_owners_are_destroyed"},
+          "fallible_policy": {"const": "a_stored_fallible_acquisition_without_payload_binding_conditionally_destroys_Val_only_when_Ok"},
+          "path_policy": {"const": "mixed_live_and_terminal_joins_reject_instead_of_emitting_an_unconditional_double_destroy"},
+          "interaction_policy": {"const": "manual_close_move_return_owned_argument_and_defer_terminal_states_exclude_automatic_cleanup"},
+          "directory_policy": {"const": "open_directories_is_compatibility_storage_only_and_has_no_enforcement_read"},
+          "backend_policy": {"const": "mir_to_c_emits_the_shared_compiler_plan_and_phase15_canonical_resource_parity_keeps_mir_to_c_and_cranelift_cleanup_consumers_in_agreement"},
           "enforcement_enabled": {"const": true}
         }
       },
@@ -8374,10 +8404,10 @@
           "const": "phase20_opening_evidence_and_qualification_authority_v1"
         },
         "status": {
-          "const": "ready_for_patch20_10"
+          "const": "ready_for_patch20_11"
         },
         "next_patch": {
-          "const": "20.10"
+          "const": "20.11"
         },
         "predecessor_closure_status": {
           "const": "phase19_closed_brand_identity_and_value_representation"

@@ -883,25 +883,27 @@
     "enforcement_enabled": true
   },
   "phase20_resource_acquisition_obligations": {
-    "authority_version": "phase20_resource_acquisition_obligations_v2",
-    "status": "patch20_9a_complete",
-    "next_patch": "20.10",
+    "authority_version": "phase20_resource_acquisition_obligations_v3",
+    "status": "patch20_10_complete",
+    "next_patch": "20.11",
     "issue": "CR-5/#106",
     "review_view": "compiler/CRANELIFT_PHASE20_RESOURCE_ACQUISITION_OBLIGATIONS.md",
     "user_positive_fixture": "compiler/phase20_resource_acquisition_source.gst",
     "directory_positive_fixture": "compiler/phase20_resource_acquisition_directory_source.gst",
     "path_transfer_positive_fixture": "compiler/phase20_resource_acquisition_path_transfer_source.gst",
     "module_fixture": "compiler/phase20_resource_enforcement_module.gst",
-    "negative_fixtures": [
+    "automatic_cleanup_fixtures": [
       "compiler/future/p20_issue106_bound_directory_current.gst",
       "compiler/future/p20_issue106_unbound_directory_current.gst",
       "compiler/phase20_resource_acquisition_user_bound_invalid.gst",
+      "compiler/phase20_resource_acquisition_callee_drop_invalid.gst"
+    ],
+    "negative_fixtures": [
       "compiler/phase20_resource_acquisition_user_discarded_invalid.gst",
       "compiler/phase20_resource_acquisition_directory_discarded_invalid.gst",
       "compiler/phase20_resource_acquisition_conditional_close_invalid.gst",
       "compiler/phase20_resource_acquisition_loop_close_invalid.gst",
-      "compiler/phase20_resource_acquisition_match_close_invalid.gst",
-      "compiler/phase20_resource_acquisition_callee_drop_invalid.gst"
+      "compiler/phase20_resource_acquisition_match_close_invalid.gst"
     ],
     "diagnostics": [
       "ResourceAcquisitionLeak",
@@ -909,12 +911,30 @@
     ],
     "identity_policy": "a_tracking_eligible_call_expression_gets_one_stable_source_span_identity_independent_of_later_binding",
     "transfer_policy": "binding_assignment_return_aggregate_payload_guard_alias_and_owned_argument_transport_the_same_identity_without_duplicate_obligations_and_an_owned_resource_parameter_establishes_the_callee_obligation",
-    "conditional_policy": "a_fallible_guard_or_direct_success_flag_failure_path_has_no_successful_acquisition_obligation_and_the_success_payload_inherits_the_pending_identity_while_if_match_and_loop_paths_join_pending_and_terminal_state_conservatively",
-    "callee_policy": "a_by_value_resource_parameter_is_pending_in_the_callee_until_consumed_or_returned_except_inside_its_validated_destructor_which_is_the_terminal_operation",
+    "conditional_policy": "a_fallible_guard_or_direct_success_flag_failure_path_has_no_successful_acquisition_obligation_the_success_payload_inherits_the_pending_identity_and_unbound_fallible_storage_is_cleaned_conditionally_while_mixed_live_and_terminal_if_match_and_loop_paths_reject",
+    "callee_policy": "a_by_value_resource_parameter_is_pending_in_the_callee_until_consumed_returned_or_automatically_destroyed_except_inside_its_validated_destructor_which_is_the_terminal_operation",
     "temporary_policy": "an_ignored_tracking_eligible_call_must_transfer_or_consume_its_identity_by_full_expression_end",
-    "directory_policy": "directory_and_source_declared_resources_use_the_same_acquisition_obligation_map_while_unidentified_legacy_directory_values_retain_compatibility_checks",
+    "directory_policy": "directory_and_source_declared_resources_use_the_same_acquisition_obligation_and_cleanup_plan_while_open_directories_is_write_only_compatibility_storage_with_no_enforcement_read",
     "backend_policy": "accepted_mir_to_c_observables_and_all_shared_frontend_rejections_are_backend_neutral_without_fallback",
-    "deferred_policy": "automatic_scope_exit_destructor_invocation_reverse_order_and_nested_resource_field_cleanup_remain_exclusively_patch20_10",
+    "deferred_policy": "patch20_10_automatically_invokes_validated_destructors_in_reverse_lexical_and_resource_field_order_without_double_running_manual_or_deferred_cleanup",
+    "enforcement_enabled": true
+  },
+  "phase20_resource_scope_cleanup": {
+    "authority_version": "phase20_resource_scope_cleanup_v1",
+    "status": "patch20_10_complete",
+    "next_patch": "20.11",
+    "issue": "CR-5/#106",
+    "review_view": "compiler/CRANELIFT_PHASE20_RESOURCE_SCOPE_CLEANUP.md",
+    "module_fixture": "compiler/phase20_resource_scope_cleanup_module.gst",
+    "source_fixture": "compiler/phase20_resource_scope_cleanup_source.gst",
+    "cleanup_policy": "the_typechecker_produces_structured_cleanup_actions_and_codegen_consumes_them_without_replanning",
+    "order_policy": "inner_scopes_precede_outer_scopes_declarations_are_reversed_and_resource_fields_are_reversed_by_declared_field_order",
+    "return_policy": "the_return_value_is_evaluated_and_transferred_before_active_defers_and_remaining_live_owners_are_destroyed",
+    "fallible_policy": "a_stored_fallible_acquisition_without_payload_binding_conditionally_destroys_Val_only_when_Ok",
+    "path_policy": "mixed_live_and_terminal_joins_reject_instead_of_emitting_an_unconditional_double_destroy",
+    "interaction_policy": "manual_close_move_return_owned_argument_and_defer_terminal_states_exclude_automatic_cleanup",
+    "directory_policy": "open_directories_is_compatibility_storage_only_and_has_no_enforcement_read",
+    "backend_policy": "mir_to_c_emits_the_shared_compiler_plan_and_phase15_canonical_resource_parity_keeps_mir_to_c_and_cranelift_cleanup_consumers_in_agreement",
     "enforcement_enabled": true
   },
   "phase19_brand_authority": {
@@ -1478,8 +1498,8 @@
   "opening_snapshots": {
     "phase20": {
       "opening_version": "phase20_opening_evidence_and_qualification_authority_v1",
-      "status": "ready_for_patch20_10",
-      "next_patch": "20.10",
+      "status": "ready_for_patch20_11",
+      "next_patch": "20.11",
       "predecessor_closure_status": "phase19_closed_brand_identity_and_value_representation",
       "roadmap_merge_sha": "1cfab1344b24ffefc72b4d752ead3eb17c6719c6",
       "review_view": "compiler/CRANELIFT_PHASE20_OPENING.md",
@@ -1525,26 +1545,22 @@
           "id": "issue106_unbound_directory_payload",
           "source_requirement": "CR-5/#106",
           "fixture": "compiler/future/p20_issue106_unbound_directory_current.gst",
-          "compile_exit": 1,
-          "current_verdict": "rejects_unbound_directory_through_acquisition_identity",
-          "diagnostic_substrings": [
-            "[ResourceAcquisitionLeak]"
-          ],
+          "compile_exit": 0,
+          "current_verdict": "accepts_unbound_directory_with_conditional_scope_cleanup",
+          "diagnostic_substrings": [],
           "semantic_owner": "compiler_linear_resource_verifier",
-          "next_patch": "20.9",
+          "next_patch": "20.10",
           "fix_enabled": true
         },
         {
           "id": "issue106_bound_directory_control",
           "source_requirement": "CR-5/#106",
           "fixture": "compiler/future/p20_issue106_bound_directory_current.gst",
-          "compile_exit": 1,
-          "current_verdict": "rejects_bound_directory_through_acquisition_identity",
-          "diagnostic_substrings": [
-            "[ResourceAcquisitionLeak]"
-          ],
+          "compile_exit": 0,
+          "current_verdict": "accepts_bound_directory_with_payload_scope_cleanup",
+          "diagnostic_substrings": [],
           "semantic_owner": "compiler_linear_resource_verifier",
-          "next_patch": "20.9",
+          "next_patch": "20.10",
           "fix_enabled": true
         }
       ],
