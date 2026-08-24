@@ -16757,6 +16757,35 @@ guard-cranelift-phase20-post-prerequisite-seed-convergence:
     python3 scripts/phase20_post_prerequisite_seed_convergence.py validate
     python3 scripts/phase20_post_prerequisite_seed_convergence.py check-review
 
+guard-cranelift-phase20-long-lived-concurrent-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧵 Checking Phase 20 long-lived/concurrent resource authority..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase20-long-lived-concurrent-contract | grep -F $'guard-cranelift-phase20-long-lived-concurrent-contract\t1\t' >/dev/null
+    just guard-cranelift-phase20-post-prerequisite-seed-convergence
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase20_long_lived_concurrent.py validate
+    python3 scripts/phase20_long_lived_concurrent.py check-review
+
+guard-cranelift-phase20-long-lived-concurrent-smoke:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "⚖️ Checking Phase 20 deterministic long-lived/concurrent smoke..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase20-long-lived-concurrent-smoke | grep -F $'guard-cranelift-phase20-long-lived-concurrent-smoke\t2\t' >/dev/null
+    just guard-cranelift-phase20-long-lived-concurrent-contract
+    scripts/phase20_long_lived_concurrent.sh small
+
+guard-cranelift-phase20-long-lived-concurrent-full:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🕰️ Checking Phase 20 full long-lived/concurrent resource cohort..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase20-long-lived-concurrent-full | grep -F $'guard-cranelift-phase20-long-lived-concurrent-full\t3\t' >/dev/null
+    just guard-cranelift-phase20-long-lived-concurrent-smoke
+    scripts/phase20_long_lived_concurrent.sh full
+
 guard-cranelift-phase18-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail

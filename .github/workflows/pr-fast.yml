@@ -383,6 +383,9 @@ jobs:
       - name: Phase 20 post-prerequisite seed convergence
         run: just guard-cranelift-phase20-post-prerequisite-seed-convergence
 
+      - name: Phase 20 long-lived and concurrent resource authority
+        run: just guard-cranelift-phase20-long-lived-concurrent-contract
+
       - name: Phase 19 cross-feature composition
         run: just guard-cranelift-phase19-composition-contract
 
@@ -507,6 +510,9 @@ jobs:
 
       - name: Phase 20 generic guard prerequisites parity
         run: just guard-cranelift-phase20-generic-guard-prerequisites-parity
+
+      - name: Phase 20 long-lived and concurrent resource smoke
+        run: just guard-cranelift-phase20-long-lived-concurrent-smoke
 
   final:
     name: final diff check

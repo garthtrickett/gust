@@ -91,7 +91,7 @@ does not activate another lane, and does not authorize Phase 21.
 - [x] Patch 20.14h — Phase-Frozen Historical Accounting — DONE
 - [x] Patch 20.14a — Generic Guard Prerequisite Corrections — DONE
 - [x] Patch 20.14b — Post-Prerequisite Bootstrap Seed Reconvergence — DONE
-- [ ] Patch 20.15 — Long-Lived and Concurrent Resource Differential
+- [x] Patch 20.15 — Long-Lived and Concurrent Resource Differential — DONE
 - [ ] Patch 20.16 — Cross-Feature Qualification and Residue Audit
 - [ ] Patch 20.17 — Phase 20 Closure
 
