@@ -40,6 +40,12 @@ ENFORCEMENT_LINEAR_FIXTURES = [
     "compiler/phase20_resource_destructor_owner_invalid.gst",
 ]
 
+GENERIC_GUARD_LINEAR_FIXTURES = [
+    "compiler/phase20_generic_guard_prerequisites_source.gst",
+    "compiler/phase20_generic_resource_destructor_wrong_type_invalid.gst",
+    "compiler/phase20_generic_resource_destructor_wrong_brand_invalid.gst",
+]
+
 SOURCE_DESTRUCTORS = {
     SOURCE_DECLARATIONS[0]: (
         "Phase13CompositionResourceMetadata",
@@ -199,7 +205,8 @@ def validate() -> dict:
         source = path.read_text(encoding="utf-8")
         if has_linear_attribute(source):
             actual_linear.append(relative(path))
-    expected_linear = sorted(SOURCE_DECLARATIONS + ENFORCEMENT_LINEAR_FIXTURES)
+    expected_linear = sorted(SOURCE_DECLARATIONS + ENFORCEMENT_LINEAR_FIXTURES +
+                             GENERIC_GUARD_LINEAR_FIXTURES)
     require(actual_linear == expected_linear,
             "compiler-owned #[linear] declaration inventory drifted: " +
             repr(actual_linear))
@@ -212,6 +219,13 @@ def validate() -> dict:
     require(all(path in enforcement_files
                 for path in ENFORCEMENT_LINEAR_FIXTURES),
             "Phase 20 linear fixtures are not classified by their authority")
+
+    generic_guard = registry.get("phase20_generic_guard_prerequisites", {})
+    generic_guard_files = [generic_guard.get("positive_fixture", "")]
+    generic_guard_files += generic_guard.get("negative_fixtures", [])
+    require(all(path in generic_guard_files
+                for path in GENERIC_GUARD_LINEAR_FIXTURES),
+            "Patch 20.14a linear fixtures are not classified by their authority")
 
     for source_path, (type_name, destructor_name) in SOURCE_DESTRUCTORS.items():
         source = (ROOT / source_path).read_text(encoding="utf-8")
