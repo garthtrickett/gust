@@ -33,6 +33,7 @@
     "phase20_long_lived_concurrent",
     "phase20_cross_feature_qualification",
     "phase20_resource_rooted_access",
+    "phase20_unsafe_mutex_migration",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -1010,6 +1011,41 @@
           "mutex_policy": {"const": "Mutex_Lock_and_Unlock_semantics_and_all_existing_call_sites_remain_unchanged_until_patch20_16c_migration"},
           "backend_policy": {"const": "the_existing_generic_guard_prerequisite_MIR_to_C_and_supported_Cranelift_observable_remains_identical_without_fallback"},
           "bootstrap_policy": {"const": "the_checked_in_seed_builds_the_additive_carrier_and_generated_seed_reconvergence_remains_isolated_in_patch20_16e"}
+        }
+      },
+      "phase20_unsafe_mutex_migration": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["contract_version", "status", "next_patch", "review_view",
+                     "scanner", "source_scope", "explicit_unsafe_policy",
+                     "call_sites", "total_lock_calls", "total_unlock_calls",
+                     "total_calls", "transitional_test_coverage",
+                     "migration_policy", "enforcement_enabled", "backend_policy",
+                     "bootstrap_policy"],
+        "properties": {
+          "contract_version": {"const": "phase20_unsafe_mutex_migration_v1"},
+          "status": {"const": "patch20_16c_complete"},
+          "next_patch": {"const": "20.16d"},
+          "review_view": {"const": "compiler/CRANELIFT_PHASE20_UNSAFE_MUTEX_MIGRATION.md"},
+          "scanner": {"const": "scripts/phase20_unsafe_mutex_migration.py"},
+          "source_scope": {"const": "every_git_tracked_gust_source_file"},
+          "explicit_unsafe_policy": {"const": "every_method_call_spelled_dot_Lock_or_dot_Unlock_is_classified_and_lexically_nested_in_an_explicit_unsafe_block_or_unsafe_function_body"},
+          "call_sites": {
+            "const": [
+              {"path": "compiler/e2e_complex_bootstrap_target.gst", "role": "bootstrap_target", "lock_calls": 4, "unlock_calls": 4},
+              {"path": "compiler/phase20_component_threading_source.gst", "role": "compiler_threading_compile_only_fixture", "lock_calls": 1, "unlock_calls": 1},
+              {"path": "tests/e2e_mutex_concurrency.gst", "role": "transitional_mutex_test", "lock_calls": 3, "unlock_calls": 3},
+              {"path": "tests/e2e_sync_primitives.gst", "role": "transitional_sync_test", "lock_calls": 4, "unlock_calls": 4}
+            ]
+          },
+          "total_lock_calls": {"const": 12},
+          "total_unlock_calls": {"const": 12},
+          "total_calls": {"const": 24},
+          "transitional_test_coverage": {"const": ["tests/e2e_mutex_concurrency.gst", "tests/e2e_sync_primitives.gst"]},
+          "migration_policy": {"const": "all_existing_sites_were_already_explicitly_unsafe_due_the_prior_raw_pointer_migration_so_patch20_16c_freezes_that_complete_noop_inventory_without_source_rewrites"},
+          "enforcement_enabled": {"const": false},
+          "backend_policy": {"const": "raw_Mutex_lowering_runtime_symbols_ABI_and_all_existing_observables_remain_unchanged_without_backend_fallback"},
+          "bootstrap_policy": {"const": "make_gust_accepts_the_complete_explicit_unsafe_inventory_and_seed_reconvergence_remains_isolated_in_patch20_16e"}
         }
       },
       "phase19_brand_authority": {

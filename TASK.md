@@ -104,7 +104,7 @@ does not activate another lane, and does not authorize Phase 21.
 - [x] Patch 20.16 — Cross-Feature Qualification and Residue Audit — DONE
 - [x] Patch 20.16a — Mutex Guard Decision and Implementation Authority — DONE
 - [x] Patch 20.16b — Inert Resource-Rooted Access Authority — DONE
-- [ ] Patch 20.16c — Explicit-Unsafe Mutex Primitive Migration
+- [x] Patch 20.16c — Explicit-Unsafe Mutex Primitive Migration — DONE
 - [ ] Patch 20.16d — Protected-Access Liveness Enforcement
 - [ ] Patch 20.16e — Protected-Access Bootstrap Seed Reconvergence
 - [ ] Patch 20.17 — Phase 20 Closure
