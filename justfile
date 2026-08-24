@@ -16767,6 +16767,34 @@ guard-cranelift-phase20-resource-rooted-access-parity:
     just guard-cranelift-phase20-resource-rooted-access-contract
     just guard-cranelift-phase20-generic-guard-prerequisites-parity
 
+guard-cranelift-phase20-unsafe-mutex-migration-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 20 explicit-unsafe Mutex primitive inventory..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase20-unsafe-mutex-migration-contract | grep -F $'guard-cranelift-phase20-unsafe-mutex-migration-contract\t1\t' >/dev/null
+    just guard-cranelift-phase20-resource-rooted-access-contract
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase20_unsafe_mutex_migration.py validate
+    python3 scripts/phase20_unsafe_mutex_migration.py check-review
+
+guard-cranelift-phase20-unsafe-mutex-migration-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "⚖️ Checking Phase 20 explicit-unsafe Mutex unchanged observables..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase20-unsafe-mutex-migration-parity | grep -F $'guard-cranelift-phase20-unsafe-mutex-migration-parity\t2\t' >/dev/null
+    just guard-cranelift-phase20-unsafe-mutex-migration-contract
+    just guard-compile-pass compiler/phase20_component_threading_source.gst phase20_16c_component_threading
+    just guard-positive compiler/e2e_complex_bootstrap_target.gst phase20_16c_bootstrap_target
+    grep -Fx 'Active: E2E_Bootstrap' build/guards/phase20_16c_bootstrap_target/compiler.log >/dev/null
+    grep -Fx '3' build/guards/phase20_16c_bootstrap_target/compiler.log >/dev/null
+    grep -Fx '1' build/guards/phase20_16c_bootstrap_target/compiler.log >/dev/null
+    just guard-positive tests/e2e_mutex_concurrency.gst phase20_16c_mutex_concurrency
+    grep -Fx '300' build/guards/phase20_16c_mutex_concurrency/compiler.log >/dev/null
+    just guard-positive tests/e2e_sync_primitives.gst phase20_16c_sync_primitives
+    grep -Fx '10' build/guards/phase20_16c_sync_primitives/compiler.log >/dev/null
+
 guard-cranelift-phase20-post-prerequisite-seed-convergence:
     #!/usr/bin/env bash
     set -euo pipefail

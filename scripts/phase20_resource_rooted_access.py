@@ -85,7 +85,7 @@ def validate() -> dict:
     task = TASK.read_text(encoding="utf-8")
     require("- [x] Patch 20.16b — Inert Resource-Rooted Access Authority — DONE"
             in task, "TASK.md does not mark Patch 20.16b DONE")
-    require("- [ ] Patch 20.16c — Explicit-Unsafe Mutex Primitive Migration"
+    require("- [x] Patch 20.16c — Explicit-Unsafe Mutex Primitive Migration — DONE"
             in task, "TASK.md does not preserve Patch 20.16c as the next boundary")
 
     workflow = PR_FAST.read_text(encoding="utf-8")
