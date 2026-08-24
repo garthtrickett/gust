@@ -1,0 +1,9 @@
+kind	requirement	evidence	level
+closure	every Phase 20 status row is DONE	TASK.md Status rows 20.0 through 20.17	1
+issues	all compiler-owned issue scenarios have focused registered guards	seven registry-owned scenario rows with guard levels	1
+qualification	the selected cohort has zero unexplained differences	phase20_cross_feature_qualification unexplained_divergences	1
+residue	every deferred cohort is owned and falsifiable without fallback	six final residue rows and poisoned direct Cranelift policy	1
+protected_access	OD-13 implementation authority and its unsafe boundary are preserved	phase20_protected_access_liveness handoff and raw_mutex_policy	1
+bootstrap	the protected-access bootstrap seed reached its fixed point	phase20_protected_access_seed_convergence authority	1
+phase_gate	Phase 20 authoritative Historical Full gate is satisfied	run 32772996884 completed success with 18/18 jobs on exact merged main 6e54e3cc6fa8fc44e5df7a67624bb183b01b2258	1
+non_claim	the closure view is generated from registry authority	view regenerated and compared byte for byte	1

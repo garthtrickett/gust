@@ -36,6 +36,7 @@
     "phase20_unsafe_mutex_migration",
     "phase20_protected_access_liveness",
     "phase20_protected_access_seed_convergence",
+    "phase20_closure",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -1141,6 +1142,54 @@
               "line_delta": {"const": 186}
             }
           }
+        }
+      },
+      "phase20_closure": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "version", "status", "authority_owner", "wording",
+          "authoritative_historical_full", "resolved_scenarios",
+          "residue_authority", "seed_authority", "seed_fixed_point_policy",
+          "non_claims", "view_derivation"
+        ],
+        "properties": {
+          "version": {"const": "phase20_closure_v1"},
+          "status": {"const": "phase20_closed_semantic_foundations_and_qualification"},
+          "authority_owner": {"const": "scripts/cranelift_feature_registry.json"},
+          "wording": {"type": "string", "minLength": 1},
+          "authoritative_historical_full": {"const": {
+            "workflow": "Cranelift Historical Full",
+            "run_id": 32772996884,
+            "event": "workflow_dispatch",
+            "head_branch": "main",
+            "head_sha": "6e54e3cc6fa8fc44e5df7a67624bb183b01b2258",
+            "status": "completed",
+            "conclusion": "success",
+            "successful_jobs": 18,
+            "total_jobs": 18
+          }},
+          "resolved_scenarios": {"const": [
+            {"id": "CR-11/#158", "authority": "phase20_nested_brand_annotation", "guard": "guard-cranelift-phase20-nested-brand-annotation-parity", "level": 2},
+            {"id": "CR-12/#159", "authority": "phase20_exact_brand_boundary", "guard": "guard-cranelift-phase20-exact-brand-boundary-parity", "level": 2},
+            {"id": "contextual-generic-constructor", "authority": "phase20_contextual_generic_constructor", "guard": "guard-cranelift-phase20-contextual-generic-constructor-parity", "level": 2},
+            {"id": "CR-13/#160", "authority": "phase20_arena_free_invalidation", "guard": "guard-cranelift-phase20-arena-free-parity", "level": 2},
+            {"id": "#106", "authority": "phase20_resource_acquisition_obligations", "guard": "guard-cranelift-phase20-resource-acquisition-parity", "level": 2},
+            {"id": "CR-5", "authority": "phase20_resource_scope_cleanup", "guard": "guard-cranelift-phase20-resource-scope-cleanup-parity", "level": 2},
+            {"id": "OD-13-implementation", "authority": "phase20_protected_access_liveness", "guard": "guard-cranelift-phase20-protected-access-liveness-contract", "level": 1}
+          ]},
+          "residue_authority": {"const": "phase20_cross_feature_qualification_v1"},
+          "seed_authority": {"const": "phase20_protected_access_seed_convergence_v1"},
+          "seed_fixed_point_policy": {"const": "make_bootstrap_stage2_stage3_byte_identity"},
+          "non_claims": {"const": [
+            "Phase 20 provides universal Gust or Cranelift feature coverage.",
+            "Every explicit Phase 21 residue has been implemented.",
+            "The compiler selects a public Stdlib Mutex guard spelling, representation, re-entrancy policy, or accessor ergonomics.",
+            "Raw or unsafe code receives the protected-access guarantee of the safe typed path.",
+            "Phase 20 makes a tenant or data-isolation claim or closes OD-8's evidence-open soundness verdict.",
+            "Phase 21 self-hosting has begun or completed."
+          ]},
+          "view_derivation": {"const": "the_closure_view_is_generated_from_this_block_and_the_cross_feature_residue_authority"}
         }
       },
       "phase19_brand_authority": {

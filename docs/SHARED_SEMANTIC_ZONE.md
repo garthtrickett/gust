@@ -214,9 +214,10 @@ decision: OD-3 is still marked open in `VISION.md` §27 while `std.Rc`,
 > `phase20_protected_access_liveness` authority: resource-rooted access cannot
 > detach from, escape, or survive the guard that authorizes it, raw Mutex
 > primitives require explicit unsafe, and automatic lifecycle cleanup is checked
-> across the selected exit forms. Once that exact authority is merged on `main`,
-> its generated handoff permits the registrar to resume Stdlib S1.8. Patch 20.16e
-> remains the isolated seed reconvergence. No patch may add a Mutex-specific
+> across the selected exit forms. Its generated handoff permits the registrar
+> to resume Stdlib S1.8. Patch 20.16e completed the isolated seed reconvergence,
+> and Phase 20 closed only after the exact merged-seed Historical Full passed.
+> No patch may add a Mutex-specific
 > Resource exception or choose the Stdlib spelling, representation, re-entrancy,
 > or accessor ergonomics.
 
