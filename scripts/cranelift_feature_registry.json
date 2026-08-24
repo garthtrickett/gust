@@ -1246,10 +1246,18 @@
     "minimized_failures": []
   },
   "phase20_generic_guard_prerequisites": {
-    "authority_version": "phase20_generic_guard_prerequisites_v1",
+    "authority_version": "phase20_generic_guard_prerequisites_v2",
     "status": "patch20_14a_complete",
     "next_patch": "20.14b",
-    "open_decision": "OD-13",
+    "decision_at_patch": "OD_13_open_during_patch20_14a",
+    "decision_successor_status": "OD_13_resolved_2026_08_24",
+    "decision_authority_patch": "20.16a",
+    "implementation_transition": [
+      "20.16b",
+      "20.16c",
+      "20.16d",
+      "20.16e"
+    ],
     "review_view": "compiler/CRANELIFT_PHASE20_GENERIC_GUARD_PREREQUISITES.md",
     "semantic_fixture": "compiler/typechecker_phase20_generic_guard_prerequisites_test_entry.gst",
     "positive_fixture": "compiler/phase20_generic_guard_prerequisites_source.gst",
@@ -1265,7 +1273,11 @@
     "resource_destructor_policy": "the_single_owned_parameter_of_a_generic_resource_destructor_matches_the_canonical_declared_template_after_its_inferred_brand_parameter_is_substituted",
     "safe_reference_policy": "a_safe_reference_parameter_to_a_same_brand_struct_retains_safe_parameter_provenance_through_aggregate_field_assignment_and_return",
     "non_laundering_policy": "raw_derived_and_sandbox_derived_reference_provenance_remains_rejected_at_the_same_safe_branded_aggregate_boundary",
-    "mutex_policy": "Mutex_Lock_continues_to_return_RawPointer_T_with_explicit_Unlock_while_OD_13_is_open",
+    "mutex_policy_at_patch": "during_patch20_14a_Mutex_Lock_returned_RawPointer_T_with_explicit_Unlock_while_OD_13_was_open",
+    "resolved_safe_contract": "safe_lock_acquisition_returns_one_move_only_linear_guard_that_carries_context_branded_protected_access_and_owns_automatic_exactly_once_unlock_on_every_scope_exit",
+    "resolved_raw_policy": "raw_pointer_access_and_manual_Unlock_may_remain_only_as_explicit_unsafe_or_compiler_internal_primitives_not_the_safe_contract",
+    "resolved_token_policy": "the_guard_is_the_access_authority_and_acquisition_obligation_without_a_separate_compiler_owned_access_token",
+    "implementation_handoff": "notify_the_registrar_after_patch20_16d_checked_generic_implementation_authority_lands",
     "backend_policy": "the_frontend_validates_the_full_generic_source_and_projects_selected_main_return_37_to_supported_canonical_mir_for_MIR_to_C_and_Cranelift_without_fallback",
     "bootstrap_policy": "the_checked_in_seed_builds_the_capability_patch_and_generated_seed_reconvergence_is_isolated_in_patch20_14b"
   },
