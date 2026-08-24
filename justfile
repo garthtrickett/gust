@@ -16830,7 +16830,6 @@ guard-cranelift-phase20-protected-access-liveness-full:
     python3 scripts/cranelift_test_levels.py validate
     python3 scripts/cranelift_test_levels.py level guard-cranelift-phase20-protected-access-liveness-full | grep -F $'guard-cranelift-phase20-protected-access-liveness-full\t3\t' >/dev/null
     just guard-cranelift-phase20-protected-access-liveness-parity
-    just guard-cranelift-phase20-long-lived-concurrent-full
 
 guard-cranelift-phase20-post-prerequisite-seed-convergence:
     #!/usr/bin/env bash
@@ -16902,6 +16901,7 @@ guard-cranelift-phase20-cross-feature-qualification-full:
     just guard-cranelift-phase20-cross-feature-qualification-parity
     scripts/phase20_cross_feature_qualification.sh full
     just guard-cranelift-phase20-generated-mir-scale-full
+    just guard-cranelift-phase20-long-lived-concurrent-full
     just guard-cranelift-phase20-protected-access-liveness-full
 
 guard-cranelift-phase18-opening-contract:

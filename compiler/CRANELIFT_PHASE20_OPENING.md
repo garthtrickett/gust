@@ -11,7 +11,7 @@ Do not edit by hand.
 - Canonical feature entries: `95`
 - Composition links: `71`
 - Deferred-source links: `82`
-- Historical Full Level 3 guards: `163`
+- Historical Full Level 3 guards: `164`
 
 ## Baseline probes
 
@@ -433,6 +433,7 @@ and 20.9 respectively.
 - `guard-cranelift-phase20-cross-feature-qualification-full`
 - `guard-cranelift-phase20-generated-mir-scale-full`
 - `guard-cranelift-phase20-long-lived-concurrent-full`
+- `guard-cranelift-phase20-protected-access-liveness-full`
 - `guard-cranelift-phase9b-close`
 - `guard-cranelift-phase9c-close`
 - `guard-cranelift-phase9c-differential-ladder-native-shard`
