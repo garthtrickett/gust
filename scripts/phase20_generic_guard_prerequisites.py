@@ -113,7 +113,7 @@ def validate() -> dict:
     for evidence in (
         "- [x] Patch 20.14a — Generic Guard Prerequisite Corrections — DONE",
         "- [x] Patch 20.16a — Mutex Guard Decision and Implementation Authority — DONE",
-        "- [ ] Patch 20.16b — Inert Resource-Rooted Access Authority",
+        "- [x] Patch 20.16b — Inert Resource-Rooted Access Authority — DONE",
         "- [ ] Patch 20.16c — Explicit-Unsafe Mutex Primitive Migration",
         "- [ ] Patch 20.16d — Protected-Access Liveness Enforcement",
         "- [ ] Patch 20.16e — Protected-Access Bootstrap Seed Reconvergence",

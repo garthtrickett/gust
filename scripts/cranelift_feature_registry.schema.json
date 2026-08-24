@@ -32,6 +32,7 @@
     "phase20_post_prerequisite_seed_convergence",
     "phase20_long_lived_concurrent",
     "phase20_cross_feature_qualification",
+    "phase20_resource_rooted_access",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -981,6 +982,34 @@
             }
           },
           "unexplained_divergences": {"const": []}
+        }
+      },
+      "phase20_resource_rooted_access": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["contract_version", "status", "next_patch", "review_view",
+                     "semantic_fixture", "carrier", "root_authority",
+                     "constructor", "queries", "readback_policy", "join_policy",
+                     "move_policy", "terminal_policy", "inert_policy",
+                     "mutex_policy", "backend_policy", "bootstrap_policy"],
+        "properties": {
+          "contract_version": {"const": "phase20_resource_rooted_access_v1"},
+          "status": {"const": "patch20_16b_complete"},
+          "next_patch": {"const": "20.16c"},
+          "review_view": {"const": "compiler/CRANELIFT_PHASE20_RESOURCE_ROOTED_ACCESS.md"},
+          "semantic_fixture": {"const": "compiler/typechecker_phase20_resource_rooted_access_test_entry.gst"},
+          "carrier": {"const": "ExpressionProvenance.resource_root_identity"},
+          "root_authority": {"const": "ResourceAcquisitionObligation.identity"},
+          "constructor": {"const": "env_expression_provenance_rooted_in_resource_storage"},
+          "queries": {"const": ["expression_provenance_has_resource_root", "expression_provenance_resource_root_identity", "env_expression_provenance_resource_root_is_live"]},
+          "readback_policy": {"const": "safe_readback_preserves_the_same_resource_root_identity"},
+          "join_policy": {"const": "a_join_preserves_resource_root_authority_only_when_both_paths_carry_the_same_nonempty_identity"},
+          "move_policy": {"const": "guard_rebinding_preserves_the_canonical_acquisition_identity_so_rooted_access_observes_the_same_pending_obligation"},
+          "terminal_policy": {"const": "closed_destroyed_or_transferred_obligation_state_is_observable_as_a_non_live_resource_root"},
+          "inert_policy": {"const": "no_current_typechecking_path_constructs_resource_rooted_provenance_and_no_new_rejection_or_diagnostic_is_enabled"},
+          "mutex_policy": {"const": "Mutex_Lock_and_Unlock_semantics_and_all_existing_call_sites_remain_unchanged_until_patch20_16c_migration"},
+          "backend_policy": {"const": "the_existing_generic_guard_prerequisite_MIR_to_C_and_supported_Cranelift_observable_remains_identical_without_fallback"},
+          "bootstrap_policy": {"const": "the_checked_in_seed_builds_the_additive_carrier_and_generated_seed_reconvergence_remains_isolated_in_patch20_16e"}
         }
       },
       "phase19_brand_authority": {
