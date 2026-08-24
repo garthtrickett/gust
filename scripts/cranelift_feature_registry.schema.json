@@ -31,6 +31,7 @@
     "phase20_generic_guard_prerequisites",
     "phase20_post_prerequisite_seed_convergence",
     "phase20_long_lived_concurrent",
+    "phase20_cross_feature_qualification",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -915,6 +916,60 @@
               }
             }
           }
+        }
+      },
+      "phase20_cross_feature_qualification": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["contract_version", "status", "next_patch", "review_view",
+                     "harness", "source_fixture", "resource_module_fixture",
+                     "runtime_probe_fixture", "canonical_mir_fixture", "profiles",
+                     "selected_features", "expected_exit", "expected_events",
+                     "normalization_policy", "backend_policy", "fallback_policy",
+                     "registry_audit", "final_residues", "unexplained_divergences"],
+        "properties": {
+          "contract_version": {"const": "phase20_cross_feature_qualification_v1"},
+          "status": {"const": "phase20_ready_for_authoritative_historical_full"},
+          "next_patch": {"const": "20.17"},
+          "review_view": {"const": "compiler/CRANELIFT_PHASE20_CROSS_FEATURE_QUALIFICATION.md"},
+          "harness": {"const": "scripts/phase20_cross_feature_qualification.sh"},
+          "source_fixture": {"const": "compiler/phase20_cross_feature_qualification_source.gst"},
+          "resource_module_fixture": {"const": "compiler/phase20_cross_feature_resource_module.gst"},
+          "runtime_probe_fixture": {"const": "compiler/fixtures/phase20_cross_feature_probe.c"},
+          "canonical_mir_fixture": {"const": "compiler/fixtures/native_backend_phase20_cross_feature_qualification.mir"},
+          "profiles": {"const": [
+            {"id": "small", "level": 2, "concurrent_cycles": 8},
+            {"id": "full", "level": 3, "concurrent_cycles": 128}
+          ]},
+          "selected_features": {"const": ["brand_identity", "arena_liveness", "user_resources", "modules", "approved_runtime_import", "bounded_scale", "long_lived_concurrency"]},
+          "expected_exit": {"const": 47},
+          "expected_events": {"const": [57, 2, 1]},
+          "normalization_policy": {"const": "none"},
+          "backend_policy": {"const": "MIR_to_C_executes_the_mixed_source_oracle_and_direct_canonical_MIR_Cranelift_executes_the_same_observable_plan_against_the_same_runtime_and_test_probes"},
+          "fallback_policy": {"const": "direct_mixed_source_Cranelift_is_poisoned_and_must_reject_before_driver_discovery_without_an_artifact"},
+          "registry_audit": {"const": {"entry_count": 95, "migrated": 34, "candidate_deferred": 43, "replaced": 11, "deferred": 7, "duplicate_ids": 0, "unowned_rows": 0}},
+          "final_residues": {
+            "type": "array",
+            "minItems": 6,
+            "maxItems": 6,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["category", "source_fixture", "decision", "reason_code", "diagnostic", "failure_stage", "owner", "destination", "falsifier"],
+              "properties": {
+                "category": {"enum": ["collections", "strings", "filesystem", "allocation", "resources", "threading_synchronization"]},
+                "source_fixture": {"type": "string", "pattern": "^compiler/"},
+                "decision": {"enum": ["deferred", "source_or_type_failure"]},
+                "reason_code": {"type": "string", "minLength": 1},
+                "diagnostic": {"type": "string", "minLength": 1},
+                "failure_stage": {"const": "before_driver_discovery"},
+                "owner": {"const": "phase13_generic_source_to_mir"},
+                "destination": {"const": "phase21_opening"},
+                "falsifier": {"type": "string", "minLength": 1}
+              }
+            }
+          },
+          "unexplained_divergences": {"const": []}
         }
       },
       "phase19_brand_authority": {

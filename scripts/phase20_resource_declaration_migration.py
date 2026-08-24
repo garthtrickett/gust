@@ -46,6 +46,10 @@ GENERIC_GUARD_LINEAR_FIXTURES = [
     "compiler/phase20_generic_resource_destructor_wrong_brand_invalid.gst",
 ]
 
+CROSS_FEATURE_LINEAR_FIXTURES = [
+    "compiler/phase20_cross_feature_resource_module.gst",
+]
+
 SOURCE_DESTRUCTORS = {
     SOURCE_DECLARATIONS[0]: (
         "Phase13CompositionResourceMetadata",
@@ -206,7 +210,8 @@ def validate() -> dict:
         if has_linear_attribute(source):
             actual_linear.append(relative(path))
     expected_linear = sorted(SOURCE_DECLARATIONS + ENFORCEMENT_LINEAR_FIXTURES +
-                             GENERIC_GUARD_LINEAR_FIXTURES)
+                             GENERIC_GUARD_LINEAR_FIXTURES +
+                             CROSS_FEATURE_LINEAR_FIXTURES)
     require(actual_linear == expected_linear,
             "compiler-owned #[linear] declaration inventory drifted: " +
             repr(actual_linear))
@@ -226,6 +231,11 @@ def validate() -> dict:
     require(all(path in generic_guard_files
                 for path in GENERIC_GUARD_LINEAR_FIXTURES),
             "Patch 20.14a linear fixtures are not classified by their authority")
+
+    cross_feature = registry.get("phase20_cross_feature_qualification", {})
+    require(cross_feature.get("resource_module_fixture") in
+            CROSS_FEATURE_LINEAR_FIXTURES,
+            "Patch 20.16 linear fixture is not classified by its authority")
 
     for source_path, (type_name, destructor_name) in SOURCE_DESTRUCTORS.items():
         source = (ROOT / source_path).read_text(encoding="utf-8")

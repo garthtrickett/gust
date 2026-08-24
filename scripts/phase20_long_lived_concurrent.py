@@ -19,6 +19,7 @@ JUSTFILE = ROOT / "justfile"
 GUARD_L1 = "guard-cranelift-phase20-long-lived-concurrent-contract"
 GUARD_L2 = "guard-cranelift-phase20-long-lived-concurrent-smoke"
 GUARD_L3 = "guard-cranelift-phase20-long-lived-concurrent-full"
+COMPOSITION_L3 = "guard-cranelift-phase20-cross-feature-qualification-full"
 
 
 def require(condition: bool, message: str) -> None:
@@ -88,13 +89,16 @@ def validate() -> dict:
     require(f"just {GUARD_L1}" in pr_fast and f"just {GUARD_L2}" in pr_fast and
             f"just {GUARD_L3}" not in pr_fast,
             "PR Fast Patch 20.15 ownership drifted")
-    historical = HISTORICAL.read_text(encoding="utf-8")
-    require(f"just {GUARD_L3}" in historical,
-            "Historical Full does not own Patch 20.15 Level 3")
     justfile = JUSTFILE.read_text(encoding="utf-8")
     require(all(f"{guard}:" in justfile for guard in
                 (GUARD_L1, GUARD_L2, GUARD_L3)),
             "Patch 20.15 just guards are missing")
+    historical = HISTORICAL.read_text(encoding="utf-8")
+    composition_recipe = justfile.split(f"{COMPOSITION_L3}:", 1)[1].split(
+        "\n\n", 1)[0] if f"{COMPOSITION_L3}:" in justfile else ""
+    require(f"phase20) just {COMPOSITION_L3} ;;" in historical and
+            f"just {GUARD_L3}" in composition_recipe,
+            "Historical Full does not transitively own Patch 20.15 Level 3")
     smoke_recipe = justfile.split(f"{GUARD_L2}:", 1)[1].split(
         f"{GUARD_L3}:", 1)[0]
     require("just guard-cranelift-phase20-resource-scope-cleanup-parity"

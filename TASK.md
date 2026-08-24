@@ -92,7 +92,7 @@ does not activate another lane, and does not authorize Phase 21.
 - [x] Patch 20.14a — Generic Guard Prerequisite Corrections — DONE
 - [x] Patch 20.14b — Post-Prerequisite Bootstrap Seed Reconvergence — DONE
 - [x] Patch 20.15 — Long-Lived and Concurrent Resource Differential — DONE
-- [ ] Patch 20.16 — Cross-Feature Qualification and Residue Audit
+- [x] Patch 20.16 — Cross-Feature Qualification and Residue Audit — DONE
 - [ ] Patch 20.17 — Phase 20 Closure
 
 Status rows are machine-parsed in the same form the Phase 15–19 close guards
