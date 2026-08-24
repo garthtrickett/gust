@@ -404,6 +404,9 @@ jobs:
       - name: Phase 20 semantic foundations and qualification closure
         run: just guard-cranelift-phase20-close
 
+      - name: Phase 21 roadmap and OD-8 design authority
+        run: just guard-cranelift-phase21-roadmap
+
       - name: Phase 19 cross-feature composition
         run: just guard-cranelift-phase19-composition-contract
 

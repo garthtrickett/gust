@@ -16928,6 +16928,17 @@ guard-cranelift-phase20-close:
     python3 scripts/phase20_protected_access_seed_convergence.py check-review
     python3 scripts/phase20_closure.py --check
 
+guard-cranelift-phase21-roadmap:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🗺️ Checking Phase 21 roadmap and OD-8 design authority..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase21-roadmap | grep -F $'guard-cranelift-phase21-roadmap\t1\t' >/dev/null
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase20_closure.py --check
+    python3 scripts/phase21_roadmap.py validate
+    python3 scripts/phase21_roadmap.py check-review
+
 guard-cranelift-phase18-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail

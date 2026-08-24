@@ -2,7 +2,7 @@
 
 **Product, Language, Runtime, and Platform Decisions**
 
-> **What this document is.** A well-specified hypothesis with thirteen registered decisions: seven open, two direction-set, and four resolved (§0.15). Two of the open decisions — **OD-9** (can a model write Gust) and **OD-8** (is the scoping analysis sound) — can invalidate the thesis outright, and both resolve inside the next four months. The prose is confident because vague prose cannot be attacked; the uncertainty is real and lives in §0.15. Read that table before treating any of this as settled.
+> **What this document is.** A well-specified hypothesis with fourteen registered decisions: seven open, two direction-set, one design-set/evidence-open, and four resolved (§0.15). Two evidence-open decisions — **OD-9** (can a model write Gust) and **OD-8** (is the scoping analysis sound) — can invalidate the thesis outright, and both resolve inside the next four months. The prose is confident because vague prose cannot be attacked; the uncertainty is real and lives in §0.15. Read that table before treating any of this as settled.
 >
 > **The plan is four months long.** Build the demo (§0.7). Do not pick a business until it exists (§0.8). Everything past §0.16 is a specification of a system that is deliberately *not* being built yet — it exists so that demo-stage decisions do not foreclose it, and most of it should never be built by us.
 
@@ -440,7 +440,7 @@ second, drifting copy of it.
 | # | Question | Status | Blocks | Stated in full |
 |---|---|---|---|---|
 | **OD-9** | **Model fluency** — can an agent write Gust well, and how do we get there from no corpus? *Thesis-invalidating. Starts week one.* | **OPEN** | Demo | §0.7; blocked-on evidence in `TASK_STDLIB.md` CR-6 and `docs/ONE_WAY_LEDGER.md` E1 |
-| **OD-8** | **Soundness of the tenant-scoping analysis** — adversarial review before publication. *Thesis-invalidating.* | **OPEN** | Demo | §56; sequencing in `docs/DEMO_TARGET_PROGRAM.md` |
+| **OD-8** | **Soundness of the tenant-scoping analysis** — adversarial review before publication. *Thesis-invalidating.* | **DESIGN SET 2026-08-24 / EVIDENCE OPEN** — the operator selected §56.2's typed Scope provenance model; the soundness verdict remains open until the implemented analysis survives the predefined adversarial suite | Demo | §56; implementation and verdict sequencing in `TASK.md` Phase 21 |
 | OD-1 | Transparent suspension vs coloured async (server) | **DIRECTION SET 2026-08-20** — transparent suspension unless a fatal blocker is hit; §21 defines what counts | Demo | §21; evidence in `docs/ONE_WAY_LEDGER.md` E9; escalation as `TASK_STDLIB.md` CR-8 |
 | OD-2 | ~~Generic functions vs compiler-owned query derivation~~ | **RESOLVED 2026-08-20** — compiler-owned derivation; §13's ban stands | — | §14; consequences in §13 and `docs/DEMO_TARGET_PROGRAM.md` |
 | OD-10 | **Distribution for the product path** | **OPEN** — first candidate recorded 2026-08-20 (`docs/STRATEGY_REVIEW.md` §6); **first *deployment* proposed separately at §6.1**, deliberately not an answer to this row | Month 4 | §0.11 |
@@ -452,6 +452,7 @@ second, drifting copy of it.
 | OD-12 | ~~**Mobile execution boundary** — should mobile apps remain Gust-only above compiler-owned Swift/Kotlin hosts, or may application authors mix Swift/Kotlin into the normal source model?~~ | **RESOLVED 2026-08-21** — AOT Gust core plus generated, pinned Swift/Kotlin hosts; application-authored native code is only an explicit in-process escape hatch and forfeits the named process-integrity guarantee | — | `docs/MOBILE_NATIVE_DEPLOYMENT.md` §10; client consequences in Part IX; guarantee boundary in §93 and §98 |
 | OD-13 | ~~**Mutex protected-access contract** — does lock acquisition return a linear guard carrying context-branded protected access, another compiler-owned access token, or retain raw-pointer access plus explicit unlock?~~ | **RESOLVED 2026-08-24** — safe lock acquisition returns one move-only linear guard carrying context-branded protected access; the guard owns automatic exactly-once unlock | — | §26.1; compiler evidence in `docs/SHARED_SEMANTIC_ZONE.md` D-4; implementation sequencing in `TASK.md` Patches 20.16a–20.16e |
 | OD-14 | **Gust mascot** — should Gust's mascot be a donkey, and what visual treatment should carry the identity? | **OPEN** — provisional direction recorded 2026-08-24: a donkey | Brand and demo presentation | §0.15.1 |
+| OD-15 | **Native self-host reproducibility criterion** — must independent Cranelift compiler stages be byte-identical, or is a bounded semantic reproducibility contract sufficient? | **OPEN** — registered 2026-08-24; no criterion is implied by starting Phase 21 | Phase 21 closure | `TASK.md` Patch 21.16; Phase 21 shape in `docs/ROADMAP_TAIL.md` |
 
 There is no OD-7. The number is unused and nothing in the repository references it; it is recorded here so a reader who notices the gap does not go looking.
 
@@ -1789,19 +1790,33 @@ At a site such as `from Issue where workspace == scope and state == Open`, the c
 
 **This is the lead product claim (§1) and the whole point of the demo (§0.14).**
 
-The compiler **statically enforces** that every database query is tenant-scoped. Queries that cannot be statically shown to carry tenant scope are rejected at compile time.
+Within the compiler-owned typed-query path, the compiler **statically enforces**
+that every query rooted at a scoped entity carries matching trusted Scope
+provenance. A typed query that cannot discharge every scoped-root obligation is
+rejected at compile time.
 
-Missing tenant scoping is the canonical failure mode of agent-authored applications and the direct cause of repeated public data-exposure incidents across AI app-building platforms. Every other stack treats it as a configuration concern — row-level security policies, middleware, a template the generator might forget. Gust makes it a property of the type system: **the unscoped program does not compile.**
+Missing tenant scoping is the canonical failure mode of agent-authored applications and the direct cause of repeated public data-exposure incidents across AI app-building platforms. Every other stack treats it as a configuration concern — row-level security policies, middleware, a template the generator might forget. Gust makes it a property of the typed-query analysis: **the unscoped typed query does not compile.**
 
 Authorization predicates are injected into queries where policies can be translated into database expressions. Where full translation is impossible, a runtime policy check is required.
 
-This is static enforcement backed by generated conformance tests (§79), not formal proof. See §79 for the language Gust is permitted to use externally.
+This is static enforcement backed by generated conformance tests (§79), not
+formal proof. The claim is limited to compiler-owned typed queries. Caches,
+non-query reads, multi-step flows, unsafe/raw SQL, and establishment of the
+trusted request context are not included. See §79 for the language Gust is
+permitted to use externally.
 
 ### 56.1 The attack list for OD-8
 
 §0.11 requires that someone adversarial attack the scoping analysis before publication. An instruction to "review it adversarially" with no target list produces a review that confirms what it was shown. This is the target list — the classes a reviewer should try to build a counterexample from, written before the analysis exists so that it cannot be shaped around what the analysis happens to catch.
 
-**The class most likely to succeed, and it is not a bug.** "The unscoped program does not compile" is a **presence** claim: it says a tenant scope is *there*. It does not say the scope is the *caller's* tenant. A program that scopes every query to a tenant id read straight from an attacker-controlled request field satisfies the analysis completely and leaks everything. If that is out of scope, §1 and §79 must say so in the words used externally, because a reader will hear the stronger claim. **Presence is cheap to check and correctness is not** — that asymmetry is the analysis's shape, not an oversight in it, and it is the first thing an honest reviewer will find.
+**The first and load-bearing attack is provenance authenticity.** A predicate
+using a tenant id read from an attacker-controlled request field must not
+discharge anything merely because its syntax looks scoped. Try to construct,
+cast, copy, deserialize, return, store, or launder a typed Scope from ordinary
+input, and try to substitute one entity's Scope for another. Any such path that
+discharges a query obligation is an in-scope counterexample. Establishing the
+trusted request context itself is outside the typed-query guarantee; the review
+still verifies that ordinary Gust code cannot manufacture its trusted output.
 
 The remaining classes, roughly by how much they would cost to close:
 
@@ -1814,19 +1829,25 @@ The remaining classes, roughly by how much they would cost to close:
 7. **The legitimately cross-tenant path.** Admin tooling and migrations must be able to do this. How is that marked, how visible is the marking, and can it be applied by someone who did not realise what it turns off?
 8. **Non-query reads.** Stored procedures, triggers, a raw connection obtained through a capability, or any supplier surface (§98) that returns rows without passing through the query layer.
 9. **Dynamic shape.** Table or column names computed at runtime.
-10. **Where the tenant value comes from.** The analysis assumes the request context is trustworthy. Whatever establishes that context is inside the trusted base and belongs in the review.
+10. **Where the tenant value comes from.** Establishing the request context is
+    explicitly outside the typed-query guarantee. Verify the boundary is named,
+    its output is non-forgeable from ordinary input, and no external claim says
+    the compiler proved the host's authentication or tenant selection.
 
 **How to run it.** The reviewer's job is to produce a program that compiles and leaks, not to assess whether the design seems sound. One such program resolves OD-8 negatively, which is the outcome §0.11 wants found in month four rather than after publication. A review that produces no counterexample should say which of these classes it actually attempted.
 
-### 56.2 What the analysis must check — proposed
+### 56.2 What the analysis must check — design set, evidence open
 
-Row 6 and row 8 of `docs/DEMO_TARGET_PROGRAM.md` are both unowned, and nothing states what the analysis checks. The attack list in §56.1 has nothing to attack until it does. This is a proposal, not a decision; the value of writing it now is that §56.1 was written first and can be run against it.
+The operator selected this design on 2026-08-24. It is normative for the
+compiler-owned typed-query path, but selecting a design is not a soundness
+verdict. The predefined §56.1 attack list must run against the implementation
+before OD-8 can resolve positively.
 
 **1. Declaration.** An entity type declares which field carries its scope. The compiler records the pairing; nothing else in the program may assert it.
 
 **2. Obligation.** Every query rooted at a scoped entity carries a scope obligation. A query whose obligations are not all discharged does not compile.
 
-**3. Discharge is by *provenance*, not by syntax — this is the load-bearing rule.** An obligation is discharged only by a predicate whose value flows from a **scope-typed** binding, `Scope[Workspace]`, obtainable only from the request context and not constructible from user input. A `where workspace == <some string>` does not discharge anything, however well-formed it looks. This is what converts the presence claim §56.1 identifies as the weakest point into a provenance claim, and it is the difference between "a scope is present" and "the caller's scope is present". **If exactly one rule here survives review, it should be this one.** It is also the rule most likely to be quietly weakened during implementation, because syntactic matching is far easier and passes the same tests until someone attacks it.
+**3. Discharge is by *provenance*, not by syntax — this is the load-bearing rule.** An obligation is discharged only by a predicate whose value flows from **non-forgeable typed Scope provenance**, such as `Scope[Workspace]`, obtainable only from the trusted request context and not constructible from user input. A `where workspace == <some string>` does not discharge anything, however well-formed it looks. This is what converts the presence claim §56.1 identifies as the weakest point into a provenance claim, and it is the difference between "a scope is present" and "the caller's scope is present". **If exactly one rule here survives review, it should be this one.** It is also the rule most likely to be quietly weakened during implementation, because syntactic matching is far easier and passes the same tests until someone attacks it.
 
 **4. Joins introduce obligations; they do not satisfy them.** Each scoped entity in a query carries its own obligation. Discharging one never discharges another, and an unscoped lookup table joined in carries none — which is correct only if the scoped side cannot be widened through the join, and that is exactly what §56.1's class 2 exists to test.
 
@@ -1836,9 +1857,19 @@ Row 6 and row 8 of `docs/DEMO_TARGET_PROGRAM.md` are both unowned, and nothing s
 
 **7. Rejection is at compile time, at the query, with the diagnostic in `docs/DEMO_TARGET_PROGRAM.md`.** Not a lint, not a runtime check, not a generated test — those are §79's evidence that the rule holds, not the rule.
 
-**What this proposal does not cover, and knows it.** Caches (§56.1 class 5), non-query reads (class 8), and multi-step flows (class 6) are all outside the query analysis by construction. Naming them here rather than leaving them out is the point: the analysis is sound over queries, and **the claim made externally must be about queries** or it will be broader than the thing that was checked.
+**What this design does not cover, and knows it.** Caches (§56.1 class 5),
+non-query reads (class 8), multi-step flows (class 6), unsafe/raw SQL, and
+establishment of the trusted request context are outside the typed-query
+analysis by construction. Naming them here rather than leaving them out is the
+point: any eventual positive claim must be about the implemented compiler-owned
+typed-query path or it will be broader than the thing that was checked.
 
-> **OD-8 lives here.** §0.15 names this section as where OD-8 is stated in full, and until 2026-08-20 it was not stated here at all — a reader could finish §56 without learning that the soundness of the analysis above is an open, *thesis-invalidating* question. **Is the scoping analysis sound?** One counterexample — one program that carries no tenant scope and compiles anyway — retires the only claim this document makes, which is why §0.11 requires an adversarial review before publication rather than after. Nothing in §56 is weakened by saying so; the claim is exactly as strong as the analysis, and the analysis has not yet been attacked. Status is owned by §0.15.
+> **OD-8 lives here.** The design is set; the evidence verdict is not. One
+> in-scope counterexample — one compiler-owned typed query that lacks matching
+> trusted Scope provenance and compiles anyway — resolves OD-8 negatively.
+> Ordinary positive tests or this prose cannot resolve it positively. The
+> complete predefined adversarial suite must attack the implementation first,
+> and §0.15 remains the sole owner of the resulting status.
 
 ## 57. Raw SQL
 

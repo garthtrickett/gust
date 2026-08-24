@@ -1,0 +1,57 @@
+name: Cranelift Phase 21 Roadmap
+
+on:
+  pull_request:
+    paths:
+      - 'TASK.md'
+      - 'docs/VISION.md'
+      - 'docs/SHARED_SEMANTIC_ZONE.md'
+      - 'docs/DEMO_TARGET_PROGRAM.md'
+      - 'docs/ROADMAP_TAIL.md'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/cranelift_registry.py'
+      - 'scripts/cranelift_test_levels.json'
+      - 'scripts/phase20_closure.py'
+      - 'scripts/phase21_roadmap.py'
+      - 'compiler/CRANELIFT_PHASE21_ROADMAP.md'
+      - '.github/workflows/phase21-roadmap.yml'
+      - '.github/workflows/pr-fast.yml'
+      - 'justfile'
+  push:
+    branches: [main]
+    paths:
+      - 'TASK.md'
+      - 'docs/VISION.md'
+      - 'docs/SHARED_SEMANTIC_ZONE.md'
+      - 'docs/DEMO_TARGET_PROGRAM.md'
+      - 'docs/ROADMAP_TAIL.md'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/cranelift_registry.py'
+      - 'scripts/cranelift_test_levels.json'
+      - 'scripts/phase20_closure.py'
+      - 'scripts/phase21_roadmap.py'
+      - 'compiler/CRANELIFT_PHASE21_ROADMAP.md'
+      - '.github/workflows/phase21-roadmap.yml'
+      - '.github/workflows/pr-fast.yml'
+      - 'justfile'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  roadmap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: guard-cranelift-phase21-roadmap
+        run: just guard-cranelift-phase21-roadmap

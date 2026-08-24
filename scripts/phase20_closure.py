@@ -163,7 +163,10 @@ def check() -> None:
             "Historical Full job population is incomplete")
 
     task = TASK.read_text(encoding="utf-8")
-    status = task.split("## Status", 1)[1].split(
+    phase20_record = task.split(
+        "# Immutable Phase 20 Completion Record", 1
+    )[1]
+    status = phase20_record.split("## Status", 1)[1].split(
         "## Immutable Phase 19 Completion Record", 1)[0]
     rows = re.findall(r"^- \[([ x])\] Patch (20\.\d+[a-z]?) — .+$",
                       status, re.MULTILINE)

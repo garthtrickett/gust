@@ -37,6 +37,7 @@
     "phase20_protected_access_liveness",
     "phase20_protected_access_seed_convergence",
     "phase20_closure",
+    "phase21_roadmap",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -1190,6 +1191,68 @@
             "Phase 21 self-hosting has begun or completed."
           ]},
           "view_derivation": {"const": "the_closure_view_is_generated_from_this_block_and_the_cross_feature_residue_authority"}
+        }
+      },
+      "phase21_roadmap": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "contract_version", "status", "next_patch", "review_view",
+          "predecessor", "activation", "serial_tracks", "od8", "od15",
+          "phase_boundary"
+        ],
+        "properties": {
+          "contract_version": {"const": "phase21_roadmap_and_od8_design_authority_v1"},
+          "status": {"const": "patch21_0_complete"},
+          "next_patch": {"const": "21.1"},
+          "review_view": {"const": "compiler/CRANELIFT_PHASE21_ROADMAP.md"},
+          "predecessor": {"const": {
+            "closure_status": "phase20_closed_semantic_foundations_and_qualification",
+            "closure_merge_sha": "da18ab2ba3307c24ffabdc510fd0583f9a75e22b",
+            "historical_run_id": 32772996884,
+            "historical_head_sha": "6e54e3cc6fa8fc44e5df7a67624bb183b01b2258",
+            "historical_jobs": 18
+          }},
+          "activation": {"const": {
+            "operator_date": "2026-08-24",
+            "condition": "formal_phase20_closure",
+            "condition_satisfied": true,
+            "completion_loop_through": "21.18"
+          }},
+          "serial_tracks": {"const": [
+            "typed_query_scope_analysis_and_adversarial_verdict",
+            "cranelift_self_hosting_qualification"
+          ]},
+          "od8": {"const": {
+            "status": "design_set_evidence_open",
+            "design_authority": "docs/VISION.md_section_56_2",
+            "obligation": "every_query_rooted_at_a_scoped_entity_carries_an_independent_compile_time_scope_obligation",
+            "discharge": "matching_non_forgeable_typed_Scope_provenance_derived_from_the_trusted_request_context_only",
+            "syntax_policy": "a_tenant_predicate_or_arbitrary_user_controlled_value_never_discharges_an_obligation",
+            "join_policy": "every_scoped_join_root_carries_its_own_obligation",
+            "nesting_policy": "every_nested_query_carries_its_own_obligation",
+            "cross_tenant_policy": "explicit_capability_gated_non_ambient_and_visible_at_the_call_site",
+            "rejection_policy": "compiler_error_at_the_query",
+            "claim_scope": "compiler_owned_typed_query_path_only",
+            "demo_target_contract": "typed_query_negative_not_raw_sql_and_exact_surface_deferred_to_21_3",
+            "excluded_claims": ["caches", "non_query_reads", "multi_step_flows", "unsafe_or_raw_SQL", "trusted_request_context_establishment"],
+            "positive_resolution_gate": "implemented_analysis_survives_the_complete_predefined_section_56_1_adversarial_suite",
+            "negative_resolution_gate": "one_in_scope_compiling_leak_counterexample"
+          }},
+          "od15": {"const": {
+            "status": "open",
+            "question": "native_stage_binary_identity_or_bounded_semantic_reproducibility",
+            "decision_patch": "21.16",
+            "blocks": "21.18"
+          }},
+          "phase_boundary": {"const": {
+            "roadmap_patch_changes_compiler_semantics": false,
+            "roadmap_patch_changes_mir_or_backends": false,
+            "roadmap_patch_changes_abi_layout_or_runtime_symbols": false,
+            "roadmap_patch_changes_bootstrap_seed": false,
+            "roadmap_patch_edits_stdlib": false,
+            "phase22_default_backend_flip": "out_of_scope"
+          }}
         }
       },
       "phase19_brand_authority": {
