@@ -5,7 +5,7 @@ Generated from `scripts/cranelift_feature_registry.json` by
 
 - Contract: `phase20_generated_mir_scale_v1`
 - Status: `patch20_14_complete`
-- Next patch: `20.14a`
+- Next patch: `20.14h`
 - Generator: `scripts/phase20_generated_mir_scale.py`
 - Algorithm: `lcg32_seeded_abstract_scalar_plan_v1`
 - Canonical MIR constraint: `validated_i32_scalar_local_operations_and_acyclic_local_calls_only`

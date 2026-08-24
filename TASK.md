@@ -88,6 +88,7 @@ does not activate another lane, and does not authorize Phase 21.
 - [x] Patch 20.12 — Whole-Program Corpus and Observable Contract — DONE
 - [x] Patch 20.13 — Stdlib and Runtime Component Differential — DONE
 - [x] Patch 20.14 — Generated-MIR, Scale, and Resource-Use Qualification — DONE
+- [x] Patch 20.14h — Phase-Frozen Historical Accounting — DONE
 - [ ] Patch 20.14a — Generic Guard Prerequisite Corrections
 - [ ] Patch 20.15 — Long-Lived and Concurrent Resource Differential
 - [ ] Patch 20.16 — Cross-Feature Qualification and Residue Audit
@@ -817,6 +818,34 @@ generated and scale cohorts.
 The bounded generated set has zero unexplained divergence, stress cases finish
 inside their declared resource budgets, and no threshold can drift silently.
 
+## Patch 20.14h — Phase-Frozen Historical Accounting
+
+**Purpose**
+
+Keep the closed Phase 19 self-compilation differential reproducible after
+later phases legitimately change compiler sources and regenerate the bootstrap
+seed.
+
+**Steps**
+
+- Freeze the final Phase 19 comparison at the registry-named Phase 19.11 seed
+  commit instead of repository `HEAD`.
+- Continue reconstructing and attributing every Phase 19 compiler-changing
+  boundary with the existing full-history fetch requirement.
+- Record that Phase 20 and later compiler changes and seeds belong to their own
+  phase history and do not retroactively alter Phase 19 evidence.
+- Preserve the existing baseline-to-Phase-19 insertion/deletion totals and zero
+  unexplained-difference requirement.
+
+**Test Level:** Level 1 for registry/generated contract; Level 3 for the frozen
+historical reconstruction.
+
+**Exit Gate**
+
+The Phase 19 Historical Full shard reconstructs the named Phase 19 boundaries,
+matches the named Phase 19.11 seed, and remains green when later-phase compiler
+sources or seeds differ from that frozen result.
+
 ## Patch 20.14a — Generic Guard Prerequisite Corrections
 
 **Purpose**
@@ -945,6 +974,7 @@ running Level 3 suite does not satisfy this gate.
 → 20.12 observable corpus
 → 20.13 stdlib/runtime components
 → 20.14 generated MIR and scale
+→ 20.14h phase-frozen historical accounting
 → 20.14a generic guard prerequisites
 → 20.15 long-lived/concurrent resources
 → 20.16 complete qualification

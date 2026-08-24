@@ -14,6 +14,7 @@ LEVELS = ROOT / "scripts/cranelift_test_levels.json"
 TASK = ROOT / "TASK.md"
 HISTORICAL = ROOT / ".github/workflows/cranelift-historical-full.yml"
 REVIEW = ROOT / "compiler/CRANELIFT_PHASE19_SELF_COMPILATION_DIFFERENTIAL.md"
+HARNESS = ROOT / "scripts/phase19_self_compilation_differential.sh"
 GUARD = "guard-cranelift-phase19-self-compilation-differential"
 
 
@@ -57,12 +58,14 @@ def load_record() -> dict:
 def validate() -> dict:
     record = load_record()
     expected = {
-        "contract_version": "phase19_self_compilation_differential_v2",
+        "contract_version": "phase19_self_compilation_differential_v3",
         "status": "ready_for_patch19_12",
         "next_patch": "19.12",
         "review_view": "compiler/CRANELIFT_PHASE19_SELF_COMPILATION_DIFFERENTIAL.md",
         "baseline_policy": "previous_committed_converged_seed_before_patch19_3",
-        "current_policy": "latest_committed_converged_seed_after_patch19_11",
+        "current_policy": "committed_phase19_11_seed_at_named_seed_commit",
+        "current_seed_subject": "bootstrap: regenerate Phase 19.11 seed",
+        "phase_boundary_policy": "later_phase_compiler_changes_and_seeds_are_out_of_scope_and_must_be_owned_by_their_own_phase_history",
         "level3_owner": "Cranelift Historical Full",
     }
     for key, value in expected.items():
@@ -91,6 +94,12 @@ def validate() -> dict:
             "Historical Full must fetch the compiler baseline history")
     require("- [x] Patch 19.10 — Generated-C Equivalence Over the Compiler's Own Sources — DONE"
             in TASK.read_text(encoding="utf-8"), "TASK.md does not mark Patch 19.10 DONE")
+    harness = HARNESS.read_text(encoding="utf-8")
+    require('git show "$current_seed_commit:gust_v4.c"' in harness,
+            "historical harness does not read the frozen Phase 19 seed")
+    require('git diff --quiet "$last_boundary" HEAD' not in harness and
+            'cmp -s "$previous_output" gust_v4.c' not in harness,
+            "historical harness still compares the frozen Phase 19 result to HEAD")
     return record
 
 
@@ -106,6 +115,8 @@ def render(record: dict) -> str:
         f"- Status: `{record['status']}`",
         f"- Next patch: `{record['next_patch']}`",
         f"- Level 3 owner: `{record['level3_owner']}`",
+        f"- Frozen current seed: `{record['current_seed_subject']}`",
+        f"- Later-phase policy: `{record['phase_boundary_policy']}`",
         "",
         "## Complete compiler-source differential",
         "",
@@ -114,7 +125,7 @@ def render(record: dict) -> str:
         "a complete unified C diff named for its owning patch. The guard also rejects",
         "any compiler-source commit whose subject is not assigned to that transition,",
         "requires the baseline build to reproduce its seed, and requires the final",
-        "build to reproduce the current converged seed.",
+        "build to reproduce the named Phase 19 converged seed.",
         "",
         f"The complete baseline-to-current C diff contains {diff['insertions']} insertions",
         f"and {diff['deletions']} deletions, with {diff['unexplained_differences']} unexplained differences.",
@@ -129,8 +140,10 @@ def render(record: dict) -> str:
     lines += [
         "",
         "Patch 19.7 is intentionally the zero-diff transition. Any added, removed, or",
-        "reordered compiler-source commit, any missing boundary, any seed mismatch, or",
-        "any unlabelled transition makes the Level 3 guard fail.",
+        "reordered Phase 19 compiler-source commit, any missing boundary, any Phase 19",
+        "seed mismatch, or any unlabelled Phase 19 transition makes the Level 3 guard",
+        "fail. Compiler changes and seed regenerations in Phase 20 and later are owned",
+        "by those phases and do not retroactively change the frozen Phase 19 evidence.",
         "",
     ]
     return "\n".join(lines)
