@@ -83,6 +83,15 @@ def validate() -> dict:
         require(isinstance(successor_diff, dict),
                 "Patch 20.14b seed authority omits generated diff accounting")
         live_seed_lines = successor_diff.get("current_lines")
+        protected_access = registry.get("phase20_protected_access_seed_convergence")
+        if protected_access is not None:
+            require(protected_access.get("predecessor_seed_authority") ==
+                    successor.get("contract_version"),
+                    "Patch 20.16e seed authority does not name Patch 20.14b predecessor")
+            protected_diff = protected_access.get("generated_seed_diff")
+            require(isinstance(protected_diff, dict),
+                    "Patch 20.16e seed authority omits generated diff accounting")
+            live_seed_lines = protected_diff.get("current_lines")
     seed_text = SEED.read_text(encoding="utf-8")
     require(len(seed_text.splitlines()) == live_seed_lines,
             "committed seed line count drifted")

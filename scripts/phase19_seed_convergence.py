@@ -92,6 +92,17 @@ def validate() -> dict:
             require(isinstance(post_diff, dict),
                     "Patch 20.14b seed authority omits generated diff accounting")
             live_seed_lines = post_diff.get("current_lines")
+            protected_access = json.loads(REGISTRY.read_text(encoding="utf-8")).get(
+                "phase20_protected_access_seed_convergence"
+            )
+            if protected_access is not None:
+                require(protected_access.get("predecessor_seed_authority") ==
+                        post_prerequisite.get("contract_version"),
+                        "Patch 20.16e seed authority does not name Patch 20.14b predecessor")
+                protected_diff = protected_access.get("generated_seed_diff")
+                require(isinstance(protected_diff, dict),
+                        "Patch 20.16e seed authority omits generated diff accounting")
+                live_seed_lines = protected_diff.get("current_lines")
     require(len(seed.splitlines()) == live_seed_lines, "committed seed line count drifted")
     for symbol in (
         "typechecker__env_get_canonical_branded_type_name",
