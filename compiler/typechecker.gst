@@ -1238,6 +1238,14 @@ func env_type_is_safe_parameter_origin(t: ast.Type[ctx], ctx: &Arena) int {
         return 1;
     }
     unsafe {
+        if t.tag == 11 { // Reference
+            mut reference_inner_param_origin := ctx[t.Reference.inner];
+            if reference_inner_param_origin.tag == 8 { // Struct
+                if reference_inner_param_origin.Struct.brand != empty[Index[str, ctx]] {
+                    return 1;
+                }
+            }
+        }
         if t.tag == 8 { // Struct
             if t.Struct.brand != empty[Index[str, ctx]] {
                 return 1;
@@ -10882,9 +10890,28 @@ func env_validate_resource_declaration(env: *TypeEnvironment[ctx], stmt: ast.Sta
         mut owned_parameter_matches := 0;
         if len(sig.params) == 1 {
             mut parameter_type := sig.params[0];
-            if parameter_type.tag == 8 &&
-               std.str_eq(parameter_type.Struct.struct_name, type_name) == 1 {
-                owned_parameter_matches = 1;
+            if parameter_type.tag == 8 {
+                mut expected_parameter_type := make_type_struct(type_name, "", ctx);
+                mut brand_parameter_index := env_get_template_brand_parameter_index(
+                    env, type_name
+                );
+                if brand_parameter_index >= 0 &&
+                   stmt.StructDecl.generics != empty[Index[std.Vector[str, ctx], ctx]] {
+                    mut declaration_generics: std.Vector[str, ctx] :=
+                        ctx[stmt.StructDecl.generics];
+                    if brand_parameter_index < len(declaration_generics) {
+                        expected_parameter_type = make_type_struct(
+                            type_name,
+                            declaration_generics[brand_parameter_index],
+                            ctx
+                        );
+                    }
+                }
+                if env_types_match_at_brand_boundary(
+                    env, expected_parameter_type, parameter_type, ctx
+                ) == 1 {
+                    owned_parameter_matches = 1;
+                }
             }
         }
         if owned_parameter_matches == 0 {

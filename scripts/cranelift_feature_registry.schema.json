@@ -28,6 +28,7 @@
     "phase20_whole_program_corpus",
     "phase20_stdlib_runtime_differential",
     "phase20_generated_mir_scale",
+    "phase20_generic_guard_prerequisites",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -798,6 +799,35 @@
               }
             }
           }
+        }
+      },
+      "phase20_generic_guard_prerequisites": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["authority_version", "status", "next_patch",
+                     "open_decision", "review_view", "semantic_fixture",
+                     "positive_fixture", "negative_fixtures",
+                     "provenance_negative_cases", "canonical_mir_fixture",
+                     "resource_destructor_policy", "safe_reference_policy",
+                     "non_laundering_policy", "mutex_policy",
+                     "backend_policy", "bootstrap_policy"],
+        "properties": {
+          "authority_version": {"const": "phase20_generic_guard_prerequisites_v1"},
+          "status": {"const": "patch20_14a_complete"},
+          "next_patch": {"const": "20.14b"},
+          "open_decision": {"const": "OD-13"},
+          "review_view": {"const": "compiler/CRANELIFT_PHASE20_GENERIC_GUARD_PREREQUISITES.md"},
+          "semantic_fixture": {"const": "compiler/typechecker_phase20_generic_guard_prerequisites_test_entry.gst"},
+          "positive_fixture": {"const": "compiler/phase20_generic_guard_prerequisites_source.gst"},
+          "negative_fixtures": {"const": ["compiler/phase20_generic_resource_destructor_wrong_type_invalid.gst", "compiler/phase20_generic_resource_destructor_wrong_brand_invalid.gst"]},
+          "provenance_negative_cases": {"const": ["raw_derived", "sandbox_derived"]},
+          "canonical_mir_fixture": {"const": "compiler/fixtures/native_backend_phase20_generic_guard_prerequisites.mir"},
+          "resource_destructor_policy": {"const": "the_single_owned_parameter_of_a_generic_resource_destructor_matches_the_canonical_declared_template_after_its_inferred_brand_parameter_is_substituted"},
+          "safe_reference_policy": {"const": "a_safe_reference_parameter_to_a_same_brand_struct_retains_safe_parameter_provenance_through_aggregate_field_assignment_and_return"},
+          "non_laundering_policy": {"const": "raw_derived_and_sandbox_derived_reference_provenance_remains_rejected_at_the_same_safe_branded_aggregate_boundary"},
+          "mutex_policy": {"const": "Mutex_Lock_continues_to_return_RawPointer_T_with_explicit_Unlock_while_OD_13_is_open"},
+          "backend_policy": {"const": "the_frontend_validates_the_full_generic_source_and_projects_selected_main_return_37_to_supported_canonical_mir_for_MIR_to_C_and_Cranelift_without_fallback"},
+          "bootstrap_policy": {"const": "the_checked_in_seed_builds_the_capability_patch_and_generated_seed_reconvergence_is_isolated_in_patch20_14b"}
         }
       },
       "phase19_brand_authority": {
