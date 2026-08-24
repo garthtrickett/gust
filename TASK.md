@@ -66,6 +66,15 @@ Stdlib API. This amendment inserts Patch 20.14a for only the two generic
 compiler defects and registers the protected-access choice as OD-13 in
 `docs/VISION.md` §0.15. Patch 20.14 remains unchanged.
 
+On 2026-08-24, after Patch 20.16 merged as
+`65bbc59b7b2f4ffe5e4134b7835803275c9a6aba`, the operator resolved OD-13 in
+favour of one move-only linear guard carrying safe context-branded protected
+access and owning automatic exactly-once unlock. This amendment inserts Patches
+20.16a–20.16e before closure. They preserve the required inert-support,
+whole-tree-migration, then enforcement sequence; keep raw access only as an
+explicit unsafe/internal primitive; and leave the Stdlib type, spelling,
+representation, re-entrancy, and accessor ergonomics to the Stdlib lane.
+
 Activation is Cranelift-only. It does not authorize edits to `TASK_STDLIB.md`,
 does not activate another lane, and does not authorize Phase 21.
 
@@ -93,6 +102,11 @@ does not activate another lane, and does not authorize Phase 21.
 - [x] Patch 20.14b — Post-Prerequisite Bootstrap Seed Reconvergence — DONE
 - [x] Patch 20.15 — Long-Lived and Concurrent Resource Differential — DONE
 - [x] Patch 20.16 — Cross-Feature Qualification and Residue Audit — DONE
+- [x] Patch 20.16a — Mutex Guard Decision and Implementation Authority — DONE
+- [ ] Patch 20.16b — Inert Resource-Rooted Access Authority
+- [ ] Patch 20.16c — Explicit-Unsafe Mutex Primitive Migration
+- [ ] Patch 20.16d — Protected-Access Liveness Enforcement
+- [ ] Patch 20.16e — Protected-Access Bootstrap Seed Reconvergence
 - [ ] Patch 20.17 — Phase 20 Closure
 
 Status rows are machine-parsed in the same form the Phase 15–19 close guards
@@ -865,8 +879,9 @@ Resource guard, without choosing or changing the Mutex protected-access API.
 - Add positive generic/branded witnesses and negative wrong-type,
   wrong-brand, raw-derived, and sandbox-derived witnesses; prove accepted
   programs retain identical MIR-to-C and supported Cranelift meaning.
-- Keep `Mutex.Lock() -> RawPointer(T)` and explicit `Unlock()` unchanged while
-  OD-13 is open. Do not add a Mutex-specific destructor exception, raw-pointer
+- At this patch's historical boundary, keep `Mutex.Lock() -> RawPointer(T)` and
+  explicit `Unlock()` unchanged while OD-13 is open. Do not add a Mutex-specific
+  destructor exception, raw-pointer
   wrapper, Stdlib API, MIR instruction, ABI/layout change, or runtime symbol.
 
 **Test Level:** Levels 1 and 2.
@@ -876,7 +891,7 @@ Resource guard, without choosing or changing the Mutex protected-access API.
 Generic/branded Resource destructor validation and safe same-brand reference
 capture work through canonical type/provenance authority, all unsafe-derived
 negative cases remain rejected, and OD-13 remains an explicit shared-zone
-block rather than an implicit API choice.
+block at this patch's historical boundary rather than an implicit API choice.
 
 Because this correction changes the self-hosted typechecker after the earlier
 Patch 20.11 fixed point, generated seed publication remains isolated. Patch
@@ -956,6 +971,150 @@ All selected pairs pass, all exclusions are explained and owned, there are zero
 unexplained divergences, and the generated record says Phase 20 is ready for an
 authoritative Historical Full run.
 
+## Patch 20.16a — Mutex Guard Decision and Implementation Authority
+
+**Purpose**
+
+Record the operator's OD-13 decision and establish the smallest generic,
+bootstrap-safe implementation sequence without changing compiler behaviour.
+
+**Steps**
+
+- Make `docs/VISION.md` §26.1 normative: safe lock acquisition returns one
+  move-only linear guard carrying context-branded protected access and owning
+  automatic exactly-once unlock on every scope exit.
+- Record that raw-pointer/manual unlock may remain only explicit unsafe or
+  compiler-internal machinery and that no separate compiler-owned access token
+  is introduced.
+- Assign generic resource-rooted access provenance and liveness to Cranelift
+  while leaving guard spelling, representation, re-entrancy, and accessor
+  ergonomics to Stdlib.
+- Update the compiler-owned registry and generated review so the former OD-13
+  open state remains identifiable as Patch 20.14a history but cannot be mistaken
+  for current authority.
+
+**Test Level:** Level 1 registry/generated contract.
+
+**Exit Gate**
+
+OD-13 is resolved coherently in the decision register, normative section,
+shared-zone map, roadmap, registry, and generated review; no compiler, MIR,
+ABI, layout, runtime-symbol, bootstrap-seed, or Stdlib behaviour changes.
+
+## Patch 20.16b — Inert Resource-Rooted Access Authority
+
+**Purpose**
+
+Add the generic compiler representation needed to associate protected access
+with a live linear Resource guard, while preserving all accepted and rejected
+source behaviour.
+
+**Steps**
+
+- Add canonical frontend state and queries for a reference whose access
+  authority is rooted in one linear Resource value; do not add a Mutex-specific
+  typechecker or backend path.
+- Carry the root identity through bindings and guard moves without enforcing a
+  new rejection yet. Moving the guard transfers the one identity; close and
+  destruction identify its terminal state.
+- Add inert positive witnesses and inventory guards proving the new authority
+  is recorded but cannot change program meaning in this patch.
+- Preserve canonical MIR meaning, MIR-to-C parity, explicit Cranelift
+  no-fallback, runtime symbols, ABI, and layout.
+
+**Test Level:** Level 1 contract and Level 2 unchanged-meaning differential.
+
+**Exit Gate**
+
+The self-hosted compiler and seed accept the inert authority, the full selected
+source cohort retains its declared observable, and no protected-access
+rejection is enabled.
+
+## Patch 20.16c — Explicit-Unsafe Mutex Primitive Migration
+
+**Purpose**
+
+Migrate every existing compiler-owned use of raw Mutex lock/unlock primitives
+under the still-inert rule before safe-call enforcement changes.
+
+**Steps**
+
+- Inventory every Gust call to the compiler-owned raw `Lock()` and `Unlock()`
+  primitives, including compiler fixtures, bootstrap targets, and tests.
+- Place the whole inventory behind the language's existing explicit unsafe
+  boundary while safe calls remain temporarily accepted, so this patch is a
+  semantic no-op.
+- Add an exhaustive migration guard that rejects unclassified raw primitive
+  call sites and records which ones are transitional test coverage.
+- Do not add the Stdlib guard API or choose its naming, representation,
+  re-entrancy, or accessor form.
+
+**Test Level:** Levels 1 and 2 plus bootstrap buildability.
+
+**Exit Gate**
+
+Every compiler-owned raw lock/unlock call site is classified and explicitly
+unsafe, all previous observables and backend parity remain unchanged, and the
+compiler still builds itself before enforcement is enabled.
+
+## Patch 20.16d — Protected-Access Liveness Enforcement
+
+**Purpose**
+
+Enable the resolved generic safe contract after the inert authority and
+whole-tree migration are complete.
+
+**Steps**
+
+- Make a live move-only Resource guard the sole safe authority for its rooted
+  context-branded protected access; moving the guard transfers both authority
+  and its acquisition obligation.
+- Reject access detached from the guard, escape or storage beyond the guard,
+  and use after guard move, explicit close, destructor, or any scope exit.
+- Require the existing raw Mutex lock/unlock primitives to be called only from
+  an explicit unsafe boundary; keep their runtime ABI internal and unchanged.
+- Prove automatic cleanup unlocks exactly once on normal, early-return,
+  conditional, and failure exits, with positive and negative source tests,
+  MIR-to-C tests, and supported Cranelift differential tests.
+- Preserve non-laundering, use no separate access token, add no Mutex-specific
+  Resource exception, and add no new MIR operation, ABI/layout rule, or runtime
+  symbol.
+- Publish checked implementation authority and notify the registrar so Stdlib
+  S1.8 may re-derive its blocked work without prescribing its API ergonomics.
+
+**Test Level:** Levels 1 and 2, with the registered lifecycle composition at
+Level 3.
+
+**Exit Gate**
+
+Safe access is possible exactly while its live guard exists, cannot escape or
+survive it, raw/manual access is explicit unsafe only, exactly-once cleanup and
+backend parity hold, and the generated handoff says implementation authority
+has landed.
+
+## Patch 20.16e — Protected-Access Bootstrap Seed Reconvergence
+
+**Purpose**
+
+Restore the checked-in bootstrap fixed point after the protected-access
+compiler changes without hiding generated seed churn in a semantic patch.
+
+**Steps**
+
+- Start from merged Patch 20.16d and run `make bootstrap`, requiring stage 2 and
+  stage 3 byte identity.
+- Commit only generated `gust_v4.c` and seed-specific authority.
+- Re-run the Patch 20.16d Level 1 contract with the converged seed.
+- Preserve the resolved contract and all runtime, ABI, layout, MIR, and Stdlib
+  boundaries unchanged.
+
+**Test Level:** Level 1 plus bootstrap convergence.
+
+**Exit Gate**
+
+The seed-only diff reaches a three-stage fixed point, accounts for Patch
+20.16d, and contains no capability or API change.
+
 ## Patch 20.17 — Phase 20 Closure
 
 **Purpose**
@@ -969,7 +1128,7 @@ Close the phase only after exact merged-main authoritative evidence exists.
   issue/coordination bookkeeping follows its owning lane and is not simulated by
   editing `TASK_STDLIB.md`.
 - Run `Cranelift Historical Full` against the exact merged `main` containing
-  Patch 20.16.
+  Patch 20.16e.
 - Require the full run to complete successfully, cite run ID, event, exact
   40-character head SHA, and job population, then update the generated closure
   source and artifact coherently.
@@ -1008,6 +1167,11 @@ running Level 3 suite does not satisfy this gate.
 → 20.14b post-prerequisite seed reconvergence
 → 20.15 long-lived/concurrent resources
 → 20.16 complete qualification
+→ 20.16a Mutex guard decision authority
+→ 20.16b inert resource-rooted access authority
+→ 20.16c explicit-unsafe raw primitive migration
+→ 20.16d protected-access liveness enforcement
+→ 20.16e protected-access seed reconvergence
 → 20.17 closure.
 
 The no-op boundaries at 20.1/20.2, 20.4/20.5, and especially
@@ -1037,6 +1201,12 @@ Phase 20 succeeds when:
   cohorts pass their declared budgets;
 - long-lived and concurrent selected programs have deterministic invariants and
   no leak, double destruction, deadlock, fallback, or unexplained divergence;
+- safe Mutex acquisition is represented by one move-only linear guard whose
+  live resource identity authorizes context-branded protected access and whose
+  cleanup unlocks exactly once on every scope exit;
+- protected access cannot detach from, escape, or survive its guard, while raw
+  lock/unlock primitives are available only behind an explicit unsafe/internal
+  boundary and have identical meaning through both backends;
 - every unsupported or deferred cohort is registry-owned with a reason and
   falsifier, and the selected cohort has zero unexplained differences;
 - the bootstrap seed is regenerated alone and reaches a three-stage fixed

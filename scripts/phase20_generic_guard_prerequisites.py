@@ -33,12 +33,22 @@ def validate() -> dict:
     authority = registry.get("phase20_generic_guard_prerequisites")
     require(isinstance(authority, dict), "Patch 20.14a authority is missing")
     require(authority.get("authority_version") ==
-            "phase20_generic_guard_prerequisites_v1",
+            "phase20_generic_guard_prerequisites_v2",
             "Patch 20.14a authority version drifted")
     require(authority.get("status") == "patch20_14a_complete",
             "Patch 20.14a status drifted")
     require(authority.get("next_patch") == "20.14b",
             "Patch 20.14a successor drifted")
+    require(authority.get("decision_at_patch") ==
+            "OD_13_open_during_patch20_14a",
+            "Patch 20.14a historical OD-13 state drifted")
+    require(authority.get("decision_successor_status") ==
+            "OD_13_resolved_2026_08_24",
+            "OD-13 successor decision drifted")
+    require(authority.get("decision_authority_patch") == "20.16a" and
+            authority.get("implementation_transition") ==
+            ["20.16b", "20.16c", "20.16d", "20.16e"],
+            "OD-13 implementation sequencing drifted")
 
     for key in ("semantic_fixture", "positive_fixture", "canonical_mir_fixture"):
         require((ROOT / authority[key]).is_file(),
@@ -92,12 +102,23 @@ def validate() -> dict:
             "Patch 20.14a canonical MIR projection drifted")
 
     vision = VISION.read_text(encoding="utf-8")
-    require("| OD-13 | **Mutex protected-access contract**" in vision and
-            "Mutex.Lock()` currently returns `RawPointer(T)`" in vision,
-            "OD-13 or the unchanged Mutex contract is missing")
-    require("- [x] Patch 20.14a — Generic Guard Prerequisite Corrections — DONE"
-            in TASK.read_text(encoding="utf-8"),
-            "TASK.md does not mark Patch 20.14a DONE")
+    for evidence in (
+        "| OD-13 | ~~**Mutex protected-access contract**",
+        "**RESOLVED 2026-08-24**",
+        "non-forgeable, move-only linear guard",
+        "separate access token",
+    ):
+        require(evidence in vision, f"resolved OD-13 evidence is missing: {evidence}")
+    task = TASK.read_text(encoding="utf-8")
+    for evidence in (
+        "- [x] Patch 20.14a — Generic Guard Prerequisite Corrections — DONE",
+        "- [x] Patch 20.16a — Mutex Guard Decision and Implementation Authority — DONE",
+        "- [ ] Patch 20.16b — Inert Resource-Rooted Access Authority",
+        "- [ ] Patch 20.16c — Explicit-Unsafe Mutex Primitive Migration",
+        "- [ ] Patch 20.16d — Protected-Access Liveness Enforcement",
+        "- [ ] Patch 20.16e — Protected-Access Bootstrap Seed Reconvergence",
+    ):
+        require(evidence in task, f"TASK.md OD-13 sequencing is missing: {evidence}")
 
     workflow = PR_FAST.read_text(encoding="utf-8")
     require("Phase 20 generic guard prerequisites" in workflow and
@@ -133,14 +154,28 @@ def render(authority: dict) -> str:
         "references remain rejected. Wrong owned types and wrong brands remain",
         "`ResourceDestructorSignature` failures. There is no Mutex-specific path.",
         "",
-        "## Backend and open-decision boundary",
+        "## Backend and historical decision boundary",
         "",
         "The accepted source returns 37 through MIR-to-C; the same selected",
         "observable returns 37 through supported canonical MIR and Cranelift.",
-        "`Mutex.Lock()` still returns `RawPointer(T)` with explicit `Unlock()`.",
-        "OD-13 remains open and Patch 20.14a makes no Stdlib API, MIR, ABI, layout,",
-        "or runtime-symbol decision. The compiler-source change is followed by",
-        "the isolated Patch 20.14b seed reconvergence before Patch 20.15.",
+        "During Patch 20.14a, `Mutex.Lock()` still returned `RawPointer(T)` with",
+        "explicit `Unlock()` and OD-13 remained open. That phase-frozen fact is",
+        "retained by `decision_at_patch`; it is not current decision authority.",
+        "",
+        "## Resolved successor and implementation boundary",
+        "",
+        "The operator resolved OD-13 on 2026-08-24. Safe acquisition returns one",
+        "move-only linear guard carrying context-branded protected access and",
+        "owning automatic exactly-once unlock on every scope exit. The guard is",
+        "the authority; no separate compiler access token is introduced. Raw",
+        "pointer/manual unlock may remain only explicit unsafe or internal machinery.",
+        "",
+        "Patch 20.16a records that decision without changing behaviour. Patches",
+        "20.16b–20.16e stage inert generic resource-rooted authority, whole-tree",
+        "raw-primitive migration, protected-access liveness enforcement, and",
+        "isolated seed convergence. The registrar handoff occurs only after checked",
+        "Patch 20.16d implementation authority lands. Stdlib API ergonomics remain",
+        "outside this record.",
         "",
     ])
 
