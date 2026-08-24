@@ -1100,7 +1100,7 @@
         "authority": "phase17_runtime_import_authority",
         "whole_program_case": "p20_multi_module_runtime_scalar",
         "source_fixture": "compiler/phase20_whole_program_scalar_source.gst",
-        "selected_helpers": ["tiny_host_add_one_i32", "tiny_host_add_i32", "tiny_host_is_positive_i32"],
+        "selected_helpers": ["tiny_host_add_i32"],
         "observable_owner": "phase20_whole_program_corpus_v1"
       }
     ],

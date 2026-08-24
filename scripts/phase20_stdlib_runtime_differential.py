@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -60,14 +61,31 @@ def validate() -> dict:
             "Patch 20.13 selected case ownership drifted")
     require((ROOT / component["source_fixture"]).is_file(),
             "Patch 20.13 selected source fixture is missing")
-    imports = registry["phase17_runtime_import_authority"]["selected_imports"]
-    expected_helpers = [row["external_spelling"] for row in imports]
-    require(component.get("selected_helpers") == expected_helpers,
-            "Patch 20.13 selected helper projection drifted")
     corpus_cases = registry["phase20_whole_program_corpus"]["selected_cases"]
-    require(any(case["id"] == component["whole_program_case"] and
-                case["kind"] == "runtime_success" for case in corpus_cases),
+    selected_case = next((case for case in corpus_cases
+                          if case["id"] == component["whole_program_case"] and
+                          case["kind"] == "runtime_success"), None)
+    require(selected_case is not None,
             "Patch 20.13 selected component lacks Patch 20.12 runtime evidence")
+    require(component["source_fixture"] == selected_case["source_fixture"],
+            "Patch 20.13 selected source diverges from its whole-program case")
+    fixture_paths = [selected_case["source_fixture"],
+                     *selected_case.get("companion_fixtures", [])]
+    fixture_text = "\n".join(
+        "\n".join(line.split("//", 1)[0]
+                  for line in (ROOT / path).read_text(
+                      encoding="utf-8").splitlines()
+                  if not line.lstrip().startswith("extern func "))
+        for path in fixture_paths
+    )
+    imports = registry["phase17_runtime_import_authority"]["selected_imports"]
+    available_helpers = [row["external_spelling"] for row in imports]
+    observed_helpers = [helper for helper in available_helpers
+                        if re.search(rf"\b{re.escape(helper)}\s*\(", fixture_text)]
+    require(observed_helpers,
+            "Patch 20.13 selected case calls no Phase 17 helper observably")
+    require(component.get("selected_helpers") == observed_helpers,
+            "Patch 20.13 selected helpers do not match observable fixture calls")
 
     exclusions = authority.get("explicit_exclusions")
     require(isinstance(exclusions, list) and len(exclusions) == 6,
