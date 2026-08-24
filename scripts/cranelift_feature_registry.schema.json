@@ -29,6 +29,7 @@
     "phase20_stdlib_runtime_differential",
     "phase20_generated_mir_scale",
     "phase20_generic_guard_prerequisites",
+    "phase20_post_prerequisite_seed_convergence",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -828,6 +829,40 @@
           "mutex_policy": {"const": "Mutex_Lock_continues_to_return_RawPointer_T_with_explicit_Unlock_while_OD_13_is_open"},
           "backend_policy": {"const": "the_frontend_validates_the_full_generic_source_and_projects_selected_main_return_37_to_supported_canonical_mir_for_MIR_to_C_and_Cranelift_without_fallback"},
           "bootstrap_policy": {"const": "the_checked_in_seed_builds_the_capability_patch_and_generated_seed_reconvergence_is_isolated_in_patch20_14b"}
+        }
+      },
+      "phase20_post_prerequisite_seed_convergence": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["contract_version", "status", "next_patch",
+                     "review_view", "seed_path", "predecessor_authority",
+                     "previous_seed_commit", "fixed_point_policy",
+                     "seed_only_policy", "accounted_patch",
+                     "generated_seed_diff"],
+        "properties": {
+          "contract_version": {"const": "phase20_post_prerequisite_seed_convergence_v1"},
+          "status": {"const": "patch20_14b_complete"},
+          "next_patch": {"const": "20.15"},
+          "review_view": {"const": "compiler/CRANELIFT_PHASE20_POST_PREREQUISITE_SEED_CONVERGENCE.md"},
+          "seed_path": {"const": "gust_v4.c"},
+          "predecessor_authority": {"const": "phase20_seed_convergence_v1"},
+          "previous_seed_commit": {"const": "958262bc42e33f83a79d828a629e582528e334e7"},
+          "fixed_point_policy": {"const": "make_bootstrap_stage2_stage3_byte_identity"},
+          "seed_only_policy": {"const": "generated_seed_and_seed_specific_authority_only"},
+          "accounted_patch": {"const": "20.14a"},
+          "generated_seed_diff": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["previous_lines", "current_lines", "insertions",
+                         "deletions", "line_delta"],
+            "properties": {
+              "previous_lines": {"const": 59502},
+              "current_lines": {"const": 59520},
+              "insertions": {"const": 63},
+              "deletions": {"const": 45},
+              "line_delta": {"const": 18}
+            }
+          }
         }
       },
       "phase19_brand_authority": {

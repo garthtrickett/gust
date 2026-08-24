@@ -1269,6 +1269,25 @@
     "backend_policy": "the_frontend_validates_the_full_generic_source_and_projects_selected_main_return_37_to_supported_canonical_mir_for_MIR_to_C_and_Cranelift_without_fallback",
     "bootstrap_policy": "the_checked_in_seed_builds_the_capability_patch_and_generated_seed_reconvergence_is_isolated_in_patch20_14b"
   },
+  "phase20_post_prerequisite_seed_convergence": {
+    "contract_version": "phase20_post_prerequisite_seed_convergence_v1",
+    "status": "patch20_14b_complete",
+    "next_patch": "20.15",
+    "review_view": "compiler/CRANELIFT_PHASE20_POST_PREREQUISITE_SEED_CONVERGENCE.md",
+    "seed_path": "gust_v4.c",
+    "predecessor_authority": "phase20_seed_convergence_v1",
+    "previous_seed_commit": "958262bc42e33f83a79d828a629e582528e334e7",
+    "fixed_point_policy": "make_bootstrap_stage2_stage3_byte_identity",
+    "seed_only_policy": "generated_seed_and_seed_specific_authority_only",
+    "accounted_patch": "20.14a",
+    "generated_seed_diff": {
+      "previous_lines": 59502,
+      "current_lines": 59520,
+      "insertions": 63,
+      "deletions": 45,
+      "line_delta": 18
+    }
+  },
   "phase19_brand_authority": {
     "authority_version": "phase19_brand_identity_authority_v1",
     "status": "ready_for_patch19_3",
