@@ -46,7 +46,7 @@ another through Cranelift.
 | Operator semantics | `VISION.md` §16 | Cranelift | `VISION.md` §16 — "the operator set is compiler-owned" |
 | Fiber scheduling contract | `src/runtime/fiber.c`; `VISION.md` §20–§21 | Cranelift | — |
 | Mutex and synchronization runtime contract | Phase 17.12 thread runtime audit | Cranelift | `TASK.md` "Immutable Phase 17 Completion Record", Patch 17.12 |
-| Mutex protected-access semantics | `VISION.md` §26.1; `phase20_generic_guard_prerequisites` registry authority | Cranelift owns the generic semantic floor; Stdlib owns API ergonomics after the checked handoff | `TASK.md` Patches 20.16a–20.16e; see **D-4** |
+| Mutex protected-access semantics | `VISION.md` §26.1; `phase20_protected_access_liveness` registry authority | Cranelift owns the generic semantic floor; Stdlib owns API ergonomics after the checked handoff | `TASK.md` Patches 20.16a–20.16e; see **D-4** |
 | Target, object format, relocation, linker, link mode | Phase 18 authority | Cranelift | `TASK.md` Phase Boundary |
 | Differential oracle status of MIR-to-C | `AGENTS.md`; every phase's Success Criteria | Cranelift | `AGENTS.md` Repository rules |
 | Explicit-Cranelift no-fallback | same | Cranelift | same |
@@ -210,14 +210,15 @@ decision: OD-3 is still marked open in `VISION.md` §27 while `std.Rc`,
 > unlock may remain only behind an explicit unsafe or compiler-internal
 > boundary, and there is no separate compiler-owned access token.
 >
-> The decision does not itself implement that contract. The remaining generic
-> compiler gap is resource-rooted access provenance and liveness: access must
-> not detach from, escape, or survive the guard that authorizes it. `TASK.md`
-> Patches 20.16a–20.16e own the bootstrap-safe authority, inert support,
-> whole-tree migration, enforcement, and seed convergence. Stdlib S1.8 remains
-> blocked until the registrar receives checked implementation authority from
-> Patch 20.16d. No patch may add a Mutex-specific Resource exception or choose
-> the Stdlib spelling, representation, re-entrancy, or accessor ergonomics.
+> Patch 20.16d implements the remaining generic compiler floor as the registry's
+> `phase20_protected_access_liveness` authority: resource-rooted access cannot
+> detach from, escape, or survive the guard that authorizes it, raw Mutex
+> primitives require explicit unsafe, and automatic lifecycle cleanup is checked
+> across the selected exit forms. Once that exact authority is merged on `main`,
+> its generated handoff permits the registrar to resume Stdlib S1.8. Patch 20.16e
+> remains the isolated seed reconvergence. No patch may add a Mutex-specific
+> Resource exception or choose the Stdlib spelling, representation, re-entrancy,
+> or accessor ergonomics.
 
 The original entry cited line numbers in a living document, which this file
 forbids elsewhere; it now cites the item.

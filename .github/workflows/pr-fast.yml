@@ -386,6 +386,9 @@ jobs:
       - name: Phase 20 explicit-unsafe Mutex primitive migration
         run: just guard-cranelift-phase20-unsafe-mutex-migration-contract
 
+      - name: Phase 20 protected-access liveness enforcement
+        run: just guard-cranelift-phase20-protected-access-liveness-contract
+
       - name: Phase 20 post-prerequisite seed convergence
         run: just guard-cranelift-phase20-post-prerequisite-seed-convergence
 
@@ -525,6 +528,9 @@ jobs:
 
       - name: Phase 20 explicit-unsafe Mutex primitive migration parity
         run: just guard-cranelift-phase20-unsafe-mutex-migration-parity
+
+      - name: Phase 20 protected-access liveness enforcement parity
+        run: just guard-cranelift-phase20-protected-access-liveness-parity
 
       - name: Phase 20 long-lived and concurrent resource smoke
         run: just guard-cranelift-phase20-long-lived-concurrent-smoke

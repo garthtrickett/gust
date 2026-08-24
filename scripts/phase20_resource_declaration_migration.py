@@ -50,6 +50,10 @@ CROSS_FEATURE_LINEAR_FIXTURES = [
     "compiler/phase20_cross_feature_resource_module.gst",
 ]
 
+PROTECTED_ACCESS_LINEAR_FIXTURES = [
+    "compiler/phase20_protected_access_module.gst",
+]
+
 SOURCE_DESTRUCTORS = {
     SOURCE_DECLARATIONS[0]: (
         "Phase13CompositionResourceMetadata",
@@ -82,6 +86,7 @@ DIRECTORY_VOCABULARY_FILES = [
     "compiler/phase19_cross_feature_composition_source.gst",
     "compiler/phase20_directory_external_construction_invalid.gst",
     "compiler/phase20_directory_external_field_invalid.gst",
+    "compiler/phase20_protected_access_source.gst",
     "compiler/phase20_resource_acquisition_directory_discarded_invalid.gst",
     "compiler/phase20_resource_acquisition_directory_source.gst",
     "compiler/resolver.gst",
@@ -211,7 +216,8 @@ def validate() -> dict:
             actual_linear.append(relative(path))
     expected_linear = sorted(SOURCE_DECLARATIONS + ENFORCEMENT_LINEAR_FIXTURES +
                              GENERIC_GUARD_LINEAR_FIXTURES +
-                             CROSS_FEATURE_LINEAR_FIXTURES)
+                             CROSS_FEATURE_LINEAR_FIXTURES +
+                             PROTECTED_ACCESS_LINEAR_FIXTURES)
     require(actual_linear == expected_linear,
             "compiler-owned #[linear] declaration inventory drifted: " +
             repr(actual_linear))
@@ -236,6 +242,11 @@ def validate() -> dict:
     require(cross_feature.get("resource_module_fixture") in
             CROSS_FEATURE_LINEAR_FIXTURES,
             "Patch 20.16 linear fixture is not classified by its authority")
+
+    protected_access = registry.get("phase20_protected_access_liveness", {})
+    require(protected_access.get("module_fixture") in
+            PROTECTED_ACCESS_LINEAR_FIXTURES,
+            "Patch 20.16d linear fixture is not classified by its authority")
 
     for source_path, (type_name, destructor_name) in SOURCE_DESTRUCTORS.items():
         source = (ROOT / source_path).read_text(encoding="utf-8")

@@ -16795,6 +16795,42 @@ guard-cranelift-phase20-unsafe-mutex-migration-parity:
     just guard-positive tests/e2e_sync_primitives.gst phase20_16c_sync_primitives
     grep -Fx '10' build/guards/phase20_16c_sync_primitives/compiler.log >/dev/null
 
+guard-cranelift-phase20-protected-access-liveness-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🛡️ Checking Phase 20 protected-access liveness enforcement..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase20-protected-access-liveness-contract | grep -F $'guard-cranelift-phase20-protected-access-liveness-contract\t1\t' >/dev/null
+    just guard-cranelift-phase20-unsafe-mutex-migration-contract
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase20_protected_access_liveness.py validate
+    python3 scripts/phase20_protected_access_liveness.py check-review
+    just guard-compile-pass compiler/phase20_protected_access_source.gst phase20_protected_access_positive
+    just guard-compile-fail compiler/phase20_protected_access_after_close_invalid.gst ProtectedAccessNotLive phase20_protected_access_after_close
+    just guard-compile-fail compiler/phase20_protected_access_return_invalid.gst ProtectedAccessEscape phase20_protected_access_return
+    just guard-compile-fail compiler/phase20_protected_access_storage_invalid.gst ProtectedAccessEscape phase20_protected_access_storage
+    just guard-compile-fail compiler/phase20_protected_access_argument_invalid.gst ProtectedAccessEscape phase20_protected_access_argument
+    just guard-compile-fail compiler/phase20_protected_access_ambiguous_invalid.gst ProtectedAccessAmbiguousRoot phase20_protected_access_ambiguous
+    just guard-compile-fail compiler/phase20_mutex_lock_safe_invalid.gst UnsafeMutexPrimitive phase20_mutex_lock_safe
+    just guard-compile-fail compiler/phase20_mutex_unlock_safe_invalid.gst UnsafeMutexPrimitive phase20_mutex_unlock_safe
+
+guard-cranelift-phase20-protected-access-liveness-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "⚖️ Checking Phase 20 protected-access lifecycle parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase20-protected-access-liveness-parity | grep -F $'guard-cranelift-phase20-protected-access-liveness-parity\t2\t' >/dev/null
+    just guard-cranelift-phase20-protected-access-liveness-contract
+    scripts/phase20_protected_access_liveness.sh
+
+guard-cranelift-phase20-protected-access-liveness-full:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🌐 Checking Phase 20 protected-access lifecycle composition..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase20-protected-access-liveness-full | grep -F $'guard-cranelift-phase20-protected-access-liveness-full\t3\t' >/dev/null
+    just guard-cranelift-phase20-protected-access-liveness-parity
+
 guard-cranelift-phase20-post-prerequisite-seed-convergence:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -16866,6 +16902,7 @@ guard-cranelift-phase20-cross-feature-qualification-full:
     scripts/phase20_cross_feature_qualification.sh full
     just guard-cranelift-phase20-generated-mir-scale-full
     just guard-cranelift-phase20-long-lived-concurrent-full
+    just guard-cranelift-phase20-protected-access-liveness-full
 
 guard-cranelift-phase18-opening-contract:
     #!/usr/bin/env bash

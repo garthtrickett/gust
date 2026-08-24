@@ -53,7 +53,7 @@ def validate() -> dict:
         "env_type_is_safe_branded_return_target(prov.resolved_type, ctx) == 0",
         "expression_provenance_allows_safe_branding(prov) == 0",
         "std.str_eq(left.resource_root_identity, right.resource_root_identity)",
-        "safe_readback_prov.resource_root_identity = std.Clone(",
+        "safe_readback_prov = expression_provenance_inherit_resource_root(",
     ):
         require(evidence in typechecker,
                 f"resource-rooted access carrier evidence is missing: {evidence}")

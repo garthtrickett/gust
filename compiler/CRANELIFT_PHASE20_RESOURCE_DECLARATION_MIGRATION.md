@@ -30,7 +30,7 @@ The synthesized `os_Dir_ctx` resource records inert destructor
 linear/destructor metadata. Its source compatibility, explicit close
 behavior, cleanup scheduling, and diagnostics are unchanged.
 
-The exact directory vocabulary cohort contains 22 compiler files. The
+The exact directory vocabulary cohort contains 23 compiler files. The
 inventory guard derives both cohorts from live compiler sources and
 rejects any unclassified declaration or directory use site.
 

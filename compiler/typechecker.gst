@@ -936,8 +936,8 @@ func expression_provenance_inherit_readback(base_prov: ExpressionProvenance[ctx]
     if expression_provenance_allows_safe_branding(base_prov) == 1 {
         mut safe_readback_prov := expression_provenance_safe_arena(result_t, ctx);
         safe_readback_prov.legacy_origins = typechecker_clone_origin_set(base_prov.legacy_origins, ctx);
-        safe_readback_prov.resource_root_identity = std.Clone(
-            ctx, base_prov.resource_root_identity
+        safe_readback_prov = expression_provenance_inherit_resource_root(
+            base_prov, safe_readback_prov, ctx
         );
         set_union(safe_readback_prov.legacy_origins, legacy_origins, ctx);
         return safe_readback_prov;
@@ -977,6 +977,24 @@ func expression_provenance_with_resource_root(prov: ExpressionProvenance[ctx], r
     mut rooted := prov;
     rooted.resource_root_identity = std.Clone(ctx, resource_identity);
     return rooted;
+}
+
+func expression_provenance_inherit_resource_root(source: ExpressionProvenance[ctx], destination: ExpressionProvenance[ctx], ctx: &Arena) ExpressionProvenance[ctx] {
+    mut inherited := destination;
+    unsafe {
+        // Copying a scalar out of protected storage does not leave an alias to
+        // that storage. References, pointers, strings, slices, and aggregates
+        // retain the root because they can still name or contain protected data.
+        if inherited.resolved_type.tag != 0 && // Int
+           inherited.resolved_type.tag != 1 && // Byte
+           inherited.resolved_type.tag != 2 && // Bool
+           inherited.resolved_type.tag != 3 {  // Void
+            inherited.resource_root_identity = std.Clone(
+                ctx, source.resource_root_identity
+            );
+        }
+    }
+    return inherited;
 }
 
 func expression_provenance_has_resource_root(prov: ExpressionProvenance[ctx]) int {
@@ -1063,6 +1081,9 @@ func expression_provenance_empty_value(t: ast.Type[ctx], ctx: &Arena) Expression
 func expression_provenance_address_of(inner_prov: ExpressionProvenance[ctx], result_t: ast.Type[ctx], legacy_origins: Index[OriginSet[ctx], ctx], ctx: &Arena) ExpressionProvenance[ctx] {
     if expression_provenance_allows_safe_branding(inner_prov) == 1 {
         mut safe_address_prov := expression_provenance_safe_arena(result_t, ctx);
+        safe_address_prov = expression_provenance_inherit_resource_root(
+            inner_prov, safe_address_prov, ctx
+        );
         safe_address_prov.legacy_origins = typechecker_clone_origin_set(inner_prov.legacy_origins, ctx);
         set_union(safe_address_prov.legacy_origins, legacy_origins, ctx);
         set_add(safe_address_prov.legacy_origins, "address_of", ctx);
@@ -1119,6 +1140,9 @@ func step51g_expression_provenance_project_field_preserving_raw_sandbox(base_pro
 
     if expression_provenance_allows_safe_branding(base_prov) == 1 {
         mut safe_field_prov := expression_provenance_safe_arena(result_t, ctx);
+        safe_field_prov = expression_provenance_inherit_resource_root(
+            base_prov, safe_field_prov, ctx
+        );
         safe_field_prov.legacy_origins = typechecker_clone_origin_set(base_prov.legacy_origins, ctx);
         set_union(safe_field_prov.legacy_origins, legacy_origins, ctx);
         set_add(safe_field_prov.legacy_origins, field_label, ctx);
@@ -1144,6 +1168,9 @@ func step51g_expression_provenance_aggregate_from_member_preserving_raw_sandbox(
 
     if expression_provenance_allows_safe_branding(member_prov) == 1 {
         mut safe_aggregate_prov := expression_provenance_safe_arena(aggregate_t, ctx);
+        safe_aggregate_prov = expression_provenance_inherit_resource_root(
+            member_prov, safe_aggregate_prov, ctx
+        );
         safe_aggregate_prov.legacy_origins = typechecker_clone_origin_set(member_prov.legacy_origins, ctx);
         set_union(safe_aggregate_prov.legacy_origins, legacy_origins, ctx);
         set_add(safe_aggregate_prov.legacy_origins, aggregate_label, ctx);
@@ -1169,6 +1196,9 @@ func step51g_expression_provenance_project_container_element_preserving_raw_sand
 
     if expression_provenance_allows_safe_branding(element_prov) == 1 {
         mut safe_container_prov := expression_provenance_safe_arena(result_t, ctx);
+        safe_container_prov = expression_provenance_inherit_resource_root(
+            element_prov, safe_container_prov, ctx
+        );
         safe_container_prov.legacy_origins = typechecker_clone_origin_set(element_prov.legacy_origins, ctx);
         set_union(safe_container_prov.legacy_origins, legacy_origins, ctx);
         set_add(safe_container_prov.legacy_origins, container_label, ctx);
@@ -1194,6 +1224,9 @@ func step51g_expression_provenance_call_return_preserving_raw_sandbox(return_pro
 
     if expression_provenance_allows_safe_branding(return_prov) == 1 {
         mut safe_call_prov := expression_provenance_safe_arena(result_t, ctx);
+        safe_call_prov = expression_provenance_inherit_resource_root(
+            return_prov, safe_call_prov, ctx
+        );
         safe_call_prov.legacy_origins = typechecker_clone_origin_set(return_prov.legacy_origins, ctx);
         set_union(safe_call_prov.legacy_origins, legacy_origins, ctx);
         return safe_call_prov;
@@ -1212,6 +1245,9 @@ func step51g_expression_provenance_return_boundary_preserving_raw_sandbox(return
 
     if expression_provenance_allows_safe_branding(return_prov) == 1 {
         mut safe_return_prov := expression_provenance_safe_arena(result_t, ctx);
+        safe_return_prov = expression_provenance_inherit_resource_root(
+            return_prov, safe_return_prov, ctx
+        );
         safe_return_prov.legacy_origins = typechecker_clone_origin_set(return_prov.legacy_origins, ctx);
         set_union(safe_return_prov.legacy_origins, legacy_origins, ctx);
         return safe_return_prov;
@@ -2861,6 +2897,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     mut elem_type_arena_write := typechecker_get_index_element_type(idx_type_arena_write, env, ctx);
                     elem_type_arena_write = env_resolve_type(env, elem_type_arena_write, ctx);
                     env_report_non_laundering_safe_brand_target(env, idx_type_arena_write, value_prov_arena_write_nlaunder, get_expression_span(value_arg_arena_write, ctx), "Passing raw-derived or sandbox-derived value to Arena.Set/Write", ctx);
+                    env_report_resource_root_escape(env, value_prov_arena_write_nlaunder, get_expression_span(value_arg_arena_write, ctx), "storing protected access with Arena.Set/Write", ctx);
                     if env_types_match_at_brand_boundary(env, elem_type_arena_write, value_type_arena_write, ctx) == 0 {
                         mut msg_value_arena_write := std.Concat("Semantic Error: Arena.Set/Write value type mismatch. Expected ", ast.serialize_type(elem_type_arena_write, ctx));
                         msg_value_arena_write = std.Concat(msg_value_arena_write, " but got ");
@@ -2927,6 +2964,10 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
 
                 if is_mutex == 1 {
                     if std.str_eq(right_name, "Lock") {
+                        if (*env).in_unsafe_block == 0 {
+                            mut msg_mutex_lock_unsafe := "Semantic Error: [UnsafeMutexPrimitive] raw Mutex.Lock requires an explicit 'unsafe' block";
+                            report_error(2, msg_mutex_lock_unsafe, expr.Call.span, env, ctx);
+                        }
                         unsafe {
                             mut lookup := (*env).struct_registry.Get(s_name);
                             if lookup.Ok {
@@ -2938,6 +2979,10 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         }
                     }
                     if std.str_eq(right_name, "Unlock") {
+                        if (*env).in_unsafe_block == 0 {
+                            mut msg_mutex_unlock_unsafe := "Semantic Error: [UnsafeMutexPrimitive] raw Mutex.Unlock requires an explicit 'unsafe' block";
+                            report_error(2, msg_mutex_unlock_unsafe, expr.Call.span, env, ctx);
+                        }
                         mut t_void: ast.Type[ctx]; t_void.tag = 3; // Void
                         return t_void;
                     }
@@ -2982,6 +3027,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                             mut elem_type := typechecker_get_template_elem_type(s_name, "data", env, ctx);
                             elem_type = env_resolve_type(env, elem_type, ctx);
                             env_report_non_laundering_safe_brand_target(env, elem_type, arg_prov_vector_push_nlaunder, get_expression_span(arg0_idx, ctx), "Passing raw-derived or sandbox-derived value to Vector.Push", ctx);
+                            env_report_resource_root_escape(env, arg_prov_vector_push_nlaunder, get_expression_span(arg0_idx, ctx), "storing protected access with Vector.Push", ctx);
                             if env_types_match_at_brand_boundary(env, elem_type, arg_type, ctx) == 0 {
                                 mut msg := std.Concat("Semantic Error: Argument type mismatch for Vector.Push. Expected ", ast.serialize_type(elem_type, ctx));
                                 msg = std.Concat(msg, " but got ");
@@ -3020,6 +3066,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         mut elem_type_vector_set := typechecker_get_template_elem_type(s_name, "data", env, ctx);
                         elem_type_vector_set = env_resolve_type(env, elem_type_vector_set, ctx);
                         env_report_non_laundering_safe_brand_target(env, elem_type_vector_set, value_arg_prov_vector_set_nlaunder, get_expression_span(value_arg_idx_vector_set, ctx), "Passing raw-derived or sandbox-derived value to Vector.Set", ctx);
+                        env_report_resource_root_escape(env, value_arg_prov_vector_set_nlaunder, get_expression_span(value_arg_idx_vector_set, ctx), "storing protected access with Vector.Set", ctx);
                         if env_types_match_at_brand_boundary(env, elem_type_vector_set, value_arg_type_vector_set, ctx) == 0 {
                             mut msg_vector_set_value := std.Concat("Semantic Error: Vector.Set value type mismatch. Expected ", ast.serialize_type(elem_type_vector_set, ctx));
                             msg_vector_set_value = std.Concat(msg_vector_set_value, " but got ");
@@ -3128,6 +3175,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                             mut v_type := typechecker_get_template_elem_type(s_name, "values", env, ctx);
                             v_type = env_resolve_type(env, v_type, ctx);
                             env_report_non_laundering_safe_brand_target(env, v_type, v_arg_prov_map_insert_nlaunder, get_expression_span(arg1_idx, ctx), "Passing raw-derived or sandbox-derived value to HashMap.Insert/Set", ctx);
+                            env_report_resource_root_escape(env, v_arg_prov_map_insert_nlaunder, get_expression_span(arg1_idx, ctx), "storing protected access with HashMap.Insert/Set", ctx);
 
                             if env_types_match_at_brand_boundary(env, k_type, k_arg, ctx) == 0 {
                                 mut msg := std.Concat("Semantic Error: Key type mismatch for HashMap.Insert/Set. Expected ", ast.serialize_type(k_type, ctx));
@@ -4270,6 +4318,10 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     mut arg_prov_check_call_nlaunder := evaluated_arg_provenances_call_nlaunder[k];
                     arg_prov_check_call_nlaunder.resolved_type = resolved_arg;
                     env_report_non_laundering_safe_brand_target(env, expected_type, arg_prov_check_call_nlaunder, arg_span_call_nlaunder, "Passing raw-derived or sandbox-derived argument", ctx);
+                    env_report_resource_root_escape(
+                        env, arg_prov_check_call_nlaunder, arg_span_call_nlaunder,
+                        "passing protected access to a callee", ctx
+                    );
 
                     if env_types_match_at_brand_boundary(env, expected_type, resolved_arg, ctx) == 0 {
                         mut msg := std.Format("Semantic Error: Argument type mismatch for function '%s'. Expected %s but got %s",
@@ -4502,6 +4554,10 @@ func check_expression_with_provenance(expr_idx: Index[ast.Expression[ctx], ctx],
                 if direct_lookup.Ok {
                     mut found_direct := direct_lookup.Val;
                     found_direct.resolved_type = t;
+                    env_report_resource_root_liveness(
+                        env, found_direct, get_expression_span(expr_idx, ctx),
+                        "reading rooted local", ctx
+                    );
                     return found_direct;
                 }
 
@@ -4511,6 +4567,10 @@ func check_expression_with_provenance(expr_idx: Index[ast.Expression[ctx], ctx],
                     if resolved_lookup.Ok {
                         mut found_resolved := resolved_lookup.Val;
                         found_resolved.resolved_type = t;
+                        env_report_resource_root_liveness(
+                            env, found_resolved, get_expression_span(expr_idx, ctx),
+                            "reading rooted local", ctx
+                        );
                         return found_resolved;
                     }
                 }
@@ -4570,6 +4630,9 @@ func check_expression_with_provenance(expr_idx: Index[ast.Expression[ctx], ctx],
                 mut cast_left_prov := check_expression_with_provenance(expr.AsCast.left, env, scope, ctx);
                 if expression_provenance_allows_safe_branding(cast_left_prov) == 1 {
                     mut cast_safe_prov := expression_provenance_safe_arena(t, ctx);
+                    cast_safe_prov = expression_provenance_inherit_resource_root(
+                        cast_left_prov, cast_safe_prov, ctx
+                    );
                     cast_safe_prov.legacy_origins = typechecker_clone_origin_set(cast_left_prov.legacy_origins, ctx);
                     set_union(cast_safe_prov.legacy_origins, legacy_origins, ctx);
                     set_add(cast_safe_prov.legacy_origins, "as_cast", ctx);
@@ -4696,6 +4759,27 @@ func check_expression_with_provenance(expr_idx: Index[ast.Expression[ctx], ctx],
             if expr.tag == 12 { // Call
                 mut call_name_prov := expression_to_string(expr.Call.function, ctx);
                 mut resolved_call_name_prov := env_resolve_namespaced_ident(env, call_name_prov, ctx);
+
+                if t.tag == 11 { // Reference result may be guarded access.
+                    mut call_resource_root := env_resource_root_identity_for_call(
+                        env, expr_idx, ctx
+                    );
+                    if std.str_eq(call_resource_root, "resource-root:ambiguous") == 1 {
+                        mut msg_ambiguous_root := "Semantic Error: [ProtectedAccessAmbiguousRoot] protected access may name only one Resource guard";
+                        report_error(2, msg_ambiguous_root, expr.Call.span, env, ctx);
+                    } else if len(call_resource_root) > 0 {
+                        mut rooted_call_prov := expression_provenance_safe_arena(t, ctx);
+                        rooted_call_prov.legacy_origins = legacy_origins;
+                        rooted_call_prov = expression_provenance_with_resource_root(
+                            rooted_call_prov, call_resource_root, ctx
+                        );
+                        env_report_resource_root_liveness(
+                            env, rooted_call_prov, expr.Call.span,
+                            "creating protected access", ctx
+                        );
+                        return rooted_call_prov;
+                    }
+                }
 
                 if std.str_eq(call_name_prov, "os.ArenaAlloc") == 1 {
                     mut arena_alloc_prov := expression_provenance_safe_arena(t, ctx);
@@ -9017,6 +9101,18 @@ func env_resource_identity_for_expression(env: *TypeEnvironment[ctx], expr_idx: 
             mut taken_identity := env_resource_identity_for_expression(env, expr.Take.expr, ctx);
             return std.Clone(ctx, taken_identity);
         }
+        if expr.tag == 6 { // AddressOf
+            mut addressed_identity := env_resource_identity_for_expression(
+                env, expr.AddressOf.expr, ctx
+            );
+            return std.Clone(ctx, addressed_identity);
+        }
+        if expr.tag == 7 { // Dereference
+            mut dereferenced_identity := env_resource_identity_for_expression(
+                env, expr.Dereference.expr, ctx
+            );
+            return std.Clone(ctx, dereferenced_identity);
+        }
         if expr.tag == 9 { // AsCast
             mut cast_identity := env_resource_identity_for_expression(env, expr.AsCast.left, ctx);
             return std.Clone(ctx, cast_identity);
@@ -9156,6 +9252,71 @@ func env_expression_provenance_resource_root_is_live(env: *TypeEnvironment[ctx],
     return env_resource_obligation_is_pending(
         env, prov.resource_root_identity, ctx
     );
+}
+
+func env_resource_root_identity_for_call(env: *TypeEnvironment[ctx], expr_idx: Index[ast.Expression[ctx], ctx], ctx: &Arena) str {
+    unsafe {
+        if expr_idx == empty[Index[ast.Expression[ctx], ctx]] {
+            return "";
+        }
+        mut expr := ctx[expr_idx];
+        if expr.tag != 12 { // Call
+            return "";
+        }
+        mut found := "";
+        mut function_expr := ctx[expr.Call.function];
+        if function_expr.tag == 11 { // Selector receiver
+            found = env_resource_identity_for_expression(
+                env, function_expr.Selector.left, ctx
+            );
+        }
+        mut arguments: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
+        mut i := 0;
+        while i < len(arguments) {
+            mut argument_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+            ctx.Set(argument_idx, arguments[i]);
+            mut identity := env_resource_identity_for_expression(
+                env, argument_idx, ctx
+            );
+            if len(identity) > 0 {
+                if len(found) > 0 && std.str_eq(found, identity) == 0 {
+                    return "resource-root:ambiguous";
+                }
+                found = std.Clone(ctx, identity);
+            }
+            i = i + 1;
+        }
+        return std.Clone(ctx, found);
+    }
+}
+
+func env_report_resource_root_liveness(env: *TypeEnvironment[ctx], prov: ExpressionProvenance[ctx], span: token.Span, context: str, ctx: &Arena) int {
+    if expression_provenance_has_resource_root(prov) == 0 {
+        return 0;
+    }
+    if env_expression_provenance_resource_root_is_live(env, prov, ctx) == 1 {
+        return 0;
+    }
+    mut msg := "Semantic Error: [ProtectedAccessNotLive] protected access requires its live Resource guard";
+    if len(context) > 0 {
+        msg = std.Concat(msg, ": ");
+        msg = std.Concat(msg, context);
+    }
+    report_error(2, msg, span, env, ctx);
+    return 1;
+}
+
+func env_report_resource_root_escape(env: *TypeEnvironment[ctx], prov: ExpressionProvenance[ctx], span: token.Span, context: str, ctx: &Arena) int {
+    if expression_provenance_has_resource_root(prov) == 0 {
+        return 0;
+    }
+    mut msg := "Semantic Error: [ProtectedAccessEscape] Resource-rooted protected access cannot escape or be stored beyond its guard";
+    if len(context) > 0 {
+        msg = std.Concat(msg, ": ");
+        msg = std.Concat(msg, context);
+    }
+    report_error(2, msg, span, env, ctx);
+    return 1;
 }
 
 func env_transfer_resource_return_expression(env: *TypeEnvironment[ctx], expr_idx: Index[ast.Expression[ctx], ctx], ctx: &Arena) int {
@@ -12761,6 +12922,10 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             env_report_hashmap_get_val_readback_non_laundering_safe_brand_target(env, left_type, val_idx, assignment_span_nlaunder, "Assigning raw-derived or sandbox-derived value read through HashMap.Get", ctx);
 
             if left.tag == 11 { // Selector
+                env_report_resource_root_escape(
+                    env, val_prov_assignment, assignment_span_nlaunder,
+                    "storing protected access in a field", ctx
+                );
                 if step51g_non_laundering_type_is_safe_brand_target(left_type, ctx) == 0 {
                     mut selector_storage_type_nlaunder := env_resolve_selector_storage_target_type(env, left_idx, scope, ctx);
                     env_report_non_laundering_safe_brand_target(env, selector_storage_type_nlaunder, val_prov_assignment, assignment_span_nlaunder, "Assigning raw-derived or sandbox-derived value to selector field", ctx);
@@ -12834,6 +12999,10 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             }
 
             if left.tag == 8 { // IndexAccess
+                env_report_resource_root_escape(
+                    env, val_prov_assignment, assignment_span_nlaunder,
+                    "storing protected access in a container", ctx
+                );
                 if step51g_non_laundering_type_is_safe_brand_target(left_type, ctx) == 0 {
                     mut container_storage_type_nlaunder := env_resolve_index_storage_target_type(env, left_idx, scope, ctx);
                     env_report_non_laundering_safe_brand_target(env, container_storage_type_nlaunder, val_prov_assignment, assignment_span_nlaunder, "Assigning raw-derived or sandbox-derived value to indexed container element", ctx);
@@ -13674,6 +13843,10 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                     mut return_nlaunder_span: token.Span;
                     return_nlaunder_span = get_expression_span(expr_idx, ctx);
                     env_report_non_laundering_safe_brand_target(env, expected_t, return_prov_for_enforcement, return_nlaunder_span, "Returning raw-derived or sandbox-derived value", ctx);
+                    env_report_resource_root_escape(
+                        env, return_prov_for_enforcement, return_nlaunder_span,
+                        "returning protected access", ctx
+                    );
                 }
             } else {
                 mut msg := "Semantic Error: Return statement used outside function body";
