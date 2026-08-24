@@ -191,7 +191,9 @@ def check() -> None:
             "Cranelift Historical Full does not route the rename-invariance shard")
 
     shared = SHARED_ZONE.read_text(encoding="utf-8")
-    require("D-1" not in shared, "D-1 remains in the shared semantic zone")
+    require(not any(line.startswith("### D-1 —")
+                    for line in shared.splitlines()),
+            "D-1 remains in the shared semantic zone")
     require("D-2 — Rust/self-hosted brand-rule divergence — closed" in shared,
             "the historical D-2 closure record was removed")
 

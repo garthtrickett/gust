@@ -139,7 +139,7 @@ means. `VISION.md` §16 makes the operator set compiler-owned, so defining `==`
 on `str` as content equality remains zone work, tracked as `TASK_STDLIB.md`
 CR-1. Until it lands, `std.str_eq(a, b)` is the only spelling.
 
-### D-4 — Resource obligations cannot attach to a user type
+### D-4 — Resource and provenance semantics remain incomplete for generic branded guards
 
 `STEP52_RESOURCE_SEMANTICS.md` items 2 and 6 in its "Verified state" table —
 resource representation (originally "automatic resource lifecycle enforcement")
@@ -190,6 +190,25 @@ as `TASK_STDLIB.md` CR-5 and pinned by
 One part of the row has since been decided by implementation rather than by
 decision: OD-3 is still marked open in `VISION.md` §27 while `std.Rc`,
 `std.RcNew`, and `std.RcNode` already ship. Tracked as `TASK_STDLIB.md` CR-9.
+
+> **Phase 20 correction, 2026-08-24.** The historical limitation above is no
+> longer current in full. Patches 20.6–20.10 added source-declared destructor
+> identity, construction opacity/private cleanup authority, acquisition-site
+> obligations, transfer joins, and automatic generic scope cleanup. A preserved
+> S1.8 probe then exposed two narrower compiler defects: the declaration
+> validator compares a branded generic destructor parameter's monomorphized
+> struct name with the unsubstituted template name, and non-laundering
+> provenance misclassifies a direct safe same-brand reference parameter when it
+> is stored in a same-brand aggregate field. Patch 20.14a owns those generic
+> corrections. They do not authorize a Mutex-specific exception.
+>
+> The third probe result is a decision rather than a defect with a unique local
+> fix: the compiler defines `Mutex.Lock()` as returning `RawPointer(T)` and
+> codegen pairs it with explicit `Unlock()`. Whether acquisition instead yields
+> a linear guard carrying protected access is registered as OD-13 in
+> `docs/VISION.md` §0.15. Until that decision is resolved, Stdlib S1.8 remains
+> blocked and neither lane may smuggle the choice through a wrapper or backend
+> special case.
 
 The original entry cited line numbers in a living document, which this file
 forbids elsewhere; it now cites the item.
