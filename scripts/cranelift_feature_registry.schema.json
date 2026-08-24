@@ -675,7 +675,7 @@
                 "authority": {"const": "phase17_runtime_import_authority"},
                 "whole_program_case": {"const": "p20_multi_module_runtime_scalar"},
                 "source_fixture": {"const": "compiler/phase20_whole_program_scalar_source.gst"},
-                "selected_helpers": {"const": ["tiny_host_add_one_i32", "tiny_host_add_i32", "tiny_host_is_positive_i32"]},
+                "selected_helpers": {"const": ["tiny_host_add_i32"]},
                 "observable_owner": {"const": "phase20_whole_program_corpus_v1"}
               }
             }

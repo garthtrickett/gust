@@ -15,7 +15,7 @@ Generated from `scripts/cranelift_feature_registry.json` by
 - Component: `runtime_component:approved_scalar_imports`
 - Whole-program case: `p20_multi_module_runtime_scalar`
 - Source: `compiler/phase20_whole_program_scalar_source.gst`
-- Helpers: `tiny_host_add_one_i32,tiny_host_add_i32,tiny_host_is_positive_i32`
+- Helpers: `tiny_host_add_i32`
 
 This is the only current component with a real, no-fallback
 whole-program source route. Patch 20.12 owns its exact compile/runtime
