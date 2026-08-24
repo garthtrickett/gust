@@ -1085,6 +1085,82 @@
       }
     ]
   },
+  "phase20_stdlib_runtime_differential": {
+    "contract_version": "phase20_stdlib_runtime_differential_v1",
+    "status": "patch20_13_complete",
+    "next_patch": "20.14",
+    "review_view": "compiler/CRANELIFT_PHASE20_STDLIB_RUNTIME_DIFFERENTIAL.md",
+    "harness": "scripts/phase20_stdlib_runtime_differential.sh",
+    "selection_policy": "select_only_components_with_a_real_whole_program_cranelift_source_route",
+    "marker_policy": "source_markers_and_request_witnesses_do_not_establish_component_execution",
+    "normalization_policy": "none",
+    "selected_components": [
+      {
+        "component_id": "runtime_component:approved_scalar_imports",
+        "authority": "phase17_runtime_import_authority",
+        "whole_program_case": "p20_multi_module_runtime_scalar",
+        "source_fixture": "compiler/phase20_whole_program_scalar_source.gst",
+        "selected_helpers": ["tiny_host_add_one_i32", "tiny_host_add_i32", "tiny_host_is_positive_i32"],
+        "observable_owner": "phase20_whole_program_corpus_v1"
+      }
+    ],
+    "explicit_exclusions": [
+      {
+        "category": "collections",
+        "source_fixture": "compiler/phase20_component_collections_source.gst",
+        "decision": "deferred",
+        "reason_code": "deferred_p13_structured_cfg_non_reducible_shape",
+        "owner": "phase13_generic_source_to_mir",
+        "destination": "20.16",
+        "falsifier": "a real Vector or HashMap source program reaches the native driver and its full Patch 20 observable differential passes"
+      },
+      {
+        "category": "strings",
+        "source_fixture": "compiler/phase20_component_strings_source.gst",
+        "decision": "deferred",
+        "reason_code": "deferred_p13_structured_cfg_condition_shape",
+        "owner": "phase13_generic_source_to_mir",
+        "destination": "20.16",
+        "falsifier": "a real string utility source program reaches the native driver and its full Patch 20 observable differential passes"
+      },
+      {
+        "category": "filesystem",
+        "source_fixture": "compiler/phase20_component_filesystem_source.gst",
+        "decision": "deferred",
+        "reason_code": "source_feature_not_represented",
+        "owner": "phase13_generic_source_to_mir",
+        "destination": "20.16",
+        "falsifier": "a sandboxed file I/O source program reaches the native driver and its exact filesystem-tree differential passes"
+      },
+      {
+        "category": "allocation",
+        "source_fixture": "compiler/phase20_component_allocation_source.gst",
+        "decision": "deferred",
+        "reason_code": "source_feature_not_represented",
+        "owner": "phase13_generic_source_to_mir",
+        "destination": "20.16",
+        "falsifier": "a real Arena allocation and write source program reaches the native driver and its full observable differential passes"
+      },
+      {
+        "category": "resources",
+        "source_fixture": "compiler/phase20_resource_scope_cleanup_source.gst",
+        "decision": "source_or_type_failure",
+        "reason_code": "source_or_type_failure",
+        "owner": "phase13_generic_source_to_mir",
+        "destination": "20.16",
+        "falsifier": "a successful source-declared Resource program reaches the native driver and its terminal-state and cleanup differential passes"
+      },
+      {
+        "category": "threading_synchronization",
+        "source_fixture": "compiler/phase20_component_threading_source.gst",
+        "decision": "deferred",
+        "reason_code": "deferred_p13_parameter_argument_target_dependent_abi",
+        "owner": "phase13_generic_source_to_mir",
+        "destination": "20.16",
+        "falsifier": "a real Mutex or Channel source program reaches the native driver and its deterministic-invariant differential passes"
+      }
+    ]
+  },
   "phase19_brand_authority": {
     "authority_version": "phase19_brand_identity_authority_v1",
     "status": "ready_for_patch19_3",
