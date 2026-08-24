@@ -1249,9 +1249,11 @@ The precise Stdlib type and method spelling, guard representation,
 re-entrancy policy, and whether access is implicit or through an accessor
 remain library decisions. `TASK.md` Patches 20.16a–20.16e stage the compiler
 transition as decision authority, inert support, whole-tree migration, generic
-enforcement, and isolated seed convergence. Until the enforcement patch lands,
-the existing raw return remains observable implementation evidence and Stdlib
-S1.8 remains blocked; decision prose alone does not claim implementation.
+enforcement, and isolated seed convergence. The registry's
+`phase20_protected_access_liveness` row is the checked implementation authority;
+Stdlib S1.8 may resume only after that exact row is merged on `main` and its
+generated handoff is re-derived. Decision prose alone does not claim
+implementation.
 
 ## 27. Shared ownership (OD-3)
 

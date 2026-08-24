@@ -1485,7 +1485,7 @@
     "review_view": "compiler/CRANELIFT_PHASE20_UNSAFE_MUTEX_MIGRATION.md",
     "scanner": "scripts/phase20_unsafe_mutex_migration.py",
     "source_scope": "every_git_tracked_gust_source_file",
-    "explicit_unsafe_policy": "every_method_call_spelled_dot_Lock_or_dot_Unlock_is_classified_and_lexically_nested_in_an_explicit_unsafe_block_or_unsafe_function_body",
+    "explicit_unsafe_policy": "every_operational_method_call_spelled_dot_Lock_or_dot_Unlock_is_lexically_nested_in_explicit_unsafe_and_the_only_safe_calls_are_the_two_exact_patch20_16d_enforcement_negatives",
     "call_sites": [
       {
         "path": "compiler/e2e_complex_bootstrap_target.gst",
@@ -1496,6 +1496,24 @@
       {
         "path": "compiler/phase20_component_threading_source.gst",
         "role": "compiler_threading_compile_only_fixture",
+        "lock_calls": 1,
+        "unlock_calls": 1
+      },
+      {
+        "path": "compiler/phase20_mutex_lock_safe_invalid.gst",
+        "role": "patch20_16d_enforcement_negative",
+        "lock_calls": 1,
+        "unlock_calls": 0
+      },
+      {
+        "path": "compiler/phase20_mutex_unlock_safe_invalid.gst",
+        "role": "patch20_16d_enforcement_negative",
+        "lock_calls": 0,
+        "unlock_calls": 1
+      },
+      {
+        "path": "compiler/phase20_protected_access_module.gst",
+        "role": "patch20_16d_explicit_unsafe_lifecycle_fixture",
         "lock_calls": 1,
         "unlock_calls": 1
       },
@@ -1512,17 +1530,59 @@
         "unlock_calls": 4
       }
     ],
-    "total_lock_calls": 12,
-    "total_unlock_calls": 12,
-    "total_calls": 24,
+    "baseline_lock_calls": 12,
+    "baseline_unlock_calls": 12,
+    "baseline_calls": 24,
+    "total_lock_calls": 14,
+    "total_unlock_calls": 14,
+    "total_calls": 28,
+    "enforcement_negative_fixtures": [
+      "compiler/phase20_mutex_lock_safe_invalid.gst",
+      "compiler/phase20_mutex_unlock_safe_invalid.gst"
+    ],
     "transitional_test_coverage": [
       "tests/e2e_mutex_concurrency.gst",
       "tests/e2e_sync_primitives.gst"
     ],
-    "migration_policy": "all_existing_sites_were_already_explicitly_unsafe_due_the_prior_raw_pointer_migration_so_patch20_16c_freezes_that_complete_noop_inventory_without_source_rewrites",
-    "enforcement_enabled": false,
+    "migration_policy": "patch20_16c_freezes_the_24_call_explicit_unsafe_noop_baseline_while_patch20_16d_adds_two_explicit_unsafe_lifecycle_calls_and_two_exact_classified_enforcement_negatives",
+    "enforcement_enabled": true,
     "backend_policy": "raw_Mutex_lowering_runtime_symbols_ABI_and_all_existing_observables_remain_unchanged_without_backend_fallback",
-    "bootstrap_policy": "make_gust_accepts_the_complete_explicit_unsafe_inventory_and_seed_reconvergence_remains_isolated_in_patch20_16e"
+    "bootstrap_policy": "make_gust_accepts_the_complete_classified_inventory_and_seed_reconvergence_remains_isolated_in_patch20_16e"
+  },
+  "phase20_protected_access_liveness": {
+    "contract_version": "phase20_protected_access_liveness_v1",
+    "status": "patch20_16d_complete",
+    "next_patch": "20.16e",
+    "review_view": "compiler/CRANELIFT_PHASE20_PROTECTED_ACCESS_LIVENESS.md",
+    "module_fixture": "compiler/phase20_protected_access_module.gst",
+    "positive_fixture": "compiler/phase20_protected_access_source.gst",
+    "negative_fixtures": [
+      {"path": "compiler/phase20_protected_access_after_close_invalid.gst", "diagnostic": "ProtectedAccessNotLive"},
+      {"path": "compiler/phase20_protected_access_return_invalid.gst", "diagnostic": "ProtectedAccessEscape"},
+      {"path": "compiler/phase20_protected_access_storage_invalid.gst", "diagnostic": "ProtectedAccessEscape"},
+      {"path": "compiler/phase20_protected_access_argument_invalid.gst", "diagnostic": "ProtectedAccessEscape"},
+      {"path": "compiler/phase20_protected_access_ambiguous_invalid.gst", "diagnostic": "ProtectedAccessAmbiguousRoot"},
+      {"path": "compiler/phase20_mutex_lock_safe_invalid.gst", "diagnostic": "UnsafeMutexPrimitive"},
+      {"path": "compiler/phase20_mutex_unlock_safe_invalid.gst", "diagnostic": "UnsafeMutexPrimitive"}
+    ],
+    "canonical_mir_fixture": "compiler/fixtures/native_backend_phase20_protected_access_liveness.mir",
+    "native_probe": "compiler/fixtures/phase20_protected_access_lifecycle_probe.c",
+    "carrier": "ExpressionProvenance.resource_root_identity",
+    "root_authority": "ResourceAcquisitionObligation.identity",
+    "access_policy": "a_reference_result_with_exactly_one_live_Resource_guard_receiver_or_argument_inherits_that_guard_acquisition_identity",
+    "scalar_copy_policy": "Int_Byte_Bool_and_Void_results_do_not_alias_protected_storage_and_drop_the_resource_root",
+    "escape_policy": "rooted_access_may_be_read_only_while_its_obligation_is_pending_and_cannot_be_returned_stored_or_passed_through_an_unchecked_callee_boundary",
+    "move_policy": "moving_the_guard_transfers_the_same_acquisition_identity_and_obligation_to_the_destination_owner",
+    "terminal_policy": "closed_destroyed_transferred_or_scope_exited_guard_authority_cannot_create_or_read_rooted_access",
+    "raw_mutex_policy": "Mutex_Lock_and_Unlock_require_explicit_unsafe_while_lowering_runtime_symbols_ABI_layout_and_MIR_remain_unchanged",
+    "cleanup_paths": ["normal", "early_return", "conditional", "selected_failure"],
+    "backend_policy": "MIR_to_C_proves_source_liveness_and_exactly_once_cleanup_while_supported_canonical_MIR_and_Cranelift_execute_four_unlocked_lifecycle_cycles_with_shared_exit_72_without_fallback",
+    "bootstrap_policy": "generated_seed_reconvergence_is_isolated_in_patch20_16e",
+    "handoff": {
+      "implementation_authority_landed": true,
+      "registrar_action": "stdlib_s1_8_may_rederive_from_merged_patch20_16d",
+      "stdlib_policy": "not_selected_by_compiler_authority"
+    }
   },
   "phase19_brand_authority": {
     "authority_version": "phase19_brand_identity_authority_v1",

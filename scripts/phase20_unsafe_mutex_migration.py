@@ -157,7 +157,8 @@ unsafe func internal_call() { mutex.Unlock(); }
 
 def tracked_gust_paths() -> list[str]:
     result = subprocess.run(
-        ["git", "ls-files", "-z", "*.gst"],
+        ["git", "ls-files", "-z", "--cached", "--others",
+         "--exclude-standard", "--", "*.gst"],
         cwd=ROOT,
         check=True,
         capture_output=True,
@@ -192,13 +193,17 @@ def validate() -> tuple[dict, list[MethodCall]]:
     require(authority.get("source_scope") ==
             "every_git_tracked_gust_source_file",
             "Patch 20.16c source scope drifted")
-    require(authority.get("enforcement_enabled") is False,
-            "Patch 20.16c enabled enforcement before the migration boundary")
+    require(authority.get("enforcement_enabled") is True,
+            "Patch 20.16d successor enforcement state drifted")
 
     calls = complete_inventory()
     unsafe_failures = [call for call in calls if not call.explicit_unsafe]
-    require(not unsafe_failures,
-            "raw Mutex-style method call exists outside explicit unsafe: " +
+    enforcement_negatives = set(authority.get(
+        "enforcement_negative_fixtures", []))
+    require({call.path for call in unsafe_failures} == enforcement_negatives and
+            len(unsafe_failures) == 2,
+            "raw Mutex-style method call outside explicit unsafe differs from "
+            "the exact Patch 20.16d enforcement-negative fixtures: " +
             ", ".join(f"{call.path}:{call.line}:{call.method}"
                       for call in unsafe_failures))
 
@@ -215,11 +220,15 @@ def validate() -> tuple[dict, list[MethodCall]]:
             f"raw Mutex call-site classification drifted: actual={actual!r}")
     lock_calls = sum(call.method == "Lock" for call in calls)
     unlock_calls = sum(call.method == "Unlock" for call in calls)
-    require(lock_calls == authority.get("total_lock_calls") == 12,
+    require(authority.get("baseline_lock_calls") == 12 and
+            authority.get("baseline_unlock_calls") == 12 and
+            authority.get("baseline_calls") == 24,
+            "Patch 20.16c frozen 24-call baseline drifted")
+    require(lock_calls == authority.get("total_lock_calls") == 14,
             "raw Mutex Lock inventory drifted")
-    require(unlock_calls == authority.get("total_unlock_calls") == 12,
+    require(unlock_calls == authority.get("total_unlock_calls") == 14,
             "raw Mutex Unlock inventory drifted")
-    require(len(calls) == authority.get("total_calls") == 24,
+    require(len(calls) == authority.get("total_calls") == 28,
             "raw Mutex total call inventory drifted")
     require(authority.get("transitional_test_coverage") == [
         "tests/e2e_mutex_concurrency.gst",
@@ -230,6 +239,8 @@ def validate() -> tuple[dict, list[MethodCall]]:
     codegen = CODEGEN.read_text(encoding="utf-8")
     require("return make_type_pointer(val_t_lookup.Val, ctx);" in typechecker,
             "transitional Mutex.Lock return type changed during migration")
+    require("[UnsafeMutexPrimitive]" in typechecker,
+            "Patch 20.16d raw primitive enforcement is missing")
     require("std_Mutex_Lock_impl(" in codegen and
             "std_Mutex_Unlock_impl(" in codegen,
             "transitional Mutex primitive lowering changed during migration")
@@ -237,8 +248,8 @@ def validate() -> tuple[dict, list[MethodCall]]:
     task = TASK.read_text(encoding="utf-8")
     require("- [x] Patch 20.16c — Explicit-Unsafe Mutex Primitive Migration — DONE"
             in task, "TASK.md does not mark Patch 20.16c DONE")
-    require("- [ ] Patch 20.16d — Protected-Access Liveness Enforcement"
-            in task, "TASK.md does not preserve Patch 20.16d as the next boundary")
+    require("- [x] Patch 20.16d — Protected-Access Liveness Enforcement — DONE"
+            in task, "TASK.md does not mark the Patch 20.16d successor DONE")
     workflow = PR_FAST.read_text(encoding="utf-8")
     require("Phase 20 explicit-unsafe Mutex primitive migration" in workflow and
             "just guard-cranelift-phase20-unsafe-mutex-migration-contract"
@@ -266,9 +277,10 @@ def render(authority: dict) -> str:
         f"- Status: `{authority['status']}`",
         f"- Next patch: `{authority['next_patch']}`",
         f"- Scope: `{authority['source_scope']}`",
-        f"- Calls: `{authority['total_calls']}` "
+        f"- Current classified calls: `{authority['total_calls']}` "
         f"(`{authority['total_lock_calls']}` Lock, "
         f"`{authority['total_unlock_calls']}` Unlock)",
+        f"- Patch 20.16c frozen baseline: `{authority['baseline_calls']}`",
         "",
         "## Complete classified inventory",
         "",
@@ -280,25 +292,28 @@ def render(authority: dict) -> str:
         )
     lines += [
         "",
-        "Every tracked Gust call spelled `.Lock(` or `.Unlock(` is lexically",
-        "inside an explicit `unsafe` block or unsafe function body. The scanner",
+        "Every tracked Gust call spelled `.Lock(` or `.Unlock(` is classified.",
+        "All operational calls are lexically inside an explicit `unsafe` block",
+        "or unsafe function body; the only safe calls are the two exact Patch",
+        "20.16d enforcement-negative fixtures. The scanner",
         "masks comments and literals, handles inline and whitespace-separated",
         "unsafe blocks, and rejects both unclassified calls and classified calls",
         "that escape the unsafe context.",
         "",
-        "All 24 sites were already explicit unsafe because earlier raw-pointer",
+        "The 24-call Patch 20.16c baseline was already explicit unsafe because earlier raw-pointer",
         "migration wrapped the dereference performed between Lock and Unlock.",
         "Patch 20.16c therefore freezes the complete migration as a semantic no-op",
-        "without rewriting source. The two `tests/` fixtures remain transitional",
+        "without rewriting source. Patch 20.16d adds two explicit-unsafe",
+        "lifecycle calls and the two classified safe rejection witnesses. The",
+        "two `tests/` fixtures remain transitional",
         "raw/manual coverage, not the future safe API contract.",
         "",
         "## Enforcement and backend boundary",
         "",
-        "Safe-call enforcement remains disabled. `Mutex.Lock()` still returns a",
-        "raw pointer; Lock/Unlock lowering, runtime symbols, ABI/layout, MIR, and",
-        "all existing observables remain unchanged. Patch 20.16d is the only next",
-        "boundary authorized to enable generic protected-access liveness and raw",
-        "primitive unsafe-call enforcement. Seed reconvergence remains isolated in",
+        "Safe-call enforcement is enabled by Patch 20.16d. `Mutex.Lock()` still",
+        "returns a raw pointer internally; Lock/Unlock lowering, runtime symbols,",
+        "ABI/layout, and MIR remain unchanged. Generic protected-access liveness",
+        "is owned by the successor authority. Seed reconvergence remains isolated in",
         "Patch 20.16e.",
         "",
     ]
