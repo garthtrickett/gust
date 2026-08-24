@@ -16831,6 +16831,17 @@ guard-cranelift-phase20-protected-access-liveness-full:
     python3 scripts/cranelift_test_levels.py level guard-cranelift-phase20-protected-access-liveness-full | grep -F $'guard-cranelift-phase20-protected-access-liveness-full\t3\t' >/dev/null
     just guard-cranelift-phase20-protected-access-liveness-parity
 
+guard-cranelift-phase20-protected-access-seed-convergence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🌱 Checking Phase 20 protected-access seed convergence authority..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase20-protected-access-seed-convergence | grep -F $'guard-cranelift-phase20-protected-access-seed-convergence\t1\t' >/dev/null
+    just guard-cranelift-phase20-protected-access-liveness-contract
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase20_protected_access_seed_convergence.py validate
+    python3 scripts/phase20_protected_access_seed_convergence.py check-review
+
 guard-cranelift-phase20-post-prerequisite-seed-convergence:
     #!/usr/bin/env bash
     set -euo pipefail

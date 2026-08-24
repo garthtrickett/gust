@@ -116,8 +116,10 @@ def validate() -> dict:
     task = TASK.read_text(encoding="utf-8")
     require("- [x] Patch 20.16d — Protected-Access Liveness Enforcement — DONE"
             in task, "TASK.md does not mark Patch 20.16d DONE")
-    require("- [ ] Patch 20.16e — Protected-Access Bootstrap Seed Reconvergence"
-            in task, "TASK.md does not preserve Patch 20.16e as the next boundary")
+    require("- [x] Patch 20.16e — Protected-Access Bootstrap Seed Reconvergence — DONE"
+            in task, "TASK.md does not mark Patch 20.16e DONE")
+    require("- [ ] Patch 20.17 — Phase 20 Closure" in task,
+            "TASK.md does not preserve Patch 20.17 as the next boundary")
 
     workflow = PR_FAST.read_text(encoding="utf-8")
     require("Phase 20 protected-access liveness enforcement" in workflow and

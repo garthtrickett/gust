@@ -389,6 +389,9 @@ jobs:
       - name: Phase 20 protected-access liveness enforcement
         run: just guard-cranelift-phase20-protected-access-liveness-contract
 
+      - name: Phase 20 protected-access seed convergence
+        run: just guard-cranelift-phase20-protected-access-seed-convergence
+
       - name: Phase 20 post-prerequisite seed convergence
         run: just guard-cranelift-phase20-post-prerequisite-seed-convergence
 

@@ -35,6 +35,7 @@
     "phase20_resource_rooted_access",
     "phase20_unsafe_mutex_migration",
     "phase20_protected_access_liveness",
+    "phase20_protected_access_seed_convergence",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -1098,6 +1099,48 @@
           "backend_policy": {"const": "MIR_to_C_proves_source_liveness_and_exactly_once_cleanup_while_supported_canonical_MIR_and_Cranelift_execute_four_unlocked_lifecycle_cycles_with_shared_exit_72_without_fallback"},
           "bootstrap_policy": {"const": "generated_seed_reconvergence_is_isolated_in_patch20_16e"},
           "handoff": {"const": {"implementation_authority_landed": true, "registrar_action": "stdlib_s1_8_may_rederive_from_merged_patch20_16d", "stdlib_policy": "not_selected_by_compiler_authority"}}
+        }
+      },
+      "phase20_protected_access_seed_convergence": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["contract_version", "status", "next_patch",
+                     "review_view", "seed_path", "predecessor_seed_authority",
+                     "accounted_authority", "previous_seed_commit",
+                     "fixed_point_policy", "seed_only_policy",
+                     "accounted_patches", "generated_seed_diff"],
+        "properties": {
+          "contract_version": {"const": "phase20_protected_access_seed_convergence_v1"},
+          "status": {"const": "patch20_16e_complete"},
+          "next_patch": {"const": "20.17"},
+          "review_view": {"const": "compiler/CRANELIFT_PHASE20_PROTECTED_ACCESS_SEED_CONVERGENCE.md"},
+          "seed_path": {"const": "gust_v4.c"},
+          "predecessor_seed_authority": {"const": "phase20_post_prerequisite_seed_convergence_v1"},
+          "accounted_authority": {"const": "phase20_protected_access_liveness_v1"},
+          "previous_seed_commit": {"const": "1588c07944468d7ef68e21b945540203a4d87595"},
+          "fixed_point_policy": {"const": "make_bootstrap_stage2_stage3_byte_identity"},
+          "seed_only_policy": {"const": "generated_seed_and_seed_specific_authority_only"},
+          "accounted_patches": {"const": [
+            {"patch": "20.15", "scope": "long_lived_and_concurrent_resource_qualification_fixtures_and_authority"},
+            {"patch": "20.16", "scope": "cross_feature_resource_qualification_fixtures_and_authority"},
+            {"patch": "20.16a", "scope": "OD_13_decision_projection_without_compiler_semantic_change"},
+            {"patch": "20.16b", "scope": "inert_resource_root_carrier_in_the_self_hosted_typechecker"},
+            {"patch": "20.16c", "scope": "unsafe_Mutex_inventory_authority_without_compiler_semantic_change"},
+            {"patch": "20.16d", "scope": "protected_access_liveness_enforcement_and_fixtures"}
+          ]},
+          "generated_seed_diff": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["previous_lines", "current_lines", "insertions",
+                         "deletions", "line_delta"],
+            "properties": {
+              "previous_lines": {"const": 59520},
+              "current_lines": {"const": 59706},
+              "insertions": {"const": 234},
+              "deletions": {"const": 48},
+              "line_delta": {"const": 186}
+            }
+          }
         }
       },
       "phase19_brand_authority": {

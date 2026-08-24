@@ -1585,6 +1585,33 @@
       "stdlib_policy": "not_selected_by_compiler_authority"
     }
   },
+  "phase20_protected_access_seed_convergence": {
+    "contract_version": "phase20_protected_access_seed_convergence_v1",
+    "status": "patch20_16e_complete",
+    "next_patch": "20.17",
+    "review_view": "compiler/CRANELIFT_PHASE20_PROTECTED_ACCESS_SEED_CONVERGENCE.md",
+    "seed_path": "gust_v4.c",
+    "predecessor_seed_authority": "phase20_post_prerequisite_seed_convergence_v1",
+    "accounted_authority": "phase20_protected_access_liveness_v1",
+    "previous_seed_commit": "1588c07944468d7ef68e21b945540203a4d87595",
+    "fixed_point_policy": "make_bootstrap_stage2_stage3_byte_identity",
+    "seed_only_policy": "generated_seed_and_seed_specific_authority_only",
+    "accounted_patches": [
+      {"patch": "20.15", "scope": "long_lived_and_concurrent_resource_qualification_fixtures_and_authority"},
+      {"patch": "20.16", "scope": "cross_feature_resource_qualification_fixtures_and_authority"},
+      {"patch": "20.16a", "scope": "OD_13_decision_projection_without_compiler_semantic_change"},
+      {"patch": "20.16b", "scope": "inert_resource_root_carrier_in_the_self_hosted_typechecker"},
+      {"patch": "20.16c", "scope": "unsafe_Mutex_inventory_authority_without_compiler_semantic_change"},
+      {"patch": "20.16d", "scope": "protected_access_liveness_enforcement_and_fixtures"}
+    ],
+    "generated_seed_diff": {
+      "previous_lines": 59520,
+      "current_lines": 59706,
+      "insertions": 234,
+      "deletions": 48,
+      "line_delta": 186
+    }
+  },
   "phase19_brand_authority": {
     "authority_version": "phase19_brand_identity_authority_v1",
     "status": "ready_for_patch19_3",

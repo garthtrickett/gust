@@ -38,6 +38,7 @@ TOP_FIELDS = {
     "phase20_resource_rooted_access",
     "phase20_unsafe_mutex_migration",
     "phase20_protected_access_liveness",
+    "phase20_protected_access_seed_convergence",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming", "phase19_classification", "phase19_representation",
