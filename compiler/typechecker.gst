@@ -21,7 +21,8 @@ type AddressOriginRecord[ctx] struct {
 type ExpressionProvenance[ctx] struct {
     resolved_type: ast.Type[ctx],
     address_origin: AddressOriginMetadata,
-    legacy_origins: Index[OriginSet[ctx], ctx]
+    legacy_origins: Index[OriginSet[ctx], ctx],
+    resource_root_identity: str
 }
 
 func init_address_origin_unknown(origin: *AddressOriginMetadata) {
@@ -878,6 +879,7 @@ func expression_provenance_unknown(t: ast.Type[ctx], ctx: &Arena) ExpressionProv
     prov.resolved_type = t;
     prov.address_origin = origin;
     prov.legacy_origins = set_init(ctx);
+    prov.resource_root_identity = "";
     return prov;
 }
 
@@ -888,6 +890,7 @@ func expression_provenance_safe_arena(t: ast.Type[ctx], ctx: &Arena) ExpressionP
     prov.resolved_type = t;
     prov.address_origin = origin;
     prov.legacy_origins = set_init(ctx);
+    prov.resource_root_identity = "";
     return prov;
 }
 
@@ -898,6 +901,7 @@ func expression_provenance_raw_derived(t: ast.Type[ctx], ctx: &Arena) Expression
     prov.resolved_type = t;
     prov.address_origin = origin;
     prov.legacy_origins = set_init(ctx);
+    prov.resource_root_identity = "";
     return prov;
 }
 
@@ -908,6 +912,7 @@ func expression_provenance_sandbox_derived(t: ast.Type[ctx], ctx: &Arena) Expres
     prov.resolved_type = t;
     prov.address_origin = origin;
     prov.legacy_origins = set_init(ctx);
+    prov.resource_root_identity = "";
     return prov;
 }
 
@@ -931,6 +936,9 @@ func expression_provenance_inherit_readback(base_prov: ExpressionProvenance[ctx]
     if expression_provenance_allows_safe_branding(base_prov) == 1 {
         mut safe_readback_prov := expression_provenance_safe_arena(result_t, ctx);
         safe_readback_prov.legacy_origins = typechecker_clone_origin_set(base_prov.legacy_origins, ctx);
+        safe_readback_prov.resource_root_identity = std.Clone(
+            ctx, base_prov.resource_root_identity
+        );
         set_union(safe_readback_prov.legacy_origins, legacy_origins, ctx);
         return safe_readback_prov;
     }
@@ -956,7 +964,30 @@ func step51g_join_expression_provenance(left: ExpressionProvenance[ctx], right: 
     if right.legacy_origins != empty[Index[OriginSet[ctx], ctx]] {
         set_union(joined.legacy_origins, right.legacy_origins, ctx);
     }
+    if len(left.resource_root_identity) > 0 &&
+       std.str_eq(left.resource_root_identity, right.resource_root_identity) == 1 {
+        joined.resource_root_identity = std.Clone(
+            ctx, left.resource_root_identity
+        );
+    }
     return joined;
+}
+
+func expression_provenance_with_resource_root(prov: ExpressionProvenance[ctx], resource_identity: str, ctx: &Arena) ExpressionProvenance[ctx] {
+    mut rooted := prov;
+    rooted.resource_root_identity = std.Clone(ctx, resource_identity);
+    return rooted;
+}
+
+func expression_provenance_has_resource_root(prov: ExpressionProvenance[ctx]) int {
+    if len(prov.resource_root_identity) > 0 {
+        return 1;
+    }
+    return 0;
+}
+
+func expression_provenance_resource_root_identity(prov: ExpressionProvenance[ctx], ctx: &Arena) str {
+    return std.Clone(ctx, prov.resource_root_identity);
 }
 
 func step51g_join_expression_provenance_preserving_raw_sandbox(left: ExpressionProvenance[ctx], right: ExpressionProvenance[ctx], ctx: &Arena) ExpressionProvenance[ctx] {
@@ -9100,6 +9131,31 @@ func env_resource_obligation_is_pending(env: *TypeEnvironment[ctx], identity: st
         }
         return 0;
     }
+}
+
+func env_expression_provenance_rooted_in_resource_storage(env: *TypeEnvironment[ctx], prov: ExpressionProvenance[ctx], resource_storage_name: str, ctx: &Arena) ExpressionProvenance[ctx] {
+    if env_type_is_safe_branded_return_target(prov.resolved_type, ctx) == 0 ||
+       expression_provenance_allows_safe_branding(prov) == 0 {
+        return prov;
+    }
+    unsafe {
+        guard identity := (*env).resource_value_identities.Get(resource_storage_name) else {
+            return prov;
+        };
+        if env_resource_obligation_is_pending(env, identity, ctx) == 0 {
+            return prov;
+        }
+        return expression_provenance_with_resource_root(prov, identity, ctx);
+    }
+}
+
+func env_expression_provenance_resource_root_is_live(env: *TypeEnvironment[ctx], prov: ExpressionProvenance[ctx], ctx: &Arena) int {
+    if expression_provenance_has_resource_root(prov) == 0 {
+        return 0;
+    }
+    return env_resource_obligation_is_pending(
+        env, prov.resource_root_identity, ctx
+    );
 }
 
 func env_transfer_resource_return_expression(env: *TypeEnvironment[ctx], expr_idx: Index[ast.Expression[ctx], ctx], ctx: &Arena) int {

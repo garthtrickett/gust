@@ -16746,6 +16746,27 @@ guard-cranelift-phase20-generic-guard-prerequisites-parity:
     just guard-cranelift-phase20-generic-guard-prerequisites-contract
     scripts/phase20_generic_guard_prerequisites.sh
 
+guard-cranelift-phase20-resource-rooted-access-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🌱 Checking Phase 20 inert resource-rooted access authority..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase20-resource-rooted-access-contract | grep -F $'guard-cranelift-phase20-resource-rooted-access-contract\t1\t' >/dev/null
+    just guard-cranelift-phase20-generic-guard-prerequisites-contract
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase20_resource_rooted_access.py validate
+    python3 scripts/phase20_resource_rooted_access.py check-review
+    just guard-positive compiler/typechecker_phase20_resource_rooted_access_test_entry.gst phase20_resource_rooted_access
+
+guard-cranelift-phase20-resource-rooted-access-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "⚖️ Checking Phase 20 inert resource-rooted access unchanged meaning..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase20-resource-rooted-access-parity | grep -F $'guard-cranelift-phase20-resource-rooted-access-parity\t2\t' >/dev/null
+    just guard-cranelift-phase20-resource-rooted-access-contract
+    just guard-cranelift-phase20-generic-guard-prerequisites-parity
+
 guard-cranelift-phase20-post-prerequisite-seed-convergence:
     #!/usr/bin/env bash
     set -euo pipefail

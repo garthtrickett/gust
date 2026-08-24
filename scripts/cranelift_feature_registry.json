@@ -1455,6 +1455,29 @@
     ],
     "unexplained_divergences": []
   },
+  "phase20_resource_rooted_access": {
+    "contract_version": "phase20_resource_rooted_access_v1",
+    "status": "patch20_16b_complete",
+    "next_patch": "20.16c",
+    "review_view": "compiler/CRANELIFT_PHASE20_RESOURCE_ROOTED_ACCESS.md",
+    "semantic_fixture": "compiler/typechecker_phase20_resource_rooted_access_test_entry.gst",
+    "carrier": "ExpressionProvenance.resource_root_identity",
+    "root_authority": "ResourceAcquisitionObligation.identity",
+    "constructor": "env_expression_provenance_rooted_in_resource_storage",
+    "queries": [
+      "expression_provenance_has_resource_root",
+      "expression_provenance_resource_root_identity",
+      "env_expression_provenance_resource_root_is_live"
+    ],
+    "readback_policy": "safe_readback_preserves_the_same_resource_root_identity",
+    "join_policy": "a_join_preserves_resource_root_authority_only_when_both_paths_carry_the_same_nonempty_identity",
+    "move_policy": "guard_rebinding_preserves_the_canonical_acquisition_identity_so_rooted_access_observes_the_same_pending_obligation",
+    "terminal_policy": "closed_destroyed_or_transferred_obligation_state_is_observable_as_a_non_live_resource_root",
+    "inert_policy": "no_current_typechecking_path_constructs_resource_rooted_provenance_and_no_new_rejection_or_diagnostic_is_enabled",
+    "mutex_policy": "Mutex_Lock_and_Unlock_semantics_and_all_existing_call_sites_remain_unchanged_until_patch20_16c_migration",
+    "backend_policy": "the_existing_generic_guard_prerequisite_MIR_to_C_and_supported_Cranelift_observable_remains_identical_without_fallback",
+    "bootstrap_policy": "the_checked_in_seed_builds_the_additive_carrier_and_generated_seed_reconvergence_remains_isolated_in_patch20_16e"
+  },
   "phase19_brand_authority": {
     "authority_version": "phase19_brand_identity_authority_v1",
     "status": "ready_for_patch19_3",
