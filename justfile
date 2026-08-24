@@ -16775,6 +16775,7 @@ guard-cranelift-phase20-long-lived-concurrent-smoke:
     python3 scripts/cranelift_test_levels.py validate
     python3 scripts/cranelift_test_levels.py level guard-cranelift-phase20-long-lived-concurrent-smoke | grep -F $'guard-cranelift-phase20-long-lived-concurrent-smoke\t2\t' >/dev/null
     just guard-cranelift-phase20-long-lived-concurrent-contract
+    just guard-cranelift-phase20-resource-scope-cleanup-parity
     scripts/phase20_long_lived_concurrent.sh small
 
 guard-cranelift-phase20-long-lived-concurrent-full:

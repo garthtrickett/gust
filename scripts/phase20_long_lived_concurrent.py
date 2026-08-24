@@ -95,6 +95,11 @@ def validate() -> dict:
     require(all(f"{guard}:" in justfile for guard in
                 (GUARD_L1, GUARD_L2, GUARD_L3)),
             "Patch 20.15 just guards are missing")
+    smoke_recipe = justfile.split(f"{GUARD_L2}:", 1)[1].split(
+        f"{GUARD_L3}:", 1)[0]
+    require("just guard-cranelift-phase20-resource-scope-cleanup-parity"
+            in smoke_recipe,
+            "Patch 20.15 Level 2 does not execute shared cleanup parity")
     return record
 
 
