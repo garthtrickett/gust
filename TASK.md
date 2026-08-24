@@ -1,4 +1,394 @@
-# Phase 20 — Whole-Program Differential Qualification
+# Phase 21 — Tenant-Scoped Typed Queries and Cranelift Self-Hosting Qualification
+
+**Lane:** Cranelift. Branches follow the existing
+`codex/phase<N>-<patch>-<slug>` pattern.
+
+Workflow, Monitoring, Merge, Phase Completion, Runner, and Git Authorization
+policies are defined in `AGENTS.md`. Shared semantic ownership is defined in
+`docs/SHARED_SEMANTIC_ZONE.md`. This document is the active Cranelift roadmap.
+
+Phase 21 has two serial tracks because both require the single compiler-semantic
+writer. Track A implements and attacks the operator-selected OD-8 provenance
+model over the compiler-owned typed-query path. Track B then migrates the six
+explicit Phase 20 residues needed for native compiler compilation and qualifies
+a Cranelift-built Gust compiler through a native rebuild. Work from one track is
+not folded into a patch from the other.
+
+The phase does not implement Postgres, HTTP, authentication, request-context
+establishment, caches, non-query reads, multi-step data-flow isolation, or a
+general authorization platform. It does not claim that unsafe/raw SQL receives
+typed-query guarantees. It does not flip the default backend, deprecate
+MIR-to-C, replace the bootstrap seed policy, or edit a Stdlib API.
+
+## Roadmap Activation
+
+Phase 20 formally closed on 2026-08-24. `Cranelift Historical Full` run
+`32772996884`, event `workflow_dispatch`, completed `success` with 18/18 jobs on
+exact merged `main` `6e54e3cc6fa8fc44e5df7a67624bb183b01b2258`.
+The generated closure PR #207 then completed 81/81 strict exact-head
+`pull_request` workflows with zero review threads and merged as exact main
+`da18ab2ba3307c24ffabdc510fd0583f9a75e22b`.
+
+On 2026-08-24 the operator conditionally authorized Phase 21 roadmap authoring
+and continuation after formal Phase 20 closure. That condition is satisfied.
+The operator also settled OD-8's design direction in favour of
+`docs/VISION.md` §56.2's provenance model while explicitly leaving the
+thesis-invalidating soundness verdict evidence-open. This roadmap records both
+facts and activates the Phase Completion Loop through Patch 21.18 after the
+roadmap PR merges.
+
+Activation is Cranelift-only. It does not authorize edits to `TASK_STDLIB.md`,
+does not begin Phase 22, and does not permit OD-8 to be marked fully resolved
+until the predefined adversarial suite has run against the implemented
+analysis.
+
+## Phase Boundary
+
+In scope:
+
+- a non-forgeable typed `Scope[Workspace]` provenance category whose trusted origin
+  is compiler-owned and whose establishment by the request host is outside the
+  query-analysis guarantee;
+- compiler-owned typed-query structure sufficient to represent scoped roots,
+  predicates, joins, nesting, and explicit cross-tenant markers without a
+  database runtime;
+- one compile-time obligation per scoped root, including every joined root and
+  nested query;
+- discharge only from matching typed Scope provenance, never from predicate
+  spelling or arbitrary user-controlled values;
+- explicit, capability-gated cross-tenant access visible at the call site;
+- rejection at the query and a predefined adversarial verdict suite bounded to
+  the compiler-owned typed-query path;
+- the six Phase 20 residue categories: collections, strings, filesystem,
+  allocation, resources, and threading/synchronization;
+- Cranelift compilation of compiler support libraries, selected compiler
+  modules, the full compiler, selected programs through the Cranelift-built
+  compiler, and a native compiler rebuild;
+- an explicitly registered decision on native-stage reproducibility before the
+  closure criterion depends on it.
+
+Out of scope:
+
+- caches, non-query reads, multi-step flows, stored procedures, triggers,
+  supplier surfaces, raw connections, and unsafe/raw SQL;
+- proving or implementing the trusted request-context establishment path;
+- full policy translation, Postgres execution, transactions, migrations, or a
+  public database library;
+- general lifetime algebra, arbitrary brand relationships, a second semantic
+  authority, backend-specific source meaning, or silent Cranelift fallback;
+- the default-backend flip and every Phase 22–25 retirement action.
+
+## Status
+
+- [x] Patch 21.0 — Roadmap and OD-8 Design Authority — DONE
+- [ ] Patch 21.1 — Opening Evidence and Dual-Track Baseline
+- [ ] Patch 21.2 — Inert Scoped-Query Semantic Records
+- [ ] Patch 21.3 — Typed-Query Surface Under the No-op
+- [ ] Patch 21.4 — Trusted Scope Provenance Enforcement
+- [ ] Patch 21.5 — Per-Root Join and Nested-Query Obligations
+- [ ] Patch 21.6 — Explicit Cross-Tenant Capability Boundary
+- [ ] Patch 21.7 — OD-8 Adversarial Soundness Verdict
+- [ ] Patch 21.7a — Tenant-Scope Bootstrap Seed Reconvergence
+- [ ] Patch 21.8 — Phase 20 Residue Migration Authority
+- [ ] Patch 21.9 — Collections and Strings Native Source Migration
+- [ ] Patch 21.10 — Filesystem and Allocation Native Source Migration
+- [ ] Patch 21.11 — Resources and Synchronization Native Source Migration
+- [ ] Patch 21.12 — Compiler Support-Library Native Qualification
+- [ ] Patch 21.13 — Selected Compiler-Module Native Qualification
+- [ ] Patch 21.13a — Native-Feature Bootstrap Seed Reconvergence
+- [ ] Patch 21.14 — Full Compiler Canonical-MIR and Native Object Qualification
+- [ ] Patch 21.15 — Cranelift-Built Compiler Program Compilation
+- [ ] Patch 21.16 — Native Rebuild Reproducibility Authority
+- [ ] Patch 21.17 — Complete Guard Suite and Resource Budgets
+- [ ] Patch 21.18 — Phase 21 Closure
+
+Status rows are machine-parsed. Keep each row as
+`- [ ] Patch 21.N — <Title>` or `- [x] Patch 21.N — <Title> — DONE`; an
+inserted amendment may append one lowercase letter to `N`.
+
+## Immutable Contracts
+
+- MIR-to-C remains the semantic oracle for accepted source until a later
+  roadmap deliberately changes that policy.
+- Explicit Cranelift never falls back to C. Unsupported typed-query or compiler
+  source fails before driver discovery and artifact publication.
+- Tenant-scope authority is generic compiler semantics, never a backend rule or
+  a special case for one entity or library.
+- A syntactically present tenant predicate is not evidence. Only matching,
+  non-forgeable typed Scope provenance discharges an obligation.
+- Each scoped join root and nested query carries its own obligation. Outer or
+  sibling discharge never clears it.
+- Cross-tenant access is explicit, capability-gated, non-ambient, and visible at
+  the call site. Raw SQL is a separate unsafe/privileged boundary outside the
+  guarantee.
+- The external claim is limited to compiler-owned typed queries. No closure
+  wording silently includes caches, non-query reads, multi-step flows, unsafe
+  SQL, or establishment of trusted request context.
+- Compiler syntax follows the bootstrap-safe sequence: inert support, complete
+  migration under the no-op, then enforcement. Generated `gust_v4.c` changes
+  only in isolated seed patches.
+- Phase 21 self-hosting does not change the default backend and does not replace
+  the Phase 25 native bootstrap-seed decision.
+
+## Patch 21.0 — Roadmap and OD-8 Design Authority
+
+**Purpose**
+
+Activate the phase from the exact Phase 20 closure and turn the operator's OD-8
+choice into one checked, non-overclaiming source of authority.
+
+**Steps**
+
+- Update `docs/VISION.md` §0.15 and §56.2 to say `DESIGN SET / EVIDENCE OPEN`,
+  preserving the adversarial soundness verdict as thesis-invalidating.
+- Add the tenant-scope obligation/provenance row to
+  `docs/SHARED_SEMANTIC_ZONE.md` with Cranelift as the only semantic writer.
+- Register this roadmap and its exact predecessor closure in the Cranelift
+  registry; generate a review artifact and add a focused Level 1 guard.
+- Register the native-stage reproducibility criterion as an open decision-tree
+  node rather than choosing it implicitly during implementation.
+- Make no parser, typechecker, MIR, backend, ABI/layout, runtime-symbol, target,
+  linker, seed, or Stdlib capability change.
+
+**Test Level:** Level 1 documentation/authority contract.
+
+**Exit Gate**
+
+The operator decision, bounded claim, evidence-open verdict, phase ordering,
+predecessor closure, and successor Patch 21.1 are represented identically in
+VISION, the shared-zone map, TASK, the registry, and the generated review.
+
+## Patch 21.1 — Opening Evidence and Dual-Track Baseline
+
+Inventory the absent typed-query/effect surface, preserve executable positive
+and negative query-shaped witnesses, re-derive the six Phase 20 residues, and
+measure the current full-compiler explicit-Cranelift failure stage. Record every
+case with an owner, stable reason, expected transition, and falsifier. Do not
+add syntax or change accepted-program meaning.
+
+**Exit Gate:** the opening registry accounts for every Track A construct, every
+inherited residue, and the complete compiler self-hosting baseline with zero
+unclassified failure.
+
+## Patch 21.2 — Inert Scoped-Query Semantic Records
+
+Add compiler-owned records for scoped-entity declarations, canonical query
+roots, per-root obligations, predicate provenance, nested query identity,
+cross-tenant markers, and trusted Scope origin. Keep them unreachable from
+normal source typechecking and lowering. Add no MIR operation, runtime symbol,
+ABI/layout rule, or rejection.
+
+**Exit Gate:** the inert records round-trip through focused self-hosted compiler
+tests, are not forgeable through ordinary type construction, and change no
+existing program's diagnostics or generated C.
+
+## Patch 21.3 — Typed-Query Surface Under the No-op
+
+Add the minimum compiler-owned declaration/query syntax needed by the attack
+suite and typed derivation (`scoped entity`, root, predicate, join, nesting,
+terminal query, and explicit cross-tenant marker) as a semantic no-op. Migrate
+all newly introduced fixtures and any compiler-owned consumers while the new
+surface is inert. Do not enable enforcement in this patch.
+
+**Exit Gate:** the checked-in seed builds the complete new syntax and the entire
+classified source inventory is migrated under the no-op.
+
+## Patch 21.4 — Trusted Scope Provenance Enforcement
+
+Enable one generic rule: a scoped root creates an obligation discharged only by
+a matching non-forgeable `Scope[Workspace]` provenance derived from the trusted
+context boundary. Arbitrary values, casts, copied predicate spelling, and
+user-controlled request fields cannot establish the provenance. Reject at the
+query with the registered diagnostic; keep the trusted-context establishment
+mechanism outside the guarantee.
+
+**Exit Gate:** positive trusted provenance and negative absent, forged,
+wrong-scope, arbitrary-value, and syntax-only programs agree through the
+semantic oracle and supported native cohort.
+
+## Patch 21.5 — Per-Root Join and Nested-Query Obligations
+
+Extend the generic analysis so every scoped join root and every subquery,
+aggregate, or `EXISTS` node owns an independent obligation. Define conservative
+query-as-value joins: preserve the complete obligation set or reject when it
+cannot be represented. Do not let outer, sibling, or earlier discharge clear a
+different root.
+
+**Exit Gate:** scoped/unscoped joins, multiple scoped joins, nesting, query
+values, branches, returns, aggregates, and aliasing have deterministic joined
+obligation sets and exact failure locations.
+
+## Patch 21.6 — Explicit Cross-Tenant Capability Boundary
+
+Add the smallest generic non-ambient capability check needed by the named
+cross-tenant marker. The capability is non-forgeable and non-transitive, must be
+visible at the query call site, and cannot be hidden behind an ordinary helper.
+Keep privileged raw SQL an explicit separate unsafe boundary outside typed-query
+guarantees; do not implement a database runtime or broader effect system here.
+
+**Exit Gate:** deliberate cross-tenant typed queries require the registered
+capability at the call site, laundering/re-export is rejected, ordinary scoped
+queries remain unchanged, and raw SQL cannot be presented as covered.
+
+## Patch 21.7 — OD-8 Adversarial Soundness Verdict
+
+Freeze and execute the §56.1 attack list against the implemented typed-query
+path: raw-boundary transitivity, joins, nesting, queries as values, dynamic
+shape, forged/untrusted tenant inputs, and the legitimate cross-tenant path.
+Record caches, non-query reads, multi-step flows, and trusted-context
+establishment as explicit out-of-scope probes rather than false passes.
+
+If any in-scope program compiles and leaks, record OD-8 negative and stop or
+rescope the thesis. Only if the complete predefined in-scope suite produces no
+counterexample may §0.15 move from `EVIDENCE OPEN` to a bounded resolved verdict.
+
+**Exit Gate:** the registry-generated attack report names every attempted class,
+witness, outcome, and claim boundary; OD-8 status follows evidence rather than
+roadmap completion.
+
+## Patch 21.7a — Tenant-Scope Bootstrap Seed Reconvergence
+
+Regenerate `gust_v4.c` alone after Track A compiler changes, require byte-
+identical stage 2/stage 3 output, and publish seed-specific authority in its own
+commit and PR. Add no semantics.
+
+## Patch 21.8 — Phase 20 Residue Migration Authority
+
+Re-derive the Phase 20 final residues from current compiler output, split each
+broad category into the smallest generic source-to-canonical-MIR capabilities,
+and order them by the compiler self-hosting dependency graph. Preserve explicit
+early rejection for every not-yet-migrated row.
+
+## Patch 21.9 — Collections and Strings Native Source Migration
+
+Migrate the generic structured-control-flow and condition shapes needed by
+compiler-owned collection and string sources. Use canonical MIR, not source
+recognizers, and prove representative source differentials with no fallback.
+
+## Patch 21.10 — Filesystem and Allocation Native Source Migration
+
+Add generic canonical-MIR representation and lowering for the exact filesystem
+and arena allocation/write operations required by compiler support code. Reuse
+Phase 14 layout and Phase 17 runtime authorities; add or change a runtime symbol
+only in an explicitly separated authority patch if evidence requires it.
+
+## Patch 21.11 — Resources and Synchronization Native Source Migration
+
+Carry Phase 15/20 resource state, automatic cleanup, approved runtime imports,
+and selected Mutex/Channel ABI through generic source-to-MIR and Cranelift
+lowering. Preserve protected-access liveness and unsafe raw boundaries; no
+Stdlib-specific backend path.
+
+## Patch 21.12 — Compiler Support-Library Native Qualification
+
+Compile the compiler's dependency modules through explicit Cranelift in
+topological slices. Each slice records canonical MIR, diagnostics, output or
+library artifact properties, resource state, and memory/time budgets while
+MIR-to-C remains the oracle.
+
+## Patch 21.13 — Selected Compiler-Module Native Qualification
+
+Compile representative lexer, parser, resolver, typechecker, MIR, and codegen
+modules through the native path, expanding only after the prior slice is fully
+classified. Large-function or registry failures receive generic capability rows
+rather than per-module exceptions.
+
+## Patch 21.13a — Native-Feature Bootstrap Seed Reconvergence
+
+Regenerate `gust_v4.c` alone after the compiler-source/native-feature migration,
+require stage 2/stage 3 byte identity, and publish only the generated seed plus
+seed-specific authority.
+
+## Patch 21.14 — Full Compiler Canonical-MIR and Native Object Qualification
+
+Produce canonical MIR and a linked native compiler object for the full compiler
+with no generated C in the qualified native route. Verify target/layout/ABI,
+runtime package, linker, object publication, failure cleanup, and deterministic
+diagnostics under the existing authorities.
+
+## Patch 21.15 — Cranelift-Built Compiler Program Compilation
+
+Use the Cranelift-built compiler to compile the selected positive, negative,
+resource, module, and typed-query programs. Compare accepted behaviour,
+diagnostics, side effects, and artifacts to the semantic oracle without hiding
+unsupported paths behind C.
+
+## Patch 21.16 — Native Rebuild Reproducibility Authority
+
+Resolve the registered native-stage reproducibility decision with measured
+evidence, then use the Cranelift-built compiler to rebuild the compiler again.
+Require the selected criterion—binary identity or a precisely bounded semantic
+reproducibility contract—across independently produced native stages.
+
+## Patch 21.17 — Complete Guard Suite and Resource Budgets
+
+Run the Cranelift-built compiler through the complete required guard suite and
+registered long-lived, concurrency, large-function, compile-time, peak-memory,
+diagnostic, and failure-cleanup budgets. Classify every skip or deferral; zero
+unexplained failure is permitted.
+
+## Patch 21.18 — Phase 21 Closure
+
+Require every Phase 21 row DONE, the OD-8 verdict recorded exactly as evidence
+supports, the native self-rebuild criterion satisfied, the full required guard
+suite green under the Cranelift-built compiler, all review threads resolved, and
+an authoritative Historical Full success on the exact merged Phase 21 head.
+Generate the closure record from registry authority and write a terminal lane
+state. Do not begin Phase 22 from a running or merely available Level 3 suite.
+
+## Recommended Implementation Order
+
+21.0 decision/roadmap authority
+→ 21.1 opening evidence
+→ 21.2 inert records
+→ 21.3 no-op surface/migration
+→ 21.4 provenance enforcement
+→ 21.5 join/nesting obligations
+→ 21.6 cross-tenant boundary
+→ 21.7 adversarial verdict
+→ 21.7a seed
+→ 21.8 residue authority
+→ 21.9–21.11 generic native migrations
+→ 21.12 support libraries
+→ 21.13 selected compiler modules
+→ 21.13a seed
+→ 21.14 full compiler native artifact
+→ 21.15 native compiler compiles programs
+→ 21.16 native rebuild criterion
+→ 21.17 guard suite/budgets
+→ 21.18 closure.
+
+## Phase 21 Success Criteria
+
+Phase 21 succeeds when:
+
+- only trusted non-forgeable matching Scope provenance discharges a scoped-root
+  obligation in the compiler-owned typed-query path;
+- every scoped join root and nested query carries its own obligation, and
+  cross-tenant access is explicit, capability-gated, and visible at the call
+  site;
+- rejection is a compiler error at the query, while raw SQL and all named
+  non-query boundaries remain explicitly outside the claim;
+- OD-8's status is supported by the complete predefined adversarial evidence,
+  not by design prose or ordinary positive tests;
+- all six inherited Phase 20 residue categories have final registry-owned
+  dispositions with zero fallback and zero unexplained divergence;
+- a Cranelift-built Gust compiler compiles the selected program corpus and
+  rebuilds the compiler under the explicitly resolved reproducibility criterion;
+- the complete required guard suite and resource budgets pass through the
+  qualified native compiler route without generated C for those stages;
+- bootstrap-sensitive compiler changes are represented by isolated converged
+  seed commits; and
+- an authoritative Historical Full run succeeds on exact merged Phase 21 main
+  and is cited by generated closure and terminal records.
+
+Phase 21 does not flip the default backend, retire MIR-to-C, establish a native
+bootstrap seed, implement a database/runtime platform, or claim isolation
+outside compiler-owned typed queries.
+
+---
+
+# Immutable Phase 20 Completion Record — Whole-Program Differential Qualification
 
 **Lane:** Cranelift. Branches follow the existing `codex/phase<N>-<patch>-<slug>` pattern.
 

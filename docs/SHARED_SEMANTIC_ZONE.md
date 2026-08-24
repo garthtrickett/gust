@@ -43,6 +43,7 @@ another through Cranelift.
 | The `std_*` runtime symbol surface | Phase 17 helper inventory | Cranelift adds the row; Stdlib proposes — see the three-step protocol at `TASK_STDLIB.md` CR-4 | `scripts/cranelift_feature_registry.json` Phase 17 helper rows |
 | Native-boundary metadata | Phase 17; Phase 18 request validation | Cranelift | `TASK.md` Request and MIR Ownership |
 | Pointer and provenance semantics | `STEP51_DEFERRED_UNSAFE_SEMANTICS.md`; `README.md` two-backends rationale | Cranelift | `README.md:47` |
+| Tenant-scoped typed-query obligations and trusted `Scope` provenance | `VISION.md` §56.2; `TASK.md` Phase 21 | Cranelift | OD-8 is `DESIGN SET / EVIDENCE OPEN`; Phase 21 Patches 21.2–21.7 |
 | Operator semantics | `VISION.md` §16 | Cranelift | `VISION.md` §16 — "the operator set is compiler-owned" |
 | Fiber scheduling contract | `src/runtime/fiber.c`; `VISION.md` §20–§21 | Cranelift | — |
 | Mutex and synchronization runtime contract | Phase 17.12 thread runtime audit | Cranelift | `TASK.md` "Immutable Phase 17 Completion Record", Patch 17.12 |
@@ -51,6 +52,18 @@ another through Cranelift.
 | Differential oracle status of MIR-to-C | `AGENTS.md`; every phase's Success Criteria | Cranelift | `AGENTS.md` Repository rules |
 | Explicit-Cranelift no-fallback | same | Cranelift | same |
 | The bootstrap seed (`gust_v4.c`) and fixed-point convergence | `AGENTS.md` "Bootstrap seed"; `README.md` "The Non-Rust Bootstrap Chain" | Cranelift | `make bootstrap` asserts stage 2 and stage 3 byte-identical |
+
+**OD-8's shared-zone boundary is deliberately narrow.** The operator selected
+the §56.2 provenance model on 2026-08-24, but the thesis-invalidating soundness
+verdict remains evidence-open. A scoped entity creates a compile-time obligation
+that only matching, non-forgeable typed Scope provenance from the trusted
+request boundary may discharge. Every scoped join root and nested query owns its
+own obligation; deliberate cross-tenant access is explicit, capability-gated,
+and visible at the call site; rejection occurs at the query. This authority
+covers only the compiler-owned typed-query path. Caches, non-query reads,
+multi-step flows, unsafe/raw SQL, and establishment of trusted request context
+remain outside its guarantee. `TASK.md` Phase 21 owns implementation and the
+predefined adversarial verdict gate.
 
 **The seed is a serialized resource, not merely a shared one.** Any lane may *run*
 `make bootstrap` to validate its own change — that is ordinary validation and needs

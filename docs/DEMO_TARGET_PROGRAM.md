@@ -35,8 +35,9 @@ An issue tracker's "list issues assigned to me" handler. Recognisable, boring,
 and it is where the canonical failure lives.
 
 ```gust
-// The tenant is resolved by the platform before application code runs
-// (VISION.md §9) and is immutable for the request.
+// The tenant is resolved by the trusted host before application code runs
+// (VISION.md §9). Establishing that context is outside the typed-query
+// guarantee; ordinary Gust code cannot forge the Scope value it supplies.
 
 type Issue[ctx] struct {
     id:          IssueId,
@@ -54,17 +55,16 @@ type ListError enum {
 // The signature states two things: what it returns, and what authority it needs.
 // `uses db.read<Issue>` is the entire containment claim (VISION.md §17).
 
-func list_my_issues(session: Session) Result[std.Vector[Issue], ListError]
+func list_my_issues(session: Session, scope: Scope[Workspace]) Result[std.Vector[Issue], ListError]
     uses db.read<Issue>
 {
     guard user := session.user() else {
         return Err(ListError.NotAuthorized);
     }
 
-    // `from` is tenant-scoped by construction. There is no way to spell this
-    // query that omits the workspace predicate — that is VISION.md §56, and it
-    // is why the leak is not expressible rather than merely discouraged.
-    mut issues := from(Issue)
+    // This illustrative spelling passes non-forgeable typed Scope provenance
+    // into the compiler-owned query. Patch 21.3 owns the final surface syntax.
+    mut issues := from(Issue, scope)
         .where(assignee == user.id)
         .where(closed == false)
         .order_by(id)
@@ -96,8 +96,9 @@ Three properties, and each is load-bearing:
    §3.4.
 2. **`uses db.read<Issue>` is the reviewable artifact.** It is business-level
    authority, not `network.request<host>` (§18). Widening it shows up in a diff.
-3. **The unscoped query has no spelling.** `from(Issue)` carries the workspace
-   predicate; there is no builder method that removes it.
+3. **An unscoped typed query does not compile.** Each scoped root carries an
+   obligation, and only matching non-forgeable typed Scope provenance can
+   discharge it. Predicate spelling or an arbitrary request value cannot.
 
 ## The negative case
 
@@ -112,7 +113,10 @@ func list_my_issues(session: Session) Result[std.Vector[Issue], ListError]
         return Err(ListError.NotAuthorized);
     }
 
-    mut issues := raw_sql("SELECT * FROM issues WHERE assignee = $1", user.id)?;
+    mut issues := from(Issue)
+        .where(workspace == session.workspace_id)
+        .where(assignee == user.id)
+        .all()?;
     return Ok(issues);
 }
 ```
@@ -120,24 +124,29 @@ func list_my_issues(session: Session) Result[std.Vector[Issue], ListError]
 Required diagnostic — the error, not a lint and not a scanner finding:
 
 ```
-error: query is not tenant-scoped
+error: query lacks trusted tenant-scope provenance
   --> issues.gst:9:20
    |
- 9 |     mut issues := raw_sql("SELECT * FROM issues WHERE assignee = $1", user.id)?;
-   |                   ^^^^^^^ constructs a query over `issues` with no workspace predicate
+ 9 |     mut issues := from(Issue)
+   |                   ^^^^^^^^^^^ creates a scope obligation for `Issue`
    |
    = note: `Issue` is a workspace-scoped entity (declared at schema.gst:14)
-   = note: every query over a workspace-scoped entity must be constructed
-           through `from(Issue)`, which applies the predicate
-   = help: rewrite as `from(Issue).where(assignee == user.id)`
-   = help: if this query is deliberately cross-tenant, it requires the
-           `db.cross_tenant<Issue>` capability, which must be declared in the
-           signature and approved in the manifest
+   = note: `session.workspace_id` is an ordinary value; matching predicate
+           syntax does not prove trusted Scope provenance
+   = help: supply a matching `Scope[Workspace]` derived from the trusted request context
+   = help: deliberate cross-tenant access requires an explicit capability-gated
+           marker visible at this query
 ```
 
 The second help line matters as much as the rejection: `VISION.md` §53 and §97
-require cross-tenant access to be *possible*, *declared*, and *approved* — not
-impossible. A rule with no escape hatch gets routed around.
+require cross-tenant access to be *possible*, *declared*, capability-gated, and
+visible at the call site — not impossible. Patch 21.3 owns the final typed-query
+spelling and Patch 21.6 owns the final cross-tenant marker. These examples are
+target pseudocode, not syntax authority.
+
+Privileged raw SQL is an explicit boundary outside this guarantee. It is not
+the negative case for the compiler-owned typed-query analysis and must not be
+presented as though the compiler inspects arbitrary SQL text for tenant scope.
 
 ## The exploit-autopsy companion
 
@@ -173,9 +182,9 @@ Ordered by dependency. Status re-verified 2026-08-22; evidence in
 | 3 | A constructor for `Option` — `Some(42)` rather than writing `.tag` and `.Some.val` | **PARTIAL** — ledger E1 | Cranelift lane — CR-14 / PR #128; generic enum construction, not an `Option` special case |
 | 4 | Implicit context in application code (`using ctx`) | **ABSENT** | **NOT A DEMO PREREQUISITE** as of the 2026-08-20 placement directive — Phase 5.3 sits after C deprecation; see `docs/UNSAFE_FFI_SEQUENCE.md` §4. Spec at VISION **§24.1** |
 | 5 | `uses` clauses parsed and checked across the call graph | **ABSENT** — ledger E10, but `FunctionSignature` already carries per-function obligations | **unowned** — VISION §0.7 Track A; spec proposed at **§18.1** |
-| 6 | Entity declarations that mark an entity workspace-scoped | **ABSENT** | **unowned** — VISION §56; spec proposed at **§56.2** rule 1 |
-| 7 | Compiler-owned query derivation (`from`, `.where`, `.all`) | **ABSENT** | **unowned** — VISION §55, spec proposed at **§55.1**. OD-2 resolved 2026-08-20: this is compiler work by decision, not a library someone could contribute |
-| 8 | Tenant scope tracked through query construction; unscoped rejected | **ABSENT** | **unowned** — VISION §56, OD-8; spec proposed at **§56.2**, attack list at **§56.1** |
+| 6 | Entity declarations that mark an entity workspace-scoped | **ABSENT** | Cranelift lane — Phase 21 Track A, Patch 21.2 onward; VISION **§56.2** rule 1 |
+| 7 | Compiler-owned query derivation (`from`, `.where`, `.all`) | **ABSENT** | Cranelift lane — Phase 21 Track A, Patch 21.3 onward; VISION **§55.1**. OD-2 resolved 2026-08-20: this is compiler work by decision, not a library someone could contribute |
+| 8 | Tenant scope tracked through query construction; unscoped rejected | **ABSENT** | Cranelift lane — Phase 21 Track A, Patches 21.4–21.7; OD-8 is design-set/evidence-open at VISION **§56.2**, attack list at **§56.1** |
 | 9 | A Postgres capability to execute the query against | **ABSENT** | **unowned** — VISION **§54.0**, which finds this row shares CR-5's blocker with `MutexGuard` |
 | 10 | Panic scoped to the request, not the process | **VIOLATED** — ledger E3 | `TASK_STDLIB.md` CR-3, issue #91 — unscheduled |
 

@@ -40,6 +40,7 @@ TOP_FIELDS = {
     "phase20_protected_access_liveness",
     "phase20_protected_access_seed_convergence",
     "phase20_closure",
+    "phase21_roadmap",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming", "phase19_classification", "phase19_representation",
