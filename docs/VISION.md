@@ -883,6 +883,22 @@ What this commits the project to, stated plainly because it is a constraint and 
 - **Every derived type surface is compiler work.** There is no path where a library author supplies one, so the cost lands on the compiler team by construction — which is the trade §13 is buying.
 - **The escape hatch is a new compiler-owned derivation, never a user generic.** A request that would be answered by "write it generically" is answered here by adding a derivation or declining the feature.
 
+**Applied to MutexGuard, 2026-08-24.** The first reusable S1.8 probe attempted
+ordinary imported functions over `MutexGuard[T, ctx]`, `std.Mutex[T, ctx]`, and
+`&T`. The compiler retained `T` as an unresolved namespaced type and rejected
+the declaration, destructor, call, and accessor. That result is consistent with
+this section: general user-written generic functions are unavailable, so the
+probe is evidence against that implementation route, not a reason to enable it.
+
+The selected direction is a bounded compiler-owned derivation for protected
+Resource guard families. It produces concrete acquisition, guard, destructor,
+and rooted-accessor identities from resolved type and brand metadata. MutexGuard
+is the first consumer, but neither backend may recognize `Mutex`, `MutexGuard`,
+or the selected library spelling: both consume ordinary canonical Resource and
+protected-access semantics. This does not reopen OD-2. `TASK_STDLIB.md` CR-15
+owns the checked request and witness; the compiler lane must sequence the
+implementation before Stdlib S1.8 resumes.
+
 The evidence for feasibility is the compiler itself: `compiler/errors.gst:17` declares `Result[T, ctx]` as an ordinary generic enum, so a demanding real consumer needed a generic sum type and expressed it with the facilities users already have.
 
 > **No compiler-owned derivation exists yet**, because everything §14 lists as derived — the query builder, RPC schemas, templates — is itself unbuilt. What the section gets right today is the negative half: user-written generic functions are genuinely unavailable, while generic structs and enums with monomorphisation work (`docs/ONE_WAY_LEDGER.md` E15).
@@ -1255,14 +1271,17 @@ not introduce a separate access token: the guard itself is the access authority
 and the acquisition obligation. This is generic resource-rooted provenance and
 liveness authority, not a Mutex-specific exception to Resource semantics.
 
-The precise Stdlib type and method spelling, guard representation,
-re-entrancy policy, and whether access is implicit or through an accessor
-remain library decisions. `TASK.md` Patches 20.16a–20.16e stage the compiler
+The initial Stdlib spelling is now selected as module-level `sync.lock(&mutex)`
+and `sync.get(&owner)`, returning and accessing a compiler-derived
+`MutexGuard[T, ctx]`. User-defined extension-method ergonomics such as
+`mutex.ScopedLock()` remain explicitly deferred. Guard representation and
+re-entrancy policy remain later library decisions. `TASK.md` Patches 20.16a–20.16e stage the compiler
 transition as decision authority, inert support, whole-tree migration, generic
 enforcement, and isolated seed convergence. The registry's
 `phase20_protected_access_liveness` row is the checked implementation authority;
-Stdlib S1.8 may resume only after that exact row is merged on `main` and its
-generated handoff is re-derived. Decision prose alone does not claim
+it establishes liveness but not the OD-2-compatible reusable derivation. Stdlib
+S1.8 may resume only after both that authority and CR-15's compiler-owned
+derivation are merged and re-derived. Decision prose alone does not claim
 implementation.
 
 ## 27. Shared ownership (OD-3)

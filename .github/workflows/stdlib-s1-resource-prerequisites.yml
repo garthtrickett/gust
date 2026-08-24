@@ -1,9 +1,7 @@
 name: Stdlib S1 Resource Prerequisites
 
-# Pins the S1.7 audit rather than a behaviour. If the resource framework gains
-# source-level destructor declaration, this fails and the audit in
-# STEP52_RESOURCE_SEMANTICS.md and TASK_STDLIB.md CR-5 must be re-verified before
-# MutexGuard work resumes.
+# Pins the current handoff: CR-5's resource floor is resolved, while CR-15 owns
+# the bounded compiler derivation required by the selected MutexGuard surface.
 
 on:
   pull_request:
@@ -12,12 +10,25 @@ on:
       - 'compiler/lexer.gst'
       - 'STEP52_RESOURCE_SEMANTICS.md'
       - 'TASK_STDLIB.md'
+      - 'docs/SHARED_SEMANTIC_ZONE.md'
+      - 'docs/STDLIB_FOUNDATIONS.md'
+      - 'docs/STDLIB_SURFACE_FINDINGS.md'
+      - 'docs/VISION.md'
+      - 'tests/stdlib_s1_mutex_guard_generic_derivation_*.gst'
+      - 'justfile'
       - '.github/workflows/stdlib-s1-resource-prerequisites.yml'
   push:
     branches: [main]
     paths:
       - 'compiler/typechecker.gst'
       - 'STEP52_RESOURCE_SEMANTICS.md'
+      - 'TASK_STDLIB.md'
+      - 'docs/SHARED_SEMANTIC_ZONE.md'
+      - 'docs/STDLIB_FOUNDATIONS.md'
+      - 'docs/STDLIB_SURFACE_FINDINGS.md'
+      - 'docs/VISION.md'
+      - 'tests/stdlib_s1_mutex_guard_generic_derivation_*.gst'
+      - 'justfile'
       - '.github/workflows/stdlib-s1-resource-prerequisites.yml'
   workflow_dispatch:
 

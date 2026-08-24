@@ -2,10 +2,11 @@
 
 A "stdlib foundations" plan covering string ergonomics, HashMap through
 references, branded collection consistency, `Clone` normalization, a scoped mutex
-guard, and then a roadmap out to `std.net`. Reviewed 2026-08-20.
+guard, and then a roadmap out to `std.net`. Reviewed again 2026-08-24 after the
+Phase 20 resource/protected-access sequence and the CR-15 derivation probe.
 
 **Most of the first half is already the Phase S1 roadmap in `TASK_STDLIB.md`, and
-five of its eight items are done.** The valuable content is therefore the status
+every pre-guard item is done.** The valuable content is therefore the status
 mapping, the roadmap tail that is *not* captured anywhere, and three blockers the
 plan does not know it has.
 
@@ -18,14 +19,17 @@ plan does not know it has.
 | 1.1 `str` equality | **S1.1** | **DONE (#74)** — but see below, it is not what the plan asks for |
 | 1.1 `str` length, byte access, slicing | **S1.2** | **DONE** |
 | 1.2 HashMap methods through references | **S1.3** | **DONE** |
-| 1.3 Branded collection type consistency | **S1.4** | **blocked on CR-11 / issue #158** |
-| 1.4 `Clone` with arena references | **S1.5** | **blocked on CR-12 and CR-13 / issues #159 and #160** |
+| 1.3 Branded collection type consistency | **S1.4** | **DONE** |
+| 1.4 `Clone` with arena references | **S1.5** | **DONE** |
 | Tests proving all five compose | **S1.6** | **DONE** |
-| 2.x scoped mutex guard | **S1.7** | **audit DONE; guard blocked on CR-5** |
+| 2.x scoped mutex guard | **S1.7 / S1.8** | **audit DONE; resource floor landed; reusable guard blocked on CR-15** |
 
-Phase 19 delivered CR-2. Verification exposed narrower shared-zone defects for
-S1.4 and S1.5, each now filed with a minimal witness. The lane did not idle: the
-independent S1.6 composition program proceeded and is done.
+Phase 19 delivered CR-2, and the narrower S1.4/S1.5 defects subsequently landed
+through Cranelift coordination. Phase 20 delivered CR-5 and generic
+protected-access liveness. The remaining guard blocker is CR-15: OD-2 excludes
+the imported generic functions the selected `sync.lock` / `sync.get` surface
+would otherwise use, so concrete instances must come from bounded
+compiler-owned derivation.
 
 ### 1.1 is done, and it did not do what this plan wants
 
@@ -52,7 +56,7 @@ already assumes a byte-based `str`.
 
 ---
 
-## 2. Three blockers the plan does not know it has
+## 2. Three blockers the plan did not know it had — current disposition
 
 **A. The guard's compile-fail list requires visibility levels, which do not
 exist.** The plan wants to reject *"construct fake guard"* and *"manually unlock
@@ -63,6 +67,10 @@ internal. `docs/ONE_WAY_LEDGER.md` row 35 records that `pub`, `private`,
 field of every struct is reachable everywhere. **A guard whose constructor anyone
 can call is not a guard**, and this is a hard prerequisite rather than a polish
 item.
+
+**Resolved by Phase 20.** `#[opaque]` construction control and `#[private]`
+cleanup authority now exist as generic source metadata. S1.9 must consume them;
+it must not recreate visibility for MutexGuard.
 
 **B. `MutexGuard` is blocked on destructor declaration, not on design.** The plan
 states the ideal exactly right:
@@ -78,6 +86,15 @@ guard is blocked on exactly the same thing as the Postgres capability
 worth scheduling**, because it shows what CR-5 buys: not one type, but the
 principle that resources are library code.
 
+**Superseded by CR-15.** Source-declared destructors, acquisition obligations,
+automatic scope cleanup, transfer joins, and protected-access liveness have now
+landed. The design is still selected, but an ordinary reusable Gust module would
+require user-written generic `lock` and `get` functions, which resolved OD-2
+forbids. The operator chose bounded compiler-owned derivation over reopening
+generic functions. That derivation must be generic over Resource and protected
+access metadata and backend-neutral; it is not permission for a Mutex-named
+backend rule.
+
 **C. `Mutex[T]` grants mutable access through a guard, which is interior
 mutability.** The plan wisely defers it — *"I would not start there"* — but the
 tension should be recorded: §27 says safe application code does not receive
@@ -85,6 +102,11 @@ unrestricted interior mutability, and `guard.value.counter += 1` is mutation
 through a shared handle. It may well be *restricted* enough to qualify, since
 access is gated on holding the guard. **That is an OD-3 question, not a stdlib
 one**, and it should be routed there rather than decided inside a mutex patch.
+
+**Resolved by OD-13.** One move-only guard is both the acquisition obligation
+and the authority for context-branded protected access while live. Patch 20.16d
+enforces that generic liveness rule. CR-15 supplies the missing reusable
+derivation; it does not reopen the access decision.
 
 ---
 
@@ -122,7 +144,8 @@ test rather than as a philosophy.
 `TASK_STDLIB.md` runs to S1.12. Everything below is beyond it and is in no file.
 
 1. **Standardize linear OS resources** — `File`, `Socket`, explicit `Close`,
-   move-only ownership. *Depends on CR-5, as above.*
+   move-only ownership. *Consumes the landed CR-5 resource floor; any new
+   runtime symbols still follow CR-4's cross-lane protocol.*
 2. **Basic `std.net`** — `Listen`, `Accept`, `Connect`, `Read`, `Write`, `Close`,
    **initially blocking if necessary.**
 3. **Buffered I/O** — `BufferedReader`, `BufferedWriter`, `ReadLine`, with

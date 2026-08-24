@@ -234,6 +234,25 @@ decision: OD-3 is still marked open in `VISION.md` §27 while `std.Rc`,
 > Resource exception or choose the Stdlib spelling, representation, re-entrancy,
 > or accessor ergonomics.
 
+> **Stdlib derivation correction, 2026-08-24.** After the handoff, the first
+> reusable `MutexGuard[T, ctx]` module probe exposed a different shared-zone
+> boundary. Its imported `lock` and `get` functions require user-written generic
+> functions, which `VISION.md` §14 deliberately excludes under resolved OD-2.
+> The live compiler consequently retains the module's `T` as an unresolved
+> namespaced type: branded-nesting and generic destructor validation reject the
+> declaration, the concrete `std.Mutex[Counter, arena]` call does not instantiate
+> it, and the accessor cannot resolve `T`'s fields. Patch 20.16d's concrete
+> liveness oracle still passes; the missing layer is reusable derivation.
+>
+> The operator selected a bounded compiler-owned derivation rather than
+> reopening general-purpose user generic functions. `TASK_STDLIB.md` CR-15 is
+> the checked seven-point request. It preserves the selected module-level
+> `sync.lock` / `sync.get` surface and defers extension methods, while requiring
+> the compiler to derive concrete protected-Resource guard identities from
+> resolved type/brand metadata. Neither backend may recognize Mutex or the
+> library spelling. Until that generic authority lands, S1.8 remains blocked;
+> the Patch 20.16d registrar handoff alone is necessary but not sufficient.
+
 The original entry cited line numbers in a living document, which this file
 forbids elsewhere; it now cites the item.
 
