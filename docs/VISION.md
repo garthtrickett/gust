@@ -183,6 +183,15 @@ the Gust example does not compile until it is fixed. Complete traces published:
 every capability declared, every one exercised, every authority attempt
 rejected.
 
+The publication package also includes a small set of incident-grounded exploit
+autopsies selected close to release from recent TypeScript/npm, Python/PyPI, and
+Rust/Cargo disclosures. Each one reproduces the original exploit path in a
+sandbox, attempts the faithful safe-Gust equivalent, and shows the exact
+compiler, capability, build, isolation, or guarantee-boundary result. The claim
+is always about the specific required precondition—**prevented, contained,
+exposed, or not covered**—never that Gust cannot be hacked. Selection and exit
+criteria live in `docs/DEMO_EXPLOIT_AUTOPSIES.md`.
+
 That artifact is the entire asset at this stage. Everything else is scaffolding around it.
 
 This first side-by-side is a **mechanism demonstration**, not a benchmark: its
@@ -392,7 +401,12 @@ Almost every component exists somewhere. The composition does not. Stating the d
 
 ## 0.14 Sequencing
 
-**Months 0–4 — the demo.** §0.7, two tracks in parallel. Track A: effects, scoping, typed queries. Track B: model fluency. Then one agent-generated multi-tenant application. Publish.
+**Months 0–4 — the demo.** §0.7, two tracks in parallel. Track A: effects,
+scoping, typed queries. Track B: model fluency. Then one agent-generated
+multi-tenant application. During the final publication pass, select and
+reproduce the recent incident-based exploit autopsies in
+`docs/DEMO_EXPLOIT_AUTOPSIES.md`; choosing them late keeps them current and
+prevents marketing examples from driving language scope. Publish.
 
 **Months 0–4 — benchmark protocol, not benchmark results.** Preregister the
 arms, tasks, threat model, budgets, metrics, and audit method in parallel where

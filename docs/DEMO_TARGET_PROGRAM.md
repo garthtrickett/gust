@@ -20,6 +20,9 @@ table below, with an owner per row.
   syntax settled differently.
 - When it compiles and the negative case is rejected, §0.7's deliverable exists
   and this file is replaced by the real fixture.
+- The publication package then adds the incident-based companion specified in
+  `docs/DEMO_EXPLOIT_AUTOPSIES.md`. Those autopsies demonstrate shipped
+  guarantees; they do not add speculative prerequisites to the program below.
 
 **Written 2026-08-20 against `b47d0049`.** Verified blockers cite
 `docs/ONE_WAY_LEDGER.md`, which carries the reproductions.
@@ -135,6 +138,26 @@ error: query is not tenant-scoped
 The second help line matters as much as the rejection: `VISION.md` §53 and §97
 require cross-tenant access to be *possible*, *declared*, and *approved* — not
 impossible. A rule with no escape hatch gets routed around.
+
+## The exploit-autopsy companion
+
+Once this program and its negative case are reproducible, the published demo
+also grounds Gust's wider containment story in recent incidents. Near
+publication, search the preceding 12–18 months of TypeScript/npm, Python/PyPI,
+and Rust/Cargo disclosures and select only cases whose exploit preconditions map
+to an implemented Gust guarantee.
+
+Each selected incident must show a faithful sandboxed reproduction in the
+original ecosystem, the benign requirement it served, the equivalent safe Gust
+attempt, the exact rejection or containment evidence, and the boundary at which
+`unsafe`, unrestricted authority, or an external supplier weakens the claim.
+The permitted verdicts are **prevented**, **contained**, **exposed**, or **not
+covered**—never the generic claim that Gust “cannot be hacked.”
+
+`docs/DEMO_EXPLOIT_AUTOPSIES.md` owns the selection rules, artifact format,
+claim taxonomy, and publication exit gate. This remains a presentation and
+evidence layer over the core thesis-invalidating demo: it must not delay finding
+out whether tenant scoping is sound or whether agents can write Gust.
 
 ---
 

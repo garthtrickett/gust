@@ -10,6 +10,11 @@ that Gust can express and reject the selected failure. The benchmark asks
 whether that advantage survives realistic application variety and the strongest
 credible TypeScript alternative.
 
+The recent-incident comparisons in `docs/DEMO_EXPLOIT_AUTOPSIES.md` are a
+separate explanatory artifact. They ask whether a specific disclosed exploit
+path maps to a shipped Gust guarantee; they are not benchmark observations,
+prevalence evidence, or a substitute for the hardened comparison arm below.
+
 ## 1. The question
 
 For the same realistic multi-tenant application specification and a fixed agent
