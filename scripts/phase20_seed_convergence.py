@@ -74,8 +74,17 @@ def validate() -> dict:
     require(all(set(row) == {"patch", "scope"} and row["scope"] for row in accounted),
             "seed accounting row shape drifted")
 
+    live_seed_lines = diff["current_lines"]
+    successor = registry.get("phase20_post_prerequisite_seed_convergence")
+    if successor is not None:
+        require(successor.get("predecessor_authority") == record["contract_version"],
+                "Patch 20.14b seed authority does not name this predecessor")
+        successor_diff = successor.get("generated_seed_diff")
+        require(isinstance(successor_diff, dict),
+                "Patch 20.14b seed authority omits generated diff accounting")
+        live_seed_lines = successor_diff.get("current_lines")
     seed_text = SEED.read_text(encoding="utf-8")
-    require(len(seed_text.splitlines()) == diff["current_lines"],
+    require(len(seed_text.splitlines()) == live_seed_lines,
             "committed seed line count drifted")
 
     workflow = WORKFLOW.read_text(encoding="utf-8")

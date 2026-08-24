@@ -32,6 +32,7 @@ TOP_FIELDS = {
     "phase20_stdlib_runtime_differential",
     "phase20_generated_mir_scale",
     "phase20_generic_guard_prerequisites",
+    "phase20_post_prerequisite_seed_convergence",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming", "phase19_classification", "phase19_representation",

@@ -380,6 +380,9 @@ jobs:
       - name: Phase 20 generic guard prerequisites
         run: just guard-cranelift-phase20-generic-guard-prerequisites-contract
 
+      - name: Phase 20 post-prerequisite seed convergence
+        run: just guard-cranelift-phase20-post-prerequisite-seed-convergence
+
       - name: Phase 19 cross-feature composition
         run: just guard-cranelift-phase19-composition-contract
 

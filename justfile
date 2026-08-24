@@ -16746,6 +16746,17 @@ guard-cranelift-phase20-generic-guard-prerequisites-parity:
     just guard-cranelift-phase20-generic-guard-prerequisites-contract
     scripts/phase20_generic_guard_prerequisites.sh
 
+guard-cranelift-phase20-post-prerequisite-seed-convergence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🌱 Checking Phase 20 post-prerequisite seed convergence authority..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase20-post-prerequisite-seed-convergence | grep -F $'guard-cranelift-phase20-post-prerequisite-seed-convergence\t1\t' >/dev/null
+    just guard-cranelift-phase20-generic-guard-prerequisites-contract
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase20_post_prerequisite_seed_convergence.py validate
+    python3 scripts/phase20_post_prerequisite_seed_convergence.py check-review
+
 guard-cranelift-phase18-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail
