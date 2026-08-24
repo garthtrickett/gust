@@ -416,7 +416,7 @@
           "directory_bridge_owner": {"const": "compiler/typechecker.gst"},
           "directory_resource_type": {"const": "os_Dir_ctx"},
           "directory_destructor": {"const": "os.CloseDir"},
-          "directory_vocabulary_files": {"type": "array", "minItems": 22, "maxItems": 22, "uniqueItems": true, "items": {"type": "string"}},
+          "directory_vocabulary_files": {"type": "array", "minItems": 23, "maxItems": 23, "uniqueItems": true, "items": {"type": "string"}},
           "source_policy": {"const": "every_compiler_owned_linear_struct_declares_destructor_opacity_and_a_same_module_private_owned_cleanup_function"},
           "directory_policy": {"const": "the_synthesized_directory_resource_records_the_same_inert_destructor_and_opacity_metadata_without_changing_live_phase15_cleanup_authority"},
           "use_site_policy": {"const": "all_compiler_owned_directory_construction_read_close_defer_and_diagnostic_vocabulary_is_classified_by_exact_file"},

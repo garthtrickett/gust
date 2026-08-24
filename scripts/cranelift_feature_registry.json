@@ -822,6 +822,7 @@
       "compiler/phase19_cross_feature_composition_source.gst",
       "compiler/phase20_directory_external_construction_invalid.gst",
       "compiler/phase20_directory_external_field_invalid.gst",
+      "compiler/phase20_protected_access_source.gst",
       "compiler/phase20_resource_acquisition_directory_discarded_invalid.gst",
       "compiler/phase20_resource_acquisition_directory_source.gst",
       "compiler/resolver.gst",
