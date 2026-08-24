@@ -26,6 +26,7 @@ LEVELS = ROOT / "scripts/cranelift_test_levels.json"
 GUARD_L1 = "guard-cranelift-phase20-generated-mir-scale-contract"
 GUARD_L2 = "guard-cranelift-phase20-generated-mir-sample-parity"
 GUARD_L3 = "guard-cranelift-phase20-generated-mir-scale-full"
+COMPOSITION_L3 = "guard-cranelift-phase20-cross-feature-qualification-full"
 
 
 class Error(RuntimeError):
@@ -158,14 +159,17 @@ def validate() -> dict:
             "PR Fast does not own both Patch 20.14 Level 1/2 guards")
     require(f"just {GUARD_L3}" not in pr_fast,
             "PR Fast must not run Patch 20.14 Level 3")
-    historical = HISTORICAL.read_text(encoding="utf-8")
-    require("          - phase20" in historical and
-            f"phase20) just {GUARD_L3}" in historical,
-            "Historical Full does not own Patch 20.14 Level 3")
     justfile = JUSTFILE.read_text(encoding="utf-8")
     require(all(f"{guard}:" in justfile
                 for guard in (GUARD_L1, GUARD_L2, GUARD_L3)),
             "Patch 20.14 just guards are missing")
+    historical = HISTORICAL.read_text(encoding="utf-8")
+    composition_recipe = justfile.split(f"{COMPOSITION_L3}:", 1)[1].split(
+        "\n\n", 1)[0] if f"{COMPOSITION_L3}:" in justfile else ""
+    require("          - phase20" in historical and
+            f"phase20) just {COMPOSITION_L3} ;;" in historical and
+            f"just {GUARD_L3}" in composition_recipe,
+            "Historical Full does not transitively own Patch 20.14 Level 3")
     return value
 
 

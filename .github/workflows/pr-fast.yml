@@ -386,6 +386,9 @@ jobs:
       - name: Phase 20 long-lived and concurrent resource authority
         run: just guard-cranelift-phase20-long-lived-concurrent-contract
 
+      - name: Phase 20 cross-feature qualification authority
+        run: just guard-cranelift-phase20-cross-feature-qualification-contract
+
       - name: Phase 19 cross-feature composition
         run: just guard-cranelift-phase19-composition-contract
 
@@ -513,6 +516,9 @@ jobs:
 
       - name: Phase 20 long-lived and concurrent resource smoke
         run: just guard-cranelift-phase20-long-lived-concurrent-smoke
+
+      - name: Phase 20 mixed cross-feature qualification
+        run: just guard-cranelift-phase20-cross-feature-qualification-parity
 
   final:
     name: final diff check

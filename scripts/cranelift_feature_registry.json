@@ -1336,6 +1336,113 @@
       }
     ]
   },
+  "phase20_cross_feature_qualification": {
+    "contract_version": "phase20_cross_feature_qualification_v1",
+    "status": "phase20_ready_for_authoritative_historical_full",
+    "next_patch": "20.17",
+    "review_view": "compiler/CRANELIFT_PHASE20_CROSS_FEATURE_QUALIFICATION.md",
+    "harness": "scripts/phase20_cross_feature_qualification.sh",
+    "source_fixture": "compiler/phase20_cross_feature_qualification_source.gst",
+    "resource_module_fixture": "compiler/phase20_cross_feature_resource_module.gst",
+    "runtime_probe_fixture": "compiler/fixtures/phase20_cross_feature_probe.c",
+    "canonical_mir_fixture": "compiler/fixtures/native_backend_phase20_cross_feature_qualification.mir",
+    "profiles": [
+      {"id": "small", "level": 2, "concurrent_cycles": 8},
+      {"id": "full", "level": 3, "concurrent_cycles": 128}
+    ],
+    "selected_features": [
+      "brand_identity",
+      "arena_liveness",
+      "user_resources",
+      "modules",
+      "approved_runtime_import",
+      "bounded_scale",
+      "long_lived_concurrency"
+    ],
+    "expected_exit": 47,
+    "expected_events": [57, 2, 1],
+    "normalization_policy": "none",
+    "backend_policy": "MIR_to_C_executes_the_mixed_source_oracle_and_direct_canonical_MIR_Cranelift_executes_the_same_observable_plan_against_the_same_runtime_and_test_probes",
+    "fallback_policy": "direct_mixed_source_Cranelift_is_poisoned_and_must_reject_before_driver_discovery_without_an_artifact",
+    "registry_audit": {
+      "entry_count": 95,
+      "migrated": 34,
+      "candidate_deferred": 43,
+      "replaced": 11,
+      "deferred": 7,
+      "duplicate_ids": 0,
+      "unowned_rows": 0
+    },
+    "final_residues": [
+      {
+        "category": "collections",
+        "source_fixture": "compiler/phase20_component_collections_source.gst",
+        "decision": "deferred",
+        "reason_code": "deferred_p13_structured_cfg_non_reducible_shape",
+        "diagnostic": "stdout:reason_code=deferred_p13_structured_cfg_non_reducible_shape",
+        "failure_stage": "before_driver_discovery",
+        "owner": "phase13_generic_source_to_mir",
+        "destination": "phase21_opening",
+        "falsifier": "a real Vector or HashMap source program reaches the native driver and its full observable differential passes"
+      },
+      {
+        "category": "strings",
+        "source_fixture": "compiler/phase20_component_strings_source.gst",
+        "decision": "deferred",
+        "reason_code": "deferred_p13_structured_cfg_condition_shape",
+        "diagnostic": "stdout:reason_code=deferred_p13_structured_cfg_condition_shape",
+        "failure_stage": "before_driver_discovery",
+        "owner": "phase13_generic_source_to_mir",
+        "destination": "phase21_opening",
+        "falsifier": "a real string utility source program reaches the native driver and its full observable differential passes"
+      },
+      {
+        "category": "filesystem",
+        "source_fixture": "compiler/phase20_component_filesystem_source.gst",
+        "decision": "deferred",
+        "reason_code": "source_feature_not_represented",
+        "diagnostic": "stdout:reason_code=source_feature_not_represented",
+        "failure_stage": "before_driver_discovery",
+        "owner": "phase13_generic_source_to_mir",
+        "destination": "phase21_opening",
+        "falsifier": "a sandboxed file I/O source program reaches the native driver and its exact filesystem-tree differential passes"
+      },
+      {
+        "category": "allocation",
+        "source_fixture": "compiler/phase20_component_allocation_source.gst",
+        "decision": "deferred",
+        "reason_code": "source_feature_not_represented",
+        "diagnostic": "stdout:reason_code=source_feature_not_represented",
+        "failure_stage": "before_driver_discovery",
+        "owner": "phase13_generic_source_to_mir",
+        "destination": "phase21_opening",
+        "falsifier": "a real Arena allocation and write source program reaches the native driver and its full observable differential passes"
+      },
+      {
+        "category": "resources",
+        "source_fixture": "compiler/phase20_resource_scope_cleanup_source.gst",
+        "decision": "source_or_type_failure",
+        "reason_code": "source_or_type_failure",
+        "diagnostic": "stderr:Native backend canonical MIR verification failed: unsupported top-level statement in module/import cohort",
+        "failure_stage": "before_driver_discovery",
+        "owner": "phase13_generic_source_to_mir",
+        "destination": "phase21_opening",
+        "falsifier": "a source-declared Resource program reaches the native driver and its terminal-state and cleanup differential passes"
+      },
+      {
+        "category": "threading_synchronization",
+        "source_fixture": "compiler/phase20_component_threading_source.gst",
+        "decision": "deferred",
+        "reason_code": "deferred_p13_parameter_argument_target_dependent_abi",
+        "diagnostic": "stdout:reason_code=deferred_p13_parameter_argument_target_dependent_abi",
+        "failure_stage": "before_driver_discovery",
+        "owner": "phase13_generic_source_to_mir",
+        "destination": "phase21_opening",
+        "falsifier": "a real Mutex or Channel source program reaches the native driver and its deterministic-invariant differential passes"
+      }
+    ],
+    "unexplained_divergences": []
+  },
   "phase19_brand_authority": {
     "authority_version": "phase19_brand_identity_authority_v1",
     "status": "ready_for_patch19_3",
