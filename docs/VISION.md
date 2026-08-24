@@ -2,7 +2,7 @@
 
 **Product, Language, Runtime, and Platform Decisions**
 
-> **What this document is.** A well-specified hypothesis with ten registered decisions: six open, two direction-set, and two resolved (§0.15). Two of the open decisions — **OD-9** (can a model write Gust) and **OD-8** (is the scoping analysis sound) — can invalidate the thesis outright, and both resolve inside the next four months. The prose is confident because vague prose cannot be attacked; the uncertainty is real and lives in §0.15. Read that table before treating any of this as settled.
+> **What this document is.** A well-specified hypothesis with twelve registered decisions: seven open, two direction-set, and three resolved (§0.15). Two of the open decisions — **OD-9** (can a model write Gust) and **OD-8** (is the scoping analysis sound) — can invalidate the thesis outright, and both resolve inside the next four months. The prose is confident because vague prose cannot be attacked; the uncertainty is real and lives in §0.15. Read that table before treating any of this as settled.
 >
 > **The plan is four months long.** Build the demo (§0.7). Do not pick a business until it exists (§0.8). Everything past §0.16 is a specification of a system that is deliberately *not* being built yet — it exists so that demo-stage decisions do not foreclose it, and most of it should never be built by us.
 
@@ -436,6 +436,7 @@ second, drifting copy of it.
 | OD-11 | ~~The fate of `std.Spawn`~~ | **RESOLVED 2026-08-20** — bare form deleted; scoped spawn returns a linear task handle | Demo | §20.1 |
 | OD-5 | Supplier certification staffing model | **DIRECTION SET 2026-08-20** — split the function: an agent does conformance, the operator does trust and commerce; pricing still open | Post-1.0 | Part XVI |
 | OD-12 | ~~**Mobile execution boundary** — should mobile apps remain Gust-only above compiler-owned Swift/Kotlin hosts, or may application authors mix Swift/Kotlin into the normal source model?~~ | **RESOLVED 2026-08-21** — AOT Gust core plus generated, pinned Swift/Kotlin hosts; application-authored native code is only an explicit in-process escape hatch and forfeits the named process-integrity guarantee | — | `docs/MOBILE_NATIVE_DEPLOYMENT.md` §10; client consequences in Part IX; guarantee boundary in §93 and §98 |
+| OD-13 | **Mutex protected-access contract** — does lock acquisition return a linear guard carrying context-branded protected access, another compiler-owned access token, or retain raw-pointer access plus explicit unlock? | **OPEN** — proposal recorded 2026-08-24 (§26.1); current compiler contract remains unchanged | Stdlib S1.8 safe `MutexGuard` | §26.1; compiler evidence in `docs/SHARED_SEMANTIC_ZONE.md` D-4; sequencing in `TASK.md` Patch 20.14a |
 
 There is no OD-7. The number is unused and nothing in the repository references it; it is recorded here so a reader who notices the gap does not go looking.
 
@@ -1209,6 +1210,29 @@ Public APIs must state context brands explicitly. There is no hidden lifetime in
 
 **Deferred.** Restricting mutation through references, whether by reintroducing `inout` or by another mechanism, is future work and is not scheduled. It is a containment property (§0.4), so when it is taken up it needs a design decision and enforcement, not just a wording change. Until then, do not cite `&T[ctx]` as an immutability guarantee anywhere — in documentation, in review, or in a safety argument.
 
+### 26.1 Mutex protected access — proposed (OD-13)
+
+`Mutex.Lock()` currently returns `RawPointer(T)` and requires a separate
+`Unlock()`. That contract exposes representation-aware unsafe access and cannot
+be composed into a safe exactly-once scoped guard without deciding what value
+represents both the acquisition obligation and access to the protected value.
+
+**Proposal, not a decision:** acquisition should return one linear,
+non-forgeable guard value. The guard owns exactly one unlock obligation and
+provides context-branded access to the protected value for no longer than the
+guard's lifetime. Moving the guard transfers both; cleanup or explicit close
+releases once; raw pointers are not the safe surface. The precise Stdlib type
+and method spelling, guard representation, re-entrancy policy, and whether
+access is implicit or through an accessor remain deliberately undecided.
+
+The alternative is to retain raw-pointer access plus explicit unlock and treat
+a safe guard as impossible under the current contract. A third option is a
+compiler-owned access token distinct from a Resource guard. Evidence that
+either alternative preserves non-laundering, exactly-once cleanup, and backend
+parity with less semantic surface would falsify the proposal. OD-13 owns the
+choice; Patch 20.14a fixes only generic destructor matching and safe-reference
+provenance and must not decide it indirectly.
+
 ## 27. Shared ownership (OD-3)
 
 Ordinary references remain borrowed and context-bound.
@@ -1229,7 +1253,15 @@ Shared mutation should instead occur through SAM state ownership, actors, transa
 
 Root resource types opt into resource semantics through explicit linear metadata, a `Resource[...]` representation, and registered destructor metadata.
 
-> **The opt-in half is implemented.** A `#[linear]` layout attribute is parsed alongside `repr(C)` and `packed` (`compiler/parser.gst:869-872`), flows to `StructDecl.is_linear_resource`, and is registered by `env_register_struct_linear_metadata` (`compiler/typechecker.gst:6801`). Registered *destructor* metadata for user-defined types is the part that is missing (`TASK_STDLIB.md` CR-5), which is what blocks `MutexGuard`.
+> **Corrected after Phase 20 Patches 20.6–20.10.** User-defined resources can
+> now declare `#[destructor(name)]`, restrict construction with `#[opaque]`,
+> keep cleanup private to the defining module, and receive acquisition,
+> transfer, and automatic lexical cleanup obligations. The remaining generic
+> defect is narrower: a branded generic destructor parameter is compared by its
+> monomorphized struct name against the unsubstituted template name. Patch
+> 20.14a owns that correction. A safe `MutexGuard` remains separately blocked on
+> OD-13's protected-access contract; destructor declaration itself is no longer
+> the missing feature.
 >
 > Worth stating explicitly because the word is overloaded: this opt-in is separate from the structural linearity that governs move-versus-copy for ordinary values. `str` and slices are automatically linear for move tracking and are *not* automatically resources — which is exactly what the next paragraph claims. `docs/ONE_WAY_LEDGER.md` E20 and E13.
 
@@ -1656,9 +1688,17 @@ When no policy exists or a decision is ambiguous, access is denied.
 
 **What it must provide.** A connection acquired from a capability, a way to execute what §55.1 derives, transactions, and release on scope exit. Nothing exotic — which is why it looked cheap.
 
-**Prerequisite 1, and the one nobody has connected to it: a database connection must close, and there is no way to declare that it does.** `docs/SHARED_SEMANTIC_ZONE.md` D-4 records that resource *representation*, transfer state, and `defer` are all present, while destructor **declaration** is not: there is one built-in destructor and no source syntax to declare another. That is the gap `TASK_STDLIB.md` CR-5 states, and it is why `MutexGuard` is blocked.
+**Prerequisite 1: a database connection must close under the generic Resource
+contract.** Phase 20 Patches 20.6–20.10 supplied source-declared destructors,
+construction opacity, acquisition obligations, transfer, and automatic lexical
+cleanup. The remaining generic branded-destructor mismatch is recorded in
+`docs/SHARED_SEMANTIC_ZONE.md` D-4 and scheduled as Patch 20.14a. Database
+effects and a concrete connection API remain separate work.
 
-> **A Postgres connection is `MutexGuard` with a socket.** It is a linear resource whose release must be enforced rather than remembered, and it is blocked by exactly the same missing feature. The two have been tracked as unrelated — one a stdlib ergonomics item, the other a platform item — and they are one prerequisite with two consumers. **Whoever unblocks `MutexGuard` unblocks this row**, and that is worth knowing before either is scheduled.
+> **A Postgres connection and `MutexGuard` share the generic Resource floor but
+> no longer have the same complete blocker.** Patch 20.14a's template-aware
+> destructor correction benefits both. A safe Mutex acquisition additionally
+> needs OD-13's protected-access decision; a database connection does not.
 
 **Prerequisite 2 — effects (row 5).** Without `uses db.read<…>`, acquiring a connection grants ambient database authority, which is §17's failure mode rather than a partial implementation of it.
 

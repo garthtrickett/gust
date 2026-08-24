@@ -55,6 +55,17 @@ directed Cranelift to verify and correct both findings before Patch 20.10. This
 amendment inserts Patch 20.9a without widening it into the automatic cleanup
 work reserved for Patch 20.10.
 
+On 2026-08-24, after Patch 20.13, the preserved Stdlib S1.8 probe exposed two
+generic compiler defects and one separate open design question: branded generic
+Resource destructors fail declaration validation, a direct safe same-brand
+reference parameter is misclassified as raw-derived when stored in an
+aggregate, and `Mutex.Lock()` still has the compiler-owned
+`RawPointer(T)`/explicit-`Unlock()` contract. The operator directed Cranelift to
+record and triage the handoff without widening Patch 20.14 or deciding the
+Stdlib API. This amendment inserts Patch 20.14a for only the two generic
+compiler defects and registers the protected-access choice as OD-13 in
+`docs/VISION.md` §0.15. Patch 20.14 remains unchanged.
+
 Activation is Cranelift-only. It does not authorize edits to `TASK_STDLIB.md`,
 does not activate another lane, and does not authorize Phase 21.
 
@@ -77,6 +88,7 @@ does not activate another lane, and does not authorize Phase 21.
 - [x] Patch 20.12 — Whole-Program Corpus and Observable Contract — DONE
 - [x] Patch 20.13 — Stdlib and Runtime Component Differential — DONE
 - [ ] Patch 20.14 — Generated-MIR, Scale, and Resource-Use Qualification
+- [ ] Patch 20.14a — Generic Guard Prerequisite Corrections
 - [ ] Patch 20.15 — Long-Lived and Concurrent Resource Differential
 - [ ] Patch 20.16 — Cross-Feature Qualification and Residue Audit
 - [ ] Patch 20.17 — Phase 20 Closure
@@ -805,6 +817,37 @@ generated and scale cohorts.
 The bounded generated set has zero unexplained divergence, stress cases finish
 inside their declared resource budgets, and no threshold can drift silently.
 
+## Patch 20.14a — Generic Guard Prerequisite Corrections
+
+**Purpose**
+
+Correct the two generic frontend defects independently blocking a branded
+Resource guard, without choosing or changing the Mutex protected-access API.
+
+**Steps**
+
+- Match a declared Resource destructor's single owned parameter against the
+  canonical generic/template type after brand substitution, not against an
+  unsubstituted struct-name spelling.
+- Preserve the existing non-laundering boundary while carrying safe-reference
+  parameter provenance through a same-brand aggregate field assignment and
+  return.
+- Add positive generic/branded witnesses and negative wrong-type,
+  wrong-brand, raw-derived, and sandbox-derived witnesses; prove accepted
+  programs retain identical MIR-to-C and supported Cranelift meaning.
+- Keep `Mutex.Lock() -> RawPointer(T)` and explicit `Unlock()` unchanged while
+  OD-13 is open. Do not add a Mutex-specific destructor exception, raw-pointer
+  wrapper, Stdlib API, MIR instruction, ABI/layout change, or runtime symbol.
+
+**Test Level:** Levels 1 and 2.
+
+**Exit Gate**
+
+Generic/branded Resource destructor validation and safe same-brand reference
+capture work through canonical type/provenance authority, all unsafe-derived
+negative cases remain rejected, and OD-13 remains an explicit shared-zone
+block rather than an implicit API choice.
+
 ## Patch 20.15 — Long-Lived and Concurrent Resource Differential
 
 **Purpose**
@@ -902,6 +945,7 @@ running Level 3 suite does not satisfy this gate.
 → 20.12 observable corpus
 → 20.13 stdlib/runtime components
 → 20.14 generated MIR and scale
+→ 20.14a generic guard prerequisites
 → 20.15 long-lived/concurrent resources
 → 20.16 complete qualification
 → 20.17 closure.
