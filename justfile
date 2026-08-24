@@ -16673,6 +16673,26 @@ guard-cranelift-phase20-whole-program-corpus-parity:
     just guard-cranelift-phase20-whole-program-corpus-contract
     scripts/phase20_whole_program_corpus.sh
 
+guard-cranelift-phase20-stdlib-runtime-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧩 Checking Phase 20 stdlib/runtime component selection..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase20-stdlib-runtime-contract | grep -F $'guard-cranelift-phase20-stdlib-runtime-contract\t1\t' >/dev/null
+    just guard-cranelift-phase20-whole-program-corpus-contract
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase20_stdlib_runtime_differential.py validate
+    python3 scripts/phase20_stdlib_runtime_differential.py check-review
+
+guard-cranelift-phase20-stdlib-runtime-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "⚖️ Checking Phase 20 stdlib/runtime selection and exclusions..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase20-stdlib-runtime-parity | grep -F $'guard-cranelift-phase20-stdlib-runtime-parity\t2\t' >/dev/null
+    just guard-cranelift-phase20-stdlib-runtime-contract
+    scripts/phase20_stdlib_runtime_differential.sh
+
 guard-cranelift-phase18-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail

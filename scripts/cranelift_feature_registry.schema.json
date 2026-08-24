@@ -26,6 +26,7 @@
     "phase20_resource_scope_cleanup",
     "phase20_seed_convergence",
     "phase20_whole_program_corpus",
+    "phase20_stdlib_runtime_differential",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -638,6 +639,63 @@
                 "owner": {"type": "string", "minLength": 1},
                 "next_patch": {"enum": ["20.13", "20.14"]},
                 "reason": {"type": "string", "minLength": 1},
+                "falsifier": {"type": "string", "minLength": 1}
+              }
+            }
+          }
+        }
+      },
+      "phase20_stdlib_runtime_differential": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["contract_version", "status", "next_patch", "review_view",
+                     "harness", "selection_policy", "marker_policy",
+                     "normalization_policy", "selected_components",
+                     "explicit_exclusions"],
+        "properties": {
+          "contract_version": {"const": "phase20_stdlib_runtime_differential_v1"},
+          "status": {"const": "patch20_13_complete"},
+          "next_patch": {"const": "20.14"},
+          "review_view": {"const": "compiler/CRANELIFT_PHASE20_STDLIB_RUNTIME_DIFFERENTIAL.md"},
+          "harness": {"const": "scripts/phase20_stdlib_runtime_differential.sh"},
+          "selection_policy": {"const": "select_only_components_with_a_real_whole_program_cranelift_source_route"},
+          "marker_policy": {"const": "source_markers_and_request_witnesses_do_not_establish_component_execution"},
+          "normalization_policy": {"const": "none"},
+          "selected_components": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["component_id", "authority", "whole_program_case",
+                           "source_fixture", "selected_helpers", "observable_owner"],
+              "properties": {
+                "component_id": {"const": "runtime_component:approved_scalar_imports"},
+                "authority": {"const": "phase17_runtime_import_authority"},
+                "whole_program_case": {"const": "p20_multi_module_runtime_scalar"},
+                "source_fixture": {"const": "compiler/phase20_whole_program_scalar_source.gst"},
+                "selected_helpers": {"const": ["tiny_host_add_one_i32", "tiny_host_add_i32", "tiny_host_is_positive_i32"]},
+                "observable_owner": {"const": "phase20_whole_program_corpus_v1"}
+              }
+            }
+          },
+          "explicit_exclusions": {
+            "type": "array",
+            "minItems": 6,
+            "maxItems": 6,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["category", "source_fixture", "decision",
+                           "reason_code", "owner", "destination", "falsifier"],
+              "properties": {
+                "category": {"enum": ["collections", "strings", "filesystem", "allocation", "resources", "threading_synchronization"]},
+                "source_fixture": {"pattern": "^(compiler|tests)/.*\\.gst$"},
+                "decision": {"enum": ["deferred", "source_or_type_failure"]},
+                "reason_code": {"type": "string", "minLength": 1},
+                "owner": {"const": "phase13_generic_source_to_mir"},
+                "destination": {"const": "20.16"},
                 "falsifier": {"type": "string", "minLength": 1}
               }
             }
