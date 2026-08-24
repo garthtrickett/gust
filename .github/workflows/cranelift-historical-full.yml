@@ -77,6 +77,7 @@ jobs:
         shard:
           - phase9-core
           - phase19
+          - phase20
           - phase18
           - phase9g
           - phase15
@@ -146,6 +147,7 @@ jobs:
             phase17) just guard-cranelift-phase17-complete-runtime-evidence ;;
             phase18) just guard-cranelift-phase18-complete-target-evidence ;;
             phase19) just guard-cranelift-phase19-self-compilation-differential ;;
+            phase20) just guard-cranelift-phase20-generated-mir-scale-full ;;
             *) echo "Unknown historical shard: $HISTORICAL_SHARD" >&2; exit 2 ;;
           esac
 

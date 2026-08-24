@@ -16693,6 +16693,35 @@ guard-cranelift-phase20-stdlib-runtime-parity:
     just guard-cranelift-phase20-stdlib-runtime-contract
     scripts/phase20_stdlib_runtime_differential.sh
 
+guard-cranelift-phase20-generated-mir-scale-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧬 Checking Phase 20 generated-MIR and scale authority..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase20-generated-mir-scale-contract | grep -F $'guard-cranelift-phase20-generated-mir-scale-contract\t1\t' >/dev/null
+    just guard-cranelift-phase20-stdlib-runtime-contract
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase20_generated_mir_scale.py validate
+    python3 scripts/phase20_generated_mir_scale.py check-review
+
+guard-cranelift-phase20-generated-mir-sample-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "⚖️ Checking Phase 20 deterministic generated-MIR samples..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase20-generated-mir-sample-parity | grep -F $'guard-cranelift-phase20-generated-mir-sample-parity\t2\t' >/dev/null
+    just guard-cranelift-phase20-generated-mir-scale-contract
+    python3 scripts/phase20_generated_mir_scale.py run --profile small --output build/guards/phase20_generated_mir_sample
+
+guard-cranelift-phase20-generated-mir-scale-full:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "📈 Checking Phase 20 full generated-MIR and scale cohorts..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase20-generated-mir-scale-full | grep -F $'guard-cranelift-phase20-generated-mir-scale-full\t3\t' >/dev/null
+    just guard-cranelift-phase20-generated-mir-sample-parity
+    python3 scripts/phase20_generated_mir_scale.py run --profile full --output build/guards/phase20_generated_mir_scale
+
 guard-cranelift-phase18-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail
