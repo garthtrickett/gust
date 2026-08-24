@@ -89,7 +89,8 @@ does not activate another lane, and does not authorize Phase 21.
 - [x] Patch 20.13 — Stdlib and Runtime Component Differential — DONE
 - [x] Patch 20.14 — Generated-MIR, Scale, and Resource-Use Qualification — DONE
 - [x] Patch 20.14h — Phase-Frozen Historical Accounting — DONE
-- [ ] Patch 20.14a — Generic Guard Prerequisite Corrections
+- [x] Patch 20.14a — Generic Guard Prerequisite Corrections — DONE
+- [ ] Patch 20.14b — Post-Prerequisite Bootstrap Seed Reconvergence
 - [ ] Patch 20.15 — Long-Lived and Concurrent Resource Differential
 - [ ] Patch 20.16 — Cross-Feature Qualification and Residue Audit
 - [ ] Patch 20.17 — Phase 20 Closure
@@ -877,6 +878,34 @@ capture work through canonical type/provenance authority, all unsafe-derived
 negative cases remain rejected, and OD-13 remains an explicit shared-zone
 block rather than an implicit API choice.
 
+Because this correction changes the self-hosted typechecker after the earlier
+Patch 20.11 fixed point, generated seed publication remains isolated. Patch
+20.14b is the required seed-only follow-up; it is not part of this capability
+patch.
+
+## Patch 20.14b — Post-Prerequisite Bootstrap Seed Reconvergence
+
+**Purpose**
+
+Restore the checked-in bootstrap fixed point after Patch 20.14a without hiding
+generated seed churn inside the semantic correction.
+
+**Steps**
+
+- Start from merged Patch 20.14a and run `make bootstrap`, requiring stage 2 and
+  stage 3 byte identity.
+- Commit only the generated `gust_v4.c` change and seed-specific authority.
+- Re-run the Patch 20.14a Level 1 contract with the converged seed.
+- Preserve OD-13 and all compiler, MIR, ABI, layout, runtime-symbol, and Stdlib
+  semantics unchanged.
+
+**Test Level:** Level 1 plus bootstrap convergence.
+
+**Exit Gate**
+
+The seed-only diff reaches a three-stage fixed point, accounts for Patch
+20.14a, and contains no capability or API change.
+
 ## Patch 20.15 — Long-Lived and Concurrent Resource Differential
 
 **Purpose**
@@ -976,6 +1005,7 @@ running Level 3 suite does not satisfy this gate.
 → 20.14 generated MIR and scale
 → 20.14h phase-frozen historical accounting
 → 20.14a generic guard prerequisites
+→ 20.14b post-prerequisite seed reconvergence
 → 20.15 long-lived/concurrent resources
 → 20.16 complete qualification
 → 20.17 closure.

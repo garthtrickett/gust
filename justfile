@@ -16722,6 +16722,30 @@ guard-cranelift-phase20-generated-mir-scale-full:
     just guard-cranelift-phase20-generated-mir-sample-parity
     python3 scripts/phase20_generated_mir_scale.py run --profile full --output build/guards/phase20_generated_mir_scale
 
+guard-cranelift-phase20-generic-guard-prerequisites-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔐 Checking Phase 20 generic guard prerequisites..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase20-generic-guard-prerequisites-contract | grep -F $'guard-cranelift-phase20-generic-guard-prerequisites-contract\t1\t' >/dev/null
+    just guard-cranelift-phase20-generated-mir-scale-contract
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase20_generic_guard_prerequisites.py validate
+    python3 scripts/phase20_generic_guard_prerequisites.py check-review
+    just guard-compile-pass compiler/phase20_generic_guard_prerequisites_source.gst phase20_generic_guard_prerequisites_positive
+    just guard-compile-fail compiler/phase20_generic_resource_destructor_wrong_type_invalid.gst ResourceDestructorSignature phase20_generic_resource_wrong_type
+    just guard-compile-fail compiler/phase20_generic_resource_destructor_wrong_brand_invalid.gst ResourceDestructorSignature phase20_generic_resource_wrong_brand
+    just guard-positive compiler/typechecker_phase20_generic_guard_prerequisites_test_entry.gst phase20_generic_guard_prerequisites_provenance
+
+guard-cranelift-phase20-generic-guard-prerequisites-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "⚖️ Checking Phase 20 generic guard prerequisite parity..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase20-generic-guard-prerequisites-parity | grep -F $'guard-cranelift-phase20-generic-guard-prerequisites-parity\t2\t' >/dev/null
+    just guard-cranelift-phase20-generic-guard-prerequisites-contract
+    scripts/phase20_generic_guard_prerequisites.sh
+
 guard-cranelift-phase18-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail
