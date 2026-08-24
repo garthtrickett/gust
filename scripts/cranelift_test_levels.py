@@ -249,6 +249,7 @@ def check_historical_workflow(policy: dict) -> None:
         "phase17",
         "phase18",
         "phase19",
+        "phase20",
     ):
         require(
             f"          - {shard}" in text,

@@ -1161,6 +1161,90 @@
       }
     ]
   },
+  "phase20_generated_mir_scale": {
+    "contract_version": "phase20_generated_mir_scale_v1",
+    "status": "patch20_14_complete",
+    "next_patch": "20.14a",
+    "review_view": "compiler/CRANELIFT_PHASE20_GENERATED_MIR_SCALE.md",
+    "generator": "scripts/phase20_generated_mir_scale.py",
+    "harness": "scripts/phase20_generated_mir_scale.py run",
+    "algorithm": "lcg32_seeded_abstract_scalar_plan_v1",
+    "canonical_mir_constraint": "validated_i32_scalar_local_operations_and_acyclic_local_calls_only",
+    "route_policy": "generated_scalars_and_large_function_use_three_way_source_and_direct_mir_agreement_while_large_module_uses_mir_to_c_source_oracle_against_direct_canonical_mir_because_the_source_native_planner_intentionally_rejects_unregistered_call_graph_shapes",
+    "normalization_policy": "none",
+    "recorded_seed_sets": {
+      "level2": [1, 7, 19, 42],
+      "level3": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32]
+    },
+    "cohorts": [
+      {
+        "id": "small_generated_scalar",
+        "level": 2,
+        "seed_set": "level2",
+        "operation_count": 8
+      },
+      {
+        "id": "full_generated_scalar",
+        "level": 3,
+        "seed_set": "level3",
+        "operation_count": 24
+      },
+      {
+        "id": "large_function",
+        "level": 3,
+        "operation_count": 1024
+      },
+      {
+        "id": "large_module",
+        "level": 3,
+        "function_count": 64
+      }
+    ],
+    "measurement": {
+      "protocol": "fresh_child_process_monotonic_elapsed_and_wait4_maxrss",
+      "warmup_runs": 1,
+      "sample_count": 3,
+      "elapsed_statistic": "median",
+      "memory_statistic": "maximum",
+      "threshold_policy": "fixed_registry_values_reviewed_with_the_patch_no_runtime_rebasing",
+      "budgets": [
+        {
+          "cohort": "large_function",
+          "backend": "mir-to-c",
+          "baseline_elapsed_ms": 24,
+          "baseline_peak_rss_kib": 16128,
+          "max_elapsed_ms": 10000,
+          "max_peak_rss_kib": 262144
+        },
+        {
+          "cohort": "large_function",
+          "backend": "cranelift",
+          "baseline_elapsed_ms": 107,
+          "baseline_peak_rss_kib": 83328,
+          "max_elapsed_ms": 10000,
+          "max_peak_rss_kib": 262144
+        },
+        {
+          "cohort": "large_module",
+          "backend": "mir-to-c",
+          "baseline_elapsed_ms": 8,
+          "baseline_peak_rss_kib": 16000,
+          "max_elapsed_ms": 10000,
+          "max_peak_rss_kib": 262144
+        },
+        {
+          "cohort": "large_module",
+          "backend": "cranelift",
+          "baseline_elapsed_ms": 16,
+          "baseline_peak_rss_kib": 16128,
+          "max_elapsed_ms": 10000,
+          "max_peak_rss_kib": 262144
+        }
+      ]
+    },
+    "failure_preservation_policy": "any divergence is copied to the guard output, minimized to the shortest reproducing operation plan, and committed under compiler/fixtures/phase20_generated_failures before qualification may pass",
+    "minimized_failures": []
+  },
   "phase19_brand_authority": {
     "authority_version": "phase19_brand_identity_authority_v1",
     "status": "ready_for_patch19_3",

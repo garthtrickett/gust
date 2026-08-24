@@ -30,6 +30,7 @@ TOP_FIELDS = {
     "phase20_seed_convergence",
     "phase20_whole_program_corpus",
     "phase20_stdlib_runtime_differential",
+    "phase20_generated_mir_scale",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming", "phase19_classification", "phase19_representation",

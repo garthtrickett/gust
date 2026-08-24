@@ -27,6 +27,7 @@
     "phase20_seed_convergence",
     "phase20_whole_program_corpus",
     "phase20_stdlib_runtime_differential",
+    "phase20_generated_mir_scale",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -697,6 +698,103 @@
                 "owner": {"const": "phase13_generic_source_to_mir"},
                 "destination": {"const": "20.16"},
                 "falsifier": {"type": "string", "minLength": 1}
+              }
+            }
+          }
+        }
+      },
+      "phase20_generated_mir_scale": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["contract_version", "status", "next_patch", "review_view",
+                     "generator", "harness", "algorithm",
+                     "canonical_mir_constraint", "route_policy",
+                     "normalization_policy",
+                     "recorded_seed_sets", "cohorts", "measurement",
+                     "failure_preservation_policy", "minimized_failures"],
+        "properties": {
+          "contract_version": {"const": "phase20_generated_mir_scale_v1"},
+          "status": {"const": "patch20_14_complete"},
+          "next_patch": {"const": "20.14a"},
+          "review_view": {"const": "compiler/CRANELIFT_PHASE20_GENERATED_MIR_SCALE.md"},
+          "generator": {"const": "scripts/phase20_generated_mir_scale.py"},
+          "harness": {"const": "scripts/phase20_generated_mir_scale.py run"},
+          "algorithm": {"const": "lcg32_seeded_abstract_scalar_plan_v1"},
+          "canonical_mir_constraint": {"const": "validated_i32_scalar_local_operations_and_acyclic_local_calls_only"},
+          "route_policy": {"const": "generated_scalars_and_large_function_use_three_way_source_and_direct_mir_agreement_while_large_module_uses_mir_to_c_source_oracle_against_direct_canonical_mir_because_the_source_native_planner_intentionally_rejects_unregistered_call_graph_shapes"},
+          "normalization_policy": {"const": "none"},
+          "recorded_seed_sets": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["level2", "level3"],
+            "properties": {
+              "level2": {"const": [1, 7, 19, 42]},
+              "level3": {"const": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32]}
+            }
+          },
+          "cohorts": {
+            "type": "array",
+            "minItems": 4,
+            "maxItems": 4,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "level"],
+              "properties": {
+                "id": {"enum": ["small_generated_scalar", "full_generated_scalar", "large_function", "large_module"]},
+                "level": {"enum": [2, 3]},
+                "seed_set": {"enum": ["level2", "level3"]},
+                "operation_count": {"type": "integer", "minimum": 1},
+                "function_count": {"type": "integer", "minimum": 1}
+              }
+            }
+          },
+          "measurement": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["protocol", "warmup_runs", "sample_count",
+                         "elapsed_statistic", "memory_statistic",
+                         "threshold_policy", "budgets"],
+            "properties": {
+              "protocol": {"const": "fresh_child_process_monotonic_elapsed_and_wait4_maxrss"},
+              "warmup_runs": {"const": 1},
+              "sample_count": {"const": 3},
+              "elapsed_statistic": {"const": "median"},
+              "memory_statistic": {"const": "maximum"},
+              "threshold_policy": {"const": "fixed_registry_values_reviewed_with_the_patch_no_runtime_rebasing"},
+              "budgets": {
+                "type": "array",
+                "minItems": 4,
+                "maxItems": 4,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["cohort", "backend", "baseline_elapsed_ms",
+                               "baseline_peak_rss_kib", "max_elapsed_ms",
+                               "max_peak_rss_kib"],
+                  "properties": {
+                    "cohort": {"enum": ["large_function", "large_module"]},
+                    "backend": {"enum": ["mir-to-c", "cranelift"]},
+                    "baseline_elapsed_ms": {"type": "integer", "minimum": 1},
+                    "baseline_peak_rss_kib": {"type": "integer", "minimum": 1},
+                    "max_elapsed_ms": {"type": "integer", "minimum": 1},
+                    "max_peak_rss_kib": {"type": "integer", "minimum": 1}
+                  }
+                }
+              }
+            }
+          },
+          "failure_preservation_policy": {"type": "string", "minLength": 1},
+          "minimized_failures": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["seed", "fixture", "reason"],
+              "properties": {
+                "seed": {"type": "integer", "minimum": 1},
+                "fixture": {"pattern": "^compiler/fixtures/phase20_generated_failures/.*\\.mir$"},
+                "reason": {"type": "string", "minLength": 1}
               }
             }
           }

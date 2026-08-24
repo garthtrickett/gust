@@ -374,6 +374,9 @@ jobs:
       - name: Phase 20 stdlib and runtime component selection
         run: just guard-cranelift-phase20-stdlib-runtime-contract
 
+      - name: Phase 20 generated-MIR and scale authority
+        run: just guard-cranelift-phase20-generated-mir-scale-contract
+
       - name: Phase 19 cross-feature composition
         run: just guard-cranelift-phase19-composition-contract
 
@@ -492,6 +495,9 @@ jobs:
 
       - name: Phase 20 stdlib and runtime component differential
         run: just guard-cranelift-phase20-stdlib-runtime-parity
+
+      - name: Phase 20 deterministic generated-MIR samples
+        run: just guard-cranelift-phase20-generated-mir-sample-parity
 
   final:
     name: final diff check

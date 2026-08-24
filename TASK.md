@@ -87,7 +87,7 @@ does not activate another lane, and does not authorize Phase 21.
 - [x] Patch 20.11 — Bootstrap Seed Regeneration and Fixed-Point Convergence — DONE
 - [x] Patch 20.12 — Whole-Program Corpus and Observable Contract — DONE
 - [x] Patch 20.13 — Stdlib and Runtime Component Differential — DONE
-- [ ] Patch 20.14 — Generated-MIR, Scale, and Resource-Use Qualification
+- [x] Patch 20.14 — Generated-MIR, Scale, and Resource-Use Qualification — DONE
 - [ ] Patch 20.14a — Generic Guard Prerequisite Corrections
 - [ ] Patch 20.15 — Long-Lived and Concurrent Resource Differential
 - [ ] Patch 20.16 — Cross-Feature Qualification and Residue Audit
