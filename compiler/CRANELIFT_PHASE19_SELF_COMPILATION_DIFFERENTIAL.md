@@ -3,10 +3,12 @@
 Generated from `scripts/cranelift_feature_registry.json` by
 `scripts/phase19_self_compilation.py project`. Do not edit by hand.
 
-- Contract: `phase19_self_compilation_differential_v2`
+- Contract: `phase19_self_compilation_differential_v3`
 - Status: `ready_for_patch19_12`
 - Next patch: `19.12`
 - Level 3 owner: `Cranelift Historical Full`
+- Frozen current seed: `bootstrap: regenerate Phase 19.11 seed`
+- Later-phase policy: `later_phase_compiler_changes_and_seeds_are_out_of_scope_and_must_be_owned_by_their_own_phase_history`
 
 ## Complete compiler-source differential
 
@@ -15,7 +17,7 @@ baseline and at every compiler-changing Phase 19.3–19.11 merge boundary. Each 
 a complete unified C diff named for its owning patch. The guard also rejects
 any compiler-source commit whose subject is not assigned to that transition,
 requires the baseline build to reproduce its seed, and requires the final
-build to reproduce the current converged seed.
+build to reproduce the named Phase 19 converged seed.
 
 The complete baseline-to-current C diff contains 15019 insertions
 and 14672 deletions, with 0 unexplained differences.
@@ -31,5 +33,7 @@ and 14672 deletions, with 0 unexplained differences.
 - Patch 19.11 / PR #156 — `fix: finalize phase19 rename invariance evidence`; `phase19: add cross-feature composition evidence`
 
 Patch 19.7 is intentionally the zero-diff transition. Any added, removed, or
-reordered compiler-source commit, any missing boundary, any seed mismatch, or
-any unlabelled transition makes the Level 3 guard fail.
+reordered Phase 19 compiler-source commit, any missing boundary, any Phase 19
+seed mismatch, or any unlabelled Phase 19 transition makes the Level 3 guard
+fail. Compiler changes and seed regenerations in Phase 20 and later are owned
+by those phases and do not retroactively change the frozen Phase 19 evidence.

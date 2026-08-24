@@ -1164,7 +1164,7 @@
   "phase20_generated_mir_scale": {
     "contract_version": "phase20_generated_mir_scale_v1",
     "status": "patch20_14_complete",
-    "next_patch": "20.14a",
+    "next_patch": "20.14h",
     "review_view": "compiler/CRANELIFT_PHASE20_GENERATED_MIR_SCALE.md",
     "generator": "scripts/phase20_generated_mir_scale.py",
     "harness": "scripts/phase20_generated_mir_scale.py run",
@@ -1659,12 +1659,14 @@
     ]
   },
   "phase19_self_compilation_differential": {
-    "contract_version": "phase19_self_compilation_differential_v2",
+    "contract_version": "phase19_self_compilation_differential_v3",
     "status": "ready_for_patch19_12",
     "next_patch": "19.12",
     "review_view": "compiler/CRANELIFT_PHASE19_SELF_COMPILATION_DIFFERENTIAL.md",
     "baseline_policy": "previous_committed_converged_seed_before_patch19_3",
-    "current_policy": "latest_committed_converged_seed_after_patch19_11",
+    "current_policy": "committed_phase19_11_seed_at_named_seed_commit",
+    "current_seed_subject": "bootstrap: regenerate Phase 19.11 seed",
+    "phase_boundary_policy": "later_phase_compiler_changes_and_seeds_are_out_of_scope_and_must_be_owned_by_their_own_phase_history",
     "full_diff": {
       "insertions": 15019,
       "deletions": 14672,

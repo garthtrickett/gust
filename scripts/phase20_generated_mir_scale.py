@@ -49,7 +49,7 @@ def validate() -> dict:
     require(value.get("contract_version") == "phase20_generated_mir_scale_v1",
             "Patch 20.14 contract version drifted")
     require(value.get("status") == "patch20_14_complete" and
-            value.get("next_patch") == "20.14a",
+            value.get("next_patch") == "20.14h",
             "Patch 20.14 status or successor drifted")
     require(value.get("generator") ==
             "scripts/phase20_generated_mir_scale.py",
