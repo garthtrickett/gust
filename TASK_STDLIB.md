@@ -33,11 +33,15 @@ landed the CR-2 authority, and S1.6 can consume it. S1.4 and S1.5 verification
 found narrower shared-zone defects, filed separately. The generic constructor
 authority for CR-11 then landed in Cranelift Patch 20.3a, unblocking S1.4.
 Cranelift Patches 20.3 and 20.5 subsequently resolved CR-12 and CR-13,
-unblocking S1.5.
+unblocking S1.5. Phase 20 later resolved CR-5's generic resource floor and
+Patch 20.16d landed protected-access liveness. The first reusable S1.8 probe
+then exposed CR-15: OD-2 forbids the user-written generic functions that the
+selected module API would otherwise require, so a bounded compiler-owned
+derivation must land before S1.8 resumes.
 
 | Delivered (8) | Blocked (4) | Depends on the rest (1) |
 | --- | --- | --- |
-| S1.0, S1.1, S1.2, S1.3, S1.4, S1.5, S1.6, S1.7 | S1.8, S1.9, S1.10, S1.11 — CR-5 | S1.12 closure |
+| S1.0, S1.1, S1.2, S1.3, S1.4, S1.5, S1.6, S1.7 | S1.8, S1.9, S1.10, S1.11 — CR-15 | S1.12 closure |
 
 The lane does not idle at a blocked patch. It records the shared-zone defect and
 takes the next independent item. That is why S1.6 was delivered while S1.4 and
@@ -140,7 +144,7 @@ current would re-open work that is done.
 | --- | --- |
 | `str == str` typechecks and emits invalid C | **Closed** by S1.1 (#74). Both compilers now reject `==` and `!=` on `str` with a byte-identical diagnostic naming `std.str_eq`. Making `==` *mean* content equality is still open as CR-1. |
 | A method call on a reference receiver fails resolution | **Closed** by S1.3 (#86). |
-| `defer` has no AST/typechecker representation | **Superseded.** `defer` is an AST node; `STEP52_RESOURCE_SEMANTICS.md` predates that. The remaining gap is destructor declaration and enforcement, re-verified by S1.7 (#87) and stated in CR-5. |
+| `defer` has no AST/typechecker representation | **Superseded.** `defer` is an AST node; Phase 20 subsequently resolved CR-5's destructor, opacity, acquisition, and cleanup floor. The current MutexGuard blocker is the OD-2-compatible compiler-owned derivation recorded as CR-15. |
 | Rust and self-hosted brand matching diverge | **Closed by deletion.** PR #137 removed the deprecated Rust prototype on 2026-08-21; D-2 is recorded as closed in `docs/SHARED_SEMANTIC_ZONE.md`. Phase 19 subsequently closed CR-2/D-1. |
 
 Still open from that baseline: the `exit(1)` bounds policy (CR-3, unscheduled).
@@ -372,7 +376,7 @@ property, so taking it up later needs a design decision and real enforcement, no
 a wording change. Nothing in the Stdlib lane waits on it, and S1.3 shipped
 without it.
 
-### CR-5 — Generic resource semantics sufficient for a scoped guard
+### CR-5 — Generic resource semantics sufficient for a scoped guard — **RESOLVED 2026-08-24**
 
 1. **Intended behaviour:** `guard := mutex.Lock()` yields a move-only value that
    releases the lock exactly once on every scope exit, including early return,
@@ -430,11 +434,20 @@ No Mutex-specific compiler support may be added under any circumstances. If the
 generic change is too large, `MutexGuard` is deferred and the `Lock(); defer
 Unlock();` pattern remains the recommended form.
 
-**S1.7 verdict: S1.8 through S1.11 stay blocked.** A `MutexGuard` needs a
+**Historical S1.7 verdict: S1.8 through S1.11 stayed blocked.** A `MutexGuard` needs a
 destructor, and no user-defined type can declare one. Building it today would
 require hardcoding `Mutex` into the compiler the way `os_Dir_ctx` is hardcoded to
 `os.CloseDir`, which the paragraph above forbids. `Lock(); defer Unlock();`
 remains the recommended form until CR-5 lands.
+
+**Current correction.** Cranelift Patches 20.6–20.10 and 20.14a–20.16d landed
+source-declared destructor identity, opacity/private cleanup authority,
+acquisition-site obligations, generic scope cleanup, branded generic destructor
+validation, same-brand reference capture, and guard-rooted protected-access
+liveness. CR-5 is therefore resolved. The remaining S1.8 blocker is not resource
+semantics: the selected reusable `MutexGuard[T, ctx]` module surface requires a
+generic function shape which OD-2 deliberately excludes. That narrower current
+gap is CR-15.
 
 ### CR-7 — No roadmap owns the demo deliverable
 
@@ -528,7 +541,7 @@ because the gap between §20 and `std.Spawn` is invisible from either roadmap:
 Precedent: CR-6 was resolved the same way — `VISION.md` §26 described a borrow
 model that was never implemented and was corrected to the one that exists.
 
-### CR-5 and CR-10 are blocked on the same absent primitive
+### CR-5 and CR-10 shared one absent primitive — **RESOLVED 2026-08-24**
 
 **Recorded 2026-08-20.** These were raised separately, for unrelated features, by
 different lanes. They reduce to one missing piece of language surface, and
@@ -557,6 +570,11 @@ the outcome `docs/ONE_WAY_LEDGER.md` exists to prevent: one way to do each thing
 visibility, and at what granularity, belongs to the shared-zone owner. CR-10
 below now classifies that ownership; it does not choose between propagating
 opacity and implementing `VISION.md` §73's visibility levels.
+
+**Current correction.** Phase 20 subsequently landed `#[opaque]` construction
+control and `#[private]` cleanup authority as generic source metadata. The
+shared primitive this section identified is no longer absent. S1.9 must consume
+that generic authority after CR-15; it must not add a guard-specific exception.
 
 ### CR-10 — Type-opacity ownership — **RESOLVED 2026-08-21**
 
@@ -701,6 +719,57 @@ lane's design decision.
 because row 3 names the Stdlib lane as owner and the Stdlib lane cannot do it,
 and a demo prerequisite assigned to a lane that cannot execute it will sit
 untouched while appearing owned.
+
+### CR-15 — Compiler-owned derivation for the generic MutexGuard surface
+
+Raised by the first checked implementation probe after Patch 20.16d's generic
+resource-rooted access authority landed. This request preserves OD-2: it does
+not ask for user-written generic functions.
+
+1. **Intended behaviour:** an ordinary program imports the safe synchronization
+   module and writes `sync.lock(&mutex)`, receiving one inferred or explicitly
+   typed `MutexGuard[T, ctx]`. `sync.get(&owner)` returns guard-rooted `&T` only
+   while the owner is live. Moving the owner transfers the obligation and scope
+   exit unlocks exactly once. The public surface contains no raw pointer or
+   `unsafe` spelling.
+2. **Existing limitation:** generic structs and enums monomorphize, but OD-2
+   deliberately excludes user-written generic functions. The preserved
+   `tests/stdlib_s1_mutex_guard_generic_derivation_rejected.gst` probe confirms
+   the live consequence: `T` in the imported `lock`/`get` signatures remains a
+   namespaced literal rather than being instantiated from
+   `std.Mutex[Counter, arena]`; branded-nesting and destructor validation then
+   reject the unresolved placeholder. Patch 20.16d's concrete protected-access
+   oracle passes, so this is derivation breadth rather than resource liveness.
+3. **Smallest generic change:** add one bounded compiler-owned derivation for
+   protected Resource guard families. Given a concrete protected type and brand,
+   it produces concrete acquisition, guard, destructor, and rooted-accessor
+   identities equivalent to the selected module-level `lock`/`get` surface.
+   The derivation must operate on resolved generic Resource/protected-access
+   metadata, not on the spelling `Mutex`, and must not enable arbitrary
+   user-written generic functions. A Mutex-only typechecker exception and a
+   backend special case are both forbidden.
+4. **Affected:** self-hosted typechecker derivation and concrete type/call
+   registration, generic substitution, branded-nesting and destructor
+   validation, canonical resource call/MIR evidence, focused source fixtures,
+   and the bootstrap seed. The Stdlib module, tests, examples, and ergonomics
+   resume after the checked compiler authority lands.
+5. **MIR-to-C:** yes. Every derived concrete surface must lower through ordinary
+   canonical calls and the existing Resource cleanup/access semantics.
+6. **Cranelift:** yes for parity evidence, but no bespoke Mutex or guard lowering.
+   Cranelift consumes the same canonical MIR and must never fall back.
+7. **Bootstrap:** yes. The derivation is implemented in the self-hosted compiler;
+   seed reconvergence remains an isolated compiler-lane patch.
+
+**Operator ruling 2026-08-24:** compiler-owned derivation is selected over
+reopening general-purpose user generic functions. The desired initial spelling
+is the module-level `sync.lock` / `sync.get` API. User-defined extension-method
+ergonomics such as `mutex.ScopedLock()` are explicitly deferred for later and
+are not part of CR-15 or S1.8.
+
+**Owner: Cranelift lane; unscheduled.** S1.8 through S1.11 remain blocked until
+that lane lands a generic, backend-neutral derivation authority and hands the
+checked surface back. This request authorizes no Stdlib or compiler
+implementation by itself.
 
 ## Verification Policy
 
@@ -1090,7 +1159,7 @@ handed to the Cranelift lane.
 
 ### Patch S1.8 — MutexGuard Prototype
 
-*Blocked by CR-5.*
+*Blocked by CR-15. CR-5's resource floor is resolved.*
 
 **Purpose**
 
@@ -1098,14 +1167,23 @@ Express a scoped lock as an ordinary Gust linear resource.
 
 **Steps**
 
-- `mutex.Lock()` returns a `MutexGuard` representing exactly one acquisition.
+- The safe synchronization module exposes `sync.lock(&mutex)` returning a
+  compiler-derived `MutexGuard[T, ctx]` representing exactly one acquisition.
+- `sync.get(&owner)` returns context-branded protected access rooted in that
+  live guard, as required by OD-13 and Patch 20.16d.
 - The guard is move-only, non-copyable, and released exactly once on scope exit.
 - Implement it with existing linear-resource metadata and registered destructor
-  identity. No compiler knowledge of `Mutex`.
+  identity after CR-15 lands. The derivation consumes generic Resource and
+  protected-access metadata; no compiler or backend rule may key on the spelling
+  `Mutex` or `MutexGuard`.
 - Keep raw `Mutex.Lock` and `Mutex.Unlock` public and unchanged.
-- Keep `Lock(); defer Unlock();` working and documented as the safer manual form.
-- Do not introduce `Mutex[T]`, `Guard[T]`, or protected-value borrowing. The
-  guard represents lock ownership only; shared data stays separate.
+- Keep explicit-unsafe raw `Lock(); defer Unlock();` working and documented as
+  the low-level manual form, not as the safe default.
+- Preserve OD-2: application and library authors do not gain generic functions.
+  The bounded compiler-owned derivation emits concrete instances for the
+  selected module surface.
+- Defer user-defined extension methods, including `mutex.ScopedLock()`, to a
+  later explicitly roadmapped ergonomics decision.
 - Add `guard-stdlib-s1-mutex-guard`.
 
 **Test Level**
@@ -1114,13 +1192,15 @@ Level 1, with a Level 2 parity family.
 
 **Exit Gate**
 
-A `MutexGuard` exists as an ordinary linear resource type, releases exactly once
-at scope exit, and required no Mutex-specific compiler support. Raw lock and
-unlock are unchanged.
+A compiler-derived `MutexGuard[T, ctx]` behaves as an ordinary linear resource,
+provides protected access only while live, and releases exactly once at scope
+exit. Derivation is frontend-generic and both backends consume ordinary
+canonical Resource semantics without Mutex-specific lowering. Raw lock and
+unlock are unchanged and remain explicit unsafe primitives.
 
 ### Patch S1.9 — MutexGuard Scope and Resource Tests
 
-*Blocked by CR-5.*
+*Blocked by CR-15 through S1.8.*
 
 **Purpose**
 
@@ -1135,13 +1215,9 @@ Validate the guard against control flow, not just the happy path.
   then let the guard release again.
 - Where preventing raw double-unlock would require a broad compiler semantic
   change, document it as a limitation rather than expanding scope.
-- **`construct a fabricated guard` is not satisfiable until CR-5 item 3(c)
-  lands.** No visibility mechanism exists in the compiler, so there is no
-  construct by which that rejection could be expressed. The escape hatch above is
-  scoped to double-unlock and does not cover fabrication. Either 3(c) resolves
-  first, or this bullet is struck and the exit gate is met with a recorded
-  limitation — that is a scoping decision for whoever picks up S1.9, not a
-  silent omission.
+- Construction opacity/private cleanup authority landed with CR-5. Require the
+  CR-15-derived guard constructor to preserve that authority so fabrication is
+  rejected without a Mutex-specific rule.
 - Add `guard-stdlib-s1-mutex-guard-scope`.
 
 **Test Level**
@@ -1155,7 +1231,7 @@ rejected at compile time, or is recorded as an explicit documented limitation.
 
 ### Patch S1.10 — MutexGuard Fiber Contention Tests
 
-*Blocked by CR-5.*
+*Blocked by CR-15 through S1.8.*
 
 **Purpose**
 
@@ -1182,7 +1258,7 @@ guard, and the shared-counter result is exact.
 
 ### Patch S1.11 — Realistic Example Migration
 
-*Blocked by CR-5.*
+*Blocked by CR-15 through S1.8.*
 
 **Purpose**
 
@@ -1256,15 +1332,15 @@ refusing to let S1.12 be marked `DONE` while anything below is outstanding.
 
 | patch | blocked by | owner |
 | --- | --- | --- |
-| S1.8 MutexGuard prototype | CR-5 | Cranelift lane |
-| S1.9 MutexGuard scope tests | CR-5 | Cranelift lane |
-| S1.10 MutexGuard fiber tests | CR-5 | Cranelift lane |
-| S1.11 realistic migration | CR-5 | Cranelift lane |
+| S1.8 MutexGuard prototype | CR-15 | Cranelift lane |
+| S1.9 MutexGuard scope tests | CR-15 through S1.8 | Cranelift lane |
+| S1.10 MutexGuard fiber tests | CR-15 through S1.8 | Cranelift lane |
+| S1.11 realistic migration | CR-15 through S1.8 | Cranelift lane |
 | S1.12 closure | all of the above | Stdlib lane |
 
-No deferral here is unowned. CR-11 through CR-13 have seven-point reports and
-minimal witnesses; CR-5 has a concrete statement of the smallest change
-required, from S1.7.
+No deferral here is unowned. CR-11 through CR-13 are resolved. CR-15 has a
+seven-point report, a checked minimal witness, an operator-selected
+compiler-owned derivation direction, and a named owner; it is not yet scheduled.
 
 ### Residue — what a normal program still cannot express safely
 
@@ -1275,25 +1351,23 @@ Recording this is the point of the phase, not an apology for it.
   compiler-owned (`VISION.md` §16). Users write `std.str_eq(a, b)`.
 - **An out-of-range string index kills the process**, not the request, which
   `VISION.md` §34 forbids. CR-3, and filed as issue #91.
-- **No user type can declare a destructor.** One exists, `os.CloseDir` for
-  directory handles, hardcoded. So no scoped guard of any kind is expressible,
-  `MutexGuard` included. CR-5, from S1.7.
+- **No reusable safe MutexGuard surface exists.** The generic Resource,
+  destructor, opacity, cleanup, and protected-access liveness floor has landed,
+  but OD-2 forbids the user-written generic `lock`/`get` functions the selected
+  library shape would otherwise require. CR-15 assigns a bounded compiler-owned
+  derivation to the Cranelift lane without reopening general generic functions.
 - **References carry no mutability and are not analysed for aliasing.** Two `&T`
   arguments may alias one value and both write through it (`VISION.md` §26).
-- **Cleanup is enforced for one built-in type and for nothing else.** A
-  directory handle bound to a local and never closed is a compile error:
-  `Resource leak. Directory resource variable 'd' must be cleanly closed with
-  os.CloseDir before leaving local scope`. `os.Dir` gets the obligation because
-  the compiler hardcodes its destructor, and since no user type can declare one,
-  a user-defined resource carries no obligation at all. The check is also keyed
-  to the *binding* rather than the acquisition: the same leak with no local bound
-  compiles clean and runs — observed, and filed as issue #106. CR-5.
+- **Raw Mutex access remains explicitly unsafe.** Patch 20.16d preserved the
+  existing raw primitives and requires an `unsafe` block. Until CR-15 and S1.8
+  land, safe application code has no scoped acquisition/accessor spelling.
 
 ### What closure requires
 
 1. S1.4, S1.5, and S1.6 are done.
-2. CR-5 resolved — source-level destructor declaration plus scope-exit
-   enforcement — then S1.8 through S1.11.
+2. CR-15 resolved with bounded compiler-owned guard derivation that preserves
+   OD-2 and lowers through ordinary backend-neutral Resource semantics — then
+   S1.8 through S1.11.
 3. The residue list above re-checked against the compiler, not from memory.
 4. `guard-stdlib-s1-close` passing with S1.12 marked `DONE`.
 5. **The Level 3 owner not failing, cited by run ID and conclusion.**
@@ -1333,6 +1407,7 @@ Patch S1.0 opening inventory and surface baseline
 → Patch S1.4 branded collection type consistency
 → Patch S1.5 Clone arena destination normalization
 → Patch S1.6 stdlib composition regression program
+→ **hand CR-15 compiler-owned protected-guard derivation to the Cranelift lane**
 → Patch S1.8 MutexGuard prototype
 → Patch S1.9 MutexGuard scope and resource tests
 → Patch S1.10 MutexGuard fiber contention tests
@@ -1357,12 +1432,15 @@ mutex locking without the author knowing:
 - any manual unlock path;
 - any Cranelift limitation.
 
-And without the compiler acquiring:
+And without the implementation acquiring:
 
 - new lifetime machinery;
 - new ownership proof systems;
 - backend-specific semantics;
-- knowledge of any individual stdlib type.
+- backend knowledge of any individual stdlib type. The CR-15 frontend
+  derivation is bounded compiler-owned work over generic Resource and
+  protected-access metadata; it is not user generic programming or a
+  Mutex-named backend rule.
 
 Phase S1 closure does not claim a complete standard library, a text or Unicode
 API, networking, or production readiness.

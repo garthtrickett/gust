@@ -211,6 +211,17 @@ agent would consult for authoritative resource state and it is stale.
 **Consequence:** the document's §20 stop condition will fire. Better to schedule
 the prerequisite audit than to discover it at task 7.
 
+**Current correction 2026-08-24.** S1.7 performed that audit, and Phase 20 then
+landed source destructor identity, construction opacity/private cleanup,
+acquisition obligations, transfer joins, automatic scope cleanup, and generic
+protected-access liveness. F6's original CR-5 prerequisite is resolved. The
+first reusable `MutexGuard[T, ctx]` module probe exposed CR-15 instead: its
+imported generic `lock`/`get` functions conflict with OD-2's deliberate ban on
+user-written generic functions. The operator selected bounded compiler-owned
+derivation over reopening OD-2. `TASK_STDLIB.md` CR-15 and the checked fixtures
+`tests/stdlib_s1_mutex_guard_generic_derivation_{module,rejected}.gst` are the
+current authority; no Mutex-specific backend rule is permitted.
+
 ---
 
 ## Reproduction

@@ -22683,50 +22683,58 @@ guard-stdlib-s1-collection-receivers:
 guard-stdlib-s1-resource-prerequisites:
     #!/usr/bin/env bash
     set -euo pipefail
-    echo "🔒 Checking the resource prerequisites recorded by S1.7..."
-    tc="compiler/typechecker.gst"
+    echo "🔒 Checking the current S1 MutexGuard prerequisites and CR-15 handoff..."
+    roadmap="TASK_STDLIB.md"
+    shared="docs/SHARED_SEMANTIC_ZONE.md"
+    vision="docs/VISION.md"
+    foundations="docs/STDLIB_FOUNDATIONS.md"
+    findings="docs/STDLIB_SURFACE_FINDINGS.md"
+    module="tests/stdlib_s1_mutex_guard_generic_derivation_module.gst"
+    witness="tests/stdlib_s1_mutex_guard_generic_derivation_rejected.gst"
 
-    # This guard pins the audit rather than a behaviour. If any of these change,
-    # STEP52_RESOURCE_SEMANTICS.md and CR-5 are stale and must be re-verified
-    # before MutexGuard work resumes.
+    # S1.7 remains historical evidence, while the live roadmap must distinguish
+    # the resolved resource floor from the current OD-2 derivation blocker.
+    rg -n -F 'Status: re-verified 2026-08-19 by Patch S1.7' STEP52_RESOURCE_SEMANTICS.md >/dev/null
+    rg -n -F '### CR-5 — Generic resource semantics sufficient for a scoped guard — **RESOLVED 2026-08-24**' "$roadmap" >/dev/null
+    rg -n -F '### CR-15 — Compiler-owned derivation for the generic MutexGuard surface' "$roadmap" >/dev/null
+    rg -n -F '*Blocked by CR-15. CR-5'"'"'s resource floor is resolved.*' "$roadmap" >/dev/null
 
-    # (a) Destructor identity: every registration must still be os.CloseDir. A
-    # third registration, or one naming a different destructor, means source-level
-    # destructor declaration may now exist.
-    registrations="$(rg -n -F 'env_register_struct_linear_destructor(env,' "$tc" || true)"
-    count="$(printf '%s\n' "$registrations" | rg -c . || true)"
-    if [ "$count" != "2" ]; then
-      echo "Expected exactly 2 destructor registrations, found $count:"
-      printf '%s\n' "$registrations"
-      echo "Re-verify STEP52_RESOURCE_SEMANTICS.md and TASK_STDLIB.md CR-5."
+    # OD-2 stays categorical: this correction selects derivation and must never
+    # turn into a local exception for user-written generic functions.
+    rg -n -F 'User-written generic functions are not available initially.' "$vision" >/dev/null
+    rg -n -F 'This does not reopen OD-2.' "$vision" >/dev/null
+    rg -n -F 'bounded compiler-owned derivation' "$roadmap" "$shared" "$vision" >/dev/null
+    rg -n -F 'reusable guard blocked on CR-15' "$foundations" >/dev/null
+    rg -n -F 'Current correction 2026-08-24.' "$findings" >/dev/null
+    rg -n -F 'User-defined extension-method' "$roadmap" >/dev/null
+
+    for fixture in "$module" "$witness"; do
+      test -f "$fixture"
+    done
+    rg -n -F 'type MutexGuard[T, ctx] struct' "$module" >/dev/null
+    rg -n -F 'func lock(mutex: &std.Mutex[T, ctx]) MutexGuard[T, ctx]' "$module" >/dev/null
+    rg -n -F 'func get(owner: &MutexGuard[T, ctx]) &T' "$module" >/dev/null
+
+    # Pin the exact live limitation that CR-15 hands to the compiler lane. The
+    # witness must remain rejected for unresolved generic substitution, not for
+    # an unrelated parser error or a weakened raw-Mutex boundary.
+    mkdir -p build/guards/stdlib_s1_resource_prerequisites
+    make gust >build/guards/stdlib_s1_resource_prerequisites/build.log 2>&1
+    output="build/guards/stdlib_s1_resource_prerequisites/generic-derivation.output"
+    if ./gust "$witness" >"$output" 2>&1; then
+      echo "$witness unexpectedly compiled; re-derive CR-15 before resuming S1.8."
       exit 1
     fi
-    if printf '%s\n' "$registrations" | rg -v -F '"os.CloseDir"' | rg -q .; then
-      echo "A destructor other than os.CloseDir is registered:"
-      printf '%s\n' "$registrations"
-      echo "Re-verify STEP52_RESOURCE_SEMANTICS.md and TASK_STDLIB.md CR-5."
-      exit 1
-    fi
-
-    # (b) No source syntax for declaring a destructor. If one appears, CR-5 (a)
-    # may be satisfied and MutexGuard becomes possible.
-    # src/lexer.rs and src/parser.rs were in this list. They are removed with
-    # the Rust prototype. Note the loop guards on [ -f "$f" ], so deleting them
-    # would have left this silently checking less rather than failing -- which
-    # is exactly why they come out of the list explicitly instead.
-    for f in compiler/lexer.gst; do
-      if [ -f "$f" ] && rg -q -i -e '"drop_func"' -e '"destructor"' "$f"; then
-        echo "A destructor keyword or attribute appeared in $f."
-        echo "Re-verify STEP52_RESOURCE_SEMANTICS.md and TASK_STDLIB.md CR-5."
-        exit 1
-      fi
+    for token in \
+      'Brand Nesting Restriction violation.' \
+      '[ResourceDestructorSignature]' \
+      'Argument type mismatch for function' \
+      'stdlib_s1_mutex_guard_generic_derivation_module__T'
+    do
+      rg -n -F "$token" "$output" >/dev/null
     done
 
-    # (c) The audit's own record must stay present and dated.
-    rg -n -F 'Status: re-verified 2026-08-19 by Patch S1.7' STEP52_RESOURCE_SEMANTICS.md >/dev/null
-    rg -n -F 'S1.7 verdict: S1.8 through S1.11 stay blocked' TASK_STDLIB.md >/dev/null
-
-    echo "✅ Resource prerequisites unchanged since the S1.7 audit: one built-in destructor, no source syntax to declare one."
+    echo "✅ CR-5 is resolved; CR-15 preserves OD-2 and pins the compiler-owned generic derivation gap."
 
 # Stdlib lane, Phase S1. Appended at the end for the same reason as the other S1
 # guards: several guards extract recipe bodies with sed ranges bounded by the
@@ -22860,7 +22868,7 @@ guard-stdlib-s1-close:
     fi
 
     # Every coordination request must state a resolution or an owning phase.
-    for cr in CR-1 CR-2 CR-3 CR-4 CR-5 CR-6 CR-7 CR-8 CR-9 CR-10 CR-11 CR-12 CR-13 CR-14; do
+    for cr in CR-1 CR-2 CR-3 CR-4 CR-5 CR-6 CR-7 CR-8 CR-9 CR-10 CR-11 CR-12 CR-13 CR-14 CR-15; do
       if rg -n -F -e "### $cr " "$roadmap" >/dev/null 2>&1; then
         body="$(rg -n -A 40 -F -e "### $cr " "$roadmap" || true)"
         if ! printf '%s\n' "$body" | rg -q -e 'RESOLVED|Resolved|Placement|owner|Phase 19|Cranelift lane|deferred'; then
