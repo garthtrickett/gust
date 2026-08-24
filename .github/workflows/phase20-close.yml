@@ -1,0 +1,59 @@
+name: Cranelift Phase 20 Closure
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/cranelift_registry.py'
+      - 'scripts/cranelift_test_levels.json'
+      - 'scripts/phase20_closure.py'
+      - 'scripts/phase20_cross_feature_qualification.py'
+      - 'scripts/phase20_protected_access_liveness.py'
+      - 'scripts/phase20_protected_access_seed_convergence.py'
+      - 'tests/cranelift/phase20_closure_contract.tsv'
+      - 'docs/PHASE20_CLOSURE.md'
+      - 'docs/SHARED_SEMANTIC_ZONE.md'
+      - '.github/workflows/cranelift-historical-full.yml'
+      - '.github/workflows/phase20-close.yml'
+      - '.github/workflows/pr-fast.yml'
+      - 'justfile'
+      - 'TASK.md'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/cranelift_registry.py'
+      - 'scripts/cranelift_test_levels.json'
+      - 'scripts/phase20_closure.py'
+      - 'scripts/phase20_cross_feature_qualification.py'
+      - 'scripts/phase20_protected_access_liveness.py'
+      - 'scripts/phase20_protected_access_seed_convergence.py'
+      - 'tests/cranelift/phase20_closure_contract.tsv'
+      - 'docs/PHASE20_CLOSURE.md'
+      - 'docs/SHARED_SEMANTIC_ZONE.md'
+      - '.github/workflows/cranelift-historical-full.yml'
+      - '.github/workflows/phase20-close.yml'
+      - '.github/workflows/pr-fast.yml'
+      - 'justfile'
+      - 'TASK.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  close:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: guard-cranelift-phase20-close
+        run: just guard-cranelift-phase20-close

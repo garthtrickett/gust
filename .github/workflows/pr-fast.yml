@@ -401,6 +401,9 @@ jobs:
       - name: Phase 20 cross-feature qualification authority
         run: just guard-cranelift-phase20-cross-feature-qualification-contract
 
+      - name: Phase 20 semantic foundations and qualification closure
+        run: just guard-cranelift-phase20-close
+
       - name: Phase 19 cross-feature composition
         run: just guard-cranelift-phase19-composition-contract
 

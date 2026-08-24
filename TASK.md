@@ -107,7 +107,7 @@ does not activate another lane, and does not authorize Phase 21.
 - [x] Patch 20.16c — Explicit-Unsafe Mutex Primitive Migration — DONE
 - [x] Patch 20.16d — Protected-Access Liveness Enforcement — DONE
 - [x] Patch 20.16e — Protected-Access Bootstrap Seed Reconvergence — DONE
-- [ ] Patch 20.17 — Phase 20 Closure
+- [x] Patch 20.17 — Phase 20 Closure — DONE
 
 Status rows are machine-parsed in the same form the Phase 15–19 close guards
 parse `TASK.md`. Keep each row as `- [ ] Patch 20.N — <Title>` or
@@ -1218,6 +1218,21 @@ Phase 20 succeeds when:
 Phase 20 does not claim universal language coverage or Phase 21 self-hosting.
 It claims that the declared representative cohort is semantically coherent,
 fully explained, and differentially qualified.
+
+## Phase 20 Closure Record
+
+Phase 20 closed on 2026-08-24 after `Cranelift Historical Full` run
+**32772996884** completed successfully for event `workflow_dispatch` on exact
+merged `main` **6e54e3cc6fa8fc44e5df7a67624bb183b01b2258**. The complete job
+population was **18/18** jobs completed successfully, with zero unfinished and
+zero non-success jobs. `scripts/cranelift_feature_registry.json` is the source
+authority for this record and generates `docs/PHASE20_CLOSURE.md`.
+
+The selected cohort has zero unexplained differences; all six remaining
+cross-feature residues have explicit owners, reason codes, failure stages,
+destinations, and falsifiers, with explicit Cranelift no-fallback preserved.
+Patch 20.16d's generic protected-access implementation authority remains the
+Stdlib handoff; Phase 20 does not select the library's public Mutex API.
 
 ---
 

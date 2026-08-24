@@ -308,6 +308,7 @@
     "guard-cranelift-phase20-protected-access-liveness-parity": 2,
     "guard-cranelift-phase20-protected-access-liveness-full": 3,
     "guard-cranelift-phase20-protected-access-seed-convergence": 1,
+    "guard-cranelift-phase20-close": 1,
     "guard-cranelift-phase20-resource-scope-cleanup-parity": 2,
     "guard-cranelift-phase20-seed-convergence": 1,
     "guard-cranelift-phase20-nested-brand-annotation-contract": 1,

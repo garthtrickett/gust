@@ -16915,6 +16915,17 @@ guard-cranelift-phase20-cross-feature-qualification-full:
     just guard-cranelift-phase20-long-lived-concurrent-full
     just guard-cranelift-phase20-protected-access-liveness-full
 
+guard-cranelift-phase20-close:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Closing Phase 20 semantic foundations and qualification..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase20-close | grep -F $'guard-cranelift-phase20-close\t1\t' >/dev/null
+    just guard-cranelift-phase20-cross-feature-qualification-contract
+    just guard-cranelift-phase20-protected-access-seed-convergence
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase20_closure.py --check
+
 guard-cranelift-phase18-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail

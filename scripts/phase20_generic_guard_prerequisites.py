@@ -117,7 +117,7 @@ def validate() -> dict:
         "- [x] Patch 20.16c — Explicit-Unsafe Mutex Primitive Migration — DONE",
         "- [x] Patch 20.16d — Protected-Access Liveness Enforcement — DONE",
         "- [x] Patch 20.16e — Protected-Access Bootstrap Seed Reconvergence — DONE",
-        "- [ ] Patch 20.17 — Phase 20 Closure",
+        "- [x] Patch 20.17 — Phase 20 Closure — DONE",
     ):
         require(evidence in task, f"TASK.md OD-13 sequencing is missing: {evidence}")
 
