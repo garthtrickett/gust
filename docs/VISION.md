@@ -2,7 +2,7 @@
 
 **Product, Language, Runtime, and Platform Decisions**
 
-> **What this document is.** A well-specified hypothesis with twelve registered decisions: seven open, two direction-set, and three resolved (§0.15). Two of the open decisions — **OD-9** (can a model write Gust) and **OD-8** (is the scoping analysis sound) — can invalidate the thesis outright, and both resolve inside the next four months. The prose is confident because vague prose cannot be attacked; the uncertainty is real and lives in §0.15. Read that table before treating any of this as settled.
+> **What this document is.** A well-specified hypothesis with thirteen registered decisions: seven open, two direction-set, and four resolved (§0.15). Two of the open decisions — **OD-9** (can a model write Gust) and **OD-8** (is the scoping analysis sound) — can invalidate the thesis outright, and both resolve inside the next four months. The prose is confident because vague prose cannot be attacked; the uncertainty is real and lives in §0.15. Read that table before treating any of this as settled.
 >
 > **The plan is four months long.** Build the demo (§0.7). Do not pick a business until it exists (§0.8). Everything past §0.16 is a specification of a system that is deliberately *not* being built yet — it exists so that demo-stage decisions do not foreclose it, and most of it should never be built by us.
 
@@ -451,10 +451,19 @@ second, drifting copy of it.
 | OD-5 | Supplier certification staffing model | **DIRECTION SET 2026-08-20** — split the function: an agent does conformance, the operator does trust and commerce; pricing still open | Post-1.0 | Part XVI |
 | OD-12 | ~~**Mobile execution boundary** — should mobile apps remain Gust-only above compiler-owned Swift/Kotlin hosts, or may application authors mix Swift/Kotlin into the normal source model?~~ | **RESOLVED 2026-08-21** — AOT Gust core plus generated, pinned Swift/Kotlin hosts; application-authored native code is only an explicit in-process escape hatch and forfeits the named process-integrity guarantee | — | `docs/MOBILE_NATIVE_DEPLOYMENT.md` §10; client consequences in Part IX; guarantee boundary in §93 and §98 |
 | OD-13 | ~~**Mutex protected-access contract** — does lock acquisition return a linear guard carrying context-branded protected access, another compiler-owned access token, or retain raw-pointer access plus explicit unlock?~~ | **RESOLVED 2026-08-24** — safe lock acquisition returns one move-only linear guard carrying context-branded protected access; the guard owns automatic exactly-once unlock | — | §26.1; compiler evidence in `docs/SHARED_SEMANTIC_ZONE.md` D-4; implementation sequencing in `TASK.md` Patches 20.16a–20.16e |
+| OD-14 | **Gust mascot** — should Gust's mascot be a donkey, and what visual treatment should carry the identity? | **OPEN** — provisional direction recorded 2026-08-24: a donkey | Brand and demo presentation | §0.15.1 |
 
 There is no OD-7. The number is unused and nothing in the repository references it; it is recorded here so a reader who notices the gap does not go looking.
 
 **Numbers are append-only and never recycled.** OD-11 was opened on 2026-08-20 with OD-7 sitting vacant, deliberately. A recycled number reads correctly in every new document and silently wrong in every old one, and the failure is invisible precisely because the reference resolves. A permanent gap costs one sentence of explanation; a reused number costs a misreading nobody can see.
+
+### 0.15.1 Mascot — provisional direction (OD-14)
+
+Gust needs a recognizable mascot for the demo and its public identity. The
+provisional direction is a **donkey**: dependable, sure-footed, and built to
+carry serious work. OD-14 remains open while the visual treatment, name, and
+final adoption are undecided; no artwork or public brand commitment follows
+from recording the direction here.
 
 **This table is also the escalation list, and that is its second job.** A lane
 working autonomously needs a test for *when to stop and ask*, and the test is
