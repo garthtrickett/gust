@@ -147,7 +147,7 @@ jobs:
             phase17) just guard-cranelift-phase17-complete-runtime-evidence ;;
             phase18) just guard-cranelift-phase18-complete-target-evidence ;;
             phase19) just guard-cranelift-phase19-self-compilation-differential ;;
-            phase20) just guard-cranelift-phase20-generated-mir-scale-full ;;
+            phase20) just guard-cranelift-phase20-generated-mir-scale-full && just guard-cranelift-phase20-long-lived-concurrent-full ;;
             *) echo "Unknown historical shard: $HISTORICAL_SHARD" >&2; exit 2 ;;
           esac
 

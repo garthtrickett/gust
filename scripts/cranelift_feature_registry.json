@@ -1288,6 +1288,54 @@
       "line_delta": 18
     }
   },
+  "phase20_long_lived_concurrent": {
+    "contract_version": "phase20_long_lived_concurrent_v1",
+    "status": "patch20_15_complete",
+    "next_patch": "20.16",
+    "review_view": "compiler/CRANELIFT_PHASE20_LONG_LIVED_CONCURRENT.md",
+    "harness": "scripts/phase20_long_lived_concurrent.sh",
+    "runtime_source_fixture": "compiler/phase20_long_lived_concurrent_source.gst",
+    "runtime_probe_fixture": "compiler/fixtures/phase20_long_lived_concurrent_probe.c",
+    "canonical_mir_fixture": "compiler/fixtures/native_backend_phase20_long_lived_concurrent.mir",
+    "resource_source_fixture": "compiler/phase20_long_lived_resource_source.gst",
+    "resource_module_fixture": "compiler/phase20_resource_scope_cleanup_module.gst",
+    "profiles": [
+      {
+        "id": "small",
+        "level": 2,
+        "concurrent_cycles": 8,
+        "resource_process_runs": 1
+      },
+      {
+        "id": "full",
+        "level": 3,
+        "concurrent_cycles": 128,
+        "resource_process_runs": 4
+      }
+    ],
+    "resource_policy": "sixteen_in_process_cycles_each_destroy_nested_fields_in_reverse_order_transfer_one_manual_terminal_owner_and_destroy_the_outer_owner_exactly_once",
+    "concurrency_policy": "two_pthreads_share_one_runtime_mutex_and_one_bounded_channel_producer_is_joined_after_deterministic_receive_count_and_sum_invariants",
+    "allocation_policy": "one_mutex_and_one_channel_are_reused_for_the_bounded_process_lifetime_and_reclaimed_with_the_test_process",
+    "backend_policy": "MIR_to_C_source_and_direct_canonical_MIR_Cranelift_call_the_same_test_only_probe_and_link_the_same_production_runtime_without_fallback",
+    "normalization_policy": "none",
+    "od13_policy": "open_and_unchanged_not_part_of_patch20_15",
+    "explicit_exclusions": [
+      {
+        "id": "direct_resource_source_to_cranelift",
+        "owner": "phase13_generic_source_to_mir",
+        "reason_code": "source_or_type_failure",
+        "destination": "20.16",
+        "falsifier": "the_direct_resource_source_route_compiles_and_executes_the_same_exact_cleanup_observables_with_MIR_to_C_poisoned"
+      },
+      {
+        "id": "direct_threading_source_to_cranelift",
+        "owner": "phase13_generic_source_to_mir",
+        "reason_code": "deferred_p13_parameter_argument_target_dependent_abi",
+        "destination": "20.16",
+        "falsifier": "a_function_pointer_Mutex_or_Channel_source_program_compiles_and_executes_its_deterministic_invariant_with_MIR_to_C_poisoned"
+      }
+    ]
+  },
   "phase19_brand_authority": {
     "authority_version": "phase19_brand_identity_authority_v1",
     "status": "ready_for_patch19_3",

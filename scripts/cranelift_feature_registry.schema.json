@@ -30,6 +30,7 @@
     "phase20_generated_mir_scale",
     "phase20_generic_guard_prerequisites",
     "phase20_post_prerequisite_seed_convergence",
+    "phase20_long_lived_concurrent",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -861,6 +862,57 @@
               "insertions": {"const": 63},
               "deletions": {"const": 45},
               "line_delta": {"const": 18}
+            }
+          }
+        }
+      },
+      "phase20_long_lived_concurrent": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["contract_version", "status", "next_patch", "review_view",
+                     "harness", "runtime_source_fixture", "runtime_probe_fixture",
+                     "canonical_mir_fixture", "resource_source_fixture",
+                     "resource_module_fixture", "profiles", "resource_policy",
+                     "concurrency_policy", "allocation_policy", "backend_policy",
+                     "normalization_policy", "od13_policy", "explicit_exclusions"],
+        "properties": {
+          "contract_version": {"const": "phase20_long_lived_concurrent_v1"},
+          "status": {"const": "patch20_15_complete"},
+          "next_patch": {"const": "20.16"},
+          "review_view": {"const": "compiler/CRANELIFT_PHASE20_LONG_LIVED_CONCURRENT.md"},
+          "harness": {"const": "scripts/phase20_long_lived_concurrent.sh"},
+          "runtime_source_fixture": {"const": "compiler/phase20_long_lived_concurrent_source.gst"},
+          "runtime_probe_fixture": {"const": "compiler/fixtures/phase20_long_lived_concurrent_probe.c"},
+          "canonical_mir_fixture": {"const": "compiler/fixtures/native_backend_phase20_long_lived_concurrent.mir"},
+          "resource_source_fixture": {"const": "compiler/phase20_long_lived_resource_source.gst"},
+          "resource_module_fixture": {"const": "compiler/phase20_resource_scope_cleanup_module.gst"},
+          "profiles": {
+            "const": [
+              {"id": "small", "level": 2, "concurrent_cycles": 8, "resource_process_runs": 1},
+              {"id": "full", "level": 3, "concurrent_cycles": 128, "resource_process_runs": 4}
+            ]
+          },
+          "resource_policy": {"const": "sixteen_in_process_cycles_each_destroy_nested_fields_in_reverse_order_transfer_one_manual_terminal_owner_and_destroy_the_outer_owner_exactly_once"},
+          "concurrency_policy": {"const": "two_pthreads_share_one_runtime_mutex_and_one_bounded_channel_producer_is_joined_after_deterministic_receive_count_and_sum_invariants"},
+          "allocation_policy": {"const": "one_mutex_and_one_channel_are_reused_for_the_bounded_process_lifetime_and_reclaimed_with_the_test_process"},
+          "backend_policy": {"const": "MIR_to_C_source_and_direct_canonical_MIR_Cranelift_call_the_same_test_only_probe_and_link_the_same_production_runtime_without_fallback"},
+          "normalization_policy": {"const": "none"},
+          "od13_policy": {"const": "open_and_unchanged_not_part_of_patch20_15"},
+          "explicit_exclusions": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "owner", "reason_code", "destination", "falsifier"],
+              "properties": {
+                "id": {"enum": ["direct_resource_source_to_cranelift", "direct_threading_source_to_cranelift"]},
+                "owner": {"const": "phase13_generic_source_to_mir"},
+                "reason_code": {"enum": ["source_or_type_failure", "deferred_p13_parameter_argument_target_dependent_abi"]},
+                "destination": {"const": "20.16"},
+                "falsifier": {"type": "string", "minLength": 1}
+              }
             }
           }
         }
