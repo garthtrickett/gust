@@ -313,6 +313,26 @@ func mir_native_scalar_source_capabilities(ctx: &Arena) capability.MirNativeBack
         "ImportedCallVoid",
         ctx
     );
+    capabilities = capability.mir_native_backend_capability_set_with_operation(
+        capabilities,
+        "LocalStringSetCall",
+        ctx
+    );
+    capabilities = capability.mir_native_backend_capability_set_with_operation(
+        capabilities,
+        "ArenaInit",
+        ctx
+    );
+    capabilities = capability.mir_native_backend_capability_set_with_operation(
+        capabilities,
+        "ArenaStoreI32",
+        ctx
+    );
+    capabilities = capability.mir_native_backend_capability_set_with_operation(
+        capabilities,
+        "LocalI32SetArenaLoad",
+        ctx
+    );
     capabilities = capability.mir_native_backend_capability_set_with_type_or_abi(
         capabilities,
         "int",
@@ -326,6 +346,16 @@ func mir_native_scalar_source_capabilities(ctx: &Arena) capability.MirNativeBack
     capabilities = capability.mir_native_backend_capability_set_with_type_or_abi(
         capabilities,
         "str",
+        ctx
+    );
+    capabilities = capability.mir_native_backend_capability_set_with_type_or_abi(
+        capabilities,
+        "arena",
+        ctx
+    );
+    capabilities = capability.mir_native_backend_capability_set_with_type_or_abi(
+        capabilities,
+        "usize",
         ctx
     );
     capabilities = capability.mir_native_backend_capability_set_with_type_or_abi(
@@ -383,6 +413,31 @@ func mir_native_scalar_source_capabilities(ctx: &Arena) capability.MirNativeBack
         "os_LogStr",
         ctx
     );
+    capabilities = capability.mir_native_backend_capability_set_with_runtime_import(
+        capabilities,
+        "os_Arena_New",
+        ctx
+    );
+    capabilities = capability.mir_native_backend_capability_set_with_runtime_import(
+        capabilities,
+        "os_Arena_Free",
+        ctx
+    );
+    capabilities = capability.mir_native_backend_capability_set_with_runtime_import(
+        capabilities,
+        "os_ArenaAlloc",
+        ctx
+    );
+    capabilities = capability.mir_native_backend_capability_set_with_runtime_import(
+        capabilities,
+        "os_WriteFile",
+        ctx
+    );
+    capabilities = capability.mir_native_backend_capability_set_with_runtime_import(
+        capabilities,
+        "os_ReadFile",
+        ctx
+    );
     capabilities = capability.mir_native_backend_capability_set_with_target_requirement(
         capabilities,
         "native_host",
@@ -422,7 +477,12 @@ func mir_native_scalar_source_requires_retained_runtime_package(
         mut requirement := requirements[index];
         if requirement.kind.tag == 2 &&
            (std.str_eq(requirement.feature, "os_LogInt") == 1 ||
-            std.str_eq(requirement.feature, "os_LogStr") == 1)
+            std.str_eq(requirement.feature, "os_LogStr") == 1 ||
+            std.str_eq(requirement.feature, "os_Arena_New") == 1 ||
+            std.str_eq(requirement.feature, "os_Arena_Free") == 1 ||
+            std.str_eq(requirement.feature, "os_ArenaAlloc") == 1 ||
+            std.str_eq(requirement.feature, "os_WriteFile") == 1 ||
+            std.str_eq(requirement.feature, "os_ReadFile") == 1)
         {
             return 1;
         }

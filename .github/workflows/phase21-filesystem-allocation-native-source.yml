@@ -1,4 +1,4 @@
-name: Cranelift Phase 21 Collection String Native Source
+name: Cranelift Phase 21 Filesystem Allocation Native Source
 
 on:
   pull_request:
@@ -16,9 +16,9 @@ on:
       - 'scripts/cranelift_test_levels.json'
       - 'scripts/phase21_collection_string_native_source.py'
       - 'scripts/phase21_collection_string_native_source.sh'
-      - 'scripts/phase21_opening.py'
-      - 'scripts/phase21_opening.sh'
-      - '.github/workflows/phase21-collection-string-native-source.yml'
+      - 'scripts/phase21_filesystem_allocation_native_source.py'
+      - 'scripts/phase21_filesystem_allocation_native_source.sh'
+      - '.github/workflows/phase21-filesystem-allocation-native-source.yml'
       - '.github/workflows/pr-fast.yml'
       - 'justfile'
   push:
@@ -37,9 +37,9 @@ on:
       - 'scripts/cranelift_test_levels.json'
       - 'scripts/phase21_collection_string_native_source.py'
       - 'scripts/phase21_collection_string_native_source.sh'
-      - 'scripts/phase21_opening.py'
-      - 'scripts/phase21_opening.sh'
-      - '.github/workflows/phase21-collection-string-native-source.yml'
+      - 'scripts/phase21_filesystem_allocation_native_source.py'
+      - 'scripts/phase21_filesystem_allocation_native_source.sh'
+      - '.github/workflows/phase21-filesystem-allocation-native-source.yml'
       - '.github/workflows/pr-fast.yml'
       - 'justfile'
   workflow_dispatch:
@@ -59,8 +59,8 @@ jobs:
       - uses: actions/checkout@v4
       - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
       - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-      - name: guard-cranelift-phase21-collection-string-native-source-contract
-        run: just guard-cranelift-phase21-collection-string-native-source-contract
+      - name: guard-cranelift-phase21-filesystem-allocation-native-source-contract
+        run: just guard-cranelift-phase21-filesystem-allocation-native-source-contract
 
   parity:
     needs: contract
@@ -71,5 +71,5 @@ jobs:
       - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
       - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - run: make gust
-      - name: guard-cranelift-phase21-collection-string-native-source-parity
-        run: just guard-cranelift-phase21-collection-string-native-source-parity
+      - name: guard-cranelift-phase21-filesystem-allocation-native-source-parity
+        run: just guard-cranelift-phase21-filesystem-allocation-native-source-parity

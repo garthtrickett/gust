@@ -437,6 +437,9 @@ jobs:
       - name: Phase 21 collection and string native source migration
         run: just guard-cranelift-phase21-collection-string-native-source-contract
 
+      - name: Phase 21 filesystem and allocation native source migration
+        run: just guard-cranelift-phase21-filesystem-allocation-native-source-contract
+
       - name: Phase 19 cross-feature composition
         run: just guard-cranelift-phase19-composition-contract
 

@@ -2,6 +2,7 @@ import "ast.gst" as ast;
 import "mir.gst" as mir;
 import "mir_native_backend_capability.gst" as capability;
 import "mir_native_backend_collection_string_source.gst" as collection_string;
+import "mir_native_backend_filesystem_allocation_source.gst" as filesystem_allocation;
 import "mir_native_backend_block_parameter_loop_source.gst" as block_parameter_loop;
 import "mir_native_backend_capability.gst" as capability;
 import "mir_native_backend_direct_call_source.gst" as direct_call;
@@ -2476,10 +2477,16 @@ func mir_native_generic_plan_from_bundle(bundle: mir.MirProgramBundle[ctx], ctx:
     mut has_local_call := 0;
     mut has_imported_call := 0;
     mut has_imported_void_call := 0;
+    mut has_local_string_set_call := 0;
+    mut has_arena_init := 0;
+    mut has_arena_store_i32 := 0;
+    mut has_arena_load_i32 := 0;
     mut has_return := 0;
     mut has_int := 0;
     mut has_bool := 0;
     mut has_str := 0;
+    mut has_arena := 0;
+    mut has_usize := 0;
     mut has_zero_int_abi := 0;
     mut has_one_int_abi := 0;
     mut has_two_int_abi := 0;
@@ -2587,6 +2594,18 @@ func mir_native_generic_plan_from_bundle(bundle: mir.MirProgramBundle[ctx], ctx:
         if mir_native_generic_contains(canonical, "kind: CallVoid") == 1 {
             has_imported_void_call = 1;
         }
+        if mir_native_generic_contains(canonical, "kind: LocalStringSetCall") == 1 {
+            has_local_string_set_call = 1;
+        }
+        if mir_native_generic_contains(canonical, "kind: ArenaInit") == 1 {
+            has_arena_init = 1;
+        }
+        if mir_native_generic_contains(canonical, "kind: ArenaStoreI32") == 1 {
+            has_arena_store_i32 = 1;
+        }
+        if mir_native_generic_contains(canonical, "kind: LocalI32SetArenaLoad") == 1 {
+            has_arena_load_i32 = 1;
+        }
         if mir_native_generic_contains(canonical, "ReturnI32") == 1 ||
            mir_native_generic_contains(canonical, "ReturnLocalI32") == 1 ||
            mir_native_generic_contains(
@@ -2622,6 +2641,14 @@ func mir_native_generic_plan_from_bundle(bundle: mir.MirProgramBundle[ctx], ctx:
         }
         if mir_native_generic_contains(canonical, "type: str") == 1 {
             has_str = 1;
+        }
+        if mir_native_generic_contains(canonical, "type: arena") == 1 ||
+           mir_native_generic_contains(canonical, "return_type: arena") == 1 {
+            has_arena = 1;
+        }
+        if mir_native_generic_contains(canonical, "type: usize") == 1 ||
+           mir_native_generic_contains(canonical, "return_type: usize") == 1 {
+            has_usize = 1;
         }
 
         mut symbols: std.Vector[mir.MirProgramBundleSymbol[ctx], ctx] :=
@@ -2777,6 +2804,50 @@ func mir_native_generic_plan_from_bundle(bundle: mir.MirProgramBundle[ctx], ctx:
         );
         ordinal = ordinal + 1;
     }
+    if has_local_string_set_call == 1 {
+        plan = mir_native_generic_plan_add(
+            plan,
+            0,
+            module_path,
+            ordinal,
+            "LocalStringSetCall",
+            ctx
+        );
+        ordinal = ordinal + 1;
+    }
+    if has_arena_init == 1 {
+        plan = mir_native_generic_plan_add(
+            plan,
+            0,
+            module_path,
+            ordinal,
+            "ArenaInit",
+            ctx
+        );
+        ordinal = ordinal + 1;
+    }
+    if has_arena_store_i32 == 1 {
+        plan = mir_native_generic_plan_add(
+            plan,
+            0,
+            module_path,
+            ordinal,
+            "ArenaStoreI32",
+            ctx
+        );
+        ordinal = ordinal + 1;
+    }
+    if has_arena_load_i32 == 1 {
+        plan = mir_native_generic_plan_add(
+            plan,
+            0,
+            module_path,
+            ordinal,
+            "LocalI32SetArenaLoad",
+            ctx
+        );
+        ordinal = ordinal + 1;
+    }
     if has_return == 1 {
         plan = mir_native_generic_plan_add(
             plan,
@@ -2817,6 +2888,28 @@ func mir_native_generic_plan_from_bundle(bundle: mir.MirProgramBundle[ctx], ctx:
             module_path,
             ordinal,
             "str",
+            ctx
+        );
+        ordinal = ordinal + 1;
+    }
+    if has_arena == 1 {
+        plan = mir_native_generic_plan_add(
+            plan,
+            1,
+            module_path,
+            ordinal,
+            "arena",
+            ctx
+        );
+        ordinal = ordinal + 1;
+    }
+    if has_usize == 1 {
+        plan = mir_native_generic_plan_add(
+            plan,
+            1,
+            module_path,
+            ordinal,
+            "usize",
             ctx
         );
         ordinal = ordinal + 1;
@@ -3076,6 +3169,23 @@ func mir_native_generic_source_lower(programs: std.Vector[ast.Program[ctx], ctx]
                         }
                         if collection_string_result.represented == 1 {
                             bundle = collection_string_result.bundle;
+                        } else {
+                        mut filesystem_allocation_result :=
+                            filesystem_allocation.mir_native_filesystem_allocation_source_lower(
+                                programs,
+                                module_paths,
+                                module_prefixes,
+                                ctx
+                            );
+                        if filesystem_allocation_result.invalid == 1 {
+                            return mir_native_generic_empty_result(
+                                3,
+                                filesystem_allocation_result.diagnostic,
+                                ctx
+                            );
+                        }
+                        if filesystem_allocation_result.represented == 1 {
+                            bundle = filesystem_allocation_result.bundle;
                         } else {
                         mut structured_cfg_result :=
                             structured_cfg.mir_native_structured_cfg_source_lower(
