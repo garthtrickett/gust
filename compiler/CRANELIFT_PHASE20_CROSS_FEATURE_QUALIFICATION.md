@@ -62,6 +62,13 @@ Generated from `scripts/cranelift_feature_registry.json` by
   - Owner: `phase13_generic_source_to_mir`; destination: `phase21_opening`
   - Falsifier: a real Mutex or Channel source program reaches the native driver and its deterministic-invariant differential passes
 
+## Successor transitions
+
+The six residues above remain the frozen Patch 20.16 snapshot.
+Completed successor migrations are no longer re-probed as residues
+by this historical guard.
+Completed successor-owned categories: `collections,strings`.
+
 The resource and threading rows subsume Patch 20.15's narrower direct
 source exclusions; they are not additional residue categories. The
 authoritative Historical Full result remains a Patch 20.17 closure gate.

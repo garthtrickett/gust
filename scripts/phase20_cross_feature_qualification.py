@@ -107,6 +107,14 @@ def validate() -> dict:
         require((ROOT / row["source_fixture"]).is_file(),
                 f"missing residue fixture: {row['source_fixture']}")
 
+    successor = registry.get("phase21_collection_string_native_source", {})
+    migrated_categories = []
+    if successor.get("status") == "patch21_9_complete":
+        require(successor.get("predecessor_authority") ==
+                registry["phase21_residue_migration_authority"]["contract_version"],
+                "Patch 21.9 successor authority is not linked to Patch 21.8")
+        migrated_categories = ["collections", "strings"]
+
     refinements = registry["phase20_long_lived_concurrent"][
         "explicit_exclusions"]
     require({row["reason_code"] for row in refinements} == {
@@ -140,7 +148,13 @@ def validate() -> dict:
     require("guard-cranelift-phase20-generated-mir-scale-full" in full_recipe and
             "guard-cranelift-phase20-long-lived-concurrent-full" in full_recipe,
             "Patch 20.16 Level 3 does not compose both existing full owners")
-    return record
+    projected = dict(record)
+    projected["active_final_residues"] = [
+        row for row in residues
+        if row["category"] not in migrated_categories
+    ]
+    projected["completed_successor_migrations"] = migrated_categories
+    return projected
 
 
 def render(record: dict) -> str:
@@ -190,6 +204,14 @@ def render(record: dict) -> str:
         ]
     lines += [
         "",
+        "## Successor transitions",
+        "",
+        "The six residues above remain the frozen Patch 20.16 snapshot.",
+        "Completed successor migrations are no longer re-probed as residues",
+        "by this historical guard.",
+        "Completed successor-owned categories: `" +
+        ",".join(record["completed_successor_migrations"]) + "`.",
+        "",
         "The resource and threading rows subsume Patch 20.15's narrower direct",
         "source exclusions; they are not additional residue categories. The",
         "authoritative Historical Full result remains a Patch 20.17 closure gate.",
@@ -203,7 +225,7 @@ def residue_cases(record: dict) -> str:
         row["category"], row["source_fixture"], row["decision"],
         row["reason_code"], row["diagnostic"], row["failure_stage"],
         row["owner"], row["destination"],
-    ]) for row in record["final_residues"])
+    ]) for row in record["active_final_residues"])
 
 
 def main() -> None:
