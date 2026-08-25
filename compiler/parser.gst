@@ -484,6 +484,7 @@ func get_expression_span(expr: Index[ast.Expression[ctx], ctx], ctx: &Arena) tok
         else if tag == 11 { s = ctx[expr].Selector.span; }
         else if tag == 12 { s = ctx[expr].Call.span; }
         else if tag == 13 { s = ctx[expr].Empty.span; }
+        else if tag == 14 { s = ctx[expr].Query.span; }
     }
     return s;
 }
@@ -519,12 +520,220 @@ func peek_token_precedence(p: *Parser[ctx]) int {
     }
 }
 
+func parser_cur_ident_is(p: *Parser[ctx], literal: str) int {
+    unsafe {
+        if cur_token_is(p, 2) == false { // Ident = 2
+            return 0;
+        }
+        return std.str_eq((*p).cur_token.literal, literal);
+    }
+}
+
+// Phase 21.3 query blocks are syntax and metadata only. Until the following
+// enforcement patches, the block's value is exactly its terminal expression.
+func parse_query_expression(p: *Parser[ctx], ctx: &Arena) Index[ast.Expression[ctx], ctx] {
+    unsafe {
+        mut query_start_parse := (*p).cur_token.span;
+        next_token(p); // consume contextual 'query'
+        if cur_token_is(p, 13) == false { // LBrace = 13
+            error_at_current(p, "Syntax Error: Expected '{' after query");
+            return empty[Index[ast.Expression[ctx], ctx]];
+        }
+        next_token(p); // consume '{'
+
+        mut query_roots_parse: std.Vector[ast.QueryRoot[ctx], ctx] := std.VectorNew(ctx);
+        mut query_predicates_parse: std.Vector[ast.Expression[ctx], ctx] := std.VectorNew(ctx);
+        mut query_joins_parse: std.Vector[ast.QueryJoin[ctx], ctx] := std.VectorNew(ctx);
+        mut query_nested_parse: std.Vector[ast.Expression[ctx], ctx] := std.VectorNew(ctx);
+        mut query_cross_tenant_parse: Index[ast.Expression[ctx], ctx] := empty[Index[ast.Expression[ctx], ctx]];
+        mut query_terminal_parse: Index[ast.Expression[ctx], ctx] := empty[Index[ast.Expression[ctx], ctx]];
+
+        while cur_token_is(p, 14) == false && cur_token_is(p, 0) == false { // RBrace, Eof
+            if parser_cur_ident_is(p, "root") == 1 {
+                mut root_start_parse := (*p).cur_token.span;
+                next_token(p); // consume 'root'
+                if cur_token_is(p, 2) == false {
+                    error_at_current(p, "Syntax Error: Expected scoped entity name after query root");
+                    return empty[Index[ast.Expression[ctx], ctx]];
+                }
+                mut root_entity_parse := std.Clone(*ctx, (*p).cur_token.literal);
+                next_token(p); // consume entity
+                if cur_token_is(p, 37) == false { // As = 37
+                    error_at_current(p, "Syntax Error: Expected 'as' after query root entity");
+                    return empty[Index[ast.Expression[ctx], ctx]];
+                }
+                next_token(p); // consume contextual 'as'
+                if cur_token_is(p, 2) == false {
+                    error_at_current(p, "Syntax Error: Expected binding name after query root 'as'");
+                    return empty[Index[ast.Expression[ctx], ctx]];
+                }
+                mut root_binding_parse := std.Clone(*ctx, (*p).cur_token.literal);
+                mut root_end_parse := (*p).cur_token.span;
+                next_token(p); // consume binding
+                if cur_token_is(p, 10) == false { // Semicolon = 10
+                    error_at_current(p, "Syntax Error: Expected ';' after query root");
+                    return empty[Index[ast.Expression[ctx], ctx]];
+                }
+                next_token(p); // consume ';'
+                mut root_record_parse: ast.QueryRoot[ctx];
+                root_record_parse.entity_name = root_entity_parse;
+                root_record_parse.binding_name = root_binding_parse;
+                root_record_parse.span = merge_spans(root_start_parse, root_end_parse);
+                query_roots_parse.Push(root_record_parse);
+            } else if parser_cur_ident_is(p, "predicate") == 1 {
+                next_token(p); // consume 'predicate'
+                mut predicate_idx_parse := parse_expression(p, 1, ctx);
+                if predicate_idx_parse == empty[Index[ast.Expression[ctx], ctx]] {
+                    error_at_current(p, "Syntax Error: Expected expression after query predicate");
+                    return empty[Index[ast.Expression[ctx], ctx]];
+                }
+                query_predicates_parse.Push(ctx[predicate_idx_parse]);
+                if cur_token_is(p, 10) == false { // Semicolon = 10
+                    error_at_current(p, "Syntax Error: Expected ';' after query predicate");
+                    return empty[Index[ast.Expression[ctx], ctx]];
+                }
+                next_token(p); // consume ';'
+            } else if parser_cur_ident_is(p, "join") == 1 {
+                mut join_start_parse := (*p).cur_token.span;
+                next_token(p); // consume 'join'
+                if cur_token_is(p, 2) == false {
+                    error_at_current(p, "Syntax Error: Expected scoped entity name after query join");
+                    return empty[Index[ast.Expression[ctx], ctx]];
+                }
+                mut join_entity_parse := std.Clone(*ctx, (*p).cur_token.literal);
+                next_token(p); // consume entity
+                if cur_token_is(p, 37) == false { // As = 37
+                    error_at_current(p, "Syntax Error: Expected 'as' after query join entity");
+                    return empty[Index[ast.Expression[ctx], ctx]];
+                }
+                next_token(p); // consume contextual 'as'
+                if cur_token_is(p, 2) == false {
+                    error_at_current(p, "Syntax Error: Expected binding name after query join 'as'");
+                    return empty[Index[ast.Expression[ctx], ctx]];
+                }
+                mut join_binding_parse := std.Clone(*ctx, (*p).cur_token.literal);
+                next_token(p); // consume binding
+                if parser_cur_ident_is(p, "predicate") == 0 {
+                    error_at_current(p, "Syntax Error: Expected predicate after query join binding");
+                    return empty[Index[ast.Expression[ctx], ctx]];
+                }
+                next_token(p); // consume 'predicate'
+                mut join_predicate_parse := parse_expression(p, 1, ctx);
+                if join_predicate_parse == empty[Index[ast.Expression[ctx], ctx]] {
+                    error_at_current(p, "Syntax Error: Expected expression after query join predicate");
+                    return empty[Index[ast.Expression[ctx], ctx]];
+                }
+                mut join_end_parse := get_expression_span(join_predicate_parse, ctx);
+                if cur_token_is(p, 10) == false { // Semicolon = 10
+                    error_at_current(p, "Syntax Error: Expected ';' after query join");
+                    return empty[Index[ast.Expression[ctx], ctx]];
+                }
+                next_token(p); // consume ';'
+                mut join_record_parse: ast.QueryJoin[ctx];
+                join_record_parse.entity_name = join_entity_parse;
+                join_record_parse.binding_name = join_binding_parse;
+                join_record_parse.predicate = join_predicate_parse;
+                join_record_parse.span = merge_spans(join_start_parse, join_end_parse);
+                query_joins_parse.Push(join_record_parse);
+            } else if parser_cur_ident_is(p, "nested") == 1 {
+                next_token(p); // consume 'nested'
+                if parser_cur_ident_is(p, "query") == 0 {
+                    error_at_current(p, "Syntax Error: Expected query block after nested");
+                    return empty[Index[ast.Expression[ctx], ctx]];
+                }
+                mut nested_query_idx_parse := parse_query_expression(p, ctx);
+                if nested_query_idx_parse == empty[Index[ast.Expression[ctx], ctx]] {
+                    return empty[Index[ast.Expression[ctx], ctx]];
+                }
+                query_nested_parse.Push(ctx[nested_query_idx_parse]);
+                if cur_token_is(p, 10) == false { // Semicolon = 10
+                    error_at_current(p, "Syntax Error: Expected ';' after nested query");
+                    return empty[Index[ast.Expression[ctx], ctx]];
+                }
+                next_token(p); // consume ';'
+            } else if parser_cur_ident_is(p, "cross_tenant") == 1 {
+                if query_cross_tenant_parse != empty[Index[ast.Expression[ctx], ctx]] {
+                    error_at_current(p, "Syntax Error: Duplicate cross_tenant marker in query");
+                    return empty[Index[ast.Expression[ctx], ctx]];
+                }
+                next_token(p); // consume 'cross_tenant'
+                query_cross_tenant_parse = parse_expression(p, 1, ctx);
+                if query_cross_tenant_parse == empty[Index[ast.Expression[ctx], ctx]] {
+                    error_at_current(p, "Syntax Error: Expected capability expression after cross_tenant");
+                    return empty[Index[ast.Expression[ctx], ctx]];
+                }
+                if cur_token_is(p, 10) == false { // Semicolon = 10
+                    error_at_current(p, "Syntax Error: Expected ';' after cross_tenant marker");
+                    return empty[Index[ast.Expression[ctx], ctx]];
+                }
+                next_token(p); // consume ';'
+            } else if parser_cur_ident_is(p, "terminal") == 1 {
+                if query_terminal_parse != empty[Index[ast.Expression[ctx], ctx]] {
+                    error_at_current(p, "Syntax Error: Duplicate terminal expression in query");
+                    return empty[Index[ast.Expression[ctx], ctx]];
+                }
+                next_token(p); // consume 'terminal'
+                query_terminal_parse = parse_expression(p, 1, ctx);
+                if query_terminal_parse == empty[Index[ast.Expression[ctx], ctx]] {
+                    error_at_current(p, "Syntax Error: Expected expression after query terminal");
+                    return empty[Index[ast.Expression[ctx], ctx]];
+                }
+                if cur_token_is(p, 10) == false { // Semicolon = 10
+                    error_at_current(p, "Syntax Error: Expected ';' after query terminal");
+                    return empty[Index[ast.Expression[ctx], ctx]];
+                }
+                next_token(p); // consume ';'
+            } else {
+                error_at_current(p, "Syntax Error: Expected root, predicate, join, nested query, cross_tenant, or terminal in query block");
+                return empty[Index[ast.Expression[ctx], ctx]];
+            }
+        }
+
+        if cur_token_is(p, 14) == false { // RBrace = 14
+            error_at_current(p, "Syntax Error: Expected closing '}' after query block");
+            return empty[Index[ast.Expression[ctx], ctx]];
+        }
+        if query_terminal_parse == empty[Index[ast.Expression[ctx], ctx]] {
+            error_at_current(p, "Syntax Error: Query block requires one terminal expression");
+            return empty[Index[ast.Expression[ctx], ctx]];
+        }
+        mut query_end_parse := (*p).cur_token.span;
+        next_token(p); // consume '}'
+
+        mut roots_idx_parse: Index[std.Vector[ast.QueryRoot[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+        mut predicates_idx_parse: Index[std.Vector[ast.Expression[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+        mut joins_idx_parse: Index[std.Vector[ast.QueryJoin[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+        mut nested_idx_parse: Index[std.Vector[ast.Expression[ctx], ctx], ctx] := os.ArenaAlloc(ctx);
+        ctx.Set(roots_idx_parse, query_roots_parse);
+        ctx.Set(predicates_idx_parse, query_predicates_parse);
+        ctx.Set(joins_idx_parse, query_joins_parse);
+        ctx.Set(nested_idx_parse, query_nested_parse);
+
+        mut query_expr_idx_parse: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+        mut query_expr_parse: ast.Expression[ctx];
+        query_expr_parse.tag = 14; // Query = 14
+        query_expr_parse.Query.roots = roots_idx_parse;
+        query_expr_parse.Query.predicates = predicates_idx_parse;
+        query_expr_parse.Query.joins = joins_idx_parse;
+        query_expr_parse.Query.nested_queries = nested_idx_parse;
+        query_expr_parse.Query.cross_tenant_capability = query_cross_tenant_parse;
+        query_expr_parse.Query.terminal = query_terminal_parse;
+        query_expr_parse.Query.span = merge_spans(query_start_parse, query_end_parse);
+        ctx.Set(query_expr_idx_parse, query_expr_parse);
+        return query_expr_idx_parse;
+    }
+}
+
 func parse_prefix_expression(p: *Parser[ctx], ctx: &Arena) Index[ast.Expression[ctx], ctx] {
     mut e_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
     unsafe {
         mut tag := (*p).cur_token.token_type.tag;
         mut start_span := (*p).cur_token.span;
 
+        if tag == 2 && std.str_eq((*p).cur_token.literal, "query") == 1 &&
+           peek_token_is(p, 13) { // contextual query only before '{'
+            return parse_query_expression(p, ctx);
+        }
         if tag == 2 { // Ident = 2
             mut e_identifier_parse: ast.Expression[ctx];
             e_identifier_parse.tag = 0; // Identifier = 0
@@ -815,6 +1024,8 @@ func parse_struct_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], c
         mut declared_destructor_name_decl := "";
         mut is_opaque_decl := 0;
         mut is_private_decl := 0;
+        mut is_scoped_entity_decl := 0;
+        mut scoped_entity_field_decl := "";
 
         while cur_token_is(p, 49) { // Hash = 49
             next_token(p); // consume '#'
@@ -930,6 +1141,44 @@ func parse_struct_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], c
                     return empty[Index[ast.Statement[ctx], ctx]];
                 }
                 is_private_decl = 1;
+            } else if std.str_eq(layout_attr_name, "scoped") {
+                if is_scoped_entity_decl == 1 {
+                    mut err_scoped_duplicate: errors.CompilerError[Any];
+                    err_scoped_duplicate.kind.tag = 1; // ParserError
+                    err_scoped_duplicate.message = "Duplicate scoped entity declaration attribute";
+                    err_scoped_duplicate.span = (*p).cur_token.span;
+                    (*p).errors.Push(err_scoped_duplicate);
+                    return empty[Index[ast.Statement[ctx], ctx]];
+                }
+                if cur_token_is(p, 11) == false { // LParen = 11
+                    mut err_scoped_lparen: errors.CompilerError[Any];
+                    err_scoped_lparen.kind.tag = 1; // ParserError
+                    err_scoped_lparen.message = "Expected '(' after scoped entity attribute";
+                    err_scoped_lparen.span = (*p).cur_token.span;
+                    (*p).errors.Push(err_scoped_lparen);
+                    return empty[Index[ast.Statement[ctx], ctx]];
+                }
+                next_token(p); // consume '('
+                if cur_token_is(p, 2) == false { // Ident = 2
+                    mut err_scoped_field: errors.CompilerError[Any];
+                    err_scoped_field.kind.tag = 1; // ParserError
+                    err_scoped_field.message = "Expected scope field name in scoped entity attribute";
+                    err_scoped_field.span = (*p).cur_token.span;
+                    (*p).errors.Push(err_scoped_field);
+                    return empty[Index[ast.Statement[ctx], ctx]];
+                }
+                scoped_entity_field_decl = std.Clone(*ctx, (*p).cur_token.literal);
+                is_scoped_entity_decl = 1;
+                next_token(p); // consume scope field name
+                if cur_token_is(p, 12) == false { // RParen = 12
+                    mut err_scoped_rparen: errors.CompilerError[Any];
+                    err_scoped_rparen.kind.tag = 1; // ParserError
+                    err_scoped_rparen.message = "Expected ')' after scoped entity field";
+                    err_scoped_rparen.span = (*p).cur_token.span;
+                    (*p).errors.Push(err_scoped_rparen);
+                    return empty[Index[ast.Statement[ctx], ctx]];
+                }
+                next_token(p); // consume ')'
             } else {
                 mut err_layout_unsupported: errors.CompilerError[Any];
                 err_layout_unsupported.kind.tag = 1; // ParserError
@@ -953,7 +1202,8 @@ func parse_struct_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], c
         if is_private_decl == 1 {
             if is_repr_c_decl == 1 || is_packed_decl == 1 ||
                is_linear_resource_decl == 1 ||
-               len(declared_destructor_name_decl) > 0 || is_opaque_decl == 1
+               len(declared_destructor_name_decl) > 0 || is_opaque_decl == 1 ||
+               is_scoped_entity_decl == 1
             {
                 mut err_attribute_conflict: errors.CompilerError[Any];
                 err_attribute_conflict.kind.tag = 1; // ParserError
@@ -1115,12 +1365,15 @@ func parse_struct_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], c
             stmt_struct_parse.StructDecl.is_linear_resource = is_linear_resource_decl;
             stmt_struct_parse.StructDecl.declared_destructor_name = declared_destructor_name_decl;
             stmt_struct_parse.StructDecl.is_opaque = is_opaque_decl;
+            stmt_struct_parse.StructDecl.is_scoped_entity = is_scoped_entity_decl;
+            stmt_struct_parse.StructDecl.scope_field = scoped_entity_field_decl;
 
             stmt_struct_parse.StructDecl.span = merge_spans(start_span, end_span);
             ctx.Set(stmt_idx, stmt_struct_parse);
             return stmt_idx;
         } else if cur_token_is(p, 41) { // Enum = 41
-            if len(declared_destructor_name_decl) > 0 || is_opaque_decl == 1 {
+            if len(declared_destructor_name_decl) > 0 || is_opaque_decl == 1 ||
+               is_scoped_entity_decl == 1 {
                 mut err_resource_enum_target: errors.CompilerError[Any];
                 err_resource_enum_target.kind.tag = 1; // ParserError
                 err_resource_enum_target.message = "Resource declaration attributes require a struct type";

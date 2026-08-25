@@ -83,7 +83,7 @@ Out of scope:
 - [x] Patch 21.0 — Roadmap and OD-8 Design Authority — DONE
 - [x] Patch 21.1 — Opening Evidence and Dual-Track Baseline — DONE
 - [x] Patch 21.2 — Inert Scoped-Query Semantic Records — DONE
-- [ ] Patch 21.3 — Typed-Query Surface Under the No-op
+- [x] Patch 21.3 — Typed-Query Surface Under the No-op — DONE
 - [ ] Patch 21.4 — Trusted Scope Provenance Enforcement
 - [ ] Patch 21.5 — Per-Root Join and Nested-Query Obligations
 - [ ] Patch 21.6 — Explicit Cross-Tenant Capability Boundary

@@ -93,9 +93,9 @@ def validate() -> dict:
         text = path.read_text(encoding="utf-8")
         require(f"witness_kind: {'intended_trusted_scope_positive' if row['id'] == 'trusted_scope_shape' else 'intended_untrusted_scope_negative'}" in text,
                 f"witness kind drifted: {row['id']}")
-        require("current_surface: ordinary_user_values_no_compiler_owned_query_or_scope_provenance" in text and
-                "syntax_authority: none_exact_typed_query_spelling_belongs_to_patch21_3" in text,
-                f"witness overclaims current query authority: {row['id']}")
+        require("current_surface: compiler_owned_typed_query_syntax_without_scope_enforcement" in text and
+                "syntax_authority: patch21_3_contextual_query_and_scoped_entity_surface" in text,
+                f"witness was not migrated under Patch 21.3: {row['id']}")
         require(row.get("mir_to_c_exit") == row.get("cranelift_exit") and
                 row.get("mir_to_c_exit") in {21, 99},
                 f"witness backend baseline drifted: {row['id']}")

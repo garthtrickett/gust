@@ -413,6 +413,9 @@ jobs:
       - name: Phase 21 inert scoped-query semantic records
         run: just guard-cranelift-phase21-inert-scoped-query-records-contract
 
+      - name: Phase 21 typed-query no-op surface
+        run: just guard-cranelift-phase21-typed-query-noop-surface-contract
+
       - name: Phase 19 cross-feature composition
         run: just guard-cranelift-phase19-composition-contract
 

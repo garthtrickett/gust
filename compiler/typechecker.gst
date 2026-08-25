@@ -1989,6 +1989,9 @@ func get_expression_origins(expr_idx: Index[ast.Expression[ctx], ctx], env: *Typ
             return set_init(ctx);
         }
         mut expr := ctx[expr_idx];
+        if expr.tag == 14 { // Query (Phase 21.3 semantic no-op)
+            return get_expression_origins(expr.Query.terminal, env, ctx);
+        }
         if expr.tag == 0 { // Identifier
             mut name := expr.Identifier.name;
             mut lookup_type := (*env).variable_types.Get(name);
@@ -2179,6 +2182,10 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
             return dummy;
         }
         mut expr := ctx[expr_idx];
+
+        if expr.tag == 14 { // Query (Phase 21.3 semantic no-op)
+            return check_expression(expr.Query.terminal, env, scope, ctx);
+        }
 
         if expr.tag == 0 { // Identifier
             mut name := expr.Identifier.name;
@@ -4544,6 +4551,11 @@ func check_expression_with_provenance(expr_idx: Index[ast.Expression[ctx], ctx],
     unsafe {
         if expr_idx != empty[Index[ast.Expression[ctx], ctx]] {
             mut expr := ctx[expr_idx];
+            if expr.tag == 14 { // Query (Phase 21.3 semantic no-op)
+                return check_expression_with_provenance(
+                    expr.Query.terminal, env, scope, ctx
+                );
+            }
             if expr.tag == 0 { // Identifier
                 mut name := expr.Identifier.name;
                 if std.str_eq(name, "null") == 1 {
@@ -9085,6 +9097,12 @@ func env_resource_identity_for_expression(env: *TypeEnvironment[ctx], expr_idx: 
         }
 
         mut expr := ctx[expr_idx];
+        if expr.tag == 14 { // Query (Phase 21.3 semantic no-op)
+            mut query_identity_phase21_3 := env_resource_identity_for_expression(
+                env, expr.Query.terminal, ctx
+            );
+            return std.Clone(ctx, query_identity_phase21_3);
+        }
         if expr.tag == 0 { // Identifier
             mut resolved_name := env_resolve_namespaced_ident(env, expr.Identifier.name, ctx);
             mut resolved_lookup := (*env).resource_value_identities.Get(resolved_name);
@@ -11186,6 +11204,7 @@ func get_expression_span(expr_idx: Index[ast.Expression[ctx], ctx], ctx: &Arena)
         if tag == 11 { s = expr.Selector.span; }
         if tag == 12 { s = expr.Call.span; }
         if tag == 13 { s = expr.Empty.span; }
+        if tag == 14 { s = expr.Query.span; }
     }
     return s;
 }
@@ -11219,6 +11238,9 @@ func get_root_variable(expr_idx: Index[ast.Expression[ctx], ctx], ctx: &Arena) s
         }
         if (*expr_ptr).tag == 11 { // Selector
             return get_root_variable((*expr_ptr).Selector.left, ctx);
+        }
+        if (*expr_ptr).tag == 14 { // Query (Phase 21.3 semantic no-op)
+            return get_root_variable((*expr_ptr).Query.terminal, ctx);
         }
         return "";
     }
@@ -11423,6 +11445,9 @@ func expression_to_string(expr_idx: Index[ast.Expression[ctx], ctx], ctx: &Arena
             res = std.Concat(res, args_str);
             res = std.Concat(res, ")");
             return std.Clone(ctx, res);
+        }
+        if (*expr_ptr).tag == 14 { // Query (Phase 21.3 semantic no-op)
+            return expression_to_string((*expr_ptr).Query.terminal, ctx);
         }
         return "";
     }

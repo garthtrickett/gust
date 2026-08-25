@@ -25,6 +25,21 @@ type MatchCase[ctx] struct {
     span: token.Span
 }
 
+// Phase 21.3 typed-query syntax records. These records are syntax-only until
+// the provenance and per-root obligation patches enable semantic checks.
+type QueryRoot[ctx] struct {
+    entity_name: str,
+    binding_name: str,
+    span: token.Span
+}
+
+type QueryJoin[ctx] struct {
+    entity_name: str,
+    binding_name: str,
+    predicate: Index[Expression[ctx], ctx],
+    span: token.Span
+}
+
 type BlockStatement[ctx] struct {
     statements: Index[std.Vector[Statement[ctx], ctx], ctx],
     span: token.Span
@@ -77,6 +92,8 @@ type Statement[ctx] enum {
         is_linear_resource: int,
         declared_destructor_name: str,
         is_opaque: int,
+        is_scoped_entity: int,
+        scope_field: str,
         span: token.Span
     },
     EnumDecl {
@@ -215,6 +232,15 @@ type Expression[ctx] enum {
     },
     Empty {
         target_type: Index[Type[ctx], ctx],
+        span: token.Span
+    },
+    Query {
+        roots: Index[std.Vector[QueryRoot[ctx], ctx], ctx],
+        predicates: Index[std.Vector[Expression[ctx], ctx], ctx],
+        joins: Index[std.Vector[QueryJoin[ctx], ctx], ctx],
+        nested_queries: Index[std.Vector[Expression[ctx], ctx], ctx],
+        cross_tenant_capability: Index[Expression[ctx], ctx],
+        terminal: Index[Expression[ctx], ctx],
         span: token.Span
     }
 }
@@ -520,6 +546,65 @@ func serialize_expression(expr_idx: Index[Expression[ctx], ctx], indent: int, ct
             res = std.Concat(res, "\n");
             return std.Clone(ctx, res);
         }
+        if expr.tag == 14 { // Query
+            mut query_res_ast := std.Concat(pad, "Query:\n");
+            mut query_roots_ast: std.Vector[QueryRoot[ctx], ctx] := ctx[expr.Query.roots];
+            mut query_root_index_ast := 0;
+            while query_root_index_ast < len(query_roots_ast) {
+                mut query_root_ast := query_roots_ast[query_root_index_ast];
+                mut query_root_line_ast := ast_repeat_spaces(indent + 1, ctx);
+                query_root_line_ast = std.Concat(query_root_line_ast, "Root: ");
+                query_root_line_ast = std.Concat(query_root_line_ast, query_root_ast.entity_name);
+                query_root_line_ast = std.Concat(query_root_line_ast, " as ");
+                query_root_line_ast = std.Concat(query_root_line_ast, query_root_ast.binding_name);
+                query_root_line_ast = std.Concat(query_root_line_ast, "\n");
+                query_res_ast = std.Concat(query_res_ast, query_root_line_ast);
+                query_root_index_ast = query_root_index_ast + 1;
+            }
+            mut query_predicates_ast: std.Vector[Expression[ctx], ctx] := ctx[expr.Query.predicates];
+            mut query_predicate_index_ast := 0;
+            while query_predicate_index_ast < len(query_predicates_ast) {
+                mut query_predicate_idx_ast: Index[Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx.Set(query_predicate_idx_ast, query_predicates_ast[query_predicate_index_ast]);
+                query_res_ast = std.Concat(query_res_ast, ast_repeat_spaces(indent + 1, ctx));
+                query_res_ast = std.Concat(query_res_ast, "Predicate:\n");
+                query_res_ast = std.Concat(query_res_ast, serialize_expression(query_predicate_idx_ast, indent + 2, ctx));
+                query_predicate_index_ast = query_predicate_index_ast + 1;
+            }
+            mut query_joins_ast: std.Vector[QueryJoin[ctx], ctx] := ctx[expr.Query.joins];
+            mut query_join_index_ast := 0;
+            while query_join_index_ast < len(query_joins_ast) {
+                mut query_join_ast := query_joins_ast[query_join_index_ast];
+                mut query_join_line_ast := ast_repeat_spaces(indent + 1, ctx);
+                query_join_line_ast = std.Concat(query_join_line_ast, "Join: ");
+                query_join_line_ast = std.Concat(query_join_line_ast, query_join_ast.entity_name);
+                query_join_line_ast = std.Concat(query_join_line_ast, " as ");
+                query_join_line_ast = std.Concat(query_join_line_ast, query_join_ast.binding_name);
+                query_join_line_ast = std.Concat(query_join_line_ast, "\n");
+                query_res_ast = std.Concat(query_res_ast, query_join_line_ast);
+                query_res_ast = std.Concat(query_res_ast, serialize_expression(query_join_ast.predicate, indent + 2, ctx));
+                query_join_index_ast = query_join_index_ast + 1;
+            }
+            mut query_nested_ast: std.Vector[Expression[ctx], ctx] := ctx[expr.Query.nested_queries];
+            mut query_nested_index_ast := 0;
+            while query_nested_index_ast < len(query_nested_ast) {
+                mut query_nested_idx_ast: Index[Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx.Set(query_nested_idx_ast, query_nested_ast[query_nested_index_ast]);
+                query_res_ast = std.Concat(query_res_ast, ast_repeat_spaces(indent + 1, ctx));
+                query_res_ast = std.Concat(query_res_ast, "Nested:\n");
+                query_res_ast = std.Concat(query_res_ast, serialize_expression(query_nested_idx_ast, indent + 2, ctx));
+                query_nested_index_ast = query_nested_index_ast + 1;
+            }
+            if expr.Query.cross_tenant_capability != empty[Index[Expression[ctx], ctx]] {
+                query_res_ast = std.Concat(query_res_ast, ast_repeat_spaces(indent + 1, ctx));
+                query_res_ast = std.Concat(query_res_ast, "CrossTenant:\n");
+                query_res_ast = std.Concat(query_res_ast, serialize_expression(expr.Query.cross_tenant_capability, indent + 2, ctx));
+            }
+            query_res_ast = std.Concat(query_res_ast, ast_repeat_spaces(indent + 1, ctx));
+            query_res_ast = std.Concat(query_res_ast, "Terminal:\n");
+            query_res_ast = std.Concat(query_res_ast, serialize_expression(expr.Query.terminal, indent + 2, ctx));
+            return std.Clone(ctx, query_res_ast);
+        }
     }
     return "UnknownExpr";
 }
@@ -613,6 +698,11 @@ func serialize_statement(stmt_idx: Index[Statement[ctx], ctx], indent: int, ctx:
             }
             if stmt.StructDecl.is_opaque == 1 {
                 res = std.Concat(res, " #[opaque]");
+            }
+            if stmt.StructDecl.is_scoped_entity == 1 {
+                res = std.Concat(res, " #[scoped(");
+                res = std.Concat(res, stmt.StructDecl.scope_field);
+                res = std.Concat(res, ")]");
             }
             res = std.Concat(res, "\n");
             
