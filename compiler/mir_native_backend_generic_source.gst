@@ -1282,8 +1282,25 @@ func mir_native_generic_analyze(programs: std.Vector[ast.Program[ctx], ctx], mod
     }
 
     mut program := programs[0];
-    mut top_level: std.Vector[ast.Statement[ctx], ctx] :=
+    mut source_top_level: std.Vector[ast.Statement[ctx], ctx] :=
         ctx[program.statements];
+    // Scoped entity declarations are compile-time query metadata. When a
+    // scalar query terminal does not materialize the entity, the generic
+    // source route may ignore that declaration without lowering a struct.
+    mut top_level: std.Vector[ast.Statement[ctx], ctx] := std.VectorNew(ctx);
+    mut source_top_index_phase21_4 := 0;
+    unsafe {
+        while source_top_index_phase21_4 < len(source_top_level) {
+            mut source_statement_phase21_4 :=
+                source_top_level[source_top_index_phase21_4];
+            if source_statement_phase21_4.tag != 1 ||
+               source_statement_phase21_4.StructDecl.is_scoped_entity == 0
+            {
+                top_level.Push(source_statement_phase21_4);
+            }
+            source_top_index_phase21_4 = source_top_index_phase21_4 + 1;
+        }
+    }
 
     if len(top_level) == 1 {
         return mir_native_generic_analyze_single_function(

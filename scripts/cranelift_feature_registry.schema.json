@@ -41,6 +41,7 @@
     "phase21_opening",
     "phase21_inert_scoped_query_records",
     "phase21_typed_query_noop_surface",
+    "phase21_trusted_scope_provenance",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -1343,6 +1344,38 @@
           "compiler_owned_consumers": ["compiler/ast.gst","compiler/parser.gst","compiler/typechecker.gst","compiler/codegen.gst","compiler/mir_native_backend_generic_source.gst"],
           "enforcement_policy": "no_scope_obligation_is_created_or_discharged_and_no_query_rejection_is_enabled_until_patch21_4",
           "boundary": {"adds_source_syntax":true,"changes_existing_program_meaning":false,"enforcement_enabled":false,"adds_or_changes_MIR_operations":false,"changes_backend_observables":false,"changes_ABI_layout_or_runtime_symbols":false,"changes_bootstrap_seed":false,"edits_stdlib":false}
+        }
+      },
+      "phase21_trusted_scope_provenance": {
+        "const": {
+          "contract_version": "phase21_trusted_scope_provenance_v1",
+          "status": "patch21_4_complete",
+          "next_patch": "21.5",
+          "review_view": "compiler/CRANELIFT_PHASE21_TRUSTED_SCOPE_PROVENANCE.md",
+          "scoped_entity_registry": ["TypeEnvironment.struct_scoped_entity","TypeEnvironment.struct_scope_field"],
+          "trusted_origin_intrinsic": "trusted_scope_from_context",
+          "trusted_origin_policy": "reserved_compiler_owned_compile_time_intrinsic_usable_only_inside_typed_query_predicates_with_one_literal_scope_identity_and_never_emitted_to_either_backend",
+          "trusted_scope_type_policy": "the_intrinsic_result_is_the_compiler_only_nominal_type_Scope_of_the_literal_scope_identity_and_discharge_requires_that_exact_type",
+          "provenance_carrier": ["ExpressionProvenance.trusted_scope_identity","ExpressionProvenance.trusted_scope_origin_kind"],
+          "scope_identity_policy": "the_scoped_entity_declared_field_name_is_the_canonical_matching_Scope_identity",
+          "discharge_policy": "a_primary_scoped_root_is_discharged_only_by_equality_between_its_bound_scope_field_and_matching_trusted_request_context_scope_provenance",
+          "diagnostic_class": "TenantScopeProvenance",
+          "diagnostic": "error: query lacks trusted tenant-scope provenance",
+          "positive_fixture": {"source_fixture":"compiler/phase21_trusted_scope_positive.gst","mir_to_c_exit":41,"cranelift_exit":41},
+          "negative_fixtures": [
+            {"kind":"absent","source_fixture":"compiler/phase21_trusted_scope_absent_invalid.gst"},
+            {"kind":"forged_function","source_fixture":"compiler/phase21_trusted_scope_forged_invalid.gst"},
+            {"kind":"wrong_scope","source_fixture":"compiler/phase21_trusted_scope_wrong_identity_invalid.gst"},
+            {"kind":"arbitrary_value","source_fixture":"compiler/phase21_trusted_scope_arbitrary_invalid.gst"},
+            {"kind":"cast","source_fixture":"compiler/phase21_trusted_scope_cast_invalid.gst"},
+            {"kind":"copied_predicate_spelling","source_fixture":"compiler/phase21_trusted_scope_syntax_only_invalid.gst"}
+          ],
+          "nonforgeability_fixtures": [
+            {"kind":"outside_query_use","source_fixture":"compiler/phase21_trusted_scope_outside_query_invalid.gst","diagnostic_class":"TrustedScopeBoundary"},
+            {"kind":"reserved_intrinsic_redefinition","source_fixture":"compiler/phase21_trusted_scope_reserved_intrinsic_invalid.gst","diagnostic_class":"ReservedCompilerIntrinsic"}
+          ],
+          "native_policy": "metadata_only_scoped_entity_declarations_are_filtered_before_generic_scalar_source_analysis_without_lowering_or_materializing_the_entity",
+          "boundary": {"primary_scoped_roots_enforced":true,"join_roots_enforced":false,"nested_queries_enforced":false,"cross_tenant_capability_enforced":false,"trusted_request_context_establishment_claimed":false,"adds_or_changes_MIR_operations":false,"changes_ABI_layout_or_runtime_symbols":false,"changes_bootstrap_seed":false,"edits_stdlib":false}
         }
       },
       "phase19_brand_authority": {

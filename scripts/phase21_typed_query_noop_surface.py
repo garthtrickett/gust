@@ -97,9 +97,14 @@ def validate() -> dict:
             "ctx[expr_idx].Query.terminal, env, ctx" in codegen and
             "ctx[expression.Query.terminal], env, ctx" in generic,
             "terminal delegation is incomplete")
-    for source in (ast, parser, typechecker, codegen, generic):
-        require("query lacks trusted tenant-scope provenance" not in source,
-                "Patch 21.4 query rejection was enabled early")
+    successor = registry.get("phase21_trusted_scope_provenance")
+    if successor is None:
+        for source in (ast, parser, typechecker, codegen, generic):
+            require("query lacks trusted tenant-scope provenance" not in source,
+                    "Patch 21.4 query rejection was enabled without authority")
+    else:
+        require(successor.get("status") == "patch21_4_complete",
+                "typed-query rejection exists without complete Patch 21.4 authority")
 
     parser_fixture = read(record["parser_fixture"])
     complete = read(record["complete_surface_fixture"])

@@ -26,7 +26,7 @@ func main() int {
     mut cross_capability_phase21_3 := 1;
     return query {
         root Phase21WorkspaceRow as workspace;
-        predicate workspace.workspace_id == workspace_scope_phase21_3;
+        predicate workspace.workspace_id == trusted_scope_from_context("workspace_id");
         join Phase21MemberRow as member predicate member.workspace_id == member_scope_phase21_3;
         nested query {
             root Phase21AuditRow as audit;

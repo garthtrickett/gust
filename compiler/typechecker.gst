@@ -22,7 +22,9 @@ type ExpressionProvenance[ctx] struct {
     resolved_type: ast.Type[ctx],
     address_origin: AddressOriginMetadata,
     legacy_origins: Index[OriginSet[ctx], ctx],
-    resource_root_identity: str
+    resource_root_identity: str,
+    trusted_scope_identity: str,
+    trusted_scope_origin_kind: str
 }
 
 func init_address_origin_unknown(origin: *AddressOriginMetadata) {
@@ -658,6 +660,7 @@ type FunctionSignature[ctx] struct {
     requires_unsafe_call: int,
     requires_layout_metadata: int,
     requires_sandbox_arena: int,
+    is_compile_time_only: int,
     is_private: int
 }
 
@@ -669,6 +672,7 @@ func init_function_signature_ffi_defaults(sig: *FunctionSignature[ctx]) {
         (*sig).requires_unsafe_call = 0;
         (*sig).requires_layout_metadata = 0;
         (*sig).requires_sandbox_arena = 0;
+        (*sig).is_compile_time_only = 0;
         (*sig).is_private = 0;
     }
 }
@@ -781,6 +785,8 @@ type TypeEnvironment[ctx] struct {
     struct_linear_destructor: std.HashMap[str, str, ctx],
     struct_declared_destructor: std.HashMap[str, str, ctx],
     struct_declared_opaque: std.HashMap[str, int, ctx],
+    struct_scoped_entity: std.HashMap[str, int, ctx],
+    struct_scope_field: std.HashMap[str, str, ctx],
     struct_declaration_module: std.HashMap[str, str, ctx],
     function_declaration_module: std.HashMap[str, str, ctx],
     struct_validated_destructor: std.HashMap[str, str, ctx],
@@ -829,6 +835,7 @@ type TypeEnvironment[ctx] struct {
     current_function_local_vars: Index[OriginSet[ctx], ctx],
     checked_results: std.HashMap[str, int, ctx],
     in_unsafe_block: int,
+    in_typed_query_predicate: int,
     active_monomorphizations: std.HashMap[str, int, ctx],
     current_alloc_struct: str,
     current_params: std.Vector[str, ctx],
@@ -880,6 +887,8 @@ func expression_provenance_unknown(t: ast.Type[ctx], ctx: &Arena) ExpressionProv
     prov.address_origin = origin;
     prov.legacy_origins = set_init(ctx);
     prov.resource_root_identity = "";
+    prov.trusted_scope_identity = "";
+    prov.trusted_scope_origin_kind = "";
     return prov;
 }
 
@@ -891,6 +900,8 @@ func expression_provenance_safe_arena(t: ast.Type[ctx], ctx: &Arena) ExpressionP
     prov.address_origin = origin;
     prov.legacy_origins = set_init(ctx);
     prov.resource_root_identity = "";
+    prov.trusted_scope_identity = "";
+    prov.trusted_scope_origin_kind = "";
     return prov;
 }
 
@@ -902,6 +913,8 @@ func expression_provenance_raw_derived(t: ast.Type[ctx], ctx: &Arena) Expression
     prov.address_origin = origin;
     prov.legacy_origins = set_init(ctx);
     prov.resource_root_identity = "";
+    prov.trusted_scope_identity = "";
+    prov.trusted_scope_origin_kind = "";
     return prov;
 }
 
@@ -913,6 +926,8 @@ func expression_provenance_sandbox_derived(t: ast.Type[ctx], ctx: &Arena) Expres
     prov.address_origin = origin;
     prov.legacy_origins = set_init(ctx);
     prov.resource_root_identity = "";
+    prov.trusted_scope_identity = "";
+    prov.trusted_scope_origin_kind = "";
     return prov;
 }
 
@@ -2174,6 +2189,241 @@ func env_report_linear_resource_use_after_move(env: *TypeEnvironment[ctx], name:
     }
 }
 
+func typechecker_query_side_is_scoped_field(
+    expr_idx: Index[ast.Expression[ctx], ctx],
+    binding_name: str,
+    scope_field: str,
+    ctx: &Arena
+) int {
+    unsafe {
+        if expr_idx == empty[Index[ast.Expression[ctx], ctx]] {
+            return 0;
+        }
+        mut expr_phase21_4 := ctx[expr_idx];
+        if expr_phase21_4.tag != 11 { // Selector
+            return 0;
+        }
+        if std.str_eq(expr_phase21_4.Selector.right, scope_field) == 0 {
+            return 0;
+        }
+        mut base_phase21_4 := ctx[expr_phase21_4.Selector.left];
+        if base_phase21_4.tag != 0 { // Identifier
+            return 0;
+        }
+        return std.str_eq(base_phase21_4.Identifier.name, binding_name);
+    }
+}
+
+func typechecker_make_trusted_scope_type(
+    scope_identity: str,
+    ctx: &Arena
+) ast.Type[ctx] {
+    mut scope_args_phase21_4: std.Vector[ast.Type[ctx], ctx] :=
+        std.VectorNew(ctx);
+    scope_args_phase21_4.Push(
+        make_type_brand_marker(scope_identity, ctx)
+    );
+    return make_type_generic("Scope", scope_args_phase21_4, ctx);
+}
+
+func typechecker_type_is_matching_trusted_scope(
+    t: ast.Type[ctx],
+    required_scope_identity: str,
+    ctx: &Arena
+) int {
+    unsafe {
+        if t.tag != 10 || std.str_eq(t.Generic.name, "Scope") == 0 {
+            return 0;
+        }
+        mut scope_args_phase21_4: std.Vector[ast.Type[ctx], ctx] :=
+            ctx[t.Generic.args];
+        if len(scope_args_phase21_4) != 1 ||
+           typechecker_type_is_brand_marker(scope_args_phase21_4[0], ctx) == 0
+        {
+            return 0;
+        }
+        return std.str_eq(
+            scope_args_phase21_4[0].Struct.struct_name,
+            required_scope_identity
+        );
+    }
+}
+
+func typechecker_query_expression_has_trusted_scope(
+    expr_idx: Index[ast.Expression[ctx], ctx],
+    required_scope_identity: str,
+    env: *TypeEnvironment[ctx],
+    scope: Index[Scope[ctx], ctx],
+    ctx: &Arena
+) int {
+    unsafe {
+        mut previous_query_predicate_phase21_4 :=
+            (*env).in_typed_query_predicate;
+        (*env).in_typed_query_predicate = 1;
+        mut provenance_phase21_4 := check_expression_with_provenance(
+            expr_idx, env, scope, ctx
+        );
+        (*env).in_typed_query_predicate = previous_query_predicate_phase21_4;
+        if typechecker_type_is_matching_trusted_scope(
+            provenance_phase21_4.resolved_type,
+            required_scope_identity,
+            ctx
+        ) == 0 {
+            return 0;
+        }
+        if std.str_eq(
+            provenance_phase21_4.trusted_scope_origin_kind,
+            "trusted_request_context_scope"
+        ) == 0 {
+            return 0;
+        }
+        return std.str_eq(
+            provenance_phase21_4.trusted_scope_identity,
+            required_scope_identity
+        );
+    }
+}
+
+func typechecker_query_predicate_discharges_root(
+    predicate_idx: Index[ast.Expression[ctx], ctx],
+    binding_name: str,
+    scope_field: str,
+    env: *TypeEnvironment[ctx],
+    scope: Index[Scope[ctx], ctx],
+    ctx: &Arena
+) int {
+    unsafe {
+        if predicate_idx == empty[Index[ast.Expression[ctx], ctx]] {
+            return 0;
+        }
+        mut predicate_phase21_4 := ctx[predicate_idx];
+        if predicate_phase21_4.tag != 10 { // Binary
+            return 0;
+        }
+        if std.str_eq(predicate_phase21_4.Binary.op, "&&") == 1 {
+            if typechecker_query_predicate_discharges_root(
+                predicate_phase21_4.Binary.left,
+                binding_name,
+                scope_field,
+                env,
+                scope,
+                ctx
+            ) == 1 {
+                return 1;
+            }
+            return typechecker_query_predicate_discharges_root(
+                predicate_phase21_4.Binary.right,
+                binding_name,
+                scope_field,
+                env,
+                scope,
+                ctx
+            );
+        }
+        if std.str_eq(predicate_phase21_4.Binary.op, "==") == 0 {
+            return 0;
+        }
+        if typechecker_query_side_is_scoped_field(
+            predicate_phase21_4.Binary.left,
+            binding_name,
+            scope_field,
+            ctx
+        ) == 1 {
+            return typechecker_query_expression_has_trusted_scope(
+                predicate_phase21_4.Binary.right,
+                scope_field,
+                env,
+                scope,
+                ctx
+            );
+        }
+        if typechecker_query_side_is_scoped_field(
+            predicate_phase21_4.Binary.right,
+            binding_name,
+            scope_field,
+            ctx
+        ) == 1 {
+            return typechecker_query_expression_has_trusted_scope(
+                predicate_phase21_4.Binary.left,
+                scope_field,
+                env,
+                scope,
+                ctx
+            );
+        }
+        return 0;
+    }
+}
+
+func typechecker_check_query_scope_obligations(
+    expr: ast.Expression[ctx],
+    env: *TypeEnvironment[ctx],
+    scope: Index[Scope[ctx], ctx],
+    ctx: &Arena
+) {
+    unsafe {
+        mut roots_phase21_4: std.Vector[ast.QueryRoot[ctx], ctx] :=
+            ctx[expr.Query.roots];
+        mut predicates_phase21_4: std.Vector[ast.Expression[ctx], ctx] :=
+            ctx[expr.Query.predicates];
+        mut root_index_phase21_4 := 0;
+        while root_index_phase21_4 < len(roots_phase21_4) {
+            mut root_phase21_4 := roots_phase21_4[root_index_phase21_4];
+            mut resolved_entity_phase21_4 := env_resolve_namespaced_ident(
+                env, root_phase21_4.entity_name, ctx
+            );
+            mut scoped_lookup_phase21_4 := (*env).struct_scoped_entity.Get(
+                resolved_entity_phase21_4
+            );
+            if scoped_lookup_phase21_4.Ok {
+                if scoped_lookup_phase21_4.Val == 1 {
+                    mut field_lookup_phase21_4 := (*env).struct_scope_field.Get(
+                        resolved_entity_phase21_4
+                    );
+                    mut discharged_phase21_4 := 0;
+                    if field_lookup_phase21_4.Ok {
+                        mut predicate_index_phase21_4 := 0;
+                        while predicate_index_phase21_4 < len(predicates_phase21_4) {
+                            mut predicate_idx_phase21_4:
+                                Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                            ctx.Set(
+                                predicate_idx_phase21_4,
+                                predicates_phase21_4[predicate_index_phase21_4]
+                            );
+                            if typechecker_query_predicate_discharges_root(
+                                predicate_idx_phase21_4,
+                                root_phase21_4.binding_name,
+                                field_lookup_phase21_4.Val,
+                                env,
+                                scope,
+                                ctx
+                            ) == 1 {
+                                discharged_phase21_4 = 1;
+                            }
+                            predicate_index_phase21_4 =
+                                predicate_index_phase21_4 + 1;
+                        }
+                    }
+                    if discharged_phase21_4 == 0 {
+                        mut message_phase21_4 :=
+                            "Semantic Error: [TenantScopeProvenance] error: query lacks trusted tenant-scope provenance for scoped root '";
+                        message_phase21_4 = std.Concat(
+                            message_phase21_4, root_phase21_4.entity_name
+                        );
+                        message_phase21_4 = std.Concat(
+                            message_phase21_4, "'"
+                        );
+                        report_error(
+                            2, message_phase21_4, expr.Query.span, env, ctx
+                        );
+                    }
+                }
+            }
+            root_index_phase21_4 = root_index_phase21_4 + 1;
+        }
+    }
+}
+
 func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvironment[ctx], scope: Index[Scope[ctx], ctx], ctx: &Arena) ast.Type[ctx] {
     unsafe {
         mut dummy: ast.Type[ctx];
@@ -2183,7 +2433,10 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
         }
         mut expr := ctx[expr_idx];
 
-        if expr.tag == 14 { // Query (Phase 21.3 semantic no-op)
+        if expr.tag == 14 { // Query (Phase 21.4 primary-root enforcement)
+            typechecker_check_query_scope_obligations(
+                expr, env, scope, ctx
+            );
             return check_expression(expr.Query.terminal, env, scope, ctx);
         }
 
@@ -3636,6 +3889,34 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 env, resolved_func, expr.Call.span, 0, ctx
             );
 
+            if std.str_eq(resolved_func, "trusted_scope_from_context") == 1 {
+                mut trusted_args_phase21_4: std.Vector[ast.Expression[ctx], ctx] :=
+                    ctx[expr.Call.arguments];
+                if (*env).in_typed_query_predicate == 0 {
+                    report_error(
+                        2,
+                        "Semantic Error: [TrustedScopeBoundary] trusted_scope_from_context may be used only inside a compiler-owned typed-query predicate",
+                        expr.Call.span,
+                        env,
+                        ctx
+                    );
+                }
+                if len(trusted_args_phase21_4) != 1 ||
+                   trusted_args_phase21_4[0].tag != 2
+                {
+                    report_error(
+                        2,
+                        "Semantic Error: [TrustedScopeBoundary] trusted_scope_from_context requires one compile-time scope identity string",
+                        expr.Call.span,
+                        env,
+                        ctx
+                    );
+                }
+                return typechecker_make_trusted_scope_type(
+                    trusted_args_phase21_4[0].String.val, ctx
+                );
+            }
+
             if std.str_eq(resolved_func, "len") {
                 mut args_vec_len_call: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
                 if len(args_vec_len_call) != 1 {
@@ -4771,6 +5052,30 @@ func check_expression_with_provenance(expr_idx: Index[ast.Expression[ctx], ctx],
             if expr.tag == 12 { // Call
                 mut call_name_prov := expression_to_string(expr.Call.function, ctx);
                 mut resolved_call_name_prov := env_resolve_namespaced_ident(env, call_name_prov, ctx);
+
+                if std.str_eq(
+                    resolved_call_name_prov,
+                    "trusted_scope_from_context"
+                ) == 1 && (*env).in_typed_query_predicate == 1 {
+                    mut trusted_args_prov_phase21_4:
+                        std.Vector[ast.Expression[ctx], ctx] :=
+                            ctx[expr.Call.arguments];
+                    if len(trusted_args_prov_phase21_4) == 1 &&
+                       trusted_args_prov_phase21_4[0].tag == 2
+                    {
+                        mut trusted_prov_phase21_4 :=
+                            expression_provenance_safe_arena(t, ctx);
+                        trusted_prov_phase21_4.legacy_origins = legacy_origins;
+                        trusted_prov_phase21_4.trusted_scope_identity =
+                            std.Clone(
+                                ctx,
+                                trusted_args_prov_phase21_4[0].String.val
+                            );
+                        trusted_prov_phase21_4.trusted_scope_origin_kind =
+                            std.Clone(ctx, "trusted_request_context_scope");
+                        return trusted_prov_phase21_4;
+                    }
+                }
 
                 if t.tag == 11 { // Reference result may be guarded access.
                     mut call_resource_root := env_resource_root_identity_for_call(
@@ -7167,6 +7472,21 @@ func register_fn(env: *TypeEnvironment[ctx], name: str, params: std.Vector[ast.T
             register_fn(env, "os_ScratchReset", p_void, t_void, ctx);
             register_fn(env, "std.Yield", p_void, t_void, ctx);
             register_fn(env, "std_Yield", p_void, t_void, ctx);
+            // Compiler-owned compile-time boundary. It may appear only inside
+            // typed-query predicates; query lowering never emits this call.
+            mut sig_trusted_scope: FunctionSignature[ctx];
+            init_function_signature_ffi_defaults(&sig_trusted_scope);
+            sig_trusted_scope.params = p_str;
+            sig_trusted_scope.return_type =
+                typechecker_make_trusted_scope_type("Any", ctx);
+            sig_trusted_scope.return_origins = set_init(ctx);
+            sig_trusted_scope.is_compile_time_only = 1;
+            mut trusted_scope_param_names: std.Vector[str, ctx] := std.VectorNew(ctx);
+            trusted_scope_param_names.Push("scope_identity");
+            sig_trusted_scope.param_names = trusted_scope_param_names;
+            env_register_function(
+                env, "trusted_scope_from_context", sig_trusted_scope, ctx
+            );
 
             // os.Arena.New
             mut sig_arena_new: FunctionSignature[ctx];
@@ -7373,6 +7693,8 @@ func env_new(ctx: &Arena) TypeEnvironment[ctx] {
         env_ref_new.struct_linear_destructor = std.HashMapNew(ctx);
         env_ref_new.struct_declared_destructor = std.HashMapNew(ctx);
         env_ref_new.struct_declared_opaque = std.HashMapNew(ctx);
+        env_ref_new.struct_scoped_entity = std.HashMapNew(ctx);
+        env_ref_new.struct_scope_field = std.HashMapNew(ctx);
         env_ref_new.struct_declaration_module = std.HashMapNew(ctx);
         env_ref_new.function_declaration_module = std.HashMapNew(ctx);
         env_ref_new.struct_validated_destructor = std.HashMapNew(ctx);
@@ -7421,6 +7743,7 @@ func env_new(ctx: &Arena) TypeEnvironment[ctx] {
         env_ref_new.current_function_local_vars = empty[Index[OriginSet[ctx], ctx]];
         env_ref_new.checked_results = std.HashMapNew(ctx);
         env_ref_new.in_unsafe_block = 0;
+        env_ref_new.in_typed_query_predicate = 0;
         env_ref_new.active_monomorphizations = std.HashMapNew(ctx);
         env_ref_new.current_alloc_struct = "";
         env_ref_new.current_params = std.VectorNew(ctx);
@@ -10798,6 +11121,51 @@ func env_pre_register_statement(env: *TypeEnvironment[ctx], stmt: ast.Statement[
             mut name := stmt.StructDecl.name;
             mut namespaced_name := env_resolve_namespaced_ident(env, name, ctx);
 
+            if stmt.StructDecl.is_scoped_entity == 1 {
+                mut scoped_field_found_phase21_4 := 0;
+                mut scoped_fields_phase21_4: std.Vector[ast.FieldDef[ctx], ctx] :=
+                    ctx[stmt.StructDecl.fields];
+                mut scoped_field_index_phase21_4 := 0;
+                while scoped_field_index_phase21_4 < len(scoped_fields_phase21_4) {
+                    if std.str_eq(
+                        scoped_fields_phase21_4[scoped_field_index_phase21_4].name,
+                        stmt.StructDecl.scope_field
+                    ) == 1 {
+                        scoped_field_found_phase21_4 = 1;
+                    }
+                    scoped_field_index_phase21_4 = scoped_field_index_phase21_4 + 1;
+                }
+                if scoped_field_found_phase21_4 == 0 {
+                    mut scoped_field_message_phase21_4 :=
+                        "Semantic Error: [ScopedEntityField] scoped entity field '";
+                    scoped_field_message_phase21_4 = std.Concat(
+                        scoped_field_message_phase21_4,
+                        stmt.StructDecl.scope_field
+                    );
+                    scoped_field_message_phase21_4 = std.Concat(
+                        scoped_field_message_phase21_4,
+                        "' is not declared on entity '"
+                    );
+                    scoped_field_message_phase21_4 = std.Concat(
+                        scoped_field_message_phase21_4, namespaced_name
+                    );
+                    scoped_field_message_phase21_4 = std.Concat(
+                        scoped_field_message_phase21_4, "'"
+                    );
+                    report_error(
+                        2, scoped_field_message_phase21_4,
+                        stmt.StructDecl.span, env, ctx
+                    );
+                }
+                (*env).struct_scoped_entity.Insert(
+                    std.Clone(ctx, namespaced_name), 1
+                );
+                (*env).struct_scope_field.Insert(
+                    std.Clone(ctx, namespaced_name),
+                    std.Clone(ctx, stmt.StructDecl.scope_field)
+                );
+            }
+
             mut is_generic := 0;
             if stmt.StructDecl.generics != empty[Index[std.Vector[str, ctx], ctx]] {
                 mut generics_vec_struct_decl: std.Vector[str, ctx] := ctx[stmt.StructDecl.generics];
@@ -10969,6 +11337,17 @@ func env_pre_register_statement(env: *TypeEnvironment[ctx], stmt: ast.Statement[
         if stmt.tag == 3 { // FunctionDecl
             mut name := stmt.FunctionDecl.name;
             mut namespaced_name := env_resolve_namespaced_ident(env, name, ctx);
+
+            if std.str_eq(namespaced_name, "trusted_scope_from_context") == 1 {
+                report_error(
+                    2,
+                    "Semantic Error: [ReservedCompilerIntrinsic] trusted_scope_from_context is a compiler-owned trusted request-context boundary",
+                    stmt.FunctionDecl.span,
+                    env,
+                    ctx
+                );
+                return;
+            }
 
             mut sig: FunctionSignature[ctx];
             init_function_signature_ffi_defaults(&sig);
