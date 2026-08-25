@@ -89,4 +89,4 @@ do
     "$build_root/$attack_id.$kind.cranelift.stdout"
 done < <(python3 scripts/phase21_od8_adversarial_verdict.py negative-cases)
 
-echo "✅ Phase 21.7 OD-8 attack suite passed: 27 in-scope attempts, 0 counterexamples, bounded typed-query verdict"
+echo "✅ Phase 21.7 OD-8 attack suite passed: 28 in-scope attempts, 0 counterexamples, bounded typed-query verdict"

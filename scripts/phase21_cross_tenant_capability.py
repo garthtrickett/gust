@@ -21,7 +21,8 @@ POSITIVE_KINDS = ["direct_cross_tenant_capability",
                   "ordinary_scoped_query_unchanged"]
 NEGATIVE_KINDS = ["forged_value", "ordinary_helper", "reexport",
                   "nested_nontransitive", "outside_marker",
-                  "reserved_redefinition", "wrong_arity"]
+                  "predicate_capability_misuse", "reserved_redefinition",
+                  "wrong_arity"]
 
 
 def require(condition: bool, message: str) -> None:
@@ -55,7 +56,7 @@ def validate() -> dict:
             "reserved_compile_time_only_host_capability_recognized_only_as_the_direct_cross_tenant_expression_at_the_owning_query",
             "capability policy drifted")
     require(record.get("local_bypass_policy") ==
-            "a_valid_marker_bypasses_only_the_current_query_local_scope_obligations_and_every_nested_query_requires_its_own_marker_or_trusted_scope_provenance",
+            "a_valid_marker_bypasses_only_the_current_query_local_scope_obligation_reporting_not_predicate_intrinsic_boundary_validation_and_every_nested_query_requires_its_own_marker_or_trusted_scope_provenance",
             "local bypass policy drifted")
     require(record.get("nontransitive_policy") ==
             "ordinary_values_variables_helpers_returns_reexports_and_outer_query_markers_never_carry_cross_tenant_authority",
@@ -83,6 +84,7 @@ def validate() -> dict:
         "typechecker_query_cross_tenant_capability_state",
         "cross_tenant_capability_from_host",
         "cross_tenant_state_phase21_6 == 0",
+        "typechecker_validate_query_predicates_when_scope_bypassed",
         "CrossTenantCapabilityBoundary",
         "is_compile_time_only = 1",
     ):
@@ -134,7 +136,8 @@ def render(record: dict) -> str:
         f"- Diagnostic: `{record['diagnostic_class']}` — `{record['diagnostic']}`",
         "", "A deliberate cross-tenant query must spell the marker at that query",
         "and directly invoke the reserved compile-time host capability. The marker",
-        "bypasses only that query's local scoped-root obligations. It cannot flow",
+        "bypasses only that query's local scoped-root obligation reporting; predicate",
+        "intrinsic boundaries remain validated. Authority cannot flow",
         "through values, variables, helpers, returns, re-exports, or an outer query.",
         "", "## Positive evidence", "",
     ]

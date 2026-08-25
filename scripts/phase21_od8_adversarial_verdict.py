@@ -73,6 +73,9 @@ def validate() -> dict:
     require(verdict.get("operator_design_date") == "2026-08-24" and
             verdict.get("evidence_date") == "2026-08-25",
             "OD-8 decision or evidence date drifted")
+    require(verdict.get("post_merge_reconciliation") ==
+            "patch21_7b_added_the_omitted_marked_predicate_boundary_attempt_and_reexecuted_the_complete_suite",
+            "OD-8 post-merge reconciliation is missing")
     require(verdict.get("in_scope_counterexamples") == [],
             "positive verdict records an in-scope counterexample")
 
@@ -102,10 +105,10 @@ def validate() -> dict:
                 require(row.get("diagnostic"),
                         f"rejection witness lacks diagnostic: {row['kind']}")
             attempts.append(row)
-    require(len(attempts) == 27,
+    require(len(attempts) == 28,
             "predefined in-scope witness population drifted")
     require(sum(row["expected"] == "accept" for row in attempts) == 5 and
-            sum(row["expected"] == "reject" for row in attempts) == 22,
+            sum(row["expected"] == "reject" for row in attempts) == 23,
             "accepted/rejected witness split drifted")
 
     excluded = record.get("out_of_scope_probes", [])
@@ -167,6 +170,7 @@ def render(record: dict) -> str:
         f"- OD-8 status: `{verdict['od8_status']}`",
         f"- Verdict: `{verdict['decision']}`",
         f"- Evidence date: `{verdict['evidence_date']}`",
+        f"- Post-merge reconciliation: `{verdict['post_merge_reconciliation']}`",
         f"- In-scope counterexamples: `{len(verdict['in_scope_counterexamples'])}`",
         "",
         "## In-scope attacks",
