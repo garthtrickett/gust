@@ -22722,6 +22722,15 @@ guard-stdlib-s1-resource-prerequisites:
     module="tests/stdlib_s1_mutex_guard_generic_derivation_module.gst"
     witness="tests/stdlib_s1_mutex_guard_generic_derivation_rejected.gst"
 
+    require_cr15_contract() {
+      local roadmap_file="$1"
+      local shared_file="$2"
+      local vision_file="$3"
+      rg -n -F 'bounded compiler-owned derivation' "$roadmap_file" >/dev/null &&
+        rg -n -F 'bounded compiler-owned derivation' "$shared_file" >/dev/null &&
+        rg -n -F 'bounded compiler-owned derivation' "$vision_file" >/dev/null
+    }
+
     # S1.7 remains historical evidence, while the live roadmap must distinguish
     # the resolved resource floor from the current OD-2 derivation blocker.
     rg -n -F 'Status: re-verified 2026-08-19 by Patch S1.7' STEP52_RESOURCE_SEMANTICS.md >/dev/null
@@ -22733,10 +22742,26 @@ guard-stdlib-s1-resource-prerequisites:
     # turn into a local exception for user-written generic functions.
     rg -n -F 'User-written generic functions are not available initially.' "$vision" >/dev/null
     rg -n -F 'This does not reopen OD-2.' "$vision" >/dev/null
-    rg -n -F 'bounded compiler-owned derivation' "$roadmap" "$shared" "$vision" >/dev/null
+    require_cr15_contract "$roadmap" "$shared" "$vision"
     rg -n -F 'reusable guard blocked on CR-15' "$foundations" >/dev/null
     rg -n -F 'Current correction 2026-08-24.' "$findings" >/dev/null
     rg -n -F 'User-defined extension-method' "$roadmap" >/dev/null
+
+    # Prove the assertions are file-specific rather than another union search.
+    contract_probe_root="$(mktemp -d)"
+    trap 'rm -rf "$contract_probe_root"' EXIT
+    cp "$shared" "$contract_probe_root/shared-without-cr15.md"
+    sed -i '/bounded compiler-owned derivation/d' "$contract_probe_root/shared-without-cr15.md"
+    if require_cr15_contract "$roadmap" "$contract_probe_root/shared-without-cr15.md" "$vision"; then
+      echo "CR-15 guard accepted a shared-zone record with its derivation contract removed."
+      exit 1
+    fi
+    cp "$vision" "$contract_probe_root/vision-without-cr15.md"
+    sed -i '/bounded compiler-owned derivation/d' "$contract_probe_root/vision-without-cr15.md"
+    if require_cr15_contract "$roadmap" "$shared" "$contract_probe_root/vision-without-cr15.md"; then
+      echo "CR-15 guard accepted a vision record with its derivation contract removed."
+      exit 1
+    fi
 
     for fixture in "$module" "$witness"; do
       test -f "$fixture"
