@@ -89,10 +89,15 @@ def validate() -> dict:
     ):
         require(spelling in typechecker,
                 f"per-root implementation is missing: {spelling}")
-    require("cross_tenant_capability" not in
-            typechecker[typechecker.index("typechecker_build_query_scope_obligations"):
-                        typechecker.index("func check_expression_internal")],
-            "Patch 21.5 widened into cross-tenant capability enforcement")
+    successor = registry.get("phase21_cross_tenant_capability")
+    if successor is None:
+        require("cross_tenant_capability" not in
+                typechecker[typechecker.index("typechecker_build_query_scope_obligations"):
+                            typechecker.index("func check_expression_internal")],
+                "Patch 21.5 widened into cross-tenant capability enforcement")
+    else:
+        require(successor.get("status") == "patch21_6_complete",
+                "cross-tenant enforcement exists without complete Patch 21.6 authority")
 
     boundary = record.get("boundary", {})
     for field in ("primary_scoped_roots_enforced", "join_roots_enforced",
@@ -121,7 +126,9 @@ def validate() -> dict:
     workflow = WORKFLOW.read_text(encoding="utf-8")
     require(f"just {GUARD_L1}" in workflow and f"just {GUARD_L2}" in workflow,
             "dedicated Patch 21.5 workflow does not own both guards")
-    return record
+    projected = dict(record)
+    projected["_cross_tenant_successor_complete"] = successor is not None
+    return projected
 
 
 def render(record: dict) -> str:
@@ -152,10 +159,14 @@ def render(record: dict) -> str:
             f"- `{row['kind']}` — `{row['source_fixture']}` — "
             f"`{row['root_kind']}` binding `{row['binding']}` rejected at its query"
         )
-    lines += ["", "Unscoped joins create no obligation. Cross-tenant capability",
-              "enforcement remains Patch 21.6. Trusted-context establishment, raw",
-              "SQL, MIR operations, ABI/layout, runtime symbols, and Stdlib remain",
-              "outside this patch.", ""]
+    lines += ["", "Unscoped joins create no obligation."]
+    if record.get("_cross_tenant_successor_complete"):
+        lines += ["Successor Patch 21.6 now enforces the explicit, non-transitive",
+                  "cross-tenant capability boundary at each owning query site."]
+    else:
+        lines += ["Cross-tenant capability enforcement remains Patch 21.6."]
+    lines += ["Trusted-context establishment, raw SQL, MIR operations, ABI/layout,",
+              "runtime symbols, and Stdlib remain outside this patch.", ""]
     return "\n".join(lines)
 
 

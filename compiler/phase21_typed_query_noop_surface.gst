@@ -23,7 +23,6 @@ type Phase21AuditRow struct {
 func main() int {
     mut workspace_scope_phase21_3 := 7;
     mut member_scope_phase21_3 := 7;
-    mut cross_capability_phase21_3 := 1;
     return query {
         root Phase21WorkspaceRow as workspace;
         predicate workspace.workspace_id == trusted_scope_from_context("workspace_id");
@@ -33,7 +32,7 @@ func main() int {
             predicate audit.workspace_id == trusted_scope_from_context("workspace_id");
             terminal 11;
         };
-        cross_tenant cross_capability_phase21_3;
+        cross_tenant cross_tenant_capability_from_host();
         terminal 37;
     };
 }

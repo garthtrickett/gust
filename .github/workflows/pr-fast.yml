@@ -422,6 +422,9 @@ jobs:
       - name: Phase 21 per-root join and nested-query obligations
         run: just guard-cranelift-phase21-per-root-obligations-contract
 
+      - name: Phase 21 explicit cross-tenant capability boundary
+        run: just guard-cranelift-phase21-cross-tenant-capability-contract
+
       - name: Phase 19 cross-feature composition
         run: just guard-cranelift-phase19-composition-contract
 

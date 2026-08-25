@@ -86,7 +86,7 @@ Out of scope:
 - [x] Patch 21.3 — Typed-Query Surface Under the No-op — DONE
 - [x] Patch 21.4 — Trusted Scope Provenance Enforcement — DONE
 - [x] Patch 21.5 — Per-Root Join and Nested-Query Obligations — DONE
-- [ ] Patch 21.6 — Explicit Cross-Tenant Capability Boundary
+- [x] Patch 21.6 — Explicit Cross-Tenant Capability Boundary — DONE
 - [ ] Patch 21.7 — OD-8 Adversarial Soundness Verdict
 - [ ] Patch 21.7a — Tenant-Scope Bootstrap Seed Reconvergence
 - [ ] Patch 21.8 — Phase 20 Residue Migration Authority

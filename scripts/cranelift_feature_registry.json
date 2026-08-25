@@ -2141,6 +2141,49 @@
       "edits_stdlib": false
     }
   },
+  "phase21_cross_tenant_capability": {
+    "contract_version": "phase21_cross_tenant_capability_v1",
+    "status": "patch21_6_complete",
+    "next_patch": "21.7",
+    "review_view": "compiler/CRANELIFT_PHASE21_CROSS_TENANT_CAPABILITY.md",
+    "marker_syntax": "cross_tenant capability_expression",
+    "trusted_host_intrinsic": "cross_tenant_capability_from_host",
+    "capability_type": "CrossTenantCapability",
+    "capability_policy": "reserved_compile_time_only_host_capability_recognized_only_as_the_direct_cross_tenant_expression_at_the_owning_query",
+    "local_bypass_policy": "a_valid_marker_bypasses_only_the_current_query_local_scope_obligations_and_every_nested_query_requires_its_own_marker_or_trusted_scope_provenance",
+    "nontransitive_policy": "ordinary_values_variables_helpers_returns_reexports_and_outer_query_markers_never_carry_cross_tenant_authority",
+    "diagnostic_class": "CrossTenantCapability",
+    "diagnostic": "error: cross_tenant requires a direct compiler-owned host capability at this query",
+    "boundary_diagnostic_class": "CrossTenantCapabilityBoundary",
+    "positive_fixtures": [
+      {"kind":"direct_cross_tenant_capability","source_fixture":"compiler/phase21_cross_tenant_capability_positive.gst","mir_to_c_exit":71,"cranelift_exit":71},
+      {"kind":"ordinary_scoped_query_unchanged","source_fixture":"compiler/phase21_cross_tenant_ordinary_scoped_positive.gst","mir_to_c_exit":72,"cranelift_exit":72}
+    ],
+    "negative_fixtures": [
+      {"kind":"forged_value","source_fixture":"compiler/phase21_cross_tenant_forged_invalid.gst","diagnostic_class":"CrossTenantCapability"},
+      {"kind":"ordinary_helper","source_fixture":"compiler/phase21_cross_tenant_helper_invalid.gst","diagnostic_class":"CrossTenantCapability"},
+      {"kind":"reexport","source_fixture":"compiler/phase21_cross_tenant_reexport_invalid.gst","diagnostic_class":"CrossTenantCapabilityBoundary"},
+      {"kind":"nested_nontransitive","source_fixture":"compiler/phase21_cross_tenant_nested_nontransitive_invalid.gst","diagnostic_class":"TenantScopeProvenance"},
+      {"kind":"outside_marker","source_fixture":"compiler/phase21_cross_tenant_outside_marker_invalid.gst","diagnostic_class":"CrossTenantCapabilityBoundary"},
+      {"kind":"reserved_redefinition","source_fixture":"compiler/phase21_cross_tenant_redefinition_invalid.gst","diagnostic_class":"ReservedCompilerIntrinsic"},
+      {"kind":"wrong_arity","source_fixture":"compiler/phase21_cross_tenant_wrong_arity_invalid.gst","diagnostic_class":"CrossTenantCapability"}
+    ],
+    "boundary": {
+      "cross_tenant_capability_enforced": true,
+      "capability_is_nonforgeable": true,
+      "capability_is_nontransitive": true,
+      "marker_is_visible_at_query_site": true,
+      "ordinary_scoped_queries_changed": false,
+      "raw_SQL_included_in_typed_query_guarantee": false,
+      "adds_database_runtime": false,
+      "adds_broader_effect_system": false,
+      "trusted_host_capability_establishment_claimed": false,
+      "adds_or_changes_MIR_operations": false,
+      "changes_ABI_layout_or_runtime_symbols": false,
+      "changes_bootstrap_seed": false,
+      "edits_stdlib": false
+    }
+  },
   "phase19_brand_authority": {
     "authority_version": "phase19_brand_identity_authority_v1",
     "status": "ready_for_patch19_3",
