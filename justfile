@@ -16939,6 +16939,25 @@ guard-cranelift-phase21-roadmap:
     python3 scripts/phase21_roadmap.py validate
     python3 scripts/phase21_roadmap.py check-review
 
+guard-cranelift-phase21-opening-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔎 Checking Phase 21 opening evidence authority..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase21-opening-contract | grep -F $'guard-cranelift-phase21-opening-contract\t1\t' >/dev/null
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase21_roadmap.py validate
+    python3 scripts/phase21_roadmap.py check-review
+    python3 scripts/phase21_opening.py validate
+    python3 scripts/phase21_opening.py check-review
+
+guard-cranelift-phase21-opening-evidence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Replaying Phase 21 opening witnesses, residues, and full-compiler baseline..."
+    just guard-cranelift-phase21-opening-contract
+    bash scripts/phase21_opening.sh
+
 guard-cranelift-phase18-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail
