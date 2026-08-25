@@ -76,6 +76,7 @@ typedef struct ast__Expression_Identifier ast__Expression_Identifier;
 typedef struct ast__Expression_IndexAccess ast__Expression_IndexAccess;
 typedef struct ast__Expression_Integer ast__Expression_Integer;
 typedef struct ast__Expression_Move ast__Expression_Move;
+typedef struct ast__Expression_Query ast__Expression_Query;
 typedef struct ast__Expression_Selector ast__Expression_Selector;
 typedef struct ast__Expression_String ast__Expression_String;
 typedef struct ast__Expression_Take ast__Expression_Take;
@@ -84,6 +85,8 @@ typedef struct ast__FieldDef ast__FieldDef;
 typedef struct ast__MatchCase ast__MatchCase;
 typedef struct ast__Parameter ast__Parameter;
 typedef struct ast__Program ast__Program;
+typedef struct ast__QueryJoin ast__QueryJoin;
+typedef struct ast__QueryRoot ast__QueryRoot;
 typedef struct ast__Statement_Assignment ast__Statement_Assignment;
 typedef struct ast__Statement_Defer ast__Statement_Defer;
 typedef struct ast__Statement_EnumDecl ast__Statement_EnumDecl;
@@ -645,6 +648,8 @@ typedef struct std_Vector_ast__FieldDef std_Vector_ast__FieldDef;
 typedef struct std_Vector_ast__MatchCase std_Vector_ast__MatchCase;
 typedef struct std_Vector_ast__Parameter std_Vector_ast__Parameter;
 typedef struct std_Vector_ast__Program std_Vector_ast__Program;
+typedef struct std_Vector_ast__QueryJoin std_Vector_ast__QueryJoin;
+typedef struct std_Vector_ast__QueryRoot std_Vector_ast__QueryRoot;
 typedef struct std_Vector_ast__Statement std_Vector_ast__Statement;
 typedef struct std_Vector_ast__VariantDef std_Vector_ast__VariantDef;
 typedef struct std_Vector_mir__MirAggregateBlockReference std_Vector_mir__MirAggregateBlockReference;
@@ -748,11 +753,13 @@ typedef struct std_Vector_mir_struct_layout__MirStructOperation std_Vector_mir_s
 typedef struct std_Vector_mir_struct_layout__MirStructValue std_Vector_mir_struct_layout__MirStructValue;
 typedef struct std_Vector_typechecker__ExpressionProvenance std_Vector_typechecker__ExpressionProvenance;
 typedef struct std_Vector_typechecker__PrefixMapEntry std_Vector_typechecker__PrefixMapEntry;
+typedef struct std_Vector_typechecker__QueryScopeObligation std_Vector_typechecker__QueryScopeObligation;
 typedef struct std_Vector_typechecker__ResolvedTypeEntry std_Vector_typechecker__ResolvedTypeEntry;
 typedef struct std_Vector_typechecker__ResourceCleanupAction std_Vector_typechecker__ResourceCleanupAction;
 typedef struct typechecker__AddressOriginRecord typechecker__AddressOriginRecord;
 typedef struct typechecker__OriginSet typechecker__OriginSet;
 typedef struct typechecker__PrefixMapEntry typechecker__PrefixMapEntry;
+typedef struct typechecker__QueryScopeObligation typechecker__QueryScopeObligation;
 typedef struct typechecker__ResolvedTypeEntry typechecker__ResolvedTypeEntry;
 typedef struct typechecker__ResourceCleanupAction typechecker__ResourceCleanupAction;
 typedef struct typechecker__Scope typechecker__Scope;
@@ -812,6 +819,7 @@ typedef struct CastResult_ast__Expression_Identifier CastResult_ast__Expression_
 typedef struct CastResult_ast__Expression_IndexAccess CastResult_ast__Expression_IndexAccess;
 typedef struct CastResult_ast__Expression_Integer CastResult_ast__Expression_Integer;
 typedef struct CastResult_ast__Expression_Move CastResult_ast__Expression_Move;
+typedef struct CastResult_ast__Expression_Query CastResult_ast__Expression_Query;
 typedef struct CastResult_ast__Expression_Selector CastResult_ast__Expression_Selector;
 typedef struct CastResult_ast__Expression_String CastResult_ast__Expression_String;
 typedef struct CastResult_ast__Expression_Take CastResult_ast__Expression_Take;
@@ -820,6 +828,8 @@ typedef struct CastResult_ast__FieldDef CastResult_ast__FieldDef;
 typedef struct CastResult_ast__MatchCase CastResult_ast__MatchCase;
 typedef struct CastResult_ast__Parameter CastResult_ast__Parameter;
 typedef struct CastResult_ast__Program CastResult_ast__Program;
+typedef struct CastResult_ast__QueryJoin CastResult_ast__QueryJoin;
+typedef struct CastResult_ast__QueryRoot CastResult_ast__QueryRoot;
 typedef struct CastResult_ast__Statement_Assignment CastResult_ast__Statement_Assignment;
 typedef struct CastResult_ast__Statement_Defer CastResult_ast__Statement_Defer;
 typedef struct CastResult_ast__Statement_EnumDecl CastResult_ast__Statement_EnumDecl;
@@ -1382,6 +1392,8 @@ typedef struct CastResult_std_Vector_ast__FieldDef CastResult_std_Vector_ast__Fi
 typedef struct CastResult_std_Vector_ast__MatchCase CastResult_std_Vector_ast__MatchCase;
 typedef struct CastResult_std_Vector_ast__Parameter CastResult_std_Vector_ast__Parameter;
 typedef struct CastResult_std_Vector_ast__Program CastResult_std_Vector_ast__Program;
+typedef struct CastResult_std_Vector_ast__QueryJoin CastResult_std_Vector_ast__QueryJoin;
+typedef struct CastResult_std_Vector_ast__QueryRoot CastResult_std_Vector_ast__QueryRoot;
 typedef struct CastResult_std_Vector_ast__Statement CastResult_std_Vector_ast__Statement;
 typedef struct CastResult_std_Vector_ast__VariantDef CastResult_std_Vector_ast__VariantDef;
 typedef struct CastResult_std_Vector_mir__MirAggregateBlockReference CastResult_std_Vector_mir__MirAggregateBlockReference;
@@ -1485,11 +1497,13 @@ typedef struct CastResult_std_Vector_mir_struct_layout__MirStructOperation CastR
 typedef struct CastResult_std_Vector_mir_struct_layout__MirStructValue CastResult_std_Vector_mir_struct_layout__MirStructValue;
 typedef struct CastResult_std_Vector_typechecker__ExpressionProvenance CastResult_std_Vector_typechecker__ExpressionProvenance;
 typedef struct CastResult_std_Vector_typechecker__PrefixMapEntry CastResult_std_Vector_typechecker__PrefixMapEntry;
+typedef struct CastResult_std_Vector_typechecker__QueryScopeObligation CastResult_std_Vector_typechecker__QueryScopeObligation;
 typedef struct CastResult_std_Vector_typechecker__ResolvedTypeEntry CastResult_std_Vector_typechecker__ResolvedTypeEntry;
 typedef struct CastResult_std_Vector_typechecker__ResourceCleanupAction CastResult_std_Vector_typechecker__ResourceCleanupAction;
 typedef struct CastResult_typechecker__AddressOriginRecord CastResult_typechecker__AddressOriginRecord;
 typedef struct CastResult_typechecker__OriginSet CastResult_typechecker__OriginSet;
 typedef struct CastResult_typechecker__PrefixMapEntry CastResult_typechecker__PrefixMapEntry;
+typedef struct CastResult_typechecker__QueryScopeObligation CastResult_typechecker__QueryScopeObligation;
 typedef struct CastResult_typechecker__ResolvedTypeEntry CastResult_typechecker__ResolvedTypeEntry;
 typedef struct CastResult_typechecker__ResourceCleanupAction CastResult_typechecker__ResourceCleanupAction;
 typedef struct CastResult_typechecker__Scope CastResult_typechecker__Scope;
@@ -2680,6 +2694,7 @@ int parser__parse_import_statement(parser__Parser* p, os_Arena* ctx);
 int parser__parse_match_statement(parser__Parser* p, os_Arena* ctx);
 int parser__parse_prefix_expression(parser__Parser* p, os_Arena* ctx);
 ast__Program parser__parse_program(parser__Parser* p, os_Arena* ctx);
+int parser__parse_query_expression(parser__Parser* p, os_Arena* ctx);
 int parser__parse_return_statement(parser__Parser* p, os_Arena* ctx);
 int parser__parse_statement(parser__Parser* p, os_Arena* ctx);
 int parser__parse_struct_decl(parser__Parser* p, os_Arena* ctx);
@@ -2687,6 +2702,7 @@ int parser__parse_type_signature(parser__Parser* p, os_Arena* ctx);
 int parser__parse_unsafe_block(parser__Parser* p, os_Arena* ctx);
 int parser__parse_var_decl(parser__Parser* p, int is_mut, os_Arena* ctx);
 int parser__parse_while_statement(parser__Parser* p, os_Arena* ctx);
+int parser__parser_cur_ident_is(parser__Parser* p, Slice_unsigned_char literal);
 Slice_unsigned_char parser__parser_get_monomorphized_name(Slice_unsigned_char template_name, int args_idx, os_Arena* ctx);
 Slice_unsigned_char parser__parser_get_type_ident(ast__Type t, os_Arena* ctx);
 unsigned char parser__peek_token_is(parser__Parser* p, int tag);
@@ -3118,8 +3134,10 @@ ast__Type typechecker__substitute_generics(typechecker__TypeEnvironment* env, as
 int typechecker__type_is_resource(ast__Type t, os_Arena* ctx);
 ast__Type typechecker__typechecker_apply_brand_substitutions(ast__Type t, std_HashMap_str_str* substitutions, os_Arena* ctx);
 typechecker__BrandIdentity typechecker__typechecker_brand_identity_from_resolved_type(ast__Type resolved, typechecker__TypeEnvironment* env, os_Arena* ctx);
+std_Vector_typechecker__QueryScopeObligation typechecker__typechecker_build_query_scope_obligations(ast__Expression expr, typechecker__TypeEnvironment* env, int scope, os_Arena* ctx);
 Slice_unsigned_char typechecker__typechecker_canonical_type_ident(typechecker__TypeEnvironment* env, ast__Type t, os_Arena* ctx);
 Slice_unsigned_char typechecker__typechecker_canonicalize_concrete_name(Slice_unsigned_char name, Slice_unsigned_char brand, os_Arena* ctx);
+void typechecker__typechecker_check_query_scope_obligations(ast__Expression expr, typechecker__TypeEnvironment* env, int scope, os_Arena* ctx);
 void typechecker__typechecker_check_resource_scoped_block(int block_idx, typechecker__TypeEnvironment* env, int scope, int establish_nested_scope, os_Arena* ctx);
 int typechecker__typechecker_classification_arena(void);
 int typechecker__typechecker_classification_hashmap(void);
@@ -3169,11 +3187,18 @@ int typechecker__typechecker_is_stack_allowed_recursive(ast__Type t, typechecker
 std_HashMap_str_typechecker__ResourceAcquisitionObligation typechecker__typechecker_join_resource_acquisition_obligation_maps(std_HashMap_str_typechecker__ResourceAcquisitionObligation left, std_HashMap_str_typechecker__ResourceAcquisitionObligation right, os_Arena* ctx);
 std_HashMap_str_str typechecker__typechecker_join_resource_value_identity_maps(std_HashMap_str_str left, std_HashMap_str_str right, os_Arena* ctx);
 void typechecker__typechecker_log_trace(Slice_unsigned_char emoji, Slice_unsigned_char message, os_Arena* ctx);
+ast__Type typechecker__typechecker_make_cross_tenant_capability_type(os_Arena* ctx);
+ast__Type typechecker__typechecker_make_trusted_scope_type(Slice_unsigned_char scope_identity, os_Arena* ctx);
 int typechecker__typechecker_matches_template_prefix(Slice_unsigned_char name, Slice_unsigned_char template_name);
 int typechecker__typechecker_name_contains_generic_component(Slice_unsigned_char name, Slice_unsigned_char generic_name, os_Arena* ctx);
 Slice_unsigned_char typechecker__typechecker_name_without_explicit_brand(Slice_unsigned_char name, Slice_unsigned_char brand_name, os_Arena* ctx);
 Slice_unsigned_char typechecker__typechecker_normalize_canonical_type_name(Slice_unsigned_char name, os_Arena* ctx);
 ast__Type typechecker__typechecker_parse_type_from_string(Slice_unsigned_char target_struct, os_Arena* ctx);
+int typechecker__typechecker_query_cross_tenant_capability_state(ast__Expression expr, typechecker__TypeEnvironment* env, os_Arena* ctx);
+int typechecker__typechecker_query_expression_has_trusted_scope(int expr_idx, Slice_unsigned_char required_scope_identity, typechecker__TypeEnvironment* env, int scope, os_Arena* ctx);
+typechecker__QueryScopeObligation typechecker__typechecker_query_make_scope_obligation(Slice_unsigned_char entity_identity, Slice_unsigned_char binding_identity, Slice_unsigned_char scope_identity, Slice_unsigned_char root_kind, int source_order, int discharged, token__Span query_span, os_Arena* ctx);
+int typechecker__typechecker_query_predicate_discharges_root(int predicate_idx, Slice_unsigned_char binding_name, Slice_unsigned_char scope_field, typechecker__TypeEnvironment* env, int scope, os_Arena* ctx);
+int typechecker__typechecker_query_side_is_scoped_field(int expr_idx, Slice_unsigned_char binding_name, Slice_unsigned_char scope_field, os_Arena* ctx);
 void typechecker__typechecker_record_contextual_expression_type(int expr_idx, ast__Type resolved_type, typechecker__TypeEnvironment* env, os_Arena* ctx);
 Slice_unsigned_char typechecker__typechecker_remove_flattened_identity(Slice_unsigned_char name, Slice_unsigned_char identity, os_Arena* ctx);
 std_HashMap_str_typechecker__ResourceAcquisitionObligation typechecker__typechecker_resource_failure_path_obligation_map(std_HashMap_str_typechecker__ResourceAcquisitionObligation src, Slice_unsigned_char identity, os_Arena* ctx);
@@ -3194,6 +3219,7 @@ ast__Type typechecker__typechecker_substitute_call_brand_identity(ast__Type t, S
 ast__Type typechecker__typechecker_substitute_field_brand(ast__Type t, int struct_brand, Slice_unsigned_char parent_path, typechecker__StructLayout layout, os_Arena* ctx);
 Slice_unsigned_char typechecker__typechecker_template_local_name(Slice_unsigned_char template_name, os_Arena* ctx);
 int typechecker__typechecker_type_is_brand_marker(ast__Type t, os_Arena* ctx);
+int typechecker__typechecker_type_is_matching_trusted_scope(ast__Type t, Slice_unsigned_char required_scope_identity, os_Arena* ctx);
 int typechecker__typechecker_type_matches_brand_identity_argument(ast__Type t, typechecker__BrandIdentity identity, os_Arena* ctx);
 int typechecker__typechecker_type_uses_generic_as_value(ast__Type t, Slice_unsigned_char generic_name, Slice_unsigned_char current_template_name, int candidate_brand_index, typechecker__TypeEnvironment* env, os_Arena* ctx);
 int typechecker__types_match(ast__Type expected, ast__Type actual, os_Arena* ctx);
@@ -3453,6 +3479,8 @@ struct typechecker__ExpressionProvenance {
     int legacy_origins;
     ast__Type resolved_type;
     Slice_unsigned_char resource_root_identity;
+    Slice_unsigned_char trusted_scope_identity;
+    Slice_unsigned_char trusted_scope_origin_kind;
 };
 
 struct LookupResult_typechecker__ExpressionProvenance {
@@ -3470,6 +3498,7 @@ struct std_Vector_ast__Type {
 struct typechecker__FunctionSignature {
     Slice_unsigned_char extern_abi;
     Slice_unsigned_char extern_symbol_name;
+    int is_compile_time_only;
     int is_extern;
     int is_private;
     int is_unsafe;
@@ -3621,6 +3650,16 @@ struct ast__Expression_Move {
     token__Span span;
 };
 
+struct ast__Expression_Query {
+    int cross_tenant_capability;
+    int joins;
+    int nested_queries;
+    int predicates;
+    int roots;
+    token__Span span;
+    int terminal;
+};
+
 struct ast__Expression_Selector {
     int left;
     Slice_unsigned_char right;
@@ -3652,6 +3691,7 @@ typedef enum {
     ast__Expression_Tag__Selector = 11,
     ast__Expression_Tag__Call = 12,
     ast__Expression_Tag__Empty = 13,
+    ast__Expression_Tag__Query = 14,
 } ast__Expression_Tag;
 
 struct ast__Expression {
@@ -3668,6 +3708,7 @@ struct ast__Expression {
         struct ast__Expression_IndexAccess IndexAccess;
         struct ast__Expression_Integer Integer;
         struct ast__Expression_Move Move;
+        struct ast__Expression_Query Query;
         struct ast__Expression_Selector Selector;
         struct ast__Expression_String String;
         struct ast__Expression_Take Take;
@@ -3696,6 +3737,19 @@ struct ast__Parameter {
 struct ast__Program {
     token__Span span;
     int statements;
+};
+
+struct ast__QueryJoin {
+    Slice_unsigned_char binding_name;
+    Slice_unsigned_char entity_name;
+    int predicate;
+    token__Span span;
+};
+
+struct ast__QueryRoot {
+    Slice_unsigned_char binding_name;
+    Slice_unsigned_char entity_name;
+    token__Span span;
 };
 
 struct ast__Statement_Assignment {
@@ -3777,8 +3831,10 @@ struct ast__Statement_StructDecl {
     int is_opaque;
     int is_packed;
     int is_repr_c;
+    int is_scoped_entity;
     Slice_unsigned_char layout_abi;
     Slice_unsigned_char name;
+    Slice_unsigned_char scope_field;
     token__Span span;
 };
 
@@ -8250,6 +8306,20 @@ struct std_Vector_ast__Program {
     int len;
 };
 
+struct std_Vector_ast__QueryJoin {
+    os_Arena* arena;
+    int capacity;
+    ast__QueryJoin* data;
+    int len;
+};
+
+struct std_Vector_ast__QueryRoot {
+    os_Arena* arena;
+    int capacity;
+    ast__QueryRoot* data;
+    int len;
+};
+
 struct std_Vector_ast__Statement {
     os_Arena* arena;
     int capacity;
@@ -8971,6 +9041,13 @@ struct std_Vector_typechecker__PrefixMapEntry {
     int len;
 };
 
+struct std_Vector_typechecker__QueryScopeObligation {
+    os_Arena* arena;
+    int capacity;
+    typechecker__QueryScopeObligation* data;
+    int len;
+};
+
 struct std_Vector_typechecker__ResolvedTypeEntry {
     os_Arena* arena;
     int capacity;
@@ -8997,6 +9074,16 @@ struct typechecker__OriginSet {
 struct typechecker__PrefixMapEntry {
     Slice_unsigned_char prefix;
     std_Vector_typechecker__ResolvedTypeEntry types;
+};
+
+struct typechecker__QueryScopeObligation {
+    Slice_unsigned_char binding_identity;
+    int discharged;
+    Slice_unsigned_char entity_identity;
+    token__Span query_span;
+    Slice_unsigned_char root_kind;
+    Slice_unsigned_char scope_identity;
+    int source_order;
 };
 
 struct typechecker__ResolvedTypeEntry {
@@ -9055,6 +9142,7 @@ struct typechecker__TypeEnvironment {
     std_HashMap_str_typechecker__ExpressionProvenance function_return_provenance;
     std_HashMap_str_str imports;
     int in_defer_expression;
+    int in_typed_query_predicate;
     int in_unsafe_block;
     std_HashMap_str_int moved_vars;
     std_HashMap_str_int open_directories;
@@ -9076,6 +9164,8 @@ struct typechecker__TypeEnvironment {
     std_HashMap_str_str struct_linear_destructor;
     std_HashMap_str_int struct_linear_resource;
     std_HashMap_str_typechecker__StructLayout struct_registry;
+    std_HashMap_str_str struct_scope_field;
+    std_HashMap_str_int struct_scoped_entity;
     std_HashMap_str_typechecker__StructTemplate struct_templates;
     std_HashMap_str_str struct_validated_destructor;
     std_HashMap_str_str template_local_names;
@@ -9160,6 +9250,7 @@ void* typechecker__expression_provenance_is_raw_or_sandbox_derived_pthread_wrapp
 void* typechecker__expression_provenance_void_unknown_pthread_wrapper(void* arg);
 void* typechecker__step51g_struct_name_is_internal_metadata_safe_brand_target_pthread_wrapper(void* arg);
 void* typechecker__step51g_non_laundering_safe_brand_target_diagnostic_kind_reports_pthread_wrapper(void* arg);
+void* typechecker__typechecker_make_cross_tenant_capability_type_pthread_wrapper(void* arg);
 void* typechecker__typechecker_is_contextual_generic_constructor_name_pthread_wrapper(void* arg);
 void* typechecker__env_new_pthread_wrapper(void* arg);
 void* typechecker__env_directory_resource_type_is_legacy_handle_pthread_wrapper(void* arg);
@@ -10393,6 +10484,69 @@ Slice_unsigned_char ast__serialize_expression(int expr_idx, int indent, os_Arena
     res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"\n", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     return std_Clone_str(ctx, res);
     }
+    if ((expr.tag == 14)) {
+    Slice_unsigned_char query_res_ast = (({ Slice_unsigned_char _s1 = pad; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"Query:\n", 7 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    std_Vector_ast__QueryRoot query_roots_ast = (*((std_Vector_ast__QueryRoot*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(expr.Query.roots))));
+    int query_root_index_ast = 0;
+    while ((query_root_index_ast < query_roots_ast.len)) {
+        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    ast__QueryRoot query_root_ast = (*({ if (query_root_index_ast < 0 || query_root_index_ast >= query_roots_ast.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(query_roots_ast.data[query_root_index_ast]); }));
+    Slice_unsigned_char query_root_line_ast = ast__ast_repeat_spaces((indent + 1), ctx);
+    query_root_line_ast = (({ Slice_unsigned_char _s1 = query_root_line_ast; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"Root: ", 6 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    query_root_line_ast = (({ Slice_unsigned_char _s1 = query_root_line_ast; Slice_unsigned_char _s2 = query_root_ast.entity_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    query_root_line_ast = (({ Slice_unsigned_char _s1 = query_root_line_ast; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)" as ", 4 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    query_root_line_ast = (({ Slice_unsigned_char _s1 = query_root_line_ast; Slice_unsigned_char _s2 = query_root_ast.binding_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    query_root_line_ast = (({ Slice_unsigned_char _s1 = query_root_line_ast; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"\n", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    query_res_ast = (({ Slice_unsigned_char _s1 = query_res_ast; Slice_unsigned_char _s2 = query_root_line_ast; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    query_root_index_ast = (query_root_index_ast + 1);
+    }
+    std_Vector_ast__Expression query_predicates_ast = (*((std_Vector_ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(expr.Query.predicates))));
+    int query_predicate_index_ast = 0;
+    while ((query_predicate_index_ast < query_predicates_ast.len)) {
+        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    int query_predicate_idx_ast = os_ArenaAlloc(ctx, sizeof(ast__Expression));
+    ({ *((ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(query_predicate_idx_ast))) = (*({ if (query_predicate_index_ast < 0 || query_predicate_index_ast >= query_predicates_ast.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(query_predicates_ast.data[query_predicate_index_ast]); })); });
+    query_res_ast = (({ Slice_unsigned_char _s1 = query_res_ast; Slice_unsigned_char _s2 = ast__ast_repeat_spaces((indent + 1), ctx); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    query_res_ast = (({ Slice_unsigned_char _s1 = query_res_ast; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"Predicate:\n", 11 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    query_res_ast = (({ Slice_unsigned_char _s1 = query_res_ast; Slice_unsigned_char _s2 = ast__serialize_expression(query_predicate_idx_ast, (indent + 2), ctx); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    query_predicate_index_ast = (query_predicate_index_ast + 1);
+    }
+    std_Vector_ast__QueryJoin query_joins_ast = (*((std_Vector_ast__QueryJoin*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(expr.Query.joins))));
+    int query_join_index_ast = 0;
+    while ((query_join_index_ast < query_joins_ast.len)) {
+        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    ast__QueryJoin query_join_ast = (*({ if (query_join_index_ast < 0 || query_join_index_ast >= query_joins_ast.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(query_joins_ast.data[query_join_index_ast]); }));
+    Slice_unsigned_char query_join_line_ast = ast__ast_repeat_spaces((indent + 1), ctx);
+    query_join_line_ast = (({ Slice_unsigned_char _s1 = query_join_line_ast; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"Join: ", 6 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    query_join_line_ast = (({ Slice_unsigned_char _s1 = query_join_line_ast; Slice_unsigned_char _s2 = query_join_ast.entity_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    query_join_line_ast = (({ Slice_unsigned_char _s1 = query_join_line_ast; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)" as ", 4 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    query_join_line_ast = (({ Slice_unsigned_char _s1 = query_join_line_ast; Slice_unsigned_char _s2 = query_join_ast.binding_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    query_join_line_ast = (({ Slice_unsigned_char _s1 = query_join_line_ast; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"\n", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    query_res_ast = (({ Slice_unsigned_char _s1 = query_res_ast; Slice_unsigned_char _s2 = query_join_line_ast; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    query_res_ast = (({ Slice_unsigned_char _s1 = query_res_ast; Slice_unsigned_char _s2 = ast__serialize_expression(query_join_ast.predicate, (indent + 2), ctx); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    query_join_index_ast = (query_join_index_ast + 1);
+    }
+    std_Vector_ast__Expression query_nested_ast = (*((std_Vector_ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(expr.Query.nested_queries))));
+    int query_nested_index_ast = 0;
+    while ((query_nested_index_ast < query_nested_ast.len)) {
+        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    int query_nested_idx_ast = os_ArenaAlloc(ctx, sizeof(ast__Expression));
+    ({ *((ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(query_nested_idx_ast))) = (*({ if (query_nested_index_ast < 0 || query_nested_index_ast >= query_nested_ast.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(query_nested_ast.data[query_nested_index_ast]); })); });
+    query_res_ast = (({ Slice_unsigned_char _s1 = query_res_ast; Slice_unsigned_char _s2 = ast__ast_repeat_spaces((indent + 1), ctx); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    query_res_ast = (({ Slice_unsigned_char _s1 = query_res_ast; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"Nested:\n", 8 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    query_res_ast = (({ Slice_unsigned_char _s1 = query_res_ast; Slice_unsigned_char _s2 = ast__serialize_expression(query_nested_idx_ast, (indent + 2), ctx); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    query_nested_index_ast = (query_nested_index_ast + 1);
+    }
+    if ((expr.Query.cross_tenant_capability != 0xFFFFFFFF)) {
+    query_res_ast = (({ Slice_unsigned_char _s1 = query_res_ast; Slice_unsigned_char _s2 = ast__ast_repeat_spaces((indent + 1), ctx); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    query_res_ast = (({ Slice_unsigned_char _s1 = query_res_ast; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"CrossTenant:\n", 13 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    query_res_ast = (({ Slice_unsigned_char _s1 = query_res_ast; Slice_unsigned_char _s2 = ast__serialize_expression(expr.Query.cross_tenant_capability, (indent + 2), ctx); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    }
+    query_res_ast = (({ Slice_unsigned_char _s1 = query_res_ast; Slice_unsigned_char _s2 = ast__ast_repeat_spaces((indent + 1), ctx); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    query_res_ast = (({ Slice_unsigned_char _s1 = query_res_ast; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"Terminal:\n", 10 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    query_res_ast = (({ Slice_unsigned_char _s1 = query_res_ast; Slice_unsigned_char _s2 = ast__serialize_expression(expr.Query.terminal, (indent + 2), ctx); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    return std_Clone_str(ctx, query_res_ast);
+    }
     }
     return ((Slice_unsigned_char){ (unsigned char*)"UnknownExpr", 11 });
 }
@@ -10482,6 +10636,11 @@ Slice_unsigned_char ast__serialize_statement(int stmt_idx, int indent, os_Arena*
     }
     if ((stmt.StructDecl.is_opaque == 1)) {
     res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)" #[opaque]", 10 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    }
+    if ((stmt.StructDecl.is_scoped_entity == 1)) {
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)" #[scoped(", 10 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = stmt.StructDecl.scope_field; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)")]", 2 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     }
     res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"\n", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     std_Vector_ast__FieldDef fields_vec = (*((std_Vector_ast__FieldDef*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(stmt.StructDecl.fields))));
@@ -11159,6 +11318,10 @@ token__Span parser__get_expression_span(int expr, os_Arena* ctx) {
     } else {
     if ((tag == 13)) {
     s = (*((ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(expr)))).Empty.span;
+    } else {
+    if ((tag == 14)) {
+    s = (*((ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(expr)))).Query.span;
+    }
     }
     }
     }
@@ -11213,11 +11376,223 @@ void* parser__peek_token_precedence_pthread_wrapper(void* arg) {
     return NULL;
 }
 
+int parser__parser_cur_ident_is(parser__Parser* p, Slice_unsigned_char literal) {
+    {
+    if ((parser__cur_token_is(p, 2) == 0)) {
+    return 0;
+    }
+    return std_str_eq((*(p)).cur_token.literal, literal);
+    }
+}
+
+int parser__parse_query_expression(parser__Parser* p, os_Arena* ctx) {
+    if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    {
+    token__Span query_start_parse = (*(p)).cur_token.span;
+    parser__next_token(p);
+    if ((parser__cur_token_is(p, 13) == 0)) {
+    parser__error_at_current(p, ((Slice_unsigned_char){ (unsigned char*)"Syntax Error: Expected '{' after query", 38 }));
+    return 0xFFFFFFFF;
+    }
+    parser__next_token(p);
+    std_Vector_ast__QueryRoot query_roots_parse = ((struct std_Vector_ast__QueryRoot){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx });
+    std_Vector_ast__Expression query_predicates_parse = ((struct std_Vector_ast__Expression){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx });
+    std_Vector_ast__QueryJoin query_joins_parse = ((struct std_Vector_ast__QueryJoin){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx });
+    std_Vector_ast__Expression query_nested_parse = ((struct std_Vector_ast__Expression){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx });
+    int query_cross_tenant_parse = 0xFFFFFFFF;
+    int query_terminal_parse = 0xFFFFFFFF;
+    while (((parser__cur_token_is(p, 14) == 0) && (parser__cur_token_is(p, 0) == 0))) {
+        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    if ((parser__parser_cur_ident_is(p, ((Slice_unsigned_char){ (unsigned char*)"root", 4 })) == 1)) {
+    token__Span root_start_parse = (*(p)).cur_token.span;
+    parser__next_token(p);
+    if ((parser__cur_token_is(p, 2) == 0)) {
+    parser__error_at_current(p, ((Slice_unsigned_char){ (unsigned char*)"Syntax Error: Expected scoped entity name after query root", 58 }));
+    return 0xFFFFFFFF;
+    }
+    Slice_unsigned_char root_entity_parse = std_Clone_str(&((*(ctx))), (*(p)).cur_token.literal);
+    parser__next_token(p);
+    if ((parser__cur_token_is(p, 37) == 0)) {
+    parser__error_at_current(p, ((Slice_unsigned_char){ (unsigned char*)"Syntax Error: Expected 'as' after query root entity", 51 }));
+    return 0xFFFFFFFF;
+    }
+    parser__next_token(p);
+    if ((parser__cur_token_is(p, 2) == 0)) {
+    parser__error_at_current(p, ((Slice_unsigned_char){ (unsigned char*)"Syntax Error: Expected binding name after query root 'as'", 57 }));
+    return 0xFFFFFFFF;
+    }
+    Slice_unsigned_char root_binding_parse = std_Clone_str(&((*(ctx))), (*(p)).cur_token.literal);
+    token__Span root_end_parse = (*(p)).cur_token.span;
+    parser__next_token(p);
+    if ((parser__cur_token_is(p, 10) == 0)) {
+    parser__error_at_current(p, ((Slice_unsigned_char){ (unsigned char*)"Syntax Error: Expected ';' after query root", 43 }));
+    return 0xFFFFFFFF;
+    }
+    parser__next_token(p);
+    ast__QueryRoot root_record_parse = ((ast__QueryRoot){ .binding_name = ((Slice_unsigned_char){ NULL, 0 }), .entity_name = ((Slice_unsigned_char){ NULL, 0 }), .span = ((token__Span){ .end = ((token__Position){ .column = 0, .line = 0, .offset = 0 }), .start = ((token__Position){ .column = 0, .line = 0, .offset = 0 }) }) });
+    root_record_parse.entity_name = root_entity_parse;
+    root_record_parse.binding_name = root_binding_parse;
+    root_record_parse.span = parser__merge_spans(root_start_parse, root_end_parse);
+    os_VectorPush(&(query_roots_parse), root_record_parse);
+    } else {
+    if ((parser__parser_cur_ident_is(p, ((Slice_unsigned_char){ (unsigned char*)"predicate", 9 })) == 1)) {
+    parser__next_token(p);
+    int predicate_idx_parse = parser__parse_expression(p, 1, ctx);
+    if ((predicate_idx_parse == 0xFFFFFFFF)) {
+    parser__error_at_current(p, ((Slice_unsigned_char){ (unsigned char*)"Syntax Error: Expected expression after query predicate", 55 }));
+    return 0xFFFFFFFF;
+    }
+    os_VectorPush(&(query_predicates_parse), (*((ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(predicate_idx_parse)))));
+    if ((parser__cur_token_is(p, 10) == 0)) {
+    parser__error_at_current(p, ((Slice_unsigned_char){ (unsigned char*)"Syntax Error: Expected ';' after query predicate", 48 }));
+    return 0xFFFFFFFF;
+    }
+    parser__next_token(p);
+    } else {
+    if ((parser__parser_cur_ident_is(p, ((Slice_unsigned_char){ (unsigned char*)"join", 4 })) == 1)) {
+    token__Span join_start_parse = (*(p)).cur_token.span;
+    parser__next_token(p);
+    if ((parser__cur_token_is(p, 2) == 0)) {
+    parser__error_at_current(p, ((Slice_unsigned_char){ (unsigned char*)"Syntax Error: Expected scoped entity name after query join", 58 }));
+    return 0xFFFFFFFF;
+    }
+    Slice_unsigned_char join_entity_parse = std_Clone_str(&((*(ctx))), (*(p)).cur_token.literal);
+    parser__next_token(p);
+    if ((parser__cur_token_is(p, 37) == 0)) {
+    parser__error_at_current(p, ((Slice_unsigned_char){ (unsigned char*)"Syntax Error: Expected 'as' after query join entity", 51 }));
+    return 0xFFFFFFFF;
+    }
+    parser__next_token(p);
+    if ((parser__cur_token_is(p, 2) == 0)) {
+    parser__error_at_current(p, ((Slice_unsigned_char){ (unsigned char*)"Syntax Error: Expected binding name after query join 'as'", 57 }));
+    return 0xFFFFFFFF;
+    }
+    Slice_unsigned_char join_binding_parse = std_Clone_str(&((*(ctx))), (*(p)).cur_token.literal);
+    parser__next_token(p);
+    if ((parser__parser_cur_ident_is(p, ((Slice_unsigned_char){ (unsigned char*)"predicate", 9 })) == 0)) {
+    parser__error_at_current(p, ((Slice_unsigned_char){ (unsigned char*)"Syntax Error: Expected predicate after query join binding", 57 }));
+    return 0xFFFFFFFF;
+    }
+    parser__next_token(p);
+    int join_predicate_parse = parser__parse_expression(p, 1, ctx);
+    if ((join_predicate_parse == 0xFFFFFFFF)) {
+    parser__error_at_current(p, ((Slice_unsigned_char){ (unsigned char*)"Syntax Error: Expected expression after query join predicate", 60 }));
+    return 0xFFFFFFFF;
+    }
+    token__Span join_end_parse = parser__get_expression_span(join_predicate_parse, ctx);
+    if ((parser__cur_token_is(p, 10) == 0)) {
+    parser__error_at_current(p, ((Slice_unsigned_char){ (unsigned char*)"Syntax Error: Expected ';' after query join", 43 }));
+    return 0xFFFFFFFF;
+    }
+    parser__next_token(p);
+    ast__QueryJoin join_record_parse = ((ast__QueryJoin){ .binding_name = ((Slice_unsigned_char){ NULL, 0 }), .entity_name = ((Slice_unsigned_char){ NULL, 0 }), .predicate = 0xFFFFFFFF, .span = ((token__Span){ .end = ((token__Position){ .column = 0, .line = 0, .offset = 0 }), .start = ((token__Position){ .column = 0, .line = 0, .offset = 0 }) }) });
+    join_record_parse.entity_name = join_entity_parse;
+    join_record_parse.binding_name = join_binding_parse;
+    join_record_parse.predicate = join_predicate_parse;
+    join_record_parse.span = parser__merge_spans(join_start_parse, join_end_parse);
+    os_VectorPush(&(query_joins_parse), join_record_parse);
+    } else {
+    if ((parser__parser_cur_ident_is(p, ((Slice_unsigned_char){ (unsigned char*)"nested", 6 })) == 1)) {
+    parser__next_token(p);
+    if ((parser__parser_cur_ident_is(p, ((Slice_unsigned_char){ (unsigned char*)"query", 5 })) == 0)) {
+    parser__error_at_current(p, ((Slice_unsigned_char){ (unsigned char*)"Syntax Error: Expected query block after nested", 47 }));
+    return 0xFFFFFFFF;
+    }
+    int nested_query_idx_parse = parser__parse_query_expression(p, ctx);
+    if ((nested_query_idx_parse == 0xFFFFFFFF)) {
+    return 0xFFFFFFFF;
+    }
+    os_VectorPush(&(query_nested_parse), (*((ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(nested_query_idx_parse)))));
+    if ((parser__cur_token_is(p, 10) == 0)) {
+    parser__error_at_current(p, ((Slice_unsigned_char){ (unsigned char*)"Syntax Error: Expected ';' after nested query", 45 }));
+    return 0xFFFFFFFF;
+    }
+    parser__next_token(p);
+    } else {
+    if ((parser__parser_cur_ident_is(p, ((Slice_unsigned_char){ (unsigned char*)"cross_tenant", 12 })) == 1)) {
+    if ((query_cross_tenant_parse != 0xFFFFFFFF)) {
+    parser__error_at_current(p, ((Slice_unsigned_char){ (unsigned char*)"Syntax Error: Duplicate cross_tenant marker in query", 52 }));
+    return 0xFFFFFFFF;
+    }
+    parser__next_token(p);
+    query_cross_tenant_parse = parser__parse_expression(p, 1, ctx);
+    if ((query_cross_tenant_parse == 0xFFFFFFFF)) {
+    parser__error_at_current(p, ((Slice_unsigned_char){ (unsigned char*)"Syntax Error: Expected capability expression after cross_tenant", 63 }));
+    return 0xFFFFFFFF;
+    }
+    if ((parser__cur_token_is(p, 10) == 0)) {
+    parser__error_at_current(p, ((Slice_unsigned_char){ (unsigned char*)"Syntax Error: Expected ';' after cross_tenant marker", 52 }));
+    return 0xFFFFFFFF;
+    }
+    parser__next_token(p);
+    } else {
+    if ((parser__parser_cur_ident_is(p, ((Slice_unsigned_char){ (unsigned char*)"terminal", 8 })) == 1)) {
+    if ((query_terminal_parse != 0xFFFFFFFF)) {
+    parser__error_at_current(p, ((Slice_unsigned_char){ (unsigned char*)"Syntax Error: Duplicate terminal expression in query", 52 }));
+    return 0xFFFFFFFF;
+    }
+    parser__next_token(p);
+    query_terminal_parse = parser__parse_expression(p, 1, ctx);
+    if ((query_terminal_parse == 0xFFFFFFFF)) {
+    parser__error_at_current(p, ((Slice_unsigned_char){ (unsigned char*)"Syntax Error: Expected expression after query terminal", 54 }));
+    return 0xFFFFFFFF;
+    }
+    if ((parser__cur_token_is(p, 10) == 0)) {
+    parser__error_at_current(p, ((Slice_unsigned_char){ (unsigned char*)"Syntax Error: Expected ';' after query terminal", 47 }));
+    return 0xFFFFFFFF;
+    }
+    parser__next_token(p);
+    } else {
+    parser__error_at_current(p, ((Slice_unsigned_char){ (unsigned char*)"Syntax Error: Expected root, predicate, join, nested query, cross_tenant, or terminal in query block", 100 }));
+    return 0xFFFFFFFF;
+    }
+    }
+    }
+    }
+    }
+    }
+    }
+    if ((parser__cur_token_is(p, 14) == 0)) {
+    parser__error_at_current(p, ((Slice_unsigned_char){ (unsigned char*)"Syntax Error: Expected closing '}' after query block", 52 }));
+    return 0xFFFFFFFF;
+    }
+    if ((query_terminal_parse == 0xFFFFFFFF)) {
+    parser__error_at_current(p, ((Slice_unsigned_char){ (unsigned char*)"Syntax Error: Query block requires one terminal expression", 58 }));
+    return 0xFFFFFFFF;
+    }
+    token__Span query_end_parse = (*(p)).cur_token.span;
+    parser__next_token(p);
+    int roots_idx_parse = os_ArenaAlloc(ctx, sizeof(std_Vector_ast__QueryRoot));
+    int predicates_idx_parse = os_ArenaAlloc(ctx, sizeof(std_Vector_ast__Expression));
+    int joins_idx_parse = os_ArenaAlloc(ctx, sizeof(std_Vector_ast__QueryJoin));
+    int nested_idx_parse = os_ArenaAlloc(ctx, sizeof(std_Vector_ast__Expression));
+    ({ *((std_Vector_ast__QueryRoot*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(roots_idx_parse))) = query_roots_parse; });
+    ({ *((std_Vector_ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(predicates_idx_parse))) = query_predicates_parse; });
+    ({ *((std_Vector_ast__QueryJoin*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(joins_idx_parse))) = query_joins_parse; });
+    ({ *((std_Vector_ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(nested_idx_parse))) = query_nested_parse; });
+    int query_expr_idx_parse = os_ArenaAlloc(ctx, sizeof(ast__Expression));
+    ast__Expression query_expr_parse = ((ast__Expression){ .tag = 0 });
+    query_expr_parse.tag = 14;
+    query_expr_parse.Query.roots = roots_idx_parse;
+    query_expr_parse.Query.predicates = predicates_idx_parse;
+    query_expr_parse.Query.joins = joins_idx_parse;
+    query_expr_parse.Query.nested_queries = nested_idx_parse;
+    query_expr_parse.Query.cross_tenant_capability = query_cross_tenant_parse;
+    query_expr_parse.Query.terminal = query_terminal_parse;
+    query_expr_parse.Query.span = parser__merge_spans(query_start_parse, query_end_parse);
+    ({ *((ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(query_expr_idx_parse))) = query_expr_parse; });
+    return query_expr_idx_parse;
+    }
+}
+
 int parser__parse_prefix_expression(parser__Parser* p, os_Arena* ctx) {
     int e_idx = os_ArenaAlloc(ctx, sizeof(ast__Expression));
     {
     int tag = (*(p)).cur_token.token_type.tag;
     token__Span start_span = (*(p)).cur_token.span;
+    if ((((tag == 2) && (std_str_eq((*(p)).cur_token.literal, ((Slice_unsigned_char){ (unsigned char*)"query", 5 })) == 1)) && parser__peek_token_is(p, 13))) {
+    return parser__parse_query_expression(p, ctx);
+    }
     if ((tag == 2)) {
     ast__Expression e_identifier_parse = ((ast__Expression){ .tag = 0 });
     e_identifier_parse.tag = 0;
@@ -11509,6 +11884,8 @@ int parser__parse_struct_decl(parser__Parser* p, os_Arena* ctx) {
     Slice_unsigned_char declared_destructor_name_decl = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
     int is_opaque_decl = 0;
     int is_private_decl = 0;
+    int is_scoped_entity_decl = 0;
+    Slice_unsigned_char scoped_entity_field_decl = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
     while (parser__cur_token_is(p, 49)) {
         if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
     parser__next_token(p);
@@ -11628,12 +12005,52 @@ int parser__parse_struct_decl(parser__Parser* p, os_Arena* ctx) {
     }
     is_private_decl = 1;
     } else {
+    if (std_str_eq(layout_attr_name, ((Slice_unsigned_char){ (unsigned char*)"scoped", 6 }))) {
+    if ((is_scoped_entity_decl == 1)) {
+    errors__CompilerError err_scoped_duplicate = ((errors__CompilerError){ .file_path = ((Slice_unsigned_char){ NULL, 0 }), .kind = ((errors__ErrorKind){ .tag = 0 }), .message = ((Slice_unsigned_char){ NULL, 0 }), .span = ((token__Span){ .end = ((token__Position){ .column = 0, .line = 0, .offset = 0 }), .start = ((token__Position){ .column = 0, .line = 0, .offset = 0 }) }) });
+    err_scoped_duplicate.kind.tag = 1;
+    err_scoped_duplicate.message = ((Slice_unsigned_char){ (unsigned char*)"Duplicate scoped entity declaration attribute", 45 });
+    err_scoped_duplicate.span = (*(p)).cur_token.span;
+    os_VectorPush(&((*(p)).errors), err_scoped_duplicate);
+    return 0xFFFFFFFF;
+    }
+    if ((parser__cur_token_is(p, 11) == 0)) {
+    errors__CompilerError err_scoped_lparen = ((errors__CompilerError){ .file_path = ((Slice_unsigned_char){ NULL, 0 }), .kind = ((errors__ErrorKind){ .tag = 0 }), .message = ((Slice_unsigned_char){ NULL, 0 }), .span = ((token__Span){ .end = ((token__Position){ .column = 0, .line = 0, .offset = 0 }), .start = ((token__Position){ .column = 0, .line = 0, .offset = 0 }) }) });
+    err_scoped_lparen.kind.tag = 1;
+    err_scoped_lparen.message = ((Slice_unsigned_char){ (unsigned char*)"Expected '(' after scoped entity attribute", 42 });
+    err_scoped_lparen.span = (*(p)).cur_token.span;
+    os_VectorPush(&((*(p)).errors), err_scoped_lparen);
+    return 0xFFFFFFFF;
+    }
+    parser__next_token(p);
+    if ((parser__cur_token_is(p, 2) == 0)) {
+    errors__CompilerError err_scoped_field = ((errors__CompilerError){ .file_path = ((Slice_unsigned_char){ NULL, 0 }), .kind = ((errors__ErrorKind){ .tag = 0 }), .message = ((Slice_unsigned_char){ NULL, 0 }), .span = ((token__Span){ .end = ((token__Position){ .column = 0, .line = 0, .offset = 0 }), .start = ((token__Position){ .column = 0, .line = 0, .offset = 0 }) }) });
+    err_scoped_field.kind.tag = 1;
+    err_scoped_field.message = ((Slice_unsigned_char){ (unsigned char*)"Expected scope field name in scoped entity attribute", 52 });
+    err_scoped_field.span = (*(p)).cur_token.span;
+    os_VectorPush(&((*(p)).errors), err_scoped_field);
+    return 0xFFFFFFFF;
+    }
+    scoped_entity_field_decl = std_Clone_str(&((*(ctx))), (*(p)).cur_token.literal);
+    is_scoped_entity_decl = 1;
+    parser__next_token(p);
+    if ((parser__cur_token_is(p, 12) == 0)) {
+    errors__CompilerError err_scoped_rparen = ((errors__CompilerError){ .file_path = ((Slice_unsigned_char){ NULL, 0 }), .kind = ((errors__ErrorKind){ .tag = 0 }), .message = ((Slice_unsigned_char){ NULL, 0 }), .span = ((token__Span){ .end = ((token__Position){ .column = 0, .line = 0, .offset = 0 }), .start = ((token__Position){ .column = 0, .line = 0, .offset = 0 }) }) });
+    err_scoped_rparen.kind.tag = 1;
+    err_scoped_rparen.message = ((Slice_unsigned_char){ (unsigned char*)"Expected ')' after scoped entity field", 38 });
+    err_scoped_rparen.span = (*(p)).cur_token.span;
+    os_VectorPush(&((*(p)).errors), err_scoped_rparen);
+    return 0xFFFFFFFF;
+    }
+    parser__next_token(p);
+    } else {
     errors__CompilerError err_layout_unsupported = ((errors__CompilerError){ .file_path = ((Slice_unsigned_char){ NULL, 0 }), .kind = ((errors__ErrorKind){ .tag = 0 }), .message = ((Slice_unsigned_char){ NULL, 0 }), .span = ((token__Span){ .end = ((token__Position){ .column = 0, .line = 0, .offset = 0 }), .start = ((token__Position){ .column = 0, .line = 0, .offset = 0 }) }) });
     err_layout_unsupported.kind.tag = 1;
     err_layout_unsupported.message = ((Slice_unsigned_char){ (unsigned char*)"Unsupported layout attribute", 28 });
     err_layout_unsupported.span = (*(p)).cur_token.span;
     os_VectorPush(&((*(p)).errors), err_layout_unsupported);
     return 0xFFFFFFFF;
+    }
     }
     }
     }
@@ -11651,7 +12068,7 @@ int parser__parse_struct_decl(parser__Parser* p, os_Arena* ctx) {
     parser__next_token(p);
     }
     if ((is_private_decl == 1)) {
-    if ((((((is_repr_c_decl == 1) || (is_packed_decl == 1)) || (is_linear_resource_decl == 1)) || (declared_destructor_name_decl.len > 0)) || (is_opaque_decl == 1))) {
+    if (((((((is_repr_c_decl == 1) || (is_packed_decl == 1)) || (is_linear_resource_decl == 1)) || (declared_destructor_name_decl.len > 0)) || (is_opaque_decl == 1)) || (is_scoped_entity_decl == 1))) {
     errors__CompilerError err_attribute_conflict = ((errors__CompilerError){ .file_path = ((Slice_unsigned_char){ NULL, 0 }), .kind = ((errors__ErrorKind){ .tag = 0 }), .message = ((Slice_unsigned_char){ NULL, 0 }), .span = ((token__Span){ .end = ((token__Position){ .column = 0, .line = 0, .offset = 0 }), .start = ((token__Position){ .column = 0, .line = 0, .offset = 0 }) }) });
     err_attribute_conflict.kind.tag = 1;
     err_attribute_conflict.message = ((Slice_unsigned_char){ (unsigned char*)"Private function attribute conflicts with type declaration attributes", 69 });
@@ -11797,12 +12214,14 @@ int parser__parse_struct_decl(parser__Parser* p, os_Arena* ctx) {
     stmt_struct_parse.StructDecl.is_linear_resource = is_linear_resource_decl;
     stmt_struct_parse.StructDecl.declared_destructor_name = declared_destructor_name_decl;
     stmt_struct_parse.StructDecl.is_opaque = is_opaque_decl;
+    stmt_struct_parse.StructDecl.is_scoped_entity = is_scoped_entity_decl;
+    stmt_struct_parse.StructDecl.scope_field = scoped_entity_field_decl;
     stmt_struct_parse.StructDecl.span = parser__merge_spans(start_span, end_span);
     ({ *((ast__Statement*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(stmt_idx))) = stmt_struct_parse; });
     return stmt_idx;
     } else {
     if (parser__cur_token_is(p, 41)) {
-    if (((declared_destructor_name_decl.len > 0) || (is_opaque_decl == 1))) {
+    if ((((declared_destructor_name_decl.len > 0) || (is_opaque_decl == 1)) || (is_scoped_entity_decl == 1))) {
     errors__CompilerError err_resource_enum_target = ((errors__CompilerError){ .file_path = ((Slice_unsigned_char){ NULL, 0 }), .kind = ((errors__ErrorKind){ .tag = 0 }), .message = ((Slice_unsigned_char){ NULL, 0 }), .span = ((token__Span){ .end = ((token__Position){ .column = 0, .line = 0, .offset = 0 }), .start = ((token__Position){ .column = 0, .line = 0, .offset = 0 }) }) });
     err_resource_enum_target.kind.tag = 1;
     err_resource_enum_target.message = ((Slice_unsigned_char){ (unsigned char*)"Resource declaration attributes require a struct type", 53 });
@@ -13502,6 +13921,7 @@ void typechecker__init_function_signature_ffi_defaults(typechecker__FunctionSign
     (*(sig)).requires_unsafe_call = 0;
     (*(sig)).requires_layout_metadata = 0;
     (*(sig)).requires_sandbox_arena = 0;
+    (*(sig)).is_compile_time_only = 0;
     (*(sig)).is_private = 0;
     }
 }
@@ -13612,46 +14032,54 @@ int typechecker__set_contains(int set, Slice_unsigned_char element, os_Arena* ct
 }
 
 typechecker__ExpressionProvenance typechecker__expression_provenance_unknown(ast__Type t, os_Arena* ctx) {
-    typechecker__ExpressionProvenance prov = ((typechecker__ExpressionProvenance){ .address_origin = ((typechecker__AddressOriginMetadata){ .is_raw_derived = 0, .is_safe_arena = 0, .is_sandbox_derived = 0, .is_unknown = 0 }), .legacy_origins = 0xFFFFFFFF, .resolved_type = ((ast__Type){ .tag = 0 }), .resource_root_identity = ((Slice_unsigned_char){ NULL, 0 }) });
+    typechecker__ExpressionProvenance prov = ((typechecker__ExpressionProvenance){ .address_origin = ((typechecker__AddressOriginMetadata){ .is_raw_derived = 0, .is_safe_arena = 0, .is_sandbox_derived = 0, .is_unknown = 0 }), .legacy_origins = 0xFFFFFFFF, .resolved_type = ((ast__Type){ .tag = 0 }), .resource_root_identity = ((Slice_unsigned_char){ NULL, 0 }), .trusted_scope_identity = ((Slice_unsigned_char){ NULL, 0 }), .trusted_scope_origin_kind = ((Slice_unsigned_char){ NULL, 0 }) });
     typechecker__AddressOriginMetadata origin = ((typechecker__AddressOriginMetadata){ .is_raw_derived = 0, .is_safe_arena = 0, .is_sandbox_derived = 0, .is_unknown = 0 });
     typechecker__init_address_origin_unknown(&(origin));
     prov.resolved_type = t;
     prov.address_origin = origin;
     prov.legacy_origins = typechecker__set_init(ctx);
     prov.resource_root_identity = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
+    prov.trusted_scope_identity = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
+    prov.trusted_scope_origin_kind = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
     return prov;
 }
 
 typechecker__ExpressionProvenance typechecker__expression_provenance_safe_arena(ast__Type t, os_Arena* ctx) {
-    typechecker__ExpressionProvenance prov = ((typechecker__ExpressionProvenance){ .address_origin = ((typechecker__AddressOriginMetadata){ .is_raw_derived = 0, .is_safe_arena = 0, .is_sandbox_derived = 0, .is_unknown = 0 }), .legacy_origins = 0xFFFFFFFF, .resolved_type = ((ast__Type){ .tag = 0 }), .resource_root_identity = ((Slice_unsigned_char){ NULL, 0 }) });
+    typechecker__ExpressionProvenance prov = ((typechecker__ExpressionProvenance){ .address_origin = ((typechecker__AddressOriginMetadata){ .is_raw_derived = 0, .is_safe_arena = 0, .is_sandbox_derived = 0, .is_unknown = 0 }), .legacy_origins = 0xFFFFFFFF, .resolved_type = ((ast__Type){ .tag = 0 }), .resource_root_identity = ((Slice_unsigned_char){ NULL, 0 }), .trusted_scope_identity = ((Slice_unsigned_char){ NULL, 0 }), .trusted_scope_origin_kind = ((Slice_unsigned_char){ NULL, 0 }) });
     typechecker__AddressOriginMetadata origin = ((typechecker__AddressOriginMetadata){ .is_raw_derived = 0, .is_safe_arena = 0, .is_sandbox_derived = 0, .is_unknown = 0 });
     typechecker__init_address_origin_safe_arena(&(origin));
     prov.resolved_type = t;
     prov.address_origin = origin;
     prov.legacy_origins = typechecker__set_init(ctx);
     prov.resource_root_identity = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
+    prov.trusted_scope_identity = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
+    prov.trusted_scope_origin_kind = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
     return prov;
 }
 
 typechecker__ExpressionProvenance typechecker__expression_provenance_raw_derived(ast__Type t, os_Arena* ctx) {
-    typechecker__ExpressionProvenance prov = ((typechecker__ExpressionProvenance){ .address_origin = ((typechecker__AddressOriginMetadata){ .is_raw_derived = 0, .is_safe_arena = 0, .is_sandbox_derived = 0, .is_unknown = 0 }), .legacy_origins = 0xFFFFFFFF, .resolved_type = ((ast__Type){ .tag = 0 }), .resource_root_identity = ((Slice_unsigned_char){ NULL, 0 }) });
+    typechecker__ExpressionProvenance prov = ((typechecker__ExpressionProvenance){ .address_origin = ((typechecker__AddressOriginMetadata){ .is_raw_derived = 0, .is_safe_arena = 0, .is_sandbox_derived = 0, .is_unknown = 0 }), .legacy_origins = 0xFFFFFFFF, .resolved_type = ((ast__Type){ .tag = 0 }), .resource_root_identity = ((Slice_unsigned_char){ NULL, 0 }), .trusted_scope_identity = ((Slice_unsigned_char){ NULL, 0 }), .trusted_scope_origin_kind = ((Slice_unsigned_char){ NULL, 0 }) });
     typechecker__AddressOriginMetadata origin = ((typechecker__AddressOriginMetadata){ .is_raw_derived = 0, .is_safe_arena = 0, .is_sandbox_derived = 0, .is_unknown = 0 });
     typechecker__init_address_origin_raw_derived(&(origin));
     prov.resolved_type = t;
     prov.address_origin = origin;
     prov.legacy_origins = typechecker__set_init(ctx);
     prov.resource_root_identity = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
+    prov.trusted_scope_identity = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
+    prov.trusted_scope_origin_kind = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
     return prov;
 }
 
 typechecker__ExpressionProvenance typechecker__expression_provenance_sandbox_derived(ast__Type t, os_Arena* ctx) {
-    typechecker__ExpressionProvenance prov = ((typechecker__ExpressionProvenance){ .address_origin = ((typechecker__AddressOriginMetadata){ .is_raw_derived = 0, .is_safe_arena = 0, .is_sandbox_derived = 0, .is_unknown = 0 }), .legacy_origins = 0xFFFFFFFF, .resolved_type = ((ast__Type){ .tag = 0 }), .resource_root_identity = ((Slice_unsigned_char){ NULL, 0 }) });
+    typechecker__ExpressionProvenance prov = ((typechecker__ExpressionProvenance){ .address_origin = ((typechecker__AddressOriginMetadata){ .is_raw_derived = 0, .is_safe_arena = 0, .is_sandbox_derived = 0, .is_unknown = 0 }), .legacy_origins = 0xFFFFFFFF, .resolved_type = ((ast__Type){ .tag = 0 }), .resource_root_identity = ((Slice_unsigned_char){ NULL, 0 }), .trusted_scope_identity = ((Slice_unsigned_char){ NULL, 0 }), .trusted_scope_origin_kind = ((Slice_unsigned_char){ NULL, 0 }) });
     typechecker__AddressOriginMetadata origin = ((typechecker__AddressOriginMetadata){ .is_raw_derived = 0, .is_safe_arena = 0, .is_sandbox_derived = 0, .is_unknown = 0 });
     typechecker__init_address_origin_sandbox_derived(&(origin));
     prov.resolved_type = t;
     prov.address_origin = origin;
     prov.legacy_origins = typechecker__set_init(ctx);
     prov.resource_root_identity = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
+    prov.trusted_scope_identity = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
+    prov.trusted_scope_origin_kind = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
     return prov;
 }
 
@@ -14707,6 +15135,9 @@ int typechecker__get_expression_origins(int expr_idx, typechecker__TypeEnvironme
     return typechecker__set_init(ctx);
     }
     ast__Expression expr = (*((ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(expr_idx))));
+    if ((expr.tag == 14)) {
+    return typechecker__get_expression_origins(expr.Query.terminal, env, ctx);
+    }
     if ((expr.tag == 0)) {
     Slice_unsigned_char name = expr.Identifier.name;
     LookupResult_ast__Type lookup_type = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&((*(env)).variable_types), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).variable_types), name, 1); } res; });
@@ -14886,6 +15317,219 @@ void typechecker__env_report_linear_resource_use_after_move(typechecker__TypeEnv
     }
 }
 
+int typechecker__typechecker_query_side_is_scoped_field(int expr_idx, Slice_unsigned_char binding_name, Slice_unsigned_char scope_field, os_Arena* ctx) {
+    {
+    if ((expr_idx == 0xFFFFFFFF)) {
+    return 0;
+    }
+    ast__Expression expr_phase21_4 = (*((ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(expr_idx))));
+    if ((expr_phase21_4.tag != 11)) {
+    return 0;
+    }
+    if ((std_str_eq(expr_phase21_4.Selector.right, scope_field) == 0)) {
+    return 0;
+    }
+    ast__Expression base_phase21_4 = (*((ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(expr_phase21_4.Selector.left))));
+    if ((base_phase21_4.tag != 0)) {
+    return 0;
+    }
+    return std_str_eq(base_phase21_4.Identifier.name, binding_name);
+    }
+}
+
+ast__Type typechecker__typechecker_make_trusted_scope_type(Slice_unsigned_char scope_identity, os_Arena* ctx) {
+    std_Vector_ast__Type scope_args_phase21_4 = ((struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx });
+    os_VectorPush(&(scope_args_phase21_4), typechecker__make_type_brand_marker(scope_identity, ctx));
+    return typechecker__make_type_generic(((Slice_unsigned_char){ (unsigned char*)"Scope", 5 }), scope_args_phase21_4, ctx);
+}
+
+ast__Type typechecker__typechecker_make_cross_tenant_capability_type(os_Arena* ctx) {
+    return typechecker__make_type_struct(((Slice_unsigned_char){ (unsigned char*)"CrossTenantCapability", 21 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), ctx);
+}
+
+void* typechecker__typechecker_make_cross_tenant_capability_type_pthread_wrapper(void* arg) {
+    typechecker__typechecker_make_cross_tenant_capability_type((os_Arena*)(uintptr_t)arg);
+    return NULL;
+}
+
+int typechecker__typechecker_type_is_matching_trusted_scope(ast__Type t, Slice_unsigned_char required_scope_identity, os_Arena* ctx) {
+    {
+    if (((t.tag != 10) || (std_str_eq(t.Generic.name, ((Slice_unsigned_char){ (unsigned char*)"Scope", 5 })) == 0))) {
+    return 0;
+    }
+    std_Vector_ast__Type scope_args_phase21_4 = (*((std_Vector_ast__Type*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(t.Generic.args))));
+    if (((scope_args_phase21_4.len != 1) || (typechecker__typechecker_type_is_brand_marker((*({ if (0 < 0 || 0 >= scope_args_phase21_4.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(scope_args_phase21_4.data[0]); })), ctx) == 0))) {
+    return 0;
+    }
+    return std_str_eq((*({ if (0 < 0 || 0 >= scope_args_phase21_4.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(scope_args_phase21_4.data[0]); })).Struct.struct_name, required_scope_identity);
+    }
+}
+
+int typechecker__typechecker_query_expression_has_trusted_scope(int expr_idx, Slice_unsigned_char required_scope_identity, typechecker__TypeEnvironment* env, int scope, os_Arena* ctx) {
+    {
+    int previous_query_predicate_phase21_4 = (*(env)).in_typed_query_predicate;
+    (*(env)).in_typed_query_predicate = 1;
+    typechecker__ExpressionProvenance provenance_phase21_4 = typechecker__check_expression_with_provenance(expr_idx, env, scope, ctx);
+    (*(env)).in_typed_query_predicate = previous_query_predicate_phase21_4;
+    if ((typechecker__typechecker_type_is_matching_trusted_scope(provenance_phase21_4.resolved_type, required_scope_identity, ctx) == 0)) {
+    return 0;
+    }
+    if ((std_str_eq(provenance_phase21_4.trusted_scope_origin_kind, ((Slice_unsigned_char){ (unsigned char*)"trusted_request_context_scope", 29 })) == 0)) {
+    return 0;
+    }
+    return std_str_eq(provenance_phase21_4.trusted_scope_identity, required_scope_identity);
+    }
+}
+
+int typechecker__typechecker_query_predicate_discharges_root(int predicate_idx, Slice_unsigned_char binding_name, Slice_unsigned_char scope_field, typechecker__TypeEnvironment* env, int scope, os_Arena* ctx) {
+    if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    {
+    if ((predicate_idx == 0xFFFFFFFF)) {
+    return 0;
+    }
+    ast__Expression predicate_phase21_4 = (*((ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(predicate_idx))));
+    if ((predicate_phase21_4.tag != 10)) {
+    return 0;
+    }
+    if ((std_str_eq(predicate_phase21_4.Binary.op, ((Slice_unsigned_char){ (unsigned char*)"&&", 2 })) == 1)) {
+    if ((typechecker__typechecker_query_predicate_discharges_root(predicate_phase21_4.Binary.left, binding_name, scope_field, env, scope, ctx) == 1)) {
+    return 1;
+    }
+    return typechecker__typechecker_query_predicate_discharges_root(predicate_phase21_4.Binary.right, binding_name, scope_field, env, scope, ctx);
+    }
+    if ((std_str_eq(predicate_phase21_4.Binary.op, ((Slice_unsigned_char){ (unsigned char*)"==", 2 })) == 0)) {
+    return 0;
+    }
+    if ((typechecker__typechecker_query_side_is_scoped_field(predicate_phase21_4.Binary.left, binding_name, scope_field, ctx) == 1)) {
+    return typechecker__typechecker_query_expression_has_trusted_scope(predicate_phase21_4.Binary.right, scope_field, env, scope, ctx);
+    }
+    if ((typechecker__typechecker_query_side_is_scoped_field(predicate_phase21_4.Binary.right, binding_name, scope_field, ctx) == 1)) {
+    return typechecker__typechecker_query_expression_has_trusted_scope(predicate_phase21_4.Binary.left, scope_field, env, scope, ctx);
+    }
+    return 0;
+    }
+}
+
+typechecker__QueryScopeObligation typechecker__typechecker_query_make_scope_obligation(Slice_unsigned_char entity_identity, Slice_unsigned_char binding_identity, Slice_unsigned_char scope_identity, Slice_unsigned_char root_kind, int source_order, int discharged, token__Span query_span, os_Arena* ctx) {
+    typechecker__QueryScopeObligation obligation_phase21_5 = ((typechecker__QueryScopeObligation){ .binding_identity = ((Slice_unsigned_char){ NULL, 0 }), .discharged = 0, .entity_identity = ((Slice_unsigned_char){ NULL, 0 }), .query_span = ((token__Span){ .end = ((token__Position){ .column = 0, .line = 0, .offset = 0 }), .start = ((token__Position){ .column = 0, .line = 0, .offset = 0 }) }), .root_kind = ((Slice_unsigned_char){ NULL, 0 }), .scope_identity = ((Slice_unsigned_char){ NULL, 0 }), .source_order = 0 });
+    obligation_phase21_5.entity_identity = std_Clone_str(ctx, entity_identity);
+    obligation_phase21_5.binding_identity = std_Clone_str(ctx, binding_identity);
+    obligation_phase21_5.scope_identity = std_Clone_str(ctx, scope_identity);
+    obligation_phase21_5.root_kind = std_Clone_str(ctx, root_kind);
+    obligation_phase21_5.source_order = source_order;
+    obligation_phase21_5.discharged = discharged;
+    obligation_phase21_5.query_span = query_span;
+    return obligation_phase21_5;
+}
+
+std_Vector_typechecker__QueryScopeObligation typechecker__typechecker_build_query_scope_obligations(ast__Expression expr, typechecker__TypeEnvironment* env, int scope, os_Arena* ctx) {
+    std_Vector_typechecker__QueryScopeObligation obligations_phase21_5 = ((struct std_Vector_typechecker__QueryScopeObligation){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx });
+    {
+    std_Vector_ast__QueryRoot roots_phase21_5 = (*((std_Vector_ast__QueryRoot*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(expr.Query.roots))));
+    std_Vector_ast__Expression predicates_phase21_5 = (*((std_Vector_ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(expr.Query.predicates))));
+    int root_index_phase21_5 = 0;
+    while ((root_index_phase21_5 < roots_phase21_5.len)) {
+        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    ast__QueryRoot root_phase21_5 = (*({ if (root_index_phase21_5 < 0 || root_index_phase21_5 >= roots_phase21_5.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(roots_phase21_5.data[root_index_phase21_5]); }));
+    Slice_unsigned_char resolved_entity_phase21_5 = typechecker__env_resolve_namespaced_ident(env, root_phase21_5.entity_name, ctx);
+    LookupResult_int scoped_lookup_phase21_5 = ({ LookupResult_int res = {0}; res.Ok = os_HashMapContains(&((*(env)).struct_scoped_entity), resolved_entity_phase21_5, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).struct_scoped_entity), resolved_entity_phase21_5, 1); } res; });
+    if (scoped_lookup_phase21_5.Ok) {
+    if ((scoped_lookup_phase21_5.Val == 1)) {
+    LookupResult_str field_lookup_phase21_5 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&((*(env)).struct_scope_field), resolved_entity_phase21_5, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).struct_scope_field), resolved_entity_phase21_5, 1); } res; });
+    int discharged_phase21_5 = 0;
+    if (field_lookup_phase21_5.Ok) {
+    int predicate_index_phase21_5 = 0;
+    while ((predicate_index_phase21_5 < predicates_phase21_5.len)) {
+        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    int predicate_idx_phase21_5 = os_ArenaAlloc(ctx, sizeof(ast__Expression));
+    ({ *((ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(predicate_idx_phase21_5))) = (*({ if (predicate_index_phase21_5 < 0 || predicate_index_phase21_5 >= predicates_phase21_5.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(predicates_phase21_5.data[predicate_index_phase21_5]); })); });
+    if ((typechecker__typechecker_query_predicate_discharges_root(predicate_idx_phase21_5, root_phase21_5.binding_name, field_lookup_phase21_5.Val, env, scope, ctx) == 1)) {
+    discharged_phase21_5 = 1;
+    }
+    predicate_index_phase21_5 = (predicate_index_phase21_5 + 1);
+    }
+    os_VectorPush(&(obligations_phase21_5), typechecker__typechecker_query_make_scope_obligation(root_phase21_5.entity_name, root_phase21_5.binding_name, field_lookup_phase21_5.Val, ((Slice_unsigned_char){ (unsigned char*)"primary", 7 }), root_index_phase21_5, discharged_phase21_5, expr.Query.span, ctx));
+    }
+    }
+    }
+    root_index_phase21_5 = (root_index_phase21_5 + 1);
+    }
+    std_Vector_ast__QueryJoin joins_phase21_5 = (*((std_Vector_ast__QueryJoin*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(expr.Query.joins))));
+    int join_index_phase21_5 = 0;
+    while ((join_index_phase21_5 < joins_phase21_5.len)) {
+        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    ast__QueryJoin join_phase21_5 = (*({ if (join_index_phase21_5 < 0 || join_index_phase21_5 >= joins_phase21_5.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(joins_phase21_5.data[join_index_phase21_5]); }));
+    Slice_unsigned_char resolved_join_entity_phase21_5 = typechecker__env_resolve_namespaced_ident(env, join_phase21_5.entity_name, ctx);
+    LookupResult_int join_scoped_lookup_phase21_5 = ({ LookupResult_int res = {0}; res.Ok = os_HashMapContains(&((*(env)).struct_scoped_entity), resolved_join_entity_phase21_5, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).struct_scoped_entity), resolved_join_entity_phase21_5, 1); } res; });
+    if (join_scoped_lookup_phase21_5.Ok) {
+    if ((join_scoped_lookup_phase21_5.Val == 1)) {
+    LookupResult_str join_field_lookup_phase21_5 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&((*(env)).struct_scope_field), resolved_join_entity_phase21_5, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).struct_scope_field), resolved_join_entity_phase21_5, 1); } res; });
+    if (join_field_lookup_phase21_5.Ok) {
+    int join_discharged_phase21_5 = typechecker__typechecker_query_predicate_discharges_root(join_phase21_5.predicate, join_phase21_5.binding_name, join_field_lookup_phase21_5.Val, env, scope, ctx);
+    os_VectorPush(&(obligations_phase21_5), typechecker__typechecker_query_make_scope_obligation(join_phase21_5.entity_name, join_phase21_5.binding_name, join_field_lookup_phase21_5.Val, ((Slice_unsigned_char){ (unsigned char*)"join", 4 }), join_index_phase21_5, join_discharged_phase21_5, expr.Query.span, ctx));
+    }
+    }
+    }
+    join_index_phase21_5 = (join_index_phase21_5 + 1);
+    }
+    }
+    return obligations_phase21_5;
+}
+
+int typechecker__typechecker_query_cross_tenant_capability_state(ast__Expression expr, typechecker__TypeEnvironment* env, os_Arena* ctx) {
+    {
+    if ((expr.Query.cross_tenant_capability == 0xFFFFFFFF)) {
+    return 0;
+    }
+    ast__Expression capability_phase21_6 = (*((ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(expr.Query.cross_tenant_capability))));
+    if ((capability_phase21_6.tag == 12)) {
+    Slice_unsigned_char capability_name_phase21_6 = typechecker__expression_to_string(capability_phase21_6.Call.function, ctx);
+    Slice_unsigned_char resolved_capability_phase21_6 = typechecker__env_resolve_namespaced_ident(env, capability_name_phase21_6, ctx);
+    std_Vector_ast__Expression capability_args_phase21_6 = (*((std_Vector_ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(capability_phase21_6.Call.arguments))));
+    if (((std_str_eq(resolved_capability_phase21_6, ((Slice_unsigned_char){ (unsigned char*)"cross_tenant_capability_from_host", 33 })) == 1) && (capability_args_phase21_6.len == 0))) {
+    return 1;
+    }
+    }
+    typechecker__report_error(2, ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: [CrossTenantCapability] error: cross_tenant requires a direct compiler-owned host capability at this query", 122 }), expr.Query.span, env, ctx);
+    return 2;
+    }
+}
+
+void typechecker__typechecker_check_query_scope_obligations(ast__Expression expr, typechecker__TypeEnvironment* env, int scope, os_Arena* ctx) {
+    int cross_tenant_state_phase21_6 = typechecker__typechecker_query_cross_tenant_capability_state(expr, env, ctx);
+    std_Vector_typechecker__QueryScopeObligation obligations_phase21_5 = ((struct std_Vector_typechecker__QueryScopeObligation){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx });
+    if ((cross_tenant_state_phase21_6 == 0)) {
+    obligations_phase21_5 = typechecker__typechecker_build_query_scope_obligations(expr, env, scope, ctx);
+    }
+    int obligation_index_phase21_5 = 0;
+    while ((obligation_index_phase21_5 < obligations_phase21_5.len)) {
+        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    typechecker__QueryScopeObligation obligation_phase21_5 = (*({ if (obligation_index_phase21_5 < 0 || obligation_index_phase21_5 >= obligations_phase21_5.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(obligations_phase21_5.data[obligation_index_phase21_5]); }));
+    if (((obligation_phase21_5.discharged == 0) && (cross_tenant_state_phase21_6 == 0))) {
+    Slice_unsigned_char message_phase21_5 = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: [TenantScopeProvenance] error: query lacks trusted tenant-scope provenance for scoped root '", 108 });
+    message_phase21_5 = (({ Slice_unsigned_char _s1 = message_phase21_5; Slice_unsigned_char _s2 = obligation_phase21_5.entity_identity; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    message_phase21_5 = (({ Slice_unsigned_char _s1 = message_phase21_5; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"' (", 3 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    message_phase21_5 = (({ Slice_unsigned_char _s1 = message_phase21_5; Slice_unsigned_char _s2 = obligation_phase21_5.root_kind; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    message_phase21_5 = (({ Slice_unsigned_char _s1 = message_phase21_5; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)" binding '", 10 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    message_phase21_5 = (({ Slice_unsigned_char _s1 = message_phase21_5; Slice_unsigned_char _s2 = obligation_phase21_5.binding_identity; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    message_phase21_5 = (({ Slice_unsigned_char _s1 = message_phase21_5; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"')", 2 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    typechecker__report_error(2, message_phase21_5, obligation_phase21_5.query_span, env, ctx);
+    }
+    obligation_index_phase21_5 = (obligation_index_phase21_5 + 1);
+    }
+    {
+    std_Vector_ast__Expression nested_phase21_5 = (*((std_Vector_ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(expr.Query.nested_queries))));
+    int nested_index_phase21_5 = 0;
+    while ((nested_index_phase21_5 < nested_phase21_5.len)) {
+        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    int nested_expr_idx_phase21_5 = os_ArenaAlloc(ctx, sizeof(ast__Expression));
+    ({ *((ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(nested_expr_idx_phase21_5))) = (*({ if (nested_index_phase21_5 < 0 || nested_index_phase21_5 >= nested_phase21_5.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(nested_phase21_5.data[nested_index_phase21_5]); })); });
+    typechecker__check_expression(nested_expr_idx_phase21_5, env, scope, ctx);
+    nested_index_phase21_5 = (nested_index_phase21_5 + 1);
+    }
+    }
+}
+
 ast__Type typechecker__check_expression_internal(int expr_idx, typechecker__TypeEnvironment* env, int scope, os_Arena* ctx) {
     {
     ast__Type dummy = ((ast__Type){ .tag = 0 });
@@ -14894,6 +15538,10 @@ ast__Type typechecker__check_expression_internal(int expr_idx, typechecker__Type
     return dummy;
     }
     ast__Expression expr = (*((ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(expr_idx))));
+    if ((expr.tag == 14)) {
+    typechecker__typechecker_check_query_scope_obligations(expr, env, scope, ctx);
+    return typechecker__check_expression(expr.Query.terminal, env, scope, ctx);
+    }
     if ((expr.tag == 0)) {
     Slice_unsigned_char name = expr.Identifier.name;
     if ((std_str_eq(name, ((Slice_unsigned_char){ (unsigned char*)"null", 4 })) == 1)) {
@@ -16238,6 +16886,20 @@ ast__Type typechecker__check_expression_internal(int expr_idx, typechecker__Type
     Slice_unsigned_char func_name = typechecker__expression_to_string(expr.Call.function, ctx);
     Slice_unsigned_char resolved_func = typechecker__env_resolve_namespaced_ident(env, func_name, ctx);
     typechecker__env_report_private_function_access(env, resolved_func, expr.Call.span, 0, ctx);
+    if ((std_str_eq(resolved_func, ((Slice_unsigned_char){ (unsigned char*)"trusted_scope_from_context", 26 })) == 1)) {
+    std_Vector_ast__Expression trusted_args_phase21_4 = (*((std_Vector_ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(expr.Call.arguments))));
+    if (((*(env)).in_typed_query_predicate == 0)) {
+    typechecker__report_error(2, ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: [TrustedScopeBoundary] trusted_scope_from_context may be used only inside a compiler-owned typed-query predicate", 128 }), expr.Call.span, env, ctx);
+    }
+    if (((trusted_args_phase21_4.len != 1) || ((*({ if (0 < 0 || 0 >= trusted_args_phase21_4.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(trusted_args_phase21_4.data[0]); })).tag != 2))) {
+    typechecker__report_error(2, ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: [TrustedScopeBoundary] trusted_scope_from_context requires one compile-time scope identity string", 113 }), expr.Call.span, env, ctx);
+    }
+    return typechecker__typechecker_make_trusted_scope_type((*({ if (0 < 0 || 0 >= trusted_args_phase21_4.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(trusted_args_phase21_4.data[0]); })).String.val, ctx);
+    }
+    if ((std_str_eq(resolved_func, ((Slice_unsigned_char){ (unsigned char*)"cross_tenant_capability_from_host", 33 })) == 1)) {
+    typechecker__report_error(2, ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: [CrossTenantCapabilityBoundary] cross_tenant_capability_from_host may be used only as the direct capability expression of a compiler-owned typed query", 166 }), expr.Call.span, env, ctx);
+    return typechecker__typechecker_make_cross_tenant_capability_type(ctx);
+    }
     if (std_str_eq(resolved_func, ((Slice_unsigned_char){ (unsigned char*)"len", 3 }))) {
     std_Vector_ast__Expression args_vec_len_call = (*((std_Vector_ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(expr.Call.arguments))));
     if ((args_vec_len_call.len != 1)) {
@@ -16788,7 +17450,7 @@ ast__Type typechecker__check_expression_internal(int expr_idx, typechecker__Type
     return t_void;
     }
     int has_custom_sig = 0;
-    typechecker__FunctionSignature sig = ((typechecker__FunctionSignature){ .extern_abi = ((Slice_unsigned_char){ NULL, 0 }), .extern_symbol_name = ((Slice_unsigned_char){ NULL, 0 }), .is_extern = 0, .is_private = 0, .is_unsafe = 0, .param_names = ((std_Vector_str){ .arena = NULL, .capacity = 0, .data = NULL, .len = 0 }), .params = ((std_Vector_ast__Type){ .arena = NULL, .capacity = 0, .data = NULL, .len = 0 }), .requires_layout_metadata = 0, .requires_sandbox_arena = 0, .requires_unsafe_call = 0, .return_origins = 0xFFFFFFFF, .return_type = ((ast__Type){ .tag = 0 }) });
+    typechecker__FunctionSignature sig = ((typechecker__FunctionSignature){ .extern_abi = ((Slice_unsigned_char){ NULL, 0 }), .extern_symbol_name = ((Slice_unsigned_char){ NULL, 0 }), .is_compile_time_only = 0, .is_extern = 0, .is_private = 0, .is_unsafe = 0, .param_names = ((std_Vector_str){ .arena = NULL, .capacity = 0, .data = NULL, .len = 0 }), .params = ((std_Vector_ast__Type){ .arena = NULL, .capacity = 0, .data = NULL, .len = 0 }), .requires_layout_metadata = 0, .requires_sandbox_arena = 0, .requires_unsafe_call = 0, .return_origins = 0xFFFFFFFF, .return_type = ((ast__Type){ .tag = 0 }) });
     typechecker__init_function_signature_ffi_defaults(&(sig));
     sig.is_unsafe = 0;
     if ((std_str_eq(resolved_func, ((Slice_unsigned_char){ (unsigned char*)"std_Concat", 10 })) || std_str_eq(resolved_func, ((Slice_unsigned_char){ (unsigned char*)"std.Concat", 10 })))) {
@@ -17123,6 +17785,9 @@ typechecker__ExpressionProvenance typechecker__check_expression_with_provenance(
     {
     if ((expr_idx != 0xFFFFFFFF)) {
     ast__Expression expr = (*((ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(expr_idx))));
+    if ((expr.tag == 14)) {
+    return typechecker__check_expression_with_provenance(expr.Query.terminal, env, scope, ctx);
+    }
     if ((expr.tag == 0)) {
     Slice_unsigned_char name = expr.Identifier.name;
     if ((std_str_eq(name, ((Slice_unsigned_char){ (unsigned char*)"null", 4 })) == 1)) {
@@ -17306,6 +17971,16 @@ typechecker__ExpressionProvenance typechecker__check_expression_with_provenance(
     if ((expr.tag == 12)) {
     Slice_unsigned_char call_name_prov = typechecker__expression_to_string(expr.Call.function, ctx);
     Slice_unsigned_char resolved_call_name_prov = typechecker__env_resolve_namespaced_ident(env, call_name_prov, ctx);
+    if (((std_str_eq(resolved_call_name_prov, ((Slice_unsigned_char){ (unsigned char*)"trusted_scope_from_context", 26 })) == 1) && ((*(env)).in_typed_query_predicate == 1))) {
+    std_Vector_ast__Expression trusted_args_prov_phase21_4 = (*((std_Vector_ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(expr.Call.arguments))));
+    if (((trusted_args_prov_phase21_4.len == 1) && ((*({ if (0 < 0 || 0 >= trusted_args_prov_phase21_4.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(trusted_args_prov_phase21_4.data[0]); })).tag == 2))) {
+    typechecker__ExpressionProvenance trusted_prov_phase21_4 = typechecker__expression_provenance_safe_arena(t, ctx);
+    trusted_prov_phase21_4.legacy_origins = legacy_origins;
+    trusted_prov_phase21_4.trusted_scope_identity = std_Clone_str(ctx, (*({ if (0 < 0 || 0 >= trusted_args_prov_phase21_4.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(trusted_args_prov_phase21_4.data[0]); })).String.val);
+    trusted_prov_phase21_4.trusted_scope_origin_kind = std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"trusted_request_context_scope", 29 }));
+    return trusted_prov_phase21_4;
+    }
+    }
     if ((t.tag == 11)) {
     Slice_unsigned_char call_resource_root = typechecker__env_resource_root_identity_for_call(env, expr_idx, ctx);
     if ((std_str_eq(call_resource_root, ((Slice_unsigned_char){ (unsigned char*)"resource-root:ambiguous", 23 })) == 1)) {
@@ -19520,7 +20195,7 @@ void typechecker__env_register_std_structs(typechecker__TypeEnvironment* env, os
 
 void typechecker__register_fn(typechecker__TypeEnvironment* env, Slice_unsigned_char name, std_Vector_ast__Type params, ast__Type ret_t, os_Arena* ctx) {
     {
-    typechecker__FunctionSignature sig = ((typechecker__FunctionSignature){ .extern_abi = ((Slice_unsigned_char){ NULL, 0 }), .extern_symbol_name = ((Slice_unsigned_char){ NULL, 0 }), .is_extern = 0, .is_private = 0, .is_unsafe = 0, .param_names = ((std_Vector_str){ .arena = NULL, .capacity = 0, .data = NULL, .len = 0 }), .params = ((std_Vector_ast__Type){ .arena = NULL, .capacity = 0, .data = NULL, .len = 0 }), .requires_layout_metadata = 0, .requires_sandbox_arena = 0, .requires_unsafe_call = 0, .return_origins = 0xFFFFFFFF, .return_type = ((ast__Type){ .tag = 0 }) });
+    typechecker__FunctionSignature sig = ((typechecker__FunctionSignature){ .extern_abi = ((Slice_unsigned_char){ NULL, 0 }), .extern_symbol_name = ((Slice_unsigned_char){ NULL, 0 }), .is_compile_time_only = 0, .is_extern = 0, .is_private = 0, .is_unsafe = 0, .param_names = ((std_Vector_str){ .arena = NULL, .capacity = 0, .data = NULL, .len = 0 }), .params = ((std_Vector_ast__Type){ .arena = NULL, .capacity = 0, .data = NULL, .len = 0 }), .requires_layout_metadata = 0, .requires_sandbox_arena = 0, .requires_unsafe_call = 0, .return_origins = 0xFFFFFFFF, .return_type = ((ast__Type){ .tag = 0 }) });
     typechecker__init_function_signature_ffi_defaults(&(sig));
     sig.params = params;
     sig.return_type = ret_t;
@@ -19601,7 +20276,26 @@ void typechecker__env_register_std_functions(typechecker__TypeEnvironment* env, 
     typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"os_ScratchReset", 15 }), p_void, t_void, ctx);
     typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std.Yield", 9 }), p_void, t_void, ctx);
     typechecker__register_fn(env, ((Slice_unsigned_char){ (unsigned char*)"std_Yield", 9 }), p_void, t_void, ctx);
-    typechecker__FunctionSignature sig_arena_new = ((typechecker__FunctionSignature){ .extern_abi = ((Slice_unsigned_char){ NULL, 0 }), .extern_symbol_name = ((Slice_unsigned_char){ NULL, 0 }), .is_extern = 0, .is_private = 0, .is_unsafe = 0, .param_names = ((std_Vector_str){ .arena = NULL, .capacity = 0, .data = NULL, .len = 0 }), .params = ((std_Vector_ast__Type){ .arena = NULL, .capacity = 0, .data = NULL, .len = 0 }), .requires_layout_metadata = 0, .requires_sandbox_arena = 0, .requires_unsafe_call = 0, .return_origins = 0xFFFFFFFF, .return_type = ((ast__Type){ .tag = 0 }) });
+    typechecker__FunctionSignature sig_trusted_scope = ((typechecker__FunctionSignature){ .extern_abi = ((Slice_unsigned_char){ NULL, 0 }), .extern_symbol_name = ((Slice_unsigned_char){ NULL, 0 }), .is_compile_time_only = 0, .is_extern = 0, .is_private = 0, .is_unsafe = 0, .param_names = ((std_Vector_str){ .arena = NULL, .capacity = 0, .data = NULL, .len = 0 }), .params = ((std_Vector_ast__Type){ .arena = NULL, .capacity = 0, .data = NULL, .len = 0 }), .requires_layout_metadata = 0, .requires_sandbox_arena = 0, .requires_unsafe_call = 0, .return_origins = 0xFFFFFFFF, .return_type = ((ast__Type){ .tag = 0 }) });
+    typechecker__init_function_signature_ffi_defaults(&(sig_trusted_scope));
+    sig_trusted_scope.params = p_str;
+    sig_trusted_scope.return_type = typechecker__typechecker_make_trusted_scope_type(((Slice_unsigned_char){ (unsigned char*)"Any", 3 }), ctx);
+    sig_trusted_scope.return_origins = typechecker__set_init(ctx);
+    sig_trusted_scope.is_compile_time_only = 1;
+    std_Vector_str trusted_scope_param_names = ((struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx });
+    os_VectorPush(&(trusted_scope_param_names), ((Slice_unsigned_char){ (unsigned char*)"scope_identity", 14 }));
+    sig_trusted_scope.param_names = trusted_scope_param_names;
+    typechecker__env_register_function(env, ((Slice_unsigned_char){ (unsigned char*)"trusted_scope_from_context", 26 }), sig_trusted_scope, ctx);
+    typechecker__FunctionSignature sig_cross_tenant_capability = ((typechecker__FunctionSignature){ .extern_abi = ((Slice_unsigned_char){ NULL, 0 }), .extern_symbol_name = ((Slice_unsigned_char){ NULL, 0 }), .is_compile_time_only = 0, .is_extern = 0, .is_private = 0, .is_unsafe = 0, .param_names = ((std_Vector_str){ .arena = NULL, .capacity = 0, .data = NULL, .len = 0 }), .params = ((std_Vector_ast__Type){ .arena = NULL, .capacity = 0, .data = NULL, .len = 0 }), .requires_layout_metadata = 0, .requires_sandbox_arena = 0, .requires_unsafe_call = 0, .return_origins = 0xFFFFFFFF, .return_type = ((ast__Type){ .tag = 0 }) });
+    typechecker__init_function_signature_ffi_defaults(&(sig_cross_tenant_capability));
+    sig_cross_tenant_capability.params = p_void;
+    sig_cross_tenant_capability.return_type = typechecker__typechecker_make_cross_tenant_capability_type(ctx);
+    sig_cross_tenant_capability.return_origins = typechecker__set_init(ctx);
+    sig_cross_tenant_capability.is_compile_time_only = 1;
+    std_Vector_str cross_tenant_capability_param_names = ((struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx });
+    sig_cross_tenant_capability.param_names = cross_tenant_capability_param_names;
+    typechecker__env_register_function(env, ((Slice_unsigned_char){ (unsigned char*)"cross_tenant_capability_from_host", 33 }), sig_cross_tenant_capability, ctx);
+    typechecker__FunctionSignature sig_arena_new = ((typechecker__FunctionSignature){ .extern_abi = ((Slice_unsigned_char){ NULL, 0 }), .extern_symbol_name = ((Slice_unsigned_char){ NULL, 0 }), .is_compile_time_only = 0, .is_extern = 0, .is_private = 0, .is_unsafe = 0, .param_names = ((std_Vector_str){ .arena = NULL, .capacity = 0, .data = NULL, .len = 0 }), .params = ((std_Vector_ast__Type){ .arena = NULL, .capacity = 0, .data = NULL, .len = 0 }), .requires_layout_metadata = 0, .requires_sandbox_arena = 0, .requires_unsafe_call = 0, .return_origins = 0xFFFFFFFF, .return_type = ((ast__Type){ .tag = 0 }) });
     typechecker__init_function_signature_ffi_defaults(&(sig_arena_new));
     std_Vector_str arena_new_names = ((struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx });
     std_Vector_ast__Type arena_new_params = ((struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx });
@@ -19760,6 +20454,8 @@ typechecker__TypeEnvironment typechecker__env_new(os_Arena* ctx) {
     env_ref_new->struct_linear_destructor = ((struct std_HashMap_str_str){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx });
     env_ref_new->struct_declared_destructor = ((struct std_HashMap_str_str){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx });
     env_ref_new->struct_declared_opaque = ((struct std_HashMap_str_int){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx });
+    env_ref_new->struct_scoped_entity = ((struct std_HashMap_str_int){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx });
+    env_ref_new->struct_scope_field = ((struct std_HashMap_str_str){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx });
     env_ref_new->struct_declaration_module = ((struct std_HashMap_str_str){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx });
     env_ref_new->function_declaration_module = ((struct std_HashMap_str_str){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx });
     env_ref_new->struct_validated_destructor = ((struct std_HashMap_str_str){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx });
@@ -19808,6 +20504,7 @@ typechecker__TypeEnvironment typechecker__env_new(os_Arena* ctx) {
     env_ref_new->current_function_local_vars = 0xFFFFFFFF;
     env_ref_new->checked_results = ((struct std_HashMap_str_int){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx });
     env_ref_new->in_unsafe_block = 0;
+    env_ref_new->in_typed_query_predicate = 0;
     env_ref_new->active_monomorphizations = ((struct std_HashMap_str_int){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx });
     env_ref_new->current_alloc_struct = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
     env_ref_new->current_params = ((struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx });
@@ -20114,21 +20811,21 @@ int typechecker__env_function_is_validated_resource_destructor(typechecker__Type
 
 int typechecker__env_private_function_access_allowed(typechecker__TypeEnvironment* env, Slice_unsigned_char name, int compiler_cleanup_invocation, os_Arena* ctx) {
     {
-    LookupResult_typechecker__FunctionSignature _guard_res_sig_7715_9 = {0};
-    _guard_res_sig_7715_9 = ({ LookupResult_typechecker__FunctionSignature res = {0}; res.Ok = os_HashMapContains(&((*(env)).function_registry), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).function_registry), name, 1); } res; });
-    if (!_guard_res_sig_7715_9.Ok) {
+    LookupResult_typechecker__FunctionSignature _guard_res_sig_8284_9 = {0};
+    _guard_res_sig_8284_9 = ({ LookupResult_typechecker__FunctionSignature res = {0}; res.Ok = os_HashMapContains(&((*(env)).function_registry), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).function_registry), name, 1); } res; });
+    if (!_guard_res_sig_8284_9.Ok) {
         return 1;
     }
-    typechecker__FunctionSignature sig = _guard_res_sig_7715_9.Val;
+    typechecker__FunctionSignature sig = _guard_res_sig_8284_9.Val;
     if ((sig.is_private == 0)) {
     return 1;
     }
-    LookupResult_str _guard_res_owner_7721_9 = {0};
-    _guard_res_owner_7721_9 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&((*(env)).function_declaration_module), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).function_declaration_module), name, 1); } res; });
-    if (!_guard_res_owner_7721_9.Ok) {
+    LookupResult_str _guard_res_owner_8290_9 = {0};
+    _guard_res_owner_8290_9 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&((*(env)).function_declaration_module), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).function_declaration_module), name, 1); } res; });
+    if (!_guard_res_owner_8290_9.Ok) {
         return 0;
     }
-    Slice_unsigned_char owner = _guard_res_owner_7721_9.Val;
+    Slice_unsigned_char owner = _guard_res_owner_8290_9.Val;
     if ((std_str_eq(owner, (*(env)).current_prefix) == 1)) {
     return 1;
     }
@@ -21246,12 +21943,12 @@ int typechecker__env_resource_storage_field_order(typechecker__TypeEnvironment* 
     return (0 - 1);
     }
     Slice_unsigned_char root = typechecker__env_resource_storage_root(storage_name, ctx);
-    LookupResult_ast__Type _guard_res_root_type_lookup_8840_9 = {0};
-    _guard_res_root_type_lookup_8840_9 = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&((*(env)).variable_types), root, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).variable_types), root, 1); } res; });
-    if (!_guard_res_root_type_lookup_8840_9.Ok) {
+    LookupResult_ast__Type _guard_res_root_type_lookup_9409_9 = {0};
+    _guard_res_root_type_lookup_9409_9 = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&((*(env)).variable_types), root, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).variable_types), root, 1); } res; });
+    if (!_guard_res_root_type_lookup_9409_9.Ok) {
         return (0 - 1);
     }
-    ast__Type root_type_lookup = _guard_res_root_type_lookup_8840_9.Val;
+    ast__Type root_type_lookup = _guard_res_root_type_lookup_9409_9.Val;
     ast__Type root_type = typechecker__env_resolve_type(env, root_type_lookup, ctx);
     if ((root_type.tag != 8)) {
     return (0 - 1);
@@ -21500,6 +22197,10 @@ Slice_unsigned_char typechecker__env_resource_identity_for_expression(typechecke
     return std_Clone_str(ctx, storage_lookup.Val);
     }
     ast__Expression expr = (*((ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(expr_idx))));
+    if ((expr.tag == 14)) {
+    Slice_unsigned_char query_identity_phase21_3 = typechecker__env_resource_identity_for_expression(env, expr.Query.terminal, ctx);
+    return std_Clone_str(ctx, query_identity_phase21_3);
+    }
     if ((expr.tag == 0)) {
     Slice_unsigned_char resolved_name = typechecker__env_resolve_namespaced_ident(env, expr.Identifier.name, ctx);
     LookupResult_str resolved_lookup = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&((*(env)).resource_value_identities), resolved_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).resource_value_identities), resolved_name, 1); } res; });
@@ -21547,12 +22248,12 @@ int typechecker__env_bind_resource_identity(typechecker__TypeEnvironment* env, S
     if (((storage_name.len == 0) || (identity.len == 0))) {
     return 0;
     }
-    LookupResult_typechecker__ResourceAcquisitionObligation _guard_res_obligation_lookup_9139_9 = {0};
-    _guard_res_obligation_lookup_9139_9 = ({ LookupResult_typechecker__ResourceAcquisitionObligation res = {0}; res.Ok = os_HashMapContains(&((*(env)).resource_acquisition_obligations), identity, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).resource_acquisition_obligations), identity, 1); } res; });
-    if (!_guard_res_obligation_lookup_9139_9.Ok) {
+    LookupResult_typechecker__ResourceAcquisitionObligation _guard_res_obligation_lookup_9714_9 = {0};
+    _guard_res_obligation_lookup_9714_9 = ({ LookupResult_typechecker__ResourceAcquisitionObligation res = {0}; res.Ok = os_HashMapContains(&((*(env)).resource_acquisition_obligations), identity, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).resource_acquisition_obligations), identity, 1); } res; });
+    if (!_guard_res_obligation_lookup_9714_9.Ok) {
         return 0;
     }
-    typechecker__ResourceAcquisitionObligation obligation_lookup = _guard_res_obligation_lookup_9139_9.Val;
+    typechecker__ResourceAcquisitionObligation obligation_lookup = _guard_res_obligation_lookup_9714_9.Val;
     *os_HashMapRef(&((*(env)).resource_value_identities), std_Clone_str(ctx, storage_name), 1) = std_Clone_str(ctx, identity);
     typechecker__ResourceAcquisitionObligation obligation = obligation_lookup;
     Slice_unsigned_char root = typechecker__env_resource_storage_root(storage_name, ctx);
@@ -21603,12 +22304,12 @@ int typechecker__env_bind_resource_expression(typechecker__TypeEnvironment* env,
 
 int typechecker__env_resource_obligation_set_state(typechecker__TypeEnvironment* env, Slice_unsigned_char identity, int state, os_Arena* ctx) {
     {
-    LookupResult_typechecker__ResourceAcquisitionObligation _guard_res_lookup_9208_9 = {0};
-    _guard_res_lookup_9208_9 = ({ LookupResult_typechecker__ResourceAcquisitionObligation res = {0}; res.Ok = os_HashMapContains(&((*(env)).resource_acquisition_obligations), identity, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).resource_acquisition_obligations), identity, 1); } res; });
-    if (!_guard_res_lookup_9208_9.Ok) {
+    LookupResult_typechecker__ResourceAcquisitionObligation _guard_res_lookup_9783_9 = {0};
+    _guard_res_lookup_9783_9 = ({ LookupResult_typechecker__ResourceAcquisitionObligation res = {0}; res.Ok = os_HashMapContains(&((*(env)).resource_acquisition_obligations), identity, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).resource_acquisition_obligations), identity, 1); } res; });
+    if (!_guard_res_lookup_9783_9.Ok) {
         return 0;
     }
-    typechecker__ResourceAcquisitionObligation lookup = _guard_res_lookup_9208_9.Val;
+    typechecker__ResourceAcquisitionObligation lookup = _guard_res_lookup_9783_9.Val;
     typechecker__ResourceAcquisitionObligation obligation = lookup;
     obligation.state = state;
     *os_HashMapRef(&((*(env)).resource_acquisition_obligations), std_Clone_str(ctx, identity), 1) = obligation;
@@ -21633,12 +22334,12 @@ typechecker__ExpressionProvenance typechecker__env_expression_provenance_rooted_
     return prov;
     }
     {
-    LookupResult_str _guard_res_identity_9238_9 = {0};
-    _guard_res_identity_9238_9 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&((*(env)).resource_value_identities), resource_storage_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).resource_value_identities), resource_storage_name, 1); } res; });
-    if (!_guard_res_identity_9238_9.Ok) {
+    LookupResult_str _guard_res_identity_9813_9 = {0};
+    _guard_res_identity_9813_9 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&((*(env)).resource_value_identities), resource_storage_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).resource_value_identities), resource_storage_name, 1); } res; });
+    if (!_guard_res_identity_9813_9.Ok) {
         return prov;
     }
-    Slice_unsigned_char identity = _guard_res_identity_9238_9.Val;
+    Slice_unsigned_char identity = _guard_res_identity_9813_9.Val;
     if ((typechecker__env_resource_obligation_is_pending(env, identity, ctx) == 0)) {
     return prov;
     }
@@ -21725,12 +22426,12 @@ int typechecker__env_transfer_resource_return_expression(typechecker__TypeEnviro
 
 int typechecker__env_resource_destructor_matches_obligation(typechecker__TypeEnvironment* env, Slice_unsigned_char resolved_func, Slice_unsigned_char identity, os_Arena* ctx) {
     {
-    LookupResult_typechecker__ResourceAcquisitionObligation _guard_res_lookup_9332_9 = {0};
-    _guard_res_lookup_9332_9 = ({ LookupResult_typechecker__ResourceAcquisitionObligation res = {0}; res.Ok = os_HashMapContains(&((*(env)).resource_acquisition_obligations), identity, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).resource_acquisition_obligations), identity, 1); } res; });
-    if (!_guard_res_lookup_9332_9.Ok) {
+    LookupResult_typechecker__ResourceAcquisitionObligation _guard_res_lookup_9907_9 = {0};
+    _guard_res_lookup_9907_9 = ({ LookupResult_typechecker__ResourceAcquisitionObligation res = {0}; res.Ok = os_HashMapContains(&((*(env)).resource_acquisition_obligations), identity, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).resource_acquisition_obligations), identity, 1); } res; });
+    if (!_guard_res_lookup_9907_9.Ok) {
         return 0;
     }
-    typechecker__ResourceAcquisitionObligation lookup = _guard_res_lookup_9332_9.Val;
+    typechecker__ResourceAcquisitionObligation lookup = _guard_res_lookup_9907_9.Val;
     Slice_unsigned_char destructor_name = lookup.destructor_name;
     if ((destructor_name.len == 0)) {
     return 0;
@@ -23195,6 +23896,28 @@ void typechecker__env_pre_register_statement(typechecker__TypeEnvironment* env, 
     if ((stmt.tag == 1)) {
     Slice_unsigned_char name = stmt.StructDecl.name;
     Slice_unsigned_char namespaced_name = typechecker__env_resolve_namespaced_ident(env, name, ctx);
+    if ((stmt.StructDecl.is_scoped_entity == 1)) {
+    int scoped_field_found_phase21_4 = 0;
+    std_Vector_ast__FieldDef scoped_fields_phase21_4 = (*((std_Vector_ast__FieldDef*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(stmt.StructDecl.fields))));
+    int scoped_field_index_phase21_4 = 0;
+    while ((scoped_field_index_phase21_4 < scoped_fields_phase21_4.len)) {
+        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    if ((std_str_eq((*({ if (scoped_field_index_phase21_4 < 0 || scoped_field_index_phase21_4 >= scoped_fields_phase21_4.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(scoped_fields_phase21_4.data[scoped_field_index_phase21_4]); })).name, stmt.StructDecl.scope_field) == 1)) {
+    scoped_field_found_phase21_4 = 1;
+    }
+    scoped_field_index_phase21_4 = (scoped_field_index_phase21_4 + 1);
+    }
+    if ((scoped_field_found_phase21_4 == 0)) {
+    Slice_unsigned_char scoped_field_message_phase21_4 = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: [ScopedEntityField] scoped entity field '", 57 });
+    scoped_field_message_phase21_4 = (({ Slice_unsigned_char _s1 = scoped_field_message_phase21_4; Slice_unsigned_char _s2 = stmt.StructDecl.scope_field; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    scoped_field_message_phase21_4 = (({ Slice_unsigned_char _s1 = scoped_field_message_phase21_4; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"' is not declared on entity '", 29 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    scoped_field_message_phase21_4 = (({ Slice_unsigned_char _s1 = scoped_field_message_phase21_4; Slice_unsigned_char _s2 = namespaced_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    scoped_field_message_phase21_4 = (({ Slice_unsigned_char _s1 = scoped_field_message_phase21_4; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"'", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    typechecker__report_error(2, scoped_field_message_phase21_4, stmt.StructDecl.span, env, ctx);
+    }
+    *os_HashMapRef(&((*(env)).struct_scoped_entity), std_Clone_str(ctx, namespaced_name), 1) = 1;
+    *os_HashMapRef(&((*(env)).struct_scope_field), std_Clone_str(ctx, namespaced_name), 1) = std_Clone_str(ctx, stmt.StructDecl.scope_field);
+    }
     int is_generic = 0;
     if ((stmt.StructDecl.generics != 0xFFFFFFFF)) {
     std_Vector_str generics_vec_struct_decl = (*((std_Vector_str*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(stmt.StructDecl.generics))));
@@ -23324,7 +24047,15 @@ void typechecker__env_pre_register_statement(typechecker__TypeEnvironment* env, 
     if ((stmt.tag == 3)) {
     Slice_unsigned_char name = stmt.FunctionDecl.name;
     Slice_unsigned_char namespaced_name = typechecker__env_resolve_namespaced_ident(env, name, ctx);
-    typechecker__FunctionSignature sig = ((typechecker__FunctionSignature){ .extern_abi = ((Slice_unsigned_char){ NULL, 0 }), .extern_symbol_name = ((Slice_unsigned_char){ NULL, 0 }), .is_extern = 0, .is_private = 0, .is_unsafe = 0, .param_names = ((std_Vector_str){ .arena = NULL, .capacity = 0, .data = NULL, .len = 0 }), .params = ((std_Vector_ast__Type){ .arena = NULL, .capacity = 0, .data = NULL, .len = 0 }), .requires_layout_metadata = 0, .requires_sandbox_arena = 0, .requires_unsafe_call = 0, .return_origins = 0xFFFFFFFF, .return_type = ((ast__Type){ .tag = 0 }) });
+    if ((std_str_eq(namespaced_name, ((Slice_unsigned_char){ (unsigned char*)"trusted_scope_from_context", 26 })) == 1)) {
+    typechecker__report_error(2, ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: [ReservedCompilerIntrinsic] trusted_scope_from_context is a compiler-owned trusted request-context boundary", 123 }), stmt.FunctionDecl.span, env, ctx);
+    return ;
+    }
+    if ((std_str_eq(namespaced_name, ((Slice_unsigned_char){ (unsigned char*)"cross_tenant_capability_from_host", 33 })) == 1)) {
+    typechecker__report_error(2, ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: [ReservedCompilerIntrinsic] cross_tenant_capability_from_host is a compiler-owned privileged host boundary", 122 }), stmt.FunctionDecl.span, env, ctx);
+    return ;
+    }
+    typechecker__FunctionSignature sig = ((typechecker__FunctionSignature){ .extern_abi = ((Slice_unsigned_char){ NULL, 0 }), .extern_symbol_name = ((Slice_unsigned_char){ NULL, 0 }), .is_compile_time_only = 0, .is_extern = 0, .is_private = 0, .is_unsafe = 0, .param_names = ((std_Vector_str){ .arena = NULL, .capacity = 0, .data = NULL, .len = 0 }), .params = ((std_Vector_ast__Type){ .arena = NULL, .capacity = 0, .data = NULL, .len = 0 }), .requires_layout_metadata = 0, .requires_sandbox_arena = 0, .requires_unsafe_call = 0, .return_origins = 0xFFFFFFFF, .return_type = ((ast__Type){ .tag = 0 }) });
     typechecker__init_function_signature_ffi_defaults(&(sig));
     sig.param_names = ((struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx });
     sig.params = ((struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx });
@@ -23450,9 +24181,9 @@ int typechecker__env_validate_resource_declaration(typechecker__TypeEnvironment*
     }
     Slice_unsigned_char type_name = typechecker__env_resolve_namespaced_ident(env, stmt.StructDecl.name, ctx);
     Slice_unsigned_char destructor_name = typechecker__env_resolve_namespaced_ident(env, declared_destructor, ctx);
-    LookupResult_typechecker__FunctionSignature _guard_res_sig_11073_9 = {0};
-    _guard_res_sig_11073_9 = ({ LookupResult_typechecker__FunctionSignature res = {0}; res.Ok = os_HashMapContains(&((*(env)).function_registry), destructor_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).function_registry), destructor_name, 1); } res; });
-    if (!_guard_res_sig_11073_9.Ok) {
+    LookupResult_typechecker__FunctionSignature _guard_res_sig_11717_9 = {0};
+    _guard_res_sig_11717_9 = ({ LookupResult_typechecker__FunctionSignature res = {0}; res.Ok = os_HashMapContains(&((*(env)).function_registry), destructor_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).function_registry), destructor_name, 1); } res; });
+    if (!_guard_res_sig_11717_9.Ok) {
         Slice_unsigned_char missing_msg = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: [ResourceDestructorMissing] Declared destructor '", 65 }); Slice_unsigned_char _s2 = declared_destructor; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     missing_msg = (({ Slice_unsigned_char _s1 = missing_msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"' for resource type '", 21 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     missing_msg = (({ Slice_unsigned_char _s1 = missing_msg; Slice_unsigned_char _s2 = type_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
@@ -23460,10 +24191,10 @@ int typechecker__env_validate_resource_declaration(typechecker__TypeEnvironment*
     typechecker__report_error(2, missing_msg, stmt.StructDecl.span, env, ctx);
     return 0;
     }
-    typechecker__FunctionSignature sig = _guard_res_sig_11073_9.Val;
-    LookupResult_str _guard_res_type_owner_11082_9 = {0};
-    _guard_res_type_owner_11082_9 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&((*(env)).struct_declaration_module), type_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).struct_declaration_module), type_name, 1); } res; });
-    if (!_guard_res_type_owner_11082_9.Ok) {
+    typechecker__FunctionSignature sig = _guard_res_sig_11717_9.Val;
+    LookupResult_str _guard_res_type_owner_11726_9 = {0};
+    _guard_res_type_owner_11726_9 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&((*(env)).struct_declaration_module), type_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).struct_declaration_module), type_name, 1); } res; });
+    if (!_guard_res_type_owner_11726_9.Ok) {
         Slice_unsigned_char owner_msg = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: [ResourceDestructorModuleMismatch] Destructor '", 63 }); Slice_unsigned_char _s2 = destructor_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     owner_msg = (({ Slice_unsigned_char _s1 = owner_msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"' must be declared in the same module as resource type '", 56 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     owner_msg = (({ Slice_unsigned_char _s1 = owner_msg; Slice_unsigned_char _s2 = type_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
@@ -23471,10 +24202,10 @@ int typechecker__env_validate_resource_declaration(typechecker__TypeEnvironment*
     typechecker__report_error(2, owner_msg, stmt.StructDecl.span, env, ctx);
     return 0;
     }
-    Slice_unsigned_char type_owner = _guard_res_type_owner_11082_9.Val;
-    LookupResult_str _guard_res_destructor_owner_11090_9 = {0};
-    _guard_res_destructor_owner_11090_9 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&((*(env)).function_declaration_module), destructor_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).function_declaration_module), destructor_name, 1); } res; });
-    if (!_guard_res_destructor_owner_11090_9.Ok) {
+    Slice_unsigned_char type_owner = _guard_res_type_owner_11726_9.Val;
+    LookupResult_str _guard_res_destructor_owner_11734_9 = {0};
+    _guard_res_destructor_owner_11734_9 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&((*(env)).function_declaration_module), destructor_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).function_declaration_module), destructor_name, 1); } res; });
+    if (!_guard_res_destructor_owner_11734_9.Ok) {
         Slice_unsigned_char missing_owner_msg = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: [ResourceDestructorModuleMismatch] Destructor '", 63 }); Slice_unsigned_char _s2 = destructor_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     missing_owner_msg = (({ Slice_unsigned_char _s1 = missing_owner_msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"' must be declared in the same module as resource type '", 56 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     missing_owner_msg = (({ Slice_unsigned_char _s1 = missing_owner_msg; Slice_unsigned_char _s2 = type_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
@@ -23482,7 +24213,7 @@ int typechecker__env_validate_resource_declaration(typechecker__TypeEnvironment*
     typechecker__report_error(2, missing_owner_msg, stmt.StructDecl.span, env, ctx);
     return 0;
     }
-    Slice_unsigned_char destructor_owner = _guard_res_destructor_owner_11090_9.Val;
+    Slice_unsigned_char destructor_owner = _guard_res_destructor_owner_11734_9.Val;
     if ((std_str_eq(type_owner, destructor_owner) == 0)) {
     Slice_unsigned_char different_owner_msg = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: [ResourceDestructorModuleMismatch] Destructor '", 63 }); Slice_unsigned_char _s2 = destructor_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     different_owner_msg = (({ Slice_unsigned_char _s1 = different_owner_msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"' must be declared in the same module as resource type '", 56 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
@@ -23586,6 +24317,9 @@ token__Span typechecker__get_expression_span(int expr_idx, os_Arena* ctx) {
     if ((tag == 13)) {
     s = expr.Empty.span;
     }
+    if ((tag == 14)) {
+    s = expr.Query.span;
+    }
     }
     return s;
 }
@@ -23620,6 +24354,9 @@ Slice_unsigned_char typechecker__get_root_variable(int expr_idx, os_Arena* ctx) 
     }
     if (((*(expr_ptr)).tag == 11)) {
     return typechecker__get_root_variable((*(expr_ptr)).Selector.left, ctx);
+    }
+    if (((*(expr_ptr)).tag == 14)) {
+    return typechecker__get_root_variable((*(expr_ptr)).Query.terminal, ctx);
     }
     return ((Slice_unsigned_char){ (unsigned char*)"", 0 });
     }
@@ -23827,6 +24564,9 @@ Slice_unsigned_char typechecker__expression_to_string(int expr_idx, os_Arena* ct
     res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = args_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)")", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     return std_Clone_str(ctx, res);
+    }
+    if (((*(expr_ptr)).tag == 14)) {
+    return typechecker__expression_to_string((*(expr_ptr)).Query.terminal, ctx);
     }
     return ((Slice_unsigned_char){ (unsigned char*)"", 0 });
     }
@@ -24928,22 +25668,22 @@ errors__Result_int typechecker__check_statement_impl(int stmt_idx, typechecker__
     }
     typechecker__scope_insert(scope, std_Clone_str(ctx, name), resolved_explicit, ctx);
     *os_HashMapRef(&((*(env)).variable_types), std_Clone_str(ctx, name), 1) = resolved_explicit;
-    LookupResult_ast__Type _guard_res_lookup_type_explicit_12664_17 = {0};
-    _guard_res_lookup_type_explicit_12664_17 = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&((*(env)).variable_types), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).variable_types), name, 1); } res; });
-    if (!_guard_res_lookup_type_explicit_12664_17.Ok) {
+    LookupResult_ast__Type _guard_res_lookup_type_explicit_13315_17 = {0};
+    _guard_res_lookup_type_explicit_13315_17 = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&((*(env)).variable_types), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).variable_types), name, 1); } res; });
+    if (!_guard_res_lookup_type_explicit_13315_17.Ok) {
         return res;
     }
-    ast__Type lookup_type_explicit = _guard_res_lookup_type_explicit_12664_17.Val;
+    ast__Type lookup_type_explicit = _guard_res_lookup_type_explicit_13315_17.Val;
     val_type = lookup_type_explicit;
     } else {
     typechecker__scope_insert(scope, std_Clone_str(ctx, name), val_type, ctx);
     *os_HashMapRef(&((*(env)).variable_types), std_Clone_str(ctx, name), 1) = val_type;
-    LookupResult_ast__Type _guard_res_lookup_type_12671_17 = {0};
-    _guard_res_lookup_type_12671_17 = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&((*(env)).variable_types), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).variable_types), name, 1); } res; });
-    if (!_guard_res_lookup_type_12671_17.Ok) {
+    LookupResult_ast__Type _guard_res_lookup_type_13322_17 = {0};
+    _guard_res_lookup_type_13322_17 = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&((*(env)).variable_types), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).variable_types), name, 1); } res; });
+    if (!_guard_res_lookup_type_13322_17.Ok) {
         return res;
     }
-    ast__Type lookup_type = _guard_res_lookup_type_12671_17.Val;
+    ast__Type lookup_type = _guard_res_lookup_type_13322_17.Val;
     val_type = lookup_type;
     }
     Slice_unsigned_char declaration_arena_identity = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
@@ -26712,7 +27452,7 @@ void typechecker__env_synthesize_is_valid_helpers(typechecker__TypeEnvironment* 
     int has_bool = typechecker__typechecker_has_boolean_fields(t_struct, env, ctx);
     if ((has_bool == 1)) {
     Slice_unsigned_char func_name = (({ Slice_unsigned_char _s1 = key; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"_IsValid", 8 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-    typechecker__FunctionSignature sig = ((typechecker__FunctionSignature){ .extern_abi = ((Slice_unsigned_char){ NULL, 0 }), .extern_symbol_name = ((Slice_unsigned_char){ NULL, 0 }), .is_extern = 0, .is_private = 0, .is_unsafe = 0, .param_names = ((std_Vector_str){ .arena = NULL, .capacity = 0, .data = NULL, .len = 0 }), .params = ((std_Vector_ast__Type){ .arena = NULL, .capacity = 0, .data = NULL, .len = 0 }), .requires_layout_metadata = 0, .requires_sandbox_arena = 0, .requires_unsafe_call = 0, .return_origins = 0xFFFFFFFF, .return_type = ((ast__Type){ .tag = 0 }) });
+    typechecker__FunctionSignature sig = ((typechecker__FunctionSignature){ .extern_abi = ((Slice_unsigned_char){ NULL, 0 }), .extern_symbol_name = ((Slice_unsigned_char){ NULL, 0 }), .is_compile_time_only = 0, .is_extern = 0, .is_private = 0, .is_unsafe = 0, .param_names = ((std_Vector_str){ .arena = NULL, .capacity = 0, .data = NULL, .len = 0 }), .params = ((std_Vector_ast__Type){ .arena = NULL, .capacity = 0, .data = NULL, .len = 0 }), .requires_layout_metadata = 0, .requires_sandbox_arena = 0, .requires_unsafe_call = 0, .return_origins = 0xFFFFFFFF, .return_type = ((ast__Type){ .tag = 0 }) });
     typechecker__init_function_signature_ffi_defaults(&(sig));
     sig.param_names = ((struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx });
     os_VectorPush(&(sig.param_names), ((Slice_unsigned_char){ (unsigned char*)"req", 3 }));
@@ -30286,6 +31026,9 @@ int codegen__codegen_expr_calls_func(int expr_idx, Slice_unsigned_char func_name
     if ((tag == 13)) {
     return 0;
     }
+    if ((tag == 14)) {
+    return codegen__codegen_expr_calls_func(expr.Query.terminal, func_name, ctx);
+    }
     }
     return 0;
 }
@@ -31412,6 +32155,9 @@ token__Span codegen__codegen_get_expression_span(int expr_idx, os_Arena* ctx) {
     }
     if ((expr.tag == 13)) {
     s = expr.Empty.span;
+    }
+    if ((expr.tag == 14)) {
+    s = expr.Query.span;
     }
     }
     return s;
@@ -33763,6 +34509,9 @@ Slice_unsigned_char codegen__codegen_generate_expression(int expr_idx, typecheck
     ast__Type resolved_t = typechecker__env_resolve_type(env, t_empty, ctx);
     return std_Clone_str(ctx, codegen__codegen_gen_type_aware_initializer(resolved_t, env, ctx));
     }
+    if ((tag == 14)) {
+    return codegen__codegen_generate_expression((*((ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(expr_idx)))).Query.terminal, env, ctx);
+    }
     }
     return ((Slice_unsigned_char){ (unsigned char*)"0", 1 });
 }
@@ -33794,12 +34543,12 @@ Slice_unsigned_char codegen__codegen_resource_cleanup_c_function_name(Slice_unsi
 Slice_unsigned_char codegen__codegen_generate_resource_cleanup_plan(Slice_unsigned_char kind, token__Span span, typechecker__TypeEnvironment* env, os_Arena* ctx) {
     {
     Slice_unsigned_char key = typechecker__resource_cleanup_plan_key(((typechecker__TypeEnvironment*)env), kind, span, ctx);
-    LookupResult_Index_std_Vector_typechecker__ResourceCleanupAction _guard_res_plan_lookup_3450_9 = {0};
-    _guard_res_plan_lookup_3450_9 = ({ LookupResult_Index_std_Vector_typechecker__ResourceCleanupAction res = {0}; res.Ok = os_HashMapContains(&((*(env)).resource_cleanup_plans), key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).resource_cleanup_plans), key, 1); } res; });
-    if (!_guard_res_plan_lookup_3450_9.Ok) {
+    LookupResult_Index_std_Vector_typechecker__ResourceCleanupAction _guard_res_plan_lookup_3459_9 = {0};
+    _guard_res_plan_lookup_3459_9 = ({ LookupResult_Index_std_Vector_typechecker__ResourceCleanupAction res = {0}; res.Ok = os_HashMapContains(&((*(env)).resource_cleanup_plans), key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).resource_cleanup_plans), key, 1); } res; });
+    if (!_guard_res_plan_lookup_3459_9.Ok) {
         return ((Slice_unsigned_char){ (unsigned char*)"", 0 });
     }
-    int plan_lookup = _guard_res_plan_lookup_3450_9.Val;
+    int plan_lookup = _guard_res_plan_lookup_3459_9.Val;
     std_Vector_typechecker__ResourceCleanupAction actions = (*((std_Vector_typechecker__ResourceCleanupAction*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(plan_lookup))));
     Slice_unsigned_char generated = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
     int i = 0;
@@ -34630,14 +35379,14 @@ Slice_unsigned_char codegen__codegen_generate(std_Vector_ast__Program programs, 
         if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
     Slice_unsigned_char key = (*({ if (i_fwd < 0 || i_fwd >= erased_struct_keys.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(erased_struct_keys.data[i_fwd]); }));
     if ((((((((std_str_eq(key, ((Slice_unsigned_char){ (unsigned char*)"std_Vector_str", 14 })) == 0) && (std_str_eq(key, ((Slice_unsigned_char){ (unsigned char*)"os_Dir", 6 })) == 0)) && (std_str_eq(key, ((Slice_unsigned_char){ (unsigned char*)"os_DirEntry", 11 })) == 0)) && (std_str_eq(key, ((Slice_unsigned_char){ (unsigned char*)"os_ProcessResult", 16 })) == 0)) && (std_str_eq(key, ((Slice_unsigned_char){ (unsigned char*)"LookupResult_os_Dir", 19 })) == 0)) && (std_str_eq(key, ((Slice_unsigned_char){ (unsigned char*)"LookupResult_os_DirEntry", 24 })) == 0)) && (std_str_find(key, ((Slice_unsigned_char){ (unsigned char*)"CastResult_", 11 })) == (0 - 1)))) {
-    LookupResult_str _guard_res_orig_key_4363_17 = {0};
-    _guard_res_orig_key_4363_17 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&(erased_to_original), key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(erased_to_original), key, 1); } res; });
-    if (!_guard_res_orig_key_4363_17.Ok) {
+    LookupResult_str _guard_res_orig_key_4372_17 = {0};
+    _guard_res_orig_key_4372_17 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&(erased_to_original), key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(erased_to_original), key, 1); } res; });
+    if (!_guard_res_orig_key_4372_17.Ok) {
         os_LogStr((({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"🚨 CRITICAL COMPILER BUG: erased_to_original.Get failed for key: ", 67 }); Slice_unsigned_char _s2 = key; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); })));
     exit(1);
     return std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"", 0 }));
     }
-    Slice_unsigned_char orig_key = _guard_res_orig_key_4363_17.Val;
+    Slice_unsigned_char orig_key = _guard_res_orig_key_4372_17.Val;
     Slice_unsigned_char fwd = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"typedef struct ", 15 }); Slice_unsigned_char _s2 = key; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     fwd = (({ Slice_unsigned_char _s1 = fwd; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)" ", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     fwd = (({ Slice_unsigned_char _s1 = fwd; Slice_unsigned_char _s2 = key; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
@@ -34688,9 +35437,9 @@ Slice_unsigned_char codegen__codegen_generate(std_Vector_ast__Program programs, 
         if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
     Slice_unsigned_char key = (*({ if (f_idx < 0 || f_idx >= func_keys.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(func_keys.data[f_idx]); }));
     if ((std_str_eq(key, ((Slice_unsigned_char){ (unsigned char*)"main", 4 })) == 0)) {
-    if ((codegen__codegen_should_skip_fwd_decl(key) == 0)) {
     LookupResult_typechecker__FunctionSignature sig_lookup = ({ LookupResult_typechecker__FunctionSignature res = {0}; res.Ok = os_HashMapContains(&((*(env)).function_registry), key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).function_registry), key, 1); } res; });
     if (sig_lookup.Ok) {
+    if (((sig_lookup.Val.is_compile_time_only == 0) && (codegen__codegen_should_skip_fwd_decl(key) == 0))) {
     Slice_unsigned_char fwd_decl = codegen__codegen_gen_function_fwd_decl(key, sig_lookup.Val, env, ctx);
     os_VectorPush(&(chunks), fwd_decl);
     }
@@ -34705,14 +35454,14 @@ Slice_unsigned_char codegen__codegen_generate(std_Vector_ast__Program programs, 
         if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
     Slice_unsigned_char key = (*({ if (i < 0 || i >= erased_struct_keys.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(erased_struct_keys.data[i]); }));
     if (((((((std_str_eq(key, ((Slice_unsigned_char){ (unsigned char*)"std_Vector_str", 14 })) == 0) && (std_str_eq(key, ((Slice_unsigned_char){ (unsigned char*)"os_Dir", 6 })) == 0)) && (std_str_eq(key, ((Slice_unsigned_char){ (unsigned char*)"os_DirEntry", 11 })) == 0)) && (std_str_eq(key, ((Slice_unsigned_char){ (unsigned char*)"os_ProcessResult", 16 })) == 0)) && (std_str_eq(key, ((Slice_unsigned_char){ (unsigned char*)"LookupResult_os_Dir", 19 })) == 0)) && (std_str_eq(key, ((Slice_unsigned_char){ (unsigned char*)"LookupResult_os_DirEntry", 24 })) == 0))) {
-    LookupResult_str _guard_res_orig_key_4446_17 = {0};
-    _guard_res_orig_key_4446_17 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&(erased_to_original), key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(erased_to_original), key, 1); } res; });
-    if (!_guard_res_orig_key_4446_17.Ok) {
+    LookupResult_str _guard_res_orig_key_4456_17 = {0};
+    _guard_res_orig_key_4456_17 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&(erased_to_original), key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(erased_to_original), key, 1); } res; });
+    if (!_guard_res_orig_key_4456_17.Ok) {
         os_LogStr((({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"🚨 CRITICAL COMPILER BUG: erased_to_original.Get failed for key: ", 67 }); Slice_unsigned_char _s2 = key; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); })));
     exit(1);
     return std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"", 0 }));
     }
-    Slice_unsigned_char orig_key = _guard_res_orig_key_4446_17.Val;
+    Slice_unsigned_char orig_key = _guard_res_orig_key_4456_17.Val;
     int is_template_instance = 0;
     if ((std_str_find(key, ((Slice_unsigned_char){ (unsigned char*)"_", 1 })) != (0 - 1))) {
     is_template_instance = 1;
@@ -34879,14 +35628,14 @@ Slice_unsigned_char codegen__codegen_generate(std_Vector_ast__Program programs, 
     t_struct.Struct.brand = 0xFFFFFFFF;
     int has_bool = codegen__codegen_has_boolean_fields(t_struct, env, ctx);
     if ((has_bool == 1)) {
-    LookupResult_str _guard_res_orig_key_4615_17 = {0};
-    _guard_res_orig_key_4615_17 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&(erased_to_original), key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(erased_to_original), key, 1); } res; });
-    if (!_guard_res_orig_key_4615_17.Ok) {
+    LookupResult_str _guard_res_orig_key_4625_17 = {0};
+    _guard_res_orig_key_4625_17 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&(erased_to_original), key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(erased_to_original), key, 1); } res; });
+    if (!_guard_res_orig_key_4625_17.Ok) {
         os_LogStr((({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"🚨 CRITICAL COMPILER BUG: erased_to_original.Get failed for key: ", 67 }); Slice_unsigned_char _s2 = key; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); })));
     exit(1);
     return std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"", 0 }));
     }
-    Slice_unsigned_char orig_key = _guard_res_orig_key_4615_17.Val;
+    Slice_unsigned_char orig_key = _guard_res_orig_key_4625_17.Val;
     std_Option_typechecker__StructLayout layout_lookup = ({ std_Option_typechecker__StructLayout _gust_map_get_opt_result = {0}; int _gust_map_get_opt_ok = os_HashMapContains(&((*(env)).struct_registry), orig_key, 1); if (_gust_map_get_opt_ok) { _gust_map_get_opt_result.tag = std_Option_typechecker__StructLayout_Tag__Some; _gust_map_get_opt_result.Some.val = *os_HashMapRef(&((*(env)).struct_registry), orig_key, 1); } else { _gust_map_get_opt_result.tag = std_Option_typechecker__StructLayout_Tag__None; } _gust_map_get_opt_result; });
     switch (layout_lookup.tag) {
         case std_Option_typechecker__StructLayout_Tag__Some: {
@@ -57415,6 +58164,9 @@ mir_native_backend_generic_source__MirNativeGenericConstValue mir_native_backend
     result.value = folded.value;
     return result;
     }
+    if ((expression.tag == 14)) {
+    return mir_native_backend_generic_source__mir_native_generic_const_eval((*((ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(expression.Query.terminal)))), env, ctx);
+    }
     return result;
     }
 }
@@ -57930,7 +58682,19 @@ mir_native_backend_generic_source__MirNativeGenericModel mir_native_backend_gene
     return model;
     }
     ast__Program program = (*({ if (0 < 0 || 0 >= programs.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(programs.data[0]); }));
-    std_Vector_ast__Statement top_level = (*((std_Vector_ast__Statement*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(program.statements))));
+    std_Vector_ast__Statement source_top_level = (*((std_Vector_ast__Statement*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(program.statements))));
+    std_Vector_ast__Statement top_level = ((struct std_Vector_ast__Statement){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx });
+    int source_top_index_phase21_4 = 0;
+    {
+    while ((source_top_index_phase21_4 < source_top_level.len)) {
+        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    ast__Statement source_statement_phase21_4 = (*({ if (source_top_index_phase21_4 < 0 || source_top_index_phase21_4 >= source_top_level.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(source_top_level.data[source_top_index_phase21_4]); }));
+    if (((source_statement_phase21_4.tag != 1) || (source_statement_phase21_4.StructDecl.is_scoped_entity == 0))) {
+    os_VectorPush(&(top_level), source_statement_phase21_4);
+    }
+    source_top_index_phase21_4 = (source_top_index_phase21_4 + 1);
+    }
+    }
     if ((top_level.len == 1)) {
     return mir_native_backend_generic_source__mir_native_generic_analyze_single_function((*({ if (0 < 0 || 0 >= top_level.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(top_level.data[0]); })), (*({ if (0 < 0 || 0 >= module_paths.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(module_paths.data[0]); })), ctx);
     }

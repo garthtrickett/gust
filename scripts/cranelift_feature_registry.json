@@ -2294,6 +2294,40 @@
       "edits_stdlib": false
     }
   },
+  "phase21_tenant_scope_seed_convergence": {
+    "contract_version": "phase21_tenant_scope_seed_convergence_v1",
+    "status": "patch21_7a_complete",
+    "next_patch": "21.8",
+    "review_view": "compiler/CRANELIFT_PHASE21_TENANT_SCOPE_SEED_CONVERGENCE.md",
+    "seed_path": "gust_v4.c",
+    "predecessor_seed_authority": "phase20_protected_access_seed_convergence_v1",
+    "accounted_authority": "phase21_od8_adversarial_verdict_v1",
+    "previous_seed_commit": "02fead71a87f0148d4290ee12e84973931c400e8",
+    "fixed_point_policy": "make_bootstrap_stage2_stage3_byte_identity",
+    "seed_only_policy": "generated_seed_and_seed_specific_authority_only",
+    "accounted_patches": [
+      {"patch":"21.1","scope":"opening_evidence_and_typed_query_baseline_fixtures"},
+      {"patch":"21.2","scope":"inert_scoped_query_semantic_records"},
+      {"patch":"21.3","scope":"typed_query_noop_surface"},
+      {"patch":"21.4","scope":"trusted_scope_provenance_enforcement"},
+      {"patch":"21.5","scope":"per_root_join_nested_and_query_value_obligations"},
+      {"patch":"21.6","scope":"explicit_cross_tenant_capability_boundary"},
+      {"patch":"21.7","scope":"adversarial_verdict_fixtures_and_authority_without_new_semantics"}
+    ],
+    "generated_seed_diff": {
+      "previous_lines": 59706,
+      "current_lines": 60470,
+      "insertions": 841,
+      "deletions": 77,
+      "line_delta": 764
+    },
+    "boundary": {
+      "adds_semantics": false,
+      "changes_MIR_or_backends": false,
+      "changes_ABI_layout_or_runtime_symbols": false,
+      "edits_stdlib": false
+    }
+  },
   "phase19_brand_authority": {
     "authority_version": "phase19_brand_identity_authority_v1",
     "status": "ready_for_patch19_3",

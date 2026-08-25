@@ -17068,6 +17068,17 @@ guard-cranelift-phase21-od8-adversarial-verdict-evidence:
     just guard-cranelift-phase21-od8-adversarial-verdict-contract
     bash scripts/phase21_od8_adversarial_verdict.sh
 
+guard-cranelift-phase21-tenant-scope-seed-convergence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🌱 Checking Phase 21 tenant-scope seed convergence authority..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase21-tenant-scope-seed-convergence | grep -F $'guard-cranelift-phase21-tenant-scope-seed-convergence\t1\t' >/dev/null
+    just guard-cranelift-phase21-od8-adversarial-verdict-contract
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase21_tenant_scope_seed_convergence.py validate
+    python3 scripts/phase21_tenant_scope_seed_convergence.py check-review
+
 guard-cranelift-phase18-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail
