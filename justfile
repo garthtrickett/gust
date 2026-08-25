@@ -12604,7 +12604,7 @@ guard-cranelift-phase13-broader-imported-runtime-calls-parity:
 
     required_worker_symbols=(
       'fn phase11_import_registry_classification('
-      '("abs", "abs", [TinyMirType::I32])'
+      '("abs", "abs", [TinyMirType::I32], TinyMirType::I32)'
       '"tiny_host_add_one_i32"'
       '"tiny_host_add_i32"'
       '"tiny_host_is_positive_i32"'
