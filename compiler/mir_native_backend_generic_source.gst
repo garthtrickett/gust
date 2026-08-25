@@ -3238,6 +3238,7 @@ func mir_native_generic_source_lower(programs: std.Vector[ast.Program[ctx], ctx]
     }
     }
     }
+    }
 
     mut serialized := mir.mir_serialize_program_bundle(bundle, ctx);
     if std.str_eq(serialized, "format: invalid\n") == 1 {
