@@ -17048,6 +17048,26 @@ guard-cranelift-phase21-cross-tenant-capability-evidence:
     just guard-cranelift-phase21-cross-tenant-capability-contract
     bash scripts/phase21_cross_tenant_capability.sh
 
+guard-cranelift-phase21-od8-adversarial-verdict-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🛡️ Checking Phase 21 OD-8 adversarial verdict authority..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase21-od8-adversarial-verdict-contract | grep -F $'guard-cranelift-phase21-od8-adversarial-verdict-contract\t1\t' >/dev/null
+    just guard-cranelift-phase21-cross-tenant-capability-contract
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase21_roadmap.py validate
+    python3 scripts/phase21_roadmap.py check-review
+    python3 scripts/phase21_od8_adversarial_verdict.py validate
+    python3 scripts/phase21_od8_adversarial_verdict.py check-review
+
+guard-cranelift-phase21-od8-adversarial-verdict-evidence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "⚔️ Executing the complete bounded Phase 21 OD-8 attack suite..."
+    just guard-cranelift-phase21-od8-adversarial-verdict-contract
+    bash scripts/phase21_od8_adversarial_verdict.sh
+
 guard-cranelift-phase18-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail
