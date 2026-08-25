@@ -2239,6 +2239,12 @@ func typechecker_make_trusted_scope_type(
     return make_type_generic("Scope", scope_args_phase21_4, ctx);
 }
 
+func typechecker_make_cross_tenant_capability_type(
+    ctx: &Arena
+) ast.Type[ctx] {
+    return make_type_struct("CrossTenantCapability", "", ctx);
+}
+
 func typechecker_type_is_matching_trusted_scope(
     t: ast.Type[ctx],
     required_scope_identity: str,
@@ -2508,20 +2514,74 @@ func typechecker_build_query_scope_obligations(
     return obligations_phase21_5;
 }
 
+// Return 0 when no marker exists, 1 for the one valid direct host-capability
+// form, and 2 after reporting an invalid or laundered marker. The capability
+// is deliberately recognized at this query node instead of flowing as an
+// ordinary value, so helpers, locals, returns, and outer queries cannot confer
+// it transitively.
+func typechecker_query_cross_tenant_capability_state(
+    expr: ast.Expression[ctx],
+    env: *TypeEnvironment[ctx],
+    ctx: &Arena
+) int {
+    unsafe {
+        if expr.Query.cross_tenant_capability ==
+           empty[Index[ast.Expression[ctx], ctx]]
+        {
+            return 0;
+        }
+        mut capability_phase21_6 :=
+            ctx[expr.Query.cross_tenant_capability];
+        if capability_phase21_6.tag == 12 { // Call
+            mut capability_name_phase21_6 := expression_to_string(
+                capability_phase21_6.Call.function, ctx
+            );
+            mut resolved_capability_phase21_6 := env_resolve_namespaced_ident(
+                env, capability_name_phase21_6, ctx
+            );
+            mut capability_args_phase21_6:
+                std.Vector[ast.Expression[ctx], ctx] :=
+                    ctx[capability_phase21_6.Call.arguments];
+            if std.str_eq(
+                resolved_capability_phase21_6,
+                "cross_tenant_capability_from_host"
+            ) == 1 && len(capability_args_phase21_6) == 0 {
+                return 1;
+            }
+        }
+        report_error(
+            2,
+            "Semantic Error: [CrossTenantCapability] error: cross_tenant requires a direct compiler-owned host capability at this query",
+            expr.Query.span,
+            env,
+            ctx
+        );
+        return 2;
+    }
+}
+
 func typechecker_check_query_scope_obligations(
     expr: ast.Expression[ctx],
     env: *TypeEnvironment[ctx],
     scope: Index[Scope[ctx], ctx],
     ctx: &Arena
 ) {
-    mut obligations_phase21_5 := typechecker_build_query_scope_obligations(
-        expr, env, scope, ctx
-    );
+    mut cross_tenant_state_phase21_6 :=
+        typechecker_query_cross_tenant_capability_state(expr, env, ctx);
+    mut obligations_phase21_5: std.Vector[QueryScopeObligation[ctx], ctx] :=
+        std.VectorNew(ctx);
+    if cross_tenant_state_phase21_6 == 0 {
+        obligations_phase21_5 = typechecker_build_query_scope_obligations(
+            expr, env, scope, ctx
+        );
+    }
     mut obligation_index_phase21_5 := 0;
     while obligation_index_phase21_5 < len(obligations_phase21_5) {
         mut obligation_phase21_5 :=
             obligations_phase21_5[obligation_index_phase21_5];
-        if obligation_phase21_5.discharged == 0 {
+        if obligation_phase21_5.discharged == 0 &&
+           cross_tenant_state_phase21_6 == 0
+        {
             mut message_phase21_5 :=
                 "Semantic Error: [TenantScopeProvenance] error: query lacks trusted tenant-scope provenance for scoped root '";
             message_phase21_5 = std.Concat(
@@ -2572,7 +2632,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
         }
         mut expr := ctx[expr_idx];
 
-        if expr.tag == 14 { // Query (Phase 21.5 complete local obligation set)
+        if expr.tag == 14 { // Query (Phase 21.6 local scope/capability gate)
             typechecker_check_query_scope_obligations(
                 expr, env, scope, ctx
             );
@@ -4054,6 +4114,20 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 return typechecker_make_trusted_scope_type(
                     trusted_args_phase21_4[0].String.val, ctx
                 );
+            }
+
+            if std.str_eq(
+                resolved_func,
+                "cross_tenant_capability_from_host"
+            ) == 1 {
+                report_error(
+                    2,
+                    "Semantic Error: [CrossTenantCapabilityBoundary] cross_tenant_capability_from_host may be used only as the direct capability expression of a compiler-owned typed query",
+                    expr.Call.span,
+                    env,
+                    ctx
+                );
+                return typechecker_make_cross_tenant_capability_type(ctx);
             }
 
             if std.str_eq(resolved_func, "len") {
@@ -7625,6 +7699,27 @@ func register_fn(env: *TypeEnvironment[ctx], name: str, params: std.Vector[ast.T
             sig_trusted_scope.param_names = trusted_scope_param_names;
             env_register_function(
                 env, "trusted_scope_from_context", sig_trusted_scope, ctx
+            );
+
+            // Compiler-owned, compile-time-only cross-tenant capability. The
+            // typechecker recognizes it only as a direct query-site marker;
+            // no value or runtime symbol is emitted.
+            mut sig_cross_tenant_capability: FunctionSignature[ctx];
+            init_function_signature_ffi_defaults(&sig_cross_tenant_capability);
+            sig_cross_tenant_capability.params = p_void;
+            sig_cross_tenant_capability.return_type =
+                typechecker_make_cross_tenant_capability_type(ctx);
+            sig_cross_tenant_capability.return_origins = set_init(ctx);
+            sig_cross_tenant_capability.is_compile_time_only = 1;
+            mut cross_tenant_capability_param_names:
+                std.Vector[str, ctx] := std.VectorNew(ctx);
+            sig_cross_tenant_capability.param_names =
+                cross_tenant_capability_param_names;
+            env_register_function(
+                env,
+                "cross_tenant_capability_from_host",
+                sig_cross_tenant_capability,
+                ctx
             );
 
             // os.Arena.New
@@ -11481,6 +11576,19 @@ func env_pre_register_statement(env: *TypeEnvironment[ctx], stmt: ast.Statement[
                 report_error(
                     2,
                     "Semantic Error: [ReservedCompilerIntrinsic] trusted_scope_from_context is a compiler-owned trusted request-context boundary",
+                    stmt.FunctionDecl.span,
+                    env,
+                    ctx
+                );
+                return;
+            }
+            if std.str_eq(
+                namespaced_name,
+                "cross_tenant_capability_from_host"
+            ) == 1 {
+                report_error(
+                    2,
+                    "Semantic Error: [ReservedCompilerIntrinsic] cross_tenant_capability_from_host is a compiler-owned privileged host boundary",
                     stmt.FunctionDecl.span,
                     env,
                     ctx

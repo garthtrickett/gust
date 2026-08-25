@@ -17030,6 +17030,24 @@ guard-cranelift-phase21-per-root-obligations-evidence:
     just guard-cranelift-phase21-per-root-obligations-contract
     bash scripts/phase21_per_root_obligations.sh
 
+guard-cranelift-phase21-cross-tenant-capability-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🌐 Checking Phase 21 explicit cross-tenant capability boundary..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase21-cross-tenant-capability-contract | grep -F $'guard-cranelift-phase21-cross-tenant-capability-contract\t1\t' >/dev/null
+    just guard-cranelift-phase21-per-root-obligations-contract
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase21_cross_tenant_capability.py validate
+    python3 scripts/phase21_cross_tenant_capability.py check-review
+
+guard-cranelift-phase21-cross-tenant-capability-evidence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Replaying Phase 21 cross-tenant capability evidence..."
+    just guard-cranelift-phase21-cross-tenant-capability-contract
+    bash scripts/phase21_cross_tenant_capability.sh
+
 guard-cranelift-phase18-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail

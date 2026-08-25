@@ -33,7 +33,8 @@ branches, or aggregate-shaped nested queries.
 - `query_value_unresolved` — `compiler/phase21_query_value_unresolved_invalid.gst` — `primary` binding `workspace` rejected at its query
 - `branch_unresolved` — `compiler/phase21_query_value_branch_invalid.gst` — `primary` binding `second_workspace` rejected at its query
 
-Unscoped joins create no obligation. Cross-tenant capability
-enforcement remains Patch 21.6. Trusted-context establishment, raw
-SQL, MIR operations, ABI/layout, runtime symbols, and Stdlib remain
-outside this patch.
+Unscoped joins create no obligation.
+Successor Patch 21.6 now enforces the explicit, non-transitive
+cross-tenant capability boundary at each owning query site.
+Trusted-context establishment, raw SQL, MIR operations, ABI/layout,
+runtime symbols, and Stdlib remain outside this patch.
