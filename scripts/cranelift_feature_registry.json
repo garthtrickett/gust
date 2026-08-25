@@ -1709,6 +1709,230 @@
       "phase22_default_backend_flip": "out_of_scope"
     }
   },
+  "phase21_opening": {
+    "contract_version": "phase21_opening_evidence_v1",
+    "status": "patch21_1_complete",
+    "next_patch": "21.2",
+    "review_view": "compiler/CRANELIFT_PHASE21_OPENING.md",
+    "observed_main_sha": "736efd9c794352f855e799139f3a9672ee7ea2e0",
+    "roadmap_authority": "phase21_roadmap_and_od8_design_authority_v1",
+    "track_a_inventory": [
+      {
+        "id": "scoped_entity_declaration",
+        "current_state": "absent",
+        "owner": "compiler_typed_query_semantics",
+        "stable_reason": "no_compiler_AST_parser_or_type_environment_record_for_a_scoped_entity",
+        "expected_transition": "21.2_inert_record_then_21.3_no_op_surface",
+        "falsifier": "a_source_declaration_records_a_compiler_owned_scoped_entity_identity"
+      },
+      {
+        "id": "trusted_scope_provenance",
+        "current_state": "absent",
+        "owner": "compiler_typed_query_semantics",
+        "stable_reason": "lexical_typechecker_Scope_is_not_a_non_forgeable_tenant_Scope_value",
+        "expected_transition": "21.2_inert_record_then_21.4_enforcement",
+        "falsifier": "ordinary_source_cannot_forge_or_substitute_a_trusted_Scope_Workspace_value"
+      },
+      {
+        "id": "typed_query_root_predicate_and_terminal",
+        "current_state": "absent",
+        "owner": "compiler_typed_query_semantics",
+        "stable_reason": "no_compiler_owned_query_expression_or_root_obligation_exists",
+        "expected_transition": "21.2_inert_record_then_21.3_no_op_surface",
+        "falsifier": "a_scoped_root_predicate_and_terminal_query_round_trip_through_the_compiler"
+      },
+      {
+        "id": "predicate_provenance_discharge",
+        "current_state": "absent",
+        "owner": "compiler_typed_query_semantics",
+        "stable_reason": "ordinary_value_equality_has_no_query_obligation_or_provenance_meaning",
+        "expected_transition": "21.4_enforcement",
+        "falsifier": "only_matching_trusted_Scope_provenance_discharges_a_scoped_root"
+      },
+      {
+        "id": "scoped_join_root_obligation",
+        "current_state": "absent",
+        "owner": "compiler_typed_query_semantics",
+        "stable_reason": "no_query_join_tree_or_per_root_obligation_set_exists",
+        "expected_transition": "21.5_enforcement",
+        "falsifier": "each_scoped_join_root_retains_an_independent_obligation"
+      },
+      {
+        "id": "nested_query_obligation",
+        "current_state": "absent",
+        "owner": "compiler_typed_query_semantics",
+        "stable_reason": "no_nested_query_identity_or_obligation_boundary_exists",
+        "expected_transition": "21.5_enforcement",
+        "falsifier": "every_nested_query_retains_its_own_scoped_root_obligations"
+      },
+      {
+        "id": "query_value_obligation_preservation",
+        "current_state": "absent",
+        "owner": "compiler_typed_query_semantics",
+        "stable_reason": "queries_are_not_values_and_no_obligation_set_can_flow_or_join",
+        "expected_transition": "21.5_enforcement_or_conservative_rejection",
+        "falsifier": "query_values_preserve_complete_obligations_or_reject_before_laundering"
+      },
+      {
+        "id": "cross_tenant_capability_marker",
+        "current_state": "absent",
+        "owner": "compiler_typed_query_semantics",
+        "stable_reason": "no_non_ambient_query_site_cross_tenant_capability_marker_exists",
+        "expected_transition": "21.6_enforcement",
+        "falsifier": "cross_tenant_typed_queries_require_an_explicit_non_forgeable_call_site_capability"
+      },
+      {
+        "id": "query_site_rejection_diagnostic",
+        "current_state": "absent",
+        "owner": "compiler_typed_query_semantics",
+        "stable_reason": "no_query_node_exists_at_which_to_attach_the_OD8_diagnostic",
+        "expected_transition": "21.4_through_21.6",
+        "falsifier": "a_missing_wrong_or_laundered_scope_is_rejected_at_the_query"
+      },
+      {
+        "id": "general_uses_clause_and_db_read_effect",
+        "current_state": "absent_classified_outside_phase21_OD8_implementation",
+        "owner": "compiler_effect_semantics_future_roadmap",
+        "stable_reason": "FunctionSignature_has_inert_internal_requires_fields_but_no_user_uses_clause_or_db_read_effect",
+        "expected_transition": "future_explicitly_activated_effect_roadmap_not_phase21",
+        "falsifier": "parser_AST_and_call_graph_check_a_user_uses_db_read_effect_clause"
+      },
+      {
+        "id": "trusted_request_context_establishment",
+        "current_state": "excluded_from_typed_query_guarantee",
+        "owner": "trusted_host_boundary",
+        "stable_reason": "operator_explicitly_excluded_authentication_and_scope_establishment_from_OD8",
+        "expected_transition": "no_phase21_transition",
+        "falsifier": "none_exclusion_is_a_claim_boundary_not_a_compiler_capability"
+      },
+      {
+        "id": "unsafe_or_raw_SQL",
+        "current_state": "excluded_from_typed_query_guarantee",
+        "owner": "explicit_privileged_boundary",
+        "stable_reason": "operator_explicitly_excluded_raw_SQL_from_compiler_owned_typed_query_analysis",
+        "expected_transition": "no_phase21_transition",
+        "falsifier": "none_exclusion_is_a_claim_boundary_not_a_compiler_capability"
+      }
+    ],
+    "query_shape_witnesses": [
+      {
+        "id": "trusted_scope_shape",
+        "source_fixture": "compiler/phase21_query_shape_trusted_baseline.gst",
+        "intended_future_verdict": "accept_with_matching_trusted_scope_provenance",
+        "current_semantic_status": "accepted_as_ordinary_user_values_not_as_a_typed_query",
+        "mir_to_c_exit": 21,
+        "cranelift_exit": 21,
+        "owner": "compiler_typed_query_semantics",
+        "expected_transition": "21.3_surface_then_21.4_positive_enforcement",
+        "falsifier": "the_equivalent_typed_query_accepts_only_from_matching_trusted_Scope_provenance"
+      },
+      {
+        "id": "untrusted_scope_shape",
+        "source_fixture": "compiler/phase21_query_shape_untrusted_baseline.gst",
+        "intended_future_verdict": "reject_at_query_despite_matching_predicate_syntax",
+        "current_semantic_status": "accepted_as_ordinary_user_values_and_returns_the_leak_marker",
+        "mir_to_c_exit": 99,
+        "cranelift_exit": 99,
+        "owner": "compiler_typed_query_semantics",
+        "expected_transition": "21.3_surface_then_21.4_query_site_rejection",
+        "falsifier": "the_equivalent_typed_query_rejects_an_arbitrary_user_controlled_scope_value_at_the_query"
+      }
+    ],
+    "inherited_residues": [
+      {
+        "category": "collections",
+        "source_fixture": "compiler/phase20_component_collections_source.gst",
+        "current_decision": "deferred",
+        "reason_code": "deferred_p13_structured_cfg_non_reducible_shape",
+        "stable_reason": "deferred_p13_structured_cfg_non_reducible_shape",
+        "failure_stage": "before_driver_discovery",
+        "owner": "phase13_generic_source_to_mir",
+        "expected_transition": "21.9",
+        "falsifier": "a_real_Vector_or_HashMap_source_program_reaches_the_native_driver_and_its_full_observable_differential_passes"
+      },
+      {
+        "category": "strings",
+        "source_fixture": "compiler/phase20_component_strings_source.gst",
+        "current_decision": "deferred",
+        "reason_code": "deferred_p13_structured_cfg_condition_shape",
+        "stable_reason": "deferred_p13_structured_cfg_condition_shape",
+        "failure_stage": "before_driver_discovery",
+        "owner": "phase13_generic_source_to_mir",
+        "expected_transition": "21.9",
+        "falsifier": "a_real_string_utility_source_program_reaches_the_native_driver_and_its_full_observable_differential_passes"
+      },
+      {
+        "category": "filesystem",
+        "source_fixture": "compiler/phase20_component_filesystem_source.gst",
+        "current_decision": "deferred",
+        "reason_code": "source_feature_not_represented",
+        "stable_reason": "source_feature_not_represented",
+        "failure_stage": "before_driver_discovery",
+        "owner": "phase13_generic_source_to_mir",
+        "expected_transition": "21.10",
+        "falsifier": "a_sandboxed_file_IO_source_program_reaches_the_native_driver_and_its_exact_filesystem_tree_differential_passes"
+      },
+      {
+        "category": "allocation",
+        "source_fixture": "compiler/phase20_component_allocation_source.gst",
+        "current_decision": "deferred",
+        "reason_code": "source_feature_not_represented",
+        "stable_reason": "source_feature_not_represented",
+        "failure_stage": "before_driver_discovery",
+        "owner": "phase13_generic_source_to_mir",
+        "expected_transition": "21.10",
+        "falsifier": "a_real_Arena_allocation_and_write_source_program_reaches_the_native_driver_and_its_full_observable_differential_passes"
+      },
+      {
+        "category": "resources",
+        "source_fixture": "compiler/phase20_resource_scope_cleanup_source.gst",
+        "current_decision": "source_or_type_failure",
+        "reason_code": "source_or_type_failure",
+        "stable_reason": "source_or_type_failure_unsupported_top_level_statement_in_module_import_cohort",
+        "failure_stage": "before_driver_discovery",
+        "owner": "phase13_generic_source_to_mir",
+        "expected_transition": "21.11",
+        "falsifier": "a_source_declared_Resource_program_reaches_the_native_driver_and_its_terminal_state_and_cleanup_differential_passes"
+      },
+      {
+        "category": "threading_synchronization",
+        "source_fixture": "compiler/phase20_component_threading_source.gst",
+        "current_decision": "deferred",
+        "reason_code": "deferred_p13_parameter_argument_target_dependent_abi",
+        "stable_reason": "deferred_p13_parameter_argument_target_dependent_abi",
+        "failure_stage": "before_driver_discovery",
+        "owner": "phase13_generic_source_to_mir",
+        "expected_transition": "21.11",
+        "falsifier": "a_real_Mutex_or_Channel_source_program_reaches_the_native_driver_and_its_deterministic_invariant_differential_passes"
+      }
+    ],
+    "full_compiler_baseline": {
+      "source_fixture": "compiler/test_runner_entry.gst",
+      "backend": "explicit_cranelift",
+      "compile_exit": 1,
+      "decision": "source_or_type_failure",
+      "capability": "phase13_generic_source_to_mir",
+      "reason_code": "source_or_type_failure",
+      "diagnostic_class": "canonical_mir_verification_error",
+      "diagnostic": "Native backend canonical MIR verification failed: unsupported top-level statement in module/import cohort",
+      "source_line": 238,
+      "source_column": 1,
+      "failure_stage": "before_driver_discovery",
+      "artifact": "absent",
+      "owner": "compiler_generic_native_capability_planner",
+      "expected_transition": "21.8_through_21.14_classify_and_migrate_the_complete_compiler_dependency_graph",
+      "falsifier": "the_full_compiler_reaches_the_native_driver_and_publishes_a_linked_native_compiler_artifact"
+    },
+    "unclassified_failures": [],
+    "boundary": {
+      "changes_accepted_program_meaning": false,
+      "adds_syntax_or_semantic_records": false,
+      "changes_MIR_or_backends": false,
+      "changes_ABI_layout_or_runtime_symbols": false,
+      "changes_bootstrap_seed": false,
+      "edits_stdlib": false
+    }
+  },
   "phase19_brand_authority": {
     "authority_version": "phase19_brand_identity_authority_v1",
     "status": "ready_for_patch19_3",

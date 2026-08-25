@@ -1,0 +1,81 @@
+name: Cranelift Phase 21 Opening
+
+on:
+  pull_request:
+    paths:
+      - 'TASK.md'
+      - 'compiler/phase21_query_shape_trusted_baseline.gst'
+      - 'compiler/phase21_query_shape_untrusted_baseline.gst'
+      - 'compiler/CRANELIFT_PHASE21_OPENING.md'
+      - 'compiler/test_runner_entry.gst'
+      - 'compiler/phase20_component_collections_source.gst'
+      - 'compiler/phase20_component_strings_source.gst'
+      - 'compiler/phase20_component_filesystem_source.gst'
+      - 'compiler/phase20_component_allocation_source.gst'
+      - 'compiler/phase20_resource_scope_cleanup_source.gst'
+      - 'compiler/phase20_component_threading_source.gst'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/cranelift_registry.py'
+      - 'scripts/cranelift_test_levels.json'
+      - 'scripts/phase21_roadmap.py'
+      - 'scripts/phase21_opening.py'
+      - 'scripts/phase21_opening.sh'
+      - '.github/workflows/phase21-opening.yml'
+      - '.github/workflows/pr-fast.yml'
+      - 'justfile'
+  push:
+    branches: [main]
+    paths:
+      - 'TASK.md'
+      - 'compiler/phase21_query_shape_trusted_baseline.gst'
+      - 'compiler/phase21_query_shape_untrusted_baseline.gst'
+      - 'compiler/CRANELIFT_PHASE21_OPENING.md'
+      - 'compiler/test_runner_entry.gst'
+      - 'compiler/phase20_component_collections_source.gst'
+      - 'compiler/phase20_component_strings_source.gst'
+      - 'compiler/phase20_component_filesystem_source.gst'
+      - 'compiler/phase20_component_allocation_source.gst'
+      - 'compiler/phase20_resource_scope_cleanup_source.gst'
+      - 'compiler/phase20_component_threading_source.gst'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/cranelift_registry.py'
+      - 'scripts/cranelift_test_levels.json'
+      - 'scripts/phase21_roadmap.py'
+      - 'scripts/phase21_opening.py'
+      - 'scripts/phase21_opening.sh'
+      - '.github/workflows/phase21-opening.yml'
+      - '.github/workflows/pr-fast.yml'
+      - 'justfile'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: guard-cranelift-phase21-opening-contract
+        run: just guard-cranelift-phase21-opening-contract
+
+  evidence:
+    needs: contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - run: make gust
+      - name: guard-cranelift-phase21-opening-evidence
+        run: just guard-cranelift-phase21-opening-evidence

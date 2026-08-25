@@ -81,7 +81,7 @@ Out of scope:
 ## Status
 
 - [x] Patch 21.0 — Roadmap and OD-8 Design Authority — DONE
-- [ ] Patch 21.1 — Opening Evidence and Dual-Track Baseline
+- [x] Patch 21.1 — Opening Evidence and Dual-Track Baseline — DONE
 - [ ] Patch 21.2 — Inert Scoped-Query Semantic Records
 - [ ] Patch 21.3 — Typed-Query Surface Under the No-op
 - [ ] Patch 21.4 — Trusted Scope Provenance Enforcement

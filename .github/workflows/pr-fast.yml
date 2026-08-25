@@ -407,6 +407,9 @@ jobs:
       - name: Phase 21 roadmap and OD-8 design authority
         run: just guard-cranelift-phase21-roadmap
 
+      - name: Phase 21 opening evidence authority
+        run: just guard-cranelift-phase21-opening-contract
+
       - name: Phase 19 cross-feature composition
         run: just guard-cranelift-phase19-composition-contract
 

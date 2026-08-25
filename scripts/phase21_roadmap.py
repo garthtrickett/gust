@@ -144,9 +144,11 @@ def validate() -> dict:
                       status, re.MULTILINE)
     require([patch for _, patch in rows] == EXPECTED_PATCHES,
             "Phase 21 status rows are missing, duplicated, or reordered")
-    require(rows[0] == ("x", "21.0") and
-            all(mark == " " for mark, _ in rows[1:]),
-            "only Patch 21.0 may be DONE in the roadmap authority")
+    marks = [mark for mark, _ in rows]
+    require(marks[0] == "x", "Patch 21.0 must remain DONE")
+    if " " in marks:
+        require("x" not in marks[marks.index(" "):],
+                "Phase 21 DONE rows must form one contiguous prefix")
     require("On 2026-08-24 the operator conditionally authorized Phase 21" in task and
             "That condition is satisfied" in task,
             "TASK.md does not record operator activation")
