@@ -16994,6 +16994,24 @@ guard-cranelift-phase21-typed-query-noop-surface-evidence:
     just guard-cranelift-phase21-typed-query-noop-surface-contract
     bash scripts/phase21_typed_query_noop_surface.sh
 
+guard-cranelift-phase21-trusted-scope-provenance-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔐 Checking Phase 21 trusted Scope provenance authority..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase21-trusted-scope-provenance-contract | grep -F $'guard-cranelift-phase21-trusted-scope-provenance-contract\t1\t' >/dev/null
+    just guard-cranelift-phase21-typed-query-noop-surface-contract
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase21_trusted_scope_provenance.py validate
+    python3 scripts/phase21_trusted_scope_provenance.py check-review
+
+guard-cranelift-phase21-trusted-scope-provenance-evidence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Replaying Phase 21 trusted Scope provenance and query-site rejection evidence..."
+    just guard-cranelift-phase21-trusted-scope-provenance-contract
+    bash scripts/phase21_trusted_scope_provenance.sh
+
 guard-cranelift-phase18-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail

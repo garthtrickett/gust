@@ -4429,9 +4429,10 @@ typedef void Any;
         while f_idx < len(func_keys) {
             mut key := func_keys[f_idx];
             if std.str_eq(key, "main") == 0 {
-                if codegen_should_skip_fwd_decl(key) == 0 {
-                    mut sig_lookup := (*env).function_registry.Get(key);
-                    if sig_lookup.Ok {
+                mut sig_lookup := (*env).function_registry.Get(key);
+                if sig_lookup.Ok {
+                    if sig_lookup.Val.is_compile_time_only == 0 &&
+                       codegen_should_skip_fwd_decl(key) == 0 {
                         mut fwd_decl := codegen_gen_function_fwd_decl(key, sig_lookup.Val, env, ctx);
                         chunks.Push(fwd_decl);
                     }

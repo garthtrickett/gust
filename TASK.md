@@ -84,7 +84,7 @@ Out of scope:
 - [x] Patch 21.1 — Opening Evidence and Dual-Track Baseline — DONE
 - [x] Patch 21.2 — Inert Scoped-Query Semantic Records — DONE
 - [x] Patch 21.3 — Typed-Query Surface Under the No-op — DONE
-- [ ] Patch 21.4 — Trusted Scope Provenance Enforcement
+- [x] Patch 21.4 — Trusted Scope Provenance Enforcement — DONE
 - [ ] Patch 21.5 — Per-Root Join and Nested-Query Obligations
 - [ ] Patch 21.6 — Explicit Cross-Tenant Capability Boundary
 - [ ] Patch 21.7 — OD-8 Adversarial Soundness Verdict

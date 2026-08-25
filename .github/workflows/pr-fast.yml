@@ -416,6 +416,9 @@ jobs:
       - name: Phase 21 typed-query no-op surface
         run: just guard-cranelift-phase21-typed-query-noop-surface-contract
 
+      - name: Phase 21 trusted Scope provenance
+        run: just guard-cranelift-phase21-trusted-scope-provenance-contract
+
       - name: Phase 19 cross-feature composition
         run: just guard-cranelift-phase19-composition-contract
 

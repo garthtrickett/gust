@@ -44,6 +44,7 @@ TOP_FIELDS = {
     "phase21_opening",
     "phase21_inert_scoped_query_records",
     "phase21_typed_query_noop_surface",
+    "phase21_trusted_scope_provenance",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming", "phase19_classification", "phase19_representation",
