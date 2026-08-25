@@ -39,6 +39,7 @@
     "phase20_closure",
     "phase21_roadmap",
     "phase21_opening",
+    "phase21_inert_scoped_query_records",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -1295,6 +1296,29 @@
           },
           "unclassified_failures": [],
           "boundary": {"changes_accepted_program_meaning":false,"adds_syntax_or_semantic_records":false,"changes_MIR_or_backends":false,"changes_ABI_layout_or_runtime_symbols":false,"changes_bootstrap_seed":false,"edits_stdlib":false}
+        }
+      },
+      "phase21_inert_scoped_query_records": {
+        "const": {
+          "contract_version": "phase21_inert_scoped_query_semantic_records_v1",
+          "status": "patch21_2_complete",
+          "next_patch": "21.3",
+          "review_view": "compiler/CRANELIFT_PHASE21_INERT_SCOPED_QUERY_RECORDS.md",
+          "module": "compiler/typed_query_semantic_records.gst",
+          "self_hosted_round_trip_fixture": "compiler/typed_query_semantic_records_test_entry.gst",
+          "ordinary_construction_forge_fixture": "compiler/typed_query_semantic_records_forge_invalid.gst",
+          "private_constructor_forge_fixture": "compiler/typed_query_semantic_records_private_constructor_invalid.gst",
+          "record_families": ["ScopedEntityDeclaration","CanonicalQueryRoot","PerRootScopeObligation","PredicateProvenance","NestedQueryIdentity","CrossTenantMarker","TrustedScopeOrigin"],
+          "construction_policy": "all_records_opaque_all_constructors_private_no_record_value_leaves_the_module",
+          "reachability_policy": "module_absent_from_parser_typechecker_codegen_MIR_and_normal_compiler_entrypoints",
+          "trusted_scope_origin_policy": "identity_only_inert_record_no_public_constructor_no_source_value_provenance",
+          "per_root_policy": "each_canonical_root_has_a_distinct_recorded_obligation_identity_without_enforcement",
+          "semantic_delta_witnesses": [
+            {"kind":"generated_c_golden_and_runtime_observation","source_fixture":"compiler/phase21_query_shape_trusted_baseline.gst","generated_c_golden":"compiler/fixtures/phase21_query_shape_trusted_baseline.expected.c","compile_exit":0,"runtime_exit":21},
+            {"kind":"generated_c_golden_and_runtime_observation","source_fixture":"compiler/phase21_query_shape_untrusted_baseline.gst","generated_c_golden":"compiler/fixtures/phase21_query_shape_untrusted_baseline.expected.c","compile_exit":0,"runtime_exit":99},
+            {"kind":"unchanged_source_and_exact_diagnostic","source_fixture":"compiler/phase20_resource_empty_forge_invalid.gst","compile_exit":1,"diagnostic_class":"OpaqueConstruction","diagnostic":"Opaque type 'phase20_resource_enforcement_module__Handle' can be constructed only inside its defining module"}
+          ],
+          "boundary": {"reachable_from_normal_source_typechecking_or_lowering":false,"enforcement_enabled":false,"adds_source_syntax":false,"changes_MIR_or_backends":false,"changes_ABI_layout_or_runtime_symbols":false,"changes_bootstrap_seed":false,"edits_stdlib":false}
         }
       },
       "phase19_brand_authority": {
