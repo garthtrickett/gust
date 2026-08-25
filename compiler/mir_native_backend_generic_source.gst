@@ -1,6 +1,7 @@
 import "ast.gst" as ast;
 import "mir.gst" as mir;
 import "mir_native_backend_capability.gst" as capability;
+import "mir_native_backend_collection_string_source.gst" as collection_string;
 import "mir_native_backend_block_parameter_loop_source.gst" as block_parameter_loop;
 import "mir_native_backend_capability.gst" as capability;
 import "mir_native_backend_direct_call_source.gst" as direct_call;
@@ -2474,9 +2475,11 @@ func mir_native_generic_plan_from_bundle(bundle: mir.MirProgramBundle[ctx], ctx:
     mut has_block_param := 0;
     mut has_local_call := 0;
     mut has_imported_call := 0;
+    mut has_imported_void_call := 0;
     mut has_return := 0;
     mut has_int := 0;
     mut has_bool := 0;
+    mut has_str := 0;
     mut has_zero_int_abi := 0;
     mut has_one_int_abi := 0;
     mut has_two_int_abi := 0;
@@ -2574,8 +2577,15 @@ func mir_native_generic_plan_from_bundle(bundle: mir.MirProgramBundle[ctx], ctx:
         if mir_native_generic_contains(
             canonical,
             "callee_kind: ImportedFunction"
-        ) == 1 {
+        ) == 1 &&
+           mir_native_generic_contains(
+               canonical,
+               "kind: LocalI32SetCall"
+           ) == 1 {
             has_imported_call = 1;
+        }
+        if mir_native_generic_contains(canonical, "kind: CallVoid") == 1 {
+            has_imported_void_call = 1;
         }
         if mir_native_generic_contains(canonical, "ReturnI32") == 1 ||
            mir_native_generic_contains(canonical, "ReturnLocalI32") == 1 ||
@@ -2609,6 +2619,9 @@ func mir_native_generic_plan_from_bundle(bundle: mir.MirProgramBundle[ctx], ctx:
            ) == 1
         {
             has_bool = 1;
+        }
+        if mir_native_generic_contains(canonical, "type: str") == 1 {
+            has_str = 1;
         }
 
         mut symbols: std.Vector[mir.MirProgramBundleSymbol[ctx], ctx] :=
@@ -2753,6 +2766,17 @@ func mir_native_generic_plan_from_bundle(bundle: mir.MirProgramBundle[ctx], ctx:
         );
         ordinal = ordinal + 1;
     }
+    if has_imported_void_call == 1 {
+        plan = mir_native_generic_plan_add(
+            plan,
+            0,
+            module_path,
+            ordinal,
+            "ImportedCallVoid",
+            ctx
+        );
+        ordinal = ordinal + 1;
+    }
     if has_return == 1 {
         plan = mir_native_generic_plan_add(
             plan,
@@ -2782,6 +2806,17 @@ func mir_native_generic_plan_from_bundle(bundle: mir.MirProgramBundle[ctx], ctx:
             module_path,
             ordinal,
             "bool",
+            ctx
+        );
+        ordinal = ordinal + 1;
+    }
+    if has_str == 1 {
+        plan = mir_native_generic_plan_add(
+            plan,
+            1,
+            module_path,
+            ordinal,
+            "str",
             ctx
         );
         ordinal = ordinal + 1;
@@ -3025,6 +3060,23 @@ func mir_native_generic_source_lower(programs: std.Vector[ast.Program[ctx], ctx]
                     if block_parameter_loop_result.represented == 1 {
                         bundle = block_parameter_loop_result.bundle;
                     } else {
+                        mut collection_string_result :=
+                            collection_string.mir_native_collection_string_source_lower(
+                                programs,
+                                module_paths,
+                                module_prefixes,
+                                ctx
+                            );
+                        if collection_string_result.invalid == 1 {
+                            return mir_native_generic_empty_result(
+                                3,
+                                collection_string_result.diagnostic,
+                                ctx
+                            );
+                        }
+                        if collection_string_result.represented == 1 {
+                            bundle = collection_string_result.bundle;
+                        } else {
                         mut structured_cfg_result :=
                             structured_cfg.mir_native_structured_cfg_source_lower(
                                 programs,
@@ -3067,6 +3119,7 @@ func mir_native_generic_source_lower(programs: std.Vector[ast.Program[ctx], ctx]
                                 return mir_native_generic_empty_result(1, "", ctx);
                             }
                             bundle = local_state_result.bundle;
+                        }
                         }
                     }
                 }

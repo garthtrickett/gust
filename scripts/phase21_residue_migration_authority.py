@@ -166,17 +166,31 @@ def validate() -> dict:
     require(len(declared_modules) == len(set(declared_modules)),
             "compiler module appears in multiple slices")
     reachable, edges = compiler_import_graph(graph.get("root", ""))
-    require(set(declared_modules) == reachable and
-            graph.get("module_count") == len(reachable) == 38,
+    successor_modules: set[str] = set()
+    successor = registry.get("phase21_collection_string_native_source", {})
+    if successor.get("status") == "patch21_9_complete":
+        successor_modules.add("mir_native_backend_collection_string_source.gst")
+    historical_reachable = reachable - successor_modules
+    historical_edge_count = sum(
+        1 for module, imports in edges.items()
+        if module in historical_reachable
+        for dependency in imports if dependency in historical_reachable
+    )
+    require(set(declared_modules) == historical_reachable and
+            graph.get("module_count") == len(historical_reachable) == 38,
             "compiler graph leaves a module unclassified")
     require(graph.get("import_edge_count") ==
-            sum(len(imports) for imports in edges.values()) == 116,
+            historical_edge_count == 116,
             "compiler graph leaves an import edge unclassified")
     module_slice = {
         module: row["order"] for row in slices for module in row["modules"]
     }
     for module, imports in edges.items():
+        if module not in historical_reachable:
+            continue
         for dependency in imports:
+            if dependency not in historical_reachable:
+                continue
             require(module_slice[dependency] <= module_slice[module],
                     f"compiler slice orders {module} before {dependency}")
     seen_slices: set[str] = set()

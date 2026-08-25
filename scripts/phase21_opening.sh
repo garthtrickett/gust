@@ -85,7 +85,7 @@ do
     stderr:*) rg -F "${diagnostic#stderr:}" "$case_root/native.stderr" >/dev/null ;;
     *) echo "unknown Patch 21.1 diagnostic owner: $diagnostic" >&2; exit 1 ;;
   esac
-done < <(python3 scripts/phase21_opening.py residue-cases)
+done < <(python3 scripts/phase21_opening.py active-residue-cases)
 
 full_root="$build_root/full-compiler"
 mkdir -p "$full_root"
@@ -111,4 +111,4 @@ rg -F 'class=canonical_mir_verification_error' "$full_root/stdout" >/dev/null
 rg -F 'Native backend canonical MIR verification failed: unsupported top-level statement in module/import cohort' \
   "$full_root/stderr" >/dev/null
 
-echo "✅ Phase 21.1 opening evidence passed: 2 executable query shapes, 6 inherited residues, and 1 classified full-compiler baseline"
+echo "✅ Phase 21 opening evidence passed: 2 executable query shapes, the active inherited residues, and 1 classified full-compiler baseline; completed successor migrations remain owned by their transition records"

@@ -12034,7 +12034,7 @@ guard-cranelift-phase11-direct-call-abi-parity:
       'canonical compiler MIR local call graph must not contain recursion or mutual recursion'
       'compiler_mir_ingestion_signature('
       'module.declare_function('
-      'const PHASE10_DRIVER_TYPES_AND_ABIS: [&str; 6]'
+      'const PHASE10_DRIVER_TYPES_AND_ABIS: [&str; 7]'
       '"direct_scalar_abi",'
     )
     for expected_symbol in "${required_worker_symbols[@]}"; do
@@ -12337,8 +12337,8 @@ guard-cranelift-phase11-module-import-runtime-parity:
       '"bundle_export"'
       '"imported_bundle"'
       'phase11_import_registry_classification('
-      '("abs", "abs", [TinyMirType::I32])'
-      '("toupper", "toupper", [TinyMirType::I32])'
+      '("abs", "abs", [TinyMirType::I32], TinyMirType::I32)'
+      '("toupper", "toupper", [TinyMirType::I32], TinyMirType::I32)'
       'validate_phase11_import_boundary_metadata('
       'unresolved imported bundle symbol'
       'whole-program symbol signature disagreement'
@@ -12348,7 +12348,7 @@ guard-cranelift-phase11-module-import-runtime-parity:
       'additional_linker_args: Vec::new()'
       'environment_overrides: Vec::new()'
       'run_compiler_mir_link_request(link_request)'
-      'const PHASE10_DRIVER_RUNTIME_IMPORTS: [&str; 5]'
+      'const PHASE10_DRIVER_RUNTIME_IMPORTS: [&str; 7]'
     )
     for expected_symbol in "${required_worker_symbols[@]}"; do
       rg -n -F "$expected_symbol" "$rust_driver" >/dev/null
@@ -12604,7 +12604,7 @@ guard-cranelift-phase13-broader-imported-runtime-calls-parity:
 
     required_worker_symbols=(
       'fn phase11_import_registry_classification('
-      '("abs", "abs", [TinyMirType::I32])'
+      '("abs", "abs", [TinyMirType::I32], TinyMirType::I32)'
       '"tiny_host_add_one_i32"'
       '"tiny_host_add_i32"'
       '"tiny_host_is_positive_i32"'
@@ -17096,6 +17096,24 @@ guard-cranelift-phase21-residue-migration-authority-evidence:
     echo "🧪 Re-deriving Phase 21 residues and pre-driver full-compiler rejection..."
     just guard-cranelift-phase21-residue-migration-authority-contract
     bash scripts/phase21_opening.sh
+
+guard-cranelift-phase21-collection-string-native-source-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧵 Checking Phase 21 collection/string canonical-MIR source authority..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase21-collection-string-native-source-contract | grep -F $'guard-cranelift-phase21-collection-string-native-source-contract\t1\t' >/dev/null
+    just guard-cranelift-phase21-residue-migration-authority-contract
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase21_collection_string_native_source.py validate
+    python3 scripts/phase21_collection_string_native_source.py check-review
+
+guard-cranelift-phase21-collection-string-native-source-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Proving Phase 21 collection/string source differentials..."
+    just guard-cranelift-phase21-collection-string-native-source-contract
+    bash scripts/phase21_collection_string_native_source.sh
 
 guard-cranelift-phase18-opening-contract:
     #!/usr/bin/env bash

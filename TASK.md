@@ -91,7 +91,7 @@ Out of scope:
 - [x] Patch 21.7a — Tenant-Scope Bootstrap Seed Reconvergence — DONE
 - [x] Patch 21.7b — Cross-Tenant Predicate Validation Reconciliation — DONE
 - [x] Patch 21.8 — Phase 20 Residue Migration Authority — DONE
-- [ ] Patch 21.9 — Collections and Strings Native Source Migration
+- [x] Patch 21.9 — Collections and Strings Native Source Migration — DONE
 - [ ] Patch 21.10 — Filesystem and Allocation Native Source Migration
 - [ ] Patch 21.11 — Resources and Synchronization Native Source Migration
 - [ ] Patch 21.12 — Compiler Support-Library Native Qualification
@@ -287,6 +287,20 @@ qualification order with no unclassified module or import edge.
 Migrate the generic structured-control-flow and condition shapes needed by
 compiler-owned collection and string sources. Use canonical MIR, not source
 recognizers, and prove representative source differentials with no fallback.
+
+The implemented boundary is the bounded typed-AST cohort recorded by
+`phase21_collection_string_native_source_v1`. Renamed semantic variants prove
+that neither source paths nor fixture names select lowering; unrepresented
+collection or string shapes continue to reject before driver discovery. The
+worker consumes only canonical CFG, imported void calls, string data symbols,
+and the compiler-selected retained runtime archive.
+
+**Exit Gate:** all four registered source cases agree with MIR-to-C on stdout,
+stderr, and exit status; captured requests and bundles contain canonical MIR
+with no generated C or fallback; the retained archive adds no runtime symbol;
+both extra-effect probes reject before driver discovery rather than silently
+dropping behavior; and filesystem/allocation/resources/synchronization remain
+in their later roadmap patches.
 
 ## Patch 21.10 — Filesystem and Allocation Native Source Migration
 

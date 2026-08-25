@@ -10,6 +10,8 @@ PHASE10_NATIVE_BACKEND_LOCK = compiler/experiments/cranelift/Cargo.lock
 PHASE10_NATIVE_BACKEND_SOURCE = compiler/experiments/cranelift/src/main.rs
 PHASE10_NATIVE_BACKEND_TARGET_DIR = build/phase10-native-backend-cargo
 PHASE10_NATIVE_BACKEND_BUILT_BIN = $(PHASE10_NATIVE_BACKEND_TARGET_DIR)/release/gust-cranelift-experiment
+PHASE21_RUNTIME_PACKAGE = build/gust-runtime-package.a
+PHASE21_RUNTIME_OBJECTS = build/phase21-runtime/arena.o build/phase21-runtime/host_io.o
 
 PHASE10_DIAG_CC ?= clang
 PHASE10_DIAG_CFLAGS ?= -O0 -g3 -fno-omit-frame-pointer -fno-optimize-sibling-calls -fsanitize=address,undefined -fsanitize-address-use-after-scope -fno-sanitize-recover=all -pthread
@@ -179,14 +181,28 @@ build/gust-native-backend: $(PHASE10_NATIVE_BACKEND_MANIFEST) $(PHASE10_NATIVE_B
 	install -m 0755 "$(PHASE10_NATIVE_BACKEND_BUILT_BIN)" build/.gust-native-backend.tmp
 	mv build/.gust-native-backend.tmp build/gust-native-backend
 
-phase10-native-package: gust build/gust-native-backend
+build/phase21-runtime/arena.o: src/runtime/arena.c src/runtime/core_headers.h
+	mkdir -p build/phase21-runtime
+	$(CC) $(CFLAGS) -Isrc/runtime -c src/runtime/arena.c -o $@
+
+build/phase21-runtime/host_io.o: src/runtime/host_io.c src/runtime/core_headers.h
+	mkdir -p build/phase21-runtime
+	$(CC) $(CFLAGS) -Isrc/runtime -c src/runtime/host_io.c -o $@
+
+$(PHASE21_RUNTIME_PACKAGE): $(PHASE21_RUNTIME_OBJECTS)
+	@rm -f build/.gust-runtime-package.a.tmp
+	ar rcs build/.gust-runtime-package.a.tmp $(PHASE21_RUNTIME_OBJECTS)
+	mv build/.gust-runtime-package.a.tmp $(PHASE21_RUNTIME_PACKAGE)
+
+phase10-native-package: gust build/gust-native-backend $(PHASE21_RUNTIME_PACKAGE)
 	@rm -rf build/phase10-package/.bin.tmp
 	mkdir -p build/phase10-package/.bin.tmp
 	install -m 0755 gust build/phase10-package/.bin.tmp/gust
 	install -m 0755 build/gust-native-backend build/phase10-package/.bin.tmp/gust-native-backend
+	install -m 0644 $(PHASE21_RUNTIME_PACKAGE) build/phase10-package/.bin.tmp/gust-runtime-package.a
 	@rm -rf build/phase10-package/bin
 	mv build/phase10-package/.bin.tmp build/phase10-package/bin
-	@echo "✅ Phase 10 native package ready: build/phase10-package/bin/gust and build/phase10-package/bin/gust-native-backend"
+	@echo "✅ Phase 10 native package ready: build/phase10-package/bin/gust, build/phase10-package/bin/gust-native-backend, and build/phase10-package/bin/gust-runtime-package.a"
 
 # Fixed-Point Bootstrap Verification
 bootstrap: gust
@@ -369,3 +385,4 @@ install: phase10-native-package
 	install -d "$(DESTDIR)$(PREFIX)/bin"
 	install -m 0755 build/phase10-package/bin/gust "$(DESTDIR)$(PREFIX)/bin/gust"
 	install -m 0755 build/phase10-package/bin/gust-native-backend "$(DESTDIR)$(PREFIX)/bin/gust-native-backend"
+	install -m 0644 build/phase10-package/bin/gust-runtime-package.a "$(DESTDIR)$(PREFIX)/bin/gust-runtime-package.a"

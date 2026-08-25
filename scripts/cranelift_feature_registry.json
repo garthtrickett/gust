@@ -2380,6 +2380,69 @@
     "unclassified_import_edges": [],
     "boundary": {"changes_compiler_semantics":false,"changes_MIR_or_backends":false,"changes_ABI_layout_or_runtime_symbols":false,"changes_bootstrap_seed":false,"implements_patch21_9_or_later":false,"edits_stdlib":false}
   },
+  "phase21_collection_string_native_source": {
+    "contract_version": "phase21_collection_string_native_source_v1",
+    "status": "patch21_9_complete",
+    "next_patch": "21.10",
+    "review_view": "compiler/CRANELIFT_PHASE21_COLLECTION_STRING_NATIVE_SOURCE.md",
+    "predecessor_authority": "phase21_residue_migration_authority_v1",
+    "source_route_policy": "typed_AST_operations_lower_to_canonical_MIR_without_source_path_fixture_name_or_generated_C_recognition",
+    "scope": "bounded_compiler_owned_collection_and_string_source_cohort_with_conservative_pre_driver_rejection_outside_the_represented_shapes",
+    "capabilities": [
+      {"id":"scheduled_defer_call_edges","state":"represented_for_paired_arena_acquisition_and_scope_exit_source_shape","canonical_evidence":"observable_effect_CFG_preserves_oracle_behavior"},
+      {"id":"call_result_condition_cfg","state":"implemented","canonical_evidence":"LocalI32Set_then_BranchLocalI32Positive_then_join"},
+      {"id":"generic_receiver_and_aggregate_result_calls","state":"represented_for_typed_Vector_receiver_get_opt_cohort","canonical_evidence":"typed_AST_receiver_and_aggregate_result_are_resolved_before_canonical_CFG_emission"},
+      {"id":"enum_match_payload_cfg","state":"implemented_for_Option_payload_match","canonical_evidence":"then_and_else_blocks_join_before_return"},
+      {"id":"string_view_byte_and_cast_operations","state":"represented_for_str_slice_str_eq_str_byte_at_and_int_cast_cohort","canonical_evidence":"typed_AST_operations_produce_str_and_int_canonical_call_arguments"}
+    ],
+    "source_cases": [
+      {"id":"collections_primary","source_fixture":"compiler/phase20_component_collections_source.gst","expected_stdout":"20\n","expected_stderr":"","expected_exit":0},
+      {"id":"collections_renamed_variant","source_fixture":"compiler/phase21_collection_native_source_variant.gst","expected_stdout":"42\n","expected_stderr":"","expected_exit":0},
+      {"id":"strings_primary","source_fixture":"compiler/phase20_component_strings_source.gst","expected_stdout":"Hello\n1\n87\n","expected_stderr":"","expected_exit":0},
+      {"id":"strings_renamed_variant","source_fixture":"compiler/phase21_string_native_source_variant.gst","expected_stdout":"Native\n7\n82\n","expected_stderr":"","expected_exit":0}
+    ],
+    "rejected_source_cases": [
+      {"id":"collections_extra_effect","source_fixture":"compiler/phase21_collection_native_source_outside_cohort.gst","expected_failure_stage":"before_driver_discovery"},
+      {"id":"strings_extra_effect","source_fixture":"compiler/phase21_string_native_source_outside_cohort.gst","expected_failure_stage":"before_driver_discovery"}
+    ],
+    "canonical_contract": {
+      "format": "gust.compiler_mir_ingestion.v2",
+      "operations": ["LocalI32Set","BranchLocalI32Positive","CallVoid","Jump","ReturnI32"],
+      "types": ["int","str","void"],
+      "runtime_imports": ["os_LogInt","os_LogStr"],
+      "native_boundary_metadata": "ignored_with_proof_codegen_none_registry_validated",
+      "fallback": "forbidden"
+    },
+    "runtime_package": {
+      "path": "build/gust-runtime-package.a",
+      "retained_components": ["src/runtime/arena.c","src/runtime/host_io.c"],
+      "provided_symbols": ["os_ArenaAlloc","os_Arena_Free","os_Arena_New","os_Arena_Validate","os_Args","os_LogError","os_LogInt","os_LogStr","os_MockPayload","os_argc","os_argv","std_GenerationalSwap"],
+      "selected_imports": ["os_LogInt","os_LogStr"],
+      "new_or_changed_runtime_symbols": []
+    },
+    "worker_contract": {
+      "source_recognition": false,
+      "string_literal_transport": "compiler_declared_data_symbol_pointer_and_length",
+      "void_import_calls": "compiler_declared_signature_and_native_boundary_metadata",
+      "runtime_archive_link": "compiler_request_absolute_path_after_objects",
+      "generated_C": false
+    },
+    "remaining_residues": [
+      {"category":"filesystem","destination_patch":"21.10","decision":"deferred"},
+      {"category":"allocation","destination_patch":"21.10","decision":"deferred"},
+      {"category":"resources","destination_patch":"21.11","decision":"source_or_type_failure"},
+      {"category":"threading_synchronization","destination_patch":"21.11","decision":"deferred"}
+    ],
+    "boundary": {
+      "changes_Gust_program_meaning": false,
+      "changes_explicit_Cranelift_capability": true,
+      "changes_canonical_MIR_transport": true,
+      "changes_ABI_or_layout_authority": false,
+      "adds_or_changes_runtime_symbols": false,
+      "changes_bootstrap_seed": false,
+      "edits_stdlib": false
+    }
+  },
   "phase19_brand_authority": {
     "authority_version": "phase19_brand_identity_authority_v1",
     "status": "ready_for_patch19_3",
