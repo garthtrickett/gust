@@ -13,6 +13,16 @@ type MirNativeCollectionStringEffect[ctx] struct {
     string_value: str
 }
 
+type MirNativeCollectionStringIntValue struct {
+    represented: int,
+    value: int
+}
+
+type MirNativeCollectionStringStringValue[ctx] struct {
+    represented: int,
+    value: str
+}
+
 type MirNativeCollectionStringModel[ctx] struct {
     represented: int,
     invalid: int,
@@ -41,6 +51,34 @@ func mir_native_collection_string_empty_effect(ctx: &Arena) MirNativeCollectionS
     effect.int_value = 0;
     effect.string_value = std.Clone(ctx, "");
     return effect;
+}
+
+func mir_native_collection_string_unrepresented_int_value() MirNativeCollectionStringIntValue {
+    mut result: MirNativeCollectionStringIntValue;
+    result.represented = 0;
+    result.value = 0;
+    return result;
+}
+
+func mir_native_collection_string_represented_int_value(value: int) MirNativeCollectionStringIntValue {
+    mut result := mir_native_collection_string_unrepresented_int_value();
+    result.represented = 1;
+    result.value = value;
+    return result;
+}
+
+func mir_native_collection_string_unrepresented_string_value(ctx: &Arena) MirNativeCollectionStringStringValue[ctx] {
+    mut result: MirNativeCollectionStringStringValue[ctx];
+    result.represented = 0;
+    result.value = std.Clone(ctx, "");
+    return result;
+}
+
+func mir_native_collection_string_represented_string_value(value: str, ctx: &Arena) MirNativeCollectionStringStringValue[ctx] {
+    mut result := mir_native_collection_string_unrepresented_string_value(ctx);
+    result.represented = 1;
+    result.value = std.Clone(ctx, value);
+    return result;
 }
 
 func mir_native_collection_string_int_effect(value: int, ctx: &Arena) MirNativeCollectionStringEffect[ctx] {
@@ -90,6 +128,29 @@ func mir_native_collection_string_append(output: str, value: str, ctx: &Arena) s
 func mir_native_collection_string_append_int(output: str, value: int, ctx: &Arena) str {
     mut formatted := std.FormatInt(value);
     return std.Clone(ctx, std.Concat(output, formatted));
+}
+
+func mir_native_collection_string_hex_digit(value: int, ctx: &Arena) str {
+    mut digits := "0123456789abcdef";
+    return std.Clone(ctx, std.str_slice(digits, value, value + 1));
+}
+
+func mir_native_collection_string_hex_encode(value: str, ctx: &Arena) str {
+    mut encoded := std.Clone(ctx, "");
+    mut index := 0;
+    while index < len(value) {
+        mut byte_value := std.str_byte_at(value, index);
+        mut high := byte_value / 16;
+        mut low := byte_value - high * 16;
+        encoded = mir_native_collection_string_append(
+            encoded, mir_native_collection_string_hex_digit(high, ctx), ctx
+        );
+        encoded = mir_native_collection_string_append(
+            encoded, mir_native_collection_string_hex_digit(low, ctx), ctx
+        );
+        index = index + 1;
+    }
+    return std.Clone(ctx, encoded);
 }
 
 func mir_native_collection_string_expression_path(expression: ast.Expression[ctx], ctx: &Arena) str {
@@ -176,10 +237,12 @@ func mir_native_collection_string_string_value(
     names: std.Vector[str, ctx],
     values: std.Vector[str, ctx],
     ctx: &Arena
-) str {
+) MirNativeCollectionStringStringValue[ctx] {
     unsafe {
         if expression.tag == 2 {
-            return std.Clone(ctx, expression.String.val);
+            return mir_native_collection_string_represented_string_value(
+                expression.String.val, ctx
+            );
         }
         if expression.tag == 0 {
             mut index := mir_native_collection_string_find_name(
@@ -188,9 +251,11 @@ func mir_native_collection_string_string_value(
                 ctx
             );
             if index >= 0 {
-                return std.Clone(ctx, values[index]);
+                return mir_native_collection_string_represented_string_value(
+                    values[index], ctx
+                );
             }
-            return std.Clone(ctx, "");
+            return mir_native_collection_string_unrepresented_string_value(ctx);
         }
         if expression.tag == 12 &&
            std.str_eq(
@@ -201,20 +266,25 @@ func mir_native_collection_string_string_value(
             mut arguments: std.Vector[ast.Expression[ctx], ctx] :=
                 ctx[expression.Call.arguments];
             if len(arguments) != 3 || arguments[1].tag != 1 || arguments[2].tag != 1 {
-                return std.Clone(ctx, "");
+                return mir_native_collection_string_unrepresented_string_value(ctx);
             }
             mut source := mir_native_collection_string_string_value(
                 arguments[0], names, values, ctx
             );
+            if source.represented == 0 {
+                return mir_native_collection_string_unrepresented_string_value(ctx);
+            }
             mut start := arguments[1].Integer.val;
             mut end := arguments[2].Integer.val;
-            if start < 0 || end < start || end > len(source) {
-                return std.Clone(ctx, "");
+            if start < 0 || end < start || end > len(source.value) {
+                return mir_native_collection_string_unrepresented_string_value(ctx);
             }
-            return std.Clone(ctx, std.str_slice(source, start, end));
+            return mir_native_collection_string_represented_string_value(
+                std.str_slice(source.value, start, end), ctx
+            );
         }
     }
-    return std.Clone(ctx, "");
+    return mir_native_collection_string_unrepresented_string_value(ctx);
 }
 
 func mir_native_collection_string_int_value(
@@ -224,13 +294,17 @@ func mir_native_collection_string_int_value(
     binding_name: str,
     binding_value: int,
     ctx: &Arena
-) int {
+) MirNativeCollectionStringIntValue {
     unsafe {
         if expression.tag == 1 {
-            return expression.Integer.val;
+            return mir_native_collection_string_represented_int_value(
+                expression.Integer.val
+            );
         }
-        if expression.tag == 0 && std.str_eq(expression.Identifier.name, binding_name) == 1 {
-            return binding_value;
+        if expression.tag == 0 && len(binding_name) > 0 &&
+           std.str_eq(expression.Identifier.name, binding_name) == 1
+        {
+            return mir_native_collection_string_represented_int_value(binding_value);
         }
         if expression.tag == 7 {
             mut inner := ctx[expression.Dereference.expr];
@@ -265,7 +339,11 @@ func mir_native_collection_string_int_value(
                 mut right := mir_native_collection_string_string_value(
                     arguments[1], string_names, string_values, ctx
                 );
-                return std.str_eq(left, right);
+                if left.represented == 1 && right.represented == 1 {
+                    return mir_native_collection_string_represented_int_value(
+                        std.str_eq(left.value, right.value)
+                    );
+                }
             }
             if std.str_eq(name, "std.str_byte_at") == 1 &&
                len(arguments) == 2 && arguments[1].tag == 1
@@ -274,13 +352,17 @@ func mir_native_collection_string_int_value(
                     arguments[0], string_names, string_values, ctx
                 );
                 mut index := arguments[1].Integer.val;
-                if index >= 0 && index < len(source) {
-                    return std.str_byte_at(source, index);
+                if source.represented == 1 &&
+                   index >= 0 && index < len(source.value)
+                {
+                    return mir_native_collection_string_represented_int_value(
+                        std.str_byte_at(source.value, index)
+                    );
                 }
             }
         }
     }
-    return 0;
+    return mir_native_collection_string_unrepresented_int_value();
 }
 
 func mir_native_collection_string_effect_from_expression(
@@ -302,11 +384,15 @@ func mir_native_collection_string_effect_from_expression(
             return mir_native_collection_string_empty_effect(ctx);
         }
         if std.str_eq(name, "os.LogInt") == 1 {
+            mut value := mir_native_collection_string_int_value(
+                arguments[0], string_names, string_values,
+                binding_name, binding_value, ctx
+            );
+            if value.represented == 0 {
+                return mir_native_collection_string_empty_effect(ctx);
+            }
             return mir_native_collection_string_int_effect(
-                mir_native_collection_string_int_value(
-                    arguments[0], string_names, string_values,
-                    binding_name, binding_value, ctx
-                ),
+                value.value,
                 ctx
             );
         }
@@ -314,7 +400,10 @@ func mir_native_collection_string_effect_from_expression(
             mut value := mir_native_collection_string_string_value(
                 arguments[0], string_names, string_values, ctx
             );
-            return mir_native_collection_string_str_effect(value, ctx);
+            if value.represented == 0 {
+                return mir_native_collection_string_empty_effect(ctx);
+            }
+            return mir_native_collection_string_str_effect(value.value, ctx);
         }
     }
     return mir_native_collection_string_empty_effect(ctx);
@@ -540,11 +629,11 @@ func mir_native_collection_string_analyze_strings(
                 mut resolved := mir_native_collection_string_string_value(
                     value, string_names, string_values, ctx
                 );
-                if value.tag == 2 ||
+                if resolved.represented == 1 && (value.tag == 2 ||
                    std.str_eq(
                        mir_native_collection_string_call_name(value, ctx),
                        "std.str_slice"
-                   ) == 1
+                   ) == 1)
                 {
                     mut value_represented := 0;
                     if value.tag == 2 {
@@ -566,8 +655,9 @@ func mir_native_collection_string_analyze_strings(
                                 );
                             mut start := arguments[1].Integer.val;
                             mut end := arguments[2].Integer.val;
-                            if start >= 0 && end >= start &&
-                               end <= len(source_value)
+                            if source_value.represented == 1 &&
+                               start >= 0 && end >= start &&
+                               end <= len(source_value.value)
                             {
                                 value_represented = 1;
                             }
@@ -575,7 +665,7 @@ func mir_native_collection_string_analyze_strings(
                     }
                     if value_represented {
                         string_names.Push(std.Clone(ctx, statement.VarDecl.name));
-                        string_values.Push(resolved);
+                        string_values.Push(std.Clone(ctx, resolved.value));
                         statement_recognized = 1;
                         if value.tag == 12 {
                             model.string_operation_count = model.string_operation_count + 1;
@@ -627,8 +717,9 @@ func mir_native_collection_string_analyze_strings(
                                         string_values, ctx
                                     );
                                 mut byte_index := byte_arguments[1].Integer.val;
-                                if byte_index >= 0 &&
-                                   byte_index < len(byte_source)
+                                if byte_source.represented == 1 &&
+                                   byte_index >= 0 &&
+                                   byte_index < len(byte_source.value)
                                 {
                                     model.after = effect;
                                     model.string_operation_count =
@@ -659,9 +750,14 @@ func mir_native_collection_string_analyze_strings(
                    ) == 1 &&
                    statement.If.alternative != empty[Index[ast.BlockStatement[ctx], ctx]]
                 {
-                    model.condition_value = mir_native_collection_string_int_value(
+                    mut condition_value := mir_native_collection_string_int_value(
                         condition, string_names, string_values, "", 0, ctx
                     );
+                    if condition_value.represented == 0 {
+                        index = index + 1;
+                        continue;
+                    }
+                    model.condition_value = condition_value.value;
                     mut consequence := ctx[statement.If.consequence];
                     mut then_statements: std.Vector[ast.Statement[ctx], ctx] :=
                         ctx[consequence.statements];
@@ -729,10 +825,14 @@ func mir_native_collection_string_emit_effect(
         updated = mir_native_collection_string_append(updated, "_argument_0_value: ", ctx);
         updated = mir_native_collection_string_append_int(updated, effect.int_value, ctx);
     } else {
-        updated = mir_native_collection_string_append(updated, "_argument_0_kind: StringLiteral\n", ctx);
+        updated = mir_native_collection_string_append(updated, "_argument_0_kind: StringLiteralUtf8Hex\n", ctx);
         updated = mir_native_collection_string_append(updated, prefix, ctx);
         updated = mir_native_collection_string_append(updated, "_argument_0_value: ", ctx);
-        updated = mir_native_collection_string_append(updated, effect.string_value, ctx);
+        updated = mir_native_collection_string_append(
+            updated,
+            mir_native_collection_string_hex_encode(effect.string_value, ctx),
+            ctx
+        );
     }
     updated = mir_native_collection_string_append(updated, "\n", ctx);
     return std.Clone(ctx, updated);

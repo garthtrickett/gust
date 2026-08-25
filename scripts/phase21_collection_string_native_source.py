@@ -45,7 +45,7 @@ def validate() -> dict:
     record = registry.get("phase21_collection_string_native_source")
     require(isinstance(record, dict), "Patch 21.9 authority is missing")
     require(record.get("contract_version") ==
-            "phase21_collection_string_native_source_v1",
+            "phase21_collection_string_native_source_v2",
             "contract version drifted")
     require(record.get("status") == "patch21_9_complete" and
             record.get("next_patch") == "21.10",
@@ -72,6 +72,7 @@ def validate() -> dict:
     require([case.get("id") for case in cases] == [
         "collections_primary", "collections_renamed_variant",
         "strings_primary", "strings_renamed_variant",
+        "strings_embedded_newline",
     ], "source differential population drifted")
     require(all((ROOT / case["source_fixture"]).is_file() and
                 case.get("expected_exit") == 0 and
@@ -82,9 +83,14 @@ def validate() -> dict:
     rejected_cases = record.get("rejected_source_cases", [])
     require([case.get("id") for case in rejected_cases] == [
         "collections_extra_effect", "strings_extra_effect",
+        "collections_unrepresented_log_expression",
+        "strings_unrepresented_log_expression",
     ], "conservative rejection population drifted")
     require(all((ROOT / case["source_fixture"]).is_file() and
-                case.get("expected_failure_stage") == "before_driver_discovery"
+                case.get("expected_failure_stage") == "before_driver_discovery" and
+                case.get("oracle_exit") == 0 and
+                case.get("oracle_stderr") == "" and
+                case.get("oracle_stdout")
                 for case in rejected_cases),
             "a conservative rejection case is incomplete")
 
@@ -111,6 +117,8 @@ def validate() -> dict:
             "retained runtime package authority drifted")
     worker_contract = record.get("worker_contract", {})
     require(worker_contract.get("source_recognition") is False and
+            worker_contract.get("string_literal_transport") ==
+            "compiler_hex_encoded_bytes_to_declared_data_symbol_pointer_and_length" and
             worker_contract.get("generated_C") is False,
             "worker source-recognition or generated-C boundary drifted")
 
@@ -132,7 +140,9 @@ def validate() -> dict:
 
     lowerer = LOWERER.read_text(encoding="utf-8")
     require("mir_native_collection_string_source_lower" in lowerer and
-            "CallVoid" in lowerer and "StringLiteral" in lowerer and
+            "CallVoid" in lowerer and "StringLiteralUtf8Hex" in lowerer and
+            "MirNativeCollectionStringIntValue" in lowerer and
+            "MirNativeCollectionStringStringValue" in lowerer and
             "BranchLocalI32Positive" in lowerer,
             "compiler canonical lowering surface is incomplete")
     for fixture_name in (
@@ -140,6 +150,9 @@ def validate() -> dict:
         "phase20_component_strings_source.gst",
         "phase21_collection_native_source_variant.gst",
         "phase21_string_native_source_variant.gst",
+        "phase21_collection_native_unrepresented_log_expression.gst",
+        "phase21_string_native_unrepresented_log_expression.gst",
+        "phase21_string_native_embedded_newline.gst",
     ):
         require(fixture_name not in lowerer and fixture_name not in
                 WORKER.read_text(encoding="utf-8"),
@@ -151,7 +164,8 @@ def validate() -> dict:
             "gust-runtime-package.a" in ROUTE.read_text(encoding="utf-8"),
             "compiler request does not carry the retained runtime package")
     worker = WORKER.read_text(encoding="utf-8")
-    for marker in ("StringLiteral", "CallVoid", "StringSlice", "runtime_package"):
+    for marker in ("StringLiteralUtf8Hex", "compiler_mir_string_literal_bytes",
+                   "CallVoid", "StringSlice", "runtime_package"):
         require(marker in worker, f"worker lacks {marker} transport")
     makefile = MAKEFILE.read_text(encoding="utf-8")
     for marker in ("build/gust-runtime-package.a", "src/runtime/arena.c",
@@ -160,7 +174,8 @@ def validate() -> dict:
 
     task = TASK.read_text(encoding="utf-8")
     require("- [x] Patch 21.9 — Collections and Strings Native Source Migration — DONE"
-            in task and "**Exit Gate:** all four registered source cases" in task,
+            in task and "**Exit Gate:** all five registered source cases" in task and
+            "Post-merge correction (2026-08-25)" in task,
             "TASK.md does not close Patch 21.9")
     levels = json.loads(LEVELS.read_text(encoding="utf-8"))["guards"]
     require(levels.get(GUARD_L1) == 1 and levels.get(GUARD_L2) == 2,
@@ -206,6 +221,7 @@ def render(record: dict) -> str:
         lines += [
             f"- `{case['id']}` — `{case['source_fixture']}`",
             f"  - Expected failure stage: `{case['expected_failure_stage']}`",
+            f"  - MIR-to-C stdout: `{case['oracle_stdout'].encode().hex()}` (hex)",
         ]
     canonical = record["canonical_contract"]
     runtime = record["runtime_package"]
@@ -250,7 +266,9 @@ def main() -> None:
     elif args.command == "rejection-lines":
         for case in record["rejected_source_cases"]:
             print("\t".join((case["id"], case["source_fixture"],
-                             case["expected_failure_stage"])))
+                             case["expected_failure_stage"],
+                             case["oracle_stdout"].encode().hex(),
+                             str(case["oracle_exit"]))))
         return
     print(f"{GUARD_L1}: ok")
 

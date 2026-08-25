@@ -1393,6 +1393,7 @@ enum CompilerMirLoweringCallArgument<'a> {
     I32Literal(i32),
     BoolLiteral(i32),
     StringLiteral(&'a str),
+    StringLiteralUtf8Hex(&'a str),
     FunctionParamI32(usize),
     LocalI32(&'a str),
     BlockParamI32(&'a str),
@@ -1400,6 +1401,71 @@ enum CompilerMirLoweringCallArgument<'a> {
         name: &'a str,
         value: i32,
     },
+}
+
+fn compiler_mir_hex_nibble(value: u8) -> Option<u8> {
+    match value {
+        b'0'..=b'9' => Some(value - b'0'),
+        b'a'..=b'f' => Some(value - b'a' + 10),
+        b'A'..=b'F' => Some(value - b'A' + 10),
+        _ => None,
+    }
+}
+
+fn compiler_mir_string_literal_key<'a>(
+    argument: &CompilerMirLoweringCallArgument<'a>,
+) -> Option<(bool, &'a str)> {
+    match argument {
+        CompilerMirLoweringCallArgument::StringLiteral(value) => {
+            Some((false, value))
+        }
+        CompilerMirLoweringCallArgument::StringLiteralUtf8Hex(value) => {
+            Some((true, value))
+        }
+        _ => None,
+    }
+}
+
+fn compiler_mir_string_literal_bytes(
+    argument: &CompilerMirLoweringCallArgument<'_>,
+) -> Result<Vec<u8>, Box<dyn Error>> {
+    let Some((is_hex, value)) = compiler_mir_string_literal_key(argument) else {
+        return Err(IoError::new(
+            ErrorKind::InvalidInput,
+            "canonical compiler MIR call argument is not a string literal",
+        )
+        .into());
+    };
+    if !is_hex {
+        return Ok(value.as_bytes().to_vec());
+    }
+    let encoded = value.as_bytes();
+    if encoded.len() % 2 != 0 {
+        return Err(IoError::new(
+            ErrorKind::InvalidInput,
+            "canonical compiler MIR StringLiteralUtf8Hex must contain an even number of hex digits",
+        )
+        .into());
+    }
+    let mut decoded = Vec::with_capacity(encoded.len() / 2);
+    for pair in encoded.chunks_exact(2) {
+        let Some(high) = compiler_mir_hex_nibble(pair[0]) else {
+            return Err(IoError::new(
+                ErrorKind::InvalidInput,
+                "canonical compiler MIR StringLiteralUtf8Hex contains a non-hex digit",
+            )
+            .into());
+        };
+        let Some(low) = compiler_mir_hex_nibble(pair[1]) else {
+            return Err(IoError::new(
+                ErrorKind::InvalidInput,
+                "canonical compiler MIR StringLiteralUtf8Hex contains a non-hex digit",
+            )
+            .into());
+        };
+        decoded.push(high * 16 + low);
+    }
+    Ok(decoded)
 }
 
 #[derive(Clone)]
@@ -20276,7 +20342,8 @@ fn validate_canonical_compiler_mir_call_argument<'a>(
     match *argument {
         CompilerMirLoweringCallArgument::I32Literal(_) => Ok(TinyMirType::I32),
         CompilerMirLoweringCallArgument::BoolLiteral(_) => Ok(TinyMirType::Bool),
-        CompilerMirLoweringCallArgument::StringLiteral(_) => {
+        CompilerMirLoweringCallArgument::StringLiteral(_)
+        | CompilerMirLoweringCallArgument::StringLiteralUtf8Hex(_) => {
             Ok(TinyMirType::StringSlice)
         }
         CompilerMirLoweringCallArgument::FunctionParamI32(param) => function
@@ -20643,6 +20710,18 @@ fn parse_canonical_compiler_mir_call_arguments<'a>(
                         &value_key,
                     )?,
                 )
+            }
+            "StringLiteralUtf8Hex" => {
+                let value_key = format!("{argument_prefix}_value");
+                let argument = CompilerMirLoweringCallArgument::StringLiteralUtf8Hex(
+                    required_canonical_compiler_mir_fixture_field(
+                        fields,
+                        consumed,
+                        &value_key,
+                    )?,
+                );
+                compiler_mir_string_literal_bytes(&argument)?;
+                argument
             }
             "FunctionParamI32" => {
                 let param_key = format!("{argument_prefix}_param");
@@ -32305,7 +32384,7 @@ fn lower_compiler_mir_ingestion_module_to_object(
     debug_assert!(target_contract.is_pic);
     let mut module = ObjectModule::new(object_builder);
 
-    let mut string_data_ids: HashMap<&str, DataId> = HashMap::new();
+    let mut string_data_ids: HashMap<(bool, &str), DataId> = HashMap::new();
     for defined in &mir_module.functions {
         for block in &defined.fixture.function.blocks {
             for statement in &block.statements {
@@ -32321,12 +32400,10 @@ fn lower_compiler_mir_ingestion_module_to_object(
                     _ => continue,
                 };
                 for argument in arguments {
-                    let CompilerMirLoweringCallArgument::StringLiteral(value) =
-                        argument
-                    else {
+                    let Some(key) = compiler_mir_string_literal_key(argument) else {
                         continue;
                     };
-                    if string_data_ids.contains_key(value) {
+                    if string_data_ids.contains_key(&key) {
                         continue;
                     }
                     let symbol = format!(
@@ -32340,9 +32417,11 @@ fn lower_compiler_mir_ingestion_module_to_object(
                         false,
                     )?;
                     let mut description = DataDescription::new();
-                    description.define(value.as_bytes().to_vec().into_boxed_slice());
+                    description.define(
+                        compiler_mir_string_literal_bytes(argument)?.into_boxed_slice(),
+                    );
                     module.define_data(data_id, &description)?;
-                    string_data_ids.insert(value, data_id);
+                    string_data_ids.insert(key, data_id);
                 }
             }
         }
@@ -32469,7 +32548,7 @@ fn define_compiler_mir_ingestion_module_function(
     defined: &CompilerMirLoweringDefinedFunction<'_>,
     local_function_ids: &HashMap<&str, FuncId>,
     imported_function_ids: &HashMap<&str, FuncId>,
-    string_data_ids: &HashMap<&str, DataId>,
+    string_data_ids: &HashMap<(bool, &str), DataId>,
 ) -> Result<(), Box<dyn Error>> {
     let mir_function = &defined.fixture.function;
     let function_id = *local_function_ids
@@ -32643,7 +32722,7 @@ fn build_compiler_mir_ingestion_body_with_calls(
     mir_function: &CompilerMirLoweringFunction<'_>,
     local_function_refs: &HashMap<&str, FuncRef>,
     imported_function_refs: &HashMap<&str, FuncRef>,
-    string_data_values: &HashMap<&str, cranelift_codegen::ir::GlobalValue>,
+    string_data_values: &HashMap<(bool, &str), cranelift_codegen::ir::GlobalValue>,
     pointer_type: Type,
 ) -> Result<(), Box<dyn Error>> {
     let mut cranelift_blocks: HashMap<&str, Block> = HashMap::new();
@@ -32926,10 +33005,9 @@ fn build_compiler_mir_ingestion_body_with_calls(
                     };
                     let mut lowered_arguments = Vec::with_capacity(arguments.len());
                     for argument in arguments {
-                        if let CompilerMirLoweringCallArgument::StringLiteral(value) =
-                            argument
-                        {
-                            let data = *string_data_values.get(value).ok_or_else(|| {
+                        if let Some(key) = compiler_mir_string_literal_key(&argument) {
+                            let byte_length = compiler_mir_string_literal_bytes(&argument)?.len();
+                            let data = *string_data_values.get(&key).ok_or_else(|| {
                                 IoError::new(
                                     ErrorKind::InvalidInput,
                                     format!(
@@ -32943,7 +33021,7 @@ fn build_compiler_mir_ingestion_body_with_calls(
                             );
                             lowered_arguments.push(builder.ins().iconst(
                                 types::I32,
-                                i64::try_from(value.len()).map_err(|_| {
+                                i64::try_from(byte_length).map_err(|_| {
                                     IoError::new(
                                         ErrorKind::InvalidInput,
                                         "canonical compiler MIR string literal is too large",
@@ -33007,7 +33085,8 @@ fn build_compiler_mir_ingestion_body_with_calls(
                                     })?;
                                 builder.ins().iadd_imm(block_value, i64::from(value))
                             }
-                            CompilerMirLoweringCallArgument::StringLiteral(_) => {
+                            CompilerMirLoweringCallArgument::StringLiteral(_)
+                            | CompilerMirLoweringCallArgument::StringLiteralUtf8Hex(_) => {
                                 unreachable!("string literal handled before scalar lowering")
                             }
                         };
@@ -33067,8 +33146,18 @@ fn build_compiler_mir_ingestion_body_with_calls(
                                     i64::from(value),
                                 ));
                             }
-                            CompilerMirLoweringCallArgument::StringLiteral(value) => {
-                                let data = *string_data_values.get(value).ok_or_else(|| {
+                            CompilerMirLoweringCallArgument::StringLiteral(_)
+                            | CompilerMirLoweringCallArgument::StringLiteralUtf8Hex(_) => {
+                                let key = compiler_mir_string_literal_key(&argument)
+                                    .ok_or_else(|| {
+                                        IoError::new(
+                                            ErrorKind::InvalidInput,
+                                            "canonical compiler MIR string literal key is missing",
+                                        )
+                                    })?;
+                                let byte_length =
+                                    compiler_mir_string_literal_bytes(&argument)?.len();
+                                let data = *string_data_values.get(&key).ok_or_else(|| {
                                     IoError::new(
                                         ErrorKind::InvalidInput,
                                         format!(
@@ -33082,7 +33171,7 @@ fn build_compiler_mir_ingestion_body_with_calls(
                                 );
                                 lowered_arguments.push(builder.ins().iconst(
                                     types::I32,
-                                    i64::try_from(value.len()).map_err(|_| {
+                                    i64::try_from(byte_length).map_err(|_| {
                                         IoError::new(
                                             ErrorKind::InvalidInput,
                                             "canonical compiler MIR string literal is too large",

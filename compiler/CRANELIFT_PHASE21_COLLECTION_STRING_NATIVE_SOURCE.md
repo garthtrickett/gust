@@ -3,7 +3,7 @@
 Generated from `scripts/cranelift_feature_registry.json` by
 `scripts/phase21_collection_string_native_source.py project`. Do not edit by hand.
 
-- Contract: `phase21_collection_string_native_source_v1`
+- Contract: `phase21_collection_string_native_source_v2`
 - Status: `patch21_9_complete`
 - Next patch: `21.10`
 - Scope: `bounded_compiler_owned_collection_and_string_source_cohort_with_conservative_pre_driver_rejection_outside_the_represented_shapes`
@@ -40,13 +40,25 @@ Generated from `scripts/cranelift_feature_registry.json` by
   - Exit: `0`
   - Stdout: `4e61746976650a370a38320a` (hex)
   - Stderr: empty
+- `strings_embedded_newline` — `compiler/phase21_string_native_embedded_newline.gst`
+  - Exit: `0`
+  - Stdout: `4e61746976650a526f7574650a370a38320a` (hex)
+  - Stderr: empty
 
 ## Conservative rejection cases
 
 - `collections_extra_effect` — `compiler/phase21_collection_native_source_outside_cohort.gst`
   - Expected failure stage: `before_driver_discovery`
+  - MIR-to-C stdout: `32300a3939390a` (hex)
 - `strings_extra_effect` — `compiler/phase21_string_native_source_outside_cohort.gst`
   - Expected failure stage: `before_driver_discovery`
+  - MIR-to-C stdout: `48656c6c6f0a310a38370a3939390a` (hex)
+- `collections_unrepresented_log_expression` — `compiler/phase21_collection_native_unrepresented_log_expression.gst`
+  - Expected failure stage: `before_driver_discovery`
+  - MIR-to-C stdout: `34330a` (hex)
+- `strings_unrepresented_log_expression` — `compiler/phase21_string_native_unrepresented_log_expression.gst`
+  - Expected failure stage: `before_driver_discovery`
+  - MIR-to-C stdout: `4e6174697665210a370a38320a` (hex)
 
 ## Canonical and runtime boundary
 
