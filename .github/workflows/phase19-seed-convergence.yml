@@ -8,6 +8,7 @@ on:
       - 'compiler/CRANELIFT_PHASE20_SEED_CONVERGENCE.md'
       - 'compiler/CRANELIFT_PHASE20_POST_PREREQUISITE_SEED_CONVERGENCE.md'
       - 'compiler/CRANELIFT_PHASE20_PROTECTED_ACCESS_SEED_CONVERGENCE.md'
+      - 'compiler/CRANELIFT_PHASE21_TENANT_SCOPE_SEED_CONVERGENCE.md'
       - 'scripts/cranelift_feature_registry.json'
       - 'scripts/cranelift_feature_registry.schema.json'
       - 'scripts/cranelift_registry.py'
@@ -16,6 +17,7 @@ on:
       - 'scripts/phase20_seed_convergence.py'
       - 'scripts/phase20_post_prerequisite_seed_convergence.py'
       - 'scripts/phase20_protected_access_seed_convergence.py'
+      - 'scripts/phase21_tenant_scope_seed_convergence.py'
       - 'TASK.md'
       - 'justfile'
       - '.github/workflows/pr-fast.yml'
@@ -29,6 +31,7 @@ on:
       - 'compiler/CRANELIFT_PHASE20_SEED_CONVERGENCE.md'
       - 'compiler/CRANELIFT_PHASE20_POST_PREREQUISITE_SEED_CONVERGENCE.md'
       - 'compiler/CRANELIFT_PHASE20_PROTECTED_ACCESS_SEED_CONVERGENCE.md'
+      - 'compiler/CRANELIFT_PHASE21_TENANT_SCOPE_SEED_CONVERGENCE.md'
       - 'scripts/cranelift_feature_registry.json'
       - 'scripts/cranelift_feature_registry.schema.json'
       - 'scripts/cranelift_test_levels.json'
@@ -36,6 +39,7 @@ on:
       - 'scripts/phase20_seed_convergence.py'
       - 'scripts/phase20_post_prerequisite_seed_convergence.py'
       - 'scripts/phase20_protected_access_seed_convergence.py'
+      - 'scripts/phase21_tenant_scope_seed_convergence.py'
       - 'TASK.md'
       - 'justfile'
       - '.github/workflows/pr-fast.yml'
@@ -67,6 +71,8 @@ jobs:
         run: just guard-cranelift-phase20-post-prerequisite-seed-convergence
       - name: guard-cranelift-phase20-protected-access-seed-convergence
         run: just guard-cranelift-phase20-protected-access-seed-convergence
+      - name: guard-cranelift-phase21-tenant-scope-seed-convergence
+        run: just guard-cranelift-phase21-tenant-scope-seed-convergence
 
   fixed-point:
     runs-on: ubuntu-latest
@@ -90,10 +96,12 @@ jobs:
             compiler/CRANELIFT_PHASE20_SEED_CONVERGENCE.md \
             compiler/CRANELIFT_PHASE20_POST_PREREQUISITE_SEED_CONVERGENCE.md \
             compiler/CRANELIFT_PHASE20_PROTECTED_ACCESS_SEED_CONVERGENCE.md \
+            compiler/CRANELIFT_PHASE21_TENANT_SCOPE_SEED_CONVERGENCE.md \
             scripts/phase19_seed_convergence.py \
             scripts/phase20_seed_convergence.py \
             scripts/phase20_post_prerequisite_seed_convergence.py \
-            scripts/phase20_protected_access_seed_convergence.py; then
+            scripts/phase20_protected_access_seed_convergence.py \
+            scripts/phase21_tenant_scope_seed_convergence.py; then
             echo "required=false" >> "$GITHUB_OUTPUT"
           else
             echo "required=true" >> "$GITHUB_OUTPUT"

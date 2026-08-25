@@ -88,7 +88,7 @@ Out of scope:
 - [x] Patch 21.5 — Per-Root Join and Nested-Query Obligations — DONE
 - [x] Patch 21.6 — Explicit Cross-Tenant Capability Boundary — DONE
 - [x] Patch 21.7 — OD-8 Adversarial Soundness Verdict — DONE
-- [ ] Patch 21.7a — Tenant-Scope Bootstrap Seed Reconvergence
+- [x] Patch 21.7a — Tenant-Scope Bootstrap Seed Reconvergence — DONE
 - [ ] Patch 21.8 — Phase 20 Residue Migration Authority
 - [ ] Patch 21.9 — Collections and Strings Native Source Migration
 - [ ] Patch 21.10 — Filesystem and Allocation Native Source Migration

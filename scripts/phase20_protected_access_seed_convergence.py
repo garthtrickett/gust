@@ -70,8 +70,18 @@ def validate() -> dict:
         {"patch": "20.16c", "scope": "unsafe_Mutex_inventory_authority_without_compiler_semantic_change"},
         {"patch": "20.16d", "scope": "protected_access_liveness_enforcement_and_fixtures"},
     ], "accounted patch range drifted")
+    live_seed_lines = diff["current_lines"]
+    successor = registry.get("phase21_tenant_scope_seed_convergence")
+    if successor is not None:
+        require(successor.get("predecessor_seed_authority") ==
+                record["contract_version"],
+                "Patch 21.7a seed authority does not name this predecessor")
+        successor_diff = successor.get("generated_seed_diff")
+        require(isinstance(successor_diff, dict),
+                "Patch 21.7a seed authority omits generated diff accounting")
+        live_seed_lines = successor_diff.get("current_lines")
     require(len(SEED.read_text(encoding="utf-8").splitlines()) ==
-            diff["current_lines"], "committed seed line count drifted")
+            live_seed_lines, "committed seed line count drifted")
     require("- [x] Patch 20.16e — Protected-Access Bootstrap Seed Reconvergence — DONE"
             in TASK.read_text(encoding="utf-8"),
             "TASK.md does not mark 20.16e DONE")
