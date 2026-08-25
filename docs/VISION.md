@@ -440,7 +440,7 @@ second, drifting copy of it.
 | # | Question | Status | Blocks | Stated in full |
 |---|---|---|---|---|
 | **OD-9** | **Model fluency** — can an agent write Gust well, and how do we get there from no corpus? *Thesis-invalidating. Starts week one.* | **OPEN** | Demo | §0.7; blocked-on evidence in `TASK_STDLIB.md` CR-6 and `docs/ONE_WAY_LEDGER.md` E1 |
-| **OD-8** | **Soundness of the tenant-scoping analysis** — adversarial review before publication. *Thesis-invalidating.* | **DESIGN SET 2026-08-24 / EVIDENCE OPEN** — the operator selected §56.2's typed Scope provenance model; the soundness verdict remains open until the implemented analysis survives the predefined adversarial suite | Demo | §56; implementation and verdict sequencing in `TASK.md` Phase 21 |
+| **OD-8** | ~~**Soundness of the tenant-scoping analysis** — adversarial review before publication. *Thesis-invalidating.*~~ | **RESOLVED 2026-08-25 — BOUNDED POSITIVE** — the complete predefined §56.1 suite found no in-scope compiler-owned typed-query counterexample; the verdict does not cover caches, non-query reads, multi-step flows, unsafe/raw SQL, or trusted-context establishment | — | §56; generated evidence in `compiler/CRANELIFT_PHASE21_OD8_ADVERSARIAL_VERDICT.md` |
 | OD-1 | Transparent suspension vs coloured async (server) | **DIRECTION SET 2026-08-20** — transparent suspension unless a fatal blocker is hit; §21 defines what counts | Demo | §21; evidence in `docs/ONE_WAY_LEDGER.md` E9; escalation as `TASK_STDLIB.md` CR-8 |
 | OD-2 | ~~Generic functions vs compiler-owned query derivation~~ | **RESOLVED 2026-08-20** — compiler-owned derivation; §13's ban stands | — | §14; consequences in §13 and `docs/DEMO_TARGET_PROGRAM.md` |
 | OD-10 | **Distribution for the product path** | **OPEN** — first candidate recorded 2026-08-20 (`docs/STRATEGY_REVIEW.md` §6); **first *deployment* proposed separately at §6.1**, deliberately not an answer to this row | Month 4 | §0.11 |
@@ -1855,12 +1855,13 @@ The remaining classes, roughly by how much they would cost to close:
 
 **How to run it.** The reviewer's job is to produce a program that compiles and leaks, not to assess whether the design seems sound. One such program resolves OD-8 negatively, which is the outcome §0.11 wants found in month four rather than after publication. A review that produces no counterexample should say which of these classes it actually attempted.
 
-### 56.2 What the analysis must check — design set, evidence open
+### 56.2 What the analysis checks — design set, bounded verdict recorded
 
 The operator selected this design on 2026-08-24. It is normative for the
-compiler-owned typed-query path, but selecting a design is not a soundness
-verdict. The predefined §56.1 attack list must run against the implementation
-before OD-8 can resolve positively.
+compiler-owned typed-query path. On 2026-08-25 the complete predefined §56.1
+attack suite produced no in-scope compiling leak counterexample, so OD-8 has a
+bounded positive verdict. The registry-generated evidence is
+`compiler/CRANELIFT_PHASE21_OD8_ADVERSARIAL_VERDICT.md`.
 
 **1. Declaration.** An entity type declares which field carries its scope. The compiler records the pairing; nothing else in the program may assert it.
 
@@ -1883,12 +1884,14 @@ analysis by construction. Naming them here rather than leaving them out is the
 point: any eventual positive claim must be about the implemented compiler-owned
 typed-query path or it will be broader than the thing that was checked.
 
-> **OD-8 lives here.** The design is set; the evidence verdict is not. One
-> in-scope counterexample — one compiler-owned typed query that lacks matching
-> trusted Scope provenance and compiles anyway — resolves OD-8 negatively.
-> Ordinary positive tests or this prose cannot resolve it positively. The
-> complete predefined adversarial suite must attack the implementation first,
-> and §0.15 remains the sole owner of the resulting status.
+> **OD-8 lives here.** The design and bounded verdict are now recorded. The
+> complete predefined adversarial suite attacked provenance authenticity,
+> privileged-capability transitivity, joins, nesting, query-value flow, the
+> legitimate cross-tenant path, and dynamic shape; it found no in-scope
+> compiler-owned typed-query counterexample. This is generated conformance
+> evidence, not formal proof. The bounded verdict does not cover caches,
+> non-query reads, multi-step flows, unsafe/raw SQL, or trusted-context
+> establishment, and §0.15 remains the sole owner of the status.
 
 ## 57. Raw SQL
 

@@ -85,9 +85,13 @@ def render(authority: dict) -> str:
     lines += [
         f"- Positive verdict gate: `{od8['positive_resolution_gate']}`",
         f"- Negative verdict gate: `{od8['negative_resolution_gate']}`",
-        "",
-        "## OD-15",
-        "",
+    ]
+    if authority.get("_od8_successor_verdict"):
+        lines.append(
+            f"- Successor evidence verdict: `{authority['_od8_successor_verdict']}`"
+        )
+    lines += [
+        "", "## OD-15", "",
         f"- Status: `{od15['status']}`",
         f"- Question: `{od15['question']}`",
         f"- Decision patch: `{od15['decision_patch']}`",
@@ -169,12 +173,26 @@ def validate() -> dict:
     require(od8.get("demo_target_contract") ==
             "typed_query_negative_not_raw_sql_and_exact_surface_deferred_to_21_3",
             "OD-8 demo target contract drifted")
+    verdict_record = registry.get("phase21_od8_adversarial_verdict")
+    if verdict_record is None:
+        verdict_evidence = (
+            "**DESIGN SET 2026-08-24 / EVIDENCE OPEN**",
+            "### 56.2 What the analysis must check — design set, evidence open",
+            "the evidence verdict is not",
+        )
+    else:
+        require(verdict_record.get("status") == "patch21_7_complete" and
+                verdict_record.get("verdict", {}).get("od8_status") ==
+                "resolved_2026_08_25_bounded_positive",
+                "OD-8 successor verdict authority drifted")
+        verdict_evidence = (
+            "**RESOLVED 2026-08-25 — BOUNDED POSITIVE**",
+            "### 56.2 What the analysis checks — design set, bounded verdict recorded",
+            "complete predefined §56.1",
+        )
     vision = VISION.read_text(encoding="utf-8")
-    for evidence in (
-        "**DESIGN SET 2026-08-24 / EVIDENCE OPEN**",
-        "### 56.2 What the analysis must check — design set, evidence open",
+    for evidence in (*verdict_evidence,
         "non-forgeable typed Scope provenance",
-        "the evidence verdict is not",
         "compiler-owned typed-query path",
         "unsafe/raw SQL",
         "trusted request context",
@@ -186,9 +204,12 @@ def validate() -> dict:
 
     shared = SHARED.read_text(encoding="utf-8")
     shared_flat = " ".join(shared.split())
+    shared_verdict = ("OD-8 is `DESIGN SET / EVIDENCE OPEN`"
+                      if verdict_record is None else
+                      "OD-8 is `RESOLVED 2026-08-25 / BOUNDED POSITIVE`")
     for evidence in (
         "Tenant-scoped typed-query obligations and trusted `Scope` provenance",
-        "OD-8 is `DESIGN SET / EVIDENCE OPEN`",
+        shared_verdict,
         "Every scoped join root and nested query owns its own obligation",
         "compiler-owned typed-query path",
     ):
@@ -225,7 +246,10 @@ def validate() -> dict:
             "PR Fast does not own the roadmap guard")
     require(f"just {GUARD}" in WORKFLOW.read_text(encoding="utf-8"),
             "dedicated workflow does not own the roadmap guard")
-    return authority
+    projected = dict(authority)
+    if verdict_record is not None:
+        projected["_od8_successor_verdict"] = verdict_record["verdict"]["od8_status"]
+    return projected
 
 
 def main() -> None:

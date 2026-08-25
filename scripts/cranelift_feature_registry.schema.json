@@ -44,6 +44,7 @@
     "phase21_trusted_scope_provenance",
     "phase21_per_root_obligations",
     "phase21_cross_tenant_capability",
+    "phase21_od8_adversarial_verdict",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -1438,6 +1439,68 @@
             {"kind":"wrong_arity","source_fixture":"compiler/phase21_cross_tenant_wrong_arity_invalid.gst","diagnostic_class":"CrossTenantCapability"}
           ],
           "boundary": {"cross_tenant_capability_enforced":true,"capability_is_nonforgeable":true,"capability_is_nontransitive":true,"marker_is_visible_at_query_site":true,"ordinary_scoped_queries_changed":false,"raw_SQL_included_in_typed_query_guarantee":false,"adds_database_runtime":false,"adds_broader_effect_system":false,"trusted_host_capability_establishment_claimed":false,"adds_or_changes_MIR_operations":false,"changes_ABI_layout_or_runtime_symbols":false,"changes_bootstrap_seed":false,"edits_stdlib":false}
+        }
+      },
+      "phase21_od8_adversarial_verdict": {
+        "const": {
+          "contract_version": "phase21_od8_adversarial_verdict_v1",
+          "status": "patch21_7_complete",
+          "next_patch": "21.7a",
+          "review_view": "compiler/CRANELIFT_PHASE21_OD8_ADVERSARIAL_VERDICT.md",
+          "attack_authority": "docs/VISION.md_section_56_1",
+          "claim_scope": "compiler_owned_typed_query_path_only",
+          "verdict": {"od8_status":"resolved_2026_08_25_bounded_positive","decision":"complete_predefined_in_scope_suite_found_no_compiling_leak_counterexample","operator_design_date":"2026-08-24","evidence_date":"2026-08-25","positive_gate":"all_predefined_in_scope_attempts_execute_with_the_registered_accept_or_reject_outcome","in_scope_counterexamples":[]},
+          "in_scope_attacks": [
+            {"id":"provenance_authenticity","claim_boundary":"matching_nonforgeable_typed_Scope_provenance_at_the_compiler_owned_query_predicate","attempts":[
+              {"kind":"trusted_scope_positive","source_fixture":"compiler/phase21_trusted_scope_positive.gst","expected":"accept","mir_to_c_exit":41,"cranelift_exit":41},
+              {"kind":"deserialized_or_attacker_controlled_value","source_fixture":"compiler/phase21_trusted_scope_arbitrary_invalid.gst","expected":"reject","diagnostic":"[TenantScopeProvenance]"},
+              {"kind":"cast_from_attacker_value","source_fixture":"compiler/phase21_trusted_scope_cast_invalid.gst","expected":"reject","diagnostic":"[TenantScopeProvenance]"},
+              {"kind":"wrong_scope_identity","source_fixture":"compiler/phase21_trusted_scope_wrong_identity_invalid.gst","expected":"reject","diagnostic":"[TenantScopeProvenance]"},
+              {"kind":"copied_predicate_spelling","source_fixture":"compiler/phase21_trusted_scope_syntax_only_invalid.gst","expected":"reject","diagnostic":"[TenantScopeProvenance]"},
+              {"kind":"copy_laundering","source_fixture":"compiler/phase21_od8_trusted_scope_copy_invalid.gst","expected":"reject","diagnostic":"[TrustedScopeBoundary]"},
+              {"kind":"aggregate_storage_laundering","source_fixture":"compiler/phase21_od8_trusted_scope_store_invalid.gst","expected":"reject","diagnostic":"[TrustedScopeBoundary]"},
+              {"kind":"return_laundering","source_fixture":"compiler/phase21_od8_trusted_scope_return_launder_invalid.gst","expected":"reject","diagnostic":"[TrustedScopeBoundary]"},
+              {"kind":"reserved_intrinsic_redefinition","source_fixture":"compiler/phase21_trusted_scope_reserved_intrinsic_invalid.gst","expected":"reject","diagnostic":"[ReservedCompilerIntrinsic]"}
+            ],"outcome":"no_counterexample"},
+            {"id":"privileged_boundary_transitivity","claim_boundary":"implemented_typed_query_host_capability_only_raw_SQL_itself_is_outside_the_claim","attempts":[
+              {"kind":"ordinary_helper","source_fixture":"compiler/phase21_cross_tenant_helper_invalid.gst","expected":"reject","diagnostic":"[CrossTenantCapability]"},
+              {"kind":"reexport","source_fixture":"compiler/phase21_cross_tenant_reexport_invalid.gst","expected":"reject","diagnostic":"[CrossTenantCapabilityBoundary]"},
+              {"kind":"outside_marker","source_fixture":"compiler/phase21_cross_tenant_outside_marker_invalid.gst","expected":"reject","diagnostic":"[CrossTenantCapabilityBoundary]"}
+            ],"outcome":"implemented_privileged_typed_query_capability_is_nontransitive"},
+            {"id":"joins","claim_boundary":"every_scoped_join_root_has_its_own_obligation_while_unscoped_lookup_roots_add_none","attempts":[
+              {"kind":"missing_scoped_join_scope","source_fixture":"compiler/phase21_join_obligation_missing_invalid.gst","expected":"reject","diagnostic":"[TenantScopeProvenance]"},
+              {"kind":"sibling_scope_reuse","source_fixture":"compiler/phase21_join_sibling_isolation_invalid.gst","expected":"reject","diagnostic":"[TenantScopeProvenance]"},
+              {"kind":"unscoped_primary_scoped_join","source_fixture":"compiler/phase21_od8_unscoped_primary_scoped_join_invalid.gst","expected":"reject","diagnostic":"[TenantScopeProvenance]"},
+              {"kind":"scoped_primary_unscoped_lookup","source_fixture":"compiler/phase21_unscoped_join_positive.gst","expected":"accept","mir_to_c_exit":54}
+            ],"outcome":"no_counterexample"},
+            {"id":"nesting","claim_boundary":"every_nested_query_is_an_independent_obligation_boundary","attempts":[
+              {"kind":"outer_scope_does_not_clear_inner","source_fixture":"compiler/phase21_nested_obligation_missing_invalid.gst","expected":"reject","diagnostic":"[TenantScopeProvenance]"},
+              {"kind":"outer_cross_tenant_marker_does_not_clear_inner","source_fixture":"compiler/phase21_cross_tenant_nested_nontransitive_invalid.gst","expected":"reject","diagnostic":"[TenantScopeProvenance]"},
+              {"kind":"independently_scoped_nested_aggregate","source_fixture":"compiler/phase21_nested_aggregate_positive.gst","expected":"accept","mir_to_c_exit":55,"cranelift_exit":55}
+            ],"outcome":"no_counterexample"},
+            {"id":"queries_as_values","claim_boundary":"unresolved_obligations_are_rejected_before_terminal_projection_or_value_flow","attempts":[
+              {"kind":"unresolved_alias","source_fixture":"compiler/phase21_query_value_unresolved_invalid.gst","expected":"reject","diagnostic":"[TenantScopeProvenance]"},
+              {"kind":"unresolved_branch_return","source_fixture":"compiler/phase21_query_value_branch_invalid.gst","expected":"reject","diagnostic":"[TenantScopeProvenance]"},
+              {"kind":"fully_discharged_branch_alias_return","source_fixture":"compiler/phase21_query_value_flow_positive.gst","expected":"accept","mir_to_c_exit":52}
+            ],"outcome":"no_counterexample"},
+            {"id":"legitimate_cross_tenant_path","claim_boundary":"direct_nonambient_host_capability_visible_at_the_owning_query","attempts":[
+              {"kind":"direct_capability","source_fixture":"compiler/phase21_cross_tenant_capability_positive.gst","expected":"accept","mir_to_c_exit":71,"cranelift_exit":71},
+              {"kind":"forged_capability_value","source_fixture":"compiler/phase21_cross_tenant_forged_invalid.gst","expected":"reject","diagnostic":"[CrossTenantCapability]"},
+              {"kind":"wrong_arity_host_call","source_fixture":"compiler/phase21_cross_tenant_wrong_arity_invalid.gst","expected":"reject","diagnostic":"[CrossTenantCapability]"}
+            ],"outcome":"no_counterexample"},
+            {"id":"dynamic_shape","claim_boundary":"typed_query_entity_and_field_shape_is_static_syntax_not_runtime_input","attempts":[
+              {"kind":"computed_root","source_fixture":"compiler/phase21_od8_dynamic_shape_invalid.gst","expected":"reject","diagnostic":"Expected scoped entity name after query root"},
+              {"kind":"computed_column","source_fixture":"compiler/phase21_od8_dynamic_column_invalid.gst","expected":"reject","diagnostic":"Expected expression after query predicate"}
+            ],"outcome":"no_counterexample"}
+          ],
+          "out_of_scope_probes": [
+            {"id":"unsafe_raw_SQL","authority":"docs/VISION.md_sections_56_2_and_57","outcome":"explicit_privileged_boundary_outside_typed_query_analysis_not_counted_as_a_pass"},
+            {"id":"result_cache","authority":"docs/VISION.md_section_56_1_class_5","outcome":"outside_query_analysis_not_counted_as_a_pass"},
+            {"id":"multi_step_flows","authority":"docs/VISION.md_section_56_1_class_6","outcome":"outside_single_query_obligation_analysis_not_counted_as_a_pass"},
+            {"id":"non_query_reads","authority":"docs/VISION.md_section_56_1_class_8","outcome":"outside_compiler_owned_typed_query_path_not_counted_as_a_pass"},
+            {"id":"trusted_context_establishment","authority":"docs/VISION.md_section_56_1_class_10","outcome":"host_authentication_and_scope_selection_outside_compiler_claim_not_counted_as_a_pass"}
+          ],
+          "boundary": {"changes_compiler_semantics":false,"changes_MIR_or_backends":false,"changes_ABI_layout_or_runtime_symbols":false,"changes_bootstrap_seed":false,"adds_database_runtime":false,"broadens_external_claim":false,"edits_stdlib":false}
         }
       },
       "phase19_brand_authority": {

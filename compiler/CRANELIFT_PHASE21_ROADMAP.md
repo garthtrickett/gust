@@ -43,6 +43,7 @@ Generated from `scripts/cranelift_feature_registry.json` by
   - `trusted_request_context_establishment`
 - Positive verdict gate: `implemented_analysis_survives_the_complete_predefined_section_56_1_adversarial_suite`
 - Negative verdict gate: `one_in_scope_compiling_leak_counterexample`
+- Successor evidence verdict: `resolved_2026_08_25_bounded_positive`
 
 ## OD-15
 
