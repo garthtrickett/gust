@@ -19,7 +19,7 @@ just guard-compile-fail \
   PrivateDeclarationAccess \
   phase21_inert_scoped_query_records_private_constructor
 
-while IFS=$'\t' read -r kind source_fixture expected_exit expected_hash
+while IFS=$'\t' read -r kind source_fixture expected_exit expected_runtime diagnostic generated_c_golden
 do
   case_name="$(basename "$source_fixture" .gst)"
   case_root="$build_root/$case_name"
@@ -31,20 +31,33 @@ do
   set -e
   test "$actual_exit" = "$expected_exit"
   case "$kind" in
-    generated_c_sha256)
+    generated_c_golden_and_runtime_observation)
       test ! -s "$case_root/stderr"
-      actual_hash="$(sha256sum "$case_root/stdout" | cut -d' ' -f1)"
+      cmp -s \
+        <(perl -0pe 's/\n+\z/\n/' "$case_root/stdout") \
+        "$generated_c_golden"
+      cat src/runtime.c "$case_root/stdout" >"$case_root/final.c"
+      "${CC:-cc}" ${CFLAGS:--O0 -w -pthread} -Isrc \
+        "$case_root/final.c" -o "$case_root/program"
+      set +e
+      "$case_root/program" >"$case_root/runtime.stdout" \
+        2>"$case_root/runtime.stderr"
+      actual_runtime="$?"
+      set -e
+      test "$actual_runtime" = "$expected_runtime"
+      test ! -s "$case_root/runtime.stdout"
+      test ! -s "$case_root/runtime.stderr"
       ;;
-    diagnostic_stdout_sha256)
+    unchanged_source_and_exact_diagnostic)
       test ! -s "$case_root/stderr"
-      actual_hash="$(sha256sum "$case_root/stdout" | cut -d' ' -f1)"
+      rg -F "Semantic Error: [OpaqueConstruction] $diagnostic" \
+        "$case_root/stdout" >/dev/null
       ;;
     *)
       echo "unknown Patch 21.2 semantic-delta kind: $kind" >&2
       exit 1
       ;;
   esac
-  test "$actual_hash" = "$expected_hash"
 done < <(python3 scripts/phase21_inert_scoped_query_records.py semantic-delta-cases)
 
 echo "✅ Phase 21.2 inert records passed: opaque/private round-trip and zero semantic delta"

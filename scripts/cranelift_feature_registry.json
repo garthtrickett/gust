@@ -1955,24 +1955,27 @@
     "reachability_policy": "module_absent_from_parser_typechecker_codegen_MIR_and_normal_compiler_entrypoints",
     "trusted_scope_origin_policy": "identity_only_inert_record_no_public_constructor_no_source_value_provenance",
     "per_root_policy": "each_canonical_root_has_a_distinct_recorded_obligation_identity_without_enforcement",
-    "semantic_delta_baselines": [
+    "semantic_delta_witnesses": [
       {
-        "kind": "generated_c_sha256",
+        "kind": "generated_c_golden_and_runtime_observation",
         "source_fixture": "compiler/phase21_query_shape_trusted_baseline.gst",
-        "expected_exit": 0,
-        "sha256": "38f9f29cee0632ac0793ebf6f0496be1d8b6a10434aba88bab02f415be3d17a1"
+        "generated_c_golden": "compiler/fixtures/phase21_query_shape_trusted_baseline.expected.c",
+        "compile_exit": 0,
+        "runtime_exit": 21
       },
       {
-        "kind": "generated_c_sha256",
+        "kind": "generated_c_golden_and_runtime_observation",
         "source_fixture": "compiler/phase21_query_shape_untrusted_baseline.gst",
-        "expected_exit": 0,
-        "sha256": "29b340c24244b76d938cf5af11ca3bb0cacd7af97dcf7a3743db72af87860d78"
+        "generated_c_golden": "compiler/fixtures/phase21_query_shape_untrusted_baseline.expected.c",
+        "compile_exit": 0,
+        "runtime_exit": 99
       },
       {
-        "kind": "diagnostic_stdout_sha256",
+        "kind": "unchanged_source_and_exact_diagnostic",
         "source_fixture": "compiler/phase20_resource_empty_forge_invalid.gst",
-        "expected_exit": 1,
-        "sha256": "b8cf3e1ce5e3f77fb303162f38adc5eb24f3861c36d5d282b497149afc77b144"
+        "compile_exit": 1,
+        "diagnostic_class": "OpaqueConstruction",
+        "diagnostic": "Opaque type 'phase20_resource_enforcement_module__Handle' can be constructed only inside its defining module"
       }
     ],
     "boundary": {

@@ -128,19 +128,28 @@ def validate() -> dict:
             "user-controlled" in private_forge,
             "private-constructor forge witness drifted")
 
-    deltas = record.get("semantic_delta_baselines")
+    deltas = record.get("semantic_delta_witnesses")
     require(isinstance(deltas, list) and len(deltas) == 3,
             "semantic-delta baseline population drifted")
     require([row.get("kind") for row in deltas] == [
-        "generated_c_sha256", "generated_c_sha256",
-        "diagnostic_stdout_sha256",
+        "generated_c_golden_and_runtime_observation",
+        "generated_c_golden_and_runtime_observation",
+        "unchanged_source_and_exact_diagnostic",
     ], "semantic-delta baseline kinds drifted")
     for row in deltas:
         require((ROOT / row["source_fixture"]).is_file(),
                 f"semantic-delta fixture is missing: {row['source_fixture']}")
-        require(len(row.get("sha256", "")) == 64 and
-                row.get("expected_exit") in {0, 1},
+        require(row.get("compile_exit") in {0, 1},
                 f"semantic-delta row is incomplete: {row['source_fixture']}")
+    require([row.get("runtime_exit") for row in deltas[:2]] == [21, 99],
+            "query-shaped runtime observations drifted")
+    for row in deltas[:2]:
+        require((ROOT / row["generated_c_golden"]).is_file(),
+                f"generated-C golden is missing: {row['generated_c_golden']}")
+    require(deltas[2].get("diagnostic_class") == "OpaqueConstruction" and
+            deltas[2].get("diagnostic") ==
+            "Opaque type 'phase20_resource_enforcement_module__Handle' can be constructed only inside its defining module",
+            "existing diagnostic observation drifted")
 
     boundary = record.get("boundary", {})
     require(boundary and all(value is False for value in boundary.values()),
@@ -193,18 +202,28 @@ def render(record: dict) -> str:
         "## Preserved semantic baseline",
         "",
     ]
-    for row in record["semantic_delta_baselines"]:
+    for row in record["semantic_delta_witnesses"]:
         lines += [
             f"- `{row['source_fixture']}` — `{row['kind']}`",
-            f"  - Exit: `{row['expected_exit']}`",
-            f"  - SHA-256: `{row['sha256']}`",
         ]
+        if row["kind"] == "generated_c_golden_and_runtime_observation":
+            lines += [
+                f"  - Generated-C golden: `{row['generated_c_golden']}`",
+                f"  - Compile exit: `{row['compile_exit']}`",
+                f"  - Runtime exit: `{row['runtime_exit']}`",
+            ]
+        else:
+            lines += [
+                f"  - Compile exit: `{row['compile_exit']}`",
+                f"  - Diagnostic class: `{row['diagnostic_class']}`",
+                f"  - Diagnostic: `{row['diagnostic']}`",
+            ]
     lines += [
         "",
-        "These hashes were measured on exact predecessor main before the inert",
-        "module was added and are replayed after it is built. They pin generated",
-        "C for both existing query-shaped programs and one existing compiler",
-        "diagnostic. Patch 21.2 adds no source syntax, rejection, MIR operation,",
+        "The evidence guard compares both generated-C outputs byte-for-byte with",
+        "their exact-main goldens, replays both programs, and checks the exact",
+        "existing diagnostic. Patch 21.2 adds",
+        "no source syntax, rejection, MIR operation,",
         "backend behavior, ABI/layout rule, runtime symbol, or seed update.",
         "",
     ]
@@ -224,10 +243,13 @@ def main() -> None:
         require(REVIEW.read_text(encoding="utf-8") == render(record),
                 "generated Patch 21.2 review is stale; run project")
     elif args.command == "semantic-delta-cases":
-        for row in record["semantic_delta_baselines"]:
+        for row in record["semantic_delta_witnesses"]:
             print("\t".join((
                 row["kind"], row["source_fixture"],
-                str(row["expected_exit"]), row["sha256"],
+                str(row["compile_exit"]),
+                str(row.get("runtime_exit", "-")),
+                row.get("diagnostic", "-"),
+                row.get("generated_c_golden", "-"),
             )))
         return
     print(f"{GUARD_L1}: ok")
