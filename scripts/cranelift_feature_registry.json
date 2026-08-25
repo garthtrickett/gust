@@ -2150,7 +2150,7 @@
     "trusted_host_intrinsic": "cross_tenant_capability_from_host",
     "capability_type": "CrossTenantCapability",
     "capability_policy": "reserved_compile_time_only_host_capability_recognized_only_as_the_direct_cross_tenant_expression_at_the_owning_query",
-    "local_bypass_policy": "a_valid_marker_bypasses_only_the_current_query_local_scope_obligations_and_every_nested_query_requires_its_own_marker_or_trusted_scope_provenance",
+    "local_bypass_policy": "a_valid_marker_bypasses_only_the_current_query_local_scope_obligation_reporting_not_predicate_intrinsic_boundary_validation_and_every_nested_query_requires_its_own_marker_or_trusted_scope_provenance",
     "nontransitive_policy": "ordinary_values_variables_helpers_returns_reexports_and_outer_query_markers_never_carry_cross_tenant_authority",
     "diagnostic_class": "CrossTenantCapability",
     "diagnostic": "error: cross_tenant requires a direct compiler-owned host capability at this query",
@@ -2165,6 +2165,7 @@
       {"kind":"reexport","source_fixture":"compiler/phase21_cross_tenant_reexport_invalid.gst","diagnostic_class":"CrossTenantCapabilityBoundary"},
       {"kind":"nested_nontransitive","source_fixture":"compiler/phase21_cross_tenant_nested_nontransitive_invalid.gst","diagnostic_class":"TenantScopeProvenance"},
       {"kind":"outside_marker","source_fixture":"compiler/phase21_cross_tenant_outside_marker_invalid.gst","diagnostic_class":"CrossTenantCapabilityBoundary"},
+      {"kind":"predicate_capability_misuse","source_fixture":"compiler/phase21_cross_tenant_predicate_validation_invalid.gst","diagnostic_class":"CrossTenantCapabilityBoundary"},
       {"kind":"reserved_redefinition","source_fixture":"compiler/phase21_cross_tenant_redefinition_invalid.gst","diagnostic_class":"ReservedCompilerIntrinsic"},
       {"kind":"wrong_arity","source_fixture":"compiler/phase21_cross_tenant_wrong_arity_invalid.gst","diagnostic_class":"CrossTenantCapability"}
     ],
@@ -2196,6 +2197,7 @@
       "decision": "complete_predefined_in_scope_suite_found_no_compiling_leak_counterexample",
       "operator_design_date": "2026-08-24",
       "evidence_date": "2026-08-25",
+      "post_merge_reconciliation": "patch21_7b_added_the_omitted_marked_predicate_boundary_attempt_and_reexecuted_the_complete_suite",
       "positive_gate": "all_predefined_in_scope_attempts_execute_with_the_registered_accept_or_reject_outcome",
       "in_scope_counterexamples": []
     },
@@ -2222,7 +2224,8 @@
         "attempts": [
           {"kind":"ordinary_helper","source_fixture":"compiler/phase21_cross_tenant_helper_invalid.gst","expected":"reject","diagnostic":"[CrossTenantCapability]"},
           {"kind":"reexport","source_fixture":"compiler/phase21_cross_tenant_reexport_invalid.gst","expected":"reject","diagnostic":"[CrossTenantCapabilityBoundary]"},
-          {"kind":"outside_marker","source_fixture":"compiler/phase21_cross_tenant_outside_marker_invalid.gst","expected":"reject","diagnostic":"[CrossTenantCapabilityBoundary]"}
+          {"kind":"outside_marker","source_fixture":"compiler/phase21_cross_tenant_outside_marker_invalid.gst","expected":"reject","diagnostic":"[CrossTenantCapabilityBoundary]"},
+          {"kind":"marked_predicate_capability_misuse","source_fixture":"compiler/phase21_cross_tenant_predicate_validation_invalid.gst","expected":"reject","diagnostic":"[CrossTenantCapabilityBoundary]"}
         ],
         "outcome": "implemented_privileged_typed_query_capability_is_nontransitive"
       },

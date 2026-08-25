@@ -12,7 +12,8 @@ Generated from `scripts/cranelift_feature_registry.json` by
 
 A deliberate cross-tenant query must spell the marker at that query
 and directly invoke the reserved compile-time host capability. The marker
-bypasses only that query's local scoped-root obligations. It cannot flow
+bypasses only that query's local scoped-root obligation reporting; predicate
+intrinsic boundaries remain validated. Authority cannot flow
 through values, variables, helpers, returns, re-exports, or an outer query.
 
 ## Positive evidence
@@ -27,6 +28,7 @@ through values, variables, helpers, returns, re-exports, or an outer query.
 - `reexport` — `compiler/phase21_cross_tenant_reexport_invalid.gst` — `CrossTenantCapabilityBoundary`
 - `nested_nontransitive` — `compiler/phase21_cross_tenant_nested_nontransitive_invalid.gst` — `TenantScopeProvenance`
 - `outside_marker` — `compiler/phase21_cross_tenant_outside_marker_invalid.gst` — `CrossTenantCapabilityBoundary`
+- `predicate_capability_misuse` — `compiler/phase21_cross_tenant_predicate_validation_invalid.gst` — `CrossTenantCapabilityBoundary`
 - `reserved_redefinition` — `compiler/phase21_cross_tenant_redefinition_invalid.gst` — `ReservedCompilerIntrinsic`
 - `wrong_arity` — `compiler/phase21_cross_tenant_wrong_arity_invalid.gst` — `CrossTenantCapability`
 

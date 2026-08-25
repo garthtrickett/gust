@@ -89,6 +89,7 @@ Out of scope:
 - [x] Patch 21.6 — Explicit Cross-Tenant Capability Boundary — DONE
 - [x] Patch 21.7 — OD-8 Adversarial Soundness Verdict — DONE
 - [x] Patch 21.7a — Tenant-Scope Bootstrap Seed Reconvergence — DONE
+- [x] Patch 21.7b — Cross-Tenant Predicate Validation Reconciliation — DONE
 - [ ] Patch 21.8 — Phase 20 Residue Migration Authority
 - [ ] Patch 21.9 — Collections and Strings Native Source Migration
 - [ ] Patch 21.10 — Filesystem and Allocation Native Source Migration
@@ -251,6 +252,22 @@ roadmap completion.
 Regenerate `gust_v4.c` alone after Track A compiler changes, require byte-
 identical stage 2/stage 3 output, and publish seed-specific authority in its own
 commit and PR. Add no semantics.
+
+## Patch 21.7b — Cross-Tenant Predicate Validation Reconciliation
+
+Correct the post-merge Patch 21.6 discrepancy without changing the selected
+capability contract: a valid direct cross-tenant marker bypasses only unresolved
+scope-obligation reporting. It does not bypass predicate traversal or the
+compiler-owned intrinsic boundary diagnostics applicable to predicates. Add
+the exact negative compile-fail witness to both the cross-tenant and bounded
+OD-8 evidence populations; preserve every existing positive capability and
+trusted-scope outcome.
+
+**Exit Gate:** the invalid compiler-owned capability use inside a marked query
+predicate rejects identically before native driver discovery through both
+backend commands, the existing legitimate cross-tenant path remains accepted,
+and the generated OD-8 attempt count and bounded verdict match the corrected
+evidence.
 
 ## Patch 21.8 — Phase 20 Residue Migration Authority
 

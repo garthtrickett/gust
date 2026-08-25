@@ -11,6 +11,7 @@ Generated from `scripts/cranelift_feature_registry.json` by
 - OD-8 status: `resolved_2026_08_25_bounded_positive`
 - Verdict: `complete_predefined_in_scope_suite_found_no_compiling_leak_counterexample`
 - Evidence date: `2026-08-25`
+- Post-merge reconciliation: `patch21_7b_added_the_omitted_marked_predicate_boundary_attempt_and_reexecuted_the_complete_suite`
 - In-scope counterexamples: `0`
 
 ## In-scope attacks
@@ -36,6 +37,7 @@ Generated from `scripts/cranelift_feature_registry.json` by
 - `ordinary_helper` — `compiler/phase21_cross_tenant_helper_invalid.gst` — rejected with `[CrossTenantCapability]`
 - `reexport` — `compiler/phase21_cross_tenant_reexport_invalid.gst` — rejected with `[CrossTenantCapabilityBoundary]`
 - `outside_marker` — `compiler/phase21_cross_tenant_outside_marker_invalid.gst` — rejected with `[CrossTenantCapabilityBoundary]`
+- `marked_predicate_capability_misuse` — `compiler/phase21_cross_tenant_predicate_validation_invalid.gst` — rejected with `[CrossTenantCapabilityBoundary]`
 
 ### `joins`
 

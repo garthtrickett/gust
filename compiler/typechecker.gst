@@ -2560,6 +2560,159 @@ func typechecker_query_cross_tenant_capability_state(
     }
 }
 
+// Cross-tenant authority suppresses unresolved scope obligations, but it must
+// not suppress the compiler-owned intrinsic boundaries inside predicates.
+// Query aliases are semantic records rather than ordinary local bindings in
+// the Phase 21 surface, so validating the whole predicate as a normal Gust
+// expression would reject legitimate alias-to-alias joins. Walk every shape
+// instead and invoke the ordinary checker for the two privileged intrinsics.
+func typechecker_validate_query_predicate_intrinsic_boundaries(
+    expr_idx: Index[ast.Expression[ctx], ctx],
+    env: *TypeEnvironment[ctx],
+    scope: Index[Scope[ctx], ctx],
+    ctx: &Arena
+) {
+    unsafe {
+        if expr_idx == empty[Index[ast.Expression[ctx], ctx]] {
+            return;
+        }
+        mut predicate_expr_phase21_7b := ctx[expr_idx];
+        if predicate_expr_phase21_7b.tag == 4 { // Move
+            typechecker_validate_query_predicate_intrinsic_boundaries(
+                predicate_expr_phase21_7b.Move.expr, env, scope, ctx
+            );
+            return;
+        }
+        if predicate_expr_phase21_7b.tag == 5 { // Take
+            typechecker_validate_query_predicate_intrinsic_boundaries(
+                predicate_expr_phase21_7b.Take.expr, env, scope, ctx
+            );
+            return;
+        }
+        if predicate_expr_phase21_7b.tag == 6 { // AddressOf
+            typechecker_validate_query_predicate_intrinsic_boundaries(
+                predicate_expr_phase21_7b.AddressOf.expr, env, scope, ctx
+            );
+            return;
+        }
+        if predicate_expr_phase21_7b.tag == 7 { // Dereference
+            typechecker_validate_query_predicate_intrinsic_boundaries(
+                predicate_expr_phase21_7b.Dereference.expr, env, scope, ctx
+            );
+            return;
+        }
+        if predicate_expr_phase21_7b.tag == 8 { // IndexAccess
+            typechecker_validate_query_predicate_intrinsic_boundaries(
+                predicate_expr_phase21_7b.IndexAccess.allocator,
+                env, scope, ctx
+            );
+            typechecker_validate_query_predicate_intrinsic_boundaries(
+                predicate_expr_phase21_7b.IndexAccess.index,
+                env, scope, ctx
+            );
+            return;
+        }
+        if predicate_expr_phase21_7b.tag == 9 { // AsCast
+            typechecker_validate_query_predicate_intrinsic_boundaries(
+                predicate_expr_phase21_7b.AsCast.left, env, scope, ctx
+            );
+            return;
+        }
+        if predicate_expr_phase21_7b.tag == 10 { // Binary
+            typechecker_validate_query_predicate_intrinsic_boundaries(
+                predicate_expr_phase21_7b.Binary.left, env, scope, ctx
+            );
+            typechecker_validate_query_predicate_intrinsic_boundaries(
+                predicate_expr_phase21_7b.Binary.right, env, scope, ctx
+            );
+            return;
+        }
+        if predicate_expr_phase21_7b.tag == 11 { // Selector
+            typechecker_validate_query_predicate_intrinsic_boundaries(
+                predicate_expr_phase21_7b.Selector.left, env, scope, ctx
+            );
+            return;
+        }
+        if predicate_expr_phase21_7b.tag == 12 { // Call
+            mut call_name_phase21_7b := expression_to_string(
+                predicate_expr_phase21_7b.Call.function, ctx
+            );
+            mut resolved_call_phase21_7b := env_resolve_namespaced_ident(
+                env, call_name_phase21_7b, ctx
+            );
+            if std.str_eq(
+                resolved_call_phase21_7b,
+                "trusted_scope_from_context"
+            ) == 1 || std.str_eq(
+                resolved_call_phase21_7b,
+                "cross_tenant_capability_from_host"
+            ) == 1 {
+                mut previous_query_predicate_phase21_7b :=
+                    (*env).in_typed_query_predicate;
+                (*env).in_typed_query_predicate = 1;
+                check_expression(expr_idx, env, scope, ctx);
+                (*env).in_typed_query_predicate =
+                    previous_query_predicate_phase21_7b;
+                return;
+            }
+            typechecker_validate_query_predicate_intrinsic_boundaries(
+                predicate_expr_phase21_7b.Call.function, env, scope, ctx
+            );
+            mut call_args_phase21_7b: std.Vector[ast.Expression[ctx], ctx] :=
+                ctx[predicate_expr_phase21_7b.Call.arguments];
+            mut call_arg_index_phase21_7b := 0;
+            while call_arg_index_phase21_7b < len(call_args_phase21_7b) {
+                mut call_arg_idx_phase21_7b:
+                    Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                ctx.Set(
+                    call_arg_idx_phase21_7b,
+                    call_args_phase21_7b[call_arg_index_phase21_7b]
+                );
+                typechecker_validate_query_predicate_intrinsic_boundaries(
+                    call_arg_idx_phase21_7b, env, scope, ctx
+                );
+                call_arg_index_phase21_7b = call_arg_index_phase21_7b + 1;
+            }
+        }
+    }
+}
+
+func typechecker_validate_query_predicates_when_scope_bypassed(
+    expr: ast.Expression[ctx],
+    env: *TypeEnvironment[ctx],
+    scope: Index[Scope[ctx], ctx],
+    ctx: &Arena
+) {
+    unsafe {
+        mut predicates_phase21_7b: std.Vector[ast.Expression[ctx], ctx] :=
+            ctx[expr.Query.predicates];
+        mut predicate_index_phase21_7b := 0;
+        while predicate_index_phase21_7b < len(predicates_phase21_7b) {
+            mut predicate_idx_phase21_7b:
+                Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+            ctx.Set(
+                predicate_idx_phase21_7b,
+                predicates_phase21_7b[predicate_index_phase21_7b]
+            );
+            typechecker_validate_query_predicate_intrinsic_boundaries(
+                predicate_idx_phase21_7b, env, scope, ctx
+            );
+            predicate_index_phase21_7b = predicate_index_phase21_7b + 1;
+        }
+
+        mut joins_phase21_7b: std.Vector[ast.QueryJoin[ctx], ctx] :=
+            ctx[expr.Query.joins];
+        mut join_index_phase21_7b := 0;
+        while join_index_phase21_7b < len(joins_phase21_7b) {
+            typechecker_validate_query_predicate_intrinsic_boundaries(
+                joins_phase21_7b[join_index_phase21_7b].predicate,
+                env, scope, ctx
+            );
+            join_index_phase21_7b = join_index_phase21_7b + 1;
+        }
+    }
+}
+
 func typechecker_check_query_scope_obligations(
     expr: ast.Expression[ctx],
     env: *TypeEnvironment[ctx],
@@ -2572,6 +2725,10 @@ func typechecker_check_query_scope_obligations(
         std.VectorNew(ctx);
     if cross_tenant_state_phase21_6 == 0 {
         obligations_phase21_5 = typechecker_build_query_scope_obligations(
+            expr, env, scope, ctx
+        );
+    } else {
+        typechecker_validate_query_predicates_when_scope_bypassed(
             expr, env, scope, ctx
         );
     }
