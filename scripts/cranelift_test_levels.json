@@ -327,6 +327,8 @@
     "guard-cranelift-phase21-tenant-scope-seed-convergence": 1,
     "guard-cranelift-phase21-residue-migration-authority-contract": 1,
     "guard-cranelift-phase21-residue-migration-authority-evidence": 2,
+    "guard-cranelift-phase21-collection-string-native-source-contract": 1,
+    "guard-cranelift-phase21-collection-string-native-source-parity": 2,
     "guard-cranelift-phase20-resource-scope-cleanup-parity": 2,
     "guard-cranelift-phase20-seed-convergence": 1,
     "guard-cranelift-phase20-nested-brand-annotation-contract": 1,

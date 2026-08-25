@@ -22,6 +22,7 @@ type MirNativeBackendRequest[ctx] struct {
     object_format: str,
     output_path: str,
     program_mir_bundle_path: str,
+    runtime_package_path: str,
     program_bundle: mir.MirProgramBundle[ctx],
     layout_table: layout.MirLayoutTable[ctx],
     integer_conversion_table: integer_conversion.MirIntegerConversionTable[ctx],
@@ -76,6 +77,7 @@ func mir_native_backend_make_request_with_aggregate_table(target_triple: str, ob
     request.object_format = std.Clone(ctx, object_format);
     request.output_path = std.Clone(ctx, output_path);
     request.program_mir_bundle_path = std.Clone(ctx, program_mir_bundle_path);
+    request.runtime_package_path = std.Clone(ctx, "");
     request.program_bundle = program_bundle;
     request.layout_table = layout_table;
     request.integer_conversion_table = integer_conversion_table;
@@ -119,6 +121,7 @@ func mir_native_backend_make_request_with_array_slice_table(target_triple: str, 
     request.object_format = std.Clone(ctx, object_format);
     request.output_path = std.Clone(ctx, output_path);
     request.program_mir_bundle_path = std.Clone(ctx, program_mir_bundle_path);
+    request.runtime_package_path = std.Clone(ctx, "");
     request.program_bundle = program_bundle;
     request.layout_table = layout_table;
     request.integer_conversion_table = integer_conversion_table;
@@ -267,6 +270,11 @@ func mir_native_backend_request_is_valid(request: MirNativeBackendRequest[ctx], 
     if mir_native_backend_request_path_is_absolute(request.program_mir_bundle_path) == 0 {
         return 0;
     }
+    if len(request.runtime_package_path) > 0 &&
+       mir_native_backend_request_path_is_absolute(request.runtime_package_path) == 0
+    {
+        return 0;
+    }
     if std.str_eq(request.output_path, request.program_mir_bundle_path) == 1 {
         return 0;
     }
@@ -369,6 +377,16 @@ func mir_native_backend_request_is_valid(request: MirNativeBackendRequest[ctx], 
         return 0;
     }
     return 1;
+}
+
+func mir_native_backend_request_with_runtime_package(
+    request: MirNativeBackendRequest[ctx],
+    runtime_package_path: str,
+    ctx: &Arena
+) MirNativeBackendRequest[ctx] {
+    mut updated := request;
+    updated.runtime_package_path = std.Clone(ctx, runtime_package_path);
+    return updated;
 }
 
 func mir_native_backend_request_append_field(output: str, key: str, value: str, ctx: &Arena) str {
@@ -502,5 +520,13 @@ func mir_serialize_native_backend_request(request: MirNativeBackendRequest[ctx],
             ctx
         )
     );
+    if len(request.runtime_package_path) > 0 {
+        output = mir_native_backend_request_append_field(
+            output,
+            "runtime_package_path",
+            request.runtime_package_path,
+            ctx
+        );
+    }
     return std.Clone(ctx, output);
 }

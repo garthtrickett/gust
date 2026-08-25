@@ -308,6 +308,11 @@ func mir_native_scalar_source_capabilities(ctx: &Arena) capability.MirNativeBack
         "ImportedCallI32",
         ctx
     );
+    capabilities = capability.mir_native_backend_capability_set_with_operation(
+        capabilities,
+        "ImportedCallVoid",
+        ctx
+    );
     capabilities = capability.mir_native_backend_capability_set_with_type_or_abi(
         capabilities,
         "int",
@@ -316,6 +321,11 @@ func mir_native_scalar_source_capabilities(ctx: &Arena) capability.MirNativeBack
     capabilities = capability.mir_native_backend_capability_set_with_type_or_abi(
         capabilities,
         "bool",
+        ctx
+    );
+    capabilities = capability.mir_native_backend_capability_set_with_type_or_abi(
+        capabilities,
+        "str",
         ctx
     );
     capabilities = capability.mir_native_backend_capability_set_with_type_or_abi(
@@ -363,6 +373,16 @@ func mir_native_scalar_source_capabilities(ctx: &Arena) capability.MirNativeBack
         "toupper",
         ctx
     );
+    capabilities = capability.mir_native_backend_capability_set_with_runtime_import(
+        capabilities,
+        "os_LogInt",
+        ctx
+    );
+    capabilities = capability.mir_native_backend_capability_set_with_runtime_import(
+        capabilities,
+        "os_LogStr",
+        ctx
+    );
     capabilities = capability.mir_native_backend_capability_set_with_target_requirement(
         capabilities,
         "native_host",
@@ -389,6 +409,26 @@ func mir_native_scalar_source_process(driver_path: str, command_name: str, reque
         arguments.Push(std.Clone(ctx, request_path));
     }
     return os.RunProcess(ctx, arguments);
+}
+
+func mir_native_scalar_source_requires_retained_runtime_package(
+    plan: capability.MirNativeBackendCapabilityPlan[ctx],
+    ctx: &Arena
+) int {
+    mut requirements: std.Vector[capability.MirNativeBackendRequirement[ctx], ctx] :=
+        ctx[plan.requirements];
+    mut index := 0;
+    while index < len(requirements) {
+        mut requirement := requirements[index];
+        if requirement.kind.tag == 2 &&
+           (std.str_eq(requirement.feature, "os_LogInt") == 1 ||
+            std.str_eq(requirement.feature, "os_LogStr") == 1)
+        {
+            return 1;
+        }
+        index = index + 1;
+    }
+    return 0;
 }
 
 func mir_native_scalar_source_compile_inner(programs: std.Vector[ast.Program[ctx], ctx], module_paths: std.Vector[str, ctx], module_prefixes: std.Vector[str, ctx], output_path: str, ctx: &Arena) MirNativeScalarSourceRouteResult[ctx] {
@@ -593,6 +633,21 @@ func mir_native_scalar_source_compile_inner(programs: std.Vector[ast.Program[ctx
         generic_result.bundle,
         ctx
     );
+    if mir_native_scalar_source_requires_retained_runtime_package(
+        generic_result.plan,
+        ctx
+    ) == 1 {
+        mut runtime_package_path := os.path_join(
+            os.PathDir(ctx, discovery.path),
+            "gust-runtime-package.a",
+            ctx
+        );
+        backend_request = request.mir_native_backend_request_with_runtime_package(
+            backend_request,
+            runtime_package_path,
+            ctx
+        );
+    }
     mut serialized_request :=
         request.mir_serialize_native_backend_request(
             backend_request,

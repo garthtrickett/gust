@@ -17097,6 +17097,24 @@ guard-cranelift-phase21-residue-migration-authority-evidence:
     just guard-cranelift-phase21-residue-migration-authority-contract
     bash scripts/phase21_opening.sh
 
+guard-cranelift-phase21-collection-string-native-source-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧵 Checking Phase 21 collection/string canonical-MIR source authority..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase21-collection-string-native-source-contract | grep -F $'guard-cranelift-phase21-collection-string-native-source-contract\t1\t' >/dev/null
+    just guard-cranelift-phase21-residue-migration-authority-contract
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase21_collection_string_native_source.py validate
+    python3 scripts/phase21_collection_string_native_source.py check-review
+
+guard-cranelift-phase21-collection-string-native-source-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Proving Phase 21 collection/string source differentials..."
+    just guard-cranelift-phase21-collection-string-native-source-contract
+    bash scripts/phase21_collection_string_native_source.sh
+
 guard-cranelift-phase18-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail
