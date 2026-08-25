@@ -103,6 +103,14 @@ def validate() -> dict:
         require(row.get("decision") in {"deferred", "source_or_type_failure"},
                 f"Patch 20.13 exclusion decision drifted: {row.get('category')}")
 
+    successor = registry.get("phase21_collection_string_native_source", {})
+    migrated_categories = []
+    if successor.get("status") == "patch21_9_complete":
+        require(successor.get("predecessor_authority") ==
+                registry["phase21_residue_migration_authority"]["contract_version"],
+                "Patch 21.9 successor authority is not linked to Patch 21.8")
+        migrated_categories = ["collections", "strings"]
+
     require("- [x] Patch 20.13 — Stdlib and Runtime Component Differential — DONE"
             in TASK.read_text(encoding="utf-8"),
             "TASK.md does not mark Patch 20.13 DONE")
@@ -115,14 +123,20 @@ def validate() -> dict:
     justfile = JUSTFILE.read_text(encoding="utf-8")
     require(f"{GUARD_L1}:" in justfile and f"{GUARD_L2}:" in justfile,
             "Patch 20.13 just guards are missing")
-    return authority
+    projected = dict(authority)
+    projected["active_exclusions"] = [
+        row for row in exclusions
+        if row["category"] not in migrated_categories
+    ]
+    projected["completed_successor_migrations"] = migrated_categories
+    return projected
 
 
 def exclusion_rows(authority: dict) -> str:
     return "\n".join("\t".join([
         row["category"], row["source_fixture"], row["decision"],
         row["reason_code"], row["owner"], row["destination"],
-    ]) for row in authority["explicit_exclusions"])
+    ]) for row in authority["active_exclusions"])
 
 
 def render(authority: dict) -> str:
@@ -161,13 +175,23 @@ def render(authority: dict) -> str:
             f"  - Owner: `{row['owner']}`; destination: `{row['destination']}`",
             f"  - Falsifier: {row['falsifier']}",
         ]
+    migrated = authority["completed_successor_migrations"]
+    lines += [
+        "",
+        "## Successor transitions",
+        "",
+        "The six exclusions above remain the frozen Patch 20.13 snapshot.",
+        "Completed successor migrations are no longer re-probed as exclusions",
+        "by this historical guard.",
+        f"Completed successor-owned categories: `{','.join(migrated) if migrated else 'none'}`.",
+    ]
     lines += [
         "",
         "Phase 17 request witnesses continue to prove runtime-operation contract",
         "agreement, but a scalar marker plus a request witness is not counted as",
         "execution of a collection, string, filesystem, allocation, Resource, or",
-        "synchronization program. Every exclusion is re-probed before driver",
-        "discovery with MIR-to-C fallback poisoned.",
+        "synchronization program. Every still-active exclusion is re-probed before",
+        "driver discovery with MIR-to-C fallback poisoned.",
         "",
     ]
     return "\n".join(lines)

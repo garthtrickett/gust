@@ -48,8 +48,15 @@ status, stdout, stderr, canonical request/bundle, and filesystem evidence.
   - Owner: `phase13_generic_source_to_mir`; destination: `20.16`
   - Falsifier: a real Mutex or Channel source program reaches the native driver and its deterministic-invariant differential passes
 
+## Successor transitions
+
+The six exclusions above remain the frozen Patch 20.13 snapshot.
+Completed successor migrations are no longer re-probed as exclusions
+by this historical guard.
+Completed successor-owned categories: `collections,strings`.
+
 Phase 17 request witnesses continue to prove runtime-operation contract
 agreement, but a scalar marker plus a request witness is not counted as
 execution of a collection, string, filesystem, allocation, Resource, or
-synchronization program. Every exclusion is re-probed before driver
-discovery with MIR-to-C fallback poisoned.
+synchronization program. Every still-active exclusion is re-probed before
+driver discovery with MIR-to-C fallback poisoned.
