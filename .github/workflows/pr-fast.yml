@@ -431,6 +431,9 @@ jobs:
       - name: Phase 21 tenant-scope bootstrap seed convergence
         run: just guard-cranelift-phase21-tenant-scope-seed-convergence
 
+      - name: Phase 21 residue migration authority
+        run: just guard-cranelift-phase21-residue-migration-authority-contract
+
       - name: Phase 19 cross-feature composition
         run: just guard-cranelift-phase19-composition-contract
 

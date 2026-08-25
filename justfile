@@ -17079,6 +17079,24 @@ guard-cranelift-phase21-tenant-scope-seed-convergence:
     python3 scripts/phase21_tenant_scope_seed_convergence.py validate
     python3 scripts/phase21_tenant_scope_seed_convergence.py check-review
 
+guard-cranelift-phase21-residue-migration-authority-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧭 Checking Phase 21 residue migration and compiler dependency authority..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase21-residue-migration-authority-contract | grep -F $'guard-cranelift-phase21-residue-migration-authority-contract\t1\t' >/dev/null
+    just guard-cranelift-phase21-tenant-scope-seed-convergence
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase21_residue_migration_authority.py validate
+    python3 scripts/phase21_residue_migration_authority.py check-review
+
+guard-cranelift-phase21-residue-migration-authority-evidence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Re-deriving Phase 21 residues and pre-driver full-compiler rejection..."
+    just guard-cranelift-phase21-residue-migration-authority-contract
+    bash scripts/phase21_opening.sh
+
 guard-cranelift-phase18-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail

@@ -90,7 +90,7 @@ Out of scope:
 - [x] Patch 21.7 — OD-8 Adversarial Soundness Verdict — DONE
 - [x] Patch 21.7a — Tenant-Scope Bootstrap Seed Reconvergence — DONE
 - [x] Patch 21.7b — Cross-Tenant Predicate Validation Reconciliation — DONE
-- [ ] Patch 21.8 — Phase 20 Residue Migration Authority
+- [x] Patch 21.8 — Phase 20 Residue Migration Authority — DONE
 - [ ] Patch 21.9 — Collections and Strings Native Source Migration
 - [ ] Patch 21.10 — Filesystem and Allocation Native Source Migration
 - [ ] Patch 21.11 — Resources and Synchronization Native Source Migration
@@ -275,6 +275,12 @@ Re-derive the Phase 20 final residues from current compiler output, split each
 broad category into the smallest generic source-to-canonical-MIR capabilities,
 and order them by the compiler self-hosting dependency graph. Preserve explicit
 early rejection for every not-yet-migrated row.
+
+**Exit Gate:** all six inherited fixtures and the full compiler reproduce their
+registered pre-driver rejection with no artifact; every residue maps only to
+generic capability slices owned by Patches 21.9–21.11; and the complete
+transitive compiler module graph is partitioned into a dependency-respecting
+qualification order with no unclassified module or import edge.
 
 ## Patch 21.9 — Collections and Strings Native Source Migration
 

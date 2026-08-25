@@ -46,6 +46,7 @@
     "phase21_cross_tenant_capability",
     "phase21_od8_adversarial_verdict",
     "phase21_tenant_scope_seed_convergence",
+    "phase21_residue_migration_authority",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -1540,6 +1541,57 @@
             "changes_ABI_layout_or_runtime_symbols": false,
             "edits_stdlib": false
           }
+        }
+      },
+      "phase21_residue_migration_authority": {
+        "const": {
+          "contract_version": "phase21_residue_migration_authority_v1",
+          "status": "patch21_8_complete",
+          "next_patch": "21.9",
+          "review_view": "compiler/CRANELIFT_PHASE21_RESIDUE_MIGRATION_AUTHORITY.md",
+          "observed_main_sha": "59ae01923a157b7b6e7a74c1b50499ef9c597f36",
+          "predecessor_authority": "phase21_tenant_scope_seed_convergence_v1",
+          "opening_authority": "phase21_opening_evidence_v1",
+          "early_rejection_policy": "every_unimplemented_residue_and_the_full_compiler_reject_before_driver_discovery_without_an_artifact",
+          "residue_rows": [
+            {"category":"collections","source_fixture":"compiler/phase20_component_collections_source.gst","current_decision":"deferred","reason_code":"deferred_p13_structured_cfg_non_reducible_shape","failure_stage":"before_driver_discovery","destination_patch":"21.9","capabilities":["scheduled_defer_call_edges","generic_receiver_and_aggregate_result_calls","enum_match_payload_cfg"]},
+            {"category":"strings","source_fixture":"compiler/phase20_component_strings_source.gst","current_decision":"deferred","reason_code":"deferred_p13_structured_cfg_condition_shape","failure_stage":"before_driver_discovery","destination_patch":"21.9","capabilities":["call_result_condition_cfg","string_view_byte_and_cast_operations"]},
+            {"category":"filesystem","source_fixture":"compiler/phase20_component_filesystem_source.gst","current_decision":"deferred","reason_code":"source_feature_not_represented","failure_stage":"before_driver_discovery","destination_patch":"21.10","capabilities":["scheduled_defer_call_edges","approved_filesystem_runtime_calls"]},
+            {"category":"allocation","source_fixture":"compiler/phase20_component_allocation_source.gst","current_decision":"deferred","reason_code":"source_feature_not_represented","failure_stage":"before_driver_discovery","destination_patch":"21.10","capabilities":["scheduled_defer_call_edges","branded_arena_allocation_write_and_index"]},
+            {"category":"resources","source_fixture":"compiler/phase20_resource_scope_cleanup_source.gst","current_decision":"source_or_type_failure","reason_code":"source_or_type_failure","failure_stage":"before_driver_discovery","destination_patch":"21.11","capabilities":["resource_declaration_module_inventory","resource_terminal_state_cleanup_edges"]},
+            {"category":"threading_synchronization","source_fixture":"compiler/phase20_component_threading_source.gst","current_decision":"deferred","reason_code":"deferred_p13_parameter_argument_target_dependent_abi","failure_stage":"before_driver_discovery","destination_patch":"21.11","capabilities":["scheduled_defer_call_edges","branded_arena_allocation_write_and_index","function_reference_parameter_call_abi","synchronization_protected_access_and_runtime_calls"]}
+          ],
+          "capability_slices": [
+            {"order":1,"id":"scheduled_defer_call_edges","destination_patch":"21.9","depends_on":[],"surface":"generic_deferred_call_scheduling_and_exactly_once_scope_exit_edges","first_compiler_consumers":["test_runner_entry.gst"],"implementation_state":"planned_early_rejection_preserved"},
+            {"order":2,"id":"call_result_condition_cfg","destination_patch":"21.9","depends_on":[],"surface":"generic_boolean_call_results_as_if_and_loop_conditions_with_join_consistency","first_compiler_consumers":["lexer.gst","parser.gst"],"implementation_state":"planned_early_rejection_preserved"},
+            {"order":3,"id":"generic_receiver_and_aggregate_result_calls","destination_patch":"21.9","depends_on":[],"surface":"generic_selector_receiver_calls_with_branded_arguments_and_aggregate_results","first_compiler_consumers":["lexer.gst","ast.gst"],"implementation_state":"planned_early_rejection_preserved"},
+            {"order":4,"id":"enum_match_payload_cfg","destination_patch":"21.9","depends_on":["generic_receiver_and_aggregate_result_calls"],"surface":"generic_enum_match_discriminant_payload_binding_and_branch_join_lowering","first_compiler_consumers":["parser.gst","typechecker.gst"],"implementation_state":"planned_early_rejection_preserved"},
+            {"order":5,"id":"string_view_byte_and_cast_operations","destination_patch":"21.9","depends_on":["call_result_condition_cfg"],"surface":"generic_string_view_return_byte_projection_and_integer_cast_operations","first_compiler_consumers":["lexer.gst","test_runner_entry.gst"],"implementation_state":"planned_early_rejection_preserved"},
+            {"order":6,"id":"approved_filesystem_runtime_calls","destination_patch":"21.10","depends_on":["scheduled_defer_call_edges","string_view_byte_and_cast_operations"],"surface":"approved_filesystem_runtime_calls_with_arena_and_string_arguments_results_and_effect_order","first_compiler_consumers":["resolver.gst","test_runner_entry.gst"],"implementation_state":"planned_early_rejection_preserved"},
+            {"order":7,"id":"branded_arena_allocation_write_and_index","destination_patch":"21.10","depends_on":["scheduled_defer_call_edges"],"surface":"generic_branded_arena_allocation_aggregate_write_index_read_and_field_projection","first_compiler_consumers":["ast.gst","parser.gst","typechecker.gst"],"implementation_state":"planned_early_rejection_preserved"},
+            {"order":8,"id":"resource_declaration_module_inventory","destination_patch":"21.11","depends_on":[],"surface":"generic_module_inventory_for_resource_attributes_types_destructors_and_function_signatures","first_compiler_consumers":["mir_resource_authority.gst","typechecker.gst"],"implementation_state":"planned_early_rejection_preserved"},
+            {"order":9,"id":"resource_terminal_state_cleanup_edges","destination_patch":"21.11","depends_on":["scheduled_defer_call_edges","call_result_condition_cfg","enum_match_payload_cfg","branded_arena_allocation_write_and_index","resource_declaration_module_inventory"],"surface":"generic_resource_move_manual_close_scheduled_close_and_automatic_cleanup_on_all_cfg_exits","first_compiler_consumers":["typechecker.gst","mir_resource_value.gst"],"implementation_state":"planned_early_rejection_preserved"},
+            {"order":10,"id":"function_reference_parameter_call_abi","destination_patch":"21.11","depends_on":["branded_arena_allocation_write_and_index"],"surface":"generic_function_reference_pointer_parameter_argument_and_target_abi_call_lowering","first_compiler_consumers":["codegen.gst","mir_native_backend_source_route.gst"],"implementation_state":"planned_early_rejection_preserved"},
+            {"order":11,"id":"synchronization_protected_access_and_runtime_calls","destination_patch":"21.11","depends_on":["resource_terminal_state_cleanup_edges","function_reference_parameter_call_abi"],"surface":"generic_resource_guarded_protected_access_and_approved_spawn_yield_synchronization_calls","first_compiler_consumers":[],"implementation_state":"planned_qualification_tail_not_required_by_current_compiler_graph"}
+          ],
+          "compiler_graph": {
+            "root": "test_runner_entry.gst",
+            "module_count": 38,
+            "import_edge_count": 116,
+            "slices": [
+              {"order":1,"id":"lexical_ast_foundations","depends_on":[],"modules":["token.gst","lexer.gst","errors.gst","ast.gst"]},
+              {"order":2,"id":"parser_type_resolver","depends_on":["lexical_ast_foundations"],"modules":["parser.gst","typechecker.gst","resolver.gst"]},
+              {"order":3,"id":"canonical_mir_authorities","depends_on":["lexical_ast_foundations"],"modules":["mir_layout.gst","mir_resource_authority.gst","mir_function_abi_authority.gst","mir_function_call.gst","mir_integer_conversion.gst","mir_pointer.gst","mir_stack_slot.gst","mir_memory_access.gst","mir_string_view.gst","mir_array_slice.gst","mir_struct_layout.gst","mir_enum.gst","mir_aggregate_transport.gst","mir_resource_value.gst","mir.gst"]},
+              {"order":4,"id":"code_generation","depends_on":["parser_type_resolver","canonical_mir_authorities"],"modules":["codegen.gst"]},
+              {"order":5,"id":"native_source_lowering","depends_on":["lexical_ast_foundations","canonical_mir_authorities"],"modules":["mir_native_backend_capability.gst","mir_native_backend_driver.gst","mir_native_backend_block_parameter_loop_source.gst","mir_native_backend_metadata_source.gst","mir_native_backend_direct_call_source.gst","mir_native_backend_local_state_source.gst","mir_native_backend_module_import_source.gst","mir_native_backend_parameter_argument_source.gst","mir_native_backend_structured_cfg_source.gst","mir_native_backend_scalar_expression_source.gst","mir_native_backend_generic_source.gst"]},
+              {"order":6,"id":"native_request_route_and_entry","depends_on":["parser_type_resolver","canonical_mir_authorities","code_generation","native_source_lowering"],"modules":["mir_primitive_layout.gst","mir_native_backend_request.gst","mir_native_backend_source_route.gst","test_runner_entry.gst"]}
+            ]
+          },
+          "full_compiler_baseline": {"source_fixture":"compiler/test_runner_entry.gst","compile_exit":1,"decision":"source_or_type_failure","reason_code":"source_or_type_failure","diagnostic":"Native backend canonical MIR verification failed: unsupported top-level statement in module/import cohort","failure_stage":"before_driver_discovery","artifact":"absent"},
+          "unclassified_residues": [],
+          "unclassified_modules": [],
+          "unclassified_import_edges": [],
+          "boundary": {"changes_compiler_semantics":false,"changes_MIR_or_backends":false,"changes_ABI_layout_or_runtime_symbols":false,"changes_bootstrap_seed":false,"implements_patch21_9_or_later":false,"edits_stdlib":false}
         }
       },
       "phase19_brand_authority": {
