@@ -16958,6 +16958,24 @@ guard-cranelift-phase21-opening-evidence:
     just guard-cranelift-phase21-opening-contract
     bash scripts/phase21_opening.sh
 
+guard-cranelift-phase21-inert-scoped-query-records-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧱 Checking Phase 21 inert scoped-query semantic-record authority..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase21-inert-scoped-query-records-contract | grep -F $'guard-cranelift-phase21-inert-scoped-query-records-contract\t1\t' >/dev/null
+    just guard-cranelift-phase21-opening-contract
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase21_inert_scoped_query_records.py validate
+    python3 scripts/phase21_inert_scoped_query_records.py check-review
+
+guard-cranelift-phase21-inert-scoped-query-records-evidence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Replaying Phase 21 inert record, non-forgeability, and semantic-delta evidence..."
+    just guard-cranelift-phase21-inert-scoped-query-records-contract
+    bash scripts/phase21_inert_scoped_query_records.sh
+
 guard-cranelift-phase18-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail

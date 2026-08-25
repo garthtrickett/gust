@@ -42,6 +42,7 @@ TOP_FIELDS = {
     "phase20_closure",
     "phase21_roadmap",
     "phase21_opening",
+    "phase21_inert_scoped_query_records",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming", "phase19_classification", "phase19_representation",
