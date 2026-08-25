@@ -325,6 +325,8 @@
     "guard-cranelift-phase21-od8-adversarial-verdict-contract": 1,
     "guard-cranelift-phase21-od8-adversarial-verdict-evidence": 2,
     "guard-cranelift-phase21-tenant-scope-seed-convergence": 1,
+    "guard-cranelift-phase21-residue-migration-authority-contract": 1,
+    "guard-cranelift-phase21-residue-migration-authority-evidence": 2,
     "guard-cranelift-phase20-resource-scope-cleanup-parity": 2,
     "guard-cranelift-phase20-seed-convergence": 1,
     "guard-cranelift-phase20-nested-brand-annotation-contract": 1,

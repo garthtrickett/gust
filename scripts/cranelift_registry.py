@@ -49,6 +49,7 @@ TOP_FIELDS = {
     "phase21_cross_tenant_capability",
     "phase21_od8_adversarial_verdict",
     "phase21_tenant_scope_seed_convergence",
+    "phase21_residue_migration_authority",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming", "phase19_classification", "phase19_representation",
